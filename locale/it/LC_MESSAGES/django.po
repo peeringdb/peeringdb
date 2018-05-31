@@ -2509,3 +2509,124 @@ msgstr ""
 #: tests/django_init.py:82
 msgid "Kosovo"
 msgstr ""
+
+msgid "Abuse"
+msgstr ""
+
+msgid "ATM"
+msgstr ""
+
+msgid "Content"
+msgstr ""
+
+msgid "Maintenance"
+msgstr ""
+
+msgid "Middle East"
+msgstr ""
+
+msgid "Not Required"
+msgstr ""
+
+msgid "Heavy Outbound"
+msgstr ""
+
+msgid "Europe"
+msgstr ""
+
+msgid "Australia"
+msgstr ""
+
+msgid "Multiple"
+msgstr ""
+
+msgid "Private Only"
+msgstr ""
+
+msgid "Required - EU"
+msgstr ""
+
+msgid "Regional"
+msgstr ""
+
+msgid "Preferred"
+msgstr ""
+
+msgid "Restrictive"
+msgstr ""
+
+msgid "Selective"
+msgstr ""
+
+msgid "Cable/DSL/ISP"
+msgstr ""
+
+msgid "NSP"
+msgstr ""
+
+msgid "Non-Profit"
+msgstr ""
+
+msgid "Public Relations"
+msgstr ""
+
+msgid "Mostly Outbound"
+msgstr ""
+
+msgid "Required - US"
+msgstr ""
+
+msgid "Technical"
+msgstr ""
+
+msgid "Required"
+msgstr ""
+
+msgid "Educational/Research"
+msgstr ""
+
+msgid "North America"
+msgstr ""
+
+msgid "Enterprise"
+msgstr ""
+
+msgid "Route Server"
+msgstr ""
+
+msgid "Ethernet"
+msgstr ""
+
+msgid "Mostly Inbound"
+msgstr ""
+
+msgid "Heavy Inbound"
+msgstr ""
+
+msgid "Global"
+msgstr ""
+
+msgid "Africa"
+msgstr ""
+
+msgid "Sales"
+msgstr ""
+
+msgid "NOC"
+msgstr ""
+
+msgid "South America"
+msgstr ""
+
+msgid "Asia Pacific"
+msgstr ""
+
+msgid "Balanced"
+msgstr ""
+
+msgid "Required - International"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
