@@ -26,11 +26,11 @@ msgid "ATM"
 msgstr ""
 
 #: django_peeringdb/const.py:5
-msgid "Multiple"
+msgid "Plusieurs"
 msgstr ""
 
 #: django_peeringdb/const.py:8
-msgid "Abuse"
+msgid "Abus"
 msgstr ""
 
 #: django_peeringdb/const.py:9
@@ -40,69 +40,69 @@ msgstr ""
 #: django_peeringdb/const.py:10
 #: peeringdb_server/templates/site/view_exchange_side.html:26
 #: peeringdb_server/templates/site/view_exchange_side.html:37
-msgid "Policy"
+msgid "Politique"
 msgstr ""
 
 #: django_peeringdb/const.py:11
-msgid "Technical"
+msgid "Technique"
 msgstr ""
 
 #: django_peeringdb/const.py:12
-msgid "NOC"
+msgid "CGR"
 msgstr ""
 
 #: django_peeringdb/const.py:13
-msgid "Public Relations"
+msgid "Relations publiques"
 msgstr ""
 
 #: django_peeringdb/const.py:14
-msgid "Sales"
+msgid "Ventes"
 msgstr ""
 
 #: django_peeringdb/const.py:18
-msgid "Open"
+msgid "Ouvert"
 msgstr ""
 
 #: django_peeringdb/const.py:19
-msgid "Selective"
+msgid "Selectif"
 msgstr ""
 
 #: django_peeringdb/const.py:20
-msgid "Restrictive"
+msgid "Restrictif"
 msgstr ""
 
 #: django_peeringdb/const.py:21 peeringdb_server/data_views.py:47
 #: peeringdb_server/data_views.py:48
 #: peeringdb_server/templates/site/view_organization_tools.html:516
-msgid "No"
+msgid "Non"
 msgstr ""
 
 #: django_peeringdb/const.py:22 django_peeringdb/const.py:28
-msgid "Not Required"
+msgid "Non requis"
 msgstr ""
 
 #: django_peeringdb/const.py:23
-msgid "Preferred"
+msgid "Préféré"
 msgstr ""
 
 #: django_peeringdb/const.py:24
-msgid "Required - US"
+msgid "Requis - États-Unis"
 msgstr ""
 
 #: django_peeringdb/const.py:25
-msgid "Required - EU"
+msgid "Requis - Europe"
 msgstr ""
 
 #: django_peeringdb/const.py:27
-msgid "Required - International"
+msgid "Requis - International"
 msgstr ""
 
 #: django_peeringdb/const.py:29
-msgid "Private Only"
+msgid "Privé seulement"
 msgstr ""
 
 #: django_peeringdb/const.py:30
-msgid "Required"
+msgid "Requis"
 msgstr ""
 
 #: django_peeringdb/const.py:33
@@ -132,31 +132,31 @@ msgid "Not Disclosed"
 msgstr ""
 
 #: django_peeringdb/const.py:40
-msgid "Heavy Outbound"
+msgid "Principalement sortant"
 msgstr ""
 
 #: django_peeringdb/const.py:41
-msgid "Mostly Outbound"
+msgid "Généralement sortant"
 msgstr ""
 
 #: django_peeringdb/const.py:42
-msgid "Balanced"
+msgid "Balancé"
 msgstr ""
 
 #: django_peeringdb/const.py:43
-msgid "Mostly Inbound"
+msgid "Généralement entrant"
 msgstr ""
 
 #: django_peeringdb/const.py:44
-msgid "Heavy Inbound"
+msgid "Principalement entrant"
 msgstr ""
 
 #: django_peeringdb/const.py:47 django_peeringdb/const.py:59
-msgid "North America"
+msgid "Amérique du Nord"
 msgstr ""
 
 #: django_peeringdb/const.py:48 django_peeringdb/const.py:60
-msgid "Asia Pacific"
+msgid "Asie Pacifique"
 msgstr ""
 
 #: django_peeringdb/const.py:49 django_peeringdb/const.py:61
@@ -164,23 +164,23 @@ msgid "Europe"
 msgstr ""
 
 #: django_peeringdb/const.py:50 django_peeringdb/const.py:62
-msgid "South America"
+msgid "Amérique du Sud"
 msgstr ""
 
 #: django_peeringdb/const.py:51 django_peeringdb/const.py:63
-msgid "Africa"
+msgid "Afrique"
 msgstr ""
 
 #: django_peeringdb/const.py:52 django_peeringdb/const.py:64
-msgid "Australia"
+msgid "Australie"
 msgstr ""
 
 #: django_peeringdb/const.py:53 django_peeringdb/const.py:65
-msgid "Middle East"
+msgid "Moyen Orient"
 msgstr ""
 
 #: django_peeringdb/const.py:58
-msgid "Regional"
+msgid "Régional"
 msgstr ""
 
 #: django_peeringdb/const.py:66
@@ -276,16 +276,16 @@ msgid "Route Server"
 msgstr ""
 
 #: django_peeringdb/const.py:99
-msgid "Private"
+msgid "Privé"
 msgstr ""
 
 #: django_peeringdb/const.py:101
 #: peeringdb_server/templates/site/view_organization_tools.html:32
-msgid "Users"
+msgid "Utilisateurs"
 msgstr ""
 
 #: django_peeringdb/const.py:102
-msgid "Public"
+msgid "Publique"
 msgstr ""
 
 #: mail_test.py:54 peeringdb_server/mail.py:57
