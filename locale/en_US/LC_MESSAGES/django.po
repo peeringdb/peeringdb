@@ -2331,7 +2331,7 @@ msgstr ""
 #: peeringdb_server/views.py:1255 peeringdb_server/views.py:1275
 #: peeringdb_server/views.py:1283 peeringdb_server/views.py:1289
 msgid "Not Disclosed"
-msgstr "Not Disclosed"
+msgstr ""
 
 #: peeringdb_server/views.py:1261
 msgid "IPv4 Prefixes"
