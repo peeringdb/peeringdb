@@ -330,7 +330,7 @@ msgid "APPROUVÉ"
 msgstr ""
 
 #: peeringdb_server/admin.py:420 peeringdb_server/admin.py:429
-msgid "Addresse IP déjà existante ailleurs"
+msgid "Adresse IP déjà existante ailleurs"
 msgstr ""
 
 #: peeringdb_server/admin.py:448
