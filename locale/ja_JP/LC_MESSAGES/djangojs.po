@@ -20,117 +20,117 @@ msgstr ""
 #: peeringdb_server/static/peeringdb.js:415
 #: peeringdb_server/static/peeringdb.js:745
 msgid "Remove"
-msgstr ""
+msgstr "削除"
 
 #: peeringdb_server/static/peeringdb.js:425
 msgid "Canceled"
-msgstr ""
+msgstr "キャンセル"
 
 #: peeringdb_server/static/peeringdb.js:449
 msgid "Add user"
-msgstr ""
+msgstr "ユーザ追加"
 
 #: peeringdb_server/static/peeringdb.js:449
 msgid "to Organization?"
-msgstr ""
+msgstr "その組織宛てですか？"
 
 #: peeringdb_server/static/peeringdb.js:466
 msgid "Deny"
-msgstr ""
+msgstr "拒否"
 
 #: peeringdb_server/static/peeringdb.js:466
 msgid "request to join the Organization?"
-msgstr ""
+msgstr "その組織への参加リクエストですか？"
 
 #: peeringdb_server/static/peeringdb.js:615
 msgid "Unknown request type:"
-msgstr ""
+msgstr "不明なリクエスト"
 
 #: peeringdb_server/static/peeringdb.js:631
 #: peeringdb_server/static/twentyc.edit.js:622
 msgid "The server rejected your data"
-msgstr ""
+msgstr "サーバはあなたのデータを受け付けませんでした"
 
 #: peeringdb_server/static/peeringdb.js:635
 msgid "not yet been approved"
-msgstr ""
+msgstr "まだ許可されていません"
 
 #: peeringdb_server/static/peeringdb.js:636
 msgid "Parent entity pending review - please wait for it to be approved before adding entities to it"
-msgstr ""
+msgstr "親エンティティのレビューが保留中です - エンティティ追加が許可されるまでお待ちください"
 
 #: peeringdb_server/static/peeringdb.js:773
 msgid "Exchange"
-msgstr ""
+msgstr "エクスチェンジ"
 
 #: peeringdb_server/static/peeringdb.js:789
 msgid "Participant"
-msgstr ""
+msgstr "接続事業者"
 
 #: peeringdb_server/static/peeringdb.js:805
 msgid "Facility"
-msgstr ""
+msgstr "データセンタ"
 
 #: peeringdb_server/static/peeringdb.js:816
 msgid "Network Contact"
-msgstr ""
+msgstr "ネットワークの連絡先"
 
 #: peeringdb_server/static/peeringdb.js:849
 msgid "Network - Exchange link"
-msgstr ""
+msgstr "ネットワーク - エクスチェンジ のリンク"
 
 #: peeringdb_server/static/peeringdb.js:894
 msgid "Network - Facility link"
-msgstr ""
+msgstr "ネットワーク - データセンタ のリンク"
 
 #: peeringdb_server/static/peeringdb.js:920
 msgid "IXLAN"
-msgstr ""
+msgstr "IXLAN"
 
 #: peeringdb_server/static/peeringdb.js:938
 msgid "IXLAN Prefix"
-msgstr ""
+msgstr "IXLAN Prefix"
 
 #: peeringdb_server/static/peeringdb.js:959
 msgid "Exchange - Facility link"
-msgstr ""
+msgstr "エクスチェンジ - データセンタ のリンク"
 
 #: peeringdb_server/static/twentyc.edit.js:83
 msgid "Some of the fields contain invalid values - please correct and try again."
-msgstr ""
+msgstr "不正な値があります - もう一度正しい値を入力してください"
 
 #: peeringdb_server/static/twentyc.edit.js:86
 msgid "Something went wrong."
-msgstr ""
+msgstr "うまくいきませんでした"
 
 #: peeringdb_server/static/twentyc.edit.js:783
 msgid "Invalid value"
-msgstr ""
+msgstr "不正な値"
 
 #: peeringdb_server/static/twentyc.edit.js:787
 msgid "Input required"
-msgstr ""
+msgstr "必須項目"
 
 #: peeringdb_server/static/twentyc.edit.js:870
 msgid "Needs to match password"
-msgstr ""
+msgstr "正しいパスワードではありません"
 
 #: peeringdb_server/static/twentyc.edit.js:887
 msgid "Needs to be a valid email address"
-msgstr ""
+msgstr "有効なメールアドレスではありません"
 
 #: peeringdb_server/static/twentyc.edit.js:916
 msgid "Needs to be a valid url"
-msgstr ""
+msgstr "有効な URL ではありません"
 
 #: peeringdb_server/static/twentyc.edit.js:936
 msgid "Needs to be a number"
-msgstr ""
+msgstr "メンバーになる必要があります"
 
 #: peeringdb_server/static/twentyc.edit.js:946
 msgid "Yes"
-msgstr ""
+msgstr "はい"
 
 #: peeringdb_server/static/twentyc.edit.js:946
 msgid "No"
-msgstr ""
+msgstr "いいえ"
