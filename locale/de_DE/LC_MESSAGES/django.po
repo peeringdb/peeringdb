@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-06-01 19:33+0000\n"
-"PO-Revision-Date: 2018-06-02 17:28+0200\n"
+"PO-Revision-Date: 2018-06-02 17:56+0200\n"
 "Language: de_DE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -133,59 +133,59 @@ msgstr "Keine Angaben"
 
 #: django_peeringdb/const.py:40
 msgid "Heavy Outbound"
-msgstr ""
+msgstr "extrem ausgehend"
 
 #: django_peeringdb/const.py:41
 msgid "Mostly Outbound"
-msgstr ""
+msgstr "hauptsächlich ausgehend"
 
 #: django_peeringdb/const.py:42
 msgid "Balanced"
-msgstr ""
+msgstr "Ausgewogen"
 
 #: django_peeringdb/const.py:43
 msgid "Mostly Inbound"
-msgstr ""
+msgstr "hauptsächlich eingehend"
 
 #: django_peeringdb/const.py:44
 msgid "Heavy Inbound"
-msgstr ""
+msgstr "extrem eingehend"
 
 #: django_peeringdb/const.py:47 django_peeringdb/const.py:59
 msgid "North America"
-msgstr ""
+msgstr "Nord Amerika"
 
 #: django_peeringdb/const.py:48 django_peeringdb/const.py:60
 msgid "Asia Pacific"
-msgstr ""
+msgstr "Asien-Pazifik"
 
 #: django_peeringdb/const.py:49 django_peeringdb/const.py:61
 msgid "Europe"
-msgstr ""
+msgstr "Europa"
 
 #: django_peeringdb/const.py:50 django_peeringdb/const.py:62
 msgid "South America"
-msgstr ""
+msgstr "Südamerika"
 
 #: django_peeringdb/const.py:51 django_peeringdb/const.py:63
 msgid "Africa"
-msgstr ""
+msgstr "Afrika"
 
 #: django_peeringdb/const.py:52 django_peeringdb/const.py:64
 msgid "Australia"
-msgstr ""
+msgstr "Australien"
 
 #: django_peeringdb/const.py:53 django_peeringdb/const.py:65
 msgid "Middle East"
-msgstr ""
+msgstr "Nahost"
 
 #: django_peeringdb/const.py:58
 msgid "Regional"
-msgstr ""
+msgstr "Regional"
 
 #: django_peeringdb/const.py:66
 msgid "Global"
-msgstr ""
+msgstr "Global"
 
 #: django_peeringdb/const.py:70
 msgid "0-20 Mbps"
@@ -249,31 +249,31 @@ msgstr ""
 
 #: django_peeringdb/const.py:89
 msgid "NSP"
-msgstr ""
+msgstr "NSP (Network Service Provider)"
 
 #: django_peeringdb/const.py:90
 msgid "Content"
-msgstr ""
+msgstr "Content / Inhalte"
 
 #: django_peeringdb/const.py:91
 msgid "Cable/DSL/ISP"
-msgstr ""
+msgstr "Kabel/DSL/ISP"
 
 #: django_peeringdb/const.py:92
 msgid "Enterprise"
-msgstr ""
+msgstr "Unternehmen"
 
 #: django_peeringdb/const.py:93
 msgid "Educational/Research"
-msgstr ""
+msgstr "Bildung/Forschung"
 
 #: django_peeringdb/const.py:94
 msgid "Non-Profit"
-msgstr ""
+msgstr "Nicht Gewinnorientiert (Vereine)"
 
 #: django_peeringdb/const.py:95
 msgid "Route Server"
-msgstr ""
+msgstr "Route Server"
 
 #: django_peeringdb/const.py:99
 msgid "Private"
@@ -295,7 +295,7 @@ msgstr ""
 #: peeringdb_server/admin.py:54 peeringdb_server/admin.py:1135
 #: peeringdb_server/templates/site/footer.html:30
 msgid "Status"
-msgstr ""
+msgstr "Status"
 
 #: peeringdb_server/admin.py:133
 msgid "Target org cannot be in selected organizations list"
@@ -303,7 +303,7 @@ msgstr ""
 
 #: peeringdb_server/admin.py:258
 msgid "ROLLBACK"
-msgstr ""
+msgstr "ZURÜCKSETZEN"
 
 #: peeringdb_server/admin.py:269
 msgid "SOFT DELETE"
@@ -319,39 +319,39 @@ msgstr ""
 
 #: peeringdb_server/admin.py:353
 msgid "APPROVE"
-msgstr ""
+msgstr "BESTÄTIGEN"
 
 #: peeringdb_server/admin.py:354
 msgid "DENY"
-msgstr ""
+msgstr "ABLEHNEN"
 
 #: peeringdb_server/admin.py:355
 msgid "APPROVED"
-msgstr ""
+msgstr "BESTÄTIGT"
 
 #: peeringdb_server/admin.py:420 peeringdb_server/admin.py:429
 msgid "Ipaddress already exists elsewhere"
-msgstr ""
+msgstr "IP Adresse wird bereits an anderer Stelle benutzt"
 
 #: peeringdb_server/admin.py:448
 msgid "User is looking to be affiliated to these Organizations"
-msgstr ""
+msgstr "Der Benutzer möchte mit diesen Unternehmen verbunden werden"
 
 #: peeringdb_server/admin.py:479
 msgid "IXF Import History"
-msgstr ""
+msgstr "IXF Import Vergangenheit"
 
 #: peeringdb_server/admin.py:528
 msgid "Initial creation of netixlan"
-msgstr ""
+msgstr "netixlan initial angelegt"
 
 #: peeringdb_server/admin.py:548
 msgid "CAN BE ROLLED BACK"
-msgstr ""
+msgstr "KANN ZURÜCK GESETZT WERDEN"
 
 #: peeringdb_server/admin.py:552 peeringdb_server/admin.py:556
 msgid "CANNOT BE ROLLED BACK"
-msgstr ""
+msgstr "KANN NICHT ZURÜCK GESETZT WERDEN"
 
 #: peeringdb_server/admin.py:552
 msgid "Has been changed since"
@@ -363,7 +363,7 @@ msgstr ""
 
 #: peeringdb_server/admin.py:560
 msgid "HAS BEEN ROLLED BACK"
-msgstr ""
+msgstr "WURDE ZURÜCKGESETZT"
 
 #: peeringdb_server/admin.py:617
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:6
@@ -371,7 +371,7 @@ msgstr ""
 #: peeringdb_server/views.py:948 peeringdb_server/views.py:1041
 #: peeringdb_server/views.py:1231
 msgid "Organization"
-msgstr ""
+msgstr "Unternehmen"
 
 #: peeringdb_server/admin.py:622
 msgid "Not Set"
@@ -379,23 +379,23 @@ msgstr ""
 
 #: peeringdb_server/admin.py:626 peeringdb_server/admin.py:657
 msgid "Logo Missing"
-msgstr ""
+msgstr "Kein Logo"
 
 #: peeringdb_server/admin.py:627 peeringdb_server/admin.py:658
 msgid "Active"
-msgstr ""
+msgstr "Aktiv"
 
 #: peeringdb_server/admin.py:629
 msgid "Over"
-msgstr ""
+msgstr "Über"
 
 #: peeringdb_server/admin.py:631
 msgid "Waiting"
-msgstr ""
+msgstr "ausstehend"
 
 #: peeringdb_server/admin.py:688
 msgid "Malformed organization ids"
-msgstr ""
+msgstr "ungültige Unternehmens-ID"
 
 #: peeringdb_server/admin.py:695
 msgid "Merge target organization does not exist"
@@ -407,7 +407,7 @@ msgstr ""
 
 #: peeringdb_server/admin.py:736 peeringdb_server/admin.py:747
 msgid "Undo merge"
-msgstr ""
+msgstr "Veränderung rückgängig machen"
 
 #: peeringdb_server/admin.py:816
 msgid "APPROVE selected items"
@@ -450,31 +450,31 @@ msgstr ""
 
 #: peeringdb_server/admin.py:943
 msgid "VERIFIED"
-msgstr ""
+msgstr "BESTÄTIGT"
 
 #: peeringdb_server/admin.py:946
 msgid "UNVERIFIED"
-msgstr ""
+msgstr "UNBESTÄTIGT"
 
 #: peeringdb_server/admin.py:962
 msgid "User Permission"
-msgstr ""
+msgstr "Benutzerrecht"
 
 #: peeringdb_server/admin.py:963
 msgid "User Permissions"
-msgstr ""
+msgstr "Benutzerrechte"
 
 #: peeringdb_server/admin.py:1013
 msgid "Duplicate IP"
-msgstr ""
+msgstr "mehrfach vergebene IP"
 
 #: peeringdb_server/admin.py:1014
 msgid "Duplicate IPs"
-msgstr ""
+msgstr "mehrfach vergebene IPs"
 
 #: peeringdb_server/admin.py:1141
 msgid "Updated"
-msgstr ""
+msgstr "aktualisiert"
 
 #: peeringdb_server/admin.py:1259 peeringdb_server/admin.py:1291
 msgid "Only POST requests allowed."
@@ -495,7 +495,7 @@ msgstr ""
 #: peeringdb_server/data_views.py:47 peeringdb_server/data_views.py:48
 #: peeringdb_server/templates/site/view_organization_tools.html:516
 msgid "Yes"
-msgstr ""
+msgstr "Ja"
 
 #: peeringdb_server/export_views.py:140
 msgid "Invalid export format"
@@ -511,35 +511,35 @@ msgstr ""
 
 #: peeringdb_server/forms.py:59
 msgid "ASN needs to be a number"
-msgstr ""
+msgstr "ASN darf nur aus Nummern bestehen"
 
 #: peeringdb_server/forms.py:71 peeringdb_server/views.py:694
 msgid "Needs to be at least 10 characters long"
-msgstr ""
+msgstr "Muss mindestens 10 Zeichen lang sein"
 
 #: peeringdb_server/forms.py:80
 msgid "Passwords need to match"
-msgstr ""
+msgstr "Passwörter stimmen nicht überein"
 
 #: peeringdb_server/models.py:42
 #: peeringdb_server/templates/site/sponsorships.html:56
 msgid "Silver"
-msgstr ""
+msgstr "Silber"
 
 #: peeringdb_server/models.py:42
 #: peeringdb_server/templates/site/sponsorships.html:43
 msgid "Gold"
-msgstr ""
+msgstr "Gold"
 
 #: peeringdb_server/models.py:42
 #: peeringdb_server/templates/site/sponsorships.html:28
 msgid "Platinum"
-msgstr ""
+msgstr "Platin"
 
 #: peeringdb_server/models.py:43
 #: peeringdb_server/templates/site/sponsorships.html:12
 msgid "Diamond"
-msgstr ""
+msgstr "Diamant"
 
 #: peeringdb_server/models.py:45
 msgid "Data Validation"
@@ -547,11 +547,11 @@ msgstr ""
 
 #: peeringdb_server/models.py:45
 msgid "RIR"
-msgstr ""
+msgstr "RIR"
 
 #: peeringdb_server/models.py:47
 msgid "Renumber IP Space"
-msgstr ""
+msgstr "IP Bereiche neu sortieren"
 
 #: peeringdb_server/models.py:147
 msgid "Has this object's latitude and longitude been syncronized to it's address fields"
@@ -567,11 +567,11 @@ msgstr ""
 
 #: peeringdb_server/models.py:200
 msgid "Address not found"
-msgstr ""
+msgstr "Adresse nicht gefunden"
 
 #: peeringdb_server/models.py:208
 msgid "API Timeout"
-msgstr ""
+msgstr "API nicht erreichbar"
 
 #: peeringdb_server/models.py:234
 msgid "This organization in our database that was derived from the provided ASN or organization name. If this is empty it means no matching organization was found."
