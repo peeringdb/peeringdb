@@ -19,98 +19,98 @@ msgstr ""
 
 #: django_peeringdb/const.py:3
 msgid "Ethernet"
-msgstr ""
+msgstr "イーサネット"
 
 #: django_peeringdb/const.py:4
 msgid "ATM"
-msgstr ""
+msgstr "ATM"
 
 #: django_peeringdb/const.py:5
 msgid "Multiple"
-msgstr ""
+msgstr "複数の種類"
 
 #: django_peeringdb/const.py:8
 msgid "Abuse"
-msgstr ""
+msgstr "Abuse"
 
 #: django_peeringdb/const.py:9
 msgid "Maintenance"
-msgstr ""
+msgstr "メンテナンス"
 
 #: django_peeringdb/const.py:10
 #: peeringdb_server/templates/site/view_exchange_side.html:26
 #: peeringdb_server/templates/site/view_exchange_side.html:37
 msgid "Policy"
-msgstr ""
+msgstr "ポリシー"
 
 #: django_peeringdb/const.py:11
 msgid "Technical"
-msgstr ""
+msgstr "技術部"
 
 #: django_peeringdb/const.py:12
 msgid "NOC"
-msgstr ""
+msgstr "NOC"
 
 #: django_peeringdb/const.py:13
 msgid "Public Relations"
-msgstr ""
+msgstr "渉外部"
 
 #: django_peeringdb/const.py:14
 msgid "Sales"
-msgstr ""
+msgstr "営業部"
 
 #: django_peeringdb/const.py:18
 msgid "Open"
-msgstr ""
+msgstr "オープン"
 
 #: django_peeringdb/const.py:19
 msgid "Selective"
-msgstr ""
+msgstr "セレクティブ"
 
 #: django_peeringdb/const.py:20
 msgid "Restrictive"
-msgstr ""
+msgstr "限定的"
 
 #: django_peeringdb/const.py:21 peeringdb_server/data_views.py:47
 #: peeringdb_server/data_views.py:48
 #: peeringdb_server/templates/site/view_organization_tools.html:516
 msgid "No"
-msgstr ""
+msgstr "いいえ"
 
 #: django_peeringdb/const.py:22 django_peeringdb/const.py:28
 msgid "Not Required"
-msgstr ""
+msgstr "必要無し"
 
 #: django_peeringdb/const.py:23
 msgid "Preferred"
-msgstr ""
+msgstr "推奨"
 
 #: django_peeringdb/const.py:24
 msgid "Required - US"
-msgstr ""
+msgstr "必須 - US"
 
 #: django_peeringdb/const.py:25
 msgid "Required - EU"
-msgstr ""
+msgstr "必須 - EU"
 
 #: django_peeringdb/const.py:27
 msgid "Required - International"
-msgstr ""
+msgstr "必須 - International"
 
 #: django_peeringdb/const.py:29
 msgid "Private Only"
-msgstr ""
+msgstr "Private Only"
 
 #: django_peeringdb/const.py:30
 msgid "Required"
-msgstr ""
+msgstr "必須"
 
 #: django_peeringdb/const.py:33
 #: peeringdb_server/templates/site/view_exchange_side.html:21
 #: peeringdb_server/templates/site/view_network_side.html:27
 #: peeringdb_server/templates/site/view_network_side.html:147
 msgid "IPv4"
-msgstr ""
+msgstr "IPv4"
 
 #: django_peeringdb/const.py:34
 #: peeringdb_server/templates/site/view_exchange_side.html:22
@@ -120,7 +120,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_tools.html:430
 #: peeringdb_server/views.py:1084 peeringdb_server/views.py:1322
 msgid "IPv6"
-msgstr ""
+msgstr "IPv6"
 
 #: django_peeringdb/const.py:38 django_peeringdb/const.py:39
 #: django_peeringdb/const.py:56 django_peeringdb/const.py:57
@@ -129,173 +129,173 @@ msgstr ""
 #: peeringdb_server/views.py:1292 peeringdb_server/views.py:1300
 #: peeringdb_server/views.py:1306
 msgid "Not Disclosed"
-msgstr ""
+msgstr "公開無し"
 
 #: django_peeringdb/const.py:40
 msgid "Heavy Outbound"
-msgstr ""
+msgstr "送信方向が大量"
 
 #: django_peeringdb/const.py:41
 msgid "Mostly Outbound"
-msgstr ""
+msgstr "送信方向が大部分"
 
 #: django_peeringdb/const.py:42
 msgid "Balanced"
-msgstr ""
+msgstr "偏り無し"
 
 #: django_peeringdb/const.py:43
 msgid "Mostly Inbound"
-msgstr ""
+msgstr "受信方向が大部分"
 
 #: django_peeringdb/const.py:44
 msgid "Heavy Inbound"
-msgstr ""
+msgstr "受信方向が大量"
 
 #: django_peeringdb/const.py:47 django_peeringdb/const.py:59
 msgid "North America"
-msgstr ""
+msgstr "北米"
 
 #: django_peeringdb/const.py:48 django_peeringdb/const.py:60
 msgid "Asia Pacific"
-msgstr ""
+msgstr "アジア太平洋"
 
 #: django_peeringdb/const.py:49 django_peeringdb/const.py:61
 msgid "Europe"
-msgstr ""
+msgstr "ヨーロッパ"
 
 #: django_peeringdb/const.py:50 django_peeringdb/const.py:62
 msgid "South America"
-msgstr ""
+msgstr "南米"
 
 #: django_peeringdb/const.py:51 django_peeringdb/const.py:63
 msgid "Africa"
-msgstr ""
+msgstr "アフリカ"
 
 #: django_peeringdb/const.py:52 django_peeringdb/const.py:64
 msgid "Australia"
-msgstr ""
+msgstr "オーストラリア"
 
 #: django_peeringdb/const.py:53 django_peeringdb/const.py:65
 msgid "Middle East"
-msgstr ""
+msgstr "中東"
 
 #: django_peeringdb/const.py:58
 msgid "Regional"
-msgstr ""
+msgstr "特定地域"
 
 #: django_peeringdb/const.py:66
 msgid "Global"
-msgstr ""
+msgstr "世界全体"
 
 #: django_peeringdb/const.py:70
 msgid "0-20 Mbps"
-msgstr ""
+msgstr "0-20 Mbps"
 
 #: django_peeringdb/const.py:71
 msgid "20-100Mbps"
-msgstr ""
+msgstr "20-100Mbps"
 
 #: django_peeringdb/const.py:72
 msgid "100-1000Mbps"
-msgstr ""
+msgstr "100-1000Mbps"
 
 #: django_peeringdb/const.py:73
 msgid "1-5Gbps"
-msgstr ""
+msgstr "1-5Gbps"
 
 #: django_peeringdb/const.py:74
 msgid "5-10Gbps"
-msgstr ""
+msgstr "5-10Gbps"
 
 #: django_peeringdb/const.py:75
 msgid "10-20Gbps"
-msgstr ""
+msgstr "10-20Gbps"
 
 #: django_peeringdb/const.py:76
 msgid "20-50 Gbps"
-msgstr ""
+msgstr "20-50 Gbps"
 
 #: django_peeringdb/const.py:77
 msgid "50-100 Gbps"
-msgstr ""
+msgstr "50-100 Gbps"
 
 #: django_peeringdb/const.py:78
 msgid "100+ Gbps"
-msgstr ""
+msgstr "100 Gbps 以上"
 
 #: django_peeringdb/const.py:79
 msgid "100-200 Gbps"
-msgstr ""
+msgstr "100-200 Gbps"
 
 #: django_peeringdb/const.py:80
 msgid "200-300 Gbps"
-msgstr ""
+msgstr "200-300 Gbps"
 
 #: django_peeringdb/const.py:81
 msgid "300-500 Gbps"
-msgstr ""
+msgstr "300-500 Gbps"
 
 #: django_peeringdb/const.py:82
 msgid "500-1000 Gbps"
-msgstr ""
+msgstr "500-1000 Gbps"
 
 #: django_peeringdb/const.py:83
 msgid "1 Tbps+"
-msgstr ""
+msgstr "1 Tbps 以上"
 
 #: django_peeringdb/const.py:84
 msgid "10 Tbps+"
-msgstr ""
+msgstr "10 Tbps 以上"
 
 #: django_peeringdb/const.py:89
 msgid "NSP"
-msgstr ""
+msgstr "NSP"
 
 #: django_peeringdb/const.py:90
 msgid "Content"
-msgstr ""
+msgstr "コンテンツ"
 
 #: django_peeringdb/const.py:91
 msgid "Cable/DSL/ISP"
-msgstr ""
+msgstr "Cable/DSL/ISP"
 
 #: django_peeringdb/const.py:92
 msgid "Enterprise"
-msgstr ""
+msgstr "エンタープライズ"
 
 #: django_peeringdb/const.py:93
 msgid "Educational/Research"
-msgstr ""
+msgstr "教育・研究"
 
 #: django_peeringdb/const.py:94
 msgid "Non-Profit"
-msgstr ""
+msgstr "非営利"
 
 #: django_peeringdb/const.py:95
 msgid "Route Server"
-msgstr ""
+msgstr "ルートサーバ"
 
 #: django_peeringdb/const.py:99
 msgid "Private"
-msgstr ""
+msgstr "プライベート"
 
 #: django_peeringdb/const.py:101
 #: peeringdb_server/templates/site/view_organization_tools.html:32
 msgid "Users"
-msgstr ""
+msgstr "ユーザ"
 
 #: django_peeringdb/const.py:102
 msgid "Public"
-msgstr ""
+msgstr "パブリック"
 
 #: mail_test.py:54 peeringdb_server/mail.py:57
 msgid "{} Merge Notification: {} -> {}"
-msgstr ""
+msgstr "{} 統合の通知: {} -> {}"
 
 #: peeringdb_server/admin.py:54 peeringdb_server/admin.py:1135
 #: peeringdb_server/templates/site/footer.html:30
 msgid "Status"
-msgstr ""
+msgstr "ステータス"
 
 #: peeringdb_server/admin.py:133
 msgid "Target org cannot be in selected organizations list"
@@ -303,67 +303,67 @@ msgstr ""
 
 #: peeringdb_server/admin.py:258
 msgid "ROLLBACK"
-msgstr ""
+msgstr "ロールバック"
 
 #: peeringdb_server/admin.py:269
 msgid "SOFT DELETE"
-msgstr ""
+msgstr "SOFT DELETE"
 
 #: peeringdb_server/admin.py:340
 msgid "Verification Queue is currently disabled"
-msgstr ""
+msgstr "現在、確認キューは無効になっています"
 
 #: peeringdb_server/admin.py:343
 msgid "Verification Queue is currently disabled for this object type"
-msgstr ""
+msgstr "現在、このオブジェクト形式の確認キューは無効になっています"
 
 #: peeringdb_server/admin.py:353
 msgid "APPROVE"
-msgstr ""
+msgstr "承認"
 
 #: peeringdb_server/admin.py:354
 msgid "DENY"
-msgstr ""
+msgstr "拒否"
 
 #: peeringdb_server/admin.py:355
 msgid "APPROVED"
-msgstr ""
+msgstr "承認"
 
 #: peeringdb_server/admin.py:420 peeringdb_server/admin.py:429
 msgid "Ipaddress already exists elsewhere"
-msgstr ""
+msgstr "その IP アドレスは既に他の場所で使われています"
 
 #: peeringdb_server/admin.py:448
 msgid "User is looking to be affiliated to these Organizations"
-msgstr ""
+msgstr "そのユーザはその組織に所属予定になっています"
 
 #: peeringdb_server/admin.py:479
 msgid "IXF Import History"
-msgstr ""
+msgstr "IXP インポート履歴"
 
 #: peeringdb_server/admin.py:528
 msgid "Initial creation of netixlan"
-msgstr ""
+msgstr "netixlan の初期作成"
 
 #: peeringdb_server/admin.py:548
 msgid "CAN BE ROLLED BACK"
-msgstr ""
+msgstr "ロールバックする事が出来ます"
 
 #: peeringdb_server/admin.py:552 peeringdb_server/admin.py:556
 msgid "CANNOT BE ROLLED BACK"
-msgstr ""
+msgstr "ロールバックする事は出来ません"
 
 #: peeringdb_server/admin.py:552
 msgid "Has been changed since"
-msgstr ""
+msgstr "以来の変更です"
 
 #: peeringdb_server/admin.py:557
 msgid "Netixlan with conflicting ipaddress now exists elsewhere"
-msgstr ""
+msgstr "同じ IP アドレスを持つ netixlan が他の場所にもあります"
 
 #: peeringdb_server/admin.py:560
 msgid "HAS BEEN ROLLED BACK"
-msgstr ""
+msgstr "ロールバックされました"
 
 #: peeringdb_server/admin.py:617
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:6
@@ -371,551 +371,551 @@ msgstr ""
 #: peeringdb_server/views.py:948 peeringdb_server/views.py:1041
 #: peeringdb_server/views.py:1231
 msgid "Organization"
-msgstr ""
+msgstr "組織"
 
 #: peeringdb_server/admin.py:622
 msgid "Not Set"
-msgstr ""
+msgstr "設定されていません"
 
 #: peeringdb_server/admin.py:626 peeringdb_server/admin.py:657
 msgid "Logo Missing"
-msgstr ""
+msgstr "ロゴが見つかりません"
 
 #: peeringdb_server/admin.py:627 peeringdb_server/admin.py:658
 msgid "Active"
-msgstr ""
+msgstr "Active"
 
 #: peeringdb_server/admin.py:629
 msgid "Over"
-msgstr ""
+msgstr "Over"
 
 #: peeringdb_server/admin.py:631
 msgid "Waiting"
-msgstr ""
+msgstr "待ち"
 
 #: peeringdb_server/admin.py:688
 msgid "Malformed organization ids"
-msgstr ""
+msgstr "不正な組織 ID"
 
 #: peeringdb_server/admin.py:695
 msgid "Merge target organization does not exist"
-msgstr ""
+msgstr "対象の組織の統合はありません"
 
 #: peeringdb_server/admin.py:709
 msgid "Organization Merging Tool"
-msgstr ""
+msgstr "組織統合ツール"
 
 #: peeringdb_server/admin.py:736 peeringdb_server/admin.py:747
 msgid "Undo merge"
-msgstr ""
+msgstr "統合を元に戻す"
 
 #: peeringdb_server/admin.py:816
 msgid "APPROVE selected items"
-msgstr ""
+msgstr "選択したアイテムが承認されました"
 
 #: peeringdb_server/admin.py:822
 msgid "DENY and delete selected items"
-msgstr ""
+msgstr "選択したアイテムは承認されず削除されました"
 
 #: peeringdb_server/admin.py:827
 msgid "View"
-msgstr ""
+msgstr "表示"
 
 #: peeringdb_server/admin.py:843
 msgid "Affiliation request was approved and the user was notified."
-msgstr ""
+msgstr "所属リクエストが承認されたので、そのユーザに通知しました"
 
 #: peeringdb_server/admin.py:845
 msgid "Approve and notify User"
-msgstr ""
+msgstr "承認とユーザ通知"
 
 #: peeringdb_server/admin.py:851
 #: peeringdb_server/templates/site/view_organization_tools.html:520
 msgid "Approve"
-msgstr ""
+msgstr "承認"
 
 #: peeringdb_server/admin.py:857
 #: peeringdb_server/templates/site/view_organization_tools.html:521
 msgid "Deny"
-msgstr ""
+msgstr "拒否"
 
 #: peeringdb_server/admin.py:926
 #: peeringdb_server/templates/site/verify.html:217
 msgid "Change Password"
-msgstr ""
+msgstr "パスワード変更"
 
 #: peeringdb_server/admin.py:936
 msgid "Edit Permissions"
-msgstr ""
+msgstr "権限の変更"
 
 #: peeringdb_server/admin.py:943
 msgid "VERIFIED"
-msgstr ""
+msgstr "認証済みの"
 
 #: peeringdb_server/admin.py:946
 msgid "UNVERIFIED"
-msgstr ""
+msgstr "未認証の"
 
 #: peeringdb_server/admin.py:962
 msgid "User Permission"
-msgstr ""
+msgstr "ユーザ権限"
 
 #: peeringdb_server/admin.py:963
 msgid "User Permissions"
-msgstr ""
+msgstr "ユーザ権限"
 
 #: peeringdb_server/admin.py:1013
 msgid "Duplicate IP"
-msgstr ""
+msgstr "重複した IP アドレス"
 
 #: peeringdb_server/admin.py:1014
 msgid "Duplicate IPs"
-msgstr ""
+msgstr "重複した IP アドレス"
 
 #: peeringdb_server/admin.py:1141
 msgid "Updated"
-msgstr ""
+msgstr "更新された"
 
 #: peeringdb_server/admin.py:1259 peeringdb_server/admin.py:1291
 msgid "Only POST requests allowed."
-msgstr ""
+msgstr "POST のリクエストのみ許可されました"
 
 #: peeringdb_server/admin.py:1269
 msgid "{} (Preview)"
-msgstr ""
+msgstr "{} (プレビュー)"
 
 #: peeringdb_server/admin_commandline_tools.py:136
 msgid "Three leftmost octets of the original prefix - eg. xxx.xxx.xxx"
-msgstr ""
+msgstr "元プレフィクスの左側3オクテット - 例. xxx.xxx.xxx"
 
 #: peeringdb_server/admin_commandline_tools.py:140
 msgid "Three leftmost octets of the new prefix - eg. xxx.xxx.xxx"
-msgstr ""
+msgstr "新規プレフィクスの左側3オクテット - 例. xxx.xxx.xxx"
 
 #: peeringdb_server/data_views.py:47 peeringdb_server/data_views.py:48
 #: peeringdb_server/templates/site/view_organization_tools.html:516
 msgid "Yes"
-msgstr ""
+msgstr "はい"
 
 #: peeringdb_server/export_views.py:140
 msgid "Invalid export format"
-msgstr ""
+msgstr "無効なエクスポート形式"
 
 #: peeringdb_server/export_views.py:284
 msgid "Invalid tag"
-msgstr ""
+msgstr "無効なタグ"
 
 #: peeringdb_server/forms.py:21
 msgid "Invalid permission level"
-msgstr ""
+msgstr "無効な権限レベル"
 
 #: peeringdb_server/forms.py:59
 msgid "ASN needs to be a number"
-msgstr ""
+msgstr "AS番号は数字でお願いします"
 
 #: peeringdb_server/forms.py:71 peeringdb_server/views.py:694
 msgid "Needs to be at least 10 characters long"
-msgstr ""
+msgstr "10文字以上の文字数でお願いします"
 
 #: peeringdb_server/forms.py:80
 msgid "Passwords need to match"
-msgstr ""
+msgstr "文字列が一致するパスワードでお願いします"
 
 #: peeringdb_server/models.py:42
 #: peeringdb_server/templates/site/sponsorships.html:56
 msgid "Silver"
-msgstr ""
+msgstr "シルバー"
 
 #: peeringdb_server/models.py:42
 #: peeringdb_server/templates/site/sponsorships.html:43
 msgid "Gold"
-msgstr ""
+msgstr "ゴールド"
 
 #: peeringdb_server/models.py:42
 #: peeringdb_server/templates/site/sponsorships.html:28
 msgid "Platinum"
-msgstr ""
+msgstr "プラチナ"
 
 #: peeringdb_server/models.py:43
 #: peeringdb_server/templates/site/sponsorships.html:12
 msgid "Diamond"
-msgstr ""
+msgstr "ダイアモンド"
 
 #: peeringdb_server/models.py:45
 msgid "Data Validation"
-msgstr ""
+msgstr "データのバリデーション"
 
 #: peeringdb_server/models.py:45
 msgid "RIR"
-msgstr ""
+msgstr "RIR"
 
 #: peeringdb_server/models.py:47
 msgid "Renumber IP Space"
-msgstr ""
+msgstr "IP アドレスのリナンバ"
 
 #: peeringdb_server/models.py:147
 msgid "Has this object's latitude and longitude been syncronized to it's address fields"
-msgstr ""
+msgstr "このオブジェクトの緯度と経度は IP アドレスの情報と同期しています"
 
 #: peeringdb_server/models.py:150
 msgid "Last time of attempted geocode"
-msgstr ""
+msgstr "前回のジオコード試行"
 
 #: peeringdb_server/models.py:153
 msgid "Error message of previous geocode attempt"
-msgstr ""
+msgstr "前回のジオコード試行のエラーメッセージ"
 
 #: peeringdb_server/models.py:200
 msgid "Address not found"
-msgstr ""
+msgstr "アドレスが見つかりません"
 
 #: peeringdb_server/models.py:208
 msgid "API Timeout"
-msgstr ""
+msgstr "API タイムアウト"
 
 #: peeringdb_server/models.py:234
 msgid "This organization in our database that was derived from the provided ASN or organization name. If this is empty it means no matching organization was found."
-msgstr ""
+msgstr "データベース内にあるこの組織は、AS 番号もしくは組織名称から生成されました。空欄の場合は、一致する組織が無かったと言う意味になります"
 
 #: peeringdb_server/models.py:239
 msgid "The organization name entered by the user"
-msgstr ""
+msgstr "ユーザによって、組織名称が入力されました"
 
 #: peeringdb_server/models.py:242
 msgid "The ASN entered by the user"
-msgstr ""
+msgstr "ユーザによって、AS 番号が入力されました"
 
 #: peeringdb_server/models.py:245
 msgid "The user that made the request"
-msgstr ""
+msgstr "そのリクエストを行ったユーザ"
 
 #: peeringdb_server/models.py:251
 msgid "Pending"
-msgstr ""
+msgstr "ペンディング"
 
 #: peeringdb_server/models.py:252
 msgid "Approved"
-msgstr ""
+msgstr "承認された"
 
 #: peeringdb_server/models.py:253
 msgid "Denied"
-msgstr ""
+msgstr "拒否された"
 
 #: peeringdb_server/models.py:254
 msgid "Status of this request"
-msgstr ""
+msgstr "このリクエストの状態"
 
 #: peeringdb_server/models.py:258
 msgid "User to Organization Affiliation Request"
-msgstr ""
+msgstr "組織所属のリクエストを行ったユーザ"
 
 #: peeringdb_server/models.py:259
 msgid "User to Organization Affiliation Requests"
-msgstr ""
+msgstr "組織所属のリクエストを行ったユーザ"
 
 #: peeringdb_server/models.py:316
 msgid "Your affiliation to Organization \"{}\" has been approved"
-msgstr ""
+msgstr "組織所属 \"{}\" が承認されました"
 
 #: peeringdb_server/models.py:343
 msgid "The item that this queue is attached to was created by this user"
-msgstr ""
+msgstr "このユーザによって、このキューに加わっているこのアイテムが生成されました"
 
 #: peeringdb_server/models.py:435
 msgid "Allows you to upload and set a logo image file for this organization"
-msgstr ""
+msgstr "この組織のロゴファイルのアップロードが許可されました"
 
 #: peeringdb_server/models.py:658
 msgid "Sponsorship starts on"
-msgstr ""
+msgstr "にスポンサーシップが開始になります"
 
 #: peeringdb_server/models.py:660
 msgid "Sponsorship ends on"
-msgstr ""
+msgstr "にスポンサーシップが終了になります"
 
 #: peeringdb_server/models.py:662
 msgid "Expiration notification sent on"
-msgstr ""
+msgstr "に期間満了の通知が送付されました"
 
 #: peeringdb_server/models.py:665 peeringdb_server/models.py:723
 msgid "URL"
-msgstr ""
+msgstr "URL"
 
 #: peeringdb_server/models.py:666
 msgid "If specified clicking the sponsorship will take the user to this location"
-msgstr ""
+msgstr "スポンサーをクリックすると、この場所にユーザを移動します"
 
 #: peeringdb_server/models.py:671
 msgid "Allows you to upload and set a logo image file for this sponsorship"
-msgstr ""
+msgstr "このスポンサーのロゴファイルのアップロードと設置が許可されました"
 
 #: peeringdb_server/models.py:676
 msgid "Sponsorship"
-msgstr ""
+msgstr "スポンサーシップ"
 
 #: peeringdb_server/models.py:677
 msgid "Sponsorships"
-msgstr ""
+msgstr "スポンサーシップ"
 
 #: peeringdb_server/models.py:701
 msgid "Sponsorship Expired"
-msgstr ""
+msgstr "スポンサーシップが失効しました"
 
 #: peeringdb_server/models.py:724
 msgid "If specified clicking the partnership will take the user to this location"
-msgstr ""
+msgstr "パートナーをクリックすると、この場所にユーザを移動します"
 
 #: peeringdb_server/models.py:729
 msgid "Allows you to upload and set a logo image file for this partnership"
-msgstr ""
+msgstr "このパートナーのロゴファイルのアップロードと設置が許可されました"
 
 #: peeringdb_server/models.py:734
 msgid "Partnership"
-msgstr ""
+msgstr "パートナーシップ"
 
 #: peeringdb_server/models.py:735
 msgid "Partnerships"
-msgstr ""
+msgstr "パートナーシップ"
 
 #: peeringdb_server/models.py:750
 msgid "Merged on"
-msgstr ""
+msgstr "に統合しました"
 
 #: peeringdb_server/models.py:754
 msgid "Organization Merge"
-msgstr ""
+msgstr "組織の統合"
 
 #: peeringdb_server/models.py:755
 msgid "Organization Merges"
-msgstr ""
+msgstr "組織の統合"
 
 #: peeringdb_server/models.py:808
 msgid "Organization Merge: Entity"
-msgstr ""
+msgstr "組織の統合: エンティティ"
 
 #: peeringdb_server/models.py:809
 msgid "Organization Merge: Entities"
-msgstr ""
+msgstr "組織の統合: エンティティ"
 
 #: peeringdb_server/models.py:911 peeringdb_server/models.py:1110
 msgid "Need to specify at least two asns"
-msgstr ""
+msgstr "2つ以上のAS番号の記載が必要です"
 
 #: peeringdb_server/models.py:914 peeringdb_server/models.py:1113
 msgid "Can only compare a maximum of 25 asns"
-msgstr ""
+msgstr "最大25個のAS番号の比較まで可能です"
 
 #: peeringdb_server/models.py:1318
 msgid "No JSON could be parsed"
-msgstr ""
+msgstr "パース可能な JSON ではありません"
 
 #: peeringdb_server/models.py:1344
 msgid "No entries in any of the vlan_list lists, aborting."
-msgstr ""
+msgstr "vlan_list の一覧にエントリーがありませんでしたので中断します"
 
 #: peeringdb_server/models.py:1709
 msgid "IXF Import Log"
-msgstr ""
+msgstr "IXF Import のログ"
 
 #: peeringdb_server/models.py:1710
 msgid "IXF Import Logs"
-msgstr ""
+msgstr "IXF Import のログ"
 
 #: peeringdb_server/models.py:1741
 msgid "IXF Import Log Entry"
-msgstr ""
+msgstr "IXF Import のログのエントリー"
 
 #: peeringdb_server/models.py:1742
 msgid "IXF Import Log Entries"
-msgstr ""
+msgstr "IXF Import のログのエントリー"
 
 #: peeringdb_server/models.py:1847
 msgid "Sepcifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data"
-msgstr ""
+msgstr "ixp_member のデータを介して、ixp がこのネットワークの netixlan エントリーに追加出来るかどうか指定します"
 
 #: peeringdb_server/models.py:2283 peeringdb_server/models.py:2285
 msgid "Ip address already exists elsewhere"
-msgstr ""
+msgstr "他の場所で IP アドレスが使われています"
 
 #: peeringdb_server/models.py:2296
 msgid "username"
-msgstr ""
+msgstr "ユーザ名"
 
 #: peeringdb_server/models.py:2297
 msgid "Required. Letters, digits and [@.+-/_=|] only."
-msgstr ""
+msgstr "必須です。文字、数字、@.+-/_=| の記号のみです"
 
 #: peeringdb_server/models.py:2300
 msgid "Enter a valid username."
-msgstr ""
+msgstr "有効なユーザ名を入力してください"
 
 #: peeringdb_server/models.py:2303
 msgid "email address"
-msgstr ""
+msgstr "メールアドレス"
 
 #: peeringdb_server/models.py:2304
 msgid "first name"
-msgstr ""
+msgstr "名"
 
 #: peeringdb_server/models.py:2305
 msgid "last name"
-msgstr ""
+msgstr "姓"
 
 #: peeringdb_server/models.py:2307
 msgid "staff status"
-msgstr ""
+msgstr "スタッフの状態"
 
 #: peeringdb_server/models.py:2308
 msgid "Designates whether the user can log into admin site."
-msgstr ""
+msgstr "管理者サイトにログイン出来るユーザかどうか指定します"
 
 #: peeringdb_server/models.py:2310
 msgid "active"
-msgstr ""
+msgstr "アクティブ"
 
 #: peeringdb_server/models.py:2311
 msgid "Designates whether this user should be treated as active. Unselect this instead of deleting accounts."
-msgstr ""
+msgstr "そのユーザがアクティブユーザとして扱われるべきか指定します。もしアカウントを削除しないのであれば選択しないでください"
 
 #: peeringdb_server/models.py:2313
 msgid "date joined"
-msgstr ""
+msgstr "参加した日時"
 
 #: peeringdb_server/models.py:2316
 msgid "status"
-msgstr ""
+msgstr "ステータス"
 
 #: peeringdb_server/models.py:2318
 msgid "language"
-msgstr ""
+msgstr "言語"
 
 #: peeringdb_server/models.py:2327
 msgid "user"
-msgstr ""
+msgstr "ユーザ"
 
 #: peeringdb_server/models.py:2328
 msgid "users"
-msgstr ""
+msgstr "ユーザ"
 
 #: peeringdb_server/models.py:2520
 msgid "Password Reset Initiated"
-msgstr ""
+msgstr "パスワードの初期化"
 
 #: peeringdb_server/models.py:2588
 msgid "name of the tool"
-msgstr ""
+msgstr "ツール名"
 
 #: peeringdb_server/models.py:2591
 msgid "json serialization of arguments and options passed"
-msgstr ""
+msgstr "引数とオプションの JSON シリアライズがパスしました"
 
 #: peeringdb_server/models.py:2592
 msgid "result log"
-msgstr ""
+msgstr "結果ログ"
 
 #: peeringdb_server/models.py:2594
 msgid "the user that ran this command"
-msgstr ""
+msgstr "このコマンドを実行したユーザ"
 
 #: peeringdb_server/models.py:2598
 msgid "command was run at this date and time"
-msgstr ""
+msgstr "この日時に実行されたコマンド"
 
 #: peeringdb_server/org_admin_views.py:140
 msgid "Organization and all Entities it owns"
-msgstr ""
+msgstr "それが所有している組織とエンティティ"
 
 #: peeringdb_server/org_admin_views.py:141
 msgid "Any Network"
-msgstr ""
+msgstr "あらゆるネットワーク"
 
 #: peeringdb_server/org_admin_views.py:142
 msgid "Any Facility"
-msgstr ""
+msgstr "あらゆるデータセンタ"
 
 #: peeringdb_server/org_admin_views.py:143
 msgid "Any Exchange"
-msgstr ""
+msgstr "あらゆるエクスチェンジ"
 
 #: peeringdb_server/org_admin_views.py:147
 #, python-format
 msgid "Network - %(net_name)s"
-msgstr ""
+msgstr "ネットワーク - %(net_name)s"
 
 #: peeringdb_server/org_admin_views.py:152
 #, python-format
 msgid "Exchange - %(ix_name)s"
-msgstr ""
+msgstr "エクスチェンジ - %(ix_name)s"
 
 #: peeringdb_server/org_admin_views.py:157
 #, python-format
 msgid "Facility - %(fac_name)s"
-msgstr ""
+msgstr "データセンタ - %(fac_name)s"
 
 #: peeringdb_server/org_admin_views.py:216
 msgid "Invalid organization specified"
-msgstr ""
+msgstr "指定された組織は無効です"
 
 #: peeringdb_server/org_admin_views.py:309
 msgid "Needs to be member or admin"
-msgstr ""
+msgstr "メンバーもしくは管理者になる必要があります"
 
 #: peeringdb_server/org_admin_views.py:448
 #, python-format
 msgid "%(user_name)s's afilliation request has been approved"
-msgstr ""
+msgstr "%(user_name)s's 所属リクエストが承認されました"
 
 #: peeringdb_server/org_admin_views.py:502
 #, python-format
 msgid "%(user_name)s's afilliation request has been denied"
-msgstr ""
+msgstr "%(user_name)s's 所属リクエストが拒否されました"
 
 #: peeringdb_server/serializers.py:121
 msgid "Need to be unique"
-msgstr ""
+msgstr "一意である必要があります"
 
 #: peeringdb_server/serializers.py:151
 msgid "This field is required"
-msgstr ""
+msgstr "このフィールドは必須です"
 
 #: peeringdb_server/serializers.py:176
 msgid "We could not find the RiR entry for this ASN"
-msgstr ""
+msgstr "この AS 番号の RIR が見つかりませんでした"
 
 #: peeringdb_server/serializers.py:229
 #, python-format
 msgid "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
-msgstr ""
+msgstr "この形式 '%(type)s' のオブジェクトは生成する事が出来ませんでした。親エンティティ '%(parent_tag)s/%(parent_id)s' が承認されていない為です"
 
 #: peeringdb_server/serializers.py:237
 #, python-format
 msgid "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
-msgstr ""
+msgstr "この形式 '%(type)s' のオブジェクトは生成する事が出来ませんでした。親エンティティ '%(parent_tag)s/%(parent_id)s' が削除されている為です"
 
 #: peeringdb_server/signals.py:161
 #, python-format
 msgid "User %(u_name)s wishes to be affiliated to your Organization"
-msgstr ""
+msgstr "あなたの組織に所属する事を望んでいるユーザ"
 
 #: peeringdb_server/templates/account/email_confirm.html:13
 msgid "Confirm your e-mail address"
-msgstr ""
+msgstr "メールアドレスを確認してください"
 
 #: peeringdb_server/templates/account/email_confirm.html:15
 msgid "Please confirm that"
-msgstr ""
+msgstr "それを確認してください"
 
 #: peeringdb_server/templates/account/email_confirm.html:15
 msgid "is your email-address"
-msgstr ""
+msgstr "はあなたのメールアドレスです"
 
 #: peeringdb_server/templates/account/email_confirm.html:19
 msgid "Confirm"
-msgstr ""
+msgstr "確認"
 
 #: peeringdb_server/templates/account/email_confirm.html:23
 msgid "The email confirmation process for this email address has been terminated, please re-initate"
-msgstr ""
+msgstr "このメールアドレスの確認プロセスが終了しました。再開してください"
 
 #: peeringdb_server/templates/account/email_confirm.html:23
 #: peeringdb_server/templates/site/request-ownership.html:25
@@ -923,143 +923,143 @@ msgstr ""
 #: peeringdb_server/templates/site/verification_banner.html:11
 #: peeringdb_server/templates/site/verification_banner.html:14
 msgid "here"
-msgstr ""
+msgstr "ここ"
 
 #: peeringdb_server/templates/account/login.html:7
 msgid "Please use"
-msgstr ""
+msgstr "使ってください"
 
 #: peeringdb_server/templates/account/login.html:7
 msgid "this page"
-msgstr ""
+msgstr "このページ"
 
 #: peeringdb_server/templates/account/login.html:7
 msgid "instead"
-msgstr ""
+msgstr "代わりに"
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/prepare_command.html:18
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/preview_command.html:16
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/run_command.html:16
 msgid "Home"
-msgstr ""
+msgstr "ホーム"
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/prepare_command.html:22
 msgid "Prepare"
-msgstr ""
+msgstr "準備"
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/preview_command.html:20
 msgid "Preview"
-msgstr ""
+msgstr "プレビュー"
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/run_command.html:20
 msgid "Result"
-msgstr ""
+msgstr "結果"
 
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:2
 msgid "Merge Notification"
-msgstr ""
+msgstr "統合の通知"
 
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:4
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:8
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:6
 msgid "has been merged into"
-msgstr ""
+msgstr "に統合されました"
 
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:11
 msgid "All merges are processed manually by peeringdb support staff. If you think this action has been executed in error please dont hesitate to contact peeringdb support at"
-msgstr ""
+msgstr "全ての統合が PeeringDB サポートスタッフによって処理されました。もし間違って実行されたと思われた場合は、PeeringDB サポートスタッフに連絡してください"
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-approved.txt:3
 #, python-format
 msgid "%(u_full_name)s's affiliation request to %(o_name)s has been APPROVED by %(admin_full_name)s."
-msgstr ""
+msgstr "%(o_name)s への %(u_full_name)s の所属リクエストは、 %(admin_full_name)s によって承認されました"
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-approved.txt:7
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-denied.txt:7
 msgid "No further action is required on your part."
-msgstr ""
+msgstr "他のアクションは必要ありません"
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-approved.txt:9
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-denied.txt:9
 msgid "As the organization's administrator you may view your organization's user list here"
-msgstr ""
+msgstr "その組織の管理者として、あなたの組織のユーザリストを見る事が出来ます"
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-denied.txt:3
 #, python-format
 msgid "%(u_full_name)s's affiliation request to %(o_name)s has been DENIED by %(admin_full_name)s."
-msgstr ""
+msgstr "%(o_name)s への %(u_full_name)s の所属リクエストは、 %(admin_full_name)s によって拒否されました"
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil.txt:3
 #, python-format
 msgid "User %(u_name)s (%(u_email)s) wishes to be affiliated to %(o_name)s."
-msgstr ""
+msgstr "%(u_name)s (%(u_email)s) のユーザが %(o_name)s への所属を希望しています"
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil.txt:7
 msgid "As the organization's administrator you may approve or deny this request here"
-msgstr ""
+msgstr "その組織の管理者として、あなたはこのリクエストの承認もしくは拒否をします"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:3
 msgid "Ownership of organization was automatically granted to user"
-msgstr ""
+msgstr "組織の所有権がユーザに許可されました"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:5
 #: peeringdb_server/templates/site/view_organization_tools.html:496
 #: peeringdb_server/templates/site/view_organization_tools.html:542
 msgid "User"
-msgstr ""
+msgstr "ユーザ"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:7
 #: peeringdb_server/templates/site/view_organization_side.html:113
 msgid "Network"
-msgstr ""
+msgstr "ネットワーク"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:7
 msgid "AS"
-msgstr ""
+msgstr "AS"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-entity-creation.txt:4
 #, python-format
 msgid "Organization %(o_name)s (%(o_id)s) was automatically created during user '%(u_name)s's affiliation request to AS%(asn)s"
-msgstr ""
+msgstr "%(u_name)s の AS%(asn)s への所属リクエスト中に、%(o_name)s (%(o_id)s) の組織が自動生成されました。"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-entity-creation.txt:9
 #, python-format
 msgid "Network %(n_name)s (%(n_id)s) was automatically created during user '%(u_name)s's affiliation request to AS%(asn)s"
-msgstr ""
+msgstr "%(u_name)s の AS%(asn)s への所属リクエスト中に、%(n_name)s (%(n_id)s) のネットワークが自動生成されました。"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-skipvq.txt:4
 #, python-format
 msgid "User '%(u_name)s' created Network %(n_name)s AS%(n_asn)s (%(n_id)s) under organzation %(o_name)s (%(o_id)s)."
-msgstr ""
+msgstr "'%(u_name)s' のユーザが %(o_name)s (%(o_id)s) の組織下の %(n_name)s AS%(n_asn)s (%(n_id)s) のネットワークを生成しました。"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-skipvq.txt:8
 msgid "As the user's email address was succesfully matched against RiR entry data this network has skipped the verification queue."
-msgstr ""
+msgstr "そのユーザのメールアドレスが RIR のデータに一致しましたので、確認キューをスキップしました"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:4
 #, python-format
 msgid "User %(u_name)s (%(u_email)s) wishes to be affiliated to ASN %(inst)s"
-msgstr ""
+msgstr "AS 番号 %(inst)s への所属を希望しているユーザ %(u_name)s (%(u_email)s)"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:8
 msgid "They also provided this organization name in their request"
-msgstr ""
+msgstr "リクエストによってこの組織を提供しました"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:10
 msgid "There was no entry in our database that matches that ASN, so it is likely that a network and organzation for it will need to be created."
-msgstr ""
+msgstr "この AS 番号に一致するエントリーがデータベースにありませんでした。 ネットワークと組織を作成する必要があります"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:12
 #, python-format
 msgid "User %(u_name)s (%(u_email)s) wishes to create an organization called %(o_name)s."
-msgstr ""
+msgstr "%(u_name)s (%(u_email)s) のユーザは %(o_name)s と言う組織を生成します"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:15
 msgid "There was no entry in our database that matches that organization name and no ASN was provided, so it is likely that this organization will need to be created."
-msgstr ""
+msgstr "この組織名と AS 番号に一致するエントリーがデータベースにありませんでした。 組織を作成する必要があります"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:17
 msgid "You may create a new organization here"
