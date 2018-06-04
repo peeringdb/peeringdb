@@ -101,7 +101,7 @@ msgstr "不正な値があります - もう一度正しい値を入力してく
 
 #: peeringdb_server/static/twentyc.edit.js:86
 msgid "Something went wrong."
-msgstr "うまくいきませんでした"
+msgstr "失敗しました"
 
 #: peeringdb_server/static/twentyc.edit.js:783
 msgid "Invalid value"
