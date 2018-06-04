@@ -482,11 +482,11 @@ msgstr "{} (Προεπισκόπηση)"
 
 #: peeringdb_server/admin_commandline_tools.py:136
 msgid "Three leftmost octets of the original prefix - eg. xxx.xxx.xxx"
-msgstr "Ta τρία αριστερά octets του αρχικού prefix - πχ. xxx.xxx.xxx"
+msgstr "Ta τρία αριστερά octets του αρχικού prefix - π.χ. xxx.xxx.xxx"
 
 #: peeringdb_server/admin_commandline_tools.py:140
 msgid "Three leftmost octets of the new prefix - eg. xxx.xxx.xxx"
-msgstr "Τα τρία αριστερά octets του νέου prefix - πχ. xxx.xxx.xxx"
+msgstr "Τα τρία αριστερά octets του νέου prefix - π.χ. xxx.xxx.xxx"
 
 #: peeringdb_server/data_views.py:47 peeringdb_server/data_views.py:48
 #: peeringdb_server/templates/site/view_organization_tools.html:516
@@ -595,7 +595,7 @@ msgstr "Εκκρεμεί"
 
 #: peeringdb_server/models.py:252
 msgid "Approved"
-msgstr "ΕΓΚΕΚΡΙΜΕΝΟ"
+msgstr "Eγκεκριμένο"
 
 #: peeringdb_server/models.py:253
 msgid "Denied"
@@ -1206,7 +1206,7 @@ msgstr "Παρακαλούμε ακολουθήστε τον παρακάτω σ
 
 #: peeringdb_server/templates/email/username-retrieve.txt:7
 msgid "If you did not request username retrieval, you can ignore this email."
-msgstr "Aν δεν κάνατε αίτημα ανάκτησης του ονόματος χρήστη σας, μπορείτε να αγνοήσετε αυτό το email"
+msgstr "Aν δεν κάνατε αίτημα ανάκτησης του ονόματος χρήστη σας, μπορείτε να αγνοήσετε αυτό το email."
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:21
 msgid "Address"
@@ -1273,7 +1273,7 @@ msgstr "κλικάρετε για να επιλέξετε πολλαπλά"
 #: peeringdb_server/templates/site/advanced-search-fac.html:71
 #: peeringdb_server/templates/site/advanced-search-fac.html:140
 msgid "Management"
-msgstr "Management"
+msgstr "Διαχείριση" 
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:81
 #: peeringdb_server/templates/site/advanced-search-fac.html:143
