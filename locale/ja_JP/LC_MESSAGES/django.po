@@ -299,7 +299,7 @@ msgstr "ステータス"
 
 #: peeringdb_server/admin.py:133
 msgid "Target org cannot be in selected organizations list"
-msgstr ""
+msgstr "対象の組織は、選択された組織のリストにはありませんでした"
 
 #: peeringdb_server/admin.py:258
 msgid "ROLLBACK"
@@ -319,15 +319,15 @@ msgstr "現在、このオブジェクト形式の確認キューは無効にな
 
 #: peeringdb_server/admin.py:353
 msgid "APPROVE"
-msgstr "承認"
+msgstr "承認(APPROVE)"
 
 #: peeringdb_server/admin.py:354
 msgid "DENY"
-msgstr "拒否"
+msgstr "拒否(DENY)"
 
 #: peeringdb_server/admin.py:355
 msgid "APPROVED"
-msgstr "承認"
+msgstr "承認(APPROVED)"
 
 #: peeringdb_server/admin.py:420 peeringdb_server/admin.py:429
 msgid "Ipaddress already exists elsewhere"
@@ -432,12 +432,12 @@ msgstr "承認とユーザ通知"
 #: peeringdb_server/admin.py:851
 #: peeringdb_server/templates/site/view_organization_tools.html:520
 msgid "Approve"
-msgstr "承認"
+msgstr "承認(Approve)"
 
 #: peeringdb_server/admin.py:857
 #: peeringdb_server/templates/site/view_organization_tools.html:521
 msgid "Deny"
-msgstr "拒否"
+msgstr "拒否(Deny)"
 
 #: peeringdb_server/admin.py:926
 #: peeringdb_server/templates/site/verify.html:217
@@ -466,11 +466,11 @@ msgstr "ユーザ権限"
 
 #: peeringdb_server/admin.py:1013
 msgid "Duplicate IP"
-msgstr "重複した IP アドレス"
+msgstr "重複した IP アドレス(IP)"
 
 #: peeringdb_server/admin.py:1014
 msgid "Duplicate IPs"
-msgstr "重複した IP アドレス"
+msgstr "重複した IP アドレス(IPs)"
 
 #: peeringdb_server/admin.py:1141
 msgid "Updated"
@@ -595,11 +595,11 @@ msgstr "ペンディング"
 
 #: peeringdb_server/models.py:252
 msgid "Approved"
-msgstr "承認された"
+msgstr "承認された(Approved)"
 
 #: peeringdb_server/models.py:253
 msgid "Denied"
-msgstr "拒否された"
+msgstr "拒否された(Denied)"
 
 #: peeringdb_server/models.py:254
 msgid "Status of this request"
@@ -607,11 +607,11 @@ msgstr "このリクエストの状態"
 
 #: peeringdb_server/models.py:258
 msgid "User to Organization Affiliation Request"
-msgstr "組織所属のリクエストを行ったユーザ"
+msgstr "組織所属のリクエスト(Request)を行ったユーザ"
 
 #: peeringdb_server/models.py:259
 msgid "User to Organization Affiliation Requests"
-msgstr "組織所属のリクエストを行ったユーザ"
+msgstr "組織所属のリクエスト(Requests)を行ったユーザ"
 
 #: peeringdb_server/models.py:316
 msgid "Your affiliation to Organization \"{}\" has been approved"
@@ -651,11 +651,11 @@ msgstr "このスポンサーのロゴファイルのアップロードと設置
 
 #: peeringdb_server/models.py:676
 msgid "Sponsorship"
-msgstr "スポンサーシップ"
+msgstr "スポンサーシップ(Sponsorship)"
 
 #: peeringdb_server/models.py:677
 msgid "Sponsorships"
-msgstr "スポンサーシップ"
+msgstr "スポンサーシップ(Sponsorships)"
 
 #: peeringdb_server/models.py:701
 msgid "Sponsorship Expired"
@@ -671,11 +671,11 @@ msgstr "このパートナーのロゴファイルのアップロードと設置
 
 #: peeringdb_server/models.py:734
 msgid "Partnership"
-msgstr "パートナーシップ"
+msgstr "パートナーシップ(Partnership)"
 
 #: peeringdb_server/models.py:735
 msgid "Partnerships"
-msgstr "パートナーシップ"
+msgstr "パートナーシップ(Partnerships)"
 
 #: peeringdb_server/models.py:750
 msgid "Merged on"
@@ -683,11 +683,11 @@ msgstr "に統合しました"
 
 #: peeringdb_server/models.py:754
 msgid "Organization Merge"
-msgstr "組織の統合"
+msgstr "組織の統合(Organization Merge)"
 
 #: peeringdb_server/models.py:755
 msgid "Organization Merges"
-msgstr "組織の統合"
+msgstr "組織の統合(Organization Merges)"
 
 #: peeringdb_server/models.py:808
 msgid "Organization Merge: Entity"
@@ -715,19 +715,19 @@ msgstr "vlan_list の一覧にエントリーがありませんでしたので�
 
 #: peeringdb_server/models.py:1709
 msgid "IXF Import Log"
-msgstr "IXF Import のログ"
+msgstr "IXF Import のログ(IXF Import Log)"
 
 #: peeringdb_server/models.py:1710
 msgid "IXF Import Logs"
-msgstr "IXF Import のログ"
+msgstr "IXF Import のログ(IXF Import Logs)"
 
 #: peeringdb_server/models.py:1741
 msgid "IXF Import Log Entry"
-msgstr "IXF Import のログのエントリー"
+msgstr "IXF Import のログのエントリー(IXF Import Log Entry)"
 
 #: peeringdb_server/models.py:1742
 msgid "IXF Import Log Entries"
-msgstr "IXF Import のログのエントリー"
+msgstr "IXF Import のログのエントリー(IXF Import Log Entries)"
 
 #: peeringdb_server/models.py:1847
 msgid "Sepcifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data"
@@ -791,11 +791,11 @@ msgstr "言語"
 
 #: peeringdb_server/models.py:2327
 msgid "user"
-msgstr "ユーザ"
+msgstr "ユーザ(user)"
 
 #: peeringdb_server/models.py:2328
 msgid "users"
-msgstr "ユーザ"
+msgstr "ユーザ(users)"
 
 #: peeringdb_server/models.py:2520
 msgid "Password Reset Initiated"
