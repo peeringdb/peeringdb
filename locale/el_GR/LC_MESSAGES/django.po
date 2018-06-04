@@ -95,7 +95,7 @@ msgstr "Απαιτείται - ΕΕ"
 
 #: django_peeringdb/const.py:27
 msgid "Required - International"
-msgstr "Απατείται - Διεθνής"
+msgstr "Απαιτείται - Διεθνής"
 
 #: django_peeringdb/const.py:29
 msgid "Private Only"
