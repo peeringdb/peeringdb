@@ -62,7 +62,7 @@ msgstr "Η γονική οντότητα εκκρεμεί ανασκόπησης
 
 #: peeringdb_server/static/peeringdb.js:773
 msgid "Exchange"
-msgstr "IXP"
+msgstr "Exchange"
 
 #: peeringdb_server/static/peeringdb.js:789
 msgid "Participant"

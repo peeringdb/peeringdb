@@ -836,7 +836,7 @@ msgstr "Οποιαδήποτε Εγκατάσταση"
 
 #: peeringdb_server/org_admin_views.py:143
 msgid "Any Exchange"
-msgstr "Οποιοσδήποτε IXP"
+msgstr "Οποιοδήποτε Exchange"
 
 #: peeringdb_server/org_admin_views.py:147
 #, python-format
@@ -846,7 +846,7 @@ msgstr "Δίκτυο - %(net_name)s"
 #: peeringdb_server/org_admin_views.py:152
 #, python-format
 msgid "Exchange - %(ix_name)s"
-msgstr "IXP - %(ix_name)s"
+msgstr "Exchange - %(ix_name)s"
 
 #: peeringdb_server/org_admin_views.py:157
 #, python-format
@@ -1415,7 +1415,7 @@ msgstr "Δικτυακό Εύρος"
 #: peeringdb_server/templates/site/search_result_frame.html:6
 #: peeringdb_server/templates/site/view_organization_side.html:153
 msgid "Exchanges"
-msgstr "IXPs"
+msgstr "Exchanges"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:158
 #: peeringdb_server/templates/site/advanced-search.html:14
@@ -1630,7 +1630,7 @@ msgstr "ΕΓΚΑΤΑΣΤΑΣΕΙΣ"
 
 #: peeringdb_server/templates/site/index.html:77
 msgid "EXCHANGES"
-msgstr "IXPs"
+msgstr "EXCHANGES"
 
 #: peeringdb_server/templates/site/login.html:15
 #: peeringdb_server/templates/site/register.html:34
@@ -1900,7 +1900,7 @@ msgstr "Για να εγγράψετε έναν νέο δικτυακό οργα
 
 #: peeringdb_server/templates/site/verify.html:100
 msgid "To register a new facility or exchange organization, please enter the organization name below (ASN is optional)."
-msgstr "Για να εγγράψετε μια νέα εγκατάσταση ή IXP, παρακαλούμε εισάγετε το όνομα του οργανισμού παρακάτω (το ASN είναι προαιρετικό)."
+msgstr "Για να εγγράψετε μια νέα εγκατάσταση ή οργανισμό exchange, παρακαλούμε εισάγετε το όνομα του οργανισμού παρακάτω (το ASN είναι προαιρετικό)."
 
 #: peeringdb_server/templates/site/verify.html:118
 msgid "Affiliate"
@@ -2068,7 +2068,7 @@ msgstr "IXLAN"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:44
 msgid "ATTENTION: Any network relationships to the exchange via this LAN will be removed as well"
-msgstr "ΠΡΟΣΟΧΗ: Οποιεσδήποτε δικτυακές σχέσεις με τον IXP μέσω αυτού του LAN θα αφαιρεθούν επίσης"
+msgstr "ΠΡΟΣΟΧΗ: Οποιεσδήποτε δικτυακές σχέσεις με τον exchange μέσω αυτού του LAN θα αφαιρεθούν επίσης"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:97
 msgid "IXLAN Prefix"
@@ -2093,7 +2093,7 @@ msgstr "Εγκατάσταση"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:256
 msgid "Exchange - Facility link"
-msgstr "Ζεύξη IXP - Εγκατάστασης"
+msgstr "Ζεύξη Exchange - Εγκατάστασης"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:303
 #: peeringdb_server/templates/site/view_network_side.html:290
@@ -2122,7 +2122,7 @@ msgstr "Ταχύτητα"
 #: peeringdb_server/templates/site/view_network_side.html:123
 #: peeringdb_server/templates/site/view_organization_side.html:181
 msgid "Exchange"
-msgstr "IXP"
+msgstr "Exchange"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:38
 msgid "IP"
@@ -2181,7 +2181,7 @@ msgstr "RS Peer"
 
 #: peeringdb_server/templates/site/view_network_side.html:48
 msgid "Network - Exchange link"
-msgstr "Ζεύξη Δικτύου - IXP"
+msgstr "Ζεύξη Δικτύου - Exchange"
 
 #: peeringdb_server/templates/site/view_network_side.html:134
 msgid "Local ASN"
@@ -2193,7 +2193,7 @@ msgstr "Ταχύτητα (mbit/sec)"
 
 #: peeringdb_server/templates/site/view_network_side.html:189
 msgid "Add Exchange Point"
-msgstr "Προσθήκη IXP"
+msgstr "Προσθήκη Exchange Point"
 
 #: peeringdb_server/templates/site/view_organization_assets.html:33
 msgid "member"
@@ -2214,7 +2214,7 @@ msgstr "Προσθήκη Δικτύου"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:24
 msgid "Add Exchange"
-msgstr "Προσθήκη IXP"
+msgstr "Προσθήκη Exchange"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:37
 msgid "Permissions"
