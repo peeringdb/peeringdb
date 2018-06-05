@@ -61,15 +61,15 @@ msgstr "営業部"
 
 #: django_peeringdb/const.py:18
 msgid "Open"
-msgstr "オープン"
+msgstr "Open"
 
 #: django_peeringdb/const.py:19
 msgid "Selective"
-msgstr "セレクティブ"
+msgstr "Selective"
 
 #: django_peeringdb/const.py:20
 msgid "Restrictive"
-msgstr "限定的"
+msgstr "Restrictive"
 
 #: django_peeringdb/const.py:21 peeringdb_server/data_views.py:47
 #: peeringdb_server/data_views.py:48
@@ -133,11 +133,11 @@ msgstr "公開無し"
 
 #: django_peeringdb/const.py:40
 msgid "Heavy Outbound"
-msgstr "送信方向が大量"
+msgstr "甚大な送信方向のトラフィック"
 
 #: django_peeringdb/const.py:41
 msgid "Mostly Outbound"
-msgstr "送信方向が大部分"
+msgstr "大部分が送信方向のトラフィック"
 
 #: django_peeringdb/const.py:42
 msgid "Balanced"
@@ -145,11 +145,11 @@ msgstr "偏り無し"
 
 #: django_peeringdb/const.py:43
 msgid "Mostly Inbound"
-msgstr "受信方向が大部分"
+msgstr "大部分が受信方向のトラフィック"
 
 #: django_peeringdb/const.py:44
 msgid "Heavy Inbound"
-msgstr "受信方向が大量"
+msgstr "甚大な受信方向のトラフィック"
 
 #: django_peeringdb/const.py:47 django_peeringdb/const.py:59
 msgid "North America"
@@ -1063,61 +1063,61 @@ msgstr "この組織名と AS 番号に一致するエントリーがデータ�
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:17
 msgid "You may create a new organization here"
-msgstr ""
+msgstr "あなたはここに新しい組織を作成する事が出来ます"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:18
 msgid "You may create a new network here"
-msgstr ""
+msgstr "あなたはここに新しいネットワークを作成する事が出来ます"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:20
 #, python-format
 msgid "user %(user_name)s (%(u_email)s) wishes to be affiliated to Organization '%(o_name)s'"
-msgstr ""
+msgstr "このユーザ %(user_name)s (%(u_email)s) は、この組織 '%(o_name)s' に所属を希望しています"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:23
 msgid "They also provided this ASN in their request"
-msgstr ""
+msgstr "リクエストによってこの AS 番号が与えられました"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:25
 msgid "ATTENTION: This is an ownership request, approving it will grant the user administration rights over the organization and any entities it owns."
-msgstr ""
+msgstr "注意: これは所有権のリクエストです。これを承認すると組織と組織が所有するエンティティに対してのユーザ管理権限を付与します"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:28
 msgid "These are the website addresses were able to derive from the organzation and it's entities"
-msgstr ""
+msgstr "これらは、組織情報とそのエンティティから抽出されえる Web サイトのアドレスです"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:31
 msgid "These are the email addresses we could fetch from the ASNs belonging to this organization"
-msgstr ""
+msgstr "これらは、その組織が所有している AS 番号と紐づけされているメールアドレスです"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:34
 msgid "The user is affiliated with other organizations"
-msgstr ""
+msgstr "このユーザは他の組織に所属しています"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:37
 msgid "ADMIN"
-msgstr ""
+msgstr "管理者"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:39
 msgid "MEMBER"
-msgstr ""
+msgstr "メンバー"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:44
 msgid "Review Affiliation/Ownership Request"
-msgstr ""
+msgstr "組織所属リクエストと所有者権限リクエストをレビューします"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:46
 msgid "Approve Ownership Request and Notify User"
-msgstr ""
+msgstr "所有者権限リクエストを承認し、ユーザに通知します"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:3
 #, python-format
 msgid "A new '%(entity_type_name)s' has been created and requires your approval."
-msgstr ""
+msgstr "新しいエンティティ '%(entity_type_name)s' が作成された為、あなたの承認が必要となっています"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:8
 msgid "We retrieved the RiR entry for the specified ASN"
-msgstr ""
+msgstr "その特定の AS 番号の RIR エントリーを取り込みました"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:9
 msgid "but found no match with the requesting user. Here are the email addresses we gatehered"
