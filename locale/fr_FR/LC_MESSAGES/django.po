@@ -302,7 +302,7 @@ msgid "Target org cannot be in selected organizations list"
 msgstr ""
 
 #: peeringdb_server/admin.py:258
-msgid "Reculer"
+msgid "RECULER"
 msgstr ""
 
 #: peeringdb_server/admin.py:269
@@ -798,7 +798,7 @@ msgid "utilisateurs"
 msgstr ""
 
 #: peeringdb_server/models.py:2520
-msgid "Password Reset Initiated"
+msgid "Réinitialisation du mot de passe initié"
 msgstr ""
 
 #: peeringdb_server/models.py:2588
