@@ -551,7 +551,7 @@ msgstr "RIR"
 
 #: peeringdb_server/models.py:47
 msgid "Renumber IP Space"
-msgstr "IP アドレスのリナンバ"
+msgstr "IP アドレスの変更"
 
 #: peeringdb_server/models.py:147
 msgid "Has this object's latitude and longitude been syncronized to it's address fields"
@@ -591,7 +591,7 @@ msgstr "そのリクエストを行ったユーザ"
 
 #: peeringdb_server/models.py:251
 msgid "Pending"
-msgstr "ペンディング"
+msgstr "保留"
 
 #: peeringdb_server/models.py:252
 msgid "Approved"
@@ -1117,11 +1117,11 @@ msgstr "新しいエンティティ '%(entity_type_name)s' が作成された為
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:8
 msgid "We retrieved the RiR entry for the specified ASN"
-msgstr "その特定の AS 番号の RIR エントリーを取り込みました"
+msgstr "その対象の AS 番号の RIR エントリーを検索しました"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:9
 msgid "but found no match with the requesting user. Here are the email addresses we gatehered"
-msgstr ""
+msgstr "しかし、リクエストしたユーザと一致するものは見つかりませんでした。データにあったメールアドレスはこちらになります"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:13
 #: peeringdb_server/templates/site/advanced-search-fac.html:12
@@ -1147,69 +1147,69 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_tools.html:495
 #: peeringdb_server/templates/site/view_organization_tools.html:541
 msgid "Name"
-msgstr ""
+msgstr "名前"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:14
 msgid "Requested by user"
-msgstr ""
+msgstr "ユーザによってリクエストされました"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:16
 msgid "You can go to"
-msgstr ""
+msgstr "そちらに行けます"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:16
 msgid "to view and approve or deny this entry"
-msgstr ""
+msgstr "ご覧いただき、このエントリについて承認または拒否してください"
 
 #: peeringdb_server/templates/email/notify-sponsorship-admin-expiration.txt:2
 #, python-format
 msgid "%(i_label)s level sponsorship from '%(io_name)s' expired on %(i_end_date)s."
-msgstr ""
+msgstr "%(io_name)s が持つ '%(i_label)s' レベルのスポンサーシップが '%(i_end_date)s' に失効しました"
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:3
 #, python-format
 msgid "Your affiliation request to the Organization '%(o_name)s' and it's entities has been approved."
-msgstr ""
+msgstr "あなたの '%(o_name)s' に対する組織所属リクエストが承認されました"
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:8
 msgid "This was the result of a manual review of your affiliation request to ASN"
-msgstr ""
+msgstr "こちらが当該 AS 番号に対する組織所属のリクエストのレビュー結果です
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:10
 msgid "This was the result of a manual review of your affiliation request to the organization or one of it's entities."
-msgstr ""
+msgstr "こちらがその組織もしくはそのエンティティに対する所属リクエストのレビュー結果です"
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:13
 msgid "You may view and edit your organization at"
-msgstr ""
+msgstr "あなたはあなたの組織の閲覧と編集をする事が出来ます"
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:15
 msgid "If you have questions, please don't hesitate to contact peeringdb support at"
-msgstr ""
+msgstr "もし質問がありましたら、PeeringDB サポートまで連絡ください"
 
 #: peeringdb_server/templates/email/password-reset.txt:2
 msgid "You initiated a password reset on PeeringDB 2 - Please follow the url below to reset your password."
-msgstr ""
+msgstr "PeeringDB のパスワードリセットを実行します。下記の URL からパスワードのリセットをしてください"
 
 #: peeringdb_server/templates/email/password-reset.txt:6
 msgid "If you did not initiate the password reset request, please ignore this email."
-msgstr ""
+msgstr "もしパスワードリセットのリクエストをしていない場合は、このメールは無視してください"
 
 #: peeringdb_server/templates/email/username-retrieve.txt:2
 msgid "You requested a username retrieval on PeeringDB for the email address"
-msgstr ""
+msgstr "そのメールアドレスから PeeringDB のユーザ名の検索をリクエストしました"
 
 #: peeringdb_server/templates/email/username-retrieve.txt:3
 msgid "Please follow the url below to view any usernames associated with your email."
-msgstr ""
+msgstr "そのメールアドレスと紐づくユーザ名を閲覧するには、下記の URL をクリックしてください"
 
 #: peeringdb_server/templates/email/username-retrieve.txt:7
 msgid "If you did not request username retrieval, you can ignore this email."
-msgstr ""
+msgstr "もしユーザ名検索のリクエストをしていない場合は、このメールは無視してください"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:21
 msgid "Address"
-msgstr ""
+msgstr "アドレス"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:30
 #: peeringdb_server/templates/site/advanced-search-fac.html:147
@@ -1227,17 +1227,17 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_tools.html:374
 #: peeringdb_server/views.py:1051
 msgid "City"
-msgstr ""
+msgstr "市"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:30
 #: peeringdb_server/templates/site/advanced-search-fac.html:151
 #: peeringdb_server/templates/site/view_organization_tools.html:104
 msgid "State"
-msgstr ""
+msgstr "都道府県・州"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:30
 msgid "Postal"
-msgstr ""
+msgstr "郵便"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:55
 #: peeringdb_server/templates/site/advanced-search-fac.html:148
@@ -1255,7 +1255,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_tools.html:383
 #: peeringdb_server/views.py:1057
 msgid "Country"
-msgstr ""
+msgstr "国名"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:55
 #: peeringdb_server/templates/site/advanced-search-ix.html:29
@@ -1267,40 +1267,40 @@ msgstr ""
 #: peeringdb_server/templates/site/advanced-search-net.html:78
 #: peeringdb_server/templates/site/advanced-search-net.html:90
 msgid "click to select multiple"
-msgstr ""
+msgstr "複数選択してください"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:71
 #: peeringdb_server/templates/site/advanced-search-fac.html:140
 msgid "Management"
-msgstr ""
+msgstr "管理"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:81
 #: peeringdb_server/templates/site/advanced-search-fac.html:143
 msgid "CLLI"
-msgstr ""
+msgstr "CLLI"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:91
 #: peeringdb_server/templates/site/advanced-search-fac.html:144
 #: peeringdb_server/templates/site/view_organization_tools.html:142
 #: peeringdb_server/views.py:987
 msgid "NPA-NXX"
-msgstr ""
+msgstr "NPA-NXX"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:103
 #: peeringdb_server/templates/site/advanced-search-ix.html:79
 #: peeringdb_server/templates/site/advanced-search-net.html:104
 msgid "Reset"
-msgstr ""
+msgstr "リセット"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:104
 #: peeringdb_server/templates/site/advanced-search-ix.html:80
 #: peeringdb_server/templates/site/advanced-search-net.html:105
 msgid "Search"
-msgstr ""
+msgstr "検索"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:152
 msgid "Postal Code"
-msgstr ""
+msgstr "郵便番号"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:155
 #: peeringdb_server/templates/site/advanced-search.html:11
@@ -1308,80 +1308,80 @@ msgstr ""
 #: peeringdb_server/templates/site/search_result_frame.html:10
 #: peeringdb_server/templates/site/view_facility_bottom.html:23
 msgid "Networks"
-msgstr ""
+msgstr "ネットワーク(Networks)"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:162
 #: peeringdb_server/templates/site/advanced-search-ix.html:110
 #: peeringdb_server/templates/site/advanced-search-net.html:165
 msgid "Nothing matched your search criteria."
-msgstr ""
+msgstr "検索条件に一致するものはありませんでした"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:171
 #: peeringdb_server/templates/site/advanced-search-ix.html:119
 #: peeringdb_server/templates/site/advanced-search-net.html:174
 #, python-format
 msgid "...More than %(row_limit)s entries matched your query, refine your request..."
-msgstr ""
+msgstr "%(row_limit)s 個以上のエントリーがあなたの検索に合致しています。検索条件を見直してみてください"
 
 #: peeringdb_server/templates/site/advanced-search-ix.html:41
 #: peeringdb_server/templates/site/view_organization_tools.html:394
 #: peeringdb_server/views.py:1063
 msgid "Continental Region"
-msgstr ""
+msgstr "地域"
 
 #: peeringdb_server/templates/site/advanced-search-ix.html:57
 msgid "IP Block"
-msgstr ""
+msgstr "IP ブロック"
 
 #: peeringdb_server/templates/site/advanced-search-ix.html:66
 #: peeringdb_server/templates/site/advanced-search-ix.html:103
 #: peeringdb_server/templates/site/view_organization_tools.html:404
 #: peeringdb_server/views.py:1069
 msgid "Media Type"
-msgstr ""
+msgstr "通信プロトコル"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:20
 #: peeringdb_server/templates/site/advanced-search-net.html:149
 #: peeringdb_server/templates/site/view_organization_tools.html:210
 #: peeringdb_server/views.py:1273
 msgid "Network Type"
-msgstr ""
+msgstr "ネットワークの種類"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:31
 #: peeringdb_server/templates/site/advanced-search-net.html:153
 #: peeringdb_server/templates/site/view_organization_tools.html:219
 #: peeringdb_server/views.py:1293
 msgid "Traffic Levels"
-msgstr ""
+msgstr "トラフィック量"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:43
 #: peeringdb_server/templates/site/advanced-search-net.html:154
 msgid "Traffic Ratio"
-msgstr ""
+msgstr "トラフィックの方向"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:58
 #: peeringdb_server/templates/site/view_organization_tools.html:192
 #: peeringdb_server/views.py:1248
 msgid "Primary ASN"
-msgstr ""
+msgstr "Primary AS 番号"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:68
 msgid "IRR Macro"
-msgstr ""
+msgstr "IRR マクロ"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:78
 msgid "General Peering Policy"
-msgstr ""
+msgstr "ピアリングポリシー(General Peering Policy)"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:90
 #: peeringdb_server/templates/site/view_organization_tools.html:237
 #: peeringdb_server/views.py:1307
 msgid "Geographic Scope"
-msgstr ""
+msgstr "地域(Geographic Scope)"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:142
 msgid "Also known as"
-msgstr ""
+msgstr "別名"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:145
 #: peeringdb_server/templates/site/verify.html:106
@@ -1396,17 +1396,17 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_side.html:97
 #: peeringdb_server/templates/site/view_organization_side.html:108
 msgid "ASN"
-msgstr ""
+msgstr "AS 番号"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:146
 #: peeringdb_server/templates/site/view_organization_tools.html:277
 #: peeringdb_server/views.py:1365
 msgid "General Policy"
-msgstr ""
+msgstr "ピアリングポリシー(General Policy)"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:150
 msgid "Network Scope"
-msgstr ""
+msgstr "Network Scope"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:157
 #: peeringdb_server/templates/site/advanced-search.html:8
@@ -1414,67 +1414,67 @@ msgstr ""
 #: peeringdb_server/templates/site/search_result_frame.html:6
 #: peeringdb_server/templates/site/view_organization_side.html:153
 msgid "Exchanges"
-msgstr ""
+msgstr "エクスチェンジ"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:158
 #: peeringdb_server/templates/site/advanced-search.html:14
 #: peeringdb_server/templates/site/search_result.html:24
 #: peeringdb_server/templates/site/search_result_frame.html:14
 msgid "Facilities"
-msgstr ""
+msgstr "データセンタ"
 
 #: peeringdb_server/templates/site/aup.html:7
 msgid "The PeeringDB Acceptable Use Policy explicitly states the parameters that copyright extends to:"
-msgstr ""
+msgstr "PeeringDB 利用規約には著作権の保護対象が明示的に記載されています"
 
 #: peeringdb_server/templates/site/aup.html:9
 msgid "Except for Internet operational purposes approved by PeeringDB, no part of the PeeringDB data may be reproduced, stored in a retrieval system, or transmitted, in any form or by any means, electronic, mechanical, recording, or otherwise, without prior permission of PeeringDB on behalf of the copyright holders. Any use of this material to target advertising or similar activities is explicitly forbidden and will be prosecuted. PeeringDB requests to be notified of any such activities or suspicions thereof. The PeeringDB data may not be passed on in bulk to any other person or organization unless approved by PeeringDB."
-msgstr ""
+msgstr "PeeringDB によって承認されたネットワーク運用の目的を除き、PeeringDB のデータのいかなる部分も、PeeringDB の事前の許可無しに、いかなる形式または手段（電子的、機械的、録音、その他）で複製、検索システムへの保存、または送信する事は出来ません。 著作権者の代わりに 広告や同様の活動を目的としたこの資料の使用は明示的に禁止されており、起訴されます。 PeeringDB は、そのような活動や疑惑を通知される事を要求します。 PeeringDB のデータは、PeeringDB の承認を得ない限り、他の人や組織に一括して渡すことは出来ません。"
 
 #: peeringdb_server/templates/site/aup.html:19
 msgid "Any request to pass on information to any other person or organization will be evaluated on the statement of purpose outlined by the requestor."
-msgstr ""
+msgstr "いかなる個人や組織に情報を渡すいかなる要求は、要求者によって要約された理由書(Statement of Purpose)により評価されます。"
 
 #: peeringdb_server/templates/site/aup.html:22
 msgid "Users will not be able to download the full contents of the database unless the intended use is for \"Internet operational issues\". These words are tightly defined and would include network trouble-shooting, abuse reporting, and Internet research and analysis. It would not include compiling marketing lists, demographic mapping, or any other commercial application."
-msgstr ""
+msgstr "利用者が意図している用途が、 \"Internet operational issues\ では無い限りデータベースの全コンテンツをダウンロードする事は出来ません"
 
 #: peeringdb_server/templates/site/aup.html:29
 msgid "Each request would be carefully considered in light of the PeeringDB Acceptable Use Policy."
-msgstr ""
+msgstr "各リクエストは、PeeringDB の利用規約に照らして慎重に検討されます"
 
 #: peeringdb_server/templates/site/entity_create.html:4
 #, python-format
 msgid "Add a new %(entity_name)s to your Organization. Note that the newly created %(entity_name)s will need to be approved by PeeringDB staff before it will appear in the search results or the API listings"
-msgstr ""
+msgstr "新規の %(entity_name)s をあなたの組織に追加しました。新規作成された %(entity_name)s は、検索結果や API リストに表示されるようになる前に PeeringDB スタッフに承認される必要があります"
 
 #: peeringdb_server/templates/site/entity_create.html:10
 msgid "Submit"
-msgstr ""
+msgstr "Submit"
 
 #: peeringdb_server/templates/site/error.html:23
 msgid "404 - Not Found"
-msgstr ""
+msgstr "404 - Not Found"
 
 #: peeringdb_server/templates/site/error.html:24
 msgid "The page you requested does not exist."
-msgstr ""
+msgstr "あなたがリクエストしたページはありませんでした"
 
 #: peeringdb_server/templates/site/error.html:26
 msgid "403 - Forbidden"
-msgstr ""
+msgstr "403 - Forbidden"
 
 #: peeringdb_server/templates/site/error.html:27
 msgid "You dont have permissions to view this page."
-msgstr ""
+msgstr "あなたは、このページを閲覧する権限を持っていません"
 
 #: peeringdb_server/templates/site/error.html:29
 msgid "Take me home"
-msgstr ""
+msgstr "Take me home"
 
 #: peeringdb_server/templates/site/footer.html:9
 msgid "All Rights Reserved. By using this service, you agree to adhere to our"
-msgstr ""
+msgstr "転載を禁じます。このサービスを利用する事は、著作権に従う事に同意している事となります"
 
 #: peeringdb_server/templates/site/footer.html:10
 msgid "AUP"
