@@ -1908,7 +1908,7 @@ msgstr ""
 #: peeringdb_server/templates/site/verify.html:121
 #: peeringdb_server/templates/site/view_organization_tools.html:329
 msgid "In case the RiR entry cannot be retrieved for your ASN, please contact"
-msgstr ""
+msgstr "Im Falle, dass der RIR-Eintrag für Ihre ASN nicht eingeholt werden kann, kontaktieren Sie bitte"
 
 #: peeringdb_server/templates/site/verify.html:122
 msgid "for assistance"
@@ -2149,110 +2149,110 @@ msgstr ""
 
 #: peeringdb_server/templates/site/view_network_bottom.html:40
 msgid "Visiblity"
-msgstr ""
+msgstr "Sichtbarkeit"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:45
 #: peeringdb_server/templates/site/view_network_bottom.html:158
 msgid "Phone"
-msgstr ""
+msgstr "Telefon"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:48
 msgid "E-Mail"
-msgstr ""
+msgstr "E-Mail"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:167
 msgid "Visibility"
-msgstr ""
+msgstr "Sichtbarkeit"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:180
 msgid "Add Contact"
-msgstr ""
+msgstr "Kontakt hinzufügen"
 
 #: peeringdb_server/templates/site/view_network_side.html:15
 msgid "Public Peering Exchange Points"
-msgstr ""
+msgstr "Öffentliche Peering-Exchanges"
 
 #: peeringdb_server/templates/site/view_network_side.html:32
 #: peeringdb_server/templates/site/view_network_side.html:176
 msgid "RS Peer"
-msgstr ""
+msgstr "RS-Peer"
 
 #: peeringdb_server/templates/site/view_network_side.html:48
 msgid "Network - Exchange link"
-msgstr ""
+msgstr "Netzwerk-Exchange-Kopplung" 
 
 #: peeringdb_server/templates/site/view_network_side.html:134
 msgid "Local ASN"
-msgstr ""
+msgstr "Lokale ASN"
 
 #: peeringdb_server/templates/site/view_network_side.html:165
 msgid "Speed (mbit/sec)"
-msgstr ""
+msgstr "Datenrate (mbit/s)"
 
 #: peeringdb_server/templates/site/view_network_side.html:189
 msgid "Add Exchange Point"
-msgstr ""
+msgstr "Exchange hinzufügen"
 
 #: peeringdb_server/templates/site/view_organization_assets.html:33
 msgid "member"
-msgstr ""
+msgstr "Mitglied"
 
 #: peeringdb_server/templates/site/view_organization_assets.html:36
 #: peeringdb_server/templates/site/view_organization_tools.html:569
 msgid "Remove"
-msgstr ""
+msgstr "Entfernen"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:3
 msgid "Manage"
-msgstr ""
+msgstr "Verwalten"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:17
 msgid "Add Network"
-msgstr ""
+msgstr "Netzwerk hinzufügen"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:24
 msgid "Add Exchange"
-msgstr ""
+msgstr "Exchange hinzufügen"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:37
 msgid "Permissions"
-msgstr ""
+msgstr "Berechtigungen"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:70
 #: peeringdb_server/templates/site/view_organization_tools.html:184
 #: peeringdb_server/templates/site/view_organization_tools.html:366
 #: peeringdb_server/views.py:846 peeringdb_server/views.py:956
 msgid "Website"
-msgstr ""
+msgstr "Webseite"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:78
 #: peeringdb_server/views.py:849 peeringdb_server/views.py:959
 msgid "Address 1"
-msgstr ""
+msgstr "Adresse 1"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:87
 #: peeringdb_server/views.py:854 peeringdb_server/views.py:963
 msgid "Address 2"
-msgstr ""
+msgstr "Adresse 2"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:112
 msgid "Zip-Code"
-msgstr ""
+msgstr "Postleitzahl"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:134
 #: peeringdb_server/views.py:983
 msgid "CLLI Code"
-msgstr ""
+msgstr "CLLI-Code (USA)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:201
 #: peeringdb_server/views.py:1253
 msgid "IRR Record"
-msgstr ""
+msgstr "IRR-Eintrag"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:228
 #: peeringdb_server/views.py:1299
 msgid "Traffic Ratios"
-msgstr ""
+msgstr "Trafficverhältnis"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:246
 #: peeringdb_server/templates/site/view_organization_tools.html:414
@@ -2268,232 +2268,232 @@ msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:268
 msgid "Policy URL"
-msgstr ""
+msgstr "Peeringrichtlinien-URL"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:287
 #: peeringdb_server/views.py:1371
 msgid "Multiple Locations"
-msgstr ""
+msgstr "Multiple Übergabepunkte"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:297
 #: peeringdb_server/views.py:1377
 msgid "Ratio Requirement"
-msgstr ""
+msgstr "Trafficverhältnis-Anforderung"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:305
 #: peeringdb_server/views.py:1385
 msgid "Contract Requirement"
-msgstr ""
+msgstr "Vertrag erforderlich"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:318
 msgid "Add a new Network to your Organization."
-msgstr ""
+msgstr "Fügen Sie deiner Organisation ein neues Netzwerk hinzu."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:319
 msgid "We will attempt to automatically verify your relationship to the network by checking for your email address in the ASN's RiR entry."
-msgstr ""
+msgstr "Wir werden versuchen, automatisch Ihre Verbindung zu diesem Netzwerk zu prüfen, indem wir Ihre E-Mail-Adresse gegen den ASN-RIR-Eintrag prüfen."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:321
 msgid "In case of verification failure the network will need to be approved by PeeringDB staff before it will appear in the search results or the API listings."
-msgstr ""
+msgstr "Sollte die Überprüfung nicht gelingen muss das Netzwerk von PeeringDB-Mitarbeitern akzeptiert werden, bevor es in den Suchergebnissen oder den API-Listungen aufgeführt wird."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:325
 msgid "Submit Network"
-msgstr ""
+msgstr "Netzwerk einreichen"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:331
 msgid "for assistance with the creation of your network in PeeringDB."
-msgstr ""
+msgstr "für Unterstützung bei der Erstellung Ihres Netzwerkes in PeeringDB."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:437
 #: peeringdb_server/views.py:1104
 msgid "Traffic Stats Website"
-msgstr ""
+msgstr "Trafficstatistik-Webseite"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:444
 msgid "Technical E-mail"
-msgstr ""
+msgstr "E-Mail (technisch)" 
 
 #: peeringdb_server/templates/site/view_organization_tools.html:451
 #: peeringdb_server/views.py:1114
 msgid "Technical Phone"
-msgstr ""
+msgstr "Telefon (technisch)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:458
 msgid "Policy E-mail"
-msgstr ""
+msgstr "E-Mail (Peeringrichtlinien)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:465
 #: peeringdb_server/views.py:1124
 msgid "Policy Phone"
-msgstr ""
+msgstr "Telefon (Peeringrichtlinien)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:500
 msgid "Confirmed"
-msgstr ""
+msgstr "Bestätigt"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:502
 msgid "Date"
-msgstr ""
+msgstr "Datum"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:527
 msgid "Currently no users requesting affiliation with"
-msgstr ""
+msgstr "Derzeit wartet kein Nutzer auf Mitgliedschaft bei"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:547
 msgid "Group"
-msgstr ""
+msgstr "Gruppe"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:588
 msgid "Here you can grant permissions to regular members of your organization. Administrative users are not listed here as they have access to everything by default."
-msgstr ""
+msgstr "Hier können regulären Mitgliedern Berechtigungen zugeteilt werden. Administratoren werden hier nicht aufgelistet, da sie standardmäßig zu allem Zugriff haben."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:593
 msgid "Additionally, entities that are pending review cannot be permissioned out to users, and will not appear in the entity list."
-msgstr ""
+msgstr "Außerdem können für noch zu prüfende Objekte keine Berechtigungen verteilt werden und werden daher nicht aufgelistet."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:615
 msgid "Update"
-msgstr ""
+msgstr "Aktualisieren"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:618
 msgid "Delete"
-msgstr ""
+msgstr "Löschen"
 
 #: peeringdb_server/templatetags/util.py:80
 msgid "Your email address does not match the domain information we have on file for this organization."
-msgstr ""
+msgstr "Ihre E-Mail-Adresse entspricht nicht den Informationen, die uns zu dieser Organisation bekannt sind."
 
 #: peeringdb_server/templatetags/util.py:139
 msgid "seconds ago"
-msgstr ""
+msgstr "Sekunden her"
 
 #: peeringdb_server/templatetags/util.py:141
 msgid "minutes ago"
-msgstr ""
+msgstr "Minuten her"
 
 #: peeringdb_server/templatetags/util.py:143
 msgid "hours ago"
-msgstr ""
+msgstr "Stunden her"
 
 #: peeringdb_server/templatetags/util.py:145
 msgid "days ago"
-msgstr ""
+msgstr "Tage her"
 
 #: peeringdb_server/validators.py:29
 msgid "Invalid prefix: {}"
-msgstr ""
+msgstr "Ungültiges Prefix: {}"
 
 #: peeringdb_server/validators.py:32
 msgid "Address space invalid: {}"
-msgstr ""
+msgstr "Adressbereich ungültig: {}"
 
 #: peeringdb_server/validators.py:38 peeringdb_server/validators.py:47
 msgid "Maximum value allowed {}"
-msgstr ""
+msgstr "gültiges Maximum {}"
 
 #: peeringdb_server/validators.py:41 peeringdb_server/validators.py:51
 msgid "Negative value not allowed"
-msgstr ""
+msgstr "Negativwerte nicht erlaubt"
 
 #: peeringdb_server/views.py:162 peeringdb_server/views.py:190
 msgid "Please wait a bit before requesting ownership again."
-msgstr ""
+msgstr "Bitte warten Sie, bevor Sie erneut Besitz beantragen."
 
 #: peeringdb_server/views.py:169
 msgid "Invalid organization"
-msgstr ""
+msgstr "Ungültige Organisation"
 
 #: peeringdb_server/views.py:173 peeringdb_server/views.py:204
 #, python-format
 msgid "Organization '%(org_name)s' is already under ownership"
-msgstr ""
+msgstr "Organisation '%(org_name)s' ist bereits in Besitz"
 
 #: peeringdb_server/views.py:198
 msgid "Organization does not exist"
-msgstr ""
+msgstr "Organisation existiert nicht"
 
 #: peeringdb_server/views.py:215
 msgid "You already have an ownership request pending for this organization"
-msgstr ""
+msgstr "Sie haben bereits eine Besitzanfrage für diese Organisation gestellt"
 
 #: peeringdb_server/views.py:245
 msgid "Please wait a bit before requesting affiliation again."
-msgstr ""
+msgstr "Bitte warten Sie, bevor Sie erneut Mitgliedschaft beantragen."
 
 #: peeringdb_server/views.py:256 peeringdb_server/views.py:257
 msgid "Either ASN or Organization required"
-msgstr ""
+msgstr "Entweder ASN oder Organisation erforderlich"
 
 #: peeringdb_server/views.py:267 peeringdb_server/views.py:284
 msgid "Could not retrieve RiR entry"
-msgstr ""
+msgstr "RIR-Eintrag konnte nicht eingeholt werden"
 
 #: peeringdb_server/views.py:302
 msgid "Please wait a bit before trying to resend the confirmation email again"
-msgstr ""
+msgstr "Bitte warten Sie, bevor Sie erneut eine Bestätigungsmail anfordern"
 
 #: peeringdb_server/views.py:311
 msgid "We have resent your confirmation email"
-msgstr ""
+msgstr "Wir haben Ihnen eine Bestätigungsmail gesendet."
 
 #: peeringdb_server/views.py:424
 msgid "Please wait a bit before requesting another email change"
-msgstr ""
+msgstr "Bitte warten Sie, bevor Sie eine weitere E-Mail-Änderung beantragen"
 
 #: peeringdb_server/views.py:442
 msgid "E-mail already exists in our system"
-msgstr ""
+msgstr "E-Mail-Adresse existiert bereits in unserem System"
 
 #: peeringdb_server/views.py:470
 msgid "Wrong password"
-msgstr ""
+msgstr "Falsches Passwort"
 
 #: peeringdb_server/views.py:511
 msgid "Please wait a bit before requesting your usernames again."
-msgstr ""
+msgstr "Bitte warten Sie, bevor Sie ihren Benutzernamen erneut anfordern"
 
 #: peeringdb_server/views.py:602
 msgid "Invalid Security Token"
-msgstr ""
+msgstr "Ungültiges Sicherheitstoken"
 
 #: peeringdb_server/views.py:604
 msgid "Password Reset Process has expired, please"
-msgstr ""
+msgstr "Passwort-Zurücksetzungsprozess ist abgelaufen, bitte"
 
 #: peeringdb_server/views.py:653
 msgid "Please log out of your current session before trying to register. Notice, multiple accounts are no longer needed."
-msgstr ""
+msgstr "Bitte aus der aktuellen Session ausloggen, bevor Sie versuchen, sich zu registrieren. Beachte: multiple Accounts werden nicht mehr benötigt."
 
 #: peeringdb_server/views.py:681
 msgid "reCAPTCHA invalid"
-msgstr ""
+msgstr "reCAPTCHA ungültig"
 
 #: peeringdb_server/views.py:687
 msgid "This email address has already been used"
-msgstr ""
+msgstr "Diese E-Mail-Adresse wurde bereits genutzt"
 
 #: peeringdb_server/views.py:721
 msgid "Already logged in"
-msgstr ""
+msgstr "Bereits eingeloggt"
 
 #: peeringdb_server/views.py:858 peeringdb_server/views.py:967
 msgid "Location"
-msgstr ""
+msgstr "Ort"
 
 #: peeringdb_server/views.py:866 peeringdb_server/views.py:974
 msgid "Country Code"
-msgstr ""
+msgstr "Land"
 
 #: peeringdb_server/views.py:871 peeringdb_server/views.py:991
 #: peeringdb_server/views.py:1089 peeringdb_server/views.py:1332
 msgid "Notes"
-msgstr ""
+msgstr "Notizen"
 
 #: peeringdb_server/views.py:872 peeringdb_server/views.py:992
 #: peeringdb_server/views.py:1090 peeringdb_server/views.py:1333
 msgid "Markdown enabled"
-msgstr ""
+msgstr "Markdown verfügbar"
 
 #: peeringdb_server/views.py:978
 msgid "Geocode"
@@ -2501,23 +2501,23 @@ msgstr ""
 
 #: peeringdb_server/views.py:1073 peeringdb_server/views.py:1311
 msgid "Protocols Supported"
-msgstr ""
+msgstr "Unterstützte Protokolle"
 
 #: peeringdb_server/views.py:1095
 msgid "Contact Information"
-msgstr ""
+msgstr "Kontaktinformationen"
 
 #: peeringdb_server/views.py:1099 peeringdb_server/views.py:1242
 msgid "Company Website"
-msgstr ""
+msgstr "Unternehmenswebseite"
 
 #: peeringdb_server/views.py:1109
 msgid "Technical Email"
-msgstr ""
+msgstr "E-Mail (technisch)"
 
 #: peeringdb_server/views.py:1119
 msgid "Policy Email"
-msgstr ""
+msgstr "E-Mail (Peeringrichtlinien)"
 
 #: peeringdb_server/views.py:1144
 msgid "LAN"
@@ -2525,15 +2525,15 @@ msgstr ""
 
 #: peeringdb_server/views.py:1237
 msgid "Also Known As"
-msgstr ""
+msgstr "Auch bekannt als"
 
 #: peeringdb_server/views.py:1259
 msgid "Route Server URL"
-msgstr ""
+msgstr "Routenserver URL"
 
 #: peeringdb_server/views.py:1265
 msgid "Looking Glass URL"
-msgstr ""
+msgstr "Looking-Glass URL"
 
 #: peeringdb_server/views.py:1278
 msgid "IPv4 Prefixes"
@@ -2545,48 +2545,48 @@ msgstr ""
 
 #: peeringdb_server/views.py:1328
 msgid "Last Updated"
-msgstr ""
+msgstr "Zuletzt aktualisiert"
 
 #: peeringdb_server/views.py:1339
 msgid "PeeringDB Configuration"
-msgstr ""
+msgstr "PeeringDB-Konfiguration"
 
 #: peeringdb_server/views.py:1343
 msgid "Allow IXP Update"
-msgstr ""
+msgstr "IXP-Updates erlauben"
 
 #: peeringdb_server/views.py:1345
 msgid "If enabled, an ixp may manage this network's entry in their peering list"
-msgstr ""
+msgstr "Wenn aktiviert, darf ein IXP den Eintrag dieses Netzwerkes in seiner Peeringliste verwalten"
 
 #: peeringdb_server/views.py:1354
 msgid "Peering Policy Information"
-msgstr ""
+msgstr "Peeringrichtlinien-Information"
 
 #: peeringdb_server/views.py:1357
 msgid "Peering Policy"
-msgstr ""
+msgstr "Peeringrichtlinien"
 
 #: peeringdb_server/views.py:1537
 msgid "Please wait a bit before trying to login again."
-msgstr ""
+msgstr "Bitte warten Sie, bevor sie erneut versuchen, sich anzumelden."
 
 #: peeringdb_server/views.py:1562
 msgid "Account disabled."
-msgstr ""
+msgstr "Account deaktiviert."
 
 #: peeringdb_server/views.py:1563
 msgid "Invalid username/password."
-msgstr ""
+msgstr "Ungültiger Benutzername/Passwort."
 
 #: tests/django_init.py:62
 msgid "English"
-msgstr ""
+msgstr "Englisch"
 
 #: tests/django_init.py:63
 msgid "Portuguese"
-msgstr ""
+msgstr "Portugiesisch"
 
 #: tests/django_init.py:82
 msgid "Kosovo"
-msgstr ""
+msgstr "Kosovo"
