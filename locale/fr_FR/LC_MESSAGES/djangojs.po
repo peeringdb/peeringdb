@@ -3,134 +3,134 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-06-01 19:35+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2018-06-04 09:00+0200\n"
+"Language: fr_FR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 2.0.6\n"
 
 #: peeringdb_server/static/peeringdb.js:415
 #: peeringdb_server/static/peeringdb.js:745
 msgid "Remove"
-msgstr ""
+msgstr "Supprimer"
 
 #: peeringdb_server/static/peeringdb.js:425
 msgid "Canceled"
-msgstr ""
+msgstr "Annulé"
 
 #: peeringdb_server/static/peeringdb.js:449
 msgid "Add user"
-msgstr ""
+msgstr "Ajouter utilisateur"
 
 #: peeringdb_server/static/peeringdb.js:449
 msgid "to Organization?"
-msgstr ""
+msgstr "à l'Organisation?"
 
 #: peeringdb_server/static/peeringdb.js:466
 msgid "Deny"
-msgstr ""
+msgstr "Rejeter"
 
 #: peeringdb_server/static/peeringdb.js:466
 msgid "request to join the Organization?"
-msgstr ""
+msgstr "requête de rejoindre l'Organisation?"
 
 #: peeringdb_server/static/peeringdb.js:615
 msgid "Unknown request type:"
-msgstr ""
+msgstr "Type de requête inconnu:"
 
 #: peeringdb_server/static/peeringdb.js:631
 #: peeringdb_server/static/twentyc.edit.js:622
 msgid "The server rejected your data"
-msgstr ""
+msgstr "Le serveur a rejeté vos données"
 
 #: peeringdb_server/static/peeringdb.js:635
 msgid "not yet been approved"
-msgstr ""
+msgstr "pas encore été approuvé"
 
 #: peeringdb_server/static/peeringdb.js:636
 msgid "Parent entity pending review - please wait for it to be approved before adding entities to it"
-msgstr ""
+msgstr "L'entité parente n'a pas été approuvée - veuillez attendre qu'elle soit validée avant d'y ajouter d'autres entités"
 
 #: peeringdb_server/static/peeringdb.js:773
 msgid "Exchange"
-msgstr ""
+msgstr "Point d'échange"
 
 #: peeringdb_server/static/peeringdb.js:789
 msgid "Participant"
-msgstr ""
+msgstr "Participant"
 
 #: peeringdb_server/static/peeringdb.js:805
 msgid "Facility"
-msgstr ""
+msgstr "Installation"
 
 #: peeringdb_server/static/peeringdb.js:816
 msgid "Network Contact"
-msgstr ""
+msgstr "Contact réseau"
 
 #: peeringdb_server/static/peeringdb.js:849
 msgid "Network - Exchange link"
-msgstr ""
+msgstr "Réseau - Lien du point d'échange"
 
 #: peeringdb_server/static/peeringdb.js:894
 msgid "Network - Facility link"
-msgstr ""
+msgstr "Réseau - Lien de l'installation"
 
 #: peeringdb_server/static/peeringdb.js:920
 msgid "IXLAN"
-msgstr ""
+msgstr "Réseau d'échange"
 
 #: peeringdb_server/static/peeringdb.js:938
 msgid "IXLAN Prefix"
-msgstr ""
+msgstr "Préfixe du réseau d'échange"
 
 #: peeringdb_server/static/peeringdb.js:959
 msgid "Exchange - Facility link"
-msgstr ""
+msgstr "Point d'échange - Lien de l'installation"
 
 #: peeringdb_server/static/twentyc.edit.js:83
 msgid "Some of the fields contain invalid values - please correct and try again."
-msgstr ""
+msgstr "Certains champs contiennent des entrées invalides - veuillez les corriger et essayer à nouveau."
 
 #: peeringdb_server/static/twentyc.edit.js:86
 msgid "Something went wrong."
-msgstr ""
+msgstr "Quelque-chose s'est mal passé."
 
 #: peeringdb_server/static/twentyc.edit.js:783
 msgid "Invalid value"
-msgstr ""
+msgstr "Valeur invalide"
 
 #: peeringdb_server/static/twentyc.edit.js:787
 msgid "Input required"
-msgstr ""
+msgstr "Champs requis"
 
 #: peeringdb_server/static/twentyc.edit.js:870
 msgid "Needs to match password"
-msgstr ""
+msgstr "Les mots de passe doivent correspondre"
 
 #: peeringdb_server/static/twentyc.edit.js:887
 msgid "Needs to be a valid email address"
-msgstr ""
+msgstr "Format d'adresse email invalide"
 
 #: peeringdb_server/static/twentyc.edit.js:916
 msgid "Needs to be a valid url"
-msgstr ""
+msgstr "Format d'URL invalide"
 
 #: peeringdb_server/static/twentyc.edit.js:936
 msgid "Needs to be a number"
-msgstr ""
+msgstr "Doit être un nombre"
 
 #: peeringdb_server/static/twentyc.edit.js:946
 msgid "Yes"
-msgstr ""
+msgstr "Oui"
 
 #: peeringdb_server/static/twentyc.edit.js:946
 msgid "No"
-msgstr ""
+msgstr "Non"
