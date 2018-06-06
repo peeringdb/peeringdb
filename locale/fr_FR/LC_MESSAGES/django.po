@@ -317,7 +317,7 @@ msgstr "La queue de validation est actuellement désactivée"
 
 #: peeringdb_server/admin.py:343
 msgid "Verification Queue is currently disabled for this object type"
-msgstr ""
+msgstr "La file d'attente de vérification est actuellement désactivée pour ce type d'objet"
 "La queue de validation est actuellement désactivée pour ce type d'objet"
 
 #: peeringdb_server/admin.py:353
@@ -566,7 +566,7 @@ msgstr ""
 # Cannot be translated without more context
 #: peeringdb_server/models.py:150
 msgid "Last time of attempted geocode"
-msgstr ""
+msgstr "Dernière tentative de géocodage"
 
 #: peeringdb_server/models.py:153
 msgid "Error message of previous geocode attempt"
@@ -2744,7 +2744,7 @@ msgstr ""
 
 #: peeringdb_server/views.py:245
 msgid "Please wait a bit before requesting affiliation again."
-msgstr ""
+msgstr "Veuillez patientez avant de demander une nouvelle affiliation."
 "Merci de bien vouloir patienter avant d'effectuer une nouvelle demande "
 "d’affiliation."
 
@@ -2758,7 +2758,7 @@ msgstr "Ne parvient pas à récupérer l'entrée RIR"
 
 #: peeringdb_server/views.py:302
 msgid "Please wait a bit before trying to resend the confirmation email again"
-msgstr ""
+msgstr "Veuillez patientez avant d'essayer de renvoyer le courriel de confirmation"
 "Merci de bien vouloir patienter avant d'essayer à nouveau d'envoyer l'email "
 "de confirmation"
 
@@ -2768,7 +2768,7 @@ msgstr "Nous avons envoyé à nouveau l'email de confirmation"
 
 #: peeringdb_server/views.py:424
 msgid "Please wait a bit before requesting another email change"
-msgstr ""
+msgstr "Veuillez patientez avant de demander un autre changement de courriel"
 "Merci de bien vouloir patienter avant d'effectuer une nouvelle demande de "
 "changement d'email"
 
@@ -2782,7 +2782,7 @@ msgstr "Mot de passe incorrect"
 
 #: peeringdb_server/views.py:511
 msgid "Please wait a bit before requesting your usernames again."
-msgstr ""
+msgstr "Veuillez patientez avant de demander à nouveau vos noms d'utilisateur."
 "Merci de bien vouloir patienter avant d'effectuer une nouvelle demande de "
 "récupération de vos noms d'utilisateur."
 
@@ -2908,7 +2908,7 @@ msgstr "Règlement de peering"
 
 #: peeringdb_server/views.py:1537
 msgid "Please wait a bit before trying to login again."
-msgstr ""
+msgstr "Veuillez patienter un peu avant d'essayer de vous reconnecter."
 "Merci de bien vouloir patienter avant d'essayer de vous identifier à nouveau."
 
 #: peeringdb_server/views.py:1562
