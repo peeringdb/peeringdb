@@ -285,11 +285,11 @@ msgid "Utilisateurs"
 msgstr ""
 
 #: django_peeringdb/const.py:102
-msgid "Publique"
+msgid "Public"
 msgstr ""
 
 #: mail_test.py:54 peeringdb_server/mail.py:57
-msgid "{} Merge Notification: {} -> {}"
+msgid "{} Notification de fusion: {} -> {}"
 msgstr ""
 
 #: peeringdb_server/admin.py:54 peeringdb_server/admin.py:1135
@@ -302,7 +302,7 @@ msgid "Target org cannot be in selected organizations list"
 msgstr ""
 
 #: peeringdb_server/admin.py:258
-msgid "ROLLBACK"
+msgid "RECULER"
 msgstr ""
 
 #: peeringdb_server/admin.py:269
@@ -310,11 +310,11 @@ msgid "SOFT DELETE"
 msgstr ""
 
 #: peeringdb_server/admin.py:340
-msgid "Verification Queue is currently disabled"
+msgid "La file d'attente de vérification est actuellement désactivée"
 msgstr ""
 
 #: peeringdb_server/admin.py:343
-msgid "Verification Queue is currently disabled for this object type"
+msgid "La file d'attente de vérification est actuellement désactivée pour ce type d'objet"
 msgstr ""
 
 #: peeringdb_server/admin.py:353
@@ -334,11 +334,11 @@ msgid "Adresse IP déjà existante ailleurs"
 msgstr ""
 
 #: peeringdb_server/admin.py:448
-msgid "User is looking to be affiliated to these Organizations"
+msgid "L'utilisateur cherche à être affilié à ces organisations"
 msgstr ""
 
 #: peeringdb_server/admin.py:479
-msgid "IXF Import History"
+msgid "Importation d'historique IXF"
 msgstr ""
 
 #: peeringdb_server/admin.py:528
@@ -394,7 +394,7 @@ msgid "En attente"
 msgstr ""
 
 #: peeringdb_server/admin.py:688
-msgid "Malformed organization ids"
+msgid "ID de l'organisation mal formée"
 msgstr ""
 
 #: peeringdb_server/admin.py:695
@@ -465,11 +465,11 @@ msgid "Permissions de l'utilisateu"
 msgstr ""
 
 #: peeringdb_server/admin.py:1013
-msgid "Duplicate IP"
+msgid "Dupliquer l'IP"
 msgstr ""
 
 #: peeringdb_server/admin.py:1014
-msgid "Duplicate IPs"
+msgid "Dupliquer les IPs"
 msgstr ""
 
 #: peeringdb_server/admin.py:1141
@@ -481,7 +481,7 @@ msgid "Only POST requests allowed."
 msgstr ""
 
 #: peeringdb_server/admin.py:1269
-msgid "{} (Preview)"
+msgid "{} (Aperçu)"
 msgstr ""
 
 #: peeringdb_server/admin_commandline_tools.py:136
@@ -498,27 +498,27 @@ msgid "Oui"
 msgstr ""
 
 #: peeringdb_server/export_views.py:140
-msgid "Invalid export format"
+msgid "Format d'exportation invalide"
 msgstr ""
 
 #: peeringdb_server/export_views.py:284
-msgid "Invalid tag"
+msgid "Tag invalide"
 msgstr ""
 
 #: peeringdb_server/forms.py:21
-msgid "Invalid permission level"
+msgid "Niveau d'autorisation non valide"
 msgstr ""
 
 #: peeringdb_server/forms.py:59
-msgid "ASN needs to be a number"
+msgid "L'ASN doit être un numéro"
 msgstr ""
 
 #: peeringdb_server/forms.py:71 peeringdb_server/views.py:694
-msgid "Needs to be at least 10 characters long"
+msgid "Doit avoir au moins 10 caractères"
 msgstr ""
 
 #: peeringdb_server/forms.py:80
-msgid "Passwords need to match"
+msgid "Les mots de passe doivent correspondre"
 msgstr ""
 
 #: peeringdb_server/models.py:42
@@ -542,7 +542,7 @@ msgid "Diamant"
 msgstr ""
 
 #: peeringdb_server/models.py:45
-msgid "Data Validation"
+msgid "Validation de données"
 msgstr ""
 
 #: peeringdb_server/models.py:45
@@ -550,7 +550,7 @@ msgid "RIR"
 msgstr ""
 
 #: peeringdb_server/models.py:47
-msgid "Renumber IP Space"
+msgid "Renuméroter l'espace IP"
 msgstr ""
 
 #: peeringdb_server/models.py:147
@@ -558,15 +558,15 @@ msgid "Has this object's latitude and longitude been syncronized to it's address
 msgstr ""
 
 #: peeringdb_server/models.py:150
-msgid "Last time of attempted geocode"
+msgid "Dernière tentative de géocodage"
 msgstr ""
 
 #: peeringdb_server/models.py:153
-msgid "Error message of previous geocode attempt"
+msgid "Message d'eurrer de la dernière tentative de géocodage"
 msgstr ""
 
 #: peeringdb_server/models.py:200
-msgid "Address not found"
+msgid "Adresse introuvable"
 msgstr ""
 
 #: peeringdb_server/models.py:208
@@ -574,19 +574,19 @@ msgid "API Timeout"
 msgstr ""
 
 #: peeringdb_server/models.py:234
-msgid "This organization in our database that was derived from the provided ASN or organization name. If this is empty it means no matching organization was found."
+msgid "Cette organisation dans notre base de données est dérivée de l'ASN ou du nom d'organisation fourni. Si cela est vide, cela signifie qu'aucune organisation correspondante n'a été trouvée."
 msgstr ""
 
 #: peeringdb_server/models.py:239
-msgid "The organization name entered by the user"
+msgid "Le nom de l'organisation entré par l'utilisateur"
 msgstr ""
 
 #: peeringdb_server/models.py:242
-msgid "The ASN entered by the user"
+msgid "L'ASN entré par l'utilisateur"
 msgstr ""
 
 #: peeringdb_server/models.py:245
-msgid "The user that made the request"
+msgid "L'utilisateur qui a fait la requête"
 msgstr ""
 
 #: peeringdb_server/models.py:251
@@ -606,15 +606,15 @@ msgid "Statut de la requête"
 msgstr ""
 
 #: peeringdb_server/models.py:258
-msgid "User to Organization Affiliation Request"
+msgid "Demande d'affiliation de l'utilisateur à l'organisation"
 msgstr ""
 
 #: peeringdb_server/models.py:259
-msgid "User to Organization Affiliation Requests"
+msgid "Demandes d'affiliation de l'utilisateur à l'organisation"
 msgstr ""
 
 #: peeringdb_server/models.py:316
-msgid "Your affiliation to Organization \"{}\" has been approved"
+msgid "Votre demmande d'affiliation à l'organisation \"{}\" a été approuvée"
 msgstr ""
 
 #: peeringdb_server/models.py:343
@@ -622,19 +622,19 @@ msgid "The item that this queue is attached to was created by this user"
 msgstr ""
 
 #: peeringdb_server/models.py:435
-msgid "Allows you to upload and set a logo image file for this organization"
+msgid "Vous permet de télécharger et de définir un fichier d'image de logo pour cette organisation"
 msgstr ""
 
 #: peeringdb_server/models.py:658
-msgid "Sponsorship starts on"
+msgid "La commandite commence le"
 msgstr ""
 
 #: peeringdb_server/models.py:660
-msgid "Sponsorship ends on"
+msgid "La commandite se termine le"
 msgstr ""
 
 #: peeringdb_server/models.py:662
-msgid "Expiration notification sent on"
+msgid "Notification d'expiration envoyée le"
 msgstr ""
 
 #: peeringdb_server/models.py:665 peeringdb_server/models.py:723
@@ -646,19 +646,19 @@ msgid "If specified clicking the sponsorship will take the user to this location
 msgstr ""
 
 #: peeringdb_server/models.py:671
-msgid "Allows you to upload and set a logo image file for this sponsorship"
+msgid "Vous permet de télécharger et de définir un fichier d'image de logo pour ce commanditaire"
 msgstr ""
 
 #: peeringdb_server/models.py:676
-msgid "Sponsorship"
+msgid "Commandite"
 msgstr ""
 
 #: peeringdb_server/models.py:677
-msgid "Sponsorships"
+msgid "Commandites"
 msgstr ""
 
 #: peeringdb_server/models.py:701
-msgid "Sponsorship Expired"
+msgid "Commandite expirée"
 msgstr ""
 
 #: peeringdb_server/models.py:724
@@ -666,47 +666,47 @@ msgid "If specified clicking the partnership will take the user to this location
 msgstr ""
 
 #: peeringdb_server/models.py:729
-msgid "Allows you to upload and set a logo image file for this partnership"
+msgid "Vous permet de télécharger et de définir un fichier d'image de logo pour cette commandite"
 msgstr ""
 
 #: peeringdb_server/models.py:734
-msgid "Partnership"
+msgid "Commandite"
 msgstr ""
 
 #: peeringdb_server/models.py:735
-msgid "Partnerships"
+msgid "Commandites"
 msgstr ""
 
 #: peeringdb_server/models.py:750
-msgid "Merged on"
+msgid "Fusion le"
 msgstr ""
 
 #: peeringdb_server/models.py:754
-msgid "Organization Merge"
+msgid "Fusion d'organisation"
 msgstr ""
 
 #: peeringdb_server/models.py:755
-msgid "Organization Merges"
+msgid "Fusions d'organisations"
 msgstr ""
 
 #: peeringdb_server/models.py:808
-msgid "Organization Merge: Entity"
+msgid "Fusion d'organisation: entité"
 msgstr ""
 
 #: peeringdb_server/models.py:809
-msgid "Organization Merge: Entities"
+msgid "Fusion d'organisation: entités"
 msgstr ""
 
 #: peeringdb_server/models.py:911 peeringdb_server/models.py:1110
-msgid "Need to specify at least two asns"
+msgid "Besoin de spécifier au moins deux ASNs"
 msgstr ""
 
 #: peeringdb_server/models.py:914 peeringdb_server/models.py:1113
-msgid "Can only compare a maximum of 25 asns"
+msgid "Peut seulement comparer un maximum de 25 ASNs"
 msgstr ""
 
 #: peeringdb_server/models.py:1318
-msgid "No JSON could be parsed"
+msgid "Aucun JSON n'a pu être analysé"
 msgstr ""
 
 #: peeringdb_server/models.py:1344
@@ -734,7 +734,7 @@ msgid "Sepcifies whether an ixp is allowed to add a netixlan entry for this netw
 msgstr ""
 
 #: peeringdb_server/models.py:2283 peeringdb_server/models.py:2285
-msgid "Ip address already exists elsewhere"
+msgid "L'adresse IP existe déjà ailleurs"
 msgstr ""
 
 #: peeringdb_server/models.py:2296
@@ -742,11 +742,11 @@ msgid "nom d'utilisateur"
 msgstr ""
 
 #: peeringdb_server/models.py:2297
-msgid "Required. Letters, digits and [@.+-/_=|] only."
+msgid "Requis. Lettres, chiffres et [@.+-/_=|] seulement."
 msgstr ""
 
 #: peeringdb_server/models.py:2300
-msgid "Enter a valid username."
+msgid "Entrez un nom d'utilisateur valide."
 msgstr ""
 
 #: peeringdb_server/models.py:2303
@@ -798,7 +798,7 @@ msgid "utilisateurs"
 msgstr ""
 
 #: peeringdb_server/models.py:2520
-msgid "Password Reset Initiated"
+msgid "Réinitialisation du mot de passe initié"
 msgstr ""
 
 #: peeringdb_server/models.py:2588
@@ -853,11 +853,11 @@ msgid "Facility - %(fac_name)s"
 msgstr ""
 
 #: peeringdb_server/org_admin_views.py:216
-msgid "Invalid organization specified"
+msgid "Organisation invalide"
 msgstr ""
 
 #: peeringdb_server/org_admin_views.py:309
-msgid "Needs to be member or admin"
+msgid "Doit être membre ou administrateur"
 msgstr ""
 
 #: peeringdb_server/org_admin_views.py:448
@@ -871,15 +871,15 @@ msgid "%(user_name)s's afilliation request has been denied"
 msgstr ""
 
 #: peeringdb_server/serializers.py:121
-msgid "Need to be unique"
+msgid "Doit être unique"
 msgstr ""
 
 #: peeringdb_server/serializers.py:151
-msgid "This field is required"
+msgid "Ce champ est requis"
 msgstr ""
 
 #: peeringdb_server/serializers.py:176
-msgid "We could not find the RiR entry for this ASN"
+msgid "Nous n'avons pas trouvé l'entrée RIR pour ce ASN"
 msgstr ""
 
 #: peeringdb_server/serializers.py:229
@@ -944,19 +944,19 @@ msgid "Home"
 msgstr ""
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/prepare_command.html:22
-msgid "Prepare"
+msgid "Préparer"
 msgstr ""
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/preview_command.html:20
-msgid "Preview"
+msgid "Aperçu"
 msgstr ""
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/run_command.html:20
-msgid "Result"
+msgid "Resultat"
 msgstr ""
 
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:2
-msgid "Merge Notification"
+msgid "Notification de fusion"
 msgstr ""
 
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:4
@@ -1008,12 +1008,12 @@ msgstr ""
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:5
 #: peeringdb_server/templates/site/view_organization_tools.html:496
 #: peeringdb_server/templates/site/view_organization_tools.html:542
-msgid "User"
+msgid "Utilisateur"
 msgstr ""
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:7
 #: peeringdb_server/templates/site/view_organization_side.html:113
-msgid "Network"
+msgid "Réseau"
 msgstr ""
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:7
@@ -1913,15 +1913,15 @@ msgid "for assistance"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:126
-msgid "Existing affiliations"
+msgid "Affiliations existantes"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:129
-msgid "Your affiliation with"
+msgid "Votre affiliation avec"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:129
-msgid "has been approved"
+msgid "a été approuvé"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:142
@@ -1929,7 +1929,7 @@ msgid "Manage OAuth Applications"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:157
-msgid "Change email address"
+msgid "Changer l'adresse courriel"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:160
@@ -1937,23 +1937,23 @@ msgid "For speedy validation, it is required that you use a work e-mail address.
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:181
-msgid "Change Email"
+msgid "Changer courriel"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:192
-msgid "Change password"
+msgid "Changer mot de passe"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:193
-msgid "Password changed"
+msgid "Mot de passe changé"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:196
-msgid "Current Password"
+msgid "Mot de passe existant"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:212
-msgid "Password Verification"
+msgid "Vérification du mot de passe"
 msgstr ""
 
 #: peeringdb_server/templates/site/view.html:26
@@ -1961,19 +1961,19 @@ msgid "Pending Review"
 msgstr ""
 
 #: peeringdb_server/templates/site/view.html:31
-msgid "Edit"
+msgid "Modifier"
 msgstr ""
 
 #: peeringdb_server/templates/site/view.html:34
 #: peeringdb_server/templates/site/view.html:263
-msgid "Cancel"
+msgid "Annuler"
 msgstr ""
 
 #: peeringdb_server/templates/site/view.html:35
 #: peeringdb_server/templates/site/view.html:264
 #: peeringdb_server/templates/site/view_organization_tools.html:576
 #: peeringdb_server/templates/site/view_organization_tools.html:694
-msgid "Save"
+msgid "Sauvegarder"
 msgstr ""
 
 #: peeringdb_server/templates/site/view.html:56
@@ -1989,7 +1989,7 @@ msgid "Address failed validation."
 msgstr ""
 
 #: peeringdb_server/templates/site/view.html:218
-msgid "Geocoding error"
+msgid "Erreur de géocodage"
 msgstr ""
 
 #: peeringdb_server/templates/site/view.html:222
@@ -2008,18 +2008,18 @@ msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:78
 #: peeringdb_server/templates/site/view_exchange_bottom.html:134
-msgid "Prefix"
+msgid "Préfixe"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:82
 #: peeringdb_server/templates/site/view_organization_tools.html:681
-msgid "Add"
+msgid "Ajouter"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:26
 #: peeringdb_server/templates/site/view_exchange_bottom.html:170
 #: peeringdb_server/views.py:1153
-msgid "DOT1Q"
+msgid "Dot1Q"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:29
@@ -2055,7 +2055,7 @@ msgid "You may filter by"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
-msgid "dot1q"
+msgid "Dot1Q"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:44
@@ -2071,7 +2071,7 @@ msgid "IXLAN Prefix"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:138
-msgid "Add Prefix"
+msgid "Ajouter préfixe"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:202
@@ -2107,7 +2107,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_exchange_side.html:38
 #: peeringdb_server/templates/site/view_network_side.html:31
 #: peeringdb_server/templates/site/view_network_side.html:43
-msgid "Speed"
+msgid "Vitesse"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_side.html:37
@@ -2117,7 +2117,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_network_side.html:43
 #: peeringdb_server/templates/site/view_network_side.html:123
 #: peeringdb_server/templates/site/view_organization_side.html:181
-msgid "Exchange"
+msgid "Échange"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_side.html:38
@@ -2142,28 +2142,28 @@ msgstr ""
 
 #: peeringdb_server/templates/site/view_network_bottom.html:32
 #: peeringdb_server/templates/site/view_network_bottom.html:129
-msgid "Role"
+msgid "Rôle"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_network_bottom.html:40
-msgid "Visiblity"
+msgid "Visibilité"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_network_bottom.html:45
 #: peeringdb_server/templates/site/view_network_bottom.html:158
-msgid "Phone"
+msgid "Téléphone"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_network_bottom.html:48
-msgid "E-Mail"
+msgid "Courriel"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_network_bottom.html:167
-msgid "Visibility"
+msgid "Visibilité"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_network_bottom.html:180
-msgid "Add Contact"
+msgid "Ajouter contact"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_network_side.html:15
@@ -2180,7 +2180,7 @@ msgid "Network - Exchange link"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_network_side.html:134
-msgid "Local ASN"
+msgid "ASN local"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_network_side.html:165
@@ -2188,28 +2188,28 @@ msgid "Speed (mbit/sec)"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_network_side.html:189
-msgid "Add Exchange Point"
+msgid "Ajouter point d'échange"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_assets.html:33
-msgid "member"
+msgid "membre"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_assets.html:36
 #: peeringdb_server/templates/site/view_organization_tools.html:569
-msgid "Remove"
+msgid "Retirer"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:3
-msgid "Manage"
+msgid "Gérer"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:17
-msgid "Add Network"
+msgid "Ajouter réseau"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:24
-msgid "Add Exchange"
+msgid "Ajouter échange"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:37
@@ -2220,17 +2220,17 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_tools.html:184
 #: peeringdb_server/templates/site/view_organization_tools.html:366
 #: peeringdb_server/views.py:846 peeringdb_server/views.py:956
-msgid "Website"
+msgid "Site web"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:78
 #: peeringdb_server/views.py:849 peeringdb_server/views.py:959
-msgid "Address 1"
+msgid "Addresse 1"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:87
 #: peeringdb_server/views.py:854 peeringdb_server/views.py:963
-msgid "Address 2"
+msgid "Addresse 2"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:112
@@ -2249,7 +2249,7 @@ msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:228
 #: peeringdb_server/views.py:1299
-msgid "Traffic Ratios"
+msgid "Ratios de trafic"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:246
@@ -2265,26 +2265,26 @@ msgid "Multicast"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:268
-msgid "Policy URL"
+msgid "URL Politique"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:287
 #: peeringdb_server/views.py:1371
-msgid "Multiple Locations"
+msgid "Emplacements multiples"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:297
 #: peeringdb_server/views.py:1377
-msgid "Ratio Requirement"
+msgid "Exigence de ratio"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:305
 #: peeringdb_server/views.py:1385
-msgid "Contract Requirement"
+msgid "Exigence du contrat"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:318
-msgid "Add a new Network to your Organization."
+msgid "Ajouter un nouveau réseau à votre organisation."
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:319
@@ -2296,7 +2296,7 @@ msgid "In case of verification failure the network will need to be approved by P
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:325
-msgid "Submit Network"
+msgid "Soumettre le réseau"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:331
@@ -2305,7 +2305,7 @@ msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:437
 #: peeringdb_server/views.py:1104
-msgid "Traffic Stats Website"
+msgid "Statistiques de trafic"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:444
@@ -2314,7 +2314,7 @@ msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:451
 #: peeringdb_server/views.py:1114
-msgid "Technical Phone"
+msgid "Téléphone - Technique"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:458
@@ -2323,11 +2323,11 @@ msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:465
 #: peeringdb_server/views.py:1124
-msgid "Policy Phone"
+msgid "Téléphone - Politique"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:500
-msgid "Confirmed"
+msgid "Confirmé"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:502
@@ -2339,7 +2339,7 @@ msgid "Currently no users requesting affiliation with"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:547
-msgid "Group"
+msgid "Groupe"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:588
@@ -2351,11 +2351,11 @@ msgid "Additionally, entities that are pending review cannot be permissioned out
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:615
-msgid "Update"
+msgid "Mise à jour"
 msgstr ""
 
 #: peeringdb_server/templates/site/view_organization_tools.html:618
-msgid "Delete"
+msgid "Effacer"
 msgstr ""
 
 #: peeringdb_server/templatetags/util.py:80
@@ -2399,7 +2399,7 @@ msgid "Please wait a bit before requesting ownership again."
 msgstr ""
 
 #: peeringdb_server/views.py:169
-msgid "Invalid organization"
+msgid "Organisation invalide"
 msgstr ""
 
 #: peeringdb_server/views.py:173 peeringdb_server/views.py:204
@@ -2408,7 +2408,7 @@ msgid "Organization '%(org_name)s' is already under ownership"
 msgstr ""
 
 #: peeringdb_server/views.py:198
-msgid "Organization does not exist"
+msgid "L'organisation n'existe pas"
 msgstr ""
 
 #: peeringdb_server/views.py:215
@@ -2416,11 +2416,11 @@ msgid "You already have an ownership request pending for this organization"
 msgstr ""
 
 #: peeringdb_server/views.py:245
-msgid "Please wait a bit before requesting affiliation again."
+msgid "Veuillez patientez avant de demander une nouvelle affiliation."
 msgstr ""
 
 #: peeringdb_server/views.py:256 peeringdb_server/views.py:257
-msgid "Either ASN or Organization required"
+msgid "ASN ou organisation requise"
 msgstr ""
 
 #: peeringdb_server/views.py:267 peeringdb_server/views.py:284
@@ -2428,27 +2428,27 @@ msgid "Could not retrieve RiR entry"
 msgstr ""
 
 #: peeringdb_server/views.py:302
-msgid "Please wait a bit before trying to resend the confirmation email again"
+msgid "Veuillez patientez avant d'essayer de renvoyer le courriel de confirmation"
 msgstr ""
 
 #: peeringdb_server/views.py:311
-msgid "We have resent your confirmation email"
+msgid "Nous avons renvoyé votre courriel de confirmation"
 msgstr ""
 
 #: peeringdb_server/views.py:424
-msgid "Please wait a bit before requesting another email change"
+msgid "Veuillez patientez avant de demander un autre changement de courriel"
 msgstr ""
 
 #: peeringdb_server/views.py:442
-msgid "E-mail already exists in our system"
+msgid "L'adresse courriel existe déjà dans notre système"
 msgstr ""
 
 #: peeringdb_server/views.py:470
-msgid "Wrong password"
+msgid "Mauvais mot de passe"
 msgstr ""
 
 #: peeringdb_server/views.py:511
-msgid "Please wait a bit before requesting your usernames again."
+msgid "Veuillez patientez avant de demander à nouveau vos noms d'utilisateur."
 msgstr ""
 
 #: peeringdb_server/views.py:602
@@ -2456,31 +2456,31 @@ msgid "Invalid Security Token"
 msgstr ""
 
 #: peeringdb_server/views.py:604
-msgid "Password Reset Process has expired, please"
+msgid "Le processus de réinitialisation du mot de passe a expiré, s'il vous plaît"
 msgstr ""
 
 #: peeringdb_server/views.py:653
-msgid "Please log out of your current session before trying to register. Notice, multiple accounts are no longer needed."
+msgid "Veuillez vous déconnecter de votre session actuelle avant d'essayer de vous inscrire. Notez que plusieurs comptes ne sont plus nécessaires."
 msgstr ""
 
 #: peeringdb_server/views.py:681
-msgid "reCAPTCHA invalid"
+msgid "reCAPTCHA invalide"
 msgstr ""
 
 #: peeringdb_server/views.py:687
-msgid "This email address has already been used"
+msgid "Cette adresse email a déjà été utilisée"
 msgstr ""
 
 #: peeringdb_server/views.py:721
-msgid "Already logged in"
+msgid "Déjà connecté"
 msgstr ""
 
 #: peeringdb_server/views.py:858 peeringdb_server/views.py:967
-msgid "Location"
+msgid "Emplacement"
 msgstr ""
 
 #: peeringdb_server/views.py:866 peeringdb_server/views.py:974
-msgid "Country Code"
+msgid "Code de pays"
 msgstr ""
 
 #: peeringdb_server/views.py:871 peeringdb_server/views.py:991
@@ -2490,31 +2490,31 @@ msgstr ""
 
 #: peeringdb_server/views.py:872 peeringdb_server/views.py:992
 #: peeringdb_server/views.py:1090 peeringdb_server/views.py:1333
-msgid "Markdown enabled"
+msgid "Markdown activé"
 msgstr ""
 
 #: peeringdb_server/views.py:978
-msgid "Geocode"
+msgid "Géocode"
 msgstr ""
 
 #: peeringdb_server/views.py:1073 peeringdb_server/views.py:1311
-msgid "Protocols Supported"
+msgid "Protocoles supportés"
 msgstr ""
 
 #: peeringdb_server/views.py:1095
-msgid "Contact Information"
+msgid "Informations de contact"
 msgstr ""
 
 #: peeringdb_server/views.py:1099 peeringdb_server/views.py:1242
-msgid "Company Website"
+msgid "Site web corporatif"
 msgstr ""
 
 #: peeringdb_server/views.py:1109
-msgid "Technical Email"
+msgid "Adresse courriel - Technique"
 msgstr ""
 
 #: peeringdb_server/views.py:1119
-msgid "Policy Email"
+msgid "Adresse courriel - Politique"
 msgstr ""
 
 #: peeringdb_server/views.py:1144
@@ -2522,31 +2522,31 @@ msgid "LAN"
 msgstr ""
 
 #: peeringdb_server/views.py:1237
-msgid "Also Known As"
+msgid "Aussi connu sous le nom de"
 msgstr ""
 
 #: peeringdb_server/views.py:1259
-msgid "Route Server URL"
+msgid "URL Serveur de routes"
 msgstr ""
 
 #: peeringdb_server/views.py:1265
-msgid "Looking Glass URL"
+msgid "URL Looking Glass"
 msgstr ""
 
 #: peeringdb_server/views.py:1278
-msgid "IPv4 Prefixes"
+msgid "Prefixes IPv4"
 msgstr ""
 
 #: peeringdb_server/views.py:1284
-msgid "IPv6 Prefixes"
+msgid "Prefixes IPv6"
 msgstr ""
 
 #: peeringdb_server/views.py:1328
-msgid "Last Updated"
+msgid "Dernière mise à jour"
 msgstr ""
 
 #: peeringdb_server/views.py:1339
-msgid "PeeringDB Configuration"
+msgid "Configuration PeeringDB"
 msgstr ""
 
 #: peeringdb_server/views.py:1343
@@ -2566,11 +2566,11 @@ msgid "Peering Policy"
 msgstr ""
 
 #: peeringdb_server/views.py:1537
-msgid "Please wait a bit before trying to login again."
+msgid "Veuillez patienter un peu avant d'essayer de vous reconnecter."
 msgstr ""
 
 #: peeringdb_server/views.py:1562
-msgid "Account disabled."
+msgid "Compte désactivé."
 msgstr ""
 
 #: peeringdb_server/views.py:1563
