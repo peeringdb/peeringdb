@@ -1478,7 +1478,7 @@ msgstr "転載を禁じます。このサービスを利用する事は、著作
 
 #: peeringdb_server/templates/site/footer.html:10
 msgid "AUP"
-msgstr ""
+msgstr "AUP"
 
 #: peeringdb_server/templates/site/footer.html:23
 #: peeringdb_server/templates/site/sponsorships.html:12
@@ -1486,80 +1486,80 @@ msgstr ""
 #: peeringdb_server/templates/site/sponsorships.html:43
 #: peeringdb_server/templates/site/sponsorships.html:56
 msgid "Sponsors"
-msgstr ""
+msgstr "スポンサー(Sponsors)"
 
 #: peeringdb_server/templates/site/footer.html:26
 #: peeringdb_server/templates/site/partnerships.html:13
 msgid "Partners"
-msgstr ""
+msgstr "パートナー(Partners)"
 
 #: peeringdb_server/templates/site/footer.html:29
 msgid "Resources"
-msgstr ""
+msgstr "リソース(Resources)"
 
 #: peeringdb_server/templates/site/footer.html:33
 msgid "Documentation"
-msgstr ""
+msgstr "資料(Documentation)"
 
 #: peeringdb_server/templates/site/footer.html:36
 msgid "API Documentation"
-msgstr ""
+msgstr "API の資料(API Documentation)"
 
 #: peeringdb_server/templates/site/footer.html:39
 msgid "Contact Us"
-msgstr ""
+msgstr "連絡ください"
 
 #: peeringdb_server/templates/site/footer.html:43
 msgid "Global System Statistics"
-msgstr ""
+msgstr "システム全体の統計情報"
 
 #: peeringdb_server/templates/site/footer.html:45
 msgid "Peering Networks"
-msgstr ""
+msgstr "Peering Networks"
 
 #: peeringdb_server/templates/site/footer.html:46
 msgid "Public Exchange Points"
-msgstr ""
+msgstr "Public Exchange Points"
 
 #: peeringdb_server/templates/site/footer.html:47
 msgid "Unique Public Exchange Presences"
-msgstr ""
+msgstr "Unique Public Exchange Presences"
 
 #: peeringdb_server/templates/site/footer.html:48
 msgid "Private Facilities"
-msgstr ""
+msgstr "Private Facilities"
 
 #: peeringdb_server/templates/site/footer.html:49
 msgid "Private Facility Presences"
-msgstr ""
+msgstr "Private Facility Presences"
 
 #: peeringdb_server/templates/site/header.html:51
 msgid "Search here for a network, IX, or facility."
-msgstr ""
+msgstr "ここで、ネットワーク、IX、データセンタの検索が出来ます"
 
 #: peeringdb_server/templates/site/header.html:54
 msgid "Advanced Search"
-msgstr ""
+msgstr "詳細な検索"
 
 #: peeringdb_server/templates/site/header.html:65
 msgid "pending"
-msgstr ""
+msgstr "保留"
 
 #: peeringdb_server/templates/site/header.html:67
 msgid "unverified"
-msgstr ""
+msgstr "未認証の"
 
 #: peeringdb_server/templates/site/header.html:80
 msgid "Profile"
-msgstr ""
+msgstr "プロフィール"
 
 #: peeringdb_server/templates/site/header.html:81
 msgid "Logout"
-msgstr ""
+msgstr "ログアウト"
 
 #: peeringdb_server/templates/site/header.html:85
 msgid "Register"
-msgstr ""
+msgstr "登録"
 
 #: peeringdb_server/templates/site/header.html:85
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
@@ -1572,69 +1572,69 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_side.html:108
 #: peeringdb_server/templates/site/view_organization_side.html:176
 msgid "or"
-msgstr ""
+msgstr "or"
 
 #: peeringdb_server/templates/site/header.html:85
 #: peeringdb_server/templates/site/login.html:21
 msgid "Login"
-msgstr ""
+msgstr "ログイン"
 
 #: peeringdb_server/templates/site/index.html:34
 msgid "PeeringDB facilitates the exchange of information related to Peering."
-msgstr ""
+msgstr "PeeringDB はピアリングに関する情報交換を手助けします"
 
 #: peeringdb_server/templates/site/index.html:38
 msgid "Specifically, we are a database of networks that are peering, where they are peering, and if they are likely to peer with you. If you don't know what peering is, and/or you don't currently engage in peering, this probably won't have any meaning for you."
-msgstr ""
+msgstr "具体的には、あなたが現在誰とピアリングをしているか？これからピアリングできそうなところは誰か？を示すデータベースです。もしあなたがピアリングがなにかを知らない、もしくは、ピアリングに従事していなければ、おそらく意味の無いのものです"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "You are currently viewing a read-only view of the data contained here. If you are a peering network who would like to create an account,"
-msgstr ""
+msgstr "あなたは、読み取り専用（変更不可）でここのコンテンツを閲覧しています。もしあなたがネットワークのピアリング運用者でアカウントを作成したいのであれば"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "you may register for one here"
-msgstr ""
+msgstr "ここでアカウントを登録出来ます"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "Please register ONLY if you are a peering network."
-msgstr ""
+msgstr "あなたがネットワークのピアリング運用者であればアカウント登録してください"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "You may also"
-msgstr ""
+msgstr "またはあなたが"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "reset lost passwords here"
-msgstr ""
+msgstr "パスワードリセットをしたいのであればここで出来ます"
 
 #: peeringdb_server/templates/site/index.html:48
 msgid "Still have questions?"
-msgstr ""
+msgstr "質問があれば"
 
 #: peeringdb_server/templates/site/index.html:48
 msgid "Read our FAQ"
-msgstr ""
+msgstr "FAQ ページをご覧ください"
 
 #: peeringdb_server/templates/site/index.html:52
 msgid "MOST RECENT UPDATES"
-msgstr ""
+msgstr "最新のアップデート"
 
 #: peeringdb_server/templates/site/index.html:55
 msgid "NETWORKS"
-msgstr ""
+msgstr "ネットワーク(NETWORKS)"
 
 #: peeringdb_server/templates/site/index.html:66
 msgid "FACILITIES"
-msgstr ""
+msgstr "データセンタ(FACILITIES)"
 
 #: peeringdb_server/templates/site/index.html:77
 msgid "EXCHANGES"
-msgstr ""
+msgstr "エクスチェンジ(EXCHANGES)"
 
 #: peeringdb_server/templates/site/login.html:15
 #: peeringdb_server/templates/site/register.html:34
 msgid "Username"
-msgstr ""
+msgstr "ユーザ名"
 
 #: peeringdb_server/templates/site/login.html:18
 #: peeringdb_server/templates/site/password-reset.html:42
@@ -1642,31 +1642,31 @@ msgstr ""
 #: peeringdb_server/templates/site/verify.html:176
 #: peeringdb_server/templates/site/verify.html:204
 msgid "Password"
-msgstr ""
+msgstr "パスワード"
 
 #: peeringdb_server/templates/site/login.html:24
 msgid "I forgot my password .."
-msgstr ""
+msgstr "パスワードを紛失しました"
 
 #: peeringdb_server/templates/site/login.html:25
 msgid "I forgot my username .."
-msgstr ""
+msgstr "ユーザ名を紛失しました"
 
 #: peeringdb_server/templates/site/oauth-login.html:6
 msgid "Login with oAuth"
-msgstr ""
+msgstr "oAuth を使ってログイン"
 
 #: peeringdb_server/templates/site/oauth-login.html:8
 msgid "Login with your google account"
-msgstr ""
+msgstr "Google アカウントを使ってログイン"
 
 #: peeringdb_server/templates/site/oauth-login.html:9
 msgid "Login with your facebook account"
-msgstr ""
+msgstr "Facebook アカウントを使ってログイン"
 
 #: peeringdb_server/templates/site/password-reset.html:15
 msgid "We've sent instructions to your email address, provided it is in our system. You have 30 minutes to complete the process."
-msgstr ""
+msgstr "あなたのメールアドレスに説明書を送りました。プロセス完了まで30分お待ちください"
 
 #: peeringdb_server/templates/site/password-reset.html:19
 #: peeringdb_server/templates/site/register.html:62
@@ -1676,357 +1676,357 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_tools.html:499
 #: peeringdb_server/templates/site/view_organization_tools.html:545
 msgid "Email"
-msgstr ""
+msgstr "Email"
 
 #: peeringdb_server/templates/site/password-reset.html:24
 #: peeringdb_server/templates/site/password-reset.html:55
 msgid "Reset Password"
-msgstr ""
+msgstr "パスワードリセット"
 
 #: peeringdb_server/templates/site/password-reset.html:33
 msgid "The password for your account"
-msgstr ""
+msgstr "あなたのアカウントのパスワード"
 
 #: peeringdb_server/templates/site/password-reset.html:33
 msgid "has been reset, proceed to the"
-msgstr ""
+msgstr "がリセットされました。進んでください"
 
 #: peeringdb_server/templates/site/password-reset.html:33
 msgid "login page"
-msgstr ""
+msgstr "ログインページ"
 
 #: peeringdb_server/templates/site/password-reset.html:49
 msgid "Verify Password"
-msgstr ""
+msgstr "パスワード確認"
 
 #: peeringdb_server/templates/site/password-reset.html:61
 msgid "The security token you provided is invalid, please"
-msgstr ""
+msgstr "無効なセキュリティトークンです"
 
 #: peeringdb_server/templates/site/password-reset.html:61
 msgid "try again"
-msgstr ""
+msgstr "もう一度お試しください"
 
 #: peeringdb_server/templates/site/password-reset.html:63
 msgid "The password reset process has expired, please"
-msgstr ""
+msgstr "パスワードリセット処理が失効しました"
 
 #: peeringdb_server/templates/site/password-reset.html:63
 #: peeringdb_server/views.py:605
 msgid "initiate again"
-msgstr ""
+msgstr "もう一度実行してください"
 
 #: peeringdb_server/templates/site/register.html:11
 msgid "Account Created"
-msgstr ""
+msgstr "アカウントが作成されました"
 
 #: peeringdb_server/templates/site/register.html:13
 msgid "Your account was created, but won't have full access until we have reviewed it. Thank you for your patience."
-msgstr ""
+msgstr "あなたのアカウントが作成されましたが、レビューが完了するまではアクセスする事が出来ません。しばらくお待ちください"
 
 #: peeringdb_server/templates/site/register.html:16
 msgid "Return Home"
-msgstr ""
+msgstr "Return Home"
 
 #: peeringdb_server/templates/site/register.html:30
 msgid "Create account"
-msgstr ""
+msgstr "アカウント作成"
 
 #: peeringdb_server/templates/site/register.html:48
 msgid "Confirm password"
-msgstr ""
+msgstr "パスワード確認"
 
 #: peeringdb_server/templates/site/register.html:55
 msgid "For speedy validation, it is required that you use a work e-mail address. If you plan to register your ASN with PeeringDB, it is recommended that you use an email-address that exists in your ASN's public contact details."
-msgstr ""
+msgstr "バリデーションを早くする為に、メールアドレスが必要になります。もし、あなたが PeeringDB に AS 番号を登録する予定であれば、その AS 番号のコンタクト先として使用しているメールアドレスを使用する事をお勧めします"
 
 #: peeringdb_server/templates/site/register.html:69
 msgid "First name"
-msgstr ""
+msgstr "名"
 
 #: peeringdb_server/templates/site/register.html:75
 msgid "Last name"
-msgstr ""
+msgstr "姓"
 
 #: peeringdb_server/templates/site/register.html:81
 #: peeringdb_server/templates/site/view_organization_tools.html:612
 msgid "Create"
-msgstr ""
+msgstr "作成(Create)"
 
 #: peeringdb_server/templates/site/request-ownership.html:15
 #: peeringdb_server/templates/site/request-ownership.html:23
 msgid "Thank you"
-msgstr ""
+msgstr "ありがとうございました"
 
 #: peeringdb_server/templates/site/request-ownership.html:17
 #, python-format
 msgid "We have received your ownership request for %(o_name)s and will review it."
-msgstr ""
+msgstr "%(o_name)s に関する所有権リクエストを受領しました。これからレビューのプロセスに移ります"
 
 #: peeringdb_server/templates/site/request-ownership.html:24
 msgid "We have verified your relationship with this entity and you have successfully claimed ownership. You may view / edit"
-msgstr ""
+msgstr "このエンティティに関する関係の確認が完了し、あなたからの所有権のリクエストが完了しました。あなたは閲覧と編集が出来ます。"
 
 #: peeringdb_server/templates/site/request-ownership.html:37
 #: peeringdb_server/templates/site/request-ownership.html:53
 msgid "Request Ownership"
-msgstr ""
+msgstr "所有権のリクエスト"
 
 #: peeringdb_server/templates/site/request-ownership.html:48
 msgid "Please only request ownership if you are certain that you have the rights to do so. Are you sure you wish to continue?"
-msgstr ""
+msgstr "あなたが所有権をリクエストする権利を持っていれば、所有権のリクエストをお願い致します。継続してよろしいですか？"
 
 #: peeringdb_server/templates/site/request-ownership.html:61
 msgid "Only verified users may request ownership to an organization"
-msgstr ""
+msgstr "確認済みユーザだけが、組織の所有権のリクエストが出来ます"
 
 #: peeringdb_server/templates/site/sponsorships.html:71
 msgid "Become a Sponsor"
-msgstr ""
+msgstr "スポンサーになる"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:12
 msgid "These are the usernames associated with your email address"
-msgstr ""
+msgstr "これらがあなたのメールアドレスに関連するユーザ名です"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:21
 msgid "The secret you provided does not match the secret required to complete this process"
-msgstr ""
+msgstr "あなたが提供した secret は、このプロセスを完了させる為に必要な secret と一致しませんでした"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:23
 msgid "Note"
-msgstr ""
+msgstr "注記"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:23
 msgid "You should complete the process in the same browser that you originally initiated it in."
-msgstr ""
+msgstr "このプロセスを完了させる為には、もともとこのプロセスを始める時に使用していた Web ブラウザと同じものを使用する必要があります"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:25
 msgid "Please re-initiate it"
-msgstr ""
+msgstr "もう一度初めからお願いします"
 
 #: peeringdb_server/templates/site/username-retrieve.html:14
 msgid "This form allows you to retrieve the usernames associated with your email address."
-msgstr ""
+msgstr "このフォームであなたのメールアドレスと関連するユーザ名の検索が出来ます"
 
 #: peeringdb_server/templates/site/username-retrieve.html:17
 msgid "We've sent instructions to your email address, provided it is in our system."
-msgstr ""
+msgstr "あなたのメールアドレスに説明書を送りました"
 
 #: peeringdb_server/templates/site/username-retrieve.html:26
 msgid "Retrieve username(s)"
-msgstr ""
+msgstr "ユーザ名の検索(Retrieve username(s))"
 
 #: peeringdb_server/templates/site/verification_banner.html:6
 msgid "Your user account has not been affiliated with any Organization yet, and will have limited access to some of the data (such as non-public network contact information)."
-msgstr ""
+msgstr "あなたのユーザアカウントは、まだどの組織とも関連付けが出来ていません。いくつかのデータにアクセスする事が制限されています（例えば非公開となっているネットワークコンタクト先の情報などにはアクセス出来ません）"
 
 #: peeringdb_server/templates/site/verification_banner.html:11
 msgid "Please take the time to confirm your email address and request affiliation"
-msgstr ""
+msgstr "あなたのメールアドレスの確認と組織所属リクエストが完了するまでしばらくお待ちください"
 
 #: peeringdb_server/templates/site/verification_banner.html:14
 msgid "You may request affiliation to an Organization or ASN"
-msgstr ""
+msgstr "組織もしくは AS 番号に対する所属リクエストをする事が出来ます"
 
 #: peeringdb_server/templates/site/verify.html:17
 msgid "Select language"
-msgstr ""
+msgstr "言語の選択"
 
 #: peeringdb_server/templates/site/verify.html:18
 msgid "Language preference saved"
-msgstr ""
+msgstr "好みの言語を保存しました"
 
 #: peeringdb_server/templates/site/verify.html:30
 msgid "Set language preference"
-msgstr ""
+msgstr "好みの言語を選択してください"
 
 #: peeringdb_server/templates/site/verify.html:39
 msgid "You have confirmed your email address!"
-msgstr ""
+msgstr "あなたのメールアドレスを確認しました！"
 
 #: peeringdb_server/templates/site/verify.html:43
 msgid "Attention!"
-msgstr ""
+msgstr "注意！"
 
 #: peeringdb_server/templates/site/verify.html:45
 msgid "Please specify an email address for your account, we won't be able to proceed with verification until you do."
-msgstr ""
+msgstr "あなたのアカウントに紐づけるメールアドレスを指定してください。メールアドレスの指定が無いと確認作業を進める事が出来ません"
 
 #: peeringdb_server/templates/site/verify.html:48
 msgid "Email Confirmation"
-msgstr ""
+msgstr "メールアドレス確認"
 
 #: peeringdb_server/templates/site/verify.html:50
 msgid "Before getting access to any other features, you need to confirm your email address."
-msgstr ""
+msgstr "他の機能へのアクセスをする前に、あなたのメールアドレスの確認が必要になります"
 
 #: peeringdb_server/templates/site/verify.html:51
 msgid "We have sent you a message containing the confirmation link."
-msgstr ""
+msgstr "あなたに確認リンクが書かれたメッセージを送付しました"
 
 #: peeringdb_server/templates/site/verify.html:61
 msgid "You won't have full access until we or the organization you are affiliated with have reviewed your account. Thank you for your patience."
-msgstr ""
+msgstr "あなたのアカウントのレビューが完了するまでフルアクセスの権限を持つ事が出来ません。しばらくお待ちください"
 
 #: peeringdb_server/templates/site/verify.html:75
 msgid "Affiliate with organization"
-msgstr ""
+msgstr "組織に所属してください(Affiliate with organization)"
 
 #: peeringdb_server/templates/site/verify.html:80
 #, python-format
-msgid "Your affiliation with %(ar_name)s is pending approval."
+msgid "%(ar_name)s に対する所属の承認はペンディング中となっています"
 msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:82
 #, python-format
 msgid "Your affiliation with %(ar_name)s was denied"
-msgstr ""
+msgstr "%(ar_name)s に対する所属が拒否されました"
 
 #: peeringdb_server/templates/site/verify.html:84
 #, python-format
 msgid "Your affiliation with %(ar_name)s was approved"
-msgstr ""
+msgstr "%(ar_name)s に対する所属が承認されました"
 
 #: peeringdb_server/templates/site/verify.html:92
 msgid "To affiliate with an existing organization, please enter the ASN or organization name below."
-msgstr ""
+msgstr "既存の組織に所属する為には、下記に AS 番号もしくは組織名を入力してください"
 
 #: peeringdb_server/templates/site/verify.html:96
 msgid "To register a new network organization, please enter the ASN and organization name below."
-msgstr ""
+msgstr "組織を新規登録する為には、下記に AS 番号もしくは組織名を入力してください"
 
 #: peeringdb_server/templates/site/verify.html:100
 msgid "To register a new facility or exchange organization, please enter the organization name below (ASN is optional)."
-msgstr ""
+msgstr "データセンタもしくはエクスチェンジの組織を新規登録する為には、下記に組織名を入力してください（AS 番号の登録は任意です）"
 
 #: peeringdb_server/templates/site/verify.html:118
 msgid "Affiliate"
-msgstr ""
+msgstr "所属(Affiliate)"
 
 #: peeringdb_server/templates/site/verify.html:121
 #: peeringdb_server/templates/site/view_organization_tools.html:329
 msgid "In case the RiR entry cannot be retrieved for your ASN, please contact"
-msgstr ""
+msgstr "AS 番号から RIR の登録を検索できない場合は、下記にご連絡ください"
 
 #: peeringdb_server/templates/site/verify.html:122
 msgid "for assistance"
-msgstr ""
+msgstr "援助の為(for assistance)"
 
 #: peeringdb_server/templates/site/verify.html:126
 msgid "Existing affiliations"
-msgstr ""
+msgstr "既存の所属先(Existing affiliations)"
 
 #: peeringdb_server/templates/site/verify.html:129
 msgid "Your affiliation with"
-msgstr ""
+msgstr "あなたの所属に(Your affiliation with)"
 
 #: peeringdb_server/templates/site/verify.html:129
 msgid "has been approved"
-msgstr ""
+msgstr "承認されました"
 
 #: peeringdb_server/templates/site/verify.html:142
 msgid "Manage OAuth Applications"
-msgstr ""
+msgstr "OAuth アプリケーションで管理する(Manage OAuth Applications)"
 
 #: peeringdb_server/templates/site/verify.html:157
 msgid "Change email address"
-msgstr ""
+msgstr "メールアドレス変更(Change email address)"
 
 #: peeringdb_server/templates/site/verify.html:160
 msgid "For speedy validation, it is required that you use a work e-mail address. If you plan to register your ASN with PeeringDB, it is recommended that you use an email-address that exists in the ASN's public contact details."
-msgstr ""
+msgstr "バリデーションを早くする為に、メールアドレスが必要になります。もし、あなたが PeeringDB に AS 番号を登録する予定であれば、その AS 番号のコンタクト先として使用しているメールアドレスを使用する事をお勧めします"
 
 #: peeringdb_server/templates/site/verify.html:181
 msgid "Change Email"
-msgstr ""
+msgstr "メールアドレス変更(Change Email)"
 
 #: peeringdb_server/templates/site/verify.html:192
 msgid "Change password"
-msgstr ""
+msgstr "パスワード変更"
 
 #: peeringdb_server/templates/site/verify.html:193
 msgid "Password changed"
-msgstr ""
+msgstr "パスワードが変更されました"
 
 #: peeringdb_server/templates/site/verify.html:196
 msgid "Current Password"
-msgstr ""
+msgstr "現在のパスワード"
 
 #: peeringdb_server/templates/site/verify.html:212
 msgid "Password Verification"
-msgstr ""
+msgstr "パスワード確認"
 
 #: peeringdb_server/templates/site/view.html:26
 msgid "Pending Review"
-msgstr ""
+msgstr "レビューをペンディング中"
 
 #: peeringdb_server/templates/site/view.html:31
 msgid "Edit"
-msgstr ""
+msgstr "編集"
 
 #: peeringdb_server/templates/site/view.html:34
 #: peeringdb_server/templates/site/view.html:263
 msgid "Cancel"
-msgstr ""
+msgstr "キャンセル"
 
 #: peeringdb_server/templates/site/view.html:35
 #: peeringdb_server/templates/site/view.html:264
 #: peeringdb_server/templates/site/view_organization_tools.html:576
 #: peeringdb_server/templates/site/view_organization_tools.html:694
 msgid "Save"
-msgstr ""
+msgstr "保存"
 
 #: peeringdb_server/templates/site/view.html:56
 msgid "Some of the data on this page is incomplete, please update the fields marked with"
-msgstr ""
+msgstr "このページにあるいくつかのデータが不十分です。印のある箇所の更新をお願いします"
 
 #: peeringdb_server/templates/site/view.html:58
 msgid "to improve data quality"
-msgstr ""
+msgstr "データの品質の改善の為に"
 
 #: peeringdb_server/templates/site/view.html:216
 msgid "Address failed validation."
-msgstr ""
+msgstr "バリデーションに失敗したアドレス"
 
 #: peeringdb_server/templates/site/view.html:218
 msgid "Geocoding error"
-msgstr ""
+msgstr "ジオコーディングエラー"
 
 #: peeringdb_server/templates/site/view.html:222
 msgid "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."
-msgstr ""
+msgstr "このエンティティのジオコードデータの取得に失敗しました。これはアドレスフィールドの変更時に自動的に行われます"
 
 #: peeringdb_server/templates/site/view.html:225
 msgid "Updated geocode data for this entity will be obtained shortly"
-msgstr ""
+msgstr "まもなく、このエンティティについての更新されたジオコードデータの取得が行われます"
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:51
 #: peeringdb_server/templates/site/view_exchange_bottom.html:83
 #: peeringdb_server/templates/site/view_exchange_bottom.html:190
 msgid "IXF Member Export URL"
-msgstr ""
+msgstr "IXF メンバー出力 URL"
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:78
 #: peeringdb_server/templates/site/view_exchange_bottom.html:134
 msgid "Prefix"
-msgstr ""
+msgstr "プレフィクス"
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:82
 #: peeringdb_server/templates/site/view_organization_tools.html:681
 msgid "Add"
-msgstr ""
+msgstr "追加"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:26
 #: peeringdb_server/templates/site/view_exchange_bottom.html:170
 #: peeringdb_server/views.py:1153
 msgid "DOT1Q"
-msgstr ""
+msgstr "DOT1Q"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:29
 #: peeringdb_server/templates/site/view_exchange_bottom.html:180
 #: peeringdb_server/views.py:1148
 msgid "MTU"
-msgstr ""
+msgstr "MTU"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:39
 #: peeringdb_server/templates/site/view_exchange_bottom.html:250
@@ -2039,7 +2039,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_side.html:107
 #: peeringdb_server/templates/site/view_organization_side.html:175
 msgid "Nothing matched your filter"
-msgstr ""
+msgstr "あなたのフィルタと一致するものはありませんでした"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
 #: peeringdb_server/templates/site/view_exchange_bottom.html:251
@@ -2052,31 +2052,31 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_side.html:108
 #: peeringdb_server/templates/site/view_organization_side.html:176
 msgid "You may filter by"
-msgstr ""
+msgstr "によってフィルタされているかもしれません"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
 msgid "dot1q"
-msgstr ""
+msgstr "dot1q"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:44
 msgid "IXLAN"
-msgstr ""
+msgstr "IXLAN"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:44
 msgid "ATTENTION: Any network relationships to the exchange via this LAN will be removed as well"
-msgstr ""
+msgstr "注意: このエクスチェンジに関連したネットワークも削除されます"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:97
 msgid "IXLAN Prefix"
-msgstr ""
+msgstr "IXLAN Prefix"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:138
 msgid "Add Prefix"
-msgstr ""
+msgstr "プレフィクスを追加"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:202
 msgid "Add LAN"
-msgstr ""
+msgstr "LAN を追加"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:234
 #: peeringdb_server/templates/site/view_exchange_bottom.html:251
@@ -2085,30 +2085,30 @@ msgstr ""
 #: peeringdb_server/templates/site/view_network_side.html:235
 #: peeringdb_server/templates/site/view_network_side.html:278
 msgid "Facility"
-msgstr ""
+msgstr "データセンタ"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:256
 msgid "Exchange - Facility link"
-msgstr ""
+msgstr "エクスチェンジ - データセンタ のリンク"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:303
 #: peeringdb_server/templates/site/view_network_side.html:290
 #: peeringdb_server/templates/site/view_organization_tools.html:10
 msgid "Add Facility"
-msgstr ""
+msgstr "データセンタを追加"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:17
 #: peeringdb_server/templates/site/view_facility_side.html:16
 #: peeringdb_server/templates/site/view_facility_side.html:27
 msgid "Peer Name"
-msgstr ""
+msgstr "ピア名"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:25
 #: peeringdb_server/templates/site/view_exchange_side.html:38
 #: peeringdb_server/templates/site/view_network_side.html:31
 #: peeringdb_server/templates/site/view_network_side.html:43
 msgid "Speed"
-msgstr ""
+msgstr "スピード"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:37
 #: peeringdb_server/templates/site/view_facility_bottom.html:17
@@ -2118,473 +2118,473 @@ msgstr ""
 #: peeringdb_server/templates/site/view_network_side.html:123
 #: peeringdb_server/templates/site/view_organization_side.html:181
 msgid "Exchange"
-msgstr ""
+msgstr "エクスチェンジ"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:38
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 #: peeringdb_server/templates/site/view_facility_bottom.html:20
 #: peeringdb_server/templates/site/view_facility_bottom.html:31
 #: peeringdb_server/views.py:1047
 msgid "Long Name"
-msgstr ""
+msgstr "長い名前(Long Name)"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:21
 #: peeringdb_server/templates/site/view_network_bottom.html:198
 msgid "Some of this network's contacts are hidden because they are only visible to authenticated users and you are currently not logged in."
-msgstr ""
+msgstr "あなたは現在ログインしていない為、いくつかのネットワークコンタクト先が非表示になっています。認証済みのユーザであれば閲覧可能です"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:23
 #: peeringdb_server/templates/site/view_network_bottom.html:200
 msgid "Some of this network's contacts are hidden because your user account is not affiliated with any organization."
-msgstr ""
+msgstr "あなたのアカウントがどの組織にも所属していない為、いくつかのネットワークコンテ区と先が非表示になっています。"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:32
 #: peeringdb_server/templates/site/view_network_bottom.html:129
 msgid "Role"
-msgstr ""
+msgstr "役割"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:40
 msgid "Visiblity"
-msgstr ""
+msgstr "可視性(Visiblity)"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:45
 #: peeringdb_server/templates/site/view_network_bottom.html:158
 msgid "Phone"
-msgstr ""
+msgstr "電話"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:48
 msgid "E-Mail"
-msgstr ""
+msgstr "メール"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:167
 msgid "Visibility"
-msgstr ""
+msgstr "可視性(Visibility)"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:180
 msgid "Add Contact"
-msgstr ""
+msgstr "コンタクトを追加(Add Contact)"
 
 #: peeringdb_server/templates/site/view_network_side.html:15
 msgid "Public Peering Exchange Points"
-msgstr ""
+msgstr "パブリックなエクスチェンジポイント"
 
 #: peeringdb_server/templates/site/view_network_side.html:32
 #: peeringdb_server/templates/site/view_network_side.html:176
 msgid "RS Peer"
-msgstr ""
+msgstr "ルートサーバとのピア"
 
 #: peeringdb_server/templates/site/view_network_side.html:48
 msgid "Network - Exchange link"
-msgstr ""
+msgstr "ネットワーク - エクスチェンジ のリンク"
 
 #: peeringdb_server/templates/site/view_network_side.html:134
 msgid "Local ASN"
-msgstr ""
+msgstr "Local ASN"
 
 #: peeringdb_server/templates/site/view_network_side.html:165
 msgid "Speed (mbit/sec)"
-msgstr ""
+msgstr "スピード (mbit/sec)"
 
 #: peeringdb_server/templates/site/view_network_side.html:189
 msgid "Add Exchange Point"
-msgstr ""
+msgstr "エクスチェンジポイントを追加(Add Exchange Point)"
 
 #: peeringdb_server/templates/site/view_organization_assets.html:33
 msgid "member"
-msgstr ""
+msgstr "メンバー"
 
 #: peeringdb_server/templates/site/view_organization_assets.html:36
 #: peeringdb_server/templates/site/view_organization_tools.html:569
 msgid "Remove"
-msgstr ""
+msgstr "削除(Remove)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:3
 msgid "Manage"
-msgstr ""
+msgstr "管理(Manage)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:17
 msgid "Add Network"
-msgstr ""
+msgstr "ネットワークを追加(Add Network)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:24
 msgid "Add Exchange"
-msgstr ""
+msgstr "エクスチェンジを追加(Add Exchange)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:37
 msgid "Permissions"
-msgstr ""
+msgstr "パーミッション(Permissions)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:70
 #: peeringdb_server/templates/site/view_organization_tools.html:184
 #: peeringdb_server/templates/site/view_organization_tools.html:366
 #: peeringdb_server/views.py:846 peeringdb_server/views.py:956
 msgid "Website"
-msgstr ""
+msgstr "Web サイト"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:78
 #: peeringdb_server/views.py:849 peeringdb_server/views.py:959
 msgid "Address 1"
-msgstr ""
+msgstr "アドレス 1"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:87
 #: peeringdb_server/views.py:854 peeringdb_server/views.py:963
 msgid "Address 2"
-msgstr ""
+msgstr "アドレス 2"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:112
 msgid "Zip-Code"
-msgstr ""
+msgstr "郵便番号"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:134
 #: peeringdb_server/views.py:983
 msgid "CLLI Code"
-msgstr ""
+msgstr "CLLI コード"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:201
 #: peeringdb_server/views.py:1253
 msgid "IRR Record"
-msgstr ""
+msgstr "IRR レコード"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:228
 #: peeringdb_server/views.py:1299
 msgid "Traffic Ratios"
-msgstr ""
+msgstr "トラフィックの方向"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:246
 #: peeringdb_server/templates/site/view_organization_tools.html:414
 #: peeringdb_server/views.py:1076 peeringdb_server/views.py:1314
 msgid "Unicast IPv4"
-msgstr ""
+msgstr "ユニキャスト IPv4"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:254
 #: peeringdb_server/templates/site/view_organization_tools.html:422
 #: peeringdb_server/views.py:1080 peeringdb_server/views.py:1318
 msgid "Multicast"
-msgstr ""
+msgstr "マルチキャスト"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:268
 msgid "Policy URL"
-msgstr ""
+msgstr "ポリシー URL"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:287
 #: peeringdb_server/views.py:1371
 msgid "Multiple Locations"
-msgstr ""
+msgstr "複数の場所(Multiple Locations)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:297
 #: peeringdb_server/views.py:1377
 msgid "Ratio Requirement"
-msgstr ""
+msgstr "トラフィック割合の条件"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:305
 #: peeringdb_server/views.py:1385
 msgid "Contract Requirement"
-msgstr ""
+msgstr "コンタクトに関する条件"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:318
 msgid "Add a new Network to your Organization."
-msgstr ""
+msgstr "あなたの組織に新しいネットワークを追加"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:319
 msgid "We will attempt to automatically verify your relationship to the network by checking for your email address in the ASN's RiR entry."
-msgstr ""
+msgstr "AS 番号の RIR エントリーに登録されたあなたのメールアドレスをチェックする事で、そのネットワークとあなたの関係を確認します"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:321
 msgid "In case of verification failure the network will need to be approved by PeeringDB staff before it will appear in the search results or the API listings."
-msgstr ""
+msgstr "認証に失敗すると、そのネットワークが検索結果や API リストに表示されるようになる為には、PeeringDB のスタッフによる承認が必要です"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:325
 msgid "Submit Network"
-msgstr ""
+msgstr "ネットワークを登録"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:331
 msgid "for assistance with the creation of your network in PeeringDB."
-msgstr ""
+msgstr "PeeringDB であなたのネットワークを作成する手助けの為に"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:437
 #: peeringdb_server/views.py:1104
 msgid "Traffic Stats Website"
-msgstr ""
+msgstr "トラフィック統計 Web サイト"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:444
 msgid "Technical E-mail"
-msgstr ""
+msgstr "技術者のメールアドレス(Technical E-mail)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:451
 #: peeringdb_server/views.py:1114
 msgid "Technical Phone"
-msgstr ""
+msgstr "技術者の電話番号(Technical Phone)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:458
 msgid "Policy E-mail"
-msgstr ""
+msgstr "ポリシー担当者のメールアドレス(Policy E-mail)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:465
 #: peeringdb_server/views.py:1124
 msgid "Policy Phone"
-msgstr ""
+msgstr "ポリシー担当者の電話番号(Policy Phone)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:500
 msgid "Confirmed"
-msgstr ""
+msgstr "確認済み(Confirmed)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:502
 msgid "Date"
-msgstr ""
+msgstr "日時"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:527
 msgid "Currently no users requesting affiliation with"
-msgstr ""
+msgstr "に所属リクエストをしているユーザは現在いません"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:547
 msgid "Group"
-msgstr ""
+msgstr "グループ(Group)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:588
 msgid "Here you can grant permissions to regular members of your organization. Administrative users are not listed here as they have access to everything by default."
-msgstr ""
+msgstr "ここで、あなたの組織の所属する正規のメンバーに権限を与える事が出来ます。管理者権限を持つユーザはデフォルトで全てのアクセス権を持っている為、ここにリストされていません"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:593
 msgid "Additionally, entities that are pending review cannot be permissioned out to users, and will not appear in the entity list."
-msgstr ""
+msgstr "レビュー待ちエンティティはユーザからアクセスの許可はされていなく、エンティティの一覧には表示されていません"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:615
 msgid "Update"
-msgstr ""
+msgstr "アップデート(Update)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:618
 msgid "Delete"
-msgstr ""
+msgstr "削除(Delete)"
 
 #: peeringdb_server/templatetags/util.py:80
 msgid "Your email address does not match the domain information we have on file for this organization."
-msgstr ""
+msgstr "あなたのメールアドレスは、この組織のファイルにあるドメインの情報と一致しません"
 
 #: peeringdb_server/templatetags/util.py:139
 msgid "seconds ago"
-msgstr ""
+msgstr "数秒前"
 
 #: peeringdb_server/templatetags/util.py:141
 msgid "minutes ago"
-msgstr ""
+msgstr "数分前"
 
 #: peeringdb_server/templatetags/util.py:143
 msgid "hours ago"
-msgstr ""
+msgstr "数時間前"
 
 #: peeringdb_server/templatetags/util.py:145
 msgid "days ago"
-msgstr ""
+msgstr "数日前"
 
 #: peeringdb_server/validators.py:29
 msgid "Invalid prefix: {}"
-msgstr ""
+msgstr "無効なプレフィクス"
 
 #: peeringdb_server/validators.py:32
 msgid "Address space invalid: {}"
-msgstr ""
+msgstr "アドレススペースが無効でした: {}"
 
 #: peeringdb_server/validators.py:38 peeringdb_server/validators.py:47
 msgid "Maximum value allowed {}"
-msgstr ""
+msgstr "許容範囲な最大値 {}"
 
 #: peeringdb_server/validators.py:41 peeringdb_server/validators.py:51
 msgid "Negative value not allowed"
-msgstr ""
+msgstr "負の数値は許可されません"
 
 #: peeringdb_server/views.py:162 peeringdb_server/views.py:190
 msgid "Please wait a bit before requesting ownership again."
-msgstr ""
+msgstr "所有権の再リクエストの前にお待ちください"
 
 #: peeringdb_server/views.py:169
 msgid "Invalid organization"
-msgstr ""
+msgstr "無効な組織"
 
 #: peeringdb_server/views.py:173 peeringdb_server/views.py:204
 #, python-format
 msgid "Organization '%(org_name)s' is already under ownership"
-msgstr ""
+msgstr "'%(org_name)s' の組織は既に所有済みです"
 
 #: peeringdb_server/views.py:198
 msgid "Organization does not exist"
-msgstr ""
+msgstr "その組織は存在していません"
 
 #: peeringdb_server/views.py:215
 msgid "You already have an ownership request pending for this organization"
-msgstr ""
+msgstr "既にこの組織についてペンディング中の所有権リクエストがあります"
 
 #: peeringdb_server/views.py:245
 msgid "Please wait a bit before requesting affiliation again."
-msgstr ""
+msgstr "組織所属リクエストするまで少々お待ちください"
 
 #: peeringdb_server/views.py:256 peeringdb_server/views.py:257
 msgid "Either ASN or Organization required"
-msgstr ""
+msgstr "AS 番号もしくは組織のどちらかが必要となります"
 
 #: peeringdb_server/views.py:267 peeringdb_server/views.py:284
 msgid "Could not retrieve RiR entry"
-msgstr ""
+msgstr "RIR エントリーの検索が出来ませんでした"
 
 #: peeringdb_server/views.py:302
 msgid "Please wait a bit before trying to resend the confirmation email again"
-msgstr ""
+msgstr "再度確認メールを送るまで少々お待ちください"
 
 #: peeringdb_server/views.py:311
 msgid "We have resent your confirmation email"
-msgstr ""
+msgstr "確認メールをあなたに送りました"
 
 #: peeringdb_server/views.py:424
 msgid "Please wait a bit before requesting another email change"
-msgstr ""
+msgstr "メールアドレス変更のリクエストをする前に少々お待ちください"
 
 #: peeringdb_server/views.py:442
 msgid "E-mail already exists in our system"
-msgstr ""
+msgstr "既にメールアドレスが存在しています"
 
 #: peeringdb_server/views.py:470
 msgid "Wrong password"
-msgstr ""
+msgstr "間違ったパスワード"
 
 #: peeringdb_server/views.py:511
 msgid "Please wait a bit before requesting your usernames again."
-msgstr ""
+msgstr "ユーザ名変更のリクエストをする前に少々お待ちください"
 
 #: peeringdb_server/views.py:602
 msgid "Invalid Security Token"
-msgstr ""
+msgstr "無効なセキュリティトークン"
 
 #: peeringdb_server/views.py:604
 msgid "Password Reset Process has expired, please"
-msgstr ""
+msgstr "パスワードリセットが失効しました"
 
 #: peeringdb_server/views.py:653
 msgid "Please log out of your current session before trying to register. Notice, multiple accounts are no longer needed."
-msgstr ""
+msgstr "登録をする前に現在のセッションをログアウトしてください。注意: 複数のアカウントは不要です"
 
 #: peeringdb_server/views.py:681
 msgid "reCAPTCHA invalid"
-msgstr ""
+msgstr "reCAPTCHA が無効です"
 
 #: peeringdb_server/views.py:687
 msgid "This email address has already been used"
-msgstr ""
+msgstr "このメールアドレスは既に使われています"
 
 #: peeringdb_server/views.py:721
 msgid "Already logged in"
-msgstr ""
+msgstr "既にログインしています"
 
 #: peeringdb_server/views.py:858 peeringdb_server/views.py:967
 msgid "Location"
-msgstr ""
+msgstr "場所(Location)"
 
 #: peeringdb_server/views.py:866 peeringdb_server/views.py:974
 msgid "Country Code"
-msgstr ""
+msgstr "国コード"
 
 #: peeringdb_server/views.py:871 peeringdb_server/views.py:991
 #: peeringdb_server/views.py:1089 peeringdb_server/views.py:1332
-msgid "Notes"
-msgstr ""
+  msgid "Notes"
+msgstr "注意(Notes)"
 
 #: peeringdb_server/views.py:872 peeringdb_server/views.py:992
 #: peeringdb_server/views.py:1090 peeringdb_server/views.py:1333
 msgid "Markdown enabled"
-msgstr ""
+msgstr "マークダウンは有効です"
 
 #: peeringdb_server/views.py:978
 msgid "Geocode"
-msgstr ""
+msgstr "ジオコード"
 
 #: peeringdb_server/views.py:1073 peeringdb_server/views.py:1311
 msgid "Protocols Supported"
-msgstr ""
+msgstr "サポートされているプロトコル(Protocols Supported)"
 
 #: peeringdb_server/views.py:1095
 msgid "Contact Information"
-msgstr ""
+msgstr "連絡先情報"
 
 #: peeringdb_server/views.py:1099 peeringdb_server/views.py:1242
 msgid "Company Website"
-msgstr ""
+msgstr "企業の Web サイト"
 
 #: peeringdb_server/views.py:1109
 msgid "Technical Email"
-msgstr ""
+msgstr "技術者のメールアドレス(Technical Email)"
 
 #: peeringdb_server/views.py:1119
 msgid "Policy Email"
-msgstr ""
+msgstr "ポリシー担当者のメールアドレス(Policy Email)"
 
 #: peeringdb_server/views.py:1144
 msgid "LAN"
-msgstr ""
+msgstr "LAN"
 
 #: peeringdb_server/views.py:1237
 msgid "Also Known As"
-msgstr ""
+msgstr "別名"
 
 #: peeringdb_server/views.py:1259
 msgid "Route Server URL"
-msgstr ""
+msgstr "ルートサーバの URL"
 
 #: peeringdb_server/views.py:1265
 msgid "Looking Glass URL"
-msgstr ""
+msgstr "Looking Glass の URL"
 
 #: peeringdb_server/views.py:1278
 msgid "IPv4 Prefixes"
-msgstr ""
+msgstr "IPv4 プレフィクス(IPv4 Prefixes)"
 
 #: peeringdb_server/views.py:1284
 msgid "IPv6 Prefixes"
-msgstr ""
+msgstr "IPv6 プレフィクス(IPv6 Prefixes)"
 
 #: peeringdb_server/views.py:1328
 msgid "Last Updated"
-msgstr ""
+msgstr "最新のアップデート"
 
 #: peeringdb_server/views.py:1339
 msgid "PeeringDB Configuration"
-msgstr ""
+msgstr "PeeringDB の設定"
 
 #: peeringdb_server/views.py:1343
 msgid "Allow IXP Update"
-msgstr ""
+msgstr "IXP Update を許可する"
 
 #: peeringdb_server/views.py:1345
 msgid "If enabled, an ixp may manage this network's entry in their peering list"
-msgstr ""
+msgstr "もし有効なら、IXP はピアリングリストにあるこのネットワークのエンティティの管理が出来ます"
 
 #: peeringdb_server/views.py:1354
 msgid "Peering Policy Information"
-msgstr ""
+msgstr "ピアリングポリシー情報"
 
 #: peeringdb_server/views.py:1357
 msgid "Peering Policy"
-msgstr ""
+msgstr "ピアリングポリシー"
 
 #: peeringdb_server/views.py:1537
 msgid "Please wait a bit before trying to login again."
-msgstr ""
+msgstr "再度ログインを試す前に少々お待ちください"
 
 #: peeringdb_server/views.py:1562
 msgid "Account disabled."
-msgstr ""
+msgstr "アカウントが無効です"
 
 #: peeringdb_server/views.py:1563
 msgid "Invalid username/password."
-msgstr ""
+msgstr "無効なユーザ名・パスワードです"
 
 #: tests/django_init.py:62
 msgid "English"
-msgstr ""
+msgstr "英語(English)"
 
 #: tests/django_init.py:63
 msgid "Portuguese"
-msgstr ""
+msgstr "ポルトガル語(Portuguese)"
 
 #: tests/django_init.py:82
 msgid "Kosovo"
-msgstr ""
+msgstr "コソボ(Kosovo)"
