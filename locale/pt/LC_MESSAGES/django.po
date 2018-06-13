@@ -2469,7 +2469,7 @@ msgid "Mostly Inbound"
 msgstr "Principalmente Inound"
 
 msgid "Heavy Inbound"
-msgstr "muita chagada"
+msgstr "Inbound Pesado"
 
 msgid "Global"
 msgstr "Global"
