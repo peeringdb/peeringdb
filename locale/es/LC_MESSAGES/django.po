@@ -1,0 +1,2852 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-03-26 19:57+0000\n"
+"PO-Revision-Date: 2018-06-14 11:57-0500\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language-Team: \n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: es\n"
+
+#: peeringdb_com/settings.py:36
+msgid "English"
+msgstr "Inglés"
+
+#: peeringdb_com/settings.py:37
+msgid "German"
+msgstr "Alemán"
+
+#: peeringdb_com/settings.py:38
+msgid "Russian"
+msgstr "Ruso"
+
+#: peeringdb_com/settings.py:39
+msgid "Japanese"
+msgstr "Japonés"
+
+#: peeringdb_com/settings.py:40
+msgid "Chinese"
+msgstr "Chino"
+
+#: peeringdb_com/settings.py:41
+msgid "Portuguese"
+msgstr "Portugués"
+
+#: peeringdb_server/admin.py:55 peeringdb_server/admin.py:1113
+#: peeringdb_server/templates/site/footer.html:30
+msgid "Status"
+msgstr "Estado"
+
+#: peeringdb_server/admin.py:135
+msgid "Target org cannot be in selected organizations list"
+msgstr ""
+"El objetivo org no puede estar en la lista seleccionada de organizaciones"
+
+#: peeringdb_server/admin.py:253
+msgid "ROLLBACK"
+msgstr "Reversión"
+
+#: peeringdb_server/admin.py:264
+msgid "SOFT DELETE"
+msgstr "Eliminación Temporal"
+
+#: peeringdb_server/admin.py:335
+msgid "Verification Queue is currently disabled"
+msgstr "La lista de verificación está inhabilitada actualmente"
+
+#: peeringdb_server/admin.py:337
+msgid "Verification Queue is currently disabled for this object type"
+msgstr ""
+"La lista de verificación está inhabilitada actualmente para este tipo de "
+"objeto"
+
+#: peeringdb_server/admin.py:345
+msgid "APPROVE"
+msgstr "APROBAR"
+
+#: peeringdb_server/admin.py:345
+msgid "DENY"
+msgstr "NEGAR"
+
+#: peeringdb_server/admin.py:347
+msgid "APPROVED"
+msgstr "APROBADO"
+
+#: peeringdb_server/admin.py:412 peeringdb_server/admin.py:421
+msgid "Ipaddress already exists elsewhere"
+msgstr "Dirección IP ya está en uso"
+
+#: peeringdb_server/admin.py:439
+msgid "User is looking to be affiliated to these Organizations"
+msgstr "Usuario quiere ser afiliado a estas organizaciones"
+
+#: peeringdb_server/admin.py:470
+msgid "IXF Import History"
+msgstr "IXF Historial de importación"
+
+#: peeringdb_server/admin.py:518
+msgid "Initial creation of netixlan"
+msgstr "Creación inicial de netixlan"
+
+#: peeringdb_server/admin.py:538
+msgid "CAN BE ROLLED BACK"
+msgstr "Se puede retroceder"
+
+#: peeringdb_server/admin.py:541 peeringdb_server/admin.py:544
+msgid "CANNOT BE ROLLED BACK"
+msgstr "No se puede retroceder"
+
+#: peeringdb_server/admin.py:541
+msgid "Has been changed since"
+msgstr "Ha sido cambiado desde"
+
+#: peeringdb_server/admin.py:544
+msgid "Netixlan with conflicting ipaddress now exists elsewhere"
+msgstr "Netixlan con dirección IP en conflicto"
+
+#: peeringdb_server/admin.py:547
+msgid "HAS BEEN ROLLED BACK"
+msgstr "HA SIDO RETROCEDIDO"
+
+#: peeringdb_server/admin.py:602
+#: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:6
+#: peeringdb_server/templates/site/verify.html:111
+#: peeringdb_server/views.py:931 peeringdb_server/views.py:1024
+#: peeringdb_server/views.py:1214
+msgid "Organization"
+msgstr "Organización"
+
+#: peeringdb_server/admin.py:607
+msgid "Not Set"
+msgstr "No configurado"
+
+#: peeringdb_server/admin.py:611 peeringdb_server/admin.py:642
+msgid "Logo Missing"
+msgstr "Falta el logotipo"
+
+#: peeringdb_server/admin.py:612 peeringdb_server/admin.py:643
+msgid "Active"
+msgstr "Activo"
+
+#: peeringdb_server/admin.py:614
+msgid "Over"
+msgstr "Terminado"
+
+#: peeringdb_server/admin.py:616
+msgid "Waiting"
+msgstr "Esperando"
+
+#: peeringdb_server/admin.py:673
+msgid "Malformed organization ids"
+msgstr "Las IDes son malformados"
+
+#: peeringdb_server/admin.py:680
+msgid "Merge target organization does not exist"
+msgstr "Objetivo de fusión de organización no existe"
+
+#: peeringdb_server/admin.py:694
+msgid "Organization Merging Tool"
+msgstr "Herramienta para Fusionar Organizaciones"
+
+#: peeringdb_server/admin.py:719 peeringdb_server/admin.py:730
+msgid "Undo merge"
+msgstr "Anular fusión/combinación"
+
+#: peeringdb_server/admin.py:797
+msgid "APPROVE selected items"
+msgstr "Aprobar los ítems seleccionados"
+
+#: peeringdb_server/admin.py:803
+msgid "DENY and delete selected items"
+msgstr "Negar y eliminar los ítems seleccionados"
+
+#: peeringdb_server/admin.py:808
+msgid "View"
+msgstr "Visualización (Vista)"
+
+#: peeringdb_server/admin.py:824
+msgid "Affiliation request was approved and the user was notified."
+msgstr "Solicitud para afiliación fue aprobado y el usuario fue notificado."
+
+#: peeringdb_server/admin.py:826
+msgid "Approve and notify User"
+msgstr "Aprobar y notificar el usuario"
+
+#: peeringdb_server/admin.py:832
+#: peeringdb_server/templates/site/view_organization_tools.html:520
+msgid "Approve"
+msgstr "Aprobar"
+
+#: peeringdb_server/admin.py:838
+#: peeringdb_server/templates/site/view_organization_tools.html:521
+msgid "Deny"
+msgstr "NEGAR"
+
+#: peeringdb_server/admin.py:906
+#: peeringdb_server/templates/site/verify.html:216
+msgid "Change Password"
+msgstr "Cambiar Contraseña"
+
+#: peeringdb_server/admin.py:916
+msgid "Edit Permissions"
+msgstr "Editar permisos"
+
+#: peeringdb_server/admin.py:922
+msgid "VERIFIED"
+msgstr "VERIFICADO"
+
+#: peeringdb_server/admin.py:924
+msgid "UNVERIFIED"
+msgstr "No verificado"
+
+#: peeringdb_server/admin.py:940
+msgid "User Permission"
+msgstr "Permiso del usuario"
+
+#: peeringdb_server/admin.py:941
+msgid "User Permissions"
+msgstr "Permisos del Usuarios"
+
+#: peeringdb_server/admin.py:991
+msgid "Duplicate IP"
+msgstr "IP duplicada"
+
+#: peeringdb_server/admin.py:992
+msgid "Duplicate IPs"
+msgstr "IPs duplicadas"
+
+#: peeringdb_server/admin.py:1119
+msgid "Updated"
+msgstr "Actualizado"
+
+#: peeringdb_server/admin.py:1237 peeringdb_server/admin.py:1269
+msgid "Only POST requests allowed."
+msgstr "Sólo se permite solicitudes POST."
+
+#: peeringdb_server/admin.py:1247
+msgid "{} (Preview)"
+msgstr "{} (Vista Previa)"
+
+#: peeringdb_server/admin_commandline_tools.py:136
+msgid "Three leftmost octets of the original prefix - eg. xxx.xxx.xxx"
+msgstr "Los tres octetos más a la izquierda del prefijo original"
+
+#: peeringdb_server/admin_commandline_tools.py:140
+msgid "Three leftmost octets of the new prefix - eg. xxx.xxx.xxx"
+msgstr "Los tres octetos más a la izquierda del nuevo prefijo"
+
+#: peeringdb_server/data_views.py:48 peeringdb_server/data_views.py:49
+#: peeringdb_server/templates/site/view_organization_tools.html:516
+msgid "No"
+msgstr "No"
+
+#: peeringdb_server/data_views.py:48 peeringdb_server/data_views.py:49
+#: peeringdb_server/templates/site/view_organization_tools.html:516
+msgid "Yes"
+msgstr "Sí"
+
+#: peeringdb_server/export_views.py:140
+msgid "Invalid export format"
+msgstr "Formato de exportación no válido"
+
+#: peeringdb_server/export_views.py:284
+msgid "Invalid tag"
+msgstr "Etiqueta inválida"
+
+#: peeringdb_server/export_views.py:305 peeringdb_server/export_views.py:335
+#: peeringdb_server/export_views.py:359
+#: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:13
+#: peeringdb_server/templates/site/advanced-search-fac.html:12
+#: peeringdb_server/templates/site/advanced-search-fac.html:139
+#: peeringdb_server/templates/site/advanced-search-ix.html:11
+#: peeringdb_server/templates/site/advanced-search-ix.html:102
+#: peeringdb_server/templates/site/advanced-search-net.html:11
+#: peeringdb_server/templates/site/advanced-search-net.html:141
+#: peeringdb_server/templates/site/view_exchange_bottom.html:23
+#: peeringdb_server/templates/site/view_exchange_bottom.html:40
+#: peeringdb_server/templates/site/view_exchange_bottom.html:161
+#: peeringdb_server/templates/site/view_network_bottom.html:38
+#: peeringdb_server/templates/site/view_network_bottom.html:139
+#: peeringdb_server/templates/site/view_organization_side.html:25
+#: peeringdb_server/templates/site/view_organization_side.html:40
+#: peeringdb_server/templates/site/view_organization_side.html:94
+#: peeringdb_server/templates/site/view_organization_side.html:108
+#: peeringdb_server/templates/site/view_organization_side.html:161
+#: peeringdb_server/templates/site/view_organization_side.html:176
+#: peeringdb_server/templates/site/view_organization_tools.html:61
+#: peeringdb_server/templates/site/view_organization_tools.html:175
+#: peeringdb_server/templates/site/view_organization_tools.html:357
+#: peeringdb_server/templates/site/view_organization_tools.html:495
+#: peeringdb_server/templates/site/view_organization_tools.html:541
+msgid "Name"
+msgstr "Nombre"
+
+#: peeringdb_server/export_views.py:306
+#: peeringdb_server/templates/site/advanced-search-net.html:142
+msgid "Also known as"
+msgstr "También conocido cómo"
+
+#: peeringdb_server/export_views.py:307
+#: peeringdb_server/templates/site/advanced-search-net.html:145
+#: peeringdb_server/templates/site/verify.html:105
+#: peeringdb_server/templates/site/view_exchange_side.html:18
+#: peeringdb_server/templates/site/view_exchange_side.html:37
+#: peeringdb_server/templates/site/view_facility_side.html:19
+#: peeringdb_server/templates/site/view_facility_side.html:27
+#: peeringdb_server/templates/site/view_network_side.html:24
+#: peeringdb_server/templates/site/view_network_side.html:43
+#: peeringdb_server/templates/site/view_network_side.html:220
+#: peeringdb_server/templates/site/view_network_side.html:235
+#: peeringdb_server/templates/site/view_organization_side.html:97
+#: peeringdb_server/templates/site/view_organization_side.html:108
+msgid "ASN"
+msgstr "ASN"
+
+#: peeringdb_server/export_views.py:308
+#: peeringdb_server/templates/site/advanced-search-net.html:146
+#: peeringdb_server/templates/site/view_organization_tools.html:277
+#: peeringdb_server/views.py:1348
+msgid "General Policy"
+msgstr "Política general"
+
+#: peeringdb_server/export_views.py:309
+#: peeringdb_server/templates/site/advanced-search-net.html:20
+#: peeringdb_server/templates/site/advanced-search-net.html:149
+#: peeringdb_server/templates/site/view_organization_tools.html:210
+#: peeringdb_server/views.py:1256
+msgid "Network Type"
+msgstr "Tipo de red"
+
+#: peeringdb_server/export_views.py:310
+#: peeringdb_server/templates/site/advanced-search-net.html:150
+msgid "Network Scope"
+msgstr "Alcance de la red"
+
+#: peeringdb_server/export_views.py:311
+#: peeringdb_server/templates/site/advanced-search-net.html:31
+#: peeringdb_server/templates/site/advanced-search-net.html:153
+#: peeringdb_server/templates/site/view_organization_tools.html:219
+#: peeringdb_server/views.py:1276
+msgid "Traffic Levels"
+msgstr "Tasa de Tráfico"
+
+#: peeringdb_server/export_views.py:312
+#: peeringdb_server/templates/site/advanced-search-net.html:43
+#: peeringdb_server/templates/site/advanced-search-net.html:154
+msgid "Traffic Ratio"
+msgstr "Ratio de tráfico"
+
+#: peeringdb_server/export_views.py:313
+#: peeringdb_server/templates/site/advanced-search-net.html:157
+#: peeringdb_server/templates/site/advanced-search.html:8
+#: peeringdb_server/templates/site/search_result.html:12
+#: peeringdb_server/templates/site/search_result_frame.html:6
+#: peeringdb_server/templates/site/view_organization_side.html:153
+msgid "Exchanges"
+msgstr "Punto de intercambio de tráfico"
+
+#: peeringdb_server/export_views.py:314
+#: peeringdb_server/templates/site/advanced-search-net.html:158
+#: peeringdb_server/templates/site/search_result.html:24
+#: peeringdb_server/templates/site/search_result_frame.html:14
+msgid "Facilities"
+msgstr "Instalaciones"
+
+#: peeringdb_server/export_views.py:335
+#: peeringdb_server/templates/site/advanced-search-fac.html:71
+#: peeringdb_server/templates/site/advanced-search-fac.html:140
+msgid "Management"
+msgstr "Gerencia"
+
+#: peeringdb_server/export_views.py:336
+#: peeringdb_server/templates/site/advanced-search-fac.html:81
+#: peeringdb_server/templates/site/advanced-search-fac.html:143
+msgid "CLLI"
+msgstr "CLLI"
+
+#: peeringdb_server/export_views.py:336
+#: peeringdb_server/templates/site/advanced-search-fac.html:91
+#: peeringdb_server/templates/site/advanced-search-fac.html:144
+#: peeringdb_server/templates/site/view_organization_tools.html:142
+#: peeringdb_server/views.py:970
+msgid "NPA-NXX"
+msgstr "NPA NXX"
+
+#: peeringdb_server/export_views.py:337 peeringdb_server/export_views.py:362
+#: peeringdb_server/templates/site/advanced-search-fac.html:30
+#: peeringdb_server/templates/site/advanced-search-fac.html:147
+#: peeringdb_server/templates/site/advanced-search-ix.html:20
+#: peeringdb_server/templates/site/advanced-search-ix.html:105
+#: peeringdb_server/templates/site/view_exchange_bottom.html:240
+#: peeringdb_server/templates/site/view_exchange_bottom.html:251
+#: peeringdb_server/templates/site/view_network_side.html:224
+#: peeringdb_server/templates/site/view_network_side.html:235
+#: peeringdb_server/templates/site/view_organization_side.html:29
+#: peeringdb_server/templates/site/view_organization_side.html:40
+#: peeringdb_server/templates/site/view_organization_side.html:165
+#: peeringdb_server/templates/site/view_organization_side.html:176
+#: peeringdb_server/templates/site/view_organization_tools.html:95
+#: peeringdb_server/templates/site/view_organization_tools.html:374
+#: peeringdb_server/views.py:1034
+msgid "City"
+msgstr "Ciudad"
+
+#: peeringdb_server/export_views.py:337 peeringdb_server/export_views.py:361
+#: peeringdb_server/templates/site/advanced-search-fac.html:55
+#: peeringdb_server/templates/site/advanced-search-fac.html:148
+#: peeringdb_server/templates/site/advanced-search-ix.html:29
+#: peeringdb_server/templates/site/advanced-search-ix.html:104
+#: peeringdb_server/templates/site/view_exchange_bottom.html:237
+#: peeringdb_server/templates/site/view_exchange_bottom.html:251
+#: peeringdb_server/templates/site/view_network_side.html:223
+#: peeringdb_server/templates/site/view_network_side.html:235
+#: peeringdb_server/templates/site/view_organization_side.html:28
+#: peeringdb_server/templates/site/view_organization_side.html:40
+#: peeringdb_server/templates/site/view_organization_side.html:164
+#: peeringdb_server/templates/site/view_organization_side.html:176
+#: peeringdb_server/templates/site/view_organization_tools.html:123
+#: peeringdb_server/templates/site/view_organization_tools.html:383
+#: peeringdb_server/views.py:1040
+msgid "Country"
+msgstr "País"
+
+#: peeringdb_server/export_views.py:338
+#: peeringdb_server/templates/site/advanced-search-fac.html:30
+#: peeringdb_server/templates/site/advanced-search-fac.html:151
+#: peeringdb_server/templates/site/view_organization_tools.html:104
+msgid "State"
+msgstr "El Estado"
+
+#: peeringdb_server/export_views.py:338
+#: peeringdb_server/templates/site/advanced-search-fac.html:152
+msgid "Postal Code"
+msgstr "Código Postal"
+
+#: peeringdb_server/export_views.py:339
+#: peeringdb_server/templates/site/advanced-search-fac.html:155
+#: peeringdb_server/templates/site/search_result.html:18
+#: peeringdb_server/templates/site/search_result_frame.html:10
+#: peeringdb_server/templates/site/view_facility_bottom.html:23
+msgid "Networks"
+msgstr "Redes"
+
+#: peeringdb_server/export_views.py:360
+#: peeringdb_server/templates/site/advanced-search-ix.html:66
+#: peeringdb_server/templates/site/advanced-search-ix.html:103
+#: peeringdb_server/templates/site/view_organization_tools.html:404
+#: peeringdb_server/views.py:1052
+msgid "Media Type"
+msgstr "Tipo de media"
+
+#: peeringdb_server/forms.py:21
+msgid "Invalid permission level"
+msgstr "Nivel de permiso inválido"
+
+#: peeringdb_server/forms.py:59
+msgid "ASN needs to be a number"
+msgstr "El ASN tiene que ser un número"
+
+#: peeringdb_server/forms.py:70 peeringdb_server/views.py:677
+msgid "Needs to be at least 10 characters long"
+msgstr "Tiene que tener por lo menos 10 caracteres"
+
+#: peeringdb_server/forms.py:78
+msgid "Passwords need to match"
+msgstr "Las contraseñas tienen que coincidir"
+
+#: peeringdb_server/mail.py:54
+msgid "{} Merge Notification: {} -> {}"
+msgstr "{} Notificación de fusión: {} -> {}"
+
+#: peeringdb_server/models.py:42
+#: peeringdb_server/templates/site/sponsorships.html:56
+msgid "Silver"
+msgstr "Plata"
+
+#: peeringdb_server/models.py:42
+#: peeringdb_server/templates/site/sponsorships.html:43
+msgid "Gold"
+msgstr "Oro"
+
+#: peeringdb_server/models.py:43
+#: peeringdb_server/templates/site/sponsorships.html:28
+msgid "Platinum"
+msgstr "Platino"
+
+#: peeringdb_server/models.py:43
+#: peeringdb_server/templates/site/sponsorships.html:12
+msgid "Diamond"
+msgstr "Diamante"
+
+#: peeringdb_server/models.py:45
+msgid "Data Validation"
+msgstr "Validación de Datos"
+
+#: peeringdb_server/models.py:45
+msgid "RIR"
+msgstr "RIR"
+
+#: peeringdb_server/models.py:47
+msgid "Renumber IP Space"
+msgstr "Cambiar IPes"
+
+#: peeringdb_server/models.py:148
+msgid ""
+"Has this object's latitude and longitude been syncronized to it's address "
+"fields"
+msgstr ""
+"¿Han sido sincronizados la latitud y longitud de esta objeto a sus campos de "
+"dirección"
+
+#: peeringdb_server/models.py:151
+msgid "Last time of attempted geocode"
+msgstr "Hora del último intento de geocodificación"
+
+#: peeringdb_server/models.py:154
+msgid "Error message of previous geocode attempt"
+msgstr "El mensaje de error del intento anterior de geocodificación"
+
+#: peeringdb_server/models.py:201
+msgid "Address not found"
+msgstr "Dirección no encontrada"
+
+#: peeringdb_server/models.py:209
+msgid "API Timeout"
+msgstr "API tiempo de espera de inactividad"
+
+#: peeringdb_server/models.py:237
+msgid ""
+"This organization in our database that was derived from the provided ASN or "
+"organization name. If this is empty it means no matching organization was "
+"found."
+msgstr ""
+"Esta organización en nuestra base de datos fue derivada del ASN "
+"proporcionado o el nombre de la organozación. Si es vacío significa que no "
+"se encontró una organización correspondiente."
+
+#: peeringdb_server/models.py:243
+msgid "The organization name entered by the user"
+msgstr "organización ingresado por el usuario"
+
+#: peeringdb_server/models.py:245
+msgid "The ASN entered by the user"
+msgstr "El ASN introducido por el usuario"
+
+#: peeringdb_server/models.py:248
+msgid "The user that made the request"
+msgstr "El usuario que hizo la solicitud"
+
+#: peeringdb_server/models.py:254
+msgid "Pending"
+msgstr "Pendiente"
+
+#: peeringdb_server/models.py:255
+msgid "Approved"
+msgstr "Aprobado"
+
+#: peeringdb_server/models.py:256
+msgid "Denied"
+msgstr "Rechazado"
+
+#: peeringdb_server/models.py:257
+msgid "Status of this request"
+msgstr "Estado de esta solicitud"
+
+#: peeringdb_server/models.py:261
+msgid "User to Organization Affiliation Request"
+msgstr "Usuario a Solicitud de Afiliación de la Organización"
+
+#: peeringdb_server/models.py:262
+msgid "User to Organization Affiliation Requests"
+msgstr "Usuario a Solicitudes de Afiliación de la Organización"
+
+#: peeringdb_server/models.py:318
+msgid "Your affiliation to Organization \"{}\" has been approved"
+msgstr "Su afiliación a Organización “{}” ha sido aprobado"
+
+#: peeringdb_server/models.py:340
+msgid "The item that this queue is attached to was created by this user"
+msgstr ""
+"El elemento al que está conectada esta línea fue creado por este usuario"
+
+#: peeringdb_server/models.py:430
+msgid "Allows you to upload and set a logo image file for this organization"
+msgstr ""
+"Le permite cargar y seleccionar un archivo de logotipo para esta organización"
+
+#: peeringdb_server/models.py:651
+msgid "Sponsorship starts on"
+msgstr "El patrocinio comienza en"
+
+#: peeringdb_server/models.py:652
+msgid "Sponsorship ends on"
+msgstr "El patrocinio termina en"
+
+#: peeringdb_server/models.py:653
+msgid "Expiration notification sent on"
+msgstr "Notificación de vencimiento enviada"
+
+#: peeringdb_server/models.py:655 peeringdb_server/models.py:712
+msgid "URL"
+msgstr "URL"
+
+#: peeringdb_server/models.py:656
+msgid ""
+"If specified clicking the sponsorship will take the user to this location"
+msgstr ""
+"Si especificado, haciendo clic en el patrocio llevará el usuario a esta "
+"posición/ubicación"
+
+#: peeringdb_server/models.py:661
+msgid "Allows you to upload and set a logo image file for this sponsorship"
+msgstr ""
+"Le permite cargar y seleccionar un archivo de logotipo para este patrocinio"
+
+#: peeringdb_server/models.py:665
+msgid "Sponsorship"
+msgstr "Patrocinio"
+
+#: peeringdb_server/models.py:666
+msgid "Sponsorships"
+msgstr "Patrocinios"
+
+#: peeringdb_server/models.py:690
+msgid "Sponsorship Expired"
+msgstr "Patrocinio vencido"
+
+#: peeringdb_server/models.py:713
+msgid ""
+"If specified clicking the partnership will take the user to this location"
+msgstr ""
+"Si es especificado, haciendo clic en el patrocio llevará el usuario a esta "
+"posición/ubicación"
+
+#: peeringdb_server/models.py:717
+msgid "Allows you to upload and set a logo image file for this partnership"
+msgstr ""
+"Le permite cargar y seleccionar un archivo de logotipo para este patrocinio"
+
+#: peeringdb_server/models.py:721
+msgid "Partnership"
+msgstr "Colaboración"
+
+#: peeringdb_server/models.py:722
+msgid "Partnerships"
+msgstr "Colaboraciones"
+
+#: peeringdb_server/models.py:737
+msgid "Merged on"
+msgstr "Se fusionó en"
+
+#: peeringdb_server/models.py:741
+msgid "Organization Merge"
+msgstr "Fusión de la organización"
+
+#: peeringdb_server/models.py:742
+msgid "Organization Merges"
+msgstr "Fusiones de organización"
+
+#: peeringdb_server/models.py:794
+msgid "Organization Merge: Entity"
+msgstr "Fusión de la organización: Entidad"
+
+#: peeringdb_server/models.py:795
+msgid "Organization Merge: Entities"
+msgstr "Fusión de la organización: Entidades"
+
+#: peeringdb_server/models.py:897 peeringdb_server/models.py:1096
+msgid "Need to specify at least two asns"
+msgstr "Hay que especificar por lo menos dos ASNes"
+
+#: peeringdb_server/models.py:900 peeringdb_server/models.py:1099
+msgid "Can only compare a maximum of 25 asns"
+msgstr "Se puede comparar solamente"
+
+#: peeringdb_server/models.py:1301
+msgid "No JSON could be parsed"
+msgstr "Ningún JSON fue analizado"
+
+#: peeringdb_server/models.py:1327
+msgid "No entries in any of the vlan_list lists, aborting."
+msgstr "No hay entradas en ninguna de las listas vlan_list, abortando."
+
+#: peeringdb_server/models.py:1692
+msgid "IXF Import Log"
+msgstr "Registro de Importación IXF"
+
+#: peeringdb_server/models.py:1693
+msgid "IXF Import Logs"
+msgstr "Registros de importaciones IXF"
+
+#: peeringdb_server/models.py:1724
+msgid "IXF Import Log Entry"
+msgstr "Entrada en el Registro de Importación IXF"
+
+#: peeringdb_server/models.py:1725
+msgid "IXF Import Log Entries"
+msgstr "Entradas en el registro de importación IXF"
+
+#: peeringdb_server/models.py:1830
+msgid ""
+"Sepcifies whether an ixp is allowed to add a netixlan entry for this network "
+"via their ixp_member data"
+msgstr ""
+"Especifica si se permite a un IXP para agrega una entrada netixlan a esta "
+"red por medio de su información de miembro_ixp ixp_member"
+
+#: peeringdb_server/models.py:2265 peeringdb_server/models.py:2267
+msgid "Ip address already exists elsewhere"
+msgstr "Dirección IP ya está en uso"
+
+#: peeringdb_server/models.py:2277
+msgid "username"
+msgstr "nombre de usuario"
+
+#: peeringdb_server/models.py:2278
+msgid "Required. Letters, digits and [@.+-/_=|] only."
+msgstr "Obligatorio. Solamente, letras, números y [@.+-/_=|]."
+
+#: peeringdb_server/models.py:2280
+msgid "Enter a valid username."
+msgstr "Por favor, introduzca un nombre de usuario válido."
+
+#: peeringdb_server/models.py:2282
+msgid "email address"
+msgstr "correo electrónico"
+
+#: peeringdb_server/models.py:2283
+msgid "first name"
+msgstr "nombre"
+
+#: peeringdb_server/models.py:2284
+msgid "last name"
+msgstr "apellido"
+
+#: peeringdb_server/models.py:2285
+msgid "staff status"
+msgstr "estatus del personal"
+
+#: peeringdb_server/models.py:2286
+msgid "Designates whether the user can log into admin site."
+msgstr "Indica si el usuario tiene acceso al sitio del administrador."
+
+#: peeringdb_server/models.py:2287
+msgid "active"
+msgstr "activo"
+
+#: peeringdb_server/models.py:2288
+msgid ""
+"Designates whether this user should be treated as active. Unselect this "
+"instead of deleting accounts."
+msgstr ""
+"Indica si el usuario se debe tratar como activo. Anular la selección en vez "
+"de borrar las cuentas."
+
+#: peeringdb_server/models.py:2289
+msgid "date joined"
+msgstr "fecha de afiliación"
+
+#: peeringdb_server/models.py:2292
+msgid "status"
+msgstr "estado"
+
+#: peeringdb_server/models.py:2293
+msgid "language"
+msgstr "idioma"
+
+#: peeringdb_server/models.py:2302
+msgid "user"
+msgstr "usuario"
+
+#: peeringdb_server/models.py:2303
+msgid "users"
+msgstr "usuarios"
+
+#: peeringdb_server/models.py:2495
+msgid "Password Reset Initiated"
+msgstr "Restablecimiento de la contraseña iniciado"
+
+#: peeringdb_server/models.py:2562
+msgid "name of the tool"
+msgstr "nombre de la herramienta"
+
+#: peeringdb_server/models.py:2563
+msgid "json serialization of arguments and options passed"
+msgstr "serialización json de argumentos y opciones omitidos"
+
+#: peeringdb_server/models.py:2564
+msgid "result log"
+msgstr "registro de resultados"
+
+#: peeringdb_server/models.py:2566
+msgid "the user that ran this command"
+msgstr "el usuario que ejecutó este comando"
+
+#: peeringdb_server/models.py:2568
+msgid "command was run at this date and time"
+msgstr "se ejecutó el comando en esta fecha y hora"
+
+#: peeringdb_server/org_admin_views.py:138
+msgid "Organization and all Entities it owns"
+msgstr "Organización y todas las entidades que posee"
+
+#: peeringdb_server/org_admin_views.py:139
+msgid "Any Network"
+msgstr "Cualquier red"
+
+#: peeringdb_server/org_admin_views.py:140
+msgid "Any Facility"
+msgstr "Cualquier instalación"
+
+#: peeringdb_server/org_admin_views.py:141
+msgid "Any Exchange"
+msgstr "Cualquier Punto de Intercambio de tráfico"
+
+#: peeringdb_server/org_admin_views.py:145
+#, python-format
+msgid "Network - %(net_name)s"
+msgstr "Red - %(net_name)s"
+
+#: peeringdb_server/org_admin_views.py:149
+#, python-format
+msgid "Exchange - %(ix_name)s"
+msgstr "Punto de Intercambio -%(ix_name)s"
+
+#: peeringdb_server/org_admin_views.py:153
+#, python-format
+msgid "Facility - %(fac_name)s"
+msgstr "Instalación - %(fac_name)s"
+
+#: peeringdb_server/org_admin_views.py:211
+msgid "Invalid organization specified"
+msgstr "La organización especificada no es válida"
+
+#: peeringdb_server/org_admin_views.py:304
+msgid "Needs to be member or admin"
+msgstr "Tiene que ser un miembro o admin"
+
+#: peeringdb_server/org_admin_views.py:442
+#, python-format
+msgid "%(user_name)s's afilliation request has been approved"
+msgstr "solicitud de %(user_name)s’s para afiliación ha sido aprobado"
+
+#: peeringdb_server/org_admin_views.py:492
+#, python-format
+msgid "%(user_name)s's afilliation request has been denied"
+msgstr "solicitud de %(user_name)s’s para afiliación ha sido denegado"
+
+#: peeringdb_server/serializers.py:122
+msgid "Need to be unique"
+msgstr "Tiene que ser único"
+
+#: peeringdb_server/serializers.py:152
+msgid "This field is required"
+msgstr "Campo obligatorio"
+
+#: peeringdb_server/serializers.py:177
+msgid "We could not find the RiR entry for this ASN"
+msgstr "No pudimos encontrar la entrada de RiR para este ASN"
+
+#: peeringdb_server/serializers.py:230
+#, python-format
+msgid ""
+"Object of type '%(type)s' cannot be created because it's parent entity "
+"'%(parent_tag)s/%(parent_id)s' has not yet been approved"
+msgstr ""
+"Tipo de objeto %(type)s’ no pudo ser creado porque su entidad matriz "
+"%(parent_tag)s/%(parent_id)s todavía no ha sido aprobada"
+
+#: peeringdb_server/serializers.py:234
+#, python-format
+msgid ""
+"Object of type '%(type)s' cannot be created because it's parent entity "
+"'%(parent_tag)s/%(parent_id)s' has been marked as deleted"
+msgstr ""
+"Tipo de objeto %(type)s’ no pudo ser creado porque su entidad matriz "
+"%(parent_tag)s/%(parent_id)s ha sido eliminada"
+
+#: peeringdb_server/templates/account/email_confirm.html:13
+msgid "Confirm your e-mail address"
+msgstr "Por favor, Confirme su correo electrónico"
+
+#: peeringdb_server/templates/account/email_confirm.html:15
+msgid "Please confirm that"
+msgstr "Por favor, confirma que"
+
+#: peeringdb_server/templates/account/email_confirm.html:15
+msgid "is your email-address"
+msgstr "es tu correo electrónico"
+
+#: peeringdb_server/templates/account/email_confirm.html:19
+msgid "Confirm"
+msgstr "Confirmar"
+
+#: peeringdb_server/templates/account/email_confirm.html:23
+msgid ""
+"The email confirmation process for this email address has been terminated, "
+"please re-initate"
+msgstr ""
+"El proceso de confirmación para este dirección de correo ha sido abortado. "
+"Por favor iniciar el proceso otra vez"
+
+#: peeringdb_server/templates/account/email_confirm.html:23
+#: peeringdb_server/templates/site/request-ownership.html:25
+#: peeringdb_server/templates/site/username-retrieve-complete.html:25
+#: peeringdb_server/templates/site/verification_banner.html:11
+#: peeringdb_server/templates/site/verification_banner.html:14
+msgid "here"
+msgstr "aquí"
+
+#: peeringdb_server/templates/account/login.html:7
+msgid "Please use"
+msgstr "Por favor, use"
+
+#: peeringdb_server/templates/account/login.html:7
+msgid "this page"
+msgstr "esta página"
+
+#: peeringdb_server/templates/account/login.html:7
+msgid "instead"
+msgstr "en vez"
+
+#: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/prepare_command.html:18
+#: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/preview_command.html:16
+#: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/run_command.html:16
+msgid "Home"
+msgstr "Regresar a la página de inicio"
+
+#: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/prepare_command.html:22
+msgid "Prepare"
+msgstr "Preparar"
+
+#: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/preview_command.html:20
+msgid "Preview"
+msgstr "Vista Previa"
+
+#: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/run_command.html:20
+msgid "Result"
+msgstr "Resultado"
+
+#: peeringdb_server/templates/email/notify-org-admin-merge.txt:2
+msgid "Merge Notification"
+msgstr "Notificación de fusión"
+
+#: peeringdb_server/templates/email/notify-org-admin-merge.txt:4
+#: peeringdb_server/templates/email/notify-org-admin-merge.txt:8
+msgid "ID"
+msgstr "ID"
+
+#: peeringdb_server/templates/email/notify-org-admin-merge.txt:6
+msgid "has been merged into"
+msgstr "se ha fusionado en"
+
+#: peeringdb_server/templates/email/notify-org-admin-merge.txt:11
+msgid ""
+"All merges are processed manually by peeringdb support staff. If you think "
+"this action has been executed in error please dont hesitate to contact "
+"peeringdb support at"
+msgstr ""
+"Todas las fusiones son procesadas manualmente por el personal de soporte de "
+"peeringdb. Si cree que esta acción se ha ejecutado por error, no dude en "
+"ponerse en contacto con el soporte de peeringdb en"
+
+#: peeringdb_server/templates/email/notify-org-admin-user-affil-approved.txt:3
+#, python-format
+msgid ""
+"%(u_full_name)s's affiliation request to %(o_name)s has been APPROVED by "
+"%(admin_full_name)s."
+msgstr ""
+"La solicitud de afiliación%(u_full_name) s a%(o_name) s ha sido APROBADA por "
+"%(admin_full_name)s."
+
+#: peeringdb_server/templates/email/notify-org-admin-user-affil-approved.txt:7
+#: peeringdb_server/templates/email/notify-org-admin-user-affil-denied.txt:7
+msgid "No further action is required on your part."
+msgstr "No es necesaria ninguna acción adicional."
+
+#: peeringdb_server/templates/email/notify-org-admin-user-affil-approved.txt:9
+#: peeringdb_server/templates/email/notify-org-admin-user-affil-denied.txt:9
+msgid ""
+"As the organization's administrator you may view your organization's user "
+"list here"
+msgstr ""
+"Como administrador de la organización, usted puede ver la lista de usuarios "
+"de su organización aquí"
+
+#: peeringdb_server/templates/email/notify-org-admin-user-affil-denied.txt:3
+#, python-format
+msgid ""
+"%(u_full_name)s's affiliation request to %(o_name)s has been DENIED by "
+"%(admin_full_name)s."
+msgstr ""
+"solicitud de afiliación de %(u_full_name)s’s a %(o_name)s ha sido denegada "
+"por %(admin_full_name)s."
+
+#: peeringdb_server/templates/email/notify-org-admin-user-affil.txt:3
+#, python-format
+msgid "User %(u_name)s (%(u_email)s) wishes to be affiliated to %(o_name)s."
+msgstr "El usuario %(u_name)s (%(u_email)s) desea estar afiliado a %(o_name)s."
+
+#: peeringdb_server/templates/email/notify-org-admin-user-affil.txt:7
+msgid ""
+"As the organization's administrator you may approve or deny this request here"
+msgstr ""
+"Como administrador de la organización, usted puede aprobar o rechazar esta "
+"solicitud aquí"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:3
+msgid "Ownership of organization was automatically granted to user"
+msgstr "La propiedad de la organización se otorgó automáticamente al usuario"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:5
+#: peeringdb_server/templates/site/view_organization_tools.html:496
+#: peeringdb_server/templates/site/view_organization_tools.html:542
+msgid "User"
+msgstr "Usuario"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:7
+#: peeringdb_server/templates/site/view_organization_side.html:113
+msgid "Network"
+msgstr "Red"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:7
+msgid "AS"
+msgstr "AS"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-asnauto-entity-creation.txt:4
+#, python-format
+msgid ""
+"Organization %(o_name)s (%(o_id)s) was automatically created during user "
+"'%(u_name)s's affiliation request to AS%(asn)s"
+msgstr ""
+"La organización %(o_name)s (%(o_id)s) fue creada automáticamente por medio "
+"de la petición de solicitud del usuario ‘%(u_name)s’s a AS%(asn)s"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-asnauto-entity-creation.txt:9
+#, python-format
+msgid ""
+"Network %(n_name)s (%(n_id)s) was automatically created during user "
+"'%(u_name)s's affiliation request to AS%(asn)s"
+msgstr ""
+"Red %(n_name)s (%(n_id)s) fue creada automáticamente durante la solicitud de "
+"afiliación del usuario ‘%(u_name)s’s a AS%(asn)s"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-asnauto-skipvq.txt:2
+#, python-format
+msgid ""
+"User '%(u_name)s' created Network %(n_name)s AS%(n_asn)s (%(n_id)s) under "
+"organzation %(o_name)s (%(o_id)s)."
+msgstr ""
+"El usuario '%(u_name)s' creó Network %(n_name)s AS%(n_asn)s (%(n_id)s) en "
+"organzacion %(o_name)s (%(o_id)s)."
+
+#: peeringdb_server/templates/email/notify-pdb-admin-asnauto-skipvq.txt:6
+msgid ""
+"As the user's email address was succesfully matched against RiR entry data "
+"this network has skipped the verification queue."
+msgstr ""
+"Ya que la dirección de correo electrónico de esta usuario correspondió con "
+"los datos de entrada RiR esta red ha saltado la fila de verificación."
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:5
+#, python-format
+msgid "User %(u_name)s (%(u_email)s) wishes to be affiliated to ASN %(inst)s"
+msgstr "El usuario %(u_name)s (%(u_email)s) desea estar afiliado a %(inst)s"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:10
+msgid "They also provided this organization name in their request"
+msgstr "Ellos también proporcionan este nombre de organización en su solicitud"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:13
+msgid ""
+"There was no entry in our database that matches that ASN, so it is likely "
+"that a network and organzation for it will need to be created."
+msgstr ""
+"No había ninguna entrada en nuestra base de datos que coincida con ese ASN, "
+"así que es probable que tenga que crear una red y una organización."
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:16
+#, python-format
+msgid ""
+"User %(u_name)s (%(u_email)s) wishes to create an organization called "
+"%(o_name)s."
+msgstr ""
+"Usuario %(u_name)s (%(u_email)s) quiere crear una organización llamada s "
+"%(o_name)s."
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:20
+msgid ""
+"There was no entry in our database that matches that organization name and "
+"no ASN was provided, so it is likely that this organization will need to be "
+"created."
+msgstr ""
+"No había ninguna entrada en nuestra base de datos que coincida con ese "
+"nombre de organización y no proporcionó un ASN, así que es probable que "
+"tenga que crear una organización."
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:24
+msgid "You may create a new organization here"
+msgstr "Se puede crear una nueva organización aquí"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:25
+msgid "You may create a new network here"
+msgstr "Se puede crear una nueva red aquí"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:28
+#, python-format
+msgid ""
+"user %(user_name)s (%(u_email)s) wishes to be affiliated to Organization "
+"'%(o_name)s'"
+msgstr ""
+"el usuario %(user_name) s (%(u_email) s) desea estar afiliado a la "
+"Organización '%(o_name) s'"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:32
+msgid "They also provided this ASN in their request"
+msgstr "Ellos también proporcionaron este ASN con su petición"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:35
+msgid ""
+"ATTENTION: This is an ownership request, approving it will grant the user "
+"administration rights over the organization and any entities it owns."
+msgstr ""
+"Atención: Esta es una solicitud de propiedad, aprobándolo otorgará los "
+"derechos de administrador sobre la organización y cualquier entidad que "
+"posea."
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:39
+msgid ""
+"These are the website addresses were able to derive from the organzation and "
+"it's entities"
+msgstr ""
+"Estos son las direcciones de los sitios web que pudimos derivar de la "
+"organización y sus entidades"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:43
+msgid ""
+"These are the email addresses we could fetch from the ASNs belonging to this "
+"organization"
+msgstr ""
+"Estos son las direcciones de correos electrónicos que recogimos de los ASNs "
+"que pertenecen a esta organización"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:47
+msgid "The user is affiliated with other organizations"
+msgstr "El usuario está afiliado a otras organizaciones"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:50
+msgid "ADMIN"
+msgstr "ADMINISTRADOR"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:52
+msgid "MEMBER"
+msgstr "MIEMBRO"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:59
+msgid "Review Affiliation/Ownership Request"
+msgstr "Revisar Solicitud de afiliación/propiedad"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:61
+msgid "Approve Ownership Request and Notify User"
+msgstr "Aprobar la solicitud de Propiedad y notificar el usuario"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:3
+#, python-format
+msgid ""
+"A new '%(entity_type_name)s' has been created and requires your approval."
+msgstr ""
+"Un nuevo ‘%(entity_type_name)s’ has sido creador requiere su aprobación."
+
+#: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:8
+msgid "We retrieved the RiR entry for the specified ASN"
+msgstr "Hemos recogido la entrada RIR para el ASN especificado"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:9
+msgid ""
+"but found no match with the requesting user. Here are the email addresses we "
+"gatehered"
+msgstr ""
+"pero no encontramos nada que coincida con el usuario solicitante. Aquí están "
+"las direcciones de email que recogimos"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:14
+msgid "Requested by user"
+msgstr "Solicitado por usuario"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:16
+msgid "You can go to"
+msgstr "Se puede ir a"
+
+#: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:16
+msgid "to view and approve or deny this entry"
+msgstr "para ver y aprobar o denegar esta entrada"
+
+#: peeringdb_server/templates/email/notify-sponsorship-admin-expiration.txt:2
+#, python-format
+msgid ""
+"%(i_label)s level sponsorship from '%(io_name)s' expired on %(i_end_date)s."
+msgstr ""
+"%(i_label)s nivel de patrocinio de ‘%(io_name)s’ se venció en %(i_end_date)s."
+
+#: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:3
+#, python-format
+msgid ""
+"Your affiliation request to the Organization '%(o_name)s' and it's entities "
+"has been approved."
+msgstr ""
+"Su solicitud de afiliación a la Organización '%(o_name) s' y sus entidades "
+"han sido aprobadas."
+
+#: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:8
+msgid ""
+"This was the result of a manual review of your affiliation request to ASN"
+msgstr ""
+"Este fue el resultado de una revisión manual de su solicitud de afiliación a "
+"ASN"
+
+#: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:10
+msgid ""
+"This was the result of a manual review of your affiliation request to the "
+"organization or one of it's entities."
+msgstr ""
+"Este fue el resultado de una revisión manual de su solicitud de afiliación a "
+"la organización o una de sus entidades."
+
+#: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:13
+msgid "You may view and edit your organization at"
+msgstr "Se puede ver y editar su organización aquí"
+
+#: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:15
+msgid ""
+"If you have questions, please don't hesitate to contact peeringdb support at"
+msgstr ""
+"Si tiene alguna pregunta, no dude en ponerse en contacto con el servicio de "
+"asistencia de peeringdb en"
+
+#: peeringdb_server/templates/email/password-reset.txt:2
+msgid ""
+"You initiated a password reset on PeeringDB 2 - Please follow the url below "
+"to reset your password."
+msgstr ""
+"Usted inició un restablecimiento de contraseña en Peering DB 1- Por favor "
+"siga el URL abajo para restablecer su contraseña."
+
+#: peeringdb_server/templates/email/password-reset.txt:6
+msgid ""
+"If you did not initiate the password reset request, please ignore this email."
+msgstr ""
+"En caso de que usted no usted no haya solicitado un restablecimiento de "
+"contraseña, por favor ignore este correo electrónico."
+
+#: peeringdb_server/templates/email/username-retrieve.txt:2
+msgid "You requested a username retrieval on PeeringDB for the email address"
+msgstr ""
+"Pidió recuperar su nombre de usuario de PeeringDB para la dirección de "
+"correo electrónico"
+
+#: peeringdb_server/templates/email/username-retrieve.txt:3
+msgid ""
+"Please follow the url below to view any usernames associated with your email."
+msgstr ""
+"Por favor siga la siguiente url para ver cualquier nombre de usuario "
+"asociadosa su correo electrónico."
+
+#: peeringdb_server/templates/email/username-retrieve.txt:7
+msgid "If you did not request username retrieval, you can ignore this email."
+msgstr ""
+"En el caso que no pidió una recuperación de nombre de usuario por favor "
+"ignore este correo electrónico."
+
+#: peeringdb_server/templates/site/advanced-search-fac.html:21
+msgid "Address"
+msgstr "Dirección"
+
+#: peeringdb_server/templates/site/advanced-search-fac.html:30
+msgid "Postal"
+msgstr "Código Postal"
+
+#: peeringdb_server/templates/site/advanced-search-fac.html:55
+#: peeringdb_server/templates/site/advanced-search-ix.html:29
+#: peeringdb_server/templates/site/advanced-search-ix.html:41
+#: peeringdb_server/templates/site/advanced-search-ix.html:66
+#: peeringdb_server/templates/site/advanced-search-net.html:20
+#: peeringdb_server/templates/site/advanced-search-net.html:31
+#: peeringdb_server/templates/site/advanced-search-net.html:43
+#: peeringdb_server/templates/site/advanced-search-net.html:78
+#: peeringdb_server/templates/site/advanced-search-net.html:90
+msgid "click to select multiple"
+msgstr "haga clic para seleccionar varias"
+
+#: peeringdb_server/templates/site/advanced-search-fac.html:103
+#: peeringdb_server/templates/site/advanced-search-ix.html:79
+#: peeringdb_server/templates/site/advanced-search-net.html:104
+msgid "Reset"
+msgstr "Reiniciar"
+
+#: peeringdb_server/templates/site/advanced-search-fac.html:104
+#: peeringdb_server/templates/site/advanced-search-ix.html:80
+#: peeringdb_server/templates/site/advanced-search-net.html:105
+msgid "Search"
+msgstr "Buscar"
+
+#: peeringdb_server/templates/site/advanced-search-fac.html:162
+#: peeringdb_server/templates/site/advanced-search-ix.html:110
+#: peeringdb_server/templates/site/advanced-search-net.html:165
+msgid "Nothing matched your search criteria."
+msgstr "No encontramos nada que corresponda a su criterio de búsqueda."
+
+#: peeringdb_server/templates/site/advanced-search-fac.html:171
+#: peeringdb_server/templates/site/advanced-search-ix.html:119
+#: peeringdb_server/templates/site/advanced-search-net.html:174
+#, python-format
+msgid ""
+"...More than %(row_limit)s entries matched your query, refine your request..."
+msgstr ""
+"... Más de %(row_limit) s entradas coinciden con su consulta, refinan su "
+"solicitud ..."
+
+#: peeringdb_server/templates/site/advanced-search-ix.html:41
+#: peeringdb_server/templates/site/view_organization_tools.html:394
+#: peeringdb_server/views.py:1046
+msgid "Continental Region"
+msgstr "Región Continental"
+
+#: peeringdb_server/templates/site/advanced-search-ix.html:57
+msgid "IP Block"
+msgstr "Bloque de IPes"
+
+#: peeringdb_server/templates/site/advanced-search-net.html:58
+#: peeringdb_server/templates/site/view_organization_tools.html:192
+#: peeringdb_server/views.py:1231
+msgid "Primary ASN"
+msgstr "ASN Principal"
+
+#: peeringdb_server/templates/site/advanced-search-net.html:68
+msgid "IRR Macro"
+msgstr "Macro IRR"
+
+#: peeringdb_server/templates/site/advanced-search-net.html:78
+msgid "General Peering Policy"
+msgstr "Política General de Peering"
+
+#: peeringdb_server/templates/site/advanced-search-net.html:90
+#: peeringdb_server/templates/site/view_organization_tools.html:237
+#: peeringdb_server/views.py:1290
+msgid "Geographic Scope"
+msgstr "Alcance Geográfico"
+
+#: peeringdb_server/templates/site/aup.html:7
+msgid ""
+"The PeeringDB Acceptable Use Policy explicitly states the parameters that "
+"copyright extends to:"
+msgstr ""
+"La política de uso aceptable de PeeringDB declara explícitamente los "
+"parámetros que los derechos de autor extienden hasta:"
+
+#: peeringdb_server/templates/site/aup.html:9
+msgid ""
+"Except for Internet operational purposes approved by PeeringDB, no part of "
+"the PeeringDB data may be reproduced, stored in a retrieval system, or "
+"transmitted, in any form or by any means, electronic, mechanical, recording, "
+"or otherwise, without prior permission of PeeringDB on behalf of the "
+"copyright holders. Any use of this material to target advertising or similar "
+"activities is explicitly forbidden and will be prosecuted. PeeringDB "
+"requests to be notified of any such activities or suspicions thereof. The "
+"PeeringDB data may not be passed on in bulk to any other person or "
+"organization unless approved by PeeringDB."
+msgstr ""
+"Excepto fines operaciones de Internet aprobados por PeeringDB, es prohibido "
+"reproducir, almacenar en un sistema de recuperación de cualquier parte de "
+"PeeringDB en cualquier forma , electrónica, mecánica, de grabación u otra "
+"diferente sino el permiso previo de PeeringDB por parte de los dueños de los "
+"derecho de autor. Cualquier uso de este material para hacer anuncios o "
+"actividades similares es explícitamente prohibido y será procesado "
+"legalmente Peering DB pide que se le notifique de cualquier actividad "
+"sospecha. Los dato de la PeeringDB no pueden ser compartidos al por mayor a "
+"ninguna persona u organización sin la aprobación de PeeringDB."
+
+#: peeringdb_server/templates/site/aup.html:19
+msgid ""
+"Any request to pass on information to any other person or organization will "
+"be evaluated on the statement of purpose outlined by the requestor."
+msgstr ""
+"Cualquier solicitud de compartir información a cualquier otra persona u "
+"organización será evaluado por la declaración de propósito descrito por el "
+"solicitante."
+
+#: peeringdb_server/templates/site/aup.html:22
+msgid ""
+"Users will not be able to download the full contents of the database unless "
+"the intended use is for \"Internet operational issues\". These words are "
+"tightly defined and would include network trouble-shooting, abuse reporting, "
+"and Internet research and analysis. It would not include compiling marketing "
+"lists, demographic mapping, or any other commercial application."
+msgstr ""
+"Los usuarios no podrán descargar el contenido completo de la base de datos a "
+"menos que sea para fines de “asuntos operaciones de Internet”. Estas palabra "
+"son estrictamente definidas y incluiría resolución de problemas de una red, "
+"reclamando abusos, y investigación y análisis del Internet. No incluye la "
+"compilación de listas para la mercadotecnia, la creación de mapas "
+"demográficas, o cualquier otro tipo de aplicación comercial."
+
+#: peeringdb_server/templates/site/aup.html:29
+msgid ""
+"Each request would be carefully considered in light of the PeeringDB "
+"Acceptable Use Policy."
+msgstr ""
+"Cada solicitud será considerada teniendo en cuenta la política de uso "
+"aceptable de la PeeringDB."
+
+#: peeringdb_server/templates/site/entity_create.html:4
+#, python-format
+msgid ""
+"Add a new %(entity_name)s to your Organization. Note that the newly created "
+"%(entity_name)s will need to be approved by PeeringDB staff before it will "
+"appear in the search results or the API listings"
+msgstr ""
+"Añadir una nueva s %(entity_name)s a su organización. Nota que "
+"%(entity_name)s recién creados tendrán que ser aprobados por el personal de "
+"PeeringDB antes de que aparezcan en los resultados de la búsqueda o la lista "
+"de APIs"
+
+#: peeringdb_server/templates/site/entity_create.html:10
+msgid "Submit"
+msgstr "Enviar"
+
+#: peeringdb_server/templates/site/error.html:23
+msgid "404 - Not Found"
+msgstr "404 - No Encontrado"
+
+#: peeringdb_server/templates/site/error.html:24
+msgid "The page you requested does not exist."
+msgstr "La pagina que pidió no existe."
+
+#: peeringdb_server/templates/site/error.html:26
+msgid "403 - Forbidden"
+msgstr "403 Prohibido"
+
+#: peeringdb_server/templates/site/error.html:27
+msgid "You dont have permissions to view this page."
+msgstr "No tiene permisos para ver esta página."
+
+#: peeringdb_server/templates/site/error.html:29
+msgid "Take me home"
+msgstr "Regresar a la página de inicio"
+
+#: peeringdb_server/templates/site/footer.html:9
+msgid "All Rights Reserved. By using this service, you agree to adhere to our"
+msgstr ""
+"Todos los derechos reservados. Mediante el uso de este servicio, usted "
+"acepta adherirse a nuestra"
+
+#: peeringdb_server/templates/site/footer.html:10
+msgid "AUP"
+msgstr "AUP"
+
+#: peeringdb_server/templates/site/footer.html:23
+#: peeringdb_server/templates/site/sponsorships.html:12
+#: peeringdb_server/templates/site/sponsorships.html:28
+#: peeringdb_server/templates/site/sponsorships.html:43
+#: peeringdb_server/templates/site/sponsorships.html:56
+msgid "Sponsors"
+msgstr "Patrocinadores"
+
+#: peeringdb_server/templates/site/footer.html:26
+#: peeringdb_server/templates/site/partnerships.html:13
+msgid "Partners"
+msgstr "Socios/Colaboradores"
+
+#: peeringdb_server/templates/site/footer.html:29
+msgid "Resources"
+msgstr "Recursos"
+
+#: peeringdb_server/templates/site/footer.html:33
+msgid "Documentation"
+msgstr "Documentación"
+
+#: peeringdb_server/templates/site/footer.html:36
+msgid "API Documentation"
+msgstr "Documentación API"
+
+#: peeringdb_server/templates/site/footer.html:39
+msgid "Contact Us"
+msgstr "Contáctenos"
+
+#: peeringdb_server/templates/site/footer.html:43
+msgid "Global System Statistics"
+msgstr "Estadísticas del Sistema Global"
+
+#: peeringdb_server/templates/site/footer.html:45
+msgid "Peering Networks"
+msgstr "Redes de Peering"
+
+#: peeringdb_server/templates/site/footer.html:46
+msgid "Public Exchange Points"
+msgstr "Puntos de intercambio público"
+
+#: peeringdb_server/templates/site/footer.html:47
+msgid "Unique Public Exchange Presences"
+msgstr "Presencias únicas de intercambio público"
+
+#: peeringdb_server/templates/site/footer.html:48
+msgid "Private Facilities"
+msgstr "Instalaciones privadas"
+
+#: peeringdb_server/templates/site/footer.html:49
+msgid "Private Facility Presences"
+msgstr "Presencias de instalaciones privadas"
+
+#: peeringdb_server/templates/site/header.html:50
+msgid "Search here for a network, IX, or facility."
+msgstr "Busca aquí para una red, IX, o instalación."
+
+#: peeringdb_server/templates/site/header.html:53
+msgid "Advanced Search"
+msgstr "Búsqueda avanzada"
+
+#: peeringdb_server/templates/site/header.html:64
+msgid "pending"
+msgstr "pendiente"
+
+#: peeringdb_server/templates/site/header.html:66
+msgid "unverified"
+msgstr "sin verificar"
+
+#: peeringdb_server/templates/site/header.html:79
+msgid "Profile"
+msgstr "Perfil"
+
+#: peeringdb_server/templates/site/header.html:80
+msgid "Logout"
+msgstr "Cerrar sesión"
+
+#: peeringdb_server/templates/site/header.html:84
+msgid "Register"
+msgstr "Registrarse"
+
+#: peeringdb_server/templates/site/header.html:84
+#: peeringdb_server/templates/site/view_exchange_bottom.html:40
+#: peeringdb_server/templates/site/view_exchange_bottom.html:251
+#: peeringdb_server/templates/site/view_exchange_side.html:38
+#: peeringdb_server/templates/site/view_facility_bottom.html:31
+#: peeringdb_server/templates/site/view_facility_side.html:27
+#: peeringdb_server/templates/site/view_network_side.html:43
+#: peeringdb_server/templates/site/view_organization_side.html:40
+#: peeringdb_server/templates/site/view_organization_side.html:108
+#: peeringdb_server/templates/site/view_organization_side.html:176
+msgid "or"
+msgstr "o"
+
+#: peeringdb_server/templates/site/header.html:84
+#: peeringdb_server/templates/site/login.html:21
+msgid "Login"
+msgstr "Ingresar"
+
+#: peeringdb_server/templates/site/index.html:34
+msgid "PeeringDB facilitates the exchange of information related to Peering."
+msgstr ""
+"El PeeringDB facilita el intercambio de información relacionada con Peering."
+
+#: peeringdb_server/templates/site/index.html:38
+msgid ""
+"Specifically, we are a database of networks that are peering, where they are "
+"peering, and if they are likely to peer with you. If you don't know what "
+"peering is, and/or you don't currently engage in peering, this probably "
+"won't have any meaning for you."
+msgstr ""
+"Más específicamente, somos una base de datos de redes que hacen peering, "
+"donde lo hacen, y si hay una posibilidad que hagan peering con usted. Si "
+"usted no conoce que es peering y/o no se encuentra actualmente involucrado "
+"en peering, probablemente no tenga ningún significado para usted."
+
+#: peeringdb_server/templates/site/index.html:44
+msgid ""
+"You are currently viewing a read-only view of the data contained here. If "
+"you are a peering network who would like to create an account,"
+msgstr ""
+"Actualmente está viendo una vista de solo lectura de los datos aquí "
+"contenidos. Si tiene una red de peering y desea crear una cuenta,"
+
+#: peeringdb_server/templates/site/index.html:44
+msgid "you may register for one here"
+msgstr "puede registrarse aquí"
+
+#: peeringdb_server/templates/site/index.html:44
+msgid "Please register ONLY if you are a peering network."
+msgstr "Por favor regístrese SOLO si es una red de peering."
+
+#: peeringdb_server/templates/site/index.html:44
+msgid "You may also"
+msgstr "También se puede"
+
+#: peeringdb_server/templates/site/index.html:44
+msgid "reset lost passwords here"
+msgstr "restablecer contraseñas olvidada aquí"
+
+#: peeringdb_server/templates/site/index.html:48
+msgid "Still have questions?"
+msgstr "¿Todavía tiene preguntas o dudas?"
+
+#: peeringdb_server/templates/site/index.html:48
+msgid "Read our FAQ"
+msgstr "Lea nuestra FAQ"
+
+#: peeringdb_server/templates/site/index.html:52
+msgid "MOST RECENT UPDATES"
+msgstr "ACTUALIZACIONES MÁS RECIENTES"
+
+#: peeringdb_server/templates/site/index.html:55
+msgid "NETWORKS"
+msgstr "REDES"
+
+#: peeringdb_server/templates/site/index.html:66
+msgid "FACILITIES"
+msgstr "INSTALACIONES"
+
+#: peeringdb_server/templates/site/index.html:77
+msgid "EXCHANGES"
+msgstr "PUNTOS DE INTERCAMBIO"
+
+#: peeringdb_server/templates/site/login.html:15
+#: peeringdb_server/templates/site/register.html:34
+msgid "Username"
+msgstr "Nombre de usuario"
+
+#: peeringdb_server/templates/site/login.html:18
+#: peeringdb_server/templates/site/password-reset.html:42
+#: peeringdb_server/templates/site/register.html:41
+#: peeringdb_server/templates/site/verify.html:175
+#: peeringdb_server/templates/site/verify.html:203
+msgid "Password"
+msgstr "Contraseña"
+
+#: peeringdb_server/templates/site/login.html:24
+msgid "I forgot my password .."
+msgstr "Olvidé mi contraseña."
+
+#: peeringdb_server/templates/site/login.html:25
+msgid "I forgot my username .."
+msgstr "Olvidé mi nombre de usuario."
+
+#: peeringdb_server/templates/site/oauth-login.html:6
+msgid "Login with oAuth"
+msgstr "Inicia sesión con oAuth"
+
+#: peeringdb_server/templates/site/oauth-login.html:8
+msgid "Login with your google account"
+msgstr "Inicie sesión en su cuenta de Google"
+
+#: peeringdb_server/templates/site/oauth-login.html:9
+msgid "Login with your facebook account"
+msgstr "Inicia sesión con tu cuenta de Facebook"
+
+#: peeringdb_server/templates/site/password-reset.html:15
+msgid ""
+"We've sent instructions to your email address, provided it is in our system. "
+"You have 30 minutes to complete the process."
+msgstr ""
+"Hemos enviado instrucciones a su correo electrónico, dado que está "
+"registrado en nuestro sistema. Usted tiene 30 minutos para realizar este "
+"proceso."
+
+#: peeringdb_server/templates/site/password-reset.html:19
+#: peeringdb_server/templates/site/register.html:62
+#: peeringdb_server/templates/site/username-retrieve.html:21
+#: peeringdb_server/templates/site/verify.html:168
+#: peeringdb_server/templates/site/view_network_bottom.html:149
+#: peeringdb_server/templates/site/view_organization_tools.html:499
+#: peeringdb_server/templates/site/view_organization_tools.html:545
+msgid "Email"
+msgstr "Correo electrónico"
+
+#: peeringdb_server/templates/site/password-reset.html:24
+#: peeringdb_server/templates/site/password-reset.html:55
+msgid "Reset Password"
+msgstr "Restablecer contraseña"
+
+#: peeringdb_server/templates/site/password-reset.html:33
+msgid "The password for your account"
+msgstr "La contraseña para su cuenta"
+
+#: peeringdb_server/templates/site/password-reset.html:33
+msgid "has been reset, proceed to the"
+msgstr "ha sido cambiado, proceda a la"
+
+#: peeringdb_server/templates/site/password-reset.html:33
+msgid "login page"
+msgstr "la página de inicio"
+
+#: peeringdb_server/templates/site/password-reset.html:49
+msgid "Verify Password"
+msgstr "Verificar contraseña"
+
+#: peeringdb_server/templates/site/password-reset.html:61
+msgid "The security token you provided is invalid, please"
+msgstr "El token de seguridad que proporcionó no es válido, por favor"
+
+#: peeringdb_server/templates/site/password-reset.html:61
+msgid "try again"
+msgstr "intente de nuevo"
+
+#: peeringdb_server/templates/site/password-reset.html:63
+msgid "The password reset process has expired, please"
+msgstr "El proceso de restablecimiento de contraseña ha expirado, por favor"
+
+#: peeringdb_server/templates/site/password-reset.html:63
+#: peeringdb_server/views.py:588
+msgid "initiate again"
+msgstr "intente de nuevo"
+
+#: peeringdb_server/templates/site/register.html:11
+msgid "Account Created"
+msgstr "Cuenta Creada"
+
+#: peeringdb_server/templates/site/register.html:13
+msgid ""
+"Your account was created, but won't have full access until we have reviewed "
+"it. Thank you for your patience."
+msgstr ""
+"Su cuenta fue creada, pero no tendrá acceso completo hasta que la hayamos "
+"revisado. Gracias por su paciencia."
+
+#: peeringdb_server/templates/site/register.html:16
+msgid "Return Home"
+msgstr "Regresar a la página de inicio"
+
+#: peeringdb_server/templates/site/register.html:30
+msgid "Create account"
+msgstr "Crear una cuenta"
+
+#: peeringdb_server/templates/site/register.html:48
+msgid "Confirm password"
+msgstr "Confirmar la contraseña"
+
+#: peeringdb_server/templates/site/register.html:55
+msgid ""
+"For speedy validation, it is required that you use a work e-mail address. If "
+"you plan to register your ASN with PeeringDB, it is recommended that you use "
+"an email-address that exists in your ASN's public contact details."
+msgstr ""
+"Para una validación rápida, es necesario que use una dirección de correo "
+"electrónico de trabajo. Si planea registrar su ASN con PeeringDB, se "
+"recomienda que use una dirección de correo electrónico que esté presente en "
+"los datos de contactos públicos de su ASN."
+
+#: peeringdb_server/templates/site/register.html:69
+msgid "First name"
+msgstr "Nombre"
+
+#: peeringdb_server/templates/site/register.html:75
+msgid "Last name"
+msgstr "Apellido(s)"
+
+#: peeringdb_server/templates/site/register.html:81
+#: peeringdb_server/templates/site/view_organization_tools.html:612
+msgid "Create"
+msgstr "Crear"
+
+#: peeringdb_server/templates/site/request-ownership.html:15
+#: peeringdb_server/templates/site/request-ownership.html:23
+msgid "Thank you"
+msgstr "Gracias"
+
+#: peeringdb_server/templates/site/request-ownership.html:17
+#, python-format
+msgid ""
+"We have received your ownership request for %(o_name)s and will review it."
+msgstr ""
+"Hemos recibido su solicitud de propiedad para %(o_name)s y la revisaremos."
+
+#: peeringdb_server/templates/site/request-ownership.html:24
+msgid ""
+"We have verified your relationship with this entity and you have "
+"successfully claimed ownership. You may view / edit"
+msgstr ""
+"Hemos verificado su relación con esta entidad y ha reclamado la propiedad "
+"con éxito. Puede ver / editar"
+
+#: peeringdb_server/templates/site/request-ownership.html:37
+#: peeringdb_server/templates/site/request-ownership.html:53
+msgid "Request Ownership"
+msgstr "Solicitar Propiedad"
+
+#: peeringdb_server/templates/site/request-ownership.html:48
+msgid ""
+"Please only request ownership if you are certain that you have the rights to "
+"do so. Are you sure you wish to continue?"
+msgstr ""
+"Por favor, sólo solicitar propiedad si está seguro de que usted tiene los "
+"derechos para hacerlo. ¿Está seguro que desea continuar?"
+
+#: peeringdb_server/templates/site/request-ownership.html:61
+msgid "Only verified users may request ownership to an organization"
+msgstr ""
+"Sólo usuarios verificados pueden solicitar la propiedad a una organización"
+
+#: peeringdb_server/templates/site/sponsorships.html:71
+msgid "Become a Sponsor"
+msgstr "Conviértase en patrocinador"
+
+#: peeringdb_server/templates/site/username-retrieve-complete.html:12
+msgid "These are the usernames associated with your email address"
+msgstr "Estos son los nombres de usuarios asociados con su email"
+
+#: peeringdb_server/templates/site/username-retrieve-complete.html:21
+msgid ""
+"The secret you provided does not match the secret required to complete this "
+"process"
+msgstr ""
+"El secreto que proporcionó no corresponde con el secreto requerido para "
+"cumplir este proceso"
+
+#: peeringdb_server/templates/site/username-retrieve-complete.html:23
+msgid "Note"
+msgstr "Nota"
+
+#: peeringdb_server/templates/site/username-retrieve-complete.html:23
+msgid ""
+"You should complete the process in the same browser that you originally "
+"initiated it in."
+msgstr ""
+"Debe completar el proceso en el mismo navegador en que inició originalmente."
+
+#: peeringdb_server/templates/site/username-retrieve-complete.html:25
+msgid "Please re-initiate it"
+msgstr "Por favor reiniciarlo"
+
+#: peeringdb_server/templates/site/username-retrieve.html:14
+msgid ""
+"This form allows you to retrieve the usernames associated with your email "
+"address."
+msgstr ""
+"Este formulario le permite recuperar los nombres de usuario asociados a su "
+"dirección de correo electrónico."
+
+#: peeringdb_server/templates/site/username-retrieve.html:17
+msgid ""
+"We've sent instructions to your email address, provided it is in our system."
+msgstr ""
+"Hemos enviado instrucciones a su dirección de correo electrónico, dado que "
+"se encuentre en nuestro sistema."
+
+#: peeringdb_server/templates/site/username-retrieve.html:26
+msgid "Retrieve username(s)"
+msgstr "Recuperar nombre (s) de usuario"
+
+#: peeringdb_server/templates/site/verification_banner.html:6
+msgid ""
+"Your user account has not been affiliated with any Organization yet, and "
+"will have limited access to some of the data (such as non-public network "
+"contact information)."
+msgstr ""
+"Su cuenta de usuario no ha estado afiliada a una organización todavía y "
+"habrá acceso limitado a algunos de los datos (como información de contacto "
+"de la red no pública)."
+
+#: peeringdb_server/templates/site/verification_banner.html:11
+msgid ""
+"Please take the time to confirm your email address and request affiliation"
+msgstr ""
+"Por favor tome el tiempo para confirmar tu dirección de correo electrónico y "
+"solicitar afiliación"
+
+#: peeringdb_server/templates/site/verification_banner.html:14
+msgid "You may request affiliation to an Organization or ASN"
+msgstr "Usted puede solicitar la afiliación a una organización o ASN"
+
+#: peeringdb_server/templates/site/verify.html:17
+msgid "Select language"
+msgstr "Seleccione el idioma"
+
+#: peeringdb_server/templates/site/verify.html:18
+msgid "Language preference saved"
+msgstr "Idioma de preferencia ha sido guardado"
+
+#: peeringdb_server/templates/site/verify.html:29
+msgid "Set language preference"
+msgstr "Establecer preferencia de idioma"
+
+#: peeringdb_server/templates/site/verify.html:38
+msgid "You have confirmed your email address!"
+msgstr "Usted ha confirmado su dirección de correo electrónico!"
+
+#: peeringdb_server/templates/site/verify.html:42
+msgid "Attention!"
+msgstr "¡Atención!"
+
+#: peeringdb_server/templates/site/verify.html:44
+msgid ""
+"Please specify an email address for your account, we won't be able to "
+"proceed with verification until you do."
+msgstr ""
+"Por favor especifique una dirección de correo electrónico para su cuenta, no "
+"podremos proceder con la verificación hasta que lo haga."
+
+#: peeringdb_server/templates/site/verify.html:47
+msgid "Email Confirmation"
+msgstr "Confirmación de Correo Electrónico"
+
+#: peeringdb_server/templates/site/verify.html:49
+msgid ""
+"Before getting access to any other features, you need to confirm your email "
+"address."
+msgstr ""
+"Antes de obtener acceso a otras funciones, hay que confirmar su dirección de "
+"correo electrónico."
+
+#: peeringdb_server/templates/site/verify.html:50
+msgid "We have sent you a message containing the confirmation link."
+msgstr "Le hemos enviado un mensaje que contiene el enlace de confirmación."
+
+#: peeringdb_server/templates/site/verify.html:60
+msgid ""
+"You won't have full access until we or the organization you are affiliated "
+"with have reviewed your account. Thank you for your patience."
+msgstr ""
+"No tendrá acceso completo hasta que nosotros o la organización con la que "
+"está afiliado hayamos revisado su cuenta. Gracias por su paciencia."
+
+#: peeringdb_server/templates/site/verify.html:74
+msgid "Affiliate with organization"
+msgstr "Afiliar con la organización"
+
+#: peeringdb_server/templates/site/verify.html:79
+#, python-format
+msgid "Your affiliation with %(ar_name)s is pending approval."
+msgstr "Su afiliación con s %(ar_name)s está pendiente de aprobación."
+
+#: peeringdb_server/templates/site/verify.html:81
+#, python-format
+msgid "Your affiliation with %(ar_name)s was denied"
+msgstr "Su afiliación con s %(ar_name)s fue denegada"
+
+#: peeringdb_server/templates/site/verify.html:83
+#, python-format
+msgid "Your affiliation with %(ar_name)s was approved"
+msgstr "Su afiliación con s %(ar_name)s fue aprobada"
+
+#: peeringdb_server/templates/site/verify.html:91
+msgid ""
+"To affiliate with an existing organization, please enter the ASN or "
+"organization name below."
+msgstr ""
+"Para afiliar con una organización existente, por favor introduzca el ASN o "
+"el nombre de la organización abajo."
+
+#: peeringdb_server/templates/site/verify.html:95
+msgid ""
+"To register a new network organization, please enter the ASN and "
+"organization name below."
+msgstr ""
+"Pararegistrar una nueva red, por favor introduzca el ASN o el nombre de la "
+"organización abajo."
+
+#: peeringdb_server/templates/site/verify.html:99
+msgid ""
+"To register a new facility or exchange organization, please enter the "
+"organization name below (ASN is optional)."
+msgstr ""
+"Para registrar una nueva instalación, por favor introduzco el nombre de la "
+"organización abajo(ASN es opcional)."
+
+#: peeringdb_server/templates/site/verify.html:117
+msgid "Affiliate"
+msgstr "Afiliado/Socio"
+
+#: peeringdb_server/templates/site/verify.html:120
+#: peeringdb_server/templates/site/view_organization_tools.html:329
+msgid "In case the RiR entry cannot be retrieved for your ASN, please contact"
+msgstr ""
+"EN el caso de que no se pudiera recuperar la entrada RiR para su ASN, por "
+"favor contacte"
+
+#: peeringdb_server/templates/site/verify.html:121
+msgid "for assistance"
+msgstr "para ayuda"
+
+#: peeringdb_server/templates/site/verify.html:125
+msgid "Existing affiliations"
+msgstr "Afiliaciones actuales"
+
+#: peeringdb_server/templates/site/verify.html:128
+msgid "Your affiliation with"
+msgstr "Su afiliación con"
+
+#: peeringdb_server/templates/site/verify.html:128
+msgid "has been approved"
+msgstr "ha sido aprobado"
+
+#: peeringdb_server/templates/site/verify.html:141
+msgid "Manage OAuth Applications"
+msgstr "Administrar aplicaciones OAuth"
+
+#: peeringdb_server/templates/site/verify.html:156
+msgid "Change email address"
+msgstr "Cambiar sus correos electrónicos"
+
+#: peeringdb_server/templates/site/verify.html:159
+msgid ""
+"For speedy validation, it is required that you use a work e-mail address. If "
+"you plan to register your ASN with PeeringDB, it is recommended that you use "
+"an email-address that exists in the ASN's public contact details."
+msgstr ""
+"Para una validación rápida, es necesario que use una dirección de correo "
+"electrónico de trabajo. Si planea registrar su ASN con PeeringDB, se "
+"recomienda que use una dirección de correo electrónico que esté presente en "
+"los datos de contactos públicos de su ASN."
+
+#: peeringdb_server/templates/site/verify.html:180
+msgid "Change Email"
+msgstr "Cambiar su e-mail"
+
+#: peeringdb_server/templates/site/verify.html:191
+msgid "Change password"
+msgstr "Cambiar contraseña"
+
+#: peeringdb_server/templates/site/verify.html:192
+msgid "Password changed"
+msgstr "Contraseña cambiada"
+
+#: peeringdb_server/templates/site/verify.html:195
+msgid "Current Password"
+msgstr "Contraseña actual"
+
+#: peeringdb_server/templates/site/verify.html:211
+msgid "Password Verification"
+msgstr "Verificación de contraseña"
+
+#: peeringdb_server/templates/site/view.html:26
+msgid "Pending Review"
+msgstr "Revisión Pendiente"
+
+#: peeringdb_server/templates/site/view.html:31
+msgid "Edit"
+msgstr "﻿Editar"
+
+#: peeringdb_server/templates/site/view.html:34
+#: peeringdb_server/templates/site/view.html:247
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: peeringdb_server/templates/site/view.html:35
+#: peeringdb_server/templates/site/view.html:248
+#: peeringdb_server/templates/site/view_organization_tools.html:576
+#: peeringdb_server/templates/site/view_organization_tools.html:694
+msgid "Save"
+msgstr "Guardar"
+
+#: peeringdb_server/templates/site/view.html:56
+msgid ""
+"Some of the data on this page is incomplete, please update the fields marked "
+"with"
+msgstr ""
+"Algunos de los datos en esta página están incompletos, por favor actualice "
+"los campos marcados con"
+
+#: peeringdb_server/templates/site/view.html:58
+msgid "to improve data quality"
+msgstr "para mejorar la calidad de datos"
+
+#: peeringdb_server/templates/site/view.html:200
+msgid "Address failed validation."
+msgstr "La dirección falló validación."
+
+#: peeringdb_server/templates/site/view.html:202
+msgid "Geocoding error"
+msgstr "Error de geocodificación"
+
+#: peeringdb_server/templates/site/view.html:206
+msgid ""
+"Geocode data for this entity could not obtained at this point. This is done "
+"automatically upon address field changes."
+msgstr ""
+"No se pudieron obtener los datos de Geocodigo para esta entidad a este "
+"tiempo. Esto se hace automáticamente al hacer cambios al los campos de "
+"direcciones."
+
+#: peeringdb_server/templates/site/view.html:209
+msgid "Updated geocode data for this entity will be obtained shortly"
+msgstr ""
+"ILs datos actualizados de Geocodigo para esta entidad se obtendrá pronto"
+
+#: peeringdb_server/templates/site/view_exchange_assets.html:51
+#: peeringdb_server/templates/site/view_exchange_bottom.html:83
+#: peeringdb_server/templates/site/view_exchange_bottom.html:190
+msgid "IXF Member Export URL"
+msgstr "IXF miembro exportación URL"
+
+#: peeringdb_server/templates/site/view_exchange_assets.html:78
+#: peeringdb_server/templates/site/view_exchange_bottom.html:134
+msgid "Prefix"
+msgstr "Prefijo"
+
+#: peeringdb_server/templates/site/view_exchange_assets.html:82
+#: peeringdb_server/templates/site/view_organization_tools.html:681
+msgid "Add"
+msgstr "Añadir"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:26
+#: peeringdb_server/templates/site/view_exchange_bottom.html:170
+#: peeringdb_server/views.py:1136
+msgid "DOT1Q"
+msgstr "DOT1Q"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:29
+#: peeringdb_server/templates/site/view_exchange_bottom.html:180
+#: peeringdb_server/views.py:1131
+msgid "MTU"
+msgstr "MTU"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:39
+#: peeringdb_server/templates/site/view_exchange_bottom.html:250
+#: peeringdb_server/templates/site/view_exchange_side.html:33
+#: peeringdb_server/templates/site/view_facility_bottom.html:30
+#: peeringdb_server/templates/site/view_facility_side.html:26
+#: peeringdb_server/templates/site/view_network_side.html:42
+#: peeringdb_server/templates/site/view_network_side.html:234
+#: peeringdb_server/templates/site/view_organization_side.html:39
+#: peeringdb_server/templates/site/view_organization_side.html:107
+#: peeringdb_server/templates/site/view_organization_side.html:175
+msgid "Nothing matched your filter"
+msgstr "Nada coincide con su filtro"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:40
+#: peeringdb_server/templates/site/view_exchange_bottom.html:251
+#: peeringdb_server/templates/site/view_exchange_side.html:36
+#: peeringdb_server/templates/site/view_facility_bottom.html:31
+#: peeringdb_server/templates/site/view_facility_side.html:27
+#: peeringdb_server/templates/site/view_network_side.html:43
+#: peeringdb_server/templates/site/view_network_side.html:235
+#: peeringdb_server/templates/site/view_organization_side.html:40
+#: peeringdb_server/templates/site/view_organization_side.html:108
+#: peeringdb_server/templates/site/view_organization_side.html:176
+msgid "You may filter by"
+msgstr "Se puede filtrar por"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:40
+msgid "dot1q"
+msgstr "dot1q"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:44
+msgid "IXLAN"
+msgstr "IXLAN"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:44
+msgid ""
+"ATTENTION: Any network relationships to the exchange via this LAN will be "
+"removed as well"
+msgstr ""
+"ATENCIÓN: cualquier relación de red con el intercambio a través de esta LAN "
+"se eliminará también"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:97
+msgid "IXLAN Prefix"
+msgstr "Prefijo IXLAN"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:138
+msgid "Add Prefix"
+msgstr "Añadir prefijo"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:202
+msgid "Add LAN"
+msgstr "Agregar LAN"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:234
+#: peeringdb_server/templates/site/view_exchange_bottom.html:251
+#: peeringdb_server/templates/site/view_exchange_bottom.html:291
+#: peeringdb_server/templates/site/view_network_side.html:219
+#: peeringdb_server/templates/site/view_network_side.html:235
+#: peeringdb_server/templates/site/view_network_side.html:278
+msgid "Facility"
+msgstr "Instalaciones"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:256
+msgid "Exchange - Facility link"
+msgstr "Punto de Intercambio - Enlace a una Instalación"
+
+#: peeringdb_server/templates/site/view_exchange_bottom.html:303
+#: peeringdb_server/templates/site/view_network_side.html:290
+#: peeringdb_server/templates/site/view_organization_tools.html:10
+msgid "Add Facility"
+msgstr "Añadir Instalación"
+
+#: peeringdb_server/templates/site/view_exchange_side.html:17
+#: peeringdb_server/templates/site/view_facility_side.html:16
+#: peeringdb_server/templates/site/view_facility_side.html:27
+msgid "Peer Name"
+msgstr "Nombre del Peer"
+
+#: peeringdb_server/templates/site/view_exchange_side.html:21
+#: peeringdb_server/templates/site/view_network_side.html:27
+#: peeringdb_server/templates/site/view_network_side.html:147
+msgid "IPv4"
+msgstr "IPv4"
+
+#: peeringdb_server/templates/site/view_exchange_side.html:22
+#: peeringdb_server/templates/site/view_network_side.html:28
+#: peeringdb_server/templates/site/view_network_side.html:156
+#: peeringdb_server/templates/site/view_organization_tools.html:261
+#: peeringdb_server/templates/site/view_organization_tools.html:430
+#: peeringdb_server/views.py:1067 peeringdb_server/views.py:1305
+msgid "IPv6"
+msgstr "IPv6"
+
+#: peeringdb_server/templates/site/view_exchange_side.html:25
+#: peeringdb_server/templates/site/view_exchange_side.html:38
+#: peeringdb_server/templates/site/view_network_side.html:31
+#: peeringdb_server/templates/site/view_network_side.html:43
+msgid "Speed"
+msgstr "Velocidad"
+
+#: peeringdb_server/templates/site/view_exchange_side.html:26
+#: peeringdb_server/templates/site/view_exchange_side.html:37
+msgid "Policy"
+msgstr "Política"
+
+#: peeringdb_server/templates/site/view_exchange_side.html:37
+#: peeringdb_server/templates/site/view_facility_bottom.html:17
+#: peeringdb_server/templates/site/view_facility_bottom.html:31
+#: peeringdb_server/templates/site/view_network_side.html:23
+#: peeringdb_server/templates/site/view_network_side.html:43
+#: peeringdb_server/templates/site/view_network_side.html:123
+#: peeringdb_server/templates/site/view_organization_side.html:181
+msgid "Exchange"
+msgstr "Punto de Intercambio"
+
+#: peeringdb_server/templates/site/view_exchange_side.html:38
+msgid "IP"
+msgstr "IP"
+
+#: peeringdb_server/templates/site/view_facility_bottom.html:20
+#: peeringdb_server/templates/site/view_facility_bottom.html:31
+#: peeringdb_server/views.py:1030
+msgid "Long Name"
+msgstr "Nombre Completo"
+
+#: peeringdb_server/templates/site/view_network_bottom.html:21
+#: peeringdb_server/templates/site/view_network_bottom.html:198
+msgid ""
+"Some of this network's contacts are hidden because they are only visible to "
+"authenticated users and you are currently not logged in."
+msgstr ""
+"Algunos de los contactos para esta red están escondidos porque solo están "
+"visibles a usuarios autenticados y actualmente usted no tiene una sesión "
+"activa."
+
+#: peeringdb_server/templates/site/view_network_bottom.html:23
+#: peeringdb_server/templates/site/view_network_bottom.html:200
+msgid ""
+"Some of this network's contacts are hidden because your user account is not "
+"affiliated with any organization."
+msgstr ""
+"Algunos de los contactos para esta red están escondidos porque su cuenta no "
+"está afiliada con ninguna organización."
+
+#: peeringdb_server/templates/site/view_network_bottom.html:32
+#: peeringdb_server/templates/site/view_network_bottom.html:129
+msgid "Role"
+msgstr "Papel/Rol"
+
+#: peeringdb_server/templates/site/view_network_bottom.html:40
+msgid "Visiblity"
+msgstr "Visibilidad"
+
+#: peeringdb_server/templates/site/view_network_bottom.html:45
+#: peeringdb_server/templates/site/view_network_bottom.html:158
+msgid "Phone"
+msgstr "Teléfono"
+
+#: peeringdb_server/templates/site/view_network_bottom.html:48
+msgid "E-Mail"
+msgstr "E-mail"
+
+#: peeringdb_server/templates/site/view_network_bottom.html:167
+msgid "Visibility"
+msgstr "Visibilidad"
+
+#: peeringdb_server/templates/site/view_network_bottom.html:180
+msgid "Add Contact"
+msgstr "Agregar un contacto"
+
+#: peeringdb_server/templates/site/view_network_side.html:15
+msgid "Public Peering Exchange Points"
+msgstr "Puntos de intercambio de Peering público"
+
+#: peeringdb_server/templates/site/view_network_side.html:32
+#: peeringdb_server/templates/site/view_network_side.html:176
+msgid "RS Peer"
+msgstr "Peer RS"
+
+#: peeringdb_server/templates/site/view_network_side.html:48
+msgid "Network - Exchange link"
+msgstr "Red - Enlace de Intercambio"
+
+#: peeringdb_server/templates/site/view_network_side.html:134
+msgid "Local ASN"
+msgstr "ASN local"
+
+#: peeringdb_server/templates/site/view_network_side.html:165
+msgid "Speed (mbit/sec)"
+msgstr "Velocidad (Mbits/seg)"
+
+#: peeringdb_server/templates/site/view_network_side.html:189
+msgid "Add Exchange Point"
+msgstr "Añadir punto de intercambio"
+
+#: peeringdb_server/templates/site/view_organization_assets.html:33
+msgid "member"
+msgstr "miembro"
+
+#: peeringdb_server/templates/site/view_organization_assets.html:36
+#: peeringdb_server/templates/site/view_organization_tools.html:569
+msgid "Remove"
+msgstr "Quitar"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:3
+msgid "Manage"
+msgstr "Administrar"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:17
+msgid "Add Network"
+msgstr "Añadir una Red"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:24
+msgid "Add Exchange"
+msgstr "Añadir un Punto de Intercambio"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:32
+msgid "Users"
+msgstr "Usuarios"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:37
+msgid "Permissions"
+msgstr "Permisos"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:70
+#: peeringdb_server/templates/site/view_organization_tools.html:184
+#: peeringdb_server/templates/site/view_organization_tools.html:366
+#: peeringdb_server/views.py:829 peeringdb_server/views.py:939
+msgid "Website"
+msgstr "Sitio web"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:78
+#: peeringdb_server/views.py:832 peeringdb_server/views.py:942
+msgid "Address 1"
+msgstr "Dirección 1"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:87
+#: peeringdb_server/views.py:837 peeringdb_server/views.py:946
+msgid "Address 2"
+msgstr "Dirección 2"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:112
+msgid "Zip-Code"
+msgstr "Código Postal"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:134
+#: peeringdb_server/views.py:966
+msgid "CLLI Code"
+msgstr "Código CLLI"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:201
+#: peeringdb_server/views.py:1236
+msgid "IRR Record"
+msgstr "Registro IRR"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:228
+#: peeringdb_server/views.py:1282
+msgid "Traffic Ratios"
+msgstr "Tasa de tráfico"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:246
+#: peeringdb_server/templates/site/view_organization_tools.html:414
+#: peeringdb_server/views.py:1059 peeringdb_server/views.py:1297
+msgid "Unicast IPv4"
+msgstr "IPv4 Unicast"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:254
+#: peeringdb_server/templates/site/view_organization_tools.html:422
+#: peeringdb_server/views.py:1063 peeringdb_server/views.py:1301
+msgid "Multicast"
+msgstr "Multicast"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:268
+msgid "Policy URL"
+msgstr "URL de Política"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:287
+#: peeringdb_server/views.py:1354
+msgid "Multiple Locations"
+msgstr "Ubicaciones múltiples"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:297
+#: peeringdb_server/views.py:1360
+msgid "Ratio Requirement"
+msgstr "Requisito de ratio"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:305
+#: peeringdb_server/views.py:1368
+msgid "Contract Requirement"
+msgstr "Requisito de contracto"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:318
+msgid "Add a new Network to your Organization."
+msgstr "Añadir una red nueva a su organización."
+
+#: peeringdb_server/templates/site/view_organization_tools.html:319
+msgid ""
+"We will attempt to automatically verify your relationship to the network by "
+"checking for your email address in the ASN's RiR entry."
+msgstr ""
+"Intentaremos a verificar automáticamente su relación con la red por "
+"comprobar que su su email está presente en el registro RiR para el ASN."
+
+#: peeringdb_server/templates/site/view_organization_tools.html:321
+msgid ""
+"In case of verification failure the network will need to be approved by "
+"PeeringDB staff before it will appear in the search results or the API "
+"listings."
+msgstr ""
+"EN caso de que la verificación falle la red tendrá que ser aprobada por la "
+"personal de PeerinDB antes de que aparezca en los resultados de búsquedas o "
+"los listado API."
+
+#: peeringdb_server/templates/site/view_organization_tools.html:325
+msgid "Submit Network"
+msgstr "Enviar red"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:331
+msgid "for assistance with the creation of your network in PeeringDB."
+msgstr "para ayuda con la creación o inscripción de su red en la PeeringDB."
+
+#: peeringdb_server/templates/site/view_organization_tools.html:437
+#: peeringdb_server/views.py:1087
+msgid "Traffic Stats Website"
+msgstr "Sitio web con estadísticas de tráfico"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:444
+msgid "Technical E-mail"
+msgstr "E-mail técnico"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:451
+#: peeringdb_server/views.py:1097
+msgid "Technical Phone"
+msgstr "Teléfono técnico"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:458
+msgid "Policy E-mail"
+msgstr "E-mail para cuestiones política"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:465
+#: peeringdb_server/views.py:1107
+msgid "Policy Phone"
+msgstr "Teléfono para cuestiones de política"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:500
+msgid "Confirmed"
+msgstr "Confirmado"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:502
+msgid "Date"
+msgstr "Fecha"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:527
+msgid "Currently no users requesting affiliation with"
+msgstr "Actualmente no hay usuarios solicitando afiliación con"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:547
+msgid "Group"
+msgstr "Grupo"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:588
+msgid ""
+"Here you can grant permissions to regular members of your organization. "
+"Administrative users are not listed here as they have access to everything "
+"by default."
+msgstr ""
+"Aquí se puede administrar los permisos para los miembros regulares de su "
+"organización. Usuarios Administrativos no están incluidos aquí porque tienen "
+"acceso a todo por defecto."
+
+#: peeringdb_server/templates/site/view_organization_tools.html:593
+msgid ""
+"Additionally, entities that are pending review cannot be permissioned out to "
+"users, and will not appear in the entity list."
+msgstr "Adicionalmente, entidades con verificación pendiente no."
+
+#: peeringdb_server/templates/site/view_organization_tools.html:615
+msgid "Update"
+msgstr "Actualizar"
+
+#: peeringdb_server/templates/site/view_organization_tools.html:618
+msgid "Delete"
+msgstr "Borrar"
+
+#: peeringdb_server/templatetags/util.py:80
+msgid ""
+"Your email address does not match the domain information we have on file for "
+"this organization."
+msgstr ""
+"Su email no corresponde con la información del dominio que tenemos "
+"registrads para esta organización."
+
+#: peeringdb_server/templatetags/util.py:139
+msgid "seconds ago"
+msgstr "hace segundos"
+
+#: peeringdb_server/templatetags/util.py:141
+msgid "minutes ago"
+msgstr "hace minutos"
+
+#: peeringdb_server/templatetags/util.py:143
+msgid "hours ago"
+msgstr "hace horas"
+
+#: peeringdb_server/templatetags/util.py:145
+msgid "days ago"
+msgstr "hace días"
+
+#: peeringdb_server/validators.py:29
+msgid "Invalid prefix: {}"
+msgstr "Prefijo inválido: {}"
+
+#: peeringdb_server/validators.py:32
+msgid "Address space invalid: {}"
+msgstr "Espacio de direcciones inválidos."
+
+#: peeringdb_server/validators.py:38 peeringdb_server/validators.py:46
+msgid "Maximum value allowed {}"
+msgstr "Valor máximo permitido {}"
+
+#: peeringdb_server/validators.py:40 peeringdb_server/validators.py:49
+msgid "Negative value not allowed"
+msgstr "Valor negativo no permitido"
+
+#: peeringdb_server/views.py:157 peeringdb_server/views.py:182
+msgid "Please wait a bit before requesting ownership again."
+msgstr "Por favor, espere unos minutos antes de solicitar propiedad otra vez."
+
+#: peeringdb_server/views.py:164
+msgid "Invalid organization"
+msgstr "Organización inválida"
+
+#: peeringdb_server/views.py:168 peeringdb_server/views.py:196
+#, python-format
+msgid "Organization '%(org_name)s' is already under ownership"
+msgstr "La organización '%(org_name) s' ya está bajo propiedad"
+
+#: peeringdb_server/views.py:190
+msgid "Organization does not exist"
+msgstr "Esta organización no existe"
+
+#: peeringdb_server/views.py:204
+msgid "You already have an ownership request pending for this organization"
+msgstr "Ya tiene una solicitud de propiedad pendiente para esta organización"
+
+#: peeringdb_server/views.py:232
+msgid "Please wait a bit before requesting affiliation again."
+msgstr ""
+"Por favor, espere unos minutos antes de solicitar afiliación  otra vez."
+
+#: peeringdb_server/views.py:243 peeringdb_server/views.py:244
+msgid "Either ASN or Organization required"
+msgstr "Se requiere ASN u organización"
+
+#: peeringdb_server/views.py:254 peeringdb_server/views.py:271
+msgid "Could not retrieve RiR entry"
+msgstr "No se pudo recuperar la entrada de RiR"
+
+#: peeringdb_server/views.py:289
+msgid "Please wait a bit before trying to resend the confirmation email again"
+msgstr ""
+"Por favor espere unos momentos antes de enviar el email de confirmación otra "
+"vez"
+
+#: peeringdb_server/views.py:297
+msgid "We have resent your confirmation email"
+msgstr "Ya hemos enviado el email de confirmación de nuevo"
+
+#: peeringdb_server/views.py:409
+msgid "Please wait a bit before requesting another email change"
+msgstr "Por favor espere un momento antes de solicitar otro cambio de email"
+
+#: peeringdb_server/views.py:426
+msgid "E-mail already exists in our system"
+msgstr "Esta dirección ya existe/está en uso en nuestro sistema"
+
+#: peeringdb_server/views.py:454
+msgid "Wrong password"
+msgstr "Contraseña incorrecta"
+
+#: peeringdb_server/views.py:495
+msgid "Please wait a bit before requesting your usernames again."
+msgstr ""
+"Espere unos momentos antes de solicitar los nombres de usuarios otra vez."
+
+#: peeringdb_server/views.py:586
+msgid "Invalid Security Token"
+msgstr "Error, token de seguridad inválido"
+
+#: peeringdb_server/views.py:588
+msgid "Password Reset Process has expired, please"
+msgstr "El proceso de restablecimiento de contraseña ha expirado, por favor"
+
+#: peeringdb_server/views.py:637
+msgid ""
+"Please log out of your current session before trying to register. Notice, "
+"multiple accounts are no longer needed."
+msgstr ""
+"Por favor cierre la sesión actual antes de intentar a registrarse. Aviso, ya "
+"no se necesitan varias cuentas."
+
+#: peeringdb_server/views.py:664
+msgid "reCAPTCHA invalid"
+msgstr "reCAPTCHA inválido"
+
+#: peeringdb_server/views.py:670
+msgid "This email address has already been used"
+msgstr "Este email ya está en uso"
+
+#: peeringdb_server/views.py:704
+msgid "Already logged in"
+msgstr "Usuario ya tiene una sesión activa"
+
+#: peeringdb_server/views.py:841 peeringdb_server/views.py:950
+msgid "Location"
+msgstr "Ubicación"
+
+#: peeringdb_server/views.py:849 peeringdb_server/views.py:957
+msgid "Country Code"
+msgstr "Código de país"
+
+#: peeringdb_server/views.py:854 peeringdb_server/views.py:974
+#: peeringdb_server/views.py:1072 peeringdb_server/views.py:1315
+msgid "Notes"
+msgstr "Notas"
+
+#: peeringdb_server/views.py:855 peeringdb_server/views.py:975
+#: peeringdb_server/views.py:1073 peeringdb_server/views.py:1316
+msgid "Markdown enabled"
+msgstr "Markdown habilitado"
+
+#: peeringdb_server/views.py:961
+msgid "Geocode"
+msgstr "Geocodificación"
+
+#: peeringdb_server/views.py:1056 peeringdb_server/views.py:1294
+msgid "Protocols Supported"
+msgstr "Protocolos compatibles"
+
+#: peeringdb_server/views.py:1078
+msgid "Contact Information"
+msgstr "Información de Contacto"
+
+#: peeringdb_server/views.py:1082 peeringdb_server/views.py:1225
+msgid "Company Website"
+msgstr "Sitio Web de la Empresa"
+
+#: peeringdb_server/views.py:1092
+msgid "Technical Email"
+msgstr "Email técnico"
+
+#: peeringdb_server/views.py:1102
+msgid "Policy Email"
+msgstr "Email de políticas"
+
+#: peeringdb_server/views.py:1127
+msgid "LAN"
+msgstr "LAN"
+
+#: peeringdb_server/views.py:1220
+msgid "Also Known As"
+msgstr "También conocido como"
+
+#: peeringdb_server/views.py:1242
+msgid "Route Server URL"
+msgstr "URL del servidor de ruta"
+
+#: peeringdb_server/views.py:1248
+msgid "Looking Glass URL"
+msgstr "URL de Looking Glass"
+
+#: peeringdb_server/views.py:1255 peeringdb_server/views.py:1275
+#: peeringdb_server/views.py:1283 peeringdb_server/views.py:1289
+msgid "Not Disclosed"
+msgstr "No divulgado"
+
+#: peeringdb_server/views.py:1261
+msgid "IPv4 Prefixes"
+msgstr "Prefijos IPv4"
+
+#: peeringdb_server/views.py:1267
+msgid "IPv6 Prefixes"
+msgstr "Prefijos IPv6"
+
+#: peeringdb_server/views.py:1311
+msgid "Last Updated"
+msgstr "Última actualización"
+
+#: peeringdb_server/views.py:1322
+msgid "PeeringDB Configuration"
+msgstr "Configuración de PeeringDB"
+
+#: peeringdb_server/views.py:1326
+msgid "Allow IXP Update"
+msgstr "Permitir Actualización IXP"
+
+#: peeringdb_server/views.py:1328
+msgid ""
+"If enabled, an ixp may manage this network's entry in their peering list"
+msgstr ""
+"Si está habilitado, un ixp puede administrar la entrada de esta red en su "
+"lista de peering"
+
+#: peeringdb_server/views.py:1337
+msgid "Peering Policy Information"
+msgstr "Información sobre la política are Peering"
+
+#: peeringdb_server/views.py:1340
+msgid "Peering Policy"
+msgstr "Política de Peering"
+
+#: peeringdb_server/views.py:1520
+msgid "Please wait a bit before trying to login again."
+msgstr "Por favor, esperar unos minutos antes de intentar otra vez."
+
+#: peeringdb_server/views.py:1545
+msgid "Account disabled."
+msgstr "Cuenta desactivada."
+
+#: peeringdb_server/views.py:1546
+msgid "Invalid username/password."
+msgstr "Nombre de usuario/contraseña no válida."
+
+msgid "Abuse"
+msgstr "Abuso"
+
+msgid "ATM"
+msgstr "ATM"
+
+msgid "Content"
+msgstr "Contenido"
+
+msgid "Maintenance"
+msgstr "Mantenimiento"
+
+msgid "Middle East"
+msgstr "Oriente Medio"
+
+msgid "Not Required"
+msgstr "No necesario"
+
+msgid "Heavy Outbound"
+msgstr "De Salida - Tráfico Pesado"
+
+msgid "Europe"
+msgstr "Europa"
+
+msgid "Australia"
+msgstr "Australia"
+
+msgid "Multiple"
+msgstr "Multiple"
+
+msgid "Private Only"
+msgstr "Privado solo"
+
+msgid "Required - EU"
+msgstr "Necesario - UE"
+
+msgid "Regional"
+msgstr "Regional"
+
+msgid "Preferred"
+msgstr "Preferido"
+
+msgid "Restrictive"
+msgstr "Restrictivo"
+
+msgid "Selective"
+msgstr "Selectivo"
+
+msgid "Cable/DSL/ISP"
+msgstr "Cable/DSL/ISP"
+
+msgid "NSP"
+msgstr "NSP"
+
+msgid "Non-Profit"
+msgstr "Sin fines de lucro"
+
+msgid "Public Relations"
+msgstr "Relaciones Públicas"
+
+msgid "Mostly Outbound"
+msgstr "Principalmente de Ida"
+
+msgid "Required - US"
+msgstr "EE. UU. Necesario - EE. UU"
+
+msgid "Technical"
+msgstr "Técnico"
+
+msgid "Required"
+msgstr "Necesario"
+
+msgid "Educational/Research"
+msgstr "Educativo/Investigación"
+
+msgid "North America"
+msgstr "Norteamérica"
+
+msgid "Enterprise"
+msgstr "Empresas"
+
+msgid "Route Server"
+msgstr "Servidor de ruta"
+
+msgid "Ethernet"
+msgstr "Ethernet"
+
+msgid "Mostly Inbound"
+msgstr "Principalmente de Entrada"
+
+msgid "Heavy Inbound"
+msgstr "Principalmente de Entrada - Tráfico Pesado"
+
+msgid "Global"
+msgstr "Global"
+
+msgid "Africa"
+msgstr "África"
+
+msgid "Sales"
+msgstr "Ventas"
+
+msgid "NOC"
+msgstr "NOC"
+
+msgid "South America"
+msgstr "Sudamérica"
+
+msgid "Asia Pacific"
+msgstr "Asia Pacífico"
+
+msgid "Balanced"
+msgstr "Equilibrado"
+
+msgid "Required - International"
+msgstr "Campo obligatorio - Internacional"
+
+msgid "Open"
+msgstr "Abierto"
