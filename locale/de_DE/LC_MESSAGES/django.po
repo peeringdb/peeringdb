@@ -1864,46 +1864,46 @@ msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:51
 msgid "We have sent you a message containing the confirmation link."
-msgstr ""
+msgstr "Wir haben Ihnen eine Nachricht mit dem Bestätigungslink zugesandt."
 
 #: peeringdb_server/templates/site/verify.html:61
 msgid "You won't have full access until we or the organization you are affiliated with have reviewed your account. Thank you for your patience."
-msgstr ""
+msgstr "Bevor wir oder die Organisation, der Sie angehören, Ihr Konto geprüft haben, werden Sie noch keinen Vollzugriff haben. Vielen Dank für Ihre Geduld."
 
 #: peeringdb_server/templates/site/verify.html:75
 msgid "Affiliate with organization"
-msgstr ""
+msgstr "Zuordnung zu einer Organisation anfordern"
 
 #: peeringdb_server/templates/site/verify.html:80
 #, python-format
 msgid "Your affiliation with %(ar_name)s is pending approval."
-msgstr ""
+msgstr "Ihre Zuordnung zu %(ar_name)s wartet auf Genehmigung."
 
 #: peeringdb_server/templates/site/verify.html:82
 #, python-format
 msgid "Your affiliation with %(ar_name)s was denied"
-msgstr ""
+msgstr "Ihre Zuordnung zu %(ar_name)s wurde abgelehnt."
 
 #: peeringdb_server/templates/site/verify.html:84
 #, python-format
 msgid "Your affiliation with %(ar_name)s was approved"
-msgstr ""
+msgstr "Ihre Zuordnung zu %(ar_name)s wurde bestätigt."
 
 #: peeringdb_server/templates/site/verify.html:92
 msgid "To affiliate with an existing organization, please enter the ASN or organization name below."
-msgstr ""
+msgstr "Um einer existierenden Organisation zugeordnet zu werden, geben Sie bitte die ASN oder den Organisationsnamen unten ein."
 
 #: peeringdb_server/templates/site/verify.html:96
 msgid "To register a new network organization, please enter the ASN and organization name below."
-msgstr ""
+msgstr "Um eine neue Organisation zu registrieren, geben Sie bitte die ASN und den Organisationsnamen unten ein."
 
 #: peeringdb_server/templates/site/verify.html:100
 msgid "To register a new facility or exchange organization, please enter the organization name below (ASN is optional)."
-msgstr ""
+msgstr "Um einen neuen Standort oder Exchange zu registrieren, geben Sie bitte den Organisationsnamen unten ein (ASN ist optional)."
 
 #: peeringdb_server/templates/site/verify.html:118
 msgid "Affiliate"
-msgstr ""
+msgstr "Zuordnung anfordern"
 
 #: peeringdb_server/templates/site/verify.html:121
 #: peeringdb_server/templates/site/view_organization_tools.html:329
@@ -1912,101 +1912,101 @@ msgstr "Im Falle, dass der RIR-Eintrag für Ihre ASN nicht eingeholt werden kann
 
 #: peeringdb_server/templates/site/verify.html:122
 msgid "for assistance"
-msgstr ""
+msgstr "für Unterstützung"
 
 #: peeringdb_server/templates/site/verify.html:126
 msgid "Existing affiliations"
-msgstr ""
+msgstr "Bestehende Zuordnungen"
 
 #: peeringdb_server/templates/site/verify.html:129
 msgid "Your affiliation with"
-msgstr ""
+msgstr "Ihre Zuordnung zu"
 
 #: peeringdb_server/templates/site/verify.html:129
 msgid "has been approved"
-msgstr ""
+msgstr "wurde bestätigt"
 
 #: peeringdb_server/templates/site/verify.html:142
 msgid "Manage OAuth Applications"
-msgstr ""
+msgstr "OAuth-Anwendungen verwalten"
 
 #: peeringdb_server/templates/site/verify.html:157
 msgid "Change email address"
-msgstr ""
+msgstr "E-Mail-Adresse ändern"
 
 #: peeringdb_server/templates/site/verify.html:160
 msgid "For speedy validation, it is required that you use a work e-mail address. If you plan to register your ASN with PeeringDB, it is recommended that you use an email-address that exists in the ASN's public contact details."
-msgstr ""
+msgstr "Für eine schnelle Überprüfung ist es notwendig, dass sie eine Unternehmens-E-Mail-Adresse verwenden. Wenn Sie vorhaben, Ihre ASN bei PeeringDB zu registrieren, empfehlen wir, dass Sie eine E-Mail-Adresse verwenden, die bereits in den öffentlichen Kontaktdetails Ihrer ASN vorhanden ist."
 
 #: peeringdb_server/templates/site/verify.html:181
 msgid "Change Email"
-msgstr ""
+msgstr "E-Mail-Adresse ändern"
 
 #: peeringdb_server/templates/site/verify.html:192
 msgid "Change password"
-msgstr ""
+msgstr "Passwort ändern"
 
 #: peeringdb_server/templates/site/verify.html:193
 msgid "Password changed"
-msgstr ""
+msgstr "Password geändert"
 
 #: peeringdb_server/templates/site/verify.html:196
 msgid "Current Password"
-msgstr ""
+msgstr "Aktuelles Passwort"
 
 #: peeringdb_server/templates/site/verify.html:212
 msgid "Password Verification"
-msgstr ""
+msgstr "Passwort erneut eingeben"
 
 #: peeringdb_server/templates/site/view.html:26
 msgid "Pending Review"
-msgstr ""
+msgstr "In Prüfung"
 
 #: peeringdb_server/templates/site/view.html:31
 msgid "Edit"
-msgstr ""
+msgstr "Bearbeiten"
 
 #: peeringdb_server/templates/site/view.html:34
 #: peeringdb_server/templates/site/view.html:263
 msgid "Cancel"
-msgstr ""
+msgstr "Abbrechen"
 
 #: peeringdb_server/templates/site/view.html:35
 #: peeringdb_server/templates/site/view.html:264
 #: peeringdb_server/templates/site/view_organization_tools.html:576
 #: peeringdb_server/templates/site/view_organization_tools.html:694
 msgid "Save"
-msgstr ""
+msgstr "Speichern"
 
 #: peeringdb_server/templates/site/view.html:56
 msgid "Some of the data on this page is incomplete, please update the fields marked with"
-msgstr ""
+msgstr "Einige der Daten auf dieser Seite sind unvollständig. Bitte aktualisieren Sie die Felder, die mit"
 
 #: peeringdb_server/templates/site/view.html:58
 msgid "to improve data quality"
-msgstr ""
+msgstr "markiert sind, um die Datenqualität zu erhöhen."
 
 #: peeringdb_server/templates/site/view.html:216
 msgid "Address failed validation."
-msgstr ""
+msgstr "Adressüberprüfung fehlgeschlagen."
 
 #: peeringdb_server/templates/site/view.html:218
 msgid "Geocoding error"
-msgstr ""
+msgstr "Geocode-Fehler"
 
 #: peeringdb_server/templates/site/view.html:222
 msgid "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."
-msgstr ""
+msgstr "Geocodedaten für dieses Objekt konnten zu diesem Zeitpunkt nicht abgerufen werden. Dies geschieht automatisch bei Änderungen im Adressfeld."
 
 #: peeringdb_server/templates/site/view.html:225
 msgid "Updated geocode data for this entity will be obtained shortly"
-msgstr ""
+msgstr "Aktuelle Geocodedaten für dieses Objekt werden in Kürze abgerufen"
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:51
 #: peeringdb_server/templates/site/view_exchange_bottom.html:83
 #: peeringdb_server/templates/site/view_exchange_bottom.html:190
 msgid "IXF Member Export URL"
-msgstr ""
+msgstr "IXF Member-Export-URL"
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:78
 #: peeringdb_server/templates/site/view_exchange_bottom.html:134
@@ -2338,7 +2338,7 @@ msgstr "Datum"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:527
 msgid "Currently no users requesting affiliation with"
-msgstr "Derzeit wartet kein Nutzer auf Mitgliedschaft bei"
+msgstr "Derzeit wartet kein Nutzer auf Zuordnung zu"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:547
 msgid "Group"
@@ -2419,7 +2419,7 @@ msgstr "Sie haben bereits eine Besitzanfrage für diese Organisation gestellt"
 
 #: peeringdb_server/views.py:245
 msgid "Please wait a bit before requesting affiliation again."
-msgstr "Bitte warten Sie, bevor Sie erneut Mitgliedschaft beantragen."
+msgstr "Bitte warten Sie, bevor Sie erneut Zuordnung anfordern."
 
 #: peeringdb_server/views.py:256 peeringdb_server/views.py:257
 msgid "Either ASN or Organization required"
