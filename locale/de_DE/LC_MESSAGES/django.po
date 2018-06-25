@@ -16,6 +16,7 @@ msgstr ""
 "Last-Translator: Arnold Nipper <arnold@nipper.de>\n"
 "Language-Team: \n"
 "X-Generator: Poedit 2.0.8\n"
+"Language-Team: Arnold, Sara und Stefan\n"
 "X-Poedit-Bookmarks: 260,-1,-1,-1,-1,-1,-1,-1,-1,372\n"
 
 #: django_peeringdb/const.py:3
