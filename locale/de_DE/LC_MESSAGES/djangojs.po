@@ -15,7 +15,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Last-Translator: Arnold Nipper <arnold@nipper.de>\n"
-"Language-Team: Arnold, Silvan und Stefan\n"
+"Language-Team: Arnold, Sara und Stefan\n"
 "X-Generator: Poedit 2.0.7\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
