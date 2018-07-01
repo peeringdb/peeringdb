@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-06-01 19:33+0000\n"
-"PO-Revision-Date: 2018-06-05 05:26+0200\n"
+"PO-Revision-Date: 2018-07-01 14:31+0200\n"
 "Language: de_DE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -33,7 +33,7 @@ msgstr "Mehrfache"
 
 #: django_peeringdb/const.py:8
 msgid "Abuse"
-msgstr ""
+msgstr "Abuse"
 
 #: django_peeringdb/const.py:9
 msgid "Maintenance"
@@ -191,63 +191,63 @@ msgstr "Global"
 
 #: django_peeringdb/const.py:70
 msgid "0-20 Mbps"
-msgstr ""
+msgstr "0-20 Mbit/s"
 
 #: django_peeringdb/const.py:71
 msgid "20-100Mbps"
-msgstr ""
+msgstr "20-100 Mbit/s"
 
 #: django_peeringdb/const.py:72
 msgid "100-1000Mbps"
-msgstr ""
+msgstr "100-1000 Mbit/s"
 
 #: django_peeringdb/const.py:73
 msgid "1-5Gbps"
-msgstr ""
+msgstr "1-5 Gbit/s"
 
 #: django_peeringdb/const.py:74
 msgid "5-10Gbps"
-msgstr ""
+msgstr "5-10 Gbit/s"
 
 #: django_peeringdb/const.py:75
 msgid "10-20Gbps"
-msgstr ""
+msgstr "10-20 Gbit/s"
 
 #: django_peeringdb/const.py:76
 msgid "20-50 Gbps"
-msgstr ""
+msgstr "20-50 Gbit/s"
 
 #: django_peeringdb/const.py:77
 msgid "50-100 Gbps"
-msgstr ""
+msgstr "50-100 Gbit/s"
 
 #: django_peeringdb/const.py:78
 msgid "100+ Gbps"
-msgstr ""
+msgstr "100+ Gbit/s"
 
 #: django_peeringdb/const.py:79
 msgid "100-200 Gbps"
-msgstr ""
+msgstr "100-200 Gbit/s"
 
 #: django_peeringdb/const.py:80
 msgid "200-300 Gbps"
-msgstr ""
+msgstr "200-300 Gbit/s"
 
 #: django_peeringdb/const.py:81
 msgid "300-500 Gbps"
-msgstr ""
+msgstr "300-500 Gbit/s"
 
 #: django_peeringdb/const.py:82
 msgid "500-1000 Gbps"
-msgstr ""
+msgstr "500-1000 Gbit/s"
 
 #: django_peeringdb/const.py:83
 msgid "1 Tbps+"
-msgstr ""
+msgstr "1+ Tbit/s"
 
 #: django_peeringdb/const.py:84
 msgid "10 Tbps+"
-msgstr ""
+msgstr "10+ Tbit/s"
 
 #: django_peeringdb/const.py:89
 msgid "NSP"
@@ -402,11 +402,11 @@ msgstr "Ungültige Unternehmens-ID"
 
 #: peeringdb_server/admin.py:695
 msgid "Merge target organization does not exist"
-msgstr ""
+msgstr "Unternehmen, zu dem zusammengeführt werden soll existiert nicht"
 
 #: peeringdb_server/admin.py:709
 msgid "Organization Merging Tool"
-msgstr ""
+msgstr "Werkzeug zum zusammenführen von Unternehmen"
 
 #: peeringdb_server/admin.py:736 peeringdb_server/admin.py:747
 msgid "Undo merge"
@@ -556,8 +556,8 @@ msgstr "RIR"
 msgid "Renumber IP Space"
 msgstr "IP Bereiche neu sortieren"
 
+# # unklare Funktion
 #: peeringdb_server/models.py:147
-## unklare Funktion
 msgid "Has this object's latitude and longitude been syncronized to it's address fields"
 msgstr "Die Breiten- und Längenangaben dieses Objekts wurden über die Adresse ermittelt"
 
@@ -565,8 +565,8 @@ msgstr "Die Breiten- und Längenangaben dieses Objekts wurden über die Adresse 
 msgid "Last time of attempted geocode"
 msgstr "Zeit, zu der die Georeferenz zuletzt ermittelt wurde"
 
+# # Unklarer Zusammenhang
 #: peeringdb_server/models.py:153
-## Unklarer Zusammenhang
 msgid "Error message of previous geocode attempt"
 msgstr "Fehlernachricht des letzten Lokalisierungsversuchs"
 
@@ -620,7 +620,7 @@ msgstr "Anfragen zu Benutzern, die zum Unternehmen hinzugefügt werden sollen"
 
 #: peeringdb_server/models.py:316
 msgid "Your affiliation to Organization \"{}\" has been approved"
-msgstr "Die Zugehörigkeit zum Unternehmen "\{}\" wurde freigegeben"
+msgstr "Die Zugehörigkeit zum Unternehmen \"\\{}\" wurde freigegeben"
 
 #: peeringdb_server/models.py:343
 msgid "The item that this queue is attached to was created by this user"
@@ -828,7 +828,7 @@ msgstr "Befehl zu diesem Datum und zu dieser Uhrzeit ausgeführt"
 
 #: peeringdb_server/org_admin_views.py:140
 msgid "Organization and all Entities it owns"
-msgstr "Organisation und alle dazugehörigen Einträge"
+msgstr "Unternehmen und alle dazugehörigen Einträge"
 
 #: peeringdb_server/org_admin_views.py:141
 msgid "Any Network"
@@ -859,7 +859,7 @@ msgstr "Gebäude - %(fac_name)s"
 
 #: peeringdb_server/org_admin_views.py:216
 msgid "Invalid organization specified"
-msgstr "Ungültige Organisation angegeben"
+msgstr "Ungültiges Unternehmen angegeben"
 
 #: peeringdb_server/org_admin_views.py:309
 msgid "Needs to be member or admin"
@@ -1432,6 +1432,7 @@ msgstr "Liegenschaften"
 msgid "The PeeringDB Acceptable Use Policy explicitly states the parameters that copyright extends to:"
 msgstr "Die Nutzungsbedingungen von PeeringDB sagen explizit, dass sich das Urheberrecht auch auf erstreckt:"
 
+# Juristischer Text, braucht Absicherung nach Übersetzung
 #: peeringdb_server/templates/site/aup.html:9
 msgid "Except for Internet operational purposes approved by PeeringDB, no part of the PeeringDB data may be reproduced, stored in a retrieval system, or transmitted, in any form or by any means, electronic, mechanical, recording, or otherwise, without prior permission of PeeringDB on behalf of the copyright holders. Any use of this material to target advertising or similar activities is explicitly forbidden and will be prosecuted. PeeringDB requests to be notified of any such activities or suspicions thereof. The PeeringDB data may not be passed on in bulk to any other person or organization unless approved by PeeringDB."
 msgstr ""
@@ -1805,8 +1806,8 @@ msgstr "Notiz"
 msgid "You should complete the process in the same browser that you originally initiated it in."
 msgstr "Der Vorgang sollte im gleichen Browser fortgeführt werden, in dem Sie damit angefangen haben"
 
+# # unklarer Zusammenhang
 #: peeringdb_server/templates/site/username-retrieve-complete.html:25
-## unklarer Zusammenhang
 msgid "Please re-initiate it"
 msgstr "Bitte beginnen Sie noch einmal von vorn"
 
@@ -1848,16 +1849,13 @@ msgstr "Sprachauswahl speichern"
 
 #: peeringdb_server/templates/site/verify.html:39
 msgid "You have confirmed your email address!"
-msgstr "Sie haben Ihre E-Mail-Adresse bestätigt!" 
+msgstr "Sie haben Ihre E-Mail-Adresse bestätigt!"
 
 #: peeringdb_server/templates/site/verify.html:43
 msgid "Attention!"
 msgstr "Achtung!"
 
 #: peeringdb_server/templates/site/verify.html:45
-msgid "Please specify an email address for your account, we won't be able to proceed with verification until you do."
-msgid "Wir können mit der Freigabe und Überprüfung Ihres Benutzerzugangs erst forfahren, wenn Sie eine E-Mail-Adresse hinterlegen."
-
 #: peeringdb_server/templates/site/verify.html:48
 msgid "Email Confirmation"
 msgstr "E-Mail bestätigen"
@@ -2183,7 +2181,7 @@ msgstr "RS-Peer"
 
 #: peeringdb_server/templates/site/view_network_side.html:48
 msgid "Network - Exchange link"
-msgstr "Netzwerk-Exchange-Kopplung" 
+msgstr "Netzwerk-Exchange-Kopplung"
 
 #: peeringdb_server/templates/site/view_network_side.html:134
 msgid "Local ASN"
@@ -2316,7 +2314,7 @@ msgstr "Trafficstatistik-Webseite"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:444
 msgid "Technical E-mail"
-msgstr "E-Mail (technisch)" 
+msgstr "E-Mail (technisch)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:451
 #: peeringdb_server/views.py:1114
