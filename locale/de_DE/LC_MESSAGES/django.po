@@ -557,16 +557,18 @@ msgid "Renumber IP Space"
 msgstr "IP Bereiche neu sortieren"
 
 #: peeringdb_server/models.py:147
+## unklare Funktion
 msgid "Has this object's latitude and longitude been syncronized to it's address fields"
-msgstr ""
+msgstr "Die Breiten- und Längenangaben dieses Objekts wurden über die Adresse ermittelt"
 
 #: peeringdb_server/models.py:150
 msgid "Last time of attempted geocode"
 msgstr "Zeit, zu der die Georeferenz zuletzt ermittelt wurde"
 
 #: peeringdb_server/models.py:153
+## Unklarer Zusammenhang
 msgid "Error message of previous geocode attempt"
-msgstr ""
+msgstr "Fehlernachricht des letzten Lokalisierungsversuchs"
 
 #: peeringdb_server/models.py:200
 msgid "Address not found"
@@ -682,39 +684,39 @@ msgstr "Partnerschaften"
 
 #: peeringdb_server/models.py:750
 msgid "Merged on"
-msgstr ""
+msgstr "Zusammengeführt am"
 
 #: peeringdb_server/models.py:754
 msgid "Organization Merge"
-msgstr ""
+msgstr "Organisation zusammenführen"
 
 #: peeringdb_server/models.py:755
 msgid "Organization Merges"
-msgstr "Zusammenführung der Organisation"
+msgstr "Zusammengeführte Organisationen"
 
 #: peeringdb_server/models.py:808
 msgid "Organization Merge: Entity"
-msgstr "Zusammenführung der Organisation"
+msgstr "Organisation zusammenführen: Einheit"
 
 #: peeringdb_server/models.py:809
 msgid "Organization Merge: Entities"
-msgstr ""
+msgstr "Organisation zusammenführen: Einheiten"
 
 #: peeringdb_server/models.py:911 peeringdb_server/models.py:1110
 msgid "Need to specify at least two asns"
-msgstr ""
+msgstr "Es müssen zumindest zwei ASNs angegeben werden"
 
 #: peeringdb_server/models.py:914 peeringdb_server/models.py:1113
 msgid "Can only compare a maximum of 25 asns"
-msgstr ""
+msgstr "Es können maximal 25 ASNs verglichen werden"
 
 #: peeringdb_server/models.py:1318
 msgid "No JSON could be parsed"
-msgstr ""
+msgstr "JSON konnte nicht analyisert werden"
 
 #: peeringdb_server/models.py:1344
 msgid "No entries in any of the vlan_list lists, aborting."
-msgstr ""
+msgstr "Abgebrochen: Keine Einträge in einen der vlan_list Listen gefunden"
 
 #: peeringdb_server/models.py:1709
 msgid "IXF Import Log"
@@ -726,138 +728,138 @@ msgstr ""
 
 #: peeringdb_server/models.py:1741
 msgid "IXF Import Log Entry"
-msgstr ""
+msgstr "IXF Import Log Eintrag"
 
 #: peeringdb_server/models.py:1742
 msgid "IXF Import Log Entries"
-msgstr ""
+msgstr "IXF Import Log Einträge"
 
 #: peeringdb_server/models.py:1847
 msgid "Sepcifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data"
-msgstr ""
+msgstr "Gibt an, ob es einem IXP erlaubt ist einen netixlan Eintrag für dieses Netzwerk vorzunehmen anhand der ixp_member Daten"
 
 #: peeringdb_server/models.py:2283 peeringdb_server/models.py:2285
 msgid "Ip address already exists elsewhere"
-msgstr ""
+msgstr "IP Adresse wird bereits an anderer Stelle benutzt"
 
 #: peeringdb_server/models.py:2296
 msgid "username"
-msgstr ""
+msgstr "Benutzername"
 
 #: peeringdb_server/models.py:2297
 msgid "Required. Letters, digits and [@.+-/_=|] only."
-msgstr ""
+msgstr "Erforderlich. Buchstaben, Zahlen und die Zeichen [@.+-/_=|]"
 
 #: peeringdb_server/models.py:2300
 msgid "Enter a valid username."
-msgstr ""
+msgstr "Bitte einen gültigen Benutzernamen eingeben"
 
 #: peeringdb_server/models.py:2303
 msgid "email address"
-msgstr ""
+msgstr "E-Mail Adresse"
 
 #: peeringdb_server/models.py:2304
 msgid "first name"
-msgstr ""
+msgstr "Vorname"
 
 #: peeringdb_server/models.py:2305
 msgid "last name"
-msgstr ""
+msgstr "Nachname"
 
 #: peeringdb_server/models.py:2307
 msgid "staff status"
-msgstr ""
+msgstr "Firmenzugehörigkeit"
 
 #: peeringdb_server/models.py:2308
 msgid "Designates whether the user can log into admin site."
-msgstr ""
+msgstr "Gibt an, ob sich ein Benutzer auf der Admin-Seite einloggen darf"
 
 #: peeringdb_server/models.py:2310
 msgid "active"
-msgstr ""
+msgstr "Aktiv"
 
 #: peeringdb_server/models.py:2311
 msgid "Designates whether this user should be treated as active. Unselect this instead of deleting accounts."
-msgstr ""
+msgstr "Gibt an ob ein Benutzer als aktiv geführt werden soll. Statt Benutzer zu löschen bitte diesen Punkt deaktivieren."
 
 #: peeringdb_server/models.py:2313
 msgid "date joined"
-msgstr ""
+msgstr "Beitrittsdatum"
 
 #: peeringdb_server/models.py:2316
 msgid "status"
-msgstr ""
+msgstr "Status"
 
 #: peeringdb_server/models.py:2318
 msgid "language"
-msgstr ""
+msgstr "Sprache"
 
 #: peeringdb_server/models.py:2327
 msgid "user"
-msgstr ""
+msgstr "Benutzer"
 
 #: peeringdb_server/models.py:2328
 msgid "users"
-msgstr ""
+msgstr "Benutzer"
 
 #: peeringdb_server/models.py:2520
 msgid "Password Reset Initiated"
-msgstr ""
+msgstr "Passwort zurücksetzen wurde eingeleitet"
 
 #: peeringdb_server/models.py:2588
 msgid "name of the tool"
-msgstr ""
+msgstr "Name des Programms"
 
 #: peeringdb_server/models.py:2591
 msgid "json serialization of arguments and options passed"
-msgstr ""
+msgstr "JSON Anordung der Argumente und Optionen erfolgreich"
 
 #: peeringdb_server/models.py:2592
 msgid "result log"
-msgstr ""
+msgstr "Logeinträge der Resultate"
 
 #: peeringdb_server/models.py:2594
 msgid "the user that ran this command"
-msgstr ""
+msgstr "Benutzer, der den Befehl ausgeführt hat"
 
 #: peeringdb_server/models.py:2598
 msgid "command was run at this date and time"
-msgstr ""
+msgstr "Befehl zu diesem Datum und zu dieser Uhrzeit ausgeführt"
 
 #: peeringdb_server/org_admin_views.py:140
 msgid "Organization and all Entities it owns"
-msgstr ""
+msgstr "Organisation und alle dazugehörigen Einträge"
 
 #: peeringdb_server/org_admin_views.py:141
 msgid "Any Network"
-msgstr ""
+msgstr "Alle Netzwerke"
 
 #: peeringdb_server/org_admin_views.py:142
 msgid "Any Facility"
-msgstr ""
+msgstr "Alle Gebäude"
 
 #: peeringdb_server/org_admin_views.py:143
 msgid "Any Exchange"
-msgstr ""
+msgstr "Alle Austauschknoten"
 
 #: peeringdb_server/org_admin_views.py:147
 #, python-format
 msgid "Network - %(net_name)s"
-msgstr ""
+msgstr "Netzwerk - %(net_name)s"
 
 #: peeringdb_server/org_admin_views.py:152
 #, python-format
 msgid "Exchange - %(ix_name)s"
-msgstr ""
+msgstr "Austauschknoten - %(ix_name)s"
 
 #: peeringdb_server/org_admin_views.py:157
 #, python-format
 msgid "Facility - %(fac_name)s"
-msgstr ""
+msgstr "Gebäude - %(fac_name)s"
 
 #: peeringdb_server/org_admin_views.py:216
 msgid "Invalid organization specified"
-msgstr ""
+msgstr "Ungültige Organisation angegeben"
 
 #: peeringdb_server/org_admin_views.py:309
 msgid "Needs to be member or admin"
@@ -1721,147 +1723,148 @@ msgstr "fordern Sie ein neues an"
 
 #: peeringdb_server/templates/site/register.html:11
 msgid "Account Created"
-msgstr ""
+msgstr "Erstellungsdatum des Kontos"
 
 #: peeringdb_server/templates/site/register.html:13
 msgid "Your account was created, but won't have full access until we have reviewed it. Thank you for your patience."
-msgstr ""
+msgstr "Ihr Konto wurde erstellt, erhält die vollen Zugriffsrechte aber erst nach einer Überprüfung. Danke für Ihr Verständnis."
 
 #: peeringdb_server/templates/site/register.html:16
 msgid "Return Home"
-msgstr ""
+msgstr "Zur Startseite zurückkehren"
 
 #: peeringdb_server/templates/site/register.html:30
 msgid "Create account"
-msgstr ""
+msgstr "Zugang erstellen"
 
 #: peeringdb_server/templates/site/register.html:48
 msgid "Confirm password"
-msgstr ""
+msgstr "Passwort bestätigen"
 
 #: peeringdb_server/templates/site/register.html:55
 msgid "For speedy validation, it is required that you use a work e-mail address. If you plan to register your ASN with PeeringDB, it is recommended that you use an email-address that exists in your ASN's public contact details."
-msgstr ""
+msgstr "Für ein schnellere Validierung ist es nötig eine E-Mail Adresse der jeweiligen Organisation/Firme zu benutzen. Wenn Sie vorhaben Ihr ASN der PeeringDB hinzuzufügen, wird es empfohlen eine E-Mail Adresse zu benutzen, die bereits in den öffentlichen Kontaktdaten des ASNs aufgeführt ist."
 
 #: peeringdb_server/templates/site/register.html:69
 msgid "First name"
-msgstr ""
+msgstr "Vorname"
 
 #: peeringdb_server/templates/site/register.html:75
 msgid "Last name"
-msgstr ""
+msgstr "Nachname"
 
 #: peeringdb_server/templates/site/register.html:81
 #: peeringdb_server/templates/site/view_organization_tools.html:612
 msgid "Create"
-msgstr ""
+msgstr "Erstellen"
 
 #: peeringdb_server/templates/site/request-ownership.html:15
 #: peeringdb_server/templates/site/request-ownership.html:23
 msgid "Thank you"
-msgstr ""
+msgstr "Vielen Dank"
 
 #: peeringdb_server/templates/site/request-ownership.html:17
 #, python-format
 msgid "We have received your ownership request for %(o_name)s and will review it."
-msgstr ""
+msgstr "Ihre Anfrage %(o_name)s zu übernehmen wurde empfangen und liegt zur Überprüfung vor."
 
 #: peeringdb_server/templates/site/request-ownership.html:24
 msgid "We have verified your relationship with this entity and you have successfully claimed ownership. You may view / edit"
-msgstr ""
+msgstr "Ihre Anfrage diesen Eintrag zu übernehmen wurde nach einer Überprüfung freigegeben. Sie können diesen Eintrag jetzt einsehen und bearbeiten"
 
 #: peeringdb_server/templates/site/request-ownership.html:37
 #: peeringdb_server/templates/site/request-ownership.html:53
 msgid "Request Ownership"
-msgstr ""
+msgstr "Eigentum/Besitzrecht anfordern"
 
 #: peeringdb_server/templates/site/request-ownership.html:48
 msgid "Please only request ownership if you are certain that you have the rights to do so. Are you sure you wish to continue?"
-msgstr ""
+msgstr "Bitte fordern Sie Eigenturmsrechte an Objekten nur dann an, wenn Sie sicher sind, dass diese zu Ihnen gehören. Möchten Sie fortfahren?"
 
 #: peeringdb_server/templates/site/request-ownership.html:61
 msgid "Only verified users may request ownership to an organization"
-msgstr ""
+msgstr "Nur freigebene und bestätigte Benutzer können Eigentum an Organisations-Objekten anfordern"
 
 #: peeringdb_server/templates/site/sponsorships.html:71
 msgid "Become a Sponsor"
-msgstr ""
+msgstr "Pate werden"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:12
 msgid "These are the usernames associated with your email address"
-msgstr ""
+msgstr "Folgene Benutzernamen sind mit Ihrer E-Mail-Adresse verknüpft"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:21
 msgid "The secret you provided does not match the secret required to complete this process"
-msgstr ""
+msgstr "Das übermittelte Kennwort stimmt nicht mit dem hinterlegten Kennwort überein, was benötigt wird um fortzufahren"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:23
 msgid "Note"
-msgstr ""
+msgstr "Notiz"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:23
 msgid "You should complete the process in the same browser that you originally initiated it in."
-msgstr ""
+msgstr "Der Vorgang sollte im gleichen Browser fortgeführt werden, in dem Sie damit angefangen haben"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:25
+## unklarer Zusammenhang
 msgid "Please re-initiate it"
-msgstr ""
+msgstr "Bitte beginnen Sie noch einmal von vorn"
 
 #: peeringdb_server/templates/site/username-retrieve.html:14
 msgid "This form allows you to retrieve the usernames associated with your email address."
-msgstr ""
+msgstr "Dieses Formular ermöglicht es Ihnen alle Benutzer anzuzeigen, die mit Ihrer E-Mail-Adresse verknüpft sind"
 
 #: peeringdb_server/templates/site/username-retrieve.html:17
 msgid "We've sent instructions to your email address, provided it is in our system."
-msgstr ""
+msgstr "Sofern uns Ihre E-Mail-Adresse bekannt ist, haben wir Ihnen dorthin Anweisungen zugesandt."
 
 #: peeringdb_server/templates/site/username-retrieve.html:26
 msgid "Retrieve username(s)"
-msgstr ""
+msgstr "Benutzername(n) abrufen"
 
 #: peeringdb_server/templates/site/verification_banner.html:6
 msgid "Your user account has not been affiliated with any Organization yet, and will have limited access to some of the data (such as non-public network contact information)."
-msgstr ""
+msgstr "Ihr Zugang wurde mit noch keiner Organisation verbunden und hat deshalb nur eingeschränkten Zugang zu manchen Daten (wie z.B. nicht öffentiche Kontaktinformationen)."
 
 #: peeringdb_server/templates/site/verification_banner.html:11
 msgid "Please take the time to confirm your email address and request affiliation"
-msgstr ""
+msgstr "Bitte nehmen Sie sich die Zeit und bestätigen Sie Ihre E-Mail Adresse sowie zusammenhängende Zugehörigkeiten"
 
 #: peeringdb_server/templates/site/verification_banner.html:14
 msgid "You may request affiliation to an Organization or ASN"
-msgstr ""
+msgstr "Sie können die Zugehörigkeit zu einer Organisation oder zu einem ASN beantragen"
 
 #: peeringdb_server/templates/site/verify.html:17
 msgid "Select language"
-msgstr ""
+msgstr "Sprache auswählen"
 
 #: peeringdb_server/templates/site/verify.html:18
 msgid "Language preference saved"
-msgstr ""
+msgstr "Sprachauswahl gespeichert"
 
 #: peeringdb_server/templates/site/verify.html:30
 msgid "Set language preference"
-msgstr ""
+msgstr "Sprachauswahl speichern"
 
 #: peeringdb_server/templates/site/verify.html:39
 msgid "You have confirmed your email address!"
-msgstr ""
+msgstr "Sie haben Ihre E-Mail-Adresse bestätigt!" 
 
 #: peeringdb_server/templates/site/verify.html:43
 msgid "Attention!"
-msgstr ""
+msgstr "Achtung!"
 
 #: peeringdb_server/templates/site/verify.html:45
 msgid "Please specify an email address for your account, we won't be able to proceed with verification until you do."
-msgstr ""
+msgid "Wir können mit der Freigabe und Überprüfung Ihres Benutzerzugangs erst forfahren, wenn Sie eine E-Mail-Adresse hinterlegen."
 
 #: peeringdb_server/templates/site/verify.html:48
 msgid "Email Confirmation"
-msgstr ""
+msgstr "E-Mail bestätigen"
 
 #: peeringdb_server/templates/site/verify.html:50
 msgid "Before getting access to any other features, you need to confirm your email address."
-msgstr ""
+msgstr "Zugang zu weiteren Funktionen wird erst nach Bestätigung der E-Mail-Adresse gewährt."
 
 #: peeringdb_server/templates/site/verify.html:51
 msgid "We have sent you a message containing the confirmation link."
@@ -2017,7 +2020,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_exchange_assets.html:82
 #: peeringdb_server/templates/site/view_organization_tools.html:681
 msgid "Add"
-msgstr ""
+msgstr "Hinzufügen"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:26
 #: peeringdb_server/templates/site/view_exchange_bottom.html:170
@@ -2042,7 +2045,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_side.html:107
 #: peeringdb_server/templates/site/view_organization_side.html:175
 msgid "Nothing matched your filter"
-msgstr ""
+msgstr "Keine Einträge zum gewählten Filter gefunden"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
 #: peeringdb_server/templates/site/view_exchange_bottom.html:251
@@ -2055,7 +2058,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_side.html:108
 #: peeringdb_server/templates/site/view_organization_side.html:176
 msgid "You may filter by"
-msgstr ""
+msgstr "Sie können filtern nach"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
 msgid "dot1q"
@@ -2067,7 +2070,7 @@ msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:44
 msgid "ATTENTION: Any network relationships to the exchange via this LAN will be removed as well"
-msgstr ""
+msgstr "ACHTUNG: Netzwerk-Beziehungen zu diesen Austauschknoten über dieses LAN werden ebenfalls entfernt"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:97
 msgid "IXLAN Prefix"
@@ -2075,11 +2078,11 @@ msgstr ""
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:138
 msgid "Add Prefix"
-msgstr ""
+msgstr "Prefix hinzufügen"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:202
 msgid "Add LAN"
-msgstr ""
+msgstr "LAN hinzufügen"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:234
 #: peeringdb_server/templates/site/view_exchange_bottom.html:251
@@ -2088,17 +2091,17 @@ msgstr ""
 #: peeringdb_server/templates/site/view_network_side.html:235
 #: peeringdb_server/templates/site/view_network_side.html:278
 msgid "Facility"
-msgstr ""
+msgstr "Gebäude"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:256
 msgid "Exchange - Facility link"
-msgstr ""
+msgstr "Austauschknoten - Gebäude Verknüpfen"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:303
 #: peeringdb_server/templates/site/view_network_side.html:290
 #: peeringdb_server/templates/site/view_organization_tools.html:10
 msgid "Add Facility"
-msgstr ""
+msgstr "Gebäude hinzufügen"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:17
 #: peeringdb_server/templates/site/view_facility_side.html:16
@@ -2111,7 +2114,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_network_side.html:31
 #: peeringdb_server/templates/site/view_network_side.html:43
 msgid "Speed"
-msgstr ""
+msgstr "Geschwindigkeit"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:37
 #: peeringdb_server/templates/site/view_facility_bottom.html:17
@@ -2121,7 +2124,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_network_side.html:123
 #: peeringdb_server/templates/site/view_organization_side.html:181
 msgid "Exchange"
-msgstr ""
+msgstr "Austauschknoten"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:38
 msgid "IP"
@@ -2131,22 +2134,22 @@ msgstr ""
 #: peeringdb_server/templates/site/view_facility_bottom.html:31
 #: peeringdb_server/views.py:1047
 msgid "Long Name"
-msgstr ""
+msgstr "Vollstäniger Name"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:21
 #: peeringdb_server/templates/site/view_network_bottom.html:198
 msgid "Some of this network's contacts are hidden because they are only visible to authenticated users and you are currently not logged in."
-msgstr ""
+msgstr "Einige der Kontaktdaten werden nur angemeldeten Benutzern angezeigt. Bitte melden Sie sich an."
 
 #: peeringdb_server/templates/site/view_network_bottom.html:23
 #: peeringdb_server/templates/site/view_network_bottom.html:200
 msgid "Some of this network's contacts are hidden because your user account is not affiliated with any organization."
-msgstr ""
+msgstr "Einige der Kontaktdaten dieses Netzwerks werden nicht angezeigt, da Ihr Zugang nicht mit dieser Organisation verknüpft ist."
 
 #: peeringdb_server/templates/site/view_network_bottom.html:32
 #: peeringdb_server/templates/site/view_network_bottom.html:129
 msgid "Role"
-msgstr ""
+msgstr "Rolle"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:40
 msgid "Visiblity"
