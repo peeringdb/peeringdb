@@ -646,39 +646,39 @@ msgstr "URL"
 
 #: peeringdb_server/models.py:666
 msgid "If specified clicking the sponsorship will take the user to this location"
-msgstr "Wenn angegeben, werden Benutzer bei einem Klick auf den Partner (Sponsor) an diese Adresse weitergeleitet"
+msgstr "Wenn angegeben, werden Benutzer bei einem Klick auf den Paten (Sponsor) an diese Adresse weitergeleitet"
 
 #: peeringdb_server/models.py:671
 msgid "Allows you to upload and set a logo image file for this sponsorship"
-msgstr "Erlaubt es ein Logo für diese Partnerschaft hochzuladen und es ändern"
+msgstr "Erlaubt es ein Logo für diese Paten (Sponsor) hochzuladen und es zu ändern"
 
 #: peeringdb_server/models.py:676
 msgid "Sponsorship"
-msgstr "Partnerschaft"
+msgstr "Patenschaft"
 
 #: peeringdb_server/models.py:677
 msgid "Sponsorships"
-msgstr "Partnerschaften"
+msgstr "Patenschaften"
 
 #: peeringdb_server/models.py:701
 msgid "Sponsorship Expired"
-msgstr "Abgelaufene Partnerschaften"
+msgstr "Abgelaufene Patenschaft"
 
 #: peeringdb_server/models.py:724
 msgid "If specified clicking the partnership will take the user to this location"
-msgstr "Wenn angegeben, werden Benutzer bei einem Klick auf den Partner (Sponsor) an diese Adresse weitergeleitet"
+msgstr "Wenn angegeben, werden Benutzer bei einem Klick auf den Partner an diese Adresse weitergeleitet"
 
 #: peeringdb_server/models.py:729
 msgid "Allows you to upload and set a logo image file for this partnership"
-msgstr ""
+msgstr "Erlaubt es ein Logo für diesen Partnerschaft hochzuladen un es zu ändern"
 
 #: peeringdb_server/models.py:734
 msgid "Partnership"
-msgstr ""
+msgstr "Partnerschaft"
 
 #: peeringdb_server/models.py:735
 msgid "Partnerships"
-msgstr ""
+msgstr "Partnerschaften"
 
 #: peeringdb_server/models.py:750
 msgid "Merged on"
