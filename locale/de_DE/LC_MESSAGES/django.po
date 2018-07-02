@@ -1432,10 +1432,9 @@ msgstr "Liegenschaften"
 msgid "The PeeringDB Acceptable Use Policy explicitly states the parameters that copyright extends to:"
 msgstr "Die Nutzungsbedingungen von PeeringDB sagen explizit, dass sich das Urheberrecht auch auf erstreckt:"
 
-# Juristischer Text, braucht Absicherung nach Übersetzung
 #: peeringdb_server/templates/site/aup.html:9
 msgid "Except for Internet operational purposes approved by PeeringDB, no part of the PeeringDB data may be reproduced, stored in a retrieval system, or transmitted, in any form or by any means, electronic, mechanical, recording, or otherwise, without prior permission of PeeringDB on behalf of the copyright holders. Any use of this material to target advertising or similar activities is explicitly forbidden and will be prosecuted. PeeringDB requests to be notified of any such activities or suspicions thereof. The PeeringDB data may not be passed on in bulk to any other person or organization unless approved by PeeringDB."
-msgstr ""
+msgstr "Die Inhalte der PeeringDB dürfen auschließlich zu den von PeeringDB freigegebenen Zwecken zum Betreiben des Internets benutzt werden. Inhalte der PeeringDB dürfen in keiner Form reproduziert oder in andere Systeme gespeichert oder übertragen werden - weder elekrtonisch, mechanisch, akustisch oder auf sonstigen anderen Wegen ohne vorherige Erlaubnis durch die Inhaber der PeeringDB oder im Auftrag der Copyright-Inhaber. Die Benutzung der PeeringDB zu Werbe- oder Marketingzwecken ist ausdrücklich verboten und wird juristisch verfolgt. Sollten Sie Wissen darür haben, dass die PeeringDB durch Dritte mißbräuchlich verwendet wird, bitten wir Sie darum uns darüber zu informieren."
 
 #: peeringdb_server/templates/site/aup.html:19
 msgid "Any request to pass on information to any other person or organization will be evaluated on the statement of purpose outlined by the requestor."
