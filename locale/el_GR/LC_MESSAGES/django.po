@@ -1121,7 +1121,7 @@ msgid "We retrieved the RiR entry for the specified ASN"
 msgstr "Ανακτήσαμε την καταχώρηση RIR για το συγκεκριμένο ASN"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:9
-msgid "but found no match with the requesting user. Here are the email addresses we gatehered"
+msgid "but found no match with the requesting user. Here are the email addresses we gathered"
 msgstr "αλλά δεν βρήκαμε καταχώρηση με τον/την αιτούντα χρήστη. Σας παραθέτουμε τη λίστα διευθύνσεων email που αποκομίσαμε"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:13

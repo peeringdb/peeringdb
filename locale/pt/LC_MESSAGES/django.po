@@ -1058,7 +1058,7 @@ msgid "We retrieved the RiR entry for the specified ASN"
 msgstr "Foi recuperada a entrada RiR para a ASN especificado"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:9
-msgid "but found no match with the requesting user. Here are the email addresses we gatehered"
+msgid "but found no match with the requesting user. Here are the email addresses we gathered"
 msgstr "mas não foi encontrada correspondência com o usuário solicitante. Aqui estão os endereços de e-mail que obtivemos"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:14

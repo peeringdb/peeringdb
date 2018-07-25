@@ -1174,7 +1174,7 @@ msgstr "Hemos recogido la entrada RIR para el ASN especificado"
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:9
 msgid ""
 "but found no match with the requesting user. Here are the email addresses we "
-"gatehered"
+"gathered"
 msgstr ""
 "pero no encontramos nada que coincida con el usuario solicitante. Aquí están "
 "las direcciones de email que recogimos"

@@ -1199,7 +1199,7 @@ msgstr "Nous avons obtenu l'entrée RIR pour le numéro d'AS spécifié"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:9
 msgid ""
-"but found no match with the requesting user. Here are the email addresses we gatehered"
+"but found no match with the requesting user. Here are the email addresses we gathered"
 msgstr ""
 "mais nous n'avons rien trouvé correspond à l'utilisateur. Voici les adresses email que "
 "nous avons obtenu"
