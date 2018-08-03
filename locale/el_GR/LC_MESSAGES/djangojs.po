@@ -57,8 +57,7 @@ msgstr "δεν έχει εγκριθεί ακόμα"
 
 #: peeringdb_server/static/peeringdb.js:636
 msgid "Parent entity pending review - please wait for it to be approved before adding entities to it"
-msgstr "Η γονική οντότητα εκκρεμεί ανασκόπησης - παρακαλώ περιμένετε να εγκριθεί προτού
-προσθέσετε οντότητες σε αυτή."
+msgstr "Η γονική οντότητα εκκρεμεί ανασκόπησης - παρακαλώ περιμένετε να εγκριθεί προτού προσθέσετε οντότητες σε αυτή."
 
 #: peeringdb_server/static/peeringdb.js:773
 msgid "Exchange"
@@ -78,7 +77,7 @@ msgstr "Επαφή Δικτύου"
 
 #: peeringdb_server/static/peeringdb.js:849
 msgid "Network - Exchange link"
-msgstr "Ζεύξη Δικτύου - IXP""
+msgstr "Ζεύξη Δικτύου - IXP"
 
 #: peeringdb_server/static/peeringdb.js:894
 msgid "Network - Facility link"
