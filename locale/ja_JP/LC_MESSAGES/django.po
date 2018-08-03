@@ -895,7 +895,7 @@ msgstr "この形式 '%(type)s' のオブジェクトは生成する事が出来
 #: peeringdb_server/signals.py:161
 #, python-format
 msgid "User %(u_name)s wishes to be affiliated to your Organization"
-msgstr "あなたの組織に所属する事を望んでいるユーザ"
+msgstr "あなたの組織に所属する事を望んでいるユーザ: %(u_name)s"
 
 #: peeringdb_server/templates/account/email_confirm.html:13
 msgid "Confirm your e-mail address"
@@ -1173,7 +1173,7 @@ msgstr "あなたの '%(o_name)s' に対する組織所属リクエストが承�
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:8
 msgid "This was the result of a manual review of your affiliation request to ASN"
-msgstr "こちらが当該 AS 番号に対する組織所属のリクエストのレビュー結果です
+msgstr "こちらが当該 AS 番号に対する組織所属のリクエストのレビュー結果です"
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:10
 msgid "This was the result of a manual review of your affiliation request to the organization or one of it's entities."
@@ -1437,7 +1437,7 @@ msgstr "いかなる個人や組織に情報を渡すいかなる要求は、要
 
 #: peeringdb_server/templates/site/aup.html:22
 msgid "Users will not be able to download the full contents of the database unless the intended use is for \"Internet operational issues\". These words are tightly defined and would include network trouble-shooting, abuse reporting, and Internet research and analysis. It would not include compiling marketing lists, demographic mapping, or any other commercial application."
-msgstr "利用者が意図している用途が、 \"Internet operational issues\ では無い限りデータベースの全コンテンツをダウンロードする事は出来ません"
+msgstr "利用者が意図している用途が、 \"Internet operational issues\" では無い限りデータベースの全コンテンツをダウンロードする事は出来ません"
 
 #: peeringdb_server/templates/site/aup.html:29
 msgid "Each request would be carefully considered in light of the PeeringDB Acceptable Use Policy."
