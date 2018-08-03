@@ -885,7 +885,7 @@ msgstr "Δεν μπορέσαμε να βρούμε την RIR καταχώρη�
 #: peeringdb_server/serializers.py:229
 #, python-format
 msgid "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
-msgstr "Το αντικείμενο της μορφής '%(type)s' δεν μπορεί να δημιουργηθεί καθώςη γονική οντότητα δεν έχει εγκριθεί ακόμαi: '%(parent_tag)s/%(parent_id)s"
+msgstr "Το αντικείμενο της μορφής '%(type)s' δεν μπορεί να δημιουργηθεί καθώς η γονική οντότητα δεν έχει εγκριθεί ακόμα i: '%(parent_tag)s/%(parent_id)s"
 
 #: peeringdb_server/serializers.py:237
 #, python-format
