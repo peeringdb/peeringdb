@@ -129,7 +129,7 @@ msgstr "IPv6"
 #: peeringdb_server/views.py:1292 peeringdb_server/views.py:1300
 #: peeringdb_server/views.py:1306
 msgid "Not Disclosed"
-msgstr "公開無し"
+msgstr "非公開"
 
 #: django_peeringdb/const.py:40
 msgid "Heavy Outbound"
@@ -141,7 +141,7 @@ msgstr "大部分が送信方向のトラフィック"
 
 #: django_peeringdb/const.py:42
 msgid "Balanced"
-msgstr "偏り無し"
+msgstr "均衡"
 
 #: django_peeringdb/const.py:43
 msgid "Mostly Inbound"
@@ -495,7 +495,7 @@ msgstr "新規プレフィクスの左側3オクテット - 例. xxx.xxx.xxx"
 #: peeringdb_server/data_views.py:47 peeringdb_server/data_views.py:48
 #: peeringdb_server/templates/site/view_organization_tools.html:516
 msgid "Yes"
-msgstr "はい"
+msgstr "有り"
 
 #: peeringdb_server/export_views.py:140
 msgid "Invalid export format"
@@ -1585,7 +1585,7 @@ msgstr "PeeringDB はピアリングに関する情報交換を手助けしま�
 
 #: peeringdb_server/templates/site/index.html:38
 msgid "Specifically, we are a database of networks that are peering, where they are peering, and if they are likely to peer with you. If you don't know what peering is, and/or you don't currently engage in peering, this probably won't have any meaning for you."
-msgstr "あなたが現在誰とピアリングをしているか？これからピアリング出来そうなところは誰か？の情報が集まっているデータベースです。もしあなたがピアリングが何かを知らない、もしくは、ピアリングに従事していなければ、おそらく意味の無いものです"
+msgstr "あなたが現在誰とピアリングをしているか？これからピアリング出来そうなところは誰か？の情報が集まっているデータベースです。もしあなたがピアリングとは何かを知らない、もしくは、ピアリングに従事していなければ、おそらく意味の無いものです。"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "You are currently viewing a read-only view of the data contained here. If you are a peering network who would like to create an account,"
@@ -1597,7 +1597,7 @@ msgstr "ここでアカウントを登録する事が出来ます"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "Please register ONLY if you are a peering network."
-msgstr "あなたがネットワークのピアリング運用者であればアカウントを登録してみてください"
+msgstr "あなたがネットワークのピアリング運用者であればアカウントを登録してみてください。"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "You may also"
@@ -2039,7 +2039,7 @@ msgstr "MTU"
 #: peeringdb_server/templates/site/view_organization_side.html:107
 #: peeringdb_server/templates/site/view_organization_side.html:175
 msgid "Nothing matched your filter"
-msgstr "あなたのフィルタと一致するものはありませんでした"
+msgstr "フィルタに一致するものはありませんでした"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
 #: peeringdb_server/templates/site/view_exchange_bottom.html:251
@@ -2168,7 +2168,7 @@ msgstr "このコンタクト先を追加"
 
 #: peeringdb_server/templates/site/view_network_side.html:15
 msgid "Public Peering Exchange Points"
-msgstr "パブリックなエクスチェンジポイント"
+msgstr "接続しているエクスチェンジポイント"
 
 #: peeringdb_server/templates/site/view_network_side.html:32
 #: peeringdb_server/templates/site/view_network_side.html:176
@@ -2507,7 +2507,7 @@ msgstr "連絡先情報"
 
 #: peeringdb_server/views.py:1099 peeringdb_server/views.py:1242
 msgid "Company Website"
-msgstr "組織の Web サイト"
+msgstr "Web サイト"
 
 #: peeringdb_server/views.py:1109
 msgid "Technical Email"
@@ -2555,7 +2555,7 @@ msgstr "IXP Update を許可する"
 
 #: peeringdb_server/views.py:1345
 msgid "If enabled, an ixp may manage this network's entry in their peering list"
-msgstr "チェックをすると、IXP はピアリングリストにあるこのネットワークのエンティティの管理が出来ます"
+msgstr "有効にすると、IXP はピアリングリストにあるこのネットワークの項目を管理する事が出来ます"
 
 #: peeringdb_server/views.py:1354
 msgid "Peering Policy Information"
