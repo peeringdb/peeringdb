@@ -1,5 +1,4 @@
 
 # PeeringDB
 
-Currently just used for issues.
-
+Currently just used for issues and translations.

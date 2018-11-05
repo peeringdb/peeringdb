@@ -6,13 +6,13 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: 1.0\n"
-"Report-Msgid-Bugs-To: noc@ix.ru\n"
-"POT-Creation-Date: 2018-06-01 19:37+0000\n"
-"PO-Revision-Date: 2018-06-27 01:00+0300\n"
-"Last-Translator: Alexander Ilin\n"
-"Language-Team: MSK-IX\n"
-"Language: ru\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-06-04 04:53+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -27,25 +27,25 @@ msgstr "ATM"
 
 #: django_peeringdb/const.py:5
 msgid "Multiple"
-msgstr "Несколько"
+msgstr "Πολλαπλές"
 
 #: django_peeringdb/const.py:8
 msgid "Abuse"
-msgstr "Жалобы"
+msgstr "Abuse"
 
 #: django_peeringdb/const.py:9
 msgid "Maintenance"
-msgstr "Уведомления о перерывах"
+msgstr "Maintenance"
 
 #: django_peeringdb/const.py:10
 #: peeringdb_server/templates/site/view_exchange_side.html:26
 #: peeringdb_server/templates/site/view_exchange_side.html:37
 msgid "Policy"
-msgstr "Пиринговая политика"
+msgstr "Policy"
 
 #: django_peeringdb/const.py:11
 msgid "Technical"
-msgstr "Технический контакт"
+msgstr "Technical"
 
 #: django_peeringdb/const.py:12
 msgid "NOC"
@@ -53,57 +53,57 @@ msgstr "NOC"
 
 #: django_peeringdb/const.py:13
 msgid "Public Relations"
-msgstr "Общественные связи"
+msgstr "Δημόσιες Σχέσεις"
 
 #: django_peeringdb/const.py:14
 msgid "Sales"
-msgstr "Продажи"
+msgstr "Πωλήσεις"
 
 #: django_peeringdb/const.py:18
 msgid "Open"
-msgstr "Открытая"
+msgstr "Ανοιχτή"
 
 #: django_peeringdb/const.py:19
 msgid "Selective"
-msgstr "Избирательная"
+msgstr "Επιλεκτική"
 
 #: django_peeringdb/const.py:20
 msgid "Restrictive"
-msgstr "Закрытая"
+msgstr "Περιοριστική"
 
 #: django_peeringdb/const.py:21 peeringdb_server/data_views.py:47
 #: peeringdb_server/data_views.py:48
 #: peeringdb_server/templates/site/view_organization_tools.html:516
 msgid "No"
-msgstr "Нет"
+msgstr "'Οχι"
 
 #: django_peeringdb/const.py:22 django_peeringdb/const.py:28
 msgid "Not Required"
-msgstr "Не требуется"
+msgstr "Δεν απαιτείται"
 
 #: django_peeringdb/const.py:23
 msgid "Preferred"
-msgstr "Предпочтительно"
+msgstr "Προτιμητέα"
 
 #: django_peeringdb/const.py:24
 msgid "Required - US"
-msgstr "Обязательно - США"
+msgstr "Απαιτείται - ΗΠΑ"
 
 #: django_peeringdb/const.py:25
 msgid "Required - EU"
-msgstr "Обязательно - ЕС"
+msgstr "Απαιτείται - ΕΕ"
 
 #: django_peeringdb/const.py:27
 msgid "Required - International"
-msgstr "Обязательно - Весь мир"
+msgstr "Απαιτείται - Διεθνής"
 
 #: django_peeringdb/const.py:29
 msgid "Private Only"
-msgstr "Только приватные"
+msgstr "Ιδιωτικές Μόνο"
 
 #: django_peeringdb/const.py:30
 msgid "Required"
-msgstr "Обязательно"
+msgstr "Απαιτείται"
 
 #: django_peeringdb/const.py:33
 #: peeringdb_server/templates/site/view_exchange_side.html:21
@@ -129,147 +129,147 @@ msgstr "IPv6"
 #: peeringdb_server/views.py:1292 peeringdb_server/views.py:1300
 #: peeringdb_server/views.py:1306
 msgid "Not Disclosed"
-msgstr "Нет данных"
+msgstr "Δεν έχει ανακοινωθεί"
 
 #: django_peeringdb/const.py:40
 msgid "Heavy Outbound"
-msgstr "Существенный исходящий"
+msgstr "Ιδιαίτερα Εξερχόμενη"
 
 #: django_peeringdb/const.py:41
 msgid "Mostly Outbound"
-msgstr "Преобладает исходящий"
+msgstr "Ως επί το πλείστον Εξερχόμενη"
 
 #: django_peeringdb/const.py:42
 msgid "Balanced"
-msgstr "Сбалансированный"
+msgstr "Ισορροπημένη"
 
 #: django_peeringdb/const.py:43
 msgid "Mostly Inbound"
-msgstr "Преобладает входящий"
+msgstr "Ως επί το πλείστον Εισερχόμενη"
 
 #: django_peeringdb/const.py:44
 msgid "Heavy Inbound"
-msgstr "Существенный входящий"
+msgstr "Ιδιαίτερα Εισερχόμενη"
 
 #: django_peeringdb/const.py:47 django_peeringdb/const.py:59
 msgid "North America"
-msgstr "Северная Америка"
+msgstr "Βόρεια Αμερική"
 
 #: django_peeringdb/const.py:48 django_peeringdb/const.py:60
 msgid "Asia Pacific"
-msgstr "Азиатско-Тихоокеанский регион"
+msgstr "Ασία και Ειρηνικός"
 
 #: django_peeringdb/const.py:49 django_peeringdb/const.py:61
 msgid "Europe"
-msgstr "Европа"
+msgstr "Ευρώπη"
 
 #: django_peeringdb/const.py:50 django_peeringdb/const.py:62
 msgid "South America"
-msgstr "Южная Америка"
+msgstr "Νότια Αμερική"
 
 #: django_peeringdb/const.py:51 django_peeringdb/const.py:63
 msgid "Africa"
-msgstr "Африка"
+msgstr "Αφρική"
 
 #: django_peeringdb/const.py:52 django_peeringdb/const.py:64
 msgid "Australia"
-msgstr "Австралия"
+msgstr "Αυστραλία"
 
 #: django_peeringdb/const.py:53 django_peeringdb/const.py:65
 msgid "Middle East"
-msgstr "Ближний и средний Восток"
+msgstr "Μέση Ανατολή"
 
 #: django_peeringdb/const.py:58
 msgid "Regional"
-msgstr "Региональный"
+msgstr "Τοπικό"
 
 #: django_peeringdb/const.py:66
 msgid "Global"
-msgstr "Глобальный"
+msgstr "Παγκόσμιο"
 
 #: django_peeringdb/const.py:70
 msgid "0-20 Mbps"
-msgstr "0-20 Мбит/с"
+msgstr "0-20 Mbps"
 
 #: django_peeringdb/const.py:71
 msgid "20-100Mbps"
-msgstr "20-100Мбит/с"
+msgstr "20-100Mbps"
 
 #: django_peeringdb/const.py:72
 msgid "100-1000Mbps"
-msgstr "100-1000Мбит/с"
+msgstr "100-1000Mbps"
 
 #: django_peeringdb/const.py:73
 msgid "1-5Gbps"
-msgstr "1-5Гбит/с"
+msgstr "1-5Gbps"
 
 #: django_peeringdb/const.py:74
 msgid "5-10Gbps"
-msgstr "5-10Гбит/с"
+msgstr "5-10Gbps"
 
 #: django_peeringdb/const.py:75
 msgid "10-20Gbps"
-msgstr "10-20Гбит/с"
+msgstr "10-20Gbps"
 
 #: django_peeringdb/const.py:76
 msgid "20-50 Gbps"
-msgstr "20-50 Гбит/с"
+msgstr "20-50 Gbps"
 
 #: django_peeringdb/const.py:77
 msgid "50-100 Gbps"
-msgstr "50-100 Гбит/с"
+msgstr "50-100 Gbps"
 
 #: django_peeringdb/const.py:78
 msgid "100+ Gbps"
-msgstr "100+ Гбит/с"
+msgstr "100+ Gbps"
 
 #: django_peeringdb/const.py:79
 msgid "100-200 Gbps"
-msgstr "100-200 Гбит/c"
+msgstr "100-200 Gbps"
 
 #: django_peeringdb/const.py:80
 msgid "200-300 Gbps"
-msgstr "200-300 Гбит/с"
+msgstr "200-300 Gbps"
 
 #: django_peeringdb/const.py:81
 msgid "300-500 Gbps"
-msgstr "300-500 Гбит/с"
+msgstr "300-500 Gbps"
 
 #: django_peeringdb/const.py:82
 msgid "500-1000 Gbps"
-msgstr "500-1000 Гбит/с"
+msgstr "500-1000 Gbps"
 
 #: django_peeringdb/const.py:83
 msgid "1 Tbps+"
-msgstr "1+ Тбит/с"
+msgstr "1 Tbps+"
 
 #: django_peeringdb/const.py:84
 msgid "10 Tbps+"
-msgstr "10+ Тбит/c"
+msgstr "10 Tbps+"
 
 #: django_peeringdb/const.py:89
 msgid "NSP"
-msgstr "Магистральный оператор"
+msgstr "NSP"
 
 #: django_peeringdb/const.py:90
 msgid "Content"
-msgstr "Контент"
+msgstr "Περιεχόμενο"
 
 #: django_peeringdb/const.py:91
 msgid "Cable/DSL/ISP"
-msgstr "Кабельный/DSL оператор"
+msgstr "Cable/DSL/ISP"
 
 #: django_peeringdb/const.py:92
 msgid "Enterprise"
-msgstr "Компания"
+msgstr "Εταιρεία"
 
 #: django_peeringdb/const.py:93
 msgid "Educational/Research"
-msgstr "Научно/образовательное учреждение"
+msgstr "Εκπαιδευτικός/Ερευνητικός"
 
 #: django_peeringdb/const.py:94
 msgid "Non-Profit"
-msgstr "Некоммерческая организация"
+msgstr "Μη Κερδοσκοπικός"
 
 #: django_peeringdb/const.py:95
 msgid "Route Server"
@@ -277,93 +277,89 @@ msgstr "Route Server"
 
 #: django_peeringdb/const.py:99
 msgid "Private"
-msgstr "Приватный"
+msgstr "Ιδιωτικός"
 
 #: django_peeringdb/const.py:101
 #: peeringdb_server/templates/site/view_organization_tools.html:32
 msgid "Users"
-msgstr "Пользователи"
+msgstr "Χρήστες"
 
 #: django_peeringdb/const.py:102
 msgid "Public"
-msgstr "Публичный"
-
-#: mail_test.py:54 peeringdb_server/mail.py:57
-msgid "{} Merge Notification: {} -> {}"
-msgstr "{} Уведомление о слиянии: {} -> {}"
+msgstr "Δημόσιο"
 
 #: peeringdb_server/admin.py:54 peeringdb_server/admin.py:1135
 #: peeringdb_server/templates/site/footer.html:30
 msgid "Status"
-msgstr "Статус"
+msgstr "Κατάσταση"
 
 #: peeringdb_server/admin.py:133
 msgid "Target org cannot be in selected organizations list"
-msgstr "Целевая организация не может быть в списке выбранных организаций"
+msgstr "Ο στοχοποιημένος οργανισμός δεν μπορεί να είναι στη λίστα επιλεγμένων οργανισμών"
 
 #: peeringdb_server/admin.py:258
 msgid "ROLLBACK"
-msgstr "ОТКАТИТЬ ВЕРСИЮ"
+msgstr "ΕΠΑΝΑΦΟΡΑ"
 
 #: peeringdb_server/admin.py:269
 msgid "SOFT DELETE"
-msgstr "УДАЛИТЬ УСЛОВНО"
+msgstr "ΗΠΙΑ ΔΙΑΓΡΑΦΗ"
 
 #: peeringdb_server/admin.py:340
 msgid "Verification Queue is currently disabled"
-msgstr "Очередь на верификацию сейчас деактивирована"
+msgstr "Η Ουρά Επαλήθευσης είναι αυτή τη στιγμή απενεργοποιημένη"
 
 #: peeringdb_server/admin.py:343
 msgid "Verification Queue is currently disabled for this object type"
-msgstr "Очередь на верификацию сейчас деактивирована для объектов данного типа"
+msgstr "Η Ουρά Επαλήθευσης είναι αυτή τη στιγμή απενεργοποιημένη για αυτόν τον τύπο αντικειμένου"
 
 #: peeringdb_server/admin.py:353
 msgid "APPROVE"
-msgstr "ОДОБРИТЬ"
+msgstr "ΕΓΚΡΙΣΗ"
 
 #: peeringdb_server/admin.py:354
 msgid "DENY"
-msgstr "ОТКЛОНИТЬ"
+msgstr "ΑΠΑΓΟΡΕΥΣΗ"
 
 #: peeringdb_server/admin.py:355
 msgid "APPROVED"
-msgstr "ОДОБРЕНО"
+msgstr "ΕΓΚΕΚΡΙΜΕΝΟ"
 
 #: peeringdb_server/admin.py:420 peeringdb_server/admin.py:429
 msgid "Ipaddress already exists elsewhere"
-msgstr "IP-адрес уже используется"
+msgstr "Η διεύθυνση IP υπάρχει ήδη αλλού"
 
 #: peeringdb_server/admin.py:448
 msgid "User is looking to be affiliated to these Organizations"
-msgstr "Пользователь намеревается установить связь с данными Организациями"
+msgstr "Ο χρήστης ενδιαφέρεται να συσχετισθεί με αυτούς τους οργανισμούς"
 
 #: peeringdb_server/admin.py:479
 msgid "IXF Import History"
-msgstr "История импорта IXF"
+msgstr "Ιστορία Εισαγωγών IXF"
 
 #: peeringdb_server/admin.py:528
 msgid "Initial creation of netixlan"
-msgstr "Создание нового netixlan"
+msgstr "Αρχική δημιουργία του netixlan"
 
 #: peeringdb_server/admin.py:548
 msgid "CAN BE ROLLED BACK"
-msgstr "ОТКАТ ВОЗМОЖЕН"
+msgstr "ΜΠΟΡΕΙ ΝΑ ΑΝΤΙΣΤΡΑΦΕΙ"
 
 #: peeringdb_server/admin.py:552 peeringdb_server/admin.py:556
 msgid "CANNOT BE ROLLED BACK"
-msgstr "ОТКАТ НЕВОЗМОЖЕН"
+msgstr "ΔΕΝ ΜΠΟΡΕΙ ΝΑ ΑΝΤΙΣΤΡΑΦΕΙ"
 
 #: peeringdb_server/admin.py:552
 msgid "Has been changed since"
-msgstr "Изменен с"
+msgstr "Έχει αλλαχθεί από"
 
 #: peeringdb_server/admin.py:557
 msgid "Netixlan with conflicting ipaddress now exists elsewhere"
-msgstr "Netixlan с конфликтующим IP-адресом существует"
+msgstr "To netixlan με αντικρουόμενη διεύθυνση IP τώρα υπάρχει κάπου αλλού"
 
 #: peeringdb_server/admin.py:560
 msgid "HAS BEEN ROLLED BACK"
-msgstr "ПРОИЗВЕДЕН ОТКАТ"
+msgstr "ΑΝΤΙΣΤΡΑΦΗΚΕ"
 
 #: peeringdb_server/admin.py:617
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:6
@@ -371,271 +367,275 @@ msgstr "ПРОИЗВЕДЕН ОТКАТ"
 #: peeringdb_server/views.py:948 peeringdb_server/views.py:1041
 #: peeringdb_server/views.py:1231
 msgid "Organization"
-msgstr "Организация"
+msgstr "Οργανισμός"
 
 #: peeringdb_server/admin.py:622
 msgid "Not Set"
-msgstr "Не установлен"
+msgstr "Δεν έχει ορισθεί"
 
 #: peeringdb_server/admin.py:626 peeringdb_server/admin.py:657
 msgid "Logo Missing"
-msgstr "Лого отсутствует"
+msgstr "Το λογότυπο απουσιάζει"
 
 #: peeringdb_server/admin.py:627 peeringdb_server/admin.py:658
 msgid "Active"
-msgstr "Активен"
+msgstr "Ενεργό"
 
 #: peeringdb_server/admin.py:629
 msgid "Over"
-msgstr "Более"
+msgstr "Over"
 
 #: peeringdb_server/admin.py:631
 msgid "Waiting"
-msgstr "Ожидание"
+msgstr "Σε αναμονή"
 
 #: peeringdb_server/admin.py:688
 msgid "Malformed organization ids"
-msgstr "Неверно сформированы идентификаторы организаций"
+msgstr "Μη σωστά μορφοποιημένα ids οργανισμών"
 
 #: peeringdb_server/admin.py:695
 msgid "Merge target organization does not exist"
-msgstr "Организация-цель для слияния не существует"
+msgstr "Ο στοχοποιημένος οργανισμός προς συγχώνευση δεν υπάρχει"
 
 #: peeringdb_server/admin.py:709
 msgid "Organization Merging Tool"
-msgstr "Утилита для слияния Организаций"
+msgstr "Εργαλείο συγχώνευσης Οργανισμών"
 
 #: peeringdb_server/admin.py:736 peeringdb_server/admin.py:747
 msgid "Undo merge"
-msgstr "Отменить слияние"
+msgstr "Αντιστροφή συγχώνευσης"
 
 #: peeringdb_server/admin.py:816
 msgid "APPROVE selected items"
-msgstr "ОДОБРИТЬ выделенные элементы"
+msgstr "ΕΓΚΡΙΣΗ επιλεγμένων αντικειμένων"
 
 #: peeringdb_server/admin.py:822
 msgid "DENY and delete selected items"
-msgstr "ОТКЛОНИТЬ и удалить выделенные элементы"
+msgstr "ΑΠΟΡΡΙΨΗ και διαγραφή επιλεγμένων αντικειμένων"
 
 #: peeringdb_server/admin.py:827
 msgid "View"
-msgstr "Просмотр"
+msgstr "Θέαση"
 
 #: peeringdb_server/admin.py:843
 msgid "Affiliation request was approved and the user was notified."
-msgstr "Заявка на установление связи одобрена, пользователь уведомлен."
+msgstr "Το αίτημα συσχέτισης εγκρίθηκε και ο χρήστης ειδοποιήθηκε."
 
 #: peeringdb_server/admin.py:845
 msgid "Approve and notify User"
-msgstr "Одобрить и уведомить Пользователя"
+msgstr "΄Εγκριση και ειδοποίηση Χρήστη"
 
 #: peeringdb_server/admin.py:851
 #: peeringdb_server/templates/site/view_organization_tools.html:520
 msgid "Approve"
-msgstr "Одобрить"
+msgstr "'Εγκριση"
 
 #: peeringdb_server/admin.py:857
 #: peeringdb_server/templates/site/view_organization_tools.html:521
 msgid "Deny"
-msgstr "Отклонить"
+msgstr "Απόρριψη"
 
 #: peeringdb_server/admin.py:926
 #: peeringdb_server/templates/site/verify.html:217
 msgid "Change Password"
-msgstr "Изменить пароль"
+msgstr "Αλλαγή κωδικού"
 
 #: peeringdb_server/admin.py:936
 msgid "Edit Permissions"
-msgstr "Редактировать права доступа"
+msgstr "Επεξεργασία δικαιωμάτων"
 
 #: peeringdb_server/admin.py:943
 msgid "VERIFIED"
-msgstr "ПРОВЕРЕН"
+msgstr "ΕΛΕΓΜΕΝΟ"
 
 #: peeringdb_server/admin.py:946
 msgid "UNVERIFIED"
-msgstr "НЕ ПРОВЕРЕН"
+msgstr "ΜΗ ΕΛΕΓΜΕΝΟ"
 
 #: peeringdb_server/admin.py:962
 msgid "User Permission"
-msgstr "Права доступа для Пользователя"
+msgstr "Δικαίωμα Χρήστη"
 
 #: peeringdb_server/admin.py:963
 msgid "User Permissions"
-msgstr "Права доступа для Пользователя"
+msgstr "Δικαιώματα Χρήστη"
 
 #: peeringdb_server/admin.py:1013
 msgid "Duplicate IP"
-msgstr "Конфликтующие IP-адрес"
+msgstr "Διπλότυπη IP"
 
 #: peeringdb_server/admin.py:1014
 msgid "Duplicate IPs"
-msgstr "Конфликтующие IP-адреса"
+msgstr "Διπλότυπες IP"
 
 #: peeringdb_server/admin.py:1141
 msgid "Updated"
-msgstr "Последнее обновление"
+msgstr "Ενημερώθηκε"
 
 #: peeringdb_server/admin.py:1259 peeringdb_server/admin.py:1291
 msgid "Only POST requests allowed."
-msgstr "Разрешены только POST-запросы."
+msgstr "Επιτρέπονται μόνο POST αιτήματα"
 
 #: peeringdb_server/admin.py:1269
 msgid "{} (Preview)"
-msgstr "{} (Предпросмотр)"
+msgstr "{} (Προεπισκόπηση)"
 
 #: peeringdb_server/admin_commandline_tools.py:136
 msgid "Three leftmost octets of the original prefix - eg. xxx.xxx.xxx"
-msgstr "Три первых октета исходного префикса - например, xxx.xxx.xxx"
+msgstr "Ta τρία αριστερά octets του αρχικού prefix - π.χ. xxx.xxx.xxx"
 
 #: peeringdb_server/admin_commandline_tools.py:140
 msgid "Three leftmost octets of the new prefix - eg. xxx.xxx.xxx"
-msgstr "Три первых октета нового префикса - например, xxx.xxx.xxx"
+msgstr "Τα τρία αριστερά octets του νέου prefix - π.χ. xxx.xxx.xxx"
 
 #: peeringdb_server/data_views.py:47 peeringdb_server/data_views.py:48
 #: peeringdb_server/templates/site/view_organization_tools.html:516
 msgid "Yes"
-msgstr "Да"
+msgstr "Ναι"
 
 #: peeringdb_server/export_views.py:140
 msgid "Invalid export format"
-msgstr "Неверный формат экспорта"
+msgstr "Μη έγκυρη μορφή εξαγωγής"
 
 #: peeringdb_server/export_views.py:284
 msgid "Invalid tag"
-msgstr "Неверный ярлык"
+msgstr "Μη έγκυρη ετικέττα"
 
 #: peeringdb_server/forms.py:21
 msgid "Invalid permission level"
-msgstr "Недостаточно прав доступа"
+msgstr "Μη έγκυρο επίπεδο δικαιώματος"
 
 #: peeringdb_server/forms.py:59
 msgid "ASN needs to be a number"
-msgstr "Номер ASN должен быть числом"
+msgstr "To ASN πρέπει να είναι αριθμός"
 
 #: peeringdb_server/forms.py:71 peeringdb_server/views.py:694
 msgid "Needs to be at least 10 characters long"
-msgstr "Минимальная длина 10 символов"
+msgstr "Πρέπει να είναι τουλάχιστον 10 χαρακτήρες σε μέγεθος"
 
 #: peeringdb_server/forms.py:80
 msgid "Passwords need to match"
-msgstr "Пароли должны совпадать"
+msgstr "Οι κωδικοί πρέπει να είναι ταυτόσημοι"
+
+#: peeringdb_server/mail.py:57
+msgid "{} Merge Notification: {} -> {}"
+msgstr "{} Ειδοποιήση Συγχώνευσης: {} -> {}"
 
 #: peeringdb_server/models.py:42
 #: peeringdb_server/templates/site/sponsorships.html:56
 msgid "Silver"
-msgstr "Серебряный"
+msgstr "Ασημένιοι"
 
 #: peeringdb_server/models.py:42
 #: peeringdb_server/templates/site/sponsorships.html:43
 msgid "Gold"
-msgstr "Золотой"
+msgstr "Χρυσοί"
 
 #: peeringdb_server/models.py:42
 #: peeringdb_server/templates/site/sponsorships.html:28
 msgid "Platinum"
-msgstr "Платиновый"
+msgstr "Πλατινένιοι"
 
 #: peeringdb_server/models.py:43
 #: peeringdb_server/templates/site/sponsorships.html:12
 msgid "Diamond"
-msgstr "Бриллиантовый"
+msgstr "Διαμαντέντιοι"
 
 #: peeringdb_server/models.py:45
 msgid "Data Validation"
-msgstr "Проверка данных"
+msgstr "Επικύρωση Δεδομένων"
 
 #: peeringdb_server/models.py:45
 msgid "RIR"
-msgstr "Региональная интернет-регистратура"
+msgstr "RIR"
 
 #: peeringdb_server/models.py:47
 msgid "Renumber IP Space"
-msgstr "Перенумеровать IP-пространство"
+msgstr "Επαναρίθμηση Xώρου IP"
 
 #: peeringdb_server/models.py:147
 msgid "Has this object's latitude and longitude been syncronized to it's address fields"
-msgstr "Синхонизация широты и долготы объекта с полями адреса"
+msgstr "Έχει συγχρονιστεί το γεωγραφικό μήκος και πλάτος του αντικειμένου στα πεδία διεύθυνσης"
 
 #: peeringdb_server/models.py:150
 msgid "Last time of attempted geocode"
-msgstr "Время последней попытки геокодирования"
+msgstr "Τελευταία χρονική στιγμή προσπάθειας geocode"
 
 #: peeringdb_server/models.py:153
 msgid "Error message of previous geocode attempt"
-msgstr "Сообщение об ошибке предыдущей попытки геокодированния"
+msgstr "Μήνυμα λάθους τελευταίας προσπάθειας geocode"
 
 #: peeringdb_server/models.py:200
 msgid "Address not found"
-msgstr "Адрес не найден"
+msgstr "Δεν βρέθηκε η διεύθυνση"
 
 #: peeringdb_server/models.py:208
 msgid "API Timeout"
-msgstr "Таймаут API"
+msgstr "API Timeout"
 
 #: peeringdb_server/models.py:234
 msgid "This organization in our database that was derived from the provided ASN or organization name. If this is empty it means no matching organization was found."
-msgstr "Имя организации из нашей базы данных, выбранное на основе введенного ASN или названия организации. Если пусто, совпадающей организации не найдено."
+msgstr "Αυτός είναι ο οργανισμός που πρόεκυψε από το δοσμένο ASN ή όνομα οργανισμού. Αν είναι κενός, δεν βρέθηκε αντίστοιχος οργανισμός"
 
 #: peeringdb_server/models.py:239
 msgid "The organization name entered by the user"
-msgstr "Имя организации, введенное пользователем"
+msgstr "Το όνομα του οργανισμού όπως εισήχθηκε από τον χρήστη"
 
 #: peeringdb_server/models.py:242
 msgid "The ASN entered by the user"
-msgstr "Номер ASN, введенный пользователем"
+msgstr "Το ASN όπως εισήχθηκε από τον χρήστη"
 
 #: peeringdb_server/models.py:245
 msgid "The user that made the request"
-msgstr "Пользователь, создавший заявку"
+msgstr "Ο χρήστης που έκανε το αίτημα"
 
 #: peeringdb_server/models.py:251
 msgid "Pending"
-msgstr "В обработке"
+msgstr "Εκκρεμεί"
 
 #: peeringdb_server/models.py:252
 msgid "Approved"
-msgstr "Одобрено"
+msgstr "Eγκεκριμένο"
 
 #: peeringdb_server/models.py:253
 msgid "Denied"
-msgstr "Отказ"
+msgstr "Απορρίφθηκε"
 
 #: peeringdb_server/models.py:254
 msgid "Status of this request"
-msgstr "Статус заявки"
+msgstr "Κατάσταση του αιτήματος"
 
 #: peeringdb_server/models.py:258
 msgid "User to Organization Affiliation Request"
-msgstr "Заявка на связь Пользователя с Организацией"
+msgstr "Αίτημα συσχέτισης Χρήστη με Οργανισμό"
 
 #: peeringdb_server/models.py:259
 msgid "User to Organization Affiliation Requests"
-msgstr "Заявки на связь Пользователя с Организацией"
+msgstr "Αιτήματα συσχέτισης Χρήστη με Οργανισμό"
 
 #: peeringdb_server/models.py:316
 msgid "Your affiliation to Organization \"{}\" has been approved"
-msgstr "Ваша заявка на связь с Организацией \"{}\" одобрена"
+msgstr "Η συσχέτισή σας με τον Οργανισμό \"{}\" εγκρίθηκε"
 
 #: peeringdb_server/models.py:343
 msgid "The item that this queue is attached to was created by this user"
-msgstr "Элемент с которым ассоциирована данная очередь был создан пользователем"
+msgstr "Το αντικείμενο στου οποίου η σειρά έχει επισυναφθεί δημιουργήθηκε από αυτόν τον χρήστη"
 
 #: peeringdb_server/models.py:435
 msgid "Allows you to upload and set a logo image file for this organization"
-msgstr "Позволяет загрузить файл с логотипом организации"
+msgstr "Σας δίνει τη δυνατότητα να ανεβάσετε και να ορίσετε ένα αρχείο εικόνας λογότυπου για αυτόν τον οργανισμό"
 
 #: peeringdb_server/models.py:658
 msgid "Sponsorship starts on"
-msgstr "Начало периода спонсорства"
+msgstr "Η αιγίδα ξεκινά την"
 
 #: peeringdb_server/models.py:660
 msgid "Sponsorship ends on"
-msgstr "Окончание периода спонсорства"
+msgstr "Η αιγίδα λήγει την"
 
 #: peeringdb_server/models.py:662
 msgid "Expiration notification sent on"
-msgstr "Уведомление об истечение периода установлено на"
+msgstr "Η ειδοποίηση λήξης απεστάλλη στις"
 
 #: peeringdb_server/models.py:665 peeringdb_server/models.py:723
 msgid "URL"
@@ -643,282 +643,279 @@ msgstr "URL"
 
 #: peeringdb_server/models.py:666
 msgid "If specified clicking the sponsorship will take the user to this location"
-msgstr "Если указан, для спонсора будет установлена ссылка на данный адрес"
+msgstr "Αν έχει ορισθεί, κλικάροντας την αιγίδα θα μεταφέρει τον χρήστη σε αυτή την τοποθεσία"
 
 #: peeringdb_server/models.py:671
 msgid "Allows you to upload and set a logo image file for this sponsorship"
-msgstr "Позволяет загрузить файл с логотипом спонсора"
+msgstr "Σας επιτρέπει να ανεβάσετε και να ορίσετε ένα αρχείο εικόνας λογότυπουγια αυτή την αιγίδα"
 
 #: peeringdb_server/models.py:676
 msgid "Sponsorship"
-msgstr "Спонсорство"
+msgstr "Υπό την Αιγίδα"
 
 #: peeringdb_server/models.py:677
 msgid "Sponsorships"
-msgstr "Спонсорства"
+msgstr "Υπό τις Αιγίδες"
 
 #: peeringdb_server/models.py:701
 msgid "Sponsorship Expired"
-msgstr "Период спонсирования истек"
+msgstr "Η αιγίδα έχει εκπνεύσει"
 
 #: peeringdb_server/models.py:724
 msgid "If specified clicking the partnership will take the user to this location"
-msgstr "Если указан, для партнера будет установлена ссылка на данный адрес"
+msgstr "Αν έχει ορισθεί, κλικάροντας τον συνεταιρισμό θα μεταφέρει τον χρήστη σε αυτή την τοποθεσία"
 
 #: peeringdb_server/models.py:729
 msgid "Allows you to upload and set a logo image file for this partnership"
-msgstr "Позволяет загрузить файл с логотипом партнера"
+msgstr "Σας επιτρέπει να ανεβάσετε και να ορίσετε ένα αρχείο εικόνας για αυτόν τον συνεταιρισμό"
 
 #: peeringdb_server/models.py:734
 msgid "Partnership"
-msgstr "Партнерство"
+msgstr "Συνεταιρισμός"
 
 #: peeringdb_server/models.py:735
 msgid "Partnerships"
-msgstr "Партнерства"
+msgstr "Συνεταιρισμοί"
 
 #: peeringdb_server/models.py:750
 msgid "Merged on"
-msgstr "Дата слияния"
+msgstr "Συγχωνεύθηκε την"
 
 #: peeringdb_server/models.py:754
 msgid "Organization Merge"
-msgstr "Слияние организаций"
+msgstr "Συγχώνευση Οργανισμού"
 
 #: peeringdb_server/models.py:755
 msgid "Organization Merges"
-msgstr "Слияния организаций"
+msgstr "Συγχωνεύσεις Οργανισμού"
 
 #: peeringdb_server/models.py:808
 msgid "Organization Merge: Entity"
-msgstr "Слияние организаций: Сущность"
+msgstr "Συγχώνευση Οργανισμού: Οντότητα"
 
 #: peeringdb_server/models.py:809
 msgid "Organization Merge: Entities"
-msgstr "Слияние организаций: Сущности"
+msgstr "Συγχώνευση Οργανισμού: Οντότητες"
 
 #: peeringdb_server/models.py:911 peeringdb_server/models.py:1110
 msgid "Need to specify at least two asns"
-msgstr "Укажите минимум две ASN"
+msgstr "Πρέπει να ορίσετε τουλάχιστον 2 ASNs"
 
 #: peeringdb_server/models.py:914 peeringdb_server/models.py:1113
 msgid "Can only compare a maximum of 25 asns"
-msgstr "Возможно сравнение максимум 25 ASN"
+msgstr "Μπορεί να συγκρίνει το πολύ 25 ASNs"
 
 #: peeringdb_server/models.py:1318
 msgid "No JSON could be parsed"
-msgstr "Парсинг JSON невозможен"
+msgstr "Κανένα JSON δεν μπορούσε να αναλυθεί"
 
 #: peeringdb_server/models.py:1344
 msgid "No entries in any of the vlan_list lists, aborting."
-msgstr "Нет записей ни в одном из списков vlan_list, операция прервана."
+msgstr "Δεν υπάρχουν καταχωρήσεις σε καμμία από τις λίστες vlan_list, γίνεται διακοπή."
 
 #: peeringdb_server/models.py:1709
 msgid "IXF Import Log"
-msgstr "Лог импорта IXF"
+msgstr "Ημερολόγιο Εισαγωγών IXF"
 
 #: peeringdb_server/models.py:1710
 msgid "IXF Import Logs"
-msgstr "Логи импорта IXF"
+msgstr "Ημερολόγια Εισαγωγών IXF"
 
 #: peeringdb_server/models.py:1741
 msgid "IXF Import Log Entry"
-msgstr "Запись лога импорта IXF"
+msgstr "Καταχώρηση Ημερολογίου Εισαγωγών IXF"
 
 #: peeringdb_server/models.py:1742
 msgid "IXF Import Log Entries"
-msgstr "Записи лога импорта IXF"
+msgstr "Καταχωρήσεις Ημερολογίου Εισαγωγών IXF"
 
 #: peeringdb_server/models.py:1847
 msgid "Sepcifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data"
-msgstr "Определяет для IXP права добавления записи netixlan для данной сети через данные ixp_member"
+msgstr "Ορίζει αν ο IXP επιτρέπεται να προσθέσει μια καταχώρηση netixlan για αυτό το δίκτυο μέσω των ixp_member δεδομένων του"
 
 #: peeringdb_server/models.py:2283 peeringdb_server/models.py:2285
 msgid "Ip address already exists elsewhere"
-msgstr "IP адрес уже существует"
+msgstr "Αυτή η διεύθυνση IP υπάρχει ήδη αλλού"
 
 #: peeringdb_server/models.py:2296
 msgid "username"
-msgstr "имя пользователя"
+msgstr "Όνομα Χρήστη"
 
 #: peeringdb_server/models.py:2297
 msgid "Required. Letters, digits and [@.+-/_=|] only."
-msgstr "Обязательное поле. Только буквы, цифры и [@.+-/_=|]."
+msgstr "Απαιτείται. Επιτρέπονται μόνο γράμματα, ψηφία και οι χαρακτήρες [@.+-/_=|]."
 
 #: peeringdb_server/models.py:2300
 msgid "Enter a valid username."
-msgstr "Введите действительное имя пользователя."
+msgstr "Εισάγετε ένα έγκυρο όνομα χρήστη."
 
 #: peeringdb_server/models.py:2303
 msgid "email address"
-msgstr "емайл"
+msgstr "διεύθυνση email"
 
 #: peeringdb_server/models.py:2304
 msgid "first name"
-msgstr "имя"
+msgstr "όνομα"
 
 #: peeringdb_server/models.py:2305
 msgid "last name"
-msgstr "фамилия"
+msgstr "επίθετο"
 
 #: peeringdb_server/models.py:2307
-#, fuzzy
 msgid "staff status"
-msgstr "статус администратора"
+msgstr "εταιρικός ρόλος"
 
 #: peeringdb_server/models.py:2308
 msgid "Designates whether the user can log into admin site."
-msgstr "Определяет для пользователя права доступа к интерфейсу администратора."
+msgstr "Ορίζει αν ο χρήστης μπορεί να συνδεθεί στην ιστοσελίδα διαχείρισης."
 
 #: peeringdb_server/models.py:2310
 msgid "active"
-msgstr "активен"
+msgstr "ενεργός/η"
 
 #: peeringdb_server/models.py:2311
 msgid "Designates whether this user should be treated as active. Unselect this instead of deleting accounts."
-msgstr "Определяет статус активированного пользователя. Снимите выделение вместо удаления аккаунта."
+msgstr "Ορίζει αν αυτός ο χρήστης πρέπει να αντιμετωπιστεί ως ενεργός. Αποεπιλέξτε αντί να διαγράφετε λογαριασμούς."
 
 #: peeringdb_server/models.py:2313
-#, fuzzy
 msgid "date joined"
-msgstr "дата регистрации"
+msgstr "ημερομηνία ένταξης"
 
 #: peeringdb_server/models.py:2316
 msgid "status"
-msgstr "статус"
+msgstr "κατάσταση"
 
 #: peeringdb_server/models.py:2318
 msgid "language"
-msgstr "язык"
+msgstr "γλώσσα"
 
 #: peeringdb_server/models.py:2327
 msgid "user"
-msgstr "пользователь"
+msgstr "χρήστης"
 
 #: peeringdb_server/models.py:2328
 msgid "users"
-msgstr "пользователи"
+msgstr "χρήστες"
 
 #: peeringdb_server/models.py:2520
 msgid "Password Reset Initiated"
-msgstr "Инициирована смена пароля"
+msgstr "Έναρξη Επαναφοράς Κωδικού"
 
 #: peeringdb_server/models.py:2588
 msgid "name of the tool"
-msgstr "наименование утилиты"
+msgstr "όνομα του εργαλείου"
 
 #: peeringdb_server/models.py:2591
 msgid "json serialization of arguments and options passed"
-msgstr "json сериализация аргументов и переданных опций"
+msgstr "Η σειριοποίηση json των παραμέτρων και επιλογών πέτυχε"
 
 #: peeringdb_server/models.py:2592
 msgid "result log"
-msgstr "лог результатов"
+msgstr "ημερολόγιο αποτελέσματος"
 
 #: peeringdb_server/models.py:2594
 msgid "the user that ran this command"
-msgstr "пользователь, запустивший команду"
+msgstr "ο χρήστης που εκτέλεσε αυτή την εντολή"
 
 #: peeringdb_server/models.py:2598
 msgid "command was run at this date and time"
-msgstr "дата и время запуска команды"
+msgstr "η εντολή εκτελέστηκε αυτή την ημερομηνία και ώρα"
 
 #: peeringdb_server/org_admin_views.py:140
 msgid "Organization and all Entities it owns"
-msgstr "Организация и все принадлежащие ей Сущности"
+msgstr "Ο Οργανισμός και όλες οι Οντότητες που του ανήκουν"
 
 #: peeringdb_server/org_admin_views.py:141
 msgid "Any Network"
-msgstr "Любая Сеть"
+msgstr "Οποιοδήποτε Δίκτυο"
 
 #: peeringdb_server/org_admin_views.py:142
 msgid "Any Facility"
-msgstr "Любая Площадка"
+msgstr "Οποιαδήποτε Εγκατάσταση"
 
 #: peeringdb_server/org_admin_views.py:143
 msgid "Any Exchange"
-msgstr "Любой IXP"
+msgstr "Οποιοδήποτε Exchange"
 
 #: peeringdb_server/org_admin_views.py:147
 #, python-format
 msgid "Network - %(net_name)s"
-msgstr "Сеть - %(net_name)s"
+msgstr "Δίκτυο - %(net_name)s"
 
 #: peeringdb_server/org_admin_views.py:152
 #, python-format
 msgid "Exchange - %(ix_name)s"
-msgstr "IXP - %(ix_name)s"
+msgstr "Exchange - %(ix_name)s"
 
 #: peeringdb_server/org_admin_views.py:157
 #, python-format
 msgid "Facility - %(fac_name)s"
-msgstr "Площадка - %(fac_name)s"
+msgstr "Facility - %(fac_name)s"
 
 #: peeringdb_server/org_admin_views.py:216
 msgid "Invalid organization specified"
-msgstr "Указана неверная организация"
+msgstr "Ορίστηκε μη έγκυρος οργανισμός"
 
 #: peeringdb_server/org_admin_views.py:309
-#, fuzzy
 msgid "Needs to be member or admin"
-msgstr "Должен принадлежать к группе администраторов"
+msgstr "Πρέπει να είναι μέλος ή διαχειριστής"
 
 #: peeringdb_server/org_admin_views.py:448
 #, python-format
 msgid "%(user_name)s's afilliation request has been approved"
-msgstr "Заявка %(user_name)s на связь одобрена"
+msgstr "Η αίτηση συσχετισμού του/της %(user_name)s εγκρίθηκε"
 
 #: peeringdb_server/org_admin_views.py:502
 #, python-format
 msgid "%(user_name)s's afilliation request has been denied"
-msgstr "Заявка %(user_name)s на связь отклонена"
+msgstr "H αίτηση συσχετισμού του/της %(user_name)s's απορρίφθηκε"
 
 #: peeringdb_server/serializers.py:121
 msgid "Need to be unique"
-msgstr "Должно быть уникальным"
+msgstr "Πρέπει να είναι μοναδικά"
 
 #: peeringdb_server/serializers.py:151
 msgid "This field is required"
-msgstr "Обязательное поле"
+msgstr "Αυτό το πεδίο απαιτείται"
 
 #: peeringdb_server/serializers.py:176
 msgid "We could not find the RiR entry for this ASN"
-msgstr "Запись в базе данных RIR для данной ASN не найдена"
+msgstr "Δεν μπορέσαμε να βρούμε την RIR καταχώρηση για αυτό το ASN"
 
 #: peeringdb_server/serializers.py:229
 #, python-format
 msgid "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
-msgstr "Объект типа '%(type)s' не может быть создан, так как его родительская сущность '%(parent_tag)s/%(parent_id)s' еще на была одобрена"
+msgstr "Το αντικείμενο της μορφής '%(type)s' δεν μπορεί να δημιουργηθεί καθώς η γονική οντότητα δεν έχει εγκριθεί ακόμα i: '%(parent_tag)s/%(parent_id)s"
 
 #: peeringdb_server/serializers.py:237
 #, python-format
 msgid "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
-msgstr "Объект типа '%(type)s' не может быть создан, так как его родительская сущность '%(parent_tag)s/%(parent_id)s' помечена как удаленная"
+msgstr "Τα '%(parent_tag)s/%(parent_id)s' έχουν σημειωθεί ως διεγραμμένα '%(type)s'"
 
 #: peeringdb_server/signals.py:161
 #, python-format
 msgid "User %(u_name)s wishes to be affiliated to your Organization"
-msgstr "Пользователь %(u_name)s подал заявку на связь с организацией"
+msgstr "O/η χρήστης %(u_name)s επιθυμεί να συσχετισθεί με τον Οργανισμό σας"
 
 #: peeringdb_server/templates/account/email_confirm.html:13
 msgid "Confirm your e-mail address"
-msgstr "Подтвердите ваш емайл"
+msgstr "Επιβεβαιώστε την διεύθυνση email σας"
 
 #: peeringdb_server/templates/account/email_confirm.html:15
 msgid "Please confirm that"
-msgstr "Подтвердите что"
+msgstr "Παρακαλούμε επιβεβαιώστε"
 
 #: peeringdb_server/templates/account/email_confirm.html:15
 msgid "is your email-address"
-msgstr "является вашим емайлом"
+msgstr "είναι η διεύθυνση email σας"
 
 #: peeringdb_server/templates/account/email_confirm.html:19
 msgid "Confirm"
-msgstr "Подтвердить"
+msgstr "Eπιβεβαιώστε"
 
 #: peeringdb_server/templates/account/email_confirm.html:23
 msgid "The email confirmation process for this email address has been terminated, please re-initate"
-msgstr "Процесс подтверждения для данного емайла был прерван, начните снова"
+msgstr "H διαδικασία επιβεβαίωσης για αυτό το email τερματίστηκε, παρακαλώ επανεκκινήστε την"
 
 #: peeringdb_server/templates/account/email_confirm.html:23
 #: peeringdb_server/templates/site/request-ownership.html:25
@@ -926,98 +923,98 @@ msgstr "Процесс подтверждения для данного емай
 #: peeringdb_server/templates/site/verification_banner.html:11
 #: peeringdb_server/templates/site/verification_banner.html:14
 msgid "here"
-msgstr "здесь"
+msgstr "εδώ"
 
 #: peeringdb_server/templates/account/login.html:7
 msgid "Please use"
-msgstr "Используйте"
+msgstr "Παρακαλούμε χρησιμοποιήστε"
 
 #: peeringdb_server/templates/account/login.html:7
 msgid "this page"
-msgstr "эту страницу"
+msgstr "αυτή τη σελίδα"
 
 #: peeringdb_server/templates/account/login.html:7
 msgid "instead"
-msgstr "вместо"
+msgstr "αντί"
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/prepare_command.html:18
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/preview_command.html:16
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/run_command.html:16
 msgid "Home"
-msgstr "Главная"
+msgstr "Αρχική"
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/prepare_command.html:22
 msgid "Prepare"
-msgstr "Подготовка"
+msgstr "Προετοιμασία"
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/preview_command.html:20
 msgid "Preview"
-msgstr "Предпросмотр"
+msgstr "Προεπισκόπηση"
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/run_command.html:20
 msgid "Result"
-msgstr "Результат"
+msgstr "Αποτέλεσμα"
 
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:2
 msgid "Merge Notification"
-msgstr "Уведомление о слиянии"
+msgstr "Ειδοποίηση Συγχώνευσης"
 
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:4
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:8
 msgid "ID"
-msgstr "ID"
+msgstr "Ταυτότητα"
 
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:6
 msgid "has been merged into"
-msgstr "объединены в"
+msgstr "έχει συγχωνευθεί σε"
 
 #: peeringdb_server/templates/email/notify-org-admin-merge.txt:11
 msgid "All merges are processed manually by peeringdb support staff. If you think this action has been executed in error please dont hesitate to contact peeringdb support at"
-msgstr "Все слияния обрабатываются вручную администраторами PeeringDB. Если вы считаете, что действие выполнено ошибочно, свяжитесь с техподдержкой по адресу"
+msgstr "Όλες οι συγχωνεύσεις επεξεργάζονται χειροκίνητα από το προσωπικό υποστήριξης. Αν πιστεύετε πως αυτή η ενέργεια εκτελέστηκε κατά λάθος, παρακαλούμε μη διστάσετε να επικοινωνήσετε στο"
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-approved.txt:3
 #, python-format
 msgid "%(u_full_name)s's affiliation request to %(o_name)s has been APPROVED by %(admin_full_name)s."
-msgstr "Заявка %(u_full_name)s на установление связи с организацией %(o_name)s ОДОБРЕНА администратором %(admin_full_name)s."
+msgstr "H αίτηση συσχετισμού του/της %(u_full_name)s %(o_name)s ΕΓΚΡΙΘΗΚΕ από τον/την %(admin_full_name)s."
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-approved.txt:7
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-denied.txt:7
 msgid "No further action is required on your part."
-msgstr "Дальнейших действий не требуется."
+msgstr "Δεν απαιτείται άλλη ενέργεια από μέρους σας"
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-approved.txt:9
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-denied.txt:9
 msgid "As the organization's administrator you may view your organization's user list here"
-msgstr "Как администратору организации вам доступен список пользователей вашей организации здесь"
+msgstr "Ως διαχειριστής του οργανισμού σας, μπορείτε να δείτε τη λίστα χρηστών του εδώ"
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil-denied.txt:3
 #, python-format
 msgid "%(u_full_name)s's affiliation request to %(o_name)s has been DENIED by %(admin_full_name)s."
-msgstr "Заявка %(u_full_name)s на связь с организацией %(o_name)s ОТКЛОНЕНА администратором %(admin_full_name)s."
+msgstr "To aίτημα συσχετισμού του/της %(u_full_name)s προς τον %(o_name)s ΑΠΟΡΡΙΦΘΗΚΕ από τον/την %(admin_full_name)s."
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil.txt:3
 #, python-format
 msgid "User %(u_name)s (%(u_email)s) wishes to be affiliated to %(o_name)s."
-msgstr "Пользователь %(u_name)s (%(u_email)s) подал заявку на установление связи с %(o_name)s."
+msgstr "O/η χρήστης %(u_name)s (%(u_email)s) επιθυμεί να συσχετισθεί με το/ην/ο%(o_name)s."
 
 #: peeringdb_server/templates/email/notify-org-admin-user-affil.txt:7
 msgid "As the organization's administrator you may approve or deny this request here"
-msgstr "В качестве администратора организации вы можете одобрить или отклонить данную заявку здесь"
+msgstr "Ως διαχειριστής του οργανισμού, μπορείτε να εγκρίνετε ή να απορρίψετε το αίτημα εδώ"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:3
 msgid "Ownership of organization was automatically granted to user"
-msgstr "Права управления организацией назначены пользователю автоматически"
+msgstr "Η ιδιοκτησία του οργανισμού δόθηκε αυτομάτως στον/ην χρήστη"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:5
 #: peeringdb_server/templates/site/view_organization_tools.html:496
 #: peeringdb_server/templates/site/view_organization_tools.html:542
 msgid "User"
-msgstr "Пользователь"
+msgstr "Χρήστης"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:7
 #: peeringdb_server/templates/site/view_organization_side.html:113
 msgid "Network"
-msgstr "Сеть"
+msgstr "Δίκτυο"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-affil.txt:7
 msgid "AS"
@@ -1026,105 +1023,105 @@ msgstr "AS"
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-entity-creation.txt:4
 #, python-format
 msgid "Organization %(o_name)s (%(o_id)s) was automatically created during user '%(u_name)s's affiliation request to AS%(asn)s"
-msgstr "Организация %(o_name)s (%(o_id)s)создана автоматически в ходе выполнения заявки пользователя '%(u_name)s’s на связь с AS%(asn)s"
+msgstr "O Οργανισμός %(o_name)s (%(o_id)s) δημιουργήθηκε αυτόματα κατά τη διάρκεια του αιτήματος συσχέτισης του/της %(u_name)s με το AS%(asn)s"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-entity-creation.txt:9
 #, python-format
 msgid "Network %(n_name)s (%(n_id)s) was automatically created during user '%(u_name)s's affiliation request to AS%(asn)s"
-msgstr "Сеть %(n_name)s (%(n_id)s) создана автоматически в ходе выполнения заявки пользователя '%(u_name)s’s на связь с AS%(asn)s"
+msgstr "To δίκτυο %(n_name)s (%(n_id)s δημιουργήθηκε αυτόματα κατά τη διάρκειατου αιτήματος συσχέτισης του/της %(u_name)s με το AS%(asn)s"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-skipvq.txt:4
 #, python-format
 msgid "User '%(u_name)s' created Network %(n_name)s AS%(n_asn)s (%(n_id)s) under organzation %(o_name)s (%(o_id)s)."
-msgstr "Пользователь '%(u_name)s' создал Сеть %(n_name)s AS%(n_asn)s (%(n_id)s) для Организации %(o_name)s (%(o_id)s)."
+msgstr "Ο/η χρήστης '%(u_name)s' δημιούργησε το Δίκτυο %(n_name)s AS%(n_asn)s (%(n_id)s) υπό τον οργανισμό %(o_name)s (%(o_id)s)."
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-skipvq.txt:8
 msgid "As the user's email address was succesfully matched against RiR entry data this network has skipped the verification queue."
-msgstr "Емайл пользователя совпадает с информацией о сети в базе данных RIR, постановка в очередь на верификацию не требуется."
+msgstr "Καθώς η διεύθυνση email του χρήστη ταυτοποιήθηκε με την καταχώρηση RIR το δίκτυο έχει παραπέμπψει την ουρά επαλήθευσης."
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:4
 #, python-format
 msgid "User %(u_name)s (%(u_email)s) wishes to be affiliated to ASN %(inst)s"
-msgstr "Пользователь %(u_name)s (%(u_email)s) создал заявку на связь с ASN %(inst)s"
+msgstr "O/η χρήστης %(u_name)s (%(u_email)s) επιθυμεί να συσχετισθεί με το ASN %(inst)s"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:8
 msgid "They also provided this organization name in their request"
-msgstr "В заявке содержалось наименование организации"
+msgstr "Παρείχαν επίσης και αυτό το όνομα οργανισμού στο αίτημά τους"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:10
 msgid "There was no entry in our database that matches that ASN, so it is likely that a network and organzation for it will need to be created."
-msgstr "В нашей базе нет записи для данной ASN, следовательно должны быть созданы новые сеть и организация."
+msgstr "Δεν υπήρχε καταχώρηση στην βάση δεδομένων μας που να ταιριάζει σε αυτό το ASN, συνεπώς θα πρέπει να δημιουργηθεί ένα δίκτυο και ένας οργανισμός."
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:12
 #, python-format
 msgid "User %(u_name)s (%(u_email)s) wishes to create an organization called %(o_name)s."
-msgstr "Пользователь %(u_name)s (%(u_email)s) подал заявку на создание организации %(o_name)s."
+msgstr "O/η χρήστης %(u_name)s (%(u_email)s) επιθυμεί να δημιουργήσει έναν οργανισμό με όνομα %(o_name)s."
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:15
 msgid "There was no entry in our database that matches that organization name and no ASN was provided, so it is likely that this organization will need to be created."
-msgstr "В нашей базе не записи для данной организации и ASN, следовательно организация должна быть создана."
+msgstr "Δεν υπήρχε καταχώρηση στην βάση δεδομένων μας που να ταιριάζει με αυτό το όνομα οργανισμού και δεν δόθηκε κάποιο ASN, συνεπώς είναι πιθανό πως αυτός ο οργανισμός θα πρέπει να δημιουργηθεί"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:17
 msgid "You may create a new organization here"
-msgstr "Вы можете создать новую организацию здесь"
+msgstr "Μπορείτε να δημιουργήσετε έναν νέο οργανισμό εδώ"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:18
 msgid "You may create a new network here"
-msgstr "Вы можете создать новую сеть здесь"
+msgstr "Μπορείτε να δημιουργήσετε ένα νέο δίκτυο εδώ"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:20
 #, python-format
 msgid "user %(user_name)s (%(u_email)s) wishes to be affiliated to Organization '%(o_name)s'"
-msgstr "пользователь %(user_name)s (%(u_email)s) создал заявку на связь с организацией '%(o_name)s'"
+msgstr "O/η χρήστης %(user_name)s (%(u_email)s) επιθυμεί να συσχετισθεί με τον Οργανισμό '%(o_name)s'"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:23
 msgid "They also provided this ASN in their request"
-msgstr "В заявке содержался номер ASN"
+msgstr "Παρείχαν επίσης αυτό το ASN στο αίτημά τους"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:25
 msgid "ATTENTION: This is an ownership request, approving it will grant the user administration rights over the organization and any entities it owns."
-msgstr "ВНИМАНИЕ: Это запрос прав управления, если его одобрить, пользователь получит права администратора для данной организации и всех принадлежащих ей сущностей."
+msgstr "ΠΡΟΣΟΧΗ: Αυτό είναι αίτημα ιδιοκτησίας, έγκρισή του θα δώσει στον/ην χρήστη δικαιώματα διαχείρισης του οργανισμού και των οντοτήτων που του ανήκουν."
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:28
 msgid "These are the website addresses were able to derive from the organzation and it's entities"
-msgstr "Это адреса веб-сайтов организации и ее сущностей"
+msgstr "Αυτές είναι οι διευθύνσεις ιστοσελίδων που μπορέσαμε να αντλήσουμε από τον οργανισμό και τις οντότητες του"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:31
 msgid "These are the email addresses we could fetch from the ASNs belonging to this organization"
-msgstr "Вот емайлы связанные с ASN, принадлежащими этой организации"
+msgstr "Αυτές είναι οι διευθύνσεις email που μπορούσαμε να πάρουμε από τα ASN που ανήκουν σε αυτόν τον οργανισμό"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:34
 msgid "The user is affiliated with other organizations"
-msgstr "Пользователь присоединен к другим организациям"
+msgstr "O χρήστης έχει συσχετισθεί με άλλους οργανισμούς"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:37
 msgid "ADMIN"
-msgstr "АДМИН"
+msgstr "ΔΙΑΧΕΙΡΙΣΤΗΣ"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:39
 msgid "MEMBER"
-msgstr "УЧАСТНИК"
+msgstr "ΜΕΛΟΣ"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:44
 msgid "Review Affiliation/Ownership Request"
-msgstr "Обработать заявку на связь/права управления"
+msgstr "Ανασκόπηση Αιτήματος Συσχετισμού/Ιδιοκτησίας"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:46
 msgid "Approve Ownership Request and Notify User"
-msgstr "Одобрить запрос прав на управление и уведомить Пользователя"
+msgstr "Έγκριση Αιτήματος Ιδιοκτησίας και Ειδοποίηση Χρήστη"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:3
 #, python-format
 msgid "A new '%(entity_type_name)s' has been created and requires your approval."
-msgstr "Новая сущность '%(entity_type_name)s' создана и требует вашего одобрения."
+msgstr "Μια νέα οντότητα με όνομα '%(entity_type_name)s' έχει δημιουργηθεί και χρειάζεται την έγκρισή σας." 
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:8
 msgid "We retrieved the RiR entry for the specified ASN"
-msgstr "Мы извлекли записи из базы данных RIR для указанной ASN"
+msgstr "Ανακτήσαμε την καταχώρηση RIR για το συγκεκριμένο ASN"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:9
 msgid "but found no match with the requesting user. Here are the email addresses we gathered"
-msgstr "но не совпадает с запрашивающим пользователем. Вот емайлы, которые мы зарегистрировали"
+msgstr "αλλά δεν βρήκαμε καταχώρηση με τον/την αιτούντα χρήστη. Σας παραθέτουμε τη λίστα διευθύνσεων email που αποκομίσαμε"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:13
 #: peeringdb_server/templates/site/advanced-search-fac.html:12
@@ -1150,69 +1147,69 @@ msgstr "но не совпадает с запрашивающим пользо�
 #: peeringdb_server/templates/site/view_organization_tools.html:495
 #: peeringdb_server/templates/site/view_organization_tools.html:541
 msgid "Name"
-msgstr "Имя"
+msgstr "Όνομα"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:14
 msgid "Requested by user"
-msgstr "Зарегистрировано пользователем"
+msgstr "Αιτήθηκε από τον/ην χρήστη"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:16
 msgid "You can go to"
-msgstr "Вы можете перейти к"
+msgstr "Μπορείτε να πάτε στο"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:16
 msgid "to view and approve or deny this entry"
-msgstr "для того чтобы просмотреть и одобрить или отклонить эту запись"
+msgstr "για να δείτε και να εγκρίνετε ή να απορρίψετε την καταχώρηση αυτή" 
 
 #: peeringdb_server/templates/email/notify-sponsorship-admin-expiration.txt:2
 #, python-format
 msgid "%(i_label)s level sponsorship from '%(io_name)s' expired on %(i_end_date)s."
-msgstr "Истек период спонсорства '%(io_name)s', уровень %(i_label)s, дата окончания %(i_end_date)s."
+msgstr "%(i_label)s επίπεδο αιγίδας από '%(io_name)s' έληξε στις %(i_end_date)s."
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:3
 #, python-format
 msgid "Your affiliation request to the Organization '%(o_name)s' and it's entities has been approved."
-msgstr "Ваша заявка на связь с Организацией '%(o_name)s' и с ее сущностями одобрена."
+msgstr "Το αίτημa συσχετισμού σας προς τον Οργανισμό '%(o_name)s' και τις οντότητές του, έχει εγκριθεί."
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:8
 msgid "This was the result of a manual review of your affiliation request to ASN"
-msgstr "Это результат ручной обработки вашей заявки на установления связи с ASN"
+msgstr "Αυτό ήταν αποτέλεσμα χειροκίνητης ανασκόπησης του αιτήματος συσχετισμού σας με το ASN"
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:10
 msgid "This was the result of a manual review of your affiliation request to the organization or one of it's entities."
-msgstr "Это результат ручной обработки вашей заявки на установление связи с организацией или с одной из принадлежащих ей сущностей."
+msgstr "Αυτό ήταν αποτέλεσμα χειροκίνητης ανασκόπησης του αιτήματος συσχετισμού σας με τον οργανισμό ή μια από τις οντότητές του"
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:13
 msgid "You may view and edit your organization at"
-msgstr "Вы можете просматривать и изменять инофрмацию о вашей организации здесь"
+msgstr "Μπορείτε να δείτε και να επεξεργαστείτε τον οργανισμό σας στο"
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:15
 msgid "If you have questions, please don't hesitate to contact peeringdb support at"
-msgstr "Если у вас есть вопросы, свяжитесь с техподдержкой PeeringDB по адресу"
+msgstr "Αν έχετε ερωτήσεις, παρακαλούμε μην διστάσετε να επικοινωνήσετε με την υποστήριξη του peeringdb στο"
 
 #: peeringdb_server/templates/email/password-reset.txt:2
 msgid "You initiated a password reset on PeeringDB 2 - Please follow the url below to reset your password."
-msgstr "Вы инициировали сброс пароля PeeringDB 2 - пожалуйста перейдите по ссылке для сброса пароля."
+msgstr "Ξεκινήσατε μια διαδικασία ανάκτησης κωδικού στο PeeringDB 2 - Παρακαλώ ακολουθήστε τον παρακάτω σύνδεσμο για να ανακτήσετε τον κωδικό σας."
 
 #: peeringdb_server/templates/email/password-reset.txt:6
 msgid "If you did not initiate the password reset request, please ignore this email."
-msgstr "Если вы не инициировали сброс пароля, не обращайте внимания на этот емайл."
+msgstr "Αν δεν κάνατε αίτημα ανάκτησης του κωδικού σας, παρακαλώ αγνοήστε αυτό το email."
 
 #: peeringdb_server/templates/email/username-retrieve.txt:2
 msgid "You requested a username retrieval on PeeringDB for the email address"
-msgstr "Вы зпросили изменение имени пользователя PeeringDB для данного емайла"
+msgstr "Αιτηθήκατε ανάκτηση ονόματος χρήστη στο PeeringDB για αυτή την διεύθυνση email"
 
 #: peeringdb_server/templates/email/username-retrieve.txt:3
 msgid "Please follow the url below to view any usernames associated with your email."
-msgstr "Перейдите по ссылке для просмотра имен пользователей, ассоциированных с вашим емайлом."
+msgstr "Παρακαλούμε ακολουθήστε τον παρακάτω σύνδεσμο για να δείτε οποιαδήποτε ονόματα χρήστη είναι συνδεδεμένα με την διεύθυνση email σας."
 
 #: peeringdb_server/templates/email/username-retrieve.txt:7
 msgid "If you did not request username retrieval, you can ignore this email."
-msgstr "Если вы не инициировали восстановление имени пользователя, не обращайте внимания на этот емайл."
+msgstr "Aν δεν κάνατε αίτημα ανάκτησης του ονόματος χρήστη σας, μπορείτε να αγνοήσετε αυτό το email."
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:21
 msgid "Address"
-msgstr "Адрес"
+msgstr "Διεύθυνση"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:30
 #: peeringdb_server/templates/site/advanced-search-fac.html:147
@@ -1230,17 +1227,17 @@ msgstr "Адрес"
 #: peeringdb_server/templates/site/view_organization_tools.html:374
 #: peeringdb_server/views.py:1051
 msgid "City"
-msgstr "Город"
+msgstr "Πόλη"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:30
 #: peeringdb_server/templates/site/advanced-search-fac.html:151
 #: peeringdb_server/templates/site/view_organization_tools.html:104
 msgid "State"
-msgstr "Штат"
+msgstr "Πολιτεία"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:30
 msgid "Postal"
-msgstr "Почтовый"
+msgstr "Ταχυδρομικός Κωδικός"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:55
 #: peeringdb_server/templates/site/advanced-search-fac.html:148
@@ -1258,7 +1255,7 @@ msgstr "Почтовый"
 #: peeringdb_server/templates/site/view_organization_tools.html:383
 #: peeringdb_server/views.py:1057
 msgid "Country"
-msgstr "Страна"
+msgstr "Χώρα"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:55
 #: peeringdb_server/templates/site/advanced-search-ix.html:29
@@ -1270,12 +1267,12 @@ msgstr "Страна"
 #: peeringdb_server/templates/site/advanced-search-net.html:78
 #: peeringdb_server/templates/site/advanced-search-net.html:90
 msgid "click to select multiple"
-msgstr "кликните, чтобы выбрать несколько"
+msgstr "κλικάρετε για να επιλέξετε πολλαπλά"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:71
 #: peeringdb_server/templates/site/advanced-search-fac.html:140
 msgid "Management"
-msgstr "Менеджмент"
+msgstr "Διαχείριση" 
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:81
 #: peeringdb_server/templates/site/advanced-search-fac.html:143
@@ -1287,23 +1284,23 @@ msgstr "CLLI"
 #: peeringdb_server/templates/site/view_organization_tools.html:142
 #: peeringdb_server/views.py:987
 msgid "NPA-NXX"
-msgstr "NPA-NXX"
+msgstr "ΝPA-NXX"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:103
 #: peeringdb_server/templates/site/advanced-search-ix.html:79
 #: peeringdb_server/templates/site/advanced-search-net.html:104
 msgid "Reset"
-msgstr "Сбросить"
+msgstr "Επαναφορά"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:104
 #: peeringdb_server/templates/site/advanced-search-ix.html:80
 #: peeringdb_server/templates/site/advanced-search-net.html:105
 msgid "Search"
-msgstr "Поиск"
+msgstr "Αναζήτηση"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:152
 msgid "Postal Code"
-msgstr "Почтовый индекс"
+msgstr "Ταχυδρομικός Κωδικός"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:155
 #: peeringdb_server/templates/site/advanced-search.html:11
@@ -1311,80 +1308,80 @@ msgstr "Почтовый индекс"
 #: peeringdb_server/templates/site/search_result_frame.html:10
 #: peeringdb_server/templates/site/view_facility_bottom.html:23
 msgid "Networks"
-msgstr "Сети"
+msgstr "Δίκτυα"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:162
 #: peeringdb_server/templates/site/advanced-search-ix.html:110
 #: peeringdb_server/templates/site/advanced-search-net.html:165
 msgid "Nothing matched your search criteria."
-msgstr "По запросу ничего не найдено."
+msgstr "Δεν βρέθηκε τίποτα με τα κριτήρια αναζήτησής σας."
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:171
 #: peeringdb_server/templates/site/advanced-search-ix.html:119
 #: peeringdb_server/templates/site/advanced-search-net.html:174
 #, python-format
 msgid "...More than %(row_limit)s entries matched your query, refine your request..."
-msgstr "… Найдено более %(row_limit)s записей, уточните запрос …"
+msgstr "...Βρέθηκαν περισσότερες από %(row_limit)s καταχωρήσεις, παρακαλούμε συγκεκριμενοποιήστε το αίτημά σας..."
 
 #: peeringdb_server/templates/site/advanced-search-ix.html:41
 #: peeringdb_server/templates/site/view_organization_tools.html:394
 #: peeringdb_server/views.py:1063
 msgid "Continental Region"
-msgstr "Континентальный регион"
+msgstr "Hπειρωτική Περιοχή"
 
 #: peeringdb_server/templates/site/advanced-search-ix.html:57
 msgid "IP Block"
-msgstr "IP блок"
+msgstr "Mπλοκ IP"
 
 #: peeringdb_server/templates/site/advanced-search-ix.html:66
 #: peeringdb_server/templates/site/advanced-search-ix.html:103
 #: peeringdb_server/templates/site/view_organization_tools.html:404
 #: peeringdb_server/views.py:1069
 msgid "Media Type"
-msgstr "Среда передачи"
+msgstr "Tύπος Μέσου (Media Type)"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:20
 #: peeringdb_server/templates/site/advanced-search-net.html:149
 #: peeringdb_server/templates/site/view_organization_tools.html:210
 #: peeringdb_server/views.py:1273
 msgid "Network Type"
-msgstr "Тип сети"
+msgstr "Tύπος Δικτύου"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:31
 #: peeringdb_server/templates/site/advanced-search-net.html:153
 #: peeringdb_server/templates/site/view_organization_tools.html:219
 #: peeringdb_server/views.py:1293
 msgid "Traffic Levels"
-msgstr "Уровень трафика"
+msgstr "Επίπεδα Κίνησης"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:43
 #: peeringdb_server/templates/site/advanced-search-net.html:154
 msgid "Traffic Ratio"
-msgstr "Соотношение трафика"
+msgstr "Αναλογία Κίνησης"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:58
 #: peeringdb_server/templates/site/view_organization_tools.html:192
 #: peeringdb_server/views.py:1248
 msgid "Primary ASN"
-msgstr "Первичная ASN"
+msgstr "Kύριο ASN"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:68
 msgid "IRR Macro"
-msgstr "IRR Макро"
+msgstr "IRR Macro"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:78
 msgid "General Peering Policy"
-msgstr "Информация о пиринговой политике"
+msgstr "Γενική Πολιτική Peering"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:90
 #: peeringdb_server/templates/site/view_organization_tools.html:237
 #: peeringdb_server/views.py:1307
 msgid "Geographic Scope"
-msgstr "Географический охват"
+msgstr "Γεωγραφικό Εύρος"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:142
 msgid "Also known as"
-msgstr "Другое наименование"
+msgstr "γνωστός/η/ο και ως"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:145
 #: peeringdb_server/templates/site/verify.html:106
@@ -1405,11 +1402,11 @@ msgstr "ASN"
 #: peeringdb_server/templates/site/view_organization_tools.html:277
 #: peeringdb_server/views.py:1365
 msgid "General Policy"
-msgstr "Общая политика"
+msgstr "Γενική Πολιτική"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:150
 msgid "Network Scope"
-msgstr "Охват сети"
+msgstr "Δικτυακό Εύρος"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:157
 #: peeringdb_server/templates/site/advanced-search.html:8
@@ -1417,71 +1414,71 @@ msgstr "Охват сети"
 #: peeringdb_server/templates/site/search_result_frame.html:6
 #: peeringdb_server/templates/site/view_organization_side.html:153
 msgid "Exchanges"
-msgstr "IXP"
+msgstr "Exchanges"
 
 #: peeringdb_server/templates/site/advanced-search-net.html:158
 #: peeringdb_server/templates/site/advanced-search.html:14
 #: peeringdb_server/templates/site/search_result.html:24
 #: peeringdb_server/templates/site/search_result_frame.html:14
 msgid "Facilities"
-msgstr "Площадки"
+msgstr "Eγκαταστάσεις"
 
 #: peeringdb_server/templates/site/aup.html:7
 msgid "The PeeringDB Acceptable Use Policy explicitly states the parameters that copyright extends to:"
-msgstr "Политика допустимого использования PeeringDB явно определяет область действия авторских прав:"
+msgstr "H Πολιτική Ορθής Χρήσης του PeeringDB ρητά αναφέρει τις παραμέτρους που εκτείνεται η πνευματική ιδιοκτησία:"
 
 #: peeringdb_server/templates/site/aup.html:9
 msgid "Except for Internet operational purposes approved by PeeringDB, no part of the PeeringDB data may be reproduced, stored in a retrieval system, or transmitted, in any form or by any means, electronic, mechanical, recording, or otherwise, without prior permission of PeeringDB on behalf of the copyright holders. Any use of this material to target advertising or similar activities is explicitly forbidden and will be prosecuted. PeeringDB requests to be notified of any such activities or suspicions thereof. The PeeringDB data may not be passed on in bulk to any other person or organization unless approved by PeeringDB."
-msgstr "За исключением использования в целях операционного управления интернет-сетями одобренных PeeringDB, никакая часть данных PeeringDB не может быть воспроизведена, сохранена в поисковой системе или передана в любой форме или любыми средствами, электронной, механической, записи или иным образом без предварительного разрешения PeeringDB от имени владельцев авторских прав. Любое использование этих материалов для рекламы или аналогичных действий явно запрещено и будет преследоваться по закону. PeeringDB просит уведомлять о любых подобных действиях или подозрениях в этом. Данные PeeringDB не могут передаваться в большом объеме любому другому лицу или организации, если это не одобрено PeeringDB."
+msgstr "Εκτός από επιχειρησιακούς σκοπούς Internet εγκεκριμένους από το PeeringDB, κανένα μέρος των δεδομένων του PeeringDB δεν μπορεί να αναπαραχθεί, να αποθηκευθεί σε σύστημα ανάκτησης, ή να μεταδοθεί, σε οποιαδήποτε μορφή ή με οποιοδήποτε μέσο, ηλεκτρονικό, μηχανικό, καταγραφικό, ή άλλο, χωρίς την πρότερη άδεια εκ μέρους του PeeringDB από τους πνευματικούς ιδιοκτήτες. Οποιαδήποτε χρήση αυτού του υλικού για στοχοποιημένη διαφήμιση ή παραπλήσιες δραστηριότητες απαγορεύεται ρητά και θα διωχθεί ποινικά. Τα αιτήματα του PeeringDB πρέπει να ενημερώνουν για οποιεσδήποτε τέτοιες δραστηριότητες ή υποψίες των. Τα δεδομένα του PeeringDB δεν μπορούν να μεταφερθούν μαζικά σε οποιοδήποτε άλλο πρόσωπο ή οργανισμό, εκτός και αν γίνει έγκριση από το PeeringDB."
 
 #: peeringdb_server/templates/site/aup.html:19
 msgid "Any request to pass on information to any other person or organization will be evaluated on the statement of purpose outlined by the requestor."
-msgstr "Любой запрос на передачу информации третьему лицу будет рассматриваться с учетом декларации целей, предоставленной запрашивающей стороной."
+msgstr "Oποιοδήποτε αίτημα να μεταδοθεί πληροφορία σε οποιοδήποτε άλλο πρόσωπο ή οργανισμό θα εξετασθεί βάσει της δήλωσης πρόθεσης όπως υποδείχθηκε από τον αιτούντα."
 
 #: peeringdb_server/templates/site/aup.html:22
 msgid "Users will not be able to download the full contents of the database unless the intended use is for \"Internet operational issues\". These words are tightly defined and would include network trouble-shooting, abuse reporting, and Internet research and analysis. It would not include compiling marketing lists, demographic mapping, or any other commercial application."
-msgstr "Пользователи не смогут загружать полное содержимое базы данных, если это не предназначено для «операционного управления интернет-сетями». Определение вышеуказанного включает в себя устранение сетевых проблем, уведомления о злоупотреблениях, анализ и исследования и интернета. Оно не включает в себя бы компиляцию маркетинговых списков, демографическое сопоставление или любое другую коммерческое использование."
+msgstr "Οι χρήστες δεν θα μπορούν να κατεβάσουν τα πλήρη περιεχόμενα της βάσης δεδομένων, εκτός και αν η πρόθεση χρήσης είναι για \"επιχειρησιακούς σκοπούς Internet\". Αυτοί οι όροιείναι σαφώς ορισμένοι και εμπεριέχουν επίλυση δικτυακών προβλημάτων, aναφορές καταχρήσεων, και Internet έρευνα και ανάλυση. Δεν περιλαμβάνει σύνταξη λιστών διαφημιστικού περιεχομένου, δημογραφικής χαρτογράφησης, ή οποιασδήποτε άλλης εμπορικής εφαρμογής."
 
 #: peeringdb_server/templates/site/aup.html:29
 msgid "Each request would be carefully considered in light of the PeeringDB Acceptable Use Policy."
-msgstr "Каждый запрос будет рассмотрен в соответствии с Политикой допустимого использования PeeringDB."
+msgstr "Οποιοδήποτε αίτημα θα εξετασθεί προσεκτικά με γνώμονα την Πολιτική Ορθή Χρήσης του PeeringDB"
 
 #: peeringdb_server/templates/site/entity_create.html:4
 #, python-format
 msgid "Add a new %(entity_name)s to your Organization. Note that the newly created %(entity_name)s will need to be approved by PeeringDB staff before it will appear in the search results or the API listings"
-msgstr "Добавить %(entity_name)s к вашей Организации. Внимание, создаваемая сущность %(entity_name)s должна пройти одобрение администраторами PeeringDB, после чего она станет доступна в резульатах поиска и в листингах API"
+msgstr "Προσθήκη νέας οντότητας %(entity_name)s στον Οργανισμό σας. Σημειώστε πως η νεοδημιουργηθήσα %(entity_name)s θα χρειαστεί έγκριση από το προσωπικό του PeeringDB πριν να μπορέσει να εμφανιστεί σε αποτελέσματα αναζήτησης ή σε API καταχωρήσεις"
 
 #: peeringdb_server/templates/site/entity_create.html:10
 msgid "Submit"
-msgstr "Отправить"
+msgstr "Υποβολή"
 
 #: peeringdb_server/templates/site/error.html:23
 msgid "404 - Not Found"
-msgstr "404 - Not Found"
+msgstr "404 - Δεν βρέθηκε"
 
 #: peeringdb_server/templates/site/error.html:24
 msgid "The page you requested does not exist."
-msgstr "Запрашиваемая страница не существует."
+msgstr "Η σελίδα που αιτηθήκατε δεν υπάρχει."
 
 #: peeringdb_server/templates/site/error.html:26
 msgid "403 - Forbidden"
-msgstr "403 - Forbidden"
+msgstr "403 - Απαγορεύεται"
 
 #: peeringdb_server/templates/site/error.html:27
 msgid "You dont have permissions to view this page."
-msgstr "Недостаточно прав для просмотра данной страницы."
+msgstr "Δεν έχετε άδεια για να δείτε αυτή την σελίδα."
 
 #: peeringdb_server/templates/site/error.html:29
 msgid "Take me home"
-msgstr "На главную"
+msgstr "Πίσω στην αρχική"
 
 #: peeringdb_server/templates/site/footer.html:9
 msgid "All Rights Reserved. By using this service, you agree to adhere to our"
-msgstr "Все права сохранены. Используя данный сервис вы соглашаетесь с"
+msgstr "Με επιφύλαξη κάθε νομίμου δικαιώματος. Χρησιμοποιώντας αυτή την υπηρεσία, συμφωνείτε να συμμορφωθείτε στην"
 
 #: peeringdb_server/templates/site/footer.html:10
 msgid "AUP"
-msgstr "Политика допустимого использования"
+msgstr "ΠΟΧ"
 
 #: peeringdb_server/templates/site/footer.html:23
 #: peeringdb_server/templates/site/sponsorships.html:12
@@ -1489,80 +1486,80 @@ msgstr "Политика допустимого использования"
 #: peeringdb_server/templates/site/sponsorships.html:43
 #: peeringdb_server/templates/site/sponsorships.html:56
 msgid "Sponsors"
-msgstr "Спонсоры"
+msgstr "Σπόνσορες"
 
 #: peeringdb_server/templates/site/footer.html:26
 #: peeringdb_server/templates/site/partnerships.html:13
 msgid "Partners"
-msgstr "Партнеры"
+msgstr "Συνέταιροι"
 
 #: peeringdb_server/templates/site/footer.html:29
 msgid "Resources"
-msgstr "Ресурсы"
+msgstr "Πόροι"
 
 #: peeringdb_server/templates/site/footer.html:33
 msgid "Documentation"
-msgstr "Документация"
+msgstr "Εγχειρίδιο"
 
 #: peeringdb_server/templates/site/footer.html:36
 msgid "API Documentation"
-msgstr "Документация API"
+msgstr "Εγχειρίδιο API"
 
 #: peeringdb_server/templates/site/footer.html:39
 msgid "Contact Us"
-msgstr "Свяжитесь с нами"
+msgstr "Επικοινωνήστε μαζί μας"
 
 #: peeringdb_server/templates/site/footer.html:43
 msgid "Global System Statistics"
-msgstr "Общая статистика системы"
+msgstr "Οικουμενικά Στατιστικά Συστήματος"
 
 #: peeringdb_server/templates/site/footer.html:45
 msgid "Peering Networks"
-msgstr "Сетей в пиринге"
+msgstr "Δίκτυα Peering"
 
 #: peeringdb_server/templates/site/footer.html:46
 msgid "Public Exchange Points"
-msgstr "Публичные IXP"
+msgstr "Δημόσια Exchange Points"
 
 #: peeringdb_server/templates/site/footer.html:47
 msgid "Unique Public Exchange Presences"
-msgstr "Уникальных присутствий на публичных IXP"
+msgstr "Μοναδικές Παρουσίες "
 
 #: peeringdb_server/templates/site/footer.html:48
 msgid "Private Facilities"
-msgstr "Приватных площадок"
+msgstr "Ιδιωτικές Εγκαταστάσεις"
 
 #: peeringdb_server/templates/site/footer.html:49
 msgid "Private Facility Presences"
-msgstr "Присутствий на приватных площадках"
+msgstr "Παρουσίες Ιδιωτικών Εγκαταστάσεων"
 
 #: peeringdb_server/templates/site/header.html:51
 msgid "Search here for a network, IX, or facility."
-msgstr "Поиск сети, IX, площадки."
+msgstr "Αναζητήστε εδώ για ένα δίκτυο, IXP, ή εγκατάσταση."
 
 #: peeringdb_server/templates/site/header.html:54
 msgid "Advanced Search"
-msgstr "Расширенный поиск"
+msgstr "Αναλυτική Αναζήτηση"
 
 #: peeringdb_server/templates/site/header.html:65
 msgid "pending"
-msgstr "в обработке"
+msgstr "εκκρεμεί"
 
 #: peeringdb_server/templates/site/header.html:67
 msgid "unverified"
-msgstr "не проверен"
+msgstr "ανεπιβεβαιωμένο"
 
 #: peeringdb_server/templates/site/header.html:80
 msgid "Profile"
-msgstr "Профиль"
+msgstr "Προφίλ"
 
 #: peeringdb_server/templates/site/header.html:81
 msgid "Logout"
-msgstr "Выйти"
+msgstr "Αποσύνδεση"
 
 #: peeringdb_server/templates/site/header.html:85
 msgid "Register"
-msgstr "Зарегистрироваться"
+msgstr "Εγγραφή"
 
 #: peeringdb_server/templates/site/header.html:85
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
@@ -1575,69 +1572,69 @@ msgstr "Зарегистрироваться"
 #: peeringdb_server/templates/site/view_organization_side.html:108
 #: peeringdb_server/templates/site/view_organization_side.html:176
 msgid "or"
-msgstr "или"
+msgstr "ή"
 
 #: peeringdb_server/templates/site/header.html:85
 #: peeringdb_server/templates/site/login.html:21
 msgid "Login"
-msgstr "Логин"
+msgstr "Είσοδος"
 
 #: peeringdb_server/templates/site/index.html:34
 msgid "PeeringDB facilitates the exchange of information related to Peering."
-msgstr "PeeringDB способствует обмену информацией, связанной с пирингом."
+msgstr "Το PeeringDB διευκολύνει την ανταλλαγή πληροφορίας σχετιζόμενης με το Peering."
 
 #: peeringdb_server/templates/site/index.html:38
 msgid "Specifically, we are a database of networks that are peering, where they are peering, and if they are likely to peer with you. If you don't know what peering is, and/or you don't currently engage in peering, this probably won't have any meaning for you."
-msgstr "Если точнее, это база данных с информацией о сетях, участвующих в пиринге, локациях для пиринга и пиринговых политиках. Если вы не знаете что такое пиринг и не участвуете в нем, вам нет смысла ее использовать."
+msgstr "Συγκεκριμένα, είμαστε μια βάση δεδομένων δικτύων που κάνουν peering, σε ποιες τοποθεσίες κάνουν peering, και αν υπάρχει ενδεχόμενο να κάνουν peer μαζί σας. Αν δεν γνωρίζετε τι είναι το peering, και δεν το κάνετε, όλα αυτά πιθανώς να μην βγάζουν κάποιο νόημα."
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "You are currently viewing a read-only view of the data contained here. If you are a peering network who would like to create an account,"
-msgstr "Сейчас вам доступны данные в режиме чтения. Если ваша сеть участвует в пиринге и вам требуется аккаунт,"
+msgstr "Αυτή τη στιγμή βλέπετε μια read-only εικόνα των δεδομένων που υπάρχουν εδώ. Αν είστε μέλος δικτύου που κάνει peering και θα θέλατε να δημιουργήσετε ένα λογαριασμό,"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "you may register for one here"
-msgstr "создайте его здесь"
+msgstr "μπορείτε να εγγραφείτε για ένα εδώ"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "Please register ONLY if you are a peering network."
-msgstr "Пожалуйста, регистрируйтесь ТОЛЬКО если вы представляете сеть, чуствующую в пиринге."
+msgstr "Παρακαλώ εγγραφείτε ΜΟΝΟ αν είστε δίκτυο που κάνει peering."
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "You may also"
-msgstr "Вы можете также"
+msgstr "Μπορείτε επίσης"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "reset lost passwords here"
-msgstr "сбросить забытый пароль здесь"
+msgstr "επανακτήσετε χαμένους κωδικούς εδώ"
 
 #: peeringdb_server/templates/site/index.html:48
 msgid "Still have questions?"
-msgstr "Остались вопросы?"
+msgstr "Έχετε ακόμα απορίες;"
 
 #: peeringdb_server/templates/site/index.html:48
 msgid "Read our FAQ"
-msgstr "Ознакомьтесь с FAQ"
+msgstr "Διαβάστε τις Συχνές Ερωτήσεις"
 
 #: peeringdb_server/templates/site/index.html:52
 msgid "MOST RECENT UPDATES"
-msgstr "ПОСЛЕДНИЕ ОБНОВЛЕНИЯ"
+msgstr "ΤΕΛΕΥΤΑΙΕΣ ΕΝΗΜΕΡΩΣΕΙΣ"
 
 #: peeringdb_server/templates/site/index.html:55
 msgid "NETWORKS"
-msgstr "СЕТИ"
+msgstr "ΔΙΚΤΥΑ"
 
 #: peeringdb_server/templates/site/index.html:66
 msgid "FACILITIES"
-msgstr "ПЛОЩАДКИ"
+msgstr "ΕΓΚΑΤΑΣΤΑΣΕΙΣ"
 
 #: peeringdb_server/templates/site/index.html:77
 msgid "EXCHANGES"
-msgstr "IXP"
+msgstr "EXCHANGES"
 
 #: peeringdb_server/templates/site/login.html:15
 #: peeringdb_server/templates/site/register.html:34
 msgid "Username"
-msgstr "Имя пользователя"
+msgstr "Όνομα Χρήστη"
 
 #: peeringdb_server/templates/site/login.html:18
 #: peeringdb_server/templates/site/password-reset.html:42
@@ -1645,31 +1642,31 @@ msgstr "Имя пользователя"
 #: peeringdb_server/templates/site/verify.html:176
 #: peeringdb_server/templates/site/verify.html:204
 msgid "Password"
-msgstr "Пароль"
+msgstr "Κωδικός"
 
 #: peeringdb_server/templates/site/login.html:24
 msgid "I forgot my password .."
-msgstr "Я забыл пароль.."
+msgstr "Ξέχασα τον κωδικό μου .."
 
 #: peeringdb_server/templates/site/login.html:25
 msgid "I forgot my username .."
-msgstr "Я забыл имя пользователя.."
+msgstr "Ξέχασα το όνομα χρήστη μου .."
 
 #: peeringdb_server/templates/site/oauth-login.html:6
 msgid "Login with oAuth"
-msgstr "Войти с oAuth"
+msgstr "Σύνδεση με oAuth"
 
 #: peeringdb_server/templates/site/oauth-login.html:8
 msgid "Login with your google account"
-msgstr "Войти с реквизитами Google"
+msgstr "Σύνδεση με τον λογαριασμό google σας"
 
 #: peeringdb_server/templates/site/oauth-login.html:9
 msgid "Login with your facebook account"
-msgstr "Войти с реквизитами Facebook"
+msgstr "Σύνδεση με τον λογαριασμό facebook σας"
 
 #: peeringdb_server/templates/site/password-reset.html:15
 msgid "We've sent instructions to your email address, provided it is in our system. You have 30 minutes to complete the process."
-msgstr "Инструкции высланы на ваш емайл, если он зарегистрирован в нашей системе. У вас 30 минут чтобы завершить процедуру."
+msgstr "Αποστείλλαμε οδηγίες στην διεύθυνση email σας, δεδομένου πως είναι καταχωρημένη στο σύστημά μας. Έχετε 30 λεπτά να ολοκληρώσετε τη διαδικασία."
 
 #: peeringdb_server/templates/site/password-reset.html:19
 #: peeringdb_server/templates/site/register.html:62
@@ -1679,349 +1676,345 @@ msgstr "Инструкции высланы на ваш емайл, если о�
 #: peeringdb_server/templates/site/view_organization_tools.html:499
 #: peeringdb_server/templates/site/view_organization_tools.html:545
 msgid "Email"
-msgstr "Емайл"
+msgstr "Email"
 
 #: peeringdb_server/templates/site/password-reset.html:24
 #: peeringdb_server/templates/site/password-reset.html:55
 msgid "Reset Password"
-msgstr "Сбросить пароль"
+msgstr "Επανάκτηση Κωδικού"
 
 #: peeringdb_server/templates/site/password-reset.html:33
 msgid "The password for your account"
-msgstr "Пароль для вашего аккаунта"
+msgstr "Ο κωδικός για τον λογαριασμό σας"
 
 #: peeringdb_server/templates/site/password-reset.html:33
 msgid "has been reset, proceed to the"
-msgstr "был сброшен, перейдите к"
+msgstr "έχει επανακτηθεί, προχωρήστε στη"
 
 #: peeringdb_server/templates/site/password-reset.html:33
 msgid "login page"
-msgstr "страница авторизации"
+msgstr "σελίδα σύνδεσης"
 
 #: peeringdb_server/templates/site/password-reset.html:49
 msgid "Verify Password"
-msgstr "Проверка пароля"
+msgstr "Επαληθεύστε τον Κωδικό"
 
 #: peeringdb_server/templates/site/password-reset.html:61
 msgid "The security token you provided is invalid, please"
-msgstr "Неверный токен безопасности, пожалуйста"
+msgstr "Το security token που δώσατε είναι άκυρο, παρακαλούμε"
 
 #: peeringdb_server/templates/site/password-reset.html:61
 msgid "try again"
-msgstr "попробуйте снова"
+msgstr "προσπαθείστε ξανά"
 
 #: peeringdb_server/templates/site/password-reset.html:63
 msgid "The password reset process has expired, please"
-msgstr "Время для сброса пароля истекло, пожалуйста"
+msgstr "Η διαδικασία επανάκτησης κωδικού έχει εκπνεύσει, παρακαλούμε"
 
 #: peeringdb_server/templates/site/password-reset.html:63
 #: peeringdb_server/views.py:605
 msgid "initiate again"
-msgstr "начните снова"
+msgstr "επανακκινήστε την"
 
 #: peeringdb_server/templates/site/register.html:11
 msgid "Account Created"
-msgstr "Аккаунт создан"
+msgstr "Ο Λογαριασμός Δημιουργήθηκε"
 
 #: peeringdb_server/templates/site/register.html:13
 msgid "Your account was created, but won't have full access until we have reviewed it. Thank you for your patience."
-msgstr "Ваш аккаунт создан, полные права доступа будут предоставлены после нашей проверки. Спасибо за понимание."
+msgstr "Ο λογαριασμός σας δημιουργήθηκε, αλλά δεν θα έχει πλήρη πρόσβαση μέχρι να τον ανασκοπήσουμε. Ευχαριστούμε για την υπομονή σας."
 
 #: peeringdb_server/templates/site/register.html:16
 msgid "Return Home"
-msgstr "На главную"
+msgstr "Επιστροφή στην Αρχική Σελίδα"
 
 #: peeringdb_server/templates/site/register.html:30
 msgid "Create account"
-msgstr "Создать аккаунт"
+msgstr "Δημιουργία λογαριασμού"
 
 #: peeringdb_server/templates/site/register.html:48
 msgid "Confirm password"
-msgstr "Подтвердить пароль"
+msgstr "Επιβεβαίωση κωδικού"
 
 #: peeringdb_server/templates/site/register.html:55
 msgid "For speedy validation, it is required that you use a work e-mail address. If you plan to register your ASN with PeeringDB, it is recommended that you use an email-address that exists in your ASN's public contact details."
-msgstr "Для ускорения проверки укажите рабочий емайл. Если вы планируете внести в PeeringDB сведения о вашей ASN, рекомендуется использовать емайл, указанный в публичной контактной информации для вашей ASN."
+msgstr "Για γρήγορη επαλήθευση, απαιτείται να χρησιμοποιήσετε μια εργασιακή διεύθυνση email. Αν σχεδιάζετε να εγγράψετε το ASN σας με το PeeringDB, προτείνεται να χρησιμοποιήσετε την διεύθυνση email που υπάρχει στα δημόσια στοιχεία επικοινωνίας του ASN σας."
 
 #: peeringdb_server/templates/site/register.html:69
 msgid "First name"
-msgstr "Имя"
+msgstr "Όνομα"
 
 #: peeringdb_server/templates/site/register.html:75
 msgid "Last name"
-msgstr "Фамилия"
+msgstr "Επίθετο"
 
 #: peeringdb_server/templates/site/register.html:81
 #: peeringdb_server/templates/site/view_organization_tools.html:612
 msgid "Create"
-msgstr "Создать"
+msgstr "Δημιουργία"
 
 #: peeringdb_server/templates/site/request-ownership.html:15
 #: peeringdb_server/templates/site/request-ownership.html:23
 msgid "Thank you"
-msgstr "Спасибо"
+msgstr "Ευχαριστούμε"
 
 #: peeringdb_server/templates/site/request-ownership.html:17
 #, python-format
 msgid "We have received your ownership request for %(o_name)s and will review it."
-msgstr "Мы получили вашу заявку на права управления %(o_name)s и рассмотрим её в ближайшее время."
+msgstr "Λάβαμε το αίτημα ιδιοκτησίας σας για τον/την/το %(o_name)s και θα το εξετάσουμε."
 
 #: peeringdb_server/templates/site/request-ownership.html:24
 msgid "We have verified your relationship with this entity and you have successfully claimed ownership. You may view / edit"
-msgstr "Мы проверили вашу связь с данной сущностью и предоставили вам права управления. Вы можете просматривать/редактировать"
+msgstr "Έχουμε επαληθεύσει τη σχέση σας με αυτή την οντότητα και έχετε επιτυχώς διεκδικήσει την κυριότητά της. Μπορείτε να δείτε / επεξεργαστείτε"
 
 #: peeringdb_server/templates/site/request-ownership.html:37
 #: peeringdb_server/templates/site/request-ownership.html:53
 msgid "Request Ownership"
-msgstr "Подать заявку на права управления"
+msgstr "Αίτημα Ιδιοκτησίας"
 
 #: peeringdb_server/templates/site/request-ownership.html:48
 msgid "Please only request ownership if you are certain that you have the rights to do so. Are you sure you wish to continue?"
-msgstr "Перед подачей заявки на права управления убедитесь, что у вас есть соответствующие полномочия. Продолжить?"
+msgstr "Παρακαλούμε αιτηθείτε ιδιοκτησία μόνο αν είστε σίγουρος/η πως έχετε δικαιώματα να κάνετε κάτι τέτοιο. Είστε σίγουρος/η πως θέλετε να συνεχίσετε;"
 
 #: peeringdb_server/templates/site/request-ownership.html:61
 msgid "Only verified users may request ownership to an organization"
-msgstr "Только верифицированные пользователи могут подавать заявки на права управления организацией"
+msgstr "Μόνο επαληθευμένοι χρήστες μπορούν να αιτηθούν ιδιοκτησία ενός οργανισμού"
 
 #: peeringdb_server/templates/site/sponsorships.html:71
 msgid "Become a Sponsor"
-msgstr "Стать спонсором"
+msgstr "Γίνε σπόνσορας"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:12
 msgid "These are the usernames associated with your email address"
-msgstr "Эти имена пользователей ассоциированы с вашим емайлом"
+msgstr "Αυτά είναι τα ονόματα χρήστη που είναι συνδεδεμένα με την διεύθυνση email σας"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:21
 msgid "The secret you provided does not match the secret required to complete this process"
-msgstr "Cекретная информация введена неверно"
+msgstr "To μυστικό που δώσατε δεν ταιριάζει με το μυστικό που χρειάζεται για να ολοκληρωθεί η διαδικασία"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:23
 msgid "Note"
-msgstr "Примечание"
+msgstr "Σημείωση"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:23
 msgid "You should complete the process in the same browser that you originally initiated it in."
-msgstr "Процедура должна быть завершена в том же браузере в котором вы её начали."
+msgstr "Πρέπει να ολοκληρώσετε την διαδικασία στον ίδιο φυλλομετρητή στον οποίο την ξεκινήσατε"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:25
 msgid "Please re-initiate it"
-msgstr "Пожалуйста начните заново"
+msgstr "Παρακαλούμε επανακκινήστε το"
 
 #: peeringdb_server/templates/site/username-retrieve.html:14
 msgid "This form allows you to retrieve the usernames associated with your email address."
-msgstr "Эта форма позволяет получить имена пользователей, ассоциированных с вашим емайлом."
+msgstr "Αυτή η φόρμα σας επιτρέπει να ανακτήσετε τα ονόματα χρήστη συνδεδεμένα με την διεύθυνση email σας."
 
 #: peeringdb_server/templates/site/username-retrieve.html:17
 msgid "We've sent instructions to your email address, provided it is in our system."
-msgstr "Инструкции высланы на ваш емайл, если он есть в нашей системе."
+msgstr "Στείλαμε οδηγίες στην διεύθυνση email σας, δεδομένου πως είναι καταχωρημένη στο σύστημά μας."
 
 #: peeringdb_server/templates/site/username-retrieve.html:26
 msgid "Retrieve username(s)"
-msgstr "Восстановить имена пользователя(ей)"
+msgstr "Ανάκτηση όνοματος χρήστη/ων"
 
 #: peeringdb_server/templates/site/verification_banner.html:6
 msgid "Your user account has not been affiliated with any Organization yet, and will have limited access to some of the data (such as non-public network contact information)."
-msgstr "Ваш аккаунт пользователя еще не связан ни с одной организацией, вам недоступна часть информации (например, непубличные сетевые контакты)."
+msgstr "Ο λογαριασμός χρήστη σας δεν έχει συσχετισθεί με κάποιον Οργανισμό ακόμα και θα έχει περιορισμένη πρόσβαση σε κάποια δεδομένα (όπως μη δημόσια πληροφορία για επαφές δικτύων)."
 
 #: peeringdb_server/templates/site/verification_banner.html:11
 msgid "Please take the time to confirm your email address and request affiliation"
-msgstr "Пожалуйста подтвердите ваш емайл и подайте заявку на установление связи"
+msgstr "Παρακαλούμε επιβεβαιώστε την διεύθυνση email σας και ζητήστε συσχετισμό"
 
 #: peeringdb_server/templates/site/verification_banner.html:14
 msgid "You may request affiliation to an Organization or ASN"
-msgstr "Вы можете подать заявку на установление связи с Организацией или с ASN"
+msgstr "Μπορείτε να αιτηθείτε συσχετισμό με έναν Οργανισμό ή ASN"
 
 #: peeringdb_server/templates/site/verify.html:17
 msgid "Select language"
-msgstr "Выберите язык"
+msgstr "Eπιλέξτε γλώσσα"
 
 #: peeringdb_server/templates/site/verify.html:18
 msgid "Language preference saved"
-msgstr "Выбор языка сохранен"
+msgstr "H προτίμηση Γλώσσας αποθηκεύτηκε"
 
 #: peeringdb_server/templates/site/verify.html:30
 msgid "Set language preference"
-msgstr "Установить язык"
+msgstr "Ορίστε προτίμηση γλώσσας"
 
 #: peeringdb_server/templates/site/verify.html:39
 msgid "You have confirmed your email address!"
-msgstr "Ваш емайл подтвержден!"
+msgstr "Έχετε επιβεβαιώσει την διεύθυνση email σας!"
 
 #: peeringdb_server/templates/site/verify.html:43
 msgid "Attention!"
-msgstr "Внимание!"
+msgstr "Προσοχή!"
 
 #: peeringdb_server/templates/site/verify.html:45
 msgid "Please specify an email address for your account, we won't be able to proceed with verification until you do."
-msgstr "Пожалуйста укажите емайл в вашем аккаунте, без этого подтверждение невозможно."
+msgstr "Παρακαλούμε ορίστε μια διεύθυνση email για τον λογαριασμό σας, δε θα μπορέσουμε να προχωρήσουμε σε επαλήθευση μέχρι να το κάνετε."
 
 #: peeringdb_server/templates/site/verify.html:48
 msgid "Email Confirmation"
-msgstr "Подтверждение емайла"
+msgstr "Επιβεβαίωση Email"
 
 #: peeringdb_server/templates/site/verify.html:50
 msgid "Before getting access to any other features, you need to confirm your email address."
-msgstr "Для получения доступа к другим функциям необходимо подтвердить ваш емайл."
+msgstr "Πριν αποκτήσετε πρόσβαση σε οποιεσδήποτε άλλες δυνατότητες, πρέπει να επιβεβαιώσετε την διεύθυνση email σας."
 
 #: peeringdb_server/templates/site/verify.html:51
 msgid "We have sent you a message containing the confirmation link."
-msgstr "Мы выслали вам сообщение с подтверждающей ссылкой."
+msgstr "Σας στείλαμε ένα μήνυμα που εμπεριέχει τον σύνδεσμο επιβεβαίωσης."
 
 #: peeringdb_server/templates/site/verify.html:61
 msgid "You won't have full access until we or the organization you are affiliated with have reviewed your account. Thank you for your patience."
-msgstr "Ваши права доступа будут ограничены, пока ваш аккаунт не пройдет одобрение нашими администраторами или организацией, с которой вы связаны. Благодарим за понимание."
+msgstr "Δεν θα έχετε πλήρη πρόσβαση εως ότου εμείς ή ο οργανισμός με τον οποίο είστε συσχετισμένος/η θα έχει ανασκοπήσει τον λογαριασμό σας. Ευχαριστούμε για την υπομονή σας."
 
 #: peeringdb_server/templates/site/verify.html:75
-#, fuzzy
 msgid "Affiliate with organization"
-msgstr "Заявка на связь с организацией"
+msgstr "Συσχέτιση με οργανισμό"
 
 #: peeringdb_server/templates/site/verify.html:80
 #, python-format
 msgid "Your affiliation with %(ar_name)s is pending approval."
-msgstr "Ваша заявка на связь с %(ar_name)s находится на рассмотрении."
+msgstr "Ο συσχετισμός σας με %(ar_name)s εκκρεμεί έγκρισης."
 
 #: peeringdb_server/templates/site/verify.html:82
 #, python-format
 msgid "Your affiliation with %(ar_name)s was denied"
-msgstr "Ваша заявка на связь с %(ar_name)s отклонена"
+msgstr "Ο συσχετισμός σας με %(ar_name)s απορρίφθηκε"
 
 #: peeringdb_server/templates/site/verify.html:84
 #, python-format
 msgid "Your affiliation with %(ar_name)s was approved"
-msgstr "Ваша заявка на связь с %(ar_name)s одобрена"
+msgstr "Ο συσχετισμός σας με %(ar_name)s εγκρίθηκε"
 
 #: peeringdb_server/templates/site/verify.html:92
 msgid "To affiliate with an existing organization, please enter the ASN or organization name below."
-msgstr "Для установления связи с существующей организацией, введите номер ASN или наименование организации ниже."
+msgstr "Για να συσχετισθείτε με έναν υπάρχων οργανισμό, παρακαλούμε εισάγετε το ASN ή το όνομα του οργανισμού παρακάτω."
 
 #: peeringdb_server/templates/site/verify.html:96
-#, fuzzy
 msgid "To register a new network organization, please enter the ASN and organization name below."
-msgstr "Для регистрации новой сети, принадлежащей организации, введите номер ASN и наименование организации."
+msgstr "Για να εγγράψετε έναν νέο δικτυακό οργανισμό, παρακαλούμε εισάγετε το ASN και το όνομα του οργανισμού παρακάτω."
 
 #: peeringdb_server/templates/site/verify.html:100
-#, fuzzy
 msgid "To register a new facility or exchange organization, please enter the organization name below (ASN is optional)."
-msgstr "Для регистрации новой площадки или IXP, принадлежащей организации, введите наименование организации (опционально номер ASN)."
+msgstr "Για να εγγράψετε μια νέα εγκατάσταση ή οργανισμό exchange, παρακαλούμε εισάγετε το όνομα του οργανισμού παρακάτω (το ASN είναι προαιρετικό)."
 
 #: peeringdb_server/templates/site/verify.html:118
 msgid "Affiliate"
-msgstr "Связать"
+msgstr "Συσχετισμένος/η"
 
 #: peeringdb_server/templates/site/verify.html:121
 #: peeringdb_server/templates/site/view_organization_tools.html:329
 msgid "In case the RiR entry cannot be retrieved for your ASN, please contact"
-msgstr "Если запись в базе данных RIR для вашей ASN недоступна, свяжитесь с"
+msgstr "Σε περίπτωση που η καταχώρηση RIR δεν μπορεί να ανακτηθεί για το ASN σας, παρακαλούμε επικοινωνήστε με"
 
 #: peeringdb_server/templates/site/verify.html:122
 msgid "for assistance"
-msgstr "для помощи"
+msgstr "για βοήθεια"
 
 #: peeringdb_server/templates/site/verify.html:126
 msgid "Existing affiliations"
-msgstr "Имеющиеся связи"
+msgstr "Υπάρχοντες συσχετισμοί"
 
 #: peeringdb_server/templates/site/verify.html:129
 msgid "Your affiliation with"
-msgstr "Ваша связь с"
+msgstr "Η συσχέτισή σας"
 
 #: peeringdb_server/templates/site/verify.html:129
 msgid "has been approved"
-msgstr "одобрено"
+msgstr "έχει εγκριθεί"
 
 #: peeringdb_server/templates/site/verify.html:142
-#, fuzzy
 msgid "Manage OAuth Applications"
-msgstr "Управление OAuth-авторизацией"
+msgstr "Διαχείριση εφαρμογών OAuth"
 
 #: peeringdb_server/templates/site/verify.html:157
 msgid "Change email address"
-msgstr "Изменить емайл"
+msgstr "Αλλαγή διεύθυνσης email"
 
 #: peeringdb_server/templates/site/verify.html:160
 msgid "For speedy validation, it is required that you use a work e-mail address. If you plan to register your ASN with PeeringDB, it is recommended that you use an email-address that exists in the ASN's public contact details."
-msgstr "Для ускорения проверки указывайте рабочий емайл. Если вы планируете внести в PeeringDB сведения о вашей ASN, рекомендуется использовать емайл, указанный в публичной контактной информации для вашей ASN."
+msgstr "Για γρήγορη επαλήθευση, είναι απαιτούμενη η χρήση εργασιακής διεύθυνσης email. Αν σχεδιάζετε να εγγράψετε το ASN σας με το PeeringDB, προτείνεται να χρησιμοποιήσετε μια διεύθυνση email που υπάρχει στα δημόσια στοιχεία επαφής του ASN."
 
 #: peeringdb_server/templates/site/verify.html:181
 msgid "Change Email"
-msgstr "Изменить емайл"
+msgstr "Αλλαγή email"
 
 #: peeringdb_server/templates/site/verify.html:192
 msgid "Change password"
-msgstr "Изменить пароль"
+msgstr "Αλλαγή κωδικού"
 
 #: peeringdb_server/templates/site/verify.html:193
 msgid "Password changed"
-msgstr "Пароль изменен"
+msgstr "Ο κωδικός αλλάχθηκε"
 
 #: peeringdb_server/templates/site/verify.html:196
 msgid "Current Password"
-msgstr "Действующий пароль"
+msgstr "Τρέχων κωδικός"
 
 #: peeringdb_server/templates/site/verify.html:212
 msgid "Password Verification"
-msgstr "Проверка пароля"
+msgstr "Επαλήθευση κωδικού"
 
 #: peeringdb_server/templates/site/view.html:26
 msgid "Pending Review"
-msgstr "На одобрении"
+msgstr "Εκκρεμεί Ανασκόπησης"
 
 #: peeringdb_server/templates/site/view.html:31
 msgid "Edit"
-msgstr "Редактировать"
+msgstr "Επεξεργασία"
 
 #: peeringdb_server/templates/site/view.html:34
 #: peeringdb_server/templates/site/view.html:263
 msgid "Cancel"
-msgstr "Отмена"
+msgstr "Ακύρωση"
 
 #: peeringdb_server/templates/site/view.html:35
 #: peeringdb_server/templates/site/view.html:264
 #: peeringdb_server/templates/site/view_organization_tools.html:576
 #: peeringdb_server/templates/site/view_organization_tools.html:694
 msgid "Save"
-msgstr "Сохранить"
+msgstr "Αποθήκευση"
 
 #: peeringdb_server/templates/site/view.html:56
 msgid "Some of the data on this page is incomplete, please update the fields marked with"
-msgstr "Отсутствуют некоторые данные, введите информацию в поля отмеченные"
+msgstr "Κάποια από τα δεδομένα σε αυτή τη σελίδα είναι ελλειπή, παρακαλούμε ενημερώστε τα πεδία μαρκαρισμένα ως"
 
 #: peeringdb_server/templates/site/view.html:58
 msgid "to improve data quality"
-msgstr "для улучшения качества данных"
+msgstr "για να βελτιωθεί η ποιότητα των δεδομένων"
 
 #: peeringdb_server/templates/site/view.html:216
 msgid "Address failed validation."
-msgstr "Адрес не прошел проверку."
+msgstr "Αποτυχία επαλήθευσης της διεύθυνσης."
 
 #: peeringdb_server/templates/site/view.html:218
 msgid "Geocoding error"
-msgstr "Ошибка геокодирования"
+msgstr "Σφάλμα Geocoding"
 
 #: peeringdb_server/templates/site/view.html:222
 msgid "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."
-msgstr "Данные геокодирования для данной сущности сейчас недоступны. Обновление производится автоматически при изменении поля адреса."
+msgstr "Τα δεδομένα Geocode για αυτή την οντότητα δεν μπορούσαν να ανακτηθούν αυτή τη στιγμή. Αυτό συμβαίνι αυτόματα όταν αλλάζει το πεδίο διεύθυνσης."
 
 #: peeringdb_server/templates/site/view.html:225
 msgid "Updated geocode data for this entity will be obtained shortly"
-msgstr "Обновленные данные геокодирования для данной сущности скоро будут получены"
+msgstr "Ανανεωμένα στοιχεία geocode για αυτή την οντότητα θα ανακτηθούν συντόμως"
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:51
 #: peeringdb_server/templates/site/view_exchange_bottom.html:83
 #: peeringdb_server/templates/site/view_exchange_bottom.html:190
 msgid "IXF Member Export URL"
-msgstr "URL экспортируемого списка участников IXF"
+msgstr "URL εξαγωγής μελών IXF"
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:78
 #: peeringdb_server/templates/site/view_exchange_bottom.html:134
 msgid "Prefix"
-msgstr "Префикс"
+msgstr "Prefix"
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:82
 #: peeringdb_server/templates/site/view_organization_tools.html:681
 msgid "Add"
-msgstr "Новый"
+msgstr "Προσθήκη"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:26
 #: peeringdb_server/templates/site/view_exchange_bottom.html:170
@@ -2046,7 +2039,7 @@ msgstr "MTU"
 #: peeringdb_server/templates/site/view_organization_side.html:107
 #: peeringdb_server/templates/site/view_organization_side.html:175
 msgid "Nothing matched your filter"
-msgstr "Нет соответствий фильтру"
+msgstr "Δεν βρέθηκε κάτι βάσει του φίλτρου σας"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
 #: peeringdb_server/templates/site/view_exchange_bottom.html:251
@@ -2059,7 +2052,7 @@ msgstr "Нет соответствий фильтру"
 #: peeringdb_server/templates/site/view_organization_side.html:108
 #: peeringdb_server/templates/site/view_organization_side.html:176
 msgid "You may filter by"
-msgstr "Фильтровать по"
+msgstr "Μπορείτε να φιλτράρετε με"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
 msgid "dot1q"
@@ -2071,19 +2064,19 @@ msgstr "IXLAN"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:44
 msgid "ATTENTION: Any network relationships to the exchange via this LAN will be removed as well"
-msgstr "ВНИМАНИЕ: Все связи сетей с IXP через данный LAN также будут удалены"
+msgstr "ΠΡΟΣΟΧΗ: Οποιεσδήποτε δικτυακές σχέσεις με τον exchange μέσω αυτού του LAN θα αφαιρεθούν επίσης"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:97
 msgid "IXLAN Prefix"
-msgstr "Префикс IXLAN"
+msgstr "IXLAN Prefix"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:138
 msgid "Add Prefix"
-msgstr "Новый префикс"
+msgstr "Προσθήκη Prefix"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:202
 msgid "Add LAN"
-msgstr "Новый LAN"
+msgstr "Προσθήκη LAN"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:234
 #: peeringdb_server/templates/site/view_exchange_bottom.html:251
@@ -2092,31 +2085,30 @@ msgstr "Новый LAN"
 #: peeringdb_server/templates/site/view_network_side.html:235
 #: peeringdb_server/templates/site/view_network_side.html:278
 msgid "Facility"
-msgstr "Площадка"
+msgstr "Εγκατάσταση"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:256
 msgid "Exchange - Facility link"
-msgstr "Связь IXP - Площадка"
+msgstr "Ζεύξη Exchange - Εγκατάστασης"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:303
 #: peeringdb_server/templates/site/view_network_side.html:290
 #: peeringdb_server/templates/site/view_organization_tools.html:10
 msgid "Add Facility"
-msgstr "Новая Площадка"
+msgstr "Προσθήκη Εγκατάστασης"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:17
 #: peeringdb_server/templates/site/view_facility_side.html:16
 #: peeringdb_server/templates/site/view_facility_side.html:27
-#, fuzzy
 msgid "Peer Name"
-msgstr "Имя пира"
+msgstr "Όνομα Peer"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:25
 #: peeringdb_server/templates/site/view_exchange_side.html:38
 #: peeringdb_server/templates/site/view_network_side.html:31
 #: peeringdb_server/templates/site/view_network_side.html:43
 msgid "Speed"
-msgstr "Скорость"
+msgstr "Ταχύτητα"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:37
 #: peeringdb_server/templates/site/view_facility_bottom.html:17
@@ -2126,7 +2118,7 @@ msgstr "Скорость"
 #: peeringdb_server/templates/site/view_network_side.html:123
 #: peeringdb_server/templates/site/view_organization_side.html:181
 msgid "Exchange"
-msgstr "IXP"
+msgstr "Exchange"
 
 #: peeringdb_server/templates/site/view_exchange_side.html:38
 msgid "IP"
@@ -2136,129 +2128,129 @@ msgstr "IP"
 #: peeringdb_server/templates/site/view_facility_bottom.html:31
 #: peeringdb_server/views.py:1047
 msgid "Long Name"
-msgstr "Полное наименование"
+msgstr "Πλήρες Όνομα"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:21
 #: peeringdb_server/templates/site/view_network_bottom.html:198
 msgid "Some of this network's contacts are hidden because they are only visible to authenticated users and you are currently not logged in."
-msgstr "Некоторые контакты данной сети скрыты и доступны только авторизованным пользователям."
+msgstr "Κάποιες επαφές από αυτό το δίκτυο είναι κρυμμένες καθώς είναι ορατές μόνο σε συνδεδεμένους χρήστες και εσείς δεν είστε συνδεδεμένος."
 
 #: peeringdb_server/templates/site/view_network_bottom.html:23
 #: peeringdb_server/templates/site/view_network_bottom.html:200
 msgid "Some of this network's contacts are hidden because your user account is not affiliated with any organization."
-msgstr "Некоторые контакты данной сети скрыты, поскольку ваш аккаунт пользователя не присоединен к какой-либо организации."
+msgstr "Κάποιες επαφές από αυτό το δίκτυο είναι κρυμμένες καθώς τα στοιχεία του λογαριασμού σας δεν είναι συσχετισμένα με κάποιον οργανισμό."
 
 #: peeringdb_server/templates/site/view_network_bottom.html:32
 #: peeringdb_server/templates/site/view_network_bottom.html:129
 msgid "Role"
-msgstr "Роль"
+msgstr "Ρόλος"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:40
 msgid "Visiblity"
-msgstr "Показывать"
+msgstr "Ορατότητα"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:45
 #: peeringdb_server/templates/site/view_network_bottom.html:158
 msgid "Phone"
-msgstr "Телефон"
+msgstr "Τηλέφωνο"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:48
 msgid "E-Mail"
-msgstr "Емайл"
+msgstr "E-Mail"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:167
 msgid "Visibility"
-msgstr "Показывать"
+msgstr "Ορατότητα"
 
 #: peeringdb_server/templates/site/view_network_bottom.html:180
 msgid "Add Contact"
-msgstr "Новый контакт"
+msgstr "Προσθήκη Επαφής"
 
 #: peeringdb_server/templates/site/view_network_side.html:15
 msgid "Public Peering Exchange Points"
-msgstr "IXP для публичного пиринга"
+msgstr "Δημόσια Peering Exchange Points"
 
 #: peeringdb_server/templates/site/view_network_side.html:32
 #: peeringdb_server/templates/site/view_network_side.html:176
 msgid "RS Peer"
-msgstr "Пир с Route Server"
+msgstr "RS Peer"
 
 #: peeringdb_server/templates/site/view_network_side.html:48
 msgid "Network - Exchange link"
-msgstr "Связь Сеть - IXP"
+msgstr "Ζεύξη Δικτύου - Exchange"
 
 #: peeringdb_server/templates/site/view_network_side.html:134
 msgid "Local ASN"
-msgstr "Локальная ASN"
+msgstr "Τοπικό ASN"
 
 #: peeringdb_server/templates/site/view_network_side.html:165
 msgid "Speed (mbit/sec)"
-msgstr "Скорость (Мбит/с)"
+msgstr "Ταχύτητα (mbit/sec)"
 
 #: peeringdb_server/templates/site/view_network_side.html:189
 msgid "Add Exchange Point"
-msgstr "Новый IXP"
+msgstr "Προσθήκη Exchange Point"
 
 #: peeringdb_server/templates/site/view_organization_assets.html:33
 msgid "member"
-msgstr "участник"
+msgstr "μέλος"
 
 #: peeringdb_server/templates/site/view_organization_assets.html:36
 #: peeringdb_server/templates/site/view_organization_tools.html:569
 msgid "Remove"
-msgstr "Удалить"
+msgstr "Αφαίρεση"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:3
 msgid "Manage"
-msgstr "Управление"
+msgstr "Διαχείριση"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:17
 msgid "Add Network"
-msgstr "Новая сеть"
+msgstr "Προσθήκη Δικτύου"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:24
 msgid "Add Exchange"
-msgstr "Новый IXP"
+msgstr "Προσθήκη Exchange"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:37
 msgid "Permissions"
-msgstr "Права доступа"
+msgstr "Δικαιώματα"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:70
 #: peeringdb_server/templates/site/view_organization_tools.html:184
 #: peeringdb_server/templates/site/view_organization_tools.html:366
 #: peeringdb_server/views.py:846 peeringdb_server/views.py:956
 msgid "Website"
-msgstr "Веб-сайт"
+msgstr "Ιστοσελίδα"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:78
 #: peeringdb_server/views.py:849 peeringdb_server/views.py:959
 msgid "Address 1"
-msgstr "Адрес, строка 1"
+msgstr "Διεύθυνση 1"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:87
 #: peeringdb_server/views.py:854 peeringdb_server/views.py:963
 msgid "Address 2"
-msgstr "Адрес, строка 2"
+msgstr "Διεύθυνση 2"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:112
 msgid "Zip-Code"
-msgstr "Индекс"
+msgstr "Tαχυδρομικός Κωδικός"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:134
 #: peeringdb_server/views.py:983
 msgid "CLLI Code"
-msgstr "Код CLLI"
+msgstr "Κωδικός CLII"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:201
 #: peeringdb_server/views.py:1253
 msgid "IRR Record"
-msgstr "Запись IRR"
+msgstr "Εγγραφή IRR"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:228
 #: peeringdb_server/views.py:1299
 msgid "Traffic Ratios"
-msgstr "Соотношения трафика"
+msgstr "Αναλογίες Κίνησης"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:246
 #: peeringdb_server/templates/site/view_organization_tools.html:414
@@ -2274,257 +2266,256 @@ msgstr "Multicast"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:268
 msgid "Policy URL"
-msgstr "URL Пиринговой политики"
+msgstr "Διεύθυνση Πολιτικής (Policy URL)"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:287
 #: peeringdb_server/views.py:1371
 msgid "Multiple Locations"
-msgstr "Несколько локаций"
+msgstr "Πολλαπλές Τοποθεσίες"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:297
 #: peeringdb_server/views.py:1377
 msgid "Ratio Requirement"
-msgstr "Требуется соотношение трафика"
+msgstr "Απαιτήσεις Αναλογίας"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:305
 #: peeringdb_server/views.py:1385
 msgid "Contract Requirement"
-msgstr "Контракт обязателен"
+msgstr "Συμβατικές Απαιτήσεις"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:318
 msgid "Add a new Network to your Organization."
-msgstr "Новая сеть для Организации."
+msgstr "Προσθέστε ένα νέο Δίκτυο στον Οργανισμό σας"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:319
 msgid "We will attempt to automatically verify your relationship to the network by checking for your email address in the ASN's RiR entry."
-msgstr "Мы попытаемся автоматически верифицировать вашу связь с данной сетью, проверив наличие вашего емайла в информации о вашей ASN в базе данных RIR."
+msgstr "Θα προσπαθήσουμε να επαληθεύσουμε αυτόματα την σχέση σας με το δίκτυο ελέγχοντας τη διεύθυνση email σας με την καταχώρηση του ASN στον οικείο RIR."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:321
 msgid "In case of verification failure the network will need to be approved by PeeringDB staff before it will appear in the search results or the API listings."
-msgstr "В случае неудачной верификации сеть поступит на одобрение администраторами PeeringDB, после чего она появится в результатах поиска и в листинге API."
+msgstr "Σε περίπτωση αποτυχίας επαλήθευσης το δίκτυο θα πρέπει να εγκριθεί από το προσωπικό του PeeringDB πριν μπορέσει να εμφανιστεί σε αποτελέσματα αναζήτησης ή σε καταχωρήσεις API."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:325
 msgid "Submit Network"
-msgstr "Отправить заявку на сеть"
+msgstr "Υποβολή Δικτύου"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:331
 msgid "for assistance with the creation of your network in PeeringDB."
-msgstr "для помощи в регистрации вашей сети в PeeringDB."
+msgstr "για βοήθεια στη δημιουργία του δικτύου σας στο PeeringDB."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:437
 #: peeringdb_server/views.py:1104
 msgid "Traffic Stats Website"
-msgstr "Веб-сайт с данными о трафике"
+msgstr "Ιστοσελίδα Στατιστικών Κίνησης"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:444
 msgid "Technical E-mail"
-msgstr "Технический контакт, емайл"
+msgstr "Ε-mail για τεχνικά ζητήματα"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:451
 #: peeringdb_server/views.py:1114
 msgid "Technical Phone"
-msgstr "Технический контакт, телефон"
+msgstr "Τηλέφωνο για τεχνικά ζητήματα"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:458
 msgid "Policy E-mail"
-msgstr "Пиринговая политика, емайл"
+msgstr "Ε-mail για θέματα πολιτικής"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:465
 #: peeringdb_server/views.py:1124
 msgid "Policy Phone"
-msgstr "Пиринговая политика, телефон"
+msgstr "Τηλέφωνο για θέματα πολιτικής"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:500
 msgid "Confirmed"
-msgstr "Подтверждено"
+msgstr "Επιβεβαιώθηκε"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:502
 msgid "Date"
-msgstr "Дата"
+msgstr "Ημερομηνία"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:527
 msgid "Currently no users requesting affiliation with"
-msgstr "Сейчас нет пользователей, запрашивающих установление связи с"
+msgstr "Αυτή τη στιγμή δεν υπάρχουν χρήστες που ζητούν συσχέτιση με"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:547
 msgid "Group"
-msgstr "Группа"
+msgstr "Ομάδα"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:588
 msgid "Here you can grant permissions to regular members of your organization. Administrative users are not listed here as they have access to everything by default."
-msgstr "Здесь вы можете назначить права пользователям вашей организации. Администраторы здесь не указаны, поскольку имеют полные права доступа по умолчанию."
+msgstr "Εδώ μπορείτε να παραχωρήσετε άδεια σε απλά μέλη του οργανισμού σας. Οι διαχειριστές δεν είναι καταχωρημένοι εδώ καθώς έχουν πάγια πρόβαση παντού."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:593
 msgid "Additionally, entities that are pending review cannot be permissioned out to users, and will not appear in the entity list."
-msgstr "Также сущности на одобрении не показываются в списке и в их отношении не могут быть назначены права пользователей."
+msgstr "Επιπλέον, οντότητες που εκκρεμούν ανασκόπησης δεν μπορούν να αδειοδοτηθούν σε χρήστες, και δεν θα εμφανιστούν στη λίστα οντοτήτων."
 
 #: peeringdb_server/templates/site/view_organization_tools.html:615
 msgid "Update"
-msgstr "Изменить"
+msgstr "Ενημέρωση"
 
 #: peeringdb_server/templates/site/view_organization_tools.html:618
 msgid "Delete"
-msgstr "Удалить"
+msgstr "Διαγραφή"
 
 #: peeringdb_server/templatetags/util.py:80
 msgid "Your email address does not match the domain information we have on file for this organization."
-msgstr "Согласно нашим данным, ваш емайл не соответствует домену данной организации."
+msgstr "H διεύθυνση email σας δεν ταιριάζει με τα στοιχεία που έχουμε καταχωρημένα για αυτό το domain."
 
 #: peeringdb_server/templatetags/util.py:139
 msgid "seconds ago"
-msgstr "секунд назад"
+msgstr "δευτερόλεπτα πριν"
 
 #: peeringdb_server/templatetags/util.py:141
 msgid "minutes ago"
-msgstr "минут назад"
+msgstr "λεπτά πριν"
 
 #: peeringdb_server/templatetags/util.py:143
 msgid "hours ago"
-msgstr "часов назад"
+msgstr "ώρες πριν"
 
 #: peeringdb_server/templatetags/util.py:145
 msgid "days ago"
-msgstr "дней назад"
+msgstr "μέρες πριν"
 
 #: peeringdb_server/validators.py:29
 msgid "Invalid prefix: {}"
-msgstr "Недействительный префикс: {}"
+msgstr "Μη έγκυρο prefix: {}"
 
 #: peeringdb_server/validators.py:32
 msgid "Address space invalid: {}"
-msgstr "Недействительное адресное пространство: {}"
+msgstr "Μη έγκυρο Address space: {}"
 
 #: peeringdb_server/validators.py:38 peeringdb_server/validators.py:47
 msgid "Maximum value allowed {}"
-msgstr "Максимальное допустимое значение: {}"
+msgstr "Mέγιστη επιτρεπτή τιμή {}"
 
 #: peeringdb_server/validators.py:41 peeringdb_server/validators.py:51
 msgid "Negative value not allowed"
-msgstr "Отрицательные значения не допускаются"
+msgstr "Αρνητική αξία δεν επιτρέπεται"
 
 #: peeringdb_server/views.py:162 peeringdb_server/views.py:190
 msgid "Please wait a bit before requesting ownership again."
-msgstr "Подождите несколько секунд перед повторной подачей заявки на права управления."
+msgstr "Παρακαλώ περιμένετε λίγο πριν αιτηθείτε ξανά κυριότητας."
 
 #: peeringdb_server/views.py:169
 msgid "Invalid organization"
-msgstr "Недействительная организация"
+msgstr "Μη έγκυρος οργανισμός"
 
 #: peeringdb_server/views.py:173 peeringdb_server/views.py:204
 #, python-format
 msgid "Organization '%(org_name)s' is already under ownership"
-msgstr "Для организации '%(org_name)s' уже назначены права управления"
+msgstr "O Οργανισμός '%(org_name)s' ανήκει ήδη κάπου"
 
 #: peeringdb_server/views.py:198
 msgid "Organization does not exist"
-msgstr "Организация не существует"
+msgstr "Ο Οργανισμός δεν υπάρχει"
 
 #: peeringdb_server/views.py:215
 msgid "You already have an ownership request pending for this organization"
-msgstr "Ранее вами уже была подана заявка на права управления данной организацией. Заявка находится на рассмотрении"
+msgstr "Έχετε ήδη ένα αίτημα ιδιοκτησίας που εκκρεμεί για τον οργανισμό αυτό"
 
 #: peeringdb_server/views.py:245
 msgid "Please wait a bit before requesting affiliation again."
-msgstr "Перед повторной попыткой авторизации подождите некоторое время."
+msgstr "Παρακαλούμε περιμένετε λίγο πριν ζητήσετε ξανά συσχετισμό."
 
 #: peeringdb_server/views.py:256 peeringdb_server/views.py:257
 msgid "Either ASN or Organization required"
-msgstr "Необходимо ввести ASN или организацию"
+msgstr "Απαιτείται είτε ASN είτε Οργανισμός"
 
 #: peeringdb_server/views.py:267 peeringdb_server/views.py:284
 msgid "Could not retrieve RiR entry"
-msgstr "Ошибка при запросе информации из RIR"
+msgstr "Δεν ήταν δυνατή η ανάκτηση της καταχώρησης RIR"
 
 #: peeringdb_server/views.py:302
 msgid "Please wait a bit before trying to resend the confirmation email again"
-msgstr "Перед повторной отправкой подтверждающего емайла подождите некоторое время"
+msgstr "Παρακαλώ περιμένετε λίγο πριν δοκιμάσετε να επαναστείλετε ξανλα το email επιβεβαίωσης"
 
 #: peeringdb_server/views.py:311
 msgid "We have resent your confirmation email"
-msgstr "Емайл с подтверждением отправлен повторно"
+msgstr "Έχουμε επαναστείλει το email επιβεβαίωσης"
 
 #: peeringdb_server/views.py:424
 msgid "Please wait a bit before requesting another email change"
-msgstr "Перед повторной заявкой на изменение емайла подождите некоторое время"
+msgstr "Παρακαλώ περιμένετε λίγο πριν αιτηθείτε και άλλη αλλαγή email"
 
 #: peeringdb_server/views.py:442
 msgid "E-mail already exists in our system"
-msgstr "Емайл уже существует в нашей базе"
+msgstr "Το E-mail αυτό υπάρχει ήδη στο σύστημά μας"
 
 #: peeringdb_server/views.py:470
 msgid "Wrong password"
-msgstr "Неверный пароль"
+msgstr "Λάθος κωδικός"
 
 #: peeringdb_server/views.py:511
 msgid "Please wait a bit before requesting your usernames again."
-msgstr "Перед повторным запросом ваших имен пользователя подождите некоторое время."
+msgstr "Παρακαλούμε περιμένετε λίγο πριν ζητήσετε ξανά τα ονόματα χρήστη σας."
 
 #: peeringdb_server/views.py:602
 msgid "Invalid Security Token"
-msgstr "Недействительный токен безопасности"
+msgstr "Μη έγκυρο Security Token"
 
 #: peeringdb_server/views.py:604
 msgid "Password Reset Process has expired, please"
-msgstr "Время для сброса пароля истекло, пожалуйста"
+msgstr "H διαδικασία ανάκτησης κωδικού έχει εκπνεύσει, παρακαλούμε"
 
 #: peeringdb_server/views.py:653
 msgid "Please log out of your current session before trying to register. Notice, multiple accounts are no longer needed."
-msgstr "Пожалуйста, выйдите из текущей сессии перед попыткой регистрации. Обратите внимание, что множественные аккаунты больше не являются необходимыми."
+msgstr "Παρακαλούμε αποσυνδεθείτε από την υπάρχουσα συνεδρία σας πριν δοκιμάσετε να εγγραφείτε. Σημειώστε πως δεν χρειάζονται πλέον πολλαπλοί λογαριασμοί."
 
 #: peeringdb_server/views.py:681
 msgid "reCAPTCHA invalid"
-msgstr "reCAPTCHA не пройдена"
+msgstr "Μη έγκυρο reCAPTCHA"
 
 #: peeringdb_server/views.py:687
 msgid "This email address has already been used"
-msgstr "Этот емайл уже используется"
+msgstr "Αυτή η διεύθυνση email έχει ήδη χρησιμοποιηθεί"
 
 #: peeringdb_server/views.py:721
 msgid "Already logged in"
-msgstr "Уже авторизован"
+msgstr "Είνα ήδη συνδεδεμένος/η"
 
 #: peeringdb_server/views.py:858 peeringdb_server/views.py:967
-#, fuzzy
 msgid "Location"
-msgstr "Локация"
+msgstr "Τοποθεσία"
 
 #: peeringdb_server/views.py:866 peeringdb_server/views.py:974
 msgid "Country Code"
-msgstr "Код страны"
+msgstr "Κωδικός Χώρας"
 
 #: peeringdb_server/views.py:871 peeringdb_server/views.py:991
 #: peeringdb_server/views.py:1089 peeringdb_server/views.py:1332
 msgid "Notes"
-msgstr "Дополнительная информация"
+msgstr "Σημειώσεις"
 
 #: peeringdb_server/views.py:872 peeringdb_server/views.py:992
 #: peeringdb_server/views.py:1090 peeringdb_server/views.py:1333
 msgid "Markdown enabled"
-msgstr "Разметка Markdown включена"
+msgstr "Η Markdown ενεργοποιήθηκε"
 
 #: peeringdb_server/views.py:978
 msgid "Geocode"
-msgstr "Геокод"
+msgstr "Γεωκωδικός (Geocode)"
 
 #: peeringdb_server/views.py:1073 peeringdb_server/views.py:1311
 msgid "Protocols Supported"
-msgstr "Поддерживаеvst протоколы"
+msgstr "Υποστηριζόμενα Πρωτόκολλα"
 
 #: peeringdb_server/views.py:1095
 msgid "Contact Information"
-msgstr "Контактная информация"
+msgstr "Πληροφορίες Επικοινωνίας"
 
 #: peeringdb_server/views.py:1099 peeringdb_server/views.py:1242
 msgid "Company Website"
-msgstr "Веб-сайт компании"
+msgstr "Εταιρική Ιστοσελίδα"
 
 #: peeringdb_server/views.py:1109
 msgid "Technical Email"
-msgstr "Технический контакт, емайл"
+msgstr "Email για τεχνικά θέματα"
 
 #: peeringdb_server/views.py:1119
 msgid "Policy Email"
-msgstr "Пиринговая политика, емайл"
+msgstr "Email για θέματα Πολιτικής"
 
 #: peeringdb_server/views.py:1144
 msgid "LAN"
@@ -2532,7 +2523,7 @@ msgstr "LAN"
 
 #: peeringdb_server/views.py:1237
 msgid "Also Known As"
-msgstr "Другое наименование"
+msgstr "Γνωστός/η/ο και ως"
 
 #: peeringdb_server/views.py:1259
 msgid "Route Server URL"
@@ -2544,56 +2535,56 @@ msgstr "Looking Glass URL"
 
 #: peeringdb_server/views.py:1278
 msgid "IPv4 Prefixes"
-msgstr "IPv4-префиксы"
+msgstr "IPv4 Prefixes"
 
 #: peeringdb_server/views.py:1284
 msgid "IPv6 Prefixes"
-msgstr "IPv6-префиксы"
+msgstr "IPv6 Prefixes"
 
 #: peeringdb_server/views.py:1328
 msgid "Last Updated"
-msgstr "Последнее обновление"
+msgstr "Τελευταία Ενημέρωση"
 
 #: peeringdb_server/views.py:1339
 msgid "PeeringDB Configuration"
-msgstr "Конфигурация PeeringDB"
+msgstr "Ρύθμιση PeeringDB"
 
 #: peeringdb_server/views.py:1343
 msgid "Allow IXP Update"
-msgstr "Разрешить обновление IXP"
+msgstr "Έγκριση Ενημέρωσης IXP"
 
 #: peeringdb_server/views.py:1345
 msgid "If enabled, an ixp may manage this network's entry in their peering list"
-msgstr "Если установлен, IXP имеет права управления записью о данной сети в своем списке участников"
+msgstr "Όταν είναι ενεργό, ένας IXP μπορεί να διαχειριστεί αυτή την καταχώρηση του δικτού στην λίστα peering τους"
 
 #: peeringdb_server/views.py:1354
 msgid "Peering Policy Information"
-msgstr "Информация о пиринговой политике"
+msgstr "Πληροφορίες Πολιτικής Peering"
 
 #: peeringdb_server/views.py:1357
 msgid "Peering Policy"
-msgstr "Пиринговая политика"
+msgstr "Πολιτική Peering"
 
 #: peeringdb_server/views.py:1537
 msgid "Please wait a bit before trying to login again."
-msgstr "Подождите несколько секунд перед повторной попыткой авторизации."
+msgstr "Παρακαλώ περιμένετε λίγο πριν ξαναπροσπαθήσετε να κάνετε login."
 
 #: peeringdb_server/views.py:1562
 msgid "Account disabled."
-msgstr "Аккаунт деактивирован."
+msgstr "Ο λογαριασμός έχει απενεργοποιηθεί"
 
 #: peeringdb_server/views.py:1563
 msgid "Invalid username/password."
-msgstr "Неверное имя пользователя/пароль."
+msgstr "Μη έγκυρο όνομα χρήστη/κωδικός."
 
 #: tests/django_init.py:62
 msgid "English"
-msgstr "Английский"
+msgstr "Αγγλικά"
 
 #: tests/django_init.py:63
 msgid "Portuguese"
-msgstr "Португальский"
+msgstr "Πορτογαλικά"
 
 #: tests/django_init.py:82
 msgid "Kosovo"
-msgstr "Косово"
+msgstr "Kosovo"

@@ -3,87 +3,85 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PeeingDB Server\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-06-01 19:33+0000\n"
-"PO-Revision-Date: 2018-06-03 07:57+0200\n"
-"Language: de_DE\n"
+"POT-Creation-Date: 2018-06-04 04:53+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"Last-Translator: Arnold Nipper <arnold@nipper.de>\n"
-"Language-Team: Arnold, Sara und Stefan\n"
-"X-Generator: Poedit 2.0.7\n"
-"X-Poedit-SourceCharset: UTF-8\n"
 
 #: peeringdb_server/static/peeringdb.js:415
 #: peeringdb_server/static/peeringdb.js:745
 msgid "Remove"
-msgstr "Entfernen"
+msgstr "Αφαίρεση"
 
 #: peeringdb_server/static/peeringdb.js:425
 msgid "Canceled"
-msgstr "Abgebrochen"
+msgstr "Ακυρώθηκε"
 
 #: peeringdb_server/static/peeringdb.js:449
 msgid "Add user"
-msgstr "Füge Benutzer hinzu"
+msgstr "Προσθήκη χρήστη"
 
 #: peeringdb_server/static/peeringdb.js:449
 msgid "to Organization?"
-msgstr "zur Organisation?"
+msgstr "σε ποιον Οργανισμό;"
 
 #: peeringdb_server/static/peeringdb.js:466
 msgid "Deny"
-msgstr "Ablehnen"
+msgstr "Απόρριψη"
 
 #: peeringdb_server/static/peeringdb.js:466
 msgid "request to join the Organization?"
-msgstr "Anfrage, der Organisation beizutreten?"
+msgstr "αίτηση ένταξης στον Οργανισμό;"
 
 #: peeringdb_server/static/peeringdb.js:615
 msgid "Unknown request type:"
-msgstr "Unbekannter Anforderungstyp: %s"
+msgstr "Αίτημα άγνωστου τύπου:"
 
 #: peeringdb_server/static/peeringdb.js:631
 #: peeringdb_server/static/twentyc.edit.js:622
 msgid "The server rejected your data"
-msgstr "Der Server hat Ihre Daten zurückgewiesen"
+msgstr "Ο διακομιστής απέρριψε τα δεδομένα σας"
 
 #: peeringdb_server/static/peeringdb.js:635
 msgid "not yet been approved"
-msgstr "noch nicht genehmigt"
+msgstr "δεν έχει εγκριθεί ακόμα"
 
 #: peeringdb_server/static/peeringdb.js:636
 msgid "Parent entity pending review - please wait for it to be approved before adding entities to it"
-msgstr "Übergeordnete Entität steht zur  Überprüfung an - bitte warten Sie auf die Bestätigung, bevor Sie neue Entitäten hinzufügen"
+msgstr "Η γονική οντότητα εκκρεμεί ανασκόπησης - παρακαλώ περιμένετε να εγκριθεί προτού προσθέσετε οντότητες σε αυτή."
 
 #: peeringdb_server/static/peeringdb.js:773
 msgid "Exchange"
-msgstr "Austauschpunkt"
+msgstr "Exchange"
 
 #: peeringdb_server/static/peeringdb.js:789
 msgid "Participant"
-msgstr "Teilnehmer"
+msgstr "Συμμετέχων"
 
 #: peeringdb_server/static/peeringdb.js:805
 msgid "Facility"
-msgstr "Liegenschaft"
+msgstr "Εγκατάσταση"
 
 #: peeringdb_server/static/peeringdb.js:816
 msgid "Network Contact"
-msgstr "Netzwerk Kontakt"
+msgstr "Επαφή Δικτύου"
 
 #: peeringdb_server/static/peeringdb.js:849
 msgid "Network - Exchange link"
-msgstr "Netzwerk-Austauschpunkt-Link"
+msgstr "Ζεύξη Δικτύου - IXP"
 
 #: peeringdb_server/static/peeringdb.js:894
 msgid "Network - Facility link"
-msgstr "Netzwerk-Liegenschaft-Link"
+msgstr "Ζεύξη Δικτύου - Eγκατάστασης"
 
 #: peeringdb_server/static/peeringdb.js:920
 msgid "IXLAN"
@@ -91,48 +89,48 @@ msgstr "IXLAN"
 
 #: peeringdb_server/static/peeringdb.js:938
 msgid "IXLAN Prefix"
-msgstr "IXLAN-Präfix"
+msgstr "IXLAN Prefix"
 
 #: peeringdb_server/static/peeringdb.js:959
 msgid "Exchange - Facility link"
-msgstr "Netzwerk-Liegenschaft-Link"
+msgstr "Ζεύξη IXP - Εγκατάστασης"
 
 #: peeringdb_server/static/twentyc.edit.js:83
 msgid "Some of the fields contain invalid values - please correct and try again."
-msgstr "Einige Felder enthalten ungültige Werte-bitte korrigieren und erneut versuchen."
+msgstr "Κάποια από τα πεδία εμπεριέχουν μη έγκυρες τιμές - παρακαλώ διορθώστε και ξαναπροσπαθήστε"
 
 #: peeringdb_server/static/twentyc.edit.js:86
 msgid "Something went wrong."
-msgstr "Etwas ist schief gelaufen."
+msgstr "Κάτι πήγε στραβά."
 
 #: peeringdb_server/static/twentyc.edit.js:783
 msgid "Invalid value"
-msgstr "Ungültiger Wert"
+msgstr "Μη έγκυρη τιμή"
 
 #: peeringdb_server/static/twentyc.edit.js:787
 msgid "Input required"
-msgstr "Eingabe erforderlich"
+msgstr "Χρειάζεται εισαγωγή"
 
 #: peeringdb_server/static/twentyc.edit.js:870
 msgid "Needs to match password"
-msgstr "Kennwort muss übereinstimmen"
+msgstr "Πρέπει να τaιριάζει με τον κωδικό"
 
 #: peeringdb_server/static/twentyc.edit.js:887
 msgid "Needs to be a valid email address"
-msgstr "Bitte geben Sie eine gültige E-Mail-Adresse ein."
+msgstr "Πρέπει να είναι έγκυρη διεύθυνση email"
 
 #: peeringdb_server/static/twentyc.edit.js:916
 msgid "Needs to be a valid url"
-msgstr "Bitte geben Sie eine gültige URL ein"
+msgstr "Πρέπει να είναι έγκυρο url"
 
 #: peeringdb_server/static/twentyc.edit.js:936
 msgid "Needs to be a number"
-msgstr "Bitte geben Sie eine gültige Zahl ein"
+msgstr "Πρέπει να είναι αριθμός"
 
 #: peeringdb_server/static/twentyc.edit.js:946
 msgid "Yes"
-msgstr "Ja"
+msgstr "Ναι"
 
 #: peeringdb_server/static/twentyc.edit.js:946
 msgid "No"
-msgstr "Nein"
+msgstr "Όχι"

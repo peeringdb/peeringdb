@@ -977,7 +977,7 @@ msgstr "Abbiamo recuperato l'entrata RiR per l'ASN specificato"
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:9
 msgid ""
 "but found no match with the requesting user. Here are the email addresses we "
-"gatehered"
+"gathered"
 msgstr ""
 "ma non abbiamo trovato alcuna corrispondenza con l'utente richiedente. Ecco "
 "gli indirizzi email che abbiamo trovato"
