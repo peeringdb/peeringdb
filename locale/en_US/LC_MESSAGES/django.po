@@ -497,7 +497,7 @@ msgid "Renumber IP Space"
 msgstr ""
 
 #: peeringdb_server/models.py:148
-msgid "Has this object's latitude and longitude been syncronized to it's address fields"
+msgid "Has this object's latitude and longitude been syncronized to its address fields"
 msgstr ""
 
 #: peeringdb_server/models.py:151
@@ -827,12 +827,12 @@ msgstr ""
 
 #: peeringdb_server/serializers.py:230
 #, python-format
-msgid "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
+msgid "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
 msgstr ""
 
 #: peeringdb_server/serializers.py:234
 #, python-format
-msgid "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
+msgid "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
 msgstr ""
 
 #: peeringdb_server/templates/account/email_confirm.html:13
@@ -1021,7 +1021,7 @@ msgid "ATTENTION: This is an ownership request, approving it will grant the user
 msgstr ""
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:39
-msgid "These are the website addresses were able to derive from the organzation and it's entities"
+msgid "These are the website addresses were able to derive from the organzation and its entities"
 msgstr ""
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:43
@@ -1080,7 +1080,7 @@ msgstr ""
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:3
 #, python-format
-msgid "Your affiliation request to the Organization '%(o_name)s' and it's entities has been approved."
+msgid "Your affiliation request to the Organization '%(o_name)s' and its entities has been approved."
 msgstr ""
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:8
@@ -1088,7 +1088,7 @@ msgid "This was the result of a manual review of your affiliation request to ASN
 msgstr ""
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:10
-msgid "This was the result of a manual review of your affiliation request to the organization or one of it's entities."
+msgid "This was the result of a manual review of your affiliation request to the organization or one of its entities."
 msgstr ""
 
 #: peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt:13
