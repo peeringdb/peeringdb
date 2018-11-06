@@ -295,7 +295,7 @@ msgstr "Rinumerare lo spazio IP"
 
 #: peeringdb_server/models.py:147
 msgid ""
-"Has this object's latitude and longitude been syncronized to it's address "
+"Has this object's latitude and longitude been syncronized to its address "
 "fields"
 msgstr ""
 "La latitudine e la longitudine di questo oggetto sono state sincronizzate "
