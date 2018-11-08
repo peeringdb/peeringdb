@@ -6,8 +6,7 @@
 This document uses the following variables
 
 ```sh
-export FACS_REPO=git@github.com:20c/facsimile.git
-export PDB_REPO=git@git.20c.com:pdb/peeringdb.git
+export PDB_REPO=git@github.com:peeringdb/peeringdb.git
 ```
 
 ### Install obfuscation tools (Only needed if you want to obfuscate js)
@@ -23,9 +22,7 @@ mv compiler.jar ~/.local/google
 ### Install facsimile
 
 ```sh
-git clone $FACS_REPO
-cd facsimile
-python setup.py install
+pip install facsimile
 ```
 ### Clone peeringdb
 
