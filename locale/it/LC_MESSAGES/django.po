@@ -591,7 +591,7 @@ msgstr "il comando è stato eseguito in questa data e ora"
 
 #: peeringdb_server/org_admin_views.py:140
 msgid "Organization and all Entities it owns"
-msgstr "Organizzazioni e tutte le Entità che possiede"
+msgstr "Organizzazione e tutte le Entità che possiede"
 
 #: peeringdb_server/org_admin_views.py:141
 msgid "Any Network"
@@ -715,7 +715,7 @@ msgstr "questa pagina"
 
 #: peeringdb_server/templates/account/login.html:7
 msgid "instead"
-msgstr "in alternativa"
+msgstr "invece"
 
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/prepare_command.html:18
 #: peeringdb_server/templates/admin/peeringdb_server/commandlinetool/preview_command.html:16
@@ -1090,7 +1090,7 @@ msgstr ""
 
 #: peeringdb_server/templates/email/username-retrieve.txt:7
 msgid "If you did not request username retrieval, you can ignore this email."
-msgstr "Se non hai richiesto il recupero del nome utente, ignora questa mail"
+msgstr "Se non hai richiesto il recupero del nome utente, ignora questa email"
 
 #: peeringdb_server/templates/site/advanced-search-fac.html:21
 msgid "Address"
@@ -1494,11 +1494,11 @@ msgstr "Profilo"
 
 #: peeringdb_server/templates/site/header.html:81
 msgid "Logout"
-msgstr "Scollegati"
+msgstr "Scollègati"
 
 #: peeringdb_server/templates/site/header.html:85
 msgid "Register"
-msgstr "Registrati"
+msgstr "Regìstrati"
 
 #: peeringdb_server/templates/site/header.html:85
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
@@ -1516,7 +1516,7 @@ msgstr "o"
 #: peeringdb_server/templates/site/header.html:85
 #: peeringdb_server/templates/site/login.html:21
 msgid "Login"
-msgstr "Collegati"
+msgstr "Collègati"
 
 #: peeringdb_server/templates/site/index.html:34
 msgid "PeeringDB facilitates the exchange of information related to Peering."
@@ -1548,7 +1548,7 @@ msgstr "puoi registrarti qui"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "Please register ONLY if you are a peering network."
-msgstr "Si prega di registrarsi SOLO se sei una rete di peering"
+msgstr "Si prega di registrarsi SOLO se si è una rete di peering"
 
 #: peeringdb_server/templates/site/index.html:44
 msgid "You may also"
@@ -1605,15 +1605,15 @@ msgstr "Ho dimenticato il mio nome utente .."
 
 #: peeringdb_server/templates/site/oauth-login.html:6
 msgid "Login with oAuth"
-msgstr "Collegati con oAuth"
+msgstr "Collègati con oAuth"
 
 #: peeringdb_server/templates/site/oauth-login.html:8
 msgid "Login with your google account"
-msgstr "Collegati con il tuo account google"
+msgstr "Collègati con il tuo account google"
 
 #: peeringdb_server/templates/site/oauth-login.html:9
 msgid "Login with your facebook account"
-msgstr "Collegati con il tuo account facebook"
+msgstr "Collègati con il tuo account facebook"
 
 #: peeringdb_server/templates/site/password-reset.html:15
 msgid ""
@@ -1878,11 +1878,11 @@ msgid ""
 "with have reviewed your account. Thank you for your patience."
 msgstr ""
 "Non avrai pieno accesso finché noi o l'organizzazione a cui sei affiliato "
-"non avranno revisionato il tuo account. Grazie per la vostra pazienza."
+"non avremo revisionato il tuo account. Grazie per la vostra pazienza."
 
 #: peeringdb_server/templates/site/verify.html:75
 msgid "Affiliate with organization"
-msgstr "Affiliati con l'organizzazione"
+msgstr "Affìliati con l'organizzazione"
 
 #: peeringdb_server/templates/site/verify.html:80
 #, python-format
@@ -1925,7 +1925,7 @@ msgstr ""
 
 #: peeringdb_server/templates/site/verify.html:118
 msgid "Affiliate"
-msgstr "Affiliati"
+msgstr "Affìliati"
 
 #: peeringdb_server/templates/site/verify.html:121
 #: peeringdb_server/templates/site/view_organization_tools.html:329
@@ -2617,7 +2617,7 @@ msgstr "Contatti"
 
 #: peeringdb_server/views.py:1099 peeringdb_server/views.py:1242
 msgid "Company Website"
-msgstr "Sito web della compagnia"
+msgstr "Sito web dell'azienda"
 
 #: peeringdb_server/views.py:1109
 msgid "Technical Email"
@@ -2693,7 +2693,7 @@ msgstr "Account disabilitato."
 
 #: peeringdb_server/views.py:1563
 msgid "Invalid username/password."
-msgstr "Nome utente o password non validi"
+msgstr "Nome utente o password non valido"
 
 #: tests/django_init.py:62
 msgid "English"
