@@ -1,0 +1,14 @@
+<table style="width:750px; border:none;">
+<tr>
+  <th>Organization</th>
+  <th>Org ID</th>
+  <th>Status</th>
+</tr>
+{% for org in organizations %}
+<tr>
+  <td><a href="{{ org.admin_url }}">{{ org.name }}</a></td>
+  <td>{{ org.id }}</td>
+  <td>{% if user in org.admin_usergroup.user_set.all %}ADMIN{% else %}MEMBER{% endif %}</td>
+</tr>
+{% endfor %}
+</table>

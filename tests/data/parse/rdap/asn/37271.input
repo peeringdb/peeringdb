@@ -1,0 +1,70 @@
+{
+  "lang" : "en",
+  "notices" : [ {
+    "title" : "ABOUT",
+    "description" : [ "This is the AfriNIC RDAP server." ],
+    "links" : [ {
+      "value" : "https://rdap.afrinic.net/rdap/autnum/37271",
+      "rel" : "describedby",
+      "href" : "http://www.afrinic.net/en/library/membership-documents/197-database-afrinic-database-reference-manual-",
+      "hreflang" : [ "en" ],
+      "type" : "text/html",
+      "title" : "AFRINIC Database Reference Manual",
+      "media" : "screen"
+    } ]
+  } ],
+  "handle" : "AS37271",
+  "status" : [ "active" ],
+  "port43" : "whois.afrinic.net",
+  "name" : "ORG-WCL1-AFRINIC",
+  "entities" : [ {
+    "lang" : "en",
+    "handle" : "WOL-AFRINIC",
+    "status" : [ "active" ],
+    "port43" : "whois.afrinic.net",
+    "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "kind", { }, "text", "group" ], [ "fn", { }, "text", "Workonline NOC" ], [ "tel", {
+      "type" : "work"
+    }, "uri", "tel:+27 21 200 9009" ], [ "email", {
+      "type" : "work"
+    }, "text", "noc@workonline.co.za" ], [ "adr", {
+      "type" : "work"
+    }, "text", [ "30 Waterkant St", "Cape Town", "South Africa", "", "", "", "" ] ] ] ],
+    "objectClassName" : "entity"
+  }, {
+    "lang" : "en",
+    "handle" : "ORG-WCL1-AFRINIC",
+    "status" : [ "active" ],
+    "port43" : "whois.afrinic.net",
+    "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "kind", { }, "text", "org" ], [ "fn", { }, "text", "ORG-WCL1-AFRINIC" ], [ "tel", {
+      "type" : "work"
+    }, "uri", "tel:+27 21 200 9000" ], [ "tel", {
+      "type" : "work"
+    }, "uri", "tel:+27 21 200 9009" ], [ "tel", {
+      "type" : "work"
+    }, "uri", "tel:+27761157753" ], [ "email", {
+      "type" : "work"
+    }, "text", "communications@workonline.co.za" ], [ "email", {
+      "type" : "work"
+    }, "text", "robertj@workonline.co.za" ], [ "adr", {
+      "type" : "work"
+    }, "text", [ "30 Waterkant St", "Cape Town 8001", "", "", "", "", "" ] ] ] ],
+    "objectClassName" : "entity"
+  }, {
+    "lang" : "en",
+    "handle" : "RJ2-AFRINIC",
+    "status" : [ "active" ],
+    "port43" : "whois.afrinic.net",
+    "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "kind", { }, "text", "individual" ], [ "fn", { }, "text", "Robert Jooste" ], [ "tel", {
+      "type" : "work"
+    }, "uri", "tel:+27761157753" ], [ "email", {
+      "type" : "work"
+    }, "text", "robertj@workonline.co.za" ], [ "adr", {
+      "type" : "work"
+    }, "text", [ "il Palazzo Unit 2, 5 Zenith Drive, Umhlanga Rocks", "Durban", "South Africa", "", "", "", "" ] ] ] ],
+    "objectClassName" : "entity"
+  } ],
+  "startAutnum" : 37271,
+  "endAutnum" : 37271,
+  "objectClassName" : "autnum",
+  "rdapConformance" : [ "rdap_level_0" ]
+}

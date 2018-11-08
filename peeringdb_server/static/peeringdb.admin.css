@@ -1,0 +1,79 @@
+.pdbadmin div.listing {
+  height: 500px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.pdbadmin div.listing div.row {
+  padding: 3px;
+    border-bottom: 1px #ccc solid;
+    font-size: 14px;
+    border-left: 3px #666 solid;
+}
+
+.pdbadmin div.listing div.row:hover {
+  background-color: rgba(0,0,0,0.1);
+}
+
+.pdbadmin input[data-filter-target] {
+  width: 100%;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.pdbadmin p.help {
+  background-color: #eee;
+  padding: 5px;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+input.autocomplete.valid {
+  color: #2FD179;
+}
+input.autocomplete.invalid {
+  color: #D71E1E;
+}
+
+span.yourlabs-autocomplete > span > div.sub {
+  font-size: 12px;
+  color: #717D7F;
+}
+
+span.yourlabs-autocomplete > span.hilight > div.sub {
+  color: #fff;
+}
+
+#org-merge-tool #target-org {
+  font-size: 16px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+#org-merge-tool .merge-results {
+  margin-top: 15px;
+}
+
+div.commandlinetool div.result {
+  max-height: 400px;
+  width: 100%;
+  overflow-y: scroll;
+}
+
+div.commandlinetool div.result div.info {
+  color: darkgreen;
+}
+
+div.commandlinetool div.result div.warning {
+  color: orange;
+}
+
+div.commandlinetool div.result div.error {
+  color: red;
+}
+
+
+div.commandlinetool fieldset.disabled input,
+div.commandlinetool fieldset.disabled select {
+  background-color: transparent;
+}

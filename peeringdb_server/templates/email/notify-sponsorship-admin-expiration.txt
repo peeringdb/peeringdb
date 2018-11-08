@@ -1,0 +1,4 @@
+{% load i18n %}
+{% blocktrans with i_label=instance.label io_name=instance.org.name i_end_date=instance.end_date trimmed%}
+{{ i_label }} level sponsorship from '{{  io_name }}' expired on {{ i_end_date }}.
+{% endblocktrans %}

@@ -1,0 +1,42 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls admin_static static admin_modify %}
+
+{% block extrahead %}{{ block.super }}
+{{ media }}
+<script type="text/javascript">jQuery = $ = django.jQuery</script>
+{{ adminform.media }}
+<script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+{% endblock %}
+ 
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}"/>
+{% endblock %}
+ 
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+        &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ app_label|capfirst|escape }}</a>
+        &rsaquo; {% if has_change_permission %}<a href="{% url opts|admin_urlname:'changelist' %}">
+        {{ opts.verbose_name_plural|capfirst }}</a>{% else %}{{ opts.verbose_name_plural|capfirst }}{% endif %}
+        &rsaquo; {% trans 'Prepare' %}
+    </div>
+{% endblock %}
+ 
+{% block content %}
+    <form action="{% url opts|admin_urlname:action %}" method="post" id="commandlinetool_prepare_form"
+          {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
+        {% csrf_token %}
+        {% if tool %}
+        <input type="hidden" value="{{ tool.tool }}" name="tool" />
+        {% endif %}
+        <div>
+            {% for fieldset in adminform %}
+                {% include "admin/includes/fieldset.html" %}
+            {% endfor %}
+        </div>
+        <div class="submit-row">
+            <input type="submit" value="{{ action|upper }} Command" class="default"/>
+        </div>
+    </form>
+{% endblock %}

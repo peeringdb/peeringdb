@@ -1,0 +1,24 @@
+{% load i18n %}
+{% language 'en' %}
+{% blocktrans trimmed%}
+A new '{{ entity_type_name }}' has been created and requires your approval.
+{% endblocktrans %}
+
+{% if suggested %}
+{% blocktrans trimmed %}
+  This {{ entity_type_name }} has been submitted as a suggestion and will need to be assigned the aproporiate organization after review
+{% endblocktrans %}  
+{% endif %}
+
+{% if rdap %}
+  {% trans "We retrieved the RiR entry for the specified ASN" %} {{ item.asn }} 
+  {% if not suggested %}
+  {% trans "but found no match with the requesting user. Here are the email addresses we gathered" %}:
+  {% endif %}
+  {% for email in rdap.emails %} - {{ email }} {% endfor %}
+{% endif %}
+
+{% trans "Name" %}: {{ item }}
+{% trans "Requested by user" %}: {{ user.full_name }} ({{ user.email }})
+
+{% trans "You can go to" %} <a href="{{ edit_url }}">{{ edit_url }}</a> {% trans "to view and approve or deny this entry" %}{% endlanguage %}

@@ -1,0 +1,181 @@
+{
+  "rdapConformance" : [ "rdap_level_0" ],
+  "notices" : [ {
+    "title" : "Terms of Service",
+    "description" : [ "By using the ARIN RDAP/Whois service, you are agreeing to the RDAP/Whois Terms of Use" ],
+    "links" : [ {
+      "value" : "https://rdap.arin.net/registry/autnum/2914",
+      "rel" : "about",
+      "type" : "text/html",
+      "href" : "https://www.arin.net/whois_tou.html"
+    } ]
+  } ],
+  "handle" : "AS2914",
+  "startAutnum" : 2914,
+  "endAutnum" : 2914,
+  "name" : "NTT-COMMUNICATIONS-2914",
+  "events" : [ {
+    "eventAction" : "last changed",
+    "eventDate" : "2012-03-02T08:03:18-05:00"
+  }, {
+    "eventAction" : "registration",
+    "eventDate" : "1998-12-07T00:00:00-05:00"
+  } ],
+  "links" : [ {
+    "value" : "https://rdap.arin.net/registry/autnum/2914",
+    "rel" : "self",
+    "type" : "application/rdap+json",
+    "href" : "https://rdap.arin.net/registry/autnum/2914"
+  }, {
+    "value" : "https://rdap.arin.net/registry/autnum/2914",
+    "rel" : "alternate",
+    "type" : "application/xml",
+    "href" : "https://whois.arin.net/rest/asn/AS2914"
+  } ],
+  "entities" : [ {
+    "handle" : "NTTAM-1",
+    "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "fn", { }, "text", "NTT America, Inc." ], [ "adr", {
+      "label" : "8300 E Maplewood Ave.\r\nSuite 400\nGreenwood Village\nCO\n80111\nUNITED STATES"
+    }, "text", [ "", "", "", "", "", "", "" ] ], [ "kind", { }, "text", "org" ] ] ],
+    "roles" : [ "registrant" ],
+    "links" : [ {
+      "value" : "https://rdap.arin.net/registry/autnum/2914",
+      "rel" : "self",
+      "type" : "application/rdap+json",
+      "href" : "https://rdap.arin.net/registry/entity/NTTAM-1"
+    }, {
+      "value" : "https://rdap.arin.net/registry/autnum/2914",
+      "rel" : "alternate",
+      "type" : "application/xml",
+      "href" : "https://whois.arin.net/rest/org/NTTAM-1"
+    } ],
+    "events" : [ {
+      "eventAction" : "last changed",
+      "eventDate" : "2017-01-28T08:32:29-05:00"
+    }, {
+      "eventAction" : "registration",
+      "eventDate" : "2005-12-08T12:04:23-05:00"
+    } ],
+    "entities" : [ {
+      "handle" : "NAAC-ARIN",
+      "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "adr", {
+        "label" : "8300 E Maplewood Ave.\r\nSuite 400\nGreenwood Village\nCO\n80111\nUNITED STATES"
+      }, "text", [ "", "", "", "", "", "", "" ] ], [ "fn", { }, "text", "NTT America Abuse Contact" ], [ "org", { }, "text", "NTT America Abuse Contact" ], [ "kind", { }, "text", "group" ], [ "email", { }, "text", "abuse@ntt.net" ], [ "tel", {
+        "type" : [ "work", "voice" ]
+      }, "text", "+1-877-688-6625" ] ] ],
+      "roles" : [ "abuse" ],
+      "links" : [ {
+        "value" : "https://rdap.arin.net/registry/autnum/2914",
+        "rel" : "self",
+        "type" : "application/rdap+json",
+        "href" : "https://rdap.arin.net/registry/entity/NAAC-ARIN"
+      }, {
+        "value" : "https://rdap.arin.net/registry/autnum/2914",
+        "rel" : "alternate",
+        "type" : "application/xml",
+        "href" : "https://whois.arin.net/rest/poc/NAAC-ARIN"
+      } ],
+      "events" : [ {
+        "eventAction" : "last changed",
+        "eventDate" : "2016-11-10T12:58:07-05:00"
+      }, {
+        "eventAction" : "registration",
+        "eventDate" : "2005-12-02T11:16:33-05:00"
+      } ],
+      "status" : [ "validated" ],
+      "port43" : "whois.arin.net",
+      "objectClassName" : "entity"
+    }, {
+      "handle" : "NASC-ARIN",
+      "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "adr", {
+        "label" : "8300 E Maplewood Ave.\r\nSuite 400\nGreenwood Village\nCO\n80111\nUNITED STATES"
+      }, "text", [ "", "", "", "", "", "", "" ] ], [ "fn", { }, "text", "NTT America Support Contact" ], [ "org", { }, "text", "NTT America Support Contact" ], [ "kind", { }, "text", "group" ], [ "email", { }, "text", "support@us.ntt.net" ], [ "tel", {
+        "type" : [ "work", "voice" ]
+      }, "text", "+1-877-688-6625" ] ] ],
+      "roles" : [ "noc" ],
+      "links" : [ {
+        "value" : "https://rdap.arin.net/registry/autnum/2914",
+        "rel" : "self",
+        "type" : "application/rdap+json",
+        "href" : "https://rdap.arin.net/registry/entity/NASC-ARIN"
+      }, {
+        "value" : "https://rdap.arin.net/registry/autnum/2914",
+        "rel" : "alternate",
+        "type" : "application/xml",
+        "href" : "https://whois.arin.net/rest/poc/NASC-ARIN"
+      } ],
+      "events" : [ {
+        "eventAction" : "last changed",
+        "eventDate" : "2016-11-10T15:02:39-05:00"
+      }, {
+        "eventAction" : "registration",
+        "eventDate" : "2005-12-02T11:16:39-05:00"
+      } ],
+      "status" : [ "validated" ],
+      "port43" : "whois.arin.net",
+      "objectClassName" : "entity"
+    }, {
+      "handle" : "VIPAR-ARIN",
+      "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "adr", {
+        "label" : "8300 E Maplewood Ave.\r\nSuite 400\nGreenwood Village\nCO\n80111\nUNITED STATES"
+      }, "text", [ "", "", "", "", "", "", "" ] ], [ "fn", { }, "text", "VIPAR" ], [ "org", { }, "text", "VIPAR" ], [ "kind", { }, "text", "group" ], [ "email", { }, "text", "vipar@us.ntt.net" ], [ "tel", {
+        "type" : [ "work", "voice" ]
+      }, "text", "+1-877-688-6625" ] ] ],
+      "roles" : [ "administrative", "technical" ],
+      "links" : [ {
+        "value" : "https://rdap.arin.net/registry/autnum/2914",
+        "rel" : "self",
+        "type" : "application/rdap+json",
+        "href" : "https://rdap.arin.net/registry/entity/VIPAR-ARIN"
+      }, {
+        "value" : "https://rdap.arin.net/registry/autnum/2914",
+        "rel" : "alternate",
+        "type" : "application/xml",
+        "href" : "https://whois.arin.net/rest/poc/VIPAR-ARIN"
+      } ],
+      "events" : [ {
+        "eventAction" : "last changed",
+        "eventDate" : "2016-11-07T10:31:32-05:00"
+      }, {
+        "eventAction" : "registration",
+        "eventDate" : "2005-12-02T11:16:27-05:00"
+      } ],
+      "status" : [ "validated" ],
+      "port43" : "whois.arin.net",
+      "objectClassName" : "entity"
+    } ],
+    "port43" : "whois.arin.net",
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "PEERI-ARIN",
+    "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "adr", {
+      "label" : "101 Park Ave.\r\n41st. floor\nNew York\nNY\n10178\nUNITED STATES"
+    }, "text", [ "", "", "", "", "", "", "" ] ], [ "fn", { }, "text", "Peering" ], [ "org", { }, "text", "Peering" ], [ "kind", { }, "text", "group" ], [ "email", { }, "text", "peering@ntt.net" ], [ "tel", {
+      "type" : [ "work", "voice" ]
+    }, "text", "+1-877-688-6625" ] ] ],
+    "roles" : [ "technical" ],
+    "links" : [ {
+      "value" : "https://rdap.arin.net/registry/autnum/2914",
+      "rel" : "self",
+      "type" : "application/rdap+json",
+      "href" : "https://rdap.arin.net/registry/entity/PEERI-ARIN"
+    }, {
+      "value" : "https://rdap.arin.net/registry/autnum/2914",
+      "rel" : "alternate",
+      "type" : "application/xml",
+      "href" : "https://whois.arin.net/rest/poc/PEERI-ARIN"
+    } ],
+    "events" : [ {
+      "eventAction" : "last changed",
+      "eventDate" : "2016-11-07T09:55:50-05:00"
+    }, {
+      "eventAction" : "registration",
+      "eventDate" : "2006-09-05T19:36:06-04:00"
+    } ],
+    "status" : [ "validated" ],
+    "port43" : "whois.arin.net",
+    "objectClassName" : "entity"
+  } ],
+  "port43" : "whois.arin.net",
+  "objectClassName" : "autnum"
+}

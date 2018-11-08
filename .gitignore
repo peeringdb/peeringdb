@@ -1,1 +1,10 @@
-*.mo
+.cache/
+.coverage
+.facsimile
+*.pyc
+*.log
+*.sql
+*.swp
+OLD.*
+genstatic/
+venv

@@ -1,0 +1,47 @@
+{% load i18n %}{% language 'en' %}
+{% if not instance.org %}
+  {% if instance.asn %}
+    {% blocktrans with u_name=user.full_name u_email=user.email inst=instance.asn trimmed %}
+    User {{ u_name }} ({{ u_email }}) wishes to be affiliated to ASN {{ inst }}
+    {% endblocktrans %}
+    {% if instance.org_name %}
+      {% trans "They also provided this organization name in their request" %}: {{ instance.org_name }}
+    {% endif %}
+    {% trans "There was no entry in our database that matches that ASN, so it is likely that a network and organzation for it will need to be created." %}
+  {% else %}
+    {% blocktrans with u_name=user.full_name u_email=user.email o_name=instance.org_name trimmed %}
+    User {{ u_name }} ({{ u_email }}) wishes to create an organization called {{ o_name }}.
+    {% endblocktrans %}
+  {% trans "There was no entry in our database that matches that organization name and no ASN was provided, so it is likely that this organization will need to be created." %}
+  {% endif %}
+  {% trans "You may create a new organization here" %}: <a href="{{ org_add_url }}">{{ org_add_url }}</a>
+  {% trans "You may create a new network here" %}: <a href="{{ net_add_url }}">{{ net_add_url }}</a>
+{% else %}
+  {% blocktrans with u_name=user.full_name u_email=user.email o_name=instance.org.name trimmed %}
+  user {{ user_name }} ({{ u_email }}) wishes to be affiliated to Organization '{{ o_name }}'
+  {% endblocktrans %}
+  {% if instance.asn %}{% trans "They also provided this ASN in their request" %}: {{ instance.asn }}{% endif %}
+  {% if not instance.org.owned %}
+    {% trans "ATTENTION: This is an ownership request, approving it will grant the user administration rights over the organization and any entities it owns." %}
+  {% endif %}
+  {% if instance.org.urls %}
+    {% trans "These are the website addresses were able to derive from the organzation and it's entities" %}:
+    {% for url in instance.org.urls %}- <a href="{{ url }}">{{ url }}</a> {% endfor %}
+  {%endif %}
+  {% trans "These are the email addresses we could fetch from the ASNs belonging to this organization" %}:
+  {% for email in emails %}- {{ email }} {% endfor %}
+  {% if user.organizations %}
+    {% trans "The user is affiliated with other organizations" %}:
+    {% for org in user.organizations %}
+      {% if user in org.admin_usergroup.user_set.all %}
+        <a href="{{ base_url }}{{org.admin_url}}">{{ base_url }}{{org.admin_url}}</a> | {{ org.name }} | {% trans "ADMIN" %}
+      {% else %}
+        <a href="{{ base_url }}{{org.admin_url}}">{{ base_url }}{{org.admin_url}}</a> | {{ org.name }} | {% trans "MEMBER" %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endif %}
+<a href="{{ review_url }}">{% trans "Review Affiliation/Ownership Request" %}</a>
+{% if not instance.org.owned and rdap_lookup %}
+  <a href="{{ approve_url }}">{% trans "Approve Ownership Request and Notify User" %}</a>
+{% endif %}{% endlanguage %}

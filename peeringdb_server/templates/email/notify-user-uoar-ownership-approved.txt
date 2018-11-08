@@ -1,0 +1,15 @@
+{% load i18n %}
+
+{% blocktrans with o_name=uoar.org.name trimmed %}
+Your affiliation request to the Organization '{{ o_name }}' and it's entities has been approved.
+{% endblocktrans %}
+
+{% if uoar.asn %}
+{% trans "This was the result of a manual review of your affiliation request to ASN" %} {{ uoar.asn }}.
+{% else %}
+{% trans "This was the result of a manual review of your affiliation request to the organization or one of it's entities." %}
+{% endif %}
+
+{% trans "You may view and edit your organization at" %} {{ org_url }}.
+
+{% trans "If you have questions, please don't hesitate to contact peeringdb support at" %} {{ support_email }}.

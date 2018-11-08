@@ -1,0 +1,76 @@
+{% load util %}
+{% load i18n %}
+{% include "site/header.html" %}
+{% include "site/view_header.html" with errors=errors %}
+
+<div class="view_info">
+<div class="container">
+
+
+  {% if request.user.is_verified or request.user.email_confirmed %}
+  <div class="row marg-top-15">
+    <div class="col-md-4 col-sm-3 col-xs-12"></div>
+
+    <div id="success-note-pending" style="display:none" class="editable always col-md-4 col-sm-6 col-xs-12 panel">
+    <h3>{% trans "Thank you" %}</h3>
+    {% spaceless %}
+    {% blocktrans with o_name=org.name trimmed %} We have received your ownership request for {{ o_name }} and will review it.  {% endblocktrans %}
+    {% endspaceless %}
+    <div class="marg-top"></div>
+    </div>
+
+    <div id="success-note-approved" style="display:none" class="editable always col-md-4 col-sm-6 col-xs-12 panel">
+    <h3>{% trans "Thank you" %}</h3>
+    {% trans "We have verified your relationship with this entity and you have successfully claimed ownership. You may view / edit" %}
+    <a href="/org/{{ org.id }}">{% trans "here" %}</a>.
+    <div class="marg-top"></div>
+    </div>
+
+
+    <div class="editable always col-md-4 col-sm-6 col-xs-12 panel"
+         data-edit-target="/request-ownership"
+         data-edit-always-submit="yes"
+         id="form-affiliate-account">
+
+
+      <h3>{{ org.name }}</h3>
+      <h5>{% trans "Request Ownership" %}</h5>
+
+      <div class="editable payload">
+        <div data-edit-name="id">{{ org.id }}</div>
+      </div>
+
+      <div class="center">
+        <p>
+        {{ org|ownership_warning:request.user }}
+        </p>
+        <p>
+        {% trans "Please only request ownership if you are certain that you have the rights to do so. Are you sure you wish to continue?" %}
+        </p>
+      </div>
+
+      <div class="center">
+        <a data-edit-action="submit" class="btn btn-default">{% trans "Request Ownership" %}</a>
+     </div>
+    </div>
+
+    <div class="col-md-4 col-sm-3 col-xs-12"></div>
+  </div>
+  {% else %}
+  <div class="editable popin error">
+  {% trans "Only verified users may request ownership to an organization" %}
+  </div>
+  {% endif %}
+</div>
+</div>
+
+<script language="javascript" type="text/javascript">
+$('#form-affiliate-account').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    $('#success-note-'+data.xhr_response.ownership_status).show();
+    $('#form-affiliate-account').hide();
+  })
+});
+</script>
+
+{% include "site/footer.html" %}

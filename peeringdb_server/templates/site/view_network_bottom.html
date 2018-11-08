@@ -1,0 +1,204 @@
+{% load util %}
+{% load i18n %}
+{% if data.poc_set or permissions.can_create %}
+<div class="list"
+     data-sort-container=".scrollable"
+     data-sort-row=".row"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:poc">
+     
+     <div class="row">
+       <div class="col-xs-12 col-sm-12 col-md-12">
+         <h5>Contact Information</h5>
+       </div>
+     </div>
+
+     {% if data.poc_hidden %}
+       <div class="note info marg-bot-15">
+       {% if not request.user.is_authenticated %}
+       {% trans "Some of this network's contacts are hidden because they are only visible to authenticated users and you are currently not logged in." %}
+       {% elif not request.user.is_verified %}
+       {% trans "Some of this network's contacts are hidden because your user account is not affiliated with any organization." %}
+       {% endif %}
+       </div>
+     {% endif %}
+
+     <div class="row header">
+       <div class="col-xs-3 col-sm-3 col-md-3">
+         <div data-sort-target=".role"
+              data-sort-initial="asc">
+              {% trans "Role" %}
+         </div>
+       </div>
+
+       <div class="col-xs-4 col-sm-4 col-md-4">
+         <div data-sort-target=".name">
+              {% trans "Name" %}
+         </div>
+         <div data-edit-toggled="edit">{% trans "Visiblity" %}</div>
+       </div>
+
+       <div class="col-xs-5 col-sm-5 col-md-5">
+         <div>
+              {% trans "Phone" %}
+         </div>
+         <div>
+              {% trans "E-Mail" %}
+         </div>
+       </div>
+     </div>
+
+     <div class="scrollable"
+          id="list-poc"
+          data-edit-component="list"
+          data-edit-template="poc-item">
+
+          {% for p in data.poc_set %}
+          <div class="row item"
+               data-edit-id="{{ p.id }}"
+               data-edit-label="Network Contact: {{ p.name }}">
+
+               <div class="editable payload">
+                 <div data-edit-name="net_id">{{ instance.id }}</div>
+                 <div data-edit-name="role">{{ p.role }}</div>
+               </div>
+
+               <div class="col-xs-3 col-sm-3 col-md-3">
+                 {% if permissions.can_delete %}
+                 <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+                 {% endif %}
+                 <div class="role" 
+                      data-sort-value="{{ p.role }}">
+                   {{ p.role }}
+                 </div>
+               </div>
+               <div class="col-xs-4 col-sm-4 col-md-4">
+                 <div class="name"
+                      {% if permissions.can_write %}
+                      data-edit-type="string"
+                      {% endif %}
+                      data-edit-value="{{ p.name }}"
+                      data-edit-name="name">
+                    {{ p.name }}
+                 </div>
+                 <div class="visible"
+                      data-edit-type="select"
+                      data-edit-toggled={% if permissions.can_write %}"edit"{% else %}"never"{% endif %}
+                      data-edit-value="{{ p.visible }}"
+                      data-edit-data="enum/visibility"
+                      data-edit-name="visible">
+                 </div>
+   
+               </div>
+               <div class="col-xs-5 col-sm-5 col-md-5">
+                 <div class="phone"
+                      {% if permissions.can_write %}
+                      data-edit-type="string"
+                      {% endif %}
+                      data-edit-name="phone">
+                   {% if p.phone %}
+                     {{ p.phone }}
+                   {% endif %}
+                 </div>
+                 <div class="email"
+                      {% if permissions.can_write %}
+                      data-edit-type="email"
+                      {% endif %}
+                      data-edit-value="{{ p.email }}"
+                      data-edit-name="email">
+                    {{ p.email }}
+                 </div>
+ 
+               </div>
+          </div>
+          {% endfor %}
+     </div>
+     <!-- ADD POC -->
+     {% if permissions.can_create %}
+     <div class="editable"
+          data-edit-toggled="edit"
+          data-edit-component="add">
+          
+          <div class="payload">
+            <div data-edit-name="net_id">{{ instance.id }}</div>
+          </div>
+          
+          <div class="row view_row">
+            <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Role" %}</div>
+            <div class="view_value col-xs-8 col-sm-7 col-md-8">
+              <div data-edit-type="select"
+                   data-edit-data="enum/poc_roles"
+                   data-edit-name="role">
+              </div>
+            </div>
+          </div>
+ 
+          <div class="row view_row">
+            <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+            <div class="view_value col-xs-8 col-sm-7 col-md-8">
+              <div data-edit-type="string"
+                   data-edit-name="name"
+                   data-edit-required="yes">
+              </div>
+            </div>
+          </div>
+   
+          <div class="row view_row">
+            <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Email" %}</div>
+            <div class="view_value col-xs-8 col-sm-7 col-md-8">
+              <div data-edit-type="email"
+                   data-edit-name="email">
+              </div>
+            </div>
+          </div>
+ 
+          <div class="row view_row">
+            <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Phone" %}</div>
+            <div class="view_value col-xs-8 col-sm-7 col-md-8">
+              <div data-edit-type="string"
+                   data-edit-name="phone">
+              </div>
+            </div>
+          </div>
+ 
+          <div class="row view_row">
+            <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Visibility" %}</div>
+            <div class="view_value col-xs-8 col-sm-7 col-md-8">
+              <div data-edit-type="select"
+                   data-edit-data="enum/visibility"
+                   data-edit-value="Users"
+                   data-edit-name="visible">
+              </div>
+            </div>
+          </div>
+ 
+ 
+          <div class="row marg-top">
+            <div class="col-xs-12 right">
+              <a class="btn btn-default" data-edit-action="add">{% trans "Add Contact" %}</a>
+            </div>
+          </div>
+     </div>
+     {% endif %}
+   
+
+</div>
+{% elif data.poc_hidden %}
+<div class="list">
+     <div class="row">
+       <div class="col-xs-12 col-sm-12 col-md-12">
+         <h5>Contact Information</h5>
+       </div>
+     </div>
+
+     <div class="note info marg-bot-15">
+       {% if not request.user.is_authenticated %}
+       {% trans "Some of this network's contacts are hidden because they are only visible to authenticated users and you are currently not logged in." %}
+       {% elif not request.user.is_verified %}
+       {% trans "Some of this network's contacts are hidden because your user account is not affiliated with any organization." %}
+       {% endif %}
+     </div>
+</div>
+{% endif %}

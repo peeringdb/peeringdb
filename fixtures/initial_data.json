@@ -1,0 +1,43 @@
+[
+  {
+    "model" : "auth.group",
+    "pk" : 1,
+    "fields" : {
+      "name" : "guest"
+    }
+  },
+  {
+    "model" : "auth.group",
+    "pk" : 2,
+    "fields" : {
+      "name" : "user"
+    }
+  },
+  {
+    "model" : "django_namespace_perms.grouppermission",
+    "pk" : 1,
+    "fields" : {
+      "group" : 1,
+      "namespace" : "peeringdb.organization",
+      "permissions" : 1
+    }
+  },
+  {
+    "model" : "django_namespace_perms.grouppermission",
+    "pk" : 5,
+    "fields" : {
+      "group" : 2,
+      "namespace" : "peeringdb.organization",
+      "permissions" : 1
+    }
+  },
+  {
+    "model" : "django_namespace_perms.grouppermission",
+    "pk" : 6,
+    "fields" : {
+      "group" : 2,
+      "namespace" : "peeringdb.organization.*.network.*.poc_set.users",
+      "permissions" : 1
+    }
+  }
+]

@@ -1,0 +1,7 @@
+{% load i18n %}
+{% language 'en' %}
+{% trans "Ownership of organization was automatically granted to user" %}:
+
+{% trans "User" %}: '{{ user.username }}' ({{ user.email }})
+{% trans "Organization" %}: '{{ org.name }}' ({{ org.id }})
+{% trans "Network" %}: '{{ net.name }}' {% trans "AS" %}{{ net.asn }}{% endlanguage %}

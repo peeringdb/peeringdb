@@ -1,0 +1,97 @@
+{% load util %}
+{% load i18n %}
+{% include "site/header.html" %}
+
+
+<div id="inline-search-container" style="display:none;"> 
+<div class="view_info">
+<div class="container">
+{% include "site/search_result_frame.html" %}
+</div>
+</div>
+</div>
+
+
+<div id="content">
+
+{% if errors %}
+<div class="row">
+<div class="col-md-4"></div>
+<div class="col-md-4">
+<div class="editable popin error">
+  {% for error in errors %}
+  <p>{{ error }}</p>
+  {% endfor %}
+</div>
+</div>
+<div class="col-md-4"></div>
+</div>
+{% endif %}
+
+<div class="landing_info">
+  <div class="container">
+    {% include "site/verification_banner.html" %}
+    <h1>{% trans "PeeringDB facilitates the exchange of information related to Peering." %}</h1>
+    <div class="row">
+      <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12 left">
+      <p>
+      {% blocktrans trimmed %}
+      Specifically, we are a database of networks that are peering, where they are peering, and if they are likely to peer with you. If you don't know what peering is, and/or you don't currently engage in peering, this probably won't have any meaning for you.
+      {% endblocktrans %}
+      </p>
+
+      <p>
+      {% trans "You are currently viewing a read-only view of the data contained here. If you are a peering network who would like to create an account," %} <a href="/register">{% trans "you may register for one here" %}</a>. {% trans "Please register ONLY if you are a peering network." %}<!-- {% trans "You may also" %} <a href="/"> {% trans "reset lost passwords here" %}</a>. -->
+     </p>
+
+      <p>
+      {% trans "Still have questions?" %} <a href="http://docs.peeringdb.com/faq">{% trans "Read our FAQ" %}</a>
+      </p>
+      </div>
+      <div class="recent col-lg-6 col-md-12 col-sm-12 col-xs-12 left">
+        <h3>{% trans "MOST RECENT UPDATES" %}</h3>
+        <div class="recent row">
+          <div class="col-xs-12 col-sm-4">
+          <h4>{% trans "NETWORKS" %}</h4>
+          {% for row in recent.net %}
+            <div class="participant">
+              <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a> ({{ row.asn }})
+            </div>
+            <div class="age">
+              {{ row.updated|age }}
+            </div>
+          {% endfor %}
+          </div>
+          <div class="col-xs-12 col-sm-4">
+          <h4>{% trans "FACILITIES" %}</h4>
+          {% for row in recent.fac %}
+            <div class="participant">
+              <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
+            </div>
+            <div class="age">
+              {{ row.updated|age }}
+            </div>
+          {% endfor %}
+          </div>
+          <div class="col-xs-12 col-sm-4">
+          <h4>{% trans "EXCHANGES" %}</h4>
+          {% for row in recent.ix %}
+            <div class="participant">
+              <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
+            </div>
+            <div class="age">
+              {{ row.updated|age }}
+            </div>
+          {% endfor %}
+          </div>
+
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+{% include "site/footer.html" %}

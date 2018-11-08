@@ -1,0 +1,45 @@
+{
+  "handle" : "DJVG",
+  "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "fn", { }, "text", "Daan van Gorkum" ], [ "kind", { }, "text", "individual" ], [ "adr", {
+    "label" : "Postbus 8160\n1180LD Amstelveen\nthe Netherlands"
+  }, "text", null ], [ "tel", {
+    "type" : "voice"
+  }, "text", "+31203080063" ], [ "email", { }, "text", "daan.vangorkum@vusam.com" ] ] ],
+  "entities" : [ {
+    "handle" : "VUSAM",
+    "roles" : [ "registrant" ],
+    "objectClassName" : "entity"
+  } ],
+  "links" : [ {
+    "value" : "https://rdap.db.ripe.net/entity/DJVG",
+    "rel" : "self",
+    "href" : "https://rdap.db.ripe.net/entity/DJVG"
+  }, {
+    "value" : "http://www.ripe.net/data-tools/support/documentation/terms",
+    "rel" : "copyright",
+    "href" : "http://www.ripe.net/data-tools/support/documentation/terms"
+  } ],
+  "events" : [ {
+    "eventAction" : "last changed",
+    "eventDate" : "2017-06-13T22:21:32Z"
+  } ],
+  "rdapConformance" : [ "rdap_level_0" ],
+  "notices" : [ {
+    "title" : "Filtered",
+    "description" : [ "This output has been filtered." ]
+  }, {
+    "title" : "Source",
+    "description" : [ "Objects returned came from source", "RIPE" ]
+  }, {
+    "title" : "Terms and Conditions",
+    "description" : [ "This is the RIPE Database query service. The objects are in RDAP format." ],
+    "links" : [ {
+      "value" : "https://rdap.db.ripe.net/entity/DJVG",
+      "rel" : "terms-of-service",
+      "href" : "http://www.ripe.net/db/support/db-terms-conditions.pdf",
+      "type" : "application/pdf"
+    } ]
+  } ],
+  "port43" : "whois.ripe.net",
+  "objectClassName" : "entity"
+}

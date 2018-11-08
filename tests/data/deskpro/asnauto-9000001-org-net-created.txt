@@ -1,0 +1,8 @@
+
+
+
+    Organization ORG AS9000001 (2) was automatically created during user 'user_a's affiliation request to AS9000001
+
+
+    Network AS9000001 (1) was automatically created during user 'user_a's affiliation request to AS9000001
+

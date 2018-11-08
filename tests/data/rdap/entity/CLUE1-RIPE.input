@@ -1,0 +1,85 @@
+{
+  "handle" : "CLUE1-RIPE",
+  "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "fn", { }, "text", "Netwerkvereniging Coloclue" ], [ "kind", { }, "text", "group" ], [ "adr", {
+    "label" : "Frans Duwaerstraat 34\n1318AC Almere\nNetherlands"
+  }, "text", null ], [ "tel", {
+    "type" : "voice"
+  }, "text", "+31651387718" ], [ "email", { }, "text", "ops@coloclue.net" ], [ "email", { }, "text", "routers@coloclue.net" ] ] ],
+  "entities" : [ {
+    "handle" : "COLOCLUE-MNT",
+    "roles" : [ "registrant" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "JB17421-RIPE",
+    "roles" : [ "technical" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "JL9785-RIPE",
+    "roles" : [ "technical" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "JVI-RIPE",
+    "roles" : [ "technical" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "MS44437-RIPE",
+    "roles" : [ "administrative", "technical" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "MWTS1-RIPE",
+    "roles" : [ "administrative" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "NMR5-RIPE",
+    "roles" : [ "technical" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "NT1031-RIPE",
+    "roles" : [ "administrative" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "PDW-RIPE",
+    "roles" : [ "administrative", "technical" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "PEER-RIPE",
+    "roles" : [ "technical" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "TIJN-RIPE",
+    "roles" : [ "administrative", "technical" ],
+    "objectClassName" : "entity"
+  } ],
+  "links" : [ {
+    "value" : "https://rdap.db.ripe.net/entity/CLUE1-RIPE",
+    "rel" : "self",
+    "href" : "https://rdap.db.ripe.net/entity/CLUE1-RIPE"
+  }, {
+    "value" : "http://www.ripe.net/data-tools/support/documentation/terms",
+    "rel" : "copyright",
+    "href" : "http://www.ripe.net/data-tools/support/documentation/terms"
+  } ],
+  "events" : [ {
+    "eventAction" : "last changed",
+    "eventDate" : "2017-09-21T23:55:48Z"
+  } ],
+  "rdapConformance" : [ "rdap_level_0" ],
+  "notices" : [ {
+    "title" : "Filtered",
+    "description" : [ "This output has been filtered." ]
+  }, {
+    "title" : "Source",
+    "description" : [ "Objects returned came from source", "RIPE" ]
+  }, {
+    "title" : "Terms and Conditions",
+    "description" : [ "This is the RIPE Database query service. The objects are in RDAP format." ],
+    "links" : [ {
+      "value" : "https://rdap.db.ripe.net/entity/CLUE1-RIPE",
+      "rel" : "terms-of-service",
+      "href" : "http://www.ripe.net/db/support/db-terms-conditions.pdf",
+      "type" : "application/pdf"
+    } ]
+  } ],
+  "port43" : "whois.ripe.net",
+  "objectClassName" : "entity"
+}

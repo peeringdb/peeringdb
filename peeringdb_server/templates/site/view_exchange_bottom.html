@@ -1,0 +1,312 @@
+{% load util %}
+{% load i18n %}
+<!-- IXLANS -->
+
+{% if not data.lan_simple_view %}
+<div class="list"
+     -data-sort-container=".scrollable"
+     -data-sort-row=".row"
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:ixlan">
+
+  <div class="row">
+    <div class="col-xs-6 col-sm-8 col-md-8">
+      <h5>LANs</h5>
+    </div>
+    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+      <input type="text" placeholder="Filter" data-filter-target="#list-ixlans" class="form-control" />
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-xs-5 col-sm-5 col-md-5">
+      <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+    </div>
+    <div class="col-xs-4 col-sm-4 col-md-4">
+      <div data-sort-target=".dot1q">{% trans "DOT1Q" %}</div>
+    </div>
+    <div class="col-xs-3 col-sm-3 col-md-3">
+      <div data-sort-target="mtu">{% trans "MTU" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-ixlans"
+       data-edit-component="list"
+       data-edit-template="ixlan-item">
+
+    <div class="empty-result">
+      <div class="message"> {% trans "Nothing matched your filter" %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{%trans "Name" %}</b> {% trans "or" %} <b>{% trans "dot1q" %}</b></div>
+    </div>
+
+    {% for x in data.ixlans %}
+    <div class="row item separator" data-edit-id="{{ x.id }}" data-edit-label="{% trans "IXLAN" %}: {{ x.name }} - {% trans "ATTENTION: Any network relationships to the exchange via this LAN will be removed as well" %}.">
+      <div class="editable payload">
+        <div data-edit-name="ix_id">{{ x.ix_id }}</div>
+      </div>
+      <div class="col-xs-5 col-sm-5 col-md-5">
+        {% if permissions.can_delete %}
+        <a class="btn-row-delete next-to-input" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+        {% endif %}
+        <div class="name"
+             data-sort-value="{{ x.name|lower }}"
+             data-filter-value="{{ x.name }}"
+             {% if permissions.can_write %}
+             data-edit-type="string"
+             {% endif %}
+             data-edit-name="name">
+             {{ x.name }}
+        </div>
+      </div>
+      <div class="col-xs-4 col-sm-4 col-md-4"
+           data-edit-name="dot1q_support"
+           {% if permissions.can_write %}
+           data-edit-type="bool"
+           {% endif %}
+           data-edit-template="check"
+           data-edit-value="{{ x.dot1q_support }}">
+         <img data-filter-value="{% if x.dot1q_support %}dot1q{% endif %}" class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.dot1q_support %}-off{% endif %}.png" alt="dot1q_support" />
+      </div>
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        <div {% if permissions.can_write %}
+             data-edit-type="number"
+             {% endif %}
+             data-edit-value="{% if x.mtu %}{{ x.mtu }}{% endif %}"
+             data-edit-name="mtu">{{ x.mtu|fallback:"" }}</div>
+      </div>
+      <div class="col-xs-12">
+        <div {% if permissions.can_write %}
+             data-edit-type="string"
+             {% endif %}
+             data-edit-value="{{ x.ixf_ixp_member_list_url|fallback:"" }}"
+             data-edit-placeholder="{% trans "IXF Member Export URL" %}"
+             data-edit-name="ixf_ixp_member_list_url">{{ x.ixf_ixp_member_list_url|fallback:"" }}</div>
+      </div>
+      <div class="marg-top-60 pad-side-15"
+           data-edit-module="api_listing"
+           data-edit-group="#view"
+           data-edit-target="api:ixpfx">
+
+        <div
+          id="list-prefixes"
+          data-edit-component="list"
+          data-edit-template="prefix-item">
+
+          {% for prefix in x.ixpfx_set_active_or_pending %}
+          <div class="row sub" data-edit-id="{{ prefix.id }}" data-edit-label="{% trans "IXLAN Prefix" %}: {{ prefix.prefix }}">
+            <div class="editable payload">
+              <div data-edit-name="ixlan_id">{{ x.id }}</div>
+              <div data-edit-name="protocol">{{ prefix.protocol }}</div>
+            </div>
+            <div class="col-xs-4 col-sm-4 col-md-4">
+              {% if permissions.can_delete %}
+              <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+              {% endif %}
+              {{ prefix.protocol }}
+            </div>
+            <div class="col-xs-8 col-sm-8 col-md-8"
+                 {% if permissions.can_write %}
+                 data-edit-type="string"
+                 {% endif %}
+                 data-edit-name="prefix"
+                 data-edit-required="yes">{{ prefix.prefix }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% if permissions.can_create %}
+        <div class="editable"
+             data-edit-toggled="edit"
+             data-edit-component="add">
+          <div class="payload">
+            <div data-edit-name="ixlan_id">{{ x.id }}</div>
+          </div>
+
+          <div class="row sub add">
+            <div class="col-xs-4 col-sm-4 col-md-4"
+                 data-edit-type="select"
+                 data-edit-name="protocol"
+                 data-edit-data="enum/protocols">
+            </div>
+            <div class="col-xs-5 col-sm-5 col-md-5"
+                 data-edit-type="string"
+                 data-edit-name="prefix"
+                 data-edit-placeholder="{% trans "Prefix" %}"
+                 data-edit-required="yes">
+            </div>
+            <div class="col-xs-3 col-sm-3 col-md-3">
+               <a class="btn btn-default" data-edit-action="add">{% trans "Add Prefix" %}</a>
+            </div>
+          </div>
+        </div>
+        <!-- END ADD IXLAN PFX -->
+        {% endif %}
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+  <!-- ADD IX LAN -->
+  {% if permissions.can_create %}
+  <div class="editable"
+       data-edit-toggled="edit"
+       data-edit-component="add">
+
+       <div class="payload">
+         <div data-edit-name="ix_id">{{ instance.id }}</div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+         <div class="view_value col-xs-8 col-sm-7 col-md-8">
+           <div data-edit-type="string"
+                data-edit-name="name">
+           </div>
+         </div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "DOT1Q" %}</div>
+         <div class="view_value col-xs-8 col-sm-7 col-md-8">
+           <div data-edit-type="bool"
+                data-edit-name="dot1q_support"
+                data-edit-temlate="check">
+           </div>
+         </div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "MTU" %}</div>
+         <div class="view_value col-xs-8 col-sm-7 col-md-8">
+           <div data-edit-type="number"
+                data-edit-name="mtu">
+           </div>
+         </div>
+       </div>
+
+
+       <div class="row view_row">
+         <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "IXF Member Export URL" %}</div>
+         <div class="view_value col-xs-8 col-sm-7 col-md-8">
+           <div data-edit-type="string"
+                data-edit-name="ixf_ixp_member_list_url">
+           </div>
+         </div>
+       </div>
+
+
+
+       <div class="row marg-top">
+         <div class="col-xs-12 right">
+           <a class="btn btn-default" data-edit-action="add">{% trans "Add LAN" %}</a>
+         </div>
+       </div>
+  </div>
+  <!-- END ADD IXLAN -->
+  {% endif %}
+
+
+
+</div>
+
+{% endif %}
+
+<!-- IXFACS -->
+
+<div class="list"
+     data-sort-container=".scrollable"
+     data-sort-row=".row"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:ixfac">
+  <div class="row">
+    <div class="col-xs-6 col-sm-8 col-md-8">
+      <h5>Local Facilities</h5>
+    </div>
+    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+      <input type="text" placeholder="Filter" data-filter-target="#list-facilities" class="form-control" />
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-xs-6 col-sm-6 col-md-6">
+      <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
+    </div>
+    <div class="col-xs-3 col-sm-3 col-md-3">
+      <div data-sort-target=".country">{% trans "Country" %}</div>
+    </div>
+    <div class="col-xs-3 col-sm-3 col-md-3">
+      <div data-sort-target=".city">{% trans "City" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-facilities"
+       data-edit-component="list"
+       data-edit-template="ixfac-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "Nothing matched your filter" %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Facility" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}</b></div>
+    </div>
+
+    {% for f in data.facilities %}
+
+    <div class="row item" data-edit-id="{{ f.id }}" data-edit-label="{% trans "Exchange - Facility link" %}: {{ f.facility.name }}">
+      <div class="editable payload">
+        <div data-edit-name="ix_id">{{ f.ix_id }}</div>
+        <div data-edit-name="fac_id">{{ f.facility_id }}</div>
+      </div>
+      <div class="col-xs-6 col-sm-6 col-md-6">
+        {% if permissions.can_delete %}
+        <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+        {% endif %}
+        <div class="facility" data-sort-value="{{ f.facility.name|lower }}" data-filter-value="{{ f.facility.name }}">
+          <a href="/{{ f.facility|ref_tag }}/{{ f.facility.id }}">{{ f.facility.name }}</a>
+        </div>
+      </div>
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        <div class="country" data-sort-value="{{ f.facility.county.name|lower }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
+      </div>
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        <div class="city" data-sort-value="{{ f.facility.city }}" data-filter-value="{{ f.facility.city }}">{{ f.facility.city }}</div>
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+  {% if permissions.can_create %}
+  <!-- ADD IX FACILITY  -->
+  <div class="editable"
+       data-edit-toggled="edit"
+       data-edit-component="add">
+
+       <div class="payload">
+         <div data-edit-name="ix_id">{{ instance.id }}</div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Facility" %}</div>
+         <div class="view_value col-xs-8 col-sm-7 col-md-8">
+           <div data-edit-type="autocomplete"
+                data-edit-autocomplete="fac/ix/{{ instance.id }}"
+                data-edit-name="fac_id">
+           </div>
+           <div data-autocomplete-confirm></div>
+         </div>
+       </div>
+
+       <div class="row marg-top">
+         <div class="col-xs-12 right">
+           <a class="btn btn-default" data-edit-action="add">{% trans "Add Facility" %}</a>
+         </div>
+       </div>
+  </div>
+  <!-- END ADD -->
+  {% endif %}
+
+
+</div>
+

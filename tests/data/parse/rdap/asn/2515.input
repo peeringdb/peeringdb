@@ -1,0 +1,73 @@
+{
+  "handle" : "AS2515",
+  "startAutnum" : 2515,
+  "endAutnum" : 2515,
+  "name" : "JPNIC-2Byte-ASBLOCK-AP",
+  "country" : "JP",
+  "objectClassName" : "autnum",
+  "entities" : [ {
+    "handle" : "IRT-JPNIC-JP",
+    "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "fn", { }, "text", "IRT-JPNIC-JP" ], [ "kind", { }, "text", "group" ], [ "email", {
+      "pref" : "1"
+    }, "text", "hostmaster@nic.ad.jp" ], [ "adr", {
+      "label" : "Urbannet-Kanda Bldg 4F, 3-6-2 Uchi-Kanda\\nChiyoda-ku, Tokyo 101-0047, Japan"
+    }, "text", [ "", "", "", "", "", "", "" ] ], [ "email", { }, "text", "hostmaster@nic.ad.jp" ] ] ],
+    "roles" : [ "abuse" ],
+    "objectClassName" : "entity",
+    "links" : [ {
+      "value" : "https://rdap.apnic.net/autnum/2515",
+      "rel" : "self",
+      "href" : "https://rdap.apnic.net/entity/IRT-JPNIC-JP",
+      "type" : "application/rdap+json"
+    } ]
+  }, {
+    "handle" : "JNIC1-AP",
+    "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "fn", { }, "text", "Japan Network Information Center" ], [ "kind", { }, "text", "group" ], [ "adr", {
+      "label" : "Urbannet-Kanda Bldg 4F\\n3-6-2 Uchi-Kanda\\nChiyoda-ku, Tokyo 101-0047,Japan"
+    }, "text", [ "", "", "", "", "", "", "" ] ], [ "tel", {
+      "type" : "voice"
+    }, "text", "+81-3-5297-2311" ], [ "tel", {
+      "type" : "fax"
+    }, "text", "+81-3-5297-2312" ], [ "email", { }, "text", "hostmaster@nic.ad.jp" ] ] ],
+    "roles" : [ "administrative", "technical" ],
+    "objectClassName" : "entity",
+    "links" : [ {
+      "value" : "https://rdap.apnic.net/autnum/2515",
+      "rel" : "self",
+      "href" : "https://rdap.apnic.net/entity/JNIC1-AP",
+      "type" : "application/rdap+json"
+    } ]
+  } ],
+  "remarks" : [ {
+    "title" : "description",
+    "description" : [ "Block of 32 AS numbers from AS2497 to AS2528", "for assignment to JPNIC members" ]
+  }, {
+    "title" : "remarks",
+    "description" : [ "Authoritative information regarding AS Number", "assignments made from within this block can be", "queried at whois.nic.ad.jp. To only display English output,", "add '/e' at the end of command,", "e.g. 'whois -h whois.nic.ad.jp xxx/e'." ]
+  } ],
+  "links" : [ {
+    "value" : "https://rdap.apnic.net/autnum/2515",
+    "rel" : "self",
+    "href" : "https://rdap.apnic.net/autnum/2515",
+    "type" : "application/rdap+json"
+  } ],
+  "events" : [ {
+    "eventAction" : "last changed",
+    "eventDate" : "2016-10-17T00:34:45Z"
+  } ],
+  "rdapConformance" : [ "rdap_level_0" ],
+  "notices" : [ {
+    "title" : "Source",
+    "description" : [ "Objects returned came from source", "APNIC" ]
+  }, {
+    "title" : "Terms and Conditions",
+    "description" : [ "This is the APNIC WHOIS Database query service. The objects are in RDAP format." ],
+    "links" : [ {
+      "value" : "https://rdap.apnic.net/autnum/2515",
+      "rel" : "terms-of-service",
+      "href" : "http://www.apnic.net/db/dbcopyright.html",
+      "type" : "text/html"
+    } ]
+  } ],
+  "port43" : "whois.apnic.net"
+}

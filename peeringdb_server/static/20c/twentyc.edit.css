@@ -1,0 +1,106 @@
+div.editable,
+div[data-edit-type],
+div[data-edit-target] {
+  position: relative;
+}
+
+.editable.input-frame {
+  display: inline-block;
+  position: relative;
+}
+
+.editable.input-note {
+  position: absolute;
+  left: 3px;
+  top: -15px;
+  padding: 3px;
+  font-size: 10px;
+  background-color: #000;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.editable.input-note-top .editable.input-note {
+  left: 3px;
+  right: auto;
+  top: -15px;
+  bottom: auto;
+}
+
+.editable.input-note-bottom .editable.input-note {
+  left: 3px;
+  right: auto;
+  bottom: -15px;
+  top: auto;
+}
+
+.editable.input-note-left .editable.input-note {
+  right: 99%;
+  top: 2px;
+  bottom: auto;
+  left: auto;
+}
+
+.editable.input-note-right .editable.input-note {
+  left: 99%;
+  right: auto;
+  top: 2px;
+  bottom: auto;
+}
+
+.editable.input-note-relative+.editable.input-note {
+  display: inline-block;
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+}
+
+.editable.input-note.validation-error {
+  background-color: #e20000;
+}
+
+.editable input.validation-error {
+  border-color: #e20000;
+  border-style: solid;
+}
+
+.editable.popin {
+  padding: 10px;
+  border: 1px #000 solid;
+}
+
+.editable.popin.error {
+  background-color: #ffefef;
+  border-color: #e20000;
+}
+
+.editable.text {
+  height: 100px;
+  width: 200px;
+}
+
+.editable.loading-shim {
+  position: absolute;
+  z-index: 1000;
+  left: 0px;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  background-color: rgba(255,255,255,0.75);
+}
+
+.editable.payload,
+.editable > .payload {
+  display: none;
+}
+
+*[data-edit-toggled="edit"] {
+  display: none;
+}
+
+#editable-templates,
+.editable-tempaltes {
+  display: none;
+}

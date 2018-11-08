@@ -1,0 +1,83 @@
+/* RESET */
+* { list-style:none ; margin:0 ; outline:none ; padding:0 }
+input, select, textarea { -webkit-box-sizing:border-box ; -moz-box-sizing:border-box ; box-sizing:border-box }
+article, aside, details, figcaption, figure, footer, header, main, nav, section, summary { display:block }
+audio, canvas, video { display:inline-block }
+
+html { font-size:20px }
+.partnerspage { margin:auto ; max-width:1170px ; padding:0 15px }
+
+/* PARTNER LEVELS */
+/* designed for 1201+ */
+.partners-group { margin-bottom:45px ; overflow:hidden }
+    .partners-group h2 { color:#666 ; font-size:1.6rem ; text-transform:uppercase ; float:left ; width:200px }
+    .partners-group.level1 h2 { font-size:1.45rem }
+    .partners-group.level2 h2 { font-size:1.45rem }
+    .partners-group .partners { background:#FFF ; border-left:5px solid #666 ; margin-left:230px ; padding:30px 0 0 30px }
+        .partners-group .partners img { display:inline-block ; height:auto ; margin:0 30px 30px 0 ; max-height:170px ; max-width:1190px ; vertical-align:middle ; width:auto }
+        .partners-group.level1 .partners img { max-height:85px ; max-width:595px }
+        .partners-group.level2 .partners img { max-height:85px ; max-width:595px }
+
+.partners a { text-decoration: none }
+.partners h1 { display: inline }
+
+/* designed for 741 to 1200 */
+@media screen and (max-width:1200px) {
+        .partners-group { margin-bottom:0px }
+        .partners-group h2 { font-size:1.2rem ; width:150px ; float:none ; width:auto }
+    .partners-group.level1 h2 { font-size:1.1rem }
+    .partners-group.level2 h2 { font-size:1.1rem }
+    .partners-group .partners { padding:25px 0 0 25px ; border-bottom:5px solid #666 ; border-left:none ; margin:15px 0 0 0 }
+            .partners-group .partners img { margin:0 25px 25px 0 ; max-height:130px ; max-width:910px }
+        .partners-group.level1 .partners img { max-height:70px ; max-width:490px }
+        .partners-group.level2 .partners img { max-height:70px ; max-width:490px }
+}
+
+/* designed for 611 to 740 */
+@media screen and (max-width:740px) {
+        .partners-group { margin-bottom:0px }
+    .partners-group h2 { font-size:.9rem }
+    .partners-group.level1 h2 { font-size:.9rem }
+    .partners-group.level2 h2 { font-size:.9rem }
+    .partners-group .partners { padding:20px 0 0 20px }
+            .partners-group .partners img { margin:0 20px 20px 0 ; max-height:100px ; max-width:700px }
+        .partners-group.level1 .partners img { max-height:55px ; max-width:385px }
+        .partners-group.level2 .partners img { max-height:55px ; max-width:385px }
+}
+
+/* designed for 481 to 610 */
+@media screen and (max-width:610px) {
+        .partners-group { margin-bottom:0px }
+    .partners-group h2 { font-size:.8rem }
+    .partners-group.level1 h2 { font-size:.8rem }
+    .partners-group.level2 h2 { font-size:.8rem }
+    .partners-group .partners { padding:20px 0 0 20px }
+            .partners-group .partners img { margin:0 20px 20px 0 ; max-height:75px ; max-width:525px }
+        .partners-group.level1 .partners img { max-height:40px ; max-width:280px }
+        .partners-group.level2 .partners img { max-height:40px ; max-width:280px }
+}
+
+/* designed for 421 to 480 */
+@media screen and (max-width:480px) {
+        .partners-group { margin-bottom:0px }
+    .partners-group h2 { font-size:.7rem }
+    .partners-group.level1 h2 { font-size:.7rem }
+    .partners-group.level2 h2 { font-size:.7rem }
+    .partners-group .partners { padding:15px 0 0 15px }
+                .partners-group .partners img { margin:0 15px 15px 0 ; max-height:65px ; max-width:455px }
+        .partners-group.level1 .partners img { max-height:35px ; max-width:245px }
+        .partners-group.level2 .partners img { max-height:35px ; max-width:245px }
+}
+
+/* designed for 320 to 420 */
+@media screen and (max-width:420px) {
+        .partners-group { margin-bottom:0px }
+    .partners-group h2 { font-size:.6rem }
+    .partners-group.level1 h2 { font-size:.6rem }
+    .partners-group.level2 h2 { font-size:.6rem }
+    .partners-group .partners { padding:10px 0 0 10px }
+                .partners-group .partners img { margin:0 10px 10px 0 ; max-height:50px ; max-width:350px }
+        .partners-group.level1 .partners img { max-height:25px ; max-width:175px }
+        .partners-group.level2 .partners img { max-height:25px ; max-width:175px }
+}
+

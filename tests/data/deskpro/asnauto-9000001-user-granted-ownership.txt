@@ -1,0 +1,7 @@
+
+
+Ownership of organization was automatically granted to user:
+
+User: 'user_a' (neteng@20c.com)
+Organization: 'ORG AS9000001' (2)
+Network: 'AS9000001' AS9000001

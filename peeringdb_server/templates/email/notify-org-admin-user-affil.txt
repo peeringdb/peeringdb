@@ -1,0 +1,9 @@
+{% load i18n %}
+
+{% blocktrans with u_name=user.full_name u_email=user.email o_name=org.name trimmed %}
+User {{ u_name }} ({{ u_email }}) wishes to be affiliated to {{ o_name }}.
+{% endblocktrans %}
+
+{% trans "As the organization's administrator you may approve or deny this request here" %}:
+
+{{ org_management_url }}

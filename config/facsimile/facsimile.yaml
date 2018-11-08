@@ -1,0 +1,12 @@
+
+facsimile:
+  name: peeringdb
+  components:
+    peeringdb:
+      class: Facsimile
+      repo: git@github.com:peeringdb/peeringdb.git
+
+    venv:
+      class: VirtualEnv
+      repo: git@github.com:peeringdb/peeringdb.git
+

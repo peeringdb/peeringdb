@@ -1,0 +1,729 @@
+{% load util %}
+{% load i18n %}
+<div class="section_title">{% trans "Manage" %}</div>
+
+<div class="marg-top">
+  <ul class="nav nav-tabs" role="tablist">
+    {% if permissions.can_create_fac %}
+    <li role="presentation" class="{{ tab_init.fac }}">
+      <a href="#add_fac" aria-controls="add_fac" role="tab" data-toggle="tab">
+        {% trans "Add Facility" %}
+      </a>
+    </li>
+    {% endif %}
+    {% if permissions.can_create_net %}
+    <li role="presentation" class="{{ tab_init.net }}">
+      <a href="#add_net" aria-controls="add_net" role="tab" data-toggle="tab">
+        {% trans "Add Network" %}
+      </a>
+    </li>
+    {% endif %}
+    {% if permissions.can_create_ix %}
+    <li role="presentation" class="{{ tab_init.ix}}">
+      <a href="#add_ix" aria-controls="add_ix" role="tab" data-toggle="tab">
+        {% trans "Add Exchange" %}
+      </a>
+    </li>
+    {% endif %}
+
+    {% if permissions.can_manage %}
+    <li role="presentation" class="{{ tab_init.users }}">
+      <a href="#users" aria-controls="users" role="tab" data-toggle="tab">
+        {% trans "Users" %}
+      </a>
+    </li>
+    <li role="presentation">
+      <a href="#manage_perms" aria-controls="manage_perms" role="tab" data-toggle="tab">
+        {% trans "Permissions" %}
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+
+  <div class="tab-content">
+    {% if permissions.can_create_fac %}
+    <div role="tabpanel" class="tab-pane {{ tab_init.fac }}" id="add_fac">
+
+      <!-- CREATE FACILITY FORM -->
+
+      <div class="editable always auto-toggled create-form"
+           id="create-fac-form"
+           data-edit-target="api:fac:create"
+           data-edit-enter-action="submit">
+
+        <div class="payload">
+          <div data-edit-name="org_id">{{ instance.id }}</div>
+        </div>
+
+        <div class="row">
+          <div class="col-xs-12 col-sm-6 col-md-6">
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="name"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="website"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Address 1" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="address1"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Address 2" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="address2"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "City" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="city"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "State" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="state"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Zip-Code" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="zipcode"></div>
+              </div>
+            </div>
+
+
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Country" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="country"
+                     data-edit-required="yes"
+                     data-edit-data="countries"
+                     data-edit-value="US"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "CLLI Code" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="clli"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "NPA-NXX" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="npanxx"></div>
+              </div>
+            </div>
+
+
+
+          </div>
+          <div class="col-xs-12 col-sm-6 col-md-6">
+            {% include "site/entity_create.html" with entity_name="Facility" %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% if permissions.can_create_net %}
+    <div role="tabpanel" class="tab-pane {{ tab_init.net }}" id="add_net">
+      <!-- CREATE NETWORK FORM -->
+
+      <div class="editable always auto-toggled create-form"
+           id="create-net-form"
+           data-edit-target="api:net:create"
+           data-edit-enter-action="submit">
+
+        <div class="payload">
+          <div data-edit-name="org_id">{{ instance.id }}</div>
+        </div>
+
+        <div class="row">
+          <div class="col-xs-12 col-sm-6 col-md-6">
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="name"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="website"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Primary ASN" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="asn"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "IRR Record" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="irr_as_set"></div>
+              </div>
+            </div>
+
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Network Type" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="info_type"
+                     data-edit-data="enum/net_types_trunc"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Traffic Levels" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="info_traffic"
+                     data-edit-data="enum/traffic"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Traffic Ratios" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="info_ratio"
+                     data-edit-data="enum/ratios_trunc"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Geographic Scope" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="info_scope"
+                     data-edit-data="enum/scopes_trunc"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Unicast IPv4" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="info_unicast"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Multicast" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="info_multicast"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "IPv6" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="info_ipv6"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Policy URL" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="policy_url"></div>
+              </div>
+            </div>
+
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "General Policy" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="policy_general"
+                     data-edit-required="yes"
+                     data-edit-data="enum/policy_general"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Multiple Locations" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="policy_locations"
+                     data-edit-required="yes"
+                     data-edit-data="enum/policy_locations"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Ratio Requirement" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="policy_ratio"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Contract Requirement" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="policy_contracts"
+                     data-edit-required="yes"
+                     data-edit-data="enum/policy_contracts"></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="col-xs-12 col-sm-6 col-md-6">
+
+            <div class="editable note info">
+              {% trans "Add a new Network to your Organization." %}
+              <div class="marg-top-15">{% trans "We will attempt to automatically verify your relationship to the network by checking for your email address in the ASN's RiR entry." %}
+              </div>
+              <div class="marg-top-15">{% trans "In case of verification failure the network will need to be approved by PeeringDB staff before it will appear in the search results or the API listings." %}
+              </div>
+            </div>
+            <div class="marg-top">
+              <a class="btn btn-default" data-edit-action="submit">{% trans "Submit Network"  %}</a>
+            </div>
+
+            <div class="editable popin help marg-top-15">
+              {% trans "In case the RiR entry cannot be retrieved for your ASN, please contact" %}
+              <a href="mailto:support@peeringdb.com">support@peeringdb.com</a>
+              {% trans "for assistance with the creation of your network in PeeringDB." %}
+            </div>
+
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+    {% endif %}
+    {% if permissions.can_create_ix %}
+    <div role="tabpanel" class="tab-pane {{ tab_init.ix }}" id="add_ix">
+      <!-- CREATE EXCHANGE FORM -->
+
+      <div class="editable always auto-toggled create-form"
+           id="create-ix-form"
+           data-edit-target="api:ix:create"
+           data-edit-enter-action="submit">
+        <div class="payload">
+          <div data-edit-name="org_id">{{ instance.id }}</div>
+        </div>
+
+        <div class="row">
+          <div class="col-xs-12 col-sm-6 col-md-6">
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="name"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="website"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "City" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="city"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Country" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="country"
+                     data-edit-required="yes"
+                     data-edit-data="countries"
+                     data-edit-value="US"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Continental Region" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="region_continent"
+                     data-edit-required="yes"
+                     data-edit-data="enum/regions"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Media Type" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="media"
+                     data-edit-required="yes"
+                     data-edit-data="enum/media"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Unicast IPv4" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="proto_unicast"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Multicast" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="proto_multicast"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "IPv6" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="proto_ipv6"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Traffic Stats Website" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="url_stats"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Technical E-mail" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="email"
+                     data-edit-name="tech_email"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Technical Phone" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="tech_phone"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Policy E-mail" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="email"
+                     data-edit-name="policy_email"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Policy Phone" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="policy_phone"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Prefix" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-placeholder="{% trans "IPv4 or IPv6 prefix" %}"
+                     data-edit-name="prefix"></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="col-xs-12 col-sm-6 col-md-6">
+            {% include "site/entity_create.html" with entity_name="Exchange" %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- END CAN_CREATE -->
+    {% endif %}
+    {% if permissions.can_manage %}
+    <div role="tabpanel" class="tab-pane {{ tab_init.users }}" id="users">
+      <div class="editable">
+      <h5>Users requesting affiliation</h5>
+      <div class="list editable always"
+           data-edit-module="uoar_listing"
+           data-edit-target="/org_admin/uoar">
+        <div class="payload">
+          <div data-edit-name="org_id">{{ instance.id }}</div>
+        </div>
+
+        <div class="row header">
+          <div class="col-xs-6 col-sm-3 col-md-3">
+            <div>{% trans "Name" %}</div>
+            <div>{% trans "User" %}</div>
+          </div>
+          <div class="col-xs-6 col-sm-3 col-md-3">
+            <div>{% trans "Email" %}</div>
+            <div>{% trans "Confirmed" %}</div>
+          </div>
+          <div class="col-xs-6 col-sm-3 col-md-3">{% trans "Date" %}</div>
+          <div class="col-xs-12 col-sm-3 col-md-3"></div>
+        </div>
+
+      {% if instance.pending_affiliations.count %}
+        {% for uoar in instance.pending_affiliations %}
+        <div class="row item" data-edit-id="{{ uoar.id }}" data-edit-label="{{ uoar.user.full_name }}">
+
+          <div class="col-xs-6 col-sm-3 col-md-3">
+            <div>{{ uoar.user.full_name }}</div>
+            <div>{{ uoar.user.username }}</div>
+          </div>
+          <div class="col-xs-6 col-sm-3 col-md-3">
+            <div>{{ uoar.user.email }}</div>
+            <div>{% if uoar.user.email_confirmed %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</div>
+          </div>
+          <div class="col-xs-6 col-sm-3 col-md-3">{{ uoar.created|date:"Y, N d" }}</div>
+          <div class="col-xs-6 col-sm-3 col-md-3 right">
+            <a class="btn btn-default" data-edit-action="approve">{% trans "Approve" %}</a>
+            <a class="btn btn-default" data-edit-action="deny">{% trans "Deny" %}</a>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+
+      <div class="center">{% trans "Currently no users requesting affiliation with" %} {{ instance.name }}</div>
+
+
+      {% endif %}
+      </div>
+      <h5>Users in Organization</h5>
+      <div class="editable always auto-toggled" data-edit-target="/org_admin/manage_user">
+      <div class="list editable always" id="org-user-manager"
+           data-edit-module="user_listing"
+           data-edit-id="{{ instance.id }}"
+           data-edit-target="/org_admin/manage_user">
+
+        <div class="row header">
+          <div class="col-xs-4 col-sm-5 col-md-4">
+            <div>{% trans "Name" %}</div>
+            <div>{% trans "User" %}</div>
+          </div>
+          <div class="col-xs-4 col-sm-5 col-md-4">
+            <div>{% trans "Email" %}</div>
+          </div>
+          <div class="col-xs-4 col-sm-5 col-md-2">{% trans "Group" %}</div>
+          <div class="col-xs-4 col-sm-2 col-md-2"></div>
+        </div>
+
+        <div data-edit-component="list"
+             data-edit-template="user-item">
+        {% for user in users %}
+        <div class="row item editable" data-edit-id="{{ user.id }}" data-edit-label="{{ user.full_name }}">
+          <div class="col-xs-4 col-sm-5 col-md-4">
+            <div>{{ user.full_name }}</div>
+            <div>{{ user.username }}</div>
+          </div>
+          <div class="col-xs-4 col-sm-5 col-md-4">
+            <div>{{ user.email }}</div>
+          </div>
+          <div class="col-xs-4 col-sm-5 col-md-2">
+            <div data-edit-type="select"
+                 data-edit-data="enum/org_groups"
+                 data-edit-name="group"
+                 data-edit-value="{{ instance|user_org_group:user }}">{{ instance|user_org_group:user }}</div>
+          </div>
+          <div class="col-xs-4 col-sm-2 col-md-2 right">
+            <a class="btn btn-default" data-edit-action="remove">{% trans "Remove" %}</a>
+          </div>
+        </div>
+
+        {% endfor %}
+        </div>
+
+      <div class="marg-top right"><a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a></div>
+
+      </div>
+      </div>
+
+
+    </div>
+    </div>
+
+    <div role="tabpanel" class="tab-pane" id="manage_perms">
+
+      <div class="editable note info">
+        {%blocktrans trimmed %}
+        Here you can grant permissions to regular members of your organization.
+        Administrative users are not listed here as they have access to everything by default.
+        {%endblocktrans%}
+        <div class="marg-top">
+          {% trans "Additionally, entities that are pending review cannot be permissioned out to users, and will not appear in the entity list." %}
+        </div>
+      </div>
+
+
+      <div class="editable always auto-toggled marg-top" id="manage_perms_editor" data-edit-target="org_admin/permissions">
+
+        {% for uperms in user_perms.values %}
+        <div class="list editable always marg-top"
+             data-edit-id="{{ instance.id }}"
+             data-edit-module="uperm_listing"
+             data-edit-template="user-permission-item"
+             data-edit-target="/org_admin/user_permissions">
+
+          <div class="row header">
+            <div class="col-xs-12 col-sm-5 col-md-5">
+              <div>{{ uperms.name }}</div>
+            </div>
+            <div class="col-xs-4 col-sm-2 col-md-2">
+              <div>{% trans "Create" %}</div>
+            </div>
+            <div class="col-xs-4 col-sm-2 col-md-2">
+              <div>{% trans "Update" %}</div>
+            </div>
+            <div class="col-xs-4 col-sm-2 col-md-2">
+              <div>{% trans "Delete" %}</div>
+            </div>
+            <div class="col-xs-1 col-sm-1 col-md-1">
+            </div>
+          </div>
+
+          <div data-edit-component="list"
+               data-edit-template="user-permission-item">
+
+              {% for entity, perm in uperms.perms.items %}
+
+              <div class="row marg-top" data-edit-id="{{ entity }}" data-edit-label="{{ uperms.name }} - {{ instance|org_permission_id_xl:entity}}">
+                <div class="editable payload">
+                  <div data-edit-name="user_id">{{ uperms.id }}</div>
+                  <div data-edit-name="org_id">{{ instance.id }}</div>
+                  <div data-edit-name="entity">{{ entity }}</div>
+                </div>
+                <div class="col-xs-12 col-sm-5 col-md-5">
+                  <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+                  <div data-edit-name="entity">{{ instance|org_permission_id_xl:entity }}</div>
+                </div>
+                <div class="col-xs-4 col-sm-2 col-md-2">
+                  <div data-edit-name="perm_c" data-edit-type="bool" data-edit-value="{{ perm|check_perms:'create' }}"></div>
+                </div>
+                <div class="col-xs-4 col-sm-2 col-md-2">
+                  <div data-edit-name="perm_u" data-edit-type="bool" data-edit-value="{{ perm|check_perms:'update' }}"></div>
+                </div>
+                <div class="col-xs-4 col-sm-2 col-md-2">
+                  <div data-edit-name="perm_d" data-edit-type="bool" data-edit-value="{{ perm|check_perms:'delete' }}"></div>
+                </div>
+                <div class="col-xs-12 col-sm-1 col-md-1 right">
+                </div>
+              </div>
+
+              {% endfor %}
+
+          </div>
+
+          <div data-edit-component="add"
+               data-edit-toggled="edit"
+               class="editable">
+
+            <div class="payload">
+              <div data-edit-name="org_id">{{ instance.id }}</div>
+              <div data-edit-name="user_id">{{ uperms.id }}</div>
+            </div>
+
+            <div class="row marg-top">
+              <div class="col-xs-12 col-sm-5 col-md-5">
+                <div data-edit-name="entity"
+                     data-edit-type="select"
+                     data-edit-data="permissions"></div>
+              </div>
+              <div class="col-xs-4 col-sm-2 col-md-2">
+                <div data-edit-name="perm_c" data-edit-type="bool"></div>
+              </div>
+              <div class="col-xs-4 col-sm-2 col-md-2">
+                <div data-edit-name="perm_u" data-edit-type="bool"></div>
+              </div>
+              <div class="col-xs-4 col-sm-2 col-md-2">
+                <div data-edit-name="perm_d" data-edit-type="bool"></div>
+              </div>
+              <div class="col-xs-12 col-sm-1 col-md-1 right">
+                <a class="btn btn-default" data-edit-action="add">{% trans "Add" %}</a>
+              </div>
+            </div>
+
+
+
+          </div>
+        </div>
+
+        {% endfor %}
+
+          <div class="row marg-top">
+            <div class="col-md-12 center">
+              <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+            </div>
+          </div>
+
+
+      </div>
+
+    </div>
+    <!-- END CAN MANAGE -->
+    {% endif %}
+  </div>
+
+</div>
+
+<script language="javascript" type="text/javascript">
+twentyc.data.loaders.get("org_admin").prototype.orgId = {{ instance.id }};
+twentyc.data.loaders.assign("users", "org_admin");
+twentyc.data.loaders.assign("permissions", "org_admin");
+twentyc.data.load("permissions");
+$(document).ready(function() {
+  PeeringDB.list_ext_add($('#create-fac-form'),$('#api-listing-fac'));
+  PeeringDB.list_ext_add($('#create-ix-form'),$('#api-listing-ix'));
+  PeeringDB.list_ext_add($('#create-net-form'),$('#api-listing-net'));
+  if(window.location.hash == "#users") {
+    $('a[href="#users"]').tab('show');
+  }
+});
+
+</script>

@@ -1,0 +1,47 @@
+{% load util %}
+{% load i18n %}
+<!-- EXCHANGE POINTS -->
+
+<div class="list" data-sort-container=".scrollable" data-sort-row=".row.item">
+  <div class="row">
+    <div class="col-xs-6 col-sm-8 col-md-8">
+      <h5>Networks</h5>
+    </div>
+    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+      <input type="text" placeholder="Filter" data-filter-target="#list-peers" class="form-control" />
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-xs-10 col-sm-10 col-md-10">
+      <div data-sort-target=".peer" data-sort-initial="asc">{% trans "Peer Name" %}</div>
+    </div>
+    <div class="col-xs-2 col-sm-2 col-md-2">
+      <div data-sort-target=".asn">{% trans "ASN" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable" id="list-peers">
+
+    <div class="empty-result">
+      <div class="message">{% trans "Nothing matched your filter" %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Peer Name" %}</b> {% trans "or" %} <b>{% trans "ASN" %}</b></div>
+    </div>
+
+    {% for n in data.peers %}
+
+    <div class="row item">
+      <div class="col-xs-10 col-sm-10 col-md-10">
+        <div class="peer" data-sort-value="{{ n.network.name|lower }}" data-filter-value="{{ n.network.name }}">
+          <a href="/{{n.network|ref_tag}}/{{ n.network.id }}">{{ n.network.name }}</a>
+        </div>
+      </div>
+      <div class="col-xs-2 col-sm-2 col-md-2">
+        <div class="asn" data-sort-value="{{ n.network.asn }}" data-filter-value="{{ n.network.asn }}">{{ n.network.asn }}</div>
+      </div>
+
+    </div>
+
+    {% endfor %}
+
+  </div>
+</div>

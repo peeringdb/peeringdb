@@ -1,0 +1,71 @@
+{
+  "timestamp": "2017-10-26T08:04:29Z",
+  "version": "0.6",
+  "ixp_list":[
+    { "ixp_id" : 1, "shortname" : "Test Exchange" }
+  ],
+  "member_list": [
+    {
+      "asnum": 2906,
+      "peering_policy": "open",
+      "url": "http://netflix.com/",
+      "member_type": "peering",
+      "connection_list": [
+        {
+          "state": "active",
+          "if_list": [
+            {
+              "if_speed": 10000
+            }
+          ],
+          "ixp_id": 1,
+          "vlan_list": [
+            {
+              "ipv4": {
+                "as_macro": "AS-NFLX",
+                "address": "195.69.146.250",
+                "routeserver": true,
+                "max_prefix": 42
+              },
+              "ipv6": {
+                "as_macro": "AS-NFLX",
+                "address": "2001:7f8:1::a500:2906:2",
+                "routeserver": true,
+                "max_prefix": 42
+              }
+            }
+          ]
+        },
+        {
+          "state": "active",
+          "if_list": [
+            {
+              "if_speed": 10000
+            }
+          ],
+          "ixp_id": 1,
+          "vlan_list": [
+            {
+              "ipv4": {
+                "as_macro": "AS-NFLX",
+                "address": "195.69.146.250",
+                "routeserver": true,
+                "max_prefix": 42
+              },
+              "ipv6": {
+                "as_macro": "AS-NFLX",
+                "address": "2001:7f8:1::a500:2906:2",
+                "routeserver": true,
+                "max_prefix": 42
+              }
+            }
+          ]
+        }
+      ],
+      "peering_policy_url": "https://www.netflix.com/openconnect/",
+      "contact_email": [],
+      "contact_phone": [],
+      "name": "Netflix"
+    }
+  ]
+}

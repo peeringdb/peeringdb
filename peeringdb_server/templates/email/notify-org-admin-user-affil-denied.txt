@@ -1,0 +1,11 @@
+{% load i18n %}
+
+{% blocktrans with u_full_name=uoar.user.full_name o_name=uoar.org.name admin_full_name=user.full_name trimmed %}
+{{ u_full_name }}'s affiliation request to {{ o_name }} has been DENIED by {{ admin_full_name }}.
+{% endblocktrans %}
+
+{% trans "No further action is required on your part." %}
+
+{% trans "As the organization's administrator you may view your organization's user list here" %}:
+
+{{ org_management_url }}

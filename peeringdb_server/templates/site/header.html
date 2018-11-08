@@ -1,0 +1,94 @@
+{% load i18n %}
+
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>PeeringDB</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+<link rel="shortcut icon" type="image/png" href="{{STATIC_URL}}/favicon.ico"/>
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}autocomplete/jquery.autocomplete-light.css" />
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}20c/twentyc.edit.css" />
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}site.css" />
+{% endblock %}
+<script type="text/javascript">
+window.STATIC_URL = "{{ STATIC_URL }}";
+</script>
+<script src='https://www.google.com/recaptcha/api.js'></script>
+<script type="text/javascript" src="{{ STATIC_URL }}jquery/jquery.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js-cookie/js.cookie.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}showdown/showdown.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}dom-purify/purify.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.core.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.edit.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.filter-field.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.sortable.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}autocomplete/jquery.autocomplete-light.min.js"></script>
+
+<script type="text/javascript" src="{% url 'javascript-catalog' %}"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}peeringdb.js"></script>
+{{ form.media }}
+<script type="text/javascript" language="javascript">
+$(window).bind("load", function() {
+  if(!PeeringDB.csrf)
+    PeeringDB.csrf = '{{ csrf_token }}';
+});
+</script>
+</head>
+<body>
+<div class="header" id="header">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-3 col-md-4 col-sm-4 col-xs-{% if request.mobile %}12{% else %}6{% endif %} logo-container">
+        <a href="/"><img class="logo img-responsive" src="{{ STATIC_URL }}/logo-2-{% if request.GET.alt_logo %}1{%else %}0{%endif%}.png" /></a>
+      </div>
+      <div class="col-lg-5 col-md-5 col-sm-5 col-xs-{% if request.mobile %}12{% else %}6{% endif %} search-container">
+        <form action="/search" method="POST">
+          {% csrf_token %}
+          <input placeholder="{% trans "Search here for a network, IX, or facility." %}" class="form-control" name="term" id="search" type="text" />
+        </form>
+        <div class="advanced-search">
+          <a href="/advanced_search">{% trans "Advanced Search" %}</a>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-3 col-sm-3 col-xs-12 user-container">
+        <div class="nav right toolbar">
+        {% if request.user.is_authenticated %}
+          <div class="user">
+            <a href="/profile">{{ request.user.username }}</a>
+          {% if not request.user.is_verified %}
+          <div class="status">({% if not request.user.email %}<span class="attention">!</span>{%endif %}
+            {% if request.user.email_confirmed %}
+            <a href="/profile">{% trans "pending" %}</a>
+            {% else %}
+            <a href="/profile">{% trans "unverified" %}</a>
+            {% endif %})
+          </div>
+          {% endif %}
+          </div>
+          <div class="dropdown" style="display:inline-block">
+            <a class="btn btn-default dropdown-toggle" id="usermenu" data-toggle="dropdown" aria-haspopup="true">
+              <img class="img-responsive" src="{{ STATIC_URL }}hamburger-colorful.png" alt="navigation" title="navigation" />
+            </a>
+            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="usermenu">
+              {% for org in user.organizations %}
+              <li><a href="/org/{{ org.id }}">{{ org.name }}</a></li>
+              {% endfor %}
+              {% if request.user.is_verified %}
+              <li><a href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
+              {% endif %}
+              <li><a href="/profile">{% trans "Profile" %}</a></li>
+              <li><a href="/logout">{% trans "Logout" %}</a></li>
+            </ul>
+          </div>
+        {% else %}
+          <a href="/register">{% trans "Register" %}</a> {% trans "or" %} <a href="/login?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
+        {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,18 @@
+
+.table-container th.asc:after {
+  content: '\0000a0\0025b2';
+}
+.table-container th.desc:after {
+  content: '\0000a0\0025bc';
+}
+.table-container tr.odd {
+  background: #cdd4d6;
+}
+.table-container .current {
+  font-weight: bold;
+  font-size: 140%;
+}
+.pagination {
+  text-align: center;
+}
+
