@@ -164,6 +164,7 @@ version_merge_release
 # Tests
 
 ```sh
-pytest -v -rxs --cov-report term-missing --cov=peeringdb_server/ --capture=sys tests/
+pip install -r requirements-test.txt
+py.test -v -rxs --cov-report term-missing --cov=peeringdb_server/ --capture=sys tests/
 ```
 
