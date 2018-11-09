@@ -28,11 +28,12 @@ Create ~/srv
 mkdir ~/srv
 ```
 
-```
-facs $component $environment ($version|--src-dir=. for dev)
-```
-
 Copy `config/facsimile/dev.yaml` to `config/facsimile/mydev.yaml` and make changes where needed.
+
+```sh
+cp config/facsimile/dev.yaml config/facsimile/mydev.yaml
+vi config/facsimile/mydev.yaml
+```
 
 Use the `facs` command to deploy a virtualenv and server files for your dev instance
 
