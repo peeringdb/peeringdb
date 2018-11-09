@@ -4,8 +4,6 @@
   db:
     name: peeringdb
     selectable: []
-  xbahn:
-    exchange: twentyc.peeringdb
 
 - name: djangokey
   genconfig: false

@@ -28,15 +28,3 @@ application = get_wsgi_application()
 # application = HelloWorldApplication(application)
 
 from django.conf import settings
-
-if 'django_xbahn' in settings.INSTALLED_APPS:
-  import threading
-  import django_xbahn as xbahn
-
-  t = threading.Thread(target=xbahn.connect)
-  t.start();
-
-if hasattr(settings, 'XBAHN') and settings.XBAHN.get("replication"):
-  import twentyc.xbahn.django.replication as replication
-  replication.replicator.daemon = True
-  replication.start()
