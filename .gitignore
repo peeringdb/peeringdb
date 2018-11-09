@@ -3,7 +3,6 @@
 .facsimile
 *.pyc
 *.log
-*.sql
 *.swp
 OLD.*
 genstatic/
