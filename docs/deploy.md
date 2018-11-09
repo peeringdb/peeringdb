@@ -50,7 +50,7 @@ Files will be deployed to `~/srv/dev.peeringdb.com` (unless you changed the loca
 
 Once you have run `facs` for the first time it will have created a .facsimile directory
 
-You will want to open `.facimsile/state/dev/state.yaml` and set the correct passwords for everything and then do
+You will want to open `.facsimile/state/dev/state.yaml` and set the correct passwords for everything and then do
 **another** deploy to make sure the correct passwords are deployed.
 
 ```
