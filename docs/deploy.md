@@ -81,10 +81,10 @@ ln -s ~/srv/dev.peeringdb.com/peeringdb/peeringdb_com peeringdb_com
 
 ## Setup database
 
-During deploy facsimile will have created a sql file at `.facsimile/tmp/RELEASE/dev/peeringdb/init.sql` - load it into mysql.
+During deploy facsimile will have created a sql file at `.facsimile/tmp/RELEASE/mydev/peeringdb/init.sql` - load it into mysql.
 
 ```sh
-mysql -u root -p < .facsimile/tmp/RELEASE/dev/peeringdb/init.sql
+mysql -u root -p < .facsimile/tmp/RELEASE/mydev/peeringdb/init.sql
 ```
 
 ## Migrate database - empty, from scratch
