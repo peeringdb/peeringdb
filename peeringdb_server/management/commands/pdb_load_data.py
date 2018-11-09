@@ -12,6 +12,7 @@ from peeringdb_server import signals
 from django_peeringdb import models as djpdb_models
 from django_peeringdb import sync
 
+
 def sync_obj(cls, row):
     """
     we need to override django peeringdb's sync_obj function
@@ -56,7 +57,6 @@ def sync_obj(cls, row):
     except ValidationError as e:
         pass
 
-
     for field in cls._meta.get_fields():
         ftyp = cls._meta.get_field(field.name)
         value = getattr(obj, field.name, None)
@@ -74,6 +74,7 @@ def sync_obj(cls, row):
     obj.save()
     return
 
+
 sync.sync_obj = sync_obj
 
 
@@ -81,27 +82,23 @@ class Command(BaseCommand):
     help = "Load initial data from another peeringdb instance"
 
     def add_arguments(self, parser):
-        parser.add_argument("--url", default="https://www.peeringdb.com/api/", type=str)
+        parser.add_argument("--url", default="https://www.peeringdb.com/api/",
+                            type=str)
 
     def handle(self, *args, **options):
         if settings.RELEASE_ENV != "dev":
             raise Exception("This command can only be run on dev instances")
 
-
         settings.USE_TZ = False
         settings.PEERINGDB_SYNC_URL = options.get("url")
-        pre_save.disconnect(signals.addressmodel_save, sender=pdb_models.Facility)
+        pre_save.disconnect(signals.addressmodel_save,
+                            sender=pdb_models.Facility)
 
         djpdb_models.all_models = [
-            pdb_models.Organization,
-            pdb_models.Facility,
-            pdb_models.Network,
-            pdb_models.InternetExchange,
-            pdb_models.InternetExchangeFacility,
-            pdb_models.IXLan,
-            pdb_models.IXLanPrefix,
-            pdb_models.NetworkContact,
-            pdb_models.NetworkFacility,
+            pdb_models.Organization, pdb_models.Facility, pdb_models.Network,
+            pdb_models.InternetExchange, pdb_models.InternetExchangeFacility,
+            pdb_models.IXLan, pdb_models.IXLanPrefix,
+            pdb_models.NetworkContact, pdb_models.NetworkFacility,
             pdb_models.NetworkIXLan
         ]
 

@@ -12,7 +12,7 @@ export PDB_REPO=git@github.com:peeringdb/peeringdb.git
 ### Install facsimile
 
 ```sh
-pip install facsimile
+pip install facsimile jinja2
 ```
 ### Clone peeringdb
 
@@ -87,6 +87,7 @@ mysql -u root -p < .facsimile/tmp/RELEASE/dev/peeringdb/init.sql
 ## Migrate database - empty, from scratch
 
 ```sh
+. ~/srv/dev.peeringdb.com/venv/bin/activate
 ./manage.py migrate
 ./manage.py createcachetable
 ./manage.py loaddata fixtures/initial_data.json
