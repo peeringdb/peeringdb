@@ -333,7 +333,7 @@ class ModelSerializer(PermissionedModelSerializer):
     Best bet so far looks like overloading the single object get in the model
     view set, and adding on the relationships, but need to get to get the fields
     defined yet not included in the query, may have to rewrite the base class,
-    which would mean talking to the dev and committing back or we'll be fucked
+    which would mean talking to the dev and committing back or we'll have this problem
     every update
 
     After testing, the time is all in serialization and transfer, so culling
