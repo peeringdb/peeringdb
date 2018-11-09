@@ -115,7 +115,7 @@ You can populate your data from peeringdb.com using
 
 However be prepared for this to take 15-20 minutes as it will not only sync the entities, but also set up usergroups for each organization and so forth.
 
-This can only be used to populate initial data. Once you have started adding / updating objects and your data diverges from production data, it is no longer useful to call this command nor will it allow you to.
+This should only be used to populate initial data. Once you have started adding / updating objects and your data diverges from production data, it is no longer useful to call this command.
 
 Special Note: this will only sync data visible to everyone, any fields or rows hidden behind authentication will be missed.
 

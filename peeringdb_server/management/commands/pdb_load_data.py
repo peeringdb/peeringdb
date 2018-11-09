@@ -47,6 +47,11 @@ def sync_obj(cls, row):
     print(obj, obj.id)
 
     try:
+        # we want to validate because it fixes some values
+        # but at the same time we don't care about any validation
+        # errors, since we can assume that the data from the
+        # server is already valid, nor do we want to block import
+        # because our validators differ from the servers.
         obj.full_clean()
     except ValidationError as e:
         pass
@@ -99,12 +104,5 @@ class Command(BaseCommand):
             pdb_models.NetworkFacility,
             pdb_models.NetworkIXLan
         ]
-
-        for model in djpdb_models.all_models:
-            count = model.objects.all().count()
-            if count > 0:
-                self.stdout.write("This command should only be called on an empty database")
-                self.stdout.write("We already found {} {} in the database, aborting.".format(count, model))
-                return
 
         call_command("pdb_sync")
