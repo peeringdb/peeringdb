@@ -1,6 +1,8 @@
 
 # PeeringDB Deploy
 
+PeeringDB currently only runs on python2.7 - all instructions below are to be taken with that in mind.
+
 ## Getting Started
 
 This document uses the following variables
