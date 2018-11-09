@@ -42,7 +42,7 @@ facs peeringdb mydev --src-dir=.
 facs venv mydev --src-dir=.
 ```
 
-Files will be deployed to `~/srv/dev.peeringdb.com`
+Files will be deployed to `~/srv/dev.peeringdb.com` (unless you changed the location in your config)
 
 ## Setup passwords
 
