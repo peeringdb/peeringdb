@@ -30,18 +30,18 @@ Create ~/srv
 mkdir ~/srv
 ```
 
-Copy `config/facsimile/dev.yaml` to `config/facsimile/mydev.yaml` and make changes where needed.
+Copy `config/facsimile/dev.example.yaml` to `config/facsimile/dev.yaml` and make changes where needed.
 
 ```sh
-cp config/facsimile/dev.yaml config/facsimile/mydev.yaml
-vi config/facsimile/mydev.yaml
+cp config/facsimile/dev.example.yaml config/facsimile/dev.yaml
+vi config/facsimile/dev.yaml
 ```
 
 Use the `facs` command to deploy a virtualenv and server files for your dev instance
 
 ```sh
-facs peeringdb mydev --src-dir=.
-facs venv mydev --src-dir=.
+facs peeringdb dev --src-dir=.
+facs venv dev --src-dir=.
 ```
 
 Files will be deployed to `~/srv/dev.peeringdb.com` (unless you changed the location in your config)
@@ -83,10 +83,10 @@ ln -s ~/srv/dev.peeringdb.com/peeringdb/peeringdb_com peeringdb_com
 
 ## Setup database
 
-During deploy facsimile will have created a sql file at `.facsimile/tmp/RELEASE/mydev/peeringdb/init.sql` - load it into mysql.
+During deploy facsimile will have created a sql file at `.facsimile/tmp/RELEASE/dev/peeringdb/init.sql` - load it into mysql.
 
 ```sh
-mysql -u root -p < .facsimile/tmp/RELEASE/mydev/peeringdb/init.sql
+mysql -u root -p < .facsimile/tmp/RELEASE/dev/peeringdb/init.sql
 ```
 
 ## Migrate database - empty, from scratch
