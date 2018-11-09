@@ -32,11 +32,13 @@ mkdir ~/srv
 facs $component $environment ($version|--src-dir=. for dev)
 ```
 
+Copy `config/facsimile/dev.yaml` to `config/facsimile/mydev.yaml` and make changes where needed.
+
 Use the `facs` command to deploy a virtualenv and server files for your dev instance
 
 ```sh
-facs peeringdb dev --src-dir=.
-facs venv dev --src-dir=.
+facs peeringdb mydev --src-dir=.
+facs venv mydev --src-dir=.
 ```
 
 Files will be deployed to `~/srv/dev.peeringdb.com`

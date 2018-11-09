@@ -12,6 +12,7 @@ misc:
     org_id: 0
   session:
     domain: peeringdb.com
+    secure: True
   ratelimits:
     request_login_POST: "4/m"
     view_request_ownership_POST: "3/m"

@@ -29,15 +29,16 @@ rc:
       log: {{environ.HOME}}/srv/dev.peeringdb.com/var/log/api-cache.log
 
 recaptcha:
-  public_key: 6LdTFzkUAAAAAJpkAfSUOue7iNDcVY3H2xpEUVON
+  public_key: captcha-public-key-goes-here
 
 oauth:
-  enabled: true
+  enabled: false
 
 misc:
   base_url : http://localhost
   session:
     domain: localhost
+    secure: False
   suggestions:
     org_id: 18982
 
