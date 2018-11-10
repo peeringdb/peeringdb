@@ -1,0 +1,95 @@
+/* RESET */
+* { list-style:none ; margin:0 ; outline:none ; padding:0 }
+input, select, textarea { -webkit-box-sizing:border-box ; -moz-box-sizing:border-box ; box-sizing:border-box }
+article, aside, details, figcaption, figure, footer, header, main, nav, section, summary { display:block }
+audio, canvas, video { display:inline-block }
+
+html { font-size:20px }
+.sponsorspage { margin:auto ; max-width:1170px ; padding:0 15px }
+
+/* SPONSOR LEVELS */
+/* designed for 1201+ */
+.sponsors-group { margin-bottom:45px ; overflow:hidden }
+    .sponsors-group h2 { color:#666 ; font-size:1.6rem ; text-transform:uppercase ; float:left ; width:200px }
+    .sponsors-group.platinum h2 { font-size:1.45rem }
+    .sponsors-group.gold h2 { font-size:1.3rem }
+    .sponsors-group.silver h2 { font-size:1.15rem }
+    .sponsors-group .sponsors { background:#FFF ; border-left:5px solid #666 ; margin-left:230px ; padding:30px 0 0 30px }
+        .sponsors-group .sponsors img { display:inline-block ; height:auto ; margin:0 30px 30px 0 ; max-height:170px ; max-width:1190px ; vertical-align:middle ; width:auto }
+        .sponsors-group.platinum .sponsors img { max-height:85px ; max-width:595px }
+        .sponsors-group.gold .sponsors img { max-height:65px ; max-width:455px }
+        .sponsors-group.silver .sponsors img { max-height:40px ; max-width:280px }
+
+.sponsors a { text-decoration: none }
+.sponsors h1 { display: inline }
+
+/* designed for 741 to 1200 */
+@media screen and (max-width:1200px) {
+        .sponsors-group { margin-bottom:0px }
+        .sponsors-group h2 { font-size:1.2rem ; width:150px ; float:none ; width:auto }
+    .sponsors-group.platinum h2 { font-size:1.1rem }
+    .sponsors-group.gold h2 { font-size:1rem }
+    .sponsors-group.silver h2 { font-size:.9rem }
+    .sponsors-group .sponsors { padding:25px 0 0 25px ; border-bottom:5px solid #666 ; border-left:none ; margin:15px 0 0 0 }
+            .sponsors-group .sponsors img { margin:0 25px 25px 0 ; max-height:130px ; max-width:910px }
+        .sponsors-group.platinum .sponsors img { max-height:70px ; max-width:490px }
+        .sponsors-group.gold .sponsors img { max-height:55px ; max-width:385px }
+        .sponsors-group.silver .sponsors img { max-height:35px ; max-width:245px }
+}
+
+/* designed for 611 to 740 */
+@media screen and (max-width:740px) {
+        .sponsors-group { margin-bottom:0px }
+    .sponsors-group h2 { font-size:.9rem }
+    .sponsors-group.platinum h2 { font-size:.9rem }
+    .sponsors-group.gold h2 { font-size:.9rem }
+    .sponsors-group.silver h2 { font-size:.9rem }
+    .sponsors-group .sponsors { padding:20px 0 0 20px }
+            .sponsors-group .sponsors img { margin:0 20px 20px 0 ; max-height:100px ; max-width:700px }
+        .sponsors-group.platinum .sponsors img { max-height:55px ; max-width:385px }
+        .sponsors-group.gold .sponsors img { max-height:40px ; max-width:280px }
+        .sponsors-group.silver .sponsors img { max-height:25px ; max-width:175px }
+}
+
+/* designed for 481 to 610 */
+@media screen and (max-width:610px) {
+        .sponsors-group { margin-bottom:0px }
+    .sponsors-group h2 { font-size:.8rem }
+    .sponsors-group.platinum h2 { font-size:.8rem }
+    .sponsors-group.gold h2 { font-size:.8rem }
+    .sponsors-group.silver h2 { font-size:.8rem }
+    .sponsors-group .sponsors { padding:20px 0 0 20px }
+            .sponsors-group .sponsors img { margin:0 20px 20px 0 ; max-height:75px ; max-width:525px }
+        .sponsors-group.platinum .sponsors img { max-height:40px ; max-width:280px }
+        .sponsors-group.gold .sponsors img { max-height:30px ; max-width:210px }
+        .sponsors-group.silver .sponsors img { max-height:20px ; max-width:140px }
+}
+
+/* designed for 421 to 480 */
+@media screen and (max-width:480px) {
+        .sponsors-group { margin-bottom:0px }
+    .sponsors-group h2 { font-size:.7rem }
+    .sponsors-group.platinum h2 { font-size:.7rem }
+    .sponsors-group.gold h2 { font-size:.7rem }
+    .sponsors-group.silver h2 { font-size:.7rem }
+    .sponsors-group .sponsors { padding:15px 0 0 15px }
+                .sponsors-group .sponsors img { margin:0 15px 15px 0 ; max-height:65px ; max-width:455px }
+        .sponsors-group.platinum .sponsors img { max-height:35px ; max-width:245px }
+        .sponsors-group.gold .sponsors img { max-height:25px ; max-width:175px }
+        .sponsors-group.silver .sponsors img { max-height:20px ; max-width:140px }
+}
+
+/* designed for 320 to 420 */
+@media screen and (max-width:420px) {
+        .sponsors-group { margin-bottom:0px }
+    .sponsors-group h2 { font-size:.6rem }
+    .sponsors-group.platinum h2 { font-size:.6rem }
+    .sponsors-group.gold h2 { font-size:.6rem }
+    .sponsors-group.silver h2 { font-size:.6rem }
+    .sponsors-group .sponsors { padding:10px 0 0 10px }
+                .sponsors-group .sponsors img { margin:0 10px 10px 0 ; max-height:50px ; max-width:350px }
+        .sponsors-group.platinum .sponsors img { max-height:25px ; max-width:175px }
+        .sponsors-group.gold .sponsors img { max-height:20px ; max-width:140px }
+        .sponsors-group.silver .sponsors img { max-height:15px ; max-width:105px }
+}
+

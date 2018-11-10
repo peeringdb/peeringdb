@@ -1,0 +1,9 @@
+{% load i18n %}
+{% language 'en' %}
+
+{% blocktrans with u_name=user.username n_name=net.name n_asn=net.asn n_id=net.id o_name=org.name o_id=org.id trimmed %}
+User '{{ u_name }}' created Network {{ n_name }} AS{{ n_asn }} ({{n_id}}) under organzation {{ o_name }} ({{ o_id }}).
+{% endblocktrans %}
+
+{% trans "As the user's email address was succesfully matched against RiR entry data this network has skipped the verification queue." %}
+{% endlanguage %}

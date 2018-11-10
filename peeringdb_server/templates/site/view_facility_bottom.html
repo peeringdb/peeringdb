@@ -1,0 +1,55 @@
+{% load util %}
+{% load i18n %}
+
+<!-- LOCAL EXCHANGES-->
+
+<div class="list" data-sort-container=".scrollable" data-sort-row=".row">
+  <div class="row">
+    <div class="col-xs-6 col-sm-8 col-md-8">
+      <h5>Local Exchanges</h5>
+    </div>
+    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+      <input type="text" placeholder="Filter" data-filter-target="#list-exchanges" class="form-control" />
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-xs-4 col-sm-4 col-md-4">
+      <div data-sort-target=".exchange" data-sort-initial="asc">{% trans "Exchange" %}</div>
+    </div>
+    <div class="col-xs-5 col-sm-5 col-md-5">
+      <div data-sort-target=".name">{% trans "Long Name" %}</div>
+    </div>
+    <div class="col-xs-3 col-sm-3 col-md-3">
+      <div data-sort-target=".participants">{% trans "Networks" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable" id="list-exchanges">
+
+    <div class="empty-result">
+      <div class="message">{% trans "Nothing matched your filter" %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Exchange" %}</b> {% trans "or" %} <b>{%trans "Long Name" %}</b></div>
+    </div>
+
+    {% for x in data.exchanges %}
+
+    <div class="row item">
+      <div class="col-xs-4 col-sm-4 col-md-4">
+        <div class="exchange" data-sort-value="{{ x.ix.name|lower }}" data-filter-value="{{ x.ix.name }}">
+          <a href="/{{x.ix|ref_tag}}/{{ x.ix.id }}">{{ x.ix.name }}</a>
+        </div>
+      </div>
+      <div class="col-xs-5 col-sm-5 col-md-5">
+        <div class="name" data-sort-value="{{ x.ix.name_long|lower }}" data-filter-value="{{ x.ix.name_long }}">{{ x.ix.name_long }}</div>
+      </div>
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        {% with x.ix.network_count as num %}
+        <div class="participants" data-sort-value="{{ num }}">{{ num }}</div>
+        {% endwith %}
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+</div>

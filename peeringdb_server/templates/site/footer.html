@@ -1,0 +1,59 @@
+{% load i18n %}
+<div class="landing_footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-3 col-sm-4 col-xs-12">
+      {% spaceless %}
+      {% now "Y" as current_year %}
+      &copy; 2004-{{current_year}} PeeringDB <br/>
+      {% trans "All Rights Reserved. By using this service, you agree to adhere to our" %}
+      <a href="/aup">{% trans "AUP" %}</a>.<br/>
+      {% endspaceless %}
+      <p class="marg-top-15">
+      <a href="https://github.com/peeringdb/peeringdb/issues">{{PEERINGDB_VERSION}}</a> - <a href="https://docs.peeringdb.com/gov/misc/2017-04-02-PeeringDB_Privacy_Policy.pdf">{% trans "Privacy Policy" %}</a>
+      </p>
+      <p>
+          <a target='_blank' href='https://twitter.com/PeeringDB'><img class="socialmedia_icon" src='{{ STATIC_URL }}/twitter.png' alt="twitter"></a>
+          <a target='_blank' href='https://www.facebook.com/peeringdb/'><img class="socialmedia_icon" src='{{ STATIC_URL }}/facebook.png' alt="facebook"></a>
+          <a target="_blank" href="https://www.linkedin.com/company/peeringdb"><img class="socialmedia_icon" src="{{ STATIC_URL }}/linkedin.png" alt="linkedin"></a>
+          <a target="_blank" href="https://github.com/peeringdb/peeringdb/issues"><img class="socialmedia_icon" src="{{ STATIC_URL }}/github.png" alt="github"></a>
+        </p>
+      </div>
+      <div class="col-md-3 col-sm-4 col-xs-12">
+        <div>
+        <a href="/sponsors">{% trans "Sponsors" %}</a>
+        </div>
+        <div>
+        <a href="/partners">{% trans "Partners" %}</a>
+        </div>
+      <p> </p>
+      <h4>{% trans "Resources" %}</h4>
+        <div><a href="http://status.peeringdb.com/">{% trans "Status" %}</a></div>
+
+        <div>
+        <a href="/docs">{% trans "Documentation" %}</a>
+        </div>
+        <div>
+        <a href="/apidocs">{% trans "API Documentation" %}</a>
+        </div>
+      <p> </p>
+      <h4>{% trans "Contact Us" %}</h4>
+      <a href="mailto:support@peeringdb.com">support@peeringdb.com</a>
+      </div>
+      <div class="col-md-4 col-sm-4 col-xs-12">
+      <h4>{% trans "Global System Statistics" %}</h4>
+      <div class="global_stats">
+        <div>{{ global_stats.net }} {% trans "Peering Networks" %}</div>
+        <div>{{ global_stats.ix }} {% trans "Public Exchange Points" %}</div>
+        <div>{{ global_stats.netixlan }} {% trans "Unique Public Exchange Presences" %}</div>
+        <div>{{ global_stats.fac }} {% trans "Private Facilities" %}</div>
+        <div>{{ global_stats.netfac }} {% trans "Private Facility Presences" %}</div>
+      </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+
+
+  user  (neteng@other.com) wishes to be affiliated to Organization 'ORG AS9000002'
+  They also provided this ASN in their request: 9000002
+  
+    ATTENTION: This is an ownership request, approving it will grant the user administration rights over the organization and any entities it owns.
+  
+  
+  These are the email addresses we could fetch from the ASNs belonging to this organization:
+  - neteng@20c.com 
+  
+
+<a href="localost/cp/peeringdb_server/user/2/change/">Review Affiliation/Ownership Request</a>
+
+  <a href="localost/cp/peeringdb_server/userorgaffiliationrequest/2/action/approve_and_notify/">Approve Ownership Request and Notify User</a>
+

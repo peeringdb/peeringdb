@@ -1,0 +1,12 @@
+{% load i18n %}
+{% language 'en' %}
+{% if org_created %}
+    {% blocktrans with o_name=org.name o_id=org.id u_name=user.username trimmed %}
+    Organization {{ o_name }} ({{ o_id }}) was automatically created during user '{{ u_name }}'s affiliation request to AS{{ asn }}
+    {% endblocktrans %}
+{% endif %}
+{% if net_created %}
+    {% blocktrans with n_name=net.name n_id=net.id u_name=user.username trimmed %}
+    Network {{ n_name }} ({{ n_id }}) was automatically created during user '{{ u_name }}'s affiliation request to AS{{ asn }}
+    {% endblocktrans %}
+{% endif %}{% endlanguage %}

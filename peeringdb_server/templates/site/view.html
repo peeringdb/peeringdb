@@ -1,0 +1,286 @@
+{% extends "site/base.html" %}
+{% load util %}
+{% load i18n %}
+
+{% block content %}
+<div id="view" class="view {% if permissions.can_edit %}editable{% endif %}" {% if permissions.can_edit %}data-edit-target="api:{{ref_tag}}:update" data-edit-id="{{instance.id}}" data-check-incomplete="Yes"{% endif %}>
+
+{% if permissions.can_edit %}
+<div class="payload">
+  <div data-edit-name="org_id">{{ instance.org_id }}</div>
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col-md-12 col-sm-12 col-xs-12">
+    <div class="view_title row">
+      <div class="col-md-8 col-sm-8 col-xs-10{% if instance.sponsorship %} sponsor {{ instance.sponsorship.label|lower }} sponsor-badge{% endif %}"
+           {% if permissions.can_write %}
+           data-edit-type="string"
+           {% endif %}
+           data-edit-required="yes"
+           data-edit-name="name">{{ data.title }}</div>
+
+      <div class="col-md-4 col-sm-4 col-xs-2 right button-bar">
+        {% if instance.status == "pending" %}
+        <div class="status-pending">{% trans "Pending Review" %}</div>
+        {% endif %}
+        {% if permissions.can_edit %}
+
+        <div data-edit-toggled="view">
+          <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
+        </div>
+        <div data-edit-toggled="edit" style="display:none;">
+          <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+          <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+        </div>
+        {% else %}
+        <div>
+
+        {% if instance.org and not instance.org.owned and request.user.is_authenticated %}
+          {% if request.user.is_verified or request.user.email_confirmed %}
+          <a class="btn btn-default" href="/request-ownership?id={{ instance.org.id }}">Request Ownership</a>
+          {% endif %}
+        {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row">
+
+  <div class="col-md-6 col-sm-6 col-xs-12 view-left">
+  {% if permissions.can_edit %}
+  <div class="editable popin note info incomplete marg-top-15 marg-bot-15 hidden">
+  {% trans "Some of the data on this page is incomplete, please update the fields marked with" %}
+    <span class="glyphicon glyphicon-exclamation-sign"></span>
+  {% trans "to improve data quality" %}.
+  </div>
+  {% endif %}
+
+
+  <!-- fields -->
+  <div class="view_fields">
+  {% for row in data.fields %}
+    {% if not row.value|dont_render %}
+    {% if not row.admin or permissions.can_write %}
+    <div class="row view_row">
+
+      {% if row.type == "sub"%}
+        <!-- sub header -->
+        <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
+      {% else %}
+        <!-- row header -->
+        <div class="view_field col-xs-4 col-sm-5 col-md-4">{{ row.label }} {% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %}
+        {% if row.help_text %}
+          <div data-edit-toggled="edit" style="display:none;" class="help">{{ row.help_text }}</div>
+        {% endif %}</div>
+
+        <!-- row value -->
+        {% if row.type == "url" %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+              {% if not row.readonly and permissions.can_write %}
+              data-edit-type="url"
+              {% endif %}
+              {% if row.required %}
+              data-edit-required="yes"
+              {% endif %}
+              data-edit-name="{{ row.name }}"
+              data-edit-template="link">{% if row.value %}<a href="{{ row.value }}">{{ row.value }}</a>{% endif %}</div>
+
+        {% elif row.type == "email" %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+              {% if not row.readonly and permissions.can_write %}
+              data-edit-type="email"
+              {% endif %}
+              {% if row.required %}
+              data-edit-required="yes"
+              {% endif %}
+              data-edit-name="{{ row.name }}"
+              data-edit-template="link">{% if row.value %}<a href="mailto:{{ row.value }}">{{ row.value }}</a>{% endif %}</div>
+
+        {% elif row.type == "list" %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+              {% if not row.readonly and permissions.can_write %}
+              data-edit-type="select"
+              {% endif %}
+              data-edit-name="{{ row.name }}"
+              data-edit-data="{{ row.data }}"
+              data-edit-value="{{ row.value }}">{{ row|editable_list_value }}</div>
+
+        {% elif row.type == "flags" %}
+          <div class="view_value flags col-xs-8 col-sm-7 col-md-8">
+          {% for flag in row.value %}
+            <span class="checkmark"
+                  {% if not row.readonly and permissions.can_write %}
+                  data-edit-type="bool"
+                  {% endif %}
+                  data-edit-name="{{ flag.name }}"
+                  data-edit-value="{{ flag.value }}"
+                  data-edit-template="check">
+                  <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not flag.value %}-off{% endif %}.png" />
+            </span>
+            <span class="enabled">{{ flag.label }}</span>
+          {% endfor %}
+          </div>
+        {% elif row.type == "fmt-text" %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8 fmt_text"
+               {% if not row.readonly and permissions.can_write %}
+               data-edit-type="markdown"
+               {% endif %}
+               {% if row.required %}
+               data-edit-required="yes"
+               {% endif %}
+               data-edit-value="{{ row.value }}"
+               data-edit-name="{{ row.name }}">
+                    {{ row.value|render_markdown|safe }}
+                    {% if row.name == "notes" and row.value and request.user.is_authenticated %}
+                        <div>
+                            <!-- select name="language-from">
+                              <option value="" selected="selected" selected>Detect</option>
+                              {% for lang in LANGUAGES %} <option value="{{ lang.0 }}">{{ lang.1 }}</option> {% endfor %}
+                            </select -->
+                            <!-- select name="language-to">
+                              {% for lang in LANGUAGES %}
+                                <option value="{{ lang.0 }}"{% ifequal LANGUAGE_CODE lang.0 %} selected="selected"{% endifequal %}>{{ lang.1 }}</option>
+                              {% endfor %}
+                            </select -->
+                          <a class="btn btn-default translate-btn btn-xs" style="vertical-align: bottom;">Translate &#xbb;</a>
+                        </div>
+                    {% endif %}
+                </div>
+        {% elif row.type == "safe" %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+               {% if not row.readonly and permissions.can_write %}
+               data-edit-type="text"
+               {% endif %}
+               {% if row.required %}
+               data-edit-required="yes"
+               {% endif %}
+               data-edit-name="{{ row.name }}">{{ row.value|safe }}</div>
+
+        {% elif row.type == "bool" %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8">
+            <span class="checkmark"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="bool"
+                {% endif %}
+                data-edit-name="{{ row.name }}"
+                data-edit-value="{{ row.value }}"
+                data-edit-template="check">
+                <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not row.value %}-off{% endif %}.png" />
+            </span>
+          </div>
+        {% elif row.type == "location"  %}
+          <div class="view_value inline col-xs-8 col-sm-7 col-md-8">
+            <span class="inline delimited"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="string"
+                data-edit-placeholder="City"
+                {% endif %}
+                {% if row.required %}
+                data-edit-required="yes"
+                {% endif %}
+                data-edit-name="city">{{ row.value.city }}</span>{% if row.value.state or row.value.zipcode %}<span data-edit-toggled="view">,</span>{% endif %}
+
+            <span class="inline delimited"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="string"
+                data-edit-placeholder="State"
+                {% endif %}
+                {% if row.required %}
+                data-edit-required="yes"
+                {% endif %}
+                data-edit-name="state">{{ row.value.state }}</span>{% if row.value.zipcode %}<span data-edit-toggled="view">,</span>{% endif %}
+
+            <span class="inline"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="string"
+                data-edit-placeholder="Zip-Code"
+                {% endif %}
+                {% if row.required %}
+                data-edit-required="yes"
+                {% endif %}
+                data-edit-name="zipcode">
+                {{ row.value.zipcode }}
+            </span>
+          </div>
+        {% elif row.type == "geocode" %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8">
+            {% if row.value.latitude and row.value.longitude %}
+              <a href="https://maps.google.com/?q={{ row.value.latitude }},{{ row.value.longitude }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
+            {% else %}
+              {% if instance.geocode_status  %}
+              <div class="note error">
+                <div>{% trans "Address failed validation." %}</div>
+                {% if permissions.can_write and instance.geocode_error %}
+                  <div class="details">{% trans "Geocoding error" %}: {{ instance.geocode_error }}</div>
+                {% endif %}
+              </div>
+              <div class="note inactive">
+                {% trans "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."%}
+              </div>
+              {% else %}
+              <div class="note inactive">{% trans "Updated geocode data for this entity will be obtained shortly" %}</div>
+              {% endif %}
+            {% endif %}
+          </div>
+        {% elif row.type == "entity_link"  %}
+
+          <div class="view_value col-xs-8 col-sm-7 col-md-8">
+            <a href="{{ row.link }}">{{ row.value }}</a>
+          </div>
+
+        {% else %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+              {% if not row.readonly and permissions.can_write %}
+              data-edit-type="string"
+              {% endif %}
+              {% if row.required %}
+              data-edit-required="yes"
+              {% endif %}
+              data-edit-name="{{ row.name }}">{{ row.value }}</div>
+
+        {% endif %}
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+  {% endfor %}
+  </div>
+
+  {% include bottom_template_name with data=data instance=instance permissions=permissions %}
+
+  </div>
+
+  <div class="col-md-6 col-sm-6 col-xs-12">
+  {% include side_template_name with data=data instance=instance permissions=permissions %}
+  </div>
+
+</div>
+    <div class="view_title right" data-edit-toggled="edit"  style="display:none;">
+      <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+      <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+    </div>
+</div>
+
+{% if permissions.can_write %}
+<script language="javascript" type="text/javascript">
+$(document).ready(function() {
+  PeeringDB.incomplete_data_notify();
+  var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
+  editForm.on('action-success:submit', function() {
+    console.log("Incomplete data check after save");
+    setTimeout(PeeringDB.incomplete_data_notify, 500);
+  });
+});
+</script>
+{% endif %}
+
+{% if permissions.can_use_tools %}
+{% include tools_template_name with data=data instance=instance permissions=permissions %}
+{% endif %}
+
+{% include asset_template_name with data=data instance=instance permissions=permissions %}
+{% endblock %}

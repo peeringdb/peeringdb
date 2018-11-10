@@ -1,0 +1,44 @@
+{% include "site/header.html" %}
+{% include "site/view_header.html" with errors=errors %}
+{% load i18n %}
+
+<div class="view_info">
+<div class="container">
+  <div class="row marg-top-30">
+    <div class="col-md-4 col-sm-3 col-xs-12"></div>
+    <div class="col-md-4 col-sm-6 col-xs-12 panel editable always"
+         data-edit-target="/username-retrieve/initiate"
+         data-edit-enter-action="submit"
+         id="username-retrieve-initiate">
+      <div id="help">
+      {% trans "This form allows you to retrieve the usernames associated with your email address." %}
+      </div>
+      <div id="success" class="editable popin" style="display:none;">
+      {% trans "We've sent instructions to your email address, provided it is in our system." %}
+      </div>
+      <input type="text"
+             class="editable string form-control marg-bot-15"
+             placeholder="{% trans "Email" %}"
+             data-edit-name="email"
+             data-edit-type="email"
+             data-edit-required="yes" />
+
+      <a class="btn btn-default" data-edit-action="submit">{% trans "Retrieve username(s)" %}</a>
+    </div>
+    <div class="col-md-4 col-sm-3 col-xs-12"></div>
+  </div>
+</div>
+</div>
+
+<script language="javascript" type="text/javascript">
+$('#username-retrieve-initiate').each(function(idx) {
+  form = $(this)
+  $(this).on("action-success:submit", function(ev, data) {
+    //XXX why doesn't that happen automatically ?
+    form.editable('clear-error-popins')
+    form.find("#success").show();
+  })
+});
+</script>
+
+{% include "site/footer.html" %}

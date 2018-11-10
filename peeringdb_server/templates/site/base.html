@@ -1,0 +1,23 @@
+{% block header %}
+{% include 'site/header.html' %}
+{% endblock %}
+{% include 'site/view_header.html' %}
+
+<div class="view_info left">
+  <div class="container">
+
+    <div id="inline-search-container" style="display:none">
+      {% include "site/search_result_frame.html" %}
+    </div>
+
+
+    <div id="content">
+      {% include "site/verification_banner.html" %}
+      {% block content_pre %}{% endblock %}
+      {% block content %}{% endblock %}
+      {% block content_post %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+{% include 'site/footer.html' %}

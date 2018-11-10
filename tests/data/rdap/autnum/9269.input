@@ -1,0 +1,70 @@
+{
+  "handle" : "AS9269",
+  "startAutnum" : 9269,
+  "endAutnum" : 9269,
+  "name" : "HKBN-AS-AP",
+  "country" : "HK",
+  "objectClassName" : "autnum",
+  "entities" : [ {
+    "handle" : "IRT-HKBN-HK",
+    "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "fn", { }, "text", "IRT-HKBN-HK" ], [ "kind", { }, "text", "group" ], [ "email", {
+      "pref" : "1"
+    }, "text", "abuse@hkbn.net" ], [ "adr", {
+      "label" : "15/F Trans Asia Centre\\n18 Kin Hong Street, Kwai Chung\\nN.T."
+    }, "text", [ "", "", "", "", "", "", "" ] ], [ "email", { }, "text", "hostmaster@hkbn.com.hk" ] ] ],
+    "roles" : [ "abuse" ],
+    "objectClassName" : "entity",
+    "links" : [ {
+      "value" : "https://rdap.apnic.net/autnum/9269",
+      "rel" : "self",
+      "href" : "https://rdap.apnic.net/entity/IRT-HKBN-HK",
+      "type" : "application/rdap+json"
+    } ]
+  }, {
+    "handle" : "HKBN-HK",
+    "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "fn", { }, "text", "HKBN Hostmaster" ], [ "kind", { }, "text", "individual" ], [ "adr", {
+      "label" : "15/F Trans Asia Centre\\n18 Kin Hong Street, Kwai Chung\\nN.T."
+    }, "text", [ "", "", "", "", "", "", "" ] ], [ "tel", {
+      "type" : "voice"
+    }, "text", "+852-3999-3888" ], [ "tel", {
+      "type" : "fax"
+    }, "text", "+852-8167-7020" ], [ "email", { }, "text", "hostmaster@hkbn.com.hk" ] ] ],
+    "roles" : [ "technical", "administrative" ],
+    "objectClassName" : "entity",
+    "links" : [ {
+      "value" : "https://rdap.apnic.net/autnum/9269",
+      "rel" : "self",
+      "href" : "https://rdap.apnic.net/entity/HKBN-HK",
+      "type" : "application/rdap+json"
+    } ]
+  } ],
+  "remarks" : [ {
+    "title" : "description",
+    "description" : [ "Hong Kong Broadband Network Ltd." ]
+  } ],
+  "links" : [ {
+    "value" : "https://rdap.apnic.net/autnum/9269",
+    "rel" : "self",
+    "href" : "https://rdap.apnic.net/autnum/9269",
+    "type" : "application/rdap+json"
+  } ],
+  "events" : [ {
+    "eventAction" : "last changed",
+    "eventDate" : "2017-10-16T00:26:12Z"
+  } ],
+  "rdapConformance" : [ "rdap_level_0" ],
+  "notices" : [ {
+    "title" : "Source",
+    "description" : [ "Objects returned came from source", "APNIC" ]
+  }, {
+    "title" : "Terms and Conditions",
+    "description" : [ "This is the APNIC WHOIS Database query service. The objects are in RDAP format." ],
+    "links" : [ {
+      "value" : "https://rdap.apnic.net/autnum/9269",
+      "rel" : "terms-of-service",
+      "href" : "http://www.apnic.net/db/dbcopyright.html",
+      "type" : "text/html"
+    } ]
+  } ],
+  "port43" : "whois.apnic.net"
+}

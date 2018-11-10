@@ -1,0 +1,122 @@
+{% load i18n %}
+<div class="editable always auto-toggled filter-form" 
+     data-edit-target="advanced_search:ix"
+     data-edit-enter-action="submit"
+     data-sort-container=".results"
+     data-sort-row=".row">
+  <div class="row">
+    <div class="col-xs-12 col-sm-6 col-md-6">
+      <!-- LEFT COLUMN -->
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-name="name_search"
+               data-edit-reset-value=""
+               data-edit-value="{{ request.GET.name_search }}"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "City" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-name="city"
+               data-edit-reset-value=""
+               data-edit-value="{{ request.GET.city }}"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Country" %}<span class="hint">ctrl/cmd {% trans "click to select multiple" %}</span></div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-name="country__in"
+               data-edit-data="countries"
+               data-edit-value="{{ request.GET.country__in }}"
+               data-edit-reset-value=""
+               data-edit-multiple="yes"
+               --data-edit-data-all-entry=":-- All Countries --"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Continental Region" %}<span class="hint">ctrl/cmd {% trans "click to select multiple" %}</span></div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-name="region_continent__in"
+               data-edit-data="enum/regions"
+               data-edit-value="{{ request.GET.region_continent__in }}"
+               data-edit-reset-value=""
+               data-edit-multiple="yes"
+               --data-edit-data-all-entry=":-- All Regions --"></div>
+        </div>
+      </div>
+ 
+    </div>
+    <div class="col-xs-12 col-sm-6 col-md-6">
+      <!-- RIGHT COLUMN -->
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "IP Block" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-value="{{ request.GET.ipblock }}"
+               data-edit-reset-value=""
+               data-edit-name="ipblock"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Media Type" %}<span class="hint">ctrl/cmd {% trans "click to select multiple" %}</span></div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-data="enum/media",
+               data-edit-multiple="yes"
+               data-edit-value="{{ request.GET.media__in }}"
+               data-edit-name="media__in"></div>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+  <div class="right">
+    <a class="btn btn-default" data-edit-action="reset">{% trans "Reset" %}</a>
+    <a class="btn btn-default" data-edit-action="submit">{% trans "Search" %}</a>
+  </div>
+
+  <div class="right marg-top-30">
+    <a class="btn btn-default btn-xs hidden" data-export-format="json-pretty" data-export-tag="ix"><span class="glyphicon glyphicon-download"></span> JSON</a>
+    <a class="btn btn-default btn-xs hidden" data-export-format="csv" data-export-tag="ix"><span class="glyphicon glyphicon-download"></span> CSV</a>
+  </div>
+
+  <div class="editable-templates">
+    <div id="advanced-search-ix-item" class="row">
+      <div class="col-xs-5 col-sm-6 col-md-6">
+        <a href="/ix/$id" data-edit-name="name" class="name"></a>
+        <span data-edit-name="name_long" class="hint"></span>
+      </div>
+      <div class="col-xs-3 col-sm-2 col-md-2 media" data-edit-name="media"></div>
+      <div class="col-xs-1 col-sm-1 col-md-1 country" data-edit-name="country"></div>
+      <div class="col-xs-3 col-sm-3 col-md-3 city" data-edit-name="city"></div>
+    </div>
+  </div>
+
+  <div class="headers marg-top-15">
+    <div class="row">
+      <div class="col-xs-5 col-sm-6 col-md-6" data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+      <div class="col-xs-3 col-sm-2 col-md-2" data-sort-target=".media">{% trans "Media Type" %}</div>
+      <div class="col-xs-1 col-sm-1 col-md-1" data-sort-target=".country">{% trans "Country" %}</div>
+      <div class="col-xs-3 col-sm-3 col-md-3" data-sort-target=".city">{% trans "City" %}</div>
+    </div>
+  </div>
+ 
+  <div class="results-empty center" style="display:none;">
+    {% trans "Nothing matched your search criteria." %}
+  </div>
+
+
+  <div class="results">
+
+  </div>
+
+  <div class="results-cutoff center marg-top-15" style="display:none;">
+    {% blocktrans %}...More than {{ row_limit }} entries matched your query, refine your request...{% endblocktrans %}</div>
+
+
+</div>

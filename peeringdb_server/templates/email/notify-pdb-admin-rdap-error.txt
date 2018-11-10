@@ -1,0 +1,5 @@
+User {{user.username}} has run into an RDAP Lookup Error when trying to affiliate to a network.
+
+ASN: {{ asn }}
+Error Details: {{ error_details }}
+User Email: {{user.email}}

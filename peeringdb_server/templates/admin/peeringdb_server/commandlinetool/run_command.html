@@ -1,0 +1,44 @@
+{% extends "admin/admin_extended.html" %}
+{% load i18n admin_urls admin_static static admin_modify %}
+
+{% block extrahead %}{{ block.super }}
+{{ media }}
+<script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}"/>
+{% endblock %}
+
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+        &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ app_label|capfirst|escape }}</a>
+        &rsaquo; {% if has_change_permission %}<a href="{% url opts|admin_urlname:'changelist' %}">
+        {{ opts.verbose_name_plural|capfirst }}</a>{% else %}{{ opts.verbose_name_plural|capfirst }}{% endif %}
+        &rsaquo; {% trans 'Result' %}
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="commandlinetool">
+    <form action="{% url opts|admin_urlname:action %}" method="post" id="commandlinetool_run_form"
+          {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
+        {% csrf_token %}
+        {% if tool %}
+        <input type="hidden" value="{{ tool.tool }}" name="tool" />
+        {% endif %}
+        <div>
+            {% for fieldset in adminform %}
+              <fieldset disabled="disabled" class="disabled">
+                {% include "admin/includes/fieldset.html" %}
+              </fieldset>
+            {% endfor %}
+        </div>
+        <div class="result">
+        {{ tool.pretty_result|safe }}
+        </div>
+    </form>
+</div>
+{% endblock %}

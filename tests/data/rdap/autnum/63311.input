@@ -1,0 +1,94 @@
+{
+  "rdapConformance" : [ "rdap_level_0" ],
+  "notices" : [ {
+    "title" : "Terms of Service",
+    "description" : [ "By using the ARIN RDAP/Whois service, you are agreeing to the RDAP/Whois Terms of Use" ],
+    "links" : [ {
+      "value" : "https://rdap.arin.net/registry/autnum/63311",
+      "rel" : "about",
+      "type" : "text/html",
+      "href" : "https://www.arin.net/whois_tou.html"
+    } ]
+  } ],
+  "handle" : "AS63311",
+  "startAutnum" : 63311,
+  "endAutnum" : 63311,
+  "name" : "AS-20C",
+  "events" : [ {
+    "eventAction" : "last changed",
+    "eventDate" : "2014-11-17T14:28:43-05:00"
+  }, {
+    "eventAction" : "registration",
+    "eventDate" : "2014-11-17T14:28:43-05:00"
+  } ],
+  "links" : [ {
+    "value" : "https://rdap.arin.net/registry/autnum/63311",
+    "rel" : "self",
+    "type" : "application/rdap+json",
+    "href" : "https://rdap.arin.net/registry/autnum/63311"
+  }, {
+    "value" : "https://rdap.arin.net/registry/autnum/63311",
+    "rel" : "alternate",
+    "type" : "application/xml",
+    "href" : "https://whois.arin.net/rest/asn/AS63311"
+  } ],
+  "entities" : [ {
+    "handle" : "CL-672",
+    "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "fn", { }, "text", "20C, LLC" ], [ "adr", {
+      "label" : "303 W Ohio #1701\nChicago\nIL\n60654\nUNITED STATES"
+    }, "text", [ "", "", "", "", "", "", "" ] ], [ "kind", { }, "text", "org" ] ] ],
+    "roles" : [ "registrant" ],
+    "links" : [ {
+      "value" : "https://rdap.arin.net/registry/autnum/63311",
+      "rel" : "self",
+      "type" : "application/rdap+json",
+      "href" : "https://rdap.arin.net/registry/entity/CL-672"
+    }, {
+      "value" : "https://rdap.arin.net/registry/autnum/63311",
+      "rel" : "alternate",
+      "type" : "application/xml",
+      "href" : "https://whois.arin.net/rest/org/CL-672"
+    } ],
+    "events" : [ {
+      "eventAction" : "last changed",
+      "eventDate" : "2014-08-05T15:21:11-04:00"
+    }, {
+      "eventAction" : "registration",
+      "eventDate" : "2014-08-05T15:21:11-04:00"
+    } ],
+    "entities" : [ {
+      "handle" : "NETWO7047-ARIN",
+      "vcardArray" : [ "vcard", [ [ "version", { }, "text", "4.0" ], [ "adr", {
+        "label" : "303 W Ohio #1701\nChicago\nIL\n60654\nUNITED STATES"
+      }, "text", [ "", "", "", "", "", "", "" ] ], [ "fn", { }, "text", "Network Engineers" ], [ "org", { }, "text", "Network Engineers" ], [ "kind", { }, "text", "group" ], [ "email", { }, "text", "neteng@20c.com" ], [ "tel", {
+        "type" : [ "work", "voice" ]
+      }, "text", "+1-978-636-0020" ] ] ],
+      "roles" : [ "technical", "abuse", "administrative" ],
+      "links" : [ {
+        "value" : "https://rdap.arin.net/registry/autnum/63311",
+        "rel" : "self",
+        "type" : "application/rdap+json",
+        "href" : "https://rdap.arin.net/registry/entity/NETWO7047-ARIN"
+      }, {
+        "value" : "https://rdap.arin.net/registry/autnum/63311",
+        "rel" : "alternate",
+        "type" : "application/xml",
+        "href" : "https://whois.arin.net/rest/poc/NETWO7047-ARIN"
+      } ],
+      "events" : [ {
+        "eventAction" : "last changed",
+        "eventDate" : "2016-07-18T18:38:29-04:00"
+      }, {
+        "eventAction" : "registration",
+        "eventDate" : "2014-07-03T23:22:49-04:00"
+      } ],
+      "status" : [ "validated" ],
+      "port43" : "whois.arin.net",
+      "objectClassName" : "entity"
+    } ],
+    "port43" : "whois.arin.net",
+    "objectClassName" : "entity"
+  } ],
+  "port43" : "whois.arin.net",
+  "objectClassName" : "autnum"
+}

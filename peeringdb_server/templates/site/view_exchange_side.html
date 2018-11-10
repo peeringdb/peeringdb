@@ -1,0 +1,67 @@
+{% load util %}
+{% load i18n %}
+
+<!-- PEERS -->
+
+<div class="list" data-sort-container=".scrollable" data-sort-row=".row">
+  <div class="row">
+    <div class="col-xs-6 col-sm-8 col-md-8">
+      <h5>Peers at this Exchange Point</h5>
+    </div>
+    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+      <input type="text" placeholder="Filter" data-filter-target="#list-networks" class="form-control" />
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-xs-5 col-sm-5 col-md-5">
+      <div data-sort-target=".peer" data-sort-initial="asc">{% trans "Peer Name" %}</div>
+      <div data-sort-target=".asn">{% trans "ASN" %}</div>
+    </div>
+    <div class="col-xs-4 col-sm-4 col-md-4">
+      <div>{% trans "IPv4" %}</div>
+      <div>{% trans "IPv6" %}</div>
+    </div>
+    <div class="col-xs-3 col-sm-3 col-md-3">
+      <div data-sort-target=".speed">{% trans "Speed" %}</div>
+      <div>{% trans "Policy" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable" id="list-networks">
+
+    <div class="empty-result">
+      <div class="message">{% trans "Nothing matched your filter" %}</div>
+      <div class="help">
+        {% spaceless %}
+        {% trans "You may filter by" %} 
+        <b>{% trans "Exchange" %}</b>, <b>{% trans "ASN" %}</b>, <b>{% trans "Policy" %}</b>, 
+        <b>{% trans "IP" %}</b> {% trans "or" %} <b>{% trans "Speed" %}</b>
+        {% endspaceless %}
+      </div>
+    </div>
+
+    {% for x in data.networks %}
+
+    <div class="row item">
+      <div class="col-xs-5 col-sm-5 col-md-5">
+        <div class="peer" data-sort-value="{{ x.network.name|lower }}" data-filter-value="{{ x.network.name }}">
+          <a href="/{{ x.network|ref_tag }}/{{ x.network.id }}">{{ x.network.name }}</a>{% if x.ixlan.name %}<span class="tiny suffix">{{ x.ixlan.name }}</span>{% endif %}
+        </div>
+        <div class="asn" data-sort-value="{{ x.asn }}" data-filter-value="{{ x.asn }}">{{ x.asn }}</div>
+      </div>
+      <div class="col-xs-4 col-sm-4 col-md-4">
+        <div class="ip4" data-filter-value="{{x.ipaddr4}}">{{ x.ipaddr4 }}</div>
+        <div class="ip6" data-filter-value="{{x.ipaddr6}}">{{ x.ipaddr6 }}</div>
+      </div>
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        <div class="speed" data-sort-value="{{ x.speed }}" data-filter-value="{{ x.speed|pretty_speed}}">{{ x.speed|pretty_speed }}</div>
+        <div class="policy" data-filter-value="{{ x.network.policy_general }}">{{ x.network.policy_general }}</div>
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+</div>
+
+

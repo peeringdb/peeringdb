@@ -1,0 +1,11 @@
+{% load i18n %}
+{{ entity_type_name }} {% trans "Merge Notification" %}
+
+{{ entity_type_name }} "{{ entity_source.name }}" ({% trans "ID" %}: {{ entity_source.id }})
+
+{% trans "has been merged into" %}
+
+{{ entity_type_name }} "{{ entity_target.name }}" ({% trans "ID" %}: {{ entity_target.id }})
+{{ entity_target_url }}
+
+{% trans "All merges are processed manually by peeringdb support staff. If you think this action has been executed in error please dont hesitate to contact peeringdb support at" %} {{ support_email }}.

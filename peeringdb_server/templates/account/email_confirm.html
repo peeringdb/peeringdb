@@ -1,0 +1,34 @@
+{% load i18n %}
+{% load account %}
+{% include "site/header.html" %}
+{% include "site/view_header.html" with errors=errors %}
+
+<div class="view_info">
+<div class="container">
+  {% include "site/oauth-login.html" with OAUTH_ENABLED=OAUTH_ENABLED %}
+  <div class="row marg-top-15">
+     <div class="col-md-4 col-sm-3 col-xs-12"></div>
+     <div class="col-md-4 col-sm-6 col-xs-12 panel">
+       {% if confirmation %}
+       <h3>{% trans "Confirm your e-mail address" %}</h3>
+       <div>
+       {% trans "Please confirm that" %} '<b>{{ confirmation.email_address.email }}</b>' {% trans "is your email-address" %}
+       </div>
+       <form method="POST" action="{% url 'account_confirm_email' confirmation.key %}" class="marg-bot-15">
+         {% csrf_token %}
+         <button class="btn btn-default" type="submit">{% trans "Confirm" %}</button>
+       </form>
+       {% else %}
+       <div class="marg-bot-15">
+       {% trans "The email confirmation process for this email address has been terminated, please re-initate" %} <a href="/verify">{% trans "here" %}</a>
+       </div>
+       {% endif %}
+     </div>
+     <div class="col-md-4 col-sm-3 col-xs-12"></div>
+  </div>
+</div>
+</div>
+
+
+
+{% include "site/footer.html" %}

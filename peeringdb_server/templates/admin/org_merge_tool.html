@@ -1,0 +1,47 @@
+{% extends "admin/admin_extended.html" %}
+{% block content %}
+
+<div class="editable pdbadmin" id="org-merge-tool">
+<div class="editable loading-shim" style="display:none"></div>
+
+<div class="editable popin info">
+<h4>Please proceed with caution, if you no one has explained this tool to you please obtain instructions from someone before proceeding</h4>
+You may undo merges <a href="{{ undo_url }}">here</a>
+</div>
+
+<table style="width:100%">
+  <tr>
+    <td style="width:300px">
+      <h4>Selected Organizations</h4>
+      <div>
+        <input id="org-autocomplete-search-src" placeholder="Search" type="text" data-merge-type="source"/>
+        <p class="help">Organizations in this column will be merged into the organization in the right column. Click entries to remove from selection.<p>
+      </div>
+
+      <div class="listing" id="listing-selected">
+
+      </div>
+    </td>
+    <td style="width:*">
+      <h4>Merge Into Organization</h4>
+      <div>
+        <input id="org-autocomplete-search-trg" placeholder="Search" type="text" data-merge-type="target" />
+        <p class="help">Organizations in the left column will be merged into this organization<p>
+      </div>
+
+      <div class="finalize" style="display:none">
+        <div id="target-org" data-edit-type="number" data-edit-value="0"></div>
+        <a class="grp-button" id="btn-submit">Merge Organizations</a>
+      </div>
+      <div class="merge-results">
+        <h4>Merge Results</h4>
+        <div id="stats">
+        </div>
+      </div>
+    </td>
+  </tr>
+</table>
+</div>
+
+
+{% endblock %}

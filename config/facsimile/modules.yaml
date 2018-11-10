@@ -1,0 +1,30 @@
+- name: peeringdb
+  genconfig: false
+  write_sql: true
+  db:
+    name: peeringdb
+    selectable: []
+
+- name: djangokey
+  genconfig: false
+  write_sql: false
+
+- name: deskpro
+  genconfig: false
+  write_sql: false
+
+- name: google_geoloc_api
+  genconfig: false
+  write_sql: false
+
+- name: lacnic_rdap_apikey
+  genconfig: false
+  write_sql: false
+
+- name: recaptcha
+  genconfig: false
+  write_sql: false
+
+- name: email
+  genconfig: false
+  write_sql: false

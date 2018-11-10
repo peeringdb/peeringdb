@@ -1,0 +1,39 @@
+{% include "site/header.html" %}
+{% include "site/view_header.html" %}
+{% load i18n %}
+
+<div class="view_info left">
+<div class="container">
+
+<!-- title -->
+
+{% include "site/inline_search.html" %}
+
+<div id="inline-search-container" class="hidden">
+{% include "site/search_result_frame.html" %}
+</div>
+
+<div id="content">
+<div class="view">
+<div class="row">
+<div class="col-md-1 col-sm-12 col-xs-12"></div>
+
+<div class="col-md-10 col-sm-12 col-xs-12">
+{% if status == 404 %}
+<h1>{% trans "404 - Not Found" %}</h4>
+<p>{% trans "The page you requested does not exist." %}</p>
+{% elif status == 403 %}
+<h1>{% trans "403 - Forbidden" %}</h4>
+<p>{% trans "You dont have permissions to view this page." %}</p>
+{% endif %}
+<p><a href="/">{% trans "Take me home" %}</a>.</p>
+</div>
+
+<div class="col-md-1 col-sm-12 col-xs-12"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+{% include "site/footer.html" %}

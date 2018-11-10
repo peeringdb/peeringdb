@@ -1,0 +1,65 @@
+{% extends "site/base.html" %}
+{% load i18n %}
+{% block content %}
+
+<div class="advanced-search-view">
+  <ul class="nav nav-tabs" role="tablist">
+    <li role="presentation" class="{% if request.GET.reftag == "ix" or not request.GET.reftag %}active{% else %}inactive{% endif %}">
+      <a href="#ix" aria-controls="ix" role="tab" data-toggle="tab">{% trans "Exchanges" %}</a>
+    </li>
+    <li role="presentation" class="{% if request.GET.reftag == "net" %}active{% else %}inactive{% endif %}">
+      <a href="#net" aria-controls="net" role="tab" data-toggle="tab">{% trans "Networks"  %}</a>
+    </li>
+    <li role="presentation" class="{% if request.GET.reftag == "fac" %}active{% else %}inactive{% endif %}">
+      <a href="#fac" aria-controls="fac" role="tab" data-toggle="tab">{% trans "Facilities" %}</a>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "ix" or not request.GET.reftag %} active{% endif %}" id="ix">
+      {% include "site/advanced-search-ix.html" with row_limit=row_limit%}
+    </div>
+    <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "net"%} active{% endif %}" id="net">
+      {% include "site/advanced-search-net.html" with row_limit=row_limit%}
+    </div>
+    <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "fac" %} active{% endif %}" id="fac">
+      {% include "site/advanced-search-fac.html" with row_limit=row_limit%}
+    </div>
+  </div>
+
+  <script language="javascript" type="text/javascript">
+  twentyc.editable.target.get("advanced_search").prototype.limit = {{ row_limit }}; 
+  $(window).bind("load", function() {
+    twentyc.data.load("enum/traffic");
+    var reftag = $.urlParam("reftag")
+    if(reftag == "net" || reftag == "ix" || reftag == "fac") {
+      var searchForm = $('[data-edit-target="advanced_search:'+reftag+'"]')
+      searchForm.editable("loading-shim","show");
+      twentyc.data.done(function() {
+        var target = twentyc.editable.target.instantiate(searchForm);
+        target.sender = searchForm
+        $(target).on("success", function() {
+          searchForm.editable("loading-shim","hide"); 
+          searchForm.parent().find("[data-export-format]").each(function() {
+            var tag = $(this).data("export-tag");
+            var format = $(this).data("export-format");
+            $(this).removeClass("hidden")
+            $(this).attr("href", "/export/advanced-search/"+tag+"/"+format+"?"+PeeringDB.advanced_search_result[tag].param);
+          })
+        });
+        $(target).on("error", function(ev, d) {
+          searchForm.editable("loading-shim","hide"); 
+          if(d && d.info == "404 Not Found") {
+            searchForm.find(".results-empty").show();
+          } else {
+            searchForm.trigger("action-error", {});
+          }
+        });
+        target.search();
+      });
+    }
+  });
+  </script>
+</div>
+
+{% endblock %}

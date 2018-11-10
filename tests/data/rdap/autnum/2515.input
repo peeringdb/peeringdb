@@ -1,0 +1,54 @@
+{
+  "handle" : "AS2515",
+  "startAutnum" : 2515,
+  "endAutnum" : 2515,
+  "name" : "JPNIC",
+  "country" : "JP",
+  "objectClassName" : "autnum",
+  "entities" : [ {
+    "handle" : "AS5496JP",
+    "roles" : [ "technical" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "EK6175JP",
+    "roles" : [ "technical" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "HH11825JP",
+    "roles" : [ "administrative" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "MO5920JP",
+    "roles" : [ "technical" ],
+    "objectClassName" : "entity"
+  }, {
+    "handle" : "YK11438JP",
+    "roles" : [ "technical" ],
+    "objectClassName" : "entity"
+  } ],
+  "remarks" : [ {
+    "title" : "description",
+    "description" : [ "Japan Network Information Center" ]
+  } ],
+  "links" : [ {
+    "value" : "https://rdap.apnic.net/autnum/2515",
+    "rel" : "self",
+    "href" : "https://rdap.apnic.net/autnum/2515",
+    "type" : "application/rdap+json"
+  } ],
+  "rdapConformance" : [ "rdap_level_0" ],
+  "notices" : [ {
+    "title" : "Source",
+    "description" : [ "Objects returned came from source", "JPNIC" ]
+  }, {
+    "title" : "Terms and Conditions",
+    "description" : [ "This is the APNIC WHOIS Database query service. The objects are in RDAP format." ],
+    "links" : [ {
+      "value" : "https://rdap.apnic.net/autnum/2515",
+      "rel" : "terms-of-service",
+      "href" : "http://www.apnic.net/db/dbcopyright.html",
+      "type" : "text/html"
+    } ]
+  } ],
+  "port43" : "whois.apnic.net"
+}
