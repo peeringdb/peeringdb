@@ -1645,8 +1645,7 @@ class IXLan(pdb_models.IXLanBase):
 
                                     speed = 0
                                     for iface in connection.get("if_list", []):
-                                        if iface.get("if_speed", 0) > speed:
-                                            speed = iface["if_speed"]
+                                        speed += iface.get("if_speed", 0)
 
                                     for lan in connection.get("vlan_list", []):
                                         ipv4_valid = False
