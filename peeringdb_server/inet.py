@@ -87,7 +87,7 @@ def get_prefix_protocol(prefix):
     try:
         ipaddress.IPv4Network(prefix)
         return "IPv4"
-    except ipaddress.AdressValueError:
+    except ipaddress.AddressValueError:
         try:
             ipaddress.IPv6Network(prefix)
             return "IPv6"
