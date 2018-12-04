@@ -125,6 +125,13 @@ class TestJSON(unittest.TestCase):
         cls.PREFIX_COUNT += 1
         return r
 
+    @classmethod
+    def get_prefix6(cls):
+        r = u"2001:504:41:{}::/64".format(cls.PREFIX_COUNT)
+        cls.PREFIX_COUNT += 1
+        return r
+
+
     def setUp(self):
         self.db_guest = self.rest_client(URL, verbose=VERBOSE)
         self.db_user = self.rest_client(URL, verbose=VERBOSE, **USER)
@@ -916,6 +923,12 @@ class TestJSON(unittest.TestCase):
                                    "prefix": ""
                                },
                            })
+
+        # test ix creation with a ipv6 prefix
+        data = self.make_data_ix(prefix=self.get_prefix6())
+        self.assert_create(self.db_org_admin, "ix", data, ignore=["prefix"])
+
+
 
     ##########################################################################
 
