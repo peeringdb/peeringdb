@@ -91,5 +91,5 @@ def get_prefix_protocol(prefix):
         try:
             ipaddress.IPv6Network(prefix)
             return "IPv6"
-        except ipaddress.AddessValueError:
-            raise ValueErrror("Prefix invalid")
+        except ipaddress.AddressValueError:
+            raise ValueError("Prefix invalid")
