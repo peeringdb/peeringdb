@@ -14,8 +14,9 @@ try:
     from django.core.management import execute_from_command_line
 
     inp = sys.stdin.readline().strip()
-    argv = ['in.whoisd', 'pdb_whois', inp]
-    execute_from_command_line(argv)
+    if inp:
+        argv = ['in.whoisd', 'pdb_whois', inp]
+        execute_from_command_line(argv)
 
 except BaseException as e:
     # TODO log here - need to inherit
