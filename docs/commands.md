@@ -1,3 +1,7 @@
+# Commands
+
+Can be run from prod0
+
 ## undelete
 
 First find out the version id when the object was deleted
