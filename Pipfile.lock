@@ -1,0 +1,387 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "ccb18caf72ef949fa2017a2d3a876e625ada3dece9fd53402d19cc7281f6f717"
+        },
+        "host-environment-markers": {
+            "implementation_name": "cpython",
+            "implementation_version": "0",
+            "os_name": "posix",
+            "platform_machine": "x86_64",
+            "platform_python_implementation": "CPython",
+            "platform_release": "4.18.14-gentoo",
+            "platform_system": "Linux",
+            "platform_version": "#1 SMP Tue Oct 16 12:39:43 UTC 2018",
+            "python_full_version": "2.7.15",
+            "python_version": "2.7",
+            "sys_platform": "linux2"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "2.7"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "bleach": {
+            "hashes": [],
+            "version": "==2.1.3"
+        },
+        "certifi": {
+            "hashes": [],
+            "version": "==2017.11.5"
+        },
+        "chardet": {
+            "hashes": [],
+            "version": "==3.0.4"
+        },
+        "click": {
+            "hashes": [],
+            "version": "==7.0"
+        },
+        "coreapi": {
+            "hashes": [],
+            "version": "==2.3.1"
+        },
+        "coreschema": {
+            "hashes": [],
+            "version": "==0.0.4"
+        },
+        "django": {
+            "hashes": [],
+            "version": "==1.11.15"
+        },
+        "django-allauth": {
+            "hashes": [],
+            "version": "==0.32.0"
+        },
+        "django-autocomplete-light": {
+            "hashes": [],
+            "version": "==3.2.9"
+        },
+        "django-bootstrap3": {
+            "hashes": [],
+            "version": "==9.0.0"
+        },
+        "django-cors-headers": {
+            "hashes": [],
+            "version": "==2.1.0"
+        },
+        "django-cors-middleware": {
+            "hashes": [],
+            "version": "==1.3.1"
+        },
+        "django-countries": {
+            "hashes": [],
+            "version": "==4.6.1"
+        },
+        "django-crispy-forms": {
+            "hashes": [],
+            "version": "==1.6.1"
+        },
+        "django-debug-toolbar": {
+            "hashes": [],
+            "version": "==1.9.1"
+        },
+        "django-extensions": {
+            "hashes": [],
+            "version": "==1.3.3"
+        },
+        "django-forms-bootstrap": {
+            "hashes": [],
+            "version": "==3.1.0"
+        },
+        "django-grappelli": {
+            "hashes": [],
+            "version": "==2.10.1"
+        },
+        "django-handleref": {
+            "hashes": [],
+            "version": "==0.2.0"
+        },
+        "django-hashers-passlib": {
+            "hashes": [],
+            "version": "==0.3"
+        },
+        "django-inet": {
+            "hashes": [],
+            "version": "==0.3.2"
+        },
+        "django-mobi": {
+            "hashes": [],
+            "version": "==0.1.7"
+        },
+        "django-namespace-perms": {
+            "hashes": [],
+            "version": "==0.5.0"
+        },
+        "django-oauth-toolkit": {
+            "hashes": [],
+            "version": "==1.0.0"
+        },
+        "django-peeringdb": {
+            "hashes": [],
+            "version": "==0.6.0"
+        },
+        "django-phonenumber-field": {
+            "hashes": [],
+            "version": "==0.6"
+        },
+        "django-ratelimit": {
+            "hashes": [],
+            "version": "==1.1.0"
+        },
+        "django-rest-swagger": {
+            "hashes": [],
+            "version": "==2.1.2"
+        },
+        "django-reversion": {
+            "hashes": [],
+            "version": "==2.0.9"
+        },
+        "django-tables2": {
+            "hashes": [],
+            "version": "==1.0.4"
+        },
+        "django-vanilla-views": {
+            "hashes": [],
+            "version": "==1.0.2"
+        },
+        "djangorestframework": {
+            "hashes": [],
+            "version": "==3.6.3"
+        },
+        "future": {
+            "hashes": [],
+            "version": "==0.17.1"
+        },
+        "googlemaps": {
+            "hashes": [],
+            "version": "==2.5.1"
+        },
+        "html5lib": {
+            "hashes": [],
+            "version": "==1.0.1"
+        },
+        "idna": {
+            "hashes": [],
+            "version": "==2.8"
+        },
+        "ipaddress": {
+            "hashes": [],
+            "version": "==1.0.19"
+        },
+        "itypes": {
+            "hashes": [],
+            "version": "==1.1.0"
+        },
+        "jinja2": {
+            "hashes": [],
+            "version": "==2.10"
+        },
+        "markdown": {
+            "hashes": [],
+            "version": "==2.6.7"
+        },
+        "markupsafe": {
+            "hashes": [],
+            "version": "==1.1.0"
+        },
+        "munge": {
+            "hashes": [],
+            "version": "==0.6.0"
+        },
+        "mysqlclient": {
+            "hashes": [],
+            "version": "==1.3.9"
+        },
+        "oauthlib": {
+            "hashes": [],
+            "version": "==2.1.0"
+        },
+        "openapi-codec": {
+            "hashes": [],
+            "version": "==1.3.2"
+        },
+        "passlib": {
+            "hashes": [],
+            "version": "==1.7.1"
+        },
+        "peeringdb": {
+            "hashes": [],
+            "version": "==0.5.1"
+        },
+        "phonenumbers": {
+            "hashes": [],
+            "version": "==8.10.2"
+        },
+        "python-openid": {
+            "hashes": [],
+            "version": "==2.2.5"
+        },
+        "pytz": {
+            "hashes": [],
+            "version": "==2018.7"
+        },
+        "pyyaml": {
+            "hashes": [],
+            "version": "==3.13"
+        },
+        "rdap": {
+            "hashes": [],
+            "version": "==0.2.0"
+        },
+        "requests": {
+            "hashes": [],
+            "version": "==2.21.0"
+        },
+        "requests-oauthlib": {
+            "hashes": [],
+            "version": "==1.0.0"
+        },
+        "simplejson": {
+            "hashes": [],
+            "version": "==3.16.0"
+        },
+        "six": {
+            "hashes": [],
+            "version": "==1.12.0"
+        },
+        "sqlparse": {
+            "hashes": [],
+            "version": "==0.2.4"
+        },
+        "tld": {
+            "hashes": [],
+            "version": "==0.7.6"
+        },
+        "twentyc.rpc": {
+            "hashes": [],
+            "version": "==0.3.5"
+        },
+        "uritemplate": {
+            "hashes": [],
+            "version": "==3.0.0"
+        },
+        "urllib3": {
+            "hashes": [],
+            "version": "==1.24.1"
+        },
+        "uwsgi": {
+            "hashes": [],
+            "version": "==2.0.14"
+        },
+        "webencodings": {
+            "hashes": [],
+            "version": "==0.5.1"
+        }
+    },
+    "develop": {
+        "atomicwrites": {
+            "hashes": [],
+            "version": "==1.2.1"
+        },
+        "attrs": {
+            "hashes": [],
+            "version": "==18.2.0"
+        },
+        "certifi": {
+            "hashes": [],
+            "version": "==2018.11.29"
+        },
+        "chardet": {
+            "hashes": [],
+            "version": "==3.0.4"
+        },
+        "click": {
+            "hashes": [],
+            "version": "==7.0"
+        },
+        "coverage": {
+            "hashes": [],
+            "version": "==4.5.2"
+        },
+        "decorator": {
+            "hashes": [],
+            "version": "==4.3.0"
+        },
+        "facsimile": {
+            "hashes": [],
+            "version": "==1.0.2"
+        },
+        "future": {
+            "hashes": [],
+            "version": "==0.17.1"
+        },
+        "idna": {
+            "hashes": [],
+            "version": "==2.8"
+        },
+        "jsonschema": {
+            "hashes": [],
+            "version": "==2.6.0"
+        },
+        "more-itertools": {
+            "hashes": [],
+            "version": "==5.0.0"
+        },
+        "munge": {
+            "hashes": [],
+            "version": "==0.6.0"
+        },
+        "pluggy": {
+            "hashes": [],
+            "version": "==0.8.0"
+        },
+        "py": {
+            "hashes": [],
+            "version": "==1.7.0"
+        },
+        "pytest": {
+            "hashes": [],
+            "version": "==4.0.2"
+        },
+        "pytest-cov": {
+            "hashes": [],
+            "version": "==2.6.0"
+        },
+        "pytest-django": {
+            "hashes": [],
+            "version": "==3.4.4"
+        },
+        "pytest-filedata": {
+            "hashes": [],
+            "version": "==0.3.0"
+        },
+        "pyyaml": {
+            "hashes": [],
+            "version": "==3.13"
+        },
+        "requests": {
+            "hashes": [],
+            "version": "==2.21.0"
+        },
+        "requests-mock": {
+            "hashes": [],
+            "version": "==1.5.2"
+        },
+        "six": {
+            "hashes": [],
+            "version": "==1.12.0"
+        },
+        "twentyc.tmpl": {
+            "hashes": [],
+            "version": "==0.2.0"
+        },
+        "urllib3": {
+            "hashes": [],
+            "version": "==1.24.1"
+        }
+    }
+}
