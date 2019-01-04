@@ -1,0 +1,13 @@
+{% load i18n %}
+{% if TUTORIAL_MODE %}
+
+<div class="marg-bot-15">
+<div class="editable popin info panel">
+<p class="center">
+{% blocktrans trimmed %}
+This server is running in TUTORIAL MODE
+{% endblocktrans %}
+</p>
+</div>
+</div>
+{% endif %}

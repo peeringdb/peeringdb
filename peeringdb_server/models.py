@@ -50,6 +50,9 @@ COMMANDLINE_TOOLS = (("pdb_renumber_lans",
                      ("pdb_fac_merge_undo", _("Merge Facilities: UNDO")))
 
 
+if settings.TUTORIAL_MODE:
+    COMMANDLINE_TOOLS += (("pdb_wipe", _("Reset Environment")),)
+
 def debug_mail(*args):
     for arg in list(args):
         print(arg)
@@ -2702,8 +2705,24 @@ class CommandLineTool(models.Model):
         auto_now_add=True,
         help_text=_("command was run at this date and time"))
 
+    status = models.CharField(max_length=255, default="done", choices=[
+                             ("done", _("Done")),
+                             ("waiting", _("Waiting")),
+                             ("running", _("Running"))
+                             ])
+
     def __str__(self):
         return "{}: {}".format(self.tool, self.description)
+
+    def set_waiting(self):
+        self.status = "waiting"
+
+    def set_done(self):
+        self.status = "done"
+
+    def set_running(self):
+        self.status = "running"
+
 
 
 REFTAG_MAP = dict([(cls.handleref.tag, cls)
@@ -2713,10 +2732,16 @@ REFTAG_MAP = dict([(cls.handleref.tag, cls)
                        NetworkContact, IXLan, IXLanPrefix
                    ]])
 
-# enable verification queue for these models
-QUEUE_ENABLED = (User, InternetExchange, Network, Facility, Organization)
 
-# send admin notification emails for these models
-QUEUE_NOTIFY = (InternetExchange, Network, Facility, Organization)
+QUEUE_ENABLED = []
+QUEUE_NOTIFY = []
+
+if not getattr(settings, "DISABLE_VERIFICATION_QUEUE", False):
+    # enable verification queue for these models
+    QUEUE_ENABLED = (User, InternetExchange, Network, Facility, Organization)
+
+    if not getattr(settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False):
+        # send admin notification emails for these models
+        QUEUE_NOTIFY = (InternetExchange, Network, Facility, Organization)
 
 autodiscover_namespaces(Network, Facility, InternetExchange)

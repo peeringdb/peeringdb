@@ -19,6 +19,7 @@
 <div class="col-md-1 col-sm-12 col-xs-12"></div>
 
 <div class="col-md-10 col-sm-12 col-xs-12">
+{% block error %}
 {% if status == 404 %}
 <h1>{% trans "404 - Not Found" %}</h4>
 <p>{% trans "The page you requested does not exist." %}</p>
@@ -26,6 +27,7 @@
 <h1>{% trans "403 - Forbidden" %}</h4>
 <p>{% trans "You dont have permissions to view this page." %}</p>
 {% endif %}
+{% endblock %}
 <p><a href="/">{% trans "Take me home" %}</a>.</p>
 </div>
 

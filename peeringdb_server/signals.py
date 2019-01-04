@@ -21,6 +21,8 @@ from peeringdb_server.models import (
     QUEUE_ENABLED, QUEUE_NOTIFY, UserOrgAffiliationRequest, is_suggested,
     VerificationQueueItem, Organization, Facility, Network, NetworkContact)
 
+import peeringdb_server.settings as pdb_settings
+
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import override
 
@@ -103,8 +105,16 @@ def org_delete(sender, instance, **kwargs):
     usergroups tied to the organization
     """
 
-    instance.usergroup.delete()
-    instance.admin_usergroup.delete()
+    try:
+        instance.usergroup.delete()
+    except Group.DoesNotExist:
+        pass
+
+    try:
+        instance.admin_usergroup.delete()
+    except Group.DoesNotExist:
+        pass
+
     for ar in instance.affiliation_requests.all():
         ar.delete()
 
@@ -116,9 +126,17 @@ pre_delete.connect(org_delete, sender=Organization)
 def new_user_to_guests(request, user, sociallogin=None, **kwargs):
     """
     When a user is created via oauth login put them in the guest
-    group for now
+    group for now.
+
+    Unless pdb_settings.AUTO_VERIFY_USERS is toggled on in settings, in which
+    case users get automatically verified (note that this does
+    not include email verification, they will still need to do that)
     """
-    user.set_unverified()
+
+    if pdb_settings.AUTO_VERIFY_USERS:
+        user.set_verified()
+    else:
+        user.set_unverified()
 
 
 # USER TO ORGANIZATION AFFILIATION
@@ -181,8 +199,9 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     rdap_lookup = rdap = RdapLookup().get_asn(instance.asn)
                     ok = rdap_lookup.emails
                 except RdapException, inst:
-                    instance.deny()
-                    raise
+                    if not pdb_settings.AUTO_APPROVE_AFFILIATION:
+                        instance.deny()
+                        raise
 
                 # create organization
                 instance.org, org_created = Organization.create_from_rdap(
@@ -192,6 +211,11 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                 # create network
                 net, net_created = Network.create_from_rdap(
                     rdap, instance.asn, instance.org)
+
+                # if affiliate auto appove is on, auto approve at this point
+                if pdb_settings.AUTO_APPROVE_AFFILIATION:
+                    instance.approve()
+                    return
 
                 ticket_queue_asnauto_create(
                     instance.user, instance.org, net, rdap, net.asn,
@@ -212,6 +236,11 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     # organization is currently not owned
                     request_type = "request ownership of"
 
+                    # if affiliate auto appove is on, auto approve at this point
+                    if pdb_settings.AUTO_APPROVE_AFFILIATION:
+                        instance.approve()
+                        return
+
                     # if user's relationship to the org can be validated by
                     # checking the rdap information of the org's networks
                     # we can approve the affiliation (ownership) request right away
@@ -225,6 +254,14 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                             return
             else:
                 entity_name = instance.org_name
+
+                if pdb_settings.AUTO_APPROVE_AFFILIATION:
+                    org = Organization.objects.create(name=instance.org_name, status="ok")
+                    instance.org = org
+                    instance.approve()
+                    return
+
+
 
             # organization has no owners and RDAP information could not verify the user's relationship to the organization, notify pdb staff for review
             ticket_queue(

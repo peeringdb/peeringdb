@@ -116,7 +116,7 @@ There are currently 2 ways to get some data into your developer instance
 You can populate your data from peeringdb.com using
 
 ```sh
-./manage.py pdb_load_data
+./manage.py pdb_load_data --commit
 ```
 
 However be prepared for this to take 15-20 minutes as it will not only sync the entities, but also set up usergroups for each organization and so forth.

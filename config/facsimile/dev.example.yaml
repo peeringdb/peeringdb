@@ -1,6 +1,8 @@
 
 home: {{environ.HOME}}/srv/dev.peeringdb.com
 
+release_env: dev
+
 contact:
   email: {{environ.USER}}@localhost
   from: {{environ.USER}}@localhost

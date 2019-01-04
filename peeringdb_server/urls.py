@@ -50,6 +50,7 @@ from peeringdb_server.views import (
     view_username_retrieve,
     view_username_retrieve_initiate,
     view_username_retrieve_complete,
+    view_maintenance,
     resend_confirmation_mail,
     request_login,
     request_logout,
@@ -123,6 +124,7 @@ urlpatterns = [
     url('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
     url(r'^(net|ix|fac|org|asn)/translate$', request_translation),
     url(r'^suggest/(?P<reftag>fac)$', view_suggest),
+    url(r'^maintenance$', view_maintenance, name="maintenance")
 ]
 
 # o

@@ -700,11 +700,10 @@ class ModelSerializer(PermissionedModelSerializer):
         queue with status pending if they are in the QUEUE_ENABLED
         list
         """
-        if not getattr(settings, "VERIFICATION_QUEUE_DISABLED", False):
-            if self.Meta.model in QUEUE_ENABLED:
-                validated_data["status"] = "pending"
-            else:
-                validated_data["status"] = "ok"
+        if self.Meta.model in QUEUE_ENABLED:
+            validated_data["status"] = "pending"
+        else:
+            validated_data["status"] = "ok"
         if "suggest" in validated_data:
             del validated_data["suggest"]
         return super(ModelSerializer, self).create(validated_data)
@@ -1416,11 +1415,10 @@ class NetworkSerializer(ModelSerializer):
             ticket_queue_asnauto_skipvq(user, validated_data["org"],
                                         validated_data, rdap)
 
-        elif not getattr(settings, "VERIFICATION_QUEUE_DISABLED", False):
+        elif self.Meta.model in QUEUE_ENABLED:
             # user email does NOT exist in RiR data, put into verification
             # queue
-            if self.Meta.model in QUEUE_ENABLED:
-                validated_data["status"] = "pending"
+            validated_data["status"] = "pending"
         else:
             # verification queue is disabled regardless
             validated_data["status"] = "ok"

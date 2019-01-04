@@ -1,0 +1,6 @@
+{% extends "site/error.html" %}
+{% load i18n %}
+{% block error %}
+<h1>{% trans "Maintenance Mode" %}</h1>
+<p>{% trans "The site is currently in maintenance mode, during which this action is disabled, please try again in a few minutes" %}</p>
+{% endblock %}
