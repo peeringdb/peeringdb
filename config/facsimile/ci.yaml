@@ -1,0 +1,57 @@
+
+home: ci-dev.peeringdb.com
+
+contact:
+  email: {{environ.USER}}@localhost
+  from: {{environ.USER}}@localhost
+  notify: {{environ.USER}}@localhost
+  sponsorship: {{environ.USER}}@localhost
+
+rc:
+  db:
+    default:
+      host: localhost
+      name: {{environ.USER}}_peeringdb
+      prefix: {{environ.USER}}_
+    #read:
+    #  host: localhost
+    #  name: {{environ.USER}}_peeringdb
+    #  prefix: {{environ.USER}}_
+  ssl:
+    crt:
+    key:
+  api:
+    url: http://localhost/api
+    depth_result_limit: 250
+    cache:
+      enabled: true
+      dir: ci-dev.peeringdb.com/etc/api-cache
+      log: ci-dev.peeringdb.com/var/log/api-cache.log
+
+recaptcha:
+  public_key: captcha-public-key-goes-here
+
+oauth:
+  enabled: false
+
+misc:
+  base_url : http://localhost
+  session:
+    domain: localhost
+    secure: False
+  suggestions:
+    org_id: 18982
+
+django:
+  settings: ci_peeringdb_com
+
+deploy:
+  destdir: ci-dev.peeringdb.com
+  user: {{environ.USER}}
+  postcmd:
+    - chmod 0755 ci-dev.peeringdb.com/peeringdb/in.whoisd
+
+  public:
+    listen: 0.0.0.0
+    fq_name: no
+
