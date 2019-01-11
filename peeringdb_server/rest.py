@@ -38,9 +38,7 @@ class RestRouter(routers.DefaultRouter):
         routers.Route(url=r'^{prefix}{trailing_slash}$', mapping={
             'get': 'list',
             'post': 'create'
-        }, name='{basename}-list', initkwargs={
-            'suffix': 'List'
-        }),
+        }, name='{basename}-list', initkwargs={'suffix': 'List'}),
         # Detail route.
         routers.Route(
             url=r'^{prefix}/{lookup}{trailing_slash}$', mapping={
@@ -48,9 +46,7 @@ class RestRouter(routers.DefaultRouter):
                 'put': 'update',
                 'patch': 'partial_update',
                 'delete': 'destroy'
-            }, name='{basename}-detail', initkwargs={
-                'suffix': 'Instance'
-            }),
+            }, name='{basename}-detail', initkwargs={'suffix': 'Instance'}),
         routers.DynamicDetailRoute(
             url=r'^{prefix}/{lookup}/{methodnamehyphen}$',
             name='{basename}-{methodnamehyphen}', initkwargs={}),
@@ -76,6 +72,141 @@ def pdb_exception_handler(exc):
     print traceback.format_exc()
 
     return exception_handler(exc)
+
+
+class client_check(object):
+    """
+    decorator that can be attached to rest viewset responses and will
+    generate an error response if the requesting peeringdb client
+    is running a client or backend version that is incompatible with
+    the server
+
+    compatibilty is controlled via facsimile during deploy and can
+    be configured in env.misc.api.compat
+    """
+
+    def __init__(self):
+        self.min_version = settings.CLIENT_COMPAT.get("client").get("min")
+        self.max_version = settings.CLIENT_COMPAT.get("client").get("max")
+        self.backends = settings.CLIENT_COMPAT.get("backends", {})
+
+    def __call__(self, fn):
+        compat_check = self.compat_check
+
+        def wrapped(self, request, *args, **kwargs):
+            try:
+                compat_check(request)
+            except ValueError as exc:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"detail": str(exc)})
+
+            return fn(self, request, *args, **kwargs)
+
+        return wrapped
+
+    def version_tuple(self, str_version):
+        """ take a semantic version string and turn into a tuple """
+        return tuple([int(i) for i in str_version.split(".")])
+
+    def version_pad(self, version):
+        """ take a semantic version tuple and zero pad to dev version """
+        while len(version) < 4:
+            version = version + (0, )
+        return version
+
+    def version_string(self, version):
+        """ take a semantic version tuple and turn into a "." delimited string """
+        return ".".join([str(i) for i in version])
+
+    def backend_min_version(self, backend):
+        """ return the min supported version for the specified backend """
+        return self.backends.get(backend, {}).get("min")
+
+    def backend_max_version(self, backend):
+        """ return the max supported version for the specified backend """
+        return self.backends.get(backend, {}).get("max")
+
+    def client_info(self, request):
+        """
+        parse the useragent in the request and return client version
+        info if possible.
+
+        any connecting client that is NOT the peeringdb client will currently
+        return an empty dict and not compatibility checking will be done
+        """
+
+        # if no user agent was specified in headers we bail
+        try:
+            agent = request.META["HTTP_USER_AGENT"]
+        except KeyError:
+            return {}
+
+        # check if connecting client is peeringdb-py client and
+        # if it parse
+        # - the client version
+        # - backend name
+        # - backend version
+        m = re.match("PeeringDB/([\d\.]+) (\S+)/([\d\.]+)", agent)
+        if m:
+            return {
+                "client": self.version_tuple(m.group(1)),
+                "backend": {
+                    "name": m.group(2),
+                    "version": self.version_tuple(m.group(3))
+                }
+            }
+        return {}
+
+    def compat_check(self, request):
+        """
+        Check if the connecting client is compatible with the api
+
+        This is currently only sensible when the request is made through
+        the official peeringdb-py client, any other client will be
+        passed through without checks
+
+        On incompatibility a ValueError is raised
+        """
+
+        info = self.client_info(request)
+        compat = True
+        if info:
+            backend = info["backend"]["name"]
+
+            if backend not in self.backends:
+                return
+
+            backend_min = self.backend_min_version(backend)
+            backend_max = self.backend_max_version(backend)
+            client_version = info.get("client")
+            backend_version = info.get("backend").get("version")
+
+            if self.version_pad(
+                    self.min_version) > self.version_pad(client_version):
+                # client version is too low
+                compat = False
+            elif self.version_pad(
+                    self.max_version) < self.version_pad(client_version):
+                # client version is too high
+                compat = False
+
+            if self.version_pad(backend_min) > self.version_pad(
+                    backend_version):
+                # client backend version is too low
+                compat = False
+            elif self.version_pad(backend_max) < self.version_pad(
+                    backend_version):
+                # client backend version is too high
+                compat = False
+
+            if not compat:
+                raise ValueError(
+                    "Your client version is incompatible with server version of the api, please install peeringdb>={},<={} {}>={},<={}"
+                    .format(
+                        self.version_string(self.min_version),
+                        self.version_string(self.max_version), backend,
+                        self.version_string(backend_min),
+                        self.version_string(backend_max)))
 
 
 ###############################################################################
@@ -279,6 +410,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         else:
             return qset
 
+    @client_check()
     def list(self, request, *args, **kwargs):
         """
         ### Querying
@@ -405,13 +537,11 @@ class ModelViewSet(viewsets.ModelViewSet):
         try:
             r = super(ModelViewSet, self).list(request, *args, **kwargs)
         except ValueError, inst:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={
-                "detail": str(inst)
-            })
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"detail": str(inst)})
         except TypeError, inst:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={
-                "detail": str(inst)
-            })
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"detail": str(inst)})
         except CacheRedirect, inst:
             r = Response(status=200, data=inst.loader.load())
         d = time.time() - t
@@ -420,13 +550,15 @@ class ModelViewSet(viewsets.ModelViewSet):
         #FIXME: this waits for peeringdb-py fix to deal with 404 raise properly
         if not r or not len(r.data):
             if self.serializer_class.is_unique_query(request):
-                return Response(status=404, data={
-                    "data": [],
-                    "detail": "Entity not found"
-                })
+                return Response(
+                    status=404, data={
+                        "data": [],
+                        "detail": "Entity not found"
+                    })
 
         return r
 
+    @client_check()
     def retrieve(self, request, *args, **kwargs):
         # could add fk relationships here, one at a time, but we need to define
         # them somewhere by the time we get the serializer, the data is already
@@ -439,6 +571,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         return r
 
+    @client_check()
     def create(self, request, *args, **kwargs):
         """
         Create object
@@ -452,12 +585,12 @@ class ModelViewSet(viewsets.ModelViewSet):
         except PermissionDenied, inst:
             return Response(status=status.HTTP_403_FORBIDDEN)
         except ParentStatusException, inst:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={
-                "detail": str(inst)
-            })
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"detail": str(inst)})
         finally:
             self.get_serializer().finalize_create(request)
 
+    @client_check()
     def update(self, request, *args, **kwargs):
         """
         Update object
@@ -470,13 +603,11 @@ class ModelViewSet(viewsets.ModelViewSet):
                 return super(ModelViewSet, self).update(
                     request, *args, **kwargs)
         except TypeError, inst:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={
-                "detail": str(inst)
-            })
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"detail": str(inst)})
         except ValueError, inst:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={
-                "detail": str(inst)
-            })
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"detail": str(inst)})
         finally:
             self.get_serializer().finalize_update(request)
 
@@ -486,6 +617,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         """
         return Response(status=status.HTTP_403_FORBIDDEN)
 
+    @client_check()
     def destroy(self, request, pk, format=None):
         """
         Delete object
@@ -494,9 +626,8 @@ class ModelViewSet(viewsets.ModelViewSet):
             try:
                 obj = self.model.objects.get(pk=pk)
             except ValueError:
-                return Response(status=status.HTTP_400_BAD_REQUEST, data={
-                    "extra": "Invalid id"
-                })
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"extra": "Invalid id"})
             except self.model.DoesNotExist:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -576,9 +707,8 @@ class NetworkASNViewSet(NetworkViewSet):
         try:
             network = Network.objects.get(asn=int(asn))
         except ValueError:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={
-                "detail": "Invalid ASN"
-            })
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"detail": "Invalid ASN"})
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         return super(NetworkViewSet, self).retrieve(request, network.id)
@@ -607,11 +737,9 @@ class NetworkASNViewSet(NetworkViewSet):
 # set here in case we want to add more urls later
 urls = router.urls
 
-REFTAG_MAP = dict(
-    [(cls.model.handleref.tag, cls)
-     for cls in [
-         OrganizationViewSet, NetworkViewSet, FacilityViewSet,
-         InternetExchangeViewSet, InternetExchangeFacilityViewSet,
-         NetworkFacilityViewSet, NetworkIXLanViewSet, NetworkContactViewSet,
-         IXLanViewSet, IXLanPrefixViewSet
-     ]])
+REFTAG_MAP = dict([(cls.model.handleref.tag, cls) for cls in [
+    OrganizationViewSet, NetworkViewSet, FacilityViewSet,
+    InternetExchangeViewSet, InternetExchangeFacilityViewSet,
+    NetworkFacilityViewSet, NetworkIXLanViewSet, NetworkContactViewSet,
+    IXLanViewSet, IXLanPrefixViewSet
+]])

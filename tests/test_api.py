@@ -85,6 +85,7 @@ class DummyRestClient(RestClient):
         super(DummyRestClient, self).__init__(*args, **kwargs)
         self.factory = APIRequestFactory()
         self.api_client = APIClient()
+        self.useragent = kwargs.get("useragent")
         if self.user:
             self.user_inst = models.User.objects.get(username=self.user)
         else:

@@ -27,9 +27,16 @@ misc:
       enabled: true
       anon: "100/second"
       user: "100/second"
+    compat:
+      client:
+        min: "0,6"
+        max: "0,6"
+      backends:
+        - name: django_peeringdb
+          min: "0,6"
+          max: "0,6"
   maintenance:
     lockfile: "maintenance.lock"
-
 
 locale:
   # enable these locale
