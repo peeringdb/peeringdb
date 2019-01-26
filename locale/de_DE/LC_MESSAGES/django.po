@@ -147,7 +147,7 @@ msgstr "Ausgewogen"
 
 #: django_peeringdb/const.py:43
 msgid "Mostly Inbound"
-msgstr "Vorweiegend eingehend"
+msgstr "Vorwiegend eingehend"
 
 #: django_peeringdb/const.py:44
 msgid "Heavy Inbound"
