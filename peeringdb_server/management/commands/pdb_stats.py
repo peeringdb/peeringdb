@@ -1,10 +1,13 @@
+from __future__ import absolute_import, division, print_function
+
+import datetime
+import json
+
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.contrib.contenttypes.models import ContentType
-from reversion.models import Version, Revision
-
 import reversion
-import datetime
+from reversion.models import Version, Revision
 
 from peeringdb_server.models import REFTAG_MAP, UTC
 
@@ -20,6 +23,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--date", action="store", default=None,
                             help="generate stats for this date")
+        parser.add_argument("--format", action="store", default="text",
+                            help="output format to use")
 
     def status_at_date(self, obj, dt):
         versions = Version.objects.get_for_object(obj)
@@ -38,10 +43,7 @@ class Command(BaseCommand):
             dt = datetime.datetime.now()
 
         dt = dt.replace(hour=23, minute=23, second=59, tzinfo=UTC())
-
-        print("{}".format(dt.replace(tzinfo=None).strftime("%Y-%m-%d")))
-        print("-------------")
-
+        date = dt.replace(tzinfo=None).strftime("%Y-%m-%d")
         stats = {"users": 0}
 
         for tag in self.tags:
@@ -51,10 +53,19 @@ class Command(BaseCommand):
                 if self.status_at_date(obj, dt) == "ok":
                     stats[tag] += 1
 
-            print "{}: {}".format(tag, stats[tag])
-
         for user in get_user_model().objects.filter(created__lte=dt):
             if user.is_verified:
                 stats["users"] += 1
 
-        print "users: {}".format(stats["users"])
+        codec = options.get("format")
+        if codec == "text":
+            print(date)
+            print("-------------")
+            for each in stats.keys():
+                print("{}: {}".format(each, stats[each]))
+
+        elif codec == "json":
+            print(json.dumps({date: stats}))
+
+        else:
+            raise Exception("unknown format {}".format(codec))
