@@ -4,6 +4,8 @@ import logging
 
 from ._db_command import CommandError, DBCommand
 
+from django.contrib.auth.models import AnonymousUser
+
 from peeringdb.whois import WhoisFormat
 from peeringdb_server import models
 from peeringdb_server import serializers
@@ -58,6 +60,6 @@ class Command(DBCommand):
             log.error("Unknown ref tag: %s" % ref_tag)
             raise ValueError(msg)
 
-        data = Serializer(obj).data
+        data = Serializer(obj, context={"user":AnonymousUser()}).data
         fmt = WhoisFormat()
         fmt. print(obj._handleref.tag, data)
