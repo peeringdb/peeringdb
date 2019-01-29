@@ -66,6 +66,7 @@ settings.configure(
         'django.middleware.csrf.CsrfViewMiddleware',
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
+        'peeringdb_server.maintenance.Middleware',
     ),
     SOUTH_TESTS_MIGRATE=False,
     SOUTH_SKIP_TESTS=True,
@@ -147,6 +148,7 @@ settings.configure(
     CORS_ALLOW_CREDENTIALS=False,
     DATA_QUALITY_MAX_PREFIX_V4_LIMIT=500000,
     DATA_QUALITY_MAX_PREFIX_V6_LIMIT=500000,
+    TUTORIAL_MODE=False,
     RATELIMITS={
         "view_affiliate_to_org_POST": "3/m",
         "resend_confirmation_mail": "2/m",

@@ -53,6 +53,8 @@ from peeringdb_server.inet import RdapLookup, RdapException
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.deskpro import ticket_queue_rdap_error
 
+from peeringdb_server import maintenance
+
 from ratelimit.decorators import ratelimit, is_ratelimited
 
 RATELIMITS = dj_settings.RATELIMITS
@@ -64,7 +66,8 @@ from django.utils.translation import ugettext_lazy as _
 BASE_ENV = {
     'RECAPTCHA_PUBLIC_KEY': dj_settings.RECAPTCHA_PUBLIC_KEY,
     'OAUTH_ENABLED': dj_settings.OAUTH_ENABLED,
-    'PEERINGDB_VERSION': settings.PEERINGDB_VERSION
+    'PEERINGDB_VERSION': settings.PEERINGDB_VERSION,
+    'TUTORIAL_MODE': settings.TUTORIAL_MODE
 }
 
 
@@ -140,6 +143,10 @@ def view_http_error_403(request):
 
 def view_http_error_csrf(request, reason):
     return JsonResponse({"non_field_errors": [reason]}, status=403)
+
+def view_maintenance(request):
+    template = loader.get_template('site/maintenance.html')
+    return HttpResponse(template.render({}, request), status=503)
 
 
 @login_required

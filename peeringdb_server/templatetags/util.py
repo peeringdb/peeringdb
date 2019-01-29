@@ -7,6 +7,7 @@ from peeringdb_server.models import (InternetExchange, Network, Facility,
 
 from peeringdb_server.views import DoNotRender
 from peeringdb_server.org_admin_views import permission_ids
+from peeringdb_server.inet import RdapException
 from django_countries import countries
 from django_namespace_perms.util import get_permission_flag
 import tld
@@ -72,9 +73,15 @@ def ownership_warning(org, user):
             break
     if not b:
         for rdap in org.rdap_collect.values():
-            if user.validate_rdap_relationship(rdap):
-                b = True
-                break
+            try:
+                if user.validate_rdap_relationship(rdap):
+                    b = True
+                    break
+            except RdapException as exc:
+                # we don't need to do anything with the rdap exception here, as it will
+                # be raised apropriately when the request is sent off
+                pass
+
     if not b:
         return mark_safe('<span class="attention">{}</span>'.format(
             _("Your email address does not match the domain information we have on file for this organization."

@@ -338,7 +338,7 @@ class ModelAdminWithVQCtrl(object):
         This renders the controls or a status message
         """
 
-        if getattr(settings, "VERIFICATION_QUEUE_DISABLED", False):
+        if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False):
             return _("Verification Queue is currently disabled")
         if self.model not in QUEUE_ENABLED:
             return _(
@@ -1227,9 +1227,9 @@ class CommandLineToolAdmin(admin.ModelAdmin):
     """
     View that lets staff users run peeringdb command line tools
     """
-    list_display = ("tool", "description", "user", "created")
+    list_display = ("tool", "description", "user", "created", "status")
     readonly_fields = ("tool", "description", "arguments", "result", "user",
-                       "created")
+                       "created", "status")
 
     def has_delete_permission(self, request, obj=None):
         return False

@@ -10,8 +10,7 @@ from django.conf import settings
 from peeringdb_server import models as pdb_models
 from peeringdb_server import signals
 from django_peeringdb import models as djpdb_models
-from django_peeringdb import sync
-
+from django_peeringdb import sync, settings as djpdb_settings
 
 def sync_obj(cls, row):
     """
@@ -45,7 +44,7 @@ def sync_obj(cls, row):
         except AttributeError:
             pass
 
-    print(obj, obj.id)
+    #print(obj, obj.id)
 
     try:
         # we want to validate because it fixes some values
@@ -61,7 +60,7 @@ def sync_obj(cls, row):
         ftyp = cls._meta.get_field(field.name)
         value = getattr(obj, field.name, None)
         if isinstance(value, datetime.datetime):
-            setattr(obj, field.name, value.replace(tzinfo=None))
+            setattr(obj, field.name, value.replace(tzinfo=pdb_models.UTC()))
         else:
             if hasattr(ftyp, "related_name") and ftyp.multiple:
                 continue
@@ -85,12 +84,25 @@ class Command(BaseCommand):
         parser.add_argument("--url", default="https://www.peeringdb.com/api/",
                             type=str)
 
-    def handle(self, *args, **options):
-        if settings.RELEASE_ENV != "dev":
-            raise Exception("This command can only be run on dev instances")
+        parser.add_argument('--commit', action='store_true',
+                            help="will commit the changes")
 
-        settings.USE_TZ = False
-        settings.PEERINGDB_SYNC_URL = options.get("url")
+
+    def handle(self, *args, **options):
+        if settings.RELEASE_ENV != "dev" and not settings.TUTORIAL_MODE:
+            self.stdout.write("Command can only be run on dev instances and instances "\
+                              "with tutorial mode enabled")
+            return
+
+        if not options.get("commit"):
+            self.stdout.write("This will sync data from {url} to this instance, and will take "\
+                              "roughly 20 minutes to complete on a fresh db. "\
+                              "Run the command with `--commit` if you are sure you want "\
+                              "to do this.".format(**options))
+            return
+
+
+        djpdb_settings.SYNC_URL = options.get("url")
         pre_save.disconnect(signals.addressmodel_save,
                             sender=pdb_models.Facility)
 

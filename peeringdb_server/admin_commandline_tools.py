@@ -7,6 +7,7 @@ from django.core.management import call_command
 from peeringdb_server.models import (COMMANDLINE_TOOLS, CommandLineTool,
                                      InternetExchange, Facility)
 
+from peeringdb_server import maintenance
 
 def _(m):
     return m
@@ -55,6 +56,8 @@ class EmptyId(object):
 class CommandLineToolWrapper(object):
 
     tool = None
+    queue = 0
+    maintenance = False
 
     class Form(forms.Form):
         pass
@@ -96,9 +99,12 @@ class CommandLineToolWrapper(object):
     def set_arguments(self, form_data):
         pass
 
-    @reversion.create_revision()
-    def run(self, user, commit=False):
+    def _run(self, user, commit=False):
         r = StringIO.StringIO()
+
+        if self.maintenance and commit:
+            maintenance.on()
+
         try:
             if commit:
                 call_command(self.tool, *self.args, commit=True, stdout=r,
@@ -109,15 +115,42 @@ class CommandLineToolWrapper(object):
         except Exception as inst:
             self.result = "[error] {}".format(inst)
             self.status = 1
+        finally:
+            if self.maintenance and commit:
+                maintenance.off()
 
         if commit:
             CommandLineTool.objects.create(user=user, tool=self.tool,
                                            description=self.description,
+                                           status="done",
                                            arguments=json.dumps({
                                                "args": self.args,
                                                "kwargs": self.kwargs
                                            }), result=self.result)
         return self.result
+
+    def run(self, user, commit=False):
+        if self.queue and commit:
+
+            if CommandLineTool.objects.filter(tool=self.tool).exclude(status="done").count() >= self.queue:
+                self.result = "[error] {}".format(_("This command is already waiting / running - please wait for it to finish before executing it again"))
+                return self.result
+
+            CommandLineTool.objects.create(user=user, tool=self.tool,
+                                           description=self.description,
+                                           status="waiting",
+                                           arguments=json.dumps({
+                                               "args": self.args,
+                                               "kwargs": self.kwargs
+                                           }), result="")
+
+            self.result = "[warn] {}".format(_("This command takes a while to complete and will be queued and ran in the "\
+                   "background. No output log can be provided at this point in time. You may "\
+                   "review once the command has finished."))
+            return self.result
+        else:
+            with reversion.create_revision():
+                return self._run(user, commit=commit)
 
 
 # TOOL: RENUMBER LAN
@@ -222,3 +255,22 @@ class ToolMergeFacilitiesUndo(CommandLineToolWrapper):
 
     def set_arguments(self, form_data):
         self.kwargs = {"clt": form_data.get("merge", EmptyId()).id}
+
+@register_tool
+class ToolReset(CommandLineToolWrapper):
+    tool = "pdb_wipe"
+    queue = 1
+    maintenance = True
+
+    class Form(forms.Form):
+        keep_users = forms.BooleanField(required=False,
+                                        help_text=_("Don't delete users. Note that superuser accounts are always kept - regardless of this setting."))
+        load_data = forms.BooleanField(required=False, initial=True, help_text=_("Load data from peeringdb API"))
+        load_data_url = forms.CharField(required=False, initial="https://www.peeringdb.com/api")
+
+    @property
+    def description(self):
+        return "Reset environment"
+
+    def set_arguments(self, form_data):
+        self.kwargs = form_data

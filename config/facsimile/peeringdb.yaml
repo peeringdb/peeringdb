@@ -1,4 +1,4 @@
-
+release_env: dev
 rc:
   base:
     port: 7003
@@ -7,7 +7,7 @@ rc:
     url: https://peeringdb.deskpro.com/api/v2/20180226
 
 misc:
-#  base_url:
+  tutorial_mode: False
   suggestions:
     org_id: 0
   session:
@@ -27,6 +27,8 @@ misc:
       enabled: true
       anon: "100/second"
       user: "100/second"
+  maintenance:
+    lockfile: "maintenance.lock"
 
 
 locale:
@@ -57,13 +59,6 @@ install:
   - type: tmpl
     dir: tmpl
     render_files: true
-    skip: ^\.
-
-  # peeringdb static files
-  - type: copy
-    dir: $SRC_DIR$/peeringdb_server/static
-    pattern: ^$SRC_DIR$
-    replace: peeringdb
     skip: ^\.
 
   - type: copy
@@ -97,6 +92,7 @@ install:
     - $SRC_DIR$/peeringdb_server/validators.py
     - $SRC_DIR$/peeringdb_server/db_router.py
     - $SRC_DIR$/peeringdb_server/mock.py
+    - $SRC_DIR$/peeringdb_server/maintenance.py
     - $SRC_DIR$/peeringdb_server/management/__init__.py
     - $SRC_DIR$/peeringdb_server/management/commands/__init__.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_deskpro_publish.py
@@ -118,6 +114,9 @@ install:
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_stats.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_deskpro_requeue.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_generate_test_data.py
+    - $SRC_DIR$/peeringdb_server/management/commands/pdb_wipe.py
+    - $SRC_DIR$/peeringdb_server/management/commands/pdb_maintenance.py
+    - $SRC_DIR$/peeringdb_server/management/commands/pdb_process_admin_tool_command.py
     - $SRC_DIR$/peeringdb_server/migrations/__init__.py
     - $SRC_DIR$/peeringdb_server/migrations/0001_initial.py
     - $SRC_DIR$/peeringdb_server/migrations/0002_partnernship_model.py
@@ -134,6 +133,7 @@ install:
     - $SRC_DIR$/peeringdb_server/migrations/0013_user_locale.py
     - $SRC_DIR$/peeringdb_server/migrations/0014_clt_description.py
     - $SRC_DIR$/peeringdb_server/migrations/0015_email_address.py
+    - $SRC_DIR$/peeringdb_server/migrations/0016_auto_20190110_2321.py
     - $SRC_DIR$/fixtures/initial_data.json
     - $SRC_DIR$/peeringdb_server/templates/admin/admin_extended.html
     - $SRC_DIR$/peeringdb_server/templates/admin/user-organizations.html
@@ -156,6 +156,7 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/error.html
     - $SRC_DIR$/peeringdb_server/templates/site/error_404.html
     - $SRC_DIR$/peeringdb_server/templates/site/error_403.html
+    - $SRC_DIR$/peeringdb_server/templates/site/maintenance.html
     - $SRC_DIR$/peeringdb_server/templates/site/view_network_side.html
     - $SRC_DIR$/peeringdb_server/templates/site/view_network_bottom.html
     - $SRC_DIR$/peeringdb_server/templates/site/view_exchange_side.html
@@ -177,6 +178,7 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/inline_search.html
     - $SRC_DIR$/peeringdb_server/templates/site/inline_search_hidden.html
     - $SRC_DIR$/peeringdb_server/templates/site/verification_banner.html
+    - $SRC_DIR$/peeringdb_server/templates/site/tutorial_mode_banner.html
     - $SRC_DIR$/peeringdb_server/templates/site/header-sponsorships.html
     - $SRC_DIR$/peeringdb_server/templates/site/search_result_frame.html
     - $SRC_DIR$/peeringdb_server/templates/site/search_result.html
@@ -215,11 +217,4 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/simple_content.html
     - $SRC_DIR$/peeringdb_server/templates/site/aup.html
     - $SRC_DIR$/peeringdb_server/templates/oauth2_provider/base.html
-
-  # peeringdb locale files
-  - type: copy
-    dir: $SRC_DIR$/locale
-    pattern: ^$SRC_DIR$
-    replace: peeringdb
-    skip: ^\.
 
