@@ -74,6 +74,12 @@ settings.configure(
     TABLE_PREFIX='peeringdb',
     PEERINGDB_ABSTRACT_ONLY=True,
     COUNTRIES_OVERRIDE={'XK': _('Kosovo')},
+    CLIENT_COMPAT={
+        "client":{"min": (0,6), "max":(0,6,5)},
+        "backends":{
+            "django_peeringdb":{"min":(0,6), "max":(0,6,5)}
+        }
+    },
     DATABASE_ENGINE='django.db.backends.sqlite3',
     DATABASES={
         'default': {
