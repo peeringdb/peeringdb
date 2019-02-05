@@ -1,5 +1,6 @@
 import os
 import json
+import collections
 
 from django.conf import settings
 
@@ -150,7 +151,7 @@ class APICacheLoader(object):
         """
         rv = []
 
-        joined_ids = {}
+        joined_ids = collections.OrderedDict()
         e = {}
         inst = self.model()
 
