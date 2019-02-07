@@ -199,9 +199,8 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     rdap_lookup = rdap = RdapLookup().get_asn(instance.asn)
                     ok = rdap_lookup.emails
                 except RdapException, inst:
-                    if not pdb_settings.AUTO_APPROVE_AFFILIATION:
-                        instance.deny()
-                        raise
+                    instance.deny()
+                    raise
 
                 # create organization
                 instance.org, org_created = Organization.create_from_rdap(

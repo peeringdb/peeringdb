@@ -41,6 +41,8 @@ def setup_module(module):
     def get_asn(self, asn):
         if asn in ASN_RANGE_OVERRIDE:
             return pdbinet.RdapAsn(self.override_result)
+        elif pdbinet.asn_is_bogon(asn):
+            return RdapLookup_get_asn(self, asn)
         else:
             raise pdbinet.RdapNotFoundError()
 

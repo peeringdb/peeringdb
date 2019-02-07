@@ -156,7 +156,7 @@ settings.configure(
     DATA_QUALITY_MAX_PREFIX_V6_LIMIT=500000,
     TUTORIAL_MODE=False,
     RATELIMITS={
-        "view_affiliate_to_org_POST": "3/m",
+        "view_affiliate_to_org_POST": "100/m",
         "resend_confirmation_mail": "2/m",
         "view_request_ownership_GET": "3/m",
         "view_username_retrieve_initiate": "2/m",
