@@ -27,6 +27,7 @@ from peeringdb_server.models import (
     IXLanPrefix, InternetExchangeFacility)
 
 from peeringdb_server.serializers import REFTAG_MAP as REFTAG_MAP_SLZ
+from peeringdb_server import inet, settings as pdb_settings
 
 START_TIMESTAMP = time.time()
 
@@ -1030,6 +1031,32 @@ class TestJSON(unittest.TestCase):
             test_failures={"invalid": {
                 "asn": 9999999
             }}, test_success=False)
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_net_bogon_asn(self):
+
+        # Test bogon asn failure
+
+        data = self.make_data_net()
+        for bogon_asn in inet.BOGON_ASN_RANGES:
+            r_data = self.assert_create(
+                self.db_org_admin, "net", data,
+                test_failures={"invalid": {
+                    "asn": bogon_asn[0]
+                }}, test_success=False)
+
+        # server running in tutorial mode should be allowed
+        # to create networks with bogon asns, so we test that
+        # as well
+
+        pdb_settings.TUTORIAL_MODE = True
+
+        for bogon_asn in inet.BOGON_ASN_RANGES:
+            data = self.make_data_net(asn=bogon_asn[0])
+            r_data = self.assert_create(self.db_org_admin, "net", data)
+
+        pdb_settings.TUTORIAL_MODE = False
 
     ##########################################################################
 

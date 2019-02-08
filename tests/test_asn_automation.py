@@ -3,12 +3,16 @@ import json
 import pytest
 import peeringdb_server.models as models
 import peeringdb_server.views as pdbviews
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase, Client, RequestFactory
 
 import peeringdb_server.inet as pdbinet
+from util import SettingsCase
 
 ERR_COULD_NOT_GET_RIR_ENTRY = "RDAP Lookup Error: Test Not Found"
+ERR_BOGON_ASN = "RDAP Lookup Error: ASNs for documentation/private purposes " \
+                     "are not allowed in this environment"
 
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 
@@ -39,6 +43,8 @@ def setup_module(module):
             r._parsed["name"] = "AS%d" % asn
             r._parsed["org_name"] = "ORG AS%d" % asn
             return r
+        elif pdbinet.asn_is_bogon(asn):
+            return RdapLookup_get_asn(self, asn)
         else:
             raise pdbinet.RdapNotFoundError("Test Not Found")
 
@@ -204,6 +210,24 @@ class AsnAutomationTestCase(TestCase):
         self.assertEqual(net.status, "ok")
         self.assertEqual(net.org.status, "ok")
 
+    def test_affiliate_to_bogon_asn(self):
+        """
+        tests affiliation with non-existant asn
+        """
+        asns = []
+        for a,b in pdbinet.BOGON_ASN_RANGES:
+            asns.extend([a,b])
+
+        for asn in asns:
+            request = self.factory.post("/affiliate-to-org", data={
+                "asn": asn})
+
+            request.user = self.user_a
+            request._dont_enforce_csrf_checks = True
+            resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
+            self.assertEqual(resp.get("asn"), ERR_BOGON_ASN)
+
+
     def test_claim_ownership(self):
         """
         tests ownership to org via asn RiR validation
@@ -243,3 +267,31 @@ class AsnAutomationTestCase(TestCase):
         self.assertEqual(
             self.user_b.groups.filter(name=org.admin_usergroup.name).exists(),
             False)
+
+class TestTutorialMode(SettingsCase):
+    settings = {"TUTORIAL_MODE":True}
+
+    def setUp(self):
+        super(TestTutorialMode, self).setUp()
+        self.factory = RequestFactory()
+
+    def test_affiliate_to_bogon_asn(self):
+        """
+        tests affiliation with non-existant bogon asn
+        with tutorial mode enabled those should be allowed
+        """
+        user = get_user_model().objects.create_user("user_a", "user_a@localhost", "user_a")
+        asns = []
+        for a,b in pdbinet.BOGON_ASN_RANGES:
+            asns.extend([a,b])
+
+        for asn in asns:
+            request = self.factory.post("/affiliate-to-org", data={
+                "asn": asn})
+
+            request.user = user
+            request._dont_enforce_csrf_checks = True
+            resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
+            self.assertEqual(resp.get("status"), "ok")
+
+

@@ -1,7 +1,9 @@
 from django.test import TestCase
 from django.contrib.auth.models import Group, AnonymousUser
+from django.conf import settings
 import peeringdb_server.models as models
 import django_namespace_perms as nsp
+from peeringdb_server import settings as pdb_settings
 
 
 class ClientCase(TestCase):
@@ -33,3 +35,31 @@ class ClientCase(TestCase):
             group=guest_group,
             namespace="peeringdb.organization.*.network.*.poc_set.public",
             permissions=0x01)
+
+
+class SettingsCase(ClientCase):
+
+    """
+    Since we read settings from peeringdb_server.settings
+    we can't use the `settings` fixture from pytest-django
+
+    This class instead does something similar for peeringdb_server.settings,
+    where it will override settings specified and then reset after test case
+    is finished
+    """
+
+    settings = {}
+
+    @classmethod
+    def setUp(cls):
+        cls._restore = {}
+        for k,v in cls.settings.items():
+            cls._restore[k] = getattr(pdb_settings, k)
+            setattr(pdb_settings, k, v)
+
+    @classmethod
+    def tearDown(cls):
+        for k,v in cls._restore.items():
+            setattr(pdb_settings, k, v)
+
+
