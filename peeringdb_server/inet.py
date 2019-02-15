@@ -9,16 +9,51 @@ from django.utils.translation import ugettext_lazy as _
 
 from peeringdb_server import settings
 
+# RFC 5398 documentation asn range
+ASN_RFC_5398_16BIT = (64496, 64511)
+ASN_RFC_5398_32BIT = (65536, 65551)
+
+# RFC 6996 private asn range
+ASN_RFC_6996_16BIT = (64512, 65534)
+ASN_RFC_6996_32BIT = (4200000000, 4294967294)
+
+# RFC 7003 last asn
+ASN_LAST_16BIT = (65535, 65535)
+ASN_LAST_32BIT = (4294967295, 4294967295)
+
+ASN_TRANS = (23456, 23456)
+
 BOGON_ASN_RANGES = [
     # RFC 5398 - documentation 16-bit
-    (64496, 64511),
+    ASN_RFC_5398_16BIT,
     # RFC 5398 - documentation 32-bit
-    (65536, 65551),
+    ASN_RFC_5398_32BIT,
     # RFC 6996 - private 16-bit
-    (64512, 65534),
+    ASN_RFC_6996_16BIT,
     # RFC 6996 - private 32-bit
-    (4200000000, 4294967294),
+    ASN_RFC_6996_32BIT,
+    # RFC 7003 - last asn 16-bit
+    ASN_LAST_16BIT,
+    # RFC 7003 - last asn 32-bit
+    ASN_LAST_32BIT,
+    # trans
+    ASN_TRANS
 ]
+
+# the following bogon asn ranges are allowed on envionments
+# where TUTORIAL_MODE is set to True
+
+TUTORIAL_ASN_RANGES = [
+    # RFC 5398 - documentation 16-bit
+    ASN_RFC_5398_16BIT,
+    # RFC 5398 - documentation 32-bit
+    ASN_RFC_5398_32BIT,
+    # RFC 6996 - private 16-bit
+    ASN_RFC_6996_16BIT,
+    # RFC 6996 - private 32-bit
+    ASN_RFC_6996_32BIT,
+]
+
 
 class BogonAsn(rdap.RdapAsn):
 
@@ -59,10 +94,10 @@ class RdapLookup(rdap.RdapClient):
         """
 
         if asn_is_bogon(asn):
-            if settings.TUTORIAL_MODE:
+            if settings.TUTORIAL_MODE and asn_is_in_ranges(asn, TUTORIAL_ASN_RANGES):
                 return BogonAsn(asn)
             else:
-                raise RdapException(_("ASNs for documentation/private purposes " \
+                raise RdapException(_("ASNs in this range " \
                                    "are not allowed in this environment"))
         return super(RdapLookup, self).get_asn(asn)
 
@@ -79,13 +114,25 @@ def asn_is_bogon(asn):
     Return:
         - bool: True if in bogon range
     """
+    return asn_is_in_ranges(asn, BOGON_ASN_RANGES)
 
+
+def asn_is_in_ranges(asn, ranges):
+    """
+    Test if an asn falls within any of the ranges provided
+
+    Arguments:
+        - asn<int>
+        - ranges<list[tuple(min,max)]>
+
+    Return:
+        - bool
+    """
     asn = int(asn)
-    for as_range in BOGON_ASN_RANGES:
+    for as_range in ranges:
         if asn >= as_range[0] and asn <= as_range[1]:
             return True
     return False
-
 
 
 def network_is_bogon(network):

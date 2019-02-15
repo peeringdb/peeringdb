@@ -1052,7 +1052,7 @@ class TestJSON(unittest.TestCase):
 
         pdb_settings.TUTORIAL_MODE = True
 
-        for bogon_asn in inet.BOGON_ASN_RANGES:
+        for bogon_asn in inet.TUTORIAL_ASN_RANGES:
             data = self.make_data_net(asn=bogon_asn[0])
             r_data = self.assert_create(self.db_org_admin, "net", data)
 
