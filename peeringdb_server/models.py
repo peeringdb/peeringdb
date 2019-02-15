@@ -47,7 +47,8 @@ PARTNERSHIP_LEVELS = ((1, _("Data Validation")), (2, _("RIR")))
 COMMANDLINE_TOOLS = (("pdb_renumber_lans",
                       _("Renumber IP Space")), ("pdb_fac_merge",
                                                 _("Merge Facilities")),
-                     ("pdb_fac_merge_undo", _("Merge Facilities: UNDO")))
+                     ("pdb_fac_merge_undo", _("Merge Facilities: UNDO")),
+                     ("pdb_undelete", _("Restore Object(s)")))
 
 
 if settings.TUTORIAL_MODE:
@@ -988,6 +989,14 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
         return self.netfac_set.filter(status="ok")
 
     @property
+    def ixfac_set_active(self):
+        """
+        Returns queryset of active InternetExchangeFacility objects connected
+        to this facility
+        """
+        return self.ixfac_set.filter(status="ok")
+
+    @property
     def net_count(self):
         """
         Returns number of Networks at this facility
@@ -1262,6 +1271,16 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     ix = models.ForeignKey(InternetExchange, related_name="ixfac_set")
     facility = models.ForeignKey(Facility, default=0, related_name="ixfac_set")
 
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the ixfac for logging purposes
+        """
+        return "ixfac{} {} <-> {}".format(
+            self.id, self.ix.name, self.facility.name)
+
+
+
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, id):
         """
@@ -1304,6 +1323,15 @@ class IXLan(pdb_models.IXLanBase):
 
     class Meta:
         db_table = u'peeringdb_ixlan'
+
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the ixlan for logging purposes
+        """
+        return "ixlan{} {} {}".format(
+            self.id, self.name, self.ix.name)
+
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, id):
@@ -1837,6 +1865,15 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
 
     ixlan = models.ForeignKey(IXLan, default=0, related_name="ixpfx_set")
 
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the ixpfx for logging purposes
+        """
+        return "ixpfx{} {}".format(
+            self.id, self.prefix)
+
+
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, ixlan_id, id):
         """
@@ -2210,6 +2247,8 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         db_table = u'peeringdb_network_facility'
         unique_together = ('network', 'facility', 'local_asn')
 
+
+
     @classmethod
     def nsp_namespace_from_id(cls, org_id, net_id, fac_id):
         """
@@ -2265,6 +2304,15 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
             qset = cls.handleref.undeleted()
         return qset.filter(**make_relation_filter(field, filt, value))
 
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the netfac for logging purposes
+        """
+        return "netfac{} AS{} {} <-> {}".format(
+            self.id, self.network.asn, self.network.name, self.facility.name)
+
+
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["net"])
 
@@ -2289,6 +2337,14 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     @property
     def name(self):
         return ""
+
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the netixlan for logging purposes
+        """
+        return "netixlan{} AS{} {} {}".format(
+            self.id, self.asn, self.ipaddr4, self.ipaddr6)
 
     @property
     def ix_name(self):
