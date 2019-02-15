@@ -1,10 +1,14 @@
+import json
+
 from django.db.models import Q
 from django import http
 from django.utils import html
+from django.core.exceptions import ObjectDoesNotExist
+from reversion.models import Version
 from dal import autocomplete
 from peeringdb_server.models import (InternetExchange, Facility,
                                      NetworkFacility, InternetExchangeFacility,
-                                     Organization, IXLan, CommandLineTool)
+                                     Organization, IXLan, CommandLineTool, REFTAG_MAP)
 
 from peeringdb_server.admin_commandline_tools import TOOL_MAP
 
@@ -119,6 +123,61 @@ class IXLanAutocomplete(AutocompleteHTMLResponse):
             item.pk, html.escape(item.ix.name),
             html.escape(item.ix.country.code), html.escape(item.ix.name_long),
             html.escape(item.name))
+
+
+class DeletedVersionAutocomplete(autocomplete.Select2QuerySetView):
+    """
+    Autocomplete that will show reversion versions where an object
+    was set to deleted
+    """
+
+    def get_queryset(self):
+        # Only staff needs to be able to see these
+        if not self.request.user.is_staff:
+            return []
+
+
+        # no query supplied, return empty result
+        if not self.q:
+            return []
+
+        try:
+            # query is expected to be of format "<reftag> <id>"
+            # return empty result on parsing failure
+            reftag, _id = tuple(self.q.split(" "))
+        except ValueError:
+            return []
+
+        try:
+            # make sure target object exists, return
+            # empty result if not
+            obj = REFTAG_MAP[reftag].objects.get(id=_id)
+        except (KeyError, ObjectDoesNotExist):
+            return []
+
+        versions = Version.objects.get_for_object(obj).order_by("revision_id").select_related("revision")
+        rv = []
+        previous = {}
+
+        # cycle through all versions of the object and collect the ones where
+        # status was changed from 'ok' to 'deleted'
+        #
+        # order them by most recent first
+        for version in versions:
+            data = json.loads(version.serialized_data)[0].get("fields")
+
+            if previous.get("status", "ok") == "ok" and data.get("status") == "deleted":
+                rv.insert(0, version)
+
+            previous = data
+
+        return rv
+
+    def get_result_label(self, item):
+        # label should be obj representation as well as date of deletion
+        # we split the date string to remove the ms and tz parts
+        return "{} - {}".format(item, str(item.revision.date_created).split(".")[0])
+
 
 
 class CommandLineToolHistoryAutocomplete(autocomplete.Select2QuerySetView):
