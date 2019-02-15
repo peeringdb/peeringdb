@@ -82,6 +82,11 @@
              data-edit-value="{{ x.ixf_ixp_member_list_url|fallback:"" }}"
              data-edit-placeholder="{% trans "IXF Member Export URL" %}"
              data-edit-name="ixf_ixp_member_list_url">{{ x.ixf_ixp_member_list_url|fallback:"" }}</div>
+        {% if permissions.can_write %}
+        <button class="btn btn-xs btn-inline btn-primary"
+                data-edit-toggled="view"
+                data-ixf-preview="{{ x.id }}">{% trans "Preview" %}</button>
+        {% endif %}
       </div>
       <div class="marg-top-60 pad-side-15"
            data-edit-module="api_listing"
@@ -309,4 +314,68 @@
 
 
 </div>
+
+{% if permissions.can_write %}
+
+<div class="modal fade" id="ixf-preview-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">{% trans "IX-F Import Preview" %}</h4>
+      </div>
+      <div class="modal-body">
+        <p>{% blocktrans %}The actual import will run once per day at 00:00Z - use this to preview the changes that will be done{% endblocktrans %}</p>
+        <div class="ixf-log" id="ixf-log">
+          <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active">
+              <a href="#ixf-changes" aria-controls="add_fac" role="tab" data-toggle="tab">
+                {% trans "Changes" %}
+              </a>
+            </li>
+            <li role="presentation">
+              <a href="#ixf-errors" aria-controls="add_net" role="tab" data-toggle="tab">
+                {% trans "Errors" %}<span class="ixf-error-counter"></span>
+              </a>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="ixf-changes">
+              <div class="ixf-headers row">
+                <div class="col-sm-1"><strong>action</strong></div>
+                <div class="col-sm-2"><strong>asn</strong></div>
+                <div class="col-sm-3"><strong>ipv4</strong></div>
+                <div class="col-sm-3"><strong>ipv6</strong></div>
+                <div class="col-sm-1"><strong>{% trans "speed" %}</strong></div>
+                <div class="col-sm-2"><strong>{% trans "routeserver" %}</strong></div>
+              </div>
+              <div class="ixf-result"></div>
+            </div>
+            <div role="tabpanel" class="tab-pane active ixf-errors" id="ixf-errors">
+              <div>{% blocktrans %}Sometimes we encounter some errors when parsing ix-f data, these will usually affect the import, you can view any of those errors below{% endblocktrans %}</div>
+              <div class="ixf-errors-list"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<script language="javascript" type="text/javascript">
+$(document).ready(function() {
+  $('button[data-ixf-preview]').click(function() {
+    var ixlanId = $(this).data("ixf-preview")
+    $('#ixf-preview-modal').modal("show");
+    PeeringDB.IXFPreview.request(ixlanId, $("#ixf-log"));
+  });
+});
+</script>
+
+{% endif %}
+
 
