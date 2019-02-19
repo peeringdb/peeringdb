@@ -1,0 +1,59 @@
+
+home: {{environ.HOME}}/srv/dev.peeringdb.com
+
+release_env: dev
+
+contact:
+  email: {{environ.USER}}@dev0.peeringdb.com
+  from: {{environ.USER}}@dev0.peeringdb.com
+  notify: {{environ.USER}}@dev0.peeringdb.com
+  sponsorship: {{environ.USER}}@dev0.peeringdb.com
+
+rc:
+  db:
+    default:
+      host: dev0.peeringdb.com
+      name: {{environ.USER}}_peeringdb
+      prefix: {{environ.USER}}_
+    #read:
+    #  host: dev0.peeringdb.com
+    #  name: {{environ.USER}}_peeringdb
+    #  prefix: {{environ.USER}}_
+  ssl:
+    crt:
+    key:
+  api:
+    url: https://dev0.peeringdb.com/api
+    depth_result_limit: 250
+    cache:
+      enabled: true
+      dir: {{environ.HOME}}/srv/dev.peeringdb.com/etc/api-cache
+      log: {{environ.HOME}}/srv/dev.peeringdb.com/var/log/api-cache.log
+
+recaptcha:
+  public_key: 6Lfyow0TAAAAAMP2xbI86CEl92CS9qQNrytsylhW
+
+oauth:
+  enabled: false
+
+misc:
+  base_url : https://dev0.peeringdb.com
+  session:
+    domain: dev0.peeringdb.com
+    secure: False
+  suggestions:
+    org_id: 18982
+
+django:
+  settings: peeringdb_com
+
+deploy:
+  destdir: {{environ.HOME}}/srv/dev.peeringdb.com
+  user: {{environ.USER}}
+  postcmd:
+    - chmod 0755 {{environ.HOME}}/srv/dev.peeringdb.com/peeringdb/in.whoisd
+
+  public:
+    listen: 0.0.0.0
+    fq_name: no
+
