@@ -3,7 +3,9 @@
 .facsimile
 *.pyc
 *.log
+*.sqlite
 *.swp
 OLD.*
+config/facsimile/dev.yaml
 genstatic/
 venv

@@ -1441,6 +1441,13 @@ def view_aup(request):
 
     return view_simple_content(request, "site/aup.html")
 
+def view_about(request):
+    """
+    Render page containing about
+    """
+
+    return view_simple_content(request, "site/about.html")
+
 
 def view_sponsorships(request):
     """

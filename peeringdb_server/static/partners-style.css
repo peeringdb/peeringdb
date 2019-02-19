@@ -10,10 +10,10 @@ html { font-size:20px }
 /* PARTNER LEVELS */
 /* designed for 1201+ */
 .partners-group { margin-bottom:45px ; overflow:hidden }
-    .partners-group h2 { color:#666 ; font-size:1.6rem ; text-transform:uppercase ; float:left ; width:200px }
+    .partners-group h2 { color:#00203e ; font-size:1.6rem ; text-transform:uppercase ; float:left ; width:200px }
     .partners-group.level1 h2 { font-size:1.45rem }
     .partners-group.level2 h2 { font-size:1.45rem }
-    .partners-group .partners { background:#FFF ; border-left:5px solid #666 ; margin-left:230px ; padding:30px 0 0 30px }
+    .partners-group .partners { background:#FFF ; border-left:5px solid #4b6063 ; margin-left:230px ; padding:30px 0 0 30px }
         .partners-group .partners img { display:inline-block ; height:auto ; margin:0 30px 30px 0 ; max-height:170px ; max-width:1190px ; vertical-align:middle ; width:auto }
         .partners-group.level1 .partners img { max-height:85px ; max-width:595px }
         .partners-group.level2 .partners img { max-height:85px ; max-width:595px }
