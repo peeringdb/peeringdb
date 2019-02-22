@@ -9,7 +9,7 @@ pytest-cov = ">=2.0.0"
 pytest-django = ">=2.9.1"
 pytest-filedata = ">=0.1.0"
 jsonschema = ">=2.6.0"
-facsimile = "*"
+facsimile = ">=1.1.1"
 
 [packages]
 certifi = "==2017.11.5"
