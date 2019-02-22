@@ -1,5 +1,6 @@
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 import pytest
+import pytest_filedata
 
 
 def test_rdap_asn_lookup(rdap):
@@ -26,7 +27,7 @@ def test_mocker(rdap):
         asn = rdap.get_asn(63311)
 
 
-@pytest.RequestsData("rdap")
+@pytest_filedata.RequestsData("rdap")
 def test_arin0(rdap):
     asn = rdap.get_asn(63311)
     assert asn.emails == ['neteng@20c.com']
