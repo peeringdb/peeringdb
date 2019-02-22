@@ -124,6 +124,7 @@ install:
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_wipe.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_maintenance.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_process_admin_tool_command.py
+    - $SRC_DIR$/peeringdb_server/management/commands/pdb_load_data.py
     - $SRC_DIR$/peeringdb_server/migrations/__init__.py
     - $SRC_DIR$/peeringdb_server/migrations/0001_initial.py
     - $SRC_DIR$/peeringdb_server/migrations/0002_partnernship_model.py
@@ -223,5 +224,6 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/sponsorships.html
     - $SRC_DIR$/peeringdb_server/templates/site/simple_content.html
     - $SRC_DIR$/peeringdb_server/templates/site/aup.html
+    - $SRC_DIR$/peeringdb_server/templates/site/about.html
     - $SRC_DIR$/peeringdb_server/templates/oauth2_provider/base.html
 
