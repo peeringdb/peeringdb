@@ -20,9 +20,6 @@
             "member_since": "2009-02-04T00:00:00Z",
             "connection_list": [
                 {
-                    "state" : "disabled"
-                },
-                {
                     "ixp_id": 42,
                     "connected_since": "2009-02-04T00:00:00Z",
                     "state": "active",
@@ -31,9 +28,6 @@
                             "switch_id": 0,
                             "if_speed": 10000,
                             "if_type": "LR4"
-                        },
-                        {
-                            "if_speed": "fast"
                         }
                     ],
                     "vlan_list": [
@@ -51,15 +45,6 @@
                                 "routeserver": true,
                                 "max_prefix": 42,
                                 "as_macro": "AS-NFLX-V6"
-                            }
-                        },
-                        {
-                            "vlan_id" : 1
-                        },
-                        {
-                            "vlan_id" : 2,
-                            "ipv4": {
-                                "address": "195.69.146.error"
                             }
                         }
                     ]
@@ -95,9 +80,6 @@
                     ]
                 }
             ]
-        },
-        {
-            "member_type": "other"
         }
     ]
 }

@@ -163,6 +163,5 @@ settings.configure(
         "view_request_ownership_POST": "3/m",
         "request_login_POST": "10/m",
         "view_verify_POST": "2/m",
-        "request_translation": "10/m",
-        "view_import_ixlan_ixf_preview": "1/m"
+        "request_translation": "10/m"
     })
