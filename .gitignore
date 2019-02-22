@@ -6,7 +6,7 @@
 *.sqlite
 *.swp
 OLD.*
-config/facsimile/dev.yaml
+config/facsimile/*.yaml
 genstatic/
 peeringdb_com
 venv
