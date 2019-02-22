@@ -1,10 +1,13 @@
 import StringIO
 import json
+
 import reversion
+from reversion.models import Version
+
 from dal import autocomplete
 from django import forms
 from django.core.management import call_command
-from peeringdb_server.models import (COMMANDLINE_TOOLS, CommandLineTool,
+from peeringdb_server.models import (REFTAG_MAP, COMMANDLINE_TOOLS, CommandLineTool,
                                      InternetExchange, Facility)
 
 from peeringdb_server import maintenance
@@ -99,6 +102,9 @@ class CommandLineToolWrapper(object):
     def set_arguments(self, form_data):
         pass
 
+    def validate(self):
+        pass
+
     def _run(self, user, commit=False):
         r = StringIO.StringIO()
 
@@ -106,6 +112,7 @@ class CommandLineToolWrapper(object):
             maintenance.on()
 
         try:
+            self.validate()
             if commit:
                 call_command(self.tool, *self.args, commit=True, stdout=r,
                              **self.kwargs)
@@ -274,3 +281,44 @@ class ToolReset(CommandLineToolWrapper):
 
     def set_arguments(self, form_data):
         self.kwargs = form_data
+
+
+@register_tool
+class ToolUndelete(CommandLineToolWrapper):
+    """
+    Allows restoration of an object object and it's child objects
+    """
+    tool = "pdb_undelete"
+
+    # These are the reftags that are currently supported by this
+    # tool.
+    supported_reftags = ["ixlan","fac"]
+
+    class Form(forms.Form):
+        version = forms.ModelChoiceField(
+            queryset=Version.objects.all().order_by("-revision_id"),
+            widget=autocomplete.ModelSelect2(
+                url="/autocomplete/admin/deletedversions"),
+            help_text=_("Restore this object - search by [reftag] [id]"))
+
+    @property
+    def description(self):
+        return "{reftag} {id}".format(**self.kwargs)
+
+    def set_arguments(self, form_data):
+        version = form_data.get("version")
+        if not version:
+            return
+        reftag = version.content_type.model_class().HandleRef.tag
+        self.kwargs = {"reftag":reftag, "id":version.object_id, "version_id":version.id}
+
+    def validate(self):
+        if self.kwargs.get("reftag") not in self.supported_reftags:
+            raise ValueError(_("Only {} type objects may be restored " \
+                               "through this interface at this point").format(",".join(self.supported_reftags)))
+
+        obj = REFTAG_MAP[self.kwargs.get("reftag")].objects.get(id=self.kwargs.get("id"))
+        if obj.status != "deleted":
+            raise ValueError("{} is not currently marked as deleted".format(obj))
+
+

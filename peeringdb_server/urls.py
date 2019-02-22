@@ -11,7 +11,7 @@ from peeringdb_server.autocomplete_views import (
     FacilityAutocompleteForNetwork, FacilityAutocompleteForExchange,
     OrganizationAutocomplete, ExchangeAutocomplete, ExchangeAutocompleteJSON,
     IXLanAutocomplete, FacilityAutocomplete, FacilityAutocompleteJSON,
-    clt_history)
+    DeletedVersionAutocomplete, clt_history)
 
 from peeringdb_server.export_views import (
     view_export_ixf_ix_members,
@@ -162,6 +162,8 @@ urlpatterns += [
         name="autocomplete-fac"),
     url(r'^autocomplete/ixlan/$', IXLanAutocomplete.as_view(),
         name="autocomplete-ixlan"),
+    url(r'^autocomplete/admin/deletedversions$', DeletedVersionAutocomplete.as_view(),
+        name="autocomplete-admin-deleted-versions"),
 ]
 
 # Admin autocomplete for commandlinetool history
