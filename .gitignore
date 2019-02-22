@@ -3,7 +3,10 @@
 .facsimile
 *.pyc
 *.log
+*.sqlite
 *.swp
 OLD.*
+config/facsimile/dev.yaml
 genstatic/
+peeringdb_com
 venv

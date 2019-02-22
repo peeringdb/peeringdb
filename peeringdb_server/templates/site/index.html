@@ -32,28 +32,40 @@
   <div class="container">
     {% include "site/verification_banner.html" %}
     {% include "site/tutorial_mode_banner.html" %}
-    <h1>{% trans "PeeringDB facilitates the exchange of information related to Peering." %}</h1>
+    <h2>{% trans "The Interconnection Database" %}</h2>
     <div class="row">
-      <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12 left">
+      <div class="recent col-lg-6 col-md-12 col-sm-12 col-xs-12 left">
+        <h3>{% trans "Join. Search. Grow your network." %}</h3>
       <p>
       {% blocktrans trimmed %}
-      Specifically, we are a database of networks that are peering, where they are peering, and if they are likely to peer with you. If you don't know what peering is, and/or you don't currently engage in peering, this probably won't have any meaning for you.
+      PeeringDB is a freely available, user-maintained, database of networks, and the go-to location for interconnection data. The database facilitates the global interconnection of networks at Internet Exchange Points (IXPs), data centers, and other interconnection facilities, and is the first stop in making interconnection decisions.
       {% endblocktrans %}
       </p>
-
       <p>
-      {% trans "You are currently viewing a read-only view of the data contained here. If you are a peering network who would like to create an account," %} <a href="/register">{% trans "you may register for one here" %}</a>. {% trans "Please register ONLY if you are a peering network." %}<!-- {% trans "You may also" %} <a href="/"> {% trans "reset lost passwords here" %}</a>. -->
-     </p>
-
+      {% blocktrans trimmed %}
+      The database is a non-profit, community-driven initiative run and promoted by volunteers. It is a public tool for the growth and good of the Internet. Join the community and support the continued development of the Internet.
+      {% endblocktrans %}
+      </p>
       <p>
-      {% trans "Still have questions?" %} <a href="http://docs.peeringdb.com/faq">{% trans "Read our FAQ" %}</a>
+      {% trans "Learn more" %} <a href="/about">{% trans "about" %}</a> PeeringDB.
       </p>
       </div>
       <div class="recent col-lg-6 col-md-12 col-sm-12 col-xs-12 left">
-        <h3>{% trans "MOST RECENT UPDATES" %}</h3>
+        <h3>{% trans "Most Recent Updates" %}</h3>
         <div class="recent row">
           <div class="col-xs-12 col-sm-4">
-          <h4>{% trans "NETWORKS" %}</h4>
+          <h4>{% trans "Exchanges" %}</h4>
+          {% for row in recent.ix %}
+            <div class="participant">
+              <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
+            </div>
+            <div class="age">
+              {{ row.updated|age }}
+            </div>
+          {% endfor %}
+          </div>
+          <div class="col-xs-12 col-sm-4">
+          <h4>{% trans "Networks" %}</h4>
           {% for row in recent.net %}
             <div class="participant">
               <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a> ({{ row.asn }})
@@ -64,7 +76,7 @@
           {% endfor %}
           </div>
           <div class="col-xs-12 col-sm-4">
-          <h4>{% trans "FACILITIES" %}</h4>
+          <h4>{% trans "Facilities" %}</h4>
           {% for row in recent.fac %}
             <div class="participant">
               <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
@@ -74,19 +86,6 @@
             </div>
           {% endfor %}
           </div>
-          <div class="col-xs-12 col-sm-4">
-          <h4>{% trans "EXCHANGES" %}</h4>
-          {% for row in recent.ix %}
-            <div class="participant">
-              <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
-            </div>
-            <div class="age">
-              {{ row.updated|age }}
-            </div>
-          {% endfor %}
-          </div>
-
-
         </div>
       </div>
     </div>

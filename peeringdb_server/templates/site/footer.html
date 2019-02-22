@@ -13,13 +13,16 @@
       <a href="https://github.com/peeringdb/peeringdb/issues">{{PEERINGDB_VERSION}}</a> - <a href="https://docs.peeringdb.com/gov/misc/2017-04-02-PeeringDB_Privacy_Policy.pdf">{% trans "Privacy Policy" %}</a>
       </p>
       <p>
-          <a target='_blank' href='https://twitter.com/PeeringDB'><img class="socialmedia_icon" src='{{ STATIC_URL }}/twitter.png' alt="twitter"></a>
-          <a target='_blank' href='https://www.facebook.com/peeringdb/'><img class="socialmedia_icon" src='{{ STATIC_URL }}/facebook.png' alt="facebook"></a>
-          <a target="_blank" href="https://www.linkedin.com/company/peeringdb"><img class="socialmedia_icon" src="{{ STATIC_URL }}/linkedin.png" alt="linkedin"></a>
-          <a target="_blank" href="https://github.com/peeringdb/peeringdb/issues"><img class="socialmedia_icon" src="{{ STATIC_URL }}/github.png" alt="github"></a>
+          <a target='_blank' href='https://www.facebook.com/peeringdb/'><img class="socialmedia_icon" src='{{ STATIC_URL }}/social-facebook.png' alt="Facebook"></a>
+          <a target="_blank" href="https://github.com/peeringdb/peeringdb/issues"><img class="socialmedia_icon" src="{{ STATIC_URL }}/social-github.png" alt="GitHub"></a>
+          <a target="_blank" href="https://www.linkedin.com/company/peeringdb"><img class="socialmedia_icon" src="{{ STATIC_URL }}/social-linkedin.png" alt="LinkedIn"></a>
+          <a target='_blank' href='https://twitter.com/PeeringDB'><img class="socialmedia_icon" src='{{ STATIC_URL }}/social-twitter.png' alt="Twitter"></a>
         </p>
       </div>
       <div class="col-md-3 col-sm-4 col-xs-12">
+        <div>
+        <a href="/about">{% trans "About" %}</a>
+        </div>
         <div>
         <a href="/sponsors">{% trans "Sponsors" %}</a>
         </div>
@@ -27,8 +30,9 @@
         <a href="/partners">{% trans "Partners" %}</a>
         </div>
       <p> </p>
-      <h4>{% trans "Resources" %}</h4>
+      <h4><b>{% trans "Resources" %}</b></h4>
         <div><a href="http://status.peeringdb.com/">{% trans "Status" %}</a></div>
+        <div><a href="http://docs.peeringdb.com/faq/">{% trans "FAQ" %}</a></div>
 
         <div>
         <a href="/docs">{% trans "Documentation" %}</a>
@@ -37,18 +41,18 @@
         <a href="/apidocs">{% trans "API Documentation" %}</a>
         </div>
       <p> </p>
-      <h4>{% trans "Contact Us" %}</h4>
+      <h4><b>{% trans "Contact Us" %}</b></h4>
       <a href="mailto:support@peeringdb.com">support@peeringdb.com</a>
+      <p></p>
       </div>
       <div class="col-md-4 col-sm-4 col-xs-12">
-      <h4>{% trans "Global System Statistics" %}</h4>
+      <h4><b>{% trans "Global System Statistics" %}</b></h4>
       <div class="global_stats">
-        <div>{{ global_stats.net }} {% trans "Peering Networks" %}</div>
-        <div>{{ global_stats.ix }} {% trans "Public Exchange Points" %}</div>
-        <div>{{ global_stats.netixlan }} {% trans "Unique Public Exchange Presences" %}</div>
-        <div>{{ global_stats.fac }} {% trans "Private Facilities" %}</div>
-        <div>{{ global_stats.netfac }} {% trans "Private Facility Presences" %}</div>
-      </div>
+        <div>{{ global_stats.ix }} {% trans "Exchanges" %}</div>
+        <div>{{ global_stats.net }} {% trans "Networks" %}</div>
+        <div>{{ global_stats.fac }} {% trans "Facilities" %}</div>
+        <div>{{ global_stats.netixlan }} {% trans "Connections to Exchanges" %}</div>
+        <div>{{ global_stats.netfac }} {% trans "Connections to Facilities" %}</div>
       </div>
     </div>
   </div>
