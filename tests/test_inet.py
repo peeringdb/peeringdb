@@ -23,7 +23,7 @@ def test_rdap_asn_lookup_not_found(rdap):
 
 
 def test_mocker(rdap):
-    with pytest.RequestsData("rdap"):
+    with pytest_filedata.RequestsData("rdap"):
         asn = rdap.get_asn(63311)
 
 
