@@ -9,13 +9,7 @@ from django.test import TestCase, Client, RequestFactory
 from peeringdb_server.models import (
     Organization, Network, NetworkIXLan, IXLan, IXLanPrefix, InternetExchange,
     IXLanIXFMemberImportAttempt, IXLanIXFMemberImportLog,
-    IXLanIXFMemberImportLogEntry, User)
-from peeringdb_server.import_views import (
-    view_import_ixlan_ixf_preview,
-    )
-from peeringdb_server import ixf
-
-from util import ClientCase
+    IXLanIXFMemberImportLogEntry)
 
 
 class JsonMembersListTestCase(TestCase):
@@ -110,14 +104,6 @@ class JsonMembersListTestCase(TestCase):
                     ipaddr4="195.69.146.249", ipaddr6=None, status="ok"),
             ]
 
-    def setUp(self):
-        self.ixf_importer = ixf.Importer()
-
-    def assertLog(self, log, expected):
-        path = os.path.join(os.path.dirname(__file__), "data", "ixf", "logs", "{}.json".format(expected))
-        with open(path, "r") as fh:
-            self.assertEqual(log, json.load(fh))
-
     def test_update_from_ixf_ixp_member_list(self):
         ixlan = self.entities["ixlan"][0]
         n_deleted = self.entities["netixlan"][0]
@@ -126,9 +112,11 @@ class JsonMembersListTestCase(TestCase):
         self.assertEqual(
             unicode(n_deleted2.ipaddr6), u'2001:7f8:1::a500:2906:1')
         self.assertEqual(ixlan.netixlan_set_active.count(), 1)
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+            self.json_data)
 
-        self.assertLog(log, "update_01")
+        print(log)
+        self.assertEqual(len(log), 1)
         self.assertEqual(len(netixlans), 2)
         self.assertEqual(len(netixlans_deleted), 1)
 
@@ -164,9 +152,10 @@ class JsonMembersListTestCase(TestCase):
         against any of the prefixes that exist on the ixlan get skipped
         """
         ixlan = self.entities["ixlan"][1]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+            self.json_data)
 
-        self.assertLog(log, "skip_prefix_mismatch")
+        self.assertEqual(len(log), 2)
         self.assertEqual(len(netixlans), 0)
 
     def test_update_from_ixf_ixp_member_list_skip_missing_prefixes(self):
@@ -175,11 +164,12 @@ class JsonMembersListTestCase(TestCase):
         ixlan that does not have any prefixes
         """
         ixlan = self.entities["ixlan"][2]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+            self.json_data)
 
         self.assertEqual(len(netixlans), 0)
         self.assertEqual(len(netixlans_deleted), 0)
-        self.assertEqual(log["errors"], [u'No prefixes defined on ixlan'])
+        self.assertEqual(log, [u'No prefixes defined on ixlan, skipping.'])
 
     def test_update_from_ixf_ixp_member_list_skip_disabled_networks(self):
         """
@@ -190,9 +180,10 @@ class JsonMembersListTestCase(TestCase):
         network = self.entities["net"][0]
         network.allow_ixp_update = False
         network.save()
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+            self.json_data)
 
-        self.assertLog(log, "skip_disabled_networks")
+        self.assertEqual(len(log), 3)
         self.assertEqual(len(netixlans), 0)
 
         for netixlan in network.netixlan_set_active.all():
@@ -201,7 +192,8 @@ class JsonMembersListTestCase(TestCase):
 
     def test_update_from_ixf_ixp_member_list_logs(self):
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+            self.json_data)
 
         attempt_dt_1 = ixlan.ixf_import_attempt.updated
 
@@ -229,7 +221,8 @@ class JsonMembersListTestCase(TestCase):
 
         time.sleep(0.1)
 
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+            self.json_data)
 
         ixlan.ixf_import_attempt.refresh_from_db()
         attempt_dt_2 = ixlan.ixf_import_attempt.updated
@@ -250,7 +243,8 @@ class JsonMembersListTestCase(TestCase):
 
     def test_rollback(self):
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+            self.json_data)
 
         for entry in ixlan.ixf_import_log_set.last().entries.all():
             self.assertEqual(entry.rollback_status(), 0)
@@ -268,7 +262,8 @@ class JsonMembersListTestCase(TestCase):
 
     def test_rollback_avoid_ipaddress_conflict(self):
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+            self.json_data)
 
         self.assertEqual(len(netixlans_deleted), 1)
 
@@ -299,7 +294,8 @@ class JsonMembersListTestCase(TestCase):
 
         # import the data
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+            self.json_data)
 
         # request the view and compare it agaisnt expected data
         c = Client()
@@ -329,7 +325,8 @@ class JsonMembersListTestCase(TestCase):
 
         # import the data
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+            self.json_data)
 
         # request the view and compare it agaisnt expected data
         c = Client()
@@ -357,52 +354,3 @@ class JsonMembersListTestCase_V05(JsonMembersListTestCase):
 
 class JsonMembersListTestCase_V04(JsonMembersListTestCase):
     version = "0.4"
-
-
-class TestImportPreview(ClientCase):
-
-    """
-    Test the ixf import preview
-    """
-
-    @classmethod
-    def setUpTestData(cls):
-        super(TestImportPreview, cls).setUpTestData()
-        cls.org = Organization.objects.create(name="Test Org", status="ok")
-        cls.ix = InternetExchange.objects.create(name="Test IX", status="ok", org=cls.org)
-        cls.ixlan = IXLan.objects.create(status="ok", ix=cls.ix)
-        cls.admin_user = User.objects.create_user("admin","admin@localhost","admin")
-
-        cls.org.admin_usergroup.user_set.add(cls.admin_user)
-
-
-    def test_import_preview(self):
-        request = RequestFactory().get("/import/ixlan/{}/ixf/preview/".format(self.ixlan.id))
-        request.user = self.admin_user
-
-        response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
-
-        assert response.status_code == 200
-        assert json.loads(response.content)["errors"] == ["IXF import url not specified"]
-
-
-    def test_import_preview_fail_ratelimit(self):
-        request = RequestFactory().get("/import/ixlan/{}/ixf/preview/".format(self.ixlan.id))
-        request.user = self.admin_user
-
-        response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
-        assert response.status_code == 200
-
-        response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
-        assert response.status_code == 400
-
-
-    def test_import_preview_fail_permission(self):
-        request = RequestFactory().get("/import/ixlan/{}/ixf/preview/".format(self.ixlan.id))
-        request.user = self.guest_user
-
-        response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
-        assert response.status_code == 403
-
-
-

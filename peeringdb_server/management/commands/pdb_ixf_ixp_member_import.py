@@ -1,12 +1,9 @@
-import traceback
-import json
-
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from peeringdb_server.models import (
     IXLan, )
-from peeringdb_server import ixf
+import traceback
 
 
 class Command(BaseCommand):
@@ -36,11 +33,13 @@ class Command(BaseCommand):
             self.log("Fetching data for {} from {}".format(
                 ixlan, ixlan.ixf_ixp_member_list_url))
             try:
-                importer = ixf.Importer()
+                json_data = ixlan.fetch_ixf_ixp_members_list()
                 self.log("Updating {}".format(ixlan))
                 with transaction.atomic():
-                    success, netixlans, netixlans_deleted, log = importer.update(ixlan, save=self.commit)
-                self.log(json.dumps(log))
+                    success, netixlans, netixlans_deleted, log = ixlan.update_from_ixf_ixp_member_list(
+                        json_data, save=self.commit)
+                for line in log:
+                    self.log(line)
                 self.log("Done: {} updated: {} deleted: {}".format(
                     success, len(netixlans), len(netixlans_deleted)))
             except Exception as inst:
