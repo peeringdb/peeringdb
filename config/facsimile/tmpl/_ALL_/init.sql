@@ -4,7 +4,7 @@
     {% if each.db.name %}
 create database if not exists {{env.rc.db.default.prefix}}{{each.db.name}} character set = utf8;
 grant all on {{env.rc.db.default.prefix}}{{each.db.name}}.* to '{{env.rc.db.default.prefix}}{{each.name}}'@'localhost' identified by '{{each.password}}';
-grant all on {{env.rc.db.default.prefix}}{{each.db.name}}.* to '{{env.rc.db.default.prefix}}{{each.name}}'@'%.%.int' identified by '{{each.password}}';
+grant all on {{env.rc.db.default.prefix}}{{each.db.name}}.* to '{{env.rc.db.default.prefix}}{{each.name}}'@'%' identified by '{{each.password}}';
     {% endif %}
 
   {% for table in each.db.selectable %}

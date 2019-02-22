@@ -234,4 +234,3 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/aup.html
     - $SRC_DIR$/peeringdb_server/templates/site/about.html
     - $SRC_DIR$/peeringdb_server/templates/oauth2_provider/base.html
-
