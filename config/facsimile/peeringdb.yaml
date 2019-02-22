@@ -101,6 +101,8 @@ install:
     - $SRC_DIR$/peeringdb_server/db_router.py
     - $SRC_DIR$/peeringdb_server/mock.py
     - $SRC_DIR$/peeringdb_server/maintenance.py
+    - $SRC_DIR$/peeringdb_server/import_views.py
+    - $SRC_DIR$/peeringdb_server/ixf.py
     - $SRC_DIR$/peeringdb_server/management/__init__.py
     - $SRC_DIR$/peeringdb_server/management/commands/__init__.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_deskpro_publish.py
