@@ -68,6 +68,13 @@ install:
     render_files: true
     skip: ^\.
 
+  # peeringdb static files
+  - type: copy
+    dir: $SRC_DIR$/peeringdb_server/static
+    pattern: ^$SRC_DIR$
+    replace: peeringdb
+    skip: ^\.
+
   - type: copy
     pattern: ^$SRC_DIR$
     replace: peeringdb
