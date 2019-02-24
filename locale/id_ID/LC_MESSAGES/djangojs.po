@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-06-06 04:57+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2019-02-24 18:02+GMT+7\n"
+"Last-Translator: Budiwijaya <budiw_1@yahoo.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
@@ -20,117 +20,117 @@ msgstr ""
 #: peeringdb_server/static/peeringdb.js:415
 #: peeringdb_server/static/peeringdb.js:745
 msgid "Remove"
-msgstr ""
+msgstr "Hapus"
 
 #: peeringdb_server/static/peeringdb.js:425
 msgid "Canceled"
-msgstr ""
+msgstr "Dibatalkan"
 
 #: peeringdb_server/static/peeringdb.js:449
 msgid "Add user"
-msgstr ""
+msgstr "Tambah akun"
 
 #: peeringdb_server/static/peeringdb.js:449
 msgid "to Organization?"
-msgstr ""
+msgstr "ke Organisasi?"
 
 #: peeringdb_server/static/peeringdb.js:466
 msgid "Deny"
-msgstr ""
+msgstr "Tolak"
 
 #: peeringdb_server/static/peeringdb.js:466
 msgid "request to join the Organization?"
-msgstr ""
+msgstr "meminta untuk join ke Organsiasi?"
 
 #: peeringdb_server/static/peeringdb.js:615
 msgid "Unknown request type:"
-msgstr ""
+msgstr "Permintaan tidak diketahui tipe:"
 
 #: peeringdb_server/static/peeringdb.js:631
 #: peeringdb_server/static/twentyc.edit.js:622
 msgid "The server rejected your data"
-msgstr ""
+msgstr "Server menolak data anda"
 
 #: peeringdb_server/static/peeringdb.js:635
 msgid "not yet been approved"
-msgstr ""
+msgstr "belum disetujui"
 
 #: peeringdb_server/static/peeringdb.js:636
 msgid "Parent entity pending review - please wait for it to be approved before adding entities to it"
-msgstr ""
+msgstr "Ulasan menunggu keputusan entitas induk - harap tunggu hingga disetujui sebelum menambahkan entitas ke dalamnya"
 
 #: peeringdb_server/static/peeringdb.js:773
 msgid "Exchange"
-msgstr ""
+msgstr "Exchange"
 
 #: peeringdb_server/static/peeringdb.js:789
 msgid "Participant"
-msgstr ""
+msgstr "Partisipan"
 
 #: peeringdb_server/static/peeringdb.js:805
 msgid "Facility"
-msgstr ""
+msgstr "Fasilitas"
 
 #: peeringdb_server/static/peeringdb.js:816
 msgid "Network Contact"
-msgstr ""
+msgstr "Kontak Jaringan"
 
 #: peeringdb_server/static/peeringdb.js:849
 msgid "Network - Exchange link"
-msgstr ""
+msgstr "Jaringan - Exchange link"
 
 #: peeringdb_server/static/peeringdb.js:894
 msgid "Network - Facility link"
-msgstr ""
+msgstr "Jaringan - Link fasilitas"
 
 #: peeringdb_server/static/peeringdb.js:920
 msgid "IXLAN"
-msgstr ""
+msgstr "IXLAN"
 
 #: peeringdb_server/static/peeringdb.js:938
 msgid "IXLAN Prefix"
-msgstr ""
+msgstr "IXLAN Prefix"
 
 #: peeringdb_server/static/peeringdb.js:959
 msgid "Exchange - Facility link"
-msgstr ""
+msgstr "Exchange - Link fasilitas"
 
 #: peeringdb_server/static/twentyc.edit.js:83
 msgid "Some of the fields contain invalid values - please correct and try again."
-msgstr ""
+msgstr "Beberapa bidang berisi nilai yg tidak valid - mohon perbaiki dan coba lagi."
 
 #: peeringdb_server/static/twentyc.edit.js:86
 msgid "Something went wrong."
-msgstr ""
+msgstr "Terjadi sesuatu yg salah."
 
 #: peeringdb_server/static/twentyc.edit.js:783
 msgid "Invalid value"
-msgstr ""
+msgstr "Isi tidak valid"
 
 #: peeringdb_server/static/twentyc.edit.js:787
 msgid "Input required"
-msgstr ""
+msgstr "Isian diperlukan"
 
 #: peeringdb_server/static/twentyc.edit.js:870
 msgid "Needs to match password"
-msgstr ""
+msgstr "Katasandi harus sesuai"
 
 #: peeringdb_server/static/twentyc.edit.js:887
 msgid "Needs to be a valid email address"
-msgstr ""
+msgstr "Harus surel yang valid"
 
 #: peeringdb_server/static/twentyc.edit.js:916
 msgid "Needs to be a valid url"
-msgstr ""
+msgstr "Harus UR yang valid"
 
 #: peeringdb_server/static/twentyc.edit.js:936
 msgid "Needs to be a number"
-msgstr ""
+msgstr "Harus angka"
 
 #: peeringdb_server/static/twentyc.edit.js:946
 msgid "Yes"
-msgstr ""
+msgstr "Ya"
 
 #: peeringdb_server/static/twentyc.edit.js:946
 msgid "No"
-msgstr ""
+msgstr "Tidak"
