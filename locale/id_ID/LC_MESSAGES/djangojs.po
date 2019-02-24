@@ -121,7 +121,7 @@ msgstr "Harus surel yang valid"
 
 #: peeringdb_server/static/twentyc.edit.js:916
 msgid "Needs to be a valid url"
-msgstr "Harus UR yang valid"
+msgstr "Harus URL yang valid"
 
 #: peeringdb_server/static/twentyc.edit.js:936
 msgid "Needs to be a number"
