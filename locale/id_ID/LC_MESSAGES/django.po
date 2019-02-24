@@ -939,7 +939,7 @@ msgstr "Konfirmasi"
 
 #: peeringdb_server/templates/account/email_confirm.html:23
 msgid "The email confirmation process for this email address has been terminated, please re-initate"
-msgstr "Proses konfirmasi email untuk alamat email ini telah dihentikan, silakan memulai kembali"
+msgstr "Proses konfirmasi surel untuk alamat surel ini telah dihentikan, silakan memulai kembali"
 
 #: peeringdb_server/templates/account/email_confirm.html:23
 #: peeringdb_server/templates/site/request-ownership.html:25
@@ -1061,7 +1061,7 @@ msgstr "Pengguna '%(u_name)s' membuat Jaringan %(n_name)s AS%(n_asn)s (%(n_id)s)
 
 #: peeringdb_server/templates/email/notify-pdb-admin-asnauto-skipvq.txt:8
 msgid "As the user's email address was succesfully matched against RiR entry data this network has skipped the verification queue."
-msgstr "Karena alamat email pengguna berhasil dicocokkan dengan data entri RiR, jaringan ini telah melewati antrean verifikasi."
+msgstr "Karena alamat surel pengguna berhasil dicocokkan dengan data entri RiR, jaringan ini telah melewati antrean verifikasi."
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:4
 #, python-format
@@ -1112,7 +1112,7 @@ msgstr "Ini adalah alamat website yg berasal dari organisasi dan entitasnya"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:31
 msgid "These are the email addresses we could fetch from the ASNs belonging to this organization"
-msgstr ""
+msgstr "Ini adalah alamat surel yg bisa kami temukan dari ASN milik organisasi ini""
 
 #: peeringdb_server/templates/email/notify-pdb-admin-user-affil.txt:34
 msgid "The user is affiliated with other organizations"
@@ -1145,7 +1145,7 @@ msgstr "Kami mengambil catatan RiR untuk ASN yang ditentukan"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:9
 msgid "but found no match with the requesting user. Here are the email addresses we gatehered"
-msgstr "tidak menemukan kecocokan dengan pengguna yang diminta. Berikut adalah alamat email yang kami temukan"
+msgstr "tidak menemukan kecocokan dengan pengguna yang diminta. Berikut adalah alamat surel yang kami temukan"
 
 #: peeringdb_server/templates/email/notify-pdb-admin-vq.txt:13
 #: peeringdb_server/templates/site/advanced-search-fac.html:12
@@ -1217,7 +1217,7 @@ msgstr "Anda memulai pengaturan ulang kata sandi di PeeringDB 2 - Silahkan ikuti
 
 #: peeringdb_server/templates/email/password-reset.txt:6
 msgid "If you did not initiate the password reset request, please ignore this email."
-msgstr "Jika anda tidak meminta pengaturan ulang kata sandi, silahkan diabaikan email ini."
+msgstr "Jika anda tidak meminta pengaturan ulang kata sandi, silahkan diabaikan surel ini."
 
 #: peeringdb_server/templates/email/username-retrieve.txt:2
 msgid "You requested a username retrieval on PeeringDB for the email address"
@@ -1601,7 +1601,7 @@ msgstr "atau"
 #: peeringdb_server/templates/site/header.html:85
 #: peeringdb_server/templates/site/login.html:21
 msgid "Login"
-msgstr ""
+msgstr "Masuk"
 
 #: peeringdb_server/templates/site/index.html:34
 msgid "PeeringDB facilitates the exchange of information related to Peering."
@@ -1690,7 +1690,7 @@ msgstr "Masuk dengan akun facebook"
 
 #: peeringdb_server/templates/site/password-reset.html:15
 msgid "We've sent instructions to your email address, provided it is in our system. You have 30 minutes to complete the process."
-msgstr "Kita sudah mengirimkan instruksi ke email yang anda masukkan. Anda punya waktu 30 menit untuk menyelesaikan prosesnya."
+msgstr "Kita sudah mengirimkan instruksi ke surel yang anda masukkan. Anda punya waktu 30 menit untuk menyelesaikan prosesnya."
 
 #: peeringdb_server/templates/site/password-reset.html:19
 #: peeringdb_server/templates/site/register.html:62
@@ -1762,7 +1762,7 @@ msgstr "Konfirmasi kata sandi"
 
 #: peeringdb_server/templates/site/register.html:55
 msgid "For speedy validation, it is required that you use a work e-mail address. If you plan to register your ASN with PeeringDB, it is recommended that you use an email-address that exists in your ASN's public contact details."
-msgstr "Untuk validasi yg cepat, diperlukan alamat email kantor. Jika anda ingin mendaftarkan ASN anda ke PeeringDB, sangat direkomendasikan anda menggunakan email yang ada di kontak publik di ASN anda."
+msgstr "Untuk validasi yg cepat, diperlukan alamat surel kantor. Jika anda ingin mendaftarkan ASN anda ke PeeringDB, sangat direkomendasikan anda menggunakan surel yang ada di kontak publik di ASN anda."
 
 #: peeringdb_server/templates/site/register.html:69
 msgid "First name"
@@ -1810,47 +1810,47 @@ msgstr "Menjadi Sponsor"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:12
 msgid "These are the usernames associated with your email address"
-msgstr ""
+msgstr "Ini adalah nama pengguna yg diasosiasikan dengan surel anda"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:21
 msgid "The secret you provided does not match the secret required to complete this process"
-msgstr ""
+msgstr "Secret yg anda masukkan tidak sama dengan secret yg diperlukan untuk menylesaikan proses ini"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:23
 msgid "Note"
-msgstr ""
+msgstr "Catatan"
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:23
 msgid "You should complete the process in the same browser that you originally initiated it in."
-msgstr ""
+msgstr "Anda harus menyelesaikan proses ini di peramban yg sama dengan yg anda mulai proses ini."
 
 #: peeringdb_server/templates/site/username-retrieve-complete.html:25
 msgid "Please re-initiate it"
-msgstr ""
+msgstr "Tolong dicoba lagi"
 
 #: peeringdb_server/templates/site/username-retrieve.html:14
 msgid "This form allows you to retrieve the usernames associated with your email address."
-msgstr ""
+msgstr "Formulir ini dapat digunakan untuk mengambil nama pengguna yg berasosiasi dengan surel anda."
 
 #: peeringdb_server/templates/site/username-retrieve.html:17
 msgid "We've sent instructions to your email address, provided it is in our system."
-msgstr ""
+msgstr "Kami telah mengirimkan instruksi ke surel anda yang ada di data kami."
 
 #: peeringdb_server/templates/site/username-retrieve.html:26
 msgid "Retrieve username(s)"
-msgstr ""
+msgstr "Ambil nama pengguna"
 
 #: peeringdb_server/templates/site/verification_banner.html:6
 msgid "Your user account has not been affiliated with any Organization yet, and will have limited access to some of the data (such as non-public network contact information)."
-msgstr ""
+msgstr "Akun anda belum berafiliasi dengan Organisasi manapun, kareanya akan mempunyai akses yg terbatas (seperti kontak jaringan yg bukan umum)."
 
 #: peeringdb_server/templates/site/verification_banner.html:11
 msgid "Please take the time to confirm your email address and request affiliation"
-msgstr ""
+msgstr "Tolong konfirmasi surel anda dan sekalian mengurus afiliasi dengan organisasi anda"
 
 #: peeringdb_server/templates/site/verification_banner.html:14
 msgid "You may request affiliation to an Organization or ASN"
-msgstr ""
+msgstr "Anda dapat meminta afiliasi ke Organisasi atau ASN"
 
 #: peeringdb_server/templates/site/verify.html:17
 msgid "Select language"
@@ -1858,15 +1858,15 @@ msgstr "Pilih bahasa"
 
 #: peeringdb_server/templates/site/verify.html:18
 msgid "Language preference saved"
-msgstr ""
+msgstr "Bahasa utama disimpan"
 
 #: peeringdb_server/templates/site/verify.html:30
 msgid "Set language preference"
-msgstr ""
+msgstr "Ganti bahasa utama"
 
 #: peeringdb_server/templates/site/verify.html:39
 msgid "You have confirmed your email address!"
-msgstr ""
+msgstr "Anda telah mengkonfirmasi surel anda!"
 
 #: peeringdb_server/templates/site/verify.html:43
 msgid "Attention!"
@@ -1874,95 +1874,95 @@ msgstr "Perhatian!"
 
 #: peeringdb_server/templates/site/verify.html:45
 msgid "Please specify an email address for your account, we won't be able to proceed with verification until you do."
-msgstr ""
+msgstr "Tolong masukkan alamat surel untuk akun anda, kami tidak akan bisa melanjutkan proses verifikasi ini."
 
 #: peeringdb_server/templates/site/verify.html:48
 msgid "Email Confirmation"
-msgstr ""
+msgstr "Konfirmasi Surel"
 
 #: peeringdb_server/templates/site/verify.html:50
 msgid "Before getting access to any other features, you need to confirm your email address."
-msgstr ""
+msgstr "Sebelum bisa mengakses ke fitur lainnya, anda harus mengkonfirmasi surel anda."
 
 #: peeringdb_server/templates/site/verify.html:51
 msgid "We have sent you a message containing the confirmation link."
-msgstr ""
+msgstr "Kami telah mengirimkan pesan yg berisi tautan konfirmasi."
 
 #: peeringdb_server/templates/site/verify.html:61
 msgid "You won't have full access until we or the organization you are affiliated with have reviewed your account. Thank you for your patience."
-msgstr ""
+msgstr "Anda tidak akan mendapatkan full akses sampai kami atau organisasi yg berafiliasi dengan anda telah mereview akun anda. Terima kasih atas kesabarannya."
 
 #: peeringdb_server/templates/site/verify.html:75
 msgid "Affiliate with organization"
-msgstr ""
+msgstr "Afiliasi dengan organisasi"
 
 #: peeringdb_server/templates/site/verify.html:80
 #, python-format
 msgid "Your affiliation with %(ar_name)s is pending approval."
-msgstr ""
+msgstr "Afiliasi anda dengan %(ar_name) menunggu persetujuan."
 
 #: peeringdb_server/templates/site/verify.html:82
 #, python-format
 msgid "Your affiliation with %(ar_name)s was denied"
-msgstr ""
+msgstr "Afiliasi anda dengan %(ar_name) ditolak."
 
 #: peeringdb_server/templates/site/verify.html:84
 #, python-format
 msgid "Your affiliation with %(ar_name)s was approved"
-msgstr ""
+msgstr "Afiliasi anda dengan %(ar_name) telah disetujui"
 
 #: peeringdb_server/templates/site/verify.html:92
 msgid "To affiliate with an existing organization, please enter the ASN or organization name below."
-msgstr ""
+msgstr "Untuk berafiliasi dengan organisasi yg telah ada, silahkan masukkan ASN atau nama organisasi dibawah ini."
 
 #: peeringdb_server/templates/site/verify.html:96
 msgid "To register a new network organization, please enter the ASN and organization name below."
-msgstr ""
+msgstr "Untuk mendaftarkan jaringan baru, silahkan masukkan ASN atau nama organisasi dibawah ini."
 
 #: peeringdb_server/templates/site/verify.html:100
 msgid "To register a new facility or exchange organization, please enter the organization name below (ASN is optional)."
-msgstr ""
+msgstr "Untuk mendaftarkan fasilitas atau exchange baru, silahkan masukkan nama organisasi dibawah ini (ASN tidak wajib)."
 
 #: peeringdb_server/templates/site/verify.html:118
 msgid "Affiliate"
-msgstr ""
+msgstr "Afiliasi"
 
 #: peeringdb_server/templates/site/verify.html:121
 #: peeringdb_server/templates/site/view_organization_tools.html:329
 msgid "In case the RiR entry cannot be retrieved for your ASN, please contact"
-msgstr ""
+msgstr "Jika data RiR tidak dapat diambil untuk ASN anda, silahkan kontak ke"
 
 #: peeringdb_server/templates/site/verify.html:122
 msgid "for assistance"
-msgstr ""
+msgstr "untuk bantuan"
 
 #: peeringdb_server/templates/site/verify.html:126
 msgid "Existing affiliations"
-msgstr ""
+msgstr "Afiliasi saat ini"
 
 #: peeringdb_server/templates/site/verify.html:129
 msgid "Your affiliation with"
-msgstr ""
+msgstr "Afiliasi anda dengan"
 
 #: peeringdb_server/templates/site/verify.html:129
 msgid "has been approved"
-msgstr ""
+msgstr "telah disetujui"
 
 #: peeringdb_server/templates/site/verify.html:142
 msgid "Manage OAuth Applications"
-msgstr ""
+msgstr "Atur Aplikasi OAuth"
 
 #: peeringdb_server/templates/site/verify.html:157
 msgid "Change email address"
-msgstr ""
+msgstr "Ganti alamat surel"
 
 #: peeringdb_server/templates/site/verify.html:160
 msgid "For speedy validation, it is required that you use a work e-mail address. If you plan to register your ASN with PeeringDB, it is recommended that you use an email-address that exists in the ASN's public contact details."
-msgstr ""
+msgstr "Untuk validasi yg cepat, diperlukan alamat surel kerja anda. Jika anda berencana untuk mendaftarkan ASN anda dengan PeeringDB, sangat direkomendasikan untuk menggunakan alamat surle yg ada di informasi public untuk kontak ASN anda."
 
 #: peeringdb_server/templates/site/verify.html:181
 msgid "Change Email"
-msgstr ""
+msgstr "Ganti surel"
 
 #: peeringdb_server/templates/site/verify.html:192
 msgid "Change password"
@@ -1978,11 +1978,11 @@ msgstr "Password saat ini"
 
 #: peeringdb_server/templates/site/verify.html:212
 msgid "Password Verification"
-msgstr ""
+msgstr "Verifikasi katasandi"
 
 #: peeringdb_server/templates/site/view.html:26
 msgid "Pending Review"
-msgstr ""
+msgstr "Review tertunda"
 
 #: peeringdb_server/templates/site/view.html:31
 msgid "Edit"
@@ -2002,43 +2002,43 @@ msgstr "Simpan"
 
 #: peeringdb_server/templates/site/view.html:56
 msgid "Some of the data on this page is incomplete, please update the fields marked with"
-msgstr ""
+msgstr "Beberapa data ti halaman ini tidak lengkap, tolong perbarui isian yg ditandai dengan"
 
 #: peeringdb_server/templates/site/view.html:58
 msgid "to improve data quality"
-msgstr ""
+msgstr "untuk memperbaiki kualitas data"
 
 #: peeringdb_server/templates/site/view.html:216
 msgid "Address failed validation."
-msgstr ""
+msgstr "Alamat gagal di validasi."
 
 #: peeringdb_server/templates/site/view.html:218
 msgid "Geocoding error"
-msgstr ""
+msgstr "Error geocoding"
 
 #: peeringdb_server/templates/site/view.html:222
 msgid "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."
-msgstr ""
+msgstr "Data geocode untuk entitas ini tidak dapat diambil saat ini. Ini akan dilakukan otomatis saat pergantian isian alamat."
 
 #: peeringdb_server/templates/site/view.html:225
 msgid "Updated geocode data for this entity will be obtained shortly"
-msgstr ""
+msgstr "Data geoode untuk entitas ini akan diperbaharui sesaat lagi"
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:51
 #: peeringdb_server/templates/site/view_exchange_bottom.html:83
 #: peeringdb_server/templates/site/view_exchange_bottom.html:190
 msgid "IXF Member Export URL"
-msgstr ""
+msgstr IXF Member Export URL""
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:78
 #: peeringdb_server/templates/site/view_exchange_bottom.html:134
 msgid "Prefix"
-msgstr ""
+msgstr "Prefix"
 
 #: peeringdb_server/templates/site/view_exchange_assets.html:82
 #: peeringdb_server/templates/site/view_organization_tools.html:681
 msgid "Add"
-msgstr ""
+msgstr "Tambah"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:26
 #: peeringdb_server/templates/site/view_exchange_bottom.html:170
@@ -2063,7 +2063,7 @@ msgstr "MTU"
 #: peeringdb_server/templates/site/view_organization_side.html:107
 #: peeringdb_server/templates/site/view_organization_side.html:175
 msgid "Nothing matched your filter"
-msgstr ""
+msgstr "Tidak ada yg sesuai dengan filter anda"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
 #: peeringdb_server/templates/site/view_exchange_bottom.html:251
@@ -2076,31 +2076,31 @@ msgstr ""
 #: peeringdb_server/templates/site/view_organization_side.html:108
 #: peeringdb_server/templates/site/view_organization_side.html:176
 msgid "You may filter by"
-msgstr ""
+msgstr "Anda dapat memfilter dengan"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:40
 msgid "dot1q"
-msgstr ""
+msgstr "dot1q"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:44
 msgid "IXLAN"
-msgstr ""
+msgstr "IXLAN"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:44
 msgid "ATTENTION: Any network relationships to the exchange via this LAN will be removed as well"
-msgstr ""
+msgstr "PERHATIAN: Semua hubungan jaringan ke exchange via LAN ini akan dihapus semua"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:97
 msgid "IXLAN Prefix"
-msgstr ""
+msgstr "IXLAN Prefix"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:138
 msgid "Add Prefix"
-msgstr ""
+msgstr "Tambahkan Prefix"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:202
 msgid "Add LAN"
-msgstr ""
+msgstr "Tamah LAN"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:234
 #: peeringdb_server/templates/site/view_exchange_bottom.html:251
@@ -2109,7 +2109,7 @@ msgstr ""
 #: peeringdb_server/templates/site/view_network_side.html:235
 #: peeringdb_server/templates/site/view_network_side.html:278
 msgid "Facility"
-msgstr ""
+msgstr "Fasilitas"
 
 #: peeringdb_server/templates/site/view_exchange_bottom.html:256
 msgid "Exchange - Facility link"
