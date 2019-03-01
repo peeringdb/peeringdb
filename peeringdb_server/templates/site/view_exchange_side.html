@@ -6,7 +6,7 @@
 <div class="list" data-sort-container=".scrollable" data-sort-row=".row">
   <div class="row">
     <div class="col-xs-6 col-sm-8 col-md-8">
-      <h5>Peers at this Exchange Point</h5>
+      <h5>{% trans "Peers at this Exchange Point" %}</h5>
     </div>
     <div class="col-xs-6 col-sm-4 col-md-4 filter">
       <input type="text" placeholder="Filter" data-filter-target="#list-networks" class="form-control" />
@@ -33,8 +33,8 @@
       <div class="message">{% trans "Nothing matched your filter" %}</div>
       <div class="help">
         {% spaceless %}
-        {% trans "You may filter by" %} 
-        <b>{% trans "Exchange" %}</b>, <b>{% trans "ASN" %}</b>, <b>{% trans "Policy" %}</b>, 
+        {% trans "You may filter by" %}
+        <b>{% trans "Exchange" %}</b>, <b>{% trans "ASN" %}</b>, <b>{% trans "Policy" %}</b>,
         <b>{% trans "IP" %}</b> {% trans "or" %} <b>{% trans "Speed" %}</b>
         {% endspaceless %}
       </div>
