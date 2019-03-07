@@ -30,11 +30,11 @@ misc:
     compat:
       client:
         min: "0,6"
-        max: "0,6"
+        max: "255,0"
       backends:
         - name: django_peeringdb
           min: "0,6"
-          max: "0,6"
+          max: "255,0"
   maintenance:
     lockfile: "maintenance.lock"
 
