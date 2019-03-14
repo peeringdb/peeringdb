@@ -55,16 +55,19 @@ class StatusFilter(admin.SimpleListFilter):
 
     title = _("Status")
     parameter_name = "status"
-    dflt = "ok"
+    dflt = "all"
 
     def lookups(self, request, model_admin):
         return [("ok", "ok"), ("pending", "pending"), ("deleted", "deleted"),
                 ("all", "all")]
 
     def choices(self, cl):
+        val = self.value()
+        if val is None:
+            val = "all"
         for lookup, title in self.lookup_choices:
             yield {
-                'selected': self.value() == lookup,
+                'selected': val == lookup,
                 'query_string': cl.get_query_string({
                     self.parameter_name: lookup
                 }, []),
@@ -72,9 +75,7 @@ class StatusFilter(admin.SimpleListFilter):
             }
 
     def queryset(self, request, queryset):
-        if self.value() is None:
-            return queryset.filter(**{self.parameter_name: self.dflt})
-        elif self.value() == "all":
+        if self.value() is None or self.value() == "all":
             return queryset.all()
         return queryset.filter(**{self.parameter_name: self.value()})
 

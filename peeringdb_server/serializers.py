@@ -1409,7 +1409,7 @@ class NetworkSerializer(ModelSerializer):
                 rdap = RdapLookup().get_asn(asn)
 
         # add network to existing org
-        if rdap and user.email in rdap.emails:
+        if rdap and user.validate_rdap_relationship(rdap):
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
             ticket_queue_asnauto_skipvq(user, validated_data["org"],
