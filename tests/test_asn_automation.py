@@ -89,7 +89,7 @@ class AsnAutomationTestCase(TestCase):
         cls.base_org = models.Organization.objects.create(
             name="ASN Automation Tests")
 
-        for username, email in [("user_a", "neteng@20c.com"),
+        for username, email in [("user_a", "Neteng@20c.com"),
                                 ("user_b", "neteng@other.com"),
                                 ("user_c", "other@20c.com")]:
             setattr(cls, username,
