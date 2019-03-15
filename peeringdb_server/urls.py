@@ -19,6 +19,10 @@ from peeringdb_server.export_views import (
     AdvancedSearchExportView,
 )
 
+from peeringdb_server.import_views import (
+    view_import_ixlan_ixf_preview,
+)
+
 from django.views.i18n import JavaScriptCatalog
 
 # o
@@ -121,6 +125,8 @@ urlpatterns = [
         view_export_ixf_ixlan_members),
     url(r'^export/advanced-search/(?P<tag>[\w_]+)/(?P<fmt>[\w_-]+)$',
         AdvancedSearchExportView.as_view()),
+    url(r'^import/ixlan/(?P<ixlan_id>\d+)/ixf/preview$',
+        view_import_ixlan_ixf_preview),
     url(r'^$', view_index),
     url(r'^i18n/', include('django.conf.urls.i18n')),
     url('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
