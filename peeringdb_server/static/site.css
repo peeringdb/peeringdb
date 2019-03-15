@@ -45,13 +45,21 @@ input[type="textarea"]:active:focus {
   color: #9e1e1e;
   font-weight: bold;
 }
+
 .tiny {
   font-size: 10px;
 }
+
 .suffix {
   margin-left: 5px;
   display: inline;
 }
+
+span.tiny.suffix {
+  color: #00203e;
+  font-size: 12px;
+}
+
 .hidden {
   display: none;
 }
@@ -107,12 +115,14 @@ a, a:hover, a:visited {
 }
 
 a.empty {
-  color:#000;
+  color:#ffffff;
   text-decoration: none;
 }
 
 a.btn {
   text-decoration: none;
+  color:#ffffff;
+  margin-bottom: 15px;
 }
 
 h5 {
@@ -463,8 +473,8 @@ div.recent div.participant > a {
 }
 
 div.recent div.age {
-  font-size: 12px;
-  color: #4b6063;
+  font-size: 14px;
+  color: #00203e;
   margin-bottom: 5px;
 }
 
@@ -518,7 +528,7 @@ div.view_row {
 div.view_row > div.help {
   background-color: #1c3f28;
   padding: 3px;
-  font-size: 12px;
+  font-size: 102px;
 }
 
 div.view_field {
@@ -557,10 +567,10 @@ div.view_value {
   overflow: visible;
 }
 
-
 div.view_value.fmt_text {
   /*white-space: pre-wrap;*/
 }
+
 div.view_value.fmt_text h1 {
   font-size: 20px;
   margin: 0px 0px 5px 0px;
@@ -636,7 +646,6 @@ div.list div.header {
   border-bottom: 10px #f1f1f1 solid;
 }
 
-
 div.list div.filter {
   padding: 5px;
 }
@@ -661,8 +670,8 @@ div.list div.empty-result {
 }
 
 div.list div.empty-result div.help {
-  font-size: 11px;
-  color: #4b6063;
+  font-size: 14px;
+  color: #00203e;
 }
 
 div.list > div.scrollable {
@@ -706,16 +715,18 @@ div.list div.row > div > div:nth-child(1) {
 }
 
 div.list div.row > div > div:nth-child(2) {
-  font-size: 12px;
+  color: #ffffff;
+  font-size: 14px;
 }
 
 div.list div.row.item > div > div:nth-child(2) {
-  color: #4b6063;
+  color: #00203e;
+  font-size: 14px;
 }
 
 div.list div.row.item > div > div:nth-child(2) input[type="text"],
 div.list div.row.item > div > div:nth-child(2) select {
-  color: #000000;
+  color: #00203e;
   font-size: 14px;
 }
 
@@ -1096,10 +1107,15 @@ div.advanced-search-view div.results div.row > div > div:empty:before {
   content: '-';
 }
 
-div.advanced-search-view div.results div.row > div > div:nth-child(2),
+div.advanced-search-view div.results div.row > div > div:nth-child(2) {
+  color: #00203e;
+  font-size: 14px;
+  display: block;
+}
+
 span.hint {
   color: #00203e;
-  font-size: 11px;
+  font-size: 14px;
   display: block;
 }
 

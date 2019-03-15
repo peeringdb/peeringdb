@@ -36,8 +36,8 @@
        data-edit-template="facility-item">
 
     <div class="empty-result">
-      <div class="message">{% trans "Nothing matched your filter" %}</div>
-      <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}</b></div>
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
     </div>
 
     {% for n in data.facilities %}
@@ -104,8 +104,8 @@
        data-edit-template="network-item">
 
     <div class="empty-result">
-      <div class="message">{% trans "Nothing matched your filter" %}</div>
-      <div class="help">{% trans "You may filter by"%} <b>{% trans "Name" %}</b> {% trans "or" %} <b>{% trans "ASN" %}</b></div>
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by"%} <b>{% trans "Name" %}</b> {% trans "or" %} <b>{% trans "ASN" %}.</b></div>
     </div>
 
     {% for n in data.networks %}
@@ -172,8 +172,8 @@
        data-edit-template="exchange-item">
 
     <div class="empty-result">
-      <div class="message">{% trans "Nothing matched your filter"%}</div>
-      <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}</b></div>
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
     </div>
 
     {% for n in data.exchanges %}
