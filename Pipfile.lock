@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ccb18caf72ef949fa2017a2d3a876e625ada3dece9fd53402d19cc7281f6f717"
+            "sha256": "1a543a6defe8d52546fe6b3b8a59029d7655146aef013e0fa15a13ad8583dd4a"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -55,7 +55,7 @@
         },
         "django": {
             "hashes": [],
-            "version": "==1.11.15"
+            "version": "==1.11.20"
         },
         "django-allauth": {
             "hashes": [],
@@ -203,7 +203,7 @@
         },
         "oauthlib": {
             "hashes": [],
-            "version": "==2.1.0"
+            "version": "==3.0.1"
         },
         "openapi-codec": {
             "hashes": [],
@@ -219,7 +219,7 @@
         },
         "phonenumbers": {
             "hashes": [],
-            "version": "==8.10.2"
+            "version": "==8.10.5"
         },
         "python-openid": {
             "hashes": [],
@@ -227,7 +227,7 @@
         },
         "pytz": {
             "hashes": [],
-            "version": "==2018.7"
+            "version": "==2018.9"
         },
         "pyyaml": {
             "hashes": [],
@@ -243,7 +243,7 @@
         },
         "requests-oauthlib": {
             "hashes": [],
-            "version": "==1.0.0"
+            "version": "==1.2.0"
         },
         "simplejson": {
             "hashes": [],
@@ -285,7 +285,7 @@
     "develop": {
         "atomicwrites": {
             "hashes": [],
-            "version": "==1.2.1"
+            "version": "==1.3.0"
         },
         "attrs": {
             "hashes": [],
@@ -309,11 +309,11 @@
         },
         "decorator": {
             "hashes": [],
-            "version": "==4.3.0"
+            "version": "==4.3.2"
         },
         "facsimile": {
             "hashes": [],
-            "version": "==1.0.2"
+            "version": "==1.1.1"
         },
         "future": {
             "hashes": [],
@@ -329,6 +329,7 @@
         },
         "more-itertools": {
             "hashes": [],
+            "markers": "python_version > '2.7'",
             "version": "==5.0.0"
         },
         "munge": {
@@ -337,27 +338,27 @@
         },
         "pluggy": {
             "hashes": [],
-            "version": "==0.8.0"
+            "version": "==0.8.1"
         },
         "py": {
             "hashes": [],
-            "version": "==1.7.0"
+            "version": "==1.8.0"
         },
         "pytest": {
             "hashes": [],
-            "version": "==4.0.2"
+            "version": "==4.3.0"
         },
         "pytest-cov": {
             "hashes": [],
-            "version": "==2.6.0"
+            "version": "==2.6.1"
         },
         "pytest-django": {
             "hashes": [],
-            "version": "==3.4.4"
+            "version": "==3.4.7"
         },
         "pytest-filedata": {
             "hashes": [],
-            "version": "==0.3.0"
+            "version": "==0.4.0"
         },
         "pyyaml": {
             "hashes": [],

@@ -125,6 +125,12 @@ a.btn {
   margin-bottom: 15px;
 }
 
+.btn-inline {
+  position: absolute;
+  right: 5px;
+  top: 0px;
+}
+
 h5 {
   font-weight: bold;
 }
@@ -1199,3 +1205,64 @@ span.inline.delimited input {
 div[name=ipaddr6],
 div[data-edit-name=ipaddr6]
 { word-break: break-all; }
+
+.ixf-log {
+  max-height: 400px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+
+.ixf-row {
+  padding: 2px;
+  border-bottom: 1px rgba(0,0,0,0.25) solid;
+}
+
+.ixf-skip {
+  background-color: #ffffd7;
+}
+
+.ixf-add {
+  background-color: #c5ffcd;
+}
+
+.ixf-modify {
+  background-color: #c5e9ff;
+}
+
+.ixf-delete {
+  background-color: #fbdbdb;
+}
+
+.ixf-noop {
+  background-color: #eaeaea;
+}
+
+
+.ixf-reason {
+  font-size: 11px;
+}
+
+.ixf-error {
+  color: red;
+  padding: 2px;
+}
+
+.ixf-errors-list {
+}
+
+.ixf-error-counter:not(:empty) {
+  color: red;
+  font-weight: bold;
+}
+
+.ixf-errors-overview {
+  background-color: #fbdbdb;
+  color: red;
+  text-align: center;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.ixf-errors-overview small {
+  color: #666;
+}

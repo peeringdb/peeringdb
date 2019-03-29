@@ -47,7 +47,8 @@ PARTNERSHIP_LEVELS = ((1, _("Data Validation")), (2, _("RIR")))
 COMMANDLINE_TOOLS = (("pdb_renumber_lans",
                       _("Renumber IP Space")), ("pdb_fac_merge",
                                                 _("Merge Facilities")),
-                     ("pdb_fac_merge_undo", _("Merge Facilities: UNDO")))
+                     ("pdb_fac_merge_undo", _("Merge Facilities: UNDO")),
+                     ("pdb_undelete", _("Restore Object(s)")))
 
 
 if settings.TUTORIAL_MODE:
@@ -988,6 +989,14 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
         return self.netfac_set.filter(status="ok")
 
     @property
+    def ixfac_set_active(self):
+        """
+        Returns queryset of active InternetExchangeFacility objects connected
+        to this facility
+        """
+        return self.ixfac_set.filter(status="ok")
+
+    @property
     def net_count(self):
         """
         Returns number of Networks at this facility
@@ -1262,6 +1271,16 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     ix = models.ForeignKey(InternetExchange, related_name="ixfac_set")
     facility = models.ForeignKey(Facility, default=0, related_name="ixfac_set")
 
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the ixfac for logging purposes
+        """
+        return "ixfac{} {} <-> {}".format(
+            self.id, self.ix.name, self.facility.name)
+
+
+
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, id):
         """
@@ -1304,6 +1323,15 @@ class IXLan(pdb_models.IXLanBase):
 
     class Meta:
         db_table = u'peeringdb_ixlan'
+
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the ixlan for logging purposes
+        """
+        return "ixlan{} {} {}".format(
+            self.id, self.name, self.ix.name)
+
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, id):
@@ -1350,59 +1378,6 @@ class IXLan(pdb_models.IXLanBase):
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["ix"])
 
-    def fetch_ixf_ixp_members_list(self):
-        """
-        Retrieves ixf member export data from the url provided in
-        ixf_ixp_member_list_url.
-
-        Will do a quick sanity check on the data
-
-        Returns dict containing the parsed data.
-        """
-
-        if not self.ixf_ixp_member_list_url:
-            return None
-
-        r = requests.get(self.ixf_ixp_member_list_url, timeout=5)
-        if r.status_code != 200:
-            # FIXME: log error somewhere
-            return None
-
-        try:
-            o = r.json()
-        except Exception as inst:
-            o = {"pdb_sanitize_error": _("No JSON could be parsed")}
-            return o
-
-        invalid = None
-        vlan_list_found = False
-
-        # sanitize
-
-        # This fixes instances where ixps provide two separate entries for
-        # vlans in vlan_list for ipv4 and ipv6 (AMS-IX for example)
-        for m in o.get("member_list", []):
-            asn = m.get("asnum")
-            for c in m.get("connection_list", []):
-                vlans = c.get("vlan_list", [])
-                if not vlans:
-                    continue
-                vlan_list_found = True
-                if len(vlans) == 2:
-                    # if vlans[0].get("vlan_id") == vlans[1].get("vlan_id"):
-                    keys = vlans[0].keys() + vlans[1].keys()
-                    if keys.count("ipv4") == 1 and keys.count("ipv6") == 1:
-                        vlans[0].update(**vlans[1])
-                        c["vlan_list"] = [vlans[0]]
-                        print("Sanitized", c["vlan_list"])
-
-        if not vlan_list_found:
-            invalid = _("No entries in any of the vlan_list lists, aborting.")
-
-        o["pdb_sanitize_error"] = invalid
-
-        return o
-
     @reversion.create_revision()
     def add_netixlan(self, netixlan_info, save=True, save_others=True):
         """
@@ -1427,11 +1402,16 @@ class IXLan(pdb_models.IXLanBase):
 
         log = []
         changed = False
+        created = False
         ipv4 = netixlan_info.ipaddr4
         ipv6 = netixlan_info.ipaddr6
         asn = netixlan_info.asn
         ipv4_valid = False
         ipv6_valid = False
+
+        def result(netixlan=None):
+            return { "netixlan": netixlan, "created": created,
+                     "changed": changed, "log":log}
 
         # check if either of the provided ip addresses are a fit for ANY of
         # the prefixes in this ixlan
@@ -1446,24 +1426,24 @@ class IXLan(pdb_models.IXLanBase):
         if (ipv4 and not ipv4_valid) or (ipv6 and not ipv6_valid):
             log.append(
                 "Ip addresses ({}, {}) do not match any prefix " \
-                "on this ixlan. skipping.".format(ipv4, ipv6))
-            return (None, changed, log)
+                "on this ixlan".format(ipv4, ipv6))
+            return result()
 
         # Next we check if an active netixlan with the ipaddress exists in ANOTHER lan, and bail
         # if it does.
         if ipv4 and \
             NetworkIXLan.objects.filter(status="ok", ipaddr4=ipv4).exclude(ixlan=self).count() > 0:
             log.append(
-                "Ip address {} already exists in another lan. skipping.".
+                "Ip address {} already exists in another lan".
                 format(ipv4))
-            return (None, changed, log)
+            return result()
 
         if ipv6 and \
             NetworkIXLan.objects.filter(status="ok", ipaddr6=ipv6).exclude(ixlan=self).count() > 0:
             log.append(
-                "Ip address {} already exists in another lan. skipping.".
+                "Ip address {} already exists in another lan".
                 format(ipv6))
-            return (None, changed, log)
+            return result()
 
         # now we need to figure out if the ipaddresses already exist in this ixlan,
         # we need to check ipv4 and ipv6 separately as they might exist on different
@@ -1506,6 +1486,7 @@ class IXLan(pdb_models.IXLanBase):
             # neither address exists, create a new netixlan object
             netixlan = NetworkIXLan(ixlan=self, network=netixlan_info.network,
                                     status="ok")
+            created = True
 
         # now we sync the data to our determined netixlan instance
 
@@ -1576,182 +1557,13 @@ class IXLan(pdb_models.IXLanBase):
             log.append("Validation Failure AS{} {} {}: {}".format(
                 netixlan.network.asn, netixlan.ipaddr4, netixlan.ipaddr6,
                 inst))
-            return (None, changed, log)
+            return result(None)
 
         if save and changed:
             netixlan.status = "ok"
             netixlan.save()
 
-        return (netixlan, changed, log)
-
-    def update_from_ixf_ixp_member_list(self, json_data, save=True):
-        """
-        Sync netixlans under this ixlan from ixf member export json data (specs
-        can be found at https://github.com/euro-ix/json-schemas)
-
-        Arguments:
-            - json_data (dict): parsed dict from ixf member export json (schema
-                described here https://github.com/euro-ix/json-schemas)
-
-        Keyword Arguments:
-            - save (bool): commit changes to db
-
-        Returns:
-            - Tuple(success<bool>, netixlans<list>, log<list>)
-        """
-
-        log = []
-        netixlans = []
-        ipaddresses = []
-        ixlan = self
-
-        def persist_attempt():
-            print(log)
-            if save:
-                IXLanIXFMemberImportAttempt.objects.update_or_create(
-                    ixlan=ixlan, defaults={
-                        "info": "\n".join(log)
-                    })
-
-        if json_data.get("pdb_sanitize_error"):
-            log.append(json_data.get("pdb_sanitize_error"))
-            persist_attempt()
-            return (False, [], [], log)
-
-        if self.ixpfx_set_active.count() == 0:
-            log.append("No prefixes defined on ixlan, skipping.")
-            persist_attempt()
-            return (False, [], [], log)
-
-        with transaction.atomic():
-            try:
-                member_list = json_data["member_list"]
-                for member in member_list:
-                    # we only process members of certain types
-                    if member.get("member_type", "peering") in \
-                    ["peering", "ixp", "routeserver", "probono"]:
-                        # check that the as exists in pdb
-                        asn = member["asnum"]
-
-                        if Network.objects.filter(asn=asn).exists():
-                            network = Network.objects.get(asn=asn)
-                            if network.status != "ok":
-                                log.append(
-                                    "Network with ASN {} status invalid, skipping..".
-                                    format(asn))
-                                continue
-                            for connection in member.get(
-                                    "connection_list", []):
-                                if connection.get("state", "active") in [
-                                        "active", "connected"
-                                ]:
-
-                                    speed = 0
-                                    for iface in connection.get("if_list", []):
-                                        speed += iface.get("if_speed", 0)
-
-                                    for lan in connection.get("vlan_list", []):
-                                        ipv4_valid = False
-                                        ipv6_valid = False
-
-                                        ipv4 = lan.get("ipv4", {})
-                                        ipv6 = lan.get("ipv6", {})
-                                        if not ipv4 and not ipv6:
-                                            log.append("Could not find ipv4 or 6 address in " \
-                                                "vlan_list entry for vlan_id {}".format( \
-                                                lan.get("vlan_id")))
-                                            continue
-
-                                        ipv4_addr = ipv4.get("address")
-                                        ipv6_addr = ipv6.get("address")
-
-                                        try:
-                                            if ipv4_addr:
-                                                ipaddresses.append(
-                                                    "{}-{}".format(
-                                                        asn,
-                                                        ipaddress.ip_address(
-                                                            unicode(
-                                                                ipv4_addr))))
-                                            if ipv6_addr:
-                                                ipaddresses.append(
-                                                    "{}-{}".format(
-                                                        asn,
-                                                        ipaddress.ip_address(
-                                                            unicode(
-                                                                ipv6_addr))))
-                                        except (ipaddress.AddressValueError,
-                                                ValueError) as exc:
-                                            log.append(
-                                                "Invalid ipaddress '{}' for ASN {} - skipping".
-                                                format(exc, asn))
-                                            continue
-
-                                        if not network.allow_ixp_update:
-                                            log.append(
-                                                "Network with ASN {} has disabled ixp " \
-                                                "updates, skipping..".format(asn))
-                                            continue
-
-                                        netixlan, changed, _log = self.add_netixlan(
-                                            NetworkIXLan(
-                                                ixlan=self,
-                                                network=network,
-                                                ipaddr4=ipv4_addr,
-                                                ipaddr6=ipv6_addr,
-                                                speed=(speed or 0),
-                                                asn=asn,
-                                                is_rs_peer=(ipv4.get("routeserver", False) or \
-                                                    ipv6.get("routeserver", False))
-                                            ),
-                                            save=save,
-                                            save_others=save
-                                        )
-
-                                        log.extend(_log)
-                                        if netixlan and changed:
-                                            netixlans.append(netixlan)
-
-                        else:
-                            log.append(
-                                "Network with asn {} does not exist in " \
-                                "PeeringDB, skipping...".format(asn))
-
-            except KeyError, exc:
-                log.append("Internal Error 'KeyError': {}".format(exc))
-                persist_attempt()
-                return (False, netixlans, [], log)
-
-            with reversion.create_revision():
-                netixlans_deleted = []
-                for netixlan in self.netixlan_set_active:
-                    ipv4 = "{}-{}".format(netixlan.asn, netixlan.ipaddr4)
-                    ipv6 = "{}-{}".format(netixlan.asn, netixlan.ipaddr6)
-                    if ipv4 not in ipaddresses and ipv6 not in ipaddresses:
-                        log.append("Removing ASN {} IPV4 {} IPV6 {}".format(
-                            netixlan.asn, netixlan.ipaddr4, netixlan.ipaddr6))
-                        netixlans_deleted.append(netixlan)
-                        if save:
-                            netixlan.delete()
-
-        with transaction.atomic():
-            persist_attempt()
-            if save and (netixlans or netixlans_deleted):
-                persist_log = IXLanIXFMemberImportLog.objects.create(
-                    ixlan=self)
-                for netixlan in netixlans + netixlans_deleted:
-                    versions = reversion.models.Version.objects.get_for_object(
-                        netixlan)
-                    if len(versions) == 1:
-                        version_before = None
-                    else:
-                        version_before = versions[1]
-                    version_after = versions[0]
-                    persist_log.entries.create(netixlan=netixlan,
-                                               version_before=version_before,
-                                               version_after=version_after)
-
-        return (True, netixlans, netixlans_deleted, log)
+        return result(netixlan)
 
 
 class IXLanIXFMemberImportAttempt(models.Model):
@@ -1836,6 +1648,15 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
     """
 
     ixlan = models.ForeignKey(IXLan, default=0, related_name="ixpfx_set")
+
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the ixpfx for logging purposes
+        """
+        return "ixpfx{} {}".format(
+            self.id, self.prefix)
+
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, ixlan_id, id):
@@ -2210,6 +2031,8 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         db_table = u'peeringdb_network_facility'
         unique_together = ('network', 'facility', 'local_asn')
 
+
+
     @classmethod
     def nsp_namespace_from_id(cls, org_id, net_id, fac_id):
         """
@@ -2265,6 +2088,15 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
             qset = cls.handleref.undeleted()
         return qset.filter(**make_relation_filter(field, filt, value))
 
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the netfac for logging purposes
+        """
+        return "netfac{} AS{} {} <-> {}".format(
+            self.id, self.network.asn, self.network.name, self.facility.name)
+
+
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["net"])
 
@@ -2289,6 +2121,14 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     @property
     def name(self):
         return ""
+
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the netixlan for logging purposes
+        """
+        return "netixlan{} AS{} {} {}".format(
+            self.id, self.asn, self.ipaddr4, self.ipaddr6)
 
     @property
     def ix_name(self):

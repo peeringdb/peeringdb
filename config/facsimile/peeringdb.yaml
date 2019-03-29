@@ -22,6 +22,7 @@ misc:
     view_verify_POST: "2/m"
     view_username_retrieve_initiate: "2/m"
     request_translation: "2/m"
+    view_import_ixlan_ixf_preview: "1/m"
   api:
     throtteling:
       enabled: true
@@ -30,11 +31,11 @@ misc:
     compat:
       client:
         min: "0,6"
-        max: "0,6"
+        max: "255,0"
       backends:
         - name: django_peeringdb
           min: "0,6"
-          max: "0,6"
+          max: "255,0"
   maintenance:
     lockfile: "maintenance.lock"
 
@@ -66,6 +67,13 @@ install:
   - type: tmpl
     dir: tmpl
     render_files: true
+    skip: ^\.
+
+  # peeringdb static files
+  - type: copy
+    dir: $SRC_DIR$/peeringdb_server/static
+    pattern: ^$SRC_DIR$
+    replace: peeringdb
     skip: ^\.
 
   - type: copy
@@ -100,6 +108,8 @@ install:
     - $SRC_DIR$/peeringdb_server/db_router.py
     - $SRC_DIR$/peeringdb_server/mock.py
     - $SRC_DIR$/peeringdb_server/maintenance.py
+    - $SRC_DIR$/peeringdb_server/import_views.py
+    - $SRC_DIR$/peeringdb_server/ixf.py
     - $SRC_DIR$/peeringdb_server/management/__init__.py
     - $SRC_DIR$/peeringdb_server/management/commands/__init__.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_deskpro_publish.py
@@ -226,4 +236,3 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/aup.html
     - $SRC_DIR$/peeringdb_server/templates/site/about.html
     - $SRC_DIR$/peeringdb_server/templates/oauth2_provider/base.html
-

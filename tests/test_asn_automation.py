@@ -11,8 +11,8 @@ import peeringdb_server.inet as pdbinet
 from util import SettingsCase
 
 ERR_COULD_NOT_GET_RIR_ENTRY = "RDAP Lookup Error: Test Not Found"
-ERR_BOGON_ASN = "RDAP Lookup Error: ASNs for documentation/private purposes " \
-                     "are not allowed in this environment"
+ERR_BOGON_ASN = "RDAP Lookup Error: ASNs in this range are not allowed " \
+                "in this environment"
 
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 
@@ -89,7 +89,7 @@ class AsnAutomationTestCase(TestCase):
         cls.base_org = models.Organization.objects.create(
             name="ASN Automation Tests")
 
-        for username, email in [("user_a", "neteng@20c.com"),
+        for username, email in [("user_a", "Neteng@20c.com"),
                                 ("user_b", "neteng@other.com"),
                                 ("user_c", "other@20c.com")]:
             setattr(cls, username,
@@ -282,7 +282,7 @@ class TestTutorialMode(SettingsCase):
         """
         user = get_user_model().objects.create_user("user_a", "user_a@localhost", "user_a")
         asns = []
-        for a,b in pdbinet.BOGON_ASN_RANGES:
+        for a,b in pdbinet.TUTORIAL_ASN_RANGES:
             asns.extend([a,b])
 
         for asn in asns:

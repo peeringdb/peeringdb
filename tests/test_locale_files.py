@@ -17,7 +17,15 @@ class LocaleFilesTest(TestCase):
             messages = dict(zip(message_id, message_str))
         return messages
 
-    def test_pt(self):
+    # weblate handles all this now, and these tests are failing
+    # atm because the locale files no longer reside here
+    #
+    # weblate also makes sure that variable formatting matches, so this
+    # test is somewhat redundant at this point.
+    #
+    # either need to redo this test and make sure it generates the locale
+    # or remove it.
+    def _test_pt(self):
         """
         Test portuguese locale files
         """

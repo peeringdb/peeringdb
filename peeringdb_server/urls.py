@@ -11,12 +11,16 @@ from peeringdb_server.autocomplete_views import (
     FacilityAutocompleteForNetwork, FacilityAutocompleteForExchange,
     OrganizationAutocomplete, ExchangeAutocomplete, ExchangeAutocompleteJSON,
     IXLanAutocomplete, FacilityAutocomplete, FacilityAutocompleteJSON,
-    clt_history)
+    DeletedVersionAutocomplete, clt_history)
 
 from peeringdb_server.export_views import (
     view_export_ixf_ix_members,
     view_export_ixf_ixlan_members,
     AdvancedSearchExportView,
+)
+
+from peeringdb_server.import_views import (
+    view_import_ixlan_ixf_preview,
 )
 
 from django.views.i18n import JavaScriptCatalog
@@ -121,6 +125,8 @@ urlpatterns = [
         view_export_ixf_ixlan_members),
     url(r'^export/advanced-search/(?P<tag>[\w_]+)/(?P<fmt>[\w_-]+)$',
         AdvancedSearchExportView.as_view()),
+    url(r'^import/ixlan/(?P<ixlan_id>\d+)/ixf/preview$',
+        view_import_ixlan_ixf_preview),
     url(r'^$', view_index),
     url(r'^i18n/', include('django.conf.urls.i18n')),
     url('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
@@ -158,6 +164,8 @@ urlpatterns += [
         name="autocomplete-fac"),
     url(r'^autocomplete/ixlan/$', IXLanAutocomplete.as_view(),
         name="autocomplete-ixlan"),
+    url(r'^autocomplete/admin/deletedversions$', DeletedVersionAutocomplete.as_view(),
+        name="autocomplete-admin-deleted-versions"),
 ]
 
 # Admin autocomplete for commandlinetool history

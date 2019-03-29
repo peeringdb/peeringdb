@@ -4,6 +4,7 @@ from peeringdb_server.models import REFTAG_MAP
 
 import reversion
 import json
+import re
 
 
 class Command(BaseCommand):
@@ -24,17 +25,85 @@ class Command(BaseCommand):
         else:
             self.stdout.write("[pretend] {}".format(msg))
 
+    def log_err(self, msg):
+        self.log("[error] {}".format(msg))
+
+    def log_warn(self, msg):
+        self.log("[warning] {}".format(msg))
+
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
         self.version_id = options.get("version_id")
-        version = reversion.models.Version.objects.get(id=self.version_id)
+        self.suppress_warning = None
+        self.version = version = reversion.models.Version.objects.get(
+            id=self.version_id)
         self.date = version.revision.date_created
         self.log("UNDELETING FROM DATE: {}".format(self.date))
         self.undelete(options.get("reftag"), options.get("id"))
 
+    def handle_netixlan(self, netixlan):
+        model = REFTAG_MAP["netixlan"]
+        conflict_ip4, conflict_ip6 = netixlan.ipaddress_conflict()
+
+        if conflict_ip4:
+            # ipv4 exists in another netixlan now
+            others = model.objects.filter(ipaddr4=netixlan.ipaddr4,
+                                          status="ok")
+            for other in [
+                    o for o in others if o.ixlan.ix_id == netixlan.ixlan.ix_id
+            ]:
+                # netixlan is at same ix as the one being undeleted, delete the other
+                # one so we can proceed with undeletion
+                self.log("Found duplicate netixlan at same ix: {} - deleting".
+                         format(other.ipaddr4))
+                if self.commit:
+                    other.delete()
+                else:
+                    # when in pretend mode we need suppress the next warning as we
+                    # are not deleting the conflict
+                    self.suppress_warning = True
+
+            for other in [
+                    o for o in others if o.ixlan.ix_id != netixlan.ixlan.ix_id
+            ]:
+                # unless ipv4 also exists in a netixlan that is NOT at the same ix
+                # then we need the warning again
+                self.suppress_warning = False
+
+        if conflict_ip6:
+            # ipv6 exists in another netixlan now
+            others = model.objects.filter(ipaddr6=netixlan.ipaddr6,
+                                          status="ok")
+            for other in [
+                    o for o in others if o.ixlan.ix_id == netixlan.ixlan.ix_id
+            ]:
+                # netixlan is at same ix as the one being undeleted, delete the other
+                # one so we can proceed with undeletion
+                self.log("Found duplicate netixlan at same ix: {} - deleting".
+                         format(other.ipaddr6))
+                if self.commit:
+                    other.delete()
+                else:
+                    # when in pretend mode we need suppress the next warning as we
+                    # are not deleting the conflict
+                    self.suppress_warning = True
+
+            for other in [
+                    o for o in others if o.ixlan.ix_id != netixlan.ixlan.ix_id
+            ]:
+                # unless ipv6 also exists in a netixlan that is NOT at the same ix
+                # then we need the warning again
+                self.suppress_warning = False
+
     def undelete(self, reftag, _id, parent=None, date=None):
         cls = REFTAG_MAP.get(reftag)
         obj = cls.objects.get(id=_id)
+        self.suppress_warning = False
+
+        def _label(obj):
+            if hasattr(obj, "descriptive_name"):
+                return obj.descriptive_name
+            return obj
 
         if date:
             version = reversion.models.Version.objects.get_for_object(
@@ -46,9 +115,9 @@ class Command(BaseCommand):
             except:
                 status = None
             if status == "deleted":
-                self.log(
+                self.log_warn(
                     "{} was already deleted at snapshot, skipping ..".format(
-                        obj))
+                        _label(obj)))
                 return
 
         can_undelete_obj = True
@@ -63,18 +132,29 @@ class Command(BaseCommand):
                         continue
                     if relation.status == "deleted" and relation != parent:
                         can_undelete_obj = False
-                        self.log(
-                            "Cannot undelete {}, dependent relation marked as deleted: {}".
-                            format(obj, relation))
+                        self.log_warn(
+                            "Cannot undelete {}, dependent relation marked as deleted: {}"
+                            .format(_label(obj), relation))
 
         if not can_undelete_obj:
             return
 
         if obj.status == "deleted":
             obj.status = "ok"
-            self.log("Undeleting {}".format(obj))
-            if self.commit:
-                obj.save()
+            self.log("Undeleting {}".format(_label(obj)))
+
+            handler = getattr(self, "handle_{}".format(reftag), None)
+            if handler:
+                handler(obj)
+
+            try:
+                obj.clean()
+                if self.commit:
+                    obj.save()
+            except Exception as exc:
+                if not self.suppress_warning:
+                    self.log_warn("Cannot undelete {}: {}".format(
+                        _label(obj), exc))
 
         for field in cls._meta.get_fields():
             if field.is_relation:
