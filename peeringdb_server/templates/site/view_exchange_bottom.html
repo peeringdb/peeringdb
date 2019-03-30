@@ -88,6 +88,18 @@
                 data-ixf-preview="{{ x.id }}">{% trans "Preview" %}</button>
         {% endif %}
       </div>
+      {% if permissions.can_write %}
+      <div class="pad-left-15">
+        <span class="checkmark"
+             data-edit-type="bool"
+             data-edit-value="{{ x.ixf_ixp_import_enabled }}"
+             data-edit-name="ixf_ixp_import_enabled"
+             data-edit-template="check">
+               <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.ixf_ixp_import_enabled %}-off{% endif %}.png" />
+             </span>
+             <span class="enabled">{% trans "Enable IX-F Import" %}</span>
+      </div>
+      {% endif %}
       <div class="marg-top-60 pad-side-15"
            data-edit-module="api_listing"
            data-edit-group="#view"
@@ -196,6 +208,16 @@
          <div class="view_value col-xs-8 col-sm-7 col-md-8">
            <div data-edit-type="string"
                 data-edit-name="ixf_ixp_member_list_url">
+           </div>
+         </div>
+       </div>
+
+
+       <div class="row view_row">
+         <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "IXF Import Enabled" %}</div>
+         <div class="view_value col-xs-8 col-sm-7 col-md-8">
+           <div data-edit-type="bool"
+                data-edit-name="ixf_ixp_import_enabled">
            </div>
          </div>
        </div>

@@ -56,8 +56,7 @@ class Importer(object):
             return {"pdb_error": exc}
 
         if result.status_code != 200:
-            # FIXME: log error somewhere
-            return None
+            return {"pdb_error": "Got HTTP status {}".format(result.status_code)}
 
         try:
             data = result.json()

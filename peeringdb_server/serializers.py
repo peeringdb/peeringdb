@@ -1547,13 +1547,15 @@ class IXLanSerializer(ModelSerializer):
         fields = [
             'id', 'ix_id', "ix", "name", "descr", "mtu", "dot1q_support",
             "rs_asn", "arp_sponge", "net_set", "ixpfx_set",
-            "ixf_ixp_member_list_url"
+            "ixf_ixp_member_list_url", "ixf_ixp_import_enabled",
         ] + HandleRefSerializer.Meta.fields
         related_fields = ["ix", "net_set", "ixpfx_set"]
 
         list_exclude = ["ix"]
 
-        extra_kwargs = {"ixf_ixp_member_list_url": {"write_only": True}}
+        extra_kwargs = {"ixf_ixp_member_list_url": {"write_only": True},
+                        "ixf_ixp_import_enabled": {"write_only": True},
+                       }
 
         _ref_tag = model.handleref.tag
 
