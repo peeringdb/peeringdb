@@ -1314,6 +1314,7 @@ class IXLan(pdb_models.IXLanBase):
     ix = models.ForeignKey(InternetExchange, default=0,
                            related_name="ixlan_set")
     ixf_ixp_member_list_url = models.URLField(null=True, blank=True)
+    ixf_ixp_import_enabled = models.BooleanField(default=False)
 
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards

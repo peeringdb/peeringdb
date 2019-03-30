@@ -825,6 +825,7 @@ twentyc.editable.module.register(
 
     add : function(id, trigger, container, data, context) {
       var me =this;
+      var sentData = data;
       this.target.data = data;
       this.target.args[2] = "update"
       this.target.context = this.components.add || context;
@@ -835,7 +836,7 @@ twentyc.editable.module.register(
           me[finalizer](data, function(data) {
             me.listing_add(data.id, trigger, container, data);
             container.editable("loading-shim","hide");
-          });
+          }, sentData);
         } else {
           me.listing_add(data.id, trigger, container, data);
         }
@@ -1023,6 +1024,16 @@ twentyc.editable.module.register(
     },
 
     // FINALIZERS: IXLAN
+
+    finalize_add_ixlan : function(data, callback, sentData) {
+
+      // we currently do not publish ix-f setting fields on the API
+      // so we need to set those from sent data
+      data.ixf_ixp_member_list_url = sentData.ixf_ixp_member_list_url;
+      data.ixf_ixp_import_enabled = sentData.ixf_ixp_import_enabled;
+      callback(data);
+    },
+
 
     finalize_row_ixlan : function(rowId, row, data) {
       row.editable("payload", {

@@ -21,9 +21,9 @@ class Command(BaseCommand):
 
     def log(self, msg):
         if self.commit:
-            print(msg)
+            self.stdout.write(msg)
         else:
-            print("[Pretend] {}".format(msg))
+            self.stdout.write("[Pretend] {}".format(msg))
 
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
@@ -33,6 +33,12 @@ class Command(BaseCommand):
         if only_id:
             q = q.filter(id=only_id)
         for ixlan in q:
+
+            # if the ixlan has ix-f imports disabled we skip it
+            if not ixlan.ixf_ixp_import_enabled:
+                self.log("IX-F import disabled on ixlan {}, skippig..".format(ixlan.id))
+                continue
+
             self.log("Fetching data for {} from {}".format(
                 ixlan, ixlan.ixf_ixp_member_list_url))
             try:
