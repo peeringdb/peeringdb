@@ -4,15 +4,18 @@ This holds JSON views for various data sets,
 Mostly these are needed for filling form-selects for editable
 mode
 """
+import datetime
+
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 import django_countries
 import models
 import django_peeringdb.const as const
-from peeringdb_server.models import Organization, Network
-
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
+
+from peeringdb_server.models import (
+    Organization, Network, Sponsorship)
 
 #def _(x):
 #    return x
@@ -76,6 +79,21 @@ def countries(request):
         } for code, name in list(django_countries.countries)]
     })
 
+def sponsorships(request):
+    """
+    Returns all sponsorships
+    """
+
+    now = datetime.datetime.now().replace(tzinfo=models.UTC())
+    qset = Sponsorship.objects.filter(start_date__lte=now,
+                                      end_date__gte=now)
+
+    return JsonResponse({
+        "sponsors": dict([(sponsor.org_id, {
+            "id": sponsor.org_id,
+            "name": sponsor.label.lower()
+        }) for sponsor in qset])
+    })
 
 @login_required
 def facilities(request):

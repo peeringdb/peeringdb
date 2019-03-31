@@ -5,7 +5,7 @@ article, aside, details, figcaption, figure, footer, header, main, nav, section,
 audio, canvas, video { display:inline-block }
 
 html { font-size:20px }
-.sponsorspage { margin:auto ; max-width:1170px ; padding:0 15px }
+.sponsorspage { margin:auto ; max-width:1170px ; padding:0px }
 
 /* SPONSOR LEVELS */
 /* designed for 1201+ */

@@ -133,12 +133,12 @@ def get_client_ip(request):
 
 def view_http_error_404(request):
     template = loader.get_template('site/error_404.html')
-    return HttpResponseNotFound(template.render({}, request))
+    return HttpResponseNotFound(template.render(make_env(), request))
 
 
 def view_http_error_403(request):
     template = loader.get_template('site/error_403.html')
-    return HttpResponseForbidden(template.render({}, request))
+    return HttpResponseForbidden(template.render(make_env(), request))
 
 
 def view_http_error_csrf(request, reason):
@@ -1557,6 +1557,17 @@ def request_search(request):
             return HttpResponseRedirect('/net/{}'.format(net.first().id))
 
     result = search(q)
+
+    now = datetime.datetime.now().replace(tzinfo=UTC())
+
+    sponsors = dict([(s.org_id, s.label)
+                     for s in
+                     Sponsorship.objects.filter(start_date__lte=now,
+                                                end_date__gte=now)])
+
+    for tag, rows in result.items():
+        for item in rows:
+            item["sponsorship"] = sponsors.get(item["org_id"])
 
     template = loader.get_template('site/search_result.html')
     env = make_env(

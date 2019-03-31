@@ -11,14 +11,24 @@
     <div class="col-md-4 col-sm-12 col-xs-12">
       <div class="view_title">{% trans "Exchanges" %} ({{ count_ixp }})</div>
       {% for row in search_ixp %}
-      <div class="result_row"><a href="/{{'InternetExchange'|ref_tag}}/{{row.id}}">{{row.name}}</a></div>
+      <div class="result_row">
+        <a href="/{{'InternetExchange'|ref_tag}}/{{row.id}}">{{row.name}}</a>
+        {% if row.sponsorship %}
+        <a href="/sponsors" class="sponsor {{ row.sponsorship|lower }}">{{ row.sponsorship }} sponsor</a>
+        {% endif %}
+      </div>
       {% endfor %}
 
     </div>
     <div class="col-md-4 col-sm-12 col-xs-12">
       <div class="view_title">{% trans "Networks" %} ({{ count_net }})</div>
       {% for row in search_net%}
-      <div class="result_row"><a href="/{{'Network'|ref_tag}}/{{row.id}}">{{row.name}}</a></div>
+      <div class="result_row">
+        <a href="/{{'Network'|ref_tag}}/{{row.id}}">{{row.name}}</a>
+        {% if row.sponsorship %}
+        <a href="/sponsors" class="sponsor {{ row.sponsorship|lower }}">{{ row.sponsorship }} sponsor</a>
+        {% endif %}
+      </div>
       {% endfor %}
 
 
@@ -26,7 +36,12 @@
     <div class="col-md-4 col-sm-12 col-xs-12">
       <div class="view_title">{% trans "Facilities" %} ({{ count_fac }})</div>
       {% for row in search_fac %}
-      <div class="result_row"><a href="/{{'Facility'|ref_tag}}/{{row.id}}">{{row.name}}</a></div>
+      <div class="result_row">
+        <a href="/{{'Facility'|ref_tag}}/{{row.id}}">{{row.name}}</a>
+        {% if row.sponsorship %}
+        <a href="/sponsors" class="sponsor {{ row.sponsorship|lower }}">{{ row.sponsorship }} sponsor</a>
+        {% endif %}
+      </div>
       {% endfor %}
 
 
@@ -59,5 +74,6 @@
 </div>
 
 </div>
+
 
 {% include 'site/footer.html' %}

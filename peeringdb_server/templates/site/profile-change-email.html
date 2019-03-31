@@ -1,0 +1,32 @@
+{% load i18n %}
+    <div class="editable always panel"
+         data-edit-target="/verify"
+         id="form-update-account">
+
+      <h3>{% trans "Change email address" %}</h3>
+
+      <div class="editable popin help marg-top-15">
+      {% blocktrans trimmed %}
+      For speedy validation, it is required that you use a work e-mail address. If you
+      plan to register your ASN with PeeringDB, it is recommended that you use an email-address
+      that exists in the ASN's public contact details.
+      {% endblocktrans %}
+      </div>
+
+      <input type="text"
+             class="editable string form-control marg-bot-15"
+             placeholder="{% trans "Email" %}"
+             data-edit-name="email"
+             data-edit-type="email"
+             data-edit-required="yes" />
+
+      <input type="password"
+             class="editable string form-control marg-bot-15"
+             placeholder="{% trans "Password" %}"
+             data-edit-name="password"
+             data-edit-type="password"
+             data-edit-required="yes" />
+
+      <a class="btn btn-default" data-edit-action="submit">{% trans "Change Email" %}</a>
+    </div>
+

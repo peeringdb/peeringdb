@@ -113,6 +113,7 @@ urlpatterns = [
     url(r'^org_admin/manage_user/delete$',
         peeringdb_server.org_admin_views.manage_user_delete),
     url(r'^data/countries$', peeringdb_server.data_views.countries),
+    url(r'^data/sponsors$', peeringdb_server.data_views.sponsorships),
     url(r'^data/countries_b$', peeringdb_server.data_views.countries_w_blank),
     url(r'^data/facilities$', peeringdb_server.data_views.facilities),
     url(r'^data/enum/(?P<name>[\w_]+)$', peeringdb_server.data_views.enum),
