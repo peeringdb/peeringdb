@@ -55,7 +55,7 @@ class ViewTestCase(TestCase):
         resp = c.get("/data/sponsors", follow=True)
         self.assertEqual(resp.status_code, 200)
 
-        expected = {u'sponsorships': {u'1': {u'id': 1, u'name': u'silver'}, u'3': {u'id': 3, u'name': u'gold'}, u'2': {u'id': 2, u'name': u'silver'}, u'4': {u'id': 4, u'name': u'silver'}}}
+        expected = {u'sponsors': {u'1': {u'id': 1, u'name': u'silver'}, u'3': {u'id': 3, u'name': u'gold'}, u'2': {u'id': 2, u'name': u'silver'}, u'4': {u'id': 4, u'name': u'silver'}}}
         self.assertEqual(resp.json(), expected)
 
     def test_view(self):
