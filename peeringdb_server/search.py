@@ -154,16 +154,28 @@ def search(term):
     for tag, index in search_index.items():
         for id, data in index.items():
             if data.name.lower().find(term) > -1:
-                result[tag].append({"id": id, "name": data.search_result_name})
+                result[tag].append({
+                    "id": id,
+                    "name": data.search_result_name,
+                    "org_id": data.org_id
+                })
                 continue
 
             if hasattr(data,
                        'name_long') and data.name_long.lower().find(term) > -1:
-                result[tag].append({"id": id, "name": data.search_result_name})
+                result[tag].append({
+                    "id": id,
+                    "name": data.search_result_name,
+                    "org_id" : data.org_id
+                })
                 continue
 
             if hasattr(data, 'aka') and data.aka.lower().find(term) > -1:
-                result[tag].append({"id": id, "name": data.search_result_name})
+                result[tag].append({
+                    "id": id,
+                    "name": data.search_result_name,
+                    "org_id": data.org_id
+                })
                 continue
 
             if typed_q:
@@ -171,7 +183,8 @@ def search(term):
                     if str(data.id).startswith(typed_q[tag]):
                         result[tag].append({
                             "id": id,
-                            "name": data.search_result_name
+                            "name": data.search_result_name,
+                            "org_id": data.org_id
                         })
                         continue
 
@@ -184,7 +197,8 @@ def search(term):
                     if asn and str(data.asn).startswith(asn):
                         result[tag].append({
                             "id": id,
-                            "name": data.search_result_name
+                            "name": data.search_result_name,
+                            "org_id": data.org_id
                         })
 
     for k, items in result.items():

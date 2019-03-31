@@ -14,6 +14,7 @@ html, body {
 
 body {
   background-color: #4b6063;
+  overflow-y: scroll;
 }
 
 input[type="text"]:focus,
@@ -148,8 +149,8 @@ h5 {
 }
 
 
-.btn-primary, 
-.btn-default { 
+.btn-primary,
+.btn-default {
   background-color: #33744a;
   margin-left: 10px;
   color: #ffffff;
@@ -167,21 +168,21 @@ h5 {
 .btn-default:hover {
   background-color: #4b6063 !important;
   color: #ffffff !important;
-} 
+}
 
 .btn:active,
 .btn-pimary:active,
 .btn-default:active {
   background-color: #4b6063 !important;
   color: #ffffff !important;
-} 
+}
 
 .btn:focus,
 .btn-pimary:focus,
 .btn-default:focus {
   background-color: #4b6063 !important;
   color: #ffffff !important;
-} 
+}
 
 /* error */
 
@@ -232,7 +233,7 @@ div.header div.nav div.user {
 div.header div.nav div.user div.status {
   font-size:11px;
   font-weight: normal;
-  color: #00203e; 
+  color: #00203e;
 }
 
 div.header div.nav a.btn {
@@ -249,15 +250,15 @@ div.header div.nav a.btn {
 
 div.header div.nav a.btn:active {
   background-color: #4b6063;
-} 
+}
 
 div.header div.nav a.btn:focus {
   background-color: #4b6063;
-} 
+}
 
 div.header div.nav a.btn:hover {
   background-color: #4b6063;
-} 
+}
 
 
 div.header div.nav div.dropdown {
@@ -997,7 +998,7 @@ div.oauth img {
 
 div.tab-content > div.active {
   background-color: #f1f1f1;
-  padding: 15px;
+  padding: 15px 0px;
   margin-left: 1px;
 }
 
@@ -1092,7 +1093,7 @@ div.advanced-search-view div.results div.row div {
 
 div.advanced-search-view div.headers .sort-asc:after {
   content: url('ico-down-arrow.png');
-  color: #fff; 
+  color: #fff;
 }
 div.advanced-search-view div.headers .sort-desc:after {
   content: url('ico-up-arrow.png');
@@ -1136,6 +1137,13 @@ div.sponsor.diamond h3 {
   border-bottom: 2px solid #1c3f28;
 }
 
+a.sponsor {
+  text-transform: capitalize;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+a.sponsor,
 div.view_title div.sponsor::after {
   border-radius: 5px;
   font-size: 11px;
@@ -1150,6 +1158,11 @@ div.view_title div.sponsor::after {
   cursor: pointer;
 }
 
+a.sponsor {
+  text-decoration: none;
+}
+
+a.sponsor.diamond,
 div.view_title div.sponsor.diamond::after {
   background-color: #00aca1;
   border-color: #00aca1;
@@ -1157,18 +1170,23 @@ div.view_title div.sponsor.diamond::after {
   content: 'Diamond Sponsor';
 }
 
+a.sponsor.platinum,
 div.view_title div.sponsor.platinum::after {
   background-color: #899a9d;
   border-color: #899a9d;
   color: #ffffff;
   content: 'Platinum Sponsor';
 }
+
+a.sponsor.gold,
 div.view_title div.sponsor.gold::after {
   background-color: #e3a631;
   border-color: #e3a631;
   color: #ffffff;
   content: 'Gold Sponsor';
 }
+
+a.sponsor.silver,
 div.view_title div.sponsor.silver::after {
   border-color: #626a75;
   background-color: #626a75;

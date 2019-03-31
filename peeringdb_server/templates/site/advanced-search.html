@@ -28,36 +28,45 @@
   </div>
 
   <script language="javascript" type="text/javascript">
-  twentyc.editable.target.get("advanced_search").prototype.limit = {{ row_limit }}; 
+  twentyc.editable.target.get("advanced_search").prototype.limit = {{ row_limit }};
   $(window).bind("load", function() {
-    twentyc.data.load("enum/traffic");
-    var reftag = $.urlParam("reftag")
-    if(reftag == "net" || reftag == "ix" || reftag == "fac") {
-      var searchForm = $('[data-edit-target="advanced_search:'+reftag+'"]')
-      searchForm.editable("loading-shim","show");
-      twentyc.data.done(function() {
-        var target = twentyc.editable.target.instantiate(searchForm);
-        target.sender = searchForm
-        $(target).on("success", function() {
-          searchForm.editable("loading-shim","hide"); 
-          searchForm.parent().find("[data-export-format]").each(function() {
-            var tag = $(this).data("export-tag");
-            var format = $(this).data("export-format");
-            $(this).removeClass("hidden")
-            $(this).attr("href", "/export/advanced-search/"+tag+"/"+format+"?"+PeeringDB.advanced_search_result[tag].param);
-          })
+
+    var run_search = function() {
+
+      var reftag = $.urlParam("reftag")
+      if(reftag == "net" || reftag == "ix" || reftag == "fac") {
+        var searchForm = $('[data-edit-target="advanced_search:'+reftag+'"]')
+        searchForm.editable("loading-shim","show");
+        twentyc.data.done(function() {
+          var target = twentyc.editable.target.instantiate(searchForm);
+          target.sender = searchForm
+          $(target).on("success", function() {
+            searchForm.editable("loading-shim","hide");
+            searchForm.parent().find("[data-export-format]").each(function() {
+              var tag = $(this).data("export-tag");
+              var format = $(this).data("export-format");
+              $(this).removeClass("hidden")
+              $(this).attr("href", "/export/advanced-search/"+tag+"/"+format+"?"+PeeringDB.advanced_search_result[tag].param);
+            })
+          });
+          $(target).on("error", function(ev, d) {
+            searchForm.editable("loading-shim","hide");
+            if(d && d.info == "404 Not Found") {
+              searchForm.find(".results-empty").show();
+            } else {
+              searchForm.trigger("action-error", {});
+            }
+          });
+          target.search();
         });
-        $(target).on("error", function(ev, d) {
-          searchForm.editable("loading-shim","hide"); 
-          if(d && d.info == "404 Not Found") {
-            searchForm.find(".results-empty").show();
-          } else {
-            searchForm.trigger("action-error", {});
-          }
-        });
-        target.search();
-      });
-    }
+      }
+    };
+
+    twentyc.data.load("enum/traffic", {callback:function() {
+      twentyc.data.load("sponsors", {callback:run_search});
+    }});
+
+
   });
   </script>
 </div>

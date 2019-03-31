@@ -4,11 +4,11 @@
 <!-- FACILITIES -->
 
 {% if data.facilities or permissions.can_create_fac %}
-<div class="list" 
+<div class="list"
      id="api-listing-fac"
-     data-sort-container=".scrollable" 
+     data-sort-container=".scrollable"
      data-sort-row=".row.item"
-     
+
      data-edit-module="api_listing"
      data-edit-group="#view"
      data-edit-target="api:fac">
@@ -30,7 +30,7 @@
     </div>
   </div>
 
-  <div class="scrollable" 
+  <div class="scrollable"
        id="list-facilities"
        data-edit-component="list"
        data-edit-template="facility-item">
@@ -55,10 +55,10 @@
           {{ n.status }}
         </div>
         {% endif %}
- 
+
       </div>
       <div class="col-xs-6 col-sm-6 col-md-6">
-        <div class="country" data-sort-value="{{ n.country|long_country_name }}" data-filter-value="{{ n.country|long_country_name }}">{{ n.country|long_country_name }}</div>
+        <div class="country" data-sort-value="{{ n.country.name }}" data-filter-value="{{ n.country.name }}">{{ n.country.name }}</div>
         <div class="city" data-sort-value="{{ n.city }}" data-filter-value="{{ n.city }}">{{ n.city }}</div>
       </div>
 
@@ -72,15 +72,15 @@
 <!-- NETWORKS -->
 
 {% if data.networks  or permissions.can_create_net %}
-<div class="list" 
+<div class="list"
      id="api-listing-net"
-     data-sort-container=".scrollable" 
+     data-sort-container=".scrollable"
      data-sort-row=".row.item"
-     
+
      data-edit-module="api_listing"
      data-edit-group="#view"
      data-edit-target="api:net">
- 
+
   <div class="row">
     <div class="col-xs-6 col-sm-8 col-md-8">
       <h5>Networks</h5>
@@ -98,7 +98,7 @@
     </div>
   </div>
 
-  <div class="scrollable" 
+  <div class="scrollable"
        id="list-networks"
        data-edit-component="list"
        data-edit-template="network-item">
@@ -123,7 +123,7 @@
           {{ n.status }}
         </div>
         {% endif %}
- 
+
       </div>
       <div class="col-xs-3 col-sm-3 col-md-3">
         <div class="asn" data-sort-value="{{ n.asn }}" data-filter-value="{{ n.asn }}">{{ n.asn }}</div>
@@ -139,15 +139,15 @@
 
 <!-- EXCHANGES -->
 {% if data.exchanges  or permissions.can_create_ix %}
-<div class="list" 
+<div class="list"
      id="api-listing-ix"
-     data-sort-container=".scrollable" 
+     data-sort-container=".scrollable"
      data-sort-row=".row.item"
-     
+
      data-edit-module="api_listing"
      data-edit-group="#view"
      data-edit-target="api:ix">
- 
+
   <div class="row">
     <div class="col-xs-6 col-sm-8 col-md-8">
       <h5>{% trans "Exchanges" %}</h5>
@@ -166,7 +166,7 @@
     </div>
   </div>
 
-  <div class="scrollable" 
+  <div class="scrollable"
        id="list-exchanges"
        data-edit-component="list"
        data-edit-template="exchange-item">
@@ -193,7 +193,7 @@
         {% endif %}
       </div>
       <div class="col-xs-6 col-sm-6 col-md-6">
-        <div class="country" data-sort-value="{{ n.country|long_country_name }}" data-filter-value="{{ n.country|long_country_name }}">{{ n.country|long_country_name }}</div>
+        <div class="country" data-sort-value="{{ n.country.name }}" data-filter-value="{{ n.country.name }}">{{ n.country.name }}</div>
         <div class="city" data-sort-value="{{ n.city }}" data-filter-value="{{ n.city }}">{{ n.city }}</div>
       </div>
 
