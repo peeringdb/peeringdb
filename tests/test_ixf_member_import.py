@@ -4,8 +4,12 @@ import reversion
 import requests
 import jsonschema
 import time
+import StringIO
+
 from django.db import transaction
 from django.test import TestCase, Client, RequestFactory
+from django.core.management import call_command
+
 from peeringdb_server.models import (
     Organization, Network, NetworkIXLan, IXLan, IXLanPrefix, InternetExchange,
     IXLanIXFMemberImportAttempt, IXLanIXFMemberImportLog,
@@ -350,6 +354,36 @@ class JsonMembersListTestCase(TestCase):
     def test_ixp_allow_update_default(self):
         self.assertEqual(self.entities["net"][2].allow_ixp_update, False)
 
+    def test_command(self):
+        """
+        Test the ixf_ixp_member_import command
+        """
+
+        ixlan = self.entities["ixlan"][0]
+        ixlan.ixf_ixp_member_list_url = "http://localhost:12345/ixf/member/import"
+        ixlan.ixf_ixp_import_enabled = True
+        ixlan.save()
+
+        stdout = StringIO.StringIO()
+        stderr = StringIO.StringIO()
+
+        r = call_command("pdb_ixf_ixp_member_import", only=ixlan.id, commit=True, stdout=stdout, stderr=stderr)
+        self.assertEqual(stdout.getvalue().find("Fetching data for -ixlan1 from"), 0)
+
+        # importer should skip ixlans where ixf_ixp_import_enabled is
+        # turned off
+
+        ixlan.ixf_ixp_import_enabled = False
+        ixlan.save()
+
+        stdout = StringIO.StringIO()
+        stderr = StringIO.StringIO()
+
+        r = call_command("pdb_ixf_ixp_member_import", only=ixlan.id, commit=True, stdout=stdout, stderr=stderr)
+        self.assertEqual(stdout.getvalue().find("Fetching data for -ixlan1 from"), -1)
+
+
+
 
 class JsonMembersListTestCase_V05(JsonMembersListTestCase):
     version = "0.5"
@@ -403,6 +437,7 @@ class TestImportPreview(ClientCase):
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
         assert response.status_code == 403
+
 
 
 

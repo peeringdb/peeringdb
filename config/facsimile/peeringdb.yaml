@@ -152,6 +152,8 @@ install:
     - $SRC_DIR$/peeringdb_server/migrations/0014_clt_description.py
     - $SRC_DIR$/peeringdb_server/migrations/0015_email_address.py
     - $SRC_DIR$/peeringdb_server/migrations/0016_auto_20190110_2321.py
+    - $SRC_DIR$/peeringdb_server/migrations/0017_ixf_ixp_import_enabled.py
+    - $SRC_DIR$/peeringdb_server/migrations/0018_set_ixf_ixp_import_enabled.py
     - $SRC_DIR$/fixtures/initial_data.json
     - $SRC_DIR$/peeringdb_server/templates/admin/admin_extended.html
     - $SRC_DIR$/peeringdb_server/templates/admin/user-organizations.html

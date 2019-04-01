@@ -92,6 +92,10 @@ span.tiny.suffix {
   margin-top: 60px;
 }
 
+.marg-top-80 {
+  margin-top: 80px;
+}
+
 .pad-left-15 {
   padding-left: 15px;
 }
@@ -158,8 +162,8 @@ h5 {
 }
 
 
-.btn-primary, 
-.btn-default { 
+.btn-primary,
+.btn-default {
   background-color: #33744a;
   margin-left: 10px;
   color: #ffffff;
@@ -177,21 +181,21 @@ h5 {
 .btn-default:hover {
   background-color: #4b6063 !important;
   color: #ffffff !important;
-} 
+}
 
 .btn:active,
 .btn-pimary:active,
 .btn-default:active {
   background-color: #4b6063 !important;
   color: #ffffff !important;
-} 
+}
 
 .btn:focus,
 .btn-pimary:focus,
 .btn-default:focus {
   background-color: #4b6063 !important;
   color: #ffffff !important;
-} 
+}
 
 /* error */
 
@@ -242,7 +246,7 @@ div.header div.nav div.user {
 div.header div.nav div.user div.status {
   font-size:11px;
   font-weight: normal;
-  color: #00203e; 
+  color: #00203e;
 }
 
 div.header div.nav a.btn {
@@ -259,15 +263,15 @@ div.header div.nav a.btn {
 
 div.header div.nav a.btn:active {
   background-color: #4b6063;
-} 
+}
 
 div.header div.nav a.btn:focus {
   background-color: #4b6063;
-} 
+}
 
 div.header div.nav a.btn:hover {
   background-color: #4b6063;
-} 
+}
 
 
 div.header div.nav div.dropdown {
@@ -1103,7 +1107,7 @@ div.advanced-search-view div.results div.row div {
 
 div.advanced-search-view div.headers .sort-asc:after {
   content: url('ico-down-arrow.png');
-  color: #fff; 
+  color: #fff;
 }
 div.advanced-search-view div.headers .sort-desc:after {
   content: url('ico-up-arrow.png');

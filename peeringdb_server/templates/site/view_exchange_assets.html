@@ -6,20 +6,20 @@
       {% if permissions.can_delete %}
       <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
       {% endif %}
-      <div class="facility" 
+      <div class="facility"
            data-filter-name="facility"
            data-sort-name="facility"
            data-edit-name="facility">
       </div>
     </div>
     <div class="col-xs-3 col-sm-3 col-md-3">
-      <div class="country" 
+      <div class="country"
            data-filter-name="country"
            data-sort-name="country"
            data-edit-name="country"></div>
     </div>
     <div class="col-xs-3 col-sm-3 col-md-3">
-      <div class="city" 
+      <div class="city"
           data-filter-name="city"
           data-sort-name="city"
           data-edit-name="city"></div>
@@ -31,7 +31,7 @@
       {% if permissions.can_delete %}
       <a class="btn-row-delete next-to-input" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
       {% endif %}
-      <div class="name" 
+      <div class="name"
            data-edit-type="string"
            data-edit-name="name">
       </div>
@@ -52,7 +52,18 @@
            data-edit-name="ixf_ixp_member_list_url">
       </div>
     </div>
-    <div class="marg-top-60 pad-side-15"
+    <div class="col-xs-12">
+      <div>
+        <span class="checkmark"
+             data-edit-type="bool"
+             data-edit-name="ixf_ixp_import_enabled"
+             data-edit-template="check">
+             </span>
+             <span class="enabled">{% trans "Enable IX-F Import" %}</span>
+      </div>
+
+    </div>
+    <div class="marg-top-80 pad-side-15"
          data-edit-module="api_listing"
          data-edit-group="#view"
          data-edit-target="api:ixpfx">
@@ -60,12 +71,12 @@
       <div id="list-prefixes"
            data-edit-component="list"
            data-edit-template="prefix-item">
-  
+
       </div>
       <div class="editable"
            data-edit-toggled="edit"
            data-edit-component="add">
-  
+
         <div class="row sub add">
           <div class="col-xs-4 col-sm-4 col-md-4"
                data-edit-type="select"
