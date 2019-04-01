@@ -14,6 +14,7 @@ html, body {
 
 body {
   background-color: #4b6063;
+  overflow-y: scroll;
 }
 
 input[type="text"]:focus,
@@ -1012,7 +1013,7 @@ div.oauth img {
 
 div.tab-content > div.active {
   background-color: #f1f1f1;
-  padding: 15px;
+  padding: 15px 0px;
   margin-left: 1px;
 }
 
@@ -1156,6 +1157,13 @@ div.sponsor.diamond h3 {
   border-bottom: 2px solid #1c3f28;
 }
 
+a.sponsor {
+  text-transform: capitalize;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+a.sponsor,
 div.view_title div.sponsor::after {
   border-radius: 5px;
   font-size: 11px;
@@ -1170,6 +1178,11 @@ div.view_title div.sponsor::after {
   cursor: pointer;
 }
 
+a.sponsor {
+  text-decoration: none;
+}
+
+a.sponsor.diamond,
 div.view_title div.sponsor.diamond::after {
   background-color: #00aca1;
   border-color: #00aca1;
@@ -1177,18 +1190,23 @@ div.view_title div.sponsor.diamond::after {
   content: 'Diamond Sponsor';
 }
 
+a.sponsor.platinum,
 div.view_title div.sponsor.platinum::after {
   background-color: #899a9d;
   border-color: #899a9d;
   color: #ffffff;
   content: 'Platinum Sponsor';
 }
+
+a.sponsor.gold,
 div.view_title div.sponsor.gold::after {
   background-color: #e3a631;
   border-color: #e3a631;
   color: #ffffff;
   content: 'Gold Sponsor';
 }
+
+a.sponsor.silver,
 div.view_title div.sponsor.silver::after {
   border-color: #626a75;
   background-color: #626a75;

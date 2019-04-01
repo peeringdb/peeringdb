@@ -5,221 +5,35 @@
 <div class="view_info">
 <div class="container">
 
-  <div class="row marg-top-15">
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
-
-    <div class="editable always auto-toggled col-md-4 col-sm-6 col-xs-12 panel"
-         data-edit-target="/set-user-locale"
-         data-edit-always-submit="yes"
-         data-edit-enter-action="submit"
-         id="form-language-preference">
-
-        <h3>{% trans "Select language" %}</h3>
-        <div class="editable popin info" id="language-change-success" style="display:none;">{% trans "Language preference saved" %}!</div>
-
-        {% get_current_language as LANGUAGE_CODE %}
-        <!-- Current language: {{ LANGUAGE_CODE }} -->
-
-        <div class="col-xs-12 col-sm-12 col-md-12" 
-             data-edit-type="select" 
-             data-edit-data="locales" 
-             data-edit-required="no"
-             data-edit-name="locale"
-             data-edit-value="{{ LANGUAGE_CODE }}"
-             data-edit-reset-value=""></div>
-        <a class="btn btn-default" data-edit-action="submit">{% trans "Set language preference" %}</a>
-    </div>  
-  </div>  
-
-  <div class="row marg-top-15">
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
-    <div class="editable always col-md-4 col-sm-6 col-xs-12 panel">
+  <div class="row marg-top-15 marg-bot-15">
+    <div class="col-xs-12 col-sm-6">
+      <!-- CONFIRM EMAIL -->
+      {% include "site/profile-confirm-email.html" %}
       {% if request.user.email_confirmed %}
-      <p>
-      <b>{% trans "You have confirmed your email address!" %}</b>
-      </p>
-      {% endif %}
-      {% if not request.user.email %}
-      <h3>{% trans "Attention!" %}</h3>
-      <p>
-      {% trans "Please specify an email address for your account, we won't be able to proceed with verification until you do." %}
-      </p>
-      {% elif not request.user.email_confirmed %}
-      <h3>{% trans "Email Confirmation" %}</h3>
-      <p>
-      <span class="attention">{% trans "Before getting access to any other features, you need to confirm your email address." %}</span>
-      <div class="marg-top">{% trans "We have sent you a message containing the confirmation link." %}  </div>
-      <div class="center marg-top">
-        <form action="/resend_email_confirmation" method="POST">
-          {% csrf_token %}
-          <input type="submit" value="Resend Confirmation Email" class="btn btn-default" />
-        </form>
-      </div>
-      </p>
-      {% elif not request.user.is_verified %}
-      <p>
-      {% trans "You won't have full access until we or the organization you are affiliated with have reviewed your account. Thank you for your patience." %}
-      </p>
-      {% endif %}
-    </div>
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
-  </div>
+      <!-- AFFILIATE -->
+      {% include "site/profile-affiliate.html" %}
 
-  {% if request.user.email_confirmed %}
-  <div class="row marg-top-15">
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
- 
-    <div class="editable always col-md-4 col-sm-6 col-xs-12 panel"
-         data-edit-target="/affiliate-to-org"
-         id="form-affiliate-account">
-      <h3>{% trans "Affiliate with organization" %}</h3>
-
-      {% if affiliation_request %}
-        <div class="editable popin info">
-        {% if affiliation_request.status == "pending" %}
-          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} is pending approval.  {% endblocktrans %}
-        {% elif affiliation_request.status == "denied" %}
-          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was denied {% endblocktrans %}
-        {% elif affiliation_request.status == "approved" %}
-          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was approved {% endblocktrans %}
-        {% endif %}
-        </div>
-      {% endif %}
-
-
-      <div class="editable popin help marg-top-15">
-        <p>
-        {% trans "To affiliate with an existing organization, please enter the ASN or organization name below." %}
-        </p>
-
-        <p>
-        {% trans "To register a new network organization, please enter the ASN and organization name below." %}
-        </p>
-
-        <p>
-        {% trans "To register a new facility or exchange organization, please enter the organization name below (ASN is optional)." %}
-        </p>
-      </div>
-
-      <input type="text"
-             class="editable string form-control"
-             placeholder="{% trans "ASN" %}"
-             data-edit-name="asn"
-             data-edit-type="string" />
-
-      <input type="text"
-             class="editable string form-control"
-             placeholder="{% trans "Organization" %}"
-             data-edit-name="org"
-             data-edit-autocomplete="org"
-             data-edit-autocomplete-allow-nonexistent="yes"
-             data-edit-type="autocomplete" />
-
-      <a class="btn btn-default" data-edit-action="submit">{% trans "Affiliate" %}</a>
-
-      <div class="editable popin help marg-top-15">
-            {% trans "In case the RiR entry cannot be retrieved for your ASN, please contact" %} 
-            <a href="mailto:support@peeringdb.com">support@peeringdb.com</a> {% trans "for assistance" %}.
-      </div>
-
-      <div class="marg-top">
-        <h3 class="marg-top">{% trans "Existing affiliations" %}</h3>
-
-        {% for org in affiliations %}
-        <div class="editable popin help">{% trans "Your affiliation with" %} <a href="/org/{{ org.id }}">{{ org.name }}</a> {% trans "has been approved" %}.</div> 
-        {% endfor %}
-      </div>
-
-
-    </div>
-
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
-  </div>
-  <div class="row">
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
-    <div class="col-md-4 col-sm-3 col-xs-12 panel">
+      <!-- OAUTH APPS -->
       <div class="marg-top marg-bot">
-      <a href="/oauth2/applications">{% trans "Manage OAuth Applications" %}</a> 
+      <a href="/oauth2/applications">{% trans "Manage OAuth Applications" %}</a>
       </div>
+      {% endif %}
     </div>
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
-  </div>
-  {% endif %}
+    <div class="col-xs-12 col-sm-6">
 
-  {% if not request.user.has_oauth %}
-  <div class="row marg-top-15">
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
-    
-    <div class="editable always col-md-4 col-sm-6 col-xs-12 panel"
-         data-edit-target="/verify"
-         id="form-update-account">
+      <!-- PICK LANGUAGE -->
+      {% include "site/profile-pick-language.html" %}
 
-      <h3>{% trans "Change email address" %}</h3>
+      {% if not request.user.has_oauth %}
+      <!-- CHANGE EMAIL -->
+      {% include "site/profile-change-email.html" %}
+      <!-- CHANGE PASSWORD -->
+      {% include "site/profile-change-password.html" %}
+      {% endif %}
 
-      <div class="editable popin help marg-top-15">
-      {% blocktrans trimmed %}
-      For speedy validation, it is required that you use a work e-mail address. If you
-      plan to register your ASN with PeeringDB, it is recommended that you use an email-address
-      that exists in the ASN's public contact details.
-      {% endblocktrans %}
-      </div>
-
-      <input type="text"
-             class="editable string form-control marg-bot-15"
-             placeholder="{% trans "Email" %}"
-             data-edit-name="email"
-             data-edit-type="email"
-             data-edit-required="yes" />
-
-      <input type="password"
-             class="editable string form-control marg-bot-15"
-             placeholder="{% trans "Password" %}"
-             data-edit-name="password"
-             data-edit-type="password"
-             data-edit-required="yes" />
-
-      <a class="btn btn-default" data-edit-action="submit">{% trans "Change Email" %}</a>
     </div>
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
-  </div>
-  <div class="row marg-top-15">
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
-    
-    <div class="editable always col-md-4 col-sm-6 col-xs-12 panel"
-         data-edit-target="/change-password"
-         id="form-change-password">
-
-      <h3>{% trans "Change password" %}</h3>
-      <div class="editable popin info" id="password-change-success" style="display:none;">{% trans "Password changed" %}!</div>
-      <input type="password"
-             class="editable string form-control marg-bot-15"
-             placeholder="{% trans "Current Password" %}"
-             data-edit-name="password_c"
-             data-edit-type="password"
-             data-edit-required="yes" />
-
-
-      <input type="password"
-             class="editable string form-control marg-bot-15"
-             placeholder="{% trans "Password" %}"
-             data-edit-name="password"
-             data-edit-type="password"
-             data-edit-required="yes" />
-
-
-      <input type="password"
-             class="editable string form-control marg-bot-15"
-             placeholder="{% trans "Password Verification" %}"
-             data-edit-name="password_v"
-             data-edit-type="password"
-             data-edit-required="yes" />
-
-      <a class="btn btn-default" data-edit-action="submit">{% trans "Change Password" %}</a>
-    </div>
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
   </div>
 
-  {% endif %}
 </div>
 </div>
 

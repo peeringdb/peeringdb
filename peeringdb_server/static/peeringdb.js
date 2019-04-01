@@ -315,12 +315,16 @@ PeeringDB.InlineSearch = {
 
         if(typeof data == 'string')
           data = JSON.parse(data)
-        PeeringDB.InlineSearch.apply_result(data)
-        PeeringDB.InlineSearch.busy = false
-        if(val=PeeringDB.InlineSearch.queuedSearch) {
-          PeeringDB.InlineSearch.queuedSearch = null;
-          PeeringDB.InlineSearch.search(val);
-        }
+
+
+        twentyc.data.load("sponsors", {callback:function() {
+          PeeringDB.InlineSearch.apply_result(data)
+          PeeringDB.InlineSearch.busy = false
+          if(val=PeeringDB.InlineSearch.queuedSearch) {
+            PeeringDB.InlineSearch.queuedSearch = null;
+            PeeringDB.InlineSearch.search(val);
+          }
+        }.bind(this)});
       }
     )
 
@@ -349,6 +353,15 @@ PeeringDB.InlineSearch = {
         rowNode = $(document.createElement("div"))
         rowNode.addClass("result_row")
         rowNode.append($('<a>').attr("href", "/"+type+"/"+row.id).text(row.name));
+
+        var sponsor = (twentyc.data.get("sponsors")[row.org_id] || {}).name;
+        if(sponsor) {
+          rowNode.append($('<a>').
+            attr("href", "/sponsors").
+            addClass("sponsor "+sponsor).
+            text(sponsor+" sponsor"));
+        }
+
         this.resultNodes[type].lst.append(rowNode)
       }
     }
@@ -654,6 +667,15 @@ twentyc.editable.target.register(
               }
 
               row = twentyc.editable.templates.copy("advanced-search-"+reftag+"-item")
+
+              if(d.sponsorship) {
+                $('<a>').
+                  attr("href", "/sponsors").
+                  addClass("sponsor "+d.sponsorship).
+                  text(d.sponsorship.toLowerCase()+" sponsor").
+                  insertAfter(row.find('.name'));
+              }
+
               row.find("[data-edit-name]").each(function(idx) {
                 var fld = $(this);
                 var value = d[fld.data("edit-name")]
@@ -686,6 +708,15 @@ twentyc.editable.target.register(
       data.ix_count = data.netixlan_set.length;
       data.fac_count = data.netfac_set.length;
       data.info_traffic_raw = twentyc.data.get("traffic_speed_by_label")[data.info_traffic] || 0;
+      data.sponsorship = (twentyc.data.get("sponsors")[data.org_id] || {}).name;
+    },
+
+    finalize_data_ix : function(data) {
+      data.sponsorship = (twentyc.data.get("sponsors")[data.org_id] || {}).name;
+    },
+
+    finalize_data_fac : function(data) {
+      data.sponsorship = (twentyc.data.get("sponsors")[data.org_id] || {}).name;
     }
   },
   "base"
@@ -1318,6 +1349,7 @@ twentyc.data.loaders.assign("locales", "data");
 twentyc.data.loaders.assign("countries", "data");
 twentyc.data.loaders.assign("countries_b", "data");
 twentyc.data.loaders.assign("facilities", "data");
+twentyc.data.loaders.assign("sponsors", "data");
 twentyc.data.loaders.assign("enum/regions", "data");
 twentyc.data.loaders.assign("enum/org_groups", "data");
 twentyc.data.loaders.assign("enum/media", "data");

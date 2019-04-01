@@ -1,0 +1,66 @@
+{% load i18n %}
+    <div class="editable always panel"
+         data-edit-target="/affiliate-to-org"
+         id="form-affiliate-account">
+      <h3>{% trans "Affiliate with organization" %}</h3>
+
+      {% if affiliation_request %}
+        <div class="editable popin info">
+        {% if affiliation_request.status == "pending" %}
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} is pending approval.  {% endblocktrans %}
+        {% elif affiliation_request.status == "denied" %}
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was denied {% endblocktrans %}
+        {% elif affiliation_request.status == "approved" %}
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was approved {% endblocktrans %}
+        {% endif %}
+        </div>
+      {% endif %}
+
+
+      <div class="editable popin help marg-top-15">
+        <p>
+        {% trans "To affiliate with an existing organization, please enter the ASN or organization name below." %}
+        </p>
+
+        <p>
+        {% trans "To register a new network organization, please enter the ASN and organization name below." %}
+        </p>
+
+        <p>
+        {% trans "To register a new facility or exchange organization, please enter the organization name below (ASN is optional)." %}
+        </p>
+      </div>
+
+      <input type="text"
+             class="editable string form-control"
+             placeholder="{% trans "ASN" %}"
+             data-edit-name="asn"
+             data-edit-type="string" />
+
+      <input type="text"
+             class="editable string form-control"
+             placeholder="{% trans "Organization" %}"
+             data-edit-name="org"
+             data-edit-autocomplete="org"
+             data-edit-autocomplete-allow-nonexistent="yes"
+             data-edit-type="autocomplete" />
+
+      <a class="btn btn-default" data-edit-action="submit">{% trans "Affiliate" %}</a>
+
+      <div class="editable popin help marg-top-15">
+            {% trans "In case the RiR entry cannot be retrieved for your ASN, please contact" %}
+            <a href="mailto:support@peeringdb.com">support@peeringdb.com</a> {% trans "for assistance" %}.
+      </div>
+
+      <div class="marg-top">
+        <h3 class="marg-top">{% trans "Existing affiliations" %}</h3>
+
+        {% for org in affiliations %}
+        <div class="editable popin help">{% trans "Your affiliation with" %} <a href="/org/{{ org.id }}">{{ org.name }}</a> {% trans "has been approved" %}.</div>
+        {% endfor %}
+      </div>
+
+
+    </div>
+
+

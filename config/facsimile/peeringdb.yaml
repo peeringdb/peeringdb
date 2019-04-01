@@ -177,6 +177,11 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/error_404.html
     - $SRC_DIR$/peeringdb_server/templates/site/error_403.html
     - $SRC_DIR$/peeringdb_server/templates/site/maintenance.html
+    - $SRC_DIR$/peeringdb_server/templates/site/profile-change-password.html
+    - $SRC_DIR$/peeringdb_server/templates/site/profile-change-email.html
+    - $SRC_DIR$/peeringdb_server/templates/site/profile-affiliate.html
+    - $SRC_DIR$/peeringdb_server/templates/site/profile-confirm-email.html
+    - $SRC_DIR$/peeringdb_server/templates/site/profile-pick-language.html
     - $SRC_DIR$/peeringdb_server/templates/site/view_network_side.html
     - $SRC_DIR$/peeringdb_server/templates/site/view_network_bottom.html
     - $SRC_DIR$/peeringdb_server/templates/site/view_exchange_side.html

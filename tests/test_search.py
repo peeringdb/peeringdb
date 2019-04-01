@@ -2,13 +2,16 @@
 Unit-tests for quick search functionality - note that advanced search is not
 tested here as that is using the PDB API entirely.
 """
+import re
+import datetime
 
 import pytest
 
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
 
 import peeringdb_server.search as search
 import peeringdb_server.models as models
+import peeringdb_server.views as views
 
 
 class SearchTests(TestCase):
@@ -24,6 +27,8 @@ class SearchTests(TestCase):
         search.SEARCH_CACHE["search_index"] = {}
 
         cls.instances = {}
+        cls.instances_sponsored = {}
+
         # create an instance of each searchable model, so we have something
         # to search for
         cls.org = models.Organization.objects.create(name="Test org")
@@ -36,6 +41,26 @@ class SearchTests(TestCase):
                 status="ok", org=cls.org, name="Test %s" % model.handleref.tag,
                 **kwargs)
 
+        # we also need to test that sponsor ship status comes through
+        # accordingly
+        cls.org_w_sponsorship = models.Organization.objects.create(name="Sponsor org", status="ok")
+        cls.sponsorship = models.Sponsorship.objects.create(
+            org=cls.org_w_sponsorship,
+            start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+            end_date=datetime.datetime.now() + datetime.timedelta(days=1),
+            level=1);
+
+        for model in search.searchable_models:
+            if model.handleref.tag == "net":
+                kwargs = {"asn": 2}
+            else:
+                kwargs = {}
+            cls.instances_sponsored[model.handleref.tag] = model.objects.create(
+                status="ok", org=cls.org_w_sponsorship,
+                name="Sponsor %s" % model.handleref.tag,
+                **kwargs)
+
+
     def test_search(self):
         """
         search for entities containing 'Test' - this should return all
@@ -47,14 +72,32 @@ class SearchTests(TestCase):
             assert k in rv
             assert len(rv[k]) == 1
             assert rv[k][0]["name"] == inst.search_result_name
+            assert rv[k][0]["org_id"] == inst.org_id
 
         rv = search.search("as1")
         assert len(rv["net"]) == 1
         assert rv["net"][0]["name"] == self.instances["net"].search_result_name
+        assert rv["net"][0]["org_id"] == self.instances["net"].org_id
 
         rv = search.search("asn1")
         assert len(rv["net"]) == 1
         assert rv["net"][0]["name"] == self.instances["net"].search_result_name
+        assert rv["net"][0]["org_id"] == self.instances["net"].org_id
+
+    def test_sponsor_badges(self):
+        """
+        Test that the sponsor badges show up in search result
+        """
+
+        factory = RequestFactory()
+        request = factory.get("/search",{"q":"Sponsor"})
+        response = views.request_search(request)
+        m = re.findall(re.escape(
+            '<a href="/sponsors" class="sponsor silver">'),
+            response.content)
+
+        assert len(m) == 3
+
 
     def test_search_case(self):
         """
@@ -66,6 +109,7 @@ class SearchTests(TestCase):
             assert k in rv
             assert len(rv[k]) == 1
             assert rv[k][0]["name"] == inst.search_result_name
+
 
     def test_index_updates(self):
         """
