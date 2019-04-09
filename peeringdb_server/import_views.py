@@ -4,7 +4,7 @@ import base64
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 
 from django_namespace_perms.util import has_perms
 from ratelimit.decorators import ratelimit, is_ratelimited
@@ -24,7 +24,9 @@ def enable_basic_auth(fn):
             if len(auth) == 2:
                 if auth[0].lower() == "basic":
                     username, password = base64.b64decode(auth[1]).split(':', 1)
-                    login(request, authenticate(username=username, password=password))
+                    request.user = authenticate(username=username, password=password)
+                    if not request.user:
+                        return JsonResponse({"non_field_errors":["Invalid credentials"]}, status=401)
         return fn(request, *args, **kwargs)
     return wrapped
 
