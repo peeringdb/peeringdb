@@ -1379,6 +1379,27 @@ class IXLan(pdb_models.IXLanBase):
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["ix"])
 
+    def test_ipv4_address(self, ipv4):
+        """
+        test that the ipv4 address exists in one of the prefixes in this ixlan
+        """
+        for pfx in self.ixpfx_set_active:
+            if pfx.test_ip_address(ipv4):
+                return True
+        return False
+
+
+    def test_ipv6_address(self, ipv6):
+        """
+        test that the ipv6 address exists in one of the prefixes in this ixlan
+        """
+        for pfx in self.ixpfx_set_active:
+            if pfx.test_ip_address(ipv6):
+                return True
+        return False
+
+
+
     @reversion.create_revision()
     def add_netixlan(self, netixlan_info, save=True, save_others=True):
         """
