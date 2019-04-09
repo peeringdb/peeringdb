@@ -312,6 +312,14 @@ class Importer(object):
                         ipv6.get("routeserver", False))
             )
 
+            if not self.save and (not self.ixlan.test_ipv4_address(ipv4_addr) or not \
+                self.ixlan.test_ipv6_address(ipv6_addr)):
+                #for the preview we don't care at all about new ip addresses
+                #not at the ixlan if they dont match the prefix
+                continue
+
+
+
             # after this point we either add or modify the netixlan, so
             # now is a good time to check if the related network allows
             # such updates, bail if not
