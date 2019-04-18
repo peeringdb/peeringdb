@@ -60,6 +60,15 @@ data_quality:
   max_prefix_v4_limit: 500000
   # maximum value to allow in network.info_prefixes6
   max_prefix_v6_limit: 50000
+  # minimum allowed length of a v4 prefix
+  min_prefixlen_v4: 18
+  # maximum allowed length of a v4 prefix
+  max_prefixlen_v4: 28
+  # minimum allowed length of a v6 prefix
+  min_prefixlen_v6: 64
+  # maximum allowed length of a v6 prefix
+  max_prefixlen_v6: 116
+
 
 install:
   groups:

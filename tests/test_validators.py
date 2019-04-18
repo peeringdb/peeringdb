@@ -99,3 +99,22 @@ def test_validate_info_prefixes6():
     with pytest.raises(ValidationError):
         validate_info_prefixes6(-1)
     validate_info_prefixes6(500000)
+
+
+@override_settings(DATA_QUALITY_MIN_PREFIXLEN_V4=24,
+                   DATA_QUALITY_MAX_PREFIXLEN_V4=24,
+                   DATA_QUALITY_MIN_PREFIXLEN_V6=48,
+                   DATA_QUALITY_MAX_PREFIXLEN_V6=48,
+                   )
+def test_validate_prefixlen():
+    """
+    Tests prefix length limits
+    """
+    with pytest.raises(ValidationError):
+        validate_address_space(u"37.77.32.0/20")
+    with pytest.raises(ValidationError):
+        validate_address_space(u"131.72.77.240/28")
+    with pytest.raises(ValidationError):
+        validate_address_space(u"2403:c240::/32")
+    with pytest.raises(ValidationError):
+        validate_address_space(u"2001:504:0:2::/64")
