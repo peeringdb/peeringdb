@@ -18,8 +18,18 @@ from peeringdb_server.models import (
 
 class Importer(object):
 
-    allowed_member_types = ["peering", "ixp", "routeserver", "probono"]
-    allowed_states = ["active", "connected"]
+    allowed_member_types = ["peering",
+                            "ixp",
+                            "routeserver",
+                            "probono",
+                            ]
+    allowed_states = ["",
+                      None,
+                      "active",
+                      "inactive",
+                      "connected",
+                      "operational",
+                      ]
 
     def __init__(self):
         self.reset()
@@ -29,6 +39,7 @@ class Importer(object):
         self.netixlans = []
         self.netixlans_deleted = []
         self.ipaddresses = []
+        self.asns = []
         self.ixlan = ixlan
         self.save = save
 
@@ -156,17 +167,34 @@ class Importer(object):
         their ip addresses
 
         In order for a netixlan to be removed both it's ipv4 and ipv6 address
-        need to be gone from the ixf data
+        or it's asn need to be gone from the ixf data after validation
         """
         for netixlan in self.ixlan.netixlan_set_active:
             ipv4 = "{}-{}".format(netixlan.asn, netixlan.ipaddr4)
             ipv6 = "{}-{}".format(netixlan.asn, netixlan.ipaddr6)
-            if ipv4 not in self.ipaddresses and ipv6 not in self.ipaddresses:
+
+            if netixlan.asn not in self.asns:
                 self.log_peer(netixlan.asn, "delete",
-                              _("Ip addresses no longer in data"), netixlan)
+                              _("ASN no longer in data"), netixlan)
                 self.netixlans_deleted.append(netixlan)
                 if self.save:
                     netixlan.delete()
+            elif ipv4 not in self.ipaddresses and ipv6 not in self.ipaddresses:
+                self.log_peer(netixlan.asn, "delete",
+                              _("Ip addresses no longer exist in validated data or are "\
+                                "no longer with this asn"), netixlan)
+                self.netixlans_deleted.append(netixlan)
+                if self.save:
+                    netixlan.delete()
+            elif ipv4 not in self.ipaddresses or ipv6 not in self.ipaddresses:
+                if not netixlan.network.allow_ixp_update:
+                    self.log_peer(netixlan.asn, "delete",
+                                  _("At least one ipaddress mismatched and "\
+                                    "network has disabled upates"), netixlan)
+                    self.netixlans_deleted.append(netixlan)
+                    if self.save:
+                        netixlan.delete()
+
 
     @transaction.atomic()
     def archive(self):
@@ -213,21 +241,25 @@ class Importer(object):
                 # check that the as exists in pdb
                 asn = member["asnum"]
 
+                # keep track of asns we find in the ix-f data
+                if asn not in self.asns:
+                    self.asns.append(asn)
+
                 if Network.objects.filter(asn=asn).exists():
                     network = Network.objects.get(asn=asn)
                     if network.status != "ok":
                         self.log_peer(
-                            asn, "skip",
+                            asn, "ignore",
                             _("Network status is '{}'").format(network.status))
                         continue
 
                     self.parse_connections(
                         member.get("connection_list", []), network, member)
                 else:
-                    self.log_peer(asn, "skip",
+                    self.log_peer(asn, "ignore",
                                   _("Network does not exist in peeringdb"))
             else:
-                self.log_peer(asn, "skip",
+                self.log_peer(asn, "ignore",
                               _("Invalid member type: {}").format(member_type))
 
     def parse_connections(self, connection_list, network, member):
@@ -251,7 +283,7 @@ class Importer(object):
                     connection.get("vlan_list", []), network, member,
                     connection, speed)
             else:
-                self.log_peer(asn, "skip",
+                self.log_peer(asn, "ignore",
                               _("Invalid connection state: {}").format(state))
 
     def parse_vlans(self, vlan_list, network, member, connection, speed):
@@ -274,7 +306,7 @@ class Importer(object):
             ipv4 = lan.get("ipv4", {})
             ipv6 = lan.get("ipv6", {})
 
-            # vlan entry has no ipaddresses set, log and skip
+            # vlan entry has no ipaddresses set, log and ignore
             if not ipv4 and not ipv6:
                 self.log_error(_("Could not find ipv4 or 6 address in " \
                               "vlan_list entry for vlan_id {} (AS{})").format(
@@ -319,15 +351,23 @@ class Importer(object):
                 continue
 
 
+            # if connection state is inactive we won't create or update
+            if connection.get("state", "active") == "inactive":
+                self.log_peer(asn, "noop",
+                              _("Connection is currently marked as inactive"),
+                              netixlan_info)
+                continue
+
 
             # after this point we either add or modify the netixlan, so
             # now is a good time to check if the related network allows
             # such updates, bail if not
             if not network.allow_ixp_update:
-                self.log_peer(asn, "skip",
+                self.log_peer(asn, "noop",
                               _("Network has disabled ixp updates"),
                               netixlan_info)
                 continue
+
 
             # add / modify the netixlan
             result = self.ixlan.add_netixlan(netixlan_info, save=self.save,
@@ -344,7 +384,7 @@ class Importer(object):
             elif result["netixlan"]:
                 self.log_peer(asn, "noop", "", result["netixlan"])
             elif result["log"]:
-                self.log_peer(asn, "skip", "\n".join(result["log"]),
+                self.log_peer(asn, "ignore", "\n".join(result["log"]),
                               netixlan_info)
 
     def parse_speed(self, if_list):
@@ -386,7 +426,7 @@ class Importer(object):
 
         Arguments:
             - asn <int>
-            - action <str>: add | modify | delete | noop | skip
+            - action <str>: add | modify | delete | noop | ignore
             - reason <str>
 
         Keyrword Arguments:

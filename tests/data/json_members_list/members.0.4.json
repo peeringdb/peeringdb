@@ -93,6 +93,98 @@
                             }
                         }
                     ]
+                },
+                {
+                    "ixp_id": 42,
+                    "connected_since": "2009-02-04T00:00:00Z",
+                    "state": "active",
+                    "if_list": [
+                        {
+                            "switch_id": 1,
+                            "if_speed": 10000,
+                            "if_type": "LR4"
+                        }
+                    ],
+                    "vlan_list": [
+                        {
+                            "vlan_id": 0,
+                            "mac_address" : "00:0a:95:9d:68:16",
+                            "ipv4": {
+                                "address": "195.69.147.251",
+                                "routeserver": true,
+                                "max_prefix": 42,
+                                "as_macro": "AS-NFLX-V4"
+                            },
+                            "ipv6": {
+                                "address": "2001:7f8:1::a500:2906:5",
+                                "routeserver": true,
+                                "max_prefix": 42,
+                                "as_macro": "AS-NFLX-V6"
+                            }
+                        }
+                    ]
+                },
+
+                {
+                    "ixp_id": 42,
+                    "connected_since": "2009-02-04T00:00:00Z",
+                    "state": "inactive",
+                    "if_list": [
+                        {
+                            "switch_id": 1,
+                            "if_speed": 20000,
+                            "if_type": "LR4"
+                        }
+                    ],
+                    "vlan_list": [
+                        {
+                            "vlan_id": 0,
+                            "mac_address" : "00:0a:95:9d:68:16",
+                            "ipv4": {
+                                "address": "195.69.146.251",
+                                "routeserver": true,
+                                "max_prefix": 42,
+                                "as_macro": "AS-NFLX-V4"
+                            },
+                            "ipv6": {
+                                "address": "2001:7f8:1::a500:2906:3",
+                                "routeserver": true,
+                                "max_prefix": 42,
+                                "as_macro": "AS-NFLX-V6"
+                            }
+                        }
+                    ]
+                },
+
+                {
+                    "ixp_id": 42,
+                    "connected_since": "2009-02-04T00:00:00Z",
+                    "state": "inactive",
+                    "if_list": [
+                        {
+                            "switch_id": 1,
+                            "if_speed": 10000,
+                            "if_type": "LR4"
+                        }
+                    ],
+                    "vlan_list": [
+                        {
+                            "vlan_id": 0,
+                            "mac_address" : "00:0a:95:9d:68:16",
+                            "ipv4": {
+                                "address": "195.69.146.252",
+                                "routeserver": true,
+                                "max_prefix": 42,
+                                "as_macro": "AS-NFLX-V4"
+                            },
+                            "ipv6": {
+                                "address": "2001:7f8:1::a500:2906:4",
+                                "routeserver": true,
+                                "max_prefix": 42,
+                                "as_macro": "AS-NFLX-V6"
+                            }
+                        }
+                    ]
                 }
             ]
         },
