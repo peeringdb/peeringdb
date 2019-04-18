@@ -186,7 +186,8 @@ class Importer(object):
                 self.netixlans_deleted.append(netixlan)
                 if self.save:
                     netixlan.delete()
-            elif ipv4 not in self.ipaddresses or ipv6 not in self.ipaddresses:
+            elif (netixlan.ipaddr4 and ipv4 not in self.ipaddresses) or \
+                 (netixlan.ipaddr6 and ipv6 not in self.ipaddresses):
                 if not netixlan.network.allow_ixp_update:
                     self.log_peer(netixlan.asn, "delete",
                                   _("At least one ipaddress mismatched and "\

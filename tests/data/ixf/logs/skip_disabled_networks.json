@@ -102,32 +102,6 @@
     {
       "peer": {
         "net_id": 1,
-        "ipaddr4": "195.69.146.251",
-        "is_rs_peer": false,
-        "speed": 10000,
-        "ixlan_id": 1,
-        "asn": 2906,
-        "ipaddr6": ""
-      },
-      "action": "delete",
-      "reason": "At least one ipaddress mismatched and network has disabled upates"
-    },
-    {
-      "peer": {
-        "net_id": 1,
-        "ipaddr4": "195.69.147.251",
-        "is_rs_peer": false,
-        "speed": 20000,
-        "ixlan_id": 1,
-        "asn": 2906,
-        "ipaddr6": ""
-      },
-      "action": "delete",
-      "reason": "At least one ipaddress mismatched and network has disabled upates"
-    },
-    {
-      "peer": {
-        "net_id": 1,
         "ipaddr4": "195.69.147.252",
         "is_rs_peer": false,
         "speed": 10000,
