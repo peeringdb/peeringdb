@@ -112,6 +112,18 @@ class JsonMembersListTestCase(TestCase):
                     network=cls.entities["net"][0],
                     ixlan=cls.entities["ixlan"][0], asn=2906, speed=10000,
                     ipaddr4="195.69.146.249", ipaddr6=None, status="ok"),
+                NetworkIXLan.objects.create(
+                    network=cls.entities["net"][0],
+                    ixlan=cls.entities["ixlan"][0], asn=2906, speed=10000,
+                    ipaddr4="195.69.146.251", ipaddr6=None, status="ok"),
+                NetworkIXLan.objects.create(
+                    network=cls.entities["net"][0],
+                    ixlan=cls.entities["ixlan"][0], asn=2906, speed=20000, is_rs_peer=False,
+                    ipaddr4="195.69.147.251", ipaddr6=None, status="ok"),
+                NetworkIXLan.objects.create(
+                    network=cls.entities["net"][0],
+                    ixlan=cls.entities["ixlan"][0], asn=1002, speed=10000,
+                    ipaddr4="195.69.147.252", ipaddr6=None, status="ok"),
             ]
 
     def setUp(self):
@@ -129,12 +141,12 @@ class JsonMembersListTestCase(TestCase):
         self.assertEqual(unicode(n_deleted.ipaddr4), u'195.69.146.250')
         self.assertEqual(
             unicode(n_deleted2.ipaddr6), u'2001:7f8:1::a500:2906:1')
-        self.assertEqual(ixlan.netixlan_set_active.count(), 1)
+        self.assertEqual(ixlan.netixlan_set_active.count(), 4)
         r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
 
         self.assertLog(log, "update_01")
-        self.assertEqual(len(netixlans), 2)
-        self.assertEqual(len(netixlans_deleted), 1)
+        self.assertEqual(len(netixlans), 3)
+        self.assertEqual(len(netixlans_deleted), 2)
 
         n = netixlans[0]
         self.assertEqual(unicode(n.ipaddr4), u"195.69.146.250")
@@ -151,6 +163,11 @@ class JsonMembersListTestCase(TestCase):
         self.assertEqual(n2.status, "ok")
         self.assertEqual(n2.ixlan, ixlan)
         self.assertEqual(n.asn, 2906)
+
+        # test that inactive connections had no effect
+        self.assertEqual(NetworkIXLan.objects.filter(ipaddr4="195.69.146.251", speed=10000, status="ok").count(), 1)
+        self.assertEqual(NetworkIXLan.objects.filter(ipaddr4="195.69.146.252").count(), 0)
+
 
         #self.assertEqual(IXLan.objects.get(id=ixlan.id).netixlan_set_active.count(), 2)
 
@@ -196,6 +213,7 @@ class JsonMembersListTestCase(TestCase):
         network.save()
         r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
 
+        print(json.dumps(log, indent=2))
         self.assertLog(log, "skip_disabled_networks")
         self.assertEqual(len(netixlans), 0)
 
@@ -212,7 +230,17 @@ class JsonMembersListTestCase(TestCase):
         for netixlan in netixlans:
             log_entry = ixlan.ixf_import_log_set.last().entries.get(
                 netixlan=netixlan)
-            self.assertEqual(log_entry.version_before, None)
+
+            if netixlan.id == self.entities["netixlan"][4].id:
+                # netixlan was modified
+                self.assertEqual(
+                    log_entry.version_before,
+                    reversion.models.Version.objects.get_for_object(netixlan)[1])
+            else:
+                # netixlan was added
+                self.assertEqual(
+                    log_entry.version_before, None)
+
             self.assertEqual(
                 log_entry.version_after,
                 reversion.models.Version.objects.get_for_object(netixlan)[0])
@@ -274,7 +302,7 @@ class JsonMembersListTestCase(TestCase):
         ixlan = self.entities["ixlan"][0]
         r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
 
-        self.assertEqual(len(netixlans_deleted), 1)
+        self.assertEqual(len(netixlans_deleted), 2)
 
         netixlan = netixlans_deleted[0]
         other = NetworkIXLan.objects.create(
@@ -310,6 +338,7 @@ class JsonMembersListTestCase(TestCase):
         resp = c.get("/export/ixlan/{}/ixp-member-list".format(ixlan.id))
         self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.content)
+        print(json.dumps(data, indent=2))
         with open(
                 os.path.join(
                     os.path.dirname(__file__), "data", "json_members_list",

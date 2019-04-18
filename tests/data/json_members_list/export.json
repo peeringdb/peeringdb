@@ -1,8 +1,11 @@
 {
-  "timestamp": "2017-10-26T08:04:29Z",
+  "timestamp": "2019-04-18T07:24:59Z",
   "version": "0.6",
-  "ixp_list":[
-    { "ixp_id" : 1, "shortname" : "Test Exchange" }
+  "ixp_list": [
+    {
+      "shortname": "Test Exchange",
+      "ixp_id": 1
+    }
   ],
   "member_list": [
     {
@@ -11,6 +14,50 @@
       "url": "http://netflix.com/",
       "member_type": "peering",
       "connection_list": [
+        {
+          "state": "active",
+          "if_list": [
+            {
+              "if_speed": 10000
+            }
+          ],
+          "ixp_id": 1,
+          "vlan_list": [
+            {
+              "ipv4": {
+                "as_macro": "AS-NFLX",
+                "address": "195.69.146.251",
+                "routeserver": false,
+                "max_prefix": 42
+              }
+            }
+          ]
+        },
+        {
+          "state": "active",
+          "if_list": [
+            {
+              "if_speed": 10000
+            }
+          ],
+          "ixp_id": 1,
+          "vlan_list": [
+            {
+              "ipv4": {
+                "as_macro": "AS-NFLX",
+                "address": "195.69.147.251",
+                "routeserver": true,
+                "max_prefix": 42
+              },
+              "ipv6": {
+                "as_macro": "AS-NFLX",
+                "address": "2001:7f8:1::a500:2906:5",
+                "routeserver": true,
+                "max_prefix": 42
+              }
+            }
+          ]
+        },
         {
           "state": "active",
           "if_list": [
@@ -48,13 +95,13 @@
             {
               "ipv4": {
                 "as_macro": "AS-NFLX",
-                "address": "195.69.146.250",
+                "address": "195.69.147.250",
                 "routeserver": true,
                 "max_prefix": 42
               },
               "ipv6": {
                 "as_macro": "AS-NFLX",
-                "address": "2001:7f8:1::a500:2906:2",
+                "address": "2001:7f8:1::a500:2906:1",
                 "routeserver": true,
                 "max_prefix": 42
               }

@@ -1239,7 +1239,7 @@ div[data-edit-name=ipaddr6]
   border-bottom: 1px rgba(0,0,0,0.25) solid;
 }
 
-.ixf-skip {
+.ixf-ignore {
   background-color: #ffffd7;
 }
 

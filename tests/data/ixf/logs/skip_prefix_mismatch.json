@@ -10,41 +10,80 @@
         "ixlan_id": 2,
         "asn": 2906
       },
-      "action": "skip",
+      "action": "ignore",
       "reason": "Invalid connection state: disabled"
     },
     {
       "peer": {
-        "is_rs_peer": true,
-        "ipaddr4": "195.69.146.250",
         "net_id": 1,
+        "ipaddr4": "195.69.146.250",
+        "is_rs_peer": true,
         "speed": 10000,
         "ixlan_id": 2,
         "asn": 2906,
         "ipaddr6": "2001:7f8:1::a500:2906:2"
       },
-      "action": "skip",
+      "action": "ignore",
       "reason": "Ip addresses (195.69.146.250, 2001:7f8:1::a500:2906:2) do not match any prefix on this ixlan"
     },
     {
       "peer": {
-        "is_rs_peer": true,
-        "ipaddr4": "195.69.147.250",
         "net_id": 1,
+        "ipaddr4": "195.69.147.250",
+        "is_rs_peer": true,
         "speed": 10000,
         "ixlan_id": 2,
         "asn": 2906,
         "ipaddr6": "2001:7f8:1::a500:2906:1"
       },
-      "action": "skip",
+      "action": "ignore",
       "reason": "Ip addresses (195.69.147.250, 2001:7f8:1::a500:2906:1) do not match any prefix on this ixlan"
+    },
+    {
+      "peer": {
+        "net_id": 1,
+        "ipaddr4": "195.69.147.251",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "ixlan_id": 2,
+        "asn": 2906,
+        "ipaddr6": "2001:7f8:1::a500:2906:5"
+      },
+      "action": "ignore",
+      "reason": "Ip addresses (195.69.147.251, 2001:7f8:1::a500:2906:5) do not match any prefix on this ixlan"
+    },
+    {
+      "peer": {
+        "net_id": 1,
+        "ipaddr4": "195.69.146.251",
+        "is_rs_peer": true,
+        "speed": 20000,
+        "ixlan_id": 2,
+        "asn": 2906,
+        "ipaddr6": "2001:7f8:1::a500:2906:3"
+      },
+      "action": "noop",
+      "reason": "Connection is currently marked as inactive"
+    },
+    {
+      "peer": {
+        "net_id": 1,
+        "ipaddr4": "195.69.146.252",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "ixlan_id": 2,
+        "asn": 2906,
+        "ipaddr6": "2001:7f8:1::a500:2906:4"
+      },
+      "action": "noop",
+      "reason": "Connection is currently marked as inactive"
     },
     {
       "peer": {
         "ixlan_id": 2,
         "asn": 2906
       },
-      "action": "skip",
+      "action": "ignore",
       "reason": "Invalid member type: other"
     }
   ]

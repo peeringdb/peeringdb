@@ -74,19 +74,19 @@ def export_ixf_ix_members(ixlans, pretty=False):
                 }
                 connection_list.append(connection)
 
-                if netixlan.ipaddr4:
+                if _netixlan.ipaddr4:
                     vlan_list[0]["ipv4"] = {
-                        "address": "{}".format(netixlan.ipaddr4),
-                        "routeserver": netixlan.is_rs_peer,
-                        "max_prefix": netixlan.network.info_prefixes4,
-                        "as_macro": netixlan.network.irr_as_set
+                        "address": "{}".format(_netixlan.ipaddr4),
+                        "routeserver": _netixlan.is_rs_peer,
+                        "max_prefix": _netixlan.network.info_prefixes4,
+                        "as_macro": _netixlan.network.irr_as_set
                     }
-                if netixlan.ipaddr6:
+                if _netixlan.ipaddr6:
                     vlan_list[0]["ipv6"] = {
-                        "address": "{}".format(netixlan.ipaddr6),
-                        "routeserver": netixlan.is_rs_peer,
-                        "max_prefix": netixlan.network.info_prefixes6,
-                        "as_macro": netixlan.network.irr_as_set
+                        "address": "{}".format(_netixlan.ipaddr6),
+                        "routeserver": _netixlan.is_rs_peer,
+                        "max_prefix": _netixlan.network.info_prefixes6,
+                        "as_macro": _netixlan.network.irr_as_set
                     }
 
     if pretty:

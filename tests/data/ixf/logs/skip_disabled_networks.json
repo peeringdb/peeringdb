@@ -10,55 +10,133 @@
         "ixlan_id": 1,
         "asn": 2906
       },
-      "action": "skip",
+      "action": "ignore",
       "reason": "Invalid connection state: disabled"
     },
     {
       "peer": {
-        "is_rs_peer": true,
-        "ipaddr4": "195.69.146.250",
         "net_id": 1,
+        "ipaddr4": "195.69.146.250",
+        "is_rs_peer": true,
         "speed": 10000,
         "ixlan_id": 1,
         "asn": 2906,
         "ipaddr6": "2001:7f8:1::a500:2906:2"
       },
-      "action": "skip",
+      "action": "noop",
       "reason": "Network has disabled ixp updates"
     },
     {
       "peer": {
-        "is_rs_peer": true,
-        "ipaddr4": "195.69.147.250",
         "net_id": 1,
+        "ipaddr4": "195.69.147.250",
+        "is_rs_peer": true,
         "speed": 10000,
         "ixlan_id": 1,
         "asn": 2906,
         "ipaddr6": "2001:7f8:1::a500:2906:1"
       },
-      "action": "skip",
+      "action": "noop",
       "reason": "Network has disabled ixp updates"
+    },
+    {
+      "peer": {
+        "net_id": 1,
+        "ipaddr4": "195.69.147.251",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "ixlan_id": 1,
+        "asn": 2906,
+        "ipaddr6": "2001:7f8:1::a500:2906:5"
+      },
+      "action": "noop",
+      "reason": "Network has disabled ixp updates"
+    },
+    {
+      "peer": {
+        "net_id": 1,
+        "ipaddr4": "195.69.146.251",
+        "is_rs_peer": true,
+        "speed": 20000,
+        "ixlan_id": 1,
+        "asn": 2906,
+        "ipaddr6": "2001:7f8:1::a500:2906:3"
+      },
+      "action": "noop",
+      "reason": "Connection is currently marked as inactive"
+    },
+    {
+      "peer": {
+        "net_id": 1,
+        "ipaddr4": "195.69.146.252",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "ixlan_id": 1,
+        "asn": 2906,
+        "ipaddr6": "2001:7f8:1::a500:2906:4"
+      },
+      "action": "noop",
+      "reason": "Connection is currently marked as inactive"
     },
     {
       "peer": {
         "ixlan_id": 1,
         "asn": 2906
       },
-      "action": "skip",
+      "action": "ignore",
       "reason": "Invalid member type: other"
     },
     {
       "peer": {
-        "is_rs_peer": false,
-        "ipaddr4": "195.69.146.249",
         "net_id": 1,
+        "ipaddr4": "195.69.146.249",
+        "is_rs_peer": false,
         "speed": 10000,
         "ixlan_id": 1,
         "asn": 2906,
         "ipaddr6": ""
       },
       "action": "delete",
-      "reason": "Ip addresses no longer in data"
+      "reason": "Ip addresses no longer exist in validated data or are no longer with this asn"
+    },
+    {
+      "peer": {
+        "net_id": 1,
+        "ipaddr4": "195.69.146.251",
+        "is_rs_peer": false,
+        "speed": 10000,
+        "ixlan_id": 1,
+        "asn": 2906,
+        "ipaddr6": ""
+      },
+      "action": "delete",
+      "reason": "At least one ipaddress mismatched and network has disabled upates"
+    },
+    {
+      "peer": {
+        "net_id": 1,
+        "ipaddr4": "195.69.147.251",
+        "is_rs_peer": false,
+        "speed": 20000,
+        "ixlan_id": 1,
+        "asn": 2906,
+        "ipaddr6": ""
+      },
+      "action": "delete",
+      "reason": "At least one ipaddress mismatched and network has disabled upates"
+    },
+    {
+      "peer": {
+        "net_id": 1,
+        "ipaddr4": "195.69.147.252",
+        "is_rs_peer": false,
+        "speed": 10000,
+        "ixlan_id": 1,
+        "asn": 1002,
+        "ipaddr6": ""
+      },
+      "action": "delete",
+      "reason": "ASN no longer in data"
     }
   ]
 }
