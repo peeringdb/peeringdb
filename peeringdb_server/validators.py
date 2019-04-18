@@ -31,6 +31,15 @@ def validate_address_space(prefix):
     if not network_is_pdb_valid(prefix):
         raise ValidationError(_("Address space invalid: {}").format(prefix))
 
+    prefixlen_min = getattr(settings, "DATA_QUALITY_MIN_PREFIXLEN_V{}".format(prefix.version))
+    prefixlen_max = getattr(settings, "DATA_QUALITY_MAX_PREFIXLEN_V{}".format(prefix.version))
+
+    if prefix.prefixlen < prefixlen_min:
+        raise ValidationError(
+            _("Minimum allowed prefix length is {}").format(prefixlen_min))
+    elif prefix.prefixlen > prefixlen_max:
+        raise ValidationError(
+            _("Maximum allowed prefix length is {}").format(prefixlen_max))
 
 def validate_info_prefixes4(value):
     if value > settings.DATA_QUALITY_MAX_PREFIX_V4_LIMIT:
