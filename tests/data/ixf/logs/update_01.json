@@ -24,7 +24,7 @@
         "ipaddr6": "2001:7f8:1::a500:2906:2"
       },
       "action": "add",
-      "reason": ""
+      "reason": "New ip-address"
     },
     {
       "peer": {
@@ -37,7 +37,7 @@
         "ipaddr6": "2001:7f8:1::a500:2906:1"
       },
       "action": "add",
-      "reason": ""
+      "reason": "New ip-address"
     },
     {
       "peer": {
@@ -50,7 +50,7 @@
         "ipaddr6": "2001:7f8:1::a500:2906:5"
       },
       "action": "modify",
-      "reason": ""
+      "reason": "Fields changed: ipaddr6, is_rs_peer, speed"
     },
     {
       "peer": {

@@ -213,7 +213,6 @@ class JsonMembersListTestCase(TestCase):
         network.save()
         r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
 
-        print(json.dumps(log, indent=2))
         self.assertLog(log, "skip_disabled_networks")
         self.assertEqual(len(netixlans), 0)
 
@@ -338,7 +337,6 @@ class JsonMembersListTestCase(TestCase):
         resp = c.get("/export/ixlan/{}/ixp-member-list".format(ixlan.id))
         self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.content)
-        print(json.dumps(data, indent=2))
         with open(
                 os.path.join(
                     os.path.dirname(__file__), "data", "json_members_list",
@@ -433,7 +431,18 @@ class TestImportPreview(ClientCase):
         super(TestImportPreview, cls).setUpTestData()
         cls.org = Organization.objects.create(name="Test Org", status="ok")
         cls.ix = InternetExchange.objects.create(name="Test IX", status="ok", org=cls.org)
+
         cls.ixlan = IXLan.objects.create(status="ok", ix=cls.ix)
+        IXLanPrefix.objects.create(ixlan=cls.ixlan, status="ok",
+                                   prefix="195.69.144.0/22", protocol="IPv4")
+        IXLanPrefix.objects.create(ixlan=cls.ixlan, status="ok",
+                                   prefix="2001:7f8:1::/64", protocol="IPv6")
+
+        cls.net = Network.objects.create(org=cls.org, status="ok",
+                                         asn=1000, name="net01")
+        cls.net_2 = Network.objects.create(org=cls.org, status="ok",
+                                           asn=1001, name="net02")
+
         cls.admin_user = User.objects.create_user("admin","admin@localhost","admin")
 
         cls.org.admin_usergroup.user_set.add(cls.admin_user)
@@ -466,6 +475,45 @@ class TestImportPreview(ClientCase):
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
         assert response.status_code == 403
+
+
+    def test_netixlan_diff(self):
+        netix1 = NetworkIXLan.objects.create(
+            network=self.net,
+            ixlan=self.ixlan,
+            status="ok",
+            ipaddr4="195.69.146.250",
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            asn=self.net.asn,
+            speed=1000,
+            is_rs_peer=True)
+
+        netix2 = NetworkIXLan(
+            network=self.net_2,
+            status="ok",
+            ipaddr4="195.69.146.250",
+            ipaddr6="2001:7f8:1::a500:2906:2",
+            asn=self.net_2.asn,
+            speed=10000,
+            is_rs_peer=False)
+
+        result = self.ixlan.add_netixlan(netix2, save=False,
+                                         save_others=False)
+
+        self.assertEqual(sorted(result["changed"]), ['asn', 'ipaddr6',
+                         'is_rs_peer', 'network_id', 'speed'])
+
+
+        netix2.ipaddr4 = "195.69.146.251"
+        netix2.ipaddr6 = netix1.ipaddr6
+
+        result = self.ixlan.add_netixlan(netix2, save=False,
+                                         save_others=False)
+
+        self.assertEqual(sorted(result["changed"]), ['asn', 'ipaddr4',
+                         'is_rs_peer', 'network_id', 'speed'])
+
+
 
 
 

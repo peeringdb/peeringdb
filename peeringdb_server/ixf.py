@@ -378,12 +378,15 @@ class Importer(object):
                 self.netixlans.append(result["netixlan"])
                 if result["created"]:
                     action = "add"
+                    reason = _("New ip-address")
                 else:
                     action = "modify"
+                    reason = _("Fields changed: {}").format(
+                        ", ".join(result.get("changed")))
 
-                self.log_peer(asn, action, "", result["netixlan"])
+                self.log_peer(asn, action, reason, result["netixlan"])
             elif result["netixlan"]:
-                self.log_peer(asn, "noop", "", result["netixlan"])
+                self.log_peer(asn, "noop", _("No changes"), result["netixlan"])
             elif result["log"]:
                 self.log_peer(asn, "ignore", "\n".join(result["log"]),
                               netixlan_info)
