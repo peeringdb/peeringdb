@@ -1423,7 +1423,7 @@ class IXLan(pdb_models.IXLanBase):
         """
 
         log = []
-        changed = False
+        changed = []
         created = False
         ipv4 = netixlan_info.ipaddr4
         ipv6 = netixlan_info.ipaddr6
@@ -1509,6 +1509,7 @@ class IXLan(pdb_models.IXLanBase):
             netixlan = NetworkIXLan(ixlan=self, network=netixlan_info.network,
                                     status="ok")
             created = True
+            reason = "New ip-address"
 
         # now we sync the data to our determined netixlan instance
 
@@ -1530,7 +1531,7 @@ class IXLan(pdb_models.IXLanBase):
                 #    other.save()
 
             netixlan.ipaddr4 = ipv4
-            changed = True
+            changed.append("ipaddr4")
 
         # IPv6
         if ipv6 != netixlan.ipaddr6:
@@ -1549,28 +1550,28 @@ class IXLan(pdb_models.IXLanBase):
                 #if save or save_others:
                 #    other.save()
             netixlan.ipaddr6 = ipv6
-            changed = True
+            changed.append("ipaddr6")
 
         # Is the netixlan a routeserver ?
         if netixlan_info.is_rs_peer != netixlan.is_rs_peer:
             netixlan.is_rs_peer = netixlan_info.is_rs_peer
-            changed = True
+            changed.append("is_rs_peer")
 
         # Speed
         if netixlan_info.speed != netixlan.speed and \
         (netixlan_info.speed > 0 or netixlan.speed is None):
             netixlan.speed = netixlan_info.speed
-            changed = True
+            changed.append("speed")
 
         # ASN
         if netixlan_info.asn != netixlan.asn:
             netixlan.asn = netixlan_info.asn
-            changed = True
+            changed.append("asn")
 
         # Network
         if netixlan_info.network.id != netixlan.network.id:
             netixlan.network = netixlan_info.network
-            changed = True
+            changed.append("network_id")
 
         # Finally we attempt to validate the data and then save the netixlan instance
         try:
