@@ -1167,6 +1167,40 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         return qset.filter(id__in=shared_exchanges)
 
     @classmethod
+    def filter_net_count(cls, filt=None, value=None, qset=None):
+
+        """
+        Filter ix queryset by network count value
+
+        Keyword Arguments:
+            - filt<str>: filter to apply: None, 'lt', 'gt', 'lte', 'gte'
+            - value<int>: value to filter by
+            - qset
+
+        Returns:
+            InternetExchange queryset
+        """
+
+        if not qset:
+            qset = cls.objects.filter(status="ok")
+
+        value = int(value)
+
+        if filt == "lt":
+            exchanges = [ix.id for ix in qset if ix.network_count < value]
+        elif filt == "gt":
+            exchanges = [ix.id for ix in qset if ix.network_count > value]
+        elif filt == "gte":
+            exchanges = [ix.id for ix in qset if ix.network_count >= value]
+        elif filt == "lte":
+            exchanges = [ix.id for ix in qset if ix.network_count <= value]
+        else:
+            exchanges = [ix.id for ix in qset if ix.network_count == value]
+
+        return qset.filter(pk__in=exchanges)
+
+
+    @classmethod
     def nsp_namespace_in_list(cls):
         return str(cls.id)
 
@@ -1202,7 +1236,9 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         """
         Returns count of networks at this exchange
         """
-        return len(self.networks)
+        qset = NetworkIXLan.objects.filter(ixlan__ix_id=self.id, status="ok")
+        qset = qset.values("network_id").annotate(count=models.Count("network_id"))
+        return len(qset)
 
     @property
     def ixlan_set_active(self):

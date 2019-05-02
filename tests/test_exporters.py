@@ -153,6 +153,7 @@ class AdvancedSearchExportTest(ClientCase):
         client = Client()
         response = client.get(
             "/export/advanced-search/ix/json-pretty?name__contains=Exchange")
+
         self.assertEqual(response.content,
                          self.expected_data("ix", "jsonpretty"))
 

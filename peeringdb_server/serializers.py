@@ -1589,6 +1589,8 @@ class InternetExchangeSerializer(ModelSerializer):
     fac_set = nested(FacilitySerializer, source="ixfac_set_active_prefetched",
                      through="ixfac_set", getter="facility")
 
+    net_count = serializers.SerializerMethodField()
+
     suggest = serializers.BooleanField(required=False, write_only=True)
 
     # For the creation of the initial prefix during exchange
@@ -1615,7 +1617,7 @@ class InternetExchangeSerializer(ModelSerializer):
             "region_continent", "media", "notes", "proto_unicast",
             "proto_multicast", "proto_ipv6", "website", "url_stats",
             "tech_email", "tech_phone", "policy_email", "policy_phone",
-            "fac_set", "ixlan_set", "suggest", "prefix"
+            "fac_set", "ixlan_set", "suggest", "prefix", "net_count"
         ] + HandleRefSerializer.Meta.fields
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]
@@ -1626,7 +1628,7 @@ class InternetExchangeSerializer(ModelSerializer):
 
         filters = get_relation_filters([
             "ixlan_id", "ixlan", "ixfac_id", "ixfac", "fac_id", "fac",
-            "net_id", "net"
+            "net_id", "net", "net_count"
         ], cls, **kwargs)
 
         for field, e in filters.items():
@@ -1635,6 +1637,9 @@ class InternetExchangeSerializer(ModelSerializer):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
                     qset = fn(qset=qset, field=field, **e)
                     break
+
+            if field == "network_count":
+                qset = cls.Meta.model.filter_net_count(qset=qset, **e)
 
         if "ipblock" in kwargs:
             qset = cls.Meta.model.related_to_ipblock(
@@ -1710,6 +1715,9 @@ class InternetExchangeSerializer(ModelSerializer):
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
+
+    def get_net_count(self, inst):
+        return inst.network_count
 
 
 class OrganizationSerializer(ModelSerializer):

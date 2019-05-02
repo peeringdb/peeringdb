@@ -752,6 +752,13 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_user_001_GET_ix_net_count(self):
+        data = self.assert_get_handleref(self.db_user, "ix",
+                                         SHARED["ix_r_ok"].id)
+        self.assertEqual(data.get("net_count"), 1)
+
+    ##########################################################################
+
     def test_user_001_GET_fac(self):
         self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
 
@@ -1979,6 +1986,41 @@ class TestJSON(unittest.TestCase):
         for row in data:
             self.assert_data_integrity(row, "fac")
             self.assertGreater(row["net_count"], 0)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_ix_net_count(self):
+        data = self.db_guest.all("ix", net_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["net_count"], 1)
+
+        data = self.db_guest.all("ix", net_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["net_count"], 0)
+
+        data = self.db_guest.all("ix", net_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["net_count"], 0)
+
+        data = self.db_guest.all("ix", net_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertGreater(row["net_count"], 0)
+
+        data = self.db_guest.all("ix", net_count__lte=2)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertLessEqual(row["net_count"], 2)
+
+        data = self.db_guest.all("ix", net_count__gte=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertGreaterEqual(row["net_count"], 1)
+
+
 
     ##########################################################################
 
