@@ -1435,7 +1435,6 @@ class IXLan(pdb_models.IXLanBase):
         return False
 
 
-
     @reversion.create_revision()
     def add_netixlan(self, netixlan_info, save=True, save_others=True):
         """
@@ -2286,11 +2285,40 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         conflict_v6 = (self.ipaddr6 and ipv6.exists())
         return (conflict_v4, conflict_v6)
 
+
+    def validate_ipaddr4(self):
+        if self.ipaddr4 and not self.ixlan.test_ipv4_address(self.ipaddr4):
+            raise ValidationError(_("IPv4 address outside of prefix"))
+
+    def validate_ipaddr6(self):
+        if self.ipaddr6 and not self.ixlan.test_ipv6_address(self.ipaddr6):
+            raise ValidationError(_("IPv6 address outside of prefix"))
+
+
     def clean(self):
         """
         Custom model validation
         """
         errors = {}
+
+        # check that the ip address can be validated agaisnt
+        # at least one of the prefix on the parent ixlan
+
+        try:
+            self.validate_ipaddr4()
+        except ValidationError as exc:
+            errors["ipaddr4"] = exc.message
+
+        try:
+            self.validate_ipaddr6()
+        except ValidationError as exc:
+            errors["ipaddr6"] = exc.message
+
+        if errors:
+            raise ValidationError(errors)
+
+        # make sure this ip address is not claimed anywhere else
+
         conflict_v4, conflict_v6 = self.ipaddress_conflict()
         if conflict_v4:
             errors["ipaddr4"] = _("Ip address already exists elsewhere")

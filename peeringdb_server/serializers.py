@@ -8,7 +8,7 @@ from django.db.models.query import QuerySet
 from django.db.models import Prefetch, Q, Sum, IntegerField, Case, When
 from django.db import models, transaction
 from django.db.models.fields.related import ReverseManyToOneDescriptor, ForwardManyToOneDescriptor
-from django.core.exceptions import FieldError
+from django.core.exceptions import FieldError, ValidationError
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 # from drf_toolbox import serializers
@@ -1160,6 +1160,20 @@ class NetworkIXLanSerializer(ModelSerializer):
 
     def get_ix_id(self, inst):
         return inst.ix_id
+
+    def validate(self, data):
+        netixlan = NetworkIXLan(**data)
+
+        try:
+            netixlan.validate_ipaddr4()
+        except ValidationError as exc:
+            raise serializers.ValidationError({"ipaddr4":exc.message})
+
+        try:
+            netixlan.validate_ipaddr6()
+        except ValidationError as exc:
+            raise serializers.ValidationError({"ipaddr6":exc.message})
+        return data
 
 
 class NetworkFacilitySerializer(ModelSerializer):
