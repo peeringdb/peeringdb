@@ -827,6 +827,16 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(0, len(data))
 
     ##########################################################################
+
+    def test_user_001_GET_as_set(self):
+        data = self.db_guest.all("as_set")
+        networks = Network.objects.filter(status="ok")
+        print(data)
+        for net in networks:
+            self.assertEqual(data[0].get(u"{}".format(net.asn)), net.irr_as_set)
+
+
+    ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION MEMBER
     ##########################################################################
 
@@ -1039,6 +1049,28 @@ class TestJSON(unittest.TestCase):
             test_failures={"invalid": {
                 "asn": 9999999
             }}, test_success=False)
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_PUT_DELETE_as_set(self):
+
+        """
+        The as-set endpoint is readonly, so all of these should
+        fail
+        """
+        data = self.make_data_net(asn=9000900)
+
+        with self.assertRaises(Exception) as exc:
+            r_data = self.assert_create(self.db_org_admin,"as_set",data)
+        self.assertIn("You do not have permission", str(exc.exception))
+
+        with self.assertRaises(Exception) as exc:
+            self.db_org_admin.update("as_set", {"9000900":"AS-XXX"})
+        self.assertIn("You do not have permission", str(exc.exception))
+
+        with self.assertRaises(Exception) as exc:
+            self.db_org_admin.rm("as_set", SHARED["net_rw_ok"].asn)
+        self.assertIn("You do not have permission", str(exc.exception))
 
     ##########################################################################
 

@@ -1247,7 +1247,7 @@ def view_network(request, id):
             "value": network_d.get("asn", dismiss)
         }, {
             "name": "irr_as_set",
-            "label": _("IRR Record"),
+            "label": _("IRR as-set/route-set"),
             "notify_incomplete": True,
             "value": network_d.get("irr_as_set", dismiss)
         }, {

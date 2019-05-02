@@ -697,18 +697,52 @@ NetworkIXLanViewSet = model_view_set('NetworkIXLan')
 OrganizationViewSet = model_view_set('Organization')
 
 
-class NetworkASNViewSet(NetworkViewSet):
+class ReadOnlyMixin(object):
+
+    def destroy(self, request, pk, format=None):
+        """
+        This endpoint is readonly
+        """
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def create(self, request, *args, **kwargs):
+        """
+        This endpoint is readonly
+        """
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request, *args, **kwargs):
+        """
+        This endpoint is readonly
+        """
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def patch(self, request, *args, **kwargs):
+        """
+        This endpoint is readonly
+        """
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+
+class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
     """
-    Rest API end point for Networks (by ASN, readonly)
+    AS-SET endpoint
+
+    lists all as sets mapped by asn
     """
 
     lookup_field = "asn"
+    http_method_names = ["get"]
+    model = Network
+
+    def get_queryset(self):
+        return Network.objects.filter(status="ok").exclude(irr_as_set="")
+
+    def list(self, request):
+        return Response(Network.as_set_map(self.get_queryset()))
 
     def retrieve(self, request, asn):
-        """
-        Get network by asn
-        """
-
         try:
             network = Network.objects.get(asn=int(asn))
         except ValueError:
@@ -716,28 +750,11 @@ class NetworkASNViewSet(NetworkViewSet):
                             data={"detail": "Invalid ASN"})
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        return super(NetworkViewSet, self).retrieve(request, network.id)
-
-    def destroy(self, request, pk, format=None):
-        """
-        The asn endpoint is readonly, use the /net endpoint to make changes to Network objects
-        """
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def create(self, request, *args, **kwargs):
-        """
-        The asn endpoint is readonly, use the /net endpoint to make changes to Network objects
-        """
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def update(self, request, *args, **kwargs):
-        """
-        The asn endpoint is readonly, use the /net endpoint to make changes to Network objects
-        """
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({network.asn : network.irr_as_set})
 
 
-# router.register('asn', NetworkASNViewSet, base_name='asn')
+
+router.register('as_set', ASSetViewSet, base_name='as_set')
 
 # set here in case we want to add more urls later
 urls = router.urls

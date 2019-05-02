@@ -1943,6 +1943,16 @@ class Network(pdb_models.NetworkBase):
         q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
         return qset.exclude(id__in=[i.network_id for i in q])
 
+
+    @classmethod
+    def as_set_map(cls, qset=None):
+        """
+        Returns a dict mapping asns to their irr_as_set value
+        """
+        if not qset:
+            qset = cls.objects.filter(status="ok").order_by("asn")
+        return dict([(net.asn, net.irr_as_set) for net in qset])
+
     @property
     def search_result_name(self):
         """
