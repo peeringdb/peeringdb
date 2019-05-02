@@ -1,4 +1,5 @@
 #!/bin/env python
+# -*- coding: utf-8 -*-
 """
 series of integration/unit tests for the pdb api
 """
@@ -2112,6 +2113,34 @@ class TestJSON(unittest.TestCase):
         comp = data[0]
 
         self.assertEqual(target, comp)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_accented(self):
+
+        """
+        test filtering with accented search terms
+        """
+
+        #TODO: sqlite3 is being used as the testing backend, and django 1.11
+        #seems to be unable to set a collation on it, so we can't properly test
+        #the other way atm, for now this test at least confirms that the term is
+        #unaccented correctly.
+        #
+        #on production we run mysql with flattened accents so both ways should work
+        #there regardless.
+
+        org = Organization.objects.create(name="org unaccented", status="ok")
+        net = Network.objects.create(asn=12345, name=u"net unaccented",
+                                     status="ok", org=org)
+        ix = InternetExchange.objects.create(org=org, name=u"ix unaccented", status="ok")
+        fac = Facility.objects.create(org=org, name=u"fac unaccented", status="ok")
+
+        for tag in ["org","net","ix","fac"]:
+            data = self.db_guest.all(tag, name=u"{} unãccented".format(tag))
+            self.assertEqual(len(data), 1)
+
+
 
     ##########################################################################
     # READONLY PERMISSION TESTS

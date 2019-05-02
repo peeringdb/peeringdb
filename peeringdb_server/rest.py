@@ -1,4 +1,7 @@
 import importlib
+
+import unidecode
+
 from rest_framework import (routers, serializers, status, viewsets)
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -285,6 +288,8 @@ class ModelViewSet(viewsets.ModelViewSet):
         # filters
         filters = {}
         for k, v in self.request.query_params.items():
+
+            v = unidecode.unidecode(v)
 
             if k[-3:] == "_id" and k not in field_names:
                 k = k[:-3]

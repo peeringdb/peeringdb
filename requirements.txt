@@ -10,6 +10,7 @@ Markdown==2.6.7
 bleach==2.1.3
 coreapi==2.3.1
 googlemaps==2.5.1
+Unidecode==1.0.23
 
 django-allauth==0.32.0
 django-autocomplete-light==3.2.9

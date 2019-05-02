@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Unit-tests for quick search functionality - note that advanced search is not
 tested here as that is using the PDB API entirely.
@@ -6,6 +7,7 @@ import re
 import datetime
 
 import pytest
+import unidecode
 
 from django.test import TestCase, RequestFactory
 
@@ -27,19 +29,25 @@ class SearchTests(TestCase):
         search.SEARCH_CACHE["search_index"] = {}
 
         cls.instances = {}
+        cls.instances_accented = {}
         cls.instances_sponsored = {}
 
         # create an instance of each searchable model, so we have something
         # to search for
         cls.org = models.Organization.objects.create(name="Test org")
         for model in search.searchable_models:
+            kwargs = {}
             if model.handleref.tag == "net":
                 kwargs = {"asn": 1}
-            else:
-                kwargs = {}
             cls.instances[model.handleref.tag] = model.objects.create(
                 status="ok", org=cls.org, name="Test %s" % model.handleref.tag,
                 **kwargs)
+
+            if model.handleref.tag == "net":
+                kwargs = {"asn": 2}
+            cls.instances_accented[model.handleref.tag] = model.objects.create(
+                status="ok", org=cls.org,
+                name=u"ãccented {}".format(model.handleref.tag), **kwargs)
 
         # we also need to test that sponsor ship status comes through
         # accordingly
@@ -52,7 +60,7 @@ class SearchTests(TestCase):
 
         for model in search.searchable_models:
             if model.handleref.tag == "net":
-                kwargs = {"asn": 2}
+                kwargs = {"asn": 3}
             else:
                 kwargs = {}
             cls.instances_sponsored[model.handleref.tag] = model.objects.create(
@@ -140,3 +148,22 @@ class SearchTests(TestCase):
         new_ix_p.delete()
         new_ix_o.delete()
         self.test_search()
+
+    def test_search_unaccent(self):
+        """
+        search for entities containing 'ãccented' using accented and unaccented
+        terms
+        """
+        rv = search.search(u"accented")
+        for k, inst in self.instances_accented.items():
+            assert k in rv
+            assert len(rv[k]) == 1
+            assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(inst.search_result_name)
+
+        rv = search.search(u"ãccented")
+        for k, inst in self.instances_accented.items():
+            assert k in rv
+            assert len(rv[k]) == 1
+            assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(inst.search_result_name)
+
+
