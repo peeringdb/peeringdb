@@ -1,9 +1,18 @@
 import re
-from peeringdb_server.models import User, Organization
+import requests
+
 from django.contrib.auth import forms as auth_forms
 from django import forms
+from django.utils import timezone
 from django_namespace_perms.constants import *
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings as dj_settings
+
+from captcha.fields import CaptchaField
+from captcha.models import CaptchaStore
+
+from peeringdb_server.models import User, Organization
+from peeringdb_server.inet import get_client_ip
 
 
 class OrgAdminUserPermissionForm(forms.Form):
@@ -90,6 +99,10 @@ class UsernameRetrieveForm(forms.Form):
 
 
 class UserCreationForm(auth_forms.UserCreationForm):
+    recaptcha = forms.CharField(required=False)
+    captcha = forms.CharField(required=False)
+    captcha_generator = CaptchaField(required=False)
+
     class Meta:
         model = User
         fields = (
@@ -98,6 +111,39 @@ class UserCreationForm(auth_forms.UserCreationForm):
             "first_name",
             "last_name",
         )
+
+
+    def clean(self):
+        super(UserCreationForm, self).clean()
+        recaptcha = self.cleaned_data.get("recaptcha", "")
+        captcha = self.cleaned_data.get("captcha", "")
+
+        if not recaptcha and not captcha:
+            raise forms.ValidationError(_("Please fill out the anti-spam challenge (captcha) field"))
+
+        elif recaptcha:
+            cpt_params = {
+                "secret": dj_settings.RECAPTCHA_SECRET_KEY,
+                "response": recaptcha,
+                "remoteip": get_client_ip(self.request)
+            }
+            cpt_response = requests.post(dj_settings.RECAPTCHA_VERIFY_URL,
+                                     params=cpt_params).json()
+            if not cpt_response.get("success"):
+                raise forms.ValidationError(_("reCAPTCHA invalid"))
+        else:
+            try:
+                hashkey, value = captcha.split(":")
+                self.captcha_object = CaptchaStore.objects.get(response=value,
+                                                               hashkey=hashkey,
+                                                               expiration__gt=timezone.now())
+            except CaptchaStore.DoesNotExist:
+                raise forms.ValidationError(_("captcha invalid"))
+
+    def delete_captcha(self):
+        captcha_object = getattr(self, "captcha_object", None)
+        if captcha_object:
+            captcha_object.delete()
 
 
 class UserLocaleForm(forms.Form):

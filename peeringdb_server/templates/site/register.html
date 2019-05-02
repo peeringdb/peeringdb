@@ -4,7 +4,7 @@
 
 <div class="view_info">
 <div class="container">
-  
+
   <div class="row marg-top-15" id="success-create-account" style="display:none;">
     <div class="col-md-2 col-sm-3 col-xs-12"></div>
     <div class="col-md-8 col-sm-6 col-xs-12 panel">
@@ -32,8 +32,8 @@
       <input type="text"
              class="editable string form-control marg-bot-15"
              placeholder="{% trans "Username" %}"
-             data-edit-name="username" 
-             data-edit-type="string" 
+             data-edit-name="username"
+             data-edit-type="string"
              data-edit-required="yes" />
 
       <input type="password"
@@ -76,7 +76,19 @@
              data-edit-name="last_name"
              data-edit-type="string" />
 
-      <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}"></div>
+      <div class="captcha">
+        <div class="loading center"><img src="{{ STATIC_URL }}loading.gif"> {% trans "Loading anti-spam challenge" %} ...</div>
+        <div class="captcha-container">
+          <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}"></div>
+          <div class="fallback">
+          {% for field in register_form.visible_fields %}
+            {% if field.name == "captcha_generator" %}
+              {{ field }}
+            {% endif %}
+          {% endfor %}
+          </div>
+        </div>
+      </div>
 
       <a class="btn btn-default" data-edit-action="submit">{% trans "Create" %}</a>
     </div>
@@ -85,6 +97,7 @@
   </div>
 </div>
 </div>
+
 
 <script language="javascript" type="text/javascript">
 $('#form-create-account').each(function(idx) {
@@ -95,7 +108,9 @@ $('#form-create-account').each(function(idx) {
     window.document.location.href = "/verify"
   })
   $(this).on("action-error:submit", function(ev, data) {
-    grecaptcha.reset()
+    if(PeeringDB.recaptcha_loaded()) {
+      grecaptcha.reset()
+    }
   });
 });
 </script>

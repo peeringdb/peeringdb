@@ -1,8 +1,12 @@
-import pytest
 import json
+import re
+
+import pytest
 
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group
+
+from captcha.models import CaptchaStore
 
 import peeringdb_server.models as models
 import peeringdb_server.views as views
@@ -271,3 +275,29 @@ class UserTests(TestCase):
 
         with self.assertRaises(KeyError):
             email = c.session["username_retrieve_email"]
+
+
+    def test_signup(self):
+        """
+        test user signup with captcha fallback
+        """
+
+        c = Client()
+        response = c.get("/register")
+        self.assertGreater(response.content.find('name="captcha_generator_0"'), -1)
+        m = re.search('name="captcha_generator_0" value="([^"]+)"', response.content)
+
+        captcha_obj = CaptchaStore.objects.get(hashkey=m.group(1))
+
+        response = c.post("/register", {
+            "username": "signuptest",
+            "password1": "signuptest_123",
+            "password2": "signuptest_123",
+            "email": "signuptest@localhost",
+            "captcha": "{}:{}".format(captcha_obj.hashkey, captcha_obj.response)
+        })
+
+        self.assertEqual( json.loads(response.content), {"status":"ok"})
+
+
+

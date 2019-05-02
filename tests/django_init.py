@@ -27,6 +27,7 @@ settings.configure(
         'dal',
         'dal_select2',
         'corsheaders',
+        'captcha',
     ],
     CACHES={
         "default": {
@@ -159,6 +160,8 @@ settings.configure(
     DATA_QUALITY_MIN_PREFIXLEN_V6 = 64,
     DATA_QUALITY_MAX_PREFIXLEN_V6 = 116,
     TUTORIAL_MODE=False,
+    CAPTCHA_TEST_MODE=True,
+    SITE_ID=1,
     RATELIMITS={
         "view_affiliate_to_org_POST": "100/m",
         "resend_confirmation_mail": "2/m",

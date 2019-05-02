@@ -32,6 +32,7 @@ django-tables2==1.0.4
 django-vanilla-views==1.0.2
 django-cors-headers==2.1.0
 django-ratelimit==1.1.0
+django-simple-captcha==0.5.11
 
 # issue #95
 passlib==1.7.1

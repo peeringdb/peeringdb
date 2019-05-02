@@ -122,14 +122,6 @@ def make_env(**data):
     return env
 
 
-def get_client_ip(request):
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(",")[0]
-    else:
-        ip = request.META.get("REMOTE_ADDR")
-    return ip
-
 
 def view_http_error_404(request):
     template = loader.get_template('site/error_404.html')
@@ -661,27 +653,18 @@ def view_registration(request):
         env = BASE_ENV.copy()
         env.update({
             'global_stats': global_stats(),
+            'register_form' : UserCreationForm(),
         })
         return HttpResponse(template.render(env, request))
 
     elif request.method == "POST":
         form = UserCreationForm(request.POST)
+        form.request = request
 
         if not form.is_valid():
-            return JsonResponse(form.errors, status=400)
-
-        cpt = request.POST.get("recaptcha", "")
-        cpt_params = {
-            "secret": dj_settings.RECAPTCHA_SECRET_KEY,
-            "response": cpt,
-            "remoteip": get_client_ip(request)
-        }
-        cpt_response = requests.post(dj_settings.RECAPTCHA_VERIFY_URL,
-                                     params=cpt_params).json()
-        if not cpt_response.get("success"):
-            return JsonResponse({
-                "non_field_errors": [_("reCAPTCHA invalid")]
-            }, status=400)
+            errors = form.errors
+            errors["non_field_errors"] = errors.get("__all__",[])
+            return JsonResponse(errors, status=400)
 
         email = form.cleaned_data["email"]
         if EmailAddress.objects.filter(email=email).count() > 0:
@@ -707,6 +690,8 @@ def view_registration(request):
                            password=request.POST["password1"]))
 
         user.send_email_confirmation(signup=True, request=request)
+
+        form.delete_captcha()
 
         return JsonResponse({"status": "ok"})
 
