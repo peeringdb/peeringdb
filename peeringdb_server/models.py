@@ -2328,6 +2328,26 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         if errors:
             raise ValidationError(errors)
 
+    def ipaddr(self, version):
+        """
+        Return the netixlan's ipaddr for ip version
+        """
+        if version == 4:
+            return self.ipaddr4
+        elif version == 6:
+            return self.ipaddr6
+        raise ValueError("Invalid ip version {}".format(version))
+
+
+    def descriptive_name_ipv(self, version):
+        """
+        Returns a descriptive label of the netixlan for logging purposes
+        Will only contain the ipaddress matching the specified version
+        """
+        return "netixlan{} AS{} {}".format(
+            self.id, self.asn, self.ipaddr(version))
+
+
 
 class User(AbstractBaseUser, PermissionsMixin):
     """

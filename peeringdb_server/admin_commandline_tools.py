@@ -177,23 +177,25 @@ class ToolRenumberLans(CommandLineToolWrapper):
             queryset=InternetExchange.handleref.undeleted().order_by("name"),
             widget=autocomplete.ModelSelect2(url="/autocomplete/ix/json"))
         old_prefix = forms.CharField(
-            help_text=_(
-                "Three leftmost octets of the original prefix - eg. xxx.xxx.xxx"
-            ))
+            help_text=_("Old prefix - renumber all netixlans that fall into this prefix"))
         new_prefix = forms.CharField(
-            help_text=_(
-                "Three leftmost octets of the new prefix - eg. xxx.xxx.xxx"))
+            help_text=_("New prefix - needs to be the same protocol and length as old prefix"))
 
     @property
     def description(self):
         """ Provide a human readable description of the command that was run """
-        return "{}: {} to {}".format(
-            InternetExchange.objects.get(id=self.kwargs["ix"]), self.args[0],
-            self.args[1])
+        try:
+            return "{}: {} to {}".format(
+                InternetExchange.objects.get(id=self.args[0]), self.args[1],
+                self.args[2])
+        except:
+            # if a version of this command was run before, we still need to able
+            # to display a somewhat useful discription, so fall back to this basic
+            # display
+            return "(Legacy) {}".format(self.args)
 
     def set_arguments(self, form_data):
-        self.args = [form_data.get("old_prefix"), form_data.get("new_prefix")]
-        self.kwargs = {"ix": form_data.get("exchange", EmptyId()).id}
+        self.args = [form_data.get("exchange", EmptyId()).id, form_data.get("old_prefix"), form_data.get("new_prefix")]
 
 
 @register_tool
