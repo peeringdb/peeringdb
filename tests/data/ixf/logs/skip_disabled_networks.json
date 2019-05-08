@@ -55,6 +55,32 @@
     {
       "peer": {
         "net_id": 1,
+        "ipaddr4": "195.69.147.253",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "ixlan_id": 1,
+        "asn": 2906,
+        "ipaddr6": ""
+      },
+      "action": "noop",
+      "reason": "Network has disabled ixp updates"
+    },
+    {
+      "peer": {
+        "net_id": 1,
+        "ipaddr4": "",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "ixlan_id": 1,
+        "asn": 2906,
+        "ipaddr6": "2001:7f8:1::a500:2906:6"
+      },
+      "action": "noop",
+      "reason": "Network has disabled ixp updates"
+    },
+    {
+      "peer": {
+        "net_id": 1,
         "ipaddr4": "195.69.146.251",
         "is_rs_peer": true,
         "speed": 20000,
