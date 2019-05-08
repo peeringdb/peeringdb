@@ -107,6 +107,44 @@
               }
             }
           ]
+        },
+        {
+          "state": "active",
+          "if_list": [
+            {
+              "if_speed": 10000
+            }
+          ],
+          "ixp_id": 1,
+          "vlan_list": [
+            {
+              "ipv4": {
+                "as_macro": "AS-NFLX",
+                "address": "195.69.147.253",
+                "routeserver": true,
+                "max_prefix": 42
+              }
+            }
+          ]
+        },
+        {
+          "state": "active",
+          "if_list": [
+            {
+              "if_speed": 10000
+            }
+          ],
+          "ixp_id": 1,
+          "vlan_list": [
+            {
+              "ipv6": {
+                "as_macro": "AS-NFLX",
+                "address": "2001:7f8:1::a500:2906:6",
+                "routeserver": true,
+                "max_prefix": 42
+              }
+            }
+          ]
         }
       ],
       "peering_policy_url": "https://www.netflix.com/openconnect/",
