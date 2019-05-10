@@ -58,7 +58,7 @@
 
       </div>
       <div class="col-xs-6 col-sm-6 col-md-6">
-        <div class="country" data-sort-value="{{ n.country.name }}" data-filter-value="{{ n.country.name }}">{{ n.country.name }}</div>
+        <div class="country" data-sort-value="{{ n.country.name|lower }}" data-filter-value="{{ n.country.name }}">{{ n.country.name }}</div>
         <div class="city" data-sort-value="{{ n.city }}" data-filter-value="{{ n.city }}">{{ n.city }}</div>
       </div>
 
@@ -193,7 +193,7 @@
         {% endif %}
       </div>
       <div class="col-xs-6 col-sm-6 col-md-6">
-        <div class="country" data-sort-value="{{ n.country.name }}" data-filter-value="{{ n.country.name }}">{{ n.country.name }}</div>
+        <div class="country" data-sort-value="{{ n.country.name|lower }}" data-filter-value="{{ n.country.name }}">{{ n.country.name }}</div>
         <div class="city" data-sort-value="{{ n.city }}" data-filter-value="{{ n.city }}">{{ n.city }}</div>
       </div>
 
