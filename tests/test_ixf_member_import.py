@@ -145,7 +145,7 @@ class JsonMembersListTestCase(TestCase):
         r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
 
         self.assertLog(log, "update_01")
-        self.assertEqual(len(netixlans), 3)
+        self.assertEqual(len(netixlans), 5)
         self.assertEqual(len(netixlans_deleted), 2)
 
         n = netixlans[0]
@@ -178,6 +178,11 @@ class JsonMembersListTestCase(TestCase):
         #n_deleted2.refresh_from_db()
         #self.assertEqual(n_deleted.ipaddr4, None)
         #self.assertEqual(n_deleted2.ipaddr6, None)
+
+    def test_preview_from_ixf_ixp_member_list(self):
+        ixlan = self.entities["ixlan"][0]
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data, save=False)
+        self.assertLog(log, "preview_01")
 
     def test_update_from_ixf_ixp_member_list_skip_prefix_mismatch(self):
         """
@@ -230,7 +235,7 @@ class JsonMembersListTestCase(TestCase):
             log_entry = ixlan.ixf_import_log_set.last().entries.get(
                 netixlan=netixlan)
 
-            if netixlan.id == self.entities["netixlan"][4].id:
+            if netixlan.id in (self.entities["netixlan"][4].id, self.entities["netixlan"][5].id):
                 # netixlan was modified
                 self.assertEqual(
                     log_entry.version_before,
