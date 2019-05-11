@@ -423,6 +423,8 @@ div.view_info {
 /*  border-bottom: 0px #000000 solid; */
   padding-bottom: 0px;
   padding-top: 20px;
+  /* make sure that we don't cut off long emails and such: */
+  word-break: break-word;
 }
 
 div.landing_info h1 {

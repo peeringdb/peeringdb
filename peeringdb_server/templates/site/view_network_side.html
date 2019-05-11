@@ -254,7 +254,7 @@
         <div data-filter-value="{{ f.local_asn }}">{{ f.local_asn }}</div>
       </div>
       <div class="col-xs-6 col-sm-6 col-md-6">
-        <div class="country" data-sort-value="{{ f.facility.country.name }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
+        <div class="country" data-sort-value="{{ f.facility.country.name|lower }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
         <div class="city" data-sort-value="{{ f.facility.city }}" data-filter-value="{{ f.facility.city }}">{{ f.facility.city }}</div>
       </div>
     </div>
