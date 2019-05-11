@@ -1288,3 +1288,37 @@ div[data-edit-name=ipaddr6]
 .ixf-errors-overview small {
   color: #666;
 }
+
+/**
+ * captcha
+ */
+
+div.captcha {
+  position: relative;
+  min-height: 50px;
+}
+
+div.captcha .loading {
+  padding-top: 5px;
+  position: absolute;
+  z-index: 0;
+  left: 0px;
+  right: 0px;
+  top: 0px;
+}
+
+div.captcha .captcha-container {
+  background-color: #f1f1f1;
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  position: relative;
+  z-index: 1;
+}
+
+div.captcha .g-recaptcha {
+}
+
+div.captcha .fallback {
+  display: none;
+}

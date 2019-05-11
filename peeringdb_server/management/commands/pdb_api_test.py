@@ -1,4 +1,5 @@
 #!/bin/env python
+# -*- coding: utf-8 -*-
 """
 series of integration/unit tests for the pdb api
 """
@@ -99,6 +100,30 @@ EMAIL = "test@20c.com"
 
 VERBOSE = False
 
+PREFIXES_V4 = [
+    u"206.223.114.0/24",
+    u"206.223.115.0/24",
+    u"206.223.116.0/24",
+    u"206.223.117.0/24",
+    u"206.223.118.0/24",
+    u"206.223.119.0/24",
+    u"206.223.120.0/24",
+    u"206.223.121.0/24",
+    u"206.223.122.0/24",
+]
+
+PREFIXES_V6 = [
+    u"2001:504:0:1::/64",
+    u"2001:504:0:2::/64",
+    u"2001:504:0:3::/64",
+    u"2001:504:0:4::/64",
+    u"2001:504:0:5::/64",
+    u"2001:504:0:6::/64",
+    u"2001:504:0:7::/64",
+    u"2001:504:0:8::/64",
+    u"2001:504:0:9::/64",
+]
+
 
 class TestJSON(unittest.TestCase):
 
@@ -109,16 +134,31 @@ class TestJSON(unittest.TestCase):
     IP6_COUNT = 1
 
     @classmethod
-    def get_ip6(cls):
-        r = u"2001:7f8:4::1154:%d" % cls.IP6_COUNT
+    def get_ip6(cls, ixlan):
+        hosts = []
+        for host in ixlan.ixpfx_set.filter(status=ixlan.status, protocol=6).first().prefix.hosts():
+            if len(hosts) < 100:
+                hosts.append(host)
+            else:
+                break
+
+        r = u"{}".format(hosts[cls.IP6_COUNT])
         cls.IP6_COUNT += 1
         return r
 
     @classmethod
-    def get_ip4(cls):
-        r = u"1.1.1.%d" % cls.IP4_COUNT
+    def get_ip4(cls, ixlan):
+        hosts = []
+        for host in ixlan.ixpfx_set.filter(status=ixlan.status, protocol=4).first().prefix.hosts():
+            if len(hosts) < 100:
+                hosts.append(host)
+            else:
+                break
+
+        r = u"{}".format(hosts[cls.IP4_COUNT])
         cls.IP4_COUNT += 1
         return r
+
 
     @classmethod
     def get_prefix4(cls):
@@ -317,14 +357,17 @@ class TestJSON(unittest.TestCase):
             "notes": NOTE,
             "speed": 30000,
             "asn": 12345,
-            "ipaddr4": self.get_ip4(),
-            "ipaddr6": self.get_ip6()
         }
 
         data.update(**kwargs)
         for k, v in rename.items():
             data[v] = data[k]
             del data[k]
+
+        data.update(
+            ipaddr4=self.get_ip4(IXLan.objects.get(id=data["ixlan_id"])),
+            ipaddr6=self.get_ip6(IXLan.objects.get(id=data["ixlan_id"])),
+        )
         return data
 
     ##########################################################################
@@ -614,6 +657,20 @@ class TestJSON(unittest.TestCase):
                 SHARED["%s_r_ok_public" % target].id,
                 SHARED["%s_rw_ok_public" % target].id
             ]
+        elif target == "ixpfx":
+
+            valid_s = [
+                SHARED["%s_r_ok" % target].id,
+                SHARED["%s_r_v6_ok" % target].id,
+            ]
+
+            valid_m = [
+                SHARED["%s_r_ok" % target].id,
+                SHARED["%s_rw_ok" % target].id,
+                SHARED["%s_r_v6_ok" % target].id,
+                SHARED["%s_rw_v6_ok" % target].id,
+            ]
+
         else:
 
             valid_s = [SHARED["%s_r_ok" % target].id]
@@ -622,7 +679,7 @@ class TestJSON(unittest.TestCase):
                 SHARED["%s_r_ok" % target].id, SHARED["%s_rw_ok" % target].id
             ]
 
-            # exact
+        # exact
         data = self.db_guest.all(target, **kwargs_s)
         self.assertGreater(len(data), 0)
         for row in data:
@@ -751,6 +808,13 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_user_001_GET_ix_net_count(self):
+        data = self.assert_get_handleref(self.db_user, "ix",
+                                         SHARED["ix_r_ok"].id)
+        self.assertEqual(data.get("net_count"), 1)
+
+    ##########################################################################
+
     def test_user_001_GET_fac(self):
         self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
 
@@ -817,6 +881,16 @@ class TestJSON(unittest.TestCase):
             self.assertIn(row.get("visible"), ["Users", "Public"])
         data = self.db_guest.all("poc", visible="Private", limit=100)
         self.assertEqual(0, len(data))
+
+    ##########################################################################
+
+    def test_user_001_GET_as_set(self):
+        data = self.db_guest.all("as_set")
+        networks = Network.objects.filter(status="ok")
+        print(data)
+        for net in networks:
+            self.assertEqual(data[0].get(u"{}".format(net.asn)), net.irr_as_set)
+
 
     ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION MEMBER
@@ -1031,6 +1105,28 @@ class TestJSON(unittest.TestCase):
             test_failures={"invalid": {
                 "asn": 9999999
             }}, test_success=False)
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_PUT_DELETE_as_set(self):
+
+        """
+        The as-set endpoint is readonly, so all of these should
+        fail
+        """
+        data = self.make_data_net(asn=9000900)
+
+        with self.assertRaises(Exception) as exc:
+            r_data = self.assert_create(self.db_org_admin,"as_set",data)
+        self.assertIn("You do not have permission", str(exc.exception))
+
+        with self.assertRaises(Exception) as exc:
+            self.db_org_admin.update("as_set", {"9000900":"AS-XXX"})
+        self.assertIn("You do not have permission", str(exc.exception))
+
+        with self.assertRaises(Exception) as exc:
+            self.db_org_admin.rm("as_set", SHARED["net_rw_ok"].asn)
+        self.assertIn("You do not have permission", str(exc.exception))
 
     ##########################################################################
 
@@ -1289,11 +1385,12 @@ class TestJSON(unittest.TestCase):
                 },
                 "perms": {
                     # set network to one the user doesnt have perms to
-                    "ipaddr4": self.get_ip4(),
-                    "ipaddr6": self.get_ip6(),
+                    "ipaddr4": self.get_ip4(SHARED["ixlan_rw_ok"]),
+                    "ipaddr6": self.get_ip6(SHARED["ixlan_rw_ok"]),
                     "net_id": SHARED["net_r_ok"].id
                 }
             })
+
 
         SHARED["netixlan_id"] = r_data.get("id")
 
@@ -1311,6 +1408,26 @@ class TestJSON(unittest.TestCase):
         self.assert_delete(self.db_org_admin, "netixlan",
                            test_success=SHARED["netixlan_id"],
                            test_failure=SHARED["netixlan_r_ok"].id)
+
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_PUT_netixlan_validation(self):
+        data = self.make_data_netixlan(net_id=SHARED["net_rw_ok"].id,
+                                       ixlan_id=SHARED["ixlan_rw_ok"].id)
+
+        test_failures = [
+            # test failure if ip4 not in prefix
+            {"invalid": { "ipaddr4": self.get_ip4(SHARED["ixlan_r_ok"]) }},
+            # test failure if ip6 not in prefix
+            {"invalid": { "ipaddr6": self.get_ip6(SHARED["ixlan_r_ok"]) }},
+        ]
+
+        for test_failure in test_failures:
+            self.assert_create(self.db_org_admin, "netixlan", data,
+                               test_failures=test_failure, test_success=False)
+
+
 
     ##########################################################################
 
@@ -1981,6 +2098,41 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_filter_ix_net_count(self):
+        data = self.db_guest.all("ix", net_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["net_count"], 1)
+
+        data = self.db_guest.all("ix", net_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["net_count"], 0)
+
+        data = self.db_guest.all("ix", net_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["net_count"], 0)
+
+        data = self.db_guest.all("ix", net_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertGreater(row["net_count"], 0)
+
+        data = self.db_guest.all("ix", net_count__lte=2)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertLessEqual(row["net_count"], 2)
+
+        data = self.db_guest.all("ix", net_count__gte=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertGreaterEqual(row["net_count"], 1)
+
+
+
+    ##########################################################################
+
     def test_guest_005_list_filter_fac_asn_overlap(self):
         # create three test networks
         networks = [
@@ -2112,6 +2264,34 @@ class TestJSON(unittest.TestCase):
         comp = data[0]
 
         self.assertEqual(target, comp)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_accented(self):
+
+        """
+        test filtering with accented search terms
+        """
+
+        #TODO: sqlite3 is being used as the testing backend, and django 1.11
+        #seems to be unable to set a collation on it, so we can't properly test
+        #the other way atm, for now this test at least confirms that the term is
+        #unaccented correctly.
+        #
+        #on production we run mysql with flattened accents so both ways should work
+        #there regardless.
+
+        org = Organization.objects.create(name="org unaccented", status="ok")
+        net = Network.objects.create(asn=12345, name=u"net unaccented",
+                                     status="ok", org=org)
+        ix = InternetExchange.objects.create(org=org, name=u"ix unaccented", status="ok")
+        fac = Facility.objects.create(org=org, name=u"fac unaccented", status="ok")
+
+        for tag in ["org","net","ix","fac"]:
+            data = self.db_guest.all(tag, name=u"{} unãccented".format(tag))
+            self.assertEqual(len(data), 1)
+
+
 
     ##########################################################################
     # READONLY PERMISSION TESTS
@@ -2616,6 +2796,12 @@ class Command(BaseCommand):
         if tag in ["ix", "net", "fac", "org"]:
             data["name"] = name
 
+        if tag == "ixpfx":
+            if kwargs.get("protocol", 4) == 4:
+                data["prefix"] = PREFIXES_V4[model.objects.all().count()]
+            elif kwargs.get("protocol") == 6:
+                data["prefix"] = PREFIXES_V6[model.objects.all().count()]
+
         data.update(**kwargs)
         try:
             obj = model.objects.get(**data)
@@ -2783,6 +2969,14 @@ class Command(BaseCommand):
                     IXLanPrefix,
                     status=status,
                     prefix=prefix,
+                    protocol=4,
+                    ixlan_id=SHARED["ixlan_%s_%s" % (prefix, status)].id,
+                )
+                cls.create_entity(
+                    IXLanPrefix,
+                    status=status,
+                    prefix="{}_v6".format(prefix),
+                    protocol=6,
                     ixlan_id=SHARED["ixlan_%s_%s" % (prefix, status)].id,
                 )
                 cls.create_entity(

@@ -205,3 +205,79 @@ def get_prefix_protocol(prefix):
             return "IPv6"
         except ipaddress.AddressValueError:
             raise ValueError("Prefix invalid")
+
+
+def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
+
+    """
+    Renumber an ipaddress from old prefix to new prefix
+
+    Arguments:
+        - ipaddr (ipaddress.ip_address)
+        - old_prefix (ipaddress.ip_network)
+        - new_prefix (ipaddress.ip_network)
+
+    Returns:
+        - ipaddress.ip_address: renumbered ip address
+    """
+
+    # validate that old and new prefix are compatible
+
+    if old_prefix == new_prefix:
+        raise ValueError("New and old prefix are identical")
+
+    if old_prefix.version != new_prefix.version:
+        raise ValueError("New prefix needs to be the same version as old prefix")
+
+    if new_prefix.version != ipaddr.version:
+        raise ValueError("Prefix version needs to be same version as ip address")
+
+    if old_prefix.prefixlen != new_prefix.prefixlen:
+        raise ValueError("New prefix needs to be of same length")
+
+    if ipaddr not in old_prefix:
+        raise ValueError("Ip address not within old prefix")
+
+    if ipaddr.version == 4:
+        delimiter = "."
+    else:
+        delimiter = ":"
+
+    # split prefixes and ipaddress into their octets
+
+    old_octets, old_mask = old_prefix.exploded.split("/")
+    new_octets, new_mask = new_prefix.exploded.split("/")
+    old_octets = old_octets.split(delimiter)
+    new_octets = new_octets.split(delimiter)
+    ip_octets = ipaddr.exploded.split(delimiter)
+
+    # get netmask octets so we can see which are to be replace
+
+    netmask_octets = new_prefix.netmask.exploded.split(delimiter)
+
+    i = 0
+
+    for octet in netmask_octets:
+
+        # replace any octet that is not a zero in the netmask
+
+        if (ipaddr.version == 4 and int(octet) > 0) or \
+            (ipaddr.version == 6 and octet != "0000"):
+            ip_octets[i] = new_octets[i]
+        i += 1
+
+    # return renumbered ipaddress
+
+    return ipaddress.ip_address(u"{}".format(delimiter.join([str(o) for o in ip_octets])))
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(",")[0]
+    else:
+        ip = request.META.get("REMOTE_ADDR")
+    return ip
+
+
+

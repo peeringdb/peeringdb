@@ -73,6 +73,15 @@ class AdminTests(TestCase):
             for ix in cls.entities["ix"]
         ]
 
+        #set up a prefix
+        cls.entities["ixpfx"] = [
+            models.IXLanPrefix.objects.create(
+                ixlan=cls.entities["ixlan"][0],
+                protocol="IPv4",
+                prefix="207.41.110.0/24",
+                status="ok")
+        ]
+
         #set up some netixlans
         cls.entities["netixlan"] = [
             models.NetworkIXLan.objects.create(
@@ -251,8 +260,8 @@ class AdminTests(TestCase):
         data = {
             "tool": "pdb_renumber_lans",
             "exchange": self.entities["ix"][0].id,
-            "old_prefix": "207.41.110",
-            "new_prefix": "207.41.111"
+            "old_prefix": "207.41.110.0/24",
+            "new_prefix": "207.41.111.0/24"
         }
         url = "/cp/peeringdb_server/commandlinetool/preview/"
         response = c.post(url, data, follow=True)
@@ -260,40 +269,50 @@ class AdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertGreater(
             cont.find(
-                '[pretend] netixlan: Org 0 ix (IXLAN:1) 207.41.110.37 -> 207.41.111.37'
+                '[pretend] Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24'
             ), -1)
         self.assertGreater(
             cont.find(
-                '[pretend] netixlan: Org 0 ix (IXLAN:1) 207.41.110.38 -> 207.41.111.38'
+                '[pretend] Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37'
             ), -1)
         self.assertGreater(
             cont.find(
-                '[pretend] netixlan: Org 0 ix (IXLAN:1) 207.41.110.39 -> 207.41.111.39'
+                '[pretend] Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38'
+            ), -1)
+        self.assertGreater(
+            cont.find(
+                '[pretend] Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39'
             ), -1)
 
         # test post to renumber lans command form
         data = {
             "tool": "pdb_renumber_lans",
             "exchange": self.entities["ix"][0].id,
-            "old_prefix": "207.41.110",
-            "new_prefix": "207.41.111"
+            "old_prefix": "207.41.110.0/24",
+            "new_prefix": "207.41.111.0/24"
         }
         url = "/cp/peeringdb_server/commandlinetool/run/"
         response = c.post(url, data, follow=True)
         cont = response.content
         self.assertEqual(response.status_code, 200)
+
         self.assertGreater(
             cont.find(
-                '>netixlan: Org 0 ix (IXLAN:1) 207.41.110.37 -> 207.41.111.37'
+                '>Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24'
             ), -1)
         self.assertGreater(
             cont.find(
-                '>netixlan: Org 0 ix (IXLAN:1) 207.41.110.38 -> 207.41.111.38'
+                '>Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37'
             ), -1)
         self.assertGreater(
             cont.find(
-                '>netixlan: Org 0 ix (IXLAN:1) 207.41.110.39 -> 207.41.111.39'
+                '>Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38'
             ), -1)
+        self.assertGreater(
+            cont.find(
+                '>Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39'
+            ), -1)
+
 
         for netixlan in self.entities["netixlan"]:
             netixlan.refresh_from_db()

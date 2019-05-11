@@ -1,6 +1,12 @@
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 import pytest
 import pytest_filedata
+import ipaddress
+
+from peeringdb_server.inet import (
+    RdapLookup,
+    RdapNotFoundError,
+    renumber_ipaddress
+)
 
 
 def test_rdap_asn_lookup(rdap):
@@ -38,3 +44,43 @@ def test_recurse_contacts(rdap):
     assert rdap == asn._rdapc
     assert len(asn.emails) > 1
     assert len(rdap.history) > len(asn.emails)
+
+def test_renumber_ipaddress():
+    ip4 = renumber_ipaddress(
+        ipaddress.ip_address(u"206.41.110.48"),
+        ipaddress.ip_network(u"206.41.110.0/24"),
+        ipaddress.ip_network(u"206.41.111.0/24"),
+    )
+
+    assert ip4.compressed == u"206.41.111.48"
+
+    ip6 = renumber_ipaddress(
+        ipaddress.ip_address(u"2001:504:41:110::20"),
+        ipaddress.ip_network(u"2001:504:41:110::/64"),
+        ipaddress.ip_network(u"2001:504:41:111::/64"),
+    )
+
+    assert ip6.compressed == u"2001:504:41:111::20"
+
+    with pytest.raises(ValueError):
+        renumber_ipaddress(
+            ipaddress.ip_address(u"2001:504:41:110::20"),
+            ipaddress.ip_network(u"206.41.110.0/24"),
+            ipaddress.ip_network(u"206.41.111.0/24"),
+        )
+
+    with pytest.raises(ValueError):
+        renumber_ipaddress(
+            ipaddress.ip_address(u"2001:504:41:110::20"),
+            ipaddress.ip_network(u"2001:504:41:110::/64"),
+            ipaddress.ip_network(u"206.41.111.0/24"),
+        )
+
+    with pytest.raises(ValueError):
+        renumber_ipaddress(
+            ipaddress.ip_address(u"206.41.110.48"),
+            ipaddress.ip_network(u"206.41.0.0/21"),
+            ipaddress.ip_network(u"206.41.111.0/24"),
+        )
+
+

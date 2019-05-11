@@ -1,12 +1,9 @@
 [[source]]
-
 name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
 
-
 [dev-packages]
-
 pytest = ">=2.8.7"
 pytest-cov = ">=2.0.0"
 pytest-django = ">=2.9.1"
@@ -14,9 +11,7 @@ pytest-filedata = ">=0.1.0"
 jsonschema = ">=2.6.0"
 facsimile = ">=1.1.1"
 
-
 [packages]
-
 certifi = "==2017.11.5"
 ipaddress = "==1.0.19"
 mysqlclient = "==1.3.9"
@@ -56,8 +51,8 @@ django = "==1.11.20"
 uwsgi = "==2.0.14"
 markdown = "==2.6.7"
 "twentyc.rpc" = "==0.3.5"
-
+django-simple-captcha = "==0.5.11"
+unidecode = "==1.0.23"
 
 [requires]
-
 python_version = "2.7"

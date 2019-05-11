@@ -362,5 +362,6 @@ class AdvancedSearchExportView(ExportView):
                     ("Media Type", row["media"]),
                     ("Country", row["country"]),
                     ("City", row["city"]),
+                    ("Networks", row["net_count"])
                 ]))
         return download_data
