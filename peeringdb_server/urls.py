@@ -85,7 +85,7 @@ urlpatterns = [
     url(r'^profile/v1$', view_profile_v1),
     url(r'^resend_email_confirmation$', resend_confirmation_mail),
     url(r'^sponsors$', view_sponsorships),
-    url(r'^partners$', view_partnerships),
+    #url(r'^partners$', view_partnerships),
     url(r'^aup$', view_aup),
     url(r'^about$', view_about),
     url(r'^affiliate-to-org$', view_affiliate_to_org),
