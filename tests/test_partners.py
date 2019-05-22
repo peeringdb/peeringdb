@@ -51,6 +51,10 @@ class ViewTestCase(TestCase):
         self.factory = RequestFactory()
 
     def test_view(self):
+
+        # disable this test until we re-enable the partners page
+        return
+
         c = Client()
         resp = c.get("/partners", follow=True)
         self.assertEqual(resp.status_code, 200)
