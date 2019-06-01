@@ -2,12 +2,12 @@
 {% block extrahead %}
   {{ block.super }}
   <script type="text/javascript">jQuery = $ = django.jQuery</script>
-  <script type="text/javascript" src="{{STATIC_URL}}twentyc.core.js"></script>
-  <script type="text/javascript" src="{{STATIC_URL}}twentyc.edit.js"></script>
-  <script type="text/javascript" src="{{STATIC_URL}}twentyc.filter-field.js"></script>
+  <script type="text/javascript" src="{{STATIC_URL}}20c/twentyc.core.js"></script>
+  <script type="text/javascript" src="{{STATIC_URL}}20c/twentyc.edit.js"></script>
+  <script type="text/javascript" src="{{STATIC_URL}}20c/twentyc.filter-field.js"></script>
   <script type="text/javascript" src="{{STATIC_URL}}peeringdb.admin.js"></script>
-  <script type="text/javascript" src="{{ STATIC_URL }}jquery.autocomplete-light.min.js"></script>
-  <link rel="stylesheet" href="{{STATIC_URL}}twentyc.edit.css" type="text/css" />
-  <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}jquery.autocomplete-light.css" />
+  <script type="text/javascript" src="{{ STATIC_URL }}autocomplete/jquery.autocomplete-light.min.js"></script>
+  <link rel="stylesheet" href="{{STATIC_URL}}20c/twentyc.edit.css" type="text/css" />
+  <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}autocomplete/jquery.autocomplete-light.css" />
   <link rel="stylesheet" href="{{STATIC_URL}}peeringdb.admin.css" type="text/css" />
 {% endblock %}
