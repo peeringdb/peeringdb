@@ -191,7 +191,7 @@ class Importer(object):
                 if not netixlan.network.allow_ixp_update:
                     self.log_peer(netixlan.asn, "delete",
                                   _("At least one ipaddress mismatched and "\
-                                    "network has disabled upates"), netixlan)
+                                    "network has disabled updates"), netixlan)
                     self.netixlans_deleted.append(netixlan)
                     if self.save:
                         netixlan.delete()
