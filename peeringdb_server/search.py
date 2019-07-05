@@ -5,6 +5,10 @@ from peeringdb_server.models import (UTC, InternetExchange, Network, Facility)
 import re
 import time
 import datetime
+import unidecode
+
+def unaccent(v):
+    return unidecode.unidecode(v).lower()
 
 # SEARCH INDEX BE STORED HERE
 
@@ -130,7 +134,7 @@ def search(term):
 
     result = {tag: [] for tag, model in ref_dict.items()}
 
-    term = term.lower()
+    term = unaccent(term)
 
     # try to convert to int for numeric search matching
     typed_q = {}
@@ -153,7 +157,7 @@ def search(term):
     # rid of all the ifs
     for tag, index in search_index.items():
         for id, data in index.items():
-            if data.name.lower().find(term) > -1:
+            if unaccent(data.name).find(term) > -1:
                 result[tag].append({
                     "id": id,
                     "name": data.search_result_name,
@@ -162,7 +166,7 @@ def search(term):
                 continue
 
             if hasattr(data,
-                       'name_long') and data.name_long.lower().find(term) > -1:
+                       'name_long') and unaccent(data.name_long).find(term) > -1:
                 result[tag].append({
                     "id": id,
                     "name": data.search_result_name,
@@ -170,7 +174,7 @@ def search(term):
                 })
                 continue
 
-            if hasattr(data, 'aka') and data.aka.lower().find(term) > -1:
+            if hasattr(data, 'aka') and unaccent(data.aka).find(term) > -1:
                 result[tag].append({
                     "id": id,
                     "name": data.search_result_name,

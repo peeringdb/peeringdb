@@ -8,6 +8,9 @@ PeeringDB = {
     fac : {},
     ix : {}
   },
+  recaptcha_loaded : function() {
+    return (typeof grecaptcha == "object");
+  },
   init : function() {
     this.InlineSearch.init_search();
 
@@ -25,8 +28,25 @@ PeeringDB = {
     });
 
     $('#form-create-account').on('export', function(e, data) {
-      data.recaptcha = grecaptcha.getResponse();
-    });
+      if(this.recaptcha_loaded()){
+        data.recaptcha = grecaptcha.getResponse();
+      } else {
+        data.captcha = $('#id_captcha_generator_0').val()+":"+$('#id_captcha_generator_1').val()
+      }
+    }.bind(this));
+
+    setTimeout(function() {
+      var fallback = $('#form-create-account').find('.fallback');
+      if(!this.recaptcha_loaded()) {
+        console.log("re-captcha could not be loaded, falling back to internal captcha");
+        $('#form-create-account').find('.recaptcha').hide();
+        fallback.show();
+      } else {
+        // since re-captcha loaded successfully we don't need a requirement
+        // on the fallback input
+        fallback.find('#id_captcha_0').attr('required', false);
+      }
+    }.bind(this), 3000);
 
     this.fix_list_offsets();
 

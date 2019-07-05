@@ -29,6 +29,11 @@ urlpatterns = [
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += [
+    url(r'^captcha/', include('captcha.urls')),
+    ]
+
 urlpatterns += peeringdb_server.urls.urlpatterns
 
 handler_404 = 'peeringdb_server.views.view_http_error_404'

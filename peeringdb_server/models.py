@@ -1167,6 +1167,40 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         return qset.filter(id__in=shared_exchanges)
 
     @classmethod
+    def filter_net_count(cls, filt=None, value=None, qset=None):
+
+        """
+        Filter ix queryset by network count value
+
+        Keyword Arguments:
+            - filt<str>: filter to apply: None, 'lt', 'gt', 'lte', 'gte'
+            - value<int>: value to filter by
+            - qset
+
+        Returns:
+            InternetExchange queryset
+        """
+
+        if not qset:
+            qset = cls.objects.filter(status="ok")
+
+        value = int(value)
+
+        if filt == "lt":
+            exchanges = [ix.id for ix in qset if ix.network_count < value]
+        elif filt == "gt":
+            exchanges = [ix.id for ix in qset if ix.network_count > value]
+        elif filt == "gte":
+            exchanges = [ix.id for ix in qset if ix.network_count >= value]
+        elif filt == "lte":
+            exchanges = [ix.id for ix in qset if ix.network_count <= value]
+        else:
+            exchanges = [ix.id for ix in qset if ix.network_count == value]
+
+        return qset.filter(pk__in=exchanges)
+
+
+    @classmethod
     def nsp_namespace_in_list(cls):
         return str(cls.id)
 
@@ -1202,7 +1236,9 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         """
         Returns count of networks at this exchange
         """
-        return len(self.networks)
+        qset = NetworkIXLan.objects.filter(ixlan__ix_id=self.id, status="ok")
+        qset = qset.values("network_id").annotate(count=models.Count("network_id"))
+        return len(qset)
 
     @property
     def ixlan_set_active(self):
@@ -1397,7 +1433,6 @@ class IXLan(pdb_models.IXLanBase):
             if pfx.test_ip_address(ipv6):
                 return True
         return False
-
 
 
     @reversion.create_revision()
@@ -1907,6 +1942,16 @@ class Network(pdb_models.NetworkBase):
         q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
         return qset.exclude(id__in=[i.network_id for i in q])
 
+
+    @classmethod
+    def as_set_map(cls, qset=None):
+        """
+        Returns a dict mapping asns to their irr_as_set value
+        """
+        if not qset:
+            qset = cls.objects.filter(status="ok").order_by("asn")
+        return dict([(net.asn, net.irr_as_set) for net in qset])
+
     @property
     def search_result_name(self):
         """
@@ -2240,11 +2285,40 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         conflict_v6 = (self.ipaddr6 and ipv6.exists())
         return (conflict_v4, conflict_v6)
 
+
+    def validate_ipaddr4(self):
+        if self.ipaddr4 and not self.ixlan.test_ipv4_address(self.ipaddr4):
+            raise ValidationError(_("IPv4 address outside of prefix"))
+
+    def validate_ipaddr6(self):
+        if self.ipaddr6 and not self.ixlan.test_ipv6_address(self.ipaddr6):
+            raise ValidationError(_("IPv6 address outside of prefix"))
+
+
     def clean(self):
         """
         Custom model validation
         """
         errors = {}
+
+        # check that the ip address can be validated agaisnt
+        # at least one of the prefix on the parent ixlan
+
+        try:
+            self.validate_ipaddr4()
+        except ValidationError as exc:
+            errors["ipaddr4"] = exc.message
+
+        try:
+            self.validate_ipaddr6()
+        except ValidationError as exc:
+            errors["ipaddr6"] = exc.message
+
+        if errors:
+            raise ValidationError(errors)
+
+        # make sure this ip address is not claimed anywhere else
+
         conflict_v4, conflict_v6 = self.ipaddress_conflict()
         if conflict_v4:
             errors["ipaddr4"] = _("Ip address already exists elsewhere")
@@ -2253,6 +2327,26 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
         if errors:
             raise ValidationError(errors)
+
+    def ipaddr(self, version):
+        """
+        Return the netixlan's ipaddr for ip version
+        """
+        if version == 4:
+            return self.ipaddr4
+        elif version == 6:
+            return self.ipaddr6
+        raise ValueError("Invalid ip version {}".format(version))
+
+
+    def descriptive_name_ipv(self, version):
+        """
+        Returns a descriptive label of the netixlan for logging purposes
+        Will only contain the ipaddress matching the specified version
+        """
+        return "netixlan{} AS{} {}".format(
+            self.id, self.asn, self.ipaddr(version))
+
 
 
 class User(AbstractBaseUser, PermissionsMixin):

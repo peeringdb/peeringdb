@@ -1,5 +1,5 @@
 {% load i18n %}
-<div class="editable always auto-toggled filter-form" 
+<div class="editable always auto-toggled filter-form"
      data-edit-target="advanced_search:ix"
      data-edit-enter-action="submit"
      data-sort-container=".results"
@@ -49,7 +49,7 @@
                --data-edit-data-all-entry=":-- All Regions --"></div>
         </div>
       </div>
- 
+
     </div>
     <div class="col-xs-12 col-sm-6 col-md-6">
       <!-- RIGHT COLUMN -->
@@ -72,7 +72,7 @@
                data-edit-name="media__in"></div>
         </div>
       </div>
- 
+
     </div>
   </div>
   <div class="right">
@@ -93,7 +93,8 @@
       </div>
       <div class="col-xs-3 col-sm-2 col-md-2 media" data-edit-name="media"></div>
       <div class="col-xs-1 col-sm-1 col-md-1 country" data-edit-name="country"></div>
-      <div class="col-xs-3 col-sm-3 col-md-3 city" data-edit-name="city"></div>
+      <div class="col-xs-2 col-sm-2 col-md-2 city" data-edit-name="city"></div>
+      <div class="col-xs-1 col-sm-1 col-md-1 net_count" data-edit-name="net_count"></div>
     </div>
   </div>
 
@@ -102,10 +103,11 @@
       <div class="col-xs-5 col-sm-6 col-md-6" data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
       <div class="col-xs-3 col-sm-2 col-md-2" data-sort-target=".media">{% trans "Media Type" %}</div>
       <div class="col-xs-1 col-sm-1 col-md-1" data-sort-target=".country">{% trans "Country" %}</div>
-      <div class="col-xs-3 col-sm-3 col-md-3" data-sort-target=".city">{% trans "City" %}</div>
+      <div class="col-xs-2 col-sm-2 col-md-2" data-sort-target=".city">{% trans "City" %}</div>
+      <div class="col-xs-1 col-sm-1 col-md-1" data-sort-target=".net_count">{% trans "Networks" %}</div>
     </div>
   </div>
- 
+
   <div class="results-empty center" style="display:none;">
     {% trans "No search results." %}
   </div>
