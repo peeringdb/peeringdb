@@ -8,64 +8,64 @@
 
 <div class="sponsorspage">
 	<div class="sponsors-group diamond">
-	<h2 class="level">
+		<h2 class="level">
 			{% trans "Diamond" %} <br>{% trans "Sponsors" %}
 		</h2>
 		<div class="sponsors">
-    {% for row in sponsorships.diamond|shuffle %}
-    {% if row.logo %}
-      {% if row.url %}<a href="{{row.url}}">{% endif %}
-      <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
-      {% if row.url %}</a>{% endif %}
-    {% endif %}
- 
-    {% endfor %}
- 
+			{% for row in sponsorships.diamond|shuffle %}
+				{% if row.logo %}
+					{% if row.url %}<a href="{{row.url}}">{% endif %}
+					<img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
+					{% if row.url %}</a>{% endif %}
+				{% endif %}
+			{% endfor %}
 		</div>
 	</div>
+
 	<div class="sponsors-group platinum">
 		<h2 class="level">
 			{% trans "Platinum" %} <br>{% trans "Sponsors" %}
 		</h2>
 		<div class="sponsors">
-        {% for row in sponsorships.platinum|shuffle %}
-          {% if row.logo %}
-            {% if row.url %}<a href="{{row.url}}">{% endif %}
-              <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
-            {% if row.url %}</a>{% endif %}
-          {% endif %}
-        {% endfor %}
- 
+			{% for row in sponsorships.platinum|shuffle %}
+				{% if row.logo %}
+					{% if row.url %}<a href="{{row.url}}">{% endif %}
+					<img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
+					{% if row.url %}</a>{% endif %}
+				{% endif %}
+			{% endfor %}
 		</div>
 	</div>
+
 	<div class="sponsors-group gold">
 		<h2 class="level">
 			{% trans "Gold" %} <br>{% trans "Sponsors" %}
 		</h2>
 		<div class="sponsors">
-    {% for row in sponsorships.gold|shuffle %}
-      {% if row.logo %}
-      <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
-      {% endif %}
-    {% endfor %}
- 
+			{% for row in sponsorships.gold|shuffle %}
+				{% if row.logo %}
+					<img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
+				{% endif %}
+			{% endfor %}
 		</div>
 	</div>
+
 	<div class="sponsors-group silver">
 		<h2 class="level">
 			{% trans "Silver" %} <br>{% trans "Sponsors" %}
 		</h2>
-
 		<div class="sponsors">
-        {% for row in sponsorships.silver|shuffle %}
-          {% if row.logo %}
-            <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
-          {% endif %}
-        {% endfor %}
+			{% for row in sponsorships.silver|shuffle %}
+				{% if row.logo %}
+					<img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
+				{% endif %}
+			{% endfor %}
 		</div>
 	</div>
-	</div>
 </div>
+
 <div class="marg-top center">
-  <a href="http://docs.peeringdb.com/misc/PeeringDB_Sponsorship_Levels.pdf">{% trans "Become a Sponsor" %}</a><p>
+	<a href="http://docs.peeringdb.com/misc/PeeringDB_Sponsorship_Levels.pdf">{% trans "Become a Sponsor" %}</a><p>
+</div>
+
 {% endblock %}
