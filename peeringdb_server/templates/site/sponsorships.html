@@ -44,7 +44,9 @@
 		<div class="sponsors">
 			{% for row in sponsorships.gold|shuffle %}
 				{% if row.logo %}
+					{% if row.url %}<a href="{{row.url}}">{% endif %}
 					<img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
+					{% if row.url %}</a>{% endif %}
 				{% endif %}
 			{% endfor %}
 		</div>
