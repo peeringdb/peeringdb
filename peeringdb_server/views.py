@@ -71,6 +71,12 @@ BASE_ENV = {
 }
 
 
+def is_oauth_authorize(url):
+    if url.find("/oauth2/authorize/") == 0:
+        return True
+    return False
+
+
 def export_permissions(user, entity):
     """
     returns dict of permission bools for the specified user and entity
@@ -709,8 +715,10 @@ def view_login(request, errors=None):
 
     template = loader.get_template('site/login.html')
 
+    redir = request.GET.get("next", request.POST.get("next"))
+
     env = BASE_ENV.copy()
-    env.update({'errors': errors})
+    env.update({'errors': errors, "next": redir})
     return HttpResponse(template.render(env, request))
 
 
@@ -1598,7 +1606,8 @@ def request_login(request):
     try:
         resolve(redir)
     except Resolver404:
-        redir = "/"
+        if not is_oauth_authorize(redir):
+            redir = "/"
 
     user = authenticate(username=username, password=password)
     if user is not None:
