@@ -27,7 +27,8 @@ from peeringdb_server.models import (
     InternetExchangeFacility, IXLan, IXLanPrefix, Facility, Network,
     NetworkContact, NetworkFacility, NetworkIXLan, Organization)
 from peeringdb_server.validators import (
-    validate_address_space, validate_info_prefixes4, validate_info_prefixes6)
+    validate_address_space, validate_info_prefixes4, validate_info_prefixes6,
+    validate_prefix_overlap)
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -1461,7 +1462,9 @@ class IXLanPrefixSerializer(ModelSerializer):
 
     prefix = IPPrefixField(validators=[
         validators.UniqueValidator(
-            queryset=IXLanPrefix.objects.all()), validate_address_space
+            queryset=IXLanPrefix.objects.all()),
+            validate_address_space,
+            validate_prefix_overlap,
     ])
 
     class Meta:
@@ -1614,7 +1617,8 @@ class InternetExchangeSerializer(ModelSerializer):
     prefix = IPPrefixField(validators=[
         validators.UniqueValidator(
             queryset=IXLanPrefix.objects.filter(status__in=["ok", "pending"])),
-        validate_address_space
+        validate_address_space,
+        validate_prefix_overlap,
     ], required=False, write_only=True)
 
     validators = [
