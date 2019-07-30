@@ -37,7 +37,8 @@ from passlib.hash import sha256_crypt
 
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.validators import (
-    validate_address_space, validate_info_prefixes4, validate_info_prefixes6)
+    validate_address_space, validate_info_prefixes4, validate_info_prefixes6,
+    validate_prefix_overlap)
 
 SPONSORSHIP_LEVELS = ((1, _("Silver")), (2, _("Gold")), (3, _("Platinum")),
                       (4, _("Diamond")))
@@ -1775,12 +1776,14 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
         except ValueError as inst:
             return False
 
+
     def clean(self):
         """
         Custom model validation
         """
         # validate the specified prefix address
         validate_address_space(self.prefix)
+        validate_prefix_overlap(self.prefix)
         return super(IXLanPrefix, self).clean()
 
 

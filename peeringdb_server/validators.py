@@ -9,11 +9,33 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 
 from peeringdb_server.inet import network_is_pdb_valid
+import peeringdb_server.models
+
+def validate_prefix(prefix):
+    """
+    validate ip prefix
+
+    Arguments:
+        - prefix: ipaddress.IPv4Network or an ipaddress.IPv6Network
+
+    Raises:
+        - ValidationError on failed validation
+
+    Returns:
+        - ipaddress.ip_network instance
+    """
+
+    if isinstance(prefix, unicode):
+        try:
+            prefix = ipaddress.ip_network(prefix)
+        except ValueError as exc:
+            raise ValidationError(_("Invalid prefix: {}").format(prefix))
+    return prefix
 
 
 def validate_address_space(prefix):
     """
-    validate an ipaddress according to peeringdb specs
+    validate an ip prefix according to peeringdb specs
 
     Arguments:
         - prefix: ipaddress.IPv4Network or an ipaddress.IPv6Network
@@ -22,11 +44,7 @@ def validate_address_space(prefix):
         - ValidationError on failed validation
     """
 
-    if isinstance(prefix, unicode):
-        try:
-            prefix = ipaddress.ip_network(prefix)
-        except ValueError as exc:
-            raise ValidationError(_("Invalid prefix: {}").format(prefix))
+    prefix = validate_prefix(prefix)
 
     if not network_is_pdb_valid(prefix):
         raise ValidationError(_("Address space invalid: {}").format(prefix))
@@ -58,3 +76,29 @@ def validate_info_prefixes6(value):
 
     if value < 0:
         raise ValidationError(_("Negative value not allowed"))
+
+
+def validate_prefix_overlap(prefix):
+    """
+    validate that a prefix does not overlap with another prefix
+    on an already existing ixlan
+
+    Arguments:
+        - prefix: ipaddress.IPv4Network or an ipaddress.IPv6Network
+
+    Raises:
+        - ValidationError on failed validation
+    """
+
+
+    prefix = validate_prefix(prefix)
+    qs = peeringdb_server.models.IXLanPrefix.objects.filter(protocol="IPv{}".format(prefix.version),
+                                                            status="ok")
+    qs = qs.exclude(prefix=prefix)
+    for ixpfx in qs:
+        if ixpfx.prefix.overlaps(prefix):
+            raise ValidationError(_("Prefix overlaps with {}'s prefix: {}".format(
+                ixpfx.ixlan.ix.name, ixpfx.prefix
+            )))
+
+

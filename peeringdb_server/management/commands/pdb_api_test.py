@@ -1329,7 +1329,7 @@ class TestJSON(unittest.TestCase):
         #}, test_success=False)
 
         self.assert_update(self.db_org_admin, "ixpfx", SHARED["ixpfx_id"],
-                           {"prefix": "206.126.236.0/24"}, test_failures={
+                           {"prefix": "206.127.236.0/26"}, test_failures={
                                "invalid": {
                                    "prefix": "NEEDS TO BE VALID PREFIX"
                                },
