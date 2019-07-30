@@ -7,7 +7,14 @@ from django.test import override_settings
 from django.core.exceptions import ValidationError
 
 from peeringdb_server.validators import (
-    validate_address_space, validate_info_prefixes4, validate_info_prefixes6)
+    validate_address_space, validate_info_prefixes4, validate_info_prefixes6,
+    validate_prefix_overlap)
+
+from peeringdb_server.models import (
+    Organization,
+    InternetExchange,
+    IXLan,
+    IXLanPrefix)
 
 pytestmark = pytest.mark.django_db
 
@@ -118,3 +125,16 @@ def test_validate_prefixlen():
         validate_address_space(u"2403:c240::/32")
     with pytest.raises(ValidationError):
         validate_address_space(u"2001:504:0:2::/64")
+
+@pytest.mark.djangodb
+def test_validate_prefix_overlap():
+    org = Organization.objects.create(name="Test org",status="ok")
+    ix = InternetExchange.objects.create(name="Text exchange",status="ok",org=org)
+    ixlan = IXLan.objects.create(ix=ix, status="ok")
+
+    pfx1 = IXLanPrefix.objects.create(ixlan=ixlan, protocol="IPv4",
+                                      prefix=ipaddress.ip_network(u"198.32.125.0/24"),
+                                      status="ok")
+
+    with pytest.raises(ValidationError) as exc:
+        validate_prefix_overlap(u"198.32.124.0/23")
