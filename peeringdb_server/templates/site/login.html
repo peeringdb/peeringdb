@@ -10,7 +10,7 @@
       {% csrf_token %}
        <div class="col-md-4 col-sm-3 col-xs-12"></div>
        <div class="col-md-4 col-sm-6 col-xs-12 panel">
-         <input type="hidden" name="next" id="next" value="{{ request.GET.next }}" />
+         <input type="hidden" name="next" id="next" value="{{ next }}" />
          <div class="form-group">
            <input placeholder="{% trans "Username" %}" class="form-control" type="text" id="username" name="username" />
          </div>
