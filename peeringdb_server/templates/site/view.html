@@ -126,6 +126,7 @@
           </div>
         {% elif row.type == "fmt-text" %}
           <div class="view_value col-xs-8 col-sm-7 col-md-8 fmt_text"
+               data-render-markdown="yes"
                {% if not row.readonly and permissions.can_write %}
                data-edit-type="markdown"
                {% endif %}
@@ -134,7 +135,7 @@
                {% endif %}
                data-edit-value="{{ row.value }}"
                data-edit-name="{{ row.name }}">
-                    {{ row.value|render_markdown|safe }}
+                    {{ row.value }}
                     {% if row.name == "notes" and row.value and request.user.is_authenticated %}
                         <div>
                             <!-- select name="language-from">
