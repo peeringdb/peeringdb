@@ -87,6 +87,16 @@ PeeringDB = {
        });
     });
 
+    // render markdown content
+    $('[data-render-markdown="yes"]').each(function() {
+      var converter = new showdown.Converter()
+      var value = $(this).data("edit-value")
+      // sanitize any html tags
+      var html = converter.makeHtml(value.replace(/>/g, '&gt;').replace(/</g, '&lt;'))
+      // set html after further sanitizing output via DOMPurify
+      $(this).html(DOMPurify.sanitize(html, {SAFE_FOR_JQUERY: true}))
+    })
+
   },
 
   // fix list x offsets depending on whether content is overflowing
@@ -1157,6 +1167,7 @@ twentyc.editable.module.register(
 twentyc.editable.input.register(
   "markdown",
   {
+
     apply : function(value) {
       var converter = new showdown.Converter()
       if(!value)
