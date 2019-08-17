@@ -1,4 +1,4 @@
-Django==1.11.20
+Django==1.11.23
 certifi==2017.11.5
 ipaddress==1.0.19
 mysqlclient==1.3.9
