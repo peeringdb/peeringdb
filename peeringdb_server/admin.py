@@ -791,6 +791,13 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
 
 
 class NetworkAdminForm(StatusForm):
+
+    #set initial values on info_prefixes4 and 6 to 0
+    #this streamlines the process of adding a network through
+    #the django admin controlpanel (#289)
+    info_prefixes4 = baseForms.IntegerField(required=False, initial=0)
+    info_prefixes6 = baseForms.IntegerField(required=False, initial=0)
+
     def __init__(self, *args, **kwargs):
         super(NetworkAdminForm, self).__init__(*args, **kwargs)
         fk_handleref_filter(self, "org")
