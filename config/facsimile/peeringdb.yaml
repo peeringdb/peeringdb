@@ -167,6 +167,7 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/admin/user-organizations.html
     - $SRC_DIR$/peeringdb_server/templates/site/request-ownership.html
     - $SRC_DIR$/peeringdb_server/templates/admin/org_merge_tool.html
+    - $SRC_DIR$/peeringdb_server/templates/admin/change_form.html
     - $SRC_DIR$/peeringdb_server/templates/admin/peeringdb_server/commandlinetool/change_list.html
     - $SRC_DIR$/peeringdb_server/templates/admin/peeringdb_server/commandlinetool/preview_command.html
     - $SRC_DIR$/peeringdb_server/templates/admin/peeringdb_server/commandlinetool/prepare_command.html
