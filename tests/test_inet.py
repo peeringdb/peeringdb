@@ -43,7 +43,7 @@ def test_recurse_contacts(rdap):
     asn = rdap.get_asn(3333)
     assert rdap == asn._rdapc
     assert len(asn.emails) > 1
-    assert len(rdap.history) > len(asn.emails)
+    assert len(rdap.history) > 1
 
 def test_renumber_ipaddress():
     ip4 = renumber_ipaddress(

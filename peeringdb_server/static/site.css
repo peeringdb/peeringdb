@@ -842,6 +842,12 @@ div.editable.mode-edit div.view_field {
   background-color: #9e1e1e;
 }
 
+.input-note-long .input-note {
+  white-space:normal;
+  top:auto;
+  bottom:25px;
+}
+
 div.view > div.editable.popin.error {
   margin-top: 20px;
   max-width: 600px;
