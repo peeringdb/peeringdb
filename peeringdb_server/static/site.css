@@ -1234,7 +1234,7 @@ span.inline.delimited input {
 .ip6,
 div[name=ipaddr6],
 div[data-edit-name=ipaddr6]
-{ word-break: break-all; }
+{ word-break: normal; }
 
 .ixf-log {
   max-height: 400px;
