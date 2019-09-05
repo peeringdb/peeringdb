@@ -50,7 +50,7 @@ rdap = "==0.2.0"
 django = "==1.11.23"
 uwsgi = "==2.0.14"
 markdown = "==2.6.7"
-"twentyc.rpc" = "==0.3.5"
+"twentyc.rpc" = ">=0.3.5,<0.5"
 django-simple-captcha = "==0.5.11"
 unidecode = "==1.0.23"
 
