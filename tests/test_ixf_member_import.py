@@ -7,6 +7,7 @@ import time
 import StringIO
 
 from django.db import transaction
+from django.core.cache import cache
 from django.test import TestCase, Client, RequestFactory
 from django.core.management import call_command
 
@@ -16,13 +17,15 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLogEntry, User)
 from peeringdb_server.import_views import (
     view_import_ixlan_ixf_preview,
+    view_import_net_ixf_preview,
+    view_import_net_ixf_postmortem,
     )
 from peeringdb_server import ixf
 
 from util import ClientCase
 
 
-class JsonMembersListTestCase(TestCase):
+class JsonMembersListTestCase(ClientCase):
     # test this version of the json schema; requires the file
     # to exist at data/json_members_list/members.<VERSION>.json
     version = "0.6"
@@ -37,6 +40,8 @@ class JsonMembersListTestCase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+
+        super(JsonMembersListTestCase, cls).setUpTestData()
 
         # load json members list data to test against
         with open(
@@ -126,6 +131,11 @@ class JsonMembersListTestCase(TestCase):
                     ipaddr4="195.69.147.252", ipaddr6=None, status="ok"),
             ]
 
+        cls.admin_user = User.objects.create_user("admin","admin@localhost","admin")
+        cls.entities["org"][0].admin_usergroup.user_set.add(cls.admin_user)
+
+
+
     def setUp(self):
         self.ixf_importer = ixf.Importer()
 
@@ -183,6 +193,7 @@ class JsonMembersListTestCase(TestCase):
         ixlan = self.entities["ixlan"][0]
         r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data, save=False)
         self.assertLog(log, "preview_01")
+
 
     def test_update_from_ixf_ixp_member_list_skip_prefix_mismatch(self):
         """
@@ -399,7 +410,7 @@ class JsonMembersListTestCase(TestCase):
         stdout = StringIO.StringIO()
         stderr = StringIO.StringIO()
 
-        r = call_command("pdb_ixf_ixp_member_import", only=ixlan.id, commit=True, stdout=stdout, stderr=stderr)
+        r = call_command("pdb_ixf_ixp_member_import", ixlan=[ixlan.id], commit=True, stdout=stdout, stderr=stderr)
         self.assertEqual(stdout.getvalue().find("Fetching data for -ixlan1 from"), 0)
 
         # importer should skip ixlans where ixf_ixp_import_enabled is
@@ -411,8 +422,110 @@ class JsonMembersListTestCase(TestCase):
         stdout = StringIO.StringIO()
         stderr = StringIO.StringIO()
 
-        r = call_command("pdb_ixf_ixp_member_import", only=ixlan.id, commit=True, stdout=stdout, stderr=stderr)
+        r = call_command("pdb_ixf_ixp_member_import", ixlan=[ixlan.id], commit=True, stdout=stdout, stderr=stderr)
         self.assertEqual(stdout.getvalue().find("Fetching data for -ixlan1 from"), -1)
+
+
+    def test_postmortem(self):
+        ixlan = self.entities["ixlan"][0]
+        net = self.entities["net"][0]
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        request = RequestFactory().get("/import/net/{}/ixf/preview/".format(net.id))
+        request.user = self.admin_user
+        response = view_import_net_ixf_postmortem(request, net.id)
+
+        assert response.status_code == 200
+        content = json.loads(response.content)
+        for entry in content["data"]:
+            del entry["created"]
+        self.assertLog(content, "postmortem_01")
+
+
+
+    def test_postmortem_limit(self):
+        ixlan = self.entities["ixlan"][0]
+        net = self.entities["net"][0]
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        request = RequestFactory().get("/import/net/{}/ixf/postmortem/".format(net.id),{"limit":1})
+        request.user = self.admin_user
+        response = view_import_net_ixf_postmortem(request, net.id)
+
+        content = json.loads(response.content)
+        assert len(content["data"]) == 1
+
+
+    def test_postmortem_limit_max(self):
+        ixlan = self.entities["ixlan"][0]
+        net = self.entities["net"][0]
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        request = RequestFactory().get("/import/net/{}/ixf/postmortem/".format(net.id),{"limit":1000})
+        request.user = self.admin_user
+        response = view_import_net_ixf_postmortem(request, net.id)
+
+        content = json.loads(response.content)
+        assert len(content["data"]) == 6
+        assert content["non_field_errors"] == ["Postmortem length cannot exceed 250 entries"]
+
+
+    def test_import_postmortem_fail_ratelimit(self):
+        net = self.entities["net"][0]
+        request = RequestFactory().get("/import/net/{}/ixf/postmortem/".format(net.id))
+        request.user = self.admin_user
+
+        response = view_import_net_ixf_postmortem(request, net.id)
+        assert response.status_code == 200
+
+        response = view_import_net_ixf_postmortem(request, net.id)
+        assert response.status_code == 400
+
+
+    def test_import_postmortem_fail_permission(self):
+        net = self.entities["net"][0]
+        request = RequestFactory().get("/import/net/{}/ixf/postmortem/".format(net.id))
+        request.user = self.guest_user
+
+        response = view_import_net_ixf_postmortem(request, net.id)
+        assert response.status_code == 403
+
+
+    def test_net_preview(self):
+        ixlan = self.entities["ixlan"][0]
+        net = self.entities["net"][0]
+
+        # simulate cached IX-F data
+        ixlan.ixf_ixp_import_enabled = True
+        ixlan.ixf_ixp_member_list_url = "test"
+        ixlan.save()
+        cache.set("IXF-CACHE-test", self.json_data)
+
+        request = RequestFactory().get("/import/net/{}/ixf/preview/".format(net.id))
+        request.user = self.admin_user
+        response = view_import_net_ixf_preview(request, net.id)
+
+        assert response.status_code == 200
+        content = json.loads(response.content)
+        self.assertLog(content, "preview_02")
+
+    def test_net_preview_fail_ratelimit(self):
+        net = self.entities["net"][0]
+        request = RequestFactory().get("/import/net/{}/ixf/preview/".format(net.id))
+        request.user = self.admin_user
+
+        response = view_import_net_ixf_preview(request, net.id)
+        assert response.status_code == 200
+
+        response = view_import_net_ixf_preview(request, net.id)
+        assert response.status_code == 400
+
+
+    def test_net_preview_fail_permission(self):
+        net = self.entities["net"][0]
+        request = RequestFactory().get("/import/net/{}/ixf/preview/".format(net.id))
+        request.user = self.guest_user
+
+        response = view_import_net_ixf_preview(request, net.id)
+        assert response.status_code == 403
+
 
 
 
@@ -448,6 +561,7 @@ class TestImportPreview(ClientCase):
         cls.net_2 = Network.objects.create(org=cls.org, status="ok",
                                            asn=1001, name="net02")
 
+
         cls.admin_user = User.objects.create_user("admin","admin@localhost","admin")
 
         cls.org.admin_usergroup.user_set.add(cls.admin_user)
@@ -479,6 +593,34 @@ class TestImportPreview(ClientCase):
         request.user = self.guest_user
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
+        assert response.status_code == 403
+
+
+    def test_import_net_preview(self):
+        request = RequestFactory().get("/import/net/{}/ixf/preview/".format(self.net.id))
+        request.user = self.admin_user
+
+        response = view_import_net_ixf_preview(request, self.net.id)
+
+        assert response.status_code == 200
+
+
+    def test_import_net_preview_fail_ratelimit(self):
+        request = RequestFactory().get("/import/net/{}/ixf/preview/".format(self.net.id))
+        request.user = self.admin_user
+
+        response = view_import_net_ixf_preview(request, self.net.id)
+        assert response.status_code == 200
+
+        response = view_import_net_ixf_preview(request, self.net.id)
+        assert response.status_code == 400
+
+
+    def test_import_net_preview_fail_permission(self):
+        request = RequestFactory().get("/import/net/{}/ixf/preview/".format(self.net.id))
+        request.user = self.guest_user
+
+        response = view_import_net_ixf_preview(request, self.net.id)
         assert response.status_code == 403
 
 

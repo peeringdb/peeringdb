@@ -162,6 +162,7 @@ settings.configure(
     TUTORIAL_MODE=False,
     CAPTCHA_TEST_MODE=True,
     SITE_ID=1,
+    IXF_POSTMORTEM_LIMIT=250,
     RATELIMITS={
         "view_affiliate_to_org_POST": "100/m",
         "resend_confirmation_mail": "2/m",
@@ -171,5 +172,6 @@ settings.configure(
         "request_login_POST": "10/m",
         "view_verify_POST": "2/m",
         "request_translation": "10/m",
-        "view_import_ixlan_ixf_preview": "1/m"
+        "view_import_ixlan_ixf_preview": "1/m",
+        "view_import_net_ixf_postmortem": "1/m"
     })

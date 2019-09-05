@@ -124,6 +124,12 @@
             <span class="enabled">{{ flag.label }}</span>
           {% endfor %}
           </div>
+        {% elif row.type == "action" %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8 action">
+            {% for action in row.actions %}
+            <button class="btn btn-sm" data-view-action="{{ref_tag}}_{{ action.action }}">{{ action.label }}</button>
+            {% endfor %}
+          </div>
         {% elif row.type == "fmt-text" %}
           <div class="view_value col-xs-8 col-sm-7 col-md-8 fmt_text"
                data-render-markdown="yes"
@@ -270,11 +276,15 @@
 <script language="javascript" type="text/javascript">
 $(document).ready(function() {
   PeeringDB.incomplete_data_notify();
+  PeeringDB.ViewActions.init();
+
   var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
   editForm.on('action-success:submit', function() {
     console.log("Incomplete data check after save");
     setTimeout(PeeringDB.incomplete_data_notify, 500);
   });
+
+
 });
 </script>
 {% endif %}

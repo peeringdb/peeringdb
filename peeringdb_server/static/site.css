@@ -176,6 +176,11 @@ h5 {
   border: none;
 }
 
+div.view_value.action .btn-sm {
+  background-color: #33744a;
+  color: #ffffff;
+}
+
 
 .btn:hover,
 .btn-pimary:hover,

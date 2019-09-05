@@ -186,116 +186,308 @@ function moveCursorToEnd(el) {
     }
 }
 
-PeeringDB.IXFPreview = {
+PeeringDB.ViewActions = {
 
-  /**
-   * Handle the IX-F import preview request and rendering
-   * to UI modal
-   *
-   * @class IXFPreview
-   * @namespace PeeringDB
-   */
-
-  request : function(ixlanId, renderTo) {
-
-    /**
-     * request a preview for the ixlan with ixlanId
-     *
-     * @method request
-     * @param {Number} ixlanId
-     * @param {jQuery} renderTo - render to this element (needs to have
-     *    the appropriate children elements to work, they are not
-     *    created automatically)
-     */
-
-    renderTo.find('.ixf-result').empty().
-      append($("<div>").addClass("center").text("... loading ..."));
-    renderTo.find('.ixf-error-counter').empty();
-    $.get('/import/ixlan/'+ixlanId+'/ixf/preview', function(result) {
-      this.render(result, renderTo);
-    }.bind(this)).error(function(result) {
-      if(result.responseJSON) {
-        this.render(result.responseJSON, renderTo);
-      } else {
-        this.render({"non_field_errors": ["HTTP error "+result.status]});
-      }
-    }.bind(this));
+  init : function() {
+    $('button[data-view-action]').each(function(){
+      $(this).click(function() {
+        var action = $(this).data("view-action")
+        var id = $(this).closest("[data-edit-id]").data("edit-id");
+        PeeringDB.ViewActions.actions[action](id);
+      });
+    });
   },
 
-  render : function(result, renderTo) {
+  actions : {}
+}
 
-    /**
-     * Render preview result and errors
-     *
-     * @method render
-     * @param {Object} result - result as returned from the preview request
-     * @param {jQuery} renderTo
-     *
-     *    Needs to have child divs with the following classes
-     *
-     *
-     *    .ixf-errors-list: errors will be rendered to here
-     *    .ixf-result: changes will be rendered to here
-     *    .ixf-error-counter: will be updated with number of errors
-     *
-     */
+PeeringDB.ViewActions.actions.net_ixf_preview = function(netId) {
+  $("#ixf-preview-modal").modal("show");
+  var preview = new PeeringDB.IXFNetPreview()
+  preview.request(netId, $("#ixf-log"));
+}
 
-    renderTo.find('.ixf-errors-list').empty()
-    renderTo.find('.ixf-result').empty()
-    this.render_errors((result.errors || []).concat(result.non_field_errors || []), renderTo.find('.ixf-errors-list'));
-    this.render_data(result.data || [], renderTo.find('.ixf-result'));
-  },
-
-  render_errors : function(errors, renderTo) {
-    /**
-     * Render the errors, called automatically by `render`
-     *
-     * @method render_errors
-     * @param {Array} errors
-     * @param {jQuery} renderTo
-     */
-
-    var error, i;
-
-    if(!errors.length)
-      return;
-
-    $('.ixf-error-counter').text("("+errors.length+")");
-
-    for(i = 0; i < errors.length; i++) {
-      error = errors[i];
-      renderTo.append($('<div>').addClass("ixf-error").text(error));
-    }
-  },
-
-  render_data : function(data, renderTo) {
-    /**
-     * Renders the changes made by the ix-f import, called automatically
-     * by `render`
-     *
-     * @method render_data
-     * @param {Array} data
-     * @param {jQuery} renderTo
-     */
-
-    var row, i;
-    for(i = 0; i < data.length; i++) {
-      row = data[i];
-      renderTo.append(
-        $('<div>').addClass("row ixf-row ixf-"+row.action).append(
-          $('<div>').addClass("col-sm-1").text(row.action),
-          $('<div>').addClass("col-sm-2").text("AS"+row.peer.asn),
-          $('<div>').addClass("col-sm-3").text(row.peer.ipaddr4 || "-"),
-          $('<div>').addClass("col-sm-3").text(row.peer.ipaddr6 || "-"),
-          $('<div>').addClass("col-sm-1").text(PeeringDB.pretty_speed(row.peer.speed)),
-          $('<div>').addClass("col-sm-2").text(row.peer.is_rs_peer?"yes":"no"),
-          $('<div>').addClass("col-sm-12 ixf-reason").text(row.reason)
-        )
-      );
-    }
-  }
+PeeringDB.ViewActions.actions.net_ixf_postmortem = function(netId) {
+  $("#ixf-postmortem-modal").modal("show");
+  var postmortem = new PeeringDB.IXFNetPostmortem()
+  postmortem.request(netId, $("#ixf-postmortem"));
 
 }
+
+
+PeeringDB.IXFPreview = twentyc.cls.define(
+  "IXFPreview",
+  {
+
+    /**
+     * Handle the IX-F import preview request and rendering
+     * to UI modal
+     *
+     * @class IXFPreview
+     * @namespace PeeringDB
+     */
+
+    request : function(ixlanId, renderTo) {
+
+      /**
+       * request a preview for the ixlan with ixlanId
+       *
+       * @method request
+       * @param {Number} ixlanId
+       * @param {jQuery} renderTo - render to this element (needs to have
+       *    the appropriate children elements to work, they are not
+       *    created automatically)
+       */
+
+      renderTo.find("#tab-ixf-changes").tab("show");
+      renderTo.find('.ixf-result').empty().
+        append($("<div>").addClass("center").text("... loading ..."));
+      renderTo.find('.ixf-error-counter').empty();
+      $.get('/import/ixlan/'+ixlanId+'/ixf/preview', function(result) {
+        this.render(result, renderTo);
+      }.bind(this)).error(function(result) {
+        if(result.responseJSON) {
+          this.render(result.responseJSON, renderTo);
+        } else {
+          this.render({"non_field_errors": ["HTTP error "+result.status]});
+        }
+      }.bind(this));
+    },
+
+    render : function(result, renderTo) {
+
+      /**
+       * Render preview result and errors
+       *
+       * @method render
+       * @param {Object} result - result as returned from the preview request
+       * @param {jQuery} renderTo
+       *
+       *    Needs to have child divs with the following classes
+       *
+       *
+       *    .ixf-errors-list: errors will be rendered to here
+       *    .ixf-result: changes will be rendered to here
+       *    .ixf-error-counter: will be updated with number of errors
+       *
+       */
+
+      renderTo.find('.ixf-errors-list').empty()
+      renderTo.find('.ixf-result').empty()
+
+      var errors = (result.errors || []).concat(result.non_field_errors || []);
+
+      this.render_errors(errors, renderTo.find('.ixf-errors-list'));
+      this.render_data(result.data || [], renderTo.find('.ixf-result'));
+
+      if(!result.data || !result.data.length) {
+        if(errors && errors.length) {
+          renderTo.find("#tab-ixf-errors").tab("show");
+        }
+      }
+    },
+
+    render_errors : function(errors, renderTo) {
+      /**
+       * Render the errors, called automatically by `render`
+       *
+       * @method render_errors
+       * @param {Array} errors
+       * @param {jQuery} renderTo
+       */
+
+      var error, i;
+
+      if(!errors.length)
+        return;
+
+      $('.ixf-error-counter').text("("+errors.length+")");
+
+      for(i = 0; i < errors.length; i++) {
+        error = errors[i];
+        renderTo.append($('<div>').addClass("ixf-error").text(error));
+      }
+    },
+
+    render_data : function(data, renderTo) {
+      /**
+       * Renders the changes made by the ix-f import, called automatically
+       * by `render`
+       *
+       * @method render_data
+       * @param {Array} data
+       * @param {jQuery} renderTo
+       */
+
+      var row, i;
+      for(i = 0; i < data.length; i++) {
+        row = data[i];
+        renderTo.append(
+          $('<div>').addClass("row ixf-row ixf-"+row.action).append(
+            $('<div>').addClass("col-sm-1").text(row.action),
+            $('<div>').addClass("col-sm-2").text("AS"+row.peer.asn),
+            $('<div>').addClass("col-sm-3").text(row.peer.ipaddr4 || "-"),
+            $('<div>').addClass("col-sm-3").text(row.peer.ipaddr6 || "-"),
+            $('<div>').addClass("col-sm-1").text(PeeringDB.pretty_speed(row.peer.speed)),
+            $('<div>').addClass("col-sm-2").text(row.peer.is_rs_peer?"yes":"no"),
+            $('<div>').addClass("col-sm-12 ixf-reason").text(row.reason)
+          )
+        );
+      }
+    }
+  }
+);
+
+PeeringDB.IXFNetPreview =  twentyc.cls.extend(
+  "IXFNetPreview",
+  {
+    /**
+     * Handle the IX-F import preview for networks request and rendering
+     * to UI modal
+     *
+     * @class IXFNetPreview
+     * @namespace PeeringDB
+     */
+
+    request : function(netId, renderTo) {
+
+      /**
+       * request a preview for the ixlan with ixlanId
+       *
+       * @method request
+       * @param {Number} netId
+       * @param {jQuery} renderTo - render to this element (needs to have
+       *    the appropriate children elements to work, they are not
+       *    created automatically)
+       */
+
+      renderTo.find("#tab-ixf-changes").tab("show");
+      renderTo.find('.ixf-result').empty().
+        append($("<div>").addClass("center").text("... loading ..."));
+      renderTo.find('.ixf-error-counter').empty();
+      $.get('/import/net/'+netId+'/ixf/preview', function(result) {
+        this.render(result, renderTo);
+      }.bind(this)).error(function(result) {
+        if(result.responseJSON) {
+          this.render(result.responseJSON, renderTo);
+        } else {
+          this.render({"non_field_errors": ["HTTP error "+result.status]});
+        }
+      }.bind(this));
+    },
+
+    render_data : function(data, renderTo) {
+      /**
+       * Renders the changes made by the ix-f import, called automatically
+       * by `render`
+       *
+       * @method render_data
+       * @param {Array} data
+       * @param {jQuery} renderTo
+       */
+
+      var row, i;
+      for(i = 0; i < data.length; i++) {
+        row = data[i];
+        renderTo.append(
+          $('<div>').addClass("row ixf-row ixf-"+row.action).append(
+            $('<div>').addClass("col-sm-1").text(row.action),
+            $('<div>').addClass("col-sm-3").append(
+              $('<a>').attr("href", "/ix/"+row.peer.ix_id).text(row.peer.ix_name)
+            ),
+            $('<div>').addClass("col-sm-2").text(row.peer.ipaddr4 || "-"),
+            $('<div>').addClass("col-sm-3").text(row.peer.ipaddr6 || "-"),
+            $('<div>').addClass("col-sm-1").text(PeeringDB.pretty_speed(row.peer.speed)),
+            $('<div>').addClass("col-sm-2").text(row.peer.is_rs_peer?"yes":"no"),
+            $('<div>').addClass("col-sm-12 ixf-reason").text(row.reason)
+          )
+        );
+      }
+    }
+
+  },
+  PeeringDB.IXFPreview
+)
+
+PeeringDB.IXFNetPostmortem =  twentyc.cls.extend(
+  "IXFNetPostmortem",
+  {
+    /**
+     * Handle the IX-F import preview for networks request and rendering
+     * to UI modal
+     *
+     * @class IXFNetPostmortem
+     * @namespace PeeringDB
+     */
+
+    request : function(netId, renderTo) {
+
+      /**
+       * request a preview for the ixlan with ixlanId
+       *
+       * @method request
+       * @param {Number} netId
+       * @param {jQuery} renderTo - render to this element (needs to have
+       *    the appropriate children elements to work, they are not
+       *    created automatically)
+       */
+
+      renderTo.find("#tab-ixf-changes").tab("show");
+      renderTo.find('.ixf-result').empty().
+        append($("<div>").addClass("center").text("... loading ..."));
+      renderTo.find('.ixf-error-counter').empty();
+
+      var limit = $('#ixf-postmortem-limit').val()
+      var btnRefresh = $('#ixf-postmortem-refresh')
+
+      btnRefresh.off("click").click(function() {
+        this.request(netId, renderTo);
+      }.bind(this));
+
+      $.get('/import/net/'+netId+'/ixf/postmortem?limit='+limit, function(result) {
+        this.render(result, renderTo);
+      }.bind(this)).error(function(result) {
+        if(result.responseJSON) {
+          this.render(result.responseJSON, renderTo);
+        } else {
+          this.render({"non_field_errors": ["HTTP error "+result.status]});
+        }
+      }.bind(this));
+    },
+
+    render_data : function(data, renderTo) {
+      /**
+       * Renders the changes made by the ix-f import, called automatically
+       * by `render`
+       *
+       * @method render_data
+       * @param {Array} data
+       * @param {jQuery} renderTo
+       */
+
+      var row, i;
+      for(i = 0; i < data.length; i++) {
+        row = data[i];
+        renderTo.append(
+          $('<div>').addClass("row ixf-row ixf-"+row.action).append(
+            $('<div>').addClass("col-sm-1").text(row.action),
+            $('<div>').addClass("col-sm-3").append(
+              $('<a>').attr("href", "/ix/"+row.ix_id).text(row.ix_name)
+            ),
+            $('<div>').addClass("col-sm-2").text(row.ipaddr4 || "-"),
+            $('<div>').addClass("col-sm-3").text(row.ipaddr6 || "-"),
+            $('<div>').addClass("col-sm-1").text(PeeringDB.pretty_speed(row.speed)),
+            $('<div>').addClass("col-sm-2").text(row.is_rs_peer?"yes":"no"),
+            $('<div>').addClass("col-sm-12 ixf-reason").text(row.created + " - " +row.reason)
+          )
+        );
+      }
+    }
+
+  },
+  PeeringDB.IXFPreview
+)
+
 
 PeeringDB.InlineSearch = {
 

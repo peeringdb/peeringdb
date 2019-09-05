@@ -1,0 +1,89 @@
+{
+  "non_field_errors": [],
+  "data": [
+    {
+      "ix_id": 1,
+      "ix_name": "Test Exchange",
+      "speed": 10000,
+      "ipaddr4": "195.69.146.250",
+      "ipaddr6": "2001:7f8:1::a500:2906:2",
+      "reason": "New ip-address",
+      "changes": {},
+      "is_rs_peer": true,
+      "action": "add",
+      "ixlan_id": 1,
+      "asn": 2906
+    },
+    {
+      "ix_id": 1,
+      "ix_name": "Test Exchange",
+      "speed": 10000,
+      "ipaddr4": "195.69.147.250",
+      "ipaddr6": "2001:7f8:1::a500:2906:1",
+      "reason": "New ip-address",
+      "changes": {},
+      "is_rs_peer": true,
+      "action": "add",
+      "ixlan_id": 1,
+      "asn": 2906
+    },
+    {
+      "ix_id": 1,
+      "ix_name": "Test Exchange",
+      "speed": 10000,
+      "ipaddr4": "195.69.147.251",
+      "ipaddr6": "2001:7f8:1::a500:2906:5",
+      "reason": "Fields changed: ipaddr6, is_rs_peer, speed",
+      "changes": {
+        "is_rs_peer": true,
+        "speed": 10000,
+        "ipaddr6": "2001:7f8:1::a500:2906:5"
+      },
+      "is_rs_peer": true,
+      "action": "modify",
+      "ixlan_id": 1,
+      "asn": 2906
+    },
+    {
+      "ix_id": 1,
+      "ix_name": "Test Exchange",
+      "speed": 10000,
+      "ipaddr4": "195.69.147.253",
+      "ipaddr6": null,
+      "reason": "New ip-address",
+      "changes": {},
+      "is_rs_peer": true,
+      "action": "add",
+      "ixlan_id": 1,
+      "asn": 2906
+    },
+    {
+      "ix_id": 1,
+      "ix_name": "Test Exchange",
+      "speed": 10000,
+      "ipaddr4": null,
+      "ipaddr6": "2001:7f8:1::a500:2906:6",
+      "reason": "New ip-address",
+      "changes": {},
+      "is_rs_peer": true,
+      "action": "add",
+      "ixlan_id": 1,
+      "asn": 2906
+    },
+    {
+      "ix_id": 1,
+      "ix_name": "Test Exchange",
+      "speed": 10000,
+      "ipaddr4": "195.69.146.249",
+      "ipaddr6": null,
+      "reason": "Ip addresses no longer exist in validated data or are no longer with this asn",
+      "changes": {
+        "status": "deleted"
+      },
+      "is_rs_peer": false,
+      "action": "delete",
+      "ixlan_id": 1,
+      "asn": 2906
+    }
+  ]
+}
