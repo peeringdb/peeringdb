@@ -42,8 +42,8 @@ class Command(BaseCommand):
             self.log("[error] {}".format("New prefix needs to be of same " \
                                          "protocol as old prefix"))
 
-        prefixes = IXLanPrefix.objects.filter(prefix=old, ixlan__ix_id=self.ix)
-        netixlans = NetworkIXLan.objects.filter(ixlan__ix_id=self.ix)
+        prefixes = IXLanPrefix.objects.filter(prefix=old, ixlan__ix_id=self.ix, status="ok")
+        netixlans = NetworkIXLan.objects.filter(ixlan__ix_id=self.ix, status="ok")
 
         if self.ixlan:
             self.log("Only replacing in ixlan {}".format(self.ixlan.descriptive_name))
@@ -59,7 +59,13 @@ class Command(BaseCommand):
 
         for netixlan in netixlans:
             old_addr = netixlan.ipaddr(old_prefix.version)
-            new_addr = renumber_ipaddress(old_addr, old_prefix, new_prefix)
+
+            try:
+                new_addr = renumber_ipaddress(old_addr, old_prefix, new_prefix)
+            except Exception as exc:
+                self.log("[error] {}: {}".format(old_addr, exc))
+                continue
+
             self.log("Renumbering {} -> {}".format(
                 netixlan.descriptive_name_ipv(new_addr.version), new_addr))
 
