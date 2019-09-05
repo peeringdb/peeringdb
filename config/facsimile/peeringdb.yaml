@@ -13,6 +13,9 @@ misc:
   session:
     domain: peeringdb.com
     secure: True
+  ixf:
+    postmortem:
+      limit: 250
   ratelimits:
     request_login_POST: "4/m"
     view_request_ownership_POST: "3/m"
@@ -23,6 +26,7 @@ misc:
     view_username_retrieve_initiate: "2/m"
     request_translation: "2/m"
     view_import_ixlan_ixf_preview: "1/m"
+    view_import_net_ixf_postmortem: "1/m"
   api:
     throtteling:
       enabled: true
@@ -162,6 +166,7 @@ install:
     - $SRC_DIR$/peeringdb_server/migrations/0016_auto_20190110_2321.py
     - $SRC_DIR$/peeringdb_server/migrations/0017_ixf_ixp_import_enabled.py
     - $SRC_DIR$/peeringdb_server/migrations/0018_set_ixf_ixp_import_enabled.py
+    - $SRC_DIR$/peeringdb_server/migrations/0019_auto_20190819_1133.py
     - $SRC_DIR$/fixtures/initial_data.json
     - $SRC_DIR$/peeringdb_server/templates/admin/admin_extended.html
     - $SRC_DIR$/peeringdb_server/templates/admin/user-organizations.html

@@ -55,6 +55,8 @@ COMMANDLINE_TOOLS = (("pdb_renumber_lans",
 if settings.TUTORIAL_MODE:
     COMMANDLINE_TOOLS += (("pdb_wipe", _("Reset Environment")),)
 
+COMMANDLINE_TOOLS += (("pdb_ixf_ixp_member_import", _("IX-F Import")),)
+
 def debug_mail(*args):
     for arg in list(args):
         print(arg)
@@ -1677,10 +1679,42 @@ class IXLanIXFMemberImportLogEntry(models.Model):
                                        related_name="ixf_import_log_before")
     version_after = models.ForeignKey(reversion.models.Version,
                                       related_name="ixf_import_log_after")
+    action = models.CharField(max_length=255, null=True, blank=True)
+    reason = models.CharField(max_length=255, null=True, blank=True)
+
+
 
     class Meta(object):
         verbose_name = _("IXF Import Log Entry")
         verbose_name_plural = _("IXF Import Log Entries")
+
+    @property
+    def changes(self):
+        """
+        Returns a dict of changes between the netixlan version
+        saved by the ix-f import and the version before
+
+        Fields `created`, `updated` and `version` will be ignored
+        """
+        if not self.version_before:
+            return {}
+        data_before = self.version_before.field_dict
+        data_after= self.version_after.field_dict
+        rv = {}
+        for k, v in data_after.items():
+            if k in ["created", "updated", "version"]:
+                continue
+            v2 = data_before.get(k)
+            if v != v2:
+                if isinstance(v, ipaddress.IPv4Address) or isinstance(
+                        v, ipaddress.IPv6Address):
+                    rv[k] = str(v)
+                else:
+                    rv[k] = v
+
+        return rv
+
+
 
     def rollback_status(self):
         recent_version = reversion.models.Version.objects.get_for_object(
@@ -1694,6 +1728,7 @@ class IXLanIXFMemberImportLogEntry(models.Model):
         elif self.version_before == recent_version:
             return -1
         return 1
+
 
 
 # read only, or can make bigger, making smaller could break links
@@ -1971,6 +2006,29 @@ class Network(pdb_models.NetworkBase):
     @property
     def netixlan_set_active(self):
         return self.netixlan_set(manager="handleref").filter(status="ok")
+
+    @property
+    def ixlan_set_active(self):
+        """
+        Returns IXLan queryset for ixlans connected to this network
+        through NetworkIXLan
+        """
+        ixlan_ids = []
+        for netixlan in self.netixlan_set_active:
+            if netixlan.ixlan_id not in ixlan_ids:
+                ixlan_ids.append(netixlan.ixlan_id)
+        return IXLan.objects.filter(id__in=ixlan_ids)
+
+    @property
+    def ixlan_set_ixf_enabled(self):
+        """
+        Returns IXLan queryset for IX-F import enabled ixlans connected
+        to this network throught NetworkIXLan
+        """
+        qset = self.ixlan_set_active.filter(ixf_ixp_import_enabled=True)
+        qset = qset.exclude(ixf_ixp_member_list_url__isnull=True)
+        return qset
+
 
     @property
     def poc_set_active(self):

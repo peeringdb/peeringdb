@@ -1355,6 +1355,18 @@ def view_network(request, id):
                 "value": network.allow_ixp_update
             }]
         }, {
+            "type": "action",
+            "admin": True,
+            "label": _("IXP Update Tools"),
+            "actions": [{
+                "label": _("Preview"),
+                "action": "ixf_preview",
+            },
+            {
+                "label": _("Postmortem"),
+                "action": "ixf_postmortem"
+            }]
+        }, {
             "type": "sub",
             "label": _("Peering Policy Information")
         }, {

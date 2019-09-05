@@ -4,6 +4,7 @@ import requests
 import ipaddress
 
 from django.db import transaction
+from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
 
 import reversion
@@ -11,6 +12,7 @@ import reversion
 from peeringdb_server.models import (
     IXLanIXFMemberImportAttempt,
     IXLanIXFMemberImportLog,
+    IXLanIXFMemberImportLogEntry,
     Network,
     NetworkIXLan,
 )
@@ -32,16 +34,20 @@ class Importer(object):
                       ]
 
     def __init__(self):
+        self.cache_only = False
+        self.skip_import = False
         self.reset()
 
-    def reset(self, ixlan=None, save=False):
+    def reset(self, ixlan=None, save=False, asn=None):
         self.reset_log()
         self.netixlans = []
         self.netixlans_deleted = []
         self.ipaddresses = []
         self.asns = []
+        self.archive_info = {}
         self.ixlan = ixlan
         self.save = save
+        self.asn = asn
 
     def fetch(self, url, timeout=5):
         """
@@ -75,7 +81,46 @@ class Importer(object):
             data = {"pdb_error": _("No JSON could be parsed")}
             return data
 
-        return self.sanitize(data)
+        data = self.sanitize(data)
+
+        # locally cache result
+
+        if data and not data.get("pdb_error"):
+            cache.set(self.cache_key(url), data, timeout=None)
+
+        return data
+
+    def cache_key(self, url):
+        """
+        returns the django cache key to use for caching ix-f data
+
+        Argument:
+
+            url <str>
+        """
+
+        return "IXF-CACHE-{}".format(url)
+
+
+    def fetch_cached(self, url):
+        """
+        Returns locally cached IX-F data
+
+        Arguments:
+
+            url <str>
+        """
+
+        if not url:
+            return {"pdb_error": _("IXF import url not specified")}
+
+        data = cache.get(self.cache_key(url))
+
+        if data is None:
+            return {"pdb_error": _("IX-F data not locally cached for this resource yet.")}
+
+        return data
+
 
     def sanitize(self, data):
         """
@@ -108,7 +153,7 @@ class Importer(object):
 
         return data
 
-    def update(self, ixlan, save=True, data=None, timeout=5):
+    def update(self, ixlan, save=True, data=None, timeout=5, asn=None):
         """
         Sync netixlans under this ixlan from ixf member export json data (specs
         can be found at https://github.com/euro-ix/json-schemas)
@@ -118,15 +163,22 @@ class Importer(object):
 
         Keyword Arguments:
             - save (bool): commit changes to db
+            - asn (int): only process changes for this ASN
 
         Returns:
             - Tuple(success<bool>, netixlans<list>, log<list>)
         """
 
-        self.reset(ixlan=ixlan, save=save)
+        self.reset(ixlan=ixlan, save=save, asn=asn)
 
+
+        # if data is not provided, retrieve it either from cache or
+        # from the remote resource
         if data is None:
-            data = self.fetch(ixlan.ixf_ixp_member_list_url, timeout=timeout)
+            if self.cache_only:
+                data = self.fetch_cached(ixlan.ixf_ixp_member_list_url)
+            else:
+                data = self.fetch(ixlan.ixf_ixp_member_list_url, timeout=timeout)
 
         # bail if there has been any errors during sanitize() or fetch()
         if data.get("pdb_error"):
@@ -137,6 +189,9 @@ class Importer(object):
         if ixlan.ixpfx_set_active.count() == 0:
             self.log_error(_("No prefixes defined on ixlan"), save=save)
             return (False, [], [], self.log)
+
+        if self.skip_import:
+            return (True, [], [], self.log)
 
         try:
             # parse the ixf data
@@ -169,7 +224,17 @@ class Importer(object):
         In order for a netixlan to be removed both it's ipv4 and ipv6 address
         or it's asn need to be gone from the ixf data after validation
         """
-        for netixlan in self.ixlan.netixlan_set_active:
+
+        netixlan_qset = self.ixlan.netixlan_set_active
+
+        # if we are only processing a specific asn ignore
+        # all that dont match
+
+        if self.asn:
+            netixlan_qset = netixlan_qset.filter(asn=self.asn)
+
+        for netixlan in netixlan_qset:
+
             ipv4 = "{}-{}".format(netixlan.asn, netixlan.ipaddr4)
             ipv6 = "{}-{}".format(netixlan.asn, netixlan.ipaddr6)
 
@@ -214,8 +279,11 @@ class Importer(object):
                 else:
                     version_before = versions[1]
                 version_after = versions[0]
+                info = self.archive_info.get(netixlan.id, {})
                 persist_log.entries.create(netixlan=netixlan,
                                            version_before=version_before,
+                                           action=info.get("action"),
+                                           reason=info.get("reason"),
                                            version_after=version_after)
 
     def parse(self, data):
@@ -241,6 +309,11 @@ class Importer(object):
             if member_type in self.allowed_member_types:
                 # check that the as exists in pdb
                 asn = member["asnum"]
+
+                # if we are only processing a specific asn, ignore all
+                # that dont match
+                if self.asn and asn != self.asn:
+                    continue
 
                 # keep track of asns we find in the ix-f data
                 if asn not in self.asns:
@@ -439,6 +512,8 @@ class Importer(object):
         """
         peer = {
             "ixlan_id": self.ixlan.id,
+            "ix_id": self.ixlan.ix.id,
+            "ix_name": self.ixlan.ix.name,
             "asn": asn,
         }
 
@@ -451,11 +526,18 @@ class Importer(object):
                 "is_rs_peer": netixlan.is_rs_peer,
             })
 
+            if netixlan.id:
+                self.archive_info[netixlan.id] = {"action":action, "reason":u"{}".format(reason)}
+
         self.log["data"].append({
             "peer": peer,
             "action": action,
             "reason": u"{}".format(reason),
         })
+
+
+
+
 
     def log_error(self, error, save=False):
         """
@@ -464,3 +546,125 @@ class Importer(object):
         self.log["errors"].append(u"{}".format(error))
         if save:
             self.save_log()
+
+
+
+class PostMortem(object):
+
+    """
+    Generate postmortem report for ix-f import
+    """
+
+    def reset(self, asn, **kwargs):
+
+        """
+        Reset for a fresh run
+
+        Argument(s):
+
+            - asn <int>: asn of the network to run postormem
+              report for
+
+        Keyword Argument(s):
+
+            - limit <int=100>: limit amount of import logs to process
+              max limit is defined by server config `IXF_POSTMORTEM_LIMIT`
+
+        """
+
+        self.asn = asn
+        self.limit = kwargs.get("limit", 100)
+        self.post_mortem =[]
+
+    def generate(self, asn, **kwargs):
+        """
+        Generate and return a new postmortem report
+
+        Argument(s):
+
+            - asn <int>: asn of the network to run postmortem
+              report for
+
+        Keyword Argument(s):
+
+            - limit <int=100>: limit amount of import logs to process
+              max limit is defined by server config `IXF_POSTMORTEM_LIMIT`
+
+        Returns:
+
+            - dict: postmortem report
+        """
+
+        self.reset(asn, **kwargs)
+        self._process_logs(limit=self.limit)
+        return self.post_mortem
+
+
+    def _process_logs(self, limit=100):
+
+        """
+        Process IX-F import logs
+
+        KeywordArgument(s):
+
+             - limit <int=100>: limit amount of import logs to process
+              max limit is defined by server config `IXF_POSTMORTEM_LIMIT`
+        """
+
+        # we only want import logs that actually touched the specified
+        # asn
+
+        qset = IXLanIXFMemberImportLogEntry.objects.filter(netixlan__asn=self.asn)
+        qset = qset.exclude(action__isnull=True)
+        qset = qset.order_by("-log__created")
+        qset = qset.select_related("log","netixlan","log__ixlan","log__ixlan__ix")
+
+        for entry in qset[:limit]:
+            self._process_log_entry(entry.log, entry)
+
+
+    def _process_log_entry(self, log, entry):
+
+        """
+        Process a single IX-F import log entry
+
+        Argument(s):
+
+            - log <IXLanIXFMemberImportLog>
+            - entry <IXLanIXFMemberImportLogEntry>
+
+        """
+
+        if entry.netixlan.asn != self.asn:
+            return
+
+        data = entry.version_after.field_dict
+        if data.get("asn") != self.asn:
+            return
+
+        if data.get("ipaddr4"):
+            ipaddr4 = u"{}".format(data.get("ipaddr4"))
+        else:
+            ipaddr4 = None
+
+        if data.get("ipaddr6"):
+            ipaddr6 = u"{}".format(data.get("ipaddr6"))
+        else:
+            ipaddr6 = None
+
+
+        self.post_mortem.append({
+            "ix_id": log.ixlan.ix.id,
+            "ix_name": log.ixlan.ix.name,
+            "ixlan_id": log.ixlan.id,
+            "changes": entry.changes,
+            "reason": entry.reason,
+            "action": entry.action,
+            "asn": data.get("asn"),
+            "ipaddr4": ipaddr4,
+            "ipaddr6": ipaddr6,
+            "speed": data.get("speed"),
+            "is_rs_peer": data.get("is_rs_peer"),
+            "created": log.created.strftime("%Y-%m-%d %H:%M:%S"),
+            })
+

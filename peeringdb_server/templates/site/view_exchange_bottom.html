@@ -351,12 +351,12 @@
         <div class="ixf-log" id="ixf-log">
           <ul class="nav nav-tabs" role="tablist">
             <li role="presentation" class="active">
-              <a href="#ixf-changes" aria-controls="add_fac" role="tab" data-toggle="tab">
+              <a href="#ixf-changes" id="tab-ixf-changes" aria-controls="add_fac" role="tab" data-toggle="tab">
                 {% trans "Changes" %}
               </a>
             </li>
             <li role="presentation">
-              <a href="#ixf-errors" aria-controls="add_net" role="tab" data-toggle="tab">
+              <a href="#ixf-errors" id="tab-ixf-errors" aria-controls="add_net" role="tab" data-toggle="tab">
                 {% trans "Errors" %}<span class="ixf-error-counter"></span>
               </a>
             </li>
@@ -373,7 +373,7 @@
               </div>
               <div class="ixf-result"></div>
             </div>
-            <div role="tabpanel" class="tab-pane active ixf-errors" id="ixf-errors">
+            <div role="tabpanel" class="tab-pane ixf-errors" id="ixf-errors">
               <div>{% blocktrans %}Sometimes we encounter some errors when parsing ix-f data, these will usually affect the import, you can view any of those errors below{% endblocktrans %}</div>
               <div class="ixf-errors-list"></div>
             </div>
@@ -393,7 +393,8 @@ $(document).ready(function() {
   $('button[data-ixf-preview]').click(function() {
     var ixlanId = $(this).data("ixf-preview")
     $('#ixf-preview-modal').modal("show");
-    PeeringDB.IXFPreview.request(ixlanId, $("#ixf-log"));
+    var preview = new PeeringDB.IXFPreview();
+    preview.request(ixlanId, $("#ixf-log"));
   });
 });
 </script>
