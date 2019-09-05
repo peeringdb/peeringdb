@@ -54,10 +54,10 @@ def validate_address_space(prefix):
 
     if prefix.prefixlen < prefixlen_min:
         raise ValidationError(
-            _("Minimum allowed prefix length is {}").format(prefixlen_min))
+            _("Maximum allowed prefix length is {}").format(prefixlen_min))
     elif prefix.prefixlen > prefixlen_max:
         raise ValidationError(
-            _("Maximum allowed prefix length is {}").format(prefixlen_max))
+            _("Minimum allowed prefix length is {}").format(prefixlen_max))
 
 def validate_info_prefixes4(value):
     if value > settings.DATA_QUALITY_MAX_PREFIX_V4_LIMIT:
