@@ -21,6 +21,10 @@ ASN_RFC_6996_32BIT = (4200000000, 4294967294)
 ASN_LAST_16BIT = (65535, 65535)
 ASN_LAST_32BIT = (4294967295, 4294967295)
 
+# IANA reserved ASNs
+# https://www.mail-archive.com/uknof@lists.uknof.org.uk/msg03395.html
+ASN_IANA_RESERVED = (65552, 131071)
+
 ASN_TRANS = (23456, 23456)
 
 BOGON_ASN_RANGES = [
@@ -28,6 +32,8 @@ BOGON_ASN_RANGES = [
     ASN_RFC_5398_16BIT,
     # RFC 5398 - documentation 32-bit
     ASN_RFC_5398_32BIT,
+    # IANA Reserved
+    ASN_IANA_RESERVED,
     # RFC 6996 - private 16-bit
     ASN_RFC_6996_16BIT,
     # RFC 6996 - private 32-bit
