@@ -23,8 +23,11 @@ from django.template.response import TemplateResponse
 from django.db.models import Q
 from django.db.models.functions import Concat
 from django_namespace_perms.admin import UserPermissionInline, UserPermissionInlineAdd, UserAdmin
+
 import reversion
 from reversion.admin import VersionAdmin
+
+from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
 
 import peeringdb_server.admin_commandline_tools as acltools
 from peeringdb_server.views import (JsonResponse, HttpResponseForbidden)
@@ -278,11 +281,15 @@ class SanitizedAdmin(object):
             super(SanitizedAdmin, self).get_readonly_fields(request, obj=obj))
 
 
-class SoftDeleteAdmin(SanitizedAdmin, VersionAdmin, admin.ModelAdmin):
+class SoftDeleteAdmin(SanitizedAdmin, HandleRefVersionAdmin, VersionAdmin, admin.ModelAdmin):
     """
     Soft delete admin
     """
     actions = [soft_delete]
+    object_history_template = "handleref/grappelli/object_history.html"
+    version_details_template = "handleref/grappelli/version_details.html"
+    version_revert_template = "handleref/grappelli/version_revert.html"
+    version_rollback_template = "handleref/grappelli/version_rollback.html"
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -816,6 +823,63 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         NetworkFacilityInline,
         NetworkInternetExchangeInline,
     )
+
+class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
+    list_display = ('id', 'ix', 'facility', 'status', 'created', 'updated')
+    search_fields = ('ix__name', 'facility__name')
+    readonly_fields = ('id',)
+    list_filter = (StatusFilter,)
+    form = StatusForm
+
+
+class IXLanPrefixAdmin(SoftDeleteAdmin):
+    list_display = ('id', 'prefix', 'ixlan', 'ix', 'status', 'created', 'updated')
+    readonly_fields = ('ix','id')
+    search_fields = ('ixlan__name', 'ixlan__ix__name', 'prefix')
+    list_filter = (StatusFilter,)
+    form = StatusForm
+
+    def ix(self, obj):
+        return obj.ixlan.ix
+
+
+class NetworkIXLanAdmin(SoftDeleteAdmin):
+    list_display = ('id', 'asn', 'net', 'ixlan', 'ix', 'ipaddr4', 'ipaddr6', 'status', 'created', 'updated')
+    search_fields = ('asn', 'network__asn', 'network__name', 'ixlan__name', 'ixlan__ix__name', 'ipaddr4', 'ipaddr6')
+    readonly_fields = ('id', 'ix','net')
+    list_filter = (StatusFilter,)
+    form = StatusForm
+
+    def ix(self, obj):
+        return obj.ixlan.ix
+
+    def net(self, obj):
+        return u"{} (AS{})".format(obj.network.name, obj.network.asn)
+
+
+class NetworkContactAdmin(SoftDeleteAdmin):
+    list_display = ('id', 'net', 'role', 'name', 'phone', 'email', 'status', 'created', 'updated')
+    search_fields = ('network__asn', 'network__name')
+    readonly_fields = ('id', 'net')
+    list_filter = (StatusFilter,)
+    form = StatusForm
+
+    def net(self, obj):
+        return u"{} (AS{})".format(obj.network.name, obj.network.asn)
+
+
+class NetworkFacilityAdmin(SoftDeleteAdmin):
+    list_display = ('id', 'net', 'facility', 'status', 'created', 'updated')
+    search_fields = ('network__asn', 'network__name', 'facility__name')
+    readonly_fields = ('id', 'net')
+    list_filter = (StatusFilter,)
+    form = StatusForm
+
+    def net(self, obj):
+        return u"{} (AS{})".format(obj.network.name, obj.network.asn)
+
+
+
 
 
 class VerificationQueueAdmin(ModelAdminWithUrlActions):
@@ -1364,7 +1428,12 @@ class DeskProTicketAdmin(admin.ModelAdmin):
 
 admin.site.register(Facility, FacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)
+admin.site.register(InternetExchangeFacility, InternetExchangeFacilityAdmin)
 admin.site.register(IXLan, IXLanAdmin)
+admin.site.register(IXLanPrefix, IXLanPrefixAdmin)
+admin.site.register(NetworkIXLan, NetworkIXLanAdmin)
+admin.site.register(NetworkContact, NetworkContactAdmin)
+admin.site.register(NetworkFacility, NetworkFacilityAdmin)
 admin.site.register(Network, NetworkAdmin)
 admin.site.register(User, UserAdmin)
 admin.site.register(VerificationQueueItem, VerificationQueueAdmin)
