@@ -8,6 +8,7 @@ _ = lambda s: s
 settings.configure(
     PACKAGE_VERSION="dev",
     RELEASE_ENV="dev",
+    MIGRATION_MODULES={"django_peeringdb":None},
     INSTALLED_APPS=[
         'django.contrib.auth',
         'django.contrib.contenttypes',
@@ -72,7 +73,7 @@ settings.configure(
     SOUTH_TESTS_MIGRATE=False,
     SOUTH_SKIP_TESTS=True,
     AUTH_USER_MODEL='peeringdb_server.User',
-    TABLE_PREFIX='peeringdb',
+    TABLE_PREFIX='peeringdb_',
     PEERINGDB_ABSTRACT_ONLY=True,
     COUNTRIES_OVERRIDE={'XK': _('Kosovo')},
     CLIENT_COMPAT={
@@ -163,6 +164,7 @@ settings.configure(
     CAPTCHA_TEST_MODE=True,
     SITE_ID=1,
     IXF_POSTMORTEM_LIMIT=250,
+    ABSTRACT_ONLY=True,
     RATELIMITS={
         "view_affiliate_to_org_POST": "100/m",
         "resend_confirmation_mail": "2/m",

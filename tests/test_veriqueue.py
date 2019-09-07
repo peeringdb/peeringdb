@@ -58,13 +58,14 @@ class VeriQueueTests(TestCase):
         user = self.inst["user"]
         qs = models.DeskProTicket.objects
 
+
         for tag in ["fac", "net", "ix"]:
             inst = self.inst[tag]
             vqi = models.VerificationQueueItem.get_for_entity(inst)
             vqi.user = user
             vqi.save()
             self.assertEqual(
-                qs.filter(subject="[test]{} - {}".format(
+                qs.filter(subject=u"[test]{} - {}".format(
                     vqi.content_type, inst)).exists(), True)
 
     def test_approve(self):
