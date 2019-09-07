@@ -524,9 +524,9 @@ class IXLanAdmin(SoftDeleteAdmin):
 class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
 
     model = IXLanIXFMemberImportLogEntry
-    fields = ("netixlan", "ipv4", "ipv6", "asn", "changes", "rollback_status")
+    fields = ("netixlan", "ipv4", "ipv6", "asn", "changes", "rollback_status", "action", "reason")
     readonly_fields = ("netixlan", "ipv4", "ipv6", "asn", "changes",
-                       "rollback_status")
+                       "rollback_status", "action", "reason")
     raw_id_fields = ("netixlan", )
 
     extra = 0
@@ -1370,6 +1370,8 @@ class CommandLineToolAdmin(admin.ModelAdmin):
             if tool.form_instance.is_valid():
                 action = "run"
                 tool.run(request.user, commit=False)
+            else:
+                print(tool.form_instance.errors)
             form = tool.form_instance
         else:
             raise Exception(_("Only POST requests allowed."))

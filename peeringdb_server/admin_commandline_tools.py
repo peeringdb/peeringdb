@@ -8,7 +8,7 @@ from dal import autocomplete
 from django import forms
 from django.core.management import call_command
 from peeringdb_server.models import (REFTAG_MAP, COMMANDLINE_TOOLS, CommandLineTool,
-                                     InternetExchange, Facility)
+                                     InternetExchange, Facility, IXLan)
 
 from peeringdb_server import maintenance
 
@@ -322,5 +322,3 @@ class ToolUndelete(CommandLineToolWrapper):
         obj = REFTAG_MAP[self.kwargs.get("reftag")].objects.get(id=self.kwargs.get("id"))
         if obj.status != "deleted":
             raise ValueError("{} is not currently marked as deleted".format(obj))
-
-
