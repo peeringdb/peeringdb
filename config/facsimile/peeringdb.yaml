@@ -57,6 +57,7 @@ locale:
   - ro_RO
   - ru_RU
   - zh_CN
+  - zh_TW
 
 
 data_quality:
