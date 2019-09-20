@@ -124,7 +124,9 @@ def enum(request, name):
     return JsonResponse({
         "enum/%s" % name: [{
             "id": id,
-            "name": _(n)
+            # as of django-peeringdb 1.0.0 already comes in
+            # translated
+            "name": n.decode("utf-8")
         } for id, n in getattr(const, name.upper())]
     })
 
