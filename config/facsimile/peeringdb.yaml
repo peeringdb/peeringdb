@@ -54,8 +54,10 @@ locale:
   - es_ES
   - fr_FR
   - ja_JP
+  - ro_RO
   - ru_RU
   - zh_CN
+  - zh_TW
 
 
 data_quality:
