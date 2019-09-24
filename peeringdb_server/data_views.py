@@ -110,6 +110,20 @@ def facilities(request):
     })
 
 
+def decode(value):
+    """
+    django-peeringdb imports unicode literals from __future__,
+    while peeringdb_server does not at this point.
+
+    so we may get already decoded values for some enums
+    while others still need to be decoded.
+    """
+    try:
+        return value.decode("utf-8")
+    except UnicodeEncodeError:
+        return value
+
+
 def enum(request, name):
 
     if name.upper() not in [
@@ -126,7 +140,7 @@ def enum(request, name):
             "id": id,
             # as of django-peeringdb 1.0.0 already comes in
             # translated
-            "name": n.decode("utf-8")
+            "name": decode(n)
         } for id, n in getattr(const, name.upper())]
     })
 
