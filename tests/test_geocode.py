@@ -1,11 +1,15 @@
+# -*- coding: utf-8 -*-
 import pytest
 import json
 import uuid
 import re
+import StringIO
 
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
+from django.core.management import call_command
+
 import django_namespace_perms as nsp
 
 import peeringdb_server.models as models
@@ -25,7 +29,7 @@ class ViewTestCase(TestCase):
         cls.facilities = dict(
             (k,
              models.Facility.objects.create(
-                 name="Geocode Fac %s" % k, status="ok", org=cls.organizations[
+                 name=u"Geocode Fac {}".format(k), status="ok", org=cls.organizations[
                      k], address1="Some street", address2=k, city="Chicago",
                  country="US", state="IL", zipcode="1234", latitude=1.23,
                  longitude=-1.23, geocode_status=True))
@@ -50,3 +54,22 @@ class ViewTestCase(TestCase):
         self.facilities["d"].website = 'http://www.test.com'
         self.facilities["d"].save()
         self.assertEqual(self.facilities["d"].geocode_status, True)
+
+    def test_command(self):
+        self.assertEqual(self.facilities["a"].geocode_status, True)
+
+        # change address to flag facility for geocoding
+
+        self.facilities["a"].address1 = "Another street a"
+
+        # test unicode output from command by adding special characters
+        # to the new address
+
+        self.facilities["a"].name = "sdílených služeb"
+        self.facilities["a"].save()
+
+        out = StringIO.StringIO()
+        call_command("pdb_geosync", "fac", limit=1, stdout=out)
+        out = out.getvalue()
+
+        assert out.find("[fac 1/1 ID:1]") > -1
