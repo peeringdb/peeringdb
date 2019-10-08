@@ -165,6 +165,7 @@ settings.configure(
     SITE_ID=1,
     IXF_POSTMORTEM_LIMIT=250,
     ABSTRACT_ONLY=True,
+    GOOGLE_GEOLOC_API_KEY="AIzatest",
     RATELIMITS={
         "view_affiliate_to_org_POST": "100/m",
         "resend_confirmation_mail": "2/m",
