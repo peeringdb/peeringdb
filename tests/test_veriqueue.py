@@ -1,9 +1,12 @@
+import json
 import pytest
 
 from django.test import TestCase
 from django.contrib.auth.models import Group
 
 import peeringdb_server.models as models
+
+import reversion
 
 
 class VeriQueueTests(TestCase):
@@ -81,6 +84,11 @@ class VeriQueueTests(TestCase):
         # after approval ix should be status 'ok'
         ix.refresh_from_db()
         self.assertEqual(ix.status, "ok")
+
+        # check that the status in the archive is correct (#558)
+
+        version = reversion.models.Version.objects.get_for_object(ix).order_by("-revision_id").first()
+        self.assertEqual(json.loads(version.serialized_data)[0]["fields"]["status"], "ok")
 
         # after approval vqi should no longer exist
         with self.assertRaises(models.VerificationQueueItem.DoesNotExist):

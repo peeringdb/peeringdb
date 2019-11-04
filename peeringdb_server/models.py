@@ -416,6 +416,7 @@ class VerificationQueueItem(models.Model):
                                      self._meta.model_name), args=(self.id,
                                                                    "vq_deny"))
 
+    @reversion.create_revision()
     def approve(self):
         """
         Approve the verification queue item
