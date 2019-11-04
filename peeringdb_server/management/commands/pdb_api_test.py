@@ -1107,6 +1107,16 @@ class TestJSON(unittest.TestCase):
             }}, test_success=False)
 
     ##########################################################################
+    def test_org_admin_002_POST_net_deleted(self):
+        data = self.make_data_net(asn=SHARED["net_rw_dupe_deleted"].asn)
+
+        with self.assertRaises(InvalidRequestException) as exc:
+            r_data = self.db_org_admin.create("net", data, return_response=True)
+
+        assert exc.exception.extra["asn"].find("Network has been deleted. Please contact") == 0
+
+
+    ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_as_set(self):
 
