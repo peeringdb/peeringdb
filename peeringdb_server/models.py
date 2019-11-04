@@ -373,6 +373,7 @@ class VerificationQueueItem(models.Model):
 
     class Meta(object):
         db_table = "peeringdb_verification_queue"
+        unique_together = (("content_type", "object_id"),)
 
     @classmethod
     def get_for_entity(cls, entity):

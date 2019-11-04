@@ -2,6 +2,7 @@ import pytest
 
 from django.test import TestCase
 from django.contrib.auth.models import Group
+from django.db import IntegrityError
 
 import peeringdb_server.models as models
 
@@ -124,3 +125,20 @@ class VeriQueueTests(TestCase):
         # after denial vqi should no longer exist
         with self.assertRaises(models.VerificationQueueItem.DoesNotExist):
             vqi.refresh_from_db()
+
+
+    def test_unique(self):
+        """
+        Test that only one verification queue item can exist for an entity
+        """
+
+        fac = self.inst.get("fac")
+        vqi = models.VerificationQueueItem.get_for_entity(fac)
+
+        with self.assertRaises(IntegrityError):
+            models.VerificationQueueItem.objects.create(
+                content_type=models.ContentType.objects.get_for_model(type(fac)),
+                object_id=fac.id)
+
+
+
