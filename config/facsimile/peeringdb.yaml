@@ -169,6 +169,7 @@ install:
     - $SRC_DIR$/peeringdb_server/migrations/0017_ixf_ixp_import_enabled.py
     - $SRC_DIR$/peeringdb_server/migrations/0018_set_ixf_ixp_import_enabled.py
     - $SRC_DIR$/peeringdb_server/migrations/0019_auto_20190819_1133.py
+    - $SRC_DIR$/peeringdb_server/migrations/0020_vqueue_item_unique.py
     - $SRC_DIR$/fixtures/initial_data.json
     - $SRC_DIR$/peeringdb_server/templates/admin/admin_extended.html
     - $SRC_DIR$/peeringdb_server/templates/admin/user-organizations.html
