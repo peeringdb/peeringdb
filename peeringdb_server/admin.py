@@ -15,6 +15,7 @@ from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.views.main import ChangeList
 from django import forms as baseForms
+from django.utils import html
 from django.core import urlresolvers
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -33,7 +34,7 @@ import peeringdb_server.admin_commandline_tools as acltools
 from peeringdb_server.views import (JsonResponse, HttpResponseForbidden)
 from peeringdb_server.models import (
     REFTAG_MAP, QUEUE_ENABLED, COMMANDLINE_TOOLS, OrganizationMerge,
-    OrganizationMergeEntity, Sponsorship, Partnership,
+    OrganizationMergeEntity, Sponsorship, SponsorshipOrganization, Partnership,
     UserOrgAffiliationRequest, VerificationQueueItem, Organization, Facility,
     InternetExchange, Network, InternetExchangeFacility, IXLan,
     IXLanIXFMemberImportLog, IXLanIXFMemberImportLogEntry, IXLanPrefix,
@@ -621,25 +622,24 @@ class IXLanIXFMemberImportLogAdmin(admin.ModelAdmin):
     def source(self, obj):
         return obj.ixlan.ixf_ixp_member_list_url
 
-
-class SponsorshipAdminForm(baseForms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super(SponsorshipAdminForm, self).__init__(*args, **kwargs)
-        fk_handleref_filter(self, "org")
-
+class SponsorshipOrganizationInline(admin.TabularInline):
+    model = SponsorshipOrganization
+    extra = 0
+    raw_id_fields = ('org',)
+    autocomplete_lookup_fields = {
+        'fk': ['org'],
+    }
 
 class SponsorshipAdmin(admin.ModelAdmin):
-    list_display = ('org_name', 'start_date', 'end_date', 'level', 'status')
-    readonly_fields = ('status', 'org_name', 'notify_date')
-    form = SponsorshipAdminForm
+    list_display = ('organizations', 'start_date', 'end_date', 'level', 'status')
+    readonly_fields = ('organizations', 'status', 'notify_date')
+    inlines = (SponsorshipOrganizationInline,)
 
-    def org_name(self, obj):
-        if not obj.org:
-            return ""
-        return obj.org.name
+    raw_id_fields = ('orgs',)
 
-    org_name.admin_order_field = "org__name"
-    org_name.short_description = _("Organization")
+    autocomplete_lookup_fields = {
+        'm2m': ['orgs'],
+    }
 
     def status(self, obj):
         now = datetime.datetime.now().replace(tzinfo=UTC())
@@ -647,8 +647,9 @@ class SponsorshipAdmin(admin.ModelAdmin):
             return _("Not Set")
 
         if obj.start_date <= now and obj.end_date >= now:
-            if not obj.logo:
-                return _("Logo Missing")
+            for row in obj.sponsorshiporg_set.all():
+                if not row.logo:
+                    return _("Logo Missing")
             return _("Active")
         elif now > obj.end_date:
             return _("Over")
@@ -657,6 +658,12 @@ class SponsorshipAdmin(admin.ModelAdmin):
 
     status.allow_tags = True
 
+
+    def organizations(self, obj):
+        qset = obj.orgs.all().order_by("name")
+        return "<br>\n".join([html.escape(org.name) for org in qset])
+
+    organizations.allow_tags = True
 
 class PartnershipAdminForm(baseForms.ModelForm):
     def __init__(self, *args, **kwargs):

@@ -12,12 +12,14 @@
 			{% trans "Diamond" %} <br>{% trans "Sponsors" %}
 		</h2>
 		<div class="sponsors">
-			{% for row in sponsorships.diamond|shuffle %}
-				{% if row.logo %}
-					{% if row.url %}<a href="{{row.url}}">{% endif %}
-					<img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
-					{% if row.url %}</a>{% endif %}
-				{% endif %}
+			{% for sponsorship in sponsorships.diamond|shuffle %}
+			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
+				  {% if row.logo %}
+					  {% if row.url %}<a href="{{row.url}}">{% endif %}
+					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
+					  {% if row.url %}</a>{% endif %}
+				  {% endif %}
+			  {% endfor %}
 			{% endfor %}
 		</div>
 	</div>
@@ -27,12 +29,14 @@
 			{% trans "Platinum" %} <br>{% trans "Sponsors" %}
 		</h2>
 		<div class="sponsors">
-			{% for row in sponsorships.platinum|shuffle %}
-				{% if row.logo %}
-					{% if row.url %}<a href="{{row.url}}">{% endif %}
-					<img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
-					{% if row.url %}</a>{% endif %}
-				{% endif %}
+			{% for sponsorship in sponsorships.platinum|shuffle %}
+			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
+				  {% if row.logo %}
+					  {% if row.url %}<a href="{{row.url}}">{% endif %}
+					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
+					  {% if row.url %}</a>{% endif %}
+				  {% endif %}
+			  {% endfor %}
 			{% endfor %}
 		</div>
 	</div>
@@ -42,12 +46,14 @@
 			{% trans "Gold" %} <br>{% trans "Sponsors" %}
 		</h2>
 		<div class="sponsors">
-			{% for row in sponsorships.gold|shuffle %}
-				{% if row.logo %}
-					{% if row.url %}<a href="{{row.url}}">{% endif %}
-					<img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
-					{% if row.url %}</a>{% endif %}
-				{% endif %}
+			{% for sponsorship in sponsorships.gold|shuffle %}
+			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
+				  {% if row.logo %}
+					  {% if row.url %}<a href="{{row.url}}">{% endif %}
+					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
+					  {% if row.url %}</a>{% endif %}
+				  {% endif %}
+			  {% endfor %}
 			{% endfor %}
 		</div>
 	</div>
@@ -57,10 +63,14 @@
 			{% trans "Silver" %} <br>{% trans "Sponsors" %}
 		</h2>
 		<div class="sponsors">
-			{% for row in sponsorships.silver|shuffle %}
-				{% if row.logo %}
-					<img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
-				{% endif %}
+			{% for sponsorship in sponsorships.silver|shuffle %}
+			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
+				  {% if row.logo %}
+					  {% if row.url %}<a href="{{row.url}}">{% endif %}
+					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
+					  {% if row.url %}</a>{% endif %}
+				  {% endif %}
+			  {% endfor %}
 			{% endfor %}
 		</div>
 	</div>

@@ -84,15 +84,12 @@ def sponsorships(request):
     Returns all sponsorships
     """
 
-    now = datetime.datetime.now().replace(tzinfo=models.UTC())
-    qset = Sponsorship.objects.filter(start_date__lte=now,
-                                      end_date__gte=now)
+    sponsors = {}
+    for org, sponsorship in Sponsorship.active_by_org():
+        sponsors[org.id] = {"id":org.id, "name":sponsorship.label.lower()}
 
     return JsonResponse({
-        "sponsors": dict([(sponsor.org_id, {
-            "id": sponsor.org_id,
-            "name": sponsor.label.lower()
-        }) for sponsor in qset])
+        "sponsors": sponsors,
     })
 
 @login_required
