@@ -88,7 +88,7 @@ class Command(BaseCommand):
         if output_format == "text":
             self.stdout.write(date)
             self.stdout.write("-------------")
-            for each in stats.keys():
+            for each in self.tags + ["users"]:
                 self.stdout.write("{}: {}".format(each, stats[each]))
         elif output_format == "json":
             self.stdout.write(json.dumps({date: stats}))
@@ -104,13 +104,14 @@ class Command(BaseCommand):
         `dict` with `stats` and `dt` keys
         """
 
-        dt = datetime.datetime.now()
+        dt = datetime.datetime.now().replace(tzinfo=UTC())
 
         stats = self.stats(dt)
 
         for tag in self.tags:
             model = REFTAG_MAP[tag]
             stats[tag] = model.objects.filter(status="ok").count()
+
 
         return {"stats": stats, "dt": dt}
 
