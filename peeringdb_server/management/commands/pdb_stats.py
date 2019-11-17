@@ -35,16 +35,102 @@ class Command(BaseCommand):
         else:
             return obj.status
 
+
     def handle(self, *args, **options):
         date = options.get('date', None)
         if date:
             dt = datetime.datetime.strptime(date, "%Y%m%d")
+            stats = self.generate_for_past_date(dt)
         else:
-            dt = datetime.datetime.now()
+            stats = self.generate_for_current_date()
+
+        self.print_stats(stats, output_format=options.get("format"))
+
+    def stats(self, dt):
+        """
+        Generates and returns a fresh stats dict with user count
+        for the specified date
+
+        Argument(s)
+
+        - dt: datetime object
+
+        Return(s)
+
+        `dict`
+        """
+
+        stats = {"users": 0}
+
+        for user in get_user_model().objects.filter(created__lte=dt):
+            if user.is_verified:
+                stats["users"] += 1
+
+        return stats
+
+    def print_stats(self, stats, output_format="text"):
+        """
+        Output generated stats in a userfriendly format
+
+        Argument(s)
+
+        - stats: `dict` generated via `generate_for_current_date`
+
+        Keyword Argument(s)
+
+        - output_format: `str` ("text" or "json")
+        """
+
+        dt = stats["dt"]
+        stats = stats["stats"]
+
+        date = dt.replace(tzinfo=None).strftime("%Y-%m-%d")
+        if output_format == "text":
+            self.stdout.write(date)
+            self.stdout.write("-------------")
+            for each in self.tags + ["users"]:
+                self.stdout.write("{}: {}".format(each, stats[each]))
+        elif output_format == "json":
+            self.stdout.write(json.dumps({date: stats}))
+        else:
+            raise Exception("unknown format {}".format(output_format))
+
+    def generate_for_current_date(self):
+        """
+        Generate and return stats for current date
+
+        Returns
+
+        `dict` with `stats` and `dt` keys
+        """
+
+        dt = datetime.datetime.now().replace(tzinfo=UTC())
+
+        stats = self.stats(dt)
+
+        for tag in self.tags:
+            model = REFTAG_MAP[tag]
+            stats[tag] = model.objects.filter(status="ok").count()
+
+
+        return {"stats": stats, "dt": dt}
+
+
+    def generate_for_past_date(self, dt):
+        """
+        Generate and return stats for past date
+
+        Argument(s)
+
+        - dt: `datetime` instance
+
+        Returns
+
+        `dict` with `stats` and `dt` keys
+        """
 
         dt = dt.replace(hour=23, minute=23, second=59, tzinfo=UTC())
-        date = dt.replace(tzinfo=None).strftime("%Y-%m-%d")
-        stats = {"users": 0}
+        stats = self.stats(dt)
 
         for tag in self.tags:
             model = REFTAG_MAP[tag]
@@ -53,19 +139,5 @@ class Command(BaseCommand):
                 if self.status_at_date(obj, dt) == "ok":
                     stats[tag] += 1
 
-        for user in get_user_model().objects.filter(created__lte=dt):
-            if user.is_verified:
-                stats["users"] += 1
+        return {"stats": stats, "dt": dt}
 
-        codec = options.get("format")
-        if codec == "text":
-            print(date)
-            print("-------------")
-            for each in stats.keys():
-                print("{}: {}".format(each, stats[each]))
-
-        elif codec == "json":
-            print(json.dumps({date: stats}))
-
-        else:
-            raise Exception("unknown format {}".format(codec))

@@ -926,8 +926,10 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
                                                     opts.model_name))
 
     def vq_approve(self, request, queryset):
-        for each in queryset:
-            each.approve()
+        with reversion.create_revision():
+            reversion.set_user(request.user)
+            for each in queryset:
+                each.approve()
 
     vq_approve.short_description = _("APPROVE selected items")
 
