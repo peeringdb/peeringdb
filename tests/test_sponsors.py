@@ -29,23 +29,62 @@ class ViewTestCase(TestCase):
         guest_group.user_set.add(cls.guest_user)
 
         # create organizations
-        cls.organizations = dict((k,
+
+        cls.organizations = dict(("{}".format(k),
                                   models.Organization.objects.create(
                                       name="Sponsor Org %s" % k, status="ok"))
-                                 for k in ["a", "b", "c", "d"])
+                                 for k in range(1,7))
 
         # create sponsorships
+
         cls.sponsorships = {
-            "a": models.Sponsorship.objects.create(
-                org=cls.organizations.get("a"), logo="fake.png",
-                url="org-a.com", level=1),
-            "b": models.Sponsorship.objects.create(
-                org=cls.organizations.get("b"), logo="fake.png", level=1),
-            "c": models.Sponsorship.objects.create(
-                org=cls.organizations.get("c"), logo="fake.png", level=2),
-            "d": models.Sponsorship.objects.create(
-                org=cls.organizations.get("d"), level=1)
+            "1": models.Sponsorship.objects.create(level=1),
+            "2": models.Sponsorship.objects.create(level=1),
+            "3": models.Sponsorship.objects.create(level=2),
+            "4": models.Sponsorship.objects.create(level=1),
+            "5_and_6": models.Sponsorship.objects.create(level=3)
         }
+
+        # org sponsorship with logo and url set lvl1
+
+        models.SponsorshipOrganization.objects.create(sponsorship=cls.sponsorships["1"],
+                                               org=cls.organizations["1"],
+                                               logo="fake.png",
+                                               url="org-1.com",)
+
+        # org sponsorship with logo set lvl1
+
+        models.SponsorshipOrganization.objects.create(sponsorship=cls.sponsorships["2"],
+                                               org=cls.organizations["2"],
+                                               logo="fake.png",)
+
+
+        # org sponsorship with logo set lvl2
+
+        models.SponsorshipOrganization.objects.create(sponsorship=cls.sponsorships["3"],
+                                               org=cls.organizations["3"],
+                                               logo="fake.png",)
+
+
+        # org sponsorship without logo or url set lvl1
+
+        models.SponsorshipOrganization.objects.create(sponsorship=cls.sponsorships["4"],
+                                               org=cls.organizations["4"],)
+
+
+       # two orgs in one sponsorship
+
+        models.SponsorshipOrganization.objects.create(sponsorship=cls.sponsorships["5_and_6"],
+                                               org=cls.organizations["5"],
+                                               logo="fake.png",
+                                               url="org-5.com",)
+
+
+        models.SponsorshipOrganization.objects.create(sponsorship=cls.sponsorships["5_and_6"],
+                                               org=cls.organizations["6"],
+                                               logo="fake.png",
+                                               url="org-6.com",)
+
 
     def setUp(self):
         self.factory = RequestFactory()
@@ -54,8 +93,7 @@ class ViewTestCase(TestCase):
         c = Client()
         resp = c.get("/data/sponsors", follow=True)
         self.assertEqual(resp.status_code, 200)
-
-        expected = {u'sponsors': {u'1': {u'id': 1, u'name': u'silver'}, u'3': {u'id': 3, u'name': u'gold'}, u'2': {u'id': 2, u'name': u'silver'}, u'4': {u'id': 4, u'name': u'silver'}}}
+        expected = {u'sponsors': {u'1': {u'id': 1, u'name': u'silver'}, u'3': {u'id': 3, u'name': u'gold'}, u'2': {u'id': 2, u'name': u'silver'}, u'5': {u'id': 5, u'name': u'platinum'}, u'4': {u'id': 4, u'name': u'silver'}, u'6': {u'id': 6, u'name': u'platinum'}}}
         self.assertEqual(resp.json(), expected)
 
     def test_view(self):
@@ -64,12 +102,14 @@ class ViewTestCase(TestCase):
         self.assertEqual(resp.status_code, 200)
 
         #make sure org a,b and c exist in the sponsors page
-        self.assertGreater(resp.content.find(self.organizations["a"].name), -1)
-        self.assertGreater(resp.content.find(self.organizations["b"].name), -1)
-        self.assertGreater(resp.content.find(self.organizations["c"].name), -1)
+        self.assertGreater(resp.content.find(self.organizations["1"].name), -1)
+        self.assertGreater(resp.content.find(self.organizations["2"].name), -1)
+        self.assertGreater(resp.content.find(self.organizations["3"].name), -1)
+        self.assertGreater(resp.content.find(self.organizations["5"].name), -1)
+        self.assertGreater(resp.content.find(self.organizations["6"].name), -1)
 
         #make sure org d does not exist in the sponsors page
-        self.assertEqual(resp.content.find(self.organizations["d"].name), -1)
+        self.assertEqual(resp.content.find(self.organizations["4"].name), -1)
 
         #makre sure order is randomized with each view
         i = 0

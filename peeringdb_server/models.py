@@ -373,6 +373,7 @@ class VerificationQueueItem(models.Model):
 
     class Meta(object):
         db_table = "peeringdb_verification_queue"
+        unique_together = (("content_type", "object_id"),)
 
     @classmethod
     def get_for_entity(cls, entity):
@@ -638,7 +639,7 @@ class Organization(pdb_models.OrganizationBase):
         has no sponsorship ongoing return None
         """
         now = datetime.datetime.now().replace(tzinfo=UTC())
-        return self.sponsorships.filter(
+        return self.sponsorship_set.filter(
             start_date__lte=now,
             end_date__gte=now).order_by("-start_date").first()
 
@@ -680,7 +681,7 @@ class Sponsorship(models.Model):
     for a designated timespan
     """
 
-    org = models.ForeignKey(Organization, related_name="sponsorships")
+    orgs = models.ManyToManyField(Organization, through="peeringdb_server.SponsorshipOrganization", related_name="sponsorship_set")
     start_date = models.DateTimeField(
         _("Sponsorship starts on"), default=default_time_s)
     end_date = models.DateTimeField(
@@ -688,20 +689,25 @@ class Sponsorship(models.Model):
     notify_date = models.DateTimeField(
         _("Expiration notification sent on"), null=True, blank=True)
     level = models.PositiveIntegerField(choices=SPONSORSHIP_LEVELS, default=1)
-    url = models.URLField(
-        _("URL"), help_text=
-        _("If specified clicking the sponsorship will take the user to this location"
-          ), blank=True, null=True)
-
-    logo = models.FileField(
-        upload_to="logos/", null=True, blank=True, help_text=
-        _("Allows you to upload and set a logo image file for this sponsorship"
-          ))
 
     class Meta:
         db_table = "peeringdb_sponsorship"
         verbose_name = _("Sponsorship")
         verbose_name_plural = _("Sponsorships")
+
+    @classmethod
+    def active_by_org(cls):
+        """
+        Yields (Organization, Sponsorship) for all currently
+        active sponsorships
+        """
+        now = datetime.datetime.now().replace(tzinfo=UTC())
+        qset = cls.objects.filter(start_date__lte=now, end_date__gte=now)
+        qset = qset.prefetch_related("sponsorshiporg_set")
+        for sponsorship in qset:
+            for org in sponsorship.orgs.all():
+                yield org, sponsorship
+
 
     @property
     def label(self):
@@ -724,8 +730,10 @@ class Sponsorship(models.Model):
                 "instance": self
             })
 
+        org_names = ", ".join([org.name for org in self.orgs.all()])
+
         mail = EmailMultiAlternatives((u'{}: {}').format(
-            _("Sponsorship Expired"), self.org.name), msg,
+            _("Sponsorship Expired"), org_names), msg,
                                       settings.DEFAULT_FROM_EMAIL,
                                       [settings.SPONSORSHIPS_EMAIL])
         mail.attach_alternative(msg.replace("\n", "<br />\n"), "text/html")
@@ -735,6 +743,23 @@ class Sponsorship(models.Model):
         self.save()
 
         return True
+
+
+class SponsorshipOrganization(models.Model):
+    """
+    Describes an organization->sponsorship relationship
+    """
+    org = models.ForeignKey(Organization, related_name="sponsorshiporg_set")
+    sponsorship = models.ForeignKey(Sponsorship, related_name="sponsorshiporg_set")
+    url = models.URLField(
+        _("URL"), help_text=
+        _("If specified clicking the sponsorship will take the user to this location"
+          ), blank=True, null=True)
+
+    logo = models.FileField(
+        upload_to="logos/", null=True, blank=True, help_text=
+        _("Allows you to upload and set a logo image file for this sponsorship"
+          ))
 
 
 class Partnership(models.Model):

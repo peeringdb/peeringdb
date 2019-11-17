@@ -53,10 +53,11 @@ class SearchTests(TestCase):
         # accordingly
         cls.org_w_sponsorship = models.Organization.objects.create(name="Sponsor org", status="ok")
         cls.sponsorship = models.Sponsorship.objects.create(
-            org=cls.org_w_sponsorship,
             start_date=datetime.datetime.now() - datetime.timedelta(days=1),
             end_date=datetime.datetime.now() + datetime.timedelta(days=1),
             level=1);
+        models.SponsorshipOrganization.objects.create(org=cls.org_w_sponsorship,
+                                                      sponsorship=cls.sponsorship)
 
         for model in search.searchable_models:
             if model.handleref.tag == "net":

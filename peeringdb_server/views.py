@@ -1462,8 +1462,7 @@ def view_sponsorships(request):
     template = loader.get_template("site/sponsorships.html")
     now = datetime.datetime.now().replace(tzinfo=UTC())
 
-    qset = Sponsorship.objects.filter(start_date__lte=now, end_date__gte=now,
-                                      logo__isnull=False)
+    qset = Sponsorship.objects.filter(start_date__lte=now, end_date__gte=now)
 
     sponsorships = {
         "diamond": qset.filter(level=4),
@@ -1563,12 +1562,7 @@ def request_search(request):
 
     result = search(q)
 
-    now = datetime.datetime.now().replace(tzinfo=UTC())
-
-    sponsors = dict([(s.org_id, s.label)
-                     for s in
-                     Sponsorship.objects.filter(start_date__lte=now,
-                                                end_date__gte=now)])
+    sponsors = dict([(org.id, sponsorship.label.lower()) for org, sponsorship in Sponsorship.active_by_org()])
 
     for tag, rows in result.items():
         for item in rows:
