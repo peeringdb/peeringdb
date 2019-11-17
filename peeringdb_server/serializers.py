@@ -1385,6 +1385,14 @@ class NetworkSerializer(ModelSerializer):
         # this happens here so it is done before the validators run
         if "suggest" in data:
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
+
+        # if an asn exists already but is currently deleted, fail
+        # with a specific error message indicating it (#288)
+
+        if Network.objects.filter(asn=data.get("asn"), status="deleted").exists():
+            errmsg = _("Network has been deleted. Please contact {}").format(settings.DEFAULT_FROM_EMAIL)
+            raise RestValidationError({"asn":errmsg})
+
         return super(NetworkSerializer, self).to_internal_value(data)
 
     def has_create_perms(self, user, data):
@@ -1444,6 +1452,7 @@ class NetworkSerializer(ModelSerializer):
         rdap_error = getattr(request, "rdap_error", None)
         if rdap_error:
             ticket_queue_rdap_error(*rdap_error)
+
 
 
 class IXLanPrefixSerializer(ModelSerializer):
