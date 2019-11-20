@@ -624,7 +624,7 @@ class IXLanIXFMemberImportLogAdmin(admin.ModelAdmin):
 
 class SponsorshipOrganizationInline(admin.TabularInline):
     model = SponsorshipOrganization
-    extra = 0
+    extra = 1
     raw_id_fields = ('org',)
     autocomplete_lookup_fields = {
         'fk': ['org'],
@@ -648,9 +648,9 @@ class SponsorshipAdmin(admin.ModelAdmin):
 
         if obj.start_date <= now and obj.end_date >= now:
             for row in obj.sponsorshiporg_set.all():
-                if not row.logo:
-                    return _("Logo Missing")
-            return _("Active")
+                if row.logo:
+                    return _("Active")
+            return _("Logo Missing")
         elif now > obj.end_date:
             return _("Over")
         else:
@@ -661,6 +661,8 @@ class SponsorshipAdmin(admin.ModelAdmin):
 
     def organizations(self, obj):
         qset = obj.orgs.all().order_by("name")
+        if not qset.count():
+            return _("No organization(s) set")
         return "<br>\n".join([html.escape(org.name) for org in qset])
 
     organizations.allow_tags = True
