@@ -1,11 +1,10 @@
-from util import ClientCase, Group
-
 from django.core.management import call_command
 from django.contrib.auth import get_user_model
 from django.conf import settings
 
-from peeringdb_server.models import REFTAG_MAP
+from peeringdb_server.models import REFTAG_MAP, UTC
 
+from .util import ClientCase, Group
 
 class TestWipe(ClientCase):
     @classmethod
@@ -42,3 +41,25 @@ class TestWipe(ClientCase):
         # only the superuser should be left
         assert get_user_model().objects.all().count() == 1
         assert get_user_model().objects.first().is_superuser == True
+
+    def test_run_with_sync(self):
+        """
+        Test running `pdb_wipe` and sync data from
+        test.peeringdb.com
+        """
+
+        dates = {}
+
+        for reftag, cls in REFTAG_MAP.items():
+            assert cls.objects.all().count() > 1
+            dates[reftag] = cls.objects.all().first().created.replace(tzinfo=UTC())
+
+        settings.TUTORIAL_MODE = True
+        call_command("pdb_wipe", commit=True, load_data=True,
+                     load_data_url="https://test.peeringdb.com/api")
+        settings.TUTORIAL_MODE = False
+
+        for reftag, cls in REFTAG_MAP.items():
+            created = cls.objects.all().first().created.replace(tzinfo=UTC())
+            assert created != dates[reftag]
+            assert cls.objects.all().count() > 1

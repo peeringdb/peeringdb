@@ -124,6 +124,10 @@ install:
     - $SRC_DIR$/peeringdb_server/maintenance.py
     - $SRC_DIR$/peeringdb_server/import_views.py
     - $SRC_DIR$/peeringdb_server/ixf.py
+    - $SRC_DIR$/peeringdb_server/client_adaptor/load.py
+    - $SRC_DIR$/peeringdb_server/client_adaptor/backend.py
+    - $SRC_DIR$/peeringdb_server/client_adaptor/__init__.py
+    - $SRC_DIR$/peeringdb_server/client_adaptor/setup.py
     - $SRC_DIR$/peeringdb_server/management/__init__.py
     - $SRC_DIR$/peeringdb_server/management/commands/__init__.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_deskpro_publish.py

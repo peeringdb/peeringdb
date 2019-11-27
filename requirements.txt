@@ -46,6 +46,6 @@ django-handleref==0.4.1
 django-namespace-perms==0.5.0
 #FIXME: should change from pip once 0.6.0 is tagged and released
 django-peeringdb==1.0.0
-peeringdb==0.5.1
+peeringdb==1.0.0
 rdap==0.2.0
 twentyc.rpc>=0.3.5,<0.5
