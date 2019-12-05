@@ -8,20 +8,11 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0020_sponsorship_multi_org'),
+        ("peeringdb_server", "0020_sponsorship_multi_org"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='sponsorship',
-            name='logo',
-        ),
-        migrations.RemoveField(
-            model_name='sponsorship',
-            name='org',
-        ),
-        migrations.RemoveField(
-            model_name='sponsorship',
-            name='url',
-        ),
+        migrations.RemoveField(model_name="sponsorship", name="logo",),
+        migrations.RemoveField(model_name="sponsorship", name="org",),
+        migrations.RemoveField(model_name="sponsorship", name="url",),
     ]

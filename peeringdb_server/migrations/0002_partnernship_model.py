@@ -9,39 +9,60 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0001_initial'),
+        ("peeringdb_server", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Partnership',
+            name="Partnership",
             fields=[
-                ('id',
-                 models.AutoField(auto_created=True, primary_key=True,
-                                  serialize=False, verbose_name='ID')),
-                ('level',
-                 models.PositiveIntegerField(
-                     choices=[(1, 'Data Validation Partner'),
-                              (2, 'RIR Partner')], default=1)),
-                ('url',
-                 models.URLField(
-                     blank=True, help_text=
-                     'If specified clicking the partnership will take the user to this location',
-                     null=True, verbose_name='URL')),
-                ('logo',
-                 models.FileField(
-                     blank=True, help_text=
-                     b'Allows you to upload and set a logo image file for this partnership',
-                     null=True, upload_to=b'logos/')),
-                ('org',
-                 models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
-                                   related_name='partnerships',
-                                   to='peeringdb_server.Organization')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "level",
+                    models.PositiveIntegerField(
+                        choices=[(1, "Data Validation Partner"), (2, "RIR Partner")],
+                        default=1,
+                    ),
+                ),
+                (
+                    "url",
+                    models.URLField(
+                        blank=True,
+                        help_text="If specified clicking the partnership will take the user to this location",
+                        null=True,
+                        verbose_name="URL",
+                    ),
+                ),
+                (
+                    "logo",
+                    models.FileField(
+                        blank=True,
+                        help_text=b"Allows you to upload and set a logo image file for this partnership",
+                        null=True,
+                        upload_to=b"logos/",
+                    ),
+                ),
+                (
+                    "org",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="partnerships",
+                        to="peeringdb_server.Organization",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'peeringdb_partnership',
-                'verbose_name': 'Partnership',
-                'verbose_name_plural': 'Partnerships',
+                "db_table": "peeringdb_partnership",
+                "verbose_name": "Partnership",
+                "verbose_name_plural": "Partnerships",
             },
         ),
     ]

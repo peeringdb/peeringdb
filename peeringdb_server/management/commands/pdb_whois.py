@@ -13,14 +13,14 @@ from django_handleref import util
 
 
 class Command(DBCommand):
-    args = '<customer id>'
-    help = 'command line whois'
+    args = "<customer id>"
+    help = "command line whois"
 
     def add_arguments(self, parser):
         parser.add_argument("ref", nargs="?", type=str)
 
     def handle(self, *args, **options):
-        log = logging.getLogger('pdb.script.whois')
+        log = logging.getLogger("pdb.script.whois")
 
         # FIXME - ignore multiple args for now
         args = options.get("ref")
@@ -31,7 +31,7 @@ class Command(DBCommand):
             log.error("Unknown query type '%s'" % (args))
             return
             # TODO
-            raise CommandError('unk query')
+            raise CommandError("unk query")
 
         model = None
 
@@ -40,26 +40,23 @@ class Command(DBCommand):
         if ref_tag in models.REFTAG_MAP:
             model = models.REFTAG_MAP[ref_tag]
             Serializer = serializers.REFTAG_MAP[ref_tag]
-            obj = Serializer.prefetch_related(model.objects, None,
-                                              depth=2).get(pk=pk)
+            obj = Serializer.prefetch_related(model.objects, None, depth=2).get(pk=pk)
 
-        elif ref_tag == 'as':
-            model = models.REFTAG_MAP['net']
-            Serializer = serializers.REFTAG_MAP['net']
-            obj = Serializer.prefetch_related(model.objects, None,
-                                              depth=2).get(asn=pk)
+        elif ref_tag == "as":
+            model = models.REFTAG_MAP["net"]
+            Serializer = serializers.REFTAG_MAP["net"]
+            obj = Serializer.prefetch_related(model.objects, None, depth=2).get(asn=pk)
 
+        #            data = cls(obj).data
 
-#            data = cls(obj).data
-
-# TODO doesn't work on client
-# elif ref_tag == 'ixnets':
+        # TODO doesn't work on client
+        # elif ref_tag == 'ixnets':
 
         if not model:
             msg = "Unknown ref tag: {}".format(ref_tag)
             log.error("Unknown ref tag: %s" % ref_tag)
             raise ValueError(msg)
 
-        data = Serializer(obj, context={"user":AnonymousUser()}).data
+        data = Serializer(obj, context={"user": AnonymousUser()}).data
         fmt = WhoisFormat()
-        fmt. print(obj._handleref.tag, data)
+        fmt.print(obj._handleref.tag, data)

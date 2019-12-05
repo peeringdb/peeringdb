@@ -20,18 +20,20 @@ from peeringdb_server.models import (
 
 class Importer(object):
 
-    allowed_member_types = ["peering",
-                            "ixp",
-                            "routeserver",
-                            "probono",
-                            ]
-    allowed_states = ["",
-                      None,
-                      "active",
-                      "inactive",
-                      "connected",
-                      "operational",
-                      ]
+    allowed_member_types = [
+        "peering",
+        "ixp",
+        "routeserver",
+        "probono",
+    ]
+    allowed_states = [
+        "",
+        None,
+        "active",
+        "inactive",
+        "connected",
+        "operational",
+    ]
 
     def __init__(self):
         self.cache_only = False
@@ -101,7 +103,6 @@ class Importer(object):
 
         return "IXF-CACHE-{}".format(url)
 
-
     def fetch_cached(self, url):
         """
         Returns locally cached IX-F data
@@ -117,10 +118,11 @@ class Importer(object):
         data = cache.get(self.cache_key(url))
 
         if data is None:
-            return {"pdb_error": _("IX-F data not locally cached for this resource yet.")}
+            return {
+                "pdb_error": _("IX-F data not locally cached for this resource yet.")
+            }
 
         return data
-
 
     def sanitize(self, data):
         """
@@ -171,7 +173,6 @@ class Importer(object):
 
         self.reset(ixlan=ixlan, save=save, asn=asn)
 
-
         # if data is not provided, retrieve it either from cache or
         # from the remote resource
         if data is None:
@@ -199,8 +200,7 @@ class Importer(object):
         except KeyError as exc:
             # any key erros mean that the data is invalid, log the error and
             # bail (transactions are atomic and will be rolled back)
-            self.log_error("Internal Error 'KeyError': {}".format(exc),
-                           save=save)
+            self.log_error("Internal Error 'KeyError': {}".format(exc), save=save)
             return (False, self.netixlans, [], self.log)
 
         # process any netixlans that need to be deleted
@@ -239,28 +239,41 @@ class Importer(object):
             ipv6 = "{}-{}".format(netixlan.asn, netixlan.ipaddr6)
 
             if netixlan.asn not in self.asns:
-                self.log_peer(netixlan.asn, "delete",
-                              _("ASN no longer in data"), netixlan)
+                self.log_peer(
+                    netixlan.asn, "delete", _("ASN no longer in data"), netixlan
+                )
                 self.netixlans_deleted.append(netixlan)
                 if self.save:
                     netixlan.delete()
             elif ipv4 not in self.ipaddresses and ipv6 not in self.ipaddresses:
-                self.log_peer(netixlan.asn, "delete",
-                              _("Ip addresses no longer exist in validated data or are "\
-                                "no longer with this asn"), netixlan)
+                self.log_peer(
+                    netixlan.asn,
+                    "delete",
+                    _(
+                        "Ip addresses no longer exist in validated data or are "
+                        "no longer with this asn"
+                    ),
+                    netixlan,
+                )
                 self.netixlans_deleted.append(netixlan)
                 if self.save:
                     netixlan.delete()
-            elif (netixlan.ipaddr4 and ipv4 not in self.ipaddresses) or \
-                 (netixlan.ipaddr6 and ipv6 not in self.ipaddresses):
+            elif (netixlan.ipaddr4 and ipv4 not in self.ipaddresses) or (
+                netixlan.ipaddr6 and ipv6 not in self.ipaddresses
+            ):
                 if not netixlan.network.allow_ixp_update:
-                    self.log_peer(netixlan.asn, "delete",
-                                  _("At least one ipaddress mismatched and "\
-                                    "network has disabled updates"), netixlan)
+                    self.log_peer(
+                        netixlan.asn,
+                        "delete",
+                        _(
+                            "At least one ipaddress mismatched and "
+                            "network has disabled updates"
+                        ),
+                        netixlan,
+                    )
                     self.netixlans_deleted.append(netixlan)
                     if self.save:
                         netixlan.delete()
-
 
     @transaction.atomic()
     def archive(self):
@@ -269,22 +282,22 @@ class Importer(object):
         """
 
         if self.save and (self.netixlans or self.netixlans_deleted):
-            persist_log = IXLanIXFMemberImportLog.objects.create(
-                ixlan=self.ixlan)
+            persist_log = IXLanIXFMemberImportLog.objects.create(ixlan=self.ixlan)
             for netixlan in self.netixlans + self.netixlans_deleted:
-                versions = reversion.models.Version.objects.get_for_object(
-                    netixlan)
+                versions = reversion.models.Version.objects.get_for_object(netixlan)
                 if len(versions) == 1:
                     version_before = None
                 else:
                     version_before = versions[1]
                 version_after = versions[0]
                 info = self.archive_info.get(netixlan.id, {})
-                persist_log.entries.create(netixlan=netixlan,
-                                           version_before=version_before,
-                                           action=info.get("action"),
-                                           reason=info.get("reason"),
-                                           version_after=version_after)
+                persist_log.entries.create(
+                    netixlan=netixlan,
+                    version_before=version_before,
+                    action=info.get("action"),
+                    reason=info.get("reason"),
+                    version_after=version_after,
+                )
 
     def parse(self, data):
         """
@@ -323,18 +336,23 @@ class Importer(object):
                     network = Network.objects.get(asn=asn)
                     if network.status != "ok":
                         self.log_peer(
-                            asn, "ignore",
-                            _("Network status is '{}'").format(network.status))
+                            asn,
+                            "ignore",
+                            _("Network status is '{}'").format(network.status),
+                        )
                         continue
 
                     self.parse_connections(
-                        member.get("connection_list", []), network, member)
+                        member.get("connection_list", []), network, member
+                    )
                 else:
-                    self.log_peer(asn, "ignore",
-                                  _("Network does not exist in peeringdb"))
+                    self.log_peer(
+                        asn, "ignore", _("Network does not exist in peeringdb")
+                    )
             else:
-                self.log_peer(asn, "ignore",
-                              _("Invalid member type: {}").format(member_type))
+                self.log_peer(
+                    asn, "ignore", _("Invalid member type: {}").format(member_type)
+                )
 
     def parse_connections(self, connection_list, network, member):
         """
@@ -354,11 +372,12 @@ class Importer(object):
                 speed = self.parse_speed(connection.get("if_list", []))
 
                 self.parse_vlans(
-                    connection.get("vlan_list", []), network, member,
-                    connection, speed)
+                    connection.get("vlan_list", []), network, member, connection, speed
+                )
             else:
-                self.log_peer(asn, "ignore",
-                              _("Invalid connection state: {}").format(state))
+                self.log_peer(
+                    asn, "ignore", _("Invalid connection state: {}").format(state)
+                )
 
     def parse_vlans(self, vlan_list, network, member, connection, speed):
         """
@@ -382,9 +401,12 @@ class Importer(object):
 
             # vlan entry has no ipaddresses set, log and ignore
             if not ipv4 and not ipv6:
-                self.log_error(_("Could not find ipv4 or 6 address in " \
-                              "vlan_list entry for vlan_id {} (AS{})").format(
-                              lan.get("vlan_id"), asn))
+                self.log_error(
+                    _(
+                        "Could not find ipv4 or 6 address in "
+                        "vlan_list entry for vlan_id {} (AS{})"
+                    ).format(lan.get("vlan_id"), asn)
+                )
                 continue
 
             ipv4_addr = ipv4.get("address")
@@ -396,56 +418,64 @@ class Importer(object):
             # dropped during `process_deletions`
             try:
                 if ipv4_addr:
-                    self.ipaddresses.append("{}-{}".format(
-                        asn, ipaddress.ip_address(unicode(ipv4_addr))))
+                    self.ipaddresses.append(
+                        "{}-{}".format(asn, ipaddress.ip_address(unicode(ipv4_addr)))
+                    )
                 if ipv6_addr:
-                    self.ipaddresses.append("{}-{}".format(
-                        asn, ipaddress.ip_address(unicode(ipv6_addr))))
+                    self.ipaddresses.append(
+                        "{}-{}".format(asn, ipaddress.ip_address(unicode(ipv6_addr)))
+                    )
             except (ipaddress.AddressValueError, ValueError) as exc:
                 self.log_error(
-                    _("Ip address error '{}' in vlan_list entry for vlan_id {}"
-                      ).format(exc, lan.get("vlan_id")))
+                    _("Ip address error '{}' in vlan_list entry for vlan_id {}").format(
+                        exc, lan.get("vlan_id")
+                    )
+                )
                 continue
 
             netixlan_info = NetworkIXLan(
-                    ixlan=self.ixlan,
-                    network=network,
-                    ipaddr4=ipv4_addr,
-                    ipaddr6=ipv6_addr,
-                    speed=speed,
-                    asn=asn,
-                    is_rs_peer=(ipv4.get("routeserver", False) or \
-                        ipv6.get("routeserver", False))
+                ixlan=self.ixlan,
+                network=network,
+                ipaddr4=ipv4_addr,
+                ipaddr6=ipv6_addr,
+                speed=speed,
+                asn=asn,
+                is_rs_peer=(
+                    ipv4.get("routeserver", False) or ipv6.get("routeserver", False)
+                ),
             )
 
-            if not self.save and (not self.ixlan.test_ipv4_address(ipv4_addr) and not \
-                self.ixlan.test_ipv6_address(ipv6_addr)):
-                #for the preview we don't care at all about new ip addresses
-                #not at the ixlan if they dont match the prefix
+            if not self.save and (
+                not self.ixlan.test_ipv4_address(ipv4_addr)
+                and not self.ixlan.test_ipv6_address(ipv6_addr)
+            ):
+                # for the preview we don't care at all about new ip addresses
+                # not at the ixlan if they dont match the prefix
                 continue
-
 
             # if connection state is inactive we won't create or update
             if connection.get("state", "active") == "inactive":
-                self.log_peer(asn, "noop",
-                              _("Connection is currently marked as inactive"),
-                              netixlan_info)
+                self.log_peer(
+                    asn,
+                    "noop",
+                    _("Connection is currently marked as inactive"),
+                    netixlan_info,
+                )
                 continue
-
 
             # after this point we either add or modify the netixlan, so
             # now is a good time to check if the related network allows
             # such updates, bail if not
             if not network.allow_ixp_update:
-                self.log_peer(asn, "noop",
-                              _("Network has disabled ixp updates"),
-                              netixlan_info)
+                self.log_peer(
+                    asn, "noop", _("Network has disabled ixp updates"), netixlan_info
+                )
                 continue
 
-
             # add / modify the netixlan
-            result = self.ixlan.add_netixlan(netixlan_info, save=self.save,
-                                             save_others=self.save)
+            result = self.ixlan.add_netixlan(
+                netixlan_info, save=self.save, save_others=self.save
+            )
 
             if result["netixlan"] and result["changed"]:
                 self.netixlans.append(result["netixlan"])
@@ -455,14 +485,14 @@ class Importer(object):
                 else:
                     action = "modify"
                     reason = _("Fields changed: {}").format(
-                        ", ".join(result.get("changed")))
+                        ", ".join(result.get("changed"))
+                    )
 
                 self.log_peer(asn, action, reason, result["netixlan"])
             elif result["netixlan"]:
                 self.log_peer(asn, "noop", _("No changes"), result["netixlan"])
             elif result["log"]:
-                self.log_peer(asn, "ignore", "\n".join(result["log"]),
-                              netixlan_info)
+                self.log_peer(asn, "ignore", "\n".join(result["log"]), netixlan_info)
 
     def parse_speed(self, if_list):
         """
@@ -480,7 +510,8 @@ class Importer(object):
                 speed += int(iface.get("if_speed", 0))
             except ValueError:
                 self.log_error(
-                    _("Invalid speed value: {}").format(iface.get("if_speed")))
+                    _("Invalid speed value: {}").format(iface.get("if_speed"))
+                )
         return speed
 
     def save_log(self):
@@ -488,8 +519,8 @@ class Importer(object):
         Save the attempt log
         """
         IXLanIXFMemberImportAttempt.objects.update_or_create(
-            ixlan=self.ixlan,
-            defaults={"info": "\n".join(json.dumps(self.log))})
+            ixlan=self.ixlan, defaults={"info": "\n".join(json.dumps(self.log))}
+        )
 
     def reset_log(self):
         """
@@ -518,26 +549,25 @@ class Importer(object):
         }
 
         if netixlan:
-            peer.update({
-                "net_id": netixlan.network_id,
-                "ipaddr4": u"{}".format(netixlan.ipaddr4 or ""),
-                "ipaddr6": u"{}".format(netixlan.ipaddr6 or ""),
-                "speed": netixlan.speed,
-                "is_rs_peer": netixlan.is_rs_peer,
-            })
+            peer.update(
+                {
+                    "net_id": netixlan.network_id,
+                    "ipaddr4": u"{}".format(netixlan.ipaddr4 or ""),
+                    "ipaddr6": u"{}".format(netixlan.ipaddr6 or ""),
+                    "speed": netixlan.speed,
+                    "is_rs_peer": netixlan.is_rs_peer,
+                }
+            )
 
             if netixlan.id:
-                self.archive_info[netixlan.id] = {"action":action, "reason":u"{}".format(reason)}
+                self.archive_info[netixlan.id] = {
+                    "action": action,
+                    "reason": u"{}".format(reason),
+                }
 
-        self.log["data"].append({
-            "peer": peer,
-            "action": action,
-            "reason": u"{}".format(reason),
-        })
-
-
-
-
+        self.log["data"].append(
+            {"peer": peer, "action": action, "reason": u"{}".format(reason),}
+        )
 
     def log_error(self, error, save=False):
         """
@@ -546,7 +576,6 @@ class Importer(object):
         self.log["errors"].append(u"{}".format(error))
         if save:
             self.save_log()
-
 
 
 class PostMortem(object):
@@ -574,7 +603,7 @@ class PostMortem(object):
 
         self.asn = asn
         self.limit = kwargs.get("limit", 100)
-        self.post_mortem =[]
+        self.post_mortem = []
 
     def generate(self, asn, **kwargs):
         """
@@ -599,7 +628,6 @@ class PostMortem(object):
         self._process_logs(limit=self.limit)
         return self.post_mortem
 
-
     def _process_logs(self, limit=100):
 
         """
@@ -617,11 +645,10 @@ class PostMortem(object):
         qset = IXLanIXFMemberImportLogEntry.objects.filter(netixlan__asn=self.asn)
         qset = qset.exclude(action__isnull=True)
         qset = qset.order_by("-log__created")
-        qset = qset.select_related("log","netixlan","log__ixlan","log__ixlan__ix")
+        qset = qset.select_related("log", "netixlan", "log__ixlan", "log__ixlan__ix")
 
         for entry in qset[:limit]:
             self._process_log_entry(entry.log, entry)
-
 
     def _process_log_entry(self, log, entry):
 
@@ -652,19 +679,19 @@ class PostMortem(object):
         else:
             ipaddr6 = None
 
-
-        self.post_mortem.append({
-            "ix_id": log.ixlan.ix.id,
-            "ix_name": log.ixlan.ix.name,
-            "ixlan_id": log.ixlan.id,
-            "changes": entry.changes,
-            "reason": entry.reason,
-            "action": entry.action,
-            "asn": data.get("asn"),
-            "ipaddr4": ipaddr4,
-            "ipaddr6": ipaddr6,
-            "speed": data.get("speed"),
-            "is_rs_peer": data.get("is_rs_peer"),
-            "created": log.created.strftime("%Y-%m-%d %H:%M:%S"),
-            })
-
+        self.post_mortem.append(
+            {
+                "ix_id": log.ixlan.ix.id,
+                "ix_name": log.ixlan.ix.name,
+                "ixlan_id": log.ixlan.id,
+                "changes": entry.changes,
+                "reason": entry.reason,
+                "action": entry.action,
+                "asn": data.get("asn"),
+                "ipaddr4": ipaddr4,
+                "ipaddr6": ipaddr6,
+                "speed": data.get("speed"),
+                "is_rs_peer": data.get("is_rs_peer"),
+                "created": log.created.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        )

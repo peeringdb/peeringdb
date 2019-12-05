@@ -27,19 +27,26 @@ class OrgAdminTests(TestCase):
 
         # create test users
         for name in [
-                "org_admin", "user_a", "user_b", "user_c", "user_d", "user_e",
-                "user_f"
+            "org_admin",
+            "user_a",
+            "user_b",
+            "user_c",
+            "user_d",
+            "user_e",
+            "user_f",
         ]:
-            setattr(cls, name,
-                    models.User.objects.create_user(
-                        name, "%s@localhost" % name, name))
+            setattr(
+                cls,
+                name,
+                models.User.objects.create_user(name, "%s@localhost" % name, name),
+            )
             getattr(cls, name).set_password(name)
 
         # create test org
-        cls.org = models.Organization.objects.create(name="Test org",
-                                                     status="ok")
+        cls.org = models.Organization.objects.create(name="Test org", status="ok")
         cls.org_other = models.Organization.objects.create(
-            name="Test org other", status="ok")
+            name="Test org other", status="ok"
+        )
 
         # create test entities
         for tag in cls.entities:
@@ -64,23 +71,26 @@ class OrgAdminTests(TestCase):
         """
         # test #1 - return a json response with the user we added to the org's member
         # usergroup
-        request = self.factory.get(
-            "/org-admin/users?org_id=%d" % (self.org.id))
+        request = self.factory.get("/org-admin/users?org_id=%d" % (self.org.id))
         request.user = self.org_admin
 
         resp = json.loads(org_admin.users(request).content)
 
         self.assertEqual(resp["status"], "ok")
-        self.assertEqual(resp["users"], [{
-            "id": self.user_a.id,
-            "name": "%s <%s, %s>" % (self.user_a.full_name, self.user_a.email,
-                                     self.user_a.username)
-        }])
+        self.assertEqual(
+            resp["users"],
+            [
+                {
+                    "id": self.user_a.id,
+                    "name": "%s <%s, %s>"
+                    % (self.user_a.full_name, self.user_a.email, self.user_a.username),
+                }
+            ],
+        )
 
         # test #2 - return 403 response when trying to access the org where org_admin
         # is not administrator
-        request = self.factory.get(
-            "/org-admin/users?org_id=%d" % (self.org_other.id))
+        request = self.factory.get("/org-admin/users?org_id=%d" % (self.org_other.id))
         request.user = self.org_admin
 
         resp = org_admin.users(request)
@@ -95,19 +105,14 @@ class OrgAdminTests(TestCase):
         uid = self.user_a.id
         perms = {
             uid: {
-                "perms": {
-                    "net.%d" % self.net.id: 0x01,
-                    "fac": 0x03
-                },
+                "perms": {"net.%d" % self.net.id: 0x01, "fac": 0x03},
                 "id": self.user_a.id,
-                "name": "%s <%s> %s" %
-                        (self.user_a.full_name, self.user_a.email,
-                         self.user_a.username)
+                "name": "%s <%s> %s"
+                % (self.user_a.full_name, self.user_a.email, self.user_a.username),
             }
         }
 
-        org_admin.save_user_permissions(self.org, self.user_a,
-                                        perms[uid]["perms"])
+        org_admin.save_user_permissions(self.org, self.user_a, perms[uid]["perms"])
 
         perms_all = org_admin.load_all_user_permissions(self.org)
 
@@ -121,11 +126,12 @@ class OrgAdminTests(TestCase):
 
         # Test #1 - test updating a user a's permission to the org
         url = "/org-admin/user_permissions/update?org_id=%d&user_id=%d" % (
-            self.org.id, self.user_a.id)
-        request = self.factory.post(url, data={
-            "entity": "net.%d" % self.net.id,
-            "perms": 0x03
-        })
+            self.org.id,
+            self.user_a.id,
+        )
+        request = self.factory.post(
+            url, data={"entity": "net.%d" % self.net.id, "perms": 0x03}
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
 
@@ -140,11 +146,12 @@ class OrgAdminTests(TestCase):
         # the org
 
         url = "/org-admin/user_permissions/update?org_id=%d&user_id=%d" % (
-            self.org.id, self.user_b.id)
-        request = self.factory.post(url, data={
-            "entity": "net.%d" % self.net.id,
-            "perms": 0x03
-        })
+            self.org.id,
+            self.user_b.id,
+        )
+        request = self.factory.post(
+            url, data={"entity": "net.%d" % self.net.id, "perms": 0x03}
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.user_permission_update(request)
@@ -155,11 +162,12 @@ class OrgAdminTests(TestCase):
         # the admin of his org
 
         url = "/org-admin/user_permissions/update?org_id=%d&user_id=%d" % (
-            self.org_other.id, self.user_b.id)
-        request = self.factory.post(url, data={
-            "entity": "net.%d" % self.net.id,
-            "perms": 0x03
-        })
+            self.org_other.id,
+            self.user_b.id,
+        )
+        request = self.factory.post(
+            url, data={"entity": "net.%d" % self.net.id, "perms": 0x03}
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.user_permission_update(request)
@@ -168,10 +176,10 @@ class OrgAdminTests(TestCase):
 
         # Test #4 - remove the permissions we just added
         url = "/org-admin/user_permissions/remove?org_id=%d&user_id=%d" % (
-            self.org.id, self.user_a.id)
-        request = self.factory.post(url, data={
-            "entity": "net.%d" % self.net.id
-        })
+            self.org.id,
+            self.user_a.id,
+        )
+        request = self.factory.post(url, data={"entity": "net.%d" % self.net.id})
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
 
@@ -185,10 +193,10 @@ class OrgAdminTests(TestCase):
         # Test #5 - should not be allowed remove user b's permissions as he
         # is not a member of the org
         url = "/org-admin/user_permissions/remove?org_id=%d&user_id=%d" % (
-            self.org.id, self.user_b.id)
-        request = self.factory.post(url, data={
-            "entity": "net.%d" % self.net.id
-        })
+            self.org.id,
+            self.user_b.id,
+        )
+        request = self.factory.post(url, data={"entity": "net.%d" % self.net.id})
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
 
@@ -199,10 +207,10 @@ class OrgAdminTests(TestCase):
         # Test #6 - should not be allowed to remove user b's permissions as we
         # are not the admin of his org
         url = "/org-admin/user_permissions/remove?org_id=%d&user_id=%d" % (
-            self.org_other.id, self.user_b.id)
-        request = self.factory.post(url, data={
-            "entity": "net.%d" % self.net.id
-        })
+            self.org_other.id,
+            self.user_b.id,
+        )
+        request = self.factory.post(url, data={"entity": "net.%d" % self.net.id})
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
 
@@ -219,7 +227,8 @@ class OrgAdminTests(TestCase):
 
         # Test #1 - test user a's permission to the org
         request = self.factory.get(
-            "/org-admin/user_permissions?org_id=%d" % (self.org.id))
+            "/org-admin/user_permissions?org_id=%d" % (self.org.id)
+        )
         request.user = self.org_admin
 
         uid = str(self.user_a.id)
@@ -244,7 +253,8 @@ class OrgAdminTests(TestCase):
         # Test #5 - no permissions to org
 
         request = self.factory.get(
-            "/org-admin/user_permissions?org_id=%d" % (self.org_other.id))
+            "/org-admin/user_permissions?org_id=%d" % (self.org_other.id)
+        )
         request.user = self.org_admin
 
         resp = org_admin.user_permissions(request)
@@ -258,9 +268,7 @@ class OrgAdminTests(TestCase):
         """
 
         for tag in ["fac", "net", "ix"]:
-            org_admin.save_user_permissions(self.org, self.user_a, {
-                tag: PERM_CREATE
-            })
+            org_admin.save_user_permissions(self.org, self.user_a, {tag: PERM_CREATE})
             c = Client()
             c.login(username=self.user_a.username, password="user_a")
             resp = c.get("/org/%d" % self.org.id, follow=True)
@@ -286,10 +294,10 @@ class OrgAdminTests(TestCase):
         self.assertEqual(self.user_e.is_org_admin(self.org), True)
 
         # test #1 - remove user f (member) from org
-        request = self.factory.post("/org-admin/manage_user/delete", {
-            "org_id": self.org.id,
-            "user_id": self.user_f.id
-        })
+        request = self.factory.post(
+            "/org-admin/manage_user/delete",
+            {"org_id": self.org.id, "user_id": self.user_f.id},
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.manage_user_delete(request)
@@ -300,10 +308,10 @@ class OrgAdminTests(TestCase):
         self.assertEqual(self.user_f.is_org_admin(self.org), False)
 
         # test #2 - remove user e (admin) from org
-        request = self.factory.post("/org-admin/manage_user/delete", {
-            "org_id": self.org.id,
-            "user_id": self.user_e.id
-        })
+        request = self.factory.post(
+            "/org-admin/manage_user/delete",
+            {"org_id": self.org.id, "user_id": self.user_e.id},
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.manage_user_delete(request)
@@ -314,20 +322,20 @@ class OrgAdminTests(TestCase):
         self.assertEqual(self.user_e.is_org_admin(self.org), False)
 
         # test #3 - fail on user that is not currently in org
-        request = self.factory.post("/org-admin/manage_user/delete", {
-            "org_id": self.org.id,
-            "user_id": self.user_d.id
-        })
+        request = self.factory.post(
+            "/org-admin/manage_user/delete",
+            {"org_id": self.org.id, "user_id": self.user_d.id},
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.manage_user_delete(request)
         self.assertEqual(resp.status_code, 403)
 
         # test #3 - fail on org that you are not an admin of
-        request = self.factory.post("/org-admin/manage_user/delete", {
-            "org_id": self.org_other.id,
-            "user_id": self.user_d.id
-        })
+        request = self.factory.post(
+            "/org-admin/manage_user/delete",
+            {"org_id": self.org_other.id, "user_id": self.user_d.id},
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.manage_user_delete(request)
@@ -343,11 +351,10 @@ class OrgAdminTests(TestCase):
         self.assertEqual(self.user_a.is_org_admin(self.org), False)
 
         # test #1 - move user a to admin group
-        request = self.factory.post("/org-admin/manage_user/update", {
-            "org_id": self.org.id,
-            "user_id": self.user_a.id,
-            "group": "admin"
-        })
+        request = self.factory.post(
+            "/org-admin/manage_user/update",
+            {"org_id": self.org.id, "user_id": self.user_a.id, "group": "admin"},
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
 
@@ -359,11 +366,10 @@ class OrgAdminTests(TestCase):
         self.assertEqual(self.user_a.is_org_admin(self.org), True)
 
         # test #2 move back to member group
-        request = self.factory.post("/org-admin/manage_user/update", {
-            "org_id": self.org.id,
-            "user_id": self.user_a.id,
-            "group": "member"
-        })
+        request = self.factory.post(
+            "/org-admin/manage_user/update",
+            {"org_id": self.org.id, "user_id": self.user_a.id, "group": "member"},
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
 
@@ -375,11 +381,10 @@ class OrgAdminTests(TestCase):
         self.assertEqual(self.user_a.is_org_admin(self.org), False)
 
         # test #3 - fail on user that is not currently in org
-        request = self.factory.post("/org-admin/manage_user/update", {
-            "org_id": self.org.id,
-            "user_id": self.user_d.id,
-            "group": "member"
-        })
+        request = self.factory.post(
+            "/org-admin/manage_user/update",
+            {"org_id": self.org.id, "user_id": self.user_d.id, "group": "member"},
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.manage_user_update(request)
@@ -387,11 +392,9 @@ class OrgAdminTests(TestCase):
 
         # test #3 - fail on org that you are not an admin of
         request = self.factory.post(
-            "/org-admin/manage_user/update", {
-                "org_id": self.org_other.id,
-                "user_id": self.user_d.id,
-                "group": "admin"
-            })
+            "/org-admin/manage_user/update",
+            {"org_id": self.org_other.id, "user_id": self.user_d.id, "group": "admin"},
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.manage_user_update(request)
@@ -404,8 +407,7 @@ class OrgAdminTests(TestCase):
 
         # Test #1 - retrieve permissioning ids for org
 
-        request = self.factory.get(
-            "/org-admin/permissions?org_id=%d" % self.org.id)
+        request = self.factory.get("/org-admin/permissions?org_id=%d" % self.org.id)
         request.user = self.org_admin
         resp = json.loads(org_admin.permissions(request).content)
 
@@ -420,7 +422,8 @@ class OrgAdminTests(TestCase):
 
         # Test #2 - cannot retrieve ids for other org as we are not admin
         request = self.factory.get(
-            "/org-admin/permissions?org_id=%d" % self.org_other.id)
+            "/org-admin/permissions?org_id=%d" % self.org_other.id
+        )
         request.user = self.org_admin
         resp = org_admin.permissions(request)
         self.assertEqual(resp.status_code, 403)
@@ -451,7 +454,7 @@ class OrgAdminTests(TestCase):
         source = {
             self.net.nsp_namespace: 0x01,
             self.ix.nsp_namespace: 0x01,
-            self.fac.nsp_namespace: 0x01
+            self.fac.nsp_namespace: 0x01,
         }
 
         # extract ids
@@ -460,11 +463,14 @@ class OrgAdminTests(TestCase):
         org_admin.extract_permission_id(source, dest, self.ix, self.org)
         org_admin.extract_permission_id(source, dest, self.fac, self.org)
 
-        self.assertEqual({
-            "net.%d" % self.net.id: 0x01,
-            "ix.%d" % self.ix.id: 0x01,
-            "fac.%d" % self.fac.id: 0x01
-        }, dest)
+        self.assertEqual(
+            {
+                "net.%d" % self.net.id: 0x01,
+                "ix.%d" % self.ix.id: 0x01,
+                "fac.%d" % self.fac.id: 0x01,
+            },
+            dest,
+        )
 
         # test with just the models
 
@@ -480,10 +486,8 @@ class OrgAdminTests(TestCase):
 
         # extract ids
         org_admin.extract_permission_id(source, dest, models.Network, self.org)
-        org_admin.extract_permission_id(source, dest, models.InternetExchange,
-                                        self.org)
-        org_admin.extract_permission_id(source, dest, models.Facility,
-                                        self.org)
+        org_admin.extract_permission_id(source, dest, models.InternetExchange, self.org)
+        org_admin.extract_permission_id(source, dest, models.Facility, self.org)
 
         self.assertEqual({"net": 0x01, "fac": 0x03, "ix": 0x01}, dest)
 
@@ -495,45 +499,48 @@ class OrgAdminTests(TestCase):
 
         # create a uoar for user c
         uoar = models.UserOrgAffiliationRequest.objects.create(
-            user=self.user_c, asn=1, status="pending")
+            user=self.user_c, asn=1, status="pending"
+        )
 
         # test that org id was properly derived from network asn
         self.assertEqual(uoar.org.id, self.org.id)
 
         # test approval
         request = self.factory.post(
-            "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={
-                "id": uoar.id
-            })
+            "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={"id": uoar.id}
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
 
         resp = json.loads(org_admin.uoar_approve(request).content)
 
-        self.assertEqual({
-            "status": "ok",
-            "full_name": self.user_c.full_name,
-            "id": self.user_c.id,
-            "email": self.user_c.email
-        }, resp)
+        self.assertEqual(
+            {
+                "status": "ok",
+                "full_name": self.user_c.full_name,
+                "id": self.user_c.id,
+                "email": self.user_c.email,
+            },
+            resp,
+        )
 
         # check that user is now a member of the org
         self.assertEqual(
-            self.org.usergroup.user_set.filter(id=self.user_c.id).exists(),
-            True)
+            self.org.usergroup.user_set.filter(id=self.user_c.id).exists(), True
+        )
 
         # check that the UOAR is gone
         self.assertEqual(
-            models.UserOrgAffiliationRequest.objects.filter(
-                id=uoar.id).exists(), False)
+            models.UserOrgAffiliationRequest.objects.filter(id=uoar.id).exists(), False
+        )
 
         # test: we shouldnt be allowed to approve uoar's for the org we are not
         # admins of
 
         request = self.factory.post(
-            "/org-admin/uoar/approve?org_id=%d" % self.org_other.id, data={
-                "id": uoar.id
-            })
+            "/org-admin/uoar/approve?org_id=%d" % self.org_other.id,
+            data={"id": uoar.id},
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.uoar_approve(request)
@@ -544,12 +551,12 @@ class OrgAdminTests(TestCase):
         # be allowed
 
         uoar_b = models.UserOrgAffiliationRequest.objects.create(
-            user=self.user_d, asn=22, status="pending")
+            user=self.user_d, asn=22, status="pending"
+        )
 
         request = self.factory.post(
-            "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={
-                "id": uoar_b.id
-            })
+            "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={"id": uoar_b.id}
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.uoar_approve(request)
@@ -566,29 +573,27 @@ class OrgAdminTests(TestCase):
 
         # create a uoar for user d
         uoar = models.UserOrgAffiliationRequest.objects.create(
-            user=self.user_d, asn=1, status="pending")
+            user=self.user_d, asn=1, status="pending"
+        )
 
         # test that org id was properly derived from network asn
         self.assertEqual(uoar.org.id, self.org.id)
 
         # test deny
         request = self.factory.post(
-            "/org-admin/uoar/deny?org_id=%d" % self.org.id, data={
-                "id": uoar.id
-            })
+            "/org-admin/uoar/deny?org_id=%d" % self.org.id, data={"id": uoar.id}
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
 
         resp = json.loads(org_admin.uoar_deny(request).content)
 
-        self.assertEqual({
-            "status": "ok",
-        }, resp)
+        self.assertEqual({"status": "ok",}, resp)
 
         # check that user is not a member of the org
         self.assertEqual(
-            self.org.usergroup.user_set.filter(id=self.user_d.id).exists(),
-            False)
+            self.org.usergroup.user_set.filter(id=self.user_d.id).exists(), False
+        )
 
         # check that the UOAR is there, but status is denyed
         uoar = models.UserOrgAffiliationRequest.objects.get(id=uoar.id)
@@ -598,9 +603,8 @@ class OrgAdminTests(TestCase):
         # admins of
 
         request = self.factory.post(
-            "/org-admin/uoar/deny?org_id=%d" % self.org_other.id, data={
-                "id": uoar.id
-            })
+            "/org-admin/uoar/deny?org_id=%d" % self.org_other.id, data={"id": uoar.id}
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.uoar_approve(request)
@@ -611,12 +615,12 @@ class OrgAdminTests(TestCase):
         # be allowed
 
         uoar_b = models.UserOrgAffiliationRequest.objects.create(
-            user=self.user_d, asn=22, status="pending")
+            user=self.user_d, asn=22, status="pending"
+        )
 
         request = self.factory.post(
-            "/org-admin/uoar/deny?org_id=%d" % self.org.id, data={
-                "id": uoar_b.id
-            })
+            "/org-admin/uoar/deny?org_id=%d" % self.org.id, data={"id": uoar_b.id}
+        )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.uoar_deny(request)

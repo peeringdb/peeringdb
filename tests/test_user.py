@@ -22,15 +22,20 @@ class UserTests(TestCase):
         guest_group = Group.objects.create(name="guest")
         user_group = Group.objects.create(name="user")
         for name in ["user_a", "user_b", "user_c", "user_d"]:
-            setattr(cls, name,
-                    models.User.objects.create_user(
-                        name, "%s@localhost" % name, first_name=name,
-                        last_name=name, password=name))
+            setattr(
+                cls,
+                name,
+                models.User.objects.create_user(
+                    name,
+                    "%s@localhost" % name,
+                    first_name=name,
+                    last_name=name,
+                    password=name,
+                ),
+            )
 
-        cls.org_a = models.Organization.objects.create(name="org A",
-                                                       status="ok")
-        cls.org_b = models.Organization.objects.create(name="org B",
-                                                       status="ok")
+        cls.org_a = models.Organization.objects.create(name="org A", status="ok")
+        cls.org_b = models.Organization.objects.create(name="org B", status="ok")
 
         user_group.user_set.add(cls.user_a)
         user_group.user_set.add(cls.user_d)
@@ -104,8 +109,7 @@ class UserTests(TestCase):
         self.assertEqual(self.user_c.status, "ok")
         self.assertEqual(self.user_c.is_verified, True)
 
-        self.assertEqual(
-            self.user_c.groups.filter(name="guest").exists(), False)
+        self.assertEqual(self.user_c.groups.filter(name="guest").exists(), False)
         self.assertEqual(self.user_c.groups.filter(name="user").exists(), True)
 
     def test_set_unverified(self):
@@ -119,10 +123,8 @@ class UserTests(TestCase):
         self.assertEqual(self.user_c.status, "pending")
         self.assertEqual(self.user_c.is_verified, False)
 
-        self.assertEqual(
-            self.user_c.groups.filter(name="guest").exists(), True)
-        self.assertEqual(
-            self.user_c.groups.filter(name="user").exists(), False)
+        self.assertEqual(self.user_c.groups.filter(name="guest").exists(), True)
+        self.assertEqual(self.user_c.groups.filter(name="user").exists(), False)
 
     def test_password_reset(self):
         """
@@ -132,9 +134,9 @@ class UserTests(TestCase):
         """
 
         # initiate request
-        request = self.factory.post("/reset-password", data={
-            "email": self.user_a.email
-        })
+        request = self.factory.post(
+            "/reset-password", data={"email": self.user_a.email}
+        )
         request._dont_enforce_csrf_checks = True
         resp = views.view_password_reset(request)
 
@@ -151,12 +153,14 @@ class UserTests(TestCase):
         # password reset request
         pwd = "abcdefghjikl"
         request = self.factory.post(
-            "/reset-password", data={
+            "/reset-password",
+            data={
                 "target": self.user_a.id,
                 "token": token,
                 "password": pwd,
-                "password_v": pwd
-            })
+                "password_v": pwd,
+            },
+        )
         request._dont_enforce_csrf_checks = True
         resp = views.view_password_reset(request)
 
@@ -170,48 +174,56 @@ class UserTests(TestCase):
 
         # failure test: invalid token
         request = self.factory.post(
-            "/reset-password", data={
+            "/reset-password",
+            data={
                 "target": self.user_a.id,
                 "token": "wrong",
                 "password": pwd,
-                "password_v": pwd
-            })
+                "password_v": pwd,
+            },
+        )
         request._dont_enforce_csrf_checks = True
         resp = views.view_password_reset(request)
         self.assertEqual(resp.status_code, 400)
 
         # failure test: invalid password(s): length
         request = self.factory.post(
-            "/reset-password", data={
+            "/reset-password",
+            data={
                 "target": self.user_a.id,
                 "token": token,
                 "password": "a",
-                "password_v": "a"
-            })
+                "password_v": "a",
+            },
+        )
         request._dont_enforce_csrf_checks = True
         resp = views.view_password_reset(request)
         self.assertEqual(resp.status_code, 400)
 
         # failure test: invalid password(s): validation mismatch
         request = self.factory.post(
-            "/reset-password", data={
+            "/reset-password",
+            data={
                 "target": self.user_a.id,
                 "token": token,
                 "password": pwd,
-                "password_v": "a"
-            })
+                "password_v": "a",
+            },
+        )
         request._dont_enforce_csrf_checks = True
         resp = views.view_password_reset(request)
         self.assertEqual(resp.status_code, 400)
 
         # failure test: invalid target
         request = self.factory.post(
-            "/reset-password", data={
+            "/reset-password",
+            data={
                 "target": self.user_b.id,
                 "token": token,
                 "password": pwd,
-                "password_v": pwd
-            })
+                "password_v": pwd,
+            },
+        )
         request._dont_enforce_csrf_checks = True
         resp = views.view_password_reset(request)
         self.assertEqual(resp.status_code, 400)
@@ -220,13 +232,13 @@ class UserTests(TestCase):
         data = {"next": "/org/1", "username": "user_d", "password": "user_d"}
         C = Client()
         resp = C.post("/auth", data, follow=True)
-        self.assertEqual(resp.redirect_chain, [('/org/1', 302)])
+        self.assertEqual(resp.redirect_chain, [("/org/1", 302)])
 
         data = {"next": "/logout", "username": "user_d", "password": "user_d"}
         C = Client()
         resp = C.post("/auth", data, follow=True)
-        self.assertEqual(resp.redirect_chain, [('/', 302)])
-        self.assertEqual(resp.context['user'].is_authenticated(), True)
+        self.assertEqual(resp.redirect_chain, [("/", 302)])
+        self.assertEqual(resp.context["user"].is_authenticated(), True)
 
     def test_username_retrieve(self):
         """
@@ -236,9 +248,7 @@ class UserTests(TestCase):
         c = Client()
 
         # initiate process
-        response = c.post("/username-retrieve/initiate", {
-            "email": self.user_a.email
-        })
+        response = c.post("/username-retrieve/initiate", {"email": self.user_a.email})
 
         secret = c.session["username_retrieve_secret"]
         email = c.session["username_retrieve_email"]
@@ -249,33 +259,39 @@ class UserTests(TestCase):
         response = c.get("/username-retrieve/complete?secret=123")
         self.assertEqual(response.content.find(self.user_a.email), -1)
         self.assertEqual(
-            response.content.find('<p class="username">{}</p>'.format(
-                self.user_a.username)), -1)
+            response.content.find(
+                '<p class="username">{}</p>'.format(self.user_a.username)
+            ),
+            -1,
+        )
 
         # complete process
-        response = c.get(
-            "/username-retrieve/complete?secret={}".format(secret))
+        response = c.get("/username-retrieve/complete?secret={}".format(secret))
 
         self.assertGreater(response.content.find(self.user_a.email), -1)
         self.assertGreater(
-            response.content.find('<p class="username">{}</p>'.format(
-                self.user_a.username)), -1)
+            response.content.find(
+                '<p class="username">{}</p>'.format(self.user_a.username)
+            ),
+            -1,
+        )
 
         # process no longer valid
-        response = c.get(
-            "/username-retrieve/complete?secret={}".format(secret))
+        response = c.get("/username-retrieve/complete?secret={}".format(secret))
 
         self.assertEqual(response.content.find(self.user_a.email), -1)
         self.assertEqual(
-            response.content.find('<p class="username">{}</p>'.format(
-                self.user_a.username)), -1)
+            response.content.find(
+                '<p class="username">{}</p>'.format(self.user_a.username)
+            ),
+            -1,
+        )
 
         with self.assertRaises(KeyError):
             secret = c.session["username_retrieve_secret"]
 
         with self.assertRaises(KeyError):
             email = c.session["username_retrieve_email"]
-
 
     def test_signup(self):
         """
@@ -289,15 +305,15 @@ class UserTests(TestCase):
 
         captcha_obj = CaptchaStore.objects.get(hashkey=m.group(1))
 
-        response = c.post("/register", {
-            "username": "signuptest",
-            "password1": "signuptest_123",
-            "password2": "signuptest_123",
-            "email": "signuptest@localhost",
-            "captcha": "{}:{}".format(captcha_obj.hashkey, captcha_obj.response)
-        })
+        response = c.post(
+            "/register",
+            {
+                "username": "signuptest",
+                "password1": "signuptest_123",
+                "password2": "signuptest_123",
+                "email": "signuptest@localhost",
+                "captcha": "{}:{}".format(captcha_obj.hashkey, captcha_obj.response),
+            },
+        )
 
-        self.assertEqual( json.loads(response.content), {"status":"ok"})
-
-
-
+        self.assertEqual(json.loads(response.content), {"status": "ok"})

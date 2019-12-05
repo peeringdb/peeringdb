@@ -2,11 +2,7 @@ import pytest
 import pytest_filedata
 import ipaddress
 
-from peeringdb_server.inet import (
-    RdapLookup,
-    RdapNotFoundError,
-    renumber_ipaddress
-)
+from peeringdb_server.inet import RdapLookup, RdapNotFoundError, renumber_ipaddress
 
 
 def test_rdap_asn_lookup(rdap):
@@ -36,7 +32,7 @@ def test_mocker(rdap):
 @pytest_filedata.RequestsData("rdap")
 def test_arin0(rdap):
     asn = rdap.get_asn(63311)
-    assert asn.emails == ['neteng@20c.com']
+    assert asn.emails == ["neteng@20c.com"]
 
 
 def test_recurse_contacts(rdap):
@@ -44,6 +40,7 @@ def test_recurse_contacts(rdap):
     assert rdap == asn._rdapc
     assert len(asn.emails) > 1
     assert len(rdap.history) > 1
+
 
 def test_renumber_ipaddress():
     ip4 = renumber_ipaddress(
@@ -82,5 +79,3 @@ def test_renumber_ipaddress():
             ipaddress.ip_network(u"206.41.0.0/21"),
             ipaddress.ip_network(u"206.41.111.0/24"),
         )
-
-

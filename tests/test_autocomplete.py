@@ -14,8 +14,9 @@ class TestAutocomplete(ClientCase):
     @classmethod
     def setUpTestData(cls):
         super(TestAutocomplete, cls).setUpTestData()
-        cls.staff_user = User.objects.create_user("staff", "staff@localhost",
-                                                  "staff", is_staff=True)
+        cls.staff_user = User.objects.create_user(
+            "staff", "staff@localhost", "staff", is_staff=True
+        )
 
     def setUp(self):
         self.factory = RequestFactory()

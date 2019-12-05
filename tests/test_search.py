@@ -40,24 +40,31 @@ class SearchTests(TestCase):
             if model.handleref.tag == "net":
                 kwargs = {"asn": 1}
             cls.instances[model.handleref.tag] = model.objects.create(
-                status="ok", org=cls.org, name="Test %s" % model.handleref.tag,
-                **kwargs)
+                status="ok", org=cls.org, name="Test %s" % model.handleref.tag, **kwargs
+            )
 
             if model.handleref.tag == "net":
                 kwargs = {"asn": 2}
             cls.instances_accented[model.handleref.tag] = model.objects.create(
-                status="ok", org=cls.org,
-                name=u"ãccented {}".format(model.handleref.tag), **kwargs)
+                status="ok",
+                org=cls.org,
+                name=u"ãccented {}".format(model.handleref.tag),
+                **kwargs
+            )
 
         # we also need to test that sponsor ship status comes through
         # accordingly
-        cls.org_w_sponsorship = models.Organization.objects.create(name="Sponsor org", status="ok")
+        cls.org_w_sponsorship = models.Organization.objects.create(
+            name="Sponsor org", status="ok"
+        )
         cls.sponsorship = models.Sponsorship.objects.create(
             start_date=datetime.datetime.now() - datetime.timedelta(days=1),
             end_date=datetime.datetime.now() + datetime.timedelta(days=1),
-            level=1);
-        models.SponsorshipOrganization.objects.create(org=cls.org_w_sponsorship,
-                                                      sponsorship=cls.sponsorship)
+            level=1,
+        )
+        models.SponsorshipOrganization.objects.create(
+            org=cls.org_w_sponsorship, sponsorship=cls.sponsorship
+        )
 
         for model in search.searchable_models:
             if model.handleref.tag == "net":
@@ -65,10 +72,11 @@ class SearchTests(TestCase):
             else:
                 kwargs = {}
             cls.instances_sponsored[model.handleref.tag] = model.objects.create(
-                status="ok", org=cls.org_w_sponsorship,
+                status="ok",
+                org=cls.org_w_sponsorship,
                 name="Sponsor %s" % model.handleref.tag,
-                **kwargs)
-
+                **kwargs
+            )
 
     def test_search(self):
         """
@@ -99,14 +107,13 @@ class SearchTests(TestCase):
         """
 
         factory = RequestFactory()
-        request = factory.get("/search",{"q":"Sponsor"})
+        request = factory.get("/search", {"q": "Sponsor"})
         response = views.request_search(request)
-        m = re.findall(re.escape(
-            '<a href="/sponsors" class="sponsor silver">'),
-            response.content)
+        m = re.findall(
+            re.escape('<a href="/sponsors" class="sponsor silver">'), response.content
+        )
 
         assert len(m) == 3
-
 
     def test_search_case(self):
         """
@@ -119,7 +126,6 @@ class SearchTests(TestCase):
             assert len(rv[k]) == 1
             assert rv[k][0]["name"] == inst.search_result_name
 
-
     def test_index_updates(self):
         """
         test that indexes get updated correctly when objects are created
@@ -129,12 +135,14 @@ class SearchTests(TestCase):
         # this object will be status pending and should not be returned in the search
         # results
         new_ix_p = models.InternetExchange.objects.create(
-            status="pending", org=self.org, name="Test IU ix")
+            status="pending", org=self.org, name="Test IU ix"
+        )
         self.test_search()
 
         # this object will be status ok, and should show up in the index
         new_ix_o = models.InternetExchange.objects.create(
-            status="ok", org=self.org, name="Test IU P ix")
+            status="ok", org=self.org, name="Test IU P ix"
+        )
         rv = search.search("test")
         assert len(rv["ix"]) == 2
 
@@ -145,7 +153,7 @@ class SearchTests(TestCase):
         rv = search.search("test")
         assert len(rv["ix"]) == 3
 
-        #finally we delete both and they should disappear again
+        # finally we delete both and they should disappear again
         new_ix_p.delete()
         new_ix_o.delete()
         self.test_search()
@@ -159,12 +167,14 @@ class SearchTests(TestCase):
         for k, inst in self.instances_accented.items():
             assert k in rv
             assert len(rv[k]) == 1
-            assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(inst.search_result_name)
+            assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(
+                inst.search_result_name
+            )
 
         rv = search.search(u"ãccented")
         for k, inst in self.instances_accented.items():
             assert k in rv
             assert len(rv[k]) == 1
-            assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(inst.search_result_name)
-
-
+            assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(
+                inst.search_result_name
+            )

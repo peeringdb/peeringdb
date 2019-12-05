@@ -15,8 +15,11 @@ from peeringdb_server.inet import RdapNotFoundError
 def ticket_queue(subject, body, user):
     """ queue a deskpro ticket for creation """
 
-    ticket = DeskProTicket.objects.create(subject=u"{}{}".format(
-        settings.EMAIL_SUBJECT_PREFIX, subject), body=body, user=user)
+    ticket = DeskProTicket.objects.create(
+        subject=u"{}{}".format(settings.EMAIL_SUBJECT_PREFIX, subject),
+        body=body,
+        user=user,
+    )
 
 
 class APIError(IOError):
@@ -40,15 +43,13 @@ def ticket_queue_asnauto_skipvq(user, org, net, rir_data):
     else:
         org_name = org.name
 
-    ticket_queue("[ASNAUTO] Network '%s' approved for existing Org '%s'" %
-                 (net_name, org_name),
-                 loader.get_template(
-                     'email/notify-pdb-admin-asnauto-skipvq.txt').render({
-                         "user": user,
-                         "org": org,
-                         "net": net,
-                         "rir_data": rir_data
-                     }), user)
+    ticket_queue(
+        "[ASNAUTO] Network '%s' approved for existing Org '%s'" % (net_name, org_name),
+        loader.get_template("email/notify-pdb-admin-asnauto-skipvq.txt").render(
+            {"user": user, "org": org, "net": net, "rir_data": rir_data}
+        ),
+        user,
+    )
 
 
 def ticket_queue_asnauto_affil(user, org, net, rir_data):
@@ -57,19 +58,18 @@ def ticket_queue_asnauto_affil(user, org, net, rir_data):
     """
 
     ticket_queue(
-        "[ASNAUTO] Ownership claim granted to Org '%s' for user '%s'" %
-        (org.name, user.username),
-        loader.get_template('email/notify-pdb-admin-asnauto-affil.txt').render(
-            {
-                "user": user,
-                "org": org,
-                "net": net,
-                "rir_data": rir_data
-            }), user)
+        "[ASNAUTO] Ownership claim granted to Org '%s' for user '%s'"
+        % (org.name, user.username),
+        loader.get_template("email/notify-pdb-admin-asnauto-affil.txt").render(
+            {"user": user, "org": org, "net": net, "rir_data": rir_data}
+        ),
+        user,
+    )
 
 
-def ticket_queue_asnauto_create(user, org, net, rir_data, asn,
-                                org_created=False, net_created=False):
+def ticket_queue_asnauto_create(
+    user, org, net, rir_data, asn, org_created=False, net_created=False
+):
     """
     queue deskro ticket creation for asn automation action: create
     """
@@ -88,15 +88,20 @@ def ticket_queue_asnauto_create(user, org, net, rir_data, asn,
     ticket_queue(
         "[ASNAUTO] %s created" % subject,
         loader.get_template(
-            'email/notify-pdb-admin-asnauto-entity-creation.txt').render({
+            "email/notify-pdb-admin-asnauto-entity-creation.txt"
+        ).render(
+            {
                 "user": user,
                 "org": org,
                 "net": net,
                 "asn": asn,
                 "org_created": org_created,
                 "net_created": net_created,
-                "rir_data": rir_data
-            }), user)
+                "rir_data": rir_data,
+            }
+        ),
+        user,
+    )
 
 
 def ticket_queue_rdap_error(user, asn, error):
@@ -110,11 +115,11 @@ def ticket_queue_rdap_error(user, asn, error):
     subject = "[RDAP_ERR] {} - AS{}".format(user.username, asn)
     ticket_queue(
         subject,
-        loader.get_template('email/notify-pdb-admin-rdap-error.txt').render({
-            "user": user,
-            "asn": asn,
-            "error_details": error_message
-        }), user)
+        loader.get_template("email/notify-pdb-admin-rdap-error.txt").render(
+            {"user": user, "asn": asn, "error_details": error_message}
+        ),
+        user,
+    )
 
 
 class APIClient(object):
@@ -143,42 +148,48 @@ class APIClient(object):
             return data
 
     def get(self, endpoint, param):
-        response = requests.get("{}/{}".format(self.url, endpoint),
-                                params=param, headers=self.auth_headers)
+        response = requests.get(
+            "{}/{}".format(self.url, endpoint), params=param, headers=self.auth_headers
+        )
         return self.parse_response(response)
 
     def create(self, endpoint, param):
-        response = requests.post("{}/{}".format(self.url, endpoint),
-                                 json=param, headers=self.auth_headers)
+        response = requests.post(
+            "{}/{}".format(self.url, endpoint), json=param, headers=self.auth_headers
+        )
         return self.parse_response(response)
 
     def require_person(self, user):
         person = self.get("people", {"primary_email": user.email})
         if not person:
             person = self.create(
-                "people", {
+                "people",
+                {
                     "primary_email": user.email,
                     "first_name": user.first_name,
                     "last_name": user.last_name,
-                    "name": user.full_name
-                })
+                    "name": user.full_name,
+                },
+            )
 
         return person
 
     def create_ticket(self, ticket):
         person = self.require_person(ticket.user)
         ticket_response = self.create(
-            "tickets", {
+            "tickets",
+            {
                 "subject": ticket.subject,
-                "person": {
-                    "id": person["id"]
-                },
-                "status": "awaiting_agent"
-            })
+                "person": {"id": person["id"]},
+                "status": "awaiting_agent",
+            },
+        )
 
         self.create(
-            "tickets/{}/messages".format(ticket_response["id"]), {
+            "tickets/{}/messages".format(ticket_response["id"]),
+            {
                 "message": ticket.body.replace("\n", "<br />\n"),
                 "person": person["id"],
-                "format": "html"
-            })
+                "format": "html",
+            },
+        )

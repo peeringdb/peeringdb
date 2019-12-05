@@ -8,7 +8,7 @@ from peeringdb_server.models import (
     IXLan,
     NetworkIXLan,
     Network,
-    )
+)
 from peeringdb_server import ixf
 
 
@@ -17,21 +17,25 @@ class Command(BaseCommand):
     commit = False
 
     def add_arguments(self, parser):
-        parser.add_argument('--commit', action='store_true',
-                            help="will commit changes to the database")
-        parser.add_argument('--asn', type=int, default=0,
-                            help="Only process this ASN")
-        parser.add_argument('--ixlan', type=int, nargs="*",
-                            help="Only process these ixlans")
-        parser.add_argument('--debug', action="store_true",
-                            help="Show debug output")
-        parser.add_argument('--preview', action="store_true",
-                            help="Run in preview mode")
-        parser.add_argument('--cache', action="store_true",
-                            help="Only use locally cached IX-F data")
-        parser.add_argument('--skip-import', action="store_true",
-                            help="Just update IX-F cache, do NOT perform any import logic")
-
+        parser.add_argument(
+            "--commit", action="store_true", help="will commit changes to the database"
+        )
+        parser.add_argument("--asn", type=int, default=0, help="Only process this ASN")
+        parser.add_argument(
+            "--ixlan", type=int, nargs="*", help="Only process these ixlans"
+        )
+        parser.add_argument("--debug", action="store_true", help="Show debug output")
+        parser.add_argument(
+            "--preview", action="store_true", help="Run in preview mode"
+        )
+        parser.add_argument(
+            "--cache", action="store_true", help="Only use locally cached IX-F data"
+        )
+        parser.add_argument(
+            "--skip-import",
+            action="store_true",
+            help="Just update IX-F cache, do NOT perform any import logic",
+        )
 
     def log(self, msg, debug=False):
         if self.preview:
@@ -70,26 +74,36 @@ class Command(BaseCommand):
             if ixlan_ids:
                 qset = qset.filter(id__in=ixlan_ids)
 
-
-        total_log = {"data":[], "errors":[]}
+        total_log = {"data": [], "errors": []}
 
         for ixlan in qset:
-            self.log("Fetching data for {} from {}".format(
-                ixlan, ixlan.ixf_ixp_member_list_url))
+            self.log(
+                "Fetching data for {} from {}".format(
+                    ixlan, ixlan.ixf_ixp_member_list_url
+                )
+            )
             try:
                 importer = ixf.Importer()
                 importer.skip_import = self.skip_import
                 importer.cache_only = self.cache
                 self.log("Updating {}".format(ixlan))
                 with transaction.atomic():
-                    success, netixlans, netixlans_deleted, log = importer.update(ixlan,
-                                                                                 save=self.commit,
-                                                                                 asn=asn)
+                    success, netixlans, netixlans_deleted, log = importer.update(
+                        ixlan, save=self.commit, asn=asn
+                    )
                 self.log(json.dumps(log), debug=True)
-                self.log("Done: {} updated: {} deleted: {}".format(
-                    success, len(netixlans), len(netixlans_deleted)))
+                self.log(
+                    "Done: {} updated: {} deleted: {}".format(
+                        success, len(netixlans), len(netixlans_deleted)
+                    )
+                )
                 total_log["data"].extend(log["data"])
-                total_log["errors"].extend(["{}({}): {}".format(ixlan.ix.name, ixlan.id, err) for err in log["errors"]])
+                total_log["errors"].extend(
+                    [
+                        "{}({}): {}".format(ixlan.ix.name, ixlan.id, err)
+                        for err in log["errors"]
+                    ]
+                )
 
             except Exception as inst:
                 self.log("ERROR: {}".format(inst))

@@ -15,13 +15,13 @@ class Command(BaseCommand):
     valid_targets = {"fac": ["name", "org_id"]}
 
     def add_arguments(self, parser):
-        parser.add_argument('--commit', action='store_true',
-                            help="will commit the fac merge")
-        parser.add_argument('--search',
-                            help="<ref_tag>.<field_name>:<search_value>")
         parser.add_argument(
-            '--replace',
-            help="<field_name>:<search_value>:<replacement_value>")
+            "--commit", action="store_true", help="will commit the fac merge"
+        )
+        parser.add_argument("--search", help="<ref_tag>.<field_name>:<search_value>")
+        parser.add_argument(
+            "--replace", help="<field_name>:<search_value>:<replacement_value>"
+        )
 
     def log(self, msg):
         if not self.commit:
@@ -37,19 +37,20 @@ class Command(BaseCommand):
         self.replace = options.get("replace")
 
         if not self.search:
-            raise CommandError(
-                "Specify search parameters using the --search option")
+            raise CommandError("Specify search parameters using the --search option")
 
         if not self.replace:
             raise CommandError(
-                "Specify replacement parameters using the --replace option")
+                "Specify replacement parameters using the --replace option"
+            )
 
         try:
             search_field, search_value = self.search.split(":")
             ref_tag, search_field = search_field.split(".")
         except:
             raise CommandError(
-                "Format for --search: <ref_tag>.<field_name>:<search_value>")
+                "Format for --search: <ref_tag>.<field_name>:<search_value>"
+            )
 
         try:
             m = re.match("^([^:]+):([^:]+):(.+)$", self.replace)
@@ -61,13 +62,15 @@ class Command(BaseCommand):
                 "Format for --replace: <field_name>:<search_value>:<replacement_value>"
             )
 
-        #if replace_field not in self.valid_targets.get(ref_tag,[]):
+        # if replace_field not in self.valid_targets.get(ref_tag,[]):
         #    raise CommandError("%s.%s is not a valid target for this script at this point, please add it to the valid_targets map" % (ref_tag, replace_field))
 
         self.target = "%s.%s" % (ref_tag, search_field)
 
-        self.log("Searching for %s where %s matches '%s' ..." %
-                 (ref_tag, search_field, search_value))
+        self.log(
+            "Searching for %s where %s matches '%s' ..."
+            % (ref_tag, search_field, search_value)
+        )
 
         q = pdbm.REFTAG_MAP[ref_tag].objects.filter(status="ok")
         c = 0
@@ -92,8 +95,10 @@ class Command(BaseCommand):
                         r_val = replace_value
                 if r_val is None:
                     continue
-                self.log("(<%s> id:%s) Changing %s from '%s' to '%s'" %
-                         (e, e.id, replace_field, t_val, r_val))
+                self.log(
+                    "(<%s> id:%s) Changing %s from '%s' to '%s'"
+                    % (e, e.id, replace_field, t_val, r_val)
+                )
                 c += 1
                 if self.commit:
                     setattr(e, replace_field, r_val)

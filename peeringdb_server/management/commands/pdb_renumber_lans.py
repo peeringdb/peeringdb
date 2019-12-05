@@ -13,11 +13,14 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--commit', action='store_true',
-            help="commit changes, otherwise run in pretend mode")
+            "--commit",
+            action="store_true",
+            help="commit changes, otherwise run in pretend mode",
+        )
         parser.add_argument(
-            '--ixlan', default=0,
-            help="ixlan id, if set only renumber matches in this specific ixlan"
+            "--ixlan",
+            default=0,
+            help="ixlan id, if set only renumber matches in this specific ixlan",
         )
         parser.add_argument("ix", nargs="?", type=int)
         parser.add_argument("old", nargs="?", type=str)
@@ -39,10 +42,15 @@ class Command(BaseCommand):
         new_prefix = ipaddress.ip_network(new)
 
         if old_prefix.version != new_prefix.version:
-            self.log("[error] {}".format("New prefix needs to be of same " \
-                                         "protocol as old prefix"))
+            self.log(
+                "[error] {}".format(
+                    "New prefix needs to be of same " "protocol as old prefix"
+                )
+            )
 
-        prefixes = IXLanPrefix.objects.filter(prefix=old, ixlan__ix_id=self.ix, status="ok")
+        prefixes = IXLanPrefix.objects.filter(
+            prefix=old, ixlan__ix_id=self.ix, status="ok"
+        )
         netixlans = NetworkIXLan.objects.filter(ixlan__ix_id=self.ix, status="ok")
 
         if self.ixlan:
@@ -66,14 +74,16 @@ class Command(BaseCommand):
                 self.log("[error] {}: {}".format(old_addr, exc))
                 continue
 
-            self.log("Renumbering {} -> {}".format(
-                netixlan.descriptive_name_ipv(new_addr.version), new_addr))
+            self.log(
+                "Renumbering {} -> {}".format(
+                    netixlan.descriptive_name_ipv(new_addr.version), new_addr
+                )
+            )
 
             if new_addr.version == 4:
                 netixlan.ipaddr4 = new_addr
             else:
                 netixlan.ipaddr6 = new_addr
-
 
             try:
                 netixlan.full_clean()

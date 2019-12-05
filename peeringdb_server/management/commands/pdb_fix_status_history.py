@@ -15,8 +15,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--commit', action='store_true',
-            help="commit changes, otherwise run in pretend mode")
+            "--commit",
+            action="store_true",
+            help="commit changes, otherwise run in pretend mode",
+        )
 
     def log(self, msg):
         if not self.commit:
@@ -67,8 +69,11 @@ class Command(BaseCommand):
 
             if archived_status != entity.status:
                 fixed += 1
-                self.log("Fixing {}-{} {} archived status: {}".format(
-                    tag, entity.id, version.id, entity.status))
+                self.log(
+                    "Fixing {}-{} {} archived status: {}".format(
+                        tag, entity.id, version.id, entity.status
+                    )
+                )
                 if self.commit:
                     self.process_entity(entity, version)
 
@@ -83,8 +88,7 @@ class Command(BaseCommand):
 
         # note in comment why this revision was created
 
-        reversion.set_comment(
-            "Fixing status in object archives (script, #558)")
+        reversion.set_comment("Fixing status in object archives (script, #558)")
 
         # add entity to revision
 

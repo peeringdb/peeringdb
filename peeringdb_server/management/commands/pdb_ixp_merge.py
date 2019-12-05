@@ -11,13 +11,12 @@ class Command(BaseCommand):
     commit = False
 
     def add_arguments(self, parser):
-        parser.add_argument('--target', help="merge into this ixp")
+        parser.add_argument("--target", help="merge into this ixp")
         parser.add_argument(
-            '--ids', help=
-            "merge these ixps (note: target ixp specified with the --target option)"
+            "--ids",
+            help="merge these ixps (note: target ixp specified with the --target option)",
         )
-        parser.add_argument('--commit', action='store_true',
-                            help="commit changes")
+        parser.add_argument("--commit", action="store_true", help="commit changes")
 
     def log(self, msg):
         if not self.commit:
@@ -37,8 +36,7 @@ class Command(BaseCommand):
 
         self.log("Merging %s into %s" % (ixp_from.name, ixp_to.name))
 
-        ixlans_from = pdbm.IXLan.objects.filter(ix=ixp_from).exclude(
-            status="deleted")
+        ixlans_from = pdbm.IXLan.objects.filter(ix=ixp_from).exclude(status="deleted")
         for ixlan in ixlans_from:
             ixlan.ix = ixp_to
             self.log("Moving IXLAN %s to %s" % (ixlan.id, ixp_to.name))
@@ -49,4 +47,7 @@ class Command(BaseCommand):
             ixp_from.delete()
             mail_users_entity_merge(
                 ixp_from.org.admin_usergroup.user_set.all(),
-                ixp_to.org.admin_usergroup.user_set.all(), ixp_from, ixp_to)
+                ixp_to.org.admin_usergroup.user_set.all(),
+                ixp_from,
+                ixp_to,
+            )

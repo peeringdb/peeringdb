@@ -14,15 +14,21 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "reftag", nargs="?", help=
-            "can be reftag only such as 'fac' or reftag with id to only sync that specific entity such as 'fac.1'"
+            "reftag",
+            nargs="?",
+            help="can be reftag only such as 'fac' or reftag with id to only sync that specific entity such as 'fac.1'",
         )
         parser.add_argument(
-            "--limit", type=int, default=0,
-            help="limit how many rows are synced, useful for testing")
+            "--limit",
+            type=int,
+            default=0,
+            help="limit how many rows are synced, useful for testing",
+        )
         parser.add_argument(
-            '--commit', action='store_true',
-            help="commit changes, otherwise run in pretend mode")
+            "--commit",
+            action="store_true",
+            help="commit changes, otherwise run in pretend mode",
+        )
 
     def log(self, msg):
         if not self.commit:
@@ -47,8 +53,7 @@ class Command(BaseCommand):
         if not model:
             raise ValueError(u"Unknown reftag: {}".format(reftag))
         if not hasattr(model, "geocode_status"):
-            raise TypeError(
-                "Can only geosync models containing GeocodeBaseMixin")
+            raise TypeError("Can only geosync models containing GeocodeBaseMixin")
         q = model.handleref.undeleted().filter(geocode_status=False)
         if _id:
             q = q.filter(id=_id)
@@ -60,8 +65,11 @@ class Command(BaseCommand):
             if entity.geocode_status:
                 continue
             i += 1
-            self.log(u"Syncing {} [{} {}/{} ID:{}]".format(entity.name, reftag, i,
-                                                           count, entity.id))
+            self.log(
+                u"Syncing {} [{} {}/{} ID:{}]".format(
+                    entity.name, reftag, i, count, entity.id
+                )
+            )
 
             if self.commit:
                 entity.geocode(self.gmaps)

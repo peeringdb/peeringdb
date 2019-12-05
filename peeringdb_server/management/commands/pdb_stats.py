@@ -21,23 +21,27 @@ class Command(BaseCommand):
     tags = ["fac", "ix", "net", "org"]
 
     def add_arguments(self, parser):
-        parser.add_argument("--date", action="store", default=None,
-                            help="generate stats for this date")
-        parser.add_argument("--format", action="store", default="text",
-                            help="output format to use")
+        parser.add_argument(
+            "--date", action="store", default=None, help="generate stats for this date"
+        )
+        parser.add_argument(
+            "--format", action="store", default="text", help="output format to use"
+        )
 
     def status_at_date(self, obj, dt):
         versions = Version.objects.get_for_object(obj)
-        version = versions.filter(revision__date_created__lte=dt).order_by(
-            "-revision__date_created").first()
+        version = (
+            versions.filter(revision__date_created__lte=dt)
+            .order_by("-revision__date_created")
+            .first()
+        )
         if version:
             return version.field_dict["status"]
         else:
             return obj.status
 
-
     def handle(self, *args, **options):
-        date = options.get('date', None)
+        date = options.get("date", None)
         if date:
             dt = datetime.datetime.strptime(date, "%Y%m%d")
             stats = self.generate_for_past_date(dt)
@@ -112,9 +116,7 @@ class Command(BaseCommand):
             model = REFTAG_MAP[tag]
             stats[tag] = model.objects.filter(status="ok").count()
 
-
         return {"stats": stats, "dt": dt}
-
 
     def generate_for_past_date(self, dt):
         """
@@ -140,4 +142,3 @@ class Command(BaseCommand):
                     stats[tag] += 1
 
         return {"stats": stats, "dt": dt}
-

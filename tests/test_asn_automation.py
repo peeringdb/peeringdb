@@ -11,8 +11,9 @@ import peeringdb_server.inet as pdbinet
 from util import SettingsCase
 
 ERR_COULD_NOT_GET_RIR_ENTRY = "RDAP Lookup Error: Test Not Found"
-ERR_BOGON_ASN = "RDAP Lookup Error: ASNs in this range are not allowed " \
-                "in this environment"
+ERR_BOGON_ASN = (
+    "RDAP Lookup Error: ASNs in this range are not allowed " "in this environment"
+)
 
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 
@@ -31,9 +32,9 @@ def setup_module(module):
     ASN_RANGE_OVERRIDE = range(9000000, 9000999)
 
     with open(
-            os.path.join(
-                os.path.dirname(__file__), "data", "api",
-                "rdap_override.json"), "r") as fh:
+        os.path.join(os.path.dirname(__file__), "data", "api", "rdap_override.json"),
+        "r",
+    ) as fh:
         pdbinet.RdapLookup.override_result = json.load(fh)
 
     def get_asn(self, asn):
@@ -63,9 +64,11 @@ class AsnAutomationTestCase(TestCase):
         user_group = Group.objects.create(name="user")
 
         with open(
-                os.path.join(
-                    os.path.dirname(__file__), "data", "api",
-                    "rdap_override.json"), "r") as fh:
+            os.path.join(
+                os.path.dirname(__file__), "data", "api", "rdap_override.json"
+            ),
+            "r",
+        ) as fh:
             data = json.load(fh)
             cls.rdap_63311 = pdbinet.RdapAsn(data)
             cls.rdap_63311_no_name = pdbinet.RdapAsn(data)
@@ -76,24 +79,28 @@ class AsnAutomationTestCase(TestCase):
         cls.ticket = {}
 
         for ticket_name in [
-                "asnauto-9000001-org-net-created.txt",
-                "asnauto-9000001-user-granted-ownership.txt",
-                "asnauto-9000002-user-requested-ownership.txt"
+            "asnauto-9000001-org-net-created.txt",
+            "asnauto-9000001-user-granted-ownership.txt",
+            "asnauto-9000002-user-requested-ownership.txt",
         ]:
             with open(
-                    os.path.join(
-                        os.path.dirname(__file__), "data", "deskpro",
-                        ticket_name), "r") as fh:
+                os.path.join(os.path.dirname(__file__), "data", "deskpro", ticket_name),
+                "r",
+            ) as fh:
                 cls.ticket[ticket_name] = fh.read()
 
-        cls.base_org = models.Organization.objects.create(
-            name="ASN Automation Tests")
+        cls.base_org = models.Organization.objects.create(name="ASN Automation Tests")
 
-        for username, email in [("user_a", "Neteng@20c.com"),
-                                ("user_b", "neteng@other.com"),
-                                ("user_c", "other@20c.com")]:
-            setattr(cls, username,
-                    models.User.objects.create_user(username, email, username))
+        for username, email in [
+            ("user_a", "Neteng@20c.com"),
+            ("user_b", "neteng@other.com"),
+            ("user_c", "other@20c.com"),
+        ]:
+            setattr(
+                cls,
+                username,
+                models.User.objects.create_user(username, email, username),
+            )
             getattr(cls, username).set_password(username)
             cls.base_org.usergroup.user_set.add(getattr(cls, username))
             user_group.user_set.add(getattr(cls, username))
@@ -102,27 +109,29 @@ class AsnAutomationTestCase(TestCase):
         self.factory = RequestFactory()
 
     def test_org_create_from_rdap(self):
-        org, created = models.Organization.create_from_rdap(
-            self.rdap_63311, 63311)
+        org, created = models.Organization.create_from_rdap(self.rdap_63311, 63311)
         self.assertEqual(org.name, "20C, LLC")
-        org_2, created = models.Organization.create_from_rdap(
-            self.rdap_63311, 63311)
+        org_2, created = models.Organization.create_from_rdap(self.rdap_63311, 63311)
         self.assertEqual(org_2.id, org.id)
         org, created = models.Organization.create_from_rdap(
-            self.rdap_63311_no_name, 63311)
+            self.rdap_63311_no_name, 63311
+        )
         self.assertEqual(org.name, "AS63311")
 
     def test_net_create_from_rdap(self):
-        net, created = models.Network.create_from_rdap(self.rdap_63311, 63311,
-                                                       self.base_org)
+        net, created = models.Network.create_from_rdap(
+            self.rdap_63311, 63311, self.base_org
+        )
         self.assertEqual(net.name, "AS-20C")
 
-        net, created = models.Network.create_from_rdap(self.rdap_63311, 63312,
-                                                       self.base_org)
+        net, created = models.Network.create_from_rdap(
+            self.rdap_63311, 63312, self.base_org
+        )
         self.assertEqual(net.name, "AS-20C !")
 
-        net, created = models.Network.create_from_rdap(self.rdap_63311_no_name,
-                                                       63313, self.base_org)
+        net, created = models.Network.create_from_rdap(
+            self.rdap_63311_no_name, 63313, self.base_org
+        )
         self.assertEqual(net.name, "AS63313")
 
     def test_validate_rdap_relationship(self):
@@ -142,9 +151,7 @@ class AsnAutomationTestCase(TestCase):
         asn_fail = 890000
 
         # test 1: test affiliation to asn that has no RiR entry
-        request = self.factory.post("/affiliate-to-org", data={
-            "asn": asn_fail
-        })
+        request = self.factory.post("/affiliate-to-org", data={"asn": asn_fail})
         request.user = self.user_a
         request._dont_enforce_csrf_checks = True
         resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
@@ -160,34 +167,31 @@ class AsnAutomationTestCase(TestCase):
 
         # check that support tickets were created
         ticket = models.DeskProTicket.objects.get(
-            subject=
-            "[test][ASNAUTO] Organization 'ORG AS9000001', Network 'AS9000001' created"
-        )
-        self.assertEqual(ticket.body,
-                         self.ticket["asnauto-9000001-org-net-created.txt"])
-
-        ticket = models.DeskProTicket.objects.get(
-            subject=
-            "[test][ASNAUTO] Ownership claim granted to Org 'ORG AS9000001' for user 'user_a'"
+            subject="[test][ASNAUTO] Organization 'ORG AS9000001', Network 'AS9000001' created"
         )
         self.assertEqual(
-            ticket.body,
-            self.ticket["asnauto-9000001-user-granted-ownership.txt"])
+            ticket.body, self.ticket["asnauto-9000001-org-net-created.txt"]
+        )
+
+        ticket = models.DeskProTicket.objects.get(
+            subject="[test][ASNAUTO] Ownership claim granted to Org 'ORG AS9000001' for user 'user_a'"
+        )
+        self.assertEqual(
+            ticket.body, self.ticket["asnauto-9000001-user-granted-ownership.txt"]
+        )
 
         net = models.Network.objects.get(asn=asn_ok)
         self.assertEqual(net.name, "AS%d" % asn_ok)
         self.assertEqual(net.org.name, "ORG AS%d" % asn_ok)
         self.assertEqual(
-            self.user_a.groups.filter(
-                name=net.org.admin_usergroup.name).exists(), True)
+            self.user_a.groups.filter(name=net.org.admin_usergroup.name).exists(), True
+        )
         self.assertEqual(net.status, "ok")
         self.assertEqual(net.org.status, "ok")
 
         # test 3: test affiliation to asn that hsa RiR entry and user relationship
         # cannot be verifiedi (ASN 9000002)
-        request = self.factory.post("/affiliate-to-org", data={
-            "asn": asn_ok_b
-        })
+        request = self.factory.post("/affiliate-to-org", data={"asn": asn_ok_b})
         request.user = self.user_b
         request._dont_enforce_csrf_checks = True
         resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
@@ -195,18 +199,18 @@ class AsnAutomationTestCase(TestCase):
 
         # check that support tickets were created
         ticket = models.DeskProTicket.objects.get(
-            subject=
-            "[test]User user_b wishes to request ownership of ORG AS9000002")
+            subject="[test]User user_b wishes to request ownership of ORG AS9000002"
+        )
         self.assertEqual(
-            ticket.body,
-            self.ticket["asnauto-9000002-user-requested-ownership.txt"])
+            ticket.body, self.ticket["asnauto-9000002-user-requested-ownership.txt"]
+        )
 
         net = models.Network.objects.get(asn=asn_ok_b)
         self.assertEqual(net.name, "AS%d" % asn_ok_b)
         self.assertEqual(net.org.name, "ORG AS%d" % asn_ok_b)
         self.assertEqual(
-            self.user_b.groups.filter(
-                name=net.org.admin_usergroup.name).exists(), False)
+            self.user_b.groups.filter(name=net.org.admin_usergroup.name).exists(), False
+        )
         self.assertEqual(net.status, "ok")
         self.assertEqual(net.org.status, "ok")
 
@@ -215,27 +219,27 @@ class AsnAutomationTestCase(TestCase):
         tests affiliation with non-existant asn
         """
         asns = []
-        for a,b in pdbinet.BOGON_ASN_RANGES:
-            asns.extend([a,b])
+        for a, b in pdbinet.BOGON_ASN_RANGES:
+            asns.extend([a, b])
 
         for asn in asns:
-            request = self.factory.post("/affiliate-to-org", data={
-                "asn": asn})
+            request = self.factory.post("/affiliate-to-org", data={"asn": asn})
 
             request.user = self.user_a
             request._dont_enforce_csrf_checks = True
             resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
             self.assertEqual(resp.get("asn"), ERR_BOGON_ASN)
 
-
     def test_claim_ownership(self):
         """
         tests ownership to org via asn RiR validation
         """
         org = models.Organization.objects.create(
-            status="ok", name="test_claim_ownership ORG")
+            status="ok", name="test_claim_ownership ORG"
+        )
         net = models.Network.objects.create(
-            status="ok", name="test_claim_ownership NET", asn=9000100, org=org)
+            status="ok", name="test_claim_ownership NET", asn=9000100, org=org
+        )
 
         request = self.factory.post("/request-ownership", data={"id": org.id})
         request.user = self.user_a
@@ -245,17 +249,19 @@ class AsnAutomationTestCase(TestCase):
         self.assertEqual(resp.get("status"), "ok")
         self.assertEqual(resp.get("ownership_status"), "approved")
         self.assertEqual(
-            self.user_a.groups.filter(name=org.admin_usergroup.name).exists(),
-            True)
+            self.user_a.groups.filter(name=org.admin_usergroup.name).exists(), True
+        )
 
     def test_claim_ownership_validation_failure(self):
         """
         test failure to claim ownership to org via asn RiR validation
         """
         org = models.Organization.objects.create(
-            status="ok", name="test_claim_ownership ORG")
+            status="ok", name="test_claim_ownership ORG"
+        )
         net = models.Network.objects.create(
-            status="ok", name="test_claim_ownership NET", asn=9000100, org=org)
+            status="ok", name="test_claim_ownership NET", asn=9000100, org=org
+        )
 
         request = self.factory.post("/request-ownership", data={"id": org.id})
         request.user = self.user_b
@@ -265,11 +271,12 @@ class AsnAutomationTestCase(TestCase):
         self.assertEqual(resp.get("status"), "ok")
         self.assertEqual(resp.get("ownership_status"), "pending")
         self.assertEqual(
-            self.user_b.groups.filter(name=org.admin_usergroup.name).exists(),
-            False)
+            self.user_b.groups.filter(name=org.admin_usergroup.name).exists(), False
+        )
+
 
 class TestTutorialMode(SettingsCase):
-    settings = {"TUTORIAL_MODE":True}
+    settings = {"TUTORIAL_MODE": True}
 
     def setUp(self):
         super(TestTutorialMode, self).setUp()
@@ -280,18 +287,17 @@ class TestTutorialMode(SettingsCase):
         tests affiliation with non-existant bogon asn
         with tutorial mode enabled those should be allowed
         """
-        user = get_user_model().objects.create_user("user_a", "user_a@localhost", "user_a")
+        user = get_user_model().objects.create_user(
+            "user_a", "user_a@localhost", "user_a"
+        )
         asns = []
-        for a,b in pdbinet.TUTORIAL_ASN_RANGES:
-            asns.extend([a,b])
+        for a, b in pdbinet.TUTORIAL_ASN_RANGES:
+            asns.extend([a, b])
 
         for asn in asns:
-            request = self.factory.post("/affiliate-to-org", data={
-                "asn": asn})
+            request = self.factory.post("/affiliate-to-org", data={"asn": asn})
 
             request.user = user
             request._dont_enforce_csrf_checks = True
             resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
             self.assertEqual(resp.get("status"), "ok")
-
-

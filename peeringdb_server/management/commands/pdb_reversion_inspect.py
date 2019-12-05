@@ -5,9 +5,16 @@ from django.contrib.contenttypes.models import ContentType
 from reversion.models import Version
 
 MODELS = [
-    pdbm.Organization, pdbm.Network, pdbm.InternetExchange,
-    pdbm.InternetExchangeFacility, pdbm.Facility, pdbm.NetworkContact,
-    pdbm.NetworkFacility, pdbm.IXLan, pdbm.IXLanPrefix, pdbm.NetworkIXLan
+    pdbm.Organization,
+    pdbm.Network,
+    pdbm.InternetExchange,
+    pdbm.InternetExchangeFacility,
+    pdbm.Facility,
+    pdbm.NetworkContact,
+    pdbm.NetworkFacility,
+    pdbm.IXLan,
+    pdbm.IXLanPrefix,
+    pdbm.NetworkIXLan,
 ]
 
 
@@ -32,7 +39,7 @@ class Command(BaseCommand):
 
         ids = [int(i) for i in options.get("id")]
 
-        print(ref_tag, ids)
+        print (ref_tag, ids)
 
         model = None
         for m in MODELS:
@@ -47,8 +54,8 @@ class Command(BaseCommand):
         content_type = ContentType.objects.get_for_model(model)
         for id in ids:
             versions = Version.objects.filter(
-                content_type=content_type,
-                object_id=id).order_by('revision_id')
+                content_type=content_type, object_id=id
+            ).order_by("revision_id")
             print "%s - %d:" % (ref_tag, id)
             self.print_line()
             prev = {}
@@ -57,7 +64,11 @@ class Command(BaseCommand):
                 data = json.loads(version.serialized_data)[0].get("fields")
                 n += 1
                 print "VERSION: %d (%d) - %s - User: %s" % (
-                    n, version.id, data.get("updated"), version.revision.user)
+                    n,
+                    version.id,
+                    data.get("updated"),
+                    version.revision.user,
+                )
                 if not prev:
                     for k, v in data.items():
                         print "%s: '%s'" % (k, v)

@@ -10,16 +10,22 @@ class TestWhois(ClientCase):
     @classmethod
     def setUpTestData(cls):
         super(TestWhois, cls).setUpTestData()
-        cls.org = REFTAG_MAP["org"].objects.create(name="Test org",
-                                                   status="ok")
+        cls.org = REFTAG_MAP["org"].objects.create(name="Test org", status="ok")
         cls.net = REFTAG_MAP["net"].objects.create(
-            name="Test net", status="ok", asn=63311, org=cls.org)
+            name="Test net", status="ok", asn=63311, org=cls.org
+        )
         cls.pocs = []
         for visibility in ["Private", "Users", "Public"]:
-            cls.pocs.append(REFTAG_MAP["poc"].objects.create(
-                network=cls.net, status="ok", role="Abuse",
-                name="POC-{}".format(visibility),
-                email="{}@localhost".format(visibility), visible=visibility))
+            cls.pocs.append(
+                REFTAG_MAP["poc"].objects.create(
+                    network=cls.net,
+                    status="ok",
+                    role="Abuse",
+                    name="POC-{}".format(visibility),
+                    email="{}@localhost".format(visibility),
+                    visible=visibility,
+                )
+            )
 
     def test_whois_perms(self):
         """

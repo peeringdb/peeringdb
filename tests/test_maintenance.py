@@ -11,20 +11,19 @@ import peeringdb_server.views as views
 
 from util import ClientCase
 
-class TestMaintenanceMode(ClientCase):
 
+class TestMaintenanceMode(ClientCase):
     @classmethod
     def setUpTestData(cls):
         super(TestMaintenanceMode, cls).setUpTestData()
-        cls.superuser = User.objects.create_user("su","su@localhost","su",is_superuser=True)
-        cls.org = REFTAG_MAP["org"].objects.create(name="Test Org",
-                                                   status="ok")
-
+        cls.superuser = User.objects.create_user(
+            "su", "su@localhost", "su", is_superuser=True
+        )
+        cls.org = REFTAG_MAP["org"].objects.create(name="Test Org", status="ok")
 
     @pytest.fixture(autouse=True)
     def init_lockfile(self, tmpdir):
         settings.MAINTENANCE_MODE_LOCKFILE = str(tmpdir.join("maintenance.lock"))
-
 
     def test_signup(self):
         """
@@ -39,7 +38,6 @@ class TestMaintenanceMode(ClientCase):
         assert resp.content.find("maintenance mode") > -1
 
         maintenance.off()
-
 
     def test_api(self):
         """
@@ -61,27 +59,22 @@ class TestMaintenanceMode(ClientCase):
         assert r.status_code == 200
 
         # POST should be blocked
-        r = self.client.post("/api/net", {
-            "org_id": 1,
-            "name": "Test net",
-            "asn": 9000000
-        }, format="json")
+        r = self.client.post(
+            "/api/net", {"org_id": 1, "name": "Test net", "asn": 9000000}, format="json"
+        )
         content = json.loads(r.content)
         assert r.status_code == 503
         assert content["meta"]["error"].find(err_str) > -1
         net = {"id": 1}
 
         # PUT should be blocked
-        r = self.client.put("/api/net/{}".format(net["id"]), net,
-                            format="json")
+        r = self.client.put("/api/net/{}".format(net["id"]), net, format="json")
         content = json.loads(r.content)
         assert r.status_code == 503
         assert content["meta"]["error"].find(err_str) > -1
 
-
         # DELETE should be blocked
-        r = self.client.delete("/api/net/{}".format(net["id"]), {},
-                               format="json")
+        r = self.client.delete("/api/net/{}".format(net["id"]), {}, format="json")
         content = json.loads(r.content)
         assert r.status_code == 503
         assert content["meta"]["error"].find(err_str) > -1

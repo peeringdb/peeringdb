@@ -12,6 +12,7 @@ from peeringdb_server import signals
 from django_peeringdb import models as djpdb_models
 from django_peeringdb import sync, settings as djpdb_settings
 
+
 def sync_obj(cls, row):
     """
     we need to override django peeringdb's sync_obj function
@@ -23,7 +24,7 @@ def sync_obj(cls, row):
         return
 
     try:
-        obj = cls.objects.get(pk=row['id'])
+        obj = cls.objects.get(pk=row["id"])
 
     except cls.DoesNotExist:
         obj = cls()
@@ -44,7 +45,7 @@ def sync_obj(cls, row):
         except AttributeError:
             pass
 
-    #print(obj, obj.id)
+    # print(obj, obj.id)
 
     try:
         # we want to validate because it fixes some values
@@ -81,37 +82,43 @@ class Command(BaseCommand):
     help = "Load initial data from another peeringdb instance"
 
     def add_arguments(self, parser):
-        parser.add_argument("--url", default="https://www.peeringdb.com/api/",
-                            type=str)
+        parser.add_argument("--url", default="https://www.peeringdb.com/api/", type=str)
 
-        parser.add_argument('--commit', action='store_true',
-                            help="will commit the changes")
-
+        parser.add_argument(
+            "--commit", action="store_true", help="will commit the changes"
+        )
 
     def handle(self, *args, **options):
         if settings.RELEASE_ENV != "dev" and not settings.TUTORIAL_MODE:
-            self.stdout.write("Command can only be run on dev instances and instances "\
-                              "with tutorial mode enabled")
+            self.stdout.write(
+                "Command can only be run on dev instances and instances "
+                "with tutorial mode enabled"
+            )
             return
 
         if not options.get("commit"):
-            self.stdout.write("This will sync data from {url} to this instance, and will take "\
-                              "roughly 20 minutes to complete on a fresh db. "\
-                              "Run the command with `--commit` if you are sure you want "\
-                              "to do this.".format(**options))
+            self.stdout.write(
+                "This will sync data from {url} to this instance, and will take "
+                "roughly 20 minutes to complete on a fresh db. "
+                "Run the command with `--commit` if you are sure you want "
+                "to do this.".format(**options)
+            )
             return
 
-
         djpdb_settings.SYNC_URL = options.get("url")
-        pre_save.disconnect(signals.addressmodel_save,
-                            sender=pdb_models.Facility)
+        pre_save.disconnect(signals.addressmodel_save, sender=pdb_models.Facility)
 
         djpdb_models.all_models = [
-            pdb_models.Organization, pdb_models.Facility, pdb_models.Network,
-            pdb_models.InternetExchange, pdb_models.InternetExchangeFacility,
-            pdb_models.IXLan, pdb_models.IXLanPrefix,
-            pdb_models.NetworkContact, pdb_models.NetworkFacility,
-            pdb_models.NetworkIXLan
+            pdb_models.Organization,
+            pdb_models.Facility,
+            pdb_models.Network,
+            pdb_models.InternetExchange,
+            pdb_models.InternetExchangeFacility,
+            pdb_models.IXLan,
+            pdb_models.IXLanPrefix,
+            pdb_models.NetworkContact,
+            pdb_models.NetworkFacility,
+            pdb_models.NetworkIXLan,
         ]
 
         call_command("pdb_sync")

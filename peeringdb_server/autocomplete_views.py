@@ -6,9 +6,16 @@ from django.utils import html
 from django.core.exceptions import ObjectDoesNotExist
 from reversion.models import Version
 from dal import autocomplete
-from peeringdb_server.models import (InternetExchange, Facility,
-                                     NetworkFacility, InternetExchangeFacility,
-                                     Organization, IXLan, CommandLineTool, REFTAG_MAP)
+from peeringdb_server.models import (
+    InternetExchange,
+    Facility,
+    NetworkFacility,
+    InternetExchangeFacility,
+    Organization,
+    IXLan,
+    CommandLineTool,
+    REFTAG_MAP,
+)
 
 from peeringdb_server.admin_commandline_tools import TOOL_MAP
 
@@ -18,10 +25,11 @@ class AutocompleteHTMLResponse(autocomplete.Select2QuerySetView):
         return False
 
     def render_to_response(self, context):
-        q = self.request.GET.get('q', None)
-        return http.HttpResponse("".join(
-            [i.get("text") for i in self.get_results(context)]),
-                                 content_type="text/html")
+        q = self.request.GET.get("q", None)
+        return http.HttpResponse(
+            "".join([i.get("text") for i in self.get_results(context)]),
+            content_type="text/html",
+        )
 
 
 class ExchangeAutocompleteJSON(autocomplete.Select2QuerySetView):
@@ -29,7 +37,7 @@ class ExchangeAutocompleteJSON(autocomplete.Select2QuerySetView):
         qs = InternetExchange.objects.filter(status="ok")
         if self.q:
             qs = qs.filter(name__icontains=self.q)
-        qs = qs.order_by('name')
+        qs = qs.order_by("name")
         return qs
 
 
@@ -38,12 +46,14 @@ class ExchangeAutocomplete(AutocompleteHTMLResponse):
         qs = InternetExchange.objects.filter(status="ok")
         if self.q:
             qs = qs.filter(name__icontains=self.q)
-        qs = qs.order_by('name')
+        qs = qs.order_by("name")
         return qs
 
     def get_result_label(self, item):
         return u'<span data-value="%d"><div class="main">%s</div></span>' % (
-            item.pk, html.escape(item.name))
+            item.pk,
+            html.escape(item.name),
+        )
 
 
 class FacilityAutocompleteJSON(autocomplete.Select2QuerySetView):
@@ -51,7 +61,7 @@ class FacilityAutocompleteJSON(autocomplete.Select2QuerySetView):
         qs = Facility.objects.filter(status="ok")
         if self.q:
             qs = qs.filter(name__icontains=self.q)
-        qs = qs.order_by('name')
+        qs = qs.order_by("name")
         return qs
 
 
@@ -59,14 +69,15 @@ class FacilityAutocomplete(AutocompleteHTMLResponse):
     def get_queryset(self):
         qs = Facility.objects.filter(status="ok")
         if self.q:
-            qs = qs.filter(
-                Q(name__icontains=self.q) | Q(address1__icontains=self.q))
-        qs = qs.order_by('name')
+            qs = qs.filter(Q(name__icontains=self.q) | Q(address1__icontains=self.q))
+        qs = qs.order_by("name")
         return qs
 
     def get_result_label(self, item):
-        return u'<span data-value="%d"><div class="main">%s</div> <div class="sub">%s</div></span>' % (
-            item.pk, html.escape(item.name), html.escape(item.address1))
+        return (
+            u'<span data-value="%d"><div class="main">%s</div> <div class="sub">%s</div></span>'
+            % (item.pk, html.escape(item.name), html.escape(item.address1))
+        )
 
 
 class FacilityAutocompleteForNetwork(FacilityAutocomplete):
@@ -75,8 +86,7 @@ class FacilityAutocompleteForNetwork(FacilityAutocomplete):
         net_id = self.request.resolver_match.kwargs.get("net_id")
         fac_ids = [
             nf.facility_id
-            for nf in NetworkFacility.objects.filter(status="ok",
-                                                     network_id=net_id)
+            for nf in NetworkFacility.objects.filter(status="ok", network_id=net_id)
         ]
         qs = qs.exclude(id__in=fac_ids)
         return qs
@@ -88,8 +98,7 @@ class FacilityAutocompleteForExchange(FacilityAutocomplete):
         ix_id = self.request.resolver_match.kwargs.get("ix_id")
         fac_ids = [
             nf.facility_id
-            for nf in InternetExchangeFacility.objects.filter(
-                status="ok", ix_id=ix_id)
+            for nf in InternetExchangeFacility.objects.filter(status="ok", ix_id=ix_id)
         ]
         qs = qs.exclude(id__in=fac_ids)
         return qs
@@ -100,12 +109,14 @@ class OrganizationAutocomplete(AutocompleteHTMLResponse):
         qs = Organization.objects.filter(status="ok")
         if self.q:
             qs = qs.filter(name__icontains=self.q)
-        qs = qs.order_by('name')
+        qs = qs.order_by("name")
         return qs
 
     def get_result_label(self, item):
         return u'<span data-value="%d"><div class="main">%s</div></span>' % (
-            item.pk, html.escape(item.name))
+            item.pk,
+            html.escape(item.name),
+        )
 
 
 class IXLanAutocomplete(AutocompleteHTMLResponse):
@@ -113,16 +124,22 @@ class IXLanAutocomplete(AutocompleteHTMLResponse):
         qs = IXLan.objects.filter(status="ok").select_related("ix")
         if self.q:
             qs = qs.filter(
-                Q(ix__name__icontains=self.q)
-                | Q(ix__name_long__icontains=self.q))
-        qs = qs.order_by('ix__name')
+                Q(ix__name__icontains=self.q) | Q(ix__name_long__icontains=self.q)
+            )
+        qs = qs.order_by("ix__name")
         return qs
 
     def get_result_label(self, item):
-        return u'<span data-value="%d"><div class="main">%s <div class="tiny suffix">%s</div></div> <div class="sub">%s</div> <div class="sub">%s</div></span>' % (
-            item.pk, html.escape(item.ix.name),
-            html.escape(item.ix.country.code), html.escape(item.ix.name_long),
-            html.escape(item.name))
+        return (
+            u'<span data-value="%d"><div class="main">%s <div class="tiny suffix">%s</div></div> <div class="sub">%s</div> <div class="sub">%s</div></span>'
+            % (
+                item.pk,
+                html.escape(item.ix.name),
+                html.escape(item.ix.country.code),
+                html.escape(item.ix.name_long),
+                html.escape(item.name),
+            )
+        )
 
 
 class DeletedVersionAutocomplete(autocomplete.Select2QuerySetView):
@@ -135,7 +152,6 @@ class DeletedVersionAutocomplete(autocomplete.Select2QuerySetView):
         # Only staff needs to be able to see these
         if not self.request.user.is_staff:
             return []
-
 
         # no query supplied, return empty result
         if not self.q:
@@ -155,7 +171,11 @@ class DeletedVersionAutocomplete(autocomplete.Select2QuerySetView):
         except (KeyError, ObjectDoesNotExist):
             return []
 
-        versions = Version.objects.get_for_object(obj).order_by("revision_id").select_related("revision")
+        versions = (
+            Version.objects.get_for_object(obj)
+            .order_by("revision_id")
+            .select_related("revision")
+        )
         rv = []
         previous = {}
 
@@ -179,25 +199,24 @@ class DeletedVersionAutocomplete(autocomplete.Select2QuerySetView):
         return "{} - {}".format(item, str(item.revision.date_created).split(".")[0])
 
 
-
 class CommandLineToolHistoryAutocomplete(autocomplete.Select2QuerySetView):
     """
     Autocomplete for command line tools that were ran via the admin ui
     """
+
     tool = ""
 
     def get_queryset(self):
         # Only staff needs to be able to see these
         if not self.request.user.is_staff:
             return []
-        qs = CommandLineTool.objects.filter(
-            tool=self.tool).order_by("-created")
+        qs = CommandLineTool.objects.filter(tool=self.tool).order_by("-created")
         if self.q:
             qs = qs.filter(description__icontains=self.q)
         return qs
 
     def get_result_label(self, item):
-        return (item.description or self.tool)
+        return item.description or self.tool
 
 
 clt_history = {}

@@ -23,7 +23,11 @@ from django.template import loader
 from django.template.response import TemplateResponse
 from django.db.models import Q
 from django.db.models.functions import Concat
-from django_namespace_perms.admin import UserPermissionInline, UserPermissionInlineAdd, UserAdmin
+from django_namespace_perms.admin import (
+    UserPermissionInline,
+    UserPermissionInlineAdd,
+    UserAdmin,
+)
 
 import reversion
 from reversion.admin import VersionAdmin
@@ -31,23 +35,43 @@ from reversion.admin import VersionAdmin
 from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
 
 import peeringdb_server.admin_commandline_tools as acltools
-from peeringdb_server.views import (JsonResponse, HttpResponseForbidden)
+from peeringdb_server.views import JsonResponse, HttpResponseForbidden
 from peeringdb_server.models import (
-    REFTAG_MAP, QUEUE_ENABLED, COMMANDLINE_TOOLS, OrganizationMerge,
-    OrganizationMergeEntity, Sponsorship, SponsorshipOrganization, Partnership,
-    UserOrgAffiliationRequest, VerificationQueueItem, Organization, Facility,
-    InternetExchange, Network, InternetExchangeFacility, IXLan,
-    IXLanIXFMemberImportLog, IXLanIXFMemberImportLogEntry, IXLanPrefix,
-    NetworkContact, NetworkFacility, NetworkIXLan, User, CommandLineTool, UTC,
-    DeskProTicket)
+    REFTAG_MAP,
+    QUEUE_ENABLED,
+    COMMANDLINE_TOOLS,
+    OrganizationMerge,
+    OrganizationMergeEntity,
+    Sponsorship,
+    SponsorshipOrganization,
+    Partnership,
+    UserOrgAffiliationRequest,
+    VerificationQueueItem,
+    Organization,
+    Facility,
+    InternetExchange,
+    Network,
+    InternetExchangeFacility,
+    IXLan,
+    IXLanIXFMemberImportLog,
+    IXLanIXFMemberImportLogEntry,
+    IXLanPrefix,
+    NetworkContact,
+    NetworkFacility,
+    NetworkIXLan,
+    User,
+    CommandLineTool,
+    UTC,
+    DeskProTicket,
+)
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException
 
-delete_selected.short_description = u'HARD DELETE - Proceed with caution'
+delete_selected.short_description = u"HARD DELETE - Proceed with caution"
 
 from django.utils.translation import ugettext_lazy as _
 
-#def _(x):
+# def _(x):
 #    return x
 
 
@@ -62,8 +86,12 @@ class StatusFilter(admin.SimpleListFilter):
     dflt = "all"
 
     def lookups(self, request, model_admin):
-        return [("ok", "ok"), ("pending", "pending"), ("deleted", "deleted"),
-                ("all", "all")]
+        return [
+            ("ok", "ok"),
+            ("pending", "pending"),
+            ("deleted", "deleted"),
+            ("all", "all"),
+        ]
 
     def choices(self, cl):
         val = self.value()
@@ -71,11 +99,9 @@ class StatusFilter(admin.SimpleListFilter):
             val = "all"
         for lookup, title in self.lookup_choices:
             yield {
-                'selected': val == lookup,
-                'query_string': cl.get_query_string({
-                    self.parameter_name: lookup
-                }, []),
-                'display': title
+                "selected": val == lookup,
+                "query_string": cl.get_query_string({self.parameter_name: lookup}, []),
+                "display": title,
             }
 
     def queryset(self, request, queryset):
@@ -96,7 +122,8 @@ def fk_handleref_filter(form, field, tag=None):
     if tag in REFTAG_MAP and form.instance:
         model = REFTAG_MAP.get(tag)
         qset = model.handleref.filter(
-            Q(status="ok") | Q(id=getattr(form.instance, "%s_id" % field)))
+            Q(status="ok") | Q(id=getattr(form.instance, "%s_id" % field))
+        )
 
         try:
             qset = qset.order_by("name")
@@ -136,8 +163,7 @@ def merge_organizations(targets, target, request):
 
     for org in targets:
         if org == target:
-            raise ValueError(
-                _("Target org cannot be in selected organizations list"))
+            raise ValueError(_("Target org cannot be in selected organizations list"))
 
     for org in targets:
 
@@ -178,16 +204,16 @@ def merge_organizations(targets, target, request):
         org.delete()
         org_merged += 1
 
-        mail_users_entity_merge(source_admins,
-                                target.admin_usergroup.user_set.all(), org,
-                                target)
+        mail_users_entity_merge(
+            source_admins, target.admin_usergroup.user_set.all(), org, target
+        )
 
     return {
         "ix": ix_moved,
         "fac": fac_moved,
         "net": net_moved,
         "user": user_moved,
-        "org": org_merged
+        "org": org_merged,
     }
 
 
@@ -195,10 +221,9 @@ def merge_organizations(targets, target, request):
 
 
 class StatusForm(baseForms.ModelForm):
-    status = baseForms.ChoiceField(choices=[("ok",
-                                             "ok"), ("pending",
-                                                     "pending"), ("deleted",
-                                                                  "deleted")])
+    status = baseForms.ChoiceField(
+        choices=[("ok", "ok"), ("pending", "pending"), ("deleted", "deleted")]
+    )
 
     def __init__(self, *args, **kwargs):
         super(StatusForm, self).__init__(*args, **kwargs)
@@ -207,18 +232,15 @@ class StatusForm(baseForms.ModelForm):
             if inst.status == "ok":
                 self.fields["status"].choices = [("ok", "ok")]
             elif inst.status == "pending":
-                self.fields["status"].choices = [("ok", "ok"), ("pending",
-                                                                "pending")]
+                self.fields["status"].choices = [("ok", "ok"), ("pending", "pending")]
             elif inst.status == "deleted":
-                self.fields["status"].choices = [("ok", "ok"), ("deleted",
-                                                                "deleted")]
+                self.fields["status"].choices = [("ok", "ok"), ("deleted", "deleted")]
 
 
 class ModelAdminWithUrlActions(admin.ModelAdmin):
     def make_redirect(self, obj, action):
         opts = obj.model._meta
-        return redirect("admin:%s_%s_changelist" % (opts.app_label,
-                                                    opts.model_name))
+        return redirect("admin:%s_%s_changelist" % (opts.app_label, opts.model_name))
 
     def actions_view(self, request, object_id, action, **kwargs):
         """
@@ -237,8 +259,9 @@ class ModelAdminWithUrlActions(admin.ModelAdmin):
                 return redir
                 # return redirect("admin:%s_%s_changelist" % (opts.app_label, opts.model_name))
         return redirect(
-            "admin:%s_%s_changelist" % (obj.model._meta.app_label,
-                                        obj.model._meta.model_name))
+            "admin:%s_%s_changelist"
+            % (obj.model._meta.app_label, obj.model._meta.model_name)
+        )
 
     def get_urls(self):
         """
@@ -247,9 +270,11 @@ class ModelAdminWithUrlActions(admin.ModelAdmin):
         info = self.model._meta.app_label, self.model._meta.model_name
 
         urls = [
-            url(r'^(\d+)/action/([\w]+)/$',
+            url(
+                r"^(\d+)/action/([\w]+)/$",
                 self.admin_site.admin_view(self.actions_view),
-                name="%s_%s_actions" % info),
+                name="%s_%s_actions" % info,
+            ),
         ] + super(ModelAdminWithUrlActions, self).get_urls()
         return urls
 
@@ -278,14 +303,18 @@ soft_delete.short_description = _("SOFT DELETE")
 
 class SanitizedAdmin(object):
     def get_readonly_fields(self, request, obj=None):
-        return ("version", ) + tuple(
-            super(SanitizedAdmin, self).get_readonly_fields(request, obj=obj))
+        return ("version",) + tuple(
+            super(SanitizedAdmin, self).get_readonly_fields(request, obj=obj)
+        )
 
 
-class SoftDeleteAdmin(SanitizedAdmin, HandleRefVersionAdmin, VersionAdmin, admin.ModelAdmin):
+class SoftDeleteAdmin(
+    SanitizedAdmin, HandleRefVersionAdmin, VersionAdmin, admin.ModelAdmin
+):
     """
     Soft delete admin
     """
+
     actions = [soft_delete]
     object_history_template = "handleref/grappelli/object_history.html"
     version_details_template = "handleref/grappelli/version_details.html"
@@ -299,8 +328,7 @@ class SoftDeleteAdmin(SanitizedAdmin, HandleRefVersionAdmin, VersionAdmin, admin
     def save_formset(self, request, form, formset, change):
         if request.user:
             reversion.set_user(request.user)
-        super(SoftDeleteAdmin, self).save_formset(request, form, formset,
-                                                  change)
+        super(SoftDeleteAdmin, self).save_formset(request, form, formset, change)
 
 
 class ModelAdminWithVQCtrl(object):
@@ -317,20 +345,20 @@ class ModelAdminWithVQCtrl(object):
         """
 
         fieldsets = tuple(
-            super(ModelAdminWithVQCtrl, self).get_fieldsets(request, obj=obj))
+            super(ModelAdminWithVQCtrl, self).get_fieldsets(request, obj=obj)
+        )
 
         # on automatically defined fieldsets it will insert the controls
         # somewhere towards the bottom, we dont want that - so we look for it and
         # remove it
         for k, s in fieldsets:
-            if 'verification_queue' in s["fields"]:
+            if "verification_queue" in s["fields"]:
                 s["fields"].remove("verification_queue")
 
         # attach controls to top of fieldset
-        fieldsets = ((None, {
-            'classes': ('wide,'),
-            'fields': ('verification_queue', )
-        }), ) + fieldsets
+        fieldsets = (
+            (None, {"classes": ("wide,"), "fields": ("verification_queue",)}),
+        ) + fieldsets
         return fieldsets
 
     def get_readonly_fields(self, request, obj=None):
@@ -338,9 +366,9 @@ class ModelAdminWithVQCtrl(object):
         make the modeladmin aware that "verification_queue" is a valid
         readonly field
         """
-        return ("verification_queue", ) + tuple(
-            super(ModelAdminWithVQCtrl, self).get_readonly_fields(
-                request, obj=obj))
+        return ("verification_queue",) + tuple(
+            super(ModelAdminWithVQCtrl, self).get_readonly_fields(request, obj=obj)
+        )
 
     def verification_queue(self, obj):
         """
@@ -350,19 +378,16 @@ class ModelAdminWithVQCtrl(object):
         if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False):
             return _("Verification Queue is currently disabled")
         if self.model not in QUEUE_ENABLED:
-            return _(
-                "Verification Queue is currently disabled for this object type"
-            )
+            return _("Verification Queue is currently disabled for this object type")
 
         vq = VerificationQueueItem.objects.filter(
-            content_type=ContentType.objects.get_for_model(type(obj)),
-            object_id=obj.id).first()
+            content_type=ContentType.objects.get_for_model(type(obj)), object_id=obj.id
+        ).first()
 
         if vq:
             return (
                 u'<a class="grp-button" href="{}">{}</a> &nbsp;  &nbsp; <a class="grp-button grp-delete-link" href="{}">{}</a>'
-            ).format(vq.approve_admin_url, _('APPROVE'), vq.deny_admin_url,
-                     _('DENY'))
+            ).format(vq.approve_admin_url, _("APPROVE"), vq.deny_admin_url, _("DENY"))
         return _("APPROVED")
 
     verification_queue.allow_tags = True
@@ -390,7 +415,8 @@ class IXLanInline(SanitizedAdmin, admin.StackedInline):
 
     def prefixes(self, obj):
         return ", ".join(
-            [str(ixpfx.prefix) for ixpfx in obj.ixpfx_set_active_or_pending])
+            [str(ixpfx.prefix) for ixpfx in obj.ixpfx_set_active_or_pending]
+        )
 
 
 class InternetExchangeFacilityInline(SanitizedAdmin, admin.TabularInline):
@@ -429,18 +455,22 @@ class NetworkIXLanValidationMixin(object):
     def clean_ipaddr4(self):
         ipaddr4 = self.cleaned_data["ipaddr4"]
         instance = self.instance
-        if NetworkIXLan.objects.filter(
-                ipaddr4=ipaddr4,
-                status="ok").exclude(id=getattr(instance, "id", 0)).exists():
+        if (
+            NetworkIXLan.objects.filter(ipaddr4=ipaddr4, status="ok")
+            .exclude(id=getattr(instance, "id", 0))
+            .exists()
+        ):
             raise ValidationError(_("Ipaddress already exists elsewhere"))
         return ipaddr4
 
     def clean_ipaddr6(self):
         ipaddr6 = self.cleaned_data["ipaddr6"]
         instance = self.instance
-        if NetworkIXLan.objects.filter(
-                ipaddr6=ipaddr6,
-                status="ok").exclude(id=getattr(instance, "id", 0)).exists():
+        if (
+            NetworkIXLan.objects.filter(ipaddr6=ipaddr6, status="ok")
+            .exclude(id=getattr(instance, "id", 0))
+            .exists()
+        ):
             raise ValidationError(_("Ipaddress already exists elsewhere"))
         return ipaddr6
 
@@ -460,8 +490,7 @@ class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
     def clean(self):
         super(UserOrgAffiliationRequestInlineForm, self).clean()
         try:
-            rdap_valid = RdapLookup().get_asn(
-                self.cleaned_data.get("asn")).emails
+            rdap_valid = RdapLookup().get_asn(self.cleaned_data.get("asn")).emails
         except RdapException as exc:
             raise ValidationError({"asn": str(exc)})
 
@@ -470,16 +499,16 @@ class UserOrgAffiliationRequestInline(admin.TabularInline):
     model = UserOrgAffiliationRequest
     extra = 0
     form = UserOrgAffiliationRequestInlineForm
-    verbose_name_plural = _(
-        "User is looking to be affiliated to these Organizations")
+    verbose_name_plural = _("User is looking to be affiliated to these Organizations")
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "org":
-            kwargs["queryset"] = Organization.handleref.filter(
-                status="ok").order_by("name")
-        return super(
-            UserOrgAffiliationRequestInline, self).formfield_for_foreignkey(
-                db_field, request, **kwargs)
+            kwargs["queryset"] = Organization.handleref.filter(status="ok").order_by(
+                "name"
+            )
+        return super(UserOrgAffiliationRequestInline, self).formfield_for_foreignkey(
+            db_field, request, **kwargs
+        )
 
 
 class InternetExchangeAdminForm(StatusForm):
@@ -489,20 +518,30 @@ class InternetExchangeAdminForm(StatusForm):
 
 
 class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-    list_display = ('name', 'name_long', 'city', 'country', 'status',
-                    'created', 'updated')
-    ordering = ('-created', )
-    list_filter = (StatusFilter, )
-    search_fields = ('name', )
-    readonly_fields = ('id', 'nsp_namespace', "ixf_import_history")
+    list_display = (
+        "name",
+        "name_long",
+        "city",
+        "country",
+        "status",
+        "created",
+        "updated",
+    )
+    ordering = ("-created",)
+    list_filter = (StatusFilter,)
+    search_fields = ("name",)
+    readonly_fields = ("id", "nsp_namespace", "ixf_import_history")
     inlines = (InternetExchangeFacilityInline, IXLanInline)
     form = InternetExchangeAdminForm
 
     def ixf_import_history(self, obj):
         return (u'<a href="{}?q={}">{}</a>').format(
             urlresolvers.reverse(
-                "admin:peeringdb_server_ixlanixfmemberimportlog_changelist"),
-            obj.id, _('IXF Import History'))
+                "admin:peeringdb_server_ixlanixfmemberimportlog_changelist"
+            ),
+            obj.id,
+            _("IXF Import History"),
+        )
 
     ixf_import_history.allow_tags = True
 
@@ -514,10 +553,10 @@ class IXLanAdminForm(StatusForm):
 
 
 class IXLanAdmin(SoftDeleteAdmin):
-    list_display = ('ix', 'name', 'descr', 'status')
-    search_fields = ('name', )
-    list_filter = (StatusFilter, )
-    readonly_fields = ('id', )
+    list_display = ("ix", "name", "descr", "status")
+    search_fields = ("name",)
+    list_filter = (StatusFilter,)
+    readonly_fields = ("id",)
     inlines = (IXLanPrefixInline, NetworkInternetExchangeInline)
     form = IXLanAdminForm
 
@@ -525,10 +564,27 @@ class IXLanAdmin(SoftDeleteAdmin):
 class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
 
     model = IXLanIXFMemberImportLogEntry
-    fields = ("netixlan", "ipv4", "ipv6", "asn", "changes", "rollback_status", "action", "reason")
-    readonly_fields = ("netixlan", "ipv4", "ipv6", "asn", "changes",
-                       "rollback_status", "action", "reason")
-    raw_id_fields = ("netixlan", )
+    fields = (
+        "netixlan",
+        "ipv4",
+        "ipv6",
+        "asn",
+        "changes",
+        "rollback_status",
+        "action",
+        "reason",
+    )
+    readonly_fields = (
+        "netixlan",
+        "ipv4",
+        "ipv6",
+        "asn",
+        "changes",
+        "rollback_status",
+        "action",
+        "reason",
+    )
+    raw_id_fields = ("netixlan",)
 
     extra = 0
 
@@ -559,7 +615,8 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
             v2 = vb.field_dict.get(k)
             if v != v2:
                 if isinstance(v, ipaddress.IPv4Address) or isinstance(
-                        v, ipaddress.IPv6Address):
+                    v, ipaddress.IPv6Address
+                ):
                     rv[k] = str(v)
                 else:
                     rv[k] = v
@@ -574,13 +631,15 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
             text = _("CAN BE ROLLED BACK")
             color = "#e5f3d6"
         elif rs == 1:
-            text = (u'{}<br><small>{}</small>').format(
-                _("CANNOT BE ROLLED BACK"), _("Has been changed since"))
+            text = (u"{}<br><small>{}</small>").format(
+                _("CANNOT BE ROLLED BACK"), _("Has been changed since")
+            )
             color = "#f3ded6"
         elif rs == 2:
-            text = (u'{}<br><small>{}</small>').format(
+            text = (u"{}<br><small>{}</small>").format(
                 _("CANNOT BE ROLLED BACK"),
-                _("Netixlan with conflicting ipaddress now exists elsewhere"))
+                _("Netixlan with conflicting ipaddress now exists elsewhere"),
+            )
             color = "#f3ded6"
         elif rs == -1:
             text = _("HAS BEEN ROLLED BACK")
@@ -591,10 +650,10 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
 
 
 class IXLanIXFMemberImportLogAdmin(admin.ModelAdmin):
-    search_fields = ("ixlan__ix__id", )
+    search_fields = ("ixlan__ix__id",)
     list_display = ("id", "ix", "ixlan_name", "source", "created", "changes")
     readonly_fields = ("ix", "ixlan_name", "source", "changes")
-    inlines = (IXLanIXFMemberImportLogEntryInline, )
+    inlines = (IXLanIXFMemberImportLogEntryInline,)
     actions = [rollback]
 
     def has_delete_permission(self, request, obj=None):
@@ -607,38 +666,47 @@ class IXLanIXFMemberImportLogAdmin(admin.ModelAdmin):
         return '<a href="{}">{} (ID: {})</a>'.format(
             urlresolvers.reverse(
                 "admin:peeringdb_server_internetexchange_change",
-                args=(obj.ixlan.ix.id, )), obj.ixlan.ix.name, obj.ixlan.ix.id)
+                args=(obj.ixlan.ix.id,),
+            ),
+            obj.ixlan.ix.name,
+            obj.ixlan.ix.id,
+        )
 
     ix.allow_tags = True
 
     def ixlan_name(self, obj):
         return '<a href="{}">{} (ID: {})</a>'.format(
-            urlresolvers.reverse("admin:peeringdb_server_ixlan_change",
-                                 args=(obj.ixlan.id, )), obj.ixlan.name or "",
-            obj.ixlan.id)
+            urlresolvers.reverse(
+                "admin:peeringdb_server_ixlan_change", args=(obj.ixlan.id,)
+            ),
+            obj.ixlan.name or "",
+            obj.ixlan.id,
+        )
 
     ixlan_name.allow_tags = True
 
     def source(self, obj):
         return obj.ixlan.ixf_ixp_member_list_url
 
+
 class SponsorshipOrganizationInline(admin.TabularInline):
     model = SponsorshipOrganization
     extra = 1
-    raw_id_fields = ('org',)
+    raw_id_fields = ("org",)
     autocomplete_lookup_fields = {
-        'fk': ['org'],
+        "fk": ["org"],
     }
 
+
 class SponsorshipAdmin(admin.ModelAdmin):
-    list_display = ('organizations', 'start_date', 'end_date', 'level', 'status')
-    readonly_fields = ('organizations', 'status', 'notify_date')
+    list_display = ("organizations", "start_date", "end_date", "level", "status")
+    readonly_fields = ("organizations", "status", "notify_date")
     inlines = (SponsorshipOrganizationInline,)
 
-    raw_id_fields = ('orgs',)
+    raw_id_fields = ("orgs",)
 
     autocomplete_lookup_fields = {
-        'm2m': ['orgs'],
+        "m2m": ["orgs"],
     }
 
     def status(self, obj):
@@ -658,7 +726,6 @@ class SponsorshipAdmin(admin.ModelAdmin):
 
     status.allow_tags = True
 
-
     def organizations(self, obj):
         qset = obj.orgs.all().order_by("name")
         if not qset.count():
@@ -667,6 +734,7 @@ class SponsorshipAdmin(admin.ModelAdmin):
 
     organizations.allow_tags = True
 
+
 class PartnershipAdminForm(baseForms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(PartnershipAdminForm, self).__init__(*args, **kwargs)
@@ -674,8 +742,8 @@ class PartnershipAdminForm(baseForms.ModelForm):
 
 
 class PartnershipAdmin(admin.ModelAdmin):
-    list_display = ('org_name', 'level', 'status')
-    readonly_fields = ('status', 'org_name')
+    list_display = ("org_name", "level", "status")
+    readonly_fields = ("status", "org_name")
     form = PartnershipAdminForm
 
     def org_name(self, obj):
@@ -695,18 +763,18 @@ class PartnershipAdmin(admin.ModelAdmin):
 
 
 class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-    list_display = ('handle', 'name', 'status', 'created', 'updated')
-    ordering = ('-created', )
-    search_fields = ('name', )
-    list_filter = (StatusFilter, )
-    readonly_fields = ('id', 'nsp_namespace')
+    list_display = ("handle", "name", "status", "created", "updated")
+    ordering = ("-created",)
+    search_fields = ("name",)
+    list_filter = (StatusFilter,)
+    readonly_fields = ("id", "nsp_namespace")
     form = StatusForm
 
     def get_urls(self):
         urls = super(OrganizationAdmin, self).get_urls()
         my_urls = [
-            url(r'^org-merge-tool/merge$', self.org_merge_tool_merge_action),
-            url(r'^org-merge-tool/$', self.org_merge_tool_view),
+            url(r"^org-merge-tool/merge$", self.org_merge_tool_merge_action),
+            url(r"^org-merge-tool/$", self.org_merge_tool_view),
         ]
         return my_urls + urls
 
@@ -715,19 +783,16 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
             return HttpResponseForbidden(request)
 
         try:
-            orgs = Organization.objects.filter(
-                id__in=request.GET.get("ids").split(","))
+            orgs = Organization.objects.filter(id__in=request.GET.get("ids").split(","))
         except ValueError:
-            return JsonResponse({
-                "error": _("Malformed organization ids")
-            }, status=400)
+            return JsonResponse({"error": _("Malformed organization ids")}, status=400)
 
         try:
             org = Organization.objects.get(id=request.GET.get("id"))
         except Organization.DoesNotExist:
-            return JsonResponse({
-                "error": _("Merge target organization does not exist")
-            }, status=400)
+            return JsonResponse(
+                {"error": _("Merge target organization does not exist")}, status=400
+            )
 
         rv = merge_organizations(orgs, org, request)
 
@@ -739,8 +804,10 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         context = dict(
             self.admin_site.each_context(request),
             undo_url=urlresolvers.reverse(
-                "admin:peeringdb_server_organizationmerge_changelist"),
-            title=_("Organization Merging Tool"))
+                "admin:peeringdb_server_organizationmerge_changelist"
+            ),
+            title=_("Organization Merging Tool"),
+        )
         return TemplateResponse(request, "admin/org_merge_tool.html", context)
 
 
@@ -759,15 +826,15 @@ class OrganizationMergeEntities(admin.TabularInline):
 
 
 class OrganizationMergeLog(ModelAdminWithUrlActions):
-    list_display = ('id', 'from_org', 'to_org', 'created')
-    search_fields = ('from_org__name', 'to_org__name')
-    readonly_fields = ('from_org', 'to_org', 'undo_merge')
-    inlines = (OrganizationMergeEntities, )
+    list_display = ("id", "from_org", "to_org", "created")
+    search_fields = ("from_org__name", "to_org__name")
+    readonly_fields = ("from_org", "to_org", "undo_merge")
+    inlines = (OrganizationMergeEntities,)
 
     def undo_merge(self, obj):
         return (
             u'<a class="grp-button grp-delete-link" href="action/undo">{}</a>'
-        ).format(_('Undo merge'))
+        ).format(_("Undo merge"))
 
     undo_merge.allow_tags = True
 
@@ -793,12 +860,11 @@ class FacilityAdminForm(StatusForm):
 
 
 class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-    list_display = ('name', 'org', 'city', 'country', 'status', 'created',
-                    'updated')
-    ordering = ('-created', )
-    list_filter = (StatusFilter, )
-    search_fields = ('name', )
-    readonly_fields = ('id', 'nsp_namespace')
+    list_display = ("name", "org", "city", "country", "status", "created", "updated")
+    ordering = ("-created",)
+    list_filter = (StatusFilter,)
+    search_fields = ("name",)
+    readonly_fields = ("id", "nsp_namespace")
     form = FacilityAdminForm
     inlines = (
         InternetExchangeFacilityInline,
@@ -808,9 +874,9 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
 
 class NetworkAdminForm(StatusForm):
 
-    #set initial values on info_prefixes4 and 6 to 0
-    #this streamlines the process of adding a network through
-    #the django admin controlpanel (#289)
+    # set initial values on info_prefixes4 and 6 to 0
+    # this streamlines the process of adding a network through
+    # the django admin controlpanel (#289)
     info_prefixes4 = baseForms.IntegerField(required=False, initial=0)
     info_prefixes6 = baseForms.IntegerField(required=False, initial=0)
 
@@ -820,11 +886,11 @@ class NetworkAdminForm(StatusForm):
 
 
 class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-    list_display = ('name', 'asn', 'aka', 'status', 'created', 'updated')
-    ordering = ('-created', )
-    list_filter = (StatusFilter, )
-    search_fields = ('name', 'asn')
-    readonly_fields = ('id', 'nsp_namespace')
+    list_display = ("name", "asn", "aka", "status", "created", "updated")
+    ordering = ("-created",)
+    list_filter = (StatusFilter,)
+    search_fields = ("name", "asn")
+    readonly_fields = ("id", "nsp_namespace")
     form = NetworkAdminForm
 
     inlines = (
@@ -833,18 +899,19 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         NetworkInternetExchangeInline,
     )
 
+
 class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
-    list_display = ('id', 'ix', 'facility', 'status', 'created', 'updated')
-    search_fields = ('ix__name', 'facility__name')
-    readonly_fields = ('id',)
+    list_display = ("id", "ix", "facility", "status", "created", "updated")
+    search_fields = ("ix__name", "facility__name")
+    readonly_fields = ("id",)
     list_filter = (StatusFilter,)
     form = StatusForm
 
 
 class IXLanPrefixAdmin(SoftDeleteAdmin):
-    list_display = ('id', 'prefix', 'ixlan', 'ix', 'status', 'created', 'updated')
-    readonly_fields = ('ix','id')
-    search_fields = ('ixlan__name', 'ixlan__ix__name', 'prefix')
+    list_display = ("id", "prefix", "ixlan", "ix", "status", "created", "updated")
+    readonly_fields = ("ix", "id")
+    search_fields = ("ixlan__name", "ixlan__ix__name", "prefix")
     list_filter = (StatusFilter,)
     form = StatusForm
 
@@ -853,9 +920,28 @@ class IXLanPrefixAdmin(SoftDeleteAdmin):
 
 
 class NetworkIXLanAdmin(SoftDeleteAdmin):
-    list_display = ('id', 'asn', 'net', 'ixlan', 'ix', 'ipaddr4', 'ipaddr6', 'status', 'created', 'updated')
-    search_fields = ('asn', 'network__asn', 'network__name', 'ixlan__name', 'ixlan__ix__name', 'ipaddr4', 'ipaddr6')
-    readonly_fields = ('id', 'ix','net')
+    list_display = (
+        "id",
+        "asn",
+        "net",
+        "ixlan",
+        "ix",
+        "ipaddr4",
+        "ipaddr6",
+        "status",
+        "created",
+        "updated",
+    )
+    search_fields = (
+        "asn",
+        "network__asn",
+        "network__name",
+        "ixlan__name",
+        "ixlan__ix__name",
+        "ipaddr4",
+        "ipaddr6",
+    )
+    readonly_fields = ("id", "ix", "net")
     list_filter = (StatusFilter,)
     form = StatusForm
 
@@ -867,9 +953,19 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
 
 
 class NetworkContactAdmin(SoftDeleteAdmin):
-    list_display = ('id', 'net', 'role', 'name', 'phone', 'email', 'status', 'created', 'updated')
-    search_fields = ('network__asn', 'network__name')
-    readonly_fields = ('id', 'net')
+    list_display = (
+        "id",
+        "net",
+        "role",
+        "name",
+        "phone",
+        "email",
+        "status",
+        "created",
+        "updated",
+    )
+    search_fields = ("network__asn", "network__name")
+    readonly_fields = ("id", "net")
     list_filter = (StatusFilter,)
     form = StatusForm
 
@@ -878,9 +974,9 @@ class NetworkContactAdmin(SoftDeleteAdmin):
 
 
 class NetworkFacilityAdmin(SoftDeleteAdmin):
-    list_display = ('id', 'net', 'facility', 'status', 'created', 'updated')
-    search_fields = ('network__asn', 'network__name', 'facility__name')
-    readonly_fields = ('id', 'net')
+    list_display = ("id", "net", "facility", "status", "created", "updated")
+    search_fields = ("network__asn", "network__name", "facility__name")
+    readonly_fields = ("id", "net")
     list_filter = (StatusFilter,)
     form = StatusForm
 
@@ -888,18 +984,15 @@ class NetworkFacilityAdmin(SoftDeleteAdmin):
         return u"{} (AS{})".format(obj.network.name, obj.network.asn)
 
 
-
-
-
 class VerificationQueueAdmin(ModelAdminWithUrlActions):
-    list_display = ('content_type', 'item', 'created', 'view', 'extra')
-    filter_fields = ('content_type', )
-    readonly_fields = ('created', 'view', 'extra')
-    search_fields = ('item', )
+    list_display = ("content_type", "item", "created", "view", "extra")
+    filter_fields = ("content_type",)
+    readonly_fields = ("created", "view", "extra")
+    search_fields = ("item",)
 
     def get_search_results(self, request, queryset, search_term):
-        #queryset, use_distinct = super(VerificationQueueAdmin, self).get_search_results(request, queryset, search_term)
-        if not search_term or search_term == '':
+        # queryset, use_distinct = super(VerificationQueueAdmin, self).get_search_results(request, queryset, search_term)
+        if not search_term or search_term == "":
             return queryset, False
 
         use_distinct = True
@@ -912,20 +1005,22 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
             content_type = ContentType.objects.get_for_model(model)
             for instance in list(qrs):
                 vq = VerificationQueueItem.objects.filter(
-                    content_type=content_type, object_id=instance.id)
-                myset |= (queryset & vq)
+                    content_type=content_type, object_id=instance.id
+                )
+                myset |= queryset & vq
         return myset, use_distinct
 
     def make_redirect(self, obj, action):
         if action == "vq_approve":
             opts = type(obj.first().item)._meta
             return redirect(
-                urlresolvers.reverse("admin:%s_%s_change" % (opts.app_label,
-                                                             opts.model_name),
-                                     args=(obj.first().item.id, )))
+                urlresolvers.reverse(
+                    "admin:%s_%s_change" % (opts.app_label, opts.model_name),
+                    args=(obj.first().item.id,),
+                )
+            )
         opts = obj.model._meta
-        return redirect("admin:%s_%s_changelist" % (opts.app_label,
-                                                    opts.model_name))
+        return redirect("admin:%s_%s_changelist" % (opts.app_label, opts.model_name))
 
     def vq_approve(self, request, queryset):
         with reversion.create_revision():
@@ -944,29 +1039,28 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
     actions = [vq_approve, vq_deny]
 
     def view(self, obj):
-        return (u'<a href="{}">{}</a>').format(obj.item_admin_url, _('View'))
+        return (u'<a href="{}">{}</a>').format(obj.item_admin_url, _("View"))
 
     view.allow_tags = True
 
     def extra(self, obj):
-        if hasattr(obj.item,
-                   "org") and obj.item.org.id == settings.SUGGEST_ENTITY_ORG:
+        if hasattr(obj.item, "org") and obj.item.org.id == settings.SUGGEST_ENTITY_ORG:
             return "Suggestion"
         return ""
 
 
 class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
-    list_display = ('user', 'asn', 'org', 'created', 'status')
-    search_fields = ('user', 'asn')
-    readonly_fields = ('created', )
+    list_display = ("user", "asn", "org", "created", "status")
+    search_fields = ("user", "asn")
+    readonly_fields = ("created",)
 
     def approve_and_notify(self, request, queryset):
         for each in queryset:
             each.approve()
             each.notify_ownership_approved()
         self.message_user(
-            request,
-            _("Affiliation request was approved and the user was notified."))
+            request, _("Affiliation request was approved and the user was notified.")
+        )
 
     approve_and_notify.short_description = _("Approve and notify User")
 
@@ -1002,41 +1096,61 @@ class UserCreationForm(forms.UserCreationForm):
 
     class Meta(forms.UserCreationForm.Meta):
         model = User
-        fields = ('username', 'password', 'email')
+        fields = ("username", "password", "email")
 
 
 class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
-    inlines = (UserOrgAffiliationRequestInline, )
-    readonly_fields = ('email_status', 'organizations', 'view_permissions',
-                       'change_password')
-    list_display = ('username', 'email', 'first_name', 'last_name',
-                    'email_status', 'status')
+    inlines = (UserOrgAffiliationRequestInline,)
+    readonly_fields = (
+        "email_status",
+        "organizations",
+        "view_permissions",
+        "change_password",
+    )
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "email_status",
+        "status",
+    )
     add_form = UserCreationForm
-    add_fieldsets = ((None, {
-        'classes': ('wide', ),
-        'fields': ('username', 'password1', 'password2', 'email')
-    }), )
-    fieldsets = ((None, {
-        'classes': ('wide', ),
-        'fields': ('email_status', 'change_password')
-    }), ) + UserAdmin.fieldsets + ((None, {
-        'classes': ('wide', ),
-        'fields': ('organizations', )
-    }), )
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("username", "password1", "password2", "email"),
+            },
+        ),
+    )
+    fieldsets = (
+        ((None, {"classes": ("wide",), "fields": ("email_status", "change_password")}),)
+        + UserAdmin.fieldsets
+        + ((None, {"classes": ("wide",), "fields": ("organizations",)}),)
+    )
 
     # we want to get rid of user permissions and group editor as that
     # will be displayed on a separate page, for performance reasons
 
     for name, grp in fieldsets:
-        grp["fields"] = tuple([
-            fld for fld in grp["fields"]
-            if fld not in [
-                "groups", "user_permissions", "is_staff", "is_active",
-                "is_superuser"
+        grp["fields"] = tuple(
+            [
+                fld
+                for fld in grp["fields"]
+                if fld
+                not in [
+                    "groups",
+                    "user_permissions",
+                    "is_staff",
+                    "is_active",
+                    "is_superuser",
+                ]
             ]
-        ])
+        )
         if name == "Permissions":
-            grp["fields"] += ('view_permissions', )
+            grp["fields"] += ("view_permissions",)
 
     def version(self, obj):
         """
@@ -1048,36 +1162,37 @@ class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
 
     def change_password(self, obj):
         return (u'<a href="{}">{}</a>').format(
-            urlresolvers.reverse("admin:auth_user_password_change",
-                                 args=(obj.id, )), _('Change Password'))
+            urlresolvers.reverse("admin:auth_user_password_change", args=(obj.id,)),
+            _("Change Password"),
+        )
 
     change_password.allow_tags = True
 
     def view_permissions(self, obj):
         url = urlresolvers.reverse(
-            "admin:%s_%s_change" % (UserPermission._meta.app_label,
-                                    UserPermission._meta.model_name),
-            args=(obj.id, ))
+            "admin:%s_%s_change"
+            % (UserPermission._meta.app_label, UserPermission._meta.model_name),
+            args=(obj.id,),
+        )
 
-        return (u'<a href="{}">{}</a>').format(url, _('Edit Permissions'))
+        return (u'<a href="{}">{}</a>').format(url, _("Edit Permissions"))
 
     view_permissions.allow_tags = True
 
     def email_status(self, obj):
         if obj.email_confirmed:
-            return (u'<span style="color:darkgreen">{}</span>').format(
-                _("VERIFIED"))
+            return (u'<span style="color:darkgreen">{}</span>').format(_("VERIFIED"))
         else:
-            return (u'<span style="color:darkred">{}</span>').format(
-                _("UNVERIFIED"))
+            return (u'<span style="color:darkred">{}</span>').format(_("UNVERIFIED"))
 
     email_status.allow_tags = True
 
     def organizations(self, obj):
-        return loader.get_template('admin/user-organizations.html').render({
-            'organizations': obj.organizations,
-            'user': obj
-        }).replace("\n", "")
+        return (
+            loader.get_template("admin/user-organizations.html")
+            .render({"organizations": obj.organizations, "user": obj})
+            .replace("\n", "")
+        )
 
     organizations.allow_tags = True
 
@@ -1091,31 +1206,45 @@ class UserPermission(User):
 
 class UserPermissionAdmin(UserAdmin):
 
-    search_fields = ('username', )
+    search_fields = ("username",)
 
-    inlines = (UserOrgAffiliationRequestInline, UserPermissionInline,
-               UserPermissionInlineAdd)
+    inlines = (
+        UserOrgAffiliationRequestInline,
+        UserPermissionInline,
+        UserPermissionInlineAdd,
+    )
 
-    fieldsets = ((None, {
-        'fields': ('user', 'is_active', 'is_staff', 'is_superuser', 'groups',
-                   'user_permissions'),
-        'classes': ('wide', )
-    }), )
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "user",
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+                "classes": ("wide",),
+            },
+        ),
+    )
 
-    readonly_fields = ('user', )
+    readonly_fields = ("user",)
 
     def get_form(self, request, obj=None, **kwargs):
         # we want to remove the password field from the form
         # since we dont send it and dont want to run clean for it
-        form = super(UserPermissionAdmin, self).get_form(
-            request, obj, **kwargs)
-        del form.base_fields['password']
+        form = super(UserPermissionAdmin, self).get_form(request, obj, **kwargs)
+        del form.base_fields["password"]
         return form
 
     def user(self, obj):
         url = urlresolvers.reverse(
-            "admin:%s_%s_change" % (User._meta.app_label,
-                                    User._meta.model_name), args=(obj.id, ))
+            "admin:%s_%s_change" % (User._meta.app_label, User._meta.model_name),
+            args=(obj.id,),
+        )
 
         return '<a href="%s">%s</a>' % (url, obj.username)
 
@@ -1204,7 +1333,7 @@ class DuplicateIPChangeList(ChangeList):
                     netixlan.ip_dupe = 4
                     netixlan.exchange = int(netixlan.ixlan.ix_id)
                     netixlan.ip_sorter = int(netixlan.ipaddr4)
-                    netixlan.dt_sorter = int(netixlan.updated.strftime('%s'))
+                    netixlan.dt_sorter = int(netixlan.updated.strftime("%s"))
                     collisions.append(netixlan)
 
         for ip, netixlans in ip6s.items():
@@ -1213,7 +1342,7 @@ class DuplicateIPChangeList(ChangeList):
                     netixlan.ip_dupe = 6
                     netixlan.exchange = int(netixlan.ixlan.ix_id)
                     netixlan.ip_sorter = int(netixlan.ipaddr6)
-                    netixlan.dt_sorter = int(netixlan.updated.strftime('%s'))
+                    netixlan.dt_sorter = int(netixlan.updated.strftime("%s"))
                     collisions.append(netixlan)
 
         if sort_keys != ["pk"] and sort_keys != ["-pk"]:
@@ -1233,17 +1362,27 @@ class DuplicateIPAdmin(SoftDeleteAdmin):
     Can be removed after #92 is fully completed
     """
 
-    list_display = ('id_ro', 'ip', 'asn', 'ix', 'net', 'updated_ro',
-                    'status_ro')
-    readonly_fields = ('id_ro', 'ip', 'net', 'ix', 'asn', 'updated_ro',
-                       'status_ro')
+    list_display = ("id_ro", "ip", "asn", "ix", "net", "updated_ro", "status_ro")
+    readonly_fields = ("id_ro", "ip", "net", "ix", "asn", "updated_ro", "status_ro")
     form = NetworkIXLanForm
     list_per_page = 1000
-    fieldsets = ((None, {
-        'classes': ('wide', ),
-        'fields': ('status', 'asn', 'ipaddr4', 'ipaddr6', 'ix', 'net',
-                   'updated')
-    }), )
+    fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "status",
+                    "asn",
+                    "ipaddr4",
+                    "ipaddr6",
+                    "ix",
+                    "net",
+                    "updated",
+                ),
+            },
+        ),
+    )
 
     def get_changelist(self, request):
         return DuplicateIPChangeList
@@ -1287,9 +1426,10 @@ class DuplicateIPAdmin(SoftDeleteAdmin):
     ix.admin_order_field = "exchange"
 
     def changelist_view(self, request, extra_context=None):
-        extra_context = {'title': 'Duplicate IPs'}
+        extra_context = {"title": "Duplicate IPs"}
         return super(DuplicateIPAdmin, self).changelist_view(
-            request, extra_context=extra_context)
+            request, extra_context=extra_context
+        )
 
     def has_add_permission(self, request):
         return False
@@ -1303,6 +1443,7 @@ class CommandLineToolPrepareForm(baseForms.Form):
     Form that allows user to select which commandline tool
     to run
     """
+
     tool = baseForms.ChoiceField(choices=COMMANDLINE_TOOLS)
 
 
@@ -1310,9 +1451,17 @@ class CommandLineToolAdmin(admin.ModelAdmin):
     """
     View that lets staff users run peeringdb command line tools
     """
+
     list_display = ("tool", "description", "user", "created", "status")
-    readonly_fields = ("tool", "description", "arguments", "result", "user",
-                       "created", "status")
+    readonly_fields = (
+        "tool",
+        "description",
+        "arguments",
+        "result",
+        "user",
+        "created",
+        "status",
+    )
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -1320,12 +1469,21 @@ class CommandLineToolAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super(CommandLineToolAdmin, self).get_urls()
         my_urls = [
-            url(r'^prepare/$', self.prepare_command_view,
-                name="peeringdb_server_commandlinetool_prepare"),
-            url(r'^preview/$', self.preview_command_view,
-                name="peeringdb_server_commandlinetool_preview"),
-            url(r'^run/$', self.run_command_view,
-                name="peeringdb_server_commandlinetool_run"),
+            url(
+                r"^prepare/$",
+                self.prepare_command_view,
+                name="peeringdb_server_commandlinetool_prepare",
+            ),
+            url(
+                r"^preview/$",
+                self.preview_command_view,
+                name="peeringdb_server_commandlinetool_preview",
+            ),
+            url(
+                r"^run/$",
+                self.run_command_view,
+                name="peeringdb_server_commandlinetool_run",
+            ),
         ]
         return my_urls + urls
 
@@ -1352,20 +1510,24 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         else:
             form = CommandLineToolPrepareForm()
 
-        context.update({
-            "adminform": helpers.AdminForm(
-                form, list([(None, {
-                    'fields': form.base_fields
-                })]), self.get_prepopulated_fields(request)),
-            "action": action,
-            "app_label": self.model._meta.app_label,
-            "opts": self.model._meta,
-            "title": title
-        })
+        context.update(
+            {
+                "adminform": helpers.AdminForm(
+                    form,
+                    list([(None, {"fields": form.base_fields})]),
+                    self.get_prepopulated_fields(request),
+                ),
+                "action": action,
+                "app_label": self.model._meta.app_label,
+                "opts": self.model._meta,
+                "title": title,
+            }
+        )
         return TemplateResponse(
             request,
             "admin/peeringdb_server/commandlinetool/prepare_command.html",
-            context)
+            context,
+        )
 
     def preview_command_view(self, request):
         """
@@ -1387,20 +1549,24 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         else:
             raise Exception(_("Only POST requests allowed."))
 
-        context.update({
-            "adminform": helpers.AdminForm(
-                form, list([(None, {
-                    'fields': form.base_fields
-                })]), self.get_prepopulated_fields(request)),
-            "action": action,
-            "app_label": self.model._meta.app_label,
-            "opts": self.model._meta,
-            "title": _("{} (Preview)").format(tool.name)
-        })
+        context.update(
+            {
+                "adminform": helpers.AdminForm(
+                    form,
+                    list([(None, {"fields": form.base_fields})]),
+                    self.get_prepopulated_fields(request),
+                ),
+                "action": action,
+                "app_label": self.model._meta.app_label,
+                "opts": self.model._meta,
+                "title": _("{} (Preview)").format(tool.name),
+            }
+        )
         return TemplateResponse(
             request,
             "admin/peeringdb_server/commandlinetool/preview_command.html",
-            context)
+            context,
+        )
 
     def run_command_view(self, request):
         """
@@ -1419,24 +1585,27 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         else:
             raise Exception(_("Only POST requests allowed."))
 
-        context.update({
-            "adminform": helpers.AdminForm(
-                form, list([(None, {
-                    'fields': form.base_fields
-                })]), self.get_prepopulated_fields(request)),
-            "action": "run",
-            "app_label": self.model._meta.app_label,
-            "opts": self.model._meta,
-            "title": tool.name
-        })
+        context.update(
+            {
+                "adminform": helpers.AdminForm(
+                    form,
+                    list([(None, {"fields": form.base_fields})]),
+                    self.get_prepopulated_fields(request),
+                ),
+                "action": "run",
+                "app_label": self.model._meta.app_label,
+                "opts": self.model._meta,
+                "title": tool.name,
+            }
+        )
         return TemplateResponse(
-            request, "admin/peeringdb_server/commandlinetool/run_command.html",
-            context)
+            request, "admin/peeringdb_server/commandlinetool/run_command.html", context
+        )
 
 
 class DeskProTicketAdmin(admin.ModelAdmin):
     list_display = ("id", "subject", "user", "created", "published")
-    readonly_fields = ("user", )
+    readonly_fields = ("user",)
 
 
 admin.site.register(Facility, FacilityAdmin)

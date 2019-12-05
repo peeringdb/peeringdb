@@ -33,9 +33,9 @@ def setup_module(module):
     ASN_RANGE_OVERRIDE = range(9000000, 9000999)
 
     with open(
-            os.path.join(
-                os.path.dirname(__file__), "data", "api",
-                "rdap_override.json"), "r") as fh:
+        os.path.join(os.path.dirname(__file__), "data", "api", "rdap_override.json"),
+        "r",
+    ) as fh:
         pdbinet.RdapLookup.override_result = json.load(fh)
 
     def get_asn(self, asn):
@@ -94,13 +94,12 @@ class DummyRestClient(RestClient):
             self.user_inst = models.User.objects.get(username="guest")
         self.api_client.force_authenticate(self.user_inst)
 
-    def _request(self, typ, id=0, method="GET", params=None, data=None,
-                 url=None):
+    def _request(self, typ, id=0, method="GET", params=None, data=None, url=None):
         if not url:
             if id:
                 url = "/api/%s/%s" % (typ, id)
             else:
-                url = "/api/%s" % (typ, )
+                url = "/api/%s" % (typ,)
 
         fnc = getattr(self.api_client, method.lower())
         if not data:
@@ -138,25 +137,29 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         user_group = Group.objects.create(name="user")
 
         guest_user = models.User.objects.create_user(
-            "guest", "guest@localhost", "guest")
+            "guest", "guest@localhost", "guest"
+        )
         guest_group.user_set.add(guest_user)
 
         nsp.models.GroupPermission.objects.create(
-            group=guest_group, namespace="peeringdb.organization",
-            permissions=0x01)
+            group=guest_group, namespace="peeringdb.organization", permissions=0x01
+        )
 
         nsp.models.GroupPermission.objects.create(
-            group=user_group, namespace="peeringdb.organization",
-            permissions=0x01)
+            group=user_group, namespace="peeringdb.organization", permissions=0x01
+        )
 
         nsp.models.GroupPermission.objects.create(
-            group=user_group, namespace="peeringdb.organization.{}".format(
-                settings.SUGGEST_ENTITY_ORG), permissions=0x04)
+            group=user_group,
+            namespace="peeringdb.organization.{}".format(settings.SUGGEST_ENTITY_ORG),
+            permissions=0x04,
+        )
 
         nsp.models.GroupPermission.objects.create(
             group=user_group,
             namespace="peeringdb.organization.*.network.*.poc_set.users",
-            permissions=0x01)
+            permissions=0x01,
+        )
 
         # prepare api test data
         cls.prepare()

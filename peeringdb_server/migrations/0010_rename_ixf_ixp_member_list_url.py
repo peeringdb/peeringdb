@@ -8,13 +8,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0009_rename_json_member_list_field'),
+        ("peeringdb_server", "0009_rename_json_member_list_field"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='ixlan',
-            old_name='ixf_member_export_url',
-            new_name='ixf_ixp_member_list_url',
+            model_name="ixlan",
+            old_name="ixf_member_export_url",
+            new_name="ixf_ixp_member_list_url",
         ),
     ]

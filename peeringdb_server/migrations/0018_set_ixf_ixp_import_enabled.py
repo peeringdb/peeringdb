@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 
+
 def forwards_func(apps, schema_editor):
     model = apps.get_model("peeringdb_server", "IXLan")
     for ixlan in model.objects.all():
@@ -11,16 +12,14 @@ def forwards_func(apps, schema_editor):
             ixlan.ixf_ixp_import_enabled = True
             ixlan.save()
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0017_ixf_ixp_import_enabled'),
+        ("peeringdb_server", "0017_ixf_ixp_import_enabled"),
     ]
 
     operations = [
-        migrations.AlterModelManagers(
-            name='ixlan',
-            managers=[],
-        ),
+        migrations.AlterModelManagers(name="ixlan", managers=[],),
         migrations.RunPython(forwards_func, migrations.RunPython.noop),
     ]

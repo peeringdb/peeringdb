@@ -10,30 +10,40 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0011_commandline_tool'),
+        ("peeringdb_server", "0011_commandline_tool"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DeskProTicket',
+            name="DeskProTicket",
             fields=[
-                ('id',
-                 models.AutoField(auto_created=True, primary_key=True,
-                                  serialize=False, verbose_name='ID')),
-                ('subject', models.CharField(max_length=255)),
-                ('body', models.TextField()),
-                ('created', models.DateTimeField(auto_now_add=True)),
-                ('published', models.DateTimeField(null=True)),
-                ('user',
-                 models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
-                                   to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("subject", models.CharField(max_length=255)),
+                ("body", models.TextField()),
+                ("created", models.DateTimeField(auto_now_add=True)),
+                ("published", models.DateTimeField(null=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.AlterModelOptions(
-            name='userorgaffiliationrequest',
+            name="userorgaffiliationrequest",
             options={
-                'verbose_name': 'User to Organization Affiliation Request',
-                'verbose_name_plural': 'User to Organization Affiliation Requests'
+                "verbose_name": "User to Organization Affiliation Request",
+                "verbose_name_plural": "User to Organization Affiliation Requests",
             },
         ),
     ]

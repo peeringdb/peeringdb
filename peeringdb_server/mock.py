@@ -47,18 +47,20 @@ class Mock(object):
                 yield host
 
         # Pool of IPv4 addresses (100 per prefix)
-        self.ipaddr_pool_v4 = dict([(prefix,
-                                     list(
-                                         get_hosts(
-                                             ipaddress.IPv4Network(prefix))))
-                                    for prefix in self.prefix_pool_v4])
+        self.ipaddr_pool_v4 = dict(
+            [
+                (prefix, list(get_hosts(ipaddress.IPv4Network(prefix))))
+                for prefix in self.prefix_pool_v4
+            ]
+        )
 
         # Pool of IPv6 addresses (100 per prefix)
-        self.ipaddr_pool_v6 = dict([(prefix,
-                                     list(
-                                         get_hosts(
-                                             ipaddress.IPv6Network(prefix))))
-                                    for prefix in self.prefix_pool_v6])
+        self.ipaddr_pool_v6 = dict(
+            [
+                (prefix, list(get_hosts(ipaddress.IPv6Network(prefix))))
+                for prefix in self.prefix_pool_v6
+            ]
+        )
 
     def create(self, reftag, **kwargs):
         """
@@ -82,8 +84,7 @@ class Mock(object):
                 continue
             if field.is_relation and field.many_to_one:
                 if hasattr(field.related_model, "ref_tag"):
-                    data[field.name] = self.create(
-                        field.related_model.handleref.tag)
+                    data[field.name] = self.create(field.related_model.handleref.tag)
 
         # then we set the other fields to mock values provided by this class
         for field in model._meta.get_fields():
@@ -105,8 +106,11 @@ class Mock(object):
             #
             # PDB choices often have Not Disclosed at index 0 and 1
             # so we try index 2 first.
-            if not field.is_relation and field.choices and not hasattr(
-                    self, field.name):
+            if (
+                not field.is_relation
+                and field.choices
+                and not hasattr(self, field.name)
+            ):
                 try:
                     data[field.name] = field.choices[2][0]
                 except IndexError:
@@ -129,13 +133,13 @@ class Mock(object):
                 # URLs
                 elif field.name.find("url") > -1:
                     data[field.name] = "{}/{}".format(
-                        self.website(data, reftag=reftag), field.name)
+                        self.website(data, reftag=reftag), field.name
+                    )
 
                 # everything else is routed to the apropriate method
                 # with the same name as the field name
                 else:
-                    data[field.name] = getattr(self, field.name)(data,
-                                                                 reftag=reftag)
+                    data[field.name] = getattr(self, field.name)(data, reftag=reftag)
         return model.objects.create(**data)
 
     def status(self, data, reftag=None):

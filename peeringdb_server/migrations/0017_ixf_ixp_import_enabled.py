@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0016_auto_20190110_2321'),
+        ("peeringdb_server", "0016_auto_20190110_2321"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='ixlan',
-            name='ixf_ixp_import_enabled',
+            model_name="ixlan",
+            name="ixf_ixp_import_enabled",
             field=models.BooleanField(default=False),
         ),
     ]

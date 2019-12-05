@@ -10,10 +10,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("id", nargs="?", help="ticket id")
-        parser.add_argument('--commit', action='store_true',
-                            help="will commit the changes")
-        parser.add_argument('--only-failed', action='store_true',
-                            help="only requeue failed tickets")
+        parser.add_argument(
+            "--commit", action="store_true", help="will commit the changes"
+        )
+        parser.add_argument(
+            "--only-failed", action="store_true", help="only requeue failed tickets"
+        )
 
     def log(self, msg):
         if self.commit:
@@ -28,12 +30,10 @@ class Command(BaseCommand):
 
         qset = DeskProTicket.objects
         if _id[0] == "g":
-            self.log("Requeuing tickets with id greater than {}".format(
-                _id[1:]))
+            self.log("Requeuing tickets with id greater than {}".format(_id[1:]))
             qset = qset.filter(pk__gt=_id[1:])
         elif _id[0] == "l":
-            self.log("Requeuing tickets with id smaller than {}".format(
-                _id[1:]))
+            self.log("Requeuing tickets with id smaller than {}".format(_id[1:]))
             qset = qset.filter(pk__lt=_id[1:])
         else:
             qset = qset.filter(pk=_id)
@@ -43,7 +43,7 @@ class Command(BaseCommand):
                 continue
             self.log("Requeuing ticket with id {}".format(ticket.id))
             ticket.subject = ticket.subject.replace("[FAILED]", "")
-            ticket.body = re.sub(r'API Delivery Error(.+)$', '', ticket.body)
+            ticket.body = re.sub(r"API Delivery Error(.+)$", "", ticket.body)
             ticket.published = None
             if self.commit:
                 ticket.save()

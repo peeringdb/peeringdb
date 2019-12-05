@@ -1,1 +1,1 @@
-default_app_config = 'peeringdb_server.apps.PeeringDBServerAppConfig'
+default_app_config = "peeringdb_server.apps.PeeringDBServerAppConfig"

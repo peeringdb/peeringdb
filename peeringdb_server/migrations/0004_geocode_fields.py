@@ -8,31 +8,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0003_add_lat_lon_to_address_models'),
+        ("peeringdb_server", "0003_add_lat_lon_to_address_models"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='facility',
-            name='geocode_date',
+            model_name="facility",
+            name="geocode_date",
             field=models.DateTimeField(
-                blank=True, help_text=b'Last time of attempted geocode',
-                null=True),
+                blank=True, help_text=b"Last time of attempted geocode", null=True
+            ),
         ),
         migrations.AddField(
-            model_name='facility',
-            name='geocode_error',
+            model_name="facility",
+            name="geocode_error",
             field=models.TextField(
                 blank=True,
-                help_text=b'Error message of previous geocode attempt',
-                null=True),
+                help_text=b"Error message of previous geocode attempt",
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='facility',
-            name='geocode_status',
+            model_name="facility",
+            name="geocode_status",
             field=models.BooleanField(
-                default=False, help_text=
-                b"Has this object's latitude and longitude been syncronized to it's address fields"
+                default=False,
+                help_text=b"Has this object's latitude and longitude been syncronized to it's address fields",
             ),
         ),
     ]

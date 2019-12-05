@@ -76,8 +76,7 @@ class PasswordChangeForm(forms.Form):
     def clean_password(self):
         password = self.cleaned_data.get("password")
         if len(password) < 10:
-            raise forms.ValidationError(
-                _("Needs to be at least 10 characters long"))
+            raise forms.ValidationError(_("Needs to be at least 10 characters long"))
         return password
 
     def clean_password_v(self):
@@ -86,7 +85,8 @@ class PasswordChangeForm(forms.Form):
 
         if password != password_v:
             raise forms.ValidationError(
-                _("Passwords need to match"), code="password_mismatch")
+                _("Passwords need to match"), code="password_mismatch"
+            )
         return password_v
 
 
@@ -112,31 +112,33 @@ class UserCreationForm(auth_forms.UserCreationForm):
             "last_name",
         )
 
-
     def clean(self):
         super(UserCreationForm, self).clean()
         recaptcha = self.cleaned_data.get("recaptcha", "")
         captcha = self.cleaned_data.get("captcha", "")
 
         if not recaptcha and not captcha:
-            raise forms.ValidationError(_("Please fill out the anti-spam challenge (captcha) field"))
+            raise forms.ValidationError(
+                _("Please fill out the anti-spam challenge (captcha) field")
+            )
 
         elif recaptcha:
             cpt_params = {
                 "secret": dj_settings.RECAPTCHA_SECRET_KEY,
                 "response": recaptcha,
-                "remoteip": get_client_ip(self.request)
+                "remoteip": get_client_ip(self.request),
             }
-            cpt_response = requests.post(dj_settings.RECAPTCHA_VERIFY_URL,
-                                     params=cpt_params).json()
+            cpt_response = requests.post(
+                dj_settings.RECAPTCHA_VERIFY_URL, params=cpt_params
+            ).json()
             if not cpt_response.get("success"):
                 raise forms.ValidationError(_("reCAPTCHA invalid"))
         else:
             try:
                 hashkey, value = captcha.split(":")
-                self.captcha_object = CaptchaStore.objects.get(response=value,
-                                                               hashkey=hashkey,
-                                                               expiration__gt=timezone.now())
+                self.captcha_object = CaptchaStore.objects.get(
+                    response=value, hashkey=hashkey, expiration__gt=timezone.now()
+                )
             except CaptchaStore.DoesNotExist:
                 raise forms.ValidationError(_("captcha invalid"))
 
@@ -158,4 +160,4 @@ class UserLocaleForm(forms.Form):
 
     class Meta:
         model = User
-        fields = ('locale')
+        fields = "locale"

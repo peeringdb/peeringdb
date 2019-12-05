@@ -15,26 +15,29 @@ class ClientCase(TestCase):
         user_group = Group.objects.create(name="user")
 
         cls.guest_user = models.User.objects.create_user(
-            "guest", "guest@localhost", "guest")
+            "guest", "guest@localhost", "guest"
+        )
         guest_group.user_set.add(cls.guest_user)
 
         nsp.models.GroupPermission.objects.create(
-            group=guest_group, namespace="peeringdb.organization",
-            permissions=0x01)
+            group=guest_group, namespace="peeringdb.organization", permissions=0x01
+        )
 
         nsp.models.GroupPermission.objects.create(
-            group=user_group, namespace="peeringdb.organization",
-            permissions=0x01)
+            group=user_group, namespace="peeringdb.organization", permissions=0x01
+        )
 
         nsp.models.GroupPermission.objects.create(
             group=user_group,
             namespace="peeringdb.organization.*.network.*.poc_set.users",
-            permissions=0x01)
+            permissions=0x01,
+        )
 
         nsp.models.GroupPermission.objects.create(
             group=guest_group,
             namespace="peeringdb.organization.*.network.*.poc_set.public",
-            permissions=0x01)
+            permissions=0x01,
+        )
 
 
 class SettingsCase(ClientCase):
@@ -53,13 +56,11 @@ class SettingsCase(ClientCase):
     @classmethod
     def setUp(cls):
         cls._restore = {}
-        for k,v in cls.settings.items():
+        for k, v in cls.settings.items():
             cls._restore[k] = getattr(pdb_settings, k)
             setattr(pdb_settings, k, v)
 
     @classmethod
     def tearDown(cls):
-        for k,v in cls._restore.items():
+        for k, v in cls._restore.items():
             setattr(pdb_settings, k, v)
-
-

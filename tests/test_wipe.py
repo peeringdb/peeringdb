@@ -8,12 +8,12 @@ from peeringdb_server.models import REFTAG_MAP
 
 
 class TestWipe(ClientCase):
-
     @classmethod
     def setUpTestData(cls):
         super(TestWipe, cls).setUpTestData()
         cls.superuser = get_user_model().objects.create_user(
-            "superuser", "superuser@localhost", "superuser", is_superuser=True)
+            "superuser", "superuser@localhost", "superuser", is_superuser=True
+        )
         call_command("pdb_generate_test_data", limit=2, commit=True)
 
     def test_run(self):
@@ -42,4 +42,3 @@ class TestWipe(ClientCase):
         # only the superuser should be left
         assert get_user_model().objects.all().count() == 1
         assert get_user_model().objects.first().is_superuser == True
-

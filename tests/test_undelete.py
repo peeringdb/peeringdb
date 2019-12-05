@@ -76,8 +76,13 @@ class TestUndelete(ClientCase):
         netixlan_a = self.ixlan_a.netixlan_set.first()
         self.ixlan_a.delete()
         netixlan_c = REFTAG_MAP["netixlan"].objects.create(
-            asn=self.net_a.asn, ixlan=self.ixlan_b, status="ok",
-            ipaddr4=netixlan_a.ipaddr4, network=self.net_a, speed=100)
+            asn=self.net_a.asn,
+            ixlan=self.ixlan_b,
+            status="ok",
+            ipaddr4=netixlan_a.ipaddr4,
+            network=self.net_a,
+            speed=100,
+        )
         self._undelete(self.ixlan_a)
 
         assert self.ixlan_a.status == "ok"
@@ -87,8 +92,13 @@ class TestUndelete(ClientCase):
         netixlan_a = self.ixlan_a.netixlan_set.first()
         self.ixlan_a.delete()
         netixlan_c = REFTAG_MAP["netixlan"].objects.create(
-            asn=self.net_a.asn, ixlan=self.ixlan_b, status="ok",
-            ipaddr6=netixlan_a.ipaddr6, network=self.net_a, speed=100)
+            asn=self.net_a.asn,
+            ixlan=self.ixlan_b,
+            status="ok",
+            ipaddr6=netixlan_a.ipaddr6,
+            network=self.net_a,
+            speed=100,
+        )
         self._undelete(self.ixlan_a)
 
         assert self.ixlan_a.status == "ok"
@@ -99,8 +109,13 @@ class TestUndelete(ClientCase):
         netixlan_a = self.ixlan_a.netixlan_set.first()
         self.ixlan_a.delete()
         netixlan_c = REFTAG_MAP["netixlan"].objects.create(
-            asn=self.net_a.asn, ixlan=ixlan_c, status="ok",
-            ipaddr4=netixlan_a.ipaddr4, network=self.net_a, speed=100)
+            asn=self.net_a.asn,
+            ixlan=ixlan_c,
+            status="ok",
+            ipaddr4=netixlan_a.ipaddr4,
+            network=self.net_a,
+            speed=100,
+        )
 
         assert ixlan_c.netixlan_set_active.count() == 1
 
@@ -115,8 +130,13 @@ class TestUndelete(ClientCase):
         netixlan_a = self.ixlan_a.netixlan_set.first()
         self.ixlan_a.delete()
         netixlan_c = REFTAG_MAP["netixlan"].objects.create(
-            asn=self.net_a.asn, ixlan=ixlan_c, status="ok",
-            ipaddr6=netixlan_a.ipaddr6, network=self.net_a, speed=100)
+            asn=self.net_a.asn,
+            ixlan=ixlan_c,
+            status="ok",
+            ipaddr6=netixlan_a.ipaddr6,
+            network=self.net_a,
+            speed=100,
+        )
 
         assert ixlan_c.netixlan_set_active.count() == 1
 

@@ -43,7 +43,7 @@ BOGON_ASN_RANGES = [
     # RFC 7003 - last asn 32-bit
     ASN_LAST_32BIT,
     # trans
-    ASN_TRANS
+    ASN_TRANS,
 ]
 
 # the following bogon asn ranges are allowed on envionments
@@ -72,10 +72,10 @@ class BogonAsn(rdap.RdapAsn):
     def __init__(self, asn):
         name = "AS{}".format(asn)
         self._parsed = {
-            "name":name,
-            "org_name":name,
-            "org_address":None,
-            "emails":[]
+            "name": name,
+            "org_name": name,
+            "org_address": None,
+            "emails": [],
         }
 
 
@@ -87,11 +87,10 @@ class RdapLookup(rdap.RdapClient):
     def __init__(self):
         # create rdap config
         config = dict(
-            bootstrap_url=settings.RDAP_URL.rstrip('/'),
+            bootstrap_url=settings.RDAP_URL.rstrip("/"),
             lacnic_apikey=settings.RDAP_LACNIC_APIKEY,
         )
         super(RdapLookup, self).__init__(config)
-
 
     def get_asn(self, asn):
         """
@@ -103,10 +102,10 @@ class RdapLookup(rdap.RdapClient):
             if settings.TUTORIAL_MODE and asn_is_in_ranges(asn, TUTORIAL_ASN_RANGES):
                 return BogonAsn(asn)
             else:
-                raise RdapException(_("ASNs in this range " \
-                                   "are not allowed in this environment"))
+                raise RdapException(
+                    _("ASNs in this range " "are not allowed in this environment")
+                )
         return super(RdapLookup, self).get_asn(asn)
-
 
 
 def asn_is_bogon(asn):
@@ -178,11 +177,11 @@ def network_is_pdb_valid(network):
         # 2002::/16 - RFC 3068 - 6to4 prefix
         0x2002,
         # 3ffe::/16 - RFC 5156 - used for the 6bone but was returned
-        0x3ffe,
+        0x3FFE,
         # fec0::/10 - RFC 4291 - Reserved by IETF
-        0xfec0,
+        0xFEC0,
         # ff00::/8 - RFC 4291 - Multicast
-        0xff00,
+        0xFF00,
     ]
 
     if int(network.network_address) >> 112 in v6_invalid:
@@ -267,14 +266,17 @@ def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
 
         # replace any octet that is not a zero in the netmask
 
-        if (ipaddr.version == 4 and int(octet) > 0) or \
-            (ipaddr.version == 6 and octet != "0000"):
+        if (ipaddr.version == 4 and int(octet) > 0) or (
+            ipaddr.version == 6 and octet != "0000"
+        ):
             ip_octets[i] = new_octets[i]
         i += 1
 
     # return renumbered ipaddress
 
-    return ipaddress.ip_address(u"{}".format(delimiter.join([str(o) for o in ip_octets])))
+    return ipaddress.ip_address(
+        u"{}".format(delimiter.join([str(o) for o in ip_octets]))
+    )
 
 
 def get_client_ip(request):
@@ -284,6 +286,3 @@ def get_client_ip(request):
     else:
         ip = request.META.get("REMOTE_ADDR")
     return ip
-
-
-

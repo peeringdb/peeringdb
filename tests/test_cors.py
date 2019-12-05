@@ -2,9 +2,13 @@ from django.test import TestCase, Client
 from peeringdb_server.models import Organization, User
 from util import ClientCase
 from corsheaders.middleware import (
-    ACCESS_CONTROL_ALLOW_CREDENTIALS, ACCESS_CONTROL_ALLOW_HEADERS,
-    ACCESS_CONTROL_ALLOW_METHODS, ACCESS_CONTROL_ALLOW_ORIGIN,
-    ACCESS_CONTROL_EXPOSE_HEADERS, ACCESS_CONTROL_MAX_AGE)
+    ACCESS_CONTROL_ALLOW_CREDENTIALS,
+    ACCESS_CONTROL_ALLOW_HEADERS,
+    ACCESS_CONTROL_ALLOW_METHODS,
+    ACCESS_CONTROL_ALLOW_ORIGIN,
+    ACCESS_CONTROL_EXPOSE_HEADERS,
+    ACCESS_CONTROL_MAX_AGE,
+)
 
 
 class CorsTest(ClientCase):
@@ -21,8 +25,7 @@ class CorsTest(ClientCase):
         self.assertIn(resp.status_code, [200, 301])
         self.assertIn(ACCESS_CONTROL_ALLOW_METHODS, resp)
         self.assertIn(ACCESS_CONTROL_ALLOW_ORIGIN, resp)
-        self.assertIn(method.upper(),
-                      resp[ACCESS_CONTROL_ALLOW_METHODS].split(", "))
+        self.assertIn(method.upper(), resp[ACCESS_CONTROL_ALLOW_METHODS].split(", "))
         self.assertIn("origin", resp[ACCESS_CONTROL_ALLOW_HEADERS].split(", "))
         self.assertEqual(resp[ACCESS_CONTROL_ALLOW_ORIGIN], self.test_origin)
 
@@ -31,8 +34,9 @@ class CorsTest(ClientCase):
         self.assertIn(resp.status_code, [200, 301])
 
         if ACCESS_CONTROL_ALLOW_METHODS in resp:
-            self.assertNotIn(method.upper(),
-                             resp[ACCESS_CONTROL_ALLOW_METHODS].split(", "))
+            self.assertNotIn(
+                method.upper(), resp[ACCESS_CONTROL_ALLOW_METHODS].split(", ")
+            )
 
     def test_cors_GET(self):
         self.assert_cors_allowed("/api", method="get")

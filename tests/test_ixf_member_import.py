@@ -12,14 +12,22 @@ from django.test import TestCase, Client, RequestFactory
 from django.core.management import call_command
 
 from peeringdb_server.models import (
-    Organization, Network, NetworkIXLan, IXLan, IXLanPrefix, InternetExchange,
-    IXLanIXFMemberImportAttempt, IXLanIXFMemberImportLog,
-    IXLanIXFMemberImportLogEntry, User)
+    Organization,
+    Network,
+    NetworkIXLan,
+    IXLan,
+    IXLanPrefix,
+    InternetExchange,
+    IXLanIXFMemberImportAttempt,
+    IXLanIXFMemberImportLog,
+    IXLanIXFMemberImportLogEntry,
+    User,
+)
 from peeringdb_server.import_views import (
     view_import_ixlan_ixf_preview,
     view_import_net_ixf_preview,
     view_import_net_ixf_postmortem,
-    )
+)
 from peeringdb_server import ixf
 
 from util import ClientCase
@@ -45,9 +53,14 @@ class JsonMembersListTestCase(ClientCase):
 
         # load json members list data to test against
         with open(
-                os.path.join(
-                    os.path.dirname(__file__), "data", "json_members_list",
-                    "members.{}.json".format(cls.version)), "r") as fh:
+            os.path.join(
+                os.path.dirname(__file__),
+                "data",
+                "json_members_list",
+                "members.{}.json".format(cls.version),
+            ),
+            "r",
+        ) as fh:
             cls.json_data = json.load(fh)
 
         with reversion.create_revision():
@@ -58,89 +71,145 @@ class JsonMembersListTestCase(ClientCase):
 
             # create exchange(s)
             cls.entities["ix"] = [
-                InternetExchange.objects.create(name="Test Exchange",
-                                                org=cls.entities["org"][0],
-                                                status="ok")
+                InternetExchange.objects.create(
+                    name="Test Exchange", org=cls.entities["org"][0], status="ok"
+                )
             ]
 
             # create ixlan(s)
             cls.entities["ixlan"] = [
                 IXLan.objects.create(ix=cls.entities["ix"][0], status="ok"),
                 IXLan.objects.create(ix=cls.entities["ix"][0], status="ok"),
-                IXLan.objects.create(ix=cls.entities["ix"][0], status="ok")
+                IXLan.objects.create(ix=cls.entities["ix"][0], status="ok"),
             ]
 
             # create ixlan prefix(s)
             cls.entities["ixpfx"] = [
                 IXLanPrefix.objects.create(
-                    ixlan=cls.entities["ixlan"][0], status="ok",
-                    prefix="195.69.144.0/22", protocol="IPv4"),
+                    ixlan=cls.entities["ixlan"][0],
+                    status="ok",
+                    prefix="195.69.144.0/22",
+                    protocol="IPv4",
+                ),
                 IXLanPrefix.objects.create(
-                    ixlan=cls.entities["ixlan"][0], status="ok",
-                    prefix="2001:7f8:1::/64", protocol="IPv6"),
+                    ixlan=cls.entities["ixlan"][0],
+                    status="ok",
+                    prefix="2001:7f8:1::/64",
+                    protocol="IPv6",
+                ),
                 IXLanPrefix.objects.create(
-                    ixlan=cls.entities["ixlan"][1], status="ok",
-                    prefix="195.66.224.0/22", protocol="IPv4"),
+                    ixlan=cls.entities["ixlan"][1],
+                    status="ok",
+                    prefix="195.66.224.0/22",
+                    protocol="IPv4",
+                ),
                 IXLanPrefix.objects.create(
-                    ixlan=cls.entities["ixlan"][1], status="ok",
-                    prefix="2001:7f8:4::/64", protocol="IPv6")
+                    ixlan=cls.entities["ixlan"][1],
+                    status="ok",
+                    prefix="2001:7f8:4::/64",
+                    protocol="IPv6",
+                ),
             ]
 
             # create network(s)
             cls.entities["net"] = [
                 Network.objects.create(
-                    name="Netflix", org=cls.entities["org"][0], asn=2906,
-                    info_prefixes4=42, info_prefixes6=42,
-                    website="http://netflix.com/", policy_general="Open",
+                    name="Netflix",
+                    org=cls.entities["org"][0],
+                    asn=2906,
+                    info_prefixes4=42,
+                    info_prefixes6=42,
+                    website="http://netflix.com/",
+                    policy_general="Open",
                     policy_url="https://www.netflix.com/openconnect/",
-                    allow_ixp_update=True, status="ok", irr_as_set="AS-NFLX"),
-                Network.objects.create(name="Network with deleted netixlans",
-                                       org=cls.entities["org"][0], asn=1001,
-                                       allow_ixp_update=True, status="ok"),
+                    allow_ixp_update=True,
+                    status="ok",
+                    irr_as_set="AS-NFLX",
+                ),
+                Network.objects.create(
+                    name="Network with deleted netixlans",
+                    org=cls.entities["org"][0],
+                    asn=1001,
+                    allow_ixp_update=True,
+                    status="ok",
+                ),
                 Network.objects.create(
                     name="Network with allow ixp update off",
-                    org=cls.entities["org"][0], asn=1002, status="ok")
+                    org=cls.entities["org"][0],
+                    asn=1002,
+                    status="ok",
+                ),
             ]
 
             # create netixlans
             cls.entities["netixlan"] = [
                 NetworkIXLan.objects.create(
                     network=cls.entities["net"][1],
-                    ixlan=cls.entities["ixlan"][1], asn=1001, speed=10000,
-                    ipaddr4="195.69.146.250", ipaddr6=None, status="deleted"),
+                    ixlan=cls.entities["ixlan"][1],
+                    asn=1001,
+                    speed=10000,
+                    ipaddr4="195.69.146.250",
+                    ipaddr6=None,
+                    status="deleted",
+                ),
                 NetworkIXLan.objects.create(
                     network=cls.entities["net"][1],
-                    ixlan=cls.entities["ixlan"][1], asn=1001, speed=10000,
-                    ipaddr4=None, ipaddr6="2001:7f8:1::a500:2906:1",
-                    status="deleted"),
+                    ixlan=cls.entities["ixlan"][1],
+                    asn=1001,
+                    speed=10000,
+                    ipaddr4=None,
+                    ipaddr6="2001:7f8:1::a500:2906:1",
+                    status="deleted",
+                ),
                 NetworkIXLan.objects.create(
                     network=cls.entities["net"][0],
-                    ixlan=cls.entities["ixlan"][0], asn=2906, speed=10000,
-                    ipaddr4="195.69.146.249", ipaddr6=None, status="ok"),
+                    ixlan=cls.entities["ixlan"][0],
+                    asn=2906,
+                    speed=10000,
+                    ipaddr4="195.69.146.249",
+                    ipaddr6=None,
+                    status="ok",
+                ),
                 NetworkIXLan.objects.create(
                     network=cls.entities["net"][0],
-                    ixlan=cls.entities["ixlan"][0], asn=2906, speed=10000,
-                    ipaddr4="195.69.146.251", ipaddr6=None, status="ok"),
+                    ixlan=cls.entities["ixlan"][0],
+                    asn=2906,
+                    speed=10000,
+                    ipaddr4="195.69.146.251",
+                    ipaddr6=None,
+                    status="ok",
+                ),
                 NetworkIXLan.objects.create(
                     network=cls.entities["net"][0],
-                    ixlan=cls.entities["ixlan"][0], asn=2906, speed=20000, is_rs_peer=False,
-                    ipaddr4="195.69.147.251", ipaddr6=None, status="ok"),
+                    ixlan=cls.entities["ixlan"][0],
+                    asn=2906,
+                    speed=20000,
+                    is_rs_peer=False,
+                    ipaddr4="195.69.147.251",
+                    ipaddr6=None,
+                    status="ok",
+                ),
                 NetworkIXLan.objects.create(
                     network=cls.entities["net"][0],
-                    ixlan=cls.entities["ixlan"][0], asn=1002, speed=10000,
-                    ipaddr4="195.69.147.252", ipaddr6=None, status="ok"),
+                    ixlan=cls.entities["ixlan"][0],
+                    asn=1002,
+                    speed=10000,
+                    ipaddr4="195.69.147.252",
+                    ipaddr6=None,
+                    status="ok",
+                ),
             ]
 
-        cls.admin_user = User.objects.create_user("admin","admin@localhost","admin")
+        cls.admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
         cls.entities["org"][0].admin_usergroup.user_set.add(cls.admin_user)
-
-
 
     def setUp(self):
         self.ixf_importer = ixf.Importer()
 
     def assertLog(self, log, expected):
-        path = os.path.join(os.path.dirname(__file__), "data", "ixf", "logs", "{}.json".format(expected))
+        path = os.path.join(
+            os.path.dirname(__file__), "data", "ixf", "logs", "{}.json".format(expected)
+        )
         with open(path, "r") as fh:
             self.assertEqual(log, json.load(fh))
 
@@ -148,11 +217,12 @@ class JsonMembersListTestCase(ClientCase):
         ixlan = self.entities["ixlan"][0]
         n_deleted = self.entities["netixlan"][0]
         n_deleted2 = self.entities["netixlan"][1]
-        self.assertEqual(unicode(n_deleted.ipaddr4), u'195.69.146.250')
-        self.assertEqual(
-            unicode(n_deleted2.ipaddr6), u'2001:7f8:1::a500:2906:1')
+        self.assertEqual(unicode(n_deleted.ipaddr4), u"195.69.146.250")
+        self.assertEqual(unicode(n_deleted2.ipaddr6), u"2001:7f8:1::a500:2906:1")
         self.assertEqual(ixlan.netixlan_set_active.count(), 4)
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
 
         self.assertLog(log, "update_01")
         self.assertEqual(len(netixlans), 5)
@@ -175,25 +245,32 @@ class JsonMembersListTestCase(ClientCase):
         self.assertEqual(n.asn, 2906)
 
         # test that inactive connections had no effect
-        self.assertEqual(NetworkIXLan.objects.filter(ipaddr4="195.69.146.251", speed=10000, status="ok").count(), 1)
-        self.assertEqual(NetworkIXLan.objects.filter(ipaddr4="195.69.146.252").count(), 0)
+        self.assertEqual(
+            NetworkIXLan.objects.filter(
+                ipaddr4="195.69.146.251", speed=10000, status="ok"
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            NetworkIXLan.objects.filter(ipaddr4="195.69.146.252").count(), 0
+        )
 
+        # self.assertEqual(IXLan.objects.get(id=ixlan.id).netixlan_set_active.count(), 2)
 
-        #self.assertEqual(IXLan.objects.get(id=ixlan.id).netixlan_set_active.count(), 2)
-
-        #FIXME: this is not practical until
-        #https://github.com/peeringdb/peeringdb/issues/90 is resolved
-        #so skipping those tests right now
-        #n_deleted.refresh_from_db()
-        #n_deleted2.refresh_from_db()
-        #self.assertEqual(n_deleted.ipaddr4, None)
-        #self.assertEqual(n_deleted2.ipaddr6, None)
+        # FIXME: this is not practical until
+        # https://github.com/peeringdb/peeringdb/issues/90 is resolved
+        # so skipping those tests right now
+        # n_deleted.refresh_from_db()
+        # n_deleted2.refresh_from_db()
+        # self.assertEqual(n_deleted.ipaddr4, None)
+        # self.assertEqual(n_deleted2.ipaddr6, None)
 
     def test_preview_from_ixf_ixp_member_list(self):
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data, save=False)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data, save=False
+        )
         self.assertLog(log, "preview_01")
-
 
     def test_update_from_ixf_ixp_member_list_skip_prefix_mismatch(self):
         """
@@ -201,7 +278,9 @@ class JsonMembersListTestCase(ClientCase):
         against any of the prefixes that exist on the ixlan get skipped
         """
         ixlan = self.entities["ixlan"][1]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
 
         self.assertLog(log, "skip_prefix_mismatch")
         self.assertEqual(len(netixlans), 0)
@@ -212,11 +291,13 @@ class JsonMembersListTestCase(ClientCase):
         ixlan that does not have any prefixes
         """
         ixlan = self.entities["ixlan"][2]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
 
         self.assertEqual(len(netixlans), 0)
         self.assertEqual(len(netixlans_deleted), 0)
-        self.assertEqual(log["errors"], [u'No prefixes defined on ixlan'])
+        self.assertEqual(log["errors"], [u"No prefixes defined on ixlan"])
 
     def test_update_from_ixf_ixp_member_list_skip_disabled_networks(self):
         """
@@ -227,7 +308,9 @@ class JsonMembersListTestCase(ClientCase):
         network = self.entities["net"][0]
         network.allow_ixp_update = False
         network.save()
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
 
         self.assertLog(log, "skip_disabled_networks")
         self.assertEqual(len(netixlans), 0)
@@ -238,37 +321,43 @@ class JsonMembersListTestCase(ClientCase):
 
     def test_update_from_ixf_ixp_member_list_logs(self):
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
 
         attempt_dt_1 = ixlan.ixf_import_attempt.updated
 
         for netixlan in netixlans:
-            log_entry = ixlan.ixf_import_log_set.last().entries.get(
-                netixlan=netixlan)
+            log_entry = ixlan.ixf_import_log_set.last().entries.get(netixlan=netixlan)
 
-            if netixlan.id in (self.entities["netixlan"][4].id, self.entities["netixlan"][5].id):
+            if netixlan.id in (
+                self.entities["netixlan"][4].id,
+                self.entities["netixlan"][5].id,
+            ):
                 # netixlan was modified
                 self.assertEqual(
                     log_entry.version_before,
-                    reversion.models.Version.objects.get_for_object(netixlan)[1])
+                    reversion.models.Version.objects.get_for_object(netixlan)[1],
+                )
             else:
                 # netixlan was added
-                self.assertEqual(
-                    log_entry.version_before, None)
+                self.assertEqual(log_entry.version_before, None)
 
             self.assertEqual(
                 log_entry.version_after,
-                reversion.models.Version.objects.get_for_object(netixlan)[0])
+                reversion.models.Version.objects.get_for_object(netixlan)[0],
+            )
 
         for netixlan in netixlans_deleted:
-            log_entry = ixlan.ixf_import_log_set.last().entries.get(
-                netixlan=netixlan)
+            log_entry = ixlan.ixf_import_log_set.last().entries.get(netixlan=netixlan)
             self.assertEqual(
                 log_entry.version_before,
-                reversion.models.Version.objects.get_for_object(netixlan)[1])
+                reversion.models.Version.objects.get_for_object(netixlan)[1],
+            )
             self.assertEqual(
                 log_entry.version_after,
-                reversion.models.Version.objects.get_for_object(netixlan)[0])
+                reversion.models.Version.objects.get_for_object(netixlan)[0],
+            )
 
         with reversion.create_revision():
             netixlans[0].speed = 10
@@ -276,7 +365,9 @@ class JsonMembersListTestCase(ClientCase):
 
         time.sleep(0.1)
 
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
 
         ixlan.ixf_import_attempt.refresh_from_db()
         attempt_dt_2 = ixlan.ixf_import_attempt.updated
@@ -286,18 +377,21 @@ class JsonMembersListTestCase(ClientCase):
         self.assertEqual(len(netixlans), 1)
 
         for netixlan in netixlans:
-            log_entry = ixlan.ixf_import_log_set.last().entries.get(
-                netixlan=netixlan)
+            log_entry = ixlan.ixf_import_log_set.last().entries.get(netixlan=netixlan)
             self.assertEqual(
                 log_entry.version_before,
-                reversion.models.Version.objects.get_for_object(netixlan)[1])
+                reversion.models.Version.objects.get_for_object(netixlan)[1],
+            )
             self.assertEqual(
                 log_entry.version_after,
-                reversion.models.Version.objects.get_for_object(netixlan)[0])
+                reversion.models.Version.objects.get_for_object(netixlan)[0],
+            )
 
     def test_rollback(self):
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
 
         for entry in ixlan.ixf_import_log_set.last().entries.all():
             self.assertEqual(entry.rollback_status(), 0)
@@ -315,14 +409,21 @@ class JsonMembersListTestCase(ClientCase):
 
     def test_rollback_avoid_ipaddress_conflict(self):
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
 
         self.assertEqual(len(netixlans_deleted), 2)
 
         netixlan = netixlans_deleted[0]
         other = NetworkIXLan.objects.create(
-            network=netixlan.network, ixlan=netixlan.ixlan, speed=1000,
-            status="ok", asn=netixlan.asn + 1, ipaddr4=netixlan.ipaddr4)
+            network=netixlan.network,
+            ixlan=netixlan.ixlan,
+            speed=1000,
+            status="ok",
+            asn=netixlan.asn + 1,
+            ipaddr4=netixlan.ipaddr4,
+        )
 
         for entry in ixlan.ixf_import_log_set.last().entries.all():
             if entry.netixlan == netixlan:
@@ -346,7 +447,9 @@ class JsonMembersListTestCase(ClientCase):
 
         # import the data
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
 
         # request the view and compare it agaisnt expected data
         c = Client()
@@ -354,9 +457,11 @@ class JsonMembersListTestCase(ClientCase):
         self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.content)
         with open(
-                os.path.join(
-                    os.path.dirname(__file__), "data", "json_members_list",
-                    "export.json"), "r") as fh:
+            os.path.join(
+                os.path.dirname(__file__), "data", "json_members_list", "export.json"
+            ),
+            "r",
+        ) as fh:
             expected = json.load(fh)
             data["timestamp"] = expected["timestamp"]
             self.assertEqual(data, expected)
@@ -376,7 +481,9 @@ class JsonMembersListTestCase(ClientCase):
 
         # import the data
         ixlan = self.entities["ixlan"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
 
         # request the view and compare it agaisnt expected data
         c = Client()
@@ -384,9 +491,11 @@ class JsonMembersListTestCase(ClientCase):
         self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.content)
         with open(
-                os.path.join(
-                    os.path.dirname(__file__), "data", "json_members_list",
-                    "export.json"), "r") as fh:
+            os.path.join(
+                os.path.dirname(__file__), "data", "json_members_list", "export.json"
+            ),
+            "r",
+        ) as fh:
             other = json.load(fh)
             data["timestamp"] = other["timestamp"]
             self.assertEqual(data, other)
@@ -410,7 +519,13 @@ class JsonMembersListTestCase(ClientCase):
         stdout = StringIO.StringIO()
         stderr = StringIO.StringIO()
 
-        r = call_command("pdb_ixf_ixp_member_import", ixlan=[ixlan.id], commit=True, stdout=stdout, stderr=stderr)
+        r = call_command(
+            "pdb_ixf_ixp_member_import",
+            ixlan=[ixlan.id],
+            commit=True,
+            stdout=stdout,
+            stderr=stderr,
+        )
         self.assertEqual(stdout.getvalue().find("Fetching data for -ixlan1 from"), 0)
 
         # importer should skip ixlans where ixf_ixp_import_enabled is
@@ -422,14 +537,21 @@ class JsonMembersListTestCase(ClientCase):
         stdout = StringIO.StringIO()
         stderr = StringIO.StringIO()
 
-        r = call_command("pdb_ixf_ixp_member_import", ixlan=[ixlan.id], commit=True, stdout=stdout, stderr=stderr)
+        r = call_command(
+            "pdb_ixf_ixp_member_import",
+            ixlan=[ixlan.id],
+            commit=True,
+            stdout=stdout,
+            stderr=stderr,
+        )
         self.assertEqual(stdout.getvalue().find("Fetching data for -ixlan1 from"), -1)
-
 
     def test_postmortem(self):
         ixlan = self.entities["ixlan"][0]
         net = self.entities["net"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
         request = RequestFactory().get("/import/net/{}/ixf/preview/".format(net.id))
         request.user = self.admin_user
         response = view_import_net_ixf_postmortem(request, net.id)
@@ -440,32 +562,38 @@ class JsonMembersListTestCase(ClientCase):
             del entry["created"]
         self.assertLog(content, "postmortem_01")
 
-
-
     def test_postmortem_limit(self):
         ixlan = self.entities["ixlan"][0]
         net = self.entities["net"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
-        request = RequestFactory().get("/import/net/{}/ixf/postmortem/".format(net.id),{"limit":1})
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
+        request = RequestFactory().get(
+            "/import/net/{}/ixf/postmortem/".format(net.id), {"limit": 1}
+        )
         request.user = self.admin_user
         response = view_import_net_ixf_postmortem(request, net.id)
 
         content = json.loads(response.content)
         assert len(content["data"]) == 1
 
-
     def test_postmortem_limit_max(self):
         ixlan = self.entities["ixlan"][0]
         net = self.entities["net"][0]
-        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(ixlan, data=self.json_data)
-        request = RequestFactory().get("/import/net/{}/ixf/postmortem/".format(net.id),{"limit":1000})
+        r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
+            ixlan, data=self.json_data
+        )
+        request = RequestFactory().get(
+            "/import/net/{}/ixf/postmortem/".format(net.id), {"limit": 1000}
+        )
         request.user = self.admin_user
         response = view_import_net_ixf_postmortem(request, net.id)
 
         content = json.loads(response.content)
         assert len(content["data"]) == 6
-        assert content["non_field_errors"] == ["Postmortem length cannot exceed 250 entries"]
-
+        assert content["non_field_errors"] == [
+            "Postmortem length cannot exceed 250 entries"
+        ]
 
     def test_import_postmortem_fail_ratelimit(self):
         net = self.entities["net"][0]
@@ -478,7 +606,6 @@ class JsonMembersListTestCase(ClientCase):
         response = view_import_net_ixf_postmortem(request, net.id)
         assert response.status_code == 400
 
-
     def test_import_postmortem_fail_permission(self):
         net = self.entities["net"][0]
         request = RequestFactory().get("/import/net/{}/ixf/postmortem/".format(net.id))
@@ -486,7 +613,6 @@ class JsonMembersListTestCase(ClientCase):
 
         response = view_import_net_ixf_postmortem(request, net.id)
         assert response.status_code == 403
-
 
     def test_net_preview(self):
         ixlan = self.entities["ixlan"][0]
@@ -517,7 +643,6 @@ class JsonMembersListTestCase(ClientCase):
         response = view_import_net_ixf_preview(request, net.id)
         assert response.status_code == 400
 
-
     def test_net_preview_fail_permission(self):
         net = self.entities["net"][0]
         request = RequestFactory().get("/import/net/{}/ixf/preview/".format(net.id))
@@ -525,9 +650,6 @@ class JsonMembersListTestCase(ClientCase):
 
         response = view_import_net_ixf_preview(request, net.id)
         assert response.status_code == 403
-
-
-
 
 
 class JsonMembersListTestCase_V05(JsonMembersListTestCase):
@@ -548,37 +670,46 @@ class TestImportPreview(ClientCase):
     def setUpTestData(cls):
         super(TestImportPreview, cls).setUpTestData()
         cls.org = Organization.objects.create(name="Test Org", status="ok")
-        cls.ix = InternetExchange.objects.create(name="Test IX", status="ok", org=cls.org)
+        cls.ix = InternetExchange.objects.create(
+            name="Test IX", status="ok", org=cls.org
+        )
 
         cls.ixlan = IXLan.objects.create(status="ok", ix=cls.ix)
-        IXLanPrefix.objects.create(ixlan=cls.ixlan, status="ok",
-                                   prefix="195.69.144.0/22", protocol="IPv4")
-        IXLanPrefix.objects.create(ixlan=cls.ixlan, status="ok",
-                                   prefix="2001:7f8:1::/64", protocol="IPv6")
+        IXLanPrefix.objects.create(
+            ixlan=cls.ixlan, status="ok", prefix="195.69.144.0/22", protocol="IPv4"
+        )
+        IXLanPrefix.objects.create(
+            ixlan=cls.ixlan, status="ok", prefix="2001:7f8:1::/64", protocol="IPv6"
+        )
 
-        cls.net = Network.objects.create(org=cls.org, status="ok",
-                                         asn=1000, name="net01")
-        cls.net_2 = Network.objects.create(org=cls.org, status="ok",
-                                           asn=1001, name="net02")
+        cls.net = Network.objects.create(
+            org=cls.org, status="ok", asn=1000, name="net01"
+        )
+        cls.net_2 = Network.objects.create(
+            org=cls.org, status="ok", asn=1001, name="net02"
+        )
 
-
-        cls.admin_user = User.objects.create_user("admin","admin@localhost","admin")
+        cls.admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
 
         cls.org.admin_usergroup.user_set.add(cls.admin_user)
 
-
     def test_import_preview(self):
-        request = RequestFactory().get("/import/ixlan/{}/ixf/preview/".format(self.ixlan.id))
+        request = RequestFactory().get(
+            "/import/ixlan/{}/ixf/preview/".format(self.ixlan.id)
+        )
         request.user = self.admin_user
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
 
         assert response.status_code == 200
-        assert json.loads(response.content)["errors"] == ["IXF import url not specified"]
-
+        assert json.loads(response.content)["errors"] == [
+            "IXF import url not specified"
+        ]
 
     def test_import_preview_fail_ratelimit(self):
-        request = RequestFactory().get("/import/ixlan/{}/ixf/preview/".format(self.ixlan.id))
+        request = RequestFactory().get(
+            "/import/ixlan/{}/ixf/preview/".format(self.ixlan.id)
+        )
         request.user = self.admin_user
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
@@ -586,27 +717,30 @@ class TestImportPreview(ClientCase):
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
         assert response.status_code == 400
-
 
     def test_import_preview_fail_permission(self):
-        request = RequestFactory().get("/import/ixlan/{}/ixf/preview/".format(self.ixlan.id))
+        request = RequestFactory().get(
+            "/import/ixlan/{}/ixf/preview/".format(self.ixlan.id)
+        )
         request.user = self.guest_user
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
         assert response.status_code == 403
 
-
     def test_import_net_preview(self):
-        request = RequestFactory().get("/import/net/{}/ixf/preview/".format(self.net.id))
+        request = RequestFactory().get(
+            "/import/net/{}/ixf/preview/".format(self.net.id)
+        )
         request.user = self.admin_user
 
         response = view_import_net_ixf_preview(request, self.net.id)
 
         assert response.status_code == 200
 
-
     def test_import_net_preview_fail_ratelimit(self):
-        request = RequestFactory().get("/import/net/{}/ixf/preview/".format(self.net.id))
+        request = RequestFactory().get(
+            "/import/net/{}/ixf/preview/".format(self.net.id)
+        )
         request.user = self.admin_user
 
         response = view_import_net_ixf_preview(request, self.net.id)
@@ -615,14 +749,14 @@ class TestImportPreview(ClientCase):
         response = view_import_net_ixf_preview(request, self.net.id)
         assert response.status_code == 400
 
-
     def test_import_net_preview_fail_permission(self):
-        request = RequestFactory().get("/import/net/{}/ixf/preview/".format(self.net.id))
+        request = RequestFactory().get(
+            "/import/net/{}/ixf/preview/".format(self.net.id)
+        )
         request.user = self.guest_user
 
         response = view_import_net_ixf_preview(request, self.net.id)
         assert response.status_code == 403
-
 
     def test_netixlan_diff(self):
         netix1 = NetworkIXLan.objects.create(
@@ -633,7 +767,8 @@ class TestImportPreview(ClientCase):
             ipaddr6="2001:7f8:1::a500:2906:1",
             asn=self.net.asn,
             speed=1000,
-            is_rs_peer=True)
+            is_rs_peer=True,
+        )
 
         netix2 = NetworkIXLan(
             network=self.net_2,
@@ -642,26 +777,22 @@ class TestImportPreview(ClientCase):
             ipaddr6="2001:7f8:1::a500:2906:2",
             asn=self.net_2.asn,
             speed=10000,
-            is_rs_peer=False)
+            is_rs_peer=False,
+        )
 
-        result = self.ixlan.add_netixlan(netix2, save=False,
-                                         save_others=False)
+        result = self.ixlan.add_netixlan(netix2, save=False, save_others=False)
 
-        self.assertEqual(sorted(result["changed"]), ['asn', 'ipaddr6',
-                         'is_rs_peer', 'network_id', 'speed'])
-
+        self.assertEqual(
+            sorted(result["changed"]),
+            ["asn", "ipaddr6", "is_rs_peer", "network_id", "speed"],
+        )
 
         netix2.ipaddr4 = "195.69.146.251"
         netix2.ipaddr6 = netix1.ipaddr6
 
-        result = self.ixlan.add_netixlan(netix2, save=False,
-                                         save_others=False)
+        result = self.ixlan.add_netixlan(netix2, save=False, save_others=False)
 
-        self.assertEqual(sorted(result["changed"]), ['asn', 'ipaddr4',
-                         'is_rs_peer', 'network_id', 'speed'])
-
-
-
-
-
-
+        self.assertEqual(
+            sorted(result["changed"]),
+            ["asn", "ipaddr4", "is_rs_peer", "network_id", "speed"],
+        )

@@ -6,9 +6,15 @@ from reversion.models import Version, Revision
 from optparse import make_option
 
 MODELS = [
-    pdbm.Organization, pdbm.Network, pdbm.InternetExchange, pdbm.Facility,
-    pdbm.NetworkContact, pdbm.NetworkFacility, pdbm.IXLan, pdbm.IXLanPrefix,
-    pdbm.NetworkIXLan
+    pdbm.Organization,
+    pdbm.Network,
+    pdbm.InternetExchange,
+    pdbm.Facility,
+    pdbm.NetworkContact,
+    pdbm.NetworkFacility,
+    pdbm.IXLan,
+    pdbm.IXLanPrefix,
+    pdbm.NetworkIXLan,
 ]
 
 
@@ -52,8 +58,9 @@ class DBCommand(BaseCommand):
 
         content_type = ContentType.objects.get_for_model(model)
         for id in ids:
-            versions = Version.objects.filter(content_type=content_type,
-                                              object_id_int=id)
+            versions = Version.objects.filter(
+                content_type=content_type, object_id_int=id
+            )
             print "%s - %d:" % (ref_tag, id)
             self.print_line()
             prev = {}
@@ -61,8 +68,11 @@ class DBCommand(BaseCommand):
             for version in versions:
                 data = json.loads(version.serialized_data)[0].get("fields")
                 n += 1
-                print "VERSION: %d - %s - User: %s" % (n, data.get("updated"),
-                                                       version.revision.user)
+                print "VERSION: %d - %s - User: %s" % (
+                    n,
+                    data.get("updated"),
+                    version.revision.user,
+                )
                 if not prev:
                     for k, v in data.items():
                         print "%s: '%s'" % (k, v)

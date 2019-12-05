@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0006_network_allow_ixp_update'),
+        ("peeringdb_server", "0006_network_allow_ixp_update"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='ixlan',
-            name='json_member_list_url',
+            model_name="ixlan",
+            name="json_member_list_url",
             field=models.URLField(blank=True, null=True),
         ),
     ]

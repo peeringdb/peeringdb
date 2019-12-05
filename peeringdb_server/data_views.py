@@ -14,10 +14,9 @@ import django_peeringdb.const as const
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 
-from peeringdb_server.models import (
-    Organization, Network, Sponsorship)
+from peeringdb_server.models import Organization, Network, Sponsorship
 
-#def _(x):
+# def _(x):
 #    return x
 
 # until django-peeringdb is updated we want to remove
@@ -34,14 +33,14 @@ const.NET_TYPES_TRUNC = const.NET_TYPES[1:]
 # values in a comma separated fashion - user for
 # advanced search
 const.RATIOS_ADVS = list(const.RATIOS[1:])
-const.RATIOS_ADVS[0] = (",%s" % const.RATIOS_ADVS[0][0],
-                        const.RATIOS_ADVS[0][1])
+const.RATIOS_ADVS[0] = (",%s" % const.RATIOS_ADVS[0][0], const.RATIOS_ADVS[0][1])
 const.SCOPES_ADVS = list(const.SCOPES[1:])
-const.SCOPES_ADVS[0] = (",%s" % const.SCOPES_ADVS[0][0],
-                        const.SCOPES_ADVS[0][1])
+const.SCOPES_ADVS[0] = (",%s" % const.SCOPES_ADVS[0][0], const.SCOPES_ADVS[0][1])
 const.NET_TYPES_ADVS = list(const.NET_TYPES[1:])
-const.NET_TYPES_ADVS[0] = (",%s" % const.NET_TYPES_ADVS[0][0],
-                           const.NET_TYPES_ADVS[0][1])
+const.NET_TYPES_ADVS[0] = (
+    ",%s" % const.NET_TYPES_ADVS[0][0],
+    const.NET_TYPES_ADVS[0][1],
+)
 
 const.ORG_GROUPS = (("member", "member"), ("admin", "admin"))
 
@@ -56,15 +55,15 @@ def countries_w_blank(request):
     Returns all valid countries and their country codes with a blank field
     """
 
-    return JsonResponse({
-        "countries_b": [{
-            "id": "",
-            "name": ""
-        }] + [{
-            "id": unicode(code),
-            "name": unicode(name)
-        } for code, name in list(django_countries.countries)]
-    })
+    return JsonResponse(
+        {
+            "countries_b": [{"id": "", "name": ""}]
+            + [
+                {"id": unicode(code), "name": unicode(name)}
+                for code, name in list(django_countries.countries)
+            ]
+        }
+    )
 
 
 def countries(request):
@@ -72,12 +71,15 @@ def countries(request):
     Returns all valid countries and their country codes
     """
 
-    return JsonResponse({
-        "countries": [{
-            "id": unicode(code),
-            "name": unicode(name)
-        } for code, name in list(django_countries.countries)]
-    })
+    return JsonResponse(
+        {
+            "countries": [
+                {"id": unicode(code), "name": unicode(name)}
+                for code, name in list(django_countries.countries)
+            ]
+        }
+    )
+
 
 def sponsorships(request):
     """
@@ -86,11 +88,10 @@ def sponsorships(request):
 
     sponsors = {}
     for org, sponsorship in Sponsorship.active_by_org():
-        sponsors[org.id] = {"id":org.id, "name":sponsorship.label.lower()}
+        sponsors[org.id] = {"id": org.id, "name": sponsorship.label.lower()}
 
-    return JsonResponse({
-        "sponsors": sponsors,
-    })
+    return JsonResponse({"sponsors": sponsors,})
+
 
 @login_required
 def facilities(request):
@@ -98,13 +99,14 @@ def facilities(request):
     Returns all valid facilities with id and name
     """
 
-    return JsonResponse({
-        "facilities": [{
-            "id": fac.id,
-            "name": unicode(fac.name)
-        } for fac in models.Facility.handleref.all().undeleted()
-                       .order_by("name")]
-    })
+    return JsonResponse(
+        {
+            "facilities": [
+                {"id": fac.id, "name": unicode(fac.name)}
+                for fac in models.Facility.handleref.all().undeleted().order_by("name")
+            ]
+        }
+    )
 
 
 def decode(value):
@@ -124,22 +126,43 @@ def decode(value):
 def enum(request, name):
 
     if name.upper() not in [
-            "RATIOS", "RATIOS_TRUNC", "RATIOS_ADVS", "TRAFFIC", "SCOPES",
-            "SCOPES_TRUNC", "SCOPES_ADVS", "NET_TYPES", "NET_TYPES_TRUNC",
-            "NET_TYPES_ADVS", "POLICY_GENERAL", "POLICY_LOCATIONS",
-            "POLICY_CONTRACTS", "REGIONS", "POC_ROLES", "MEDIA", "PROTOCOLS",
-            "ORG_GROUPS", "BOOL_CHOICE_STR", "VISIBILITY"
+        "RATIOS",
+        "RATIOS_TRUNC",
+        "RATIOS_ADVS",
+        "TRAFFIC",
+        "SCOPES",
+        "SCOPES_TRUNC",
+        "SCOPES_ADVS",
+        "NET_TYPES",
+        "NET_TYPES_TRUNC",
+        "NET_TYPES_ADVS",
+        "POLICY_GENERAL",
+        "POLICY_LOCATIONS",
+        "POLICY_CONTRACTS",
+        "REGIONS",
+        "POC_ROLES",
+        "MEDIA",
+        "PROTOCOLS",
+        "ORG_GROUPS",
+        "BOOL_CHOICE_STR",
+        "VISIBILITY",
     ]:
         raise Exception("Unknown enum")
 
-    return JsonResponse({
-        "enum/%s" % name: [{
-            "id": id,
-            # as of django-peeringdb 1.0.0 already comes in
-            # translated
-            "name": decode(n)
-        } for id, n in getattr(const, name.upper())]
-    })
+    return JsonResponse(
+        {
+            "enum/%s"
+            % name: [
+                {
+                    "id": id,
+                    # as of django-peeringdb 1.0.0 already comes in
+                    # translated
+                    "name": decode(n),
+                }
+                for id, n in getattr(const, name.upper())
+            ]
+        }
+    )
 
 
 def asns(request):
@@ -170,20 +193,20 @@ def organizations(request):
     if not request.user.is_superuser:
         return JsonResponse({}, status=403)
 
-    return JsonResponse({
-        "organizations": [{
-            "id": o.id,
-            "name": o.name
-        } for o in Organization.objects.filter(status="ok").order_by("name")]
-    })
+    return JsonResponse(
+        {
+            "organizations": [
+                {"id": o.id, "name": o.name}
+                for o in Organization.objects.filter(status="ok").order_by("name")
+            ]
+        }
+    )
 
 
 def languages(request):
     from django.conf import settings
+
     cur_language = translation.get_language()
-    return JsonResponse({
-        "locales": [{
-            "id": id,
-            "name": _(name)
-        } for (id, name) in settings.LANGUAGES]
-    })
+    return JsonResponse(
+        {"locales": [{"id": id, "name": _(name)} for (id, name) in settings.LANGUAGES]}
+    )

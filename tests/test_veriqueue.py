@@ -32,13 +32,14 @@ class VeriQueueTests(TestCase):
                 continue
             if model == models.User:
                 cls.inst["user"] = model.objects.create_user(
-                    "test", "test@localhost", "test")
+                    "test", "test@localhost", "test"
+                )
                 cls.inst["user"].set_unverified()
             else:
                 kwargs = {
                     "org": org,
                     "name": "Test %s" % model.handleref.tag,
-                    "status": "pending"
+                    "status": "pending",
                 }
                 if model.handleref.tag == "net":
                     kwargs.update(asn=1)
@@ -62,15 +63,17 @@ class VeriQueueTests(TestCase):
         user = self.inst["user"]
         qs = models.DeskProTicket.objects
 
-
         for tag in ["fac", "net", "ix"]:
             inst = self.inst[tag]
             vqi = models.VerificationQueueItem.get_for_entity(inst)
             vqi.user = user
             vqi.save()
             self.assertEqual(
-                qs.filter(subject=u"[test]{} - {}".format(
-                    vqi.content_type, inst)).exists(), True)
+                qs.filter(
+                    subject=u"[test]{} - {}".format(vqi.content_type, inst)
+                ).exists(),
+                True,
+            )
 
     def test_approve(self):
         """
@@ -88,8 +91,14 @@ class VeriQueueTests(TestCase):
 
         # check that the status in the archive is correct (#558)
 
-        version = reversion.models.Version.objects.get_for_object(ix).order_by("-revision_id").first()
-        self.assertEqual(json.loads(version.serialized_data)[0]["fields"]["status"], "ok")
+        version = (
+            reversion.models.Version.objects.get_for_object(ix)
+            .order_by("-revision_id")
+            .first()
+        )
+        self.assertEqual(
+            json.loads(version.serialized_data)[0]["fields"]["status"], "ok"
+        )
 
         # after approval vqi should no longer exist
         with self.assertRaises(models.VerificationQueueItem.DoesNotExist):
@@ -134,7 +143,6 @@ class VeriQueueTests(TestCase):
         with self.assertRaises(models.VerificationQueueItem.DoesNotExist):
             vqi.refresh_from_db()
 
-
     def test_unique(self):
         """
         Test that only one verification queue item can exist for an entity
@@ -146,7 +154,5 @@ class VeriQueueTests(TestCase):
         with self.assertRaises(IntegrityError):
             models.VerificationQueueItem.objects.create(
                 content_type=models.ContentType.objects.get_for_model(type(fac)),
-                object_id=fac.id)
-
-
-
+                object_id=fac.id,
+            )

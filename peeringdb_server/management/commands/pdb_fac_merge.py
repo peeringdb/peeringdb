@@ -7,7 +7,7 @@ import re
 
 
 def soft_delete(fac, cmd):
-    #overriding
+    # overriding
 
     for k in fac._handleref.delete_cascade:
         q = getattr(fac, k).exclude(status="deleted")
@@ -26,15 +26,14 @@ class Command(BaseCommand):
     pretend = False
 
     def add_arguments(self, parser):
-        parser.add_argument('--commit', action='store_true',
-                            help="will commit the fac merge")
-        parser.add_argument('--target',
-                            help="target of the merge (facility id)")
-        parser.add_argument('--ids',
-                            help="comma separated list of facility ids")
         parser.add_argument(
-            '--match',
-            help="all facs with matching names will be merged (regex)")
+            "--commit", action="store_true", help="will commit the fac merge"
+        )
+        parser.add_argument("--target", help="target of the merge (facility id)")
+        parser.add_argument("--ids", help="comma separated list of facility ids")
+        parser.add_argument(
+            "--match", help="all facs with matching names will be merged (regex)"
+        )
 
     def log(self, msg):
         if not self.commit:
@@ -61,7 +60,7 @@ class Command(BaseCommand):
 
         if self.match:
             if self.ids:
-                msg = 'ids and match are mutually exclusive'
+                msg = "ids and match are mutually exclusive"
                 self.log(msg)
                 raise CommandError(msg)
 
@@ -72,13 +71,12 @@ class Command(BaseCommand):
 
         elif self.ids:
             self.ids = self.ids.split(",")
-            self.log("Merging facilities %s -> %s" % (", ".join(self.ids),
-                                                      self.target))
+            self.log("Merging facilities %s -> %s" % (", ".join(self.ids), self.target))
             for fac in pdbm.Facility.objects.filter(id__in=self.ids):
                 facs.append(fac)
 
         else:
-            msg = 'IDs or match is required'
+            msg = "IDs or match is required"
             self.log(msg)
             raise CommandError(msg)
 
@@ -93,15 +91,18 @@ class Command(BaseCommand):
             if fac.id == self.target.id:
                 continue
             self.log("Merging %s (%d) .." % (fac, fac.id))
-            for netfac in pdbm.NetworkFacility.objects.filter(
-                    facility=fac).exclude(status="deleted"):
+            for netfac in pdbm.NetworkFacility.objects.filter(facility=fac).exclude(
+                status="deleted"
+            ):
                 netfac_other = pdbm.NetworkFacility.objects.filter(
-                    facility=self.target, network_id=netfac.network_id)
+                    facility=self.target, network_id=netfac.network_id
+                )
                 # we check if the target fac already has a netfac to the same network (that is currently undeleted), if it does we skip it
                 if netfac_other.exclude(status="deleted").exists():
                     self.log(
                         "  - netfac %s : connection already exists at target, skipping."
-                        % netfac)
+                        % netfac
+                    )
                     continue
                 # if it exists but is currently delete, we simply undelete it
                 elif netfac_other.exists():
@@ -111,8 +112,7 @@ class Command(BaseCommand):
                     netfac_other.avail_ethernet = netfac.avail_ethernet
                     netfac_other.avail_atm = netfac.avail_atm
                     netfac_other.status = "ok"
-                    self.log("  - netfac %s (undeleting and updating)" %
-                             netfac_other)
+                    self.log("  - netfac %s (undeleting and updating)" % netfac_other)
                     moved.append(netfac_other)
                     if self.commit:
                         netfac_other.save()
@@ -125,22 +125,24 @@ class Command(BaseCommand):
                         netfac.save()
 
             for ixfac in pdbm.InternetExchangeFacility.objects.filter(
-                    facility=fac).exclude(status="deleted"):
+                facility=fac
+            ).exclude(status="deleted"):
                 ixfac_other = pdbm.InternetExchangeFacility.objects.filter(
-                    facility=self.target, ix=ixfac.ix)
+                    facility=self.target, ix=ixfac.ix
+                )
                 # we check if the target fac already has an ixfac to the same exchange (that is currently undeleted), if it does, we skip it
                 if ixfac_other.exclude(status="deleted").exists():
                     self.log(
                         "  - ixfac %s : connection already exists at target, skipping."
-                        % ixfac)
+                        % ixfac
+                    )
                     continue
                 # if it exists but is currently deleted, we undelete and copy
                 elif ixfac_other.exists():
                     ixfac_other = ixfac_other.first()
                     ixfac_other.status = "ok"
                     moved.append(ixfac_other)
-                    self.log(
-                        "  - ixfac %s (undeleting and updating)" % ixfac_other)
+                    self.log("  - ixfac %s (undeleting and updating)" % ixfac_other)
                     if self.commit:
                         ixfac_other.save()
                 # if it doesnt exist, we update the facility to the target facility and save
@@ -155,5 +157,7 @@ class Command(BaseCommand):
             if self.commit:
                 mail_users_entity_merge(
                     fac.org.admin_usergroup.user_set.all(),
-                    self.target.org.admin_usergroup.user_set.all(), fac,
-                    self.target)
+                    self.target.org.admin_usergroup.user_set.all(),
+                    fac,
+                    self.target,
+                )

@@ -16,11 +16,7 @@ class AdminTests(TestCase):
 
     @classmethod
     def entity_data(cls, org, tag):
-        kwargs = {
-            "name": "%s %s" % (org.name, tag),
-            "status": "ok",
-            "org": org
-        }
+        kwargs = {"name": "%s %s" % (org.name, tag), "status": "ok", "org": org}
         if tag == "net":
             cls.asn_count += 1
             kwargs.update(asn=cls.asn_count)
@@ -35,23 +31,26 @@ class AdminTests(TestCase):
         cls.entities["org"] = [
             org
             for org in [
-                models.Organization.objects.create(
-                    name="Org %d" % i, status="ok") for i in range(0, 9)
+                models.Organization.objects.create(name="Org %d" % i, status="ok")
+                for i in range(0, 9)
             ]
         ]
 
         # set up a network,facility and ix under each org
         for tag in ["ix", "net", "fac"]:
             cls.entities[tag] = [
-                models.REFTAG_MAP[tag].objects.create(**cls.entity_data(
-                    org, tag)) for org in cls.entities["org"]
+                models.REFTAG_MAP[tag].objects.create(**cls.entity_data(org, tag))
+                for org in cls.entities["org"]
             ]
 
         # create a user under each org
         cls.entities["user"] = [
             models.User.objects.create_user(
-                "user " + org.name, "%s@localhost" % org.name,
-                first_name="First", last_name="Last")
+                "user " + org.name,
+                "%s@localhost" % org.name,
+                first_name="First",
+                last_name="Last",
+            )
             for org in cls.entities["org"]
         ]
         i = 0
@@ -60,34 +59,39 @@ class AdminTests(TestCase):
             i += 1
 
         cls.admin_user = models.User.objects.create_user(
-            "admin", "admin@localhost", first_name="admin", last_name="admin")
+            "admin", "admin@localhost", first_name="admin", last_name="admin"
+        )
         cls.admin_user.is_superuser = True
         cls.admin_user.is_staff = True
         cls.admin_user.save()
         cls.admin_user.set_password("admin")
         cls.admin_user.save()
 
-        #set up some ixlans
+        # set up some ixlans
         cls.entities["ixlan"] = [
-            models.IXLan.objects.create(ix=ix, status="ok")
-            for ix in cls.entities["ix"]
+            models.IXLan.objects.create(ix=ix, status="ok") for ix in cls.entities["ix"]
         ]
 
-        #set up a prefix
+        # set up a prefix
         cls.entities["ixpfx"] = [
             models.IXLanPrefix.objects.create(
                 ixlan=cls.entities["ixlan"][0],
                 protocol="IPv4",
                 prefix="207.41.110.0/24",
-                status="ok")
+                status="ok",
+            )
         ]
 
-        #set up some netixlans
+        # set up some netixlans
         cls.entities["netixlan"] = [
             models.NetworkIXLan.objects.create(
-                network=cls.entities["net"][0], ixlan=cls.entities["ixlan"][0],
-                ipaddr4=addr, status="ok", asn=cls.entities["net"][0].asn,
-                speed=1000)
+                network=cls.entities["net"][0],
+                ixlan=cls.entities["ixlan"][0],
+                ipaddr4=addr,
+                status="ok",
+                asn=cls.entities["net"][0].asn,
+                speed=1000,
+            )
             for addr in ["207.41.110.37", "207.41.110.38", "207.41.110.39"]
         ]
 
@@ -104,15 +108,17 @@ class AdminTests(TestCase):
         """
 
         m = [
-            models.Facility, models.InternetExchange, models.Network,
-            models.Organization, models.User
+            models.Facility,
+            models.InternetExchange,
+            models.Network,
+            models.Organization,
+            models.User,
         ]
 
         c = Client()
         c.login(username="admin", password="admin")
         for model in m:
-            url = "/cp/%s/%s/" % (model._meta.app_label,
-                                  model._meta.model_name)
+            url = "/cp/%s/%s/" % (model._meta.app_label, model._meta.model_name)
             response = c.get(url, follow=True)
             self.assertEqual(response.status_code, 200)
 
@@ -229,8 +235,8 @@ class AdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         for i, n in models.COMMANDLINE_TOOLS:
             self.assertGreater(
-                response.content.find('<option value="{}">{}</option>'.format(
-                    i, n)), -1)
+                response.content.find('<option value="{}">{}</option>'.format(i, n)), -1
+            )
 
     def test_commandline_tool_renumber_lans(self):
         # test the form that runs the renumer ip space tool
@@ -246,22 +252,25 @@ class AdminTests(TestCase):
         self.assertGreater(
             cont.find(
                 '<label class="required" for="id_old_prefix">Old prefix:</label>'
-            ), -1)
+            ),
+            -1,
+        )
         self.assertGreater(
             cont.find(
                 '<label class="required" for="id_new_prefix">New prefix:</label>'
-            ), -1)
+            ),
+            -1,
+        )
         self.assertGreater(
-            cont.find(
-                '<label class="required" for="id_exchange">Exchange:</label>'),
-            -1)
+            cont.find('<label class="required" for="id_exchange">Exchange:</label>'), -1
+        )
 
         # test post to renumber lans command form (preview)
         data = {
             "tool": "pdb_renumber_lans",
             "exchange": self.entities["ix"][0].id,
             "old_prefix": "207.41.110.0/24",
-            "new_prefix": "207.41.111.0/24"
+            "new_prefix": "207.41.111.0/24",
         }
         url = "/cp/peeringdb_server/commandlinetool/preview/"
         response = c.post(url, data, follow=True)
@@ -269,27 +278,35 @@ class AdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertGreater(
             cont.find(
-                '[pretend] Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24'
-            ), -1)
+                "[pretend] Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24"
+            ),
+            -1,
+        )
         self.assertGreater(
             cont.find(
-                '[pretend] Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37'
-            ), -1)
+                "[pretend] Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37"
+            ),
+            -1,
+        )
         self.assertGreater(
             cont.find(
-                '[pretend] Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38'
-            ), -1)
+                "[pretend] Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38"
+            ),
+            -1,
+        )
         self.assertGreater(
             cont.find(
-                '[pretend] Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39'
-            ), -1)
+                "[pretend] Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39"
+            ),
+            -1,
+        )
 
         # test post to renumber lans command form
         data = {
             "tool": "pdb_renumber_lans",
             "exchange": self.entities["ix"][0].id,
             "old_prefix": "207.41.110.0/24",
-            "new_prefix": "207.41.111.0/24"
+            "new_prefix": "207.41.111.0/24",
         }
         url = "/cp/peeringdb_server/commandlinetool/run/"
         response = c.post(url, data, follow=True)
@@ -297,29 +314,21 @@ class AdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         self.assertGreater(
-            cont.find(
-                '>Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24'
-            ), -1)
+            cont.find(">Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24"), -1
+        )
         self.assertGreater(
-            cont.find(
-                '>Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37'
-            ), -1)
+            cont.find(">Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37"), -1
+        )
         self.assertGreater(
-            cont.find(
-                '>Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38'
-            ), -1)
+            cont.find(">Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38"), -1
+        )
         self.assertGreater(
-            cont.find(
-                '>Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39'
-            ), -1)
-
+            cont.find(">Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39"), -1
+        )
 
         for netixlan in self.entities["netixlan"]:
             netixlan.refresh_from_db()
 
-        self.assertEqual(
-            str(self.entities["netixlan"][0].ipaddr4), "207.41.111.37")
-        self.assertEqual(
-            str(self.entities["netixlan"][1].ipaddr4), "207.41.111.38")
-        self.assertEqual(
-            str(self.entities["netixlan"][2].ipaddr4), "207.41.111.39")
+        self.assertEqual(str(self.entities["netixlan"][0].ipaddr4), "207.41.111.37")
+        self.assertEqual(str(self.entities["netixlan"][1].ipaddr4), "207.41.111.38")
+        self.assertEqual(str(self.entities["netixlan"][2].ipaddr4), "207.41.111.39")

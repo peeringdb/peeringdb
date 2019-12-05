@@ -11,7 +11,8 @@ from django.contrib.auth import get_user_model
 from peeringdb_server.models import REFTAG_MAP, UTC
 
 
-DATE_PAST = datetime.datetime(year=2019,month=11,day=1)
+DATE_PAST = datetime.datetime(year=2019, month=11, day=1)
+
 
 def setup_data():
 
@@ -21,7 +22,7 @@ def setup_data():
 
     # one object of each type moved to the past
 
-    for tag in ["fac","net","org","ix"]:
+    for tag in ["fac", "net", "org", "ix"]:
         for obj in REFTAG_MAP[tag].objects.all():
             obj.created = obj.updated = date_past
             obj.save()
@@ -31,18 +32,18 @@ def setup_data():
 
     User = get_user_model()
 
-    for i in range(1,7):
-        User.objects.create_user("user_{}".format(i),
-                                 "user_{}@localhost".format(i),
-                                 "secret")
+    for i in range(1, 7):
+        User.objects.create_user(
+            "user_{}".format(i), "user_{}@localhost".format(i), "secret"
+        )
 
     # move users 4, 5, 6 to the past
 
-    User.objects.filter(pk__in=[4,5,6]).update(created=date_past)
+    User.objects.filter(pk__in=[4, 5, 6]).update(created=date_past)
 
     # verify all users except 1 and 4
 
-    for user in User.objects.exclude(pk__in=[1,4]):
+    for user in User.objects.exclude(pk__in=[1, 4]):
         user.set_verified()
 
 
@@ -60,5 +61,3 @@ def test_generate_for_current_date(db, data_stats_current):
     setup_data()
     call_command("pdb_stats", stdout=output)
     assert output.getvalue().find(data_stats_current.txt) > -1
-
-

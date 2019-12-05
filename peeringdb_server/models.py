@@ -29,7 +29,7 @@ from django_handleref.models import (
     UpdatedDateTimeField,
 )
 import django_peeringdb.models as pdb_models
-from django_inet.models import (ASNField)
+from django_inet.models import ASNField
 
 from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
@@ -37,25 +37,34 @@ from passlib.hash import sha256_crypt
 
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.validators import (
-    validate_address_space, validate_info_prefixes4, validate_info_prefixes6,
-    validate_prefix_overlap)
+    validate_address_space,
+    validate_info_prefixes4,
+    validate_info_prefixes6,
+    validate_prefix_overlap,
+)
 
-SPONSORSHIP_LEVELS = ((1, _("Silver")), (2, _("Gold")), (3, _("Platinum")),
-                      (4, _("Diamond")))
+SPONSORSHIP_LEVELS = (
+    (1, _("Silver")),
+    (2, _("Gold")),
+    (3, _("Platinum")),
+    (4, _("Diamond")),
+)
 
 PARTNERSHIP_LEVELS = ((1, _("Data Validation")), (2, _("RIR")))
 
-COMMANDLINE_TOOLS = (("pdb_renumber_lans",
-                      _("Renumber IP Space")), ("pdb_fac_merge",
-                                                _("Merge Facilities")),
-                     ("pdb_fac_merge_undo", _("Merge Facilities: UNDO")),
-                     ("pdb_undelete", _("Restore Object(s)")))
+COMMANDLINE_TOOLS = (
+    ("pdb_renumber_lans", _("Renumber IP Space")),
+    ("pdb_fac_merge", _("Merge Facilities")),
+    ("pdb_fac_merge_undo", _("Merge Facilities: UNDO")),
+    ("pdb_undelete", _("Restore Object(s)")),
+)
 
 
 if settings.TUTORIAL_MODE:
     COMMANDLINE_TOOLS += (("pdb_wipe", _("Reset Environment")),)
 
 COMMANDLINE_TOOLS += (("pdb_ixf_ixp_member_import", _("IX-F Import")),)
+
 
 def debug_mail(*args):
     for arg in list(args):
@@ -161,6 +170,7 @@ class URLField(pdb_models.URLField):
     """
     local defaults for URLField
     """
+
     pass
 
 
@@ -169,14 +179,19 @@ class GeocodeBaseMixin(models.Model):
     Mixin to use for geocode enabled entities
     Allows an entity to be geocoded with the pdb_geo_sync command
     """
-    geocode_status = models.BooleanField(default=False, help_text=_(
-        "Has this object's latitude and longitude been syncronized to it's address fields"
-    ))
+
+    geocode_status = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Has this object's latitude and longitude been syncronized to it's address fields"
+        ),
+    )
     geocode_date = models.DateTimeField(
-        blank=True, null=True, help_text=_("Last time of attempted geocode"))
+        blank=True, null=True, help_text=_("Last time of attempted geocode")
+    )
     geocode_error = models.TextField(
-        blank=True, null=True,
-        help_text=_("Error message of previous geocode attempt"))
+        blank=True, null=True, help_text=_("Error message of previous geocode attempt")
+    )
 
     class Meta(object):
         abstract = True
@@ -195,9 +210,10 @@ class GeocodeBaseMixin(models.Model):
         """
         Returns an address string suitable for googlemaps query
         """
-        #pylint: disable=missing-format-attribute
+        # pylint: disable=missing-format-attribute
         return u"{e.address1} {e.address2}, {e.city}, {e.state} {e.zipcode}".format(
-            e=self)
+            e=self
+        )
 
     def geocode(self, gmaps, save=True):
         """
@@ -209,13 +225,15 @@ class GeocodeBaseMixin(models.Model):
             - gmaps: googlemaps instance
         """
         try:
-            result = gmaps.geocode(self.geocode_address, components={
-                "country": self.country.code
-            })
-            if result and ("street_address" in result[0]["types"]
-                           or "establishment" in result[0]["types"]
-                           or "premise" in result[0]["types"]
-                           or "subpremise" in result[0]["types"]):
+            result = gmaps.geocode(
+                self.geocode_address, components={"country": self.country.code}
+            )
+            if result and (
+                "street_address" in result[0]["types"]
+                or "establishment" in result[0]["types"]
+                or "premise" in result[0]["types"]
+                or "subpremise" in result[0]["types"]
+            ):
                 loc = result[0].get("geometry").get("location")
                 self.latitude = loc.get("lat")
                 self.longitude = loc.get("lng")
@@ -226,8 +244,7 @@ class GeocodeBaseMixin(models.Model):
                 self.geocode_error = _("Address not found")
             self.geocode_status = True
             return result
-        except (googlemaps.exceptions.HTTPError,
-                googlemaps.exceptions.ApiError), inst:
+        except (googlemaps.exceptions.HTTPError, googlemaps.exceptions.ApiError), inst:
             self.geocode_error = str(inst)
             self.geocode_status = True
         except googlemaps.exceptions.Timeout, inst:
@@ -256,28 +273,41 @@ class UserOrgAffiliationRequest(models.Model):
     """
 
     org = models.ForeignKey(
-        "peeringdb_server.Organization", null=True, blank=True, help_text=
-        _("This organization in our database that was derived from the provided ASN or organization name. If this is empty it means no matching organization was found."
-          ), related_name="affiliation_requests")
+        "peeringdb_server.Organization",
+        null=True,
+        blank=True,
+        help_text=_(
+            "This organization in our database that was derived from the provided ASN or organization name. If this is empty it means no matching organization was found."
+        ),
+        related_name="affiliation_requests",
+    )
 
     org_name = models.CharField(
-        max_length=255, null=True, blank=True,
-        help_text=_("The organization name entered by the user"))
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("The organization name entered by the user"),
+    )
 
-    asn = ASNField(
-        help_text=_("The ASN entered by the user"), null=True, blank=True)
+    asn = ASNField(help_text=_("The ASN entered by the user"), null=True, blank=True)
 
-    user = models.ForeignKey("peeringdb_server.User",
-                             help_text=_("The user that made the request"),
-                             related_name="affiliation_requests")
+    user = models.ForeignKey(
+        "peeringdb_server.User",
+        help_text=_("The user that made the request"),
+        related_name="affiliation_requests",
+    )
 
     created = CreatedDateTimeField()
 
     status = models.CharField(
-        max_length=254, choices=[('pending', _('Pending')), ('approved',
-                                                             _('Approved')),
-                                 ('denied', _('Denied'))],
-        help_text=_("Status of this request"))
+        max_length=254,
+        choices=[
+            ("pending", _("Pending")),
+            ("approved", _("Approved")),
+            ("denied", _("Denied")),
+        ],
+        help_text=_("Status of this request"),
+    )
 
     class Meta(object):
         db_table = "peeringdb_user_org_affil_request"
@@ -302,8 +332,10 @@ class UserOrgAffiliationRequest(models.Model):
         """
 
         if self.org_id:
-            if self.org.admin_usergroup.user_set.count() > 0 or \
-            self.org.usergroup.user_set.count() > 0:
+            if (
+                self.org.admin_usergroup.user_set.count() > 0
+                or self.org.usergroup.user_set.count() > 0
+            ):
                 # if there are other users in this org, add user as normal
                 # member
                 self.org.usergroup.user_set.add(self.user)
@@ -336,18 +368,22 @@ class UserOrgAffiliationRequest(models.Model):
         """
         if not self.org:
             return
-        #FIXME: why not have the `override` call in email_user in the first place?
+        # FIXME: why not have the `override` call in email_user in the first place?
         with override(self.user.locale):
             self.user.email_user(
-                _(u'Your affiliation to Organization "{}" has been approved')
-                .format(self.org.name),
+                _(u'Your affiliation to Organization "{}" has been approved').format(
+                    self.org.name
+                ),
                 loader.get_template(
-                    'email/notify-user-uoar-ownership-approved.txt').render({
+                    "email/notify-user-uoar-ownership-approved.txt"
+                ).render(
+                    {
                         "uoar": self,
-                        "org_url": "{}/org/{}".format(settings.BASE_URL,
-                                                      self.org.id),
-                        "support_email": settings.DEFAULT_FROM_EMAIL
-                    }))
+                        "org_url": "{}/org/{}".format(settings.BASE_URL, self.org.id),
+                        "support_email": settings.DEFAULT_FROM_EMAIL,
+                    }
+                ),
+            )
 
 
 class VerificationQueueItem(models.Model):
@@ -362,12 +398,14 @@ class VerificationQueueItem(models.Model):
     # reference to the item that requires review stored in generic fk
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
-    item = GenericForeignKey('content_type', 'object_id')
+    item = GenericForeignKey("content_type", "object_id")
     user = models.ForeignKey(
-        "peeringdb_server.User", related_name="vqitems", null=True, blank=True,
-        help_text=_(
-            "The item that this queue is attached to was created by this user"
-        ))
+        "peeringdb_server.User",
+        related_name="vqitems",
+        null=True,
+        blank=True,
+        help_text=_("The item that this queue is attached to was created by this user"),
+    )
     created = CreatedDateTimeField()
     notified = models.BooleanField(default=False)
 
@@ -385,7 +423,8 @@ class VerificationQueueItem(models.Model):
 
         return cls.objects.get(
             content_type=ContentType.objects.get_for_model(type(entity)),
-            object_id=entity.id)
+            object_id=entity.id,
+        )
 
     @property
     def item_admin_url(self):
@@ -393,9 +432,10 @@ class VerificationQueueItem(models.Model):
         Return admin url for the object in the verification queue
         """
         return urlresolvers.reverse(
-            "admin:%s_%s_change" % (self.content_type.app_label,
-                                    self.content_type.model),
-            args=(self.object_id, ))
+            "admin:%s_%s_change"
+            % (self.content_type.app_label, self.content_type.model),
+            args=(self.object_id,),
+        )
 
     @property
     def approve_admin_url(self):
@@ -403,9 +443,9 @@ class VerificationQueueItem(models.Model):
         Return admin url for approval of the verification queue item
         """
         return urlresolvers.reverse(
-            "admin:%s_%s_actions" % (self._meta.app_label,
-                                     self._meta.model_name),
-            args=(self.id, "vq_approve"))
+            "admin:%s_%s_actions" % (self._meta.app_label, self._meta.model_name),
+            args=(self.id, "vq_approve"),
+        )
 
     @property
     def deny_admin_url(self):
@@ -413,9 +453,9 @@ class VerificationQueueItem(models.Model):
         Return admin url for denial of the verification queue item
         """
         return urlresolvers.reverse(
-            "admin:%s_%s_actions" % (self._meta.app_label,
-                                     self._meta.model_name), args=(self.id,
-                                                                   "vq_deny"))
+            "admin:%s_%s_actions" % (self._meta.app_label, self._meta.model_name),
+            args=(self.id, "vq_deny"),
+        )
 
     @reversion.create_revision()
     def approve(self):
@@ -460,9 +500,13 @@ class Organization(pdb_models.OrganizationBase):
     # FileField for now as the server doesn't have all the
     # dependencies installedd (libjpeg / Pillow)
     logo = models.FileField(
-        upload_to="logos/", null=True, blank=True, help_text=
-        _("Allows you to upload and set a logo image file for this organization"
-          ))
+        upload_to="logos/",
+        null=True,
+        blank=True,
+        help_text=_(
+            "Allows you to upload and set a logo image file for this organization"
+        ),
+    )
 
     @staticmethod
     def autocomplete_search_fields():
@@ -480,7 +524,8 @@ class Organization(pdb_models.OrganizationBase):
         Return the admin url for this organization (in /cp)
         """
         return urlresolvers.reverse(
-            "admin:peeringdb_server_organization_change", args=(self.id, ))
+            "admin:peeringdb_server_organization_change", args=(self.id,)
+        )
 
     @property
     def owned(self):
@@ -621,15 +666,12 @@ class Organization(pdb_models.OrganizationBase):
         data
         """
         return {
-
             # since poc are stored in a list we need to specify a list
             # handler for it, its a class function on NetworkContact that
             # returns a relative permission namespace for each poc in the
             # list
             "list-handlers": {
-                "poc_set": {
-                    "namespace": NetworkContact.nsp_namespace_in_list
-                }
+                "poc_set": {"namespace": NetworkContact.nsp_namespace_in_list}
             }
         }
 
@@ -640,9 +682,11 @@ class Organization(pdb_models.OrganizationBase):
         has no sponsorship ongoing return None
         """
         now = datetime.datetime.now().replace(tzinfo=UTC())
-        return self.sponsorship_set.filter(
-            start_date__lte=now,
-            end_date__gte=now).order_by("-start_date").first()
+        return (
+            self.sponsorship_set.filter(start_date__lte=now, end_date__gte=now)
+            .order_by("-start_date")
+            .first()
+        )
 
     @classmethod
     @reversion.create_revision()
@@ -682,13 +726,18 @@ class Sponsorship(models.Model):
     for a designated timespan
     """
 
-    orgs = models.ManyToManyField(Organization, through="peeringdb_server.SponsorshipOrganization", related_name="sponsorship_set")
+    orgs = models.ManyToManyField(
+        Organization,
+        through="peeringdb_server.SponsorshipOrganization",
+        related_name="sponsorship_set",
+    )
     start_date = models.DateTimeField(
-        _("Sponsorship starts on"), default=default_time_s)
-    end_date = models.DateTimeField(
-        _("Sponsorship ends on"), default=default_time_e)
+        _("Sponsorship starts on"), default=default_time_s
+    )
+    end_date = models.DateTimeField(_("Sponsorship ends on"), default=default_time_e)
     notify_date = models.DateTimeField(
-        _("Expiration notification sent on"), null=True, blank=True)
+        _("Expiration notification sent on"), null=True, blank=True
+    )
     level = models.PositiveIntegerField(choices=SPONSORSHIP_LEVELS, default=1)
 
     class Meta:
@@ -709,7 +758,6 @@ class Sponsorship(models.Model):
             for org in sponsorship.orgs.all():
                 yield org, sponsorship
 
-
     @property
     def label(self):
         """
@@ -727,16 +775,17 @@ class Sponsorship(models.Model):
         if self.notify_date is not None and self.notify_date >= self.end_date:
             return False
         msg = loader.get_template(
-            'email/notify-sponsorship-admin-expiration.txt').render({
-                "instance": self
-            })
+            "email/notify-sponsorship-admin-expiration.txt"
+        ).render({"instance": self})
 
         org_names = ", ".join([org.name for org in self.orgs.all()])
 
-        mail = EmailMultiAlternatives((u'{}: {}').format(
-            _("Sponsorship Expired"), org_names), msg,
-                                      settings.DEFAULT_FROM_EMAIL,
-                                      [settings.SPONSORSHIPS_EMAIL])
+        mail = EmailMultiAlternatives(
+            (u"{}: {}").format(_("Sponsorship Expired"), org_names),
+            msg,
+            settings.DEFAULT_FROM_EMAIL,
+            [settings.SPONSORSHIPS_EMAIL],
+        )
         mail.attach_alternative(msg.replace("\n", "<br />\n"), "text/html")
         mail.send(fail_silently=True)
 
@@ -750,17 +799,26 @@ class SponsorshipOrganization(models.Model):
     """
     Describes an organization->sponsorship relationship
     """
+
     org = models.ForeignKey(Organization, related_name="sponsorshiporg_set")
     sponsorship = models.ForeignKey(Sponsorship, related_name="sponsorshiporg_set")
     url = models.URLField(
-        _("URL"), help_text=
-        _("If specified clicking the sponsorship will take the user to this location"
-          ), blank=True, null=True)
+        _("URL"),
+        help_text=_(
+            "If specified clicking the sponsorship will take the user to this location"
+        ),
+        blank=True,
+        null=True,
+    )
 
     logo = models.FileField(
-        upload_to="logos/", null=True, blank=True, help_text=
-        _("Allows you to upload and set a logo image file for this sponsorship"
-          ))
+        upload_to="logos/",
+        null=True,
+        blank=True,
+        help_text=_(
+            "Allows you to upload and set a logo image file for this sponsorship"
+        ),
+    )
 
 
 class Partnership(models.Model):
@@ -773,14 +831,22 @@ class Partnership(models.Model):
     org = models.ForeignKey(Organization, related_name="partnerships")
     level = models.PositiveIntegerField(choices=PARTNERSHIP_LEVELS, default=1)
     url = models.URLField(
-        _("URL"), help_text=
-        _("If specified clicking the partnership will take the user to this location"
-          ), blank=True, null=True)
+        _("URL"),
+        help_text=_(
+            "If specified clicking the partnership will take the user to this location"
+        ),
+        blank=True,
+        null=True,
+    )
 
     logo = models.FileField(
-        upload_to="logos/", null=True, blank=True, help_text=
-        _("Allows you to upload and set a logo image file for this partnership"
-          ))
+        upload_to="logos/",
+        null=True,
+        blank=True,
+        help_text=_(
+            "Allows you to upload and set a logo image file for this partnership"
+        ),
+    )
 
     class Meta:
         db_table = "peeringdb_partnership"
@@ -814,8 +880,9 @@ class OrganizationMerge(models.Model):
         entity can be any handleref instance or a User instance
         """
 
-        return OrganizationMergeEntity.objects.create(merge=self,
-                                                      entity=entity, note=note)
+        return OrganizationMergeEntity.objects.create(
+            merge=self, entity=entity, note=note
+        )
 
     def undo(self):
         """
@@ -853,7 +920,7 @@ class OrganizationMergeEntity(models.Model):
     merge = models.ForeignKey(OrganizationMerge, related_name="entities")
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
-    entity = GenericForeignKey('content_type', 'object_id')
+    entity = GenericForeignKey("content_type", "object_id")
     note = models.CharField(max_length=32, blank=True, null=True)
 
     class Meta:
@@ -900,12 +967,10 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, fac_id):
-        return "%s.facility.%s" % (Organization.nsp_namespace_from_id(org_id),
-                                   fac_id)
+        return "%s.facility.%s" % (Organization.nsp_namespace_from_id(org_id), fac_id)
 
     @classmethod
-    def related_to_net(cls, value=None, filt=None, field="network_id",
-                       qset=None):
+    def related_to_net(cls, value=None, filt=None, field="network_id", qset=None):
         """
         Returns queryset of Facility objects that
         are related to the network specified via net_id
@@ -970,7 +1035,8 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
         # of the specified asns
         for asn in asns:
             for netfac in NetworkFacility.objects.filter(
-                    network__asn=asn, status="ok").select_related("network"):
+                network__asn=asn, status="ok"
+            ).select_related("network"):
                 if netfac.facility_id not in facilities:
                     facilities[netfac.facility_id] = {}
                 facilities[netfac.facility_id][asn] = True
@@ -1059,8 +1125,7 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         return self.name
 
     @classmethod
-    def related_to_ixlan(cls, value=None, filt=None, field="ixlan_id",
-                         qset=None):
+    def related_to_ixlan(cls, value=None, filt=None, field="ixlan_id", qset=None):
         """
         Returns queryset of InternetExchange objects that
         are related to IXLan specified by ixlan_id
@@ -1077,8 +1142,7 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         return qset.filter(id__in=[ix.ix_id for ix in q])
 
     @classmethod
-    def related_to_ixfac(cls, value=None, filt=None, field="ixfac_id",
-                         qset=None):
+    def related_to_ixfac(cls, value=None, filt=None, field="ixfac_id", qset=None):
         """
         Returns queryset of InternetExchange objects that
         are related to IXfac link specified by ixfac_id
@@ -1095,8 +1159,7 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         return qset.filter(id__in=[ix.ix_id for ix in q])
 
     @classmethod
-    def related_to_fac(cls, filt=None, value=None, field="facility_id",
-                       qset=None):
+    def related_to_fac(cls, filt=None, value=None, field="facility_id", qset=None):
         """
         Returns queryset of InternetExchange objects that
         are related to the facility specified by fac_id
@@ -1112,8 +1175,7 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         return qset.filter(id__in=[ix.ix_id for ix in q])
 
     @classmethod
-    def related_to_net(cls, filt=None, value=None, field="network_id",
-                       qset=None):
+    def related_to_net(cls, filt=None, value=None, field="network_id", qset=None):
         """
         Returns queryset of InternetExchange objects that
         are related to the network specified by network_id
@@ -1141,7 +1203,8 @@ class InternetExchange(pdb_models.InternetExchangeBase):
             qset = cls.handleref.undeleted()
 
         q = IXLanPrefix.objects.select_related("ixlan").filter(
-            prefix__startswith=ipblock)
+            prefix__startswith=ipblock
+        )
 
         return qset.filter(id__in=[pfx.ixlan.ix_id for pfx in q])
 
@@ -1177,8 +1240,8 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         # of the specified asns
         for asn in asns:
             for netixlan in NetworkIXLan.objects.filter(
-                    network__asn=asn, status="ok").select_related(
-                        "network", "ixlan"):
+                network__asn=asn, status="ok"
+            ).select_related("network", "ixlan"):
                 if netixlan.ixlan.ix_id not in exchanges:
                     exchanges[netixlan.ixlan.ix_id] = {}
                 exchanges[netixlan.ixlan.ix_id][asn] = True
@@ -1228,7 +1291,6 @@ class InternetExchange(pdb_models.InternetExchangeBase):
 
         return qset.filter(pk__in=exchanges)
 
-
     @classmethod
     def nsp_namespace_in_list(cls):
         return str(cls.id)
@@ -1239,7 +1301,9 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         Returns permissioning namespace for an exchange
         """
         return "%s.internetexchange.%s" % (
-            Organization.nsp_namespace_from_id(org_id), ix_id)
+            Organization.nsp_namespace_from_id(org_id),
+            ix_id,
+        )
 
     @property
     def networks(self):
@@ -1282,16 +1346,18 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         Returns queryset of active or pending ixlan objects at
         this exchange
         """
-        return self.ixlan_set(manager="handleref").filter(
-            status__in=["ok", "pending"])
+        return self.ixlan_set(manager="handleref").filter(status__in=["ok", "pending"])
 
     @property
     def ixfac_set_active(self):
         """
         Returns queryset of active ixfac objects at this exchange
         """
-        return self.ixfac_set(manager="handleref").select_related(
-            "facility").filter(status="ok")
+        return (
+            self.ixfac_set(manager="handleref")
+            .select_related("facility")
+            .filter(status="ok")
+        )
 
     @property
     def nsp_namespace(self):
@@ -1341,33 +1407,28 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
         """
         Returns a descriptive label of the ixfac for logging purposes
         """
-        return "ixfac{} {} <-> {}".format(
-            self.id, self.ix.name, self.facility.name)
-
-
+        return "ixfac{} {} <-> {}".format(self.id, self.ix.name, self.facility.name)
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, id):
         """
         Returns permissioning namespace for an ixfac
         """
-        return "%s.fac.%s" % (
-            InternetExchange.nsp_namespace_from_id(org_id, ix_id), id)
+        return "%s.fac.%s" % (InternetExchange.nsp_namespace_from_id(org_id, ix_id), id)
 
     @property
     def nsp_namespace(self):
         """
         Returns permissioning namespace for this ixfac
         """
-        return self.__class__.nsp_namespace_from_id(self.ix.org_id, self.ix.id,
-                                                    self.id)
+        return self.__class__.nsp_namespace_from_id(self.ix.org_id, self.ix.id, self.id)
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["ix"])
 
     class Meta:
-        unique_together = ('ix', 'facility')
-        db_table = u'peeringdb_ix_facility'
+        unique_together = ("ix", "facility")
+        db_table = u"peeringdb_ix_facility"
 
 
 @reversion.register
@@ -1376,8 +1437,7 @@ class IXLan(pdb_models.IXLanBase):
     Describes a LAN at an exchange
     """
 
-    ix = models.ForeignKey(InternetExchange, default=0,
-                           related_name="ixlan_set")
+    ix = models.ForeignKey(InternetExchange, default=0, related_name="ixlan_set")
     ixf_ixp_member_list_url = models.URLField(null=True, blank=True)
     ixf_ixp_import_enabled = models.BooleanField(default=False)
 
@@ -1388,16 +1448,14 @@ class IXLan(pdb_models.IXLanBase):
         delete_cascade = ["ixpfx_set", "netixlan_set"]
 
     class Meta:
-        db_table = u'peeringdb_ixlan'
+        db_table = u"peeringdb_ixlan"
 
     @property
     def descriptive_name(self):
         """
         Returns a descriptive label of the ixlan for logging purposes
         """
-        return "ixlan{} {} {}".format(
-            self.id, self.name, self.ix.name)
-
+        return "ixlan{} {} {}".format(self.id, self.name, self.ix.name)
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, id):
@@ -1405,15 +1463,16 @@ class IXLan(pdb_models.IXLanBase):
         Returns permissioning namespace for an ixlan
         """
         return "%s.ixlan.%s" % (
-            InternetExchange.nsp_namespace_from_id(org_id, ix_id), id)
+            InternetExchange.nsp_namespace_from_id(org_id, ix_id),
+            id,
+        )
 
     @property
     def nsp_namespace(self):
         """
         Returns permissioning namespace for this ixlan
         """
-        return self.__class__.nsp_namespace_from_id(self.ix.org_id, self.ix_id,
-                                                    self.id)
+        return self.__class__.nsp_namespace_from_id(self.ix.org_id, self.ix_id, self.id)
 
     @property
     def ixpfx_set_active(self):
@@ -1427,16 +1486,18 @@ class IXLan(pdb_models.IXLanBase):
         """
         Returns queryset of active or pending prefixes at this ixlan
         """
-        return self.ixpfx_set(manager="handleref").filter(
-            status__in=["ok", "pending"])
+        return self.ixpfx_set(manager="handleref").filter(status__in=["ok", "pending"])
 
     @property
     def netixlan_set_active(self):
         """
         Returns queryset of active netixlan objects at this ixlan
         """
-        return self.netixlan_set(
-            manager="handleref").select_related("network").filter(status="ok")
+        return (
+            self.netixlan_set(manager="handleref")
+            .select_related("network")
+            .filter(status="ok")
+        )
         # q = NetworkIXLan.handleref.filter(ixlan_id=self.id).filter(status="ok")
         # return Network.handleref.filter(id__in=[i.network_id for i in
         # q]).filter(status="ok")
@@ -1453,7 +1514,6 @@ class IXLan(pdb_models.IXLanBase):
                 return True
         return False
 
-
     def test_ipv6_address(self, ipv6):
         """
         test that the ipv6 address exists in one of the prefixes in this ixlan
@@ -1462,7 +1522,6 @@ class IXLan(pdb_models.IXLanBase):
             if pfx.test_ip_address(ipv6):
                 return True
         return False
-
 
     @reversion.create_revision()
     def add_netixlan(self, netixlan_info, save=True, save_others=True):
@@ -1496,8 +1555,12 @@ class IXLan(pdb_models.IXLanBase):
         ipv6_valid = False
 
         def result(netixlan=None):
-            return { "netixlan": netixlan, "created": created,
-                     "changed": changed, "log":log}
+            return {
+                "netixlan": netixlan,
+                "created": created,
+                "changed": changed,
+                "log": log,
+            }
 
         # check if either of the provided ip addresses are a fit for ANY of
         # the prefixes in this ixlan
@@ -1511,24 +1574,31 @@ class IXLan(pdb_models.IXLanBase):
         # and bail
         if (ipv4 and not ipv4_valid) or (ipv6 and not ipv6_valid):
             log.append(
-                "Ip addresses ({}, {}) do not match any prefix " \
-                "on this ixlan".format(ipv4, ipv6))
+                "Ip addresses ({}, {}) do not match any prefix "
+                "on this ixlan".format(ipv4, ipv6)
+            )
             return result()
 
         # Next we check if an active netixlan with the ipaddress exists in ANOTHER lan, and bail
         # if it does.
-        if ipv4 and \
-            NetworkIXLan.objects.filter(status="ok", ipaddr4=ipv4).exclude(ixlan=self).count() > 0:
-            log.append(
-                "Ip address {} already exists in another lan".
-                format(ipv4))
+        if (
+            ipv4
+            and NetworkIXLan.objects.filter(status="ok", ipaddr4=ipv4)
+            .exclude(ixlan=self)
+            .count()
+            > 0
+        ):
+            log.append("Ip address {} already exists in another lan".format(ipv4))
             return result()
 
-        if ipv6 and \
-            NetworkIXLan.objects.filter(status="ok", ipaddr6=ipv6).exclude(ixlan=self).count() > 0:
-            log.append(
-                "Ip address {} already exists in another lan".
-                format(ipv6))
+        if (
+            ipv6
+            and NetworkIXLan.objects.filter(status="ok", ipaddr6=ipv6)
+            .exclude(ixlan=self)
+            .count()
+            > 0
+        ):
+            log.append("Ip address {} already exists in another lan".format(ipv6))
             return result()
 
         # now we need to figure out if the ipaddresses already exist in this ixlan,
@@ -1537,7 +1607,8 @@ class IXLan(pdb_models.IXLanBase):
         try:
             if ipv4:
                 netixlan_existing_v4 = NetworkIXLan.objects.get(
-                    status="ok", ixlan=self, ipaddr4=ipv4)
+                    status="ok", ixlan=self, ipaddr4=ipv4
+                )
             else:
                 netixlan_existing_v4 = None
         except NetworkIXLan.DoesNotExist:
@@ -1546,7 +1617,8 @@ class IXLan(pdb_models.IXLanBase):
         try:
             if ipv6:
                 netixlan_existing_v6 = NetworkIXLan.objects.get(
-                    status="ok", ixlan=self, ipaddr6=ipv6)
+                    status="ok", ixlan=self, ipaddr6=ipv6
+                )
             else:
                 netixlan_existing_v6 = None
         except NetworkIXLan.DoesNotExist:
@@ -1570,8 +1642,9 @@ class IXLan(pdb_models.IXLanBase):
             netixlan = netixlan_existing_v6
         else:
             # neither address exists, create a new netixlan object
-            netixlan = NetworkIXLan(ixlan=self, network=netixlan_info.network,
-                                    status="ok")
+            netixlan = NetworkIXLan(
+                ixlan=self, network=netixlan_info.network, status="ok"
+            )
             created = True
             reason = "New ip-address"
 
@@ -1581,17 +1654,18 @@ class IXLan(pdb_models.IXLanBase):
         if ipv4 != netixlan.ipaddr4:
             # we need to check if this ipaddress exists on a soft-deleted netixlan elsewhere, and
             # reset if so.
-            for other in \
-                NetworkIXLan.objects.filter(ipaddr4=ipv4, status="deleted").exclude(asn=asn):
+            for other in NetworkIXLan.objects.filter(
+                ipaddr4=ipv4, status="deleted"
+            ).exclude(asn=asn):
                 # FIXME: this is not practical until
                 # https://github.com/peeringdb/peeringdb/issues/90 is resolved
                 # so skipping for now
                 continue
 
-                #other.ipaddr4 = None
-                #other.notes = "Ip address {} was claimed by other netixlan".format(
+                # other.ipaddr4 = None
+                # other.notes = "Ip address {} was claimed by other netixlan".format(
                 #    ipv4)
-                #if save or save_others:
+                # if save or save_others:
                 #    other.save()
 
             netixlan.ipaddr4 = ipv4
@@ -1601,17 +1675,18 @@ class IXLan(pdb_models.IXLanBase):
         if ipv6 != netixlan.ipaddr6:
             # we need to check if this ipaddress exists on a soft-deleted netixlan elsewhere, and
             # reset if so.
-            for other in \
-                NetworkIXLan.objects.filter(ipaddr6=ipv6, status="deleted").exclude(asn=asn):
+            for other in NetworkIXLan.objects.filter(
+                ipaddr6=ipv6, status="deleted"
+            ).exclude(asn=asn):
                 # FIXME: this is not practical until
                 # https://github.com/peeringdb/peeringdb/issues/90 is resolved
                 # so skipping for now
                 continue
 
-                #other.ipaddr6 = None
-                #other.notes = "Ip address {} was claimed by other netixlan".format(
+                # other.ipaddr6 = None
+                # other.notes = "Ip address {} was claimed by other netixlan".format(
                 #    ipv6)
-                #if save or save_others:
+                # if save or save_others:
                 #    other.save()
             netixlan.ipaddr6 = ipv6
             changed.append("ipaddr6")
@@ -1622,8 +1697,9 @@ class IXLan(pdb_models.IXLanBase):
             changed.append("is_rs_peer")
 
         # Speed
-        if netixlan_info.speed != netixlan.speed and \
-        (netixlan_info.speed > 0 or netixlan.speed is None):
+        if netixlan_info.speed != netixlan.speed and (
+            netixlan_info.speed > 0 or netixlan.speed is None
+        ):
             netixlan.speed = netixlan_info.speed
             changed.append("speed")
 
@@ -1641,9 +1717,11 @@ class IXLan(pdb_models.IXLanBase):
         try:
             netixlan.full_clean()
         except Exception as inst:
-            log.append("Validation Failure AS{} {} {}: {}".format(
-                netixlan.network.asn, netixlan.ipaddr4, netixlan.ipaddr6,
-                inst))
+            log.append(
+                "Validation Failure AS{} {} {}: {}".format(
+                    netixlan.network.asn, netixlan.ipaddr4, netixlan.ipaddr6, inst
+                )
+            )
             return result(None)
 
         if save and changed:
@@ -1658,9 +1736,13 @@ class IXLanIXFMemberImportAttempt(models.Model):
     Holds information about the most recent ixf member import
     attempt for an ixlan
     """
-    ixlan = models.OneToOneField(IXLan, on_delete=models.CASCADE,
-                                 primary_key=True,
-                                 related_name="ixf_import_attempt")
+
+    ixlan = models.OneToOneField(
+        IXLan,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="ixf_import_attempt",
+    )
     updated = models.DateTimeField(auto_now=True)
     info = models.TextField(null=True, blank=True)
 
@@ -1670,6 +1752,7 @@ class IXLanIXFMemberImportLog(models.Model):
     Import log of a IXF member import that changed or added at least one
     netixlan under the specified ixlans
     """
+
     ixlan = models.ForeignKey(IXLan, related_name="ixf_import_log_set")
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -1698,17 +1781,19 @@ class IXLanIXFMemberImportLogEntry(models.Model):
     the netixlan's version after the change, which can be used to rollback
     the change
     """
+
     log = models.ForeignKey(IXLanIXFMemberImportLog, related_name="entries")
-    netixlan = models.ForeignKey("peeringdb_server.NetworkIXLan",
-                                 related_name="ixf_import_log_entries")
-    version_before = models.ForeignKey(reversion.models.Version, null=True,
-                                       related_name="ixf_import_log_before")
-    version_after = models.ForeignKey(reversion.models.Version,
-                                      related_name="ixf_import_log_after")
+    netixlan = models.ForeignKey(
+        "peeringdb_server.NetworkIXLan", related_name="ixf_import_log_entries"
+    )
+    version_before = models.ForeignKey(
+        reversion.models.Version, null=True, related_name="ixf_import_log_before"
+    )
+    version_after = models.ForeignKey(
+        reversion.models.Version, related_name="ixf_import_log_after"
+    )
     action = models.CharField(max_length=255, null=True, blank=True)
     reason = models.CharField(max_length=255, null=True, blank=True)
-
-
 
     class Meta(object):
         verbose_name = _("IXF Import Log Entry")
@@ -1725,7 +1810,7 @@ class IXLanIXFMemberImportLogEntry(models.Model):
         if not self.version_before:
             return {}
         data_before = self.version_before.field_dict
-        data_after= self.version_after.field_dict
+        data_after = self.version_after.field_dict
         rv = {}
         for k, v in data_after.items():
             if k in ["created", "updated", "version"]:
@@ -1733,18 +1818,18 @@ class IXLanIXFMemberImportLogEntry(models.Model):
             v2 = data_before.get(k)
             if v != v2:
                 if isinstance(v, ipaddress.IPv4Address) or isinstance(
-                        v, ipaddress.IPv6Address):
+                    v, ipaddress.IPv6Address
+                ):
                     rv[k] = str(v)
                 else:
                     rv[k] = v
 
         return rv
 
-
-
     def rollback_status(self):
         recent_version = reversion.models.Version.objects.get_for_object(
-            self.netixlan).first()
+            self.netixlan
+        ).first()
         if self.version_after == recent_version:
             if self.netixlan.status == "deleted":
                 conflict_v4, conflict_v6 = self.netixlan.ipaddress_conflict()
@@ -1754,7 +1839,6 @@ class IXLanIXFMemberImportLogEntry(models.Model):
         elif self.version_before == recent_version:
             return -1
         return 1
-
 
 
 # read only, or can make bigger, making smaller could break links
@@ -1774,9 +1858,7 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
         """
         Returns a descriptive label of the ixpfx for logging purposes
         """
-        return "ixpfx{} {}".format(
-            self.id, self.prefix)
-
+        return "ixpfx{} {}".format(self.id, self.prefix)
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, ixlan_id, id):
@@ -1784,7 +1866,9 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
         Returns permissioning namespace for an ixpfx
         """
         return "%s.prefix.%s" % (
-            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id), id)
+            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id),
+            id,
+        )
 
     @classmethod
     def related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
@@ -1805,7 +1889,8 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
         Returns permissioning namespace for this ixpfx
         """
         return self.nsp_namespace_from_id(
-            self.ixlan.ix.org_id, self.ixlan.ix.id, self.ixlan.id, self.id)
+            self.ixlan.ix.org_id, self.ixlan.ix.id, self.ixlan.id, self.id
+        )
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["ixlan"])
@@ -1830,13 +1915,12 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
                 return False
             if isinstance(addr, unicode):
                 addr = ipaddress.ip_address(addr)
-            return (addr in ipaddress.ip_network(self.prefix))
+            return addr in ipaddress.ip_network(self.prefix)
         except ipaddress.AddressValueError:
             return False
 
         except ValueError as inst:
             return False
-
 
     def clean(self):
         """
@@ -1856,9 +1940,12 @@ class Network(pdb_models.NetworkBase):
 
     org = models.ForeignKey(Organization, related_name="net_set")
     allow_ixp_update = models.BooleanField(
-        null=False, default=False, help_text=
-        _("Sepcifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data"
-          ))
+        null=False,
+        default=False,
+        help_text=_(
+            "Sepcifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data"
+        ),
+    )
 
     @staticmethod
     def autocomplete_search_fields():
@@ -1880,20 +1967,17 @@ class Network(pdb_models.NetworkBase):
         if not rdap.name:
             name = "AS%d" % (asn)
         if cls.objects.filter(name=name).exists():
-            net = cls.objects.create(org=org, asn=asn, name="%s !" % name,
-                                     status="ok")
+            net = cls.objects.create(org=org, asn=asn, name="%s !" % name, status="ok")
         else:
             net = cls.objects.create(org=org, asn=asn, name=name, status="ok")
         return net, True
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, net_id):
-        return "%s.network.%s" % (Organization.nsp_namespace_from_id(org_id),
-                                  net_id)
+        return "%s.network.%s" % (Organization.nsp_namespace_from_id(org_id), net_id)
 
     @classmethod
-    def related_to_fac(cls, value=None, filt=None, field="facility_id",
-                       qset=None):
+    def related_to_fac(cls, value=None, filt=None, field="facility_id", qset=None):
         """
         Filter queryset of Network objects related to the facility
         specified by fac_id
@@ -1909,8 +1993,7 @@ class Network(pdb_models.NetworkBase):
         return qset.filter(id__in=[i.network_id for i in q])
 
     @classmethod
-    def not_related_to_fac(cls, value=None, filt=None, field="facility_id",
-                           qset=None):
+    def not_related_to_fac(cls, value=None, filt=None, field="facility_id", qset=None):
         """
         Filter queryset of Network objects NOT related to the facility
         specified by fac_id (as in networks NOT present at the facility)
@@ -1957,8 +2040,7 @@ class Network(pdb_models.NetworkBase):
         return qset.filter(id__in=[i.network_id for i in q])
 
     @classmethod
-    def related_to_ixlan(cls, value=None, filt=None, field="ixlan_id",
-                         qset=None):
+    def related_to_ixlan(cls, value=None, filt=None, field="ixlan_id", qset=None):
         """
         Filter queryset of Network objects related to the ixlan
         specified by ixlan_id
@@ -1990,8 +2072,7 @@ class Network(pdb_models.NetworkBase):
         return qset.filter(id__in=[i.network_id for i in q])
 
     @classmethod
-    def not_related_to_ix(cls, value=None, filt=None, field="ix_id",
-                          qset=None):
+    def not_related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
         """
         Filter queryset of Network objects not related to the ix
         specified by ix_id (as in networks not present at the exchange)
@@ -2005,7 +2086,6 @@ class Network(pdb_models.NetworkBase):
         filt = make_relation_filter("ixlan__%s" % field, filt, value)
         q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
         return qset.exclude(id__in=[i.network_id for i in q])
-
 
     @classmethod
     def as_set_map(cls, qset=None):
@@ -2055,7 +2135,6 @@ class Network(pdb_models.NetworkBase):
         qset = qset.exclude(ixf_ixp_member_list_url__isnull=True)
         return qset
 
-
     @property
     def poc_set_active(self):
         return self.poc_set(manager="handleref").filter(status="ok")
@@ -2077,22 +2156,15 @@ class Network(pdb_models.NetworkBase):
         """
 
         return {
-
             # we require explicit perms to private network contacts
-            "require": {
-                "poc_set.users": 0x01,
-                "poc_set.private": 0x01
-            },
-
+            "require": {"poc_set.users": 0x01, "poc_set.private": 0x01},
             # since poc are stored in a list we need to specify a list
             # handler for it, its a class function on NetworkContact that
             # returns a relative permission namespace for each poc in the
             # list
             "list-handlers": {
-                "poc_set": {
-                    "namespace": NetworkContact.nsp_namespace_in_list
-                }
-            }
+                "poc_set": {"namespace": NetworkContact.nsp_namespace_in_list}
+            },
         }
 
     @property
@@ -2126,10 +2198,10 @@ class NetworkContact(pdb_models.ContactBase):
     """
 
     # id = models.AutoField(primary_key=True)
-    network = models.ForeignKey(Network, default=0, related_name='poc_set')
+    network = models.ForeignKey(Network, default=0, related_name="poc_set")
 
     class Meta:
-        db_table = u'peeringdb_network_contact'
+        db_table = u"peeringdb_network_contact"
 
     @classmethod
     def nsp_namespace_in_list(cls, **kwargs):
@@ -2149,8 +2221,7 @@ class NetworkContact(pdb_models.ContactBase):
         """
         Returns permissioning namespace for a network contact
         """
-        return "%s.poc_set.%s" % (
-            Network.nsp_namespace_from_id(org_id, net_id), vis)
+        return "%s.poc_set.%s" % (Network.nsp_namespace_from_id(org_id, net_id), vis)
 
     @property
     def nsp_namespace(self):
@@ -2158,7 +2229,8 @@ class NetworkContact(pdb_models.ContactBase):
         Returns a custom namespace for an instance of this model
         """
         return self.__class__.nsp_namespace_from_id(
-            self.network.org_id, self.network.id, self.visible)
+            self.network.org_id, self.network.id, self.visible
+        )
 
     @property
     def nsp_require_explicit_read(self):
@@ -2178,23 +2250,19 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     Describes a network <-> facility relationship
     """
 
-    network = models.ForeignKey(Network, default=0, related_name='netfac_set')
-    facility = models.ForeignKey(Facility, default=0,
-                                 related_name='netfac_set')
+    network = models.ForeignKey(Network, default=0, related_name="netfac_set")
+    facility = models.ForeignKey(Facility, default=0, related_name="netfac_set")
 
     class Meta:
-        db_table = u'peeringdb_network_facility'
-        unique_together = ('network', 'facility', 'local_asn')
-
-
+        db_table = u"peeringdb_network_facility"
+        unique_together = ("network", "facility", "local_asn")
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, net_id, fac_id):
         """
         Returns permissioning namespace for a netfac
         """
-        return "%s.fac.%s" % (Network.nsp_namespace_from_id(org_id, net_id),
-                              fac_id)
+        return "%s.fac.%s" % (Network.nsp_namespace_from_id(org_id, net_id), fac_id)
 
     @property
     def nsp_namespace(self):
@@ -2202,11 +2270,11 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         Returns permissioning namespace for this netfac
         """
         return self.__class__.nsp_namespace_from_id(
-            self.network.org_id, self.network_id, self.facility_id)
+            self.network.org_id, self.network_id, self.facility_id
+        )
 
     @classmethod
-    def related_to_name(cls, value=None, filt=None, field="facility__name",
-                        qset=None):
+    def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
         """
         Filter queryset of netfac objects related to facilities with name match
         in facility__name according to filter
@@ -2218,8 +2286,9 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         return qset.filter(**make_relation_filter(field, filt, value))
 
     @classmethod
-    def related_to_country(cls, value=None, filt=None,
-                           field="facility__country", qset=None):
+    def related_to_country(
+        cls, value=None, filt=None, field="facility__country", qset=None
+    ):
         """
         Filter queryset of netfac objects related to country via match
         in facility__country according to filter
@@ -2231,8 +2300,7 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         return qset.filter(**make_relation_filter(field, filt, value))
 
     @classmethod
-    def related_to_city(cls, value=None, filt=None, field="facility__city",
-                        qset=None):
+    def related_to_city(cls, value=None, filt=None, field="facility__city", qset=None):
         """
         Filter queryset of netfac objects related to city via match
         in facility__city according to filter
@@ -2249,8 +2317,8 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         Returns a descriptive label of the netfac for logging purposes
         """
         return "netfac{} AS{} {} <-> {}".format(
-            self.id, self.network.asn, self.network.name, self.facility.name)
-
+            self.id, self.network.asn, self.network.name, self.facility.name
+        )
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["net"])
@@ -2266,12 +2334,11 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     Describes a network relationship to an IX through an IX Lan
     """
 
-    network = models.ForeignKey(Network, default=0,
-                                related_name='netixlan_set')
-    ixlan = models.ForeignKey(IXLan, default=0, related_name='netixlan_set')
+    network = models.ForeignKey(Network, default=0, related_name="netixlan_set")
+    ixlan = models.ForeignKey(IXLan, default=0, related_name="netixlan_set")
 
     class Meta:
-        db_table = u'peeringdb_network_ixlan'
+        db_table = u"peeringdb_network_ixlan"
 
     @property
     def name(self):
@@ -2283,7 +2350,8 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         Returns a descriptive label of the netixlan for logging purposes
         """
         return "netixlan{} AS{} {} {}".format(
-            self.id, self.asn, self.ipaddr4, self.ipaddr6)
+            self.id, self.asn, self.ipaddr4, self.ipaddr6
+        )
 
     @property
     def ix_name(self):
@@ -2309,8 +2377,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         """
         Returns permissioning namespace for a netixlan
         """
-        return "%s.ixlan.%s" % (Network.nsp_namespace_from_id(org_id, net_id),
-                                ixlan_id)
+        return "%s.ixlan.%s" % (Network.nsp_namespace_from_id(org_id, net_id), ixlan_id)
 
     @property
     def nsp_namespace(self):
@@ -2318,7 +2385,8 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         Returns permissioning namespace for this netixlan
         """
         return self.__class__.nsp_namespace_from_id(
-            self.network.org_id, self.network.id, self.ixlan_id)
+            self.network.org_id, self.network.id, self.ixlan_id
+        )
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["net"])
@@ -2341,16 +2409,14 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         return qset.filter(ixlan_id__in=[i.id for i in q])
 
     @classmethod
-    def related_to_name(cls, value=None, filt=None, field="ix__name",
-                        qset=None):
+    def related_to_name(cls, value=None, filt=None, field="ix__name", qset=None):
         """
         Filter queryset of netixlan objects related to exchange via a name match
         according to filter
 
         Relationship through ixlan -> ix
         """
-        return cls.related_to_ix(value=value, filt=filt, field=field,
-                                 qset=qset)
+        return cls.related_to_ix(value=value, filt=filt, field=field, qset=qset)
 
     def ipaddress_conflict(self):
         """
@@ -2364,14 +2430,15 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
                 address
         """
 
-        ipv4 = NetworkIXLan.objects.filter(ipaddr4=self.ipaddr4,
-                                           status="ok").exclude(id=self.id)
-        ipv6 = NetworkIXLan.objects.filter(ipaddr6=self.ipaddr6,
-                                           status="ok").exclude(id=self.id)
-        conflict_v4 = (self.ipaddr4 and ipv4.exists())
-        conflict_v6 = (self.ipaddr6 and ipv6.exists())
+        ipv4 = NetworkIXLan.objects.filter(ipaddr4=self.ipaddr4, status="ok").exclude(
+            id=self.id
+        )
+        ipv6 = NetworkIXLan.objects.filter(ipaddr6=self.ipaddr6, status="ok").exclude(
+            id=self.id
+        )
+        conflict_v4 = self.ipaddr4 and ipv4.exists()
+        conflict_v6 = self.ipaddr6 and ipv6.exists()
         return (conflict_v4, conflict_v6)
-
 
     def validate_ipaddr4(self):
         if self.ipaddr4 and not self.ixlan.test_ipv4_address(self.ipaddr4):
@@ -2380,7 +2447,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     def validate_ipaddr6(self):
         if self.ipaddr6 and not self.ixlan.test_ipv6_address(self.ipaddr6):
             raise ValidationError(_("IPv6 address outside of prefix"))
-
 
     def clean(self):
         """
@@ -2425,55 +2491,63 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             return self.ipaddr6
         raise ValueError("Invalid ip version {}".format(version))
 
-
     def descriptive_name_ipv(self, version):
         """
         Returns a descriptive label of the netixlan for logging purposes
         Will only contain the ipaddress matching the specified version
         """
-        return "netixlan{} AS{} {}".format(
-            self.id, self.asn, self.ipaddr(version))
-
+        return "netixlan{} AS{} {}".format(self.id, self.asn, self.ipaddr(version))
 
 
 class User(AbstractBaseUser, PermissionsMixin):
     """
     proper length fields user
     """
+
     username = models.CharField(
-        _('username'), max_length=254, unique=True,
-        help_text=_('Required. Letters, digits and [@.+-/_=|] only.'),
+        _("username"),
+        max_length=254,
+        unique=True,
+        help_text=_("Required. Letters, digits and [@.+-/_=|] only."),
         validators=[
-            validators.RegexValidator(r'^[\w\.@+-=|/]+$',
-                                      _('Enter a valid username.'), 'invalid',
-                                      flags=re.UNICODE)
-        ])
-    email = models.EmailField(_('email address'), max_length=254)
-    first_name = models.CharField(_('first name'), max_length=254, blank=True)
-    last_name = models.CharField(_('last name'), max_length=254, blank=True)
+            validators.RegexValidator(
+                r"^[\w\.@+-=|/]+$",
+                _("Enter a valid username."),
+                "invalid",
+                flags=re.UNICODE,
+            )
+        ],
+    )
+    email = models.EmailField(_("email address"), max_length=254)
+    first_name = models.CharField(_("first name"), max_length=254, blank=True)
+    last_name = models.CharField(_("last name"), max_length=254, blank=True)
     is_staff = models.BooleanField(
-        _('staff status'), default=False,
-        help_text=_('Designates whether the user can log into admin site.'))
+        _("staff status"),
+        default=False,
+        help_text=_("Designates whether the user can log into admin site."),
+    )
     is_active = models.BooleanField(
-        _('active'), default=True, help_text=
-        _('Designates whether this user should be treated as active. Unselect this instead of deleting accounts.'
-          ))
-    date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
+        _("active"),
+        default=True,
+        help_text=_(
+            "Designates whether this user should be treated as active. Unselect this instead of deleting accounts."
+        ),
+    )
+    date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
     created = CreatedDateTimeField()
     updated = UpdatedDateTimeField()
-    status = models.CharField(_('status'), max_length=254, default="ok")
-    locale = models.CharField(
-        _('language'), max_length=62, blank=True, null=True)
+    status = models.CharField(_("status"), max_length=254, default="ok")
+    locale = models.CharField(_("language"), max_length=62, blank=True, null=True)
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email']
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email"]
 
     class Meta:
         db_table = "peeringdb_user"
-        verbose_name = _('user')
-        verbose_name_plural = _('users')
+        verbose_name = _("user")
+        verbose_name_plural = _("users")
 
     @property
     def organizations(self):
@@ -2486,9 +2560,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             if m and int(m.group(1)) not in ids:
                 ids.append(int(m.group(1)))
 
-        return [
-            org for org in Organization.objects.filter(id__in=ids, status="ok")
-        ]
+        return [org for org in Organization.objects.filter(id__in=ids, status="ok")]
 
     @property
     def networks(self):
@@ -2496,8 +2568,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         Returns all networks this user is a member of
         """
         return list(
-            chain.from_iterable(
-                org.net_set_active.all() for org in self.organizations))
+            chain.from_iterable(org.net_set_active.all() for org in self.organizations)
+        )
 
     @property
     def full_name(self):
@@ -2515,8 +2587,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
 
         try:
-            email = EmailAddress.objects.get(user=self, email=self.email,
-                                             primary=True)
+            email = EmailAddress.objects.get(user=self, email=self.email, primary=True)
         except EmailAddress.DoesNotExist:
             return False
 
@@ -2551,25 +2622,25 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         Returns the first_name plus the last_name, with a space in between.
         """
-        full_name = '%s %s' % (self.first_name, self.last_name)
+        full_name = "%s %s" % (self.first_name, self.last_name)
         return full_name.strip()
 
     def get_short_name(self):
         "Returns the short name for the user."
         return self.first_name
 
-    def email_user(self, subject, message,
-                   from_email=settings.DEFAULT_FROM_EMAIL):
+    def email_user(self, subject, message, from_email=settings.DEFAULT_FROM_EMAIL):
         """
         Sends an email to this User.
         """
         if not getattr(settings, "MAIL_DEBUG", False):
             mail = EmailMultiAlternatives(
-                subject, message, from_email,
-                [self.email], headers={
-                    "Auto-Submitted": "auto-generated",
-                    "Return-Path": "<>"
-                })
+                subject,
+                message,
+                from_email,
+                [self.email],
+                headers={"Auto-Submitted": "auto-generated", "Return-Path": "<>"},
+            )
             mail.send(fail_silently=False)
         else:
             debug_mail(subject, message, from_email, [self.email])
@@ -2649,7 +2720,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         Initiate the password reset process for the user
         """
 
-        #pylint: disable=access-member-before-definition
+        # pylint: disable=access-member-before-definition
 
         if self.id:
 
@@ -2661,16 +2732,20 @@ class User(AbstractBaseUser, PermissionsMixin):
             token, hashed = password_reset_token()
 
             self.password_reset = UserPasswordReset.objects.create(
-                user=self, token=hashed)
+                user=self, token=hashed
+            )
             template = loader.get_template("email/password-reset.txt")
             with override(self.locale):
                 self.email_user(
                     _("Password Reset Initiated"),
-                    template.render({
-                        "user": self,
-                        "token": token,
-                        "password_reset_url": settings.PASSWORD_RESET_URL
-                    }))
+                    template.render(
+                        {
+                            "user": self,
+                            "token": token,
+                            "password_reset_url": settings.PASSWORD_RESET_URL,
+                        }
+                    ),
+                )
             return token, hashed
         return None, None
 
@@ -2713,8 +2788,7 @@ class UserPasswordReset(models.Model):
     class Meta:
         db_table = "peeringdb_user_password_reset"
 
-    user = models.OneToOneField(User, primary_key=True,
-                                related_name="password_reset")
+    user = models.OneToOneField(User, primary_key=True, related_name="password_reset")
     token = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -2733,27 +2807,36 @@ class CommandLineTool(models.Model):
     Describes command line tool execution by a staff user inside the
     control panel (admin)
     """
-    tool = models.CharField(max_length=255, help_text=_("name of the tool"),
-                            choices=COMMANDLINE_TOOLS)
+
+    tool = models.CharField(
+        max_length=255, help_text=_("name of the tool"), choices=COMMANDLINE_TOOLS
+    )
     arguments = models.TextField(
-        help_text=_("json serialization of arguments and options passed"))
+        help_text=_("json serialization of arguments and options passed")
+    )
     result = models.TextField(null=True, blank=True, help_text=_("result log"))
     description = models.CharField(
         max_length=255,
         help_text=_("Descriptive text of command that can be searched"),
-        null=True, blank=True)
-    user = models.ForeignKey(User,
-                             help_text=_("the user that ran this command"),
-                             related_name="clt_history")
+        null=True,
+        blank=True,
+    )
+    user = models.ForeignKey(
+        User, help_text=_("the user that ran this command"), related_name="clt_history"
+    )
     created = models.DateTimeField(
-        auto_now_add=True,
-        help_text=_("command was run at this date and time"))
+        auto_now_add=True, help_text=_("command was run at this date and time")
+    )
 
-    status = models.CharField(max_length=255, default="done", choices=[
-                             ("done", _("Done")),
-                             ("waiting", _("Waiting")),
-                             ("running", _("Running"))
-                             ])
+    status = models.CharField(
+        max_length=255,
+        default="done",
+        choices=[
+            ("done", _("Done")),
+            ("waiting", _("Waiting")),
+            ("running", _("Running")),
+        ],
+    )
 
     def __str__(self):
         return "{}: {}".format(self.tool, self.description)
@@ -2768,13 +2851,23 @@ class CommandLineTool(models.Model):
         self.status = "running"
 
 
-
-REFTAG_MAP = dict([(cls.handleref.tag, cls)
-                   for cls in [
-                       Organization, Network, Facility, InternetExchange,
-                       InternetExchangeFacility, NetworkFacility, NetworkIXLan,
-                       NetworkContact, IXLan, IXLanPrefix
-                   ]])
+REFTAG_MAP = dict(
+    [
+        (cls.handleref.tag, cls)
+        for cls in [
+            Organization,
+            Network,
+            Facility,
+            InternetExchange,
+            InternetExchangeFacility,
+            NetworkFacility,
+            NetworkIXLan,
+            NetworkContact,
+            IXLan,
+            IXLanPrefix,
+        ]
+    ]
+)
 
 
 QUEUE_ENABLED = []
