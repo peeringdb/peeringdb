@@ -19,21 +19,21 @@ class Mock(object):
         # Pool of IPv4 Prefixes
         # TODO - automatic generation via ipaddress module
         self.prefix_pool_v4 = [
-            u"206.126.236.0/22",
-            u"208.115.136.0/23",
-            u"206.223.118.0/24",
-            u"206.223.123.0/24",
-            u"206.223.116.0/23",
+            "206.126.236.0/22",
+            "208.115.136.0/23",
+            "206.223.118.0/24",
+            "206.223.123.0/24",
+            "206.223.116.0/23",
         ]
 
         # Pool of IPv6 Prefixes
         # TODO - automatic generation via ipaddrsss module
         self.prefix_pool_v6 = [
-            u"2001:504:0:2::/64",
-            u"2001:504:0:4::/64",
-            u"2001:504:0:5::/64",
-            u"2001:504:0:3::/64",
-            u"2001:504:0:1::/64",
+            "2001:504:0:2::/64",
+            "2001:504:0:4::/64",
+            "2001:504:0:5::/64",
+            "2001:504:0:3::/64",
+            "2001:504:0:1::/64",
         ]
 
         # helper function that allows us to retrieve n valid
@@ -235,17 +235,17 @@ class Mock(object):
 
     def prefix(self, data, reftag=None):
         if data.get("protocol") == "IPv4":
-            return u"{}".format(self.prefix_pool_v4.pop())
+            return "{}".format(self.prefix_pool_v4.pop())
         elif data.get("protocol") == "IPv6":
-            return u"{}".format(self.prefix_pool_v6.pop())
+            return "{}".format(self.prefix_pool_v6.pop())
 
     def ipaddr4(self, data, reftag=None):
         prefix = data["ixlan"].ixpfx_set.filter(protocol="IPv4").first().prefix
-        return u"{}".format(self.ipaddr_pool_v4[u"{}".format(prefix)].pop())
+        return "{}".format(self.ipaddr_pool_v4["{}".format(prefix)].pop())
 
     def ipaddr6(self, data, reftag=None):
         prefix = data["ixlan"].ixpfx_set.filter(protocol="IPv6").first().prefix
-        return u"{}".format(self.ipaddr_pool_v6[u"{}".format(prefix)].pop())
+        return "{}".format(self.ipaddr_pool_v6["{}".format(prefix)].pop())
 
     def speed(self, data, reftag=None):
         return 1000

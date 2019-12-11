@@ -76,7 +76,7 @@ def ownership_warning(org, user):
             b = True
             break
     if not b:
-        for rdap in org.rdap_collect.values():
+        for rdap in list(org.rdap_collect.values()):
             try:
                 if user.validate_rdap_relationship(rdap):
                     b = True
@@ -99,7 +99,7 @@ def ownership_warning(org, user):
 
 @register.filter
 def long_country_name(v):
-    if type(v) == unicode:
+    if type(v) == str:
         return countries_dict.get(v, v)
     else:
         return v.name

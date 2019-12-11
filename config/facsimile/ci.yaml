@@ -11,12 +11,7 @@ rc:
   db:
     default:
       host: localhost
-      name: {{environ.USER}}_peeringdb
-      prefix: {{environ.USER}}_
-    #read:
-    #  host: localhost
-    #  name: {{environ.USER}}_peeringdb
-    #  prefix: {{environ.USER}}_
+      name: peeringdb
   ssl:
     crt:
     key:

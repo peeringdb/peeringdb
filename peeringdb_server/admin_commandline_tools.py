@@ -1,4 +1,4 @@
-import StringIO
+import io
 import json
 
 import reversion
@@ -113,7 +113,7 @@ class CommandLineToolWrapper(object):
         pass
 
     def _run(self, user, commit=False):
-        r = StringIO.StringIO()
+        r = io.StringIO()
 
         if self.maintenance and commit:
             maintenance.on()

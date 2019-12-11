@@ -15,7 +15,7 @@ class LocaleFilesTest(TestCase):
             content = fh.read()
             message_id = re.findall(r"\nmsgid (.+)\n", content)
             message_str = re.findall(r"\nmsgstr (.+)\n", content)
-            messages = dict(zip(message_id, message_str))
+            messages = dict(list(zip(message_id, message_str)))
         return messages
 
     # weblate handles all this now, and these tests are failing
@@ -45,16 +45,16 @@ class LocaleFilesTest(TestCase):
         """
         errors = 0
 
-        for msgid, msgstr in en_messages.items():
+        for msgid, msgstr in list(en_messages.items()):
 
             # %(name)s and %s type variables
-            variables_a = sorted(re.findall("%\([^\(]+\)s|%s", msgid))
-            variables_b = sorted(re.findall("%\([^\(]+\)s|%s", other_messages[msgid]))
+            variables_a = sorted(re.findall(r"%\([^\(]+\)s|%s", msgid))
+            variables_b = sorted(re.findall(r"%\([^\(]+\)s|%s", other_messages[msgid]))
             if variables_a != variables_b:
                 errors += 1
-                print "{} Locale variable error at msgid {} -> {}".format(
+                print("{} Locale variable error at msgid {} -> {}".format(
                     language, msgid, other_messages[msgid]
-                )
+                ))
 
             # {name} and {} type variables
             variables_a = sorted(
@@ -67,8 +67,8 @@ class LocaleFilesTest(TestCase):
             ]
             if variables_a != variables_b:
                 errors += 1
-                print "{} Locale variable error at msgid {} -> {}".format(
+                print("{} Locale variable error at msgid {} -> {}".format(
                     language, msgid, other_messages[msgid]
-                )
+                ))
 
         assert errors == 0

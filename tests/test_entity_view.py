@@ -171,26 +171,27 @@ class TestNetworkView(ViewTestCase):
         c = Client()
         resp = c.get("/net/%d" % self.net.id, follow=True)
         self.assertEqual(resp.status_code, 200)
-        self.assertGreater(resp.content.find(TEXT_NOT_LOGGED_IN), -1)
+        assert resp.status_code == 200
+        assert TEXT_NOT_LOGGED_IN in resp.content.decode("utf-8")
 
         # test #2 - guest logged in (not affiliated to any org)
         c = Client()
         c.login(username="guest", password="guest")
         resp = c.get("/net/%d" % self.net.id)
-        self.assertEqual(resp.status_code, 200)
-        self.assertGreater(resp.content.find(TEXT_NOT_VERIFIED), -1)
+        assert resp.status_code == 200
+        assert TEXT_NOT_VERIFIED in resp.content.decode("utf-8")
 
         # test #3 - user logged in
         c = Client()
         c.login(username="user_a", password="user_a")
         resp = c.get("/net/%d" % self.net.id)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.content.find(TEXT_NOT_VERIFIED), -1)
-        self.assertEqual(resp.content.find(TEXT_NOT_LOGGED_IN), -1)
+        assert resp.status_code == 200
+        assert TEXT_NOT_LOGGED_IN not in resp.content.decode("utf-8")
+        assert TEXT_NOT_VERIFIED not in resp.content.decode("utf-8")
 
     def test_search_asn_redirect(self):
         """
-        When the user types ASXXX or ASNXXX and hits enter, if 
+        When the user types AS*** or ASN*** and hits enter, if
         a result is found it should redirect directly to the result
         """
 

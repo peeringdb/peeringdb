@@ -104,7 +104,7 @@ class Command(BaseCommand):
         self.commit = options.get("commit", False)
         self.ixlan = int(options.get("ixlan", 0))
         self.ix = int(options.get("ix", 0))
-        old = u"{}".format(options.get("old"))
-        new = u"{}".format(options.get("new"))
+        old = "{}".format(options.get("old"))
+        new = "{}".format(options.get("new"))
 
         self.renumber_lans(old, new)

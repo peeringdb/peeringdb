@@ -3,6 +3,7 @@
 """
 series of integration/unit tests for the pdb api
 """
+import pytest
 import copy
 import unittest
 import uuid
@@ -10,8 +11,6 @@ import random
 import re
 import time
 import datetime
-
-from types import NoneType
 
 from twentyc.rpc import (
     RestClient,
@@ -113,27 +112,27 @@ EMAIL = "test@20c.com"
 VERBOSE = False
 
 PREFIXES_V4 = [
-    u"206.223.114.0/24",
-    u"206.223.115.0/24",
-    u"206.223.116.0/24",
-    u"206.223.117.0/24",
-    u"206.223.118.0/24",
-    u"206.223.119.0/24",
-    u"206.223.120.0/24",
-    u"206.223.121.0/24",
-    u"206.223.122.0/24",
+    "206.223.114.0/24",
+    "206.223.115.0/24",
+    "206.223.116.0/24",
+    "206.223.117.0/24",
+    "206.223.118.0/24",
+    "206.223.119.0/24",
+    "206.223.120.0/24",
+    "206.223.121.0/24",
+    "206.223.122.0/24",
 ]
 
 PREFIXES_V6 = [
-    u"2001:504:0:1::/64",
-    u"2001:504:0:2::/64",
-    u"2001:504:0:3::/64",
-    u"2001:504:0:4::/64",
-    u"2001:504:0:5::/64",
-    u"2001:504:0:6::/64",
-    u"2001:504:0:7::/64",
-    u"2001:504:0:8::/64",
-    u"2001:504:0:9::/64",
+    "2001:504:0:1::/64",
+    "2001:504:0:2::/64",
+    "2001:504:0:3::/64",
+    "2001:504:0:4::/64",
+    "2001:504:0:5::/64",
+    "2001:504:0:6::/64",
+    "2001:504:0:7::/64",
+    "2001:504:0:8::/64",
+    "2001:504:0:9::/64",
 ]
 
 
@@ -158,7 +157,7 @@ class TestJSON(unittest.TestCase):
             else:
                 break
 
-        r = u"{}".format(hosts[cls.IP6_COUNT])
+        r = "{}".format(hosts[cls.IP6_COUNT])
         cls.IP6_COUNT += 1
         return r
 
@@ -175,19 +174,19 @@ class TestJSON(unittest.TestCase):
             else:
                 break
 
-        r = u"{}".format(hosts[cls.IP4_COUNT])
+        r = "{}".format(hosts[cls.IP4_COUNT])
         cls.IP4_COUNT += 1
         return r
 
     @classmethod
     def get_prefix4(cls):
-        r = u"206.41.{}.0/24".format(cls.PREFIX_COUNT)
+        r = "206.41.{}.0/24".format(cls.PREFIX_COUNT)
         cls.PREFIX_COUNT += 1
         return r
 
     @classmethod
     def get_prefix6(cls):
-        r = u"2001:504:41:{}::/64".format(cls.PREFIX_COUNT)
+        r = "2001:504:41:{}::/64".format(cls.PREFIX_COUNT)
         cls.PREFIX_COUNT += 1
         return r
 
@@ -196,7 +195,7 @@ class TestJSON(unittest.TestCase):
         self.db_user = self.rest_client(URL, verbose=VERBOSE, **USER)
         self.db_org_member = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_MEMBER)
         self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_ADMIN)
-        for p, specs in USER_CRUD.items():
+        for p, specs in list(USER_CRUD.items()):
             setattr(
                 self, "db_crud_%s" % p, self.rest_client(URL, verbose=VERBOSE, **specs)
             )
@@ -303,7 +302,7 @@ class TestJSON(unittest.TestCase):
             "aka": self.make_name("Also known as"),
             "asn": asn,
             "website": WEBSITE,
-            "irr_as_set": "AS-XX-XXXXXX",
+            "irr_as_set": "AS-ZZ-ZZZZZZ",
             "info_type": "NSP",
             "info_prefixes4": 11000,
             "info_prefixes6": 12000,
@@ -383,7 +382,7 @@ class TestJSON(unittest.TestCase):
         }
 
         data.update(**kwargs)
-        for k, v in rename.items():
+        for k, v in list(rename.items()):
             data[v] = data[k]
             del data[k]
 
@@ -414,7 +413,7 @@ class TestJSON(unittest.TestCase):
         pk_rel = []
         nested_rel = []
 
-        for name, fld in serializer_class._declared_fields.items():
+        for name, fld in list(serializer_class._declared_fields.items()):
             if type(fld) == serializers.PrimaryKeyRelatedField:
                 pk_rel.append(name[:-3])
             elif isinstance(fld, serializers.ListSerializer):
@@ -446,13 +445,13 @@ class TestJSON(unittest.TestCase):
         if hasattr(self, "make_data_%s" % typ):
             msg = "data integrity failed on key '%s'"
             func = getattr(self, "make_data_%s" % typ)
-            for k, v in func().items():
+            for k, v in list(func().items()):
                 if k in ignore:
                     continue
-                if type(v) in [str, unicode]:
-                    self.assertIn(type(data.get(k)), [str, unicode], msg=msg % k)
-                elif type(v) in [int, long]:
-                    self.assertIn(type(data.get(k)), [int, long], msg=msg % k)
+                if type(v) in [str, str]:
+                    self.assertIn(type(data.get(k)), [str, str], msg=msg % k)
+                elif type(v) in [int, int]:
+                    self.assertIn(type(data.get(k)), [int, int], msg=msg % k)
                 else:
                     self.assertEqual(type(v), type(data.get(k)), msg=msg % k)
 
@@ -465,7 +464,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def assert_get_forbidden(self, db, typ, id):
-        with self.assertRaises(PermissionDeniedException) as cm:
+        with pytest.raises(PermissionDeniedException):
             db.get(typ, id)
 
     ##########################################################################
@@ -479,7 +478,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def assert_existing_fields(self, a, b, ignore={}):
-        for k, v in a.items():
+        for k, v in list(a.items()):
             if ignore and k in ignore:
                 continue
             if k in ["suggest"]:
@@ -491,11 +490,11 @@ class TestJSON(unittest.TestCase):
     def assert_delete(self, db, typ, test_success=None, test_failure=None):
         if test_success:
             db.rm(typ, test_success)
-            with self.assertRaises(NotFoundException) as cm:
+            with pytest.raises(NotFoundException):
                 self.assert_get_handleref(db, typ, test_success)
 
         if test_failure:
-            with self.assertRaises(PermissionDeniedException) as cm:
+            with pytest.raises(PermissionDeniedException):
                 db.rm(typ, test_failure)
             try:
                 self.assert_get_handleref(db, typ, test_failure)
@@ -530,33 +529,33 @@ class TestJSON(unittest.TestCase):
             # we test fail because of invalid data
             if "invalid" in test_failures:
                 data_invalid = copy.copy(data)
-                for k, v in test_failures["invalid"].items():
+                for k, v in list(test_failures["invalid"].items()):
                     data_invalid[k] = v
 
-                with self.assertRaises(InvalidRequestException) as inst:
+                with pytest.raises(InvalidRequestException) as excinfo:
                     r = db.create(typ, data_invalid, return_response=True)
-                    for k, v in test_failures["invalid"].items():
-                        self.assertIn(k, r.keys())
+                    for k, v in list(test_failures["invalid"].items()):
+                        self.assertIn(k, list(r.keys()))
 
-                self.assertEqual("400 Unknown", str(inst.exception[1]))
+                assert "400 Unknown" in str(excinfo.value)
 
             # we test fail because of parent entity status
             if "status" in test_failures:
                 data_status = copy.copy(data)
-                for k, v in test_failures["status"].items():
+                for k, v in list(test_failures["status"].items()):
                     data_status[k] = v
 
-                with self.assertRaises(InvalidRequestException) as inst_status:
+                with pytest.raises(InvalidRequestException) as excinfo:
                     r = db.create(typ, data_status, return_response=True)
-                self.assertIn("not yet been approved", str(inst_status.exception))
+                assert "not yet been approved" in str(excinfo.value)
 
             # we test fail because of permissions
             if "perms" in test_failures:
                 data_perms = copy.copy(data)
-                for k, v in test_failures["perms"].items():
+                for k, v in list(test_failures["perms"].items()):
                     data_perms[k] = v
 
-                with self.assertRaises(PermissionDeniedException) as inst:
+                with pytest.raises(PermissionDeniedException):
                     db.create(typ, data_perms, return_response=True)
 
         return r_data
@@ -582,7 +581,7 @@ class TestJSON(unittest.TestCase):
             orig = {"id": id}
             orig.update(**data)
 
-        for k, v in orig.items():
+        for k, v in list(orig.items()):
             if k[-3:] == "_id" and k[:-3] in orig:
                 del orig[k[:-3]]
 
@@ -595,7 +594,7 @@ class TestJSON(unittest.TestCase):
                         test(data, u_data)
             else:
                 # self.assertGreater(u_data["version"], orig["version"])
-                for k, v in data.items():
+                for k, v in list(data.items()):
                     self.assertEqual(u_data.get(k), v)
 
         # if test_failures is set we want to test fail conditions
@@ -604,21 +603,20 @@ class TestJSON(unittest.TestCase):
             # we test fail because of invalid data
             if "invalid" in test_failures:
                 data_invalid = copy.copy(orig)
-                for k, v in test_failures["invalid"].items():
+                for k, v in list(test_failures["invalid"].items()):
                     data_invalid[k] = v
 
-                with self.assertRaises(InvalidRequestException) as inst:
+                with pytest.raises(InvalidRequestException) as excinfo:
                     db.update(typ, **data_invalid)
-
-                self.assertEqual("400 Unknown", str(inst.exception[1]))
+                assert "400 Unknown" in str(excinfo.value)
 
             # we test fail because of permissions
             if "perms" in test_failures:
                 data_perms = copy.copy(orig)
-                for k, v in test_failures["perms"].items():
+                for k, v in list(test_failures["perms"].items()):
                     data_perms[k] = v
 
-                with self.assertRaises(PermissionDeniedException) as inst:
+                with pytest.raises(PermissionDeniedException):
                     db.update(typ, **data_perms)
 
             # we test failure to update readonly fields
@@ -628,7 +626,7 @@ class TestJSON(unittest.TestCase):
                 data_ro.update(**test_failures["readonly"])
                 db.update(typ, **data_ro)
                 u_data = self.assert_get_handleref(db, typ, id)
-                for k, v in test_failures["readonly"].items():
+                for k, v in list(test_failures["readonly"].items()):
                     self.assertEqual(u_data.get(k), b_data.get(k))
 
     ##########################################################################
@@ -735,7 +733,7 @@ class TestJSON(unittest.TestCase):
 
         # first check that the provided object is not None, as this should
         # never be the case
-        self.assertNotEqual(type(obj), NoneType, msg=note_tag)
+        self.assertNotEqual(obj, None, msg=note_tag)
 
         # single primary key relation fields
         for pk_fld in pk_flds:
@@ -765,7 +763,7 @@ class TestJSON(unittest.TestCase):
                 else:
                     self.assertIn(
                         type(obj.get(pk_fld)),
-                        [int, long, NoneType],
+                        [int, type(None)],
                         msg="PK Relation %s %s" % (note_tag, pk_fld),
                     )
 
@@ -816,7 +814,7 @@ class TestJSON(unittest.TestCase):
                 for row in obj[n_fld]:
                     self.assertIn(
                         type(row),
-                        [long, int],
+                        [int, int],
                         msg="Nested set containing ids (d1) %s %s" % (note_tag, n_fld),
                     )
             else:
@@ -918,7 +916,7 @@ class TestJSON(unittest.TestCase):
         networks = Network.objects.filter(status="ok")
         print (data)
         for net in networks:
-            self.assertEqual(data[0].get(u"{}".format(net.asn)), net.irr_as_set)
+            self.assertEqual(data[0].get("{}".format(net.asn)), net.irr_as_set)
 
     ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION MEMBER
@@ -1151,13 +1149,11 @@ class TestJSON(unittest.TestCase):
     def test_org_admin_002_POST_net_deleted(self):
         data = self.make_data_net(asn=SHARED["net_rw_dupe_deleted"].asn)
 
-        with self.assertRaises(InvalidRequestException) as exc:
+        with pytest.raises(InvalidRequestException) as excinfo:
             r_data = self.db_org_admin.create("net", data, return_response=True)
 
-        assert (
-            exc.exception.extra["asn"].find("Network has been deleted. Please contact")
-            == 0
-        )
+        # check exception vs value
+        assert "Network has been deleted. Please contact" in excinfo.value.extra["asn"]
 
     ##########################################################################
 
@@ -1169,17 +1165,17 @@ class TestJSON(unittest.TestCase):
         """
         data = self.make_data_net(asn=9000900)
 
-        with self.assertRaises(Exception) as exc:
+        with pytest.raises(PermissionDeniedException) as excinfo:
             r_data = self.assert_create(self.db_org_admin, "as_set", data)
-        self.assertIn("You do not have permission", str(exc.exception))
+        assert "You do not have permission" in str(excinfo.value)
 
-        with self.assertRaises(Exception) as exc:
-            self.db_org_admin.update("as_set", {"9000900": "AS-XXX"})
-        self.assertIn("You do not have permission", str(exc.exception))
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_org_admin.update("as_set", {"9000900": "AS-ZZZ"})
+        assert "You do not have permission" in str(excinfo.value)
 
-        with self.assertRaises(Exception) as exc:
+        with pytest.raises(PermissionDeniedException) as excinfo:
             self.db_org_admin.rm("as_set", SHARED["net_rw_ok"].asn)
-        self.assertIn("You do not have permission", str(exc.exception))
+        assert "You do not have permission" in str(excinfo.value)
 
     ##########################################################################
 
@@ -1219,7 +1215,7 @@ class TestJSON(unittest.TestCase):
         """
 
         def test_write_only_fields_missing(orig, updated):
-            assert updated.has_key("allow_ixp_update") == False
+            assert ("allow_ixp_update" in updated) == False
 
         net = SHARED["net_rw_ok"]
         self.assertEqual(net.allow_ixp_update, False)
@@ -1422,7 +1418,7 @@ class TestJSON(unittest.TestCase):
         # re-creating a deleted ixpfx that we dont have write permissions do
         # should fail
         pfx = IXLanPrefix.objects.create(
-            ixlan=SHARED["ixlan_r_ok"], prefix=u"205.127.237.0/24", protocol="IPv4"
+            ixlan=SHARED["ixlan_r_ok"], prefix="205.127.237.0/24", protocol="IPv4"
         )
         pfx.delete()
 
@@ -1458,7 +1454,7 @@ class TestJSON(unittest.TestCase):
             "netixlan",
             data,
             test_failures={
-                "invalid": {"ipaddr4": u"a b c"},
+                "invalid": {"ipaddr4": "a b c"},
                 "perms": {
                     # set network to one the user doesnt have perms to
                     "ipaddr4": self.get_ip4(SHARED["ixlan_rw_ok"]),
@@ -1594,20 +1590,6 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def __test_guest_001_GET_asn(self):
-        """
-        ASN endpoint is currently disabled
-        """
-        return
-        self.assert_get_handleref(self.db_guest, "asn", SHARED["net_r_ok"].asn)
-
-        with self.assertRaises(InvalidRequestException) as inst:
-            self.assert_get_handleref(
-                self.db_guest, "asn", "%s[" % SHARED["net_r_ok"].asn
-            )
-
-    ##########################################################################
-
     def test_guest_001_GET_ix(self):
         self.assert_get_handleref(self.db_guest, "ix", SHARED["ix_r_ok"].id)
 
@@ -1660,10 +1642,10 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_001_GET_list_404(self):
         for tag in REFTAG_MAP:
-            with self.assertRaises(NotFoundException) as inst:
+            with pytest.raises(NotFoundException):
                 data = self.db_guest.all(tag, limit=1, id=99999999)
             if tag == "net":
-                with self.assertRaises(NotFoundException) as inst:
+                with pytest.raises(NotFoundException):
                     data = self.db_guest.all(tag, limit=1, asn=99999999999)
 
         for tag in REFTAG_MAP:
@@ -1713,11 +1695,11 @@ class TestJSON(unittest.TestCase):
         data = self.db_guest.all("org", limit=10, fields=",".join(["name", "status"]))
         self.assertGreater(len(data), 0)
         for row in data:
-            self.assertEqual(sorted(row.keys()), sorted([u"name", u"status"]))
+            self.assertEqual(sorted(row.keys()), sorted(["name", "status"]))
 
         data = self.db_guest.get("org", 1, fields=",".join(["name", "status"]))
         self.assertGreater(len(data), 0)
-        self.assertEqual(sorted(data[0].keys()), sorted([u"name", u"status"]))
+        self.assertEqual(sorted(data[0].keys()), sorted(["name", "status"]))
 
     ##########################################################################
 
@@ -1757,7 +1739,7 @@ class TestJSON(unittest.TestCase):
         """
 
         for depth in [0, 1, 2, 3, 4]:
-            for tag, slz in REFTAG_MAP_SLZ.items():
+            for tag, slz in list(REFTAG_MAP_SLZ.items()):
                 note_tag = "(%s %s)" % (tag, depth)
                 if tag == "poc":
                     o = SHARED["%s_r_ok_public" % tag]
@@ -1782,7 +1764,7 @@ class TestJSON(unittest.TestCase):
         """
 
         for depth in [0, 1, 2, 3]:
-            for tag, slz in REFTAG_MAP_SLZ.items():
+            for tag, slz in list(REFTAG_MAP_SLZ.items()):
                 note_tag = "(%s %s)" % (tag, depth)
                 if tag == "poc":
                     o = SHARED["%s_r_ok_public" % tag]
@@ -1843,7 +1825,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_dates_numeric(self):
-        for flt, ass in NUMERIC_TESTS.items():
+        for flt, ass in list(NUMERIC_TESTS.items()):
             for fld in ["created", "updated"]:
 
                 if flt in ["gt", "gte"]:
@@ -1893,7 +1875,7 @@ class TestJSON(unittest.TestCase):
         self.assertGreater(len(data), 0)
         self.assert_data_integrity(data[0], "fac")
         for fac in data:
-            self.assertLessEqual(long(fac["id"]), SHARED["fac_rw_ok"].id)
+            self.assertLessEqual(int(fac["id"]), SHARED["fac_rw_ok"].id)
 
     ##########################################################################
 
@@ -1902,7 +1884,7 @@ class TestJSON(unittest.TestCase):
         self.assertGreater(len(data), 0)
         self.assert_data_integrity(data[0], "fac")
         for fac in data:
-            self.assertLess(long(fac["id"]), SHARED["fac_rw_ok"].id)
+            self.assertLess(int(fac["id"]), SHARED["fac_rw_ok"].id)
 
     ##########################################################################
 
@@ -1911,7 +1893,7 @@ class TestJSON(unittest.TestCase):
         self.assertGreater(len(data), 0)
         self.assert_data_integrity(data[0], "fac")
         for fac in data:
-            self.assertGreaterEqual(long(fac["id"]), SHARED["fac_r_ok"].id)
+            self.assertGreaterEqual(int(fac["id"]), SHARED["fac_r_ok"].id)
 
     ##########################################################################
 
@@ -1920,7 +1902,7 @@ class TestJSON(unittest.TestCase):
         self.assertGreater(len(data), 0)
         self.assert_data_integrity(data[0], "fac")
         for fac in data:
-            self.assertGreater(long(fac["id"]), SHARED["fac_r_ok"].id)
+            self.assertGreater(int(fac["id"]), SHARED["fac_r_ok"].id)
 
     ##########################################################################
 
@@ -1930,7 +1912,7 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(len(data), len(ids))
         self.assert_data_integrity(data[0], "fac")
         for fac in data:
-            self.assertIn(long(fac["id"]), ids)
+            self.assertIn(int(fac["id"]), ids)
 
     ##########################################################################
 
@@ -2133,11 +2115,11 @@ class TestJSON(unittest.TestCase):
             self.assertIn(row["id"], [ix.id for ix in exchanges])
 
         # query #3 - should error when only passing one asn
-        with self.assertRaises(InvalidRequestException) as inst:
+        with pytest.raises(InvalidRequestException):
             self.db_guest.all("ix", asn_overlap=networks[0].asn)
 
         # query #4 - should error when passing too many asns
-        with self.assertRaises(InvalidRequestException):
+        with pytest.raises(InvalidRequestException):
             self.db_guest.all(
                 "ix", asn_overlap=",".join([str(i) for i in range(0, 30)])
             )
@@ -2263,11 +2245,11 @@ class TestJSON(unittest.TestCase):
             self.assertIn(row["id"], [ix.id for ix in facilities])
 
         # query #3 - should error when only passing one asn
-        with self.assertRaises(InvalidRequestException):
+        with pytest.raises(InvalidRequestException):
             self.db_guest.all("fac", asn_overlap=networks[0].asn)
 
         # query #4 - should error when passing too many asns
-        with self.assertRaises(InvalidRequestException):
+        with pytest.raises(InvalidRequestException):
             self.db_guest.all(
                 "fac", asn_overlap=",".join([str(i) for i in range(0, 30)])
             )
@@ -2315,7 +2297,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_netfac_related_country(self):
-        data = self.db_guest.all("netfac", country=SHARED["fac_rw_ok"].country)
+        data = self.db_guest.all("netfac", country=u"{}".format(SHARED["fac_rw_ok"].country))
         self.assertEqual(len(data), 2)
         self.assert_data_integrity(data[0], "netfac")
 
@@ -2375,15 +2357,15 @@ class TestJSON(unittest.TestCase):
 
         org = Organization.objects.create(name="org unaccented", status="ok")
         net = Network.objects.create(
-            asn=12345, name=u"net unaccented", status="ok", org=org
+            asn=12345, name="net unaccented", status="ok", org=org
         )
         ix = InternetExchange.objects.create(
-            org=org, name=u"ix unaccented", status="ok"
+            org=org, name="ix unaccented", status="ok"
         )
-        fac = Facility.objects.create(org=org, name=u"fac unaccented", status="ok")
+        fac = Facility.objects.create(org=org, name="fac unaccented", status="ok")
 
         for tag in ["org", "net", "ix", "fac"]:
-            data = self.db_guest.all(tag, name=u"{} unãccented".format(tag))
+            data = self.db_guest.all(tag, name="{} unãccented".format(tag))
             self.assertEqual(len(data), 1)
 
     ##########################################################################
@@ -2819,7 +2801,7 @@ class TestJSON(unittest.TestCase):
             "netixlan",
             self.make_data_netixlan(ixlan_id=A.ixlan_id, net_id=A.network_id),
             test_success=False,
-            test_failures={"invalid": {"ipaddr4": unicode(A.ipaddr4)}},
+            test_failures={"invalid": {"ipaddr4": str(A.ipaddr4)}},
         )
 
         self.assert_create(
@@ -2827,7 +2809,7 @@ class TestJSON(unittest.TestCase):
             "netixlan",
             self.make_data_netixlan(ixlan_id=A.ixlan_id, net_id=A.network_id,),
             test_success=False,
-            test_failures={"invalid": {"ipaddr6": unicode(A.ipaddr6)}},
+            test_failures={"invalid": {"ipaddr6": str(A.ipaddr6)}},
         )
 
     def test_z_misc_002_dupe_name_update(self):
@@ -3002,7 +2984,7 @@ class Command(BaseCommand):
 
     @classmethod
     def log(cls, msg):
-        print msg
+        print(msg)
 
     @classmethod
     def create_entity(
@@ -3086,7 +3068,7 @@ class Command(BaseCommand):
 
         # create API test user for crud testing
         crud_users = {}
-        for p, specs in USER_CRUD.items():
+        for p, specs in list(USER_CRUD.items()):
             crud_user = cls.create_user(specs)
             crud_users[p] = crud_user
             memberGroup.user_set.add(crud_user)
@@ -3109,7 +3091,7 @@ class Command(BaseCommand):
             cls.log("ORG for WRITE testing created!")
 
         org_rw.admin_usergroup.user_set.add(user_org_admin)
-        for crud_user in crud_users.values():
+        for crud_user in list(crud_users.values()):
             org_rw.usergroup.user_set.add(crud_user)
 
         SHARED["org_id"] = org_rw.id
@@ -3272,7 +3254,7 @@ class Command(BaseCommand):
         )
 
         # undelete in case they got flagged as deleted
-        for name, obj in SHARED.items():
+        for name, obj in list(SHARED.items()):
             if (
                 hasattr(obj, "status")
                 and obj.status == "deleted"
@@ -3294,7 +3276,7 @@ class Command(BaseCommand):
 
         deleted = 0
 
-        for k, obj in SHARED.items():
+        for k, obj in list(SHARED.items()):
             if hasattr(obj, "delete"):
                 # print "HARD deleting ", obj
                 try:
@@ -3314,15 +3296,15 @@ class Command(BaseCommand):
                     except cls.DoesNotExist:
                         pass
 
-        print "Deleted", deleted, "objects"
+        print("Deleted", deleted, "objects")
 
     def handle(self, *args, **options):
         try:
             self.prepare()
-        except IntegrityError, inst:
-            print inst
+        except IntegrityError as inst:
+            print(inst)
             self.cleanup()
-            print "Cleaned up after inegrity error, please try again .."
+            print("Cleaned up after inegrity error, please try again ..")
             return
         if options["setup"]:
             return
@@ -3331,7 +3313,7 @@ class Command(BaseCommand):
         else:
             only = options["only"].split(",")
             funcs = []
-            for key in vars(TestJSON).keys():
+            for key in list(vars(TestJSON).keys()):
                 for o in only:
                     if key[:5] == "test_" and key.find(o) > -1:
                         funcs.append(

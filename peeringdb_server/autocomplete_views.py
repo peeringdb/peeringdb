@@ -50,7 +50,7 @@ class ExchangeAutocomplete(AutocompleteHTMLResponse):
         return qs
 
     def get_result_label(self, item):
-        return u'<span data-value="%d"><div class="main">%s</div></span>' % (
+        return '<span data-value="%d"><div class="main">%s</div></span>' % (
             item.pk,
             html.escape(item.name),
         )
@@ -75,7 +75,7 @@ class FacilityAutocomplete(AutocompleteHTMLResponse):
 
     def get_result_label(self, item):
         return (
-            u'<span data-value="%d"><div class="main">%s</div> <div class="sub">%s</div></span>'
+            '<span data-value="%d"><div class="main">%s</div> <div class="sub">%s</div></span>'
             % (item.pk, html.escape(item.name), html.escape(item.address1))
         )
 
@@ -113,7 +113,7 @@ class OrganizationAutocomplete(AutocompleteHTMLResponse):
         return qs
 
     def get_result_label(self, item):
-        return u'<span data-value="%d"><div class="main">%s</div></span>' % (
+        return '<span data-value="%d"><div class="main">%s</div></span>' % (
             item.pk,
             html.escape(item.name),
         )
@@ -131,7 +131,7 @@ class IXLanAutocomplete(AutocompleteHTMLResponse):
 
     def get_result_label(self, item):
         return (
-            u'<span data-value="%d"><div class="main">%s <div class="tiny suffix">%s</div></div> <div class="sub">%s</div> <div class="sub">%s</div></span>'
+            '<span data-value="%d"><div class="main">%s <div class="tiny suffix">%s</div></div> <div class="sub">%s</div> <div class="sub">%s</div></span>'
             % (
                 item.pk,
                 html.escape(item.ix.name),
@@ -222,7 +222,7 @@ class CommandLineToolHistoryAutocomplete(autocomplete.Select2QuerySetView):
 clt_history = {}
 # class for each command line tool wrapper that we will map to an auto-complete
 # url in urls.py
-for tool_id, tool in TOOL_MAP.items():
+for tool_id, tool in list(TOOL_MAP.items()):
 
     class ToolHistory(CommandLineToolHistoryAutocomplete):
         tool = tool_id

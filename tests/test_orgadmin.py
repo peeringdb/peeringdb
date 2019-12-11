@@ -272,12 +272,12 @@ class OrgAdminTests(TestCase):
             c = Client()
             c.login(username=self.user_a.username, password="user_a")
             resp = c.get("/org/%d" % self.org.id, follow=True)
-            print resp
+            print(resp)
 
             for _tag in ["fac", "net", "ix"]:
                 if _tag != tag:
-                    self.assertEqual(resp.content.find("#add_%s" % _tag), -1)
-            self.assertGreater(resp.content.find("#add_%s" % tag), -1)
+                    assert "#add_{}".format(_tag) not in resp.content.decode()
+            assert "#add_{}".format(tag) in resp.content.decode()
 
     def test_manage_user_delete(self):
         """

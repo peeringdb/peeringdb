@@ -21,10 +21,10 @@ class Command(BaseCommand):
     help = "Check data status/health"
 
     def log(self, id, msg):
-        print "%s: %s" % (id, msg)
+        print("%s: %s" % (id, msg))
 
     def print_line(self):
-        print "".join(["-" for i in range(0, 80)])
+        print("".join(["-" for i in range(0, 80)]))
 
     def handle(self, *args, **options):
 
@@ -40,7 +40,7 @@ class Command(BaseCommand):
 
             self.log(
                 model.handleref.tag,
-                " ".join(["%s(%d)" % (k, v) for k, v in counts.items()]),
+                " ".join(["%s(%d)" % (k, v) for k, v in list(counts.items())]),
             )
 
         # VERSION: print the id of the instances with the highest
@@ -62,7 +62,7 @@ class Command(BaseCommand):
             .count()
         )
         if ixlan > 0:
-            print "%d orphaned ixlans (ix status='deleted')" % ixlan
+            print("%d orphaned ixlans (ix status='deleted')" % ixlan)
 
         ixfac = (
             pdbm.InternetExchangeFacility.objects.filter(
@@ -72,7 +72,7 @@ class Command(BaseCommand):
             .count()
         )
         if ixfac > 0:
-            print "%d orphaned ixfacs (ix status='deleted')" % ixfac
+            print("%d orphaned ixfacs (ix status='deleted')" % ixfac)
 
         ixfac = (
             pdbm.InternetExchangeFacility.objects.filter(
@@ -82,7 +82,7 @@ class Command(BaseCommand):
             .count()
         )
         if ixfac > 0:
-            print "%d orphaned ixfacs (fac status='deleted')" % ixfac
+            print("%d orphaned ixfacs (fac status='deleted')" % ixfac)
 
         netfac = (
             pdbm.NetworkFacility.objects.filter(status="ok", network__status="deleted")
@@ -90,7 +90,7 @@ class Command(BaseCommand):
             .count()
         )
         if netfac > 0:
-            print "%d orphaned netfacs (net status='deleted')" % netfac
+            print("%d orphaned netfacs (net status='deleted')" % netfac)
 
         netfac = (
             pdbm.NetworkFacility.objects.filter(status="ok", facility__status="deleted")
@@ -98,7 +98,7 @@ class Command(BaseCommand):
             .count()
         )
         if netfac > 0:
-            print "%d orphaned netfacs (fac status='deleted')" % netfac
+            print("%d orphaned netfacs (fac status='deleted')" % netfac)
 
         poc = (
             pdbm.NetworkContact.objects.filter(status="ok", network__status="deleted")
@@ -106,7 +106,7 @@ class Command(BaseCommand):
             .count()
         )
         if poc > 0:
-            print "%d orphaned poc (net status='deleted')" % poc
+            print("%d orphaned poc (net status='deleted')" % poc)
 
         netixlan = (
             pdbm.NetworkIXLan.objects.filter(status="ok", network__status="deleted")
@@ -114,7 +114,7 @@ class Command(BaseCommand):
             .count()
         )
         if netixlan > 0:
-            print "%d orphaned netixlans (net status='deleted')" % netixlan
+            print("%d orphaned netixlans (net status='deleted')" % netixlan)
 
         netixlan = (
             pdbm.NetworkIXLan.objects.filter(status="ok", ixlan__status="deleted")
@@ -122,7 +122,7 @@ class Command(BaseCommand):
             .count()
         )
         if netixlan > 0:
-            print "%d orphaned netixlans (ixlan status='deleted')" % netixlan
+            print("%d orphaned netixlans (ixlan status='deleted')" % netixlan)
 
         ixpfx = (
             pdbm.IXLanPrefix.objects.filter(status="ok", ixlan__status="deleted")
@@ -130,7 +130,7 @@ class Command(BaseCommand):
             .count()
         )
         if ixpfx:
-            print "%d orphaned ixpfxs (ixlan status='deleted')" % ixpfx
+            print("%d orphaned ixpfxs (ixlan status='deleted')" % ixpfx)
 
         for model in [pdbm.Network, pdbm.InternetExchange, pdbm.Facility]:
             count = (
@@ -139,7 +139,7 @@ class Command(BaseCommand):
                 .count()
             )
             if count > 0:
-                print "%d orphaned %ss (org status='deleted')" % (
+                print("%d orphaned %ss (org status='deleted')" % (
                     count,
                     model.handleref.tag,
-                )
+                ))

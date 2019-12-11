@@ -59,7 +59,9 @@ settings.configure(
     LANGUAGES=[("en", _("English")), ("pt", _("Portuguese")),],
     USE_L10N=True,
     USE_I18N=True,
-    MIDDLEWARE_CLASSES=(
+    MEDIA_URL='/m/',
+    STATIC_URL='/s/',
+    MIDDLEWARE=(
         "corsheaders.middleware.CorsMiddleware",
         "django.contrib.sessions.middleware.SessionMiddleware",
         "django.middleware.locale.LocaleMiddleware",
@@ -82,7 +84,7 @@ settings.configure(
     DATABASE_ENGINE="django.db.backends.sqlite3",
     DATABASES={
         "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:",},
-        # XXX - this is supposed to work to mimic replication
+        # TODO - this is supposed to work to mimic replication
         # during tests, but doesnt. So instead we use the
         # peeringdb_server.db_router.TestRouter class instead
         # which just always used the default db for read and writes
@@ -92,7 +94,7 @@ settings.configure(
         #    'TEST' : { 'MIRROR' : 'default' }
         # }
     },
-    # XXX - change to peeringdb_server.db_router.DatabaseRouter
+    # TODO - change to peeringdb_server.db_router.DatabaseRouter
     # if repliation mimicing (see above) gets fixed
     DATABASE_ROUTERS=["peeringdb_server.db_router.TestRouter"],
     DEBUG=False,

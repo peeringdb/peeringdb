@@ -48,7 +48,7 @@ class SearchTests(TestCase):
             cls.instances_accented[model.handleref.tag] = model.objects.create(
                 status="ok",
                 org=cls.org,
-                name=u"ãccented {}".format(model.handleref.tag),
+                name="ãccented {}".format(model.handleref.tag),
                 **kwargs
             )
 
@@ -57,9 +57,12 @@ class SearchTests(TestCase):
         cls.org_w_sponsorship = models.Organization.objects.create(
             name="Sponsor org", status="ok"
         )
+
+        now = datetime.datetime.now().replace(tzinfo=models.UTC())
+
         cls.sponsorship = models.Sponsorship.objects.create(
-            start_date=datetime.datetime.now() - datetime.timedelta(days=1),
-            end_date=datetime.datetime.now() + datetime.timedelta(days=1),
+            start_date=now - datetime.timedelta(days=1),
+            end_date=now + datetime.timedelta(days=1),
             level=1,
         )
         models.SponsorshipOrganization.objects.create(
@@ -85,7 +88,7 @@ class SearchTests(TestCase):
         """
 
         rv = search.search("Test")
-        for k, inst in self.instances.items():
+        for k, inst in list(self.instances.items()):
             assert k in rv
             assert len(rv[k]) == 1
             assert rv[k][0]["name"] == inst.search_result_name
@@ -110,7 +113,7 @@ class SearchTests(TestCase):
         request = factory.get("/search", {"q": "Sponsor"})
         response = views.request_search(request)
         m = re.findall(
-            re.escape('<a href="/sponsors" class="sponsor silver">'), response.content
+            re.escape('<a href="/sponsors" class="sponsor silver">'), response.content.decode()
         )
 
         assert len(m) == 3
@@ -121,7 +124,7 @@ class SearchTests(TestCase):
         instances we created during setUp since matching is case-insensitive
         """
         rv = search.search("test")
-        for k, inst in self.instances.items():
+        for k, inst in list(self.instances.items()):
             assert k in rv
             assert len(rv[k]) == 1
             assert rv[k][0]["name"] == inst.search_result_name
@@ -163,16 +166,16 @@ class SearchTests(TestCase):
         search for entities containing 'ãccented' using accented and unaccented
         terms
         """
-        rv = search.search(u"accented")
-        for k, inst in self.instances_accented.items():
+        rv = search.search("accented")
+        for k, inst in list(self.instances_accented.items()):
             assert k in rv
             assert len(rv[k]) == 1
             assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(
                 inst.search_result_name
             )
 
-        rv = search.search(u"ãccented")
-        for k, inst in self.instances_accented.items():
+        rv = search.search("ãccented")
+        for k, inst in list(self.instances_accented.items()):
             assert k in rv
             assert len(rv[k]) == 1
             assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(

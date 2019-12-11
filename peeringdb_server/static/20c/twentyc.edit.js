@@ -1632,7 +1632,7 @@ $.fn.editable = function(action, arg, dbg) {
         if(input=me.data("edit-input-instance")) {
 
 
-          //XXX: why would this be here? breaks certain form submissions
+          //why would this be here? breaks certain form submissions
           //by doing a premature reset - taking it out does not break any tests
           //input.reset();
 

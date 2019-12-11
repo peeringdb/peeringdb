@@ -1,4 +1,4 @@
-from __future__ import absolute_import, print_function
+
 
 import re
 import datetime
@@ -9,11 +9,12 @@ import googlemaps.exceptions
 import requests
 import reversion
 
+import django.urls
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.models import UserManager, Group
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.core import validators, urlresolvers
+from django.core import validators
 from django.core.mail.message import EmailMultiAlternatives
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
@@ -211,7 +212,7 @@ class GeocodeBaseMixin(models.Model):
         Returns an address string suitable for googlemaps query
         """
         # pylint: disable=missing-format-attribute
-        return u"{e.address1} {e.address2}, {e.city}, {e.state} {e.zipcode}".format(
+        return "{e.address1} {e.address2}, {e.city}, {e.state} {e.zipcode}".format(
             e=self
         )
 
@@ -244,10 +245,10 @@ class GeocodeBaseMixin(models.Model):
                 self.geocode_error = _("Address not found")
             self.geocode_status = True
             return result
-        except (googlemaps.exceptions.HTTPError, googlemaps.exceptions.ApiError), inst:
+        except (googlemaps.exceptions.HTTPError, googlemaps.exceptions.ApiError) as inst:
             self.geocode_error = str(inst)
             self.geocode_status = True
-        except googlemaps.exceptions.Timeout, inst:
+        except googlemaps.exceptions.Timeout as inst:
             self.geocode_error = _("API Timeout")
             self.geocode_status = False
         finally:
@@ -274,6 +275,7 @@ class UserOrgAffiliationRequest(models.Model):
 
     org = models.ForeignKey(
         "peeringdb_server.Organization",
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         help_text=_(
@@ -293,6 +295,7 @@ class UserOrgAffiliationRequest(models.Model):
 
     user = models.ForeignKey(
         "peeringdb_server.User",
+        on_delete=models.CASCADE,
         help_text=_("The user that made the request"),
         related_name="affiliation_requests",
     )
@@ -371,7 +374,7 @@ class UserOrgAffiliationRequest(models.Model):
         # FIXME: why not have the `override` call in email_user in the first place?
         with override(self.user.locale):
             self.user.email_user(
-                _(u'Your affiliation to Organization "{}" has been approved').format(
+                _('Your affiliation to Organization "{}" has been approved').format(
                     self.org.name
                 ),
                 loader.get_template(
@@ -396,11 +399,12 @@ class VerificationQueueItem(models.Model):
     """
 
     # reference to the item that requires review stored in generic fk
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     item = GenericForeignKey("content_type", "object_id")
     user = models.ForeignKey(
         "peeringdb_server.User",
+        on_delete=models.CASCADE,
         related_name="vqitems",
         null=True,
         blank=True,
@@ -431,7 +435,7 @@ class VerificationQueueItem(models.Model):
         """
         Return admin url for the object in the verification queue
         """
-        return urlresolvers.reverse(
+        return django.urls.reverse(
             "admin:%s_%s_change"
             % (self.content_type.app_label, self.content_type.model),
             args=(self.object_id,),
@@ -442,7 +446,7 @@ class VerificationQueueItem(models.Model):
         """
         Return admin url for approval of the verification queue item
         """
-        return urlresolvers.reverse(
+        return django.urls.reverse(
             "admin:%s_%s_actions" % (self._meta.app_label, self._meta.model_name),
             args=(self.id, "vq_approve"),
         )
@@ -452,7 +456,7 @@ class VerificationQueueItem(models.Model):
         """
         Return admin url for denial of the verification queue item
         """
-        return urlresolvers.reverse(
+        return django.urls.reverse(
             "admin:%s_%s_actions" % (self._meta.app_label, self._meta.model_name),
             args=(self.id, "vq_deny"),
         )
@@ -485,7 +489,7 @@ class VerificationQueueItem(models.Model):
 class DeskProTicket(models.Model):
     subject = models.CharField(max_length=255)
     body = models.TextField()
-    user = models.ForeignKey("peeringdb_server.User")
+    user = models.ForeignKey("peeringdb_server.User", on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(null=True)
 
@@ -523,7 +527,7 @@ class Organization(pdb_models.OrganizationBase):
         """
         Return the admin url for this organization (in /cp)
         """
-        return urlresolvers.reverse(
+        return django.urls.reverse(
             "admin:peeringdb_server_organization_change", args=(self.id,)
         )
 
@@ -547,7 +551,7 @@ class Organization(pdb_models.OrganizationBase):
                 rdap = RdapLookup().get_asn(net.asn)
                 if rdap:
                     r[net.asn] = rdap
-            except RdapNotFoundError, inst:
+            except RdapNotFoundError as inst:
                 pass
         return r
 
@@ -656,7 +660,7 @@ class Organization(pdb_models.OrganizationBase):
         for user in self.admin_usergroup.user_set.all():
             users[user.id] = user
 
-        return sorted(users.values(), key=lambda x: x.full_name)
+        return sorted(list(users.values()), key=lambda x: x.full_name)
 
     @property
     def nsp_ruleset(self):
@@ -781,7 +785,7 @@ class Sponsorship(models.Model):
         org_names = ", ".join([org.name for org in self.orgs.all()])
 
         mail = EmailMultiAlternatives(
-            (u"{}: {}").format(_("Sponsorship Expired"), org_names),
+            ("{}: {}").format(_("Sponsorship Expired"), org_names),
             msg,
             settings.DEFAULT_FROM_EMAIL,
             [settings.SPONSORSHIPS_EMAIL],
@@ -800,8 +804,8 @@ class SponsorshipOrganization(models.Model):
     Describes an organization->sponsorship relationship
     """
 
-    org = models.ForeignKey(Organization, related_name="sponsorshiporg_set")
-    sponsorship = models.ForeignKey(Sponsorship, related_name="sponsorshiporg_set")
+    org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="sponsorshiporg_set")
+    sponsorship = models.ForeignKey(Sponsorship, on_delete=models.CASCADE, related_name="sponsorshiporg_set")
     url = models.URLField(
         _("URL"),
         help_text=_(
@@ -828,7 +832,7 @@ class Partnership(models.Model):
     It will appear on the "partners" page
     """
 
-    org = models.ForeignKey(Organization, related_name="partnerships")
+    org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="partnerships")
     level = models.PositiveIntegerField(choices=PARTNERSHIP_LEVELS, default=1)
     url = models.URLField(
         _("URL"),
@@ -864,8 +868,8 @@ class OrganizationMerge(models.Model):
     it is logged here, allowing the merge to be undone
     """
 
-    from_org = models.ForeignKey(Organization, related_name="merged_to")
-    to_org = models.ForeignKey(Organization, related_name="merged_from")
+    from_org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="merged_to")
+    to_org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="merged_from")
     created = models.DateTimeField(_("Merged on"), auto_now_add=True)
 
     class Meta:
@@ -917,8 +921,8 @@ class OrganizationMergeEntity(models.Model):
     organization merge stored in OrganizationMerge
     """
 
-    merge = models.ForeignKey(OrganizationMerge, related_name="entities")
-    content_type = models.ForeignKey(ContentType)
+    merge = models.ForeignKey(OrganizationMerge, on_delete=models.CASCADE, related_name="entities")
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     entity = GenericForeignKey("content_type", "object_id")
     note = models.CharField(max_length=32, blank=True, null=True)
@@ -935,7 +939,7 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
     Describes a peeringdb facility
     """
 
-    org = models.ForeignKey(Organization, related_name="fac_set")
+    org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="fac_set")
 
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
@@ -1044,8 +1048,8 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
         # then we check for the facilities that have all of the asns
         # peering by comparing the counts of collected asns at each
         # facility with the count of asns provided
-        for fac_id, collected_asns in facilities.items():
-            if len(collected_asns.keys()) == count:
+        for fac_id, collected_asns in list(facilities.items()):
+            if len(list(collected_asns.keys())) == count:
                 shared_facilities.append(fac_id)
 
         if not qset:
@@ -1108,7 +1112,7 @@ class InternetExchange(pdb_models.InternetExchangeBase):
     Describes a peeringdb exchange
     """
 
-    org = models.ForeignKey(Organization, related_name="ix_set")
+    org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="ix_set")
 
     @staticmethod
     def autocomplete_search_fields():
@@ -1249,8 +1253,8 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         # then we check for the exchanges that have all of the asns
         # peering by comparing the counts of collected asns at each
         # exchange with the count of asns provided
-        for ix_id, collected_asns in exchanges.items():
-            if len(collected_asns.keys()) == count:
+        for ix_id, collected_asns in list(exchanges.items()):
+            if len(list(collected_asns.keys())) == count:
                 shared_exchanges.append(ix_id)
 
         if not qset:
@@ -1399,8 +1403,8 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     Describes facility to exchange relationship
     """
 
-    ix = models.ForeignKey(InternetExchange, related_name="ixfac_set")
-    facility = models.ForeignKey(Facility, default=0, related_name="ixfac_set")
+    ix = models.ForeignKey(InternetExchange, on_delete=models.CASCADE, related_name="ixfac_set")
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE, default=0, related_name="ixfac_set")
 
     @property
     def descriptive_name(self):
@@ -1428,7 +1432,7 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
 
     class Meta:
         unique_together = ("ix", "facility")
-        db_table = u"peeringdb_ix_facility"
+        db_table = "peeringdb_ix_facility"
 
 
 @reversion.register
@@ -1437,7 +1441,7 @@ class IXLan(pdb_models.IXLanBase):
     Describes a LAN at an exchange
     """
 
-    ix = models.ForeignKey(InternetExchange, default=0, related_name="ixlan_set")
+    ix = models.ForeignKey(InternetExchange, on_delete=models.CASCADE, default=0, related_name="ixlan_set")
     ixf_ixp_member_list_url = models.URLField(null=True, blank=True)
     ixf_ixp_import_enabled = models.BooleanField(default=False)
 
@@ -1448,7 +1452,7 @@ class IXLan(pdb_models.IXLanBase):
         delete_cascade = ["ixpfx_set", "netixlan_set"]
 
     class Meta:
-        db_table = u"peeringdb_ixlan"
+        db_table = "peeringdb_ixlan"
 
     @property
     def descriptive_name(self):
@@ -1753,7 +1757,7 @@ class IXLanIXFMemberImportLog(models.Model):
     netixlan under the specified ixlans
     """
 
-    ixlan = models.ForeignKey(IXLan, related_name="ixf_import_log_set")
+    ixlan = models.ForeignKey(IXLan, on_delete=models.CASCADE, related_name="ixf_import_log_set")
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -1782,15 +1786,15 @@ class IXLanIXFMemberImportLogEntry(models.Model):
     the change
     """
 
-    log = models.ForeignKey(IXLanIXFMemberImportLog, related_name="entries")
+    log = models.ForeignKey(IXLanIXFMemberImportLog, on_delete=models.CASCADE, related_name="entries")
     netixlan = models.ForeignKey(
-        "peeringdb_server.NetworkIXLan", related_name="ixf_import_log_entries"
+        "peeringdb_server.NetworkIXLan", on_delete=models.CASCADE, related_name="ixf_import_log_entries"
     )
     version_before = models.ForeignKey(
-        reversion.models.Version, null=True, related_name="ixf_import_log_before"
+        reversion.models.Version, on_delete=models.CASCADE, null=True, related_name="ixf_import_log_before"
     )
     version_after = models.ForeignKey(
-        reversion.models.Version, related_name="ixf_import_log_after"
+        reversion.models.Version, on_delete=models.CASCADE, related_name="ixf_import_log_after"
     )
     action = models.CharField(max_length=255, null=True, blank=True)
     reason = models.CharField(max_length=255, null=True, blank=True)
@@ -1812,7 +1816,7 @@ class IXLanIXFMemberImportLogEntry(models.Model):
         data_before = self.version_before.field_dict
         data_after = self.version_after.field_dict
         rv = {}
-        for k, v in data_after.items():
+        for k, v in list(data_after.items()):
             if k in ["created", "updated", "version"]:
                 continue
             v2 = data_before.get(k)
@@ -1851,7 +1855,7 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
     Descries a Prefix at an Exchange LAN
     """
 
-    ixlan = models.ForeignKey(IXLan, default=0, related_name="ixpfx_set")
+    ixlan = models.ForeignKey(IXLan, on_delete=models.CASCADE, default=0, related_name="ixpfx_set")
 
     @property
     def descriptive_name(self):
@@ -1913,7 +1917,7 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
         try:
             if not addr:
                 return False
-            if isinstance(addr, unicode):
+            if isinstance(addr, str):
                 addr = ipaddress.ip_address(addr)
             return addr in ipaddress.ip_network(self.prefix)
         except ipaddress.AddressValueError:
@@ -1938,7 +1942,7 @@ class Network(pdb_models.NetworkBase):
     Describes a peeringdb network
     """
 
-    org = models.ForeignKey(Organization, related_name="net_set")
+    org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="net_set")
     allow_ixp_update = models.BooleanField(
         null=False,
         default=False,
@@ -2198,10 +2202,10 @@ class NetworkContact(pdb_models.ContactBase):
     """
 
     # id = models.AutoField(primary_key=True)
-    network = models.ForeignKey(Network, default=0, related_name="poc_set")
+    network = models.ForeignKey(Network, on_delete=models.CASCADE, default=0, related_name="poc_set")
 
     class Meta:
-        db_table = u"peeringdb_network_contact"
+        db_table = "peeringdb_network_contact"
 
     @classmethod
     def nsp_namespace_in_list(cls, **kwargs):
@@ -2250,11 +2254,11 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     Describes a network <-> facility relationship
     """
 
-    network = models.ForeignKey(Network, default=0, related_name="netfac_set")
-    facility = models.ForeignKey(Facility, default=0, related_name="netfac_set")
+    network = models.ForeignKey(Network, on_delete=models.CASCADE, default=0, related_name="netfac_set")
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE, default=0, related_name="netfac_set")
 
     class Meta:
-        db_table = u"peeringdb_network_facility"
+        db_table = "peeringdb_network_facility"
         unique_together = ("network", "facility", "local_asn")
 
     @classmethod
@@ -2334,11 +2338,11 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     Describes a network relationship to an IX through an IX Lan
     """
 
-    network = models.ForeignKey(Network, default=0, related_name="netixlan_set")
-    ixlan = models.ForeignKey(IXLan, default=0, related_name="netixlan_set")
+    network = models.ForeignKey(Network, on_delete=models.CASCADE, default=0, related_name="netixlan_set")
+    ixlan = models.ForeignKey(IXLan, on_delete=models.CASCADE, default=0, related_name="netixlan_set")
 
     class Meta:
-        db_table = u"peeringdb_network_ixlan"
+        db_table = "peeringdb_network_ixlan"
 
     @property
     def name(self):
@@ -2780,7 +2784,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 def password_reset_token():
 
     token = str(uuid.uuid4())
-    hashed = sha256_crypt.encrypt(token)
+    hashed = sha256_crypt.hash(token)
     return token, hashed
 
 
@@ -2788,7 +2792,7 @@ class UserPasswordReset(models.Model):
     class Meta:
         db_table = "peeringdb_user_password_reset"
 
-    user = models.OneToOneField(User, primary_key=True, related_name="password_reset")
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name="password_reset")
     token = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -2822,7 +2826,7 @@ class CommandLineTool(models.Model):
         blank=True,
     )
     user = models.ForeignKey(
-        User, help_text=_("the user that ran this command"), related_name="clt_history"
+        User, on_delete=models.CASCADE, help_text=_("the user that ran this command"), related_name="clt_history"
     )
     created = models.DateTimeField(
         auto_now_add=True, help_text=_("command was run at this date and time")

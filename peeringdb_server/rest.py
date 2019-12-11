@@ -1,5 +1,11 @@
 import importlib
 
+import re
+import traceback
+import time
+import datetime
+
+
 import unidecode
 
 from rest_framework import routers, serializers, status, viewsets
@@ -15,14 +21,11 @@ from django.utils import timezone
 from django.db.models import DateTimeField
 import django_namespace_perms.rest as nsp_rest
 
-from peeringdb_server.models import Network
+import reversion
+
+from peeringdb_server.models import Network, UTC
 from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
-
-import re
-import reversion
-import traceback
-import time
 
 import django_namespace_perms.util as nsp
 from django_namespace_perms.exceptions import *
@@ -42,6 +45,7 @@ class RestRouter(routers.DefaultRouter):
             url=r"^{prefix}{trailing_slash}$",
             mapping={"get": "list", "post": "create"},
             name="{basename}-list",
+            detail=False,
             initkwargs={"suffix": "List"},
         ),
         # Detail route.
@@ -54,11 +58,13 @@ class RestRouter(routers.DefaultRouter):
                 "delete": "destroy",
             },
             name="{basename}-detail",
+            detail=True,
             initkwargs={"suffix": "Instance"},
         ),
-        routers.DynamicDetailRoute(
+        routers.DynamicRoute(
             url=r"^{prefix}/{lookup}/{methodnamehyphen}$",
             name="{basename}-{methodnamehyphen}",
+            detail=True,
             initkwargs={},
         ),
         # Dynamically generated routes.
@@ -68,6 +74,7 @@ class RestRouter(routers.DefaultRouter):
             url=r"^{prefix}/{lookup}/{methodname}{trailing_slash}$",
             mapping={"{httpmethod}": "{methodname}",},
             name="{basename}-{methodnamehyphen}",
+            detail=False,
             initkwargs={},
         ),
     ]
@@ -82,7 +89,7 @@ class RestRouter(routers.DefaultRouter):
 
 def pdb_exception_handler(exc):
 
-    print traceback.format_exc()
+    print(traceback.format_exc())
 
     return exception_handler(exc)
 
@@ -160,7 +167,7 @@ class client_check(object):
         # - the client version
         # - backend name
         # - backend version
-        m = re.match("PeeringDB/([\d\.]+) (\S+)/([\d\.]+)", agent)
+        m = re.match(r"PeeringDB/([\d\.]+) (\S+)/([\d\.]+)", agent)
         if m:
             return {
                 "client": self.version_tuple(m.group(1)),
@@ -253,13 +260,13 @@ class ModelViewSet(viewsets.ModelViewSet):
                 qset, p_filters = self.serializer_class.prepare_query(
                     qset, **self.request.query_params
                 )
-            except ValidationError, inst:
+            except ValidationError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except ValueError, inst:
+            except ValueError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except TypeError, inst:
+            except TypeError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except FieldError, inst:
+            except FieldError as inst:
                 raise RestValidationError({"detail": "Invalid query"})
 
         else:
@@ -293,7 +300,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         # filters
         filters = {}
-        for k, v in self.request.query_params.items():
+        for k, v in list(self.request.query_params.items()):
 
             v = unidecode.unidecode(v)
 
@@ -338,7 +345,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                     # convert to datetime and make tz aware
                     try:
                         v = DateTimeField().to_python(v)
-                    except ValidationError, inst:
+                    except ValidationError as inst:
                         raise RestValidationError({"detail": str(inst[0])})
                     if timezone.is_naive(v):
                         v = timezone.make_aware(v)
@@ -373,13 +380,13 @@ class ModelViewSet(viewsets.ModelViewSet):
         if filters:
             try:
                 qset = qset.filter(**filters)
-            except ValidationError, inst:
+            except ValidationError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except ValueError, inst:
+            except ValueError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except TypeError, inst:
+            except TypeError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except FieldError, inst:
+            except FieldError as inst:
                 raise RestValidationError({"detail": "Invalid query"})
 
         # check if request qualifies for a cache load
@@ -392,7 +399,12 @@ class ModelViewSet(viewsets.ModelViewSet):
             if since > 0:
                 # .filter(status__in=["ok","deleted"])
                 qset = (
-                    qset.since(timestamp=since, deleted=True)
+                    qset.since(
+                        timestamp=datetime.datetime.fromtimestamp(since).replace(
+                            tzinfo=UTC()
+                        ),
+                        deleted=True,
+                    )
                     .order_by("updated")
                     .filter(status__in=["ok", "deleted"])
                 )
@@ -425,7 +437,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
     @client_check()
     def list(self, request, *args, **kwargs):
-        """
+        r"""
         ### Querying
 
         You may query the resultset by passing field names as url parameters
@@ -549,18 +561,18 @@ class ModelViewSet(viewsets.ModelViewSet):
         t = time.time()
         try:
             r = super(ModelViewSet, self).list(request, *args, **kwargs)
-        except ValueError, inst:
+        except ValueError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
-        except TypeError, inst:
+        except TypeError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
-        except CacheRedirect, inst:
+        except CacheRedirect as inst:
             r = Response(status=200, data=inst.loader.load())
         d = time.time() - t
-        print "done in %.5f seconds, %d queries" % (d, len(connection.queries))
+        print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
         # FIXME: this waits for peeringdb-py fix to deal with 404 raise properly
         if not r or not len(r.data):
@@ -580,7 +592,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         t = time.time()
         r = super(ModelViewSet, self).retrieve(request, *args, **kwargs)
         d = time.time() - t
-        print "done in %.5f seconds, %d queries" % (d, len(connection.queries))
+        print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
         return r
 
@@ -594,9 +606,9 @@ class ModelViewSet(viewsets.ModelViewSet):
                 if request.user:
                     reversion.set_user(request.user)
                 return super(ModelViewSet, self).create(request, *args, **kwargs)
-        except PermissionDenied, inst:
+        except PermissionDenied as inst:
             return Response(status=status.HTTP_403_FORBIDDEN)
-        except ParentStatusException, inst:
+        except ParentStatusException as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
@@ -614,11 +626,11 @@ class ModelViewSet(viewsets.ModelViewSet):
                     reversion.set_user(request.user)
 
                 return super(ModelViewSet, self).update(request, *args, **kwargs)
-        except TypeError, inst:
+        except TypeError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
-        except ValueError, inst:
+        except ValueError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
@@ -690,7 +702,7 @@ def model_view_set(model):
 
     # register with the rest router for incoming requests
     ref_tag = model_t.handleref.tag
-    router.register(ref_tag, viewset_t, base_name=ref_tag)
+    router.register(ref_tag, viewset_t, basename=ref_tag)
 
     return viewset_t
 
@@ -762,7 +774,7 @@ class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
         return Response({network.asn: network.irr_as_set})
 
 
-router.register("as_set", ASSetViewSet, base_name="as_set")
+router.register("as_set", ASSetViewSet, basename="as_set")
 
 # set here in case we want to add more urls later
 urls = router.urls

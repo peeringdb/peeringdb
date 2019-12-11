@@ -56,11 +56,11 @@ class SettingsCase(ClientCase):
     @classmethod
     def setUp(cls):
         cls._restore = {}
-        for k, v in cls.settings.items():
+        for k, v in list(cls.settings.items()):
             cls._restore[k] = getattr(pdb_settings, k)
             setattr(pdb_settings, k, v)
 
     @classmethod
     def tearDown(cls):
-        for k, v in cls._restore.items():
+        for k, v in list(cls._restore.items()):
             setattr(pdb_settings, k, v)

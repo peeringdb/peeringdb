@@ -80,7 +80,7 @@ def test_validate_address_space(prefix):
     Tests peeringdb_server.validators.validate_address_space
     """
     with pytest.raises(ValidationError) as exc:
-        validate_address_space(ipaddress.ip_network(unicode(prefix)))
+        validate_address_space(ipaddress.ip_network(str(prefix)))
 
 
 @override_settings(DATA_QUALITY_MAX_PREFIX_V4_LIMIT=500000)
@@ -118,16 +118,16 @@ def test_validate_prefixlen():
     Tests prefix length limits
     """
     with pytest.raises(ValidationError):
-        validate_address_space(u"37.77.32.0/20")
+        validate_address_space("37.77.32.0/20")
     with pytest.raises(ValidationError):
-        validate_address_space(u"131.72.77.240/28")
+        validate_address_space("131.72.77.240/28")
     with pytest.raises(ValidationError):
-        validate_address_space(u"2403:c240::/32")
+        validate_address_space("2403:c240::/32")
     with pytest.raises(ValidationError):
-        validate_address_space(u"2001:504:0:2::/64")
+        validate_address_space("2001:504:0:2::/64")
 
 
-@pytest.mark.djangodb
+@pytest.mark.django_db
 def test_validate_prefix_overlap():
     org = Organization.objects.create(name="Test org", status="ok")
     ix = InternetExchange.objects.create(name="Text exchange", status="ok", org=org)
@@ -136,9 +136,9 @@ def test_validate_prefix_overlap():
     pfx1 = IXLanPrefix.objects.create(
         ixlan=ixlan,
         protocol="IPv4",
-        prefix=ipaddress.ip_network(u"198.32.125.0/24"),
+        prefix=ipaddress.ip_network("198.32.125.0/24"),
         status="ok",
     )
 
     with pytest.raises(ValidationError) as exc:
-        validate_prefix_overlap(u"198.32.124.0/23")
+        validate_prefix_overlap("198.32.124.0/23")

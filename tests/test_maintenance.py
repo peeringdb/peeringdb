@@ -9,7 +9,7 @@ from peeringdb_server import maintenance, settings
 from peeringdb_server.models import REFTAG_MAP, User
 import peeringdb_server.views as views
 
-from util import ClientCase
+from .util import ClientCase
 
 
 class TestMaintenanceMode(ClientCase):
@@ -35,7 +35,7 @@ class TestMaintenanceMode(ClientCase):
         client = Client()
         resp = client.post("/register", data={})
         assert resp.status_code == 503
-        assert resp.content.find("maintenance mode") > -1
+        assert "maintenance mode" in resp.content.decode()
 
         maintenance.off()
 
@@ -64,20 +64,20 @@ class TestMaintenanceMode(ClientCase):
         )
         content = json.loads(r.content)
         assert r.status_code == 503
-        assert content["meta"]["error"].find(err_str) > -1
+        assert err_str in content["meta"]["error"]
         net = {"id": 1}
 
         # PUT should be blocked
         r = self.client.put("/api/net/{}".format(net["id"]), net, format="json")
         content = json.loads(r.content)
         assert r.status_code == 503
-        assert content["meta"]["error"].find(err_str) > -1
+        assert err_str in content["meta"]["error"]
 
         # DELETE should be blocked
         r = self.client.delete("/api/net/{}".format(net["id"]), {}, format="json")
         content = json.loads(r.content)
         assert r.status_code == 503
-        assert content["meta"]["error"].find(err_str) > -1
+        assert err_str in content["meta"]["error"]
 
         # set maintenance mode off
         maintenance.off()

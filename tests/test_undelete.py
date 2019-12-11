@@ -1,6 +1,6 @@
 import datetime
 
-from util import ClientCase, Group
+from .util import ClientCase, Group
 
 from django.core.management import call_command
 from django.contrib.auth import get_user_model

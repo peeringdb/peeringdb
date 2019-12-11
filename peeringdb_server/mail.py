@@ -61,7 +61,7 @@ def mail_users_entity_merge(users_source, users_target, entity_source, entity_ta
         # FIXME: why not have the `override` call in email_user in the first place?
         with override(user.locale):
             user.email_user(
-                _(u"{} Merge Notification: {} -> {}").format(
+                _("{} Merge Notification: {} -> {}").format(
                     entity_source._meta.verbose_name.capitalize(),
                     entity_source.name,
                     entity_target.name,

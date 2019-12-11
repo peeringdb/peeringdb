@@ -1,4 +1,5 @@
 import json
+import re
 
 import requests
 import ipaddress
@@ -143,7 +144,7 @@ class Importer(object):
                 vlan_list_found = True
                 if len(vlans) == 2:
                     # if vlans[0].get("vlan_id") == vlans[1].get("vlan_id"):
-                    keys = vlans[0].keys() + vlans[1].keys()
+                    keys = list(vlans[0].keys()) + list(vlans[1].keys())
                     if keys.count("ipv4") == 1 and keys.count("ipv6") == 1:
                         vlans[0].update(**vlans[1])
                         conn["vlan_list"] = [vlans[0]]
@@ -419,11 +420,11 @@ class Importer(object):
             try:
                 if ipv4_addr:
                     self.ipaddresses.append(
-                        "{}-{}".format(asn, ipaddress.ip_address(unicode(ipv4_addr)))
+                        "{}-{}".format(asn, ipaddress.ip_address(u"{}".format(ipv4_addr)))
                     )
                 if ipv6_addr:
                     self.ipaddresses.append(
-                        "{}-{}".format(asn, ipaddress.ip_address(unicode(ipv6_addr)))
+                        "{}-{}".format(asn, ipaddress.ip_address(u"{}".format(ipv6_addr)))
                     )
             except (ipaddress.AddressValueError, ValueError) as exc:
                 self.log_error(
@@ -552,8 +553,8 @@ class Importer(object):
             peer.update(
                 {
                     "net_id": netixlan.network_id,
-                    "ipaddr4": u"{}".format(netixlan.ipaddr4 or ""),
-                    "ipaddr6": u"{}".format(netixlan.ipaddr6 or ""),
+                    "ipaddr4": "{}".format(netixlan.ipaddr4 or ""),
+                    "ipaddr6": "{}".format(netixlan.ipaddr6 or ""),
                     "speed": netixlan.speed,
                     "is_rs_peer": netixlan.is_rs_peer,
                 }
@@ -562,18 +563,18 @@ class Importer(object):
             if netixlan.id:
                 self.archive_info[netixlan.id] = {
                     "action": action,
-                    "reason": u"{}".format(reason),
+                    "reason": "{}".format(reason),
                 }
 
         self.log["data"].append(
-            {"peer": peer, "action": action, "reason": u"{}".format(reason),}
+            {"peer": peer, "action": action, "reason": "{}".format(reason),}
         )
 
     def log_error(self, error, save=False):
         """
         Append error to the attempt log
         """
-        self.log["errors"].append(u"{}".format(error))
+        self.log["errors"].append("{}".format(error))
         if save:
             self.save_log()
 
@@ -670,12 +671,12 @@ class PostMortem(object):
             return
 
         if data.get("ipaddr4"):
-            ipaddr4 = u"{}".format(data.get("ipaddr4"))
+            ipaddr4 = "{}".format(data.get("ipaddr4"))
         else:
             ipaddr4 = None
 
         if data.get("ipaddr6"):
-            ipaddr6 = u"{}".format(data.get("ipaddr6"))
+            ipaddr6 = "{}".format(data.get("ipaddr6"))
         else:
             ipaddr6 = None
 

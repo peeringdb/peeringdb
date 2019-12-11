@@ -91,7 +91,7 @@ def validate_relation_filter_field(a, b):
 
 def get_relation_filters(flds, serializer, **kwargs):
     rv = {}
-    for k, v in kwargs.items():
+    for k, v in list(kwargs.items()):
         m = re.match("^(.+)__(lt|lte|gt|gte|contains|startswith|in)$", k)
         if isinstance(v, list) and v:
             v = v[0]
@@ -213,7 +213,7 @@ class SoftRequiredValidator(object):
             for field_name in self.fields
             if not attrs.get(field_name)
         }
-        valid = len(self.fields) != len(missing.keys())
+        valid = len(self.fields) != len(list(missing.keys()))
         if not valid:
             raise RestValidationError(missing)
 
@@ -414,7 +414,7 @@ class ModelSerializer(PermissionedModelSerializer):
         Check if the request parameters are expected to return a unique entity
         """
 
-        return request.GET.has_key("id")
+        return "id" in request.GET
 
     @classmethod
     def queryable_relations(self):
@@ -753,7 +753,7 @@ class ModelSerializer(PermissionedModelSerializer):
         return super(ModelSerializer, self).create(validated_data)
 
     def _unique_filter(self, fld, data):
-        for _fld, slz_fld in self._declared_fields.items():
+        for _fld, slz_fld in list(self._declared_fields.items()):
             if fld == slz_fld.source:
                 if type(slz_fld) == serializers.PrimaryKeyRelatedField:
                     return slz_fld.queryset.get(id=data[_fld])
@@ -761,9 +761,9 @@ class ModelSerializer(PermissionedModelSerializer):
     def run_validation(self, data=serializers.empty):
         try:
             return super(ModelSerializer, self).run_validation(data=data)
-        except RestValidationError, exc:
+        except RestValidationError as exc:
             filters = {}
-            for k, v in exc.detail.items():
+            for k, v in list(exc.detail.items()):
                 v = v[0]
                 if k == "non_field_errors" and v.find("unique set") > -1:
                     m = re.match("The fields (.+) must make a unique set.", v)
@@ -962,7 +962,7 @@ class FacilitySerializer(ModelSerializer):
             ["net_id", "net", "ix_id", "ix", "org_name", "net_count"], cls, **kwargs
         )
 
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["net", "ix"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -1058,6 +1058,10 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
         list_exclude = ["ix", "fac"]
 
         related_fields = ["ix", "fac"]
+
+        validators = [validators.UniqueTogetherValidator(
+            InternetExchangeFacility.objects.all(),
+            ["ix_id","fac_id"])]
 
         _ref_tag = model.handleref.tag
 
@@ -1217,7 +1221,7 @@ class NetworkIXLanSerializer(ModelSerializer):
         """
 
         filters = get_relation_filters(["ix_id", "ix", "name"], cls, **kwargs)
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["ix", "name"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -1305,10 +1309,15 @@ class NetworkFacilitySerializer(ModelSerializer):
 
         list_exclude = ["net", "fac"]
 
+        validators = [validators.UniqueTogetherValidator(
+            NetworkFacility.objects.all(),
+            ["net_id","fac_id","local_asn"])]
+
+
     @classmethod
     def prepare_query(cls, qset, **kwargs):
         filters = get_relation_filters(["name", "country", "city"], cls, **kwargs)
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["name", "country", "city"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -1475,7 +1484,7 @@ class NetworkSerializer(ModelSerializer):
             **kwargs
         )
 
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["ix", "ixlan", "netixlan", "netfac", "fac"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -1503,7 +1512,7 @@ class NetworkSerializer(ModelSerializer):
 
     @classmethod
     def is_unique_query(cls, request):
-        if request.GET.has_key("asn"):
+        if "asn" in request.GET:
             return True
         return ModelSerializer.is_unique_query(request)
 
@@ -1624,7 +1633,7 @@ class IXLanPrefixSerializer(ModelSerializer):
     @classmethod
     def prepare_query(cls, qset, **kwargs):
         filters = get_relation_filters(["ix_id", "ix"], cls, **kwargs)
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["ix"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -1856,7 +1865,7 @@ class InternetExchangeSerializer(ModelSerializer):
             **kwargs
         )
 
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["ixlan", "ixfac", "fac", "net"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)

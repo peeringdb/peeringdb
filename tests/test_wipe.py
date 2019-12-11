@@ -21,7 +21,7 @@ class TestWipe(ClientCase):
 
         assert get_user_model().objects.all().count() == 2
 
-        for reftag, cls in REFTAG_MAP.items():
+        for reftag, cls in list(REFTAG_MAP.items()):
             assert cls.objects.all().count() > 1
 
         assert Group.objects.all().count() > 2
@@ -32,7 +32,7 @@ class TestWipe(ClientCase):
         settings.TUTORIAL_MODE = False
 
         # all entities should be gone
-        for reftag, cls in REFTAG_MAP.items():
+        for reftag, cls in list(REFTAG_MAP.items()):
             assert cls.objects.all().count() == 0
 
         # only the user and guest groups should be left

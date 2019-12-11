@@ -26,7 +26,7 @@ def validate_prefix(prefix):
         - ipaddress.ip_network instance
     """
 
-    if isinstance(prefix, unicode):
+    if isinstance(prefix, str):
         try:
             prefix = ipaddress.ip_network(prefix)
         except ValueError as exc:

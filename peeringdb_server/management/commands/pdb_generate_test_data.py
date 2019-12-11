@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
     @reversion.create_revision()
     def generate(self):
-        self.entities = dict([(k, []) for k in models.REFTAG_MAP.keys()])
+        self.entities = dict([(k, []) for k in list(models.REFTAG_MAP.keys())])
         queue = [
             "org",
             "net",
@@ -111,5 +111,5 @@ class Command(BaseCommand):
 
         self.entities["org"].append(self.mock.create("org"))
 
-        for reftag, entities in self.entities.items():
+        for reftag, entities in list(self.entities.items()):
             self.log("Created {} {}s".format(len(entities), reftag))

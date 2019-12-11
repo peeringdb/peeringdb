@@ -20,7 +20,7 @@ from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
-from django.core.urlresolvers import resolve, Resolver404
+from django.urls import resolve, Resolver404
 from django.template import loader
 from django.utils.crypto import constant_time_compare
 from django_namespace_perms.util import (
@@ -203,7 +203,7 @@ def view_request_ownership(request):
             return view_index(
                 request,
                 errors=[
-                    _(u"Organization '%(org_name)s' is already under ownership")
+                    _("Organization '%(org_name)s' is already under ownership")
                     % {"org_name": org.name}
                 ],
             )
@@ -273,7 +273,7 @@ def view_affiliate_to_org(request):
     an ASN they provide
     """
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return view_login(request)
 
     if request.method == "POST":
@@ -353,7 +353,7 @@ def resend_confirmation_mail(request):
             ],
         )
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return view_login(request)
 
     request.user.send_email_confirmation(request=request)
@@ -370,7 +370,7 @@ def view_profile(request):
 @ensure_csrf_cookie
 def view_set_user_locale(request):
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return view_login(request)
 
     if request.method in ["GET", "HEAD"]:
@@ -394,7 +394,7 @@ def view_set_user_locale(request):
 
 @protected_resource(scopes=["profile"])
 def view_profile_v1(request):
-    #    if not request.user.is_authenticated():
+    #    if not request.user.is_authenticated:
     #        return view_login(request)
     oauth = get_oauthlib_core()
     scope_email, _request = oauth.verify_request(request, scopes=["email"])
@@ -437,7 +437,7 @@ def view_profile_v1(request):
 @ratelimit(key="ip", rate=RATELIMITS["view_verify_POST"], method="POST")
 def view_verify(request):
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return view_login(request)
 
     if request.method in ["GET", "HEAD"]:
@@ -500,7 +500,7 @@ def view_verify(request):
 @ensure_csrf_cookie
 def view_password_change(request):
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return view_login(request)
 
     if request.method in ["GET", "HEAD"]:
@@ -695,7 +695,7 @@ def view_registration(request):
     """
     user registration page view
     """
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return view_index(
             request,
             errors=[
@@ -763,7 +763,7 @@ def view_login(request, errors=None):
     if not errors:
         errors = []
 
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return view_index(request, errors=[_("Already logged in")])
 
     template = loader.get_template("site/login.html")
@@ -944,7 +944,7 @@ def view_organization(request, id):
             dict([(user.id, user) for user in org.admin_usergroup.user_set.all()])
         )
         users.update(dict([(user.id, user) for user in org.usergroup.user_set.all()]))
-        users = sorted(users.values(), key=lambda x: x.full_name)
+        users = sorted(list(users.values()), key=lambda x: x.full_name)
 
     # if user has rights to create sub entties or manage users, allow them
     # to view the tools
@@ -1543,7 +1543,7 @@ def view_network(request, id):
     # Add POC data to dataset
     data["poc_set"] = network_d.get("poc_set")
 
-    if not request.user.is_authenticated() or not request.user.is_verified:
+    if not request.user.is_authenticated or not request.user.is_verified:
         cnt = network.poc_set.filter(status="ok", visible="Users").count()
         data["poc_hidden"] = cnt > 0
     else:
@@ -1691,7 +1691,7 @@ def request_search(request):
     if not q:
         return HttpResponseRedirect("/")
 
-    # if the user queried for an asn directly via ASXXX or ASNXXX
+    # if the user queried for an asn directly via AS*** or ASN***
     # redirect to the result
     m = re.match(r"(asn|as)(\d+)", q.lower())
     if m:
@@ -1708,7 +1708,7 @@ def request_search(request):
         ]
     )
 
-    for tag, rows in result.items():
+    for tag, rows in list(result.items()):
         for item in rows:
             item["sponsorship"] = sponsors.get(item["org_id"])
 
@@ -1736,7 +1736,7 @@ def request_logout(request):
 @ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
 def request_login(request):
 
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return view_index(request)
 
     if request.method in ["GET", "HEAD"]:
@@ -1780,7 +1780,7 @@ def request_login(request):
 @ratelimit(key="ip", rate=RATELIMITS["request_translation"], method="POST")
 def request_translation(request, data_type):
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return JsonResponse(
             {"status": "error", "error": "Please login to use translation service"}
         )
