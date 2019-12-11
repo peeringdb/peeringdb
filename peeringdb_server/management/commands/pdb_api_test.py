@@ -1247,7 +1247,6 @@ class TestJSON(unittest.TestCase):
         data = {
             "net_id": SHARED["net_rw_ok"].id,
             "fac_id": SHARED["fac_rw_ok"].id,
-            "local_asn": 12345,
         }
 
         r_data = self.assert_create(
@@ -1273,7 +1272,8 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "netfac",
             SHARED["netfac_id"],
-            {"local_asn": random.randint(999, 9999)},
+            data,
+            test_success=False,
             test_failures={
                 "invalid": {"fac_id": ""},
                 "perms": {"net_id": SHARED["net_r_ok"].id},
@@ -1457,7 +1457,9 @@ class TestJSON(unittest.TestCase):
 
     def test_org_admin_002_POST_PUT_DELETE_netixlan(self):
         data = self.make_data_netixlan(
-            net_id=SHARED["net_rw_ok"].id, ixlan_id=SHARED["ixlan_rw_ok"].id
+            net_id=SHARED["net_rw_ok"].id,
+            ixlan_id=SHARED["ixlan_rw_ok"].id,
+            asn=SHARED["net_rw_ok"].asn,
         )
 
         r_data = self.assert_create(
@@ -2467,11 +2469,7 @@ class TestJSON(unittest.TestCase):
             self.assert_create(
                 db,
                 "netfac",
-                {
-                    "net_id": SHARED["net_r_ok"].id,
-                    "fac_id": SHARED["fac_r2_ok"].id,
-                    "local_asn": 12345,
-                },
+                {"net_id": SHARED["net_r_ok"].id, "fac_id": SHARED["fac_r2_ok"].id,},
                 test_failures={"perms": {}},
                 test_success=False,
             )
@@ -2816,6 +2814,55 @@ class TestJSON(unittest.TestCase):
             test_success=False,
             test_failures={"invalid": {"ipaddr6": str(A.ipaddr6)}},
         )
+
+    def test_z_misc_002_local_asn(self):
+
+        # test that local_asn gets enforced (#186)
+
+        net = SHARED["net_rw_ok"]
+        fac = SHARED["fac_rw_ok"]
+        ixlan = SHARED["ixlan_rw_ok"]
+
+        # test netfac create without asn sent (should auto set)
+
+        data = {"net_id": net.id, "fac_id": fac.id}
+        r_data = self.db_org_admin.create("netfac", data, return_response=True).get(
+            "data"
+        )[0]
+        assert r_data["local_asn"] == net.asn
+
+        NetworkFacility.objects.get(id=r_data["id"]).delete()
+
+        # test nefac create with local_asn sent (should ignore and auto set)
+
+        data = {"net_id": net.id, "fac_id": fac.id, "local_asn": 12345}
+        r_data = self.db_org_admin.create("netfac", data, return_response=True).get(
+            "data"
+        )[0]
+        assert r_data["local_asn"] == net.asn
+
+        NetworkFacility.objects.get(id=r_data["id"]).delete()
+
+        # test netixlan create without asn sent (should auto set)
+
+        data = self.make_data_netixlan(ixlan_id=ixlan.id, net_id=net.id)
+        del data["asn"]
+        r_data = self.db_org_admin.create("netixlan", data, return_response=True).get(
+            "data"
+        )[0]
+        assert r_data["asn"] == net.asn
+
+        NetworkIXLan.objects.get(id=r_data["id"]).delete()
+
+        # test neixlan create with asn sent (should ignore and auto set)
+
+        data = self.make_data_netixlan(ixlan_id=ixlan.id, net_id=net.id, asn=12345)
+        r_data = self.db_org_admin.create("netixlan", data, return_response=True).get(
+            "data"
+        )[0]
+        assert r_data["asn"] == net.asn
+
+        NetworkIXLan.objects.get(id=r_data["id"]).delete()
 
     def test_z_misc_002_dupe_name_update(self):
 

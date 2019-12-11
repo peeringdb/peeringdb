@@ -1361,6 +1361,23 @@ twentyc.editable.input.register(
   },
   "text"
 );
+
+twentyc.editable.input.register(
+  "readonly",
+  {
+    make : function() {
+      return $('<span class="editable input-note-relative"></span>')
+    },
+    set : function(value) {
+      this.element.text(value)
+    },
+    get : function(value) {
+      return this.element.text()
+    }
+  },
+  "text"
+);
+
 /*
  * autocomplete input type
  */

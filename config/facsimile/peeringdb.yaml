@@ -179,6 +179,8 @@ install:
     - $SRC_DIR$/peeringdb_server/migrations/0020_sponsorship_multi_org.py
     - $SRC_DIR$/peeringdb_server/migrations/0021_sponsorship_drop_single_org_relation_fields.py
     - $SRC_DIR$/peeringdb_server/migrations/0022_ixlan_remove_auto_increment.py
+    - $SRC_DIR$/peeringdb_server/migrations/0023_netfac_local_asn.py
+    - $SRC_DIR$/peeringdb_server/migrations/0024_netixlan_asn.py
     - $SRC_DIR$/fixtures/initial_data.json
     - $SRC_DIR$/peeringdb_server/templates/admin/admin_extended.html
     - $SRC_DIR$/peeringdb_server/templates/admin/user-organizations.html

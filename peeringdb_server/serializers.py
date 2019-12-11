@@ -6,7 +6,7 @@ from django_inet.rest import IPAddressField, IPPrefixField
 from django_inet.models import URLValidator
 from django.db.models.query import QuerySet
 from django.db.models import Prefetch, Q, Sum, IntegerField, Case, When
-from django.db import models, transaction
+from django.db import models, transaction, IntegrityError
 from django.db.models.fields.related import (
     ReverseManyToOneDescriptor,
     ForwardManyToOneDescriptor,
@@ -775,11 +775,19 @@ class ModelSerializer(PermissionedModelSerializer):
 
             request = self._context.get("request")
             if filters and request and request.user and request.method == "POST":
+
+                if "fac_id" in filters:
+                    filters["facility_id"] = filters["fac_id"]
+                    del filters["fac_id"]
+                if "net_id" in filters:
+                    filters["network_id"] = filters["net_id"]
+                    del filters["net_id"]
+
                 try:
                     self.instance = self.Meta.model.objects.get(**filters)
                 except self.Meta.model.DoesNotExist:
                     raise exc
-                except FieldError:
+                except FieldError as exc:
                     raise exc
                 if (
                     has_perms(request.user, self.instance, "update")
@@ -1249,6 +1257,19 @@ class NetworkIXLanSerializer(ModelSerializer):
     def get_ix_id(self, inst):
         return inst.ix_id
 
+    def run_validation(self, data=serializers.empty):
+        # `asn` will eventually be dropped from the schema
+        # for now make sure it is always a match to the related
+        # network
+
+        if data.get("net_id"):
+            try:
+                net = Network.objects.get(id=data.get("net_id"))
+                data["asn"] = net.asn
+            except:
+                pass
+        return super(NetworkIXLanSerializer, self).run_validation(data=data)
+
     def validate(self, data):
         netixlan = NetworkIXLan(**data)
 
@@ -1261,6 +1282,24 @@ class NetworkIXLanSerializer(ModelSerializer):
             netixlan.validate_ipaddr6()
         except ValidationError as exc:
             raise serializers.ValidationError({"ipaddr6": exc.message})
+
+        # when validating an existing netixlan that has a mismatching
+        # asn value raise a validation error stating that it needs
+        # to be moved
+        #
+        # this is to catch and force correction of instances where they
+        # could not be migrated automatically during rollout of #168
+        # because the targeted asn did not exist in peeringdb
+
+        if self.instance and self.instance.asn != self.instance.network.asn:
+            raise serializers.ValidationError(
+                {
+                    "asn": _(
+                        "This entity was created for the ASN {} - please remove it from this network and recreate it under the correct network"
+                    ).format(self.instance.asn)
+                }
+            )
+
         return data
 
 
@@ -1290,6 +1329,7 @@ class NetworkFacilitySerializer(ModelSerializer):
     city = serializers.SerializerMethodField()
 
     class Meta:
+
         model = NetworkFacility
         depth = 0
         fields = [
@@ -1360,8 +1400,39 @@ class NetworkFacilitySerializer(ModelSerializer):
     def get_city(self, inst):
         return inst.facility.city
 
+    def run_validation(self, data=serializers.empty):
+        # `local_asn` will eventually be dropped from the schema
+        # for now make sure it is always a match to the related
+        # network
 
-# class NetworkSerializer(serializers.ModelSerializer):
+        if data.get("net_id"):
+            try:
+                net = Network.objects.get(id=data.get("net_id"))
+                data["local_asn"] = net.asn
+            except:
+                pass
+        return super(NetworkFacilitySerializer, self).run_validation(data=data)
+
+    def validate(self, data):
+
+        # when validating an existing netfac that has a mismatching
+        # local_asn value raise a validation error stating that it needs
+        # to be moved
+        #
+        # this is to catch and force correction of instances where they
+        # could not be migrated automatically during rollout of #168
+        # because the targeted local_asn did not exist in peeringdb
+
+        if self.instance and self.instance.local_asn != self.instance.network.asn:
+            raise serializers.ValidationError(
+                {
+                    "local_asn": _(
+                        "This entity was created for the ASN {} - please remove it from this network and recreate it under the correct network"
+                    ).format(self.instance.local_asn)
+                }
+            )
+
+        return data
 
 
 class NetworkSerializer(ModelSerializer):

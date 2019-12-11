@@ -194,6 +194,8 @@ class Mock(object):
         return self.name(data, reftag=reftag)
 
     def asn(self, data, reftag=None):
+        if reftag == "netixlan":
+            return data["network"].asn
         self._asn += 1
         return self._asn
 
@@ -240,7 +242,7 @@ class Mock(object):
         return self.asn(data, reftag=reftag)
 
     def local_asn(self, data, reftag=None):
-        return self.asn(data, reftag=reftag)
+        return data["network"].asn
 
     def arp_sponge(self, data, reftag=None):
         return None

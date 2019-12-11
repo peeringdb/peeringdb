@@ -704,6 +704,7 @@ div.list > div.scrollable {
 /*  border-bottom: 3px #1c3f28 solid; */
 }
 
+
 div.list > div.row.header,
 table.result th {
   background-color: #4b6063;
@@ -754,6 +755,7 @@ div.list div.row.item > div > div:nth-child(2) select {
 div.list div.row.item {
   border-bottom: 1px #1c3f28 solid;
   background-color: #f1f1f1;
+  padding-bottom: 2px;
 }
 
 div.list div.row.item img {
@@ -847,6 +849,27 @@ div.editable.mode-edit div.view_field {
 
 .editable.input-note.validation-error {
   background-color: #9e1e1e;
+  z-index: 10;
+}
+
+div.row.item:nth-child(2) .editable.input-note.validation-error {
+  position: relative;
+  top: 0px;
+  left: 0px;
+}
+
+.editable.readonly ~ .editable.input-note.validation-error {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  display: block;
+  white-space: normal;
+}
+
+
+.mark-value-error,
+.editable.readonly.validation-error {
+  color: #9e1e1e;
+  text-decoration: underline dashed;
 }
 
 .input-note-long .input-note {

@@ -2387,6 +2387,29 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["net"])
 
+    def clean(self):
+
+        # when validating an existing netfac that has a mismatching
+        # local_asn value raise a validation error stating that it needs
+        # to be moved
+        #
+        # this is to catch and force correction of instances where they
+        # could not be migrated automatically during rollout of #168
+        # because the targeted local_asn did not exist in peeringdb
+
+        if self.id and self.local_asn != self.network.asn:
+            raise ValidationError(
+                _(
+                    "This entity was created for the ASN {} - please remove it from this network and recreate it under the correct network"
+                ).format(self.local_asn)
+            )
+
+        # `local_asn` will eventually be dropped from the schema
+        # for now make sure it is always a match to the related
+        # network (#168)
+
+        self.local_asn = self.network.asn
+
 
 # validate:
 # ip in prefix
@@ -2544,6 +2567,27 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
         if errors:
             raise ValidationError(errors)
+
+        # when validating an existing netixlan that has a mismatching
+        # asn value raise a validation error stating that it needs
+        # to be moved
+        #
+        # this is to catch and force correction of instances where they
+        # could not be migrated automatically during rollout of #168
+        # because the targeted asn did not exist in peeringdb
+
+        if self.id and self.asn != self.network.asn:
+            raise ValidationError(
+                _(
+                    "This entity was created for the ASN {} - please remove it from this network and recreate it under the correct network"
+                ).format(self.asn)
+            )
+
+        # `asn` will eventually be dropped from the schema
+        # for now make sure it is always a match to the related
+        # network (#168)
+
+        self.asn = self.network.asn
 
     def ipaddr(self, version):
         """
