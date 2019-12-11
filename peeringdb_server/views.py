@@ -97,6 +97,13 @@ BASE_ENV = {
     "TUTORIAL_MODE": settings.TUTORIAL_MODE,
 }
 
+def field_help(model, field):
+    """
+    helper function return help_text of a model
+    field
+    """
+    return model._meta.get_field(field).help_text
+
 
 def is_oauth_authorize(url):
     if url.find("/oauth2/authorize/") == 0:
@@ -1386,6 +1393,7 @@ def view_network(request, id):
             {
                 "name": "irr_as_set",
                 "label": _("IRR as-set/route-set"),
+                "help_text" : field_help(Network, "irr_as_set"),
                 "notify_incomplete": True,
                 "value": network_d.get("irr_as_set", dismiss),
             },
@@ -1416,6 +1424,7 @@ def view_network(request, id):
                 "name": "info_prefixes4",
                 "label": _("IPv4 Prefixes"),
                 "type": "number",
+                "help_text" : field_help(Network, "info_prefixes4"),
                 "notify_incomplete": True,
                 "value": int(network_d.get("info_prefixes4") or 0),
             },
@@ -1423,6 +1432,7 @@ def view_network(request, id):
                 "name": "info_prefixes6",
                 "label": _("IPv6 Prefixes"),
                 "type": "number",
+                "help_text" : field_help(Network, "info_prefixes6"),
                 "notify_incomplete": True,
                 "value": int(network_d.get("info_prefixes6") or 0),
             },

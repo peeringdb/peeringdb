@@ -559,6 +559,9 @@ div.view_field {
   white-space: nowrap;
 }
 
+div.view_field.help-text {
+}
+
 div.view_field > div.help {
   font-weight: normal;
   font-size: 11px;

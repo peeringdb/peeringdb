@@ -92,10 +92,17 @@
         <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
       {% else %}
         <!-- row header -->
-        <div class="view_field col-xs-4 col-sm-5 col-md-4">{{ row.label }} {% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %}
-        {% if row.help_text %}
+        <div class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
+             {% if row.help_text %}
+             data-toggle="tooltip"
+             data-placement="top"
+             title="{{ row.help_text }}"
+             {% endif %}>{% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %} {{ row.label }}
+             {% if row.help_text %}<span class="glyphicon glyphicon-question-sign"></span>{% endif %}
+        {% if row.helper_text %}
           <div data-edit-toggled="edit" style="display:none;" class="help">{{ row.help_text }}</div>
-        {% endif %}</div>
+        {% endif %}
+        </div>
 
         <!-- row value -->
         {% if row.type == "url" %}
@@ -305,6 +312,7 @@ $(document).ready(function() {
   });
 
   $('[data-toggle="tooltip"]').tooltip({container:"body"});
+
 });
 </script>
 {% endif %}
