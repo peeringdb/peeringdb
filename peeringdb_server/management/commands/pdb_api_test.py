@@ -312,6 +312,7 @@ class TestJSON(unittest.TestCase):
             "info_unicast": True,
             "info_multicast": False,
             "info_ipv6": True,
+            "info_never_via_route_servers": True,
             "notes": NOTE,
             "policy_url": "%s/policy" % WEBSITE,
             "policy_general": "Restrictive",

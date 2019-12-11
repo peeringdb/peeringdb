@@ -183,6 +183,7 @@ install:
     - $SRC_DIR$/peeringdb_server/migrations/0024_netixlan_asn.py
     - $SRC_DIR$/peeringdb_server/migrations/0025_E164_phonenumbers.py
     - $SRC_DIR$/peeringdb_server/migrations/0026_help_text_228.py
+    - $SRC_DIR$/peeringdb_server/migrations/0027_never_via_router_servers.py
     - $SRC_DIR$/fixtures/initial_data.json
     - $SRC_DIR$/peeringdb_server/templates/admin/admin_extended.html
     - $SRC_DIR$/peeringdb_server/templates/admin/user-organizations.html

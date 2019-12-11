@@ -1510,6 +1510,7 @@ class NetworkSerializer(ModelSerializer):
             "info_unicast",
             "info_multicast",
             "info_ipv6",
+            "info_never_via_route_servers",
             "notes",
             "policy_url",
             "policy_general",

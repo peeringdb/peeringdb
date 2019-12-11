@@ -1479,6 +1479,14 @@ def view_network(request, id):
                         "label": _("IPv6"),
                         "value": network_d.get("info_ipv6", False),
                     },
+                    {
+                        "name": "info_never_via_route_servers",
+                        "label": _("Never via route servers"),
+                        #FIXME: change to `field_help` after merging with #228
+                        "help_text": Network._meta.get_field("info_never_via_route_servers").help_text,
+                        "value": network_d.get("info_never_via_route_servers", False),
+                    },
+
                 ],
             },
             {
