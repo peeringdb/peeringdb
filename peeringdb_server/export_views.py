@@ -275,7 +275,7 @@ class AdvancedSearchExportView(ExportView):
         Returns:
             - list: list containing rendered data rows ready for export
         """
-        if self.tag not in ["net", "ix", "fac"]:
+        if self.tag not in ["net", "ix", "fac", "org"]:
             raise ValueError(_("Invalid tag"))
         data_function = getattr(self, "generate_{}".format(self.tag))
         return data_function(request)
@@ -368,6 +368,32 @@ class AdvancedSearchExportView(ExportView):
                         ("Country", row["country"]),
                         ("City", row["city"]),
                         ("Networks", row["net_count"]),
+                    ]
+                )
+            )
+        return download_data
+
+    def generate_org(self, request):
+        """
+        Fetch organization data from the api according to request and then render
+        it ready for export
+
+        Arguments:
+            - request <Request>
+
+        Returns:
+            - list: list containing rendered data ready for export
+        """
+
+        data = self.fetch(request)
+        download_data = []
+        for row in data:
+            download_data.append(
+                collections.OrderedDict(
+                    [
+                        ("Name", row["name"]),
+                        ("Country", row["country"]),
+                        ("City", row["city"]),
                     ]
                 )
             )

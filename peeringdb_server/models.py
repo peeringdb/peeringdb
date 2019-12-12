@@ -523,6 +523,14 @@ class Organization(pdb_models.OrganizationBase):
         return self.name
 
     @property
+    def search_result_name(self):
+        """
+        This will be the name displayed for quick search matches
+        of this entity
+        """
+        return self.name
+
+    @property
     def admin_url(self):
         """
         Return the admin url for this organization (in /cp)

@@ -22,6 +22,28 @@ class SearchTests(TestCase):
     """
 
     @classmethod
+    def create_instance(cls, model, org, asn=1, prefix="Test", accented=False):
+
+        kwargs = {}
+        if model.handleref.tag == "net":
+            kwargs = {"asn": asn}
+
+        kwargs.update(status="ok", name=u"{} {}".format(prefix, model.handleref.tag))
+
+        if accented:
+            kwargs.update(name=u"ãccented {}".format(model.handleref.tag))
+
+        if model.handleref.tag != "org":
+            kwargs.update(org=org)
+
+        instance = model.objects.create(**kwargs)
+
+        if model.handleref.tag == "org":
+            instance.org_id = instance.id
+
+        return instance
+
+    @classmethod
     def setUpTestData(cls):
 
         # in case other tests updated the search index through object
@@ -34,28 +56,17 @@ class SearchTests(TestCase):
 
         # create an instance of each searchable model, so we have something
         # to search for
-        cls.org = models.Organization.objects.create(name="Test org")
+        cls.org = models.Organization.objects.create(name="Parent org")
         for model in search.searchable_models:
-            kwargs = {}
-            if model.handleref.tag == "net":
-                kwargs = {"asn": 1}
-            cls.instances[model.handleref.tag] = model.objects.create(
-                status="ok", org=cls.org, name="Test %s" % model.handleref.tag, **kwargs
-            )
-
-            if model.handleref.tag == "net":
-                kwargs = {"asn": 2}
-            cls.instances_accented[model.handleref.tag] = model.objects.create(
-                status="ok",
-                org=cls.org,
-                name="ãccented {}".format(model.handleref.tag),
-                **kwargs
+            cls.instances[model.handleref.tag] = cls.create_instance(model, cls.org)
+            cls.instances_accented[model.handleref.tag] = cls.create_instance(
+                model, cls.org, asn=2, accented=True
             )
 
         # we also need to test that sponsor ship status comes through
         # accordingly
         cls.org_w_sponsorship = models.Organization.objects.create(
-            name="Sponsor org", status="ok"
+            name="Sponsor Parent org", status="ok"
         )
 
         now = datetime.datetime.now().replace(tzinfo=models.UTC())
@@ -70,15 +81,8 @@ class SearchTests(TestCase):
         )
 
         for model in search.searchable_models:
-            if model.handleref.tag == "net":
-                kwargs = {"asn": 3}
-            else:
-                kwargs = {}
-            cls.instances_sponsored[model.handleref.tag] = model.objects.create(
-                status="ok",
-                org=cls.org_w_sponsorship,
-                name="Sponsor %s" % model.handleref.tag,
-                **kwargs
+            cls.instances_sponsored[model.handleref.tag] = cls.create_instance(
+                model, cls.org_w_sponsorship, asn=3, prefix="Sponsor"
             )
 
     def test_search(self):
@@ -116,7 +120,7 @@ class SearchTests(TestCase):
             re.escape('<a href="/sponsors" class="sponsor silver">'), response.content.decode()
         )
 
-        assert len(m) == 3
+        assert len(m) == 4
 
     def test_search_case(self):
         """

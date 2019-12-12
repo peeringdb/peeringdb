@@ -1,6 +1,9 @@
+from collections import defaultdict
+
 from django.db.models import OneToOneRel
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.db import IntegrityError
 
 from peeringdb import resource
 
@@ -107,7 +110,7 @@ class Backend(BaseBackend):
         obj.clean_fields()
         obj.validate_unique()
 
-        if not isinstance(obj, (models.IXLanPrefix, models.NetworkIXLan)):
+        if not isinstance(obj, (models.IXLanPrefix, models.NetworkIXLan, models.NetworkFacility)):
             obj.clean()
 
 
@@ -116,3 +119,51 @@ class Backend(BaseBackend):
             obj.save(create_ixlan=False)
         else:
             obj.save()
+
+
+    def detect_uniqueness_error(self, exc):
+        """
+        Parse error, and if it describes any violations of a uniqueness constraint,
+        return the corresponding fields, else None
+        """
+        pattern = r"(\w+) with this (\w+) already exists"
+
+        fields = []
+        if isinstance(exc, IntegrityError):
+            return self._detect_integrity_error(exc)
+        assert isinstance(exc, ValidationError), TypeError
+
+        error_dict = getattr(
+            exc, "error_dict", getattr(
+                exc, "message_dict", {}
+            )
+        )
+
+        for name, err in error_dict.items():
+            if re.search(pattern, str(err)):
+                fields.append(name)
+        return fields or None
+
+
+    def detect_missing_relations(self, obj, exc):
+        """
+        Parse error messages and collect the missing-relationship errors
+        as a dict of Resource -> {id set}
+        """
+        missing = defaultdict(set)
+
+        error_dict = getattr(
+            exc, "error_dict", getattr(
+                exc, "message_dict", {}
+            )
+        )
+
+        for name, err in error_dict.items():
+            # check if it was a relationship that doesnt exist locally
+            pattern = r".+ with id (\d+) does not exist.+"
+            m = re.match(pattern, str(err))
+            if m:
+                field = obj._meta.get_field(name)
+                res = self.get_resource(field.related_model)
+                missing[res].add(int(m.group(1)))
+        return missing

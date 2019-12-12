@@ -1727,9 +1727,11 @@ def request_search(request):
             "search_ixp": result.get(InternetExchange._handleref.tag),
             "search_net": result.get(Network._handleref.tag),
             "search_fac": result.get(Facility._handleref.tag),
+            "search_org": result.get(Organization._handleref.tag),
             "count_ixp": len(result.get(InternetExchange._handleref.tag, [])),
             "count_net": len(result.get(Network._handleref.tag, [])),
             "count_fac": len(result.get(Facility._handleref.tag, [])),
+            "count_org": len(result.get(Organization._handleref.tag, [])),
         }
     )
     return HttpResponse(template.render(env, request))

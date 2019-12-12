@@ -6,6 +6,7 @@ from peeringdb_server.models import (
     InternetExchange,
     Network,
     Facility,
+    Organization,
     PARTNERSHIP_LEVELS,
 )
 
@@ -169,6 +170,8 @@ def ref_tag(value):
         return Network.handleref.tag
     elif value == "Facility":
         return Facility.handleref.tag
+    elif value == "Organization":
+        return Organization.handleref.tag
     return "unknown"
 
 

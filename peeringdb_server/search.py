@@ -1,7 +1,13 @@
 from django.db.models.signals import post_save, pre_delete
 from django.db.models import Q
 import peeringdb_server.rest
-from peeringdb_server.models import UTC, InternetExchange, Network, Facility
+from peeringdb_server.models import (
+    UTC,
+    InternetExchange,
+    Network,
+    Facility,
+    Organization,
+)
 import re
 import time
 import datetime
@@ -53,7 +59,7 @@ def hook_delete(sender, **kwargs):
 
 #    print "%d %s deleted from search index " % (obj.id, tag)
 
-searchable_models = [InternetExchange, Network, Facility]
+searchable_models = [InternetExchange, Network, Facility, Organization]
 
 for model in searchable_models:
     post_save.connect(hook_save, sender=model)
@@ -67,7 +73,7 @@ def search(term):
     Returns result dict
     """
 
-    search_tags = ("fac", "ix", "net")
+    search_tags = ("fac", "ix", "net", "org")
     ref_dict = peeringdb_server.rest.ref_dict()
     t = time.time()
 
@@ -160,6 +166,10 @@ def search(term):
     # rid of all the ifs
     for tag, index in list(search_index.items()):
         for id, data in list(index.items()):
+
+            if tag == "org":
+                data.org_id = data.id
+
             if unaccent(data.name).find(term) > -1:
                 result[tag].append(
                     {"id": id, "name": data.search_result_name, "org_id": data.org_id}

@@ -2272,6 +2272,14 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_filter_org_asn(self):
+        data = self.db_guest.all("org", asn=SHARED["net_r_ok"].asn)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], SHARED["org_r_ok"].id)
+
+    ##########################################################################
+
     def test_guest_005_list_filter_netixlan_related(self):
         self.assert_list_filter_related("netixlan", "net")
         self.assert_list_filter_related("netixlan", "ixlan")

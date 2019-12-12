@@ -32,12 +32,22 @@ class AdvancedSearchExportTest(ClientCase):
 
         ClientCase.setUpTestData()
 
-        # create organization
-        cls.org = Organization.objects.create(name="Test Org", status="ok")
-
         entity_count = list(range(1, 4))
 
         countries = ["US", "FI", ""]
+
+        # create orgs
+
+        # create exchanges
+        cls.org = [
+            Organization.objects.create(
+                name="Organization {}".format(i),
+                country=countries[i - 1],
+                city="City {}".format(i),
+                status="ok",
+            )
+            for i in entity_count
+        ]
 
         # create networks
         cls.net = [
@@ -48,7 +58,7 @@ class AdvancedSearchExportTest(ClientCase):
                 policy_general="Open",
                 info_traffic="0-20 Mbps",
                 asn=i,
-                org=cls.org,
+                org=cls.org[i - 1],
             )
             for i in entity_count
         ]
@@ -61,7 +71,7 @@ class AdvancedSearchExportTest(ClientCase):
                 country=countries[i - 1],
                 city="City {}".format(i),
                 status="ok",
-                org=cls.org,
+                org=cls.org[i - 1],
             )
             for i in entity_count
         ]
@@ -77,7 +87,7 @@ class AdvancedSearchExportTest(ClientCase):
                 npanxx="{}-{}".format(i, i),
                 country=countries[i - 1],
                 zipcode=i,
-                org=cls.org,
+                org=cls.org[i - 1],
             )
             for i in entity_count
         ]
@@ -198,3 +208,34 @@ class AdvancedSearchExportTest(ClientCase):
         client = Client()
         response = client.get("/export/advanced-search/ix/csv?name__contains=Exchange")
         assert response.content.decode("utf-8").replace("\r\n", "\n").rstrip() == self.expected_data("ix", "csv")
+
+    def test_export_org_json(self):
+        """ test json export of organization search """
+        client = Client()
+        response = client.get(
+            "/export/advanced-search/org/json?name_search=Organization"
+        )
+        self.assertEqual(
+            json.loads(response.content), json.loads(self.expected_data("org", "json"))
+        )
+
+    def test_export_org_json_pretty(self):
+        """ test pretty json export of organization search """
+        client = Client()
+        response = client.get(
+            "/export/advanced-search/org/json-pretty?name_search=Organization"
+        )
+
+        assert json.loads(response.content) == json.loads(self.expected_data("org", "jsonpretty"))
+
+        # TODO: better check for pretty json formatting
+
+        assert len(re.findall(r"\n  ", response.content.decode("utf-8"))) > 0
+
+    def test_export_org_csv(self):
+        """ test csv export of organization search """
+        client = Client()
+        response = client.get(
+            "/export/advanced-search/org/csv?name_search=Organization"
+        )
+        assert response.content.decode("utf-8").replace("\r\n", "\n").rstrip() == self.expected_data("org", "csv")

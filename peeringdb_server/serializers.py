@@ -2069,6 +2069,24 @@ class OrganizationSerializer(ModelSerializer):
 
         _ref_tag = model.handleref.tag
 
+    @classmethod
+    def prepare_query(cls, qset, **kwargs):
+        """
+        Add special filter options
+
+        Currently supports:
+
+        - asn: filter by network asn
+        """
+        filters = {}
+
+        if "asn" in kwargs:
+            asn = kwargs.get("asn", [""])[0]
+            qset = qset.filter(net_set__asn=asn, net_set__status="ok")
+            filters.update({"asn": kwargs.get("asn")})
+
+        return qset, filters
+
 
 REFTAG_MAP = dict(
     [

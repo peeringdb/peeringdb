@@ -246,6 +246,7 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/view_suggest_fac.html
     - $SRC_DIR$/peeringdb_server/templates/site/view_suggest_ix.html
     - $SRC_DIR$/peeringdb_server/templates/site/view_suggest_net.html
+    - $SRC_DIR$/peeringdb_server/templates/site/advanced-search-org.html
     - $SRC_DIR$/peeringdb_server/templates/email/username-retrieve.txt
     - $SRC_DIR$/peeringdb_server/templates/email/password-reset.txt
     - $SRC_DIR$/peeringdb_server/templates/email/notify-org-admin-user-affil.txt
