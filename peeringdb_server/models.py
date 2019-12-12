@@ -42,6 +42,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_prefix_overlap,
+    validate_phonenumber,
 )
 
 SPONSORSHIP_LEVELS = (
@@ -1438,6 +1439,13 @@ class InternetExchange(pdb_models.InternetExchangeBase):
 
         return r
 
+    def validate_phonenumbers(self):
+        self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
+        self.policy_phone = validate_phonenumber(self.policy_phone, self.country.code)
+
+    def clean(self):
+        self.validate_phonenumbers()
+
 
 @reversion.register
 class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
@@ -2314,6 +2322,9 @@ class NetworkContact(pdb_models.ContactBase):
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["net"])
+
+    def clean(self):
+        self.phone = validate_phonenumber(self.phone)
 
 
 @reversion.register

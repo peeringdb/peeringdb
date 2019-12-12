@@ -102,7 +102,7 @@ URL = settings.API_URL
 CITY = "Chicago"
 COUNTRY = "US"
 CONTINENT = "North America"
-PHONE = "12345"
+PHONE = "+12065550199"
 WEBSITE = "http://www.test.apitest"
 STATE = "IL"
 ZIPCODE = "1-2345"
@@ -2894,6 +2894,65 @@ class TestJSON(unittest.TestCase):
 
         B.refresh_from_db()
         self.assertEqual(B.status, "deleted")
+
+    def test_z_misc_001_ix_phone_number_validation(self):
+        data = self.make_data_ix(org_id=SHARED["org_rw_ok"].id)
+
+        # test that valid number comes back properly formatted
+
+        data.update(
+            prefix=PREFIXES_V4[-1],
+            tech_phone="+1 206 555 0199",
+            policy_phone="+1 206 555 0199",
+        )
+
+        r_data = self.db_org_admin.create("ix", data, return_response=True).get("data")[
+            0
+        ]
+
+        assert r_data["tech_phone"] == "+12065550199"
+        assert r_data["policy_phone"] == "+12065550199"
+
+        # test that invalid numbers raise validation errors
+
+        self.assert_update(
+            self.db_org_admin,
+            "ix",
+            r_data["id"],
+            {},
+            test_failures={"invalid": {"tech_phone": "invalid number"}},
+        )
+
+        self.assert_update(
+            self.db_org_admin,
+            "ix",
+            r_data["id"],
+            {},
+            test_failures={"invalid": {"policy_phone": "invalid number"}},
+        )
+
+    def test_z_misc_001_poc_phone_number_validation(self):
+        data = self.make_data_poc(net_id=SHARED["net_rw_ok"].id)
+
+        # test that valid number comes back properly formatted
+
+        data.update(phone="+1 206 555 0199")
+
+        r_data = self.db_org_admin.create("poc", data, return_response=True).get(
+            "data"
+        )[0]
+
+        assert r_data["phone"] == "+12065550199"
+
+        # test that invalid numbers raise validation errors
+
+        self.assert_update(
+            self.db_org_admin,
+            "poc",
+            r_data["id"],
+            {},
+            test_failures={"invalid": {"phone": "invalid number"}},
+        )
 
     def test_z_misc_001_org_create(self):
 

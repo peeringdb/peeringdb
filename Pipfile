@@ -56,6 +56,7 @@ coreapi = ">=2.3.1"
 googlemaps = ">=2.5.1"
 passlib = ">=1.7.1"
 unidecode = ">=1.0.23"
+phonenumbers = "==8.11.1"
 
 [requires]
 python_version = "3.6"

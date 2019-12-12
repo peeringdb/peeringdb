@@ -48,6 +48,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_prefix_overlap,
+    validate_phonenumber,
 )
 
 from django.utils.translation import ugettext_lazy as _
@@ -1140,6 +1141,9 @@ class NetworkContactSerializer(ModelSerializer):
     def get_net(self, inst):
         return self.sub_serializer(NetworkSerializer, inst.network)
 
+    def validate_phone(self, value):
+        return validate_phonenumber(value)
+
 
 class NetworkIXLanSerializer(ModelSerializer):
     """
@@ -2027,6 +2031,23 @@ class InternetExchangeSerializer(ModelSerializer):
 
     def get_net_count(self, inst):
         return inst.network_count
+
+    def validate(self, data):
+        try:
+            data["tech_phone"] = validate_phonenumber(
+                data["tech_phone"], data["country"]
+            )
+        except ValidationError as exc:
+            raise serializers.ValidationError({"tech_phone": exc.message})
+
+        try:
+            data["policy_phone"] = validate_phonenumber(
+                data["policy_phone"], data["country"]
+            )
+        except ValidationError as exc:
+            raise serializers.ValidationError({"policy_phone": exc.message})
+
+        return data
 
 
 class OrganizationSerializer(ModelSerializer):

@@ -186,6 +186,57 @@ function moveCursorToEnd(el) {
     }
 }
 
+/**
+ * Tools to handle pre and post processing of ix/net/fac/org views
+ * submissions
+ * @class ViewTools
+ * @namespace PeeringDB
+ */
+
+PeeringDB.ViewTools = {
+
+  /**
+   * applies the value of a field as it was returned by the
+   * server in the response to the submissions to the corresponding
+   * form element on the page
+   *
+   * this only needs to be done for fields that rely on server side
+   * data validation that can't be done locally
+   *
+   * @method apply_data
+   * @param {jQuery} container - main js-edit element for the submissions
+   * @param {Object} data - object literal containing server response for the entity
+   * @param {String} field - field name
+   */
+
+  apply_data : function(container, data, field) {
+
+    var input;
+    input = $('[data-edit-name="'+field+'"]').data("edit-input-instance")
+    if(input) {
+      input.set(data[field]);
+      input.apply(data[field]);
+    }
+  },
+
+  /**
+   * after submission cleanup / handling
+   *
+   * @method after_submit
+   * @param {jQuery} container - main js-edit element for the submissions
+   * @param {Object} data - object literal containing server response for the entity
+   */
+
+  after_submit : function(container, data) {
+    var target = container.data("edit-target")
+    if(target == "api:ix:update") {
+      this.apply_data(container, data, "tech_phone");
+      this.apply_data(container, data, "policy_phone");
+    }
+  }
+
+}
+
 PeeringDB.ViewActions = {
 
   init : function() {
@@ -1054,6 +1105,7 @@ twentyc.editable.module.register(
 
     init : function() {
       this.listing_init();
+
       this.container.on("listing:row-add", function(e, rowId, row, data, me) {
         var target = me.target;
         if(!target)
@@ -1107,9 +1159,18 @@ twentyc.editable.module.register(
 
     submit : function(id, data, row, trigger, container) {
       data._id = id;
+      var me = this;
+      var sentData = data;
       this.target.data = data;
       this.target.args[2] = "update"
       this.target.context = row;
+
+      $(this.target).on("success", function(ev, data) {
+        var finalizer = "finalize_update_"+me.target.args[1];
+        if(me[finalizer]) {
+          me[finalizer](id, row, data);
+        }
+      });
       this.target.execute();
     },
 
@@ -1181,11 +1242,19 @@ twentyc.editable.module.register(
 
     finalize_row_poc : function(rowId, row, data) {
       row.editable("payload", {
-        net_id : data.network,
+        net_id : data.net_id,
         role : data.role
       })
 
+      //row.find(".phone").val(data.phone);
+      var phone = row.find(".phone").data("edit-input-instance")
+      phone.set(data.phone)
+
       row.data("edit-label", gettext("Network Contact") + ": "+data.name);  ///
+    },
+
+    finalize_update_poc : function(rowId, row, data) {
+      row.find(".phone").text(data.phone);
     },
 
     // FINALIZERS: NETIX

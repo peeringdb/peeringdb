@@ -11,9 +11,17 @@ from peeringdb_server.validators import (
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_prefix_overlap,
+    validate_phonenumber,
 )
 
-from peeringdb_server.models import Organization, InternetExchange, IXLan, IXLanPrefix
+from peeringdb_server.models import (
+    Organization,
+    InternetExchange,
+    IXLan,
+    IXLanPrefix,
+    Network,
+    NetworkContact,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -142,3 +150,58 @@ def test_validate_prefix_overlap():
 
     with pytest.raises(ValidationError) as exc:
         validate_prefix_overlap("198.32.124.0/23")
+
+
+@pytest.mark.djangodb
+def test_validate_phonenumber():
+
+    # test standalone validator
+
+    validate_phonenumber("+1 206 555 0199")
+    validate_phonenumber("012065550199", "US")
+
+    with pytest.raises(ValidationError):
+        validate_phonenumber("invalid number")
+
+    with pytest.raises(ValidationError):
+        validate_phonenumber("012065550199")
+
+    # test model field validation
+
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(
+        name="Text exchange",
+        status="ok",
+        org=org,
+        country="US",
+        city="Some city",
+        region_continent="North America",
+        media="Ethernet",
+    )
+    net = Network.objects.create(name="Text network", asn=12345, status="ok", org=org)
+    poc = NetworkContact.objects.create(network=net, status="ok", role="Abuse")
+
+    # test poc phone validation
+
+    with pytest.raises(ValidationError):
+        poc.phone = "invalid"
+        poc.full_clean()
+
+    poc.phone = "+1 206 555 0199"
+    poc.full_clean()
+
+    # test ix phone validation
+
+    with pytest.raises(ValidationError):
+        ix.tech_phone = "invalid"
+        ix.full_clean()
+
+    ix.tech_phone = "+1 206 555 0199"
+    ix.full_clean()
+
+    with pytest.raises(ValidationError):
+        ix.policy_phone = "invalid"
+        ix.full_clean()
+
+    ix.policy_phone = "+1 206 555 0199"
+    ix.full_clean()

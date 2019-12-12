@@ -299,8 +299,8 @@ $(document).ready(function() {
   PeeringDB.ViewActions.init();
 
   var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
-  editForm.on('action-success:submit', function() {
-    console.log("Incomplete data check after save");
+  editForm.on('action-success:submit', function(e,data) {
+    PeeringDB.ViewTools.after_submit(editForm, data);
     setTimeout(PeeringDB.incomplete_data_notify, 500);
   });
 

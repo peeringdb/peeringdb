@@ -132,7 +132,7 @@ class Mock(object):
 
                 # phone numbers
                 elif field.name.find("phone") > -1:
-                    data[field.name] = "00000000"
+                    data[field.name] = "+12065550199"
 
                 # URLs
                 elif field.name.find("url") > -1:
