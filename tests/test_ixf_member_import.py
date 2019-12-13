@@ -73,15 +73,17 @@ class JsonMembersListTestCase(ClientCase):
             cls.entities["ix"] = [
                 InternetExchange.objects.create(
                     name="Test Exchange", org=cls.entities["org"][0], status="ok"
-                )
+                ),
+                InternetExchange.objects.create(
+                    name="Test Exchange 2", org=cls.entities["org"][0], status="ok"
+                ),
+                InternetExchange.objects.create(
+                    name="Test Exchange 3", org=cls.entities["org"][0], status="ok"
+                ),
             ]
 
             # create ixlan(s)
-            cls.entities["ixlan"] = [
-                IXLan.objects.create(ix=cls.entities["ix"][0], status="ok"),
-                IXLan.objects.create(ix=cls.entities["ix"][0], status="ok"),
-                IXLan.objects.create(ix=cls.entities["ix"][0], status="ok"),
-            ]
+            cls.entities["ixlan"] = [ix.ixlan for ix in cls.entities["ix"]]
 
             # create ixlan prefix(s)
             cls.entities["ixpfx"] = [
@@ -677,7 +679,8 @@ class TestImportPreview(ClientCase):
             name="Test IX", status="ok", org=cls.org
         )
 
-        cls.ixlan = IXLan.objects.create(status="ok", ix=cls.ix)
+        cls.ixlan = cls.ix.ixlan
+
         IXLanPrefix.objects.create(
             ixlan=cls.ixlan, status="ok", prefix="195.69.144.0/22", protocol="IPv4"
         )

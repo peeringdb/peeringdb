@@ -131,7 +131,7 @@ def test_validate_prefixlen():
 def test_validate_prefix_overlap():
     org = Organization.objects.create(name="Test org", status="ok")
     ix = InternetExchange.objects.create(name="Text exchange", status="ok", org=org)
-    ixlan = IXLan.objects.create(ix=ix, status="ok")
+    ixlan = ix.ixlan
 
     pfx1 = IXLanPrefix.objects.create(
         ixlan=ixlan,

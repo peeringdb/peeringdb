@@ -110,3 +110,9 @@ class Backend(BaseBackend):
         if not isinstance(obj, (models.IXLanPrefix, models.NetworkIXLan)):
             obj.clean()
 
+
+    def save(self, obj):
+        if obj.HandleRef.tag == "ix":
+            obj.save(create_ixlan=False)
+        else:
+            obj.save()

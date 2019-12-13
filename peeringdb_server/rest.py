@@ -680,7 +680,7 @@ def ref_dict():
     return {tag: view.model for tag, view, na in router.registry}
 
 
-def model_view_set(model):
+def model_view_set(model, methods=None):
     """
     shortcut for peeringdb models to generate viewset and register in the API urls
     """
@@ -700,6 +700,9 @@ def model_view_set(model):
     # create the type
     viewset_t = type(model + "ViewSet", (ModelViewSet,), clsdict)
 
+    if methods:
+        viewset_t.http_method_names = methods
+
     # register with the rest router for incoming requests
     ref_tag = model_t.handleref.tag
     router.register(ref_tag, viewset_t, basename=ref_tag)
@@ -710,7 +713,7 @@ def model_view_set(model):
 FacilityViewSet = model_view_set("Facility")
 InternetExchangeViewSet = model_view_set("InternetExchange")
 InternetExchangeFacilityViewSet = model_view_set("InternetExchangeFacility")
-IXLanViewSet = model_view_set("IXLan")
+IXLanViewSet = model_view_set("IXLan", methods=["get", "put"])
 IXLanPrefixViewSet = model_view_set("IXLanPrefix")
 NetworkViewSet = model_view_set("Network")
 NetworkContactViewSet = model_view_set("NetworkContact")

@@ -1921,8 +1921,13 @@ class InternetExchangeSerializer(ModelSerializer):
         # create ix
         r = super(InternetExchangeSerializer, self).create(validated_data)
 
+        ixlan = r.ixlan
+
         # create ixlan
-        ixlan = IXLan.objects.create(name="Main", ix=r, status="pending")
+        # if False:# not ixlan:
+        #    ixlan = IXLan(ix=r, status="pending")
+        #    ixlan.clean()
+        #    ixlan.save()
 
         # see if prefix already exists in a deleted state
         ixpfx = IXLanPrefix.objects.filter(prefix=prefix, status="deleted").first()

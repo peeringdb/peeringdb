@@ -1310,6 +1310,17 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         )
 
     @property
+    def ixlan(self):
+        """
+        Returns the ixlan for this exchange
+
+        As per #21 each exchange will get one ixlan with a matching
+        id, but the schema is to remain unchanged until a major
+        version bump.
+        """
+        return self.ixlan_set.first()
+
+    @property
     def networks(self):
         """
         Returns all active networks at this exchange
@@ -1396,6 +1407,29 @@ class InternetExchange(pdb_models.InternetExchangeBase):
                 ixpfx.status = "ok"
                 ixpfx.save()
 
+    def save(self, create_ixlan=True, **kwargs):
+        """
+        When an internet exchange is saved, make sure the ixlan for it
+        exists
+
+        Keyword Argument(s):
+
+        - create_ixlan (`bool`=True): if True and the ix is missing
+          it's ixlan, create it
+        """
+        r = super(InternetExchange, self).save(**kwargs)
+
+        if not self.ixlan and create_ixlan:
+            ixlan = IXLan(ix=self, status=self.status, mtu=0)
+
+            # ixlan id will be set to match ix id in ixlan's clean()
+            # call
+            ixlan.clean()
+
+            ixlan.save()
+
+        return r
+
 
 @reversion.register
 class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
@@ -1441,6 +1475,11 @@ class IXLan(pdb_models.IXLanBase):
     Describes a LAN at an exchange
     """
 
+    # as we are preparing to drop IXLans from the schema, as an interim
+    # step (#21) we are giving each ix one ixlan with matching ids, so we need
+    # to have an id field that doesnt automatically increment
+    id = models.IntegerField(primary_key=True)
+
     ix = models.ForeignKey(InternetExchange, on_delete=models.CASCADE, default=0, related_name="ixlan_set")
     ixf_ixp_member_list_url = models.URLField(null=True, blank=True)
     ixf_ixp_import_enabled = models.BooleanField(default=False)
@@ -1459,7 +1498,7 @@ class IXLan(pdb_models.IXLanBase):
         """
         Returns a descriptive label of the ixlan for logging purposes
         """
-        return "ixlan{} {} {}".format(self.id, self.name, self.ix.name)
+        return "ixlan{} {}".format(self.id, self.ix.name)
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, id):
@@ -1526,6 +1565,27 @@ class IXLan(pdb_models.IXLanBase):
             if pfx.test_ip_address(ipv6):
                 return True
         return False
+
+    def clean(self):
+        # id is set and does not match the parent ix id
+
+        if self.id and self.id != self.ix.id:
+            raise ValidationError({"id": _("IXLan id needs to match parent ix id")})
+
+        # id is not set (new ixlan)
+
+        if not self.id:
+
+            # ixlan for ix already exists
+
+            if self.ix.ixlan:
+                raise ValidationError(_("Ixlan for exchange already exists"))
+
+        # enforce correct id moving forward
+
+        self.id = self.ix.id
+
+        return super(IXLan, self).clean()
 
     @reversion.create_revision()
     def add_netixlan(self, netixlan_info, save=True, save_others=True):

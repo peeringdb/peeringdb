@@ -91,9 +91,7 @@ class AdvancedSearchExportTest(ClientCase):
         ]
 
         # create ixlans
-        cls.ixlan = [
-            IXLan.objects.create(ix=cls.ix[i - 1], status="ok") for i in entity_count
-        ]
+        cls.ixlan = [ix.ixlan for ix in cls.ix]
 
         # create netixlans
         cls.netixlan = [
