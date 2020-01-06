@@ -279,7 +279,8 @@ class FieldMethodValidator(object):
 class ExtendedURLField(serializers.URLField):
     def __init__(self, **kwargs):
         super(ExtendedURLField, self).__init__(**kwargs)
-        validator = URLValidator(message=self.error_messages["invalid"])
+        validator = URLValidator(schemes=("http", "https", "telnet", "ssh"),
+                                 message=self.error_messages["invalid"])
         self.validators = []
         self.validators.append(validator)
 
