@@ -160,7 +160,12 @@ class UniqueFieldValidator(object):
         id = getattr(self.instance, "id", 0)
         collisions = {}
         for field in self.fields:
-            filters = {field: attrs.get(field)}
+            value = attrs.get(field)
+
+            if value == "" or value is None:
+                continue
+
+            filters = {field: value}
             if not self.check_deleted:
                 filters.update(status="ok")
             if self.model.objects.filter(**filters).exclude(id=id).exists():
