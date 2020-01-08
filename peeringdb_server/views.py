@@ -95,6 +95,7 @@ BASE_ENV = {
     "OAUTH_ENABLED": dj_settings.OAUTH_ENABLED,
     "PEERINGDB_VERSION": settings.PEERINGDB_VERSION,
     "TUTORIAL_MODE": settings.TUTORIAL_MODE,
+    "RELEASE_ENV": settings.RELEASE_ENV,
 }
 
 
@@ -154,11 +155,25 @@ class DoNotRender(object):
         return []
 
 
+def beta_sync_dt():
+    dt = datetime.datetime.now()
+
+    while dt.weekday() != 6:
+        dt += datetime.timedelta(1)
+
+    return dt.replace(hour=0, minute=0, second=0)
+
+
 def make_env(**data):
     env = {}
     env.update(**BASE_ENV)
     env.update(**{"global_stats": global_stats()})
     env.update(**data)
+
+
+    if settings.RELEASE_ENV == "beta":
+        env.update(beta_sync_dt=beta_sync_dt())
+
     return env
 
 
@@ -801,6 +816,10 @@ def view_index(request, errors=None):
 
     env = BASE_ENV.copy()
     env.update({"errors": errors, "global_stats": global_stats(), "recent": recent})
+
+    if settings.RELEASE_ENV == "beta":
+        env.update(beta_sync_dt=beta_sync_dt())
+
     return HttpResponse(template.render(env, request))
 
 
@@ -831,6 +850,10 @@ def view_component(
             "bottom_template_name": "site/view_%s_bottom.html" % component,
         }
     )
+
+    if settings.RELEASE_ENV == "beta":
+        env.update(beta_sync_dt=beta_sync_dt())
+
     env.update(**kwargs)
     return HttpResponse(template.render(env, request))
 

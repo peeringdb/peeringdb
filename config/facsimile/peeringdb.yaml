@@ -240,6 +240,7 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/inline_search_hidden.html
     - $SRC_DIR$/peeringdb_server/templates/site/verification_banner.html
     - $SRC_DIR$/peeringdb_server/templates/site/tutorial_mode_banner.html
+    - $SRC_DIR$/peeringdb_server/templates/site/beta_banner.html
     - $SRC_DIR$/peeringdb_server/templates/site/header-sponsorships.html
     - $SRC_DIR$/peeringdb_server/templates/site/search_result_frame.html
     - $SRC_DIR$/peeringdb_server/templates/site/search_result.html
