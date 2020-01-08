@@ -1,0 +1,1 @@
+Marks object as deleted

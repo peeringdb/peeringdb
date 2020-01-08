@@ -95,6 +95,11 @@ install:
     replace: peeringdb
     files:
     - $SRC_DIR$/manage.py
+    - $SRC_DIR$/docs/api_list.md
+    - $SRC_DIR$/docs/api_retrieve.md
+    - $SRC_DIR$/docs/api_delete.md
+    - $SRC_DIR$/docs/api_create.md
+    - $SRC_DIR$/docs/api_update.md
     - $SRC_DIR$/peeringdb_server/api_cache.py
     - $SRC_DIR$/peeringdb_server/__init__.py
     - $SRC_DIR$/peeringdb_server/admin.py
