@@ -2,7 +2,7 @@
   "errors": [
     "Invalid speed value: fast",
     "Could not find ipv4 or 6 address in vlan_list entry for vlan_id 1 (AS2906)",
-    "Ip address error 'u'195.69.146.error' does not appear to be an IPv4 or IPv6 address' in vlan_list entry for vlan_id 2"
+    "Ip address error ''195.69.146.error' does not appear to be an IPv4 or IPv6 address' in vlan_list entry for vlan_id 2"
   ],
   "data": [
     {

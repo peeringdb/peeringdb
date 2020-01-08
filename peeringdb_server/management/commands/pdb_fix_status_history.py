@@ -22,7 +22,7 @@ class Command(BaseCommand):
 
     def log(self, msg):
         if not self.commit:
-            self.stdout.write(u"[pretend] {}".format(msg))
+            self.stdout.write("[pretend] {}".format(msg))
         else:
             self.stdout.write(msg)
 

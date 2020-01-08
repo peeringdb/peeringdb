@@ -9,7 +9,7 @@ import datetime
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 import django_countries
-import models
+from . import models
 import django_peeringdb.const as const
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
@@ -59,7 +59,7 @@ def countries_w_blank(request):
         {
             "countries_b": [{"id": "", "name": ""}]
             + [
-                {"id": unicode(code), "name": unicode(name)}
+                {"id": str(code), "name": str(name)}
                 for code, name in list(django_countries.countries)
             ]
         }
@@ -74,7 +74,7 @@ def countries(request):
     return JsonResponse(
         {
             "countries": [
-                {"id": unicode(code), "name": unicode(name)}
+                {"id": str(code), "name": str(name)}
                 for code, name in list(django_countries.countries)
             ]
         }
@@ -102,25 +102,11 @@ def facilities(request):
     return JsonResponse(
         {
             "facilities": [
-                {"id": fac.id, "name": unicode(fac.name)}
+                {"id": fac.id, "name": str(fac.name)}
                 for fac in models.Facility.handleref.all().undeleted().order_by("name")
             ]
         }
     )
-
-
-def decode(value):
-    """
-    django-peeringdb imports unicode literals from __future__,
-    while peeringdb_server does not at this point.
-
-    so we may get already decoded values for some enums
-    while others still need to be decoded.
-    """
-    try:
-        return value.decode("utf-8")
-    except UnicodeEncodeError:
-        return value
 
 
 def enum(request, name):
@@ -157,7 +143,7 @@ def enum(request, name):
                     "id": id,
                     # as of django-peeringdb 1.0.0 already comes in
                     # translated
-                    "name": decode(n),
+                    "name": n,
                 }
                 for id, n in getattr(const, name.upper())
             ]

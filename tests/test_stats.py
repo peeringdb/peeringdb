@@ -1,8 +1,8 @@
-import StringIO
+import io
 import datetime
 import pytest
 
-from util import ClientCase, Group
+from .util import ClientCase, Group
 
 from django.core.management import call_command
 from django.conf import settings
@@ -47,17 +47,17 @@ def setup_data():
         user.set_verified()
 
 
-@pytest.mark.djangodb
+@pytest.mark.django_db
 def test_generate_for_past_date(db, data_stats_past):
-    output = StringIO.StringIO()
+    output = io.StringIO()
     setup_data()
     call_command("pdb_stats", date=DATE_PAST.strftime("%Y%m%d"), stdout=output)
     assert output.getvalue() == data_stats_past.txt
 
 
-@pytest.mark.djangodb
+@pytest.mark.django_db
 def test_generate_for_current_date(db, data_stats_current):
-    output = StringIO.StringIO()
+    output = io.StringIO()
     setup_data()
     call_command("pdb_stats", stdout=output)
-    assert output.getvalue().find(data_stats_current.txt) > -1
+    assert data_stats_current.txt in output.getvalue()

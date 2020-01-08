@@ -68,9 +68,7 @@ class AdminTests(TestCase):
         cls.admin_user.save()
 
         # set up some ixlans
-        cls.entities["ixlan"] = [
-            models.IXLan.objects.create(ix=ix, status="ok") for ix in cls.entities["ix"]
-        ]
+        cls.entities["ixlan"] = [ix.ixlan for ix in cls.entities["ix"]]
 
         # set up a prefix
         cls.entities["ixpfx"] = [
@@ -170,7 +168,7 @@ class AdminTests(TestCase):
         self.assertEqual(t_org.status, "ok")
 
         # TEST 2 - Dont allow merging of target org into target org
-        with self.assertRaises(ValueError) as inst:
+        with pytest.raises(ValueError):
             admin.merge_organizations([t_org], t_org, request)
 
     def test_org_unmerge(self):
@@ -185,7 +183,7 @@ class AdminTests(TestCase):
         t_org = self.entities["org"][3]
         admin.merge_organizations(self.entities["org"][4:6], t_org, request)
 
-        print t_org
+        print(t_org)
 
         # check that merge log exists
         merges = models.OrganizationMerge.objects.filter(to_org=t_org)
@@ -234,8 +232,9 @@ class AdminTests(TestCase):
         response = c.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         for i, n in models.COMMANDLINE_TOOLS:
-            self.assertGreater(
-                response.content.find('<option value="{}">{}</option>'.format(i, n)), -1
+            assert (
+                '<option value="{}">{}</option>'.format(i, n)
+                in response.content.decode()
             )
 
     def test_commandline_tool_renumber_lans(self):
@@ -247,23 +246,10 @@ class AdminTests(TestCase):
         data = {"tool": "pdb_renumber_lans"}
         url = "/cp/peeringdb_server/commandlinetool/prepare/"
         response = c.post(url, data, follow=True)
-        cont = response.content
-        self.assertEqual(response.status_code, 200)
-        self.assertGreater(
-            cont.find(
-                '<label class="required" for="id_old_prefix">Old prefix:</label>'
-            ),
-            -1,
-        )
-        self.assertGreater(
-            cont.find(
-                '<label class="required" for="id_new_prefix">New prefix:</label>'
-            ),
-            -1,
-        )
-        self.assertGreater(
-            cont.find('<label class="required" for="id_exchange">Exchange:</label>'), -1
-        )
+        cont = response.content.decode("utf-8")
+        assert response.status_code == 200
+        assert '<label class="required" for="id_old_prefix">Old prefix:</label>' in cont
+        assert '<label class="required" for="id_exchange">Exchange:</label>' in cont
 
         # test post to renumber lans command form (preview)
         data = {
@@ -274,31 +260,18 @@ class AdminTests(TestCase):
         }
         url = "/cp/peeringdb_server/commandlinetool/preview/"
         response = c.post(url, data, follow=True)
-        cont = response.content
-        self.assertEqual(response.status_code, 200)
-        self.assertGreater(
-            cont.find(
-                "[pretend] Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24"
-            ),
-            -1,
+        cont = response.content.decode("utf-8")
+
+        assert response.status_code == 200
+        assert "[pretend] Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24" in cont
+        assert (
+            "[pretend] Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37" in cont
         )
-        self.assertGreater(
-            cont.find(
-                "[pretend] Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37"
-            ),
-            -1,
+        assert (
+            "[pretend] Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38" in cont
         )
-        self.assertGreater(
-            cont.find(
-                "[pretend] Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38"
-            ),
-            -1,
-        )
-        self.assertGreater(
-            cont.find(
-                "[pretend] Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39"
-            ),
-            -1,
+        assert (
+            "[pretend] Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39" in cont
         )
 
         # test post to renumber lans command form
@@ -310,21 +283,14 @@ class AdminTests(TestCase):
         }
         url = "/cp/peeringdb_server/commandlinetool/run/"
         response = c.post(url, data, follow=True)
-        cont = response.content
-        self.assertEqual(response.status_code, 200)
 
-        self.assertGreater(
-            cont.find(">Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24"), -1
-        )
-        self.assertGreater(
-            cont.find(">Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37"), -1
-        )
-        self.assertGreater(
-            cont.find(">Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38"), -1
-        )
-        self.assertGreater(
-            cont.find(">Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39"), -1
-        )
+        cont = response.content.decode("utf-8")
+        assert response.status_code == 200
+
+        assert "Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24" in cont
+        assert "Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37" in cont
+        assert "Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38" in cont
+        assert "Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39" in cont
 
         for netixlan in self.entities["netixlan"]:
             netixlan.refresh_from_db()

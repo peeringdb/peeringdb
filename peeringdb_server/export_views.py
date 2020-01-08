@@ -1,8 +1,8 @@
 import json
 import datetime
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import csv
-import StringIO
+import io
 import collections
 
 from django.http import JsonResponse, HttpResponse
@@ -90,7 +90,7 @@ def view_export_ixf_ix_members(request, ix_id):
     return HttpResponse(
         export_ixf_ix_members(
             IXLan.objects.filter(ix_id=ix_id, status="ok"),
-            pretty=request.GET.has_key("pretty"),
+            pretty="pretty" in request.GET,
         ),
         content_type="application/json",
     )
@@ -100,7 +100,7 @@ def view_export_ixf_ixlan_members(request, ixlan_id):
     return HttpResponse(
         export_ixf_ix_members(
             IXLan.objects.filter(id=ixlan_id, status="ok"),
-            pretty=request.GET.has_key("pretty"),
+            pretty="pretty" in request.GET,
         ),
         content_type="application/json",
     )
@@ -204,14 +204,14 @@ class ExportView(View):
             return ""
 
         response = HttpResponse(content_type="text/csv")
-        csv_writer = csv.DictWriter(response, fieldnames=data[0].keys())
+        csv_writer = csv.DictWriter(response, fieldnames=list(data[0].keys()))
 
         csv_writer.writeheader()
 
         for row in data:
-            for k, v in row.items():
-                if isinstance(v, unicode):
-                    row[k] = v.encode("utf-8")
+            for k, v in list(row.items()):
+                if isinstance(v, str):
+                    row[k] = u"{}".format(v)
             csv_writer.writerow(row)
 
         return response
@@ -245,7 +245,7 @@ class AdvancedSearchExportView(ExportView):
         viewset = RestViewSets[self.tag].as_view({"get": "list"})
 
         api_request = request_factory.get(
-            "/api/{}/?{}".format(self.tag, urllib.urlencode(params))
+            "/api/{}/?{}".format(self.tag, urllib.parse.urlencode(params))
         )
 
         # we want to use the same user as the original request
@@ -275,7 +275,7 @@ class AdvancedSearchExportView(ExportView):
         Returns:
             - list: list containing rendered data rows ready for export
         """
-        if self.tag not in ["net", "ix", "fac"]:
+        if self.tag not in ["net", "ix", "fac", "org"]:
             raise ValueError(_("Invalid tag"))
         data_function = getattr(self, "generate_{}".format(self.tag))
         return data_function(request)
@@ -368,6 +368,32 @@ class AdvancedSearchExportView(ExportView):
                         ("Country", row["country"]),
                         ("City", row["city"]),
                         ("Networks", row["net_count"]),
+                    ]
+                )
+            )
+        return download_data
+
+    def generate_org(self, request):
+        """
+        Fetch organization data from the api according to request and then render
+        it ready for export
+
+        Arguments:
+            - request <Request>
+
+        Returns:
+            - list: list containing rendered data ready for export
+        """
+
+        data = self.fetch(request)
+        download_data = []
+        for row in data:
+            download_data.append(
+                collections.OrderedDict(
+                    [
+                        ("Name", row["name"]),
+                        ("Country", row["country"]),
+                        ("City", row["city"]),
                     ]
                 )
             )

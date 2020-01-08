@@ -20,9 +20,9 @@ class Command(BaseCommand):
 
     def log(self, msg):
         if not self.commit:
-            print "%s [pretend]" % msg
+            print("%s [pretend]" % msg)
         else:
-            print msg
+            print(msg)
 
     @reversion.create_revision()
     def handle(self, *args, **options):

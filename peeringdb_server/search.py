@@ -1,7 +1,13 @@
 from django.db.models.signals import post_save, pre_delete
 from django.db.models import Q
 import peeringdb_server.rest
-from peeringdb_server.models import UTC, InternetExchange, Network, Facility
+from peeringdb_server.models import (
+    UTC,
+    InternetExchange,
+    Network,
+    Facility,
+    Organization,
+)
 import re
 import time
 import datetime
@@ -53,7 +59,7 @@ def hook_delete(sender, **kwargs):
 
 #    print "%d %s deleted from search index " % (obj.id, tag)
 
-searchable_models = [InternetExchange, Network, Facility]
+searchable_models = [InternetExchange, Network, Facility, Organization]
 
 for model in searchable_models:
     post_save.connect(hook_save, sender=model)
@@ -67,7 +73,7 @@ def search(term):
     Returns result dict
     """
 
-    search_tags = ("fac", "ix", "net")
+    search_tags = ("fac", "ix", "net", "org")
     ref_dict = peeringdb_server.rest.ref_dict()
     t = time.time()
 
@@ -76,14 +82,14 @@ def search(term):
         # whole db takes 5ish seconds, too slow to cache inline here
         search_index = {
             tag: {obj.id: obj for obj in model.objects.filter(status__in=["ok"])}
-            for tag, model in ref_dict.items()
+            for tag, model in list(ref_dict.items())
             if tag in search_tags
         }
 
-        for typ, stor in search_index.items():
-            print "CACHED: %d items in %s" % (len(stor), typ)
+        for typ, stor in list(search_index.items()):
+            print("CACHED: %d items in %s" % (len(stor), typ))
 
-        tag_id_re = re.compile("(" + "|".join(search_tags) + "|asn|as)(\d+)")
+        tag_id_re = re.compile(r"(" + r"|".join(search_tags) + r"|asn|as)(\d+)")
 
         # FIXME: for now lets force a flush every 120 seconds, might want to look
         # at an event based update solution instead
@@ -107,7 +113,7 @@ def search(term):
     ut = SEARCH_CACHE.get("update_t", 0)
     if t - ut > 600:
         dut = datetime.datetime.fromtimestamp(ut).replace(tzinfo=UTC())
-        print "Updating search index with newly created/updates objects"
+        print("Updating search index with newly created/updates objects")
         search_index_update = {
             tag: {
                 obj.id: obj
@@ -115,10 +121,10 @@ def search(term):
                     Q(created__gte=dut) | Q(updated__gte=dut)
                 ).filter(status="ok")
             }
-            for tag, model in ref_dict.items()
+            for tag, model in list(ref_dict.items())
             if tag in search_tags
         }
-        for tag, objects in search_index_update.items():
+        for tag, objects in list(search_index_update.items()):
             if tag not in SEARCH_CACHE["search_index"]:
                 SEARCH_CACHE["search_index"][tag] = dict(
                     [(obj.id, obj) for obj in ref_dict[tag].objects.filter(status="ok")]
@@ -130,12 +136,12 @@ def search(term):
     # FIXME: for some reason this gets unset sometimes - need to figure out
     # why - for now just recreate when its missing
     if not tag_id_re:
-        tag_id_re = re.compile("(" + "|".join(search_tags) + "|asn|as)(\d+)")
+        tag_id_re = re.compile(r"(" + r"|".join(search_tags) + r"|asn|as)(\d+)")
         SEARCH_CACHE["tag_id_re"] = tag_id_re
 
-    print "Search index retrieval took %.5f seconds" % (time.time() - t)
+    print("Search index retrieval took %.5f seconds" % (time.time() - t))
 
-    result = {tag: [] for tag, model in ref_dict.items()}
+    result = {tag: [] for tag, model in list(ref_dict.items())}
 
     term = unaccent(term)
 
@@ -158,8 +164,12 @@ def search(term):
     # FIXME  model should have a search_fields attr on it
     # this whole thing should be replaced with something more modular to get
     # rid of all the ifs
-    for tag, index in search_index.items():
-        for id, data in index.items():
+    for tag, index in list(search_index.items()):
+        for id, data in list(index.items()):
+
+            if tag == "org":
+                data.org_id = data.id
+
             if unaccent(data.name).find(term) > -1:
                 result[tag].append(
                     {"id": id, "name": data.search_result_name, "org_id": data.org_id}
@@ -205,7 +215,7 @@ def search(term):
                             }
                         )
 
-    for k, items in result.items():
+    for k, items in list(result.items()):
         result[k] = sorted(items, key=lambda row: row.get("name"))
 
     return result

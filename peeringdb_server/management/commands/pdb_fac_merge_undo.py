@@ -69,7 +69,7 @@ class Command(BaseCommand):
                 )
                 target = Facility.objects.get(id=match.group(2))
 
-                for source in sources.values():
+                for source in list(sources.values()):
                     if source.org.status != "ok":
                         self.log(
                             "[error] Parent organization {} of facility {} currently has status `{}`, as such the facility cannot be undeleted, please fix the organization and run the script again".format(
@@ -78,7 +78,7 @@ class Command(BaseCommand):
                         )
                         return
 
-                for source in sources.values():
+                for source in list(sources.values()):
                     if source.status == "ok" and not self.commit:
                         self.log(
                             "[warning] Looks like this merge has already been undone one way or another, please double check before committing this command"

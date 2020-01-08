@@ -42,10 +42,10 @@ $(window).bind("load", function() {
 <div class="header" id="header">
   <div class="container">
     <div class="row">
-      <div class="col-lg-3 col-md-4 col-sm-4 col-xs-{% if request.mobile %}12{% else %}6{% endif %} logo-container">
+      <div class="col-lg-3 col-md-4 col-sm-4 col-xs-12 logo-container">
         <a href="/"><img class="logo img-responsive" src="{{ STATIC_URL }}/pdb-logo-coloured.png" /></a>
       </div>
-      <div class="col-lg-5 col-md-5 col-sm-5 col-xs-{% if request.mobile %}12{% else %}6{% endif %} search-container">
+      <div class="col-lg-5 col-md-5 col-sm-5 col-xs-12 search-container">
         <form action="/search" method="POST">
           {% csrf_token %}
           <input placeholder="{% trans "Search here for a network, IX, or facility." %}" class="form-control" name="term" id="search" type="text" />

@@ -63,7 +63,27 @@
   <!-- fields -->
   <div class="view_fields">
   {% for row in data.fields %}
-    {% if not row.value|dont_render %}
+    {% if row.type == "group" %}
+      <div class="editable"
+           --data-edit-module="api_grouped_update"
+           data-edit-group="#view"
+           data-edit-target="{{ row.target }}"
+           data-edit-id="{{ row.id }}">
+           <div class="row view_row">
+             <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
+          </div>
+
+          <div class="editable payload">
+            {% for payload_row in row.payload %}
+            <div data-edit-name="{{ payload_row.name }}">{{ payload_row.value }}</div>
+            {% endfor %}
+          </div>
+
+    {% elif row.type == "group_end" %}
+      </div>
+    {% endif %}
+
+    {% if not row.value|dont_render and row.type != "group" and row.type != "group_end" %}
     {% if not row.admin or permissions.can_write %}
     <div class="row view_row">
 
@@ -72,10 +92,17 @@
         <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
       {% else %}
         <!-- row header -->
-        <div class="view_field col-xs-4 col-sm-5 col-md-4">{{ row.label }} {% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %}
-        {% if row.help_text %}
+        <div class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
+             {% if row.help_text %}
+             data-toggle="tooltip"
+             data-placement="top"
+             title="{{ row.help_text }}"
+             {% endif %}>{% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %} {{ row.label }}
+             {% if row.help_text %}<span class="glyphicon glyphicon-question-sign"></span>{% endif %}
+        {% if row.helper_text %}
           <div data-edit-toggled="edit" style="display:none;" class="help">{{ row.help_text }}</div>
-        {% endif %}</div>
+        {% endif %}
+        </div>
 
         <!-- row value -->
         {% if row.type == "url" %}
@@ -279,11 +306,12 @@ $(document).ready(function() {
   PeeringDB.ViewActions.init();
 
   var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
-  editForm.on('action-success:submit', function() {
-    console.log("Incomplete data check after save");
+  editForm.on('action-success:submit', function(e,data) {
+    PeeringDB.ViewTools.after_submit(editForm, data);
     setTimeout(PeeringDB.incomplete_data_notify, 500);
   });
 
+  $('[data-toggle="tooltip"]').tooltip({container:"body"});
 
 });
 </script>

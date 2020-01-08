@@ -4,6 +4,7 @@
 
 <div class="view_info">
 <div class="container">
+  {% include "site/beta_banner.html" %}
   {% include "site/oauth-login.html" with OAUTH_ENABLED=OAUTH_ENABLED %}
   <div class="row">
     <form role="form" action="/auth" method="POST">

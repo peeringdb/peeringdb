@@ -166,7 +166,7 @@ class UserTests(TestCase):
 
         self.assertEqual(json.loads(resp.content)["status"], "ok")
 
-        with self.assertRaises(models.UserPasswordReset.DoesNotExist):
+        with pytest.raises(models.UserPasswordReset.DoesNotExist):
             models.UserPasswordReset.objects.get(user=self.user_a)
 
         # initiate another request so we can test failures
@@ -238,7 +238,7 @@ class UserTests(TestCase):
         C = Client()
         resp = C.post("/auth", data, follow=True)
         self.assertEqual(resp.redirect_chain, [("/", 302)])
-        self.assertEqual(resp.context["user"].is_authenticated(), True)
+        self.assertEqual(resp.context["user"].is_authenticated, True)
 
     def test_username_retrieve(self):
         """
@@ -257,40 +257,34 @@ class UserTests(TestCase):
 
         # invalid secret
         response = c.get("/username-retrieve/complete?secret=123")
-        self.assertEqual(response.content.find(self.user_a.email), -1)
-        self.assertEqual(
-            response.content.find(
-                '<p class="username">{}</p>'.format(self.user_a.username)
-            ),
-            -1,
+        assert self.user_a.email not in response.content.decode()
+        assert (
+            '<p class="username">{}</p>'.format(self.user_a.username)
+            not in response.content.decode()
         )
 
         # complete process
         response = c.get("/username-retrieve/complete?secret={}".format(secret))
 
-        self.assertGreater(response.content.find(self.user_a.email), -1)
-        self.assertGreater(
-            response.content.find(
-                '<p class="username">{}</p>'.format(self.user_a.username)
-            ),
-            -1,
+        assert self.user_a.email in response.content.decode()
+        assert (
+            '<p class="username">{}</p>'.format(self.user_a.username)
+            in response.content.decode()
         )
 
         # process no longer valid
         response = c.get("/username-retrieve/complete?secret={}".format(secret))
 
-        self.assertEqual(response.content.find(self.user_a.email), -1)
-        self.assertEqual(
-            response.content.find(
-                '<p class="username">{}</p>'.format(self.user_a.username)
-            ),
-            -1,
+        assert self.user_a.email not in response.content.decode()
+        assert (
+            '<p class="username">{}</p>'.format(self.user_a.username)
+            not in response.content.decode()
         )
 
-        with self.assertRaises(KeyError):
+        with pytest.raises(KeyError):
             secret = c.session["username_retrieve_secret"]
 
-        with self.assertRaises(KeyError):
+        with pytest.raises(KeyError):
             email = c.session["username_retrieve_email"]
 
     def test_signup(self):
@@ -300,8 +294,10 @@ class UserTests(TestCase):
 
         c = Client()
         response = c.get("/register")
-        self.assertGreater(response.content.find('name="captcha_generator_0"'), -1)
-        m = re.search('name="captcha_generator_0" value="([^"]+)"', response.content)
+        assert 'name="captcha_generator_0"' in response.content.decode()
+        m = re.search(
+            'name="captcha_generator_0" value="([^"]+)"', response.content.decode()
+        )
 
         captcha_obj = CaptchaStore.objects.get(hashkey=m.group(1))
 

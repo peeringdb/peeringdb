@@ -1,5 +1,11 @@
 import importlib
 
+import re
+import traceback
+import time
+import datetime
+
+
 import unidecode
 
 from rest_framework import routers, serializers, status, viewsets
@@ -15,14 +21,11 @@ from django.utils import timezone
 from django.db.models import DateTimeField
 import django_namespace_perms.rest as nsp_rest
 
-from peeringdb_server.models import Network
+import reversion
+
+from peeringdb_server.models import Network, UTC
 from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
-
-import re
-import reversion
-import traceback
-import time
 
 import django_namespace_perms.util as nsp
 from django_namespace_perms.exceptions import *
@@ -42,6 +45,7 @@ class RestRouter(routers.DefaultRouter):
             url=r"^{prefix}{trailing_slash}$",
             mapping={"get": "list", "post": "create"},
             name="{basename}-list",
+            detail=False,
             initkwargs={"suffix": "List"},
         ),
         # Detail route.
@@ -54,11 +58,13 @@ class RestRouter(routers.DefaultRouter):
                 "delete": "destroy",
             },
             name="{basename}-detail",
+            detail=True,
             initkwargs={"suffix": "Instance"},
         ),
-        routers.DynamicDetailRoute(
+        routers.DynamicRoute(
             url=r"^{prefix}/{lookup}/{methodnamehyphen}$",
             name="{basename}-{methodnamehyphen}",
+            detail=True,
             initkwargs={},
         ),
         # Dynamically generated routes.
@@ -68,6 +74,7 @@ class RestRouter(routers.DefaultRouter):
             url=r"^{prefix}/{lookup}/{methodname}{trailing_slash}$",
             mapping={"{httpmethod}": "{methodname}",},
             name="{basename}-{methodnamehyphen}",
+            detail=False,
             initkwargs={},
         ),
     ]
@@ -82,7 +89,7 @@ class RestRouter(routers.DefaultRouter):
 
 def pdb_exception_handler(exc):
 
-    print traceback.format_exc()
+    print(traceback.format_exc())
 
     return exception_handler(exc)
 
@@ -160,7 +167,7 @@ class client_check(object):
         # - the client version
         # - backend name
         # - backend version
-        m = re.match("PeeringDB/([\d\.]+) (\S+)/([\d\.]+)", agent)
+        m = re.match(r"PeeringDB/([\d\.]+) (\S+)/([\d\.]+)", agent)
         if m:
             return {
                 "client": self.version_tuple(m.group(1)),
@@ -253,13 +260,13 @@ class ModelViewSet(viewsets.ModelViewSet):
                 qset, p_filters = self.serializer_class.prepare_query(
                     qset, **self.request.query_params
                 )
-            except ValidationError, inst:
+            except ValidationError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except ValueError, inst:
+            except ValueError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except TypeError, inst:
+            except TypeError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except FieldError, inst:
+            except FieldError as inst:
                 raise RestValidationError({"detail": "Invalid query"})
 
         else:
@@ -293,7 +300,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         # filters
         filters = {}
-        for k, v in self.request.query_params.items():
+        for k, v in list(self.request.query_params.items()):
 
             v = unidecode.unidecode(v)
 
@@ -338,7 +345,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                     # convert to datetime and make tz aware
                     try:
                         v = DateTimeField().to_python(v)
-                    except ValidationError, inst:
+                    except ValidationError as inst:
                         raise RestValidationError({"detail": str(inst[0])})
                     if timezone.is_naive(v):
                         v = timezone.make_aware(v)
@@ -373,13 +380,13 @@ class ModelViewSet(viewsets.ModelViewSet):
         if filters:
             try:
                 qset = qset.filter(**filters)
-            except ValidationError, inst:
+            except ValidationError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except ValueError, inst:
+            except ValueError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except TypeError, inst:
+            except TypeError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except FieldError, inst:
+            except FieldError as inst:
                 raise RestValidationError({"detail": "Invalid query"})
 
         # check if request qualifies for a cache load
@@ -392,7 +399,12 @@ class ModelViewSet(viewsets.ModelViewSet):
             if since > 0:
                 # .filter(status__in=["ok","deleted"])
                 qset = (
-                    qset.since(timestamp=since, deleted=True)
+                    qset.since(
+                        timestamp=datetime.datetime.fromtimestamp(since).replace(
+                            tzinfo=UTC()
+                        ),
+                        deleted=True,
+                    )
                     .order_by("updated")
                     .filter(status__in=["ok", "deleted"])
                 )
@@ -425,142 +437,20 @@ class ModelViewSet(viewsets.ModelViewSet):
 
     @client_check()
     def list(self, request, *args, **kwargs):
-        """
-        ### Querying
-
-        You may query the resultset by passing field names as url parameters
-
-        ### Numeric Queries
-
-        On numeric fields you can suffix the field names with the following filters:
-
-        - \_\_lt : less-than
-        - \_\_lte : less-than-equal
-        - \_\_gt : greater-than
-        - \_\_gte : greater-than-equal
-        - \_\_in : value inside set of values (comma separated)
-
-        **examples**
-
-            ?<field_name>__lt=10
-            ?<field_name>__in=1,10
-
-        ### String Queries
-
-        On string fields you can suffix the field names with the following filters:
-
-        - \_\_contains : field value contains specified value
-        - \_\_startswith : field value starts with specified value
-        - \_\_in : value contained inside set of values (comma separated)
-
-        **examples**
-
-            ?<field_name>__contains=something
-            ?<field_name>__in=this,that
-
-        All string filtering operations are case-insensitive
-
-        ### Since
-
-        You can use the since argument with a unix timestamp (seconds) to retrieve all
-        objects updated since then. Note that this result will contain objects that were
-        deleted in that timeframe as well - you can spot them by checking for status "deleted"
-
-        **example**
-
-            ?since=1443414678
-
-        ### Nested data
-
-        Any field ending in the suffix **_set** is a list of objects in a relationship with the parent
-        object, you can expand those lists with the 'depth' parameter as explained below.
-
-        The naming schema of the field will always tell you which type of object the set is holding
-        and will correspond with the object's endpoint on the API
-
-            <object_type>_set
-
-        So a set called 'net_set' will hold Network objects (api endpoint /net)
-
-        ### Depth
-
-        Nested sets will not be loaded (any field ending with the _set suffix) unless the 'depth'
-        parameter is passed in the request URL.
-
-        Depth can be one of three values:
-
-          - 1 : expand sets into ids (slow)
-          - 2 : expand sets into objects (slower)
-          - 0 : dont expand sets at all (default behaviour)
-
-        **example**
-
-            ?depth=1
-
-        ### Cached Responses
-
-        Any request that does not require lookups will be served a cached result. Cache is updated approximately every 15 minutes.
-
-        You can spot cached responses by checking for the "generated" property inside the "meta" object.
-
-            "meta" : {
-                // the cached data was last regenerated at this time (epoch)
-                "generated" : 1456121358.6301942
-            }
-
-        **examples**
-
-        will serve a cached result:
-
-            ?depth=2
-
-        will serve a live result:
-
-            ?id__in=1,2
-
-        ### Resultset limit
-
-        Any request that does lookup queries and has it's **depth** parameter specified will have a result limit of 250 entries, any entries past this limit will be truncated, at which point you either should be more specific with your query or use the skip and limit parameters to page through the result set
-
-        **examples**
-
-        will serve a live result and a maximum of 250 rows at a time:
-
-            ?updated__gt=2011-01-01&depth=1
-
-        will serve a live result and will not be truncated:
-
-            ?updated__gt=2011-01-01
-
-        will serve a cached result and will not be truncated:
-
-            ?depth=1
-
-        ### Pagination
-
-        Use the skip and limit parameters to page through results
-
-            ?updated__gt=2011-01-01&depth=1&limit=250 - first page
-            ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page
-            ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page
-
-        """
-
         t = time.time()
         try:
             r = super(ModelViewSet, self).list(request, *args, **kwargs)
-        except ValueError, inst:
+        except ValueError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
-        except TypeError, inst:
+        except TypeError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
-        except CacheRedirect, inst:
+        except CacheRedirect as inst:
             r = Response(status=200, data=inst.loader.load())
         d = time.time() - t
-        print "done in %.5f seconds, %d queries" % (d, len(connection.queries))
 
         # FIXME: this waits for peeringdb-py fix to deal with 404 raise properly
         if not r or not len(r.data):
@@ -580,7 +470,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         t = time.time()
         r = super(ModelViewSet, self).retrieve(request, *args, **kwargs)
         d = time.time() - t
-        print "done in %.5f seconds, %d queries" % (d, len(connection.queries))
+        print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
         return r
 
@@ -594,9 +484,9 @@ class ModelViewSet(viewsets.ModelViewSet):
                 if request.user:
                     reversion.set_user(request.user)
                 return super(ModelViewSet, self).create(request, *args, **kwargs)
-        except PermissionDenied, inst:
+        except PermissionDenied as inst:
             return Response(status=status.HTTP_403_FORBIDDEN)
-        except ParentStatusException, inst:
+        except ParentStatusException as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
@@ -614,11 +504,11 @@ class ModelViewSet(viewsets.ModelViewSet):
                     reversion.set_user(request.user)
 
                 return super(ModelViewSet, self).update(request, *args, **kwargs)
-        except TypeError, inst:
+        except TypeError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
-        except ValueError, inst:
+        except ValueError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
@@ -668,7 +558,7 @@ def ref_dict():
     return {tag: view.model for tag, view, na in router.registry}
 
 
-def model_view_set(model):
+def model_view_set(model, methods=None):
     """
     shortcut for peeringdb models to generate viewset and register in the API urls
     """
@@ -682,15 +572,33 @@ def model_view_set(model):
     clsdict = {
         "model": model_t,
         "serializer_class": scls,
-        "__doc__": "Rest API endpoint for " + model,
+        # TODO: use coreapi schemas to build parameter docs
+        # for retrieve and list
+        "__doc__": (
+            "Rest API endpoint for "
+            + model
+            + "\n\nlist:\n"
+            + settings.API_DOC_STR["list"]
+            + "\n\nretrieve:\n"
+            + settings.API_DOC_STR["retrieve"]
+            + "\n\ncreate:\n"
+            + settings.API_DOC_STR["create"]
+            + "\n\nupdate:\n"
+            + settings.API_DOC_STR["update"]
+            + "\n\ndelete:\n"
+            + settings.API_DOC_STR["delete"]
+        ),
     }
 
     # create the type
     viewset_t = type(model + "ViewSet", (ModelViewSet,), clsdict)
 
+    if methods:
+        viewset_t.http_method_names = methods
+
     # register with the rest router for incoming requests
     ref_tag = model_t.handleref.tag
-    router.register(ref_tag, viewset_t, base_name=ref_tag)
+    router.register(ref_tag, viewset_t, basename=ref_tag)
 
     return viewset_t
 
@@ -698,7 +606,7 @@ def model_view_set(model):
 FacilityViewSet = model_view_set("Facility")
 InternetExchangeViewSet = model_view_set("InternetExchange")
 InternetExchangeFacilityViewSet = model_view_set("InternetExchangeFacility")
-IXLanViewSet = model_view_set("IXLan")
+IXLanViewSet = model_view_set("IXLan", methods=["get", "put"])
 IXLanPrefixViewSet = model_view_set("IXLanPrefix")
 NetworkViewSet = model_view_set("Network")
 NetworkContactViewSet = model_view_set("NetworkContact")
@@ -762,7 +670,7 @@ class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
         return Response({network.asn: network.irr_as_set})
 
 
-router.register("as_set", ASSetViewSet, base_name="as_set")
+router.register("as_set", ASSetViewSet, basename="as_set")
 
 # set here in case we want to add more urls later
 urls = router.urls

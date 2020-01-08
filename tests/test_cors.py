@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from peeringdb_server.models import Organization, User
-from util import ClientCase
+from .util import ClientCase
 from corsheaders.middleware import (
     ACCESS_CONTROL_ALLOW_CREDENTIALS,
     ACCESS_CONTROL_ALLOW_HEADERS,

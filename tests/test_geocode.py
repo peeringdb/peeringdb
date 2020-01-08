@@ -3,7 +3,7 @@ import pytest
 import json
 import uuid
 import re
-import StringIO
+import io
 
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group, AnonymousUser
@@ -35,7 +35,7 @@ class ViewTestCase(TestCase):
             (
                 k,
                 models.Facility.objects.create(
-                    name=u"Geocode Fac {}".format(k),
+                    name="Geocode Fac {}".format(k),
                     status="ok",
                     org=cls.organizations[k],
                     address1="Some street",
@@ -54,7 +54,7 @@ class ViewTestCase(TestCase):
 
     def test_base(self):
         self.assertEqual(
-            self.facilities["a"].geocode_address, u"Some street a, Chicago, IL 1234"
+            self.facilities["a"].geocode_address, "Some street a, Chicago, IL 1234"
         )
         self.assertEqual(self.facilities["a"].geocode_coordinates, (1.23, -1.23))
 
@@ -85,8 +85,8 @@ class ViewTestCase(TestCase):
         self.facilities["a"].name = "sdílených služeb"
         self.facilities["a"].save()
 
-        out = StringIO.StringIO()
+        out = io.StringIO()
         call_command("pdb_geosync", "fac", limit=1, stdout=out)
         out = out.getvalue()
 
-        assert out.find("[fac 1/1 ID:1]") > -1
+        assert "[fac 1/1 ID:1]" in out

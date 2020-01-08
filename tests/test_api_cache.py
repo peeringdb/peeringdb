@@ -13,7 +13,7 @@ from django.conf import settings
 import peeringdb_server.models as models
 import peeringdb_server.management.commands.pdb_api_test as api_test
 
-import test_api as api_tests
+from . import test_api as api_tests
 import django_namespace_perms as nsp
 
 

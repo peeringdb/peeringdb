@@ -3,10 +3,10 @@
 
 <!-- EXCHANGE POINTS -->
 
-<div class="list" 
-     data-sort-container=".scrollable" 
+<div class="list"
+     data-sort-container=".scrollable"
      data-sort-row=".row"
-     
+
      data-edit-module="api_listing"
      data-edit-group="#view"
      data-edit-target="api:netixlan">
@@ -33,7 +33,7 @@
     </div>
   </div>
 
-  <div class="scrollable" 
+  <div class="scrollable"
        id="list-exchanges"
        data-edit-component="list"
        data-edit-template="netixlan-item">
@@ -57,13 +57,16 @@
         <div class="exchange" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
           <a href="/{{x.ixlan.ix|ref_tag}}/{{ x.ixlan.ix.id }}">{{ x.ixlan.ix.name }}</a>{% if x.ixlan.name %}<span class="tiny suffix">{{ x.ixlan.name }}</span>{% endif %}
         </div>
-        <div class="asn" 
-             data-edit-type="select"
-             data-edit-data="asns"
-             data-edit-required="yes"
+        <div class="asn{% if permissions.can_write and x.asn != x.network.asn %} mark-value-error{% endif %}"
+             {% if permissions.can_write and x.asn != x.network.asn %}
+             data-toggle="tooltip"
+             data-placement="left"
+             title="{% trans "Entry needs to be moved to correct network" %}"
+             {% endif %}
+             data-edit-type="readonly"
              data-edit-name="asn"
              data-edit-value="{{ x.asn }}"
-             data-sort-value="{{ x.asn }}" 
+             data-sort-value="{{ x.asn }}"
              data-filter-value="{{ x.asn }}">
              {{ x.asn }}
         </div>
@@ -86,7 +89,7 @@
       </div>
       <div class="col-xs-3 col-sm-3 col-md-2">
         <div class="speed"
-             data-sort-value="{{ x.speed }}" 
+             data-sort-value="{{ x.speed }}"
              data-filter-value="{{ x.speed|pretty_speed}}"
              {% if permissions.can_write %}
              data-edit-type="network_speed"
@@ -114,11 +117,11 @@
   <div class="editable"
        data-edit-toggled="edit"
        data-edit-component="add">
-       
+
        <div class="payload">
          <div data-edit-name="net_id">{{ instance.id }}</div>
        </div>
-       
+
        <div class="row view_row">
          <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Exchange" %}</div>
          <div class="view_value col-xs-8 col-sm-7 col-md-8">
@@ -129,19 +132,6 @@
            </div>
          </div>
        </div>
-
-       <div class="row view_row">
-         <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Local ASN" %}</div>
-         <div class="view_value col-xs-8 col-sm-7 col-md-8">
-           <div data-edit-type="select"
-                data-edit-data="asns"
-                data-edit-value="{{ instance.asn }}"
-                data-edit-required="yes"
-                data-edit-name="asn">
-           </div>
-         </div>
-       </div>
-
 
        <div class="row view_row">
          <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "IPv4" %}</div>
@@ -198,9 +188,9 @@
 
 <!-- PEERING FACILITIES -->
 
-<div class="list" 
+<div class="list"
 
-     data-sort-container=".scrollable" 
+     data-sort-container=".scrollable"
      data-sort-row=".row.item"
 
      data-edit-module="api_listing"
@@ -225,7 +215,7 @@
     </div>
   </div>
 
-  <div class="scrollable" 
+  <div class="scrollable"
        id="list-facilities"
        data-edit-component="list"
        data-edit-template="netfac-item">
@@ -236,12 +226,11 @@
     </div>
 
     {% for f in data.facilities %}
-  
+
     <div class="row item" data-edit-id="{{ f.id }}" data-edit-label="Network - Facility link: {{ f.facility.name }}">
       <div class="editable payload">
         <div data-edit-name="fac_id">{{ f.facility_id }}</div>
         <div data-edit-name="net_id">{{ instance.id }}</div>
-        <div data-edit-name="local_asn">{{ f.local_asn }}</div>
       </div>
       <div class="col-xs-6 col-sm-6 col-md-6">
 
@@ -251,16 +240,29 @@
         <div class="facility" data-sort-value="{{ f.facility.name }}" data-filter-value="{{ f.facility.name }}">
           <a href="/{{f.facility|ref_tag}}/{{f.facility_id}}">{{f.facility.name}}</a>
         </div>
-        <div data-filter-value="{{ f.local_asn }}">{{ f.local_asn }}</div>
+        <div class="local_asn{% if permissions.can_write and f.local_asn != f.network.asn %} mark-value-error{% endif %}"
+             {% if permissions.can_write and f.local_asn != f.network.asn %}
+             data-toggle="tooltip"
+             data-placement="left"
+             title="{% trans "Entry needs to be moved to correct network" %}"
+             {% endif %}
+             data-edit-type="readonly"
+             data-edit-name="asn"
+             data-edit-value="{{ f.local_asn }}"
+             data-sort-value="{{ f.local_asn }}"
+             data-filter-value="{{ f.local_asn }}">
+             {{ f.local_asn }}
+        </div>
+
       </div>
       <div class="col-xs-6 col-sm-6 col-md-6">
         <div class="country" data-sort-value="{{ f.facility.country.name|lower }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
         <div class="city" data-sort-value="{{ f.facility.city }}" data-filter-value="{{ f.facility.city }}">{{ f.facility.city }}</div>
       </div>
     </div>
-  
+
     {% endfor %}
-  
+
   </div>
 
   <!-- ADD NETWORK FACILITY  -->
@@ -268,12 +270,11 @@
   <div class="editable"
        data-edit-toggled="edit"
        data-edit-component="add">
-       
+
        <div class="payload">
          <div data-edit-name="net_id">{{ instance.id }}</div>
-         <div data-edit-name="local_asn">{{ instance.asn }}</div>
        </div>
-       
+
        <div class="row view_row">
          <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Facility" %}</div>
          <div class="view_value col-xs-8 col-sm-7 col-md-8">

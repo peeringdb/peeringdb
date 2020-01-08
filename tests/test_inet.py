@@ -44,38 +44,38 @@ def test_recurse_contacts(rdap):
 
 def test_renumber_ipaddress():
     ip4 = renumber_ipaddress(
-        ipaddress.ip_address(u"206.41.110.48"),
-        ipaddress.ip_network(u"206.41.110.0/24"),
-        ipaddress.ip_network(u"206.41.111.0/24"),
+        ipaddress.ip_address("206.41.110.48"),
+        ipaddress.ip_network("206.41.110.0/24"),
+        ipaddress.ip_network("206.41.111.0/24"),
     )
 
-    assert ip4.compressed == u"206.41.111.48"
+    assert ip4.compressed == "206.41.111.48"
 
     ip6 = renumber_ipaddress(
-        ipaddress.ip_address(u"2001:504:41:110::20"),
-        ipaddress.ip_network(u"2001:504:41:110::/64"),
-        ipaddress.ip_network(u"2001:504:41:111::/64"),
+        ipaddress.ip_address("2001:504:41:110::20"),
+        ipaddress.ip_network("2001:504:41:110::/64"),
+        ipaddress.ip_network("2001:504:41:111::/64"),
     )
 
-    assert ip6.compressed == u"2001:504:41:111::20"
+    assert ip6.compressed == "2001:504:41:111::20"
 
     with pytest.raises(ValueError):
         renumber_ipaddress(
-            ipaddress.ip_address(u"2001:504:41:110::20"),
-            ipaddress.ip_network(u"206.41.110.0/24"),
-            ipaddress.ip_network(u"206.41.111.0/24"),
+            ipaddress.ip_address("2001:504:41:110::20"),
+            ipaddress.ip_network("206.41.110.0/24"),
+            ipaddress.ip_network("206.41.111.0/24"),
         )
 
     with pytest.raises(ValueError):
         renumber_ipaddress(
-            ipaddress.ip_address(u"2001:504:41:110::20"),
-            ipaddress.ip_network(u"2001:504:41:110::/64"),
-            ipaddress.ip_network(u"206.41.111.0/24"),
+            ipaddress.ip_address("2001:504:41:110::20"),
+            ipaddress.ip_network("2001:504:41:110::/64"),
+            ipaddress.ip_network("206.41.111.0/24"),
         )
 
     with pytest.raises(ValueError):
         renumber_ipaddress(
-            ipaddress.ip_address(u"206.41.110.48"),
-            ipaddress.ip_network(u"206.41.0.0/21"),
-            ipaddress.ip_network(u"206.41.111.0/24"),
+            ipaddress.ip_address("206.41.110.48"),
+            ipaddress.ip_network("206.41.0.0/21"),
+            ipaddress.ip_network("206.41.111.0/24"),
         )

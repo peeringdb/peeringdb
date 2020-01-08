@@ -2,21 +2,21 @@ import datetime
 import time
 import json
 import ipaddress
-import forms
+from . import forms
 
 from operator import or_
 
+import django.urls
 from django.conf.urls import url
 from django.shortcuts import redirect, Http404
 from django.contrib.contenttypes.models import ContentType
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth import forms
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.views.main import ChangeList
 from django import forms as baseForms
 from django.utils import html
-from django.core import urlresolvers
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.template import loader
@@ -28,6 +28,7 @@ from django_namespace_perms.admin import (
     UserPermissionInlineAdd,
     UserAdmin,
 )
+from django.utils.safestring import mark_safe
 
 import reversion
 from reversion.admin import VersionAdmin
@@ -67,7 +68,7 @@ from peeringdb_server.models import (
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException
 
-delete_selected.short_description = u"HARD DELETE - Proceed with caution"
+delete_selected.short_description = "HARD DELETE - Proceed with caution"
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -294,6 +295,16 @@ rollback.short_description = _("ROLLBACK")
 def soft_delete(modeladmin, request, queryset):
     if request.user:
         reversion.set_user(request.user)
+
+    if queryset.model.handleref.tag == "ixlan":
+        messages.error(
+            request,
+            _(
+                "Ixlans can no longer be directly deleted as they are now synced to the parent exchange"
+            ),
+        )
+        return
+
     for row in queryset:
         row.delete()
 
@@ -385,12 +396,12 @@ class ModelAdminWithVQCtrl(object):
         ).first()
 
         if vq:
-            return (
-                u'<a class="grp-button" href="{}">{}</a> &nbsp;  &nbsp; <a class="grp-button grp-delete-link" href="{}">{}</a>'
-            ).format(vq.approve_admin_url, _("APPROVE"), vq.deny_admin_url, _("DENY"))
+            return mark_safe(
+                '<a class="grp-button" href="{}">{}</a> &nbsp;  &nbsp; <a class="grp-button grp-delete-link" href="{}">{}</a>'.format(
+                    vq.approve_admin_url, _("APPROVE"), vq.deny_admin_url, _("DENY")
+                )
+            )
         return _("APPROVED")
-
-    verification_queue.allow_tags = True
 
 
 class IXLanPrefixInline(SanitizedAdmin, admin.TabularInline):
@@ -404,14 +415,18 @@ class IXLanInline(SanitizedAdmin, admin.StackedInline):
     extra = 0
     form = StatusForm
     exclude = ["arp_sponge"]
-    readonly_fields = ["ixf_import_attempt_info", "prefixes"]
+    readonly_fields = ["id", "ixf_import_attempt_info", "prefixes"]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj):
+        return False
 
     def ixf_import_attempt_info(self, obj):
         if obj.ixf_import_attempt:
-            return "<pre>{}</pre>".format(obj.ixf_import_attempt.info)
+            return mark_safe("<pre>{}</pre>".format(obj.ixf_import_attempt.info))
         return ""
-
-    ixf_import_attempt_info.allow_tags = True
 
     def prefixes(self, obj):
         return ", ".join(
@@ -535,15 +550,15 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     form = InternetExchangeAdminForm
 
     def ixf_import_history(self, obj):
-        return (u'<a href="{}?q={}">{}</a>').format(
-            urlresolvers.reverse(
-                "admin:peeringdb_server_ixlanixfmemberimportlog_changelist"
-            ),
-            obj.id,
-            _("IXF Import History"),
+        return mark_safe(
+            '<a href="{}?q={}">{}</a>'.format(
+                django.urls.reverse(
+                    "admin:peeringdb_server_ixlanixfmemberimportlog_changelist"
+                ),
+                obj.id,
+                _("IXF Import History"),
+            )
         )
-
-    ixf_import_history.allow_tags = True
 
 
 class IXLanAdminForm(StatusForm):
@@ -553,6 +568,7 @@ class IXLanAdminForm(StatusForm):
 
 
 class IXLanAdmin(SoftDeleteAdmin):
+    actions = []
     list_display = ("ix", "name", "descr", "status")
     search_fields = ("name",)
     list_filter = (StatusFilter,)
@@ -609,7 +625,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
         if not vb:
             return _("Initial creation of netixlan")
         rv = {}
-        for k, v in va.field_dict.items():
+        for k, v in list(va.field_dict.items()):
             if k in ["created", "updated", "version"]:
                 continue
             v2 = vb.field_dict.get(k)
@@ -631,12 +647,12 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
             text = _("CAN BE ROLLED BACK")
             color = "#e5f3d6"
         elif rs == 1:
-            text = (u"{}<br><small>{}</small>").format(
+            text = ("{}<br><small>{}</small>").format(
                 _("CANNOT BE ROLLED BACK"), _("Has been changed since")
             )
             color = "#f3ded6"
         elif rs == 2:
-            text = (u"{}<br><small>{}</small>").format(
+            text = ("{}<br><small>{}</small>").format(
                 _("CANNOT BE ROLLED BACK"),
                 _("Netixlan with conflicting ipaddress now exists elsewhere"),
             )
@@ -644,9 +660,9 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
         elif rs == -1:
             text = _("HAS BEEN ROLLED BACK")
             color = "#d6f0f3"
-        return '<div style="background-color:{}">{}</div>'.format(color, text)
-
-    rollback_status.allow_tags = True
+        return mark_safe(
+            '<div style="background-color:{}">{}</div>'.format(color, text)
+        )
 
 
 class IXLanIXFMemberImportLogAdmin(admin.ModelAdmin):
@@ -663,27 +679,27 @@ class IXLanIXFMemberImportLogAdmin(admin.ModelAdmin):
         return obj.entries.count()
 
     def ix(self, obj):
-        return '<a href="{}">{} (ID: {})</a>'.format(
-            urlresolvers.reverse(
-                "admin:peeringdb_server_internetexchange_change",
-                args=(obj.ixlan.ix.id,),
-            ),
-            obj.ixlan.ix.name,
-            obj.ixlan.ix.id,
+        return mark_safe(
+            '<a href="{}">{} (ID: {})</a>'.format(
+                django.urls.reverse(
+                    "admin:peeringdb_server_internetexchange_change",
+                    args=(obj.ixlan.ix.id,),
+                ),
+                obj.ixlan.ix.name,
+                obj.ixlan.ix.id,
+            )
         )
-
-    ix.allow_tags = True
 
     def ixlan_name(self, obj):
-        return '<a href="{}">{} (ID: {})</a>'.format(
-            urlresolvers.reverse(
-                "admin:peeringdb_server_ixlan_change", args=(obj.ixlan.id,)
-            ),
-            obj.ixlan.name or "",
-            obj.ixlan.id,
+        return mark_safe(
+            '<a href="{}">{} (ID: {})</a>'.format(
+                django.urls.reverse(
+                    "admin:peeringdb_server_ixlan_change", args=(obj.ixlan.id,)
+                ),
+                obj.ixlan.name or "",
+                obj.ixlan.id,
+            )
         )
-
-    ixlan_name.allow_tags = True
 
     def source(self, obj):
         return obj.ixlan.ixf_ixp_member_list_url
@@ -724,15 +740,11 @@ class SponsorshipAdmin(admin.ModelAdmin):
         else:
             return _("Waiting")
 
-    status.allow_tags = True
-
     def organizations(self, obj):
         qset = obj.orgs.all().order_by("name")
         if not qset.count():
             return _("No organization(s) set")
-        return "<br>\n".join([html.escape(org.name) for org in qset])
-
-    organizations.allow_tags = True
+        return mark_safe("<br>\n".join([html.escape(org.name) for org in qset]))
 
 
 class PartnershipAdminForm(baseForms.ModelForm):
@@ -758,8 +770,6 @@ class PartnershipAdmin(admin.ModelAdmin):
         if not obj.logo:
             return _("Logo Missing")
         return _("Active")
-
-    status.allow_tags = True
 
 
 class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
@@ -803,7 +813,7 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
             return redirect("admin:login")
         context = dict(
             self.admin_site.each_context(request),
-            undo_url=urlresolvers.reverse(
+            undo_url=django.urls.reverse(
                 "admin:peeringdb_server_organizationmerge_changelist"
             ),
             title=_("Organization Merging Tool"),
@@ -832,11 +842,11 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
     inlines = (OrganizationMergeEntities,)
 
     def undo_merge(self, obj):
-        return (
-            u'<a class="grp-button grp-delete-link" href="action/undo">{}</a>'
-        ).format(_("Undo merge"))
-
-    undo_merge.allow_tags = True
+        return mark_safe(
+            '<a class="grp-button grp-delete-link" href="action/undo">{}</a>'.format(
+                _("Undo merge")
+            )
+        )
 
     @reversion.create_revision()
     def undo(modeladmin, request, queryset):
@@ -949,7 +959,7 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
         return obj.ixlan.ix
 
     def net(self, obj):
-        return u"{} (AS{})".format(obj.network.name, obj.network.asn)
+        return "{} (AS{})".format(obj.network.name, obj.network.asn)
 
 
 class NetworkContactAdmin(SoftDeleteAdmin):
@@ -970,7 +980,7 @@ class NetworkContactAdmin(SoftDeleteAdmin):
     form = StatusForm
 
     def net(self, obj):
-        return u"{} (AS{})".format(obj.network.name, obj.network.asn)
+        return "{} (AS{})".format(obj.network.name, obj.network.asn)
 
 
 class NetworkFacilityAdmin(SoftDeleteAdmin):
@@ -981,7 +991,7 @@ class NetworkFacilityAdmin(SoftDeleteAdmin):
     form = StatusForm
 
     def net(self, obj):
-        return u"{} (AS{})".format(obj.network.name, obj.network.asn)
+        return "{} (AS{})".format(obj.network.name, obj.network.asn)
 
 
 class VerificationQueueAdmin(ModelAdminWithUrlActions):
@@ -1014,7 +1024,7 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
         if action == "vq_approve":
             opts = type(obj.first().item)._meta
             return redirect(
-                urlresolvers.reverse(
+                django.urls.reverse(
                     "admin:%s_%s_change" % (opts.app_label, opts.model_name),
                     args=(obj.first().item.id,),
                 )
@@ -1039,9 +1049,7 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
     actions = [vq_approve, vq_deny]
 
     def view(self, obj):
-        return (u'<a href="{}">{}</a>').format(obj.item_admin_url, _("View"))
-
-    view.allow_tags = True
+        return mark_safe('<a href="{}">{}</a>'.format(obj.item_admin_url, _("View")))
 
     def extra(self, obj):
         if hasattr(obj.item, "org") and obj.item.org.id == settings.SUGGEST_ENTITY_ORG:
@@ -1161,40 +1169,38 @@ class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
         return 0
 
     def change_password(self, obj):
-        return (u'<a href="{}">{}</a>').format(
-            urlresolvers.reverse("admin:auth_user_password_change", args=(obj.id,)),
-            _("Change Password"),
+        return mark_safe(
+            '<a href="{}">{}</a>'.format(
+                django.urls.reverse("admin:auth_user_password_change", args=(obj.id,)),
+                _("Change Password"),
+            )
         )
 
-    change_password.allow_tags = True
-
     def view_permissions(self, obj):
-        url = urlresolvers.reverse(
+        url = django.urls.reverse(
             "admin:%s_%s_change"
             % (UserPermission._meta.app_label, UserPermission._meta.model_name),
             args=(obj.id,),
         )
 
-        return (u'<a href="{}">{}</a>').format(url, _("Edit Permissions"))
-
-    view_permissions.allow_tags = True
+        return mark_safe('<a href="{}">{}</a>'.format(url, _("Edit Permissions")))
 
     def email_status(self, obj):
         if obj.email_confirmed:
-            return (u'<span style="color:darkgreen">{}</span>').format(_("VERIFIED"))
+            return mark_safe(
+                '<span style="color:darkgreen">{}</span>'.format(_("VERIFIED"))
+            )
         else:
-            return (u'<span style="color:darkred">{}</span>').format(_("UNVERIFIED"))
-
-    email_status.allow_tags = True
+            return mark_safe(
+                '<span style="color:darkred">{}</span>'.format(_("UNVERIFIED"))
+            )
 
     def organizations(self, obj):
-        return (
+        return mark_safe(
             loader.get_template("admin/user-organizations.html")
             .render({"organizations": obj.organizations, "user": obj})
             .replace("\n", "")
         )
-
-    organizations.allow_tags = True
 
 
 class UserPermission(User):
@@ -1241,14 +1247,12 @@ class UserPermissionAdmin(UserAdmin):
         return form
 
     def user(self, obj):
-        url = urlresolvers.reverse(
+        url = django.urls.reverse(
             "admin:%s_%s_change" % (User._meta.app_label, User._meta.model_name),
             args=(obj.id,),
         )
 
-        return '<a href="%s">%s</a>' % (url, obj.username)
-
-    user.allow_tags = True
+        return mark_safe('<a href="%s">%s</a>' % (url, obj.username))
 
     def clean_password(self):
         pass
@@ -1293,7 +1297,7 @@ class DuplicateIPChangeList(ChangeList):
         ip4s = {}
         ip6s = {}
         qs = super(DuplicateIPChangeList, self).get_queryset(request)
-        sort_keys = qs.query.order_by
+        sort_keys = list(qs.query.order_by)
         if "pk" in sort_keys:
             sort_keys.remove("pk")
         if "-pk" in sort_keys:
@@ -1327,7 +1331,7 @@ class DuplicateIPChangeList(ChangeList):
                     ip6s[ip6].append(netixlan)
 
         collisions = []
-        for ip, netixlans in ip4s.items():
+        for ip, netixlans in list(ip4s.items()):
             if len(netixlans) > 1:
                 for netixlan in netixlans:
                     netixlan.ip_dupe = 4
@@ -1336,7 +1340,7 @@ class DuplicateIPChangeList(ChangeList):
                     netixlan.dt_sorter = int(netixlan.updated.strftime("%s"))
                     collisions.append(netixlan)
 
-        for ip, netixlans in ip6s.items():
+        for ip, netixlans in list(ip6s.items()):
             if len(netixlans) > 1:
                 for netixlan in netixlans:
                     netixlan.ip_dupe = 6
@@ -1414,15 +1418,13 @@ class DuplicateIPAdmin(SoftDeleteAdmin):
     ip.admin_order_field = "ip_sorter"
 
     def net(self, obj):
-        return '<a href="/net/%d">%d</a>' % (obj.network_id, obj.network_id)
+        return mark_safe('<a href="/net/%d">%d</a>' % (obj.network_id, obj.network_id))
 
-    net.allow_tags = True
     net.admin_order_field = "network_id"
 
     def ix(self, obj):
-        return '<a href="/ix/%d">%d</a>' % (obj.ixlan.ix.id, obj.ixlan.ix.id)
+        return mark_safe('<a href="/ix/%d">%d</a>' % (obj.ixlan.ix.id, obj.ixlan.ix.id))
 
-    ix.allow_tags = True
     ix.admin_order_field = "exchange"
 
     def changelist_view(self, request, extra_context=None):
@@ -1544,7 +1546,7 @@ class CommandLineToolAdmin(admin.ModelAdmin):
                 action = "run"
                 tool.run(request.user, commit=False)
             else:
-                print(tool.form_instance.errors)
+                print((tool.form_instance.errors))
             form = tool.form_instance
         else:
             raise Exception(_("Only POST requests allowed."))

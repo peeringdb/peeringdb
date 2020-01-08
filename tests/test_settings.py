@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 
 
-from util import SettingsCase
+from .util import SettingsCase
 from peeringdb_server import signals, models, serializers
 from peeringdb_server import settings as pdb_settings
 

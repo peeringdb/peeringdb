@@ -4,7 +4,7 @@ import reversion
 import requests
 import jsonschema
 import time
-import StringIO
+import io
 
 from django.db import transaction
 from django.core.cache import cache
@@ -30,7 +30,7 @@ from peeringdb_server.import_views import (
 )
 from peeringdb_server import ixf
 
-from util import ClientCase
+from .util import ClientCase
 
 
 class JsonMembersListTestCase(ClientCase):
@@ -73,15 +73,17 @@ class JsonMembersListTestCase(ClientCase):
             cls.entities["ix"] = [
                 InternetExchange.objects.create(
                     name="Test Exchange", org=cls.entities["org"][0], status="ok"
-                )
+                ),
+                InternetExchange.objects.create(
+                    name="Test Exchange 2", org=cls.entities["org"][0], status="ok"
+                ),
+                InternetExchange.objects.create(
+                    name="Test Exchange 3", org=cls.entities["org"][0], status="ok"
+                ),
             ]
 
             # create ixlan(s)
-            cls.entities["ixlan"] = [
-                IXLan.objects.create(ix=cls.entities["ix"][0], status="ok"),
-                IXLan.objects.create(ix=cls.entities["ix"][0], status="ok"),
-                IXLan.objects.create(ix=cls.entities["ix"][0], status="ok"),
-            ]
+            cls.entities["ixlan"] = [ix.ixlan for ix in cls.entities["ix"]]
 
             # create ixlan prefix(s)
             cls.entities["ixpfx"] = [
@@ -210,6 +212,7 @@ class JsonMembersListTestCase(ClientCase):
         path = os.path.join(
             os.path.dirname(__file__), "data", "ixf", "logs", "{}.json".format(expected)
         )
+        self.maxDiff = None
         with open(path, "r") as fh:
             self.assertEqual(log, json.load(fh))
 
@@ -217,8 +220,8 @@ class JsonMembersListTestCase(ClientCase):
         ixlan = self.entities["ixlan"][0]
         n_deleted = self.entities["netixlan"][0]
         n_deleted2 = self.entities["netixlan"][1]
-        self.assertEqual(unicode(n_deleted.ipaddr4), u"195.69.146.250")
-        self.assertEqual(unicode(n_deleted2.ipaddr6), u"2001:7f8:1::a500:2906:1")
+        self.assertEqual(str(n_deleted.ipaddr4), "195.69.146.250")
+        self.assertEqual(str(n_deleted2.ipaddr6), "2001:7f8:1::a500:2906:1")
         self.assertEqual(ixlan.netixlan_set_active.count(), 4)
         r, netixlans, netixlans_deleted, log = self.ixf_importer.update(
             ixlan, data=self.json_data
@@ -229,16 +232,16 @@ class JsonMembersListTestCase(ClientCase):
         self.assertEqual(len(netixlans_deleted), 2)
 
         n = netixlans[0]
-        self.assertEqual(unicode(n.ipaddr4), u"195.69.146.250")
-        self.assertEqual(unicode(n.ipaddr6), u"2001:7f8:1::a500:2906:2")
+        self.assertEqual(str(n.ipaddr4), "195.69.146.250")
+        self.assertEqual(str(n.ipaddr6), "2001:7f8:1::a500:2906:2")
         self.assertEqual(n.speed, 10000)
         self.assertEqual(n.status, "ok")
         self.assertEqual(n.ixlan, ixlan)
         self.assertEqual(n.asn, 2906)
 
         n2 = netixlans[1]
-        self.assertEqual(unicode(n2.ipaddr4), u"195.69.147.250")
-        self.assertEqual(unicode(n2.ipaddr6), u"2001:7f8:1::a500:2906:1")
+        self.assertEqual(str(n2.ipaddr4), "195.69.147.250")
+        self.assertEqual(str(n2.ipaddr6), "2001:7f8:1::a500:2906:1")
         self.assertEqual(n2.speed, 10000)
         self.assertEqual(n2.status, "ok")
         self.assertEqual(n2.ixlan, ixlan)
@@ -282,6 +285,8 @@ class JsonMembersListTestCase(ClientCase):
             ixlan, data=self.json_data
         )
 
+        # print(json.dumps(log,indent=2))
+
         self.assertLog(log, "skip_prefix_mismatch")
         self.assertEqual(len(netixlans), 0)
 
@@ -297,7 +302,7 @@ class JsonMembersListTestCase(ClientCase):
 
         self.assertEqual(len(netixlans), 0)
         self.assertEqual(len(netixlans_deleted), 0)
-        self.assertEqual(log["errors"], [u"No prefixes defined on ixlan"])
+        self.assertEqual(log["errors"], ["No prefixes defined on ixlan"])
 
     def test_update_from_ixf_ixp_member_list_skip_disabled_networks(self):
         """
@@ -516,8 +521,8 @@ class JsonMembersListTestCase(ClientCase):
         ixlan.ixf_ixp_import_enabled = True
         ixlan.save()
 
-        stdout = StringIO.StringIO()
-        stderr = StringIO.StringIO()
+        stdout = io.StringIO()
+        stderr = io.StringIO()
 
         r = call_command(
             "pdb_ixf_ixp_member_import",
@@ -526,7 +531,7 @@ class JsonMembersListTestCase(ClientCase):
             stdout=stdout,
             stderr=stderr,
         )
-        self.assertEqual(stdout.getvalue().find("Fetching data for -ixlan1 from"), 0)
+        assert "Fetching data for -ixlan1 from" in stdout.getvalue()
 
         # importer should skip ixlans where ixf_ixp_import_enabled is
         # turned off
@@ -534,8 +539,8 @@ class JsonMembersListTestCase(ClientCase):
         ixlan.ixf_ixp_import_enabled = False
         ixlan.save()
 
-        stdout = StringIO.StringIO()
-        stderr = StringIO.StringIO()
+        stdout = io.StringIO()
+        stderr = io.StringIO()
 
         r = call_command(
             "pdb_ixf_ixp_member_import",
@@ -544,7 +549,7 @@ class JsonMembersListTestCase(ClientCase):
             stdout=stdout,
             stderr=stderr,
         )
-        self.assertEqual(stdout.getvalue().find("Fetching data for -ixlan1 from"), -1)
+        assert "Fetching data for -ixlan1 from" not in stdout.getvalue()
 
     def test_postmortem(self):
         ixlan = self.entities["ixlan"][0]
@@ -674,7 +679,8 @@ class TestImportPreview(ClientCase):
             name="Test IX", status="ok", org=cls.org
         )
 
-        cls.ixlan = IXLan.objects.create(status="ok", ix=cls.ix)
+        cls.ixlan = cls.ix.ixlan
+
         IXLanPrefix.objects.create(
             ixlan=cls.ixlan, status="ok", prefix="195.69.144.0/22", protocol="IPv4"
         )

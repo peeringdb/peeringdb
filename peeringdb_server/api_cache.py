@@ -121,9 +121,9 @@ class APICacheLoader(object):
         if ruleset:
             _ruleset = {}
             namespace_str = ".".join(ns)
-            for section, rules in ruleset.items():
+            for section, rules in list(ruleset.items()):
                 _ruleset[section] = {}
-                for rule, perms in rules.items():
+                for rule, perms in list(rules.items()):
                     _ruleset[section]["%s.%s" % (namespace_str, rule)] = perms
                     ruleset = _ruleset
 
@@ -162,7 +162,11 @@ class APICacheLoader(object):
                 joined_ids[t] = {
                     "p": p,
                     "ids": self.join_ids(
-                        data, t, p, model, joined_ids.get(p, e).get("ids", e).values()
+                        data,
+                        t,
+                        p,
+                        model,
+                        list(joined_ids.get(p, e).get("ids", e).values()),
                     ),
                 }
 
@@ -170,10 +174,10 @@ class APICacheLoader(object):
 
             # create dict containing ids needed to build the permissioning
             # namespace
-            init = dict([(k, row.get(v)) for k, v in kwargs.items()])
+            init = dict([(k, row.get(v)) for k, v in list(kwargs.items())])
 
             # joined ids
-            for t, j in joined_ids.items():
+            for t, j in list(joined_ids.items()):
                 if j["p"] in row:
                     init[t] = j["ids"].get(row.get(j["p"]))
                 elif t in joined_ids:
@@ -184,7 +188,7 @@ class APICacheLoader(object):
 
             # apply fields filter
             if self.fields:
-                for k in row.keys():
+                for k in list(row.keys()):
                     if k not in self.fields:
                         del row[k]
 

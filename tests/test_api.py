@@ -30,7 +30,7 @@ def setup_module(module):
     # will be returned for them (data/api/rdap_override.json)
     #
     # ALL ASNs outside of this range will raise a RdapNotFoundError
-    ASN_RANGE_OVERRIDE = range(9000000, 9000999)
+    ASN_RANGE_OVERRIDE = list(range(9000000, 9000999))
 
     with open(
         os.path.join(os.path.dirname(__file__), "data", "api", "rdap_override.json"),

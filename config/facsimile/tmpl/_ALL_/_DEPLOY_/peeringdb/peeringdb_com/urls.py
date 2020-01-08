@@ -25,7 +25,7 @@ urlpatterns = [
     url(r'^cp/peeringdb_server/organizationmerge/add/', RedirectView.as_view(url='/cp/peeringdb_server/organization/org-merge-tool', permanent=False)),
     # we want to use default pdb login for admin area, since that is rate limited.
     url(r'^cp/login/', view_login),
-    url(r'^cp/',  include(admin.site.urls)),
+    url(r'^cp/',  admin.site.urls),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

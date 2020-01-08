@@ -3,6 +3,7 @@ peeringdb model / field validators
 """
 
 import ipaddress
+import phonenumbers
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -10,6 +11,34 @@ from django.utils.translation import ugettext_lazy as _
 
 from peeringdb_server.inet import network_is_pdb_valid
 import peeringdb_server.models
+
+
+def validate_phonenumber(phonenumber, country=None):
+    """
+    Validate a phonenumber to E.164
+
+    Arguments:
+        - phonenumber (str)
+
+    Raises:
+        - ValidationError if phone number isn't valid E.164 and cannot
+        be made E.164 valid
+
+    Returns:
+        - str: validated phonenumber
+    """
+
+    if not phonenumber:
+        return ""
+
+    try:
+        parsed_number = phonenumbers.parse(phonenumber, country)
+        validated_number = phonenumbers.format_number(
+            parsed_number, phonenumbers.PhoneNumberFormat.E164
+        )
+        return u"{}".format(validated_number)
+    except phonenumbers.phonenumberutil.NumberParseException as exc:
+        raise ValidationError(_("Not a valid phone number (E.164)"))
 
 
 def validate_prefix(prefix):
@@ -26,7 +55,7 @@ def validate_prefix(prefix):
         - ipaddress.ip_network instance
     """
 
-    if isinstance(prefix, unicode):
+    if isinstance(prefix, str):
         try:
             prefix = ipaddress.ip_network(prefix)
         except ValueError as exc:

@@ -559,6 +559,9 @@ div.view_field {
   white-space: nowrap;
 }
 
+div.view_field.help-text {
+}
+
 div.view_field > div.help {
   font-weight: normal;
   font-size: 11px;
@@ -657,6 +660,7 @@ table.result {
 div.list {
   margin-left: 15px;
   margin-right: 15px;
+  margin-top: 15px;
 }
 
 div.list div.header {
@@ -677,6 +681,7 @@ div.list h5 {
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
+  margin-left: -11px;
 }
 
 div.list div.empty-result {
@@ -701,6 +706,7 @@ div.list > div.scrollable {
   padding-left: 15px;
 /*  border-bottom: 3px #1c3f28 solid; */
 }
+
 
 div.list > div.row.header,
 table.result th {
@@ -752,6 +758,7 @@ div.list div.row.item > div > div:nth-child(2) select {
 div.list div.row.item {
   border-bottom: 1px #1c3f28 solid;
   background-color: #f1f1f1;
+  padding-bottom: 2px;
 }
 
 div.list div.row.item img {
@@ -845,6 +852,27 @@ div.editable.mode-edit div.view_field {
 
 .editable.input-note.validation-error {
   background-color: #9e1e1e;
+  z-index: 10;
+}
+
+div.row.item:nth-child(2) .editable.input-note.validation-error {
+  position: relative;
+  top: 0px;
+  left: 0px;
+}
+
+.editable.readonly ~ .editable.input-note.validation-error {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  display: block;
+  white-space: normal;
+}
+
+
+.mark-value-error,
+.editable.readonly.validation-error {
+  color: #9e1e1e;
+  text-decoration: underline dashed;
 }
 
 .input-note-long .input-note {

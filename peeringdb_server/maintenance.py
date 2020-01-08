@@ -46,6 +46,15 @@ class Middleware(object):
     ops (POST PUT PATCH DELETE)
     """
 
+    def __init__(self, get_response=None):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.process_request(request)
+        if response:
+            return response
+        return self.get_response(request)
+
     def process_request(self, request):
         if not active():
             return None
@@ -54,7 +63,7 @@ class Middleware(object):
 
             view, args, kwargs = resolve(request.path_info)
 
-            if view.func_name in ["request_login"]:
+            if view.__name__ in ["request_login"]:
                 # login should be allowed even in maint. mode
                 return None
             elif hasattr(view, "cls") and issubclass(view.cls, ModelViewSet):

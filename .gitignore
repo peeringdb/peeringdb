@@ -6,6 +6,7 @@
 *.sqlite
 *.swp
 OLD.*
+ci-dev.peeringdb.com/
 config/facsimile/*.yaml
 genstatic/
 peeringdb_com
