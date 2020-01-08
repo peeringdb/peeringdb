@@ -168,8 +168,9 @@ version_merge_release
 
 # Tests
 
+Requires `pip install tox`
+
 ```sh
-pip install -r requirements-test.txt
-py.test -v -rxs --cov-report term-missing --cov=peeringdb_server/ --capture=sys tests/
+tox
 ```
 
