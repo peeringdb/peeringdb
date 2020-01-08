@@ -135,6 +135,13 @@ settings.configure(
             "": {"handlers": ["stderr"], "level": "DEBUG", "propagate": False},
         },
     },
+    API_DOC_STR = {
+        "retrieve": "retrieve object",
+        "list": "list objects",
+        "update": "update object",
+        "delete": "delete object",
+        "create": "create object",
+    },
     OAUTH_ENABLED=False,
     RECAPTCHA_PUBLIC_KEY="",
     EMAIL_SUBJECT_PREFIX="[test]",
