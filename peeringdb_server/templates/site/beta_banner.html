@@ -1,0 +1,14 @@
+{% load i18n %}
+{% if RELEASE_ENV == 'beta'%}
+
+<div class="marg-bot-15">
+<div class="editable popin info panel">
+<p class="center">
+{% blocktrans trimmed  %}
+This is a beta/testing instance of PeeringDB. Some features may work differently than production. Do not store data here that you intend to keep - all data will be refreshed from production at
+{% endblocktrans %}
+{{ beta_sync_dt|date:"Y-m-d H:i:s" }}Z
+</p>
+</div>
+</div>
+{% endif %}
