@@ -96,6 +96,7 @@ BASE_ENV = {
     "PEERINGDB_VERSION": settings.PEERINGDB_VERSION,
     "TUTORIAL_MODE": settings.TUTORIAL_MODE,
     "RELEASE_ENV": settings.RELEASE_ENV,
+    "SHOW_AUTO_PROD_SYNC_WARNING": settings.SHOW_AUTO_PROD_SYNC_WARNING,
 }
 
 
@@ -156,12 +157,22 @@ class DoNotRender(object):
 
 
 def beta_sync_dt():
-    dt = datetime.datetime.now()
+    """
+    Returns the next date for a beta sync
+
+    This is currently hard coded to return 00:00Z for the
+    next sunday
+    """
+    dt = datetime.datetime.now() + datetime.timedelta(1)
 
     while dt.weekday() != 6:
         dt += datetime.timedelta(1)
 
     return dt.replace(hour=0, minute=0, second=0)
+
+def update_env_beta_sync_dt(env):
+    if settings.RELEASE_ENV == "beta":
+        env.update(beta_sync_dt=beta_sync_dt())
 
 
 def make_env(**data):
@@ -169,10 +180,7 @@ def make_env(**data):
     env.update(**BASE_ENV)
     env.update(**{"global_stats": global_stats()})
     env.update(**data)
-
-
-    if settings.RELEASE_ENV == "beta":
-        env.update(beta_sync_dt=beta_sync_dt())
+    update_env_beta_sync_dt(env)
 
     return env
 
@@ -734,6 +742,7 @@ def view_registration(request):
         env.update(
             {"global_stats": global_stats(), "register_form": UserCreationForm(),}
         )
+        update_env_beta_sync_dt(env)
         return HttpResponse(template.render(env, request))
 
     elif request.method == "POST":
@@ -795,6 +804,7 @@ def view_login(request, errors=None):
 
     env = BASE_ENV.copy()
     env.update({"errors": errors, "next": redir})
+    update_env_beta_sync_dt(env)
     return HttpResponse(template.render(env, request))
 
 
@@ -817,8 +827,7 @@ def view_index(request, errors=None):
     env = BASE_ENV.copy()
     env.update({"errors": errors, "global_stats": global_stats(), "recent": recent})
 
-    if settings.RELEASE_ENV == "beta":
-        env.update(beta_sync_dt=beta_sync_dt())
+    update_env_beta_sync_dt(env)
 
     return HttpResponse(template.render(env, request))
 
@@ -851,8 +860,7 @@ def view_component(
         }
     )
 
-    if settings.RELEASE_ENV == "beta":
-        env.update(beta_sync_dt=beta_sync_dt())
+    update_env_beta_sync_dt(env)
 
     env.update(**kwargs)
     return HttpResponse(template.render(env, request))
