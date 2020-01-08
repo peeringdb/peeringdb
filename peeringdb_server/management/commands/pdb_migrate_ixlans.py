@@ -576,7 +576,7 @@ class Command(BaseCommand):
             "reparented",
             "migrated",
         ]
-        with open("migrated_ixlans.csv", "wb+") as csvfile:
+        with open("migrated_ixlans.csv", "w+") as csvfile:
             csvwriter = csv.writer(csvfile, lineterminator="\n")
             csvwriter.writerow(headers)
             for ixlan_id, report in sorted(
@@ -590,10 +590,10 @@ class Command(BaseCommand):
                     [
                         report.get("old_id", ixlan_id),
                         report.get("old_ix", ix).id,
-                        report.get("old_ix", ix).name.encode("utf-8"),
+                        report.get("old_ix", ix).name,
                         id,
                         ix.id or "<pretend>",
-                        ix.name.encode("utf-8"),
+                        ix.name,
                         report.get("reparented", False),
                         report.get("migrated", False),
                     ]
