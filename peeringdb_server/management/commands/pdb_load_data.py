@@ -21,6 +21,7 @@ import peeringdb._fetch
 
 _fetch_all_latest = peeringdb._fetch.Fetcher.fetch_all_latest
 
+
 def fetch_all_latest(self, R, depth, params={}, since=None):
     """
     Some foreign keys differ in peeringdb_server from how they
@@ -51,8 +52,8 @@ def fetch_all_latest(self, R, depth, params={}, since=None):
                 row["network_id"] = v
                 del row["net_id"]
 
-
     return result
+
 
 peeringdb._fetch.Fetcher.fetch_all_latest = fetch_all_latest
 
@@ -88,22 +89,18 @@ class Command(BaseCommand):
         db_settings = settings.DATABASES.get("default")
 
         config = {
-            "sync": { "url": options.get("url") },
+            "sync": {"url": options.get("url")},
             "orm": {
                 "secret_key": settings.SECRET_KEY,
                 "backend": "peeringdb_server",
                 "migrate": False,
-                "database": dict([(k.lower(), v)
-                                 for k,v in db_settings.items()]),
-            }
+                "database": dict([(k.lower(), v) for k, v in db_settings.items()]),
+            },
         }
 
         apply_defaults(ClientSchema(), config)
 
-
-        pre_save.disconnect(signals.addressmodel_save,
-                            sender=pdb_models.Facility)
-
+        pre_save.disconnect(signals.addressmodel_save, sender=pdb_models.Facility)
 
         djpdb_models.all_models = [
             pdb_models.Organization,

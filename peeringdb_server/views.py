@@ -97,6 +97,7 @@ BASE_ENV = {
     "TUTORIAL_MODE": settings.TUTORIAL_MODE,
 }
 
+
 def field_help(model, field):
     """
     helper function return help_text of a model
@@ -1393,7 +1394,7 @@ def view_network(request, id):
             {
                 "name": "irr_as_set",
                 "label": _("IRR as-set/route-set"),
-                "help_text" : field_help(Network, "irr_as_set"),
+                "help_text": field_help(Network, "irr_as_set"),
                 "notify_incomplete": True,
                 "value": network_d.get("irr_as_set", dismiss),
             },
@@ -1424,7 +1425,7 @@ def view_network(request, id):
                 "name": "info_prefixes4",
                 "label": _("IPv4 Prefixes"),
                 "type": "number",
-                "help_text" : field_help(Network, "info_prefixes4"),
+                "help_text": field_help(Network, "info_prefixes4"),
                 "notify_incomplete": True,
                 "value": int(network_d.get("info_prefixes4") or 0),
             },
@@ -1432,7 +1433,7 @@ def view_network(request, id):
                 "name": "info_prefixes6",
                 "label": _("IPv6 Prefixes"),
                 "type": "number",
-                "help_text" : field_help(Network, "info_prefixes6"),
+                "help_text": field_help(Network, "info_prefixes6"),
                 "notify_incomplete": True,
                 "value": int(network_d.get("info_prefixes6") or 0),
             },
@@ -1482,11 +1483,12 @@ def view_network(request, id):
                     {
                         "name": "info_never_via_route_servers",
                         "label": _("Never via route servers"),
-                        #FIXME: change to `field_help` after merging with #228
-                        "help_text": Network._meta.get_field("info_never_via_route_servers").help_text,
+                        # FIXME: change to `field_help` after merging with #228
+                        "help_text": Network._meta.get_field(
+                            "info_never_via_route_servers"
+                        ).help_text,
                         "value": network_d.get("info_never_via_route_servers", False),
                     },
-
                 ],
             },
             {

@@ -63,12 +63,10 @@ class Command(BaseCommand):
             for version in versions:
                 data = json.loads(version.serialized_data)[0].get("fields")
                 n += 1
-                print("VERSION: %d (%d) - %s - User: %s" % (
-                    n,
-                    version.id,
-                    data.get("updated"),
-                    version.revision.user,
-                ))
+                print(
+                    "VERSION: %d (%d) - %s - User: %s"
+                    % (n, version.id, data.get("updated"), version.revision.user,)
+                )
                 if not prev:
                     for k, v in list(data.items()):
                         print("%s: '%s'" % (k, v))

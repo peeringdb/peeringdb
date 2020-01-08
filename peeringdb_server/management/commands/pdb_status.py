@@ -139,7 +139,7 @@ class Command(BaseCommand):
                 .count()
             )
             if count > 0:
-                print("%d orphaned %ss (org status='deleted')" % (
-                    count,
-                    model.handleref.tag,
-                ))
+                print(
+                    "%d orphaned %ss (org status='deleted')"
+                    % (count, model.handleref.tag,)
+                )

@@ -52,9 +52,11 @@ class LocaleFilesTest(TestCase):
             variables_b = sorted(re.findall(r"%\([^\(]+\)s|%s", other_messages[msgid]))
             if variables_a != variables_b:
                 errors += 1
-                print("{} Locale variable error at msgid {} -> {}".format(
-                    language, msgid, other_messages[msgid]
-                ))
+                print(
+                    "{} Locale variable error at msgid {} -> {}".format(
+                        language, msgid, other_messages[msgid]
+                    )
+                )
 
             # {name} and {} type variables
             variables_a = sorted(
@@ -67,8 +69,10 @@ class LocaleFilesTest(TestCase):
             ]
             if variables_a != variables_b:
                 errors += 1
-                print("{} Locale variable error at msgid {} -> {}".format(
-                    language, msgid, other_messages[msgid]
-                ))
+                print(
+                    "{} Locale variable error at msgid {} -> {}".format(
+                        language, msgid, other_messages[msgid]
+                    )
+                )
 
         assert errors == 0

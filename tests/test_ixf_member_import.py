@@ -285,7 +285,7 @@ class JsonMembersListTestCase(ClientCase):
             ixlan, data=self.json_data
         )
 
-        #print(json.dumps(log,indent=2))
+        # print(json.dumps(log,indent=2))
 
         self.assertLog(log, "skip_prefix_mismatch")
         self.assertEqual(len(netixlans), 0)

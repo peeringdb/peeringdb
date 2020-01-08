@@ -232,7 +232,10 @@ class AdminTests(TestCase):
         response = c.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         for i, n in models.COMMANDLINE_TOOLS:
-            assert '<option value="{}">{}</option>'.format(i, n) in response.content.decode()
+            assert (
+                '<option value="{}">{}</option>'.format(i, n)
+                in response.content.decode()
+            )
 
     def test_commandline_tool_renumber_lans(self):
         # test the form that runs the renumer ip space tool
@@ -261,9 +264,15 @@ class AdminTests(TestCase):
 
         assert response.status_code == 200
         assert "[pretend] Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24" in cont
-        assert "[pretend] Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37" in cont
-        assert "[pretend] Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38" in cont
-        assert "[pretend] Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39" in cont
+        assert (
+            "[pretend] Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37" in cont
+        )
+        assert (
+            "[pretend] Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38" in cont
+        )
+        assert (
+            "[pretend] Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39" in cont
+        )
 
         # test post to renumber lans command form
         data = {

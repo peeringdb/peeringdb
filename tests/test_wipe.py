@@ -6,6 +6,7 @@ from peeringdb_server.models import REFTAG_MAP, UTC
 
 from .util import ClientCase, Group
 
+
 class TestWipe(ClientCase):
     @classmethod
     def setUpTestData(cls):
@@ -55,8 +56,12 @@ class TestWipe(ClientCase):
             dates[reftag] = cls.objects.all().first().created.replace(tzinfo=UTC())
 
         settings.TUTORIAL_MODE = True
-        call_command("pdb_wipe", commit=True, load_data=True,
-                     load_data_url="https://test.peeringdb.com/api")
+        call_command(
+            "pdb_wipe",
+            commit=True,
+            load_data=True,
+            load_data_url="https://test.peeringdb.com/api",
+        )
         settings.TUTORIAL_MODE = False
 
         for reftag, cls in REFTAG_MAP.items():

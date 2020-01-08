@@ -59,8 +59,8 @@ settings.configure(
     LANGUAGES=[("en", _("English")), ("pt", _("Portuguese")),],
     USE_L10N=True,
     USE_I18N=True,
-    MEDIA_URL='/m/',
-    STATIC_URL='/s/',
+    MEDIA_URL="/m/",
+    STATIC_URL="/s/",
     MIDDLEWARE=(
         "corsheaders.middleware.CorsMiddleware",
         "django.contrib.sessions.middleware.SessionMiddleware",
@@ -135,7 +135,7 @@ settings.configure(
             "": {"handlers": ["stderr"], "level": "DEBUG", "propagate": False},
         },
     },
-    API_DOC_STR = {
+    API_DOC_STR={
         "retrieve": "retrieve object",
         "list": "list objects",
         "update": "update object",

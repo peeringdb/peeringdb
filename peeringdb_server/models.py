@@ -1,5 +1,3 @@
-
-
 import re
 import datetime
 from itertools import chain
@@ -246,7 +244,10 @@ class GeocodeBaseMixin(models.Model):
                 self.geocode_error = _("Address not found")
             self.geocode_status = True
             return result
-        except (googlemaps.exceptions.HTTPError, googlemaps.exceptions.ApiError) as inst:
+        except (
+            googlemaps.exceptions.HTTPError,
+            googlemaps.exceptions.ApiError,
+        ) as inst:
             self.geocode_error = str(inst)
             self.geocode_status = True
         except googlemaps.exceptions.Timeout as inst:
@@ -813,8 +814,12 @@ class SponsorshipOrganization(models.Model):
     Describes an organization->sponsorship relationship
     """
 
-    org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="sponsorshiporg_set")
-    sponsorship = models.ForeignKey(Sponsorship, on_delete=models.CASCADE, related_name="sponsorshiporg_set")
+    org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="sponsorshiporg_set"
+    )
+    sponsorship = models.ForeignKey(
+        Sponsorship, on_delete=models.CASCADE, related_name="sponsorshiporg_set"
+    )
     url = models.URLField(
         _("URL"),
         help_text=_(
@@ -841,7 +846,9 @@ class Partnership(models.Model):
     It will appear on the "partners" page
     """
 
-    org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="partnerships")
+    org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="partnerships"
+    )
     level = models.PositiveIntegerField(choices=PARTNERSHIP_LEVELS, default=1)
     url = models.URLField(
         _("URL"),
@@ -877,8 +884,12 @@ class OrganizationMerge(models.Model):
     it is logged here, allowing the merge to be undone
     """
 
-    from_org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="merged_to")
-    to_org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="merged_from")
+    from_org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="merged_to"
+    )
+    to_org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="merged_from"
+    )
     created = models.DateTimeField(_("Merged on"), auto_now_add=True)
 
     class Meta:
@@ -930,7 +941,9 @@ class OrganizationMergeEntity(models.Model):
     organization merge stored in OrganizationMerge
     """
 
-    merge = models.ForeignKey(OrganizationMerge, on_delete=models.CASCADE, related_name="entities")
+    merge = models.ForeignKey(
+        OrganizationMerge, on_delete=models.CASCADE, related_name="entities"
+    )
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     entity = GenericForeignKey("content_type", "object_id")
@@ -948,7 +961,9 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
     Describes a peeringdb facility
     """
 
-    org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="fac_set")
+    org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="fac_set"
+    )
 
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
@@ -1121,7 +1136,9 @@ class InternetExchange(pdb_models.InternetExchangeBase):
     Describes a peeringdb exchange
     """
 
-    org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="ix_set")
+    org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="ix_set"
+    )
 
     @staticmethod
     def autocomplete_search_fields():
@@ -1453,8 +1470,12 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     Describes facility to exchange relationship
     """
 
-    ix = models.ForeignKey(InternetExchange, on_delete=models.CASCADE, related_name="ixfac_set")
-    facility = models.ForeignKey(Facility, on_delete=models.CASCADE, default=0, related_name="ixfac_set")
+    ix = models.ForeignKey(
+        InternetExchange, on_delete=models.CASCADE, related_name="ixfac_set"
+    )
+    facility = models.ForeignKey(
+        Facility, on_delete=models.CASCADE, default=0, related_name="ixfac_set"
+    )
 
     @property
     def descriptive_name(self):
@@ -1496,7 +1517,9 @@ class IXLan(pdb_models.IXLanBase):
     # to have an id field that doesnt automatically increment
     id = models.IntegerField(primary_key=True)
 
-    ix = models.ForeignKey(InternetExchange, on_delete=models.CASCADE, default=0, related_name="ixlan_set")
+    ix = models.ForeignKey(
+        InternetExchange, on_delete=models.CASCADE, default=0, related_name="ixlan_set"
+    )
     ixf_ixp_member_list_url = models.URLField(null=True, blank=True)
     ixf_ixp_import_enabled = models.BooleanField(default=False)
 
@@ -1833,7 +1856,9 @@ class IXLanIXFMemberImportLog(models.Model):
     netixlan under the specified ixlans
     """
 
-    ixlan = models.ForeignKey(IXLan, on_delete=models.CASCADE, related_name="ixf_import_log_set")
+    ixlan = models.ForeignKey(
+        IXLan, on_delete=models.CASCADE, related_name="ixf_import_log_set"
+    )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -1862,15 +1887,24 @@ class IXLanIXFMemberImportLogEntry(models.Model):
     the change
     """
 
-    log = models.ForeignKey(IXLanIXFMemberImportLog, on_delete=models.CASCADE, related_name="entries")
+    log = models.ForeignKey(
+        IXLanIXFMemberImportLog, on_delete=models.CASCADE, related_name="entries"
+    )
     netixlan = models.ForeignKey(
-        "peeringdb_server.NetworkIXLan", on_delete=models.CASCADE, related_name="ixf_import_log_entries"
+        "peeringdb_server.NetworkIXLan",
+        on_delete=models.CASCADE,
+        related_name="ixf_import_log_entries",
     )
     version_before = models.ForeignKey(
-        reversion.models.Version, on_delete=models.CASCADE, null=True, related_name="ixf_import_log_before"
+        reversion.models.Version,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="ixf_import_log_before",
     )
     version_after = models.ForeignKey(
-        reversion.models.Version, on_delete=models.CASCADE, related_name="ixf_import_log_after"
+        reversion.models.Version,
+        on_delete=models.CASCADE,
+        related_name="ixf_import_log_after",
     )
     action = models.CharField(max_length=255, null=True, blank=True)
     reason = models.CharField(max_length=255, null=True, blank=True)
@@ -1931,7 +1965,9 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
     Descries a Prefix at an Exchange LAN
     """
 
-    ixlan = models.ForeignKey(IXLan, on_delete=models.CASCADE, default=0, related_name="ixpfx_set")
+    ixlan = models.ForeignKey(
+        IXLan, on_delete=models.CASCADE, default=0, related_name="ixpfx_set"
+    )
 
     @property
     def descriptive_name(self):
@@ -2018,7 +2054,9 @@ class Network(pdb_models.NetworkBase):
     Describes a peeringdb network
     """
 
-    org = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="net_set")
+    org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="net_set"
+    )
     allow_ixp_update = models.BooleanField(
         null=False,
         default=False,
@@ -2278,7 +2316,9 @@ class NetworkContact(pdb_models.ContactBase):
     """
 
     # id = models.AutoField(primary_key=True)
-    network = models.ForeignKey(Network, on_delete=models.CASCADE, default=0, related_name="poc_set")
+    network = models.ForeignKey(
+        Network, on_delete=models.CASCADE, default=0, related_name="poc_set"
+    )
 
     class Meta:
         db_table = "peeringdb_network_contact"
@@ -2333,8 +2373,12 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     Describes a network <-> facility relationship
     """
 
-    network = models.ForeignKey(Network, on_delete=models.CASCADE, default=0, related_name="netfac_set")
-    facility = models.ForeignKey(Facility, on_delete=models.CASCADE, default=0, related_name="netfac_set")
+    network = models.ForeignKey(
+        Network, on_delete=models.CASCADE, default=0, related_name="netfac_set"
+    )
+    facility = models.ForeignKey(
+        Facility, on_delete=models.CASCADE, default=0, related_name="netfac_set"
+    )
 
     class Meta:
         db_table = "peeringdb_network_facility"
@@ -2440,8 +2484,12 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     Describes a network relationship to an IX through an IX Lan
     """
 
-    network = models.ForeignKey(Network, on_delete=models.CASCADE, default=0, related_name="netixlan_set")
-    ixlan = models.ForeignKey(IXLan, on_delete=models.CASCADE, default=0, related_name="netixlan_set")
+    network = models.ForeignKey(
+        Network, on_delete=models.CASCADE, default=0, related_name="netixlan_set"
+    )
+    ixlan = models.ForeignKey(
+        IXLan, on_delete=models.CASCADE, default=0, related_name="netixlan_set"
+    )
 
     class Meta:
         db_table = "peeringdb_network_ixlan"
@@ -2915,7 +2963,9 @@ class UserPasswordReset(models.Model):
     class Meta:
         db_table = "peeringdb_user_password_reset"
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name="password_reset")
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, primary_key=True, related_name="password_reset"
+    )
     token = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -2949,7 +2999,10 @@ class CommandLineTool(models.Model):
         blank=True,
     )
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, help_text=_("the user that ran this command"), related_name="clt_history"
+        User,
+        on_delete=models.CASCADE,
+        help_text=_("the user that ran this command"),
+        related_name="clt_history",
     )
     created = models.DateTimeField(
         auto_now_add=True, help_text=_("command was run at this date and time")

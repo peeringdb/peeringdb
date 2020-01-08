@@ -297,7 +297,12 @@ def soft_delete(modeladmin, request, queryset):
         reversion.set_user(request.user)
 
     if queryset.model.handleref.tag == "ixlan":
-        messages.error(request, _("Ixlans can no longer be directly deleted as they are now synced to the parent exchange"))
+        messages.error(
+            request,
+            _(
+                "Ixlans can no longer be directly deleted as they are now synced to the parent exchange"
+            ),
+        )
         return
 
     for row in queryset:
@@ -335,7 +340,6 @@ class SoftDeleteAdmin(
         if request.user:
             reversion.set_user(request.user)
         super(SoftDeleteAdmin, self).save_formset(request, form, formset, change)
-
 
 
 class ModelAdminWithVQCtrl(object):

@@ -61,4 +61,3 @@ def test_generate_for_current_date(db, data_stats_current):
     setup_data()
     call_command("pdb_stats", stdout=output)
     assert data_stats_current.txt in output.getvalue()
-

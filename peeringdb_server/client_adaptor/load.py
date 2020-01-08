@@ -1,9 +1,10 @@
 from django_peeringdb.client_adaptor.load import (
     DJANGO_DB_FIELDS,
     database_settings,
-    )
+)
 
 __backend = None
+
 
 def load_backend(**orm_config):
     """
@@ -11,15 +12,14 @@ def load_backend(**orm_config):
     Assumes config is valid.
     """
     settings = {}
-    settings['SECRET_KEY'] = orm_config.get('secret_key', '')
+    settings["SECRET_KEY"] = orm_config.get("secret_key", "")
 
-    db_config = orm_config['database']
+    db_config = orm_config["database"]
     if db_config:
-        settings['DATABASES'] = {
-            'default': database_settings(db_config)
-        }
+        settings["DATABASES"] = {"default": database_settings(db_config)}
 
     from peeringdb_server.client_adaptor.setup import configure
+
     # Override defaults
     configure(**settings)
     # Must import implementation module after configure

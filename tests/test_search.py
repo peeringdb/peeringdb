@@ -117,7 +117,8 @@ class SearchTests(TestCase):
         request = factory.get("/search", {"q": "Sponsor"})
         response = views.request_search(request)
         m = re.findall(
-            re.escape('<a href="/sponsors" class="sponsor silver">'), response.content.decode()
+            re.escape('<a href="/sponsors" class="sponsor silver">'),
+            response.content.decode(),
         )
 
         assert len(m) == 4

@@ -919,7 +919,7 @@ class TestJSON(unittest.TestCase):
     def test_user_001_GET_as_set(self):
         data = self.db_guest.all("as_set")
         networks = Network.objects.filter(status="ok")
-        print (data)
+        print(data)
         for net in networks:
             self.assertEqual(data[0].get("{}".format(net.asn)), net.irr_as_set)
 
@@ -2316,7 +2316,9 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_netfac_related_country(self):
-        data = self.db_guest.all("netfac", country=u"{}".format(SHARED["fac_rw_ok"].country))
+        data = self.db_guest.all(
+            "netfac", country=u"{}".format(SHARED["fac_rw_ok"].country)
+        )
         self.assertEqual(len(data), 2)
         self.assert_data_integrity(data[0], "netfac")
 
@@ -2378,9 +2380,7 @@ class TestJSON(unittest.TestCase):
         net = Network.objects.create(
             asn=12345, name="net unaccented", status="ok", org=org
         )
-        ix = InternetExchange.objects.create(
-            org=org, name="ix unaccented", status="ok"
-        )
+        ix = InternetExchange.objects.create(org=org, name="ix unaccented", status="ok")
         fac = Facility.objects.create(org=org, name="fac unaccented", status="ok")
 
         for tag in ["org", "net", "ix", "fac"]:

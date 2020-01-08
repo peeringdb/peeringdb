@@ -1073,9 +1073,11 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
 
         related_fields = ["ix", "fac"]
 
-        validators = [validators.UniqueTogetherValidator(
-            InternetExchangeFacility.objects.all(),
-            ["ix_id","fac_id"])]
+        validators = [
+            validators.UniqueTogetherValidator(
+                InternetExchangeFacility.objects.all(), ["ix_id", "fac_id"]
+            )
+        ]
 
         _ref_tag = model.handleref.tag
 
@@ -1358,10 +1360,11 @@ class NetworkFacilitySerializer(ModelSerializer):
 
         list_exclude = ["net", "fac"]
 
-        validators = [validators.UniqueTogetherValidator(
-            NetworkFacility.objects.all(),
-            ["net_id","fac_id","local_asn"])]
-
+        validators = [
+            validators.UniqueTogetherValidator(
+                NetworkFacility.objects.all(), ["net_id", "fac_id", "local_asn"]
+            )
+        ]
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):

@@ -1,5 +1,3 @@
-
-
 import logging
 
 from ._db_command import CommandError, DBCommand

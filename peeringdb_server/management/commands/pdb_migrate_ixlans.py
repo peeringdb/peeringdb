@@ -243,9 +243,13 @@ class Command(BaseCommand):
         # create new exchange
 
         new_ix = InternetExchange(
-            name=u"{} {}".format(ix.name, suffix), org=ix.org, status=ixlan.status,
-            city=ix.city, media=ix.media, region_continent=ix.region_continent,
-            country=ix.country
+            name=u"{} {}".format(ix.name, suffix),
+            org=ix.org,
+            status=ixlan.status,
+            city=ix.city,
+            media=ix.media,
+            region_continent=ix.region_continent,
+            country=ix.country,
         )
 
         # we call save() with create_ixlan=False because we will
@@ -414,7 +418,6 @@ class Command(BaseCommand):
                         netixlan.network.org.save()
                 for ixpfx in ixlan.ixpfx_set.all():
                     reversion.add_to_revision(ixpfx)
-
 
         # if old_id still points to this ixlan in our ixlans collection
         # delete it so we know the old id is now available

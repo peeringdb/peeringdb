@@ -258,19 +258,28 @@ class UserTests(TestCase):
         # invalid secret
         response = c.get("/username-retrieve/complete?secret=123")
         assert self.user_a.email not in response.content.decode()
-        assert '<p class="username">{}</p>'.format(self.user_a.username) not in response.content.decode()
+        assert (
+            '<p class="username">{}</p>'.format(self.user_a.username)
+            not in response.content.decode()
+        )
 
         # complete process
         response = c.get("/username-retrieve/complete?secret={}".format(secret))
 
         assert self.user_a.email in response.content.decode()
-        assert '<p class="username">{}</p>'.format(self.user_a.username) in response.content.decode()
+        assert (
+            '<p class="username">{}</p>'.format(self.user_a.username)
+            in response.content.decode()
+        )
 
         # process no longer valid
         response = c.get("/username-retrieve/complete?secret={}".format(secret))
 
         assert self.user_a.email not in response.content.decode()
-        assert '<p class="username">{}</p>'.format(self.user_a.username) not in response.content.decode()
+        assert (
+            '<p class="username">{}</p>'.format(self.user_a.username)
+            not in response.content.decode()
+        )
 
         with pytest.raises(KeyError):
             secret = c.session["username_retrieve_secret"]
@@ -286,7 +295,9 @@ class UserTests(TestCase):
         c = Client()
         response = c.get("/register")
         assert 'name="captcha_generator_0"' in response.content.decode()
-        m = re.search('name="captcha_generator_0" value="([^"]+)"', response.content.decode())
+        m = re.search(
+            'name="captcha_generator_0" value="([^"]+)"', response.content.decode()
+        )
 
         captcha_obj = CaptchaStore.objects.get(hashkey=m.group(1))
 

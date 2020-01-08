@@ -420,11 +420,15 @@ class Importer(object):
             try:
                 if ipv4_addr:
                     self.ipaddresses.append(
-                        "{}-{}".format(asn, ipaddress.ip_address(u"{}".format(ipv4_addr)))
+                        "{}-{}".format(
+                            asn, ipaddress.ip_address(u"{}".format(ipv4_addr))
+                        )
                     )
                 if ipv6_addr:
                     self.ipaddresses.append(
-                        "{}-{}".format(asn, ipaddress.ip_address(u"{}".format(ipv6_addr)))
+                        "{}-{}".format(
+                            asn, ipaddress.ip_address(u"{}".format(ipv6_addr))
+                        )
                     )
             except (ipaddress.AddressValueError, ValueError) as exc:
                 self.log_error(

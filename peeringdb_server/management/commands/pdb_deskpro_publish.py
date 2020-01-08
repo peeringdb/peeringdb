@@ -44,7 +44,5 @@ class Command(BaseCommand):
                 )
                 ticket.published = datetime.datetime.now().replace(tzinfo=models.UTC())
                 ticket.subject = "[FAILED] {}".format(ticket.subject)
-                ticket.body = "{}\nAPI Delivery Error: {}".format(
-                    ticket.body, exc.data
-                )
+                ticket.body = "{}\nAPI Delivery Error: {}".format(ticket.body, exc.data)
                 ticket.save()

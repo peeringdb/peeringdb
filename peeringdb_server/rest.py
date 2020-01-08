@@ -572,22 +572,22 @@ def model_view_set(model, methods=None):
     clsdict = {
         "model": model_t,
         "serializer_class": scls,
-
         # TODO: use coreapi schemas to build parameter docs
         # for retrieve and list
         "__doc__": (
-            "Rest API endpoint for " + model +
-            "\n\nlist:\n" +
-            settings.API_DOC_STR["list"] +
-            "\n\nretrieve:\n" +
-            settings.API_DOC_STR["retrieve"] +
-            "\n\ncreate:\n" +
-            settings.API_DOC_STR["create"] +
-            "\n\nupdate:\n" +
-            settings.API_DOC_STR["update"] +
-            "\n\ndelete:\n" +
-            settings.API_DOC_STR["delete"]
-        )
+            "Rest API endpoint for "
+            + model
+            + "\n\nlist:\n"
+            + settings.API_DOC_STR["list"]
+            + "\n\nretrieve:\n"
+            + settings.API_DOC_STR["retrieve"]
+            + "\n\ncreate:\n"
+            + settings.API_DOC_STR["create"]
+            + "\n\nupdate:\n"
+            + settings.API_DOC_STR["update"]
+            + "\n\ndelete:\n"
+            + settings.API_DOC_STR["delete"]
+        ),
     }
 
     # create the type

@@ -12,9 +12,10 @@ import peeringdb_server.models as models
 from django_peeringdb.client_adaptor.backend import (
     Backend as BaseBackend,
     reftag_to_cls,
-    )
+)
 
 __version__ = "1.0"
+
 
 class Backend(BaseBackend):
 
@@ -82,9 +83,7 @@ class Backend(BaseBackend):
 
         if field_name in ["sponsorship_set"]:
             return
-        return super(Backend, self).set_relation_many_to_many(
-            obj, field_name, objs)
-
+        return super(Backend, self).set_relation_many_to_many(obj, field_name, objs)
 
     def clean(self, obj):
         """
@@ -104,22 +103,26 @@ class Backend(BaseBackend):
         """
 
         if isinstance(obj, models.Network):
-            obj.info_prefixes4 = min(obj.info_prefixes4, settings.DATA_QUALITY_MAX_PREFIX_V4_LIMIT)
-            obj.info_prefixes6 = min(obj.info_prefixes6, settings.DATA_QUALITY_MAX_PREFIX_V6_LIMIT)
+            obj.info_prefixes4 = min(
+                obj.info_prefixes4, settings.DATA_QUALITY_MAX_PREFIX_V4_LIMIT
+            )
+            obj.info_prefixes6 = min(
+                obj.info_prefixes6, settings.DATA_QUALITY_MAX_PREFIX_V6_LIMIT
+            )
 
         obj.clean_fields()
         obj.validate_unique()
 
-        if not isinstance(obj, (models.IXLanPrefix, models.NetworkIXLan, models.NetworkFacility)):
+        if not isinstance(
+            obj, (models.IXLanPrefix, models.NetworkIXLan, models.NetworkFacility)
+        ):
             obj.clean()
-
 
     def save(self, obj):
         if obj.HandleRef.tag == "ix":
             obj.save(create_ixlan=False)
         else:
             obj.save()
-
 
     def detect_uniqueness_error(self, exc):
         """
@@ -133,17 +136,12 @@ class Backend(BaseBackend):
             return self._detect_integrity_error(exc)
         assert isinstance(exc, ValidationError), TypeError
 
-        error_dict = getattr(
-            exc, "error_dict", getattr(
-                exc, "message_dict", {}
-            )
-        )
+        error_dict = getattr(exc, "error_dict", getattr(exc, "message_dict", {}))
 
         for name, err in error_dict.items():
             if re.search(pattern, str(err)):
                 fields.append(name)
         return fields or None
-
 
     def detect_missing_relations(self, obj, exc):
         """
@@ -152,11 +150,7 @@ class Backend(BaseBackend):
         """
         missing = defaultdict(set)
 
-        error_dict = getattr(
-            exc, "error_dict", getattr(
-                exc, "message_dict", {}
-            )
-        )
+        error_dict = getattr(exc, "error_dict", getattr(exc, "message_dict", {}))
 
         for name, err in error_dict.items():
             # check if it was a relationship that doesnt exist locally

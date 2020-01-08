@@ -8,23 +8,35 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0025_E164_phonenumbers'),
+        ("peeringdb_server", "0025_E164_phonenumbers"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='network',
-            name='info_prefixes4',
-            field=models.PositiveIntegerField(blank=True, help_text='Recommended IPv4 maximum-prefix limit to be configured on peering sessions for this ASN', null=True),
+            model_name="network",
+            name="info_prefixes4",
+            field=models.PositiveIntegerField(
+                blank=True,
+                help_text="Recommended IPv4 maximum-prefix limit to be configured on peering sessions for this ASN",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='network',
-            name='info_prefixes6',
-            field=models.PositiveIntegerField(blank=True, help_text='Recommended IPv6 maximum-prefix limit to be configured on peering sessions for this ASN', null=True),
+            model_name="network",
+            name="info_prefixes6",
+            field=models.PositiveIntegerField(
+                blank=True,
+                help_text="Recommended IPv6 maximum-prefix limit to be configured on peering sessions for this ASN",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='network',
-            name='irr_as_set',
-            field=models.CharField(blank=True, help_text='Reference to an AS-SET or ROUTE-SET in Internet Routing Registry (IRR)', max_length=255),
+            model_name="network",
+            name="irr_as_set",
+            field=models.CharField(
+                blank=True,
+                help_text="Reference to an AS-SET or ROUTE-SET in Internet Routing Registry (IRR)",
+                max_length=255,
+            ),
         ),
     ]

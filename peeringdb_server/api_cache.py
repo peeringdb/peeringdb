@@ -162,7 +162,11 @@ class APICacheLoader(object):
                 joined_ids[t] = {
                     "p": p,
                     "ids": self.join_ids(
-                        data, t, p, model, list(joined_ids.get(p, e).get("ids", e).values())
+                        data,
+                        t,
+                        p,
+                        model,
+                        list(joined_ids.get(p, e).get("ids", e).values()),
                     ),
                 }
 
