@@ -118,6 +118,7 @@ settings.configure(
             "django_namespace_perms.rest.BasePermission",
         ],
         "DEFAULT_RENDERER_CLASSES": ("peeringdb_server.renderers.MetaJSONRenderer",),
+        "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
     },
     NSP_MODE="crud",
     NSP_GUEST_GROUP="guest",
