@@ -297,10 +297,14 @@ class Command(BaseCommand):
         while loop:
             loop = False
 
-            for ixlan in ixlans.values():
-                if ixlan.id != ixlan.ix.id:
-                    loop = True
-                    self.migrate_ixlan_id(ixlan, ixlans)
+            try:
+                for ixlan in ixlans.values():
+                    if ixlan.id != ixlan.ix.id:
+                        loop = True
+                        self.migrate_ixlan_id(ixlan, ixlans)
+            except RuntimeError:
+                # ixlan `dict` size change, start over
+                loop = True
 
         self.log("Phase 3: Done")
 
