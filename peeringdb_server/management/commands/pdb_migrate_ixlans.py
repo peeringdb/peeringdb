@@ -267,7 +267,7 @@ class Command(BaseCommand):
 
         for ixfac in ix.ixfac_set_active:
             ixfac_copy = InternetExchangeFacility(
-                ix=new_ix, facility=ixfac.facility, status=ixfac.status
+                ix=new_ix, facility=ixfac.facility, status=new_ix.status
             )
             if self.commit:
                 ixfac_copy.save()
