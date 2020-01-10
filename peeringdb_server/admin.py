@@ -570,7 +570,7 @@ class IXLanAdminForm(StatusForm):
 class IXLanAdmin(SoftDeleteAdmin):
     actions = []
     list_display = ("ix", "name", "descr", "status")
-    search_fields = ("name",)
+    search_fields = ("name", "ix__name")
     list_filter = (StatusFilter,)
     readonly_fields = ("id",)
     inlines = (IXLanPrefixInline, NetworkInternetExchangeInline)
