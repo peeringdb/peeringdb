@@ -1,4 +1,11 @@
 PeeringDB = {
+  // flip to false to disable js side confirmation
+  // prompts
+  confirmation_prompts: {
+    approve : true,
+    remove : true,
+    deny : true
+  },
   is_mobile : /Android|WebOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
   js_enabled : function() {
     return this.is_mobile ? false : true;
@@ -172,6 +179,20 @@ PeeringDB = {
         $(this).find('.editable.popin.incomplete').addClass("hidden").hide();
       }
     });
+  },
+
+  /**
+   * prompt user with a confirmation dialogue
+   *
+   * will take `confirmation_prompts` setting into account
+   */
+
+  confirm: function(msg, type) {
+    if(!type || this.confirmation_prompts[type]) {
+      return confirm(msg);
+    } else {
+      return true;
+    }
   }
 }
 
@@ -815,7 +836,7 @@ twentyc.editable.module.register(
     },
 
     remove : function(id, row, trigger, container) {
-      var b = confirm(gettext("Remove") + " " +row.data("edit-label"));  ///
+      var b = PeeringDB.confirm(gettext("Remove") + " " +row.data("edit-label"), "remove");  ///
       var me = this;
       $(this.target).on("success", function(ev, data) {
         if(b)
@@ -849,7 +870,7 @@ twentyc.editable.module.register(
     execute_approve : function(trigger, container) {
       var row = trigger.closest("[data-edit-id]").first()
 
-      var b = confirm(gettext("Add user") + " " +row.data("edit-label")+ " " + gettext("to Organization?")); ///
+      var b = PeeringDB.confirm(gettext("Add user") + " " +row.data("edit-label")+ " " + gettext("to Organization?"), "approve"); ///
       if(!b)
         return;
 
@@ -866,7 +887,7 @@ twentyc.editable.module.register(
     execute_deny : function(trigger, container) {
       var row = trigger.closest("[data-edit-id]").first()
 
-      var b = confirm(gettext("Deny") +" "+row.data("edit-label")+"'s " + gettext("request to join the Organization?"));  ///
+      var b = PeeringDB.confirm(gettext("Deny") +" "+row.data("edit-label")+"'s " + gettext("request to join the Organization?"), "deny");  ///
       if(!b)
         return;
 
@@ -1175,7 +1196,7 @@ twentyc.editable.module.register(
     },
 
     remove : function(id, row, trigger, container) {
-      var b = confirm(gettext("Remove") + " "+row.data("edit-label")); ///
+      var b = PeeringDB.confirm(gettext("Remove") + " "+row.data("edit-label"), "remove"); ///
       var me = this;
       $(this.target).on("success", function(ev, data) {
         if(b)

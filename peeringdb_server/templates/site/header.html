@@ -35,6 +35,9 @@ window.STATIC_URL = "{{ STATIC_URL }}";
 $(window).bind("load", function() {
   if(!PeeringDB.csrf)
     PeeringDB.csrf = '{{ csrf_token }}';
+  {% if request.user.is_superuser %}
+  PeeringDB.confirmation_prompts.approve = false;
+  {% endif %}
 });
 </script>
 </head>
