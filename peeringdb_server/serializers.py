@@ -1873,6 +1873,9 @@ class InternetExchangeSerializer(ModelSerializer):
 
     suggest = serializers.BooleanField(required=False, write_only=True)
 
+    website = serializers.URLField(required=True)
+    tech_email = serializers.EmailField(required=True)
+
     # For the creation of the initial prefix during exchange
     # creation. It will be a required field during `POST` requests
     # but will be ignored during `PUT` so we cannot just do
