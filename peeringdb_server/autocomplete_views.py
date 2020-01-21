@@ -131,12 +131,13 @@ class IXLanAutocomplete(AutocompleteHTMLResponse):
 
     def get_result_label(self, item):
         return (
-            '<span data-value="%d"><div class="main">%s <div class="tiny suffix">%s</div></div> <div class="sub">%s</div></span>'
+            '<span data-value="%d"><div class="main">%s <div class="tiny suffix">%s</div></div> <div class="sub">%s</div> <div class="sub">%s</div></span>'
             % (
                 item.pk,
                 html.escape(item.ix.name),
                 html.escape(item.ix.country.code),
                 html.escape(item.ix.name_long),
+                html.escape(item.name),
             )
         )
 

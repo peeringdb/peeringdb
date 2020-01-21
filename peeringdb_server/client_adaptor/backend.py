@@ -119,10 +119,7 @@ class Backend(BaseBackend):
             obj.clean()
 
     def save(self, obj):
-        if obj.HandleRef.tag == "ix":
-            obj.save(create_ixlan=False)
-        else:
-            obj.save()
+        obj.save()
 
     def detect_uniqueness_error(self, exc):
         """

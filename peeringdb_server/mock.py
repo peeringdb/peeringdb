@@ -96,10 +96,6 @@ class Mock(object):
             # these we don't care about
             if field.name in ["id", "logo", "version", "created", "updated"]:
                 continue
-                # if reftag == "ixlan" and field.name != "id":
-                #    continue
-                # elif reftag != "ixlan":
-                #    continue
 
             # this we dont care about either
             if field.name.find("geocode") == 0:
@@ -144,15 +140,7 @@ class Mock(object):
                 # with the same name as the field name
                 else:
                     data[field.name] = getattr(self, field.name)(data, reftag=reftag)
-        obj = model(**data)
-        obj.clean()
-        obj.save()
-        return obj
-
-    def id(self, data, reftag=None):
-        if reftag == "ixlan":
-            return data["ix"].id
-        return None
+        return model.objects.create(**data)
 
     def status(self, data, reftag=None):
         return "ok"

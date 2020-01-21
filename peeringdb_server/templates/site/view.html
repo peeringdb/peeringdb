@@ -63,27 +63,7 @@
   <!-- fields -->
   <div class="view_fields">
   {% for row in data.fields %}
-    {% if row.type == "group" %}
-      <div class="editable"
-           --data-edit-module="api_grouped_update"
-           data-edit-group="#view"
-           data-edit-target="{{ row.target }}"
-           data-edit-id="{{ row.id }}">
-           <div class="row view_row">
-             <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
-          </div>
-
-          <div class="editable payload">
-            {% for payload_row in row.payload %}
-            <div data-edit-name="{{ payload_row.name }}">{{ payload_row.value }}</div>
-            {% endfor %}
-          </div>
-
-    {% elif row.type == "group_end" %}
-      </div>
-    {% endif %}
-
-    {% if not row.value|dont_render and row.type != "group" and row.type != "group_end" %}
+    {% if not row.value|dont_render %}
     {% if not row.admin or permissions.can_write %}
     <div class="row view_row">
 

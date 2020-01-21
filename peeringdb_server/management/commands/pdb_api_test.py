@@ -346,7 +346,6 @@ class TestJSON(unittest.TestCase):
     def make_data_ixlan(self, **kwargs):
         data = {
             "ix_id": 1,
-            "id": 1,
             "name": self.make_name("Test"),
             "descr": NOTE,
             "mtu": 12345,
@@ -354,8 +353,6 @@ class TestJSON(unittest.TestCase):
             "rs_asn": 12345,
             "arp_sponge": None,
         }
-        if "ix_id" in kwargs:
-            data["id"] = kwargs.get("ix_id")
         data.update(**kwargs)
         return data
 
@@ -654,8 +651,7 @@ class TestJSON(unittest.TestCase):
         kwargs_s = {"%s_%s" % (rel, qfld): getattr(SHARED["%s_r_ok" % rel], fld)}
         kwargs_m = {"%s_%s__in" % (rel, qfld): ",".join([str(id) for id in ids])}
 
-        attr = getattr(REFTAG_MAP[target], rel, None)
-        if attr and not isinstance(attr, property):
+        if hasattr(REFTAG_MAP[target], "%s" % rel):
 
             valid_s = [
                 r.id
@@ -1002,11 +998,6 @@ class TestJSON(unittest.TestCase):
 
         SHARED["ix_id"] = r_data.get("id")
 
-        # make sure ixlan was created and has matching id
-        ix = InternetExchange.objects.get(id=SHARED["ix_id"])
-        assert ix.ixlan
-        assert ix.ixlan.id == ix.id
-
         self.assert_update(
             self.db_org_admin,
             "ix",
@@ -1339,23 +1330,23 @@ class TestJSON(unittest.TestCase):
     def test_org_admin_002_POST_PUT_DELETE_ixlan(self):
         data = self.make_data_ixlan(ix_id=SHARED["ix_rw_ok"].id)
 
-        with self.assertRaises(Exception) as exc:
-            r_data = self.assert_create(
-                self.db_org_admin,
-                "ixlan",
-                data,
-                test_failures={
-                    "invalid": {"ix_id": ""},
-                    "perms": {"ix_id": SHARED["ix_r_ok"].id},
-                    "status": {"ix_id": SHARED["ix_rw_pending"].id},
-                },
-            )
-        self.assertIn('Method "POST" not allowed', str(exc.exception))
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "ixlan",
+            data,
+            test_failures={
+                "invalid": {"ix_id": ""},
+                "perms": {"ix_id": SHARED["ix_r_ok"].id},
+                "status": {"ix_id": SHARED["ix_rw_pending"].id},
+            },
+        )
+
+        SHARED["ixlan_id"] = r_data["id"]
 
         self.assert_update(
             self.db_org_admin,
             "ixlan",
-            SHARED["ixlan_rw_ok"].id,
+            SHARED["ixlan_id"],
             {"name": self.make_name("Test")},
             test_failures={
                 "invalid": {"mtu": "NEEDS TO BE INT"},
@@ -1363,14 +1354,12 @@ class TestJSON(unittest.TestCase):
             },
         )
 
-        with self.assertRaises(Exception) as exc:
-            self.assert_delete(
-                self.db_org_admin,
-                "ixlan",
-                test_success=SHARED["ixlan_rw_ok"].id,
-                test_failure=SHARED["ixlan_r_ok"].id,
-            )
-        self.assertIn('Method "DELETE" not allowed', str(exc.exception))
+        self.assert_delete(
+            self.db_org_admin,
+            "ixlan",
+            test_success=SHARED["ixlan_id"],
+            test_failure=SHARED["ixlan_r_ok"].id,
+        )
 
     ##########################################################################
 
@@ -2093,8 +2082,11 @@ class TestJSON(unittest.TestCase):
             for i in range(0, 2)
         ]
 
-        # collect ixlans
-        ixlans = [ix.ixlan for ix in exchanges]
+        # create ixlan at each exchange
+        ixlans = [
+            IXLan.objects.create(status="ok", **self.make_data_ixlan(ix_id=ix.id))
+            for ix in exchanges
+        ]
 
         # all three networks peer at first exchange
         for net in networks:
@@ -2599,15 +2591,13 @@ class TestJSON(unittest.TestCase):
 
     def test_readonly_users_002_POST_ixlan(self):
         for db in self.readonly_dbs():
-            with self.assertRaises(Exception) as exc:
-                self.assert_create(
-                    db,
-                    "ixlan",
-                    self.make_data_ixlan(),
-                    test_failures={"perms": {}},
-                    test_success=False,
-                )
-            self.assertIn('Method "POST" not allowed', str(exc.exception))
+            self.assert_create(
+                db,
+                "ixlan",
+                self.make_data_ixlan(),
+                test_failures={"perms": {}},
+                test_success=False,
+            )
 
     ##########################################################################
 
@@ -2626,14 +2616,9 @@ class TestJSON(unittest.TestCase):
 
     def test_readonly_users_004_DELETE_ixlan(self):
         for db in self.readonly_dbs():
-            with self.assertRaises(Exception) as exc:
-                self.assert_delete(
-                    db,
-                    "ixlan",
-                    test_success=False,
-                    test_failure=SHARED["ixlan_r_ok"].id,
-                )
-            self.assertIn('Method "DELETE" not allowed', str(exc.exception))
+            self.assert_delete(
+                db, "ixlan", test_success=False, test_failure=SHARED["ixlan_r_ok"].id
+            )
 
     ##########################################################################
 
@@ -2725,6 +2710,16 @@ class TestJSON(unittest.TestCase):
             "poc",
             self.make_data_poc(net_id=SHARED["net_rw3_ok"].id),
             test_failures={"perms": {"net_id": SHARED["net_rw2_ok"].id}},
+        )
+
+        # user with create perms should not be able to create an ixlan under
+        # net_rw_ix
+        self.assert_create(
+            self.db_crud_create,
+            "ixlan",
+            self.make_data_ixlan(ix_id=SHARED["ix_rw3_ok"].id),
+            test_failures={"perms": {}},
+            test_success=False,
         )
 
         # other crud test users should not be able to create a new poc under
@@ -3139,9 +3134,7 @@ class Command(BaseCommand):
             for k in unset:
                 if k in data:
                     del data[k]
-            obj = model(**data)
-            obj.save()
-
+            obj = model.objects.create(**data)
             cls.log(
                 "%s with status '%s' for %s testing created! (%s)"
                 % (tag.upper(), status, prefix.upper(), obj.updated)
@@ -3306,12 +3299,12 @@ class Command(BaseCommand):
 
         for status in ["ok", "pending"]:
             for prefix in ["r", "rw"]:
-                SHARED["ixlan_{}_{}".format(prefix, status)] = SHARED[
-                    "ix_{}_{}".format(prefix, status)
-                ].ixlan
-
-        for status in ["ok", "pending"]:
-            for prefix in ["r", "rw"]:
+                cls.create_entity(
+                    IXLan,
+                    status=status,
+                    prefix=prefix,
+                    ix_id=SHARED["ix_%s_%s" % (prefix, status)].id,
+                )
                 cls.create_entity(
                     IXLanPrefix,
                     status=status,
