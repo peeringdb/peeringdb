@@ -10,7 +10,7 @@ import django.urls
 from django.conf.urls import url
 from django.shortcuts import redirect, Http404
 from django.contrib.contenttypes.models import ContentType
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.contrib.auth import forms
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
@@ -296,15 +296,6 @@ def soft_delete(modeladmin, request, queryset):
     if request.user:
         reversion.set_user(request.user)
 
-    if queryset.model.handleref.tag == "ixlan":
-        messages.error(
-            request,
-            _(
-                "Ixlans can no longer be directly deleted as they are now synced to the parent exchange"
-            ),
-        )
-        return
-
     for row in queryset:
         row.delete()
 
@@ -415,13 +406,7 @@ class IXLanInline(SanitizedAdmin, admin.StackedInline):
     extra = 0
     form = StatusForm
     exclude = ["arp_sponge"]
-    readonly_fields = ["id", "ixf_import_attempt_info", "prefixes"]
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj):
-        return False
+    readonly_fields = ["ixf_import_attempt_info", "prefixes"]
 
     def ixf_import_attempt_info(self, obj):
         if obj.ixf_import_attempt:
@@ -568,7 +553,6 @@ class IXLanAdminForm(StatusForm):
 
 
 class IXLanAdmin(SoftDeleteAdmin):
-    actions = []
     list_display = ("ix", "name", "descr", "status")
     search_fields = ("name", "ix__name")
     list_filter = (StatusFilter,)

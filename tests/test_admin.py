@@ -68,7 +68,9 @@ class AdminTests(TestCase):
         cls.admin_user.save()
 
         # set up some ixlans
-        cls.entities["ixlan"] = [ix.ixlan for ix in cls.entities["ix"]]
+        cls.entities["ixlan"] = [
+            models.IXLan.objects.create(ix=ix, status="ok") for ix in cls.entities["ix"]
+        ]
 
         # set up a prefix
         cls.entities["ixpfx"] = [
