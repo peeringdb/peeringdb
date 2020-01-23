@@ -1448,6 +1448,44 @@ twentyc.editable.input.register(
 );
 
 /*
+ * mandatory boolean input type
+ * renders a drop down with 3 choices
+ *
+ * - `-`
+ * - `yes`
+ * - `no`
+ *
+ * Will raise input-required validation error if `-`
+ * is selected upon form submission
+ */
+
+twentyc.editable.input.register(
+  "mandatory_bool",
+  {
+
+    make : function() {
+      var node = this.select_make();
+      this.source.data("edit-required", "yes")
+      return node;
+    },
+
+    set : function() {
+      this.load();
+    },
+
+    load : function() {
+      this.select_load([
+        {id: "", name: "-"},
+        {id: "1", name: gettext("Yes")},
+        {id: "0", name: gettext("No")},
+      ])
+    }
+  },
+  "select"
+);
+
+
+/*
  * autocomplete input type
  */
 
