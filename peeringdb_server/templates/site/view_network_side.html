@@ -21,15 +21,15 @@
   <div class="row header">
     <div class="col-xs-4 col-sm-4 col-md-6">
       <div data-sort-target=".exchange" data-sort-initial="asc">{% trans "Exchange" %}</div>
-      <div data-sort-target=".asn">{% trans "ASN" %}</div>
+      <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
     </div>
     <div class="col-xs-5 col-sm-5 col-md-4">
       <div>{% trans "IPv4" %}</div>
       <div>{% trans "IPv6" %}</div>
     </div>
     <div class="col-xs-3 col-sm-3 col-md-2">
-      <div data-sort-target=".speed">{% trans "Speed" %}</div>
-      <div data-sort-target=".rs_peer">{% trans "RS Peer" %}</div>
+      <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
+      <div data-sort-target=".rs_peer" class="ambiguous">{% trans "RS Peer" %}</div>
     </div>
   </div>
 
