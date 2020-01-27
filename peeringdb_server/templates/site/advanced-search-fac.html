@@ -1,6 +1,6 @@
 {% load i18n %}
 
-<div class="editable always auto-toggled filter-form" 
+<div class="editable always auto-toggled filter-form"
      data-edit-target="advanced_search:fac"
      data-edit-enter-action="submit"
      data-sort-container=".results"
@@ -63,7 +63,7 @@
                --data-edit-data-all-entry=":-- All Countries --"></div>
         </div>
       </div>
- 
+
     </div>
     <div class="col-xs-12 col-sm-6 col-md-6">
       <!-- RIGHT COLUMN -->
@@ -76,7 +76,7 @@
                data-edit-name="org_name"></div>
         </div>
       </div>
- 
+
       <div class="row">
         <div class="col-xs-4 col-sm-5 col-md-4">{% trans "CLLI" %}</div>
         <div class="col-xs-8 col-sm-7 col-md-8">
@@ -86,7 +86,7 @@
                data-edit-name="clli__startswith"></div>
         </div>
       </div>
- 
+
       <div class="row">
         <div class="col-xs-4 col-sm-5 col-md-4">{% trans "NPA-NXX" %}</div>
         <div class="col-xs-8 col-sm-7 col-md-8">
@@ -96,7 +96,7 @@
                data-edit-name="npanxx__startswith"></div>
         </div>
       </div>
- 
+
     </div>
   </div>
   <div class="right">
@@ -141,7 +141,7 @@
       </div>
       <div class="col-xs-2 col-sm-2 col-md-2">
         <div data-sort-target=".clli">{% trans "CLLI" %}</div>
-        <div data-sort-target=".npanxx">{% trans "NPA-NXX" %}</div>
+        <div data-sort-target=".npanxx" class="ambiguous">{% trans "NPA-NXX" %}</div>
       </div>
       <div class="col-xs-2 col-sm-2 col-md-2">
         <div data-sort-target=".city">{% trans "City" %}</div>
@@ -149,15 +149,15 @@
       </div>
       <div class="col-xs-2 col-sm-2 col-md-2">
         <div data-sort-target=".state">{% trans "State" %}</div>
-        <div data-sort-target=".zipcode">{% trans "Postal Code" %}</div>
+        <div data-sort-target=".zipcode" class="ambiguous">{% trans "Postal Code" %}</div>
       </div>
       <div class="col-xs-2 col-sm-2 col-md-2">
-        <div data-sort-target=".net_count">{% trans "Networks" %}</div>
+        <div data-sort-target=".net_count" class="numeric">{% trans "Networks" %}</div>
       </div>
 
     </div>
   </div>
- 
+
   <div class="results-empty center" style="display:none;">
     {% trans "No search results." %}
   </div>

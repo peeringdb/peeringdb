@@ -15,14 +15,14 @@
   <div class="row header">
     <div class="col-xs-5 col-sm-5 col-md-5">
       <div data-sort-target=".peer" data-sort-initial="asc">{% trans "Peer Name" %}</div>
-      <div data-sort-target=".asn">{% trans "ASN" %}</div>
+      <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
     </div>
     <div class="col-xs-4 col-sm-4 col-md-4">
       <div>{% trans "IPv4" %}</div>
       <div>{% trans "IPv6" %}</div>
     </div>
     <div class="col-xs-3 col-sm-3 col-md-3">
-      <div data-sort-target=".speed">{% trans "Speed" %}</div>
+      <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
       <div>{% trans "Policy" %}</div>
     </div>
   </div>
@@ -33,8 +33,8 @@
       <div class="message">{% trans "No filter matches." %}</div>
       <div class="help">
         {% spaceless %}
-        {% trans "You may filter by" %} 
-        <b>{% trans "Exchange" %}</b>, <b>{% trans "ASN" %}</b>, <b>{% trans "Policy" %}</b>, 
+        {% trans "You may filter by" %}
+        <b>{% trans "Exchange" %}</b>, <b>{% trans "ASN" %}</b>, <b>{% trans "Policy" %}</b>,
         <b>{% trans "IP" %}</b> {% trans "or" %} <b>{% trans "Speed" %}.</b>
         {% endspaceless %}
       </div>
