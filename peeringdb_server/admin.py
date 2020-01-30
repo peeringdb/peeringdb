@@ -425,6 +425,11 @@ class InternetExchangeFacilityInline(SanitizedAdmin, admin.TabularInline):
     raw_id_fields = ("ix", "facility")
     form = StatusForm
 
+    autocomplete_lookup_fields = {
+        "fk": ["facility",],
+    }
+
+
 
 class NetworkContactInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkContact
@@ -440,6 +445,12 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
         "network",
     )
     form = StatusForm
+    raw_id_fields = ("facility",)
+    autocomplete_lookup_fields = {
+        "fk": ["facility",],
+    }
+
+
 
 
 class NetworkIXLanValidationMixin(object):
@@ -534,6 +545,12 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     inlines = (InternetExchangeFacilityInline, IXLanInline)
     form = InternetExchangeAdminForm
 
+    raw_id_fields = ("org",)
+    autocomplete_lookup_fields = {
+        "fk": ["org"],
+    }
+
+
     def ixf_import_history(self, obj):
         return mark_safe(
             '<a href="{}?q={}">{}</a>'.format(
@@ -559,6 +576,12 @@ class IXLanAdmin(SoftDeleteAdmin):
     readonly_fields = ("id",)
     inlines = (IXLanPrefixInline, NetworkInternetExchangeInline)
     form = IXLanAdminForm
+    raw_id_fields = ("ix",)
+    autocomplete_lookup_fields = {
+        "fk": ["ix",],
+    }
+
+
 
 
 class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
@@ -859,6 +882,13 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     list_filter = (StatusFilter,)
     search_fields = ("name",)
     readonly_fields = ("id", "nsp_namespace")
+
+    raw_id_fields = ("org",)
+    autocomplete_lookup_fields = {
+        "fk": ["org"],
+    }
+
+
     form = FacilityAdminForm
     inlines = (
         InternetExchangeFacilityInline,
@@ -893,6 +923,13 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         NetworkInternetExchangeInline,
     )
 
+    raw_id_fields = ("org",)
+    autocomplete_lookup_fields = {
+        "fk": ["org",],
+    }
+
+
+
 
 class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
     list_display = ("id", "ix", "facility", "status", "created", "updated")
@@ -900,6 +937,12 @@ class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
     readonly_fields = ("id",)
     list_filter = (StatusFilter,)
     form = StatusForm
+
+    raw_id_fields = ("ix", "facility")
+    autocomplete_lookup_fields = {
+        "fk": ["ix", "facility"],
+    }
+
 
 
 class IXLanPrefixAdmin(SoftDeleteAdmin):
@@ -939,6 +982,12 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
     list_filter = (StatusFilter,)
     form = StatusForm
 
+    raw_id_fields = ("network",)
+    autocomplete_lookup_fields = {
+        "fk": ["network",],
+    }
+
+
     def ix(self, obj):
         return obj.ixlan.ix
 
@@ -963,6 +1012,12 @@ class NetworkContactAdmin(SoftDeleteAdmin):
     list_filter = (StatusFilter,)
     form = StatusForm
 
+    raw_id_fields = ("network",)
+    autocomplete_lookup_fields = {
+        "fk": ["network",],
+    }
+
+
     def net(self, obj):
         return "{} (AS{})".format(obj.network.name, obj.network.asn)
 
@@ -973,6 +1028,13 @@ class NetworkFacilityAdmin(SoftDeleteAdmin):
     readonly_fields = ("id", "net")
     list_filter = (StatusFilter,)
     form = StatusForm
+
+    raw_id_fields = ("network", "facility")
+    autocomplete_lookup_fields = {
+        "fk": ["network", "facility"],
+    }
+
+
 
     def net(self, obj):
         return "{} (AS{})".format(obj.network.name, obj.network.asn)
