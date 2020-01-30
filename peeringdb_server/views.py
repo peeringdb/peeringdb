@@ -1397,7 +1397,7 @@ def view_network(request, id):
             {
                 "name": "aka",
                 "label": _("Also Known As"),
-                "notify_incomplete": True,
+                "notify_incomplete": False,
                 "value": network_d.get("aka", dismiss),
             },
             {
@@ -1424,14 +1424,14 @@ def view_network(request, id):
                 "name": "route_server",
                 "type": "url",
                 "label": _("Route Server URL"),
-                "notify_incomplete": True,
+                "notify_incomplete": False,
                 "value": network_d.get("route_server", dismiss),
             },
             {
                 "name": "looking_glass",
                 "type": "url",
                 "label": _("Looking Glass URL"),
-                "notify_incomplete": True,
+                "notify_incomplete": False,
                 "value": network_d.get("looking_glass", dismiss),
             },
             {
@@ -1449,6 +1449,7 @@ def view_network(request, id):
                 "type": "number",
                 "help_text": field_help(Network, "info_prefixes4"),
                 "notify_incomplete": True,
+                "notify_incomplete_group": "prefixes",
                 "value": int(network_d.get("info_prefixes4") or 0),
             },
             {
@@ -1457,6 +1458,7 @@ def view_network(request, id):
                 "type": "number",
                 "help_text": field_help(Network, "info_prefixes6"),
                 "notify_incomplete": True,
+                "notify_incomplete_group": "prefixes",
                 "value": int(network_d.get("info_prefixes6") or 0),
             },
             {
