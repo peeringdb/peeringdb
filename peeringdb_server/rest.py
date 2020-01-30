@@ -11,7 +11,7 @@ import unidecode
 from rest_framework import routers, serializers, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
-from rest_framework.exceptions import ValidationError as RestValidationError
+from rest_framework.exceptions import ValidationError as RestValidationError, ParseError
 
 from django.apps import apps
 from django.conf import settings
@@ -29,6 +29,39 @@ from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
 
 import django_namespace_perms.util as nsp
 from django_namespace_perms.exceptions import *
+
+
+class DataException(ValueError):
+    pass
+
+
+class DataMissingException(DataException):
+
+    """
+    Will be raised when the json data sent with a POST, PUT or PATCH
+    request is missing
+    """
+
+    def __init__(self, method):
+        super(DataMissingException, self).__init__(
+            "No data was supplied with the {} request".format(method)
+        )
+
+
+class DataParseException(DataException):
+
+    """
+    Will be raised when the json data sent with a POST, PUT or PATCH
+    request could not be parsed
+    """
+
+    def __init__(self, method, exc):
+        super(DataParseException, self).__init__(
+            "Data supplied with the {} request could not be parsed: {}".format(
+                method, exc
+            )
+        )
+
 
 ###############################################################################
 
@@ -474,19 +507,40 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         return r
 
+    def require_data(self, request):
+        """
+        Test that the request contains data in it's body that
+        can be parsed to the required format (json) and is not
+        empty
+
+        Will raise DataParseException error if request payload could
+        not be parsed
+
+        Will raise DataMissingException error if request payload is
+        missing or was parsed to an empty object
+        """
+        try:
+            request.data
+        except ParseError as exc:
+            raise DataParseException(request.method, exc)
+
+        if not request.data:
+            raise DataMissingException(request.method)
+
     @client_check()
     def create(self, request, *args, **kwargs):
         """
         Create object
         """
         try:
+            self.require_data(request)
             with reversion.create_revision():
                 if request.user:
                     reversion.set_user(request.user)
                 return super(ModelViewSet, self).create(request, *args, **kwargs)
         except PermissionDenied as inst:
             return Response(status=status.HTTP_403_FORBIDDEN)
-        except ParentStatusException as inst:
+        except (ParentStatusException, DataException) as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
@@ -499,6 +553,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         Update object
         """
         try:
+            self.require_data(request)
             with reversion.create_revision():
                 if request.user:
                     reversion.set_user(request.user)

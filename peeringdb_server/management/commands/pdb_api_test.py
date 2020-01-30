@@ -11,6 +11,7 @@ import random
 import re
 import time
 import datetime
+import json
 
 from twentyc.rpc import (
     RestClient,
@@ -30,6 +31,7 @@ from django.conf import settings
 from django.db.utils import IntegrityError
 
 from rest_framework import serializers
+from rest_framework.test import APIRequestFactory
 
 from peeringdb_server.models import (
     REFTAG_MAP,
@@ -49,6 +51,7 @@ from peeringdb_server.models import (
 
 from peeringdb_server.serializers import REFTAG_MAP as REFTAG_MAP_SLZ
 from peeringdb_server import inet, settings as pdb_settings
+from peeringdb_server.rest import NetworkViewSet
 
 START_TIMESTAMP = time.time()
 
@@ -538,7 +541,7 @@ class TestJSON(unittest.TestCase):
                     for k, v in list(test_failures["invalid"].items()):
                         self.assertIn(k, list(r.keys()))
 
-                assert "400 Unknown" in str(excinfo.value)
+                assert "400 Bad Request" in str(excinfo.value)
 
             # we test fail because of parent entity status
             if "status" in test_failures:
@@ -609,13 +612,17 @@ class TestJSON(unittest.TestCase):
 
                 with pytest.raises(InvalidRequestException) as excinfo:
                     db.update(typ, **data_invalid)
-                assert "400 Unknown" in str(excinfo.value)
+                assert "400 Bad Request" in str(excinfo.value)
 
             # we test fail because of permissions
             if "perms" in test_failures:
                 data_perms = copy.copy(orig)
                 for k, v in list(test_failures["perms"].items()):
                     data_perms[k] = v
+
+                # if data is empty set something so we dont
+                # trigger the empty data error
+                data_perms["_dummy_"] = 1
 
                 with pytest.raises(PermissionDeniedException):
                     db.update(typ, **data_perms)
@@ -3083,6 +3090,48 @@ class TestJSON(unittest.TestCase):
         )
         fac.refresh_from_db()
         self.assertEqual(fac.geocode_status, True)
+
+    def test_z_misc_001_api_errors(self):
+        """
+        Test empty POST, PUT data error response
+        Test parse error POST, PUT data error response
+        """
+        for reftag in list(REFTAG_MAP.keys()):
+            self._test_z_misc_001_api_errors(reftag, "post", "create")
+            self._test_z_misc_001_api_errors(reftag, "put", "update")
+
+    def _test_z_misc_001_api_errors(self, reftag, method, action):
+        factory = APIRequestFactory()
+        url = "/{}/".format(reftag)
+        view_action = {method: action}
+        view = NetworkViewSet.as_view(view_action)
+        fn = getattr(factory, method)
+
+        ERR_PARSE = "Data supplied with the {} request could not be parsed: JSON parse error - Expecting value: line 1 column 1 (char 0)".format(
+            method.upper()
+        )
+        ERR_MISSING = "No data was supplied with the {} request".format(method.upper())
+
+        # test posting invalid json error
+
+        request = fn(url, "in{valid json", content_type="application/json")
+        response = view(request)
+        response.render()
+        assert json.loads(response.content)["meta"]["error"] == ERR_PARSE
+
+        # test posting empty json error
+
+        request = fn("/net/", "{}", content_type="application/json")
+        response = view(request)
+        response.render()
+        assert json.loads(response.content)["meta"]["error"] == ERR_MISSING
+
+        # test posting empty json error
+
+        request = fn("/net/", "", content_type="application/json")
+        response = view(request)
+        response.render()
+        assert json.loads(response.content)["meta"]["error"] == ERR_MISSING
 
 
 class Command(BaseCommand):

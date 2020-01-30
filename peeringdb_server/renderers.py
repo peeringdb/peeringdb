@@ -87,7 +87,8 @@ class MetaJSONRenderer(MungeRenderer):
                 result["data"] = []
 
         elif res.status_code < 500:
-            meta["error"] = data.pop("detail", "Unknown")
+            meta["error"] = data.pop("detail", res.reason_phrase)
+
             result.update(**data)
 
         result["meta"] = meta
