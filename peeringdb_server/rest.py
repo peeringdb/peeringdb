@@ -261,11 +261,11 @@ class ModelViewSet(viewsets.ModelViewSet):
                     qset, **self.request.query_params
                 )
             except ValidationError as inst:
-                raise RestValidationError({"detail": str(inst[0])})
+                raise RestValidationError({"detail": str(inst)})
             except ValueError as inst:
-                raise RestValidationError({"detail": str(inst[0])})
+                raise RestValidationError({"detail": str(inst)})
             except TypeError as inst:
-                raise RestValidationError({"detail": str(inst[0])})
+                raise RestValidationError({"detail": str(inst)})
             except FieldError as inst:
                 raise RestValidationError({"detail": "Invalid query"})
 
