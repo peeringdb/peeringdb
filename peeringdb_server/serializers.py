@@ -1716,13 +1716,16 @@ class IXLanPrefixSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-        filters = get_relation_filters(["ix_id", "ix"], cls, **kwargs)
+        filters = get_relation_filters(["ix_id", "ix", "whereis"], cls, **kwargs)
         for field, e in list(filters.items()):
             for valid in ["ix"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
                     qset = fn(qset=qset, field=field, **e)
                     break
+
+            if field == "whereis":
+                qset = cls.Meta.model.whereis_ip(e["value"], qset=qset)
 
         return qset.select_related("ixlan", "ixlan__ix"), filters
 

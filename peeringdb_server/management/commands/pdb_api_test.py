@@ -2037,6 +2037,18 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_filter_ixpfx_whereis(self):
+        ixpfx = SHARED["ixpfx_r_ok"]
+
+        ipaddr = "{}".format(ixpfx.prefix[0])
+
+        data = self.db_guest.all("ixpfx", whereis=ipaddr)
+
+        assert len(data) == 1
+        assert data[0]["id"] == ixpfx.id
+
+    ##########################################################################
+
     def test_guest_005_list_filter_ix_related(self):
         self.assert_list_filter_related("ix", "ixlan")
         self.assert_list_filter_related("ix", "ixfac")
