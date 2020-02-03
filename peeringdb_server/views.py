@@ -170,6 +170,7 @@ def beta_sync_dt():
 
     return dt.replace(hour=0, minute=0, second=0)
 
+
 def update_env_beta_sync_dt(env):
     if settings.RELEASE_ENV == "beta":
         env.update(beta_sync_dt=beta_sync_dt())
