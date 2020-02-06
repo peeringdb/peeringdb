@@ -174,7 +174,7 @@ twentyc.editable.action.register(
           modules = [],
           targets = 1,
           changed,
-          status={"error":false},
+          status={"error":false, "data":{}},
           i;
 
 
@@ -182,13 +182,16 @@ twentyc.editable.action.register(
         targets--;
         if(error)
           status.error = true;
+
+        if(data) {
+          $.extend(status.data, data);
+        }
+
         if(!targets) {
           if(!status.error && !me.noToggle) {
-            if(data)
-              container.editable("toggle", { data:data });
-            else
-              container.editable("toggle");
+            container.editable("toggle", { data:status.data });
           }
+
           /*
           if(!status.error && container.data("edit-always")) {
             // if container is always toggled to edit mode
@@ -211,6 +214,8 @@ twentyc.editable.action.register(
 
         var target = twentyc.editable.target.instantiate(container);
         changed = target.data._changed;
+
+        $.extend(status.data, target.data);
 
         // prepare modules
         container.find("[data-edit-module]").
@@ -244,7 +249,14 @@ twentyc.editable.action.register(
       }
 
       var grouped = container.editable("filter", { grouped : true }).not("[data-edit-module]");
-      targets += grouped.length;
+
+      grouped.each(function(idx) {
+        var target = twentyc.editable.target.instantiate($(this));
+        $.extend(status.data, target.data);
+        if(target.data._changed) {
+          targets += 1
+        }
+      });
 
       if(changed || container.data("edit-always-submit") == "yes"){
         $(target).on("success", function(ev, data) {
@@ -258,8 +270,9 @@ twentyc.editable.action.register(
 
         // submit main target
         var result = target.execute();
-      } else
+      } else {
         dec_targets({}, {});
+      }
 
       // submit grouped targets
 

@@ -252,6 +252,13 @@ PeeringDB.ViewActions = {
   actions : {}
 }
 
+PeeringDB.ViewActions.actions.ix_ixf_preview = function(netId) {
+  $("#ixf-preview-modal").modal("show");
+  var preview = new PeeringDB.IXFPreview()
+  preview.request(netId, $("#ixf-log"));
+}
+
+
 PeeringDB.ViewActions.actions.net_ixf_preview = function(netId) {
   $("#ixf-preview-modal").modal("show");
   var preview = new PeeringDB.IXFNetPreview()
@@ -262,7 +269,6 @@ PeeringDB.ViewActions.actions.net_ixf_postmortem = function(netId) {
   $("#ixf-postmortem-modal").modal("show");
   var postmortem = new PeeringDB.IXFNetPostmortem()
   postmortem.request(netId, $("#ixf-postmortem"));
-
 }
 
 
@@ -1087,6 +1093,7 @@ twentyc.editable.target.register(
   "base"
 );
 
+
 /*
  * editable api listing module
  */
@@ -1343,34 +1350,6 @@ twentyc.editable.module.register(
         callback(data);
       });
 
-    },
-
-    // FINALIZERS: IXLAN
-
-    finalize_add_ixlan : function(data, callback, sentData) {
-
-      // we currently do not publish ix-f setting fields on the API
-      // so we need to set those from sent data
-      data.ixf_ixp_member_list_url = sentData.ixf_ixp_member_list_url;
-      data.ixf_ixp_import_enabled = sentData.ixf_ixp_import_enabled;
-      callback(data);
-    },
-
-
-    finalize_row_ixlan : function(rowId, row, data) {
-      row.editable("payload", {
-        ix_id : data.ix_id
-      })
-      row.data("edit-label", gettext("IXLAN") + ": "+data.name); ///
-
-      var modPrefix = row.find('[data-edit-module="api_listing"]');
-      modPrefix.editable("sync");
-      modPrefix.editable("toggle");
-
-      var cmpPrefixAdd = row.find('[data-edit-component="add"]')
-      cmpPrefixAdd.editable("payload", {
-        ixlan_id : data.id
-      });
     },
 
     // FINALIZERS: IXLAN PREFIX

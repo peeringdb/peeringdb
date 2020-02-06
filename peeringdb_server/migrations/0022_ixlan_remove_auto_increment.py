@@ -12,6 +12,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # this change was reverted, but we will keep this empty migration
-        # so it does not break the migration chain
+        migrations.AlterField(
+            model_name="ixlan",
+            name="id",
+            field=models.IntegerField(primary_key=True, serialize=False),
+        ),
     ]
