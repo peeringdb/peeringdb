@@ -162,8 +162,37 @@ PeeringDB = {
         var value = $(this).html().trim();
         var name = $(this).data("edit-name");
         var field = $(this).prev('.view_field');
+        var group = field.data("notify-incomplete-group")
+
         if(!field.length)
           field = $(this).parent().prev('.view_field');
+
+        // if field is part of a notify-incomplete-group
+        // it means we don't want to show a warning as long
+        // as one of the members of the group has it's value set
+
+        if(group && (value == "" || value == "0")) {
+          var other, i, others, _value;
+
+          // get other members of the group
+
+          others = $('[data-notify-incomplete-group="'+group+'"]')
+
+          for(i = 0; i < others.length; i++) {
+            other = $(others[i]).next('.view_value')
+            _value = other.html().trim()
+
+            // other group member's value is set, use that value
+            // to toggle that we do not want to show a notification
+            // warning for this field
+
+            if(_value != "" && _value != "0") {
+              value = _value
+              break;
+            }
+          }
+        }
+
         var check = (field.find('.incomplete').length == 1);
         if(check && (value == "" || value == "0")) {
           status.incomplete = true;

@@ -96,6 +96,7 @@
              {% if row.help_text %}
              data-toggle="tooltip"
              data-placement="top"
+             {% if row.notify_incomplete_group %}data-notify-incomplete-group="{{ row.notify_incomplete_group }}"{% endif %}
              title="{{ row.help_text }}"
              {% endif %}>{% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %} {{ row.label }}
              {% if row.help_text %}<span class="glyphicon glyphicon-question-sign"></span>{% endif %}

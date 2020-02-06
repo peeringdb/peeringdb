@@ -1999,6 +1999,26 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
         filt = make_relation_filter("ixlan__%s" % field, filt, value)
         return qset.filter(**filt)
 
+    @classmethod
+    def whereis_ip(cls, ipaddr, qset=None):
+        """
+        Filter queryset of ixpfx objects where the prefix contains
+        the supplied ipaddress
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        ids = []
+
+        ipaddr = ipaddress.ip_address(ipaddr)
+
+        for ixpfx in qset:
+            if ipaddr in ixpfx.prefix:
+                ids.append(ixpfx.id)
+
+        return qset.filter(id__in=ids)
+
     @property
     def nsp_namespace(self):
         """
