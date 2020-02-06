@@ -1033,11 +1033,24 @@ class TestJSON(unittest.TestCase):
             test_failures={
                 "invalid": {
                     "prefix": self.get_prefix4(),
-                    "policy_email": "",
                     "tech_email": "",
                 },
             },
         )
+
+        self.assert_create(
+            self.db_org_admin,
+            "ix",
+            data,
+            test_success=False,
+            test_failures={
+                "invalid": {
+                    "prefix": self.get_prefix4(),
+                    "website": "",
+                },
+            },
+        )
+
 
         self.assert_create(
             self.db_org_admin,

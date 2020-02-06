@@ -769,13 +769,51 @@ div.list div.row.item img {
   cursor: pointer;
 }
 
-div.list .sort-desc:after {
-  content: url('ico-up-arrow.png');
+.sort-desc:after {
+  font-family: 'Glyphicons Halflings';
+  content: "\e152";
+  vertical-align: bottom;
+  padding-left: 3px;
 }
 
-div.list .sort-asc:after {
-  content: url('ico-down-arrow.png');
+.sort-asc:after {
+  font-family: 'Glyphicons Halflings';
+  content: "\e151";
+  vertical-align: bottom;
+  padding-left: 3px;
 }
+
+
+.sort-desc.numeric:after {
+  font-family: 'Glyphicons Halflings';
+  content: "\e154";
+  vertical-align: bottom;
+  padding-left: 3px;
+}
+
+.sort-asc.numeric:after {
+  font-family: 'Glyphicons Halflings';
+  content: "\e153";
+  vertical-align: bottom;
+  padding-left: 3px;
+}
+
+.sort-desc.ambiguous:after {
+  font-family: 'Glyphicons Halflings';
+  content: "\e156";
+  vertical-align: bottom;
+  padding-left: 3px;
+}
+
+.sort-asc.ambiguous:after {
+  font-family: 'Glyphicons Halflings';
+  content: "\e155";
+  vertical-align: bottom;
+  padding-left: 3px;
+}
+
+
+
 
 @media (max-width: 768px) {
   div.list {
@@ -1145,14 +1183,6 @@ div.advanced-search-view div.results div.row div {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-div.advanced-search-view div.headers .sort-asc:after {
-  content: url('ico-down-arrow.png');
-  color: #fff;
-}
-div.advanced-search-view div.headers .sort-desc:after {
-  content: url('ico-up-arrow.png');
 }
 
 div.advanced-search-view div.results div.row > div > div:empty:before {
