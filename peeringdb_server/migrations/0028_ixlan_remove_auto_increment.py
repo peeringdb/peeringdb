@@ -8,10 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("peeringdb_server", "0021_sponsorship_drop_single_org_relation_fields"),
+        ("peeringdb_server", "0027_never_via_route_servers"),
     ]
 
     operations = [
-        # this change was reverted, but we will keep this empty migration
-        # so it does not break the migration chain
+        migrations.AlterField(
+            model_name="ixlan",
+            name="id",
+            field=models.IntegerField(primary_key=True, serialize=False),
+        ),
     ]
