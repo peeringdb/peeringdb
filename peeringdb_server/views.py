@@ -1270,48 +1270,57 @@ def view_exchange(request, id):
         ],
     }
 
-    ixlan_num = data["ixlans"].count()
+    # IXLAN field group (form)
 
-    if ixlan_num < 2 and not perms.get("can_edit"):
-        # if there is less than one LAN connected to this ix
-        # we want to render a simplified view to read-only
-        # viewers
+    ixlan = exchange.ixlan
 
-        data["lan_simple_view"] = True
-
-        if ixlan_num == 1:
-
-            ixlan = data["ixlans"].first()
-
-            data["fields"].extend(
-                [
-                    {"type": "sub", "label": _("LAN")},
+    data["fields"].extend(
+        [
+            {
+                "type": "group",
+                "target": "api:ixlan:update",
+                "id": ixlan.id,
+                "label": _("LAN"),
+                "payload": [{"name": "ix_id", "value": exchange.id},],
+            },
+            {
+                "type": "flags",
+                "label": _("DOT1Q"),
+                "value": [{"name": "dot1q_support", "value": ixlan.dot1q_support}],
+            },
+            {
+                "type": "number",
+                "name": "mtu",
+                "label": _("MTU"),
+                "value": (ixlan.mtu or 0),
+            },
+            {
+                "type": "flags",
+                "label": _("Enable IX-F Import"),
+                "value": [
                     {
-                        "type": "number",
-                        "name": "mtu",
-                        "label": _("MTU"),
-                        "value": ixlan.mtu or "",
-                    },
-                    {
-                        "type": "bool",
-                        "name": "dot1q_support",
-                        "label": _("DOT1Q"),
-                        "value": ixlan.dot1q_support,
-                    },
-                ]
-            )
-
-            data["fields"].extend(
-                [
-                    {
-                        "type": "string",
-                        "name": "prefix_%d" % prefix.id,
-                        "label": _(prefix.protocol),
-                        "value": prefix.prefix,
+                        "name": "ixf_ixp_import_enabled",
+                        "value": ixlan.ixf_ixp_import_enabled,
                     }
-                    for prefix in ixlan.ixpfx_set_active
-                ]
-            )
+                ],
+                "admin": True,
+            },
+            {
+                "type": "url",
+                "label": _("IX-F Member Export URL"),
+                "name": "ixf_ixp_member_list_url",
+                "value": ixlan.ixf_ixp_member_list_url,
+                "admin": True,
+            },
+            {
+                "type": "action",
+                "label": _("IX-F Import Preview"),
+                "actions": [{"label": _("Preview"), "action": "ixf_preview",},],
+                "admin": True,
+            },
+            {"type": "group_end"},
+        ]
+    )
 
     return view_component(
         request, "exchange", data, "Exchange", perms=perms, instance=exchange

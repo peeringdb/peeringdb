@@ -660,6 +660,7 @@ table.result {
 div.list {
   margin-left: 15px;
   margin-right: 15px;
+  margin-top: 15px;
 }
 
 div.list div.header {
@@ -680,6 +681,7 @@ div.list h5 {
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
+  margin-left: -11px;
 }
 
 div.list div.empty-result {

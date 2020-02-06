@@ -58,7 +58,6 @@ class Command(BaseCommand):
             "net",
             "ix",
             "fac",
-            "ixlan",
             "ixpfx",
             "ixfac",
             "netixlan",
@@ -104,6 +103,8 @@ class Command(BaseCommand):
                     params.update(protocol="IPv6")
                     entity = self.mock.create(reftag, **params)
                     self.entities[reftag].append(entity)
+                elif reftag == "ix":
+                    self.entities["ixlan"].append(entity.ixlan)
 
         self.entities["net"].append(self.mock.create("net"))
         self.entities["ix"].append(self.mock.create("ix"))

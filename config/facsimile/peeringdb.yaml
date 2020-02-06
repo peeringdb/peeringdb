@@ -160,6 +160,7 @@ install:
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_process_admin_tool_command.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_load_data.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_fix_status_history.py
+    - $SRC_DIR$/peeringdb_server/management/commands/pdb_migrate_ixlans.py
     - $SRC_DIR$/peeringdb_server/migrations/__init__.py
     - $SRC_DIR$/peeringdb_server/migrations/0001_initial.py
     - $SRC_DIR$/peeringdb_server/migrations/0002_partnernship_model.py
