@@ -1,7 +1,6 @@
-### THIS FILE IS GENERATED, DO NOT EDIT
--i https://pypi.org/simple
+-i https://pypi.org/simple/
 babel==2.8.0
-bleach==3.1.0
+bleach==3.1.1
 certifi==2019.11.28
 cfu==1.5.0
 chardet==3.0.4
@@ -37,9 +36,9 @@ django==2.2.9
 djangorestframework==3.11.0
 future==0.18.2
 googlemaps==4.0.0
-idna==2.8
+idna==2.9
 itypes==1.1.0
-jinja2==2.10.3
+jinja2==2.11.1
 markdown==3.1.1
 markupsafe==1.1.1
 munge==0.6.0
@@ -55,14 +54,14 @@ pytz==2019.3
 pyyaml==5.3
 rdap==0.2.0
 requests-oauthlib==1.3.0
-requests==2.22.0
+requests==2.23.0
 simplejson==3.17.0
-six==1.13.0
+six==1.14.0
 sqlparse==0.3.0
 tld==0.11.9
 twentyc.rpc==0.4.0
 unidecode==1.1.1
 uritemplate==3.0.1
-urllib3==1.25.7
+urllib3==1.25.8
 uwsgi==2.0.18
 webencodings==0.5.1
