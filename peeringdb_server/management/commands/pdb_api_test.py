@@ -277,6 +277,9 @@ class TestJSON(unittest.TestCase):
             "name": self.make_name("Test"),
             "org_id": SHARED["org_rw_ok"].id,
             "website": WEBSITE,
+            "city": CITY,
+            "zipcode": ZIPCODE,
+            "address1": "Some street",
             "clli": str(uuid.uuid4())[:6].upper(),
             "rencode": str(uuid.uuid4())[:6].upper(),
             "npanxx": "000-111",
@@ -1038,10 +1041,7 @@ class TestJSON(unittest.TestCase):
             data,
             test_success=False,
             test_failures={
-                "invalid": {
-                    "prefix": self.get_prefix4(),
-                    "tech_email": "",
-                },
+                "invalid": {"prefix": self.get_prefix4(), "tech_email": "",},
             },
         )
 
@@ -1050,14 +1050,8 @@ class TestJSON(unittest.TestCase):
             "ix",
             data,
             test_success=False,
-            test_failures={
-                "invalid": {
-                    "prefix": self.get_prefix4(),
-                    "website": "",
-                },
-            },
+            test_failures={"invalid": {"prefix": self.get_prefix4(), "website": "",},},
         )
-
 
         self.assert_create(
             self.db_org_admin,

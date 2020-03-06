@@ -96,11 +96,21 @@ install:
     replace: peeringdb
     files:
     - $SRC_DIR$/manage.py
-    - $SRC_DIR$/docs/api_list.md
-    - $SRC_DIR$/docs/api_retrieve.md
-    - $SRC_DIR$/docs/api_delete.md
-    - $SRC_DIR$/docs/api_create.md
-    - $SRC_DIR$/docs/api_update.md
+    - $SRC_DIR$/docs/api/op_list.md
+    - $SRC_DIR$/docs/api/op_retrieve.md
+    - $SRC_DIR$/docs/api/op_delete.md
+    - $SRC_DIR$/docs/api/op_create.md
+    - $SRC_DIR$/docs/api/op_update.md
+    - $SRC_DIR$/docs/api/obj_org.md
+    - $SRC_DIR$/docs/api/obj_netixlan.md
+    - $SRC_DIR$/docs/api/obj_poc.md
+    - $SRC_DIR$/docs/api/obj_ixfac.md
+    - $SRC_DIR$/docs/api/obj_netfac.md
+    - $SRC_DIR$/docs/api/obj_ixpfx.md
+    - $SRC_DIR$/docs/api/obj_net.md
+    - $SRC_DIR$/docs/api/obj_fac.md
+    - $SRC_DIR$/docs/api/obj_ix.md
+    - $SRC_DIR$/docs/api/obj_ixlan.md
     - $SRC_DIR$/peeringdb_server/api_cache.py
     - $SRC_DIR$/peeringdb_server/__init__.py
     - $SRC_DIR$/peeringdb_server/admin.py
@@ -130,6 +140,7 @@ install:
     - $SRC_DIR$/peeringdb_server/maintenance.py
     - $SRC_DIR$/peeringdb_server/import_views.py
     - $SRC_DIR$/peeringdb_server/ixf.py
+    - $SRC_DIR$/peeringdb_server/api_schema.py
     - $SRC_DIR$/peeringdb_server/client_adaptor/load.py
     - $SRC_DIR$/peeringdb_server/client_adaptor/backend.py
     - $SRC_DIR$/peeringdb_server/client_adaptor/__init__.py
@@ -272,7 +283,6 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/email/notify-org-admin-merge.txt
     - $SRC_DIR$/peeringdb_server/templates/email/notify-user-uoar-ownership-approved.txt
     - $SRC_DIR$/peeringdb_server/templates/email/notify-pdb-admin-rdap-error.txt
-    - $SRC_DIR$/peeringdb_server/templates/rest_framework_swagger/base.html
     - $SRC_DIR$/peeringdb_server/templatetags/__init__.py
     - $SRC_DIR$/peeringdb_server/templatetags/util.py
     - $SRC_DIR$/peeringdb_server/templates/site/advanced-search-net.html
@@ -283,3 +293,5 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/aup.html
     - $SRC_DIR$/peeringdb_server/templates/site/about.html
     - $SRC_DIR$/peeringdb_server/templates/oauth2_provider/base.html
+    - $SRC_DIR$/peeringdb_server/templates/apidocs/redoc.html
+    - $SRC_DIR$/peeringdb_server/templates/apidocs/swagger.html

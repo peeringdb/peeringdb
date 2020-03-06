@@ -1,6 +1,6 @@
 from django.conf.urls import include, url
+from django.views.generic import TemplateView
 from django.conf import settings
-from rest_framework_swagger.views import get_swagger_view
 
 import peeringdb_server.rest
 
@@ -160,9 +160,16 @@ urlpatterns = [
 # REST API
 
 urlpatterns += [
-    url(r"^api/", include(peeringdb_server.rest.urls)),
     url(r"^api-auth/", include("rest_framework.urls", namespace="rest_framework")),
-    url(r"^apidocs/", get_swagger_view(title="PeeringDB API")),
+    url(
+        r"^apidocs/",
+        TemplateView.as_view(
+            template_name="apidocs/redoc.html",
+            extra_context={"schema_url": "openapi-schema"},
+        ),
+        name="redoc-ui",
+    ),
+    url(r"^api/", include(peeringdb_server.rest.urls)),
 ]
 
 # AUTOCOMPLETE

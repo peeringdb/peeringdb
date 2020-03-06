@@ -1,4 +1,4 @@
-Retrieves a list of objects
+## List objects
 
 ### Querying
 

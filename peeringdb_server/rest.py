@@ -26,6 +26,7 @@ import reversion
 from peeringdb_server.models import Network, UTC
 from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
+from peeringdb_server.api_schema import BaseSchema
 
 import django_namespace_perms.util as nsp
 from django_namespace_perms.exceptions import *
@@ -325,9 +326,10 @@ class ModelViewSet(viewsets.ModelViewSet):
         except ValueError:
             raise RestValidationError({"detail": "'depth' needs to be a number"})
 
-        field_names = [
-            fld.name for fld in self.model._meta.get_fields()
-        ] + self.serializer_class.queryable_relations()
+        field_names = dict(
+            [(fld.name, fld) for fld in self.model._meta.get_fields()]
+            + self.serializer_class.queryable_relations()
+        )
 
         date_fields = ["DateTimeField", "DateField"]
 
@@ -364,7 +366,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             if m and flt in field_names:
                 # filter by function provided in suffix
                 try:
-                    intyp = self.model._meta.get_field(flt).get_internal_type()
+                    intyp = field_names.get(flt).get_internal_type()
                 except:
                     intyp = "CharField"
 
@@ -400,7 +402,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             elif k in field_names:
                 # filter exact matches
                 try:
-                    intyp = self.model._meta.get_field(k).get_internal_type()
+                    intyp = field_names.get(k).get_internal_type()
                 except:
                     intyp = "CharField"
                 if intyp == "ForeignKey":
@@ -603,6 +605,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             self.get_serializer().finalize_delete(request)
 
 
+# TODO: why are we doing the import like this??!
 pdb_serializers = importlib.import_module("peeringdb_server.serializers")
 router = RestRouter(trailing_slash=False)
 
@@ -627,22 +630,6 @@ def model_view_set(model, methods=None):
     clsdict = {
         "model": model_t,
         "serializer_class": scls,
-        # TODO: use coreapi schemas to build parameter docs
-        # for retrieve and list
-        "__doc__": (
-            "Rest API endpoint for "
-            + model
-            + "\n\nlist:\n"
-            + settings.API_DOC_STR["list"]
-            + "\n\nretrieve:\n"
-            + settings.API_DOC_STR["retrieve"]
-            + "\n\ncreate:\n"
-            + settings.API_DOC_STR["create"]
-            + "\n\nupdate:\n"
-            + settings.API_DOC_STR["update"]
-            + "\n\ndelete:\n"
-            + settings.API_DOC_STR["delete"]
-        ),
     }
 
     # create the type
@@ -706,6 +693,7 @@ class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
     lookup_field = "asn"
     http_method_names = ["get"]
     model = Network
+    serializer_class = pdb_serializers.serializers.Serializer
 
     def get_queryset(self):
         return Network.objects.filter(status="ok").exclude(irr_as_set="")
