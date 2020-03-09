@@ -513,7 +513,9 @@ class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
     def clean(self):
         super(UserOrgAffiliationRequestInlineForm, self).clean()
         try:
-            rdap_valid = RdapLookup().get_asn(self.cleaned_data.get("asn")).emails
+            asn = self.cleaned_data.get("asn")
+            if asn:
+                rdap_valid = RdapLookup().get_asn(asn).emails
         except RdapException as exc:
             raise ValidationError({"asn": str(exc)})
 
