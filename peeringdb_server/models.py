@@ -41,6 +41,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes6,
     validate_prefix_overlap,
     validate_phonenumber,
+    validate_irr_as_set,
 )
 
 SPONSORSHIP_LEVELS = (
@@ -2325,16 +2326,26 @@ class Network(pdb_models.NetworkBase):
         """
         Custom model validation
         """
+
         try:
             validate_info_prefixes4(self.info_prefixes4)
         except ValidationError as exc:
-            raise ValidationError({"info_prefixes4": exc[0]})
+            raise ValidationError({"info_prefixes4": exc})
 
         try:
             validate_info_prefixes6(self.info_prefixes6)
         except ValidationError as exc:
-            raise ValidationError({"info_prefixes6": exc[0]})
+            raise ValidationError({"info_prefixes6": exc})
+
+        try:
+            if self.irr_as_set:
+                self.irr_as_set = validate_irr_as_set(self.irr_as_set)
+        except ValidationError as exc:
+            raise ValidationError({"irr_as_set": exc})
+
+
         return super(Network, self).clean()
+
 
 
 # class NetworkContact(HandleRefModel):

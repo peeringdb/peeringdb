@@ -12,6 +12,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes6,
     validate_prefix_overlap,
     validate_phonenumber,
+    validate_irr_as_set,
 )
 
 from peeringdb_server.models import (
@@ -150,6 +151,32 @@ def test_validate_prefix_overlap():
 
     with pytest.raises(ValidationError) as exc:
         validate_prefix_overlap("198.32.124.0/23")
+
+@pytest.mark.parametrize("value,validated", [
+    # success validation
+    ("RIPE::AS-FOO", "RIPE::AS-FOO"),
+    ("AS-FOO@RIPE", "AS-FOO@RIPE"),
+    ("ripe::as-foo", "RIPE::AS-FOO"),
+    ("as-foo@ripe", "AS-FOO@RIPE"),
+    ("as-foo@ripe as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
+    ("as-foo@ripe,as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
+    ("as-foo@ripe, as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
+
+    # fail validation
+    ("AS-FOO", False),
+    ("UNKNOWN::AS-FOO", False),
+    ("AS-FOO@UNKNOWN", False),
+    ("ASFOO@UNKNOWN", False),
+    ("UNKNOWN::ASFOO", False),
+    ("AS-FOO RIPE:AS-FOO", False),
+    ("AS-FOO AS-FOO@RIPE", False),
+])
+def test_validate_irr_as_set(value, validated):
+    if not validated:
+        with pytest.raises(ValidationError):
+            validate_irr_as_set(value)
+    else:
+        assert validate_irr_as_set(value) == validated
 
 
 @pytest.mark.djangodb

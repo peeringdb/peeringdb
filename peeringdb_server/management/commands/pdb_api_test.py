@@ -308,7 +308,7 @@ class TestJSON(unittest.TestCase):
             "aka": self.make_name("Also known as"),
             "asn": asn,
             "website": WEBSITE,
-            "irr_as_set": "AS-ZZ-ZZZZZZ",
+            "irr_as_set": "AS-ZZ-ZZZZZZ@RIPE",
             "info_type": "NSP",
             "info_prefixes4": 11000,
             "info_prefixes6": 12000,

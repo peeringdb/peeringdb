@@ -49,6 +49,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes6,
     validate_prefix_overlap,
     validate_phonenumber,
+    validate_irr_as_set,
 )
 
 from django.utils.translation import ugettext_lazy as _
@@ -1200,6 +1201,7 @@ class NetworkContactSerializer(ModelSerializer):
         return validate_phonenumber(value)
 
 
+
 class NetworkIXLanSerializer(ModelSerializer):
     """
     Serializer for peeringdb_server.models.NetworkIXLan
@@ -1543,6 +1545,8 @@ class NetworkSerializer(ModelSerializer):
     suggest = serializers.BooleanField(required=False, write_only=True)
     validators = [AsnRdapValidator(), FieldMethodValidator("suggest", ["POST"])]
 
+    #irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
+
     class Meta:
         model = Network
         depth = 1
@@ -1723,6 +1727,13 @@ class NetworkSerializer(ModelSerializer):
         rdap_error = getattr(request, "rdap_error", None)
         if rdap_error:
             ticket_queue_rdap_error(*rdap_error)
+
+
+    def validate_irr_as_set(self, value):
+        if value:
+            return validate_irr_as_set(value)
+        else:
+            return value
 
 
 class IXLanPrefixSerializer(ModelSerializer):

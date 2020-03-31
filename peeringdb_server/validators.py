@@ -1,7 +1,7 @@
 """
 peeringdb model / field validators
 """
-
+import re
 import ipaddress
 import phonenumbers
 
@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from peeringdb_server.inet import network_is_pdb_valid
+from peeringdb_server.inet import network_is_pdb_valid, IRR_SOURCE
 import peeringdb_server.models
 
 
@@ -145,3 +145,65 @@ def validate_prefix_overlap(prefix):
                     )
                 )
             )
+
+
+def validate_irr_as_set(value):
+    """
+    Validates irr as-set string
+
+    - the as-set/rs-set name has to conform to RFC 2622 (5.1 and 5.2)
+    - the source may be specified by AS-SET@SOURCE or SOURCE::AS-SET
+    - multiple values must be separated by either comma, space or comma followed by space
+
+    Arguments:
+
+    - value: irr as-set string
+
+    Returns:
+
+    - str: validated irr as-set string
+
+    """
+
+    if not isinstance(value, str):
+        raise ValueError(_("IRR AS-SET value must be string type"))
+
+    # split multiple values
+
+    # normalize value separation to commas
+    value = value.replace(", ",",")
+    value = value.replace(" ",",")
+
+    validated = []
+
+    # validate
+    for item in value.split(","):
+        item = item.upper()
+        source = None
+
+        # <name>@<source>
+        parts_match = re.match("^(AS|RS)-([\w\d\-]+)@(\w+)$", item)
+        if parts_match:
+            source = parts_match.group(3)
+
+        # <source>::<name>
+        else:
+            parts_match = re.match("^(\w+)::(AS|RS)-([\w\d\-]+)$", item)
+            if parts_match:
+                source = parts_match.group(1)
+            else:
+                raise ValidationError(_("Invalid formatting: {} - should be AS-SET@SOURCE or SOURCE::AS-SET").format(item))
+
+        if source not in IRR_SOURCE:
+            raise ValidationError(_("Unknown IRR source: {}").format(source))
+
+        validated.append(item)
+
+    return " ".join(validated)
+
+
+
+
+
+
+
