@@ -57,7 +57,7 @@ PeeringDB = {
 
     this.fix_list_offsets();
 
-    $('.sponsor-badge').after().click(function(e) {
+    $('.sponsor-badge').click(function(e) {
       // only redirect while not in edit mode
       if($(this).parents('.mode-edit').length == 0)
         window.location.href = "/sponsors";
