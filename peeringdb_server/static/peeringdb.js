@@ -63,6 +63,7 @@ PeeringDB = {
         window.location.href = "/sponsors";
     });
 
+
     $('.translate-btn').click(function(e){
       $(this).closest('.fmt_text').find('.popin').remove();
       var note_o = $(this).closest('.fmt_text').find('p');
@@ -99,9 +100,12 @@ PeeringDB = {
       var converter = new showdown.Converter()
       var value = $(this).data("edit-value")
       // sanitize any html tags
+      var translate = $(this).find('div.translate').detach()
+
       var html = converter.makeHtml(value.replace(/>/g, '&gt;').replace(/</g, '&lt;'))
       // set html after further sanitizing output via DOMPurify
       $(this).html(DOMPurify.sanitize(html, {SAFE_FOR_JQUERY: true}))
+      $(this).append(translate);
     })
 
   },

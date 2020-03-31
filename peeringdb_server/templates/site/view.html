@@ -171,7 +171,7 @@
                data-edit-name="{{ row.name }}">
                     {{ row.value }}
                     {% if row.name == "notes" and row.value and request.user.is_authenticated %}
-                        <div>
+                        <div class="translate">
                             <!-- select name="language-from">
                               <option value="" selected="selected" selected>Detect</option>
                               {% for lang in LANGUAGES %} <option value="{{ lang.0 }}">{{ lang.1 }}</option> {% endfor %}
