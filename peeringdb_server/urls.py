@@ -70,6 +70,7 @@ from peeringdb_server.views import (
     request_api_search,
     request_search,
     request_translation,
+    cancel_affiliation_request,
 )
 import peeringdb_server.org_admin_views
 import peeringdb_server.data_views
@@ -89,7 +90,7 @@ urlpatterns = [
     url(r"^username-retrieve/complete$", view_username_retrieve_complete),
     url(r"^username-retrieve$", view_username_retrieve),
     url(r"^verify$", view_verify),
-    url(r"^profile$", view_profile),
+    url(r"^profile$", view_profile, name="user-profile"),
     url(r"^profile/v1$", view_profile_v1),
     url(r"^resend_email_confirmation$", resend_confirmation_mail),
     url(r"^sponsors$", view_sponsorships),
@@ -97,6 +98,7 @@ urlpatterns = [
     url(r"^aup$", view_aup),
     url(r"^about$", view_about),
     url(r"^affiliate-to-org$", view_affiliate_to_org),
+    url(r"^cancel-affiliation-request/(?P<uoar_id>\d+)/$", cancel_affiliation_request, name="cancel-affiliation-request"),
     url(r"^request-ownership$", view_request_ownership),
     url(r"^%s/(?P<id>\d+)/?$" % Network.handleref.tag, view_network),
     url(r"^%s/(?P<id>\d+)/?$" % InternetExchange.handleref.tag, view_exchange),

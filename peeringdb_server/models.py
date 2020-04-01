@@ -310,6 +310,7 @@ class UserOrgAffiliationRequest(models.Model):
             ("pending", _("Pending")),
             ("approved", _("Approved")),
             ("denied", _("Denied")),
+            ("canceled", _("Canceled")),
         ],
         help_text=_("Status of this request"),
     )
@@ -365,6 +366,14 @@ class UserOrgAffiliationRequest(models.Model):
         """
 
         self.status = "denied"
+        self.save()
+
+    def cancel(self):
+        """
+        deny request, marks request as canceled and keeps
+        it around until requesting user deletes it
+        """
+        self.status = "canceled"
         self.save()
 
     def notify_ownership_approved(self):
@@ -2744,6 +2753,24 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = _("user")
         verbose_name_plural = _("users")
 
+
+    @property
+    def pending_affiliation_requests(self):
+        """
+        Returns the currently pending user -> org affiliation
+        requests for this user
+        """
+        return self.affiliation_requests.filter(status="pending").order_by("-created")
+
+    @property
+    def affiliation_requests_available(self):
+        """
+        Returns whether the user currently has any affiliation request
+        slots available, by checking that the number of pending affiliation requests
+        the user has is lower than MAX_USER_AFFILIATION_REQUESTS
+        """
+        return (self.pending_affiliation_requests.count() < settings.MAX_USER_AFFILIATION_REQUESTS)
+
     @property
     def organizations(self):
         """
@@ -2800,6 +2827,16 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         group = Group.objects.get(id=settings.USER_GROUP_ID)
         return group in self.groups.all()
+
+    def flush_affiliation_requests(self):
+        """
+        Removes all user -> org affiliation requests for this user
+        that have been denied or canceled
+        """
+
+        UserOrgAffiliationRequest.objects.filter(
+            user=self, status__in=["denied","canceled"]
+        ).delete()
 
     def get_locale(self):
         "Returns user preferred language."

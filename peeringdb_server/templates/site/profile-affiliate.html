@@ -4,17 +4,43 @@
          id="form-affiliate-account">
       <h3>{% trans "Affiliate with organization" %}</h3>
 
-      {% if affiliation_request %}
-        <div class="editable popin info">
+      {% for affiliation_request in request.user.affiliation_requests.all %}
         {% if affiliation_request.status == "pending" %}
+        <div class="editable popin alert alert-warning">
+          <div class="row">
+            {% if affiliation_request.org.owned %}
+            <div class="col-xs-8 col-md-9">
           {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} is pending approval.  {% endblocktrans %}
-        {% elif affiliation_request.status == "denied" %}
-          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was denied {% endblocktrans %}
-        {% elif affiliation_request.status == "approved" %}
-          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was approved {% endblocktrans %}
-        {% endif %}
+            </div>
+            <div class="col-xs-4 col-md-3 right">
+              <form
+                action="{% url "cancel-affiliation-request" uoar_id=affiliation_request.id %}"
+                method="POST">
+                {% csrf_token %}
+                <button class="btn btn-warning btn-sm" type="submit">{% trans "Cancel" %}</button>
+              </form>
+            </div>
+            {% else %}
+            <div class="col-xs-12">
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} is being by the PeeringDB administrative staff.{% endblocktrans %}
+            </div>
+            {% endif %}
+          </div>
         </div>
-      {% endif %}
+        {% elif affiliation_request.status == "canceled" %}
+        <div class="editable popin alert alert-info">
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} You have canceled your affiliation request with {{ ar_name }} {% endblocktrans %}
+        </div>
+        {% elif affiliation_request.status == "denied" %}
+        <div class="editable popin alert alert-danger">
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was denied {% endblocktrans %}
+        </div>
+        {% elif affiliation_request.status == "approved" %}
+        <div class="editable popin alert alert-success">
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was approved {% endblocktrans %}
+        </div>
+        {% endif %}
+      {% endfor %}
 
 
       <div class="editable popin help marg-top-15">

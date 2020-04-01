@@ -172,4 +172,5 @@ settings.configure(
         "view_import_ixlan_ixf_preview": "1/m",
         "view_import_net_ixf_postmortem": "1/m",
     },
+    MAX_USER_AFFILIATION_REQUESTS=10,
 )

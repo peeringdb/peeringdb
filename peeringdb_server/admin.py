@@ -1112,24 +1112,40 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
     search_fields = ("user", "asn")
     readonly_fields = ("created",)
 
+    raw_id_fields = ("user", "org")
+    autocomplete_lookup_fields = {
+        "fk": ["user", "org"],
+    }
+
+
     def approve_and_notify(self, request, queryset):
         for each in queryset:
+            if each.status == "canceled":
+                messages.error(request, _("Cannot approve a canceled affiliation request"))
+                continue
+
             each.approve()
             each.notify_ownership_approved()
-        self.message_user(
-            request, _("Affiliation request was approved and the user was notified.")
-        )
+            self.message_user(
+                request, _("Affiliation request was approved and the user was notified.")
+            )
 
     approve_and_notify.short_description = _("Approve and notify User")
 
     def approve(self, request, queryset):
         for each in queryset:
+            if each.status == "canceled":
+                messages.error(request, _("Cannot approve a canceled affiliation request"))
+                continue
             each.approve()
 
     approve.short_description = _("Approve")
 
     def deny(self, request, queryset):
         for each in queryset:
+            if each.status == "canceled":
+                messages.error(request, _("Cannot deny a canceled affiliation request"))
+                continue
             each.deny()
 
     deny.short_description = _("Deny")

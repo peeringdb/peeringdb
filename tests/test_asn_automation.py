@@ -6,6 +6,7 @@ import peeringdb_server.views as pdbviews
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase, Client, RequestFactory
+from django.conf import settings
 
 import peeringdb_server.inet as pdbinet
 from .util import SettingsCase
@@ -213,6 +214,78 @@ class AsnAutomationTestCase(TestCase):
         )
         self.assertEqual(net.status, "ok")
         self.assertEqual(net.org.status, "ok")
+
+    def test_affiliate_limit(self):
+        """
+        test affiliation request limit (fail when there is n pending
+        affiliations for a user)
+        """
+
+        for i in range(0, settings.MAX_USER_AFFILIATION_REQUESTS + 1):
+
+            request = self.factory.post(
+                "/affiliate-to-org", data={"org": "AFFILORG{}".format(i)}
+            )
+            request.user = self.user_b
+            request._dont_enforce_csrf_checks = True
+            response = pdbviews.view_affiliate_to_org(request)
+
+            if i < settings.MAX_USER_AFFILIATION_REQUESTS:
+                assert response.status_code == 200
+            else:
+                assert response.status_code == 400
+
+    def test_cancel_affiliation_request(self):
+        """
+        tests user canceling a pending affiliation request
+        """
+
+        request = self.factory.post("/affiliate-to-org", data={"org": "AFFILORG"})
+        request.user = self.user_b
+        request._dont_enforce_csrf_checks = True
+        response = pdbviews.view_affiliate_to_org(request)
+
+        assert response.status_code == 200
+
+        affiliation_request = self.user_b.pending_affiliation_requests.first()
+
+        assert affiliation_request
+
+        request = self.factory.post(
+            "/cancel-affiliation-request/{}/".format(affiliation_request.id)
+        )
+        request.user = self.user_b
+        request._dont_enforce_csrf_checks = True
+        response = pdbviews.cancel_affiliation_request(request, affiliation_request.id)
+
+        assert response.status_code == 302
+        assert self.user_b.pending_affiliation_requests.count() == 0
+
+    def test_deny_cancel_other_affiliation_request(self):
+        """
+        users should never be allowed to cancel other user's affiliation requests
+        """
+
+        request = self.factory.post("/affiliate-to-org", data={"org": "AFFILORG"})
+        request.user = self.user_b
+        request._dont_enforce_csrf_checks = True
+        response = pdbviews.view_affiliate_to_org(request)
+
+        assert response.status_code == 200
+
+        affiliation_request = self.user_b.pending_affiliation_requests.first()
+
+        assert affiliation_request
+
+        request = self.factory.post(
+            "/cancel-affiliation-request/{}/".format(affiliation_request.id)
+        )
+        request.user = self.user_a
+        request._dont_enforce_csrf_checks = True
+        response = pdbviews.cancel_affiliation_request(request, affiliation_request.id)
+
+        assert response.status_code == 404
+        assert self.user_b.pending_affiliation_requests.count() == 1
 
     def test_affiliate_to_bogon_asn(self):
         """

@@ -14,13 +14,13 @@ from django.http import (
     HttpResponseForbidden,
 )
 from django.conf import settings as dj_settings
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
-from django.urls import resolve, Resolver404
+from django.urls import resolve, reverse, Resolver404
 from django.template import loader
 from django.utils.crypto import constant_time_compare
 from django_namespace_perms.util import (
@@ -199,6 +199,9 @@ def view_http_error_403(request):
 def view_http_error_csrf(request, reason):
     return JsonResponse({"non_field_errors": [reason]}, status=403)
 
+def view_http_error_invalid(request, reason):
+    return JsonResponse({"non_field_errors": [reason]}, status=400)
+
 
 def view_maintenance(request):
     template = loader.get_template("site/maintenance.html")
@@ -277,7 +280,7 @@ def view_request_ownership(request):
             )
 
         if UserOrgAffiliationRequest.objects.filter(
-            user=request.user, org=org
+            user=request.user, org=org, status="pending"
         ).exists():
             return JsonResponse(
                 {
@@ -290,10 +293,42 @@ def view_request_ownership(request):
                 status=400,
             )
 
+        if not request.user.affiliation_requests_available:
+            return view_http_error_invalid(
+                request,
+                _(
+                    "You have too many affiliation requests pending, "\
+                    "please wait for them to be resolved before opening more."
+                )
+            )
+
+        request.user.flush_affiliation_requests()
+
         uoar = UserOrgAffiliationRequest.objects.create(
             user=request.user, org=org, status="pending"
         )
         return JsonResponse({"status": "ok", "ownership_status": uoar.status})
+
+
+@csrf_protect
+@require_http_methods(["POST"])
+def cancel_affiliation_request(request, uoar_id):
+    """
+    Cancels a user's affiliation request
+    """
+
+    # make sure user org affiliation request specified actually
+    # belongs to requesting user
+
+    try:
+        affiliation_request = request.user.pending_affiliation_requests.get(id=uoar_id)
+    except UserOrgAffiliationRequest.DoesNotExist:
+        return view_http_error_404(request)
+
+    affiliation_request.cancel()
+
+    return redirect(reverse("user-profile"))
+
 
 
 @csrf_protect
@@ -322,6 +357,15 @@ def view_affiliate_to_org(request):
                 status=400,
             )
 
+        if not request.user.affiliation_requests_available:
+            return view_http_error_invalid(
+                request,
+                _(
+                    "You have too many affiliation requests pending, "\
+                    "please wait for them to be resolved before opening more."
+                )
+            )
+
         form = AffiliateToOrgForm(request.POST)
         if not form.is_valid():
             return JsonResponse(form.errors, status=400)
@@ -341,10 +385,7 @@ def view_affiliate_to_org(request):
 
         asn = form.cleaned_data.get("asn")
 
-        # remove all deleted uoars for user
-        UserOrgAffiliationRequest.objects.filter(
-            user=request.user, status="denied"
-        ).delete()
+        request.user.flush_affiliation_requests()
 
         try:
 
@@ -477,9 +518,6 @@ def view_verify(request):
         env = BASE_ENV.copy()
         env.update(
             {
-                "affiliation_request": request.user.affiliation_requests.order_by(
-                    "-created"
-                ).first(),
                 "affiliations": request.user.organizations,
                 "global_stats": global_stats(),
             }

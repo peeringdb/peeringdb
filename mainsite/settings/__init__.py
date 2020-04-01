@@ -176,6 +176,8 @@ RATELIMITS = {
     "view_import_net_ixf_postmortem": "1/m",
 }
 
+# maximum number of affiliation requests a user can have pending
+MAX_USER_AFFILIATION_REQUESTS = 5
 
 # Django config
 
