@@ -2061,6 +2061,19 @@ class InternetExchangeSerializer(ModelSerializer):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
         return super(InternetExchangeSerializer, self).to_internal_value(data)
 
+
+    def to_representation(self, data):
+        # When an ix is created we want to add the ixlan_id and ixpfx_id
+        # that were created to the representation (see #609)
+
+        representation = super().to_representation(data)
+        request=  self.context.get("request")
+        if request and request.method == "POST" and self.instance:
+            ixlan = self.instance.ixlan
+            ixpfx = ixlan.ixpfx_set.first()
+            representation.update(ixlan_id=ixlan.id, ixpfx_id=ixpfx.id)
+        return representation
+
     def create(self, validated_data):
         # when creating an exchange via the API it is required
         # that an initial prefix is provided and an ixlan and ixlanprefix

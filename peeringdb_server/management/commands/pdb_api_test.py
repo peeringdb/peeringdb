@@ -1010,6 +1010,11 @@ class TestJSON(unittest.TestCase):
             },
         )
 
+        # test that ixlan id and prefix id were return in the POST
+        # response (see #609)
+        assert r_data.get("ixlan_id") > 0
+        assert r_data.get("ixpfx_id") > 0
+
         SHARED["ix_id"] = r_data.get("id")
 
         # make sure ixlan was created and has matching id
