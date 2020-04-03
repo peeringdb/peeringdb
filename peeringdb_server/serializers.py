@@ -1709,9 +1709,11 @@ class NetworkSerializer(ModelSerializer):
         if rdap and user.validate_rdap_relationship(rdap):
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
+            net = super(ModelSerializer, self).create(validated_data)
             ticket_queue_asnauto_skipvq(
-                user, validated_data["org"], validated_data, rdap
+                user, validated_data["org"], net, rdap
             )
+            return net
 
         elif self.Meta.model in QUEUE_ENABLED:
             # user email does NOT exist in RiR data, put into verification
@@ -1722,6 +1724,7 @@ class NetworkSerializer(ModelSerializer):
             validated_data["status"] = "ok"
 
         return super(ModelSerializer, self).create(validated_data)
+
 
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)

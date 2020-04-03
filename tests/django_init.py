@@ -101,7 +101,7 @@ settings.configure(
     GUEST_GROUP_ID=1,
     USER_GROUP_ID=2,
     TEMPLATE_DEBUG=False,
-    BASE_URL="localost",
+    BASE_URL="https://localhost",
     PASSWORD_RESET_URL="localhost",
     API_CACHE_ROOT="tests/api-cache",
     API_CACHE_ENABLED=False,

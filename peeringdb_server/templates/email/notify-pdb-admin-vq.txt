@@ -18,7 +18,7 @@ A new '{{ entity_type_name }}' has been created and requires your approval.
   {% for email in rdap.emails %} - {{ email }} {% endfor %}
 {% endif %}
 
-{% trans "Name" %}: {{ item }}
+{% trans "Name" %}: <a href="{{ item.view_url }}">{{ item }}</a>
 {% trans "Requested by user" %}: {{ user.full_name }} ({{ user.email }})
 
 {% trans "You can go to" %} <a href="{{ edit_url }}">{{ edit_url }}</a> {% trans "to view and approve or deny this entry" %}{% endlanguage %}

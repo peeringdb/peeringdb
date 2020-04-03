@@ -552,6 +552,15 @@ class Organization(pdb_models.OrganizationBase):
         )
 
     @property
+    def view_url(self):
+        """
+        Return the URL to this organizations web view
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("org-view", args=(self.id,))
+        )
+
+    @property
     def owned(self):
         """
         Returns whether or not the organization has been claimed
@@ -1136,6 +1145,16 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
         """
         return self.netfac_set_active.count()
 
+    @property
+    def view_url(self):
+        """
+        Return the URL to this facility's web view
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("fac-view", args=(self.id,))
+        )
+
+
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["org"])
 
@@ -1423,6 +1442,17 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         Returns sponsorship object for this exchange (through owning org)
         """
         return self.org.sponsorship
+
+    @property
+    def view_url(self):
+        """
+        Return the URL to this facility's web view
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("ix-view", args=(self.id,))
+        )
+
+
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["org"])
@@ -2318,6 +2348,16 @@ class Network(pdb_models.NetworkBase):
     @property
     def sponsorship(self):
         return self.org.sponsorship
+
+    @property
+    def view_url(self):
+        """
+        Return the URL to this networks web view
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("net-view", args=(self.id,))
+        )
+
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["org"])
