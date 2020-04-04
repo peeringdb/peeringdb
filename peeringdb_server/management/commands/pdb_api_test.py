@@ -286,6 +286,11 @@ class TestJSON(unittest.TestCase):
             "latitude": None,
             "longitude": None,
             "notes": NOTE,
+            "country": COUNTRY,
+            "tech_email": EMAIL,
+            "tech_phone": PHONE,
+            "sales_email": EMAIL,
+            "sales_phone": PHONE,
         }
         data.update(**kwargs)
         return data
@@ -1199,6 +1204,7 @@ class TestJSON(unittest.TestCase):
             Network.objects.get(id=r_data["id"]).delete(hard=True)
 
     ##########################################################################
+
     def test_org_admin_002_POST_net_deleted(self):
         data = self.make_data_net(asn=SHARED["net_rw_dupe_deleted"].asn)
 

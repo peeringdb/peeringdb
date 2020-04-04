@@ -1009,6 +1009,10 @@ class FacilitySerializer(ModelSerializer):
                 "latitude",
                 "longitude",
                 "suggest",
+                "sales_email",
+                "sales_phone",
+                "tech_email",
+                "tech_phone",
             ]
             + HandleRefSerializer.Meta.fields
             + AddressSerializer.Meta.fields
@@ -1072,6 +1076,24 @@ class FacilitySerializer(ModelSerializer):
 
     def get_net_count(self, inst):
         return inst.net_count
+
+    def validate(self, data):
+        try:
+            data["tech_phone"] = validate_phonenumber(
+                data["tech_phone"], data["country"]
+            )
+        except ValidationError as exc:
+            raise serializers.ValidationError({"tech_phone": exc.message})
+
+        try:
+            data["sales_phone"] = validate_phonenumber(
+                data["sales_phone"], data["country"]
+            )
+        except ValidationError as exc:
+            raise serializers.ValidationError({"sales_phone": exc.message})
+
+        return data
+
 
 
 class InternetExchangeFacilitySerializer(ModelSerializer):

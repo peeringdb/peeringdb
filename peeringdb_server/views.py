@@ -1157,6 +1157,31 @@ def view_facility(request, id):
                 "type": "fmt-text",
                 "value": data.get("notes", dismiss),
             },
+            {
+                "type": "email",
+                "name": "tech_email",
+                "label": _("Technical Email"),
+                "value": data.get("tech_email", dismiss),
+            },
+            {
+                "type": "string",
+                "name": "tech_phone",
+                "label": _("Technical Phone"),
+                "value": data.get("tech_phone", dismiss),
+            },
+            {
+                "type": "email",
+                "name": "sales_email",
+                "label": _("Sales Email"),
+                "value": data.get("sales_email", dismiss),
+            },
+            {
+                "type": "string",
+                "name": "sales_phone",
+                "label": _("Sales Phone"),
+                "value": data.get("sales_phone", dismiss),
+            },
+
         ],
     }
 
