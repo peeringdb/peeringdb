@@ -3,7 +3,7 @@ import re
 import reversion
 
 from django_inet.rest import IPAddressField, IPPrefixField
-from django_inet.models import URLValidator
+from django.core.validators import URLValidator
 from django.db.models.query import QuerySet
 from django.db.models import Prefetch, Q, Sum, IntegerField, Case, When
 from django.db import models, transaction, IntegrityError
@@ -320,8 +320,9 @@ class FieldMethodValidator(object):
 
 class ExtendedURLField(serializers.URLField):
     def __init__(self, **kwargs):
+        schemes = kwargs.pop("schemes", None)
         super(ExtendedURLField, self).__init__(**kwargs)
-        validator = URLValidator(message=self.error_messages["invalid"])
+        validator = URLValidator(message=self.error_messages["invalid"], schemes=schemes)
         self.validators = []
         self.validators.append(validator)
 
@@ -1533,7 +1534,16 @@ class NetworkSerializer(ModelSerializer):
     )
     org = serializers.SerializerMethodField()
 
-    route_server = ExtendedURLField(required=False, allow_blank=True)
+    route_server = serializers.CharField(
+        required=False, allow_blank=True,
+        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])]
+    )
+
+    looking_glass = serializers.CharField(
+        required=False, allow_blank=True,
+        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])]
+    )
+
 
     info_prefixes4 = SaneIntegerField(
         allow_null=False, required=False, validators=[validate_info_prefixes4]

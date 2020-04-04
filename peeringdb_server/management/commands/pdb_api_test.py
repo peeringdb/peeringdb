@@ -1175,6 +1175,30 @@ class TestJSON(unittest.TestCase):
         )
 
     ##########################################################################
+
+    def test_org_admin_002_POST_net_looking_glass_url(self):
+        for scheme in ["http","https","ssh","telnet"]:
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "net",
+                self.make_data_net(asn=9000900, looking_glass="{}://foo.bar".format(scheme)),
+                test_failures={"invalid": {"looking_glass": "foo://www.bar.com"}}
+            )
+            Network.objects.get(id=r_data["id"]).delete(hard=True)
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_net_route_server_url(self):
+        for scheme in ["http","https","ssh","telnet"]:
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "net",
+                self.make_data_net(asn=9000900, route_server="{}://foo.bar".format(scheme)),
+                test_failures={"invalid": {"route_server": "foo://www.bar.com"}}
+            )
+            Network.objects.get(id=r_data["id"]).delete(hard=True)
+
+    ##########################################################################
     def test_org_admin_002_POST_net_deleted(self):
         data = self.make_data_net(asn=SHARED["net_rw_dupe_deleted"].asn)
 
