@@ -1,8 +1,8 @@
 from peeringdb_server.models import REFTAG_MAP
 from django.core.management import call_command
-from util import ClientCase
+from .util import ClientCase
 
-import StringIO
+import io
 import sys
 
 
@@ -36,7 +36,7 @@ class TestWhois(ClientCase):
 
         # whois does not go to the command's stdout so we need to
         # capture the output through sys.stdout
-        out = StringIO.StringIO()
+        out = io.StringIO()
         oldout = sys.stdout
         sys.stdout = out
 
@@ -47,6 +47,6 @@ class TestWhois(ClientCase):
 
         out = out.getvalue()
 
-        assert out.find("POC-Private") == -1
-        assert out.find("POC-Users") == -1
-        assert out.find("POC-Public") > -1
+        assert "POC-Private" not in out
+        assert "POC-Users" not in out
+        assert "POC-Public" in out

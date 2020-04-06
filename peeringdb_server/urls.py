@@ -213,7 +213,7 @@ urlpatterns += [
         ToolHistory.as_view(),
         name="autocomplete-admin-clt-history-{}".format(tool_id),
     )
-    for tool_id, ToolHistory in clt_history.items()
+    for tool_id, ToolHistory in list(clt_history.items())
 ]
 
 # Oauth2

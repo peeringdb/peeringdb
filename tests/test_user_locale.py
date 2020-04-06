@@ -63,14 +63,14 @@ class UserLocaleTests(TestCase):
         resp = c.get("/profile", follow=True)
         data = {"next": "/profile", "username": "user_en", "password": "user_en"}
         resp = c.post("/auth", data, follow=True)
-        self.assertGreater(resp.content.find("<!-- Current language: en -->"), -1)
+        assert "<!-- Current language: en -->" in resp.content.decode()
 
         c.logout()
         data = {"next": "/profile", "username": "user_pt", "password": "user_pt"}
         resp = c.post("/auth", data, follow=True)
-        self.assertGreater(resp.content.find("<!-- Current language: pt -->"), -1)
+        assert "<!-- Current language: pt -->" in resp.content.decode()
 
         c.logout()
         data = {"next": "/profile", "username": "user_undef", "password": "user_undef"}
         resp = c.post("/auth", data, follow=True)
-        self.assertGreater(resp.content.find("<!-- Current language: en -->"), -1)
+        assert "<!-- Current language: en -->" in resp.content.decode()

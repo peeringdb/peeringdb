@@ -25,9 +25,9 @@ class Command(BaseCommand):
 
     def log(self, msg):
         if not self.commit:
-            print "[%s] %s [pretend]" % (self.target, msg)
+            print("[%s] %s [pretend]" % (self.target, msg))
         else:
-            print "[%s] %s" % (self.target, msg)
+            print("[%s] %s" % (self.target, msg))
 
     @reversion.create_revision()
     def handle(self, *args, **options):
@@ -82,10 +82,10 @@ class Command(BaseCommand):
                 r_val = None
                 if replace_search_value == "*":
                     r_val = replace_value
-                elif isinstance(t_val, basestring):
+                elif isinstance(t_val, str):
                     r_val = re.sub(replace_search_value, replace_value, t_val)
-                elif type(t_val) == long:
-                    if t_val == long(replace_search_value or 0):
+                elif type(t_val) == int:
+                    if t_val == int(replace_search_value or 0):
                         r_val = replace_value
                 elif type(t_val) == int:
                     if t_val == int(replace_search_value or 0):

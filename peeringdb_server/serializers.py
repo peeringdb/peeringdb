@@ -6,7 +6,7 @@ from django_inet.rest import IPAddressField, IPPrefixField
 from django_inet.models import URLValidator
 from django.db.models.query import QuerySet
 from django.db.models import Prefetch, Q, Sum, IntegerField, Case, When
-from django.db import models, transaction
+from django.db import models, transaction, IntegrityError
 from django.db.models.fields.related import (
     ReverseManyToOneDescriptor,
     ForwardManyToOneDescriptor,
@@ -48,6 +48,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_prefix_overlap,
+    validate_phonenumber,
 )
 
 from django.utils.translation import ugettext_lazy as _
@@ -91,7 +92,7 @@ def validate_relation_filter_field(a, b):
 
 def get_relation_filters(flds, serializer, **kwargs):
     rv = {}
-    for k, v in kwargs.items():
+    for k, v in list(kwargs.items()):
         m = re.match("^(.+)__(lt|lte|gt|gte|contains|startswith|in)$", k)
         if isinstance(v, list) and v:
             v = v[0]
@@ -159,7 +160,12 @@ class UniqueFieldValidator(object):
         id = getattr(self.instance, "id", 0)
         collisions = {}
         for field in self.fields:
-            filters = {field: attrs.get(field)}
+            value = attrs.get(field)
+
+            if value == "" or value is None:
+                continue
+
+            filters = {field: value}
             if not self.check_deleted:
                 filters.update(status="ok")
             if self.model.objects.filter(**filters).exclude(id=id).exists():
@@ -213,7 +219,7 @@ class SoftRequiredValidator(object):
             for field_name in self.fields
             if not attrs.get(field_name)
         }
-        valid = len(self.fields) != len(missing.keys())
+        valid = len(self.fields) != len(list(missing.keys()))
         if not valid:
             raise RestValidationError(missing)
 
@@ -414,7 +420,7 @@ class ModelSerializer(PermissionedModelSerializer):
         Check if the request parameters are expected to return a unique entity
         """
 
-        return request.GET.has_key("id")
+        return "id" in request.GET
 
     @classmethod
     def queryable_relations(self):
@@ -753,7 +759,7 @@ class ModelSerializer(PermissionedModelSerializer):
         return super(ModelSerializer, self).create(validated_data)
 
     def _unique_filter(self, fld, data):
-        for _fld, slz_fld in self._declared_fields.items():
+        for _fld, slz_fld in list(self._declared_fields.items()):
             if fld == slz_fld.source:
                 if type(slz_fld) == serializers.PrimaryKeyRelatedField:
                     return slz_fld.queryset.get(id=data[_fld])
@@ -761,9 +767,9 @@ class ModelSerializer(PermissionedModelSerializer):
     def run_validation(self, data=serializers.empty):
         try:
             return super(ModelSerializer, self).run_validation(data=data)
-        except RestValidationError, exc:
+        except RestValidationError as exc:
             filters = {}
-            for k, v in exc.detail.items():
+            for k, v in list(exc.detail.items()):
                 v = v[0]
                 if k == "non_field_errors" and v.find("unique set") > -1:
                     m = re.match("The fields (.+) must make a unique set.", v)
@@ -775,11 +781,19 @@ class ModelSerializer(PermissionedModelSerializer):
 
             request = self._context.get("request")
             if filters and request and request.user and request.method == "POST":
+
+                if "fac_id" in filters:
+                    filters["facility_id"] = filters["fac_id"]
+                    del filters["fac_id"]
+                if "net_id" in filters:
+                    filters["network_id"] = filters["net_id"]
+                    del filters["net_id"]
+
                 try:
                     self.instance = self.Meta.model.objects.get(**filters)
                 except self.Meta.model.DoesNotExist:
                     raise exc
-                except FieldError:
+                except FieldError as exc:
                     raise exc
                 if (
                     has_perms(request.user, self.instance, "update")
@@ -962,7 +976,7 @@ class FacilitySerializer(ModelSerializer):
             ["net_id", "net", "ix_id", "ix", "org_name", "net_count"], cls, **kwargs
         )
 
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["net", "ix"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -1059,6 +1073,12 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
 
         related_fields = ["ix", "fac"]
 
+        validators = [
+            validators.UniqueTogetherValidator(
+                InternetExchangeFacility.objects.all(), ["ix_id", "fac_id"]
+            )
+        ]
+
         _ref_tag = model.handleref.tag
 
     @classmethod
@@ -1127,6 +1147,9 @@ class NetworkContactSerializer(ModelSerializer):
 
     def get_net(self, inst):
         return self.sub_serializer(NetworkSerializer, inst.network)
+
+    def validate_phone(self, value):
+        return validate_phonenumber(value)
 
 
 class NetworkIXLanSerializer(ModelSerializer):
@@ -1217,7 +1240,7 @@ class NetworkIXLanSerializer(ModelSerializer):
         """
 
         filters = get_relation_filters(["ix_id", "ix", "name"], cls, **kwargs)
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["ix", "name"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -1245,6 +1268,19 @@ class NetworkIXLanSerializer(ModelSerializer):
     def get_ix_id(self, inst):
         return inst.ix_id
 
+    def run_validation(self, data=serializers.empty):
+        # `asn` will eventually be dropped from the schema
+        # for now make sure it is always a match to the related
+        # network
+
+        if data.get("net_id"):
+            try:
+                net = Network.objects.get(id=data.get("net_id"))
+                data["asn"] = net.asn
+            except:
+                pass
+        return super(NetworkIXLanSerializer, self).run_validation(data=data)
+
     def validate(self, data):
         netixlan = NetworkIXLan(**data)
 
@@ -1257,6 +1293,24 @@ class NetworkIXLanSerializer(ModelSerializer):
             netixlan.validate_ipaddr6()
         except ValidationError as exc:
             raise serializers.ValidationError({"ipaddr6": exc.message})
+
+        # when validating an existing netixlan that has a mismatching
+        # asn value raise a validation error stating that it needs
+        # to be moved
+        #
+        # this is to catch and force correction of instances where they
+        # could not be migrated automatically during rollout of #168
+        # because the targeted asn did not exist in peeringdb
+
+        if self.instance and self.instance.asn != self.instance.network.asn:
+            raise serializers.ValidationError(
+                {
+                    "asn": _(
+                        "This entity was created for the ASN {} - please remove it from this network and recreate it under the correct network"
+                    ).format(self.instance.asn)
+                }
+            )
+
         return data
 
 
@@ -1286,6 +1340,7 @@ class NetworkFacilitySerializer(ModelSerializer):
     city = serializers.SerializerMethodField()
 
     class Meta:
+
         model = NetworkFacility
         depth = 0
         fields = [
@@ -1305,10 +1360,16 @@ class NetworkFacilitySerializer(ModelSerializer):
 
         list_exclude = ["net", "fac"]
 
+        validators = [
+            validators.UniqueTogetherValidator(
+                NetworkFacility.objects.all(), ["net_id", "fac_id", "local_asn"]
+            )
+        ]
+
     @classmethod
     def prepare_query(cls, qset, **kwargs):
         filters = get_relation_filters(["name", "country", "city"], cls, **kwargs)
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["name", "country", "city"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -1351,8 +1412,39 @@ class NetworkFacilitySerializer(ModelSerializer):
     def get_city(self, inst):
         return inst.facility.city
 
+    def run_validation(self, data=serializers.empty):
+        # `local_asn` will eventually be dropped from the schema
+        # for now make sure it is always a match to the related
+        # network
 
-# class NetworkSerializer(serializers.ModelSerializer):
+        if data.get("net_id"):
+            try:
+                net = Network.objects.get(id=data.get("net_id"))
+                data["local_asn"] = net.asn
+            except:
+                pass
+        return super(NetworkFacilitySerializer, self).run_validation(data=data)
+
+    def validate(self, data):
+
+        # when validating an existing netfac that has a mismatching
+        # local_asn value raise a validation error stating that it needs
+        # to be moved
+        #
+        # this is to catch and force correction of instances where they
+        # could not be migrated automatically during rollout of #168
+        # because the targeted local_asn did not exist in peeringdb
+
+        if self.instance and self.instance.local_asn != self.instance.network.asn:
+            raise serializers.ValidationError(
+                {
+                    "local_asn": _(
+                        "This entity was created for the ASN {} - please remove it from this network and recreate it under the correct network"
+                    ).format(self.instance.local_asn)
+                }
+            )
+
+        return data
 
 
 class NetworkSerializer(ModelSerializer):
@@ -1426,6 +1518,7 @@ class NetworkSerializer(ModelSerializer):
             "info_unicast",
             "info_multicast",
             "info_ipv6",
+            "info_never_via_route_servers",
             "notes",
             "policy_url",
             "policy_general",
@@ -1475,7 +1568,7 @@ class NetworkSerializer(ModelSerializer):
             **kwargs
         )
 
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["ix", "ixlan", "netixlan", "netfac", "fac"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -1503,7 +1596,7 @@ class NetworkSerializer(ModelSerializer):
 
     @classmethod
     def is_unique_query(cls, request):
-        if request.GET.has_key("asn"):
+        if "asn" in request.GET:
             return True
         return ModelSerializer.is_unique_query(request)
 
@@ -1623,13 +1716,16 @@ class IXLanPrefixSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-        filters = get_relation_filters(["ix_id", "ix"], cls, **kwargs)
-        for field, e in filters.items():
+        filters = get_relation_filters(["ix_id", "ix", "whereis"], cls, **kwargs)
+        for field, e in list(filters.items()):
             for valid in ["ix"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
                     qset = fn(qset=qset, field=field, **e)
                     break
+
+            if field == "whereis":
+                qset = cls.Meta.model.whereis_ip(e["value"], qset=qset)
 
         return qset.select_related("ixlan", "ixlan__ix"), filters
 
@@ -1780,6 +1876,9 @@ class InternetExchangeSerializer(ModelSerializer):
 
     suggest = serializers.BooleanField(required=False, write_only=True)
 
+    website = serializers.URLField(required=True)
+    tech_email = serializers.EmailField(required=True)
+
     # For the creation of the initial prefix during exchange
     # creation. It will be a required field during `POST` requests
     # but will be ignored during `PUT` so we cannot just do
@@ -1856,7 +1955,7 @@ class InternetExchangeSerializer(ModelSerializer):
             **kwargs
         )
 
-        for field, e in filters.items():
+        for field, e in list(filters.items()):
             for valid in ["ixlan", "ixfac", "fac", "net"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -1912,8 +2011,13 @@ class InternetExchangeSerializer(ModelSerializer):
         # create ix
         r = super(InternetExchangeSerializer, self).create(validated_data)
 
+        ixlan = r.ixlan
+
         # create ixlan
-        ixlan = IXLan.objects.create(name="Main", ix=r, status="pending")
+        # if False:# not ixlan:
+        #    ixlan = IXLan(ix=r, status="pending")
+        #    ixlan.clean()
+        #    ixlan.save()
 
         # see if prefix already exists in a deleted state
         ixpfx = IXLanPrefix.objects.filter(prefix=prefix, status="deleted").first()
@@ -1942,6 +2046,23 @@ class InternetExchangeSerializer(ModelSerializer):
 
     def get_net_count(self, inst):
         return inst.network_count
+
+    def validate(self, data):
+        try:
+            data["tech_phone"] = validate_phonenumber(
+                data["tech_phone"], data["country"]
+            )
+        except ValidationError as exc:
+            raise serializers.ValidationError({"tech_phone": exc.message})
+
+        try:
+            data["policy_phone"] = validate_phonenumber(
+                data["policy_phone"], data["country"]
+            )
+        except ValidationError as exc:
+            raise serializers.ValidationError({"policy_phone": exc.message})
+
+        return data
 
 
 class OrganizationSerializer(ModelSerializer):
@@ -1983,6 +2104,24 @@ class OrganizationSerializer(ModelSerializer):
         ]
 
         _ref_tag = model.handleref.tag
+
+    @classmethod
+    def prepare_query(cls, qset, **kwargs):
+        """
+        Add special filter options
+
+        Currently supports:
+
+        - asn: filter by network asn
+        """
+        filters = {}
+
+        if "asn" in kwargs:
+            asn = kwargs.get("asn", [""])[0]
+            qset = qset.filter(net_set__asn=asn, net_set__status="ok")
+            filters.update({"asn": kwargs.get("asn")})
+
+        return qset, filters
 
 
 REFTAG_MAP = dict(

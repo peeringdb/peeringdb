@@ -7,6 +7,7 @@ rc:
     url: https://peeringdb.deskpro.com/api/v2/20180226
 
 misc:
+  show_auto_prod_sync_warning: False
   tutorial_mode: False
   suggestions:
     org_id: 0
@@ -95,6 +96,11 @@ install:
     replace: peeringdb
     files:
     - $SRC_DIR$/manage.py
+    - $SRC_DIR$/docs/api_list.md
+    - $SRC_DIR$/docs/api_retrieve.md
+    - $SRC_DIR$/docs/api_delete.md
+    - $SRC_DIR$/docs/api_create.md
+    - $SRC_DIR$/docs/api_update.md
     - $SRC_DIR$/peeringdb_server/api_cache.py
     - $SRC_DIR$/peeringdb_server/__init__.py
     - $SRC_DIR$/peeringdb_server/admin.py
@@ -124,6 +130,10 @@ install:
     - $SRC_DIR$/peeringdb_server/maintenance.py
     - $SRC_DIR$/peeringdb_server/import_views.py
     - $SRC_DIR$/peeringdb_server/ixf.py
+    - $SRC_DIR$/peeringdb_server/client_adaptor/load.py
+    - $SRC_DIR$/peeringdb_server/client_adaptor/backend.py
+    - $SRC_DIR$/peeringdb_server/client_adaptor/__init__.py
+    - $SRC_DIR$/peeringdb_server/client_adaptor/setup.py
     - $SRC_DIR$/peeringdb_server/management/__init__.py
     - $SRC_DIR$/peeringdb_server/management/commands/__init__.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_deskpro_publish.py
@@ -150,6 +160,7 @@ install:
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_process_admin_tool_command.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_load_data.py
     - $SRC_DIR$/peeringdb_server/management/commands/pdb_fix_status_history.py
+    - $SRC_DIR$/peeringdb_server/management/commands/pdb_migrate_ixlans.py
     - $SRC_DIR$/peeringdb_server/migrations/__init__.py
     - $SRC_DIR$/peeringdb_server/migrations/0001_initial.py
     - $SRC_DIR$/peeringdb_server/migrations/0002_partnernship_model.py
@@ -173,6 +184,13 @@ install:
     - $SRC_DIR$/peeringdb_server/migrations/0020_vqueue_item_unique.py
     - $SRC_DIR$/peeringdb_server/migrations/0020_sponsorship_multi_org.py
     - $SRC_DIR$/peeringdb_server/migrations/0021_sponsorship_drop_single_org_relation_fields.py
+    - $SRC_DIR$/peeringdb_server/migrations/0022_ixlan_remove_auto_increment.py
+    - $SRC_DIR$/peeringdb_server/migrations/0023_netfac_local_asn.py
+    - $SRC_DIR$/peeringdb_server/migrations/0024_netixlan_asn.py
+    - $SRC_DIR$/peeringdb_server/migrations/0025_E164_phonenumbers.py
+    - $SRC_DIR$/peeringdb_server/migrations/0026_help_text_228.py
+    - $SRC_DIR$/peeringdb_server/migrations/0027_never_via_route_servers.py
+    - $SRC_DIR$/peeringdb_server/migrations/0028_ixlan_remove_auto_increment.py
     - $SRC_DIR$/fixtures/initial_data.json
     - $SRC_DIR$/peeringdb_server/templates/admin/admin_extended.html
     - $SRC_DIR$/peeringdb_server/templates/admin/user-organizations.html
@@ -224,6 +242,7 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/inline_search_hidden.html
     - $SRC_DIR$/peeringdb_server/templates/site/verification_banner.html
     - $SRC_DIR$/peeringdb_server/templates/site/tutorial_mode_banner.html
+    - $SRC_DIR$/peeringdb_server/templates/site/beta_banner.html
     - $SRC_DIR$/peeringdb_server/templates/site/header-sponsorships.html
     - $SRC_DIR$/peeringdb_server/templates/site/search_result_frame.html
     - $SRC_DIR$/peeringdb_server/templates/site/search_result.html
@@ -238,6 +257,7 @@ install:
     - $SRC_DIR$/peeringdb_server/templates/site/view_suggest_fac.html
     - $SRC_DIR$/peeringdb_server/templates/site/view_suggest_ix.html
     - $SRC_DIR$/peeringdb_server/templates/site/view_suggest_net.html
+    - $SRC_DIR$/peeringdb_server/templates/site/advanced-search-org.html
     - $SRC_DIR$/peeringdb_server/templates/email/username-retrieve.txt
     - $SRC_DIR$/peeringdb_server/templates/email/password-reset.txt
     - $SRC_DIR$/peeringdb_server/templates/email/notify-org-admin-user-affil.txt

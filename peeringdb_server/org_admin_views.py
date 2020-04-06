@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
 from django.template import loader
 from django.conf import settings
-from forms import OrgAdminUserPermissionForm
+from .forms import OrgAdminUserPermissionForm
 
 from peeringdb_server.models import (
     User,
@@ -43,7 +43,7 @@ def save_user_permissions(org, user, perms):
 
     nsp_perms = {}
 
-    for id, permissions in perms.items():
+    for id, permissions in list(perms.items()):
 
         if not permissions & PERM_READ:
             permissions = permissions | PERM_READ
@@ -83,7 +83,7 @@ def save_user_permissions(org, user, perms):
                 nsp_perms[Facility.nsp_namespace_from_id(org.id, id[1])] = permissions
 
     # save
-    for ns, p in nsp_perms.items():
+    for ns, p in list(nsp_perms.items()):
         UserPermission.objects.create(namespace=ns, permissions=p, user=user)
 
     return nsp_perms
@@ -440,7 +440,7 @@ def permissions(request, **kwargs):
 
     org = kwargs.get("org")
 
-    perms = [{"id": id, "name": name} for id, name in permission_ids(org).items()]
+    perms = [{"id": id, "name": name} for id, name in list(permission_ids(org).items())]
     perms = sorted(perms, key=lambda x: x.get("name"))
     return JsonResponse({"status": "ok", "permissions": perms})
 

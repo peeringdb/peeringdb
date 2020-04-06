@@ -1,5 +1,5 @@
 
-{% for k, each in module.iteritems() %}
+{% for k, each in module.items() %}
   {% if each.db %}
     {% if each.db.name %}
 create database if not exists {{env.rc.db.default.prefix}}{{each.db.name}} character set = utf8;

@@ -106,13 +106,13 @@ class ViewTestCase(TestCase):
         resp = c.get("/data/sponsors", follow=True)
         self.assertEqual(resp.status_code, 200)
         expected = {
-            u"sponsors": {
-                u"1": {u"id": 1, u"name": u"silver"},
-                u"3": {u"id": 3, u"name": u"gold"},
-                u"2": {u"id": 2, u"name": u"silver"},
-                u"5": {u"id": 5, u"name": u"platinum"},
-                u"4": {u"id": 4, u"name": u"silver"},
-                u"6": {u"id": 6, u"name": u"platinum"},
+            "sponsors": {
+                "1": {"id": 1, "name": "silver"},
+                "3": {"id": 3, "name": "gold"},
+                "2": {"id": 2, "name": "silver"},
+                "5": {"id": 5, "name": "platinum"},
+                "4": {"id": 4, "name": "silver"},
+                "6": {"id": 6, "name": "platinum"},
             }
         }
         self.assertEqual(resp.json(), expected)
@@ -122,23 +122,23 @@ class ViewTestCase(TestCase):
         resp = c.get("/sponsors", follow=True)
         self.assertEqual(resp.status_code, 200)
 
-        # make sure org a,b and c exist in the sponsors page
-        self.assertGreater(resp.content.find(self.organizations["1"].name), -1)
-        self.assertGreater(resp.content.find(self.organizations["2"].name), -1)
-        self.assertGreater(resp.content.find(self.organizations["3"].name), -1)
-        self.assertGreater(resp.content.find(self.organizations["5"].name), -1)
-        self.assertGreater(resp.content.find(self.organizations["6"].name), -1)
+        # make sure orgs 1,2,3,5 and 6 exists in the sponsor page
+        assert self.organizations["1"].name in resp.content.decode()
+        assert self.organizations["2"].name in resp.content.decode()
+        assert self.organizations["3"].name in resp.content.decode()
+        assert self.organizations["5"].name in resp.content.decode()
+        assert self.organizations["6"].name in resp.content.decode()
 
-        # make sure org d does not exist in the sponsors page
-        self.assertEqual(resp.content.find(self.organizations["4"].name), -1)
+        # make sure org 4 does not exist in the sponsors page
+        assert self.organizations["4"].name not in resp.content.decode()
 
         # makre sure order is randomized with each view
         i = 0
-        rgx = re.compile('fake.png" alt="([^"]+)"')
-        a = re.findall(rgx, resp.content)
+        rgx = re.compile(r'fake.png" alt="([^"]+)"')
+        a = re.findall(rgx, resp.content.decode())
         while i < 100:
             resp = c.get("/sponsors", follow=True)
-            b = re.findall(rgx, resp.content)
+            b = re.findall(rgx, resp.content.decode())
             self.assertEqual(len(a), len(b))
             if b != a:
                 break

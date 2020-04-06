@@ -20,7 +20,7 @@ from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
-from django.core.urlresolvers import resolve, Resolver404
+from django.urls import resolve, Resolver404
 from django.template import loader
 from django.utils.crypto import constant_time_compare
 from django_namespace_perms.util import (
@@ -95,7 +95,17 @@ BASE_ENV = {
     "OAUTH_ENABLED": dj_settings.OAUTH_ENABLED,
     "PEERINGDB_VERSION": settings.PEERINGDB_VERSION,
     "TUTORIAL_MODE": settings.TUTORIAL_MODE,
+    "RELEASE_ENV": settings.RELEASE_ENV,
+    "SHOW_AUTO_PROD_SYNC_WARNING": settings.SHOW_AUTO_PROD_SYNC_WARNING,
 }
+
+
+def field_help(model, field):
+    """
+    helper function return help_text of a model
+    field
+    """
+    return model._meta.get_field(field).help_text
 
 
 def is_oauth_authorize(url):
@@ -146,11 +156,33 @@ class DoNotRender(object):
         return []
 
 
+def beta_sync_dt():
+    """
+    Returns the next date for a beta sync
+
+    This is currently hard coded to return 00:00Z for the
+    next sunday
+    """
+    dt = datetime.datetime.now() + datetime.timedelta(1)
+
+    while dt.weekday() != 6:
+        dt += datetime.timedelta(1)
+
+    return dt.replace(hour=0, minute=0, second=0)
+
+
+def update_env_beta_sync_dt(env):
+    if settings.RELEASE_ENV == "beta":
+        env.update(beta_sync_dt=beta_sync_dt())
+
+
 def make_env(**data):
     env = {}
     env.update(**BASE_ENV)
     env.update(**{"global_stats": global_stats()})
     env.update(**data)
+    update_env_beta_sync_dt(env)
+
     return env
 
 
@@ -203,7 +235,7 @@ def view_request_ownership(request):
             return view_index(
                 request,
                 errors=[
-                    _(u"Organization '%(org_name)s' is already under ownership")
+                    _("Organization '%(org_name)s' is already under ownership")
                     % {"org_name": org.name}
                 ],
             )
@@ -273,7 +305,7 @@ def view_affiliate_to_org(request):
     an ASN they provide
     """
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return view_login(request)
 
     if request.method == "POST":
@@ -353,7 +385,7 @@ def resend_confirmation_mail(request):
             ],
         )
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return view_login(request)
 
     request.user.send_email_confirmation(request=request)
@@ -370,7 +402,7 @@ def view_profile(request):
 @ensure_csrf_cookie
 def view_set_user_locale(request):
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return view_login(request)
 
     if request.method in ["GET", "HEAD"]:
@@ -394,7 +426,7 @@ def view_set_user_locale(request):
 
 @protected_resource(scopes=["profile"])
 def view_profile_v1(request):
-    #    if not request.user.is_authenticated():
+    #    if not request.user.is_authenticated:
     #        return view_login(request)
     oauth = get_oauthlib_core()
     scope_email, _request = oauth.verify_request(request, scopes=["email"])
@@ -437,7 +469,7 @@ def view_profile_v1(request):
 @ratelimit(key="ip", rate=RATELIMITS["view_verify_POST"], method="POST")
 def view_verify(request):
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return view_login(request)
 
     if request.method in ["GET", "HEAD"]:
@@ -500,7 +532,7 @@ def view_verify(request):
 @ensure_csrf_cookie
 def view_password_change(request):
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return view_login(request)
 
     if request.method in ["GET", "HEAD"]:
@@ -695,7 +727,7 @@ def view_registration(request):
     """
     user registration page view
     """
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return view_index(
             request,
             errors=[
@@ -711,6 +743,7 @@ def view_registration(request):
         env.update(
             {"global_stats": global_stats(), "register_form": UserCreationForm(),}
         )
+        update_env_beta_sync_dt(env)
         return HttpResponse(template.render(env, request))
 
     elif request.method == "POST":
@@ -763,7 +796,7 @@ def view_login(request, errors=None):
     if not errors:
         errors = []
 
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return view_index(request, errors=[_("Already logged in")])
 
     template = loader.get_template("site/login.html")
@@ -772,6 +805,7 @@ def view_login(request, errors=None):
 
     env = BASE_ENV.copy()
     env.update({"errors": errors, "next": redir})
+    update_env_beta_sync_dt(env)
     return HttpResponse(template.render(env, request))
 
 
@@ -793,6 +827,9 @@ def view_index(request, errors=None):
 
     env = BASE_ENV.copy()
     env.update({"errors": errors, "global_stats": global_stats(), "recent": recent})
+
+    update_env_beta_sync_dt(env)
+
     return HttpResponse(template.render(env, request))
 
 
@@ -823,6 +860,9 @@ def view_component(
             "bottom_template_name": "site/view_%s_bottom.html" % component,
         }
     )
+
+    update_env_beta_sync_dt(env)
+
     env.update(**kwargs)
     return HttpResponse(template.render(env, request))
 
@@ -944,7 +984,7 @@ def view_organization(request, id):
             dict([(user.id, user) for user in org.admin_usergroup.user_set.all()])
         )
         users.update(dict([(user.id, user) for user in org.usergroup.user_set.all()]))
-        users = sorted(users.values(), key=lambda x: x.full_name)
+        users = sorted(list(users.values()), key=lambda x: x.full_name)
 
     # if user has rights to create sub entties or manage users, allow them
     # to view the tools
@@ -1231,48 +1271,57 @@ def view_exchange(request, id):
         ],
     }
 
-    ixlan_num = data["ixlans"].count()
+    # IXLAN field group (form)
 
-    if ixlan_num < 2 and not perms.get("can_edit"):
-        # if there is less than one LAN connected to this ix
-        # we want to render a simplified view to read-only
-        # viewers
+    ixlan = exchange.ixlan
 
-        data["lan_simple_view"] = True
-
-        if ixlan_num == 1:
-
-            ixlan = data["ixlans"].first()
-
-            data["fields"].extend(
-                [
-                    {"type": "sub", "label": _("LAN")},
+    data["fields"].extend(
+        [
+            {
+                "type": "group",
+                "target": "api:ixlan:update",
+                "id": ixlan.id,
+                "label": _("LAN"),
+                "payload": [{"name": "ix_id", "value": exchange.id},],
+            },
+            {
+                "type": "flags",
+                "label": _("DOT1Q"),
+                "value": [{"name": "dot1q_support", "value": ixlan.dot1q_support}],
+            },
+            {
+                "type": "number",
+                "name": "mtu",
+                "label": _("MTU"),
+                "value": (ixlan.mtu or 0),
+            },
+            {
+                "type": "flags",
+                "label": _("Enable IX-F Import"),
+                "value": [
                     {
-                        "type": "number",
-                        "name": "mtu",
-                        "label": _("MTU"),
-                        "value": ixlan.mtu or "",
-                    },
-                    {
-                        "type": "bool",
-                        "name": "dot1q_support",
-                        "label": _("DOT1Q"),
-                        "value": ixlan.dot1q_support,
-                    },
-                ]
-            )
-
-            data["fields"].extend(
-                [
-                    {
-                        "type": "string",
-                        "name": "prefix_%d" % prefix.id,
-                        "label": _(prefix.protocol),
-                        "value": prefix.prefix,
+                        "name": "ixf_ixp_import_enabled",
+                        "value": ixlan.ixf_ixp_import_enabled,
                     }
-                    for prefix in ixlan.ixpfx_set_active
-                ]
-            )
+                ],
+                "admin": True,
+            },
+            {
+                "type": "url",
+                "label": _("IX-F Member Export URL"),
+                "name": "ixf_ixp_member_list_url",
+                "value": ixlan.ixf_ixp_member_list_url,
+                "admin": True,
+            },
+            {
+                "type": "action",
+                "label": _("IX-F Import Preview"),
+                "actions": [{"label": _("Preview"), "action": "ixf_preview",},],
+                "admin": True,
+            },
+            {"type": "group_end"},
+        ]
+    )
 
     return view_component(
         request, "exchange", data, "Exchange", perms=perms, instance=exchange
@@ -1358,7 +1407,7 @@ def view_network(request, id):
             {
                 "name": "aka",
                 "label": _("Also Known As"),
-                "notify_incomplete": True,
+                "notify_incomplete": False,
                 "value": network_d.get("aka", dismiss),
             },
             {
@@ -1377,6 +1426,7 @@ def view_network(request, id):
             {
                 "name": "irr_as_set",
                 "label": _("IRR as-set/route-set"),
+                "help_text": field_help(Network, "irr_as_set"),
                 "notify_incomplete": True,
                 "value": network_d.get("irr_as_set", dismiss),
             },
@@ -1384,14 +1434,14 @@ def view_network(request, id):
                 "name": "route_server",
                 "type": "url",
                 "label": _("Route Server URL"),
-                "notify_incomplete": True,
+                "notify_incomplete": False,
                 "value": network_d.get("route_server", dismiss),
             },
             {
                 "name": "looking_glass",
                 "type": "url",
                 "label": _("Looking Glass URL"),
-                "notify_incomplete": True,
+                "notify_incomplete": False,
                 "value": network_d.get("looking_glass", dismiss),
             },
             {
@@ -1407,14 +1457,18 @@ def view_network(request, id):
                 "name": "info_prefixes4",
                 "label": _("IPv4 Prefixes"),
                 "type": "number",
+                "help_text": field_help(Network, "info_prefixes4"),
                 "notify_incomplete": True,
+                "notify_incomplete_group": "prefixes",
                 "value": int(network_d.get("info_prefixes4") or 0),
             },
             {
                 "name": "info_prefixes6",
                 "label": _("IPv6 Prefixes"),
                 "type": "number",
+                "help_text": field_help(Network, "info_prefixes6"),
                 "notify_incomplete": True,
+                "notify_incomplete_group": "prefixes",
                 "value": int(network_d.get("info_prefixes6") or 0),
             },
             {
@@ -1459,6 +1513,15 @@ def view_network(request, id):
                         "name": "info_ipv6",
                         "label": _("IPv6"),
                         "value": network_d.get("info_ipv6", False),
+                    },
+                    {
+                        "name": "info_never_via_route_servers",
+                        "label": _("Never via route servers"),
+                        # FIXME: change to `field_help` after merging with #228
+                        "help_text": Network._meta.get_field(
+                            "info_never_via_route_servers"
+                        ).help_text,
+                        "value": network_d.get("info_never_via_route_servers", False),
                     },
                 ],
             },
@@ -1543,7 +1606,7 @@ def view_network(request, id):
     # Add POC data to dataset
     data["poc_set"] = network_d.get("poc_set")
 
-    if not request.user.is_authenticated() or not request.user.is_verified:
+    if not request.user.is_authenticated or not request.user.is_verified:
         cnt = network.poc_set.filter(status="ok", visible="Users").count()
         data["poc_hidden"] = cnt > 0
     else:
@@ -1691,7 +1754,7 @@ def request_search(request):
     if not q:
         return HttpResponseRedirect("/")
 
-    # if the user queried for an asn directly via ASXXX or ASNXXX
+    # if the user queried for an asn directly via AS*** or ASN***
     # redirect to the result
     m = re.match(r"(asn|as)(\d+)", q.lower())
     if m:
@@ -1708,7 +1771,7 @@ def request_search(request):
         ]
     )
 
-    for tag, rows in result.items():
+    for tag, rows in list(result.items()):
         for item in rows:
             item["sponsorship"] = sponsors.get(item["org_id"])
 
@@ -1718,9 +1781,11 @@ def request_search(request):
             "search_ixp": result.get(InternetExchange._handleref.tag),
             "search_net": result.get(Network._handleref.tag),
             "search_fac": result.get(Facility._handleref.tag),
+            "search_org": result.get(Organization._handleref.tag),
             "count_ixp": len(result.get(InternetExchange._handleref.tag, [])),
             "count_net": len(result.get(Network._handleref.tag, [])),
             "count_fac": len(result.get(Facility._handleref.tag, [])),
+            "count_org": len(result.get(Organization._handleref.tag, [])),
         }
     )
     return HttpResponse(template.render(env, request))
@@ -1736,7 +1801,7 @@ def request_logout(request):
 @ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
 def request_login(request):
 
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return view_index(request)
 
     if request.method in ["GET", "HEAD"]:
@@ -1780,7 +1845,7 @@ def request_login(request):
 @ratelimit(key="ip", rate=RATELIMITS["request_translation"], method="POST")
 def request_translation(request, data_type):
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return JsonResponse(
             {"status": "error", "error": "Please login to use translation service"}
         )

@@ -56,7 +56,7 @@ class Command(BaseCommand):
         if self.log_file:
             self.log_file.write("%s: %s" % (id, msg))
             self.log_file.flush()
-        print "%s: %s" % (id, msg)
+        print("%s: %s" % (id, msg))
 
     def row_datetime(self, row, field="created"):
         return datetime.datetime.strptime(row.get(field), "%Y-%m-%dT%H:%M:%SZ")
@@ -88,7 +88,7 @@ class Command(BaseCommand):
         try:
             cache = {}
 
-            for tag, viewset in VIEWSETS.items():
+            for tag, viewset in list(VIEWSETS.items()):
                 if only and tag not in only:
                     continue
 
@@ -110,7 +110,7 @@ class Command(BaseCommand):
                     del res
                     del vs
 
-            for id, data in cache.items():
+            for id, data in list(cache.items()):
                 self.log(id, "saving file")
                 with open(
                     os.path.join(settings.API_CACHE_ROOT, "%s.json" % (id)), "w+"
@@ -123,4 +123,4 @@ class Command(BaseCommand):
 
         t2 = time.time()
 
-        print "Finished after %.2f seconds" % (t2 - t)
+        print("Finished after %.2f seconds" % (t2 - t))

@@ -1,8 +1,8 @@
 import json
 import pytest
 
-from util import ClientCase
-from test_api import setup_module, teardown_module
+from .util import ClientCase
+from .test_api import setup_module, teardown_module
 from peeringdb_server.models import REFTAG_MAP, User
 from rest_framework.test import APIClient, force_authenticate
 

@@ -78,8 +78,8 @@ class Command(BaseCommand):
 
         for ixlan in qset:
             self.log(
-                "Fetching data for {} from {}".format(
-                    ixlan, ixlan.ixf_ixp_member_list_url
+                "Fetching data for -ixlan{} from {}".format(
+                    ixlan.id, ixlan.ixf_ixp_member_list_url
                 )
             )
             try:

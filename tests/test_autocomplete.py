@@ -7,7 +7,7 @@ import reversion
 
 from peeringdb_server.models import User, Organization
 from peeringdb_server import autocomplete_views
-from util import ClientCase
+from .util import ClientCase
 
 
 class TestAutocomplete(ClientCase):

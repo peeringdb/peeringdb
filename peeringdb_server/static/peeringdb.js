@@ -1,4 +1,11 @@
 PeeringDB = {
+  // flip to false to disable js side confirmation
+  // prompts
+  confirmation_prompts: {
+    approve : true,
+    remove : true,
+    deny : true
+  },
   is_mobile : /Android|WebOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
   js_enabled : function() {
     return this.is_mobile ? false : true;
@@ -155,8 +162,37 @@ PeeringDB = {
         var value = $(this).html().trim();
         var name = $(this).data("edit-name");
         var field = $(this).prev('.view_field');
+        var group = field.data("notify-incomplete-group")
+
         if(!field.length)
           field = $(this).parent().prev('.view_field');
+
+        // if field is part of a notify-incomplete-group
+        // it means we don't want to show a warning as long
+        // as one of the members of the group has it's value set
+
+        if(group && (value == "" || value == "0")) {
+          var other, i, others, _value;
+
+          // get other members of the group
+
+          others = $('[data-notify-incomplete-group="'+group+'"]')
+
+          for(i = 0; i < others.length; i++) {
+            other = $(others[i]).next('.view_value')
+            _value = other.html().trim()
+
+            // other group member's value is set, use that value
+            // to toggle that we do not want to show a notification
+            // warning for this field
+
+            if(_value != "" && _value != "0") {
+              value = _value
+              break;
+            }
+          }
+        }
+
         var check = (field.find('.incomplete').length == 1);
         if(check && (value == "" || value == "0")) {
           status.incomplete = true;
@@ -172,6 +208,20 @@ PeeringDB = {
         $(this).find('.editable.popin.incomplete').addClass("hidden").hide();
       }
     });
+  },
+
+  /**
+   * prompt user with a confirmation dialogue
+   *
+   * will take `confirmation_prompts` setting into account
+   */
+
+  confirm: function(msg, type) {
+    if(!type || this.confirmation_prompts[type]) {
+      return confirm(msg);
+    } else {
+      return true;
+    }
   }
 }
 
@@ -184,6 +234,57 @@ function moveCursorToEnd(el) {
         range.collapse(false);
         range.select();
     }
+}
+
+/**
+ * Tools to handle pre and post processing of ix/net/fac/org views
+ * submissions
+ * @class ViewTools
+ * @namespace PeeringDB
+ */
+
+PeeringDB.ViewTools = {
+
+  /**
+   * applies the value of a field as it was returned by the
+   * server in the response to the submissions to the corresponding
+   * form element on the page
+   *
+   * this only needs to be done for fields that rely on server side
+   * data validation that can't be done locally
+   *
+   * @method apply_data
+   * @param {jQuery} container - main js-edit element for the submissions
+   * @param {Object} data - object literal containing server response for the entity
+   * @param {String} field - field name
+   */
+
+  apply_data : function(container, data, field) {
+
+    var input;
+    input = $('[data-edit-name="'+field+'"]').data("edit-input-instance")
+    if(input) {
+      input.set(data[field]);
+      input.apply(data[field]);
+    }
+  },
+
+  /**
+   * after submission cleanup / handling
+   *
+   * @method after_submit
+   * @param {jQuery} container - main js-edit element for the submissions
+   * @param {Object} data - object literal containing server response for the entity
+   */
+
+  after_submit : function(container, data) {
+    var target = container.data("edit-target")
+    if(target == "api:ix:update") {
+      this.apply_data(container, data, "tech_phone");
+      this.apply_data(container, data, "policy_phone");
+    }
+  }
+
 }
 
 PeeringDB.ViewActions = {
@@ -201,6 +302,13 @@ PeeringDB.ViewActions = {
   actions : {}
 }
 
+PeeringDB.ViewActions.actions.ix_ixf_preview = function(netId) {
+  $("#ixf-preview-modal").modal("show");
+  var preview = new PeeringDB.IXFPreview()
+  preview.request(netId, $("#ixf-log"));
+}
+
+
 PeeringDB.ViewActions.actions.net_ixf_preview = function(netId) {
   $("#ixf-preview-modal").modal("show");
   var preview = new PeeringDB.IXFNetPreview()
@@ -211,7 +319,6 @@ PeeringDB.ViewActions.actions.net_ixf_postmortem = function(netId) {
   $("#ixf-postmortem-modal").modal("show");
   var postmortem = new PeeringDB.IXFNetPostmortem()
   postmortem.request(netId, $("#ixf-postmortem"));
-
 }
 
 
@@ -758,7 +865,7 @@ twentyc.editable.module.register(
     },
 
     remove : function(id, row, trigger, container) {
-      var b = confirm(gettext("Remove") + " " +row.data("edit-label"));  ///
+      var b = PeeringDB.confirm(gettext("Remove") + " " +row.data("edit-label"), "remove");  ///
       var me = this;
       $(this.target).on("success", function(ev, data) {
         if(b)
@@ -792,7 +899,7 @@ twentyc.editable.module.register(
     execute_approve : function(trigger, container) {
       var row = trigger.closest("[data-edit-id]").first()
 
-      var b = confirm(gettext("Add user") + " " +row.data("edit-label")+ " " + gettext("to Organization?")); ///
+      var b = PeeringDB.confirm(gettext("Add user") + " " +row.data("edit-label")+ " " + gettext("to Organization?"), "approve"); ///
       if(!b)
         return;
 
@@ -809,7 +916,7 @@ twentyc.editable.module.register(
     execute_deny : function(trigger, container) {
       var row = trigger.closest("[data-edit-id]").first()
 
-      var b = confirm(gettext("Deny") +" "+row.data("edit-label")+"'s " + gettext("request to join the Organization?"));  ///
+      var b = PeeringDB.confirm(gettext("Deny") +" "+row.data("edit-label")+"'s " + gettext("request to join the Organization?"), "deny");  ///
       if(!b)
         return;
 
@@ -1036,6 +1143,7 @@ twentyc.editable.target.register(
   "base"
 );
 
+
 /*
  * editable api listing module
  */
@@ -1047,6 +1155,7 @@ twentyc.editable.module.register(
 
     init : function() {
       this.listing_init();
+
       this.container.on("listing:row-add", function(e, rowId, row, data, me) {
         var target = me.target;
         if(!target)
@@ -1100,14 +1209,23 @@ twentyc.editable.module.register(
 
     submit : function(id, data, row, trigger, container) {
       data._id = id;
+      var me = this;
+      var sentData = data;
       this.target.data = data;
       this.target.args[2] = "update"
       this.target.context = row;
+
+      $(this.target).on("success", function(ev, data) {
+        var finalizer = "finalize_update_"+me.target.args[1];
+        if(me[finalizer]) {
+          me[finalizer](id, row, data);
+        }
+      });
       this.target.execute();
     },
 
     remove : function(id, row, trigger, container) {
-      var b = confirm(gettext("Remove") + " "+row.data("edit-label")); ///
+      var b = PeeringDB.confirm(gettext("Remove") + " "+row.data("edit-label"), "remove"); ///
       var me = this;
       $(this.target).on("success", function(ev, data) {
         if(b)
@@ -1174,11 +1292,19 @@ twentyc.editable.module.register(
 
     finalize_row_poc : function(rowId, row, data) {
       row.editable("payload", {
-        net_id : data.network,
+        net_id : data.net_id,
         role : data.role
       })
 
+      //row.find(".phone").val(data.phone);
+      var phone = row.find(".phone").data("edit-input-instance")
+      phone.set(data.phone)
+
       row.data("edit-label", gettext("Network Contact") + ": "+data.name);  ///
+    },
+
+    finalize_update_poc : function(rowId, row, data) {
+      row.find(".phone").text(data.phone);
     },
 
     // FINALIZERS: NETIX
@@ -1276,34 +1402,6 @@ twentyc.editable.module.register(
 
     },
 
-    // FINALIZERS: IXLAN
-
-    finalize_add_ixlan : function(data, callback, sentData) {
-
-      // we currently do not publish ix-f setting fields on the API
-      // so we need to set those from sent data
-      data.ixf_ixp_member_list_url = sentData.ixf_ixp_member_list_url;
-      data.ixf_ixp_import_enabled = sentData.ixf_ixp_import_enabled;
-      callback(data);
-    },
-
-
-    finalize_row_ixlan : function(rowId, row, data) {
-      row.editable("payload", {
-        ix_id : data.ix_id
-      })
-      row.data("edit-label", gettext("IXLAN") + ": "+data.name); ///
-
-      var modPrefix = row.find('[data-edit-module="api_listing"]');
-      modPrefix.editable("sync");
-      modPrefix.editable("toggle");
-
-      var cmpPrefixAdd = row.find('[data-edit-component="add"]')
-      cmpPrefixAdd.editable("payload", {
-        ixlan_id : data.id
-      });
-    },
-
     // FINALIZERS: IXLAN PREFIX
 
     finalize_row_ixpfx : function(rowId, row, data) {
@@ -1382,6 +1480,61 @@ twentyc.editable.input.register(
   },
   "text"
 );
+
+twentyc.editable.input.register(
+  "readonly",
+  {
+    make : function() {
+      return $('<span class="editable input-note-relative"></span>')
+    },
+    set : function(value) {
+      this.element.text(value)
+    },
+    get : function(value) {
+      return this.element.text()
+    }
+  },
+  "text"
+);
+
+/*
+ * mandatory boolean input type
+ * renders a drop down with 3 choices
+ *
+ * - `-`
+ * - `yes`
+ * - `no`
+ *
+ * Will raise input-required validation error if `-`
+ * is selected upon form submission
+ */
+
+twentyc.editable.input.register(
+  "mandatory_bool",
+  {
+
+    make : function() {
+      var node = this.select_make();
+      this.source.data("edit-required", "yes")
+      return node;
+    },
+
+    set : function() {
+      this.load();
+    },
+
+    load : function() {
+      this.select_load([
+        {id: "", name: "-"},
+        {id: "1", name: gettext("Yes")},
+        {id: "0", name: gettext("No")},
+      ])
+    }
+  },
+  "select"
+);
+
+
 /*
  * autocomplete input type
  */

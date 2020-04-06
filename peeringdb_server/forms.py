@@ -63,7 +63,7 @@ class AffiliateToOrgForm(forms.Form):
         if not asn:
             return 0
         try:
-            asn = int(re.sub("\D", "", asn))
+            asn = int(re.sub(r"\D", r"", asn))
         except ValueError:
             raise forms.ValidationError(_("ASN needs to be a number"))
         return asn

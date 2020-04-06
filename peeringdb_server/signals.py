@@ -1,3 +1,4 @@
+import django.urls
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.contrib.contenttypes.models import ContentType
 from django_namespace_perms.models import Group, GroupPermission
@@ -6,7 +7,6 @@ from django.template import loader
 from django.conf import settings
 from django.dispatch import receiver
 from allauth.account.signals import user_signed_up
-from django.core import urlresolvers
 
 from corsheaders.signals import check_request_enabled
 
@@ -193,7 +193,7 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                 with override(user.locale):
                     user.email_user(
                         _(
-                            u"User %(u_name)s wishes to be affiliated to your Organization"
+                            "User %(u_name)s wishes to be affiliated to your Organization"
                         )
                         % {"u_name": instance.user.full_name},
                         loader.get_template(
@@ -219,7 +219,7 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                 try:
                     rdap_lookup = rdap = RdapLookup().get_asn(instance.asn)
                     ok = rdap_lookup.emails
-                except RdapException, inst:
+                except RdapException as inst:
                     instance.deny()
                     raise
 
@@ -271,7 +271,7 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     # if user's relationship to the org can be validated by
                     # checking the rdap information of the org's networks
                     # we can approve the affiliation (ownership) request right away
-                    for asn, rdap in instance.org.rdap_collect.items():
+                    for asn, rdap in list(instance.org.rdap_collect.items()):
                         rdap_data["emails"].extend(rdap.emails)
                         if instance.user.validate_rdap_relationship(rdap):
                             ticket_queue_asnauto_affil(
@@ -295,7 +295,7 @@ def uoar_creation(sender, instance, created=False, **kwargs):
 
             # organization has no owners and RDAP information could not verify the user's relationship to the organization, notify pdb staff for review
             ticket_queue(
-                u"User %s wishes to %s %s"
+                "User %s wishes to %s %s"
                 % (instance.user.username, request_type, entity_name),
                 loader.get_template("email/notify-pdb-admin-user-affil.txt").render(
                     {
@@ -305,19 +305,19 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                         "org_add_url": "%s%s"
                         % (
                             settings.BASE_URL,
-                            urlresolvers.reverse(
+                            django.urls.reverse(
                                 "admin:peeringdb_server_organization_add"
                             ),
                         ),
                         "net_add_url": "%s%s"
                         % (
                             settings.BASE_URL,
-                            urlresolvers.reverse("admin:peeringdb_server_network_add"),
+                            django.urls.reverse("admin:peeringdb_server_network_add"),
                         ),
                         "review_url": "%s%s"
                         % (
                             settings.BASE_URL,
-                            urlresolvers.reverse(
+                            django.urls.reverse(
                                 "admin:peeringdb_server_user_change",
                                 args=(instance.user.id,),
                             ),
@@ -325,7 +325,7 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                         "approve_url": "%s%s"
                         % (
                             settings.BASE_URL,
-                            urlresolvers.reverse(
+                            django.urls.reverse(
                                 "admin:peeringdb_server_userorgaffiliationrequest_actions",
                                 args=(instance.id, "approve_and_notify"),
                             ),
@@ -402,10 +402,10 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
             else:
                 rdap = None
 
-            title = u"{} - {}".format(instance.content_type, item)
+            title = "{} - {}".format(instance.content_type, item)
 
             if is_suggested(item):
-                title = u"[SUGGEST] {}".format(title)
+                title = "[SUGGEST] {}".format(title)
 
             ticket_queue(
                 title,

@@ -52,7 +52,7 @@ class VeriQueueTests(TestCase):
 
         # test verification queue items were created for all queue enabled
         # entities
-        for k, v in self.inst.items():
+        for k, v in list(self.inst.items()):
             vqi = models.VerificationQueueItem.get_for_entity(v)
             self.assertEqual(vqi.item, v)
 
@@ -70,7 +70,7 @@ class VeriQueueTests(TestCase):
             vqi.save()
             self.assertEqual(
                 qs.filter(
-                    subject=u"[test]{} - {}".format(vqi.content_type, inst)
+                    subject="[test]{} - {}".format(vqi.content_type, inst)
                 ).exists(),
                 True,
             )
@@ -101,7 +101,7 @@ class VeriQueueTests(TestCase):
         )
 
         # after approval vqi should no longer exist
-        with self.assertRaises(models.VerificationQueueItem.DoesNotExist):
+        with pytest.raises(models.VerificationQueueItem.DoesNotExist):
             vqi.refresh_from_db()
 
     def test_user_approve(self):
@@ -136,11 +136,11 @@ class VeriQueueTests(TestCase):
         vqi.deny()
 
         # after denial fac should no longer exist
-        with self.assertRaises(models.Facility.DoesNotExist):
+        with pytest.raises(models.Facility.DoesNotExist):
             fac.refresh_from_db()
 
         # after denial vqi should no longer exist
-        with self.assertRaises(models.VerificationQueueItem.DoesNotExist):
+        with pytest.raises(models.VerificationQueueItem.DoesNotExist):
             vqi.refresh_from_db()
 
     def test_unique(self):
@@ -151,7 +151,7 @@ class VeriQueueTests(TestCase):
         fac = self.inst.get("fac")
         vqi = models.VerificationQueueItem.get_for_entity(fac)
 
-        with self.assertRaises(IntegrityError):
+        with pytest.raises(IntegrityError):
             models.VerificationQueueItem.objects.create(
                 content_type=models.ContentType.objects.get_for_model(type(fac)),
                 object_id=fac.id,

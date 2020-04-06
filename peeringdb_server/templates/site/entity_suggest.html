@@ -10,6 +10,11 @@ Suggest {{ entity_name }} to be added to the database. Your suggestion will be r
 In order to be approved we would expect that the suggested Facility offers colocation, data center and/or meet-me-room services to the public.
 {% endblocktrans %}
 <p>
+<p class="marg-top-15"><strong>
+{% blocktrans trimmed %}
+Only use this if you don't own the Facility. If you own it, please use "Add Facility" under your organization record.
+{% endblocktrans %}
+</strong></p>
 {% elif entity_name == "Exchange" %}
 <p class="marg-top-15">
 {% blocktrans trimmed %}

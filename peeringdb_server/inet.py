@@ -275,7 +275,7 @@ def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
     # return renumbered ipaddress
 
     return ipaddress.ip_address(
-        u"{}".format(delimiter.join([str(o) for o in ip_octets]))
+        "{}".format(delimiter.join([str(o) for o in ip_octets]))
     )
 
 

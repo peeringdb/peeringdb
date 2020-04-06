@@ -70,6 +70,7 @@
               <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
               <div class="col-xs-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
+                     data-edit-required="yes"
                      data-edit-name="website"></div>
               </div>
             </div>
@@ -412,7 +413,7 @@
             <div class="row">
               <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Unicast IPv4" %}</div>
               <div class="col-xs-8 col-sm-7 col-md-8">
-                <div data-edit-type="bool"
+                <div data-edit-type="mandatory_bool"
                      data-edit-name="proto_unicast"></div>
               </div>
             </div>
@@ -420,7 +421,7 @@
             <div class="row">
               <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Multicast" %}</div>
               <div class="col-xs-8 col-sm-7 col-md-8">
-                <div data-edit-type="bool"
+                <div data-edit-type="mandatory_bool"
                      data-edit-name="proto_multicast"></div>
               </div>
             </div>
@@ -428,7 +429,7 @@
             <div class="row">
               <div class="col-xs-4 col-sm-5 col-md-4">{% trans "IPv6" %}</div>
               <div class="col-xs-8 col-sm-7 col-md-8">
-                <div data-edit-type="bool"
+                <div data-edit-type="mandatory_bool"
                      data-edit-name="proto_ipv6"></div>
               </div>
             </div>
@@ -443,6 +444,7 @@
               <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Technical E-mail" %}</div>
               <div class="col-xs-8 col-sm-7 col-md-8">
                 <div data-edit-type="email"
+                     data-edit-required="yes"
                      data-edit-name="tech_email"></div>
               </div>
             </div>

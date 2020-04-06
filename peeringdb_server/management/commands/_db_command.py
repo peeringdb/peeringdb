@@ -23,10 +23,10 @@ class DBCommand(BaseCommand):
     help = "Inspect an object's reversion history"
 
     def log(self, id, msg):
-        print "%s: %s" % (id, msg)
+        print("%s: %s" % (id, msg))
 
     def print_line(self):
-        print "".join(["-" for i in range(0, 80)])
+        print("".join(["-" for i in range(0, 80)]))
 
     def handle(self, *args, **options):
 
@@ -37,11 +37,11 @@ class DBCommand(BaseCommand):
         try:
             ref_tag = args.pop(0)
         except IndexError:
-            print "Please specify object reftag (eg 'net') and at least one id"
+            print("Please specify object reftag (eg 'net') and at least one id")
             return
 
         if len(args) == 0:
-            print "Please specify at least one id"
+            print("Please specify at least one id")
             return
 
         ids = [int(i) for i in args]
@@ -53,7 +53,7 @@ class DBCommand(BaseCommand):
                 break
 
         if not model:
-            print "Unknown ref tag: %s" % ref_tag
+            print("Unknown ref tag: %s" % ref_tag)
             return
 
         content_type = ContentType.objects.get_for_model(model)
@@ -61,27 +61,26 @@ class DBCommand(BaseCommand):
             versions = Version.objects.filter(
                 content_type=content_type, object_id_int=id
             )
-            print "%s - %d:" % (ref_tag, id)
+            print("%s - %d:" % (ref_tag, id))
             self.print_line()
             prev = {}
             n = 0
             for version in versions:
                 data = json.loads(version.serialized_data)[0].get("fields")
                 n += 1
-                print "VERSION: %d - %s - User: %s" % (
-                    n,
-                    data.get("updated"),
-                    version.revision.user,
+                print(
+                    "VERSION: %d - %s - User: %s"
+                    % (n, data.get("updated"), version.revision.user,)
                 )
                 if not prev:
-                    for k, v in data.items():
-                        print "%s: '%s'" % (k, v)
+                    for k, v in list(data.items()):
+                        print("%s: '%s'" % (k, v))
                     self.print_line()
                     prev = data
                     continue
-                for k, v in data.items():
+                for k, v in list(data.items()):
                     if prev[k] != v:
-                        print "%s: '%s' => '%s'" % (k, prev[k], v)
+                        print("%s: '%s' => '%s'" % (k, prev[k], v))
 
                 prev = data
                 self.print_line()

@@ -84,10 +84,7 @@ TEMPLATES = [
     }
 ]
 
-# django <1.10 compat
-#MIDDLEWARE_CLASSES = ()
-
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -150,5 +147,4 @@ import glob
 conffiles = glob.glob(os.path.join(os.path.dirname(__file__), 'settings.d', '*.conf'))
 conffiles.sort()
 for f in conffiles:
-    execfile(os.path.abspath(f))
-
+    exec(compile(open(os.path.abspath(f)).read(), os.path.abspath(f), "exec"))

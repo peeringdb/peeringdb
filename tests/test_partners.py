@@ -72,19 +72,19 @@ class ViewTestCase(TestCase):
         self.assertEqual(resp.status_code, 200)
 
         # make sure org a,b and c exist in the partners page
-        self.assertGreater(resp.content.find(self.organizations["a"].name), -1)
-        self.assertGreater(resp.content.find(self.organizations["b"].name), -1)
-        self.assertGreater(resp.content.find(self.organizations["c"].name), -1)
+        assert self.organizations["a"].name in resp.content.decode()
+        assert self.organizations["b"].name in resp.content.decode()
+        assert self.organizations["c"].name in resp.content.decode()
 
         # make sure org d does not exist in the partners page
-        self.assertEqual(resp.content.find(self.organizations["d"].name), -1)
+        assert self.organizations["d"].name not in resp.content.decode()
 
         # make sure partnership a url exists in the partners page
-        self.assertGreater(resp.content.find(self.partnerships["a"].url), -1)
+        assert self.organizations["a"].url in resp.content.decode()
 
         # makre sure order is randomized with each view
         i = 0
-        rgx = re.compile('fake.png" alt="([^"]+)"')
+        rgx = re.compile(r'fake.png" alt="([^"]+)"')
         a = re.findall(rgx, resp.content)
         while i < 100:
             resp = c.get("/partners", follow=True)
