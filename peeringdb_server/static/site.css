@@ -398,6 +398,23 @@ div.panel > .btn {
   margin-bottom: 5px;
 }
 
+.editable-inline > div[data-edit-type] {
+  display: inline-block;
+}
+
+.mode-edit .netixlan-extra {
+  margin-top: 10px;
+}
+
+.glyphicon-warning-sign {
+  color: #b19400;
+  vertical-align: text-top;
+}
+
+.operational .not-operational {
+  display: none !important;
+}
+
 /* landing page: info */
 
 div.landing_info {

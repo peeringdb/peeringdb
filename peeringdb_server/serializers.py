@@ -1296,6 +1296,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             "ipaddr4",
             "ipaddr6",
             "is_rs_peer",
+            "operational",
         ] + HandleRefSerializer.Meta.fields
 
         related_fields = ["net", "ixlan"]

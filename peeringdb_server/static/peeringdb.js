@@ -1325,6 +1325,9 @@ twentyc.editable.module.register(
       ixlnk.text(data.ix.name);
       row.find(".exchange").html(ixlnk);
 
+      if(data.operational)
+        row.addClass("operational")
+
       // if ixlan has a name, render it next to the exchange name
       if(data.ixlan.name)
         row.find(".exchange").append($('<span>').addClass('tiny suffix').text(data.ixlan.name));
@@ -1364,6 +1367,13 @@ twentyc.editable.module.register(
         });
       });
 
+    },
+
+    finalize_update_netixlan : function(rowId, row, data) {
+      if(data.operational)
+        row.addClass("operational")
+      else
+        row.removeClass("operational")
     },
 
 

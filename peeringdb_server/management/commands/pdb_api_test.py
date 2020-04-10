@@ -1527,6 +1527,8 @@ class TestJSON(unittest.TestCase):
             },
         )
 
+        assert r_data["operational"]
+
         SHARED["netixlan_id"] = r_data.get("id")
 
         self.assert_update(
@@ -2346,6 +2348,30 @@ class TestJSON(unittest.TestCase):
         self.assert_list_filter_related("netixlan", "net")
         self.assert_list_filter_related("netixlan", "ixlan")
         self.assert_list_filter_related("netixlan", "ix")
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_netixlan_operational(self):
+
+        # all netixlans are operational at this point,
+        # filtering by operational=False should return empty list
+
+        data = self.db_guest.all("netixlan", operational=0)
+        assert len(data) == 0
+
+        # set one netixlan to not operational
+
+        netixlan = NetworkIXLan.objects.first()
+        netixlan.operational=False
+        netixlan.save()
+
+        # assert that it is now returned in the operational=False
+        # result
+
+        data = self.db_guest.all("netixlan", operational=0)
+        assert len(data) == 1
+        assert data[0]["id"] == netixlan.id
+
 
     ##########################################################################
 
