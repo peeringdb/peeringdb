@@ -525,15 +525,10 @@ class UserOrgAffiliationRequestInline(admin.TabularInline):
     extra = 0
     form = UserOrgAffiliationRequestInlineForm
     verbose_name_plural = _("User is looking to be affiliated to these Organizations")
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "org":
-            kwargs["queryset"] = Organization.handleref.filter(status="ok").order_by(
-                "name"
-            )
-        return super(UserOrgAffiliationRequestInline, self).formfield_for_foreignkey(
-            db_field, request, **kwargs
-        )
+    raw_id_fields = ("org",)
+    autocomplete_lookup_fields = {
+        "fk": ["org"],
+    }
 
 
 class InternetExchangeAdminForm(StatusForm):
@@ -776,6 +771,10 @@ class PartnershipAdmin(admin.ModelAdmin):
     list_display = ("org_name", "level", "status")
     readonly_fields = ("status", "org_name")
     form = PartnershipAdminForm
+    raw_id_fields = ("org",)
+    autocomplete_lookup_fields = {
+        "fk": ["org"],
+    }
 
     def org_name(self, obj):
         if not obj.org:
@@ -960,6 +959,12 @@ class IXLanPrefixAdmin(SoftDeleteAdmin):
     list_filter = (StatusFilter,)
     form = StatusForm
 
+    raw_id_fields = ("ixlan",)
+    autocomplete_lookup_fields = {
+        "fk": ["ixlan"],
+    }
+
+
     def ix(self, obj):
         return obj.ixlan.ix
 
@@ -990,9 +995,9 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
     list_filter = (StatusFilter,)
     form = StatusForm
 
-    raw_id_fields = ("network",)
+    raw_id_fields = ("network","ixlan")
     autocomplete_lookup_fields = {
-        "fk": ["network",],
+        "fk": ["network","ixlan"],
     }
 
     def ix(self, obj):
@@ -1049,6 +1054,11 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
     filter_fields = ("content_type",)
     readonly_fields = ("created", "view", "extra")
     search_fields = ("item",)
+
+    raw_id_fields = ("user",)
+    autocomplete_lookup_fields = {
+        "fk": ["user"],
+    }
 
     def get_search_results(self, request, queryset, search_term):
         # queryset, use_distinct = super(VerificationQueueAdmin, self).get_search_results(request, queryset, search_term)

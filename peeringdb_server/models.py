@@ -538,6 +538,18 @@ class Organization(pdb_models.OrganizationBase):
     def __unicode__(self):
         return self.name
 
+    def related_label(self):
+        """
+        Used by grappelli autocomplete for representation
+
+        Since grappelli doesnt easily allow us to filter status
+        during autocomplete lookup, we make sure the objects
+        are marked accordingly in the result
+        """
+        if self.status == "deleted":
+            return "[DELETED] {}".format(self)
+        return "{}".format(self)
+
     @property
     def search_result_name(self):
         """
@@ -1627,6 +1639,22 @@ class IXLan(pdb_models.IXLanBase):
         # q = NetworkIXLan.handleref.filter(ixlan_id=self.id).filter(status="ok")
         # return Network.handleref.filter(id__in=[i.network_id for i in
         # q]).filter(status="ok")
+
+    @staticmethod
+    def autocomplete_search_fields():
+        """
+        Used by grappelli autocomplete to determine what
+        fields to search in
+        """
+        return ("ix__name__icontains",)
+
+
+    def related_label(self):
+        """
+        Used by grappelli autocomplete for representation
+        """
+        return "{} IXLan ({})".format(self.ix.name, self.id)
+
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["ix"])
@@ -2882,6 +2910,22 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         group = Group.objects.get(id=settings.USER_GROUP_ID)
         return group in self.groups.all()
+
+    @staticmethod
+    def autocomplete_search_fields():
+        """
+        Used by grappelli autocomplete to determine what
+        fields to search in
+        """
+        return ("username__icontains", "email__icontains", "last_name__icontains")
+
+
+    def related_label(self):
+        """
+        Used by grappelli autocomplete for representation
+        """
+        return "{} <{}> ({})".format(self.username, self.email, self.id)
+
 
     def flush_affiliation_requests(self):
         """
