@@ -55,6 +55,10 @@
         <p>
         {% trans "To register a new facility or exchange organization, please enter the organization name below (ASN is optional)." %}
         </p>
+        <p>
+        {% blocktrans trimmed %}
+Affiliation is your own organisation. That means you are an employee or otherwise working for the organisation. The affiliation request is sent to support@peeringdb.com if no one is affiliated to the organisation yet. Otherwise, the admins are contacted. Only affiliate once per organisation. If you don't get an answer within a couple of days, please contact support@peeringdb.com.
+        {% endblocktrans %}
       </div>
 
       <input type="text"

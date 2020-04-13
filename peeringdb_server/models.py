@@ -505,6 +505,10 @@ class DeskProTicket(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(null=True)
 
+    class Meta:
+        verbose_name = _("DeskPRO Ticket")
+        verbose_name_plural = _("DeskPRO Tickets")
+
 
 @reversion.register
 class Organization(pdb_models.OrganizationBase):
