@@ -594,10 +594,13 @@ if ENABLE_ALL_LANGUAGES:
 
 # dynamic config starts here
 
-API_DOC_STR = {}
-for op in ["list", "retrieve", "create", "update", "delete"]:
-    with open(os.path.join(BASE_DIR, "docs", "api_{}.md".format(op)), "r") as fh:
-        API_DOC_STR[op] = fh.read()
+API_DOC_INCLUDES = {}
+API_DOC_PATH = os.path.join(BASE_DIR, "docs", "api")
+for _, _, files in os.walk(API_DOC_PATH):
+  for file in files:
+    base, ext = os.path.splitext(file)
+    if ext == ".md":
+        API_DOC_INCLUDES[base] = os.path.join(API_DOC_PATH, file)
 
 
 MAIL_DEBUG = DEBUG
