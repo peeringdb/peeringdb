@@ -126,7 +126,7 @@ settings.configure(
     TIME_ZONE="UTC",
     USE_TZ=True,
     AUTHENTICATION_BACKENDS=("django_namespace_perms.auth.backends.NSPBackend",),
-    ROOT_URLCONF="peeringdb_com.urls",
+    ROOT_URLCONF="mainsite.urls",
     LOGGING={
         "version": 1,
         "disable_existing_loggers": False,
