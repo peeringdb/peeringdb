@@ -445,7 +445,6 @@ class InternetExchangeFacilityInline(SanitizedAdmin, admin.TabularInline):
     }
 
 
-
 class NetworkContactInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkContact
     extra = 0
@@ -464,8 +463,6 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
     autocomplete_lookup_fields = {
         "fk": ["facility",],
     }
-
-
 
 
 class NetworkIXLanValidationMixin(object):
@@ -565,7 +562,6 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "fk": ["org"],
     }
 
-
     def ixf_import_history(self, obj):
         return mark_safe(
             '<a href="{}?q={}">{}</a>'.format(
@@ -596,8 +592,6 @@ class IXLanAdmin(SoftDeleteAdmin):
     autocomplete_lookup_fields = {
         "fk": ["ix",],
     }
-
-
 
 
 class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
@@ -904,7 +898,6 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "fk": ["org"],
     }
 
-
     form = FacilityAdminForm
     inlines = (
         InternetExchangeFacilityInline,
@@ -945,8 +938,6 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     }
 
 
-
-
 class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
     list_display = ("id", "ix", "facility", "status", "created", "updated")
     search_fields = ("ix__name", "facility__name")
@@ -958,7 +949,6 @@ class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
     autocomplete_lookup_fields = {
         "fk": ["ix", "facility"],
     }
-
 
 
 class IXLanPrefixAdmin(SoftDeleteAdmin):
@@ -1003,7 +993,6 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
         "fk": ["network",],
     }
 
-
     def ix(self, obj):
         return obj.ixlan.ix
 
@@ -1033,7 +1022,6 @@ class NetworkContactAdmin(SoftDeleteAdmin):
         "fk": ["network",],
     }
 
-
     def net(self, obj):
         return "{} (AS{})".format(obj.network.name, obj.network.asn)
 
@@ -1049,8 +1037,6 @@ class NetworkFacilityAdmin(SoftDeleteAdmin):
     autocomplete_lookup_fields = {
         "fk": ["network", "facility"],
     }
-
-
 
     def net(self, obj):
         return "{} (AS{})".format(obj.network.name, obj.network.asn)

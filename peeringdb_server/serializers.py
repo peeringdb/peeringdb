@@ -55,6 +55,41 @@ from django.utils.translation import ugettext_lazy as _
 
 from rdap.exceptions import RdapException
 
+# exclude certain query filters that would otherwise
+# be exposed to the api for filtering operations
+
+FILTER_EXCLUDE = [
+    # unused
+    "org__latitude",
+    "org__longitude",
+    "ixlan_set__descr",
+    "ixlan__descr",
+    # private
+    "ixlan_set__ixf_ixp_member_list_url",
+    "ixlan__ixf_ixp_member_list_url",
+    "network__notes_private",
+    # internal
+    "ixf_import_log_set__id",
+    "ixf_import_log_set__created",
+    "ixf_import_log_set__updated",
+    "ixf_import_log_entries__id",
+    "ixf_import_log_entries__action",
+    "ixf_import_log_entries__reason",
+    "sponsorshiporg_set__id",
+    "sponsorshiporg_set__url",
+    "partnerships__id",
+    "partnerships__url",
+    "merged_to__id",
+    "merged_to__created",
+    "merged_from__id",
+    "merged_from__created",
+    "affiliation_requests__status",
+    "affiliation_requests__created",
+    "affiliation_requests__org_name",
+    "affiliation_requests__id",
+]
+
+
 # def _(x):
 #    return x
 
@@ -428,18 +463,28 @@ class ModelSerializer(PermissionedModelSerializer):
         Returns a list of all second level queryable relation fields
         """
         rv = []
+
         for fld in self.Meta.model._meta.get_fields():
+
+            if fld.name in FILTER_EXCLUDE:
+                continue
+
             if (
                 hasattr(fld, "get_internal_type")
                 and fld.get_internal_type() == "ForeignKey"
             ):
                 model = fld.related_model
                 for _fld in model._meta.get_fields():
+                    field_name = "{}__{}".format(fld.name, _fld.name)
+
+                    if field_name in FILTER_EXCLUDE:
+                        continue
+
                     if (
                         hasattr(_fld, "get_internal_type")
                         and _fld.get_internal_type() != "ForeignKey"
                     ):
-                        rv.append("%s__%s" % (fld.name, _fld.name))
+                        rv.append((field_name, _fld))
         return rv
 
     @classmethod
@@ -926,6 +971,11 @@ class FacilitySerializer(ModelSerializer):
 
     suggest = serializers.BooleanField(required=False, write_only=True)
 
+    website = serializers.URLField()
+    address1 = serializers.CharField()
+    city = serializers.CharField()
+    zipcode = serializers.CharField()
+
     validators = [FieldMethodValidator("suggest", ["POST"])]
 
     def has_create_perms(self, user, data):
@@ -965,8 +1015,6 @@ class FacilitySerializer(ModelSerializer):
         related_fields = ["org"]
 
         list_exclude = ["org"]
-
-        _ref_tag = model.handleref.tag
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
