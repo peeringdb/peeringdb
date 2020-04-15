@@ -24,6 +24,7 @@ IRR_SOURCE = (
     "EPOCH",
     "HOST",
     "JPIRR",
+    "LACNIC",
     "LEVEL3",
     "NESTEGG",
     "NTTCOM",
