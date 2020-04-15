@@ -45,7 +45,7 @@ def set_from_env(name, default=_DEFAULT_ARG):
 
 
 def set_option(name, value):
-    """ Sets and option, first checking for env vars, then checking for value already set, then going to the default value if passed. """
+    """ Sets an option, first checking for env vars, then checking for value already set, then going to the default value if passed. """
     if name in os.environ:
         globals()[name] = os.environ.get(name)
 
@@ -98,10 +98,10 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 # set RELEASE_ENV, usually one of dev, beta, tutor, prod
 set_option("RELEASE_ENV", "dev")
 
-set_bool("DEBUG", False)
-
 if RELEASE_ENV == "dev":
     set_bool("DEBUG", True)
+else:
+    set_bool("DEBUG", False)
 
 # look for mainsite/settings/${RELEASE_ENV}.py and load if it exists
 env_file = os.path.join(os.path.dirname(__file__), "{}.py".format(RELEASE_ENV))
@@ -176,6 +176,8 @@ RATELIMITS = {
     "view_import_net_ixf_postmortem": "1/m",
 }
 
+# maximum number of affiliation requests a user can have pending
+MAX_USER_AFFILIATION_REQUESTS = 5
 
 # Django config
 
@@ -594,10 +596,13 @@ if ENABLE_ALL_LANGUAGES:
 
 # dynamic config starts here
 
-API_DOC_STR = {}
-for op in ["list", "retrieve", "create", "update", "delete"]:
-    with open(os.path.join(BASE_DIR, "docs", "api_{}.md".format(op)), "r") as fh:
-        API_DOC_STR[op] = fh.read()
+API_DOC_INCLUDES = {}
+API_DOC_PATH = os.path.join(BASE_DIR, "docs", "api")
+for _, _, files in os.walk(API_DOC_PATH):
+  for file in files:
+    base, ext = os.path.splitext(file)
+    if ext == ".md":
+        API_DOC_INCLUDES[base] = os.path.join(API_DOC_PATH, file)
 
 
 MAIL_DEBUG = DEBUG

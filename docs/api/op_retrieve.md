@@ -1,8 +1,8 @@
-Retrieves single object
+## Retrieve a single object
 
 ### Depth
 
-Nested sets will not be loaded (any field ending with the _set suffix) unless the 'depth'
+Nested sets will not be expanded (any field ending with the _set suffix) unless the 'depth'
 parameter is passed in the request URL.
 
 Depth can be one of three values:

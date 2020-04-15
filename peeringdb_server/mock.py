@@ -203,7 +203,7 @@ class Mock(object):
         return self.name(data, reftag=reftag)
 
     def irr_as_set(self, data, reftag=None):
-        return "AS-{}".format(str(uuid.uuid4())[:8].upper())
+        return "AS-{}@RIPE".format(str(uuid.uuid4())[:8].upper())
 
     def looking_glass(self, data, reftag=None):
         return "{}/looking-glass".format(self.website(data, reftag=reftag))

@@ -3,10 +3,8 @@ name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
 
-
 [requires]
 python_version = "3.7"
-
 
 [dev-packages]
 tox = ">2"
@@ -18,19 +16,17 @@ jsonschema = ">=2.6.0"
 facsimile = ">=1.1.1"
 "twentyc.rpc" = ">=0.3.5,<0.5"
 
-
 [packages]
 # core requirements
 django = ">=2.2, <2.3"
 django-inet = ">=0.4.0, <0.5"
 django-handleref = ">=0.5.0, <0.6"
 django-namespace-perms = ">=0.6.0, <0.7"
-django-peeringdb = ">=1.1.0, <1.2"
+django-peeringdb = ">=2,<2.1"
 djangorestframework = ">=3.9.1, <3.12"
 mysqlclient = ">=1.3.9"
 peeringdb = ">=1.0.0, <2"
 uwsgi = ">=2.0.14"
-
 # ancilary packages
 bleach = ">=2.1.3"
 django-allauth = ">=0.32.0"
@@ -55,15 +51,11 @@ googlemaps = ">=2.5.1"
 markdown = ">=2.6.7"
 passlib = ">=1.7.1"
 phonenumbers = ">=8.11.1"
+rdap = ">=1.0.1,<2"
 unidecode = ">=1.0.23"
-
 # these should just be pulled in automatically?
 django-reversion = ">=3, <4"
 certifi = ">=2017.11.5"
 tld = ">=0.7.6"
-
 # deprecated from drf -- used by rest swagger
 coreapi = ">=2.3.1"
-
-# TODO update
-rdap = "==0.2.0"

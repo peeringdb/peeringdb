@@ -3,5 +3,5 @@
 {% trans "Ownership of organization was automatically granted to user" %}:
 
 {% trans "User" %}: '{{ user.username }}' ({{ user.email }})
-{% trans "Organization" %}: '{{ org.name }}' ({{ org.id }})
-{% trans "Network" %}: '{{ net.name }}' {% trans "AS" %}{{ net.asn }}{% endlanguage %}
+{% trans "Organization" %}: '{{ org.name }}' (<a href="{{ org.view_url }}">{{ org.id }}</a>)
+{% trans "Network" %}: '{{ net.name }}' <a href="{{ net.view_url }}">{% trans "AS" %}{{ net.asn }}</a>{% endlanguage %}

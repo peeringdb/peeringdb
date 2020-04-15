@@ -9,6 +9,36 @@ from django.utils.translation import ugettext_lazy as _
 
 from peeringdb_server import settings
 
+# Valid IRR Source values
+# reference: http://www.irr.net/docs/list.html
+IRR_SOURCE = (
+    "AFRINIC",
+    "ALTDB",
+    "AOLTW",
+    "APNIC",
+    "ARIN",
+    "BELL",
+    "BBOI",
+    "CANARIE",
+    "EASYNET",
+    "EPOCH",
+    "HOST",
+    "JPIRR",
+    "LEVEL3",
+    "NESTEGG",
+    "NTTCOM",
+    "OPENFACE",
+    "OTTIX",
+    "PANIX",
+    "RADB",
+    "REACH",
+    "RGNET",
+    "RIPE",
+    "RISQ",
+    "ROGERS",
+    "TC",
+)
+
 # RFC 5398 documentation asn range
 ASN_RFC_5398_16BIT = (64496, 64511)
 ASN_RFC_5398_32BIT = (65536, 65551)

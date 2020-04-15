@@ -34,9 +34,9 @@
     {% trans "The user is affiliated with other organizations" %}:
     {% for org in user.organizations %}
       {% if user in org.admin_usergroup.user_set.all %}
-        <a href="{{ base_url }}{{org.admin_url}}">{{ base_url }}{{org.admin_url}}</a> | {{ org.name }} | {% trans "ADMIN" %}
+        <a href="{{ base_url }}{{org.admin_url}}">{{ base_url }}{{org.admin_url}}</a> | <a href="{{ org.view_url }}">{{ org.name }}</a> | {% trans "ADMIN" %}
       {% else %}
-        <a href="{{ base_url }}{{org.admin_url}}">{{ base_url }}{{org.admin_url}}</a> | {{ org.name }} | {% trans "MEMBER" %}
+        <a href="{{ base_url }}{{org.admin_url}}">{{ base_url }}{{org.admin_url}}</a> | <a href="{{ org.view_url }}">{{ org.name }}</a> | {% trans "MEMBER" %}
       {% endif %}
     {% endfor %}
   {% endif %}

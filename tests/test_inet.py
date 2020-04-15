@@ -7,7 +7,7 @@ from peeringdb_server.inet import RdapLookup, RdapNotFoundError, renumber_ipaddr
 
 def test_rdap_asn_lookup(rdap):
     asn = rdap.get_asn(63311)
-    assert asn.raw
+    assert asn.data
     assert asn.name
     assert asn.emails
     assert asn.org_name

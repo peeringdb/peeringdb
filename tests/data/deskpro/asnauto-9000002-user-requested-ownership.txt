@@ -10,7 +10,7 @@
   - neteng@20c.com 
   
 
-<a href="localost/cp/peeringdb_server/user/2/change/">Review Affiliation/Ownership Request</a>
+<a href="https://localhost/cp/peeringdb_server/user/2/change/">Review Affiliation/Ownership Request</a>
 
-  <a href="localost/cp/peeringdb_server/userorgaffiliationrequest/2/action/approve_and_notify/">Approve Ownership Request and Notify User</a>
+  <a href="https://localhost/cp/peeringdb_server/userorgaffiliationrequest/2/action/approve_and_notify/">Approve Ownership Request and Notify User</a>
 

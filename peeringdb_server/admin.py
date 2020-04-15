@@ -445,7 +445,6 @@ class InternetExchangeFacilityInline(SanitizedAdmin, admin.TabularInline):
     }
 
 
-
 class NetworkContactInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkContact
     extra = 0
@@ -464,8 +463,6 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
     autocomplete_lookup_fields = {
         "fk": ["facility",],
     }
-
-
 
 
 class NetworkIXLanValidationMixin(object):
@@ -516,7 +513,9 @@ class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
     def clean(self):
         super(UserOrgAffiliationRequestInlineForm, self).clean()
         try:
-            rdap_valid = RdapLookup().get_asn(self.cleaned_data.get("asn")).emails
+            asn = self.cleaned_data.get("asn")
+            if asn:
+                rdap_valid = RdapLookup().get_asn(asn).emails
         except RdapException as exc:
             raise ValidationError({"asn": str(exc)})
 
@@ -526,15 +525,10 @@ class UserOrgAffiliationRequestInline(admin.TabularInline):
     extra = 0
     form = UserOrgAffiliationRequestInlineForm
     verbose_name_plural = _("User is looking to be affiliated to these Organizations")
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "org":
-            kwargs["queryset"] = Organization.handleref.filter(status="ok").order_by(
-                "name"
-            )
-        return super(UserOrgAffiliationRequestInline, self).formfield_for_foreignkey(
-            db_field, request, **kwargs
-        )
+    raw_id_fields = ("org",)
+    autocomplete_lookup_fields = {
+        "fk": ["org"],
+    }
 
 
 class InternetExchangeAdminForm(StatusForm):
@@ -564,7 +558,6 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     autocomplete_lookup_fields = {
         "fk": ["org"],
     }
-
 
     def ixf_import_history(self, obj):
         return mark_safe(
@@ -596,8 +589,6 @@ class IXLanAdmin(SoftDeleteAdmin):
     autocomplete_lookup_fields = {
         "fk": ["ix",],
     }
-
-
 
 
 class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
@@ -780,6 +771,10 @@ class PartnershipAdmin(admin.ModelAdmin):
     list_display = ("org_name", "level", "status")
     readonly_fields = ("status", "org_name")
     form = PartnershipAdminForm
+    raw_id_fields = ("org",)
+    autocomplete_lookup_fields = {
+        "fk": ["org"],
+    }
 
     def org_name(self, obj):
         if not obj.org:
@@ -904,7 +899,6 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "fk": ["org"],
     }
 
-
     form = FacilityAdminForm
     inlines = (
         InternetExchangeFacilityInline,
@@ -945,8 +939,6 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     }
 
 
-
-
 class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
     list_display = ("id", "ix", "facility", "status", "created", "updated")
     search_fields = ("ix__name", "facility__name")
@@ -960,13 +952,18 @@ class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
     }
 
 
-
 class IXLanPrefixAdmin(SoftDeleteAdmin):
     list_display = ("id", "prefix", "ixlan", "ix", "status", "created", "updated")
     readonly_fields = ("ix", "id")
     search_fields = ("ixlan__name", "ixlan__ix__name", "prefix")
     list_filter = (StatusFilter,)
     form = StatusForm
+
+    raw_id_fields = ("ixlan",)
+    autocomplete_lookup_fields = {
+        "fk": ["ixlan"],
+    }
+
 
     def ix(self, obj):
         return obj.ixlan.ix
@@ -998,11 +995,10 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
     list_filter = (StatusFilter,)
     form = StatusForm
 
-    raw_id_fields = ("network",)
+    raw_id_fields = ("network","ixlan")
     autocomplete_lookup_fields = {
-        "fk": ["network",],
+        "fk": ["network","ixlan"],
     }
-
 
     def ix(self, obj):
         return obj.ixlan.ix
@@ -1033,7 +1029,6 @@ class NetworkContactAdmin(SoftDeleteAdmin):
         "fk": ["network",],
     }
 
-
     def net(self, obj):
         return "{} (AS{})".format(obj.network.name, obj.network.asn)
 
@@ -1050,8 +1045,6 @@ class NetworkFacilityAdmin(SoftDeleteAdmin):
         "fk": ["network", "facility"],
     }
 
-
-
     def net(self, obj):
         return "{} (AS{})".format(obj.network.name, obj.network.asn)
 
@@ -1061,6 +1054,11 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
     filter_fields = ("content_type",)
     readonly_fields = ("created", "view", "extra")
     search_fields = ("item",)
+
+    raw_id_fields = ("user",)
+    autocomplete_lookup_fields = {
+        "fk": ["user"],
+    }
 
     def get_search_results(self, request, queryset, search_term):
         # queryset, use_distinct = super(VerificationQueueAdmin, self).get_search_results(request, queryset, search_term)
@@ -1124,24 +1122,40 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
     search_fields = ("user", "asn")
     readonly_fields = ("created",)
 
+    raw_id_fields = ("user", "org")
+    autocomplete_lookup_fields = {
+        "fk": ["user", "org"],
+    }
+
+
     def approve_and_notify(self, request, queryset):
         for each in queryset:
+            if each.status == "canceled":
+                messages.error(request, _("Cannot approve a canceled affiliation request"))
+                continue
+
             each.approve()
             each.notify_ownership_approved()
-        self.message_user(
-            request, _("Affiliation request was approved and the user was notified.")
-        )
+            self.message_user(
+                request, _("Affiliation request was approved and the user was notified.")
+            )
 
     approve_and_notify.short_description = _("Approve and notify User")
 
     def approve(self, request, queryset):
         for each in queryset:
+            if each.status == "canceled":
+                messages.error(request, _("Cannot approve a canceled affiliation request"))
+                continue
             each.approve()
 
     approve.short_description = _("Approve")
 
     def deny(self, request, queryset):
         for each in queryset:
+            if each.status == "canceled":
+                messages.error(request, _("Cannot deny a canceled affiliation request"))
+                continue
             each.deny()
 
     deny.short_description = _("Deny")

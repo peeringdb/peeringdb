@@ -398,6 +398,23 @@ div.panel > .btn {
   margin-bottom: 5px;
 }
 
+.editable-inline > div[data-edit-type] {
+  display: inline-block;
+}
+
+.mode-edit .netixlan-extra {
+  margin-top: 10px;
+}
+
+.glyphicon-warning-sign {
+  color: #b19400;
+  vertical-align: text-top;
+}
+
+.operational .not-operational {
+  display: none !important;
+}
+
 /* landing page: info */
 
 div.landing_info {
@@ -1234,8 +1251,7 @@ a.sponsor {
   margin-top: 2px;
 }
 
-a.sponsor,
-div.view_title div.sponsor::after {
+a.sponsor {
   border-radius: 5px;
   font-size: 11px;
   vertical-align: middle;
@@ -1253,32 +1269,28 @@ a.sponsor {
   text-decoration: none;
 }
 
-a.sponsor.diamond,
-div.view_title div.sponsor.diamond::after {
+a.sponsor.diamond {
   background-color: #00aca1;
   border-color: #00aca1;
   color: #ffffff;
   content: 'Diamond Sponsor';
 }
 
-a.sponsor.platinum,
-div.view_title div.sponsor.platinum::after {
+a.sponsor.platinum {
   background-color: #899a9d;
   border-color: #899a9d;
   color: #ffffff;
   content: 'Platinum Sponsor';
 }
 
-a.sponsor.gold,
-div.view_title div.sponsor.gold::after {
+a.sponsor.gold {
   background-color: #e3a631;
   border-color: #e3a631;
   color: #ffffff;
   content: 'Gold Sponsor';
 }
 
-a.sponsor.silver,
-div.view_title div.sponsor.silver::after {
+a.sponsor.silver {
   border-color: #626a75;
   background-color: #626a75;
   color: #ffffff;

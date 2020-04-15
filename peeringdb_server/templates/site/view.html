@@ -14,12 +14,17 @@
 <div class="row">
   <div class="col-md-12 col-sm-12 col-xs-12">
     <div class="view_title row">
-      <div class="col-md-8 col-sm-8 col-xs-10{% if instance.sponsorship %} sponsor {{ instance.sponsorship.label|lower }} sponsor-badge{% endif %}"
+      <div class="col-md-8 col-sm-8 col-xs-10"
            {% if permissions.can_write %}
            data-edit-type="string"
            {% endif %}
            data-edit-required="yes"
-           data-edit-name="name">{{ data.title }}</div>
+           data-edit-value="{{ data.title }}"
+           data-edit-name="name">{{ data.title }}
+           {% if instance.sponsorship %}
+           <a data-edit-static="yes" href="/sponsors" class="sponsor {{ instance.sponsorship.label|lower }}">{{ instance.sponsorship.label }} sponsor</a>
+           {% endif %}
+           </div>
 
       <div class="col-md-4 col-sm-4 col-xs-2 right button-bar">
         {% if instance.status == "pending" %}
@@ -171,7 +176,7 @@
                data-edit-name="{{ row.name }}">
                     {{ row.value }}
                     {% if row.name == "notes" and row.value and request.user.is_authenticated %}
-                        <div>
+                        <div class="translate">
                             <!-- select name="language-from">
                               <option value="" selected="selected" selected>Detect</option>
                               {% for lang in LANGUAGES %} <option value="{{ lang.0 }}">{{ lang.1 }}</option> {% endfor %}
