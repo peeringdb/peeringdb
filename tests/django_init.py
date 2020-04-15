@@ -101,7 +101,7 @@ settings.configure(
     GUEST_GROUP_ID=1,
     USER_GROUP_ID=2,
     TEMPLATE_DEBUG=False,
-    BASE_URL="localost",
+    BASE_URL="https://localhost",
     PASSWORD_RESET_URL="localhost",
     API_CACHE_ROOT="tests/api-cache",
     API_CACHE_ENABLED=False,
@@ -126,7 +126,7 @@ settings.configure(
     TIME_ZONE="UTC",
     USE_TZ=True,
     AUTHENTICATION_BACKENDS=("django_namespace_perms.auth.backends.NSPBackend",),
-    ROOT_URLCONF="peeringdb_com.urls",
+    ROOT_URLCONF="mainsite.urls",
     LOGGING={
         "version": 1,
         "disable_existing_loggers": False,
@@ -172,4 +172,5 @@ settings.configure(
         "view_import_ixlan_ixf_preview": "1/m",
         "view_import_net_ixf_postmortem": "1/m",
     },
+    MAX_USER_AFFILIATION_REQUESTS=10,
 )

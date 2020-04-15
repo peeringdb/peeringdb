@@ -277,12 +277,20 @@ class TestJSON(unittest.TestCase):
             "name": self.make_name("Test"),
             "org_id": SHARED["org_rw_ok"].id,
             "website": WEBSITE,
+            "city": CITY,
+            "zipcode": ZIPCODE,
+            "address1": "Some street",
             "clli": str(uuid.uuid4())[:6].upper(),
             "rencode": str(uuid.uuid4())[:6].upper(),
             "npanxx": "000-111",
             "latitude": None,
             "longitude": None,
             "notes": NOTE,
+            "country": COUNTRY,
+            "tech_email": EMAIL,
+            "tech_phone": PHONE,
+            "sales_email": EMAIL,
+            "sales_phone": PHONE,
         }
         data.update(**kwargs)
         return data
@@ -305,7 +313,7 @@ class TestJSON(unittest.TestCase):
             "aka": self.make_name("Also known as"),
             "asn": asn,
             "website": WEBSITE,
-            "irr_as_set": "AS-ZZ-ZZZZZZ",
+            "irr_as_set": "AS-ZZ-ZZZZZZ@RIPE",
             "info_type": "NSP",
             "info_prefixes4": 11000,
             "info_prefixes6": 12000,
@@ -1007,6 +1015,11 @@ class TestJSON(unittest.TestCase):
             },
         )
 
+        # test that ixlan id and prefix id were return in the POST
+        # response (see #609)
+        assert r_data.get("ixlan_id") > 0
+        assert r_data.get("ixpfx_id") > 0
+
         SHARED["ix_id"] = r_data.get("id")
 
         # make sure ixlan was created and has matching id
@@ -1038,10 +1051,7 @@ class TestJSON(unittest.TestCase):
             data,
             test_success=False,
             test_failures={
-                "invalid": {
-                    "prefix": self.get_prefix4(),
-                    "tech_email": "",
-                },
+                "invalid": {"prefix": self.get_prefix4(), "tech_email": "",},
             },
         )
 
@@ -1050,14 +1060,8 @@ class TestJSON(unittest.TestCase):
             "ix",
             data,
             test_success=False,
-            test_failures={
-                "invalid": {
-                    "prefix": self.get_prefix4(),
-                    "website": "",
-                },
-            },
+            test_failures={"invalid": {"prefix": self.get_prefix4(), "website": "",},},
         )
-
 
         self.assert_create(
             self.db_org_admin,
@@ -1176,6 +1180,31 @@ class TestJSON(unittest.TestCase):
         )
 
     ##########################################################################
+
+    def test_org_admin_002_POST_net_looking_glass_url(self):
+        for scheme in ["http","https","ssh","telnet"]:
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "net",
+                self.make_data_net(asn=9000900, looking_glass="{}://foo.bar".format(scheme)),
+                test_failures={"invalid": {"looking_glass": "foo://www.bar.com"}}
+            )
+            Network.objects.get(id=r_data["id"]).delete(hard=True)
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_net_route_server_url(self):
+        for scheme in ["http","https","ssh","telnet"]:
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "net",
+                self.make_data_net(asn=9000900, route_server="{}://foo.bar".format(scheme)),
+                test_failures={"invalid": {"route_server": "foo://www.bar.com"}}
+            )
+            Network.objects.get(id=r_data["id"]).delete(hard=True)
+
+    ##########################################################################
+
     def test_org_admin_002_POST_net_deleted(self):
         data = self.make_data_net(asn=SHARED["net_rw_dupe_deleted"].asn)
 
@@ -1497,6 +1526,8 @@ class TestJSON(unittest.TestCase):
                 },
             },
         )
+
+        assert r_data["operational"]
 
         SHARED["netixlan_id"] = r_data.get("id")
 
@@ -2317,6 +2348,30 @@ class TestJSON(unittest.TestCase):
         self.assert_list_filter_related("netixlan", "net")
         self.assert_list_filter_related("netixlan", "ixlan")
         self.assert_list_filter_related("netixlan", "ix")
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_netixlan_operational(self):
+
+        # all netixlans are operational at this point,
+        # filtering by operational=False should return empty list
+
+        data = self.db_guest.all("netixlan", operational=0)
+        assert len(data) == 0
+
+        # set one netixlan to not operational
+
+        netixlan = NetworkIXLan.objects.first()
+        netixlan.operational=False
+        netixlan.save()
+
+        # assert that it is now returned in the operational=False
+        # result
+
+        data = self.db_guest.all("netixlan", operational=0)
+        assert len(data) == 1
+        assert data[0]["id"] == netixlan.id
+
 
     ##########################################################################
 

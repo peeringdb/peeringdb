@@ -1,0 +1,8 @@
+#!/bin/sh
+
+export PDB_HOME=/srv/www.peeringdb.com
+
+. $PDB_HOME/venv/bin/activate
+cd $PDB_HOME
+
+./manage.py $@

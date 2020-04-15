@@ -41,6 +41,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes6,
     validate_prefix_overlap,
     validate_phonenumber,
+    validate_irr_as_set,
 )
 
 SPONSORSHIP_LEVELS = (
@@ -310,6 +311,7 @@ class UserOrgAffiliationRequest(models.Model):
             ("pending", _("Pending")),
             ("approved", _("Approved")),
             ("denied", _("Denied")),
+            ("canceled", _("Canceled")),
         ],
         help_text=_("Status of this request"),
     )
@@ -365,6 +367,14 @@ class UserOrgAffiliationRequest(models.Model):
         """
 
         self.status = "denied"
+        self.save()
+
+    def cancel(self):
+        """
+        deny request, marks request as canceled and keeps
+        it around until requesting user deletes it
+        """
+        self.status = "canceled"
         self.save()
 
     def notify_ownership_approved(self):
@@ -495,6 +505,10 @@ class DeskProTicket(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(null=True)
 
+    class Meta:
+        verbose_name = _("DeskPRO Ticket")
+        verbose_name_plural = _("DeskPRO Tickets")
+
 
 @reversion.register
 class Organization(pdb_models.OrganizationBase):
@@ -524,6 +538,18 @@ class Organization(pdb_models.OrganizationBase):
     def __unicode__(self):
         return self.name
 
+    def related_label(self):
+        """
+        Used by grappelli autocomplete for representation
+
+        Since grappelli doesnt easily allow us to filter status
+        during autocomplete lookup, we make sure the objects
+        are marked accordingly in the result
+        """
+        if self.status == "deleted":
+            return "[DELETED] {}".format(self)
+        return "{}".format(self)
+
     @property
     def search_result_name(self):
         """
@@ -539,6 +565,15 @@ class Organization(pdb_models.OrganizationBase):
         """
         return django.urls.reverse(
             "admin:peeringdb_server_organization_change", args=(self.id,)
+        )
+
+    @property
+    def view_url(self):
+        """
+        Return the URL to this organizations web view
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("org-view", args=(self.id,))
         )
 
     @property
@@ -1126,6 +1161,16 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
         """
         return self.netfac_set_active.count()
 
+    @property
+    def view_url(self):
+        """
+        Return the URL to this facility's web view
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("fac-view", args=(self.id,))
+        )
+
+
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["org"])
 
@@ -1414,6 +1459,17 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         """
         return self.org.sponsorship
 
+    @property
+    def view_url(self):
+        """
+        Return the URL to this facility's web view
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("ix-view", args=(self.id,))
+        )
+
+
+
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["org"])
 
@@ -1583,6 +1639,22 @@ class IXLan(pdb_models.IXLanBase):
         # q = NetworkIXLan.handleref.filter(ixlan_id=self.id).filter(status="ok")
         # return Network.handleref.filter(id__in=[i.network_id for i in
         # q]).filter(status="ok")
+
+    @staticmethod
+    def autocomplete_search_fields():
+        """
+        Used by grappelli autocomplete to determine what
+        fields to search in
+        """
+        return ("ix__name__icontains",)
+
+
+    def related_label(self):
+        """
+        Used by grappelli autocomplete for representation
+        """
+        return "{} IXLan ({})".format(self.ix.name, self.id)
+
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["ix"])
@@ -2309,6 +2381,16 @@ class Network(pdb_models.NetworkBase):
     def sponsorship(self):
         return self.org.sponsorship
 
+    @property
+    def view_url(self):
+        """
+        Return the URL to this networks web view
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("net-view", args=(self.id,))
+        )
+
+
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["org"])
 
@@ -2316,16 +2398,26 @@ class Network(pdb_models.NetworkBase):
         """
         Custom model validation
         """
+
         try:
             validate_info_prefixes4(self.info_prefixes4)
         except ValidationError as exc:
-            raise ValidationError({"info_prefixes4": exc[0]})
+            raise ValidationError({"info_prefixes4": exc})
 
         try:
             validate_info_prefixes6(self.info_prefixes6)
         except ValidationError as exc:
-            raise ValidationError({"info_prefixes6": exc[0]})
+            raise ValidationError({"info_prefixes6": exc})
+
+        try:
+            if self.irr_as_set:
+                self.irr_as_set = validate_irr_as_set(self.irr_as_set)
+        except ValidationError as exc:
+            raise ValidationError({"irr_as_set": exc})
+
+
         return super(Network, self).clean()
+
 
 
 # class NetworkContact(HandleRefModel):
@@ -2744,6 +2836,24 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = _("user")
         verbose_name_plural = _("users")
 
+
+    @property
+    def pending_affiliation_requests(self):
+        """
+        Returns the currently pending user -> org affiliation
+        requests for this user
+        """
+        return self.affiliation_requests.filter(status="pending").order_by("-created")
+
+    @property
+    def affiliation_requests_available(self):
+        """
+        Returns whether the user currently has any affiliation request
+        slots available, by checking that the number of pending affiliation requests
+        the user has is lower than MAX_USER_AFFILIATION_REQUESTS
+        """
+        return (self.pending_affiliation_requests.count() < settings.MAX_USER_AFFILIATION_REQUESTS)
+
     @property
     def organizations(self):
         """
@@ -2800,6 +2910,32 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         group = Group.objects.get(id=settings.USER_GROUP_ID)
         return group in self.groups.all()
+
+    @staticmethod
+    def autocomplete_search_fields():
+        """
+        Used by grappelli autocomplete to determine what
+        fields to search in
+        """
+        return ("username__icontains", "email__icontains", "last_name__icontains")
+
+
+    def related_label(self):
+        """
+        Used by grappelli autocomplete for representation
+        """
+        return "{} <{}> ({})".format(self.username, self.email, self.id)
+
+
+    def flush_affiliation_requests(self):
+        """
+        Removes all user -> org affiliation requests for this user
+        that have been denied or canceled
+        """
+
+        UserOrgAffiliationRequest.objects.filter(
+            user=self, status__in=["denied","canceled"]
+        ).delete()
 
     def get_locale(self):
         "Returns user preferred language."

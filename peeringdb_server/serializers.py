@@ -3,7 +3,7 @@ import re
 import reversion
 
 from django_inet.rest import IPAddressField, IPPrefixField
-from django_inet.models import URLValidator
+from django.core.validators import URLValidator
 from django.db.models.query import QuerySet
 from django.db.models import Prefetch, Q, Sum, IntegerField, Case, When
 from django.db import models, transaction, IntegrityError
@@ -49,11 +49,47 @@ from peeringdb_server.validators import (
     validate_info_prefixes6,
     validate_prefix_overlap,
     validate_phonenumber,
+    validate_irr_as_set,
 )
 
 from django.utils.translation import ugettext_lazy as _
 
 from rdap.exceptions import RdapException
+
+# exclude certain query filters that would otherwise
+# be exposed to the api for filtering operations
+
+FILTER_EXCLUDE = [
+    # unused
+    "org__latitude",
+    "org__longitude",
+    "ixlan_set__descr",
+    "ixlan__descr",
+    # private
+    "ixlan_set__ixf_ixp_member_list_url",
+    "ixlan__ixf_ixp_member_list_url",
+    "network__notes_private",
+    # internal
+    "ixf_import_log_set__id",
+    "ixf_import_log_set__created",
+    "ixf_import_log_set__updated",
+    "ixf_import_log_entries__id",
+    "ixf_import_log_entries__action",
+    "ixf_import_log_entries__reason",
+    "sponsorshiporg_set__id",
+    "sponsorshiporg_set__url",
+    "partnerships__id",
+    "partnerships__url",
+    "merged_to__id",
+    "merged_to__created",
+    "merged_from__id",
+    "merged_from__created",
+    "affiliation_requests__status",
+    "affiliation_requests__created",
+    "affiliation_requests__org_name",
+    "affiliation_requests__id",
+]
+
 
 # def _(x):
 #    return x
@@ -284,8 +320,9 @@ class FieldMethodValidator(object):
 
 class ExtendedURLField(serializers.URLField):
     def __init__(self, **kwargs):
+        schemes = kwargs.pop("schemes", None)
         super(ExtendedURLField, self).__init__(**kwargs)
-        validator = URLValidator(message=self.error_messages["invalid"])
+        validator = URLValidator(message=self.error_messages["invalid"], schemes=schemes)
         self.validators = []
         self.validators.append(validator)
 
@@ -428,18 +465,28 @@ class ModelSerializer(PermissionedModelSerializer):
         Returns a list of all second level queryable relation fields
         """
         rv = []
+
         for fld in self.Meta.model._meta.get_fields():
+
+            if fld.name in FILTER_EXCLUDE:
+                continue
+
             if (
                 hasattr(fld, "get_internal_type")
                 and fld.get_internal_type() == "ForeignKey"
             ):
                 model = fld.related_model
                 for _fld in model._meta.get_fields():
+                    field_name = "{}__{}".format(fld.name, _fld.name)
+
+                    if field_name in FILTER_EXCLUDE:
+                        continue
+
                     if (
                         hasattr(_fld, "get_internal_type")
                         and _fld.get_internal_type() != "ForeignKey"
                     ):
-                        rv.append("%s__%s" % (fld.name, _fld.name))
+                        rv.append((field_name, _fld))
         return rv
 
     @classmethod
@@ -926,6 +973,11 @@ class FacilitySerializer(ModelSerializer):
 
     suggest = serializers.BooleanField(required=False, write_only=True)
 
+    website = serializers.URLField()
+    address1 = serializers.CharField()
+    city = serializers.CharField()
+    zipcode = serializers.CharField()
+
     validators = [FieldMethodValidator("suggest", ["POST"])]
 
     def has_create_perms(self, user, data):
@@ -957,6 +1009,10 @@ class FacilitySerializer(ModelSerializer):
                 "latitude",
                 "longitude",
                 "suggest",
+                "sales_email",
+                "sales_phone",
+                "tech_email",
+                "tech_phone",
             ]
             + HandleRefSerializer.Meta.fields
             + AddressSerializer.Meta.fields
@@ -965,8 +1021,6 @@ class FacilitySerializer(ModelSerializer):
         related_fields = ["org"]
 
         list_exclude = ["org"]
-
-        _ref_tag = model.handleref.tag
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
@@ -1022,6 +1076,24 @@ class FacilitySerializer(ModelSerializer):
 
     def get_net_count(self, inst):
         return inst.net_count
+
+    def validate(self, data):
+        try:
+            data["tech_phone"] = validate_phonenumber(
+                data["tech_phone"], data["country"]
+            )
+        except ValidationError as exc:
+            raise serializers.ValidationError({"tech_phone": exc.message})
+
+        try:
+            data["sales_phone"] = validate_phonenumber(
+                data["sales_phone"], data["country"]
+            )
+        except ValidationError as exc:
+            raise serializers.ValidationError({"sales_phone": exc.message})
+
+        return data
+
 
 
 class InternetExchangeFacilitySerializer(ModelSerializer):
@@ -1152,6 +1224,7 @@ class NetworkContactSerializer(ModelSerializer):
         return validate_phonenumber(value)
 
 
+
 class NetworkIXLanSerializer(ModelSerializer):
     """
     Serializer for peeringdb_server.models.NetworkIXLan
@@ -1223,6 +1296,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             "ipaddr4",
             "ipaddr6",
             "is_rs_peer",
+            "operational",
         ] + HandleRefSerializer.Meta.fields
 
         related_fields = ["net", "ixlan"]
@@ -1483,7 +1557,16 @@ class NetworkSerializer(ModelSerializer):
     )
     org = serializers.SerializerMethodField()
 
-    route_server = ExtendedURLField(required=False, allow_blank=True)
+    route_server = serializers.CharField(
+        required=False, allow_blank=True,
+        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])]
+    )
+
+    looking_glass = serializers.CharField(
+        required=False, allow_blank=True,
+        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])]
+    )
+
 
     info_prefixes4 = SaneIntegerField(
         allow_null=False, required=False, validators=[validate_info_prefixes4]
@@ -1494,6 +1577,8 @@ class NetworkSerializer(ModelSerializer):
 
     suggest = serializers.BooleanField(required=False, write_only=True)
     validators = [AsnRdapValidator(), FieldMethodValidator("suggest", ["POST"])]
+
+    #irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
     class Meta:
         model = Network
@@ -1657,9 +1742,11 @@ class NetworkSerializer(ModelSerializer):
         if rdap and user.validate_rdap_relationship(rdap):
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
+            net = super(ModelSerializer, self).create(validated_data)
             ticket_queue_asnauto_skipvq(
-                user, validated_data["org"], validated_data, rdap
+                user, validated_data["org"], net, rdap
             )
+            return net
 
         elif self.Meta.model in QUEUE_ENABLED:
             # user email does NOT exist in RiR data, put into verification
@@ -1671,10 +1758,18 @@ class NetworkSerializer(ModelSerializer):
 
         return super(ModelSerializer, self).create(validated_data)
 
+
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)
         if rdap_error:
             ticket_queue_rdap_error(*rdap_error)
+
+
+    def validate_irr_as_set(self, value):
+        if value:
+            return validate_irr_as_set(value)
+        else:
+            return value
 
 
 class IXLanPrefixSerializer(ModelSerializer):
@@ -1998,6 +2093,19 @@ class InternetExchangeSerializer(ModelSerializer):
         if "suggest" in data:
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
         return super(InternetExchangeSerializer, self).to_internal_value(data)
+
+
+    def to_representation(self, data):
+        # When an ix is created we want to add the ixlan_id and ixpfx_id
+        # that were created to the representation (see #609)
+
+        representation = super().to_representation(data)
+        request=  self.context.get("request")
+        if request and request.method == "POST" and self.instance:
+            ixlan = self.instance.ixlan
+            ixpfx = ixlan.ixpfx_set.first()
+            representation.update(ixlan_id=ixlan.id, ixpfx_id=ixpfx.id)
+        return representation
 
     def create(self, validated_data):
         # when creating an exchange via the API it is required

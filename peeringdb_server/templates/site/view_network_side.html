@@ -45,7 +45,7 @@
 
     {% for x in data.exchanges %}
 
-    <div class="row item" data-edit-id="{{ x.id }}" data-edit-label="{% trans "Network - Exchange link" %}: {{ x.ixlan.ix.name }}">
+    <div class="row item {% if x.operational %}operational{% endif %}" data-edit-id="{{ x.id }}" data-edit-label="{% trans "Network - Exchange link" %}: {{ x.ixlan.ix.name }}">
       <div class="editable payload">
         <div data-edit-name="net_id">{{ instance.id }}</div>
         <div data-edit-name="ixlan_id">{{ x.ixlan_id }}</div>
@@ -55,21 +55,35 @@
         <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
         {% endif %}
         <div class="exchange" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
-          <a href="/{{x.ixlan.ix|ref_tag}}/{{ x.ixlan.ix.id }}">{{ x.ixlan.ix.name }}</a>{% if x.ixlan.name %}<span class="tiny suffix">{{ x.ixlan.name }}</span>{% endif %}
+          <a href="/{{x.ixlan.ix|ref_tag}}/{{ x.ixlan.ix.id }}">{{ x.ixlan.ix.name }}</a>
         </div>
-        <div class="asn{% if permissions.can_write and x.asn != x.network.asn %} mark-value-error{% endif %}"
-             {% if permissions.can_write and x.asn != x.network.asn %}
-             data-toggle="tooltip"
-             data-placement="left"
-             title="{% trans "Entry needs to be moved to correct network" %}"
-             {% endif %}
-             data-edit-type="readonly"
-             data-edit-name="asn"
-             data-edit-value="{{ x.asn }}"
-             data-sort-value="{{ x.asn }}"
-             data-filter-value="{{ x.asn }}">
-             {{ x.asn }}
+
+        <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
+
+        <div class="editable-inline netixlan-extra">
+          <div class="asn{% if permissions.can_write and x.asn != x.network.asn %} mark-value-error{% endif %}"
+               {% if permissions.can_write and x.asn != x.network.asn %}
+               data-toggle="tooltip"
+               data-placement="left"
+               title="{% trans "Entry needs to be moved to correct network" %}"
+               {% endif %}
+               data-edit-type="readonly"
+               data-edit-name="asn"
+               data-edit-value="{{ x.asn }}"
+               data-sort-value="{{ x.asn }}"
+               data-filter-value="{{ x.asn }}">
+               {{ x.asn }}
+          </div>
+          <div
+            data-edit-type="bool"
+            data-edit-name="operational"
+            data-edit-toggled="edit"
+            data-sort-value="{{ x.operational }}"
+            data-edit-value="{{ x.operational }}">
+          </div>
+          <span data-edit-toggled="edit">{% trans "Operational" %}</span>
         </div>
+
       </div>
       <div class="col-xs-5 col-sm-5 col-md-4">
         <div {% if permissions.can_write %}
@@ -106,6 +120,7 @@
              data-edit-value="{{ x.is_rs_peer }}">
           <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.is_rs_peer|as_bool %}-off{% endif %}.png" alt="RS PEER" />
         </div>
+
       </div>
     </div>
 
@@ -167,6 +182,16 @@
          <div class="view_value col-xs-8 col-sm-7 col-md-8">
            <div data-edit-type="bool"
                 data-edit-name="is_rs_peer">
+           </div>
+         </div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-xs-4 col-sm-5 col-md-4">Operational</div>
+         <div class="view_value col-xs-8 col-sm-7 col-md-8">
+           <div data-edit-type="bool"
+                data-edit-name="operational"
+                data-edit-value="true">
            </div>
          </div>
        </div>

@@ -57,11 +57,12 @@ PeeringDB = {
 
     this.fix_list_offsets();
 
-    $('.sponsor-badge').after().click(function(e) {
+    $('.sponsor-badge').click(function(e) {
       // only redirect while not in edit mode
       if($(this).parents('.mode-edit').length == 0)
         window.location.href = "/sponsors";
     });
+
 
     $('.translate-btn').click(function(e){
       $(this).closest('.fmt_text').find('.popin').remove();
@@ -99,9 +100,12 @@ PeeringDB = {
       var converter = new showdown.Converter()
       var value = $(this).data("edit-value")
       // sanitize any html tags
+      var translate = $(this).find('div.translate').detach()
+
       var html = converter.makeHtml(value.replace(/>/g, '&gt;').replace(/</g, '&lt;'))
       // set html after further sanitizing output via DOMPurify
       $(this).html(DOMPurify.sanitize(html, {SAFE_FOR_JQUERY: true}))
+      $(this).append(translate);
     })
 
   },
@@ -1321,6 +1325,9 @@ twentyc.editable.module.register(
       ixlnk.text(data.ix.name);
       row.find(".exchange").html(ixlnk);
 
+      if(data.operational)
+        row.addClass("operational")
+
       // if ixlan has a name, render it next to the exchange name
       if(data.ixlan.name)
         row.find(".exchange").append($('<span>').addClass('tiny suffix').text(data.ixlan.name));
@@ -1360,6 +1367,13 @@ twentyc.editable.module.register(
         });
       });
 
+    },
+
+    finalize_update_netixlan : function(rowId, row, data) {
+      if(data.operational)
+        row.addClass("operational")
+      else
+        row.removeClass("operational")
     },
 
 

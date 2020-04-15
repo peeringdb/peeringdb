@@ -6,6 +6,7 @@ import peeringdb_server.views as pdbviews
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase, Client, RequestFactory
+from django.conf import settings
 
 import peeringdb_server.inet as pdbinet
 from .util import SettingsCase
@@ -82,6 +83,7 @@ class AsnAutomationTestCase(TestCase):
             "asnauto-9000001-org-net-created.txt",
             "asnauto-9000001-user-granted-ownership.txt",
             "asnauto-9000002-user-requested-ownership.txt",
+            "asnauto-9000002-affiliated-user-requested-ownership.txt",
         ]:
             with open(
                 os.path.join(os.path.dirname(__file__), "data", "deskpro", ticket_name),
@@ -190,7 +192,7 @@ class AsnAutomationTestCase(TestCase):
         self.assertEqual(net.org.status, "ok")
 
         # test 3: test affiliation to asn that hsa RiR entry and user relationship
-        # cannot be verifiedi (ASN 9000002)
+        # cannot be verified (ASN 9000002)
         request = self.factory.post("/affiliate-to-org", data={"asn": asn_ok_b})
         request.user = self.user_b
         request._dont_enforce_csrf_checks = True
@@ -213,6 +215,109 @@ class AsnAutomationTestCase(TestCase):
         )
         self.assertEqual(net.status, "ok")
         self.assertEqual(net.org.status, "ok")
+
+    def test_affiliate_limit(self):
+        """
+        test affiliation request limit (fail when there is n pending
+        affiliations for a user)
+        """
+
+        for i in range(0, settings.MAX_USER_AFFILIATION_REQUESTS + 1):
+
+            request = self.factory.post(
+                "/affiliate-to-org", data={"org": "AFFILORG{}".format(i)}
+            )
+            request.user = self.user_b
+            request._dont_enforce_csrf_checks = True
+            response = pdbviews.view_affiliate_to_org(request)
+
+            if i < settings.MAX_USER_AFFILIATION_REQUESTS:
+                assert response.status_code == 200
+            else:
+                assert response.status_code == 400
+
+    def test_cancel_affiliation_request(self):
+        """
+        tests user canceling a pending affiliation request
+        """
+
+        request = self.factory.post("/affiliate-to-org", data={"org": "AFFILORG"})
+        request.user = self.user_b
+        request._dont_enforce_csrf_checks = True
+        response = pdbviews.view_affiliate_to_org(request)
+
+        assert response.status_code == 200
+
+        affiliation_request = self.user_b.pending_affiliation_requests.first()
+
+        assert affiliation_request
+
+        request = self.factory.post(
+            "/cancel-affiliation-request/{}/".format(affiliation_request.id)
+        )
+        request.user = self.user_b
+        request._dont_enforce_csrf_checks = True
+        response = pdbviews.cancel_affiliation_request(request, affiliation_request.id)
+
+        assert response.status_code == 302
+        assert self.user_b.pending_affiliation_requests.count() == 0
+
+    def test_deny_cancel_other_affiliation_request(self):
+        """
+        users should never be allowed to cancel other user's affiliation requests
+        """
+
+        request = self.factory.post("/affiliate-to-org", data={"org": "AFFILORG"})
+        request.user = self.user_b
+        request._dont_enforce_csrf_checks = True
+        response = pdbviews.view_affiliate_to_org(request)
+
+        assert response.status_code == 200
+
+        affiliation_request = self.user_b.pending_affiliation_requests.first()
+
+        assert affiliation_request
+
+        request = self.factory.post(
+            "/cancel-affiliation-request/{}/".format(affiliation_request.id)
+        )
+        request.user = self.user_a
+        request._dont_enforce_csrf_checks = True
+        response = pdbviews.cancel_affiliation_request(request, affiliation_request.id)
+
+        assert response.status_code == 404
+        assert self.user_b.pending_affiliation_requests.count() == 1
+
+    def test_affil_already_affiliated(self):
+
+        """
+        When a user needs pdb admin approval of an affiliation an deskpro
+        ticket is created.
+
+        When the user is already affiliated to another organization, there is
+        extra information appended to that ticket, such as what organizations
+        the user is already affiliated to.
+        """
+
+        org_1 = models.Organization.objects.create(name="Org with admin user", status="ok")
+        org_2 = models.Organization.objects.create(name="Org with normal user", status="ok")
+        org_1.admin_usergroup.user_set.add(self.user_b)
+        org_2.usergroup.user_set.add(self.user_b)
+
+        request = self.factory.post("/affiliate-to-org", data={"asn": 9000002})
+        request.user = self.user_b
+        request._dont_enforce_csrf_checks = True
+        resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
+        self.assertEqual(resp.get("status"), "ok")
+
+        ticket = models.DeskProTicket.objects.get(
+            subject="[test]User user_b wishes to request ownership of ORG AS9000002"
+        )
+
+        self.assertEqual(
+            ticket.body, self.ticket["asnauto-9000002-affiliated-user-requested-ownership.txt"]
+        )
+
 
     def test_affiliate_to_bogon_asn(self):
         """

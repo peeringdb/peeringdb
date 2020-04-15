@@ -1,3 +1,5 @@
+import re
+
 from collections import defaultdict
 
 from django.db.models import OneToOneRel

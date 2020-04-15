@@ -737,6 +737,7 @@ twentyc.editable.input = new (twentyc.cls.extend(
       it.set(source.data("edit-value"));
 
       it.original_value = it.get();
+      it.static_elements = source.find('[data-edit-static]')
       if(source.data().hasOwnProperty("editResetValue")) {
         it.reset_value = source.data("edit-reset-value") || null;
       } else {
@@ -805,9 +806,13 @@ twentyc.editable.input.register(
     },
 
     apply : function(value) {
-      if(!this.source.data("edit-template"))
+      if(!this.source.data("edit-template")) {
         this.source.text(this.get());
-      else {
+        this.source.data("edit-value", this.get());
+        if(this.static_elements) {
+          this.static_elements.appendTo(this.source)
+        }
+      } else {
         var tmplId = this.source.data("edit-template");
         var tmpl = twentyc.editable.templates.get(tmplId);
         var node = tmpl.clone(true);

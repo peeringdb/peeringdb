@@ -1,3 +1,4 @@
+{% load i18n %}
 <!-- TEMPLATES -->
 <div id="editable-templates">
 
@@ -12,12 +13,27 @@
            data-filter-name="exchange_name"
            data-edit-name="exchange">
       </div>
-      <div class="asn"
-           data-edit-type="readonly"
-           data-edit-name="asn"
-           data-filter-name="asn"
-           data-sort-name="asn">
-      </div>
+
+      <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
+
+        <div class="editable-inline netixlan-extra">
+          <div class="asn"
+             data-edit-type="readonly"
+             data-edit-name="asn"
+             data-filter-name="asn"
+             data-sort-name="asn">
+          </div>
+          <div
+            data-edit-type="bool"
+            data-edit-name="operational"
+            data-edit-toggled="edit"
+            data-sort-value="{{ x.operational }}"
+            data-edit-value="{{ x.operational }}">
+          </div>
+          <span data-edit-toggled="edit">{% trans "Operational" %}</span>
+        </div>
+
+
     </div>
     <div class="col-xs-5 col-sm-5 col-md-4">
       <div data-edit-type="string"

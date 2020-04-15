@@ -1,6 +1,6 @@
 from django.conf.urls import include, url
+from django.views.generic import TemplateView
 from django.conf import settings
-from rest_framework_swagger.views import get_swagger_view
 
 import peeringdb_server.rest
 
@@ -70,6 +70,7 @@ from peeringdb_server.views import (
     request_api_search,
     request_search,
     request_translation,
+    cancel_affiliation_request,
 )
 import peeringdb_server.org_admin_views
 import peeringdb_server.data_views
@@ -89,7 +90,7 @@ urlpatterns = [
     url(r"^username-retrieve/complete$", view_username_retrieve_complete),
     url(r"^username-retrieve$", view_username_retrieve),
     url(r"^verify$", view_verify),
-    url(r"^profile$", view_profile),
+    url(r"^profile$", view_profile, name="user-profile"),
     url(r"^profile/v1$", view_profile_v1),
     url(r"^resend_email_confirmation$", resend_confirmation_mail),
     url(r"^sponsors$", view_sponsorships),
@@ -97,11 +98,12 @@ urlpatterns = [
     url(r"^aup$", view_aup),
     url(r"^about$", view_about),
     url(r"^affiliate-to-org$", view_affiliate_to_org),
+    url(r"^cancel-affiliation-request/(?P<uoar_id>\d+)/$", cancel_affiliation_request, name="cancel-affiliation-request"),
     url(r"^request-ownership$", view_request_ownership),
-    url(r"^%s/(?P<id>\d+)/?$" % Network.handleref.tag, view_network),
-    url(r"^%s/(?P<id>\d+)/?$" % InternetExchange.handleref.tag, view_exchange),
-    url(r"^%s/(?P<id>\d+)/?$" % Facility.handleref.tag, view_facility),
-    url(r"^%s/(?P<id>\d+)/?$" % Organization.handleref.tag, view_organization),
+    url(r"^%s/(?P<id>\d+)/?$" % Network.handleref.tag, view_network, name="net-view"),
+    url(r"^%s/(?P<id>\d+)/?$" % InternetExchange.handleref.tag, view_exchange, name="ix-view"),
+    url(r"^%s/(?P<id>\d+)/?$" % Facility.handleref.tag, view_facility, name="fac-view"),
+    url(r"^%s/(?P<id>\d+)/?$" % Organization.handleref.tag, view_organization, name="org-view"),
     url(r"^%s$" % Network.handleref.tag, view_network_by_query),
     url(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn),
     url(r"^org_admin/users$", peeringdb_server.org_admin_views.users),
@@ -160,9 +162,16 @@ urlpatterns = [
 # REST API
 
 urlpatterns += [
-    url(r"^api/", include(peeringdb_server.rest.urls)),
     url(r"^api-auth/", include("rest_framework.urls", namespace="rest_framework")),
-    url(r"^apidocs/", get_swagger_view(title="PeeringDB API")),
+    url(
+        r"^apidocs/",
+        TemplateView.as_view(
+            template_name="apidocs/redoc.html",
+            extra_context={"schema_url": "openapi-schema"},
+        ),
+        name="redoc-ui",
+    ),
+    url(r"^api/", include(peeringdb_server.rest.urls)),
 ]
 
 # AUTOCOMPLETE
