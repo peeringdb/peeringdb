@@ -206,7 +206,7 @@ def validate_irr_as_set(value):
 
         if len(as_parts) > settings.DATA_QUALITY_MAX_IRR_DEPTH:
             raise ValidationError(
-                _("Maximum hierarchy depth: {}").format(
+                _("Maximum AS-SET hierarchy depth: {}").format(
                     settings.DATA_QUALITY_MAX_IRR_DEPTH
                 )
             )
