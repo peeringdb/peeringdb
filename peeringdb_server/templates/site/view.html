@@ -21,7 +21,9 @@
            data-edit-required="yes"
            data-edit-value="{{ data.title }}"
            data-edit-name="name">{{ data.title }}
+           {% if instance.sponsorship %}
            <a data-edit-static="yes" href="/sponsors" class="sponsor {{ instance.sponsorship.label|lower }}">{{ instance.sponsorship.label }} sponsor</a>
+           {% endif %}
            </div>
 
       <div class="col-md-4 col-sm-4 col-xs-2 right button-bar">
