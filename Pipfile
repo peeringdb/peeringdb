@@ -55,6 +55,7 @@ googlemaps = ">=2.5.1"
 markdown = ">=2.6.7"
 passlib = ">=1.7.1"
 phonenumbers = ">=8.11.1"
+rdap = ">=1, <2"
 unidecode = ">=1.0.23"
 
 # these should just be pulled in automatically?
@@ -65,5 +66,3 @@ tld = ">=0.7.6"
 # deprecated from drf -- used by rest swagger
 coreapi = ">=2.3.1"
 
-# TODO update
-rdap = "==0.2.0"
