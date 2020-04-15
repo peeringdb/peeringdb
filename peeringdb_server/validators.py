@@ -180,22 +180,63 @@ def validate_irr_as_set(value):
     for item in value.split(","):
         item = item.upper()
         source = None
+        as_set = None
 
         # <name>@<source>
-        parts_match = re.match("^(AS|RS)-([\w\d\-]+)@(\w+)$", item)
+        parts_match = re.match("^([\w\d\-:]+)@(\w+)$", item)
         if parts_match:
-            source = parts_match.group(3)
+            source = parts_match.group(2)
+            as_set = parts_match.group(1)
 
         # <source>::<name>
         else:
-            parts_match = re.match("^(\w+)::(AS|RS)-([\w\d\-]+)$", item)
+            parts_match = re.match("^(\w+)::([\w\d\-:]+)$", item)
             if parts_match:
                 source = parts_match.group(1)
+                as_set = parts_match.group(2)
             else:
                 raise ValidationError(_("Invalid formatting: {} - should be AS-SET@SOURCE or SOURCE::AS-SET").format(item))
 
         if source not in IRR_SOURCE:
             raise ValidationError(_("Unknown IRR source: {}").format(source))
+
+
+        # validate set name and as hierarchy
+        as_parts = as_set.split(":")
+
+        if len(as_parts) > settings.DATA_QUALITY_MAX_IRR_DEPTH:
+            raise ValidationError(
+                _("Maximum hierarchy depth: {}").format(
+                    settings.DATA_QUALITY_MAX_IRR_DEPTH
+                )
+            )
+
+        set_found = False
+        typ = None
+        types = []
+
+        for part in as_parts:
+            match_set = re.match("^(AS|RS)-[\w\d\-]+$", part)
+            match_as = re.match("^(AS)[\d]+$", part)
+
+            # set name found
+
+            if match_set:
+                set_found = True
+                types.append(match_set.group(1))
+            elif not match_as:
+                raise ValidationError(_("Invalid formatting: {} - should be RS-SET, AS-SET or AS123").format(part))
+            else:
+                types.append(match_as.group(1))
+
+
+        if len(list(set(types))) != 1:
+            raise ValidationError(
+                _("All parts of an hierarchical name have to be of the same type")
+            )
+
+        if not set_found:
+            raise ValidationError(_("At least one component must be an actual set name"))
 
         validated.append(item)
 
