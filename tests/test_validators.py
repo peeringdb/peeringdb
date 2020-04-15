@@ -161,6 +161,7 @@ def test_validate_prefix_overlap():
     ("as-foo@ripe as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
     ("as-foo@ripe,as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
     ("as-foo@ripe, as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
+    ("RIPE::AS15562:AS-SNIJDERS RIPE::AS15562:AS-SNIJDERS:AS2914", "RIPE::AS15562:AS-SNIJDERS RIPE::AS15562:AS-SNIJDERS:AS2914"),
 
     # fail validation
     ("AS-FOO", False),
