@@ -1,11 +1,11 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "f5f9820b05ae6dbeb6752d91a8c3525b7d503d2716ca87be2f96d613fbf14374"
+            "sha256": "a0ed08b7c1ab04d8bcf3d131d8acbcc09e4b90148fd8873c2a25ed4b23782633"
         },
         "pipfile-spec": 6,
         "requires": {
-            "python_version": "3.6"
+            "python_version": "3.7"
         },
         "sources": [
             {
@@ -205,10 +205,10 @@
         },
         "django-peeringdb": {
             "hashes": [
-                "sha256:3981ccd347f688d2968b2544a75a231309d6019a14e878aafe26763228b32e5b"
+                "sha256:18d8edce8b98b45d12c07657cef8c6f8a0da5ee980617ce79de6d1fd494b1181"
             ],
             "index": "pypi",
-            "version": "==1.1.0"
+            "version": "==2.0.0"
         },
         "django-phonenumber-field": {
             "hashes": [
@@ -700,14 +700,6 @@
             "markers": "python_version < '3.8'",
             "version": "==1.6.0"
         },
-        "importlib-resources": {
-            "hashes": [
-                "sha256:4019b6a9082d8ada9def02bece4a76b131518866790d58fdda0b5f8c603b36c2",
-                "sha256:dd98ceeef3f5ad2ef4cc287b8586da4ebad15877f351e9688987ad663a0a29b8"
-            ],
-            "markers": "python_version < '3.7'",
-            "version": "==1.4.0"
-        },
         "jsonschema": {
             "hashes": [
                 "sha256:4e5b3cf8216f577bee9ce139cbe72eca3ea4f292ec60928ff24758ce626cd163",
@@ -884,7 +876,6 @@
                 "sha256:aa36550ff0c0b7ef7fa639055d797116ee891440eac1a56f378e2d3179e0320b",
                 "sha256:c599e4d75c98f6798c509911d08a22e6c021d074469042177c8c86fb92eefd96"
             ],
-            "markers": "python_version < '3.8'",
             "version": "==3.1.0"
         }
     }
