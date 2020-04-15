@@ -68,14 +68,15 @@ RUN chown -R pdb:pdb api-cache locale media var/log
 FROM final as tester
 
 WORKDIR /srv/www.peeringdb.com
-ADD Pipfile* ./
+# copy from builder in case we're testing new deps
+COPY --from=builder /srv/www.peeringdb.com/Pipfile* ./
 COPY tests/ tests
 
 RUN pip install -U pipenv
 RUN pipenv install --dev --ignore-pipfile -v
 RUN echo `which python`
 RUN pip freeze
-RUN pytest -x -v -rA --cov-report term-missing --cov=peeringdb_server tests/
+RUN pytest -v -rA --cov-report term-missing --cov=peeringdb_server tests/
 
 #### entry point from final image, not tester
 FROM final
@@ -84,8 +85,9 @@ COPY Ctl/docker/entrypoint.sh .
 COPY Ctl/docker/django-uwsgi.ini etc/
 
 ENV UWSGI_SOCKET="127.0.0.1:7002"
+ENV RUNSERVER_BIND="127.0.0.1:8080"
 
 USER pdb
 
 ENTRYPOINT ["./entrypoint.sh"]
-CMD ["runserver", "0.0.0.0:8080"]
+CMD ["runserver", "$RUNSERVER_BIND"]
