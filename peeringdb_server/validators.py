@@ -226,16 +226,14 @@ def validate_irr_as_set(value):
                 types.append(match_set.group(1))
             elif not match_as:
                 raise ValidationError(_("Invalid formatting: {} - should be RS-SET, AS-SET or AS123").format(part))
-            else:
-                types.append(match_as.group(1))
 
 
-        if len(list(set(types))) != 1:
+        if len(list(set(types))) > 1:
             raise ValidationError(
                 _("All parts of an hierarchical name have to be of the same type")
             )
 
-        if not set_found:
+        if not set_found and len(as_parts) > 1:
             raise ValidationError(_("At least one component must be an actual set name"))
 
         validated.append(item)

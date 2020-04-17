@@ -167,6 +167,9 @@ def test_validate_prefix_overlap():
         "RIPE::AS12345:AS-FOO RIPE::AS12345:AS-FOO:AS9876"
     ),
     ("ripe::as-foo:as123:as345", "RIPE::AS-FOO:AS123:AS345"),
+    ("RIPE::AS12345", "RIPE::AS12345"),
+    ("AS12345@RIPE", "AS12345@RIPE"),
+    ("RIPE::AS123456:RS-FOO", "RIPE::AS123456:RS-FOO"),
 
     # fail validation
     ("AS-FOO", False),
@@ -176,9 +179,8 @@ def test_validate_prefix_overlap():
     ("UNKNOWN::ASFOO", False),
     ("AS-FOO RIPE:AS-FOO", False),
     ("AS-FOO AS-FOO@RIPE", False),
-    ("RIPE::AS12345", False),
     ("RIPE::RS15562:RS-FOO", False),
-    ("RIPE::AS12356:RS-FOO", False),
+    ("RIPE::AS123456:RS-FOO:AS-FOO", False),
 
     # > DATA_QUALITY_MAX_IRR_DEPTH
     ("ripe::as-foo:as123:as345:as678", False),
