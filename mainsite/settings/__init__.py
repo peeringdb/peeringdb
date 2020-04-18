@@ -163,6 +163,9 @@ set_option("DATA_QUALITY_MIN_PREFIXLEN_V6", 64)
 # maximum value to allow for prefix length on a v6 prefix
 set_option("DATA_QUALITY_MAX_PREFIXLEN_V6", 116)
 
+# maximum value to allow for irr set hierarchy depth
+set_option("DATA_QUALITY_MAX_IRR_DEPTH", 3)
+
 RATELIMITS = {
     "request_login_POST": "4/m",
     "request_translation": "2/m",

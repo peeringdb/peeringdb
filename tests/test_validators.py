@@ -156,11 +156,20 @@ def test_validate_prefix_overlap():
     # success validation
     ("RIPE::AS-FOO", "RIPE::AS-FOO"),
     ("AS-FOO@RIPE", "AS-FOO@RIPE"),
+    ("AS-FOO-BAR@RIPE", "AS-FOO-BAR@RIPE"),
     ("ripe::as-foo", "RIPE::AS-FOO"),
     ("as-foo@ripe", "AS-FOO@RIPE"),
     ("as-foo@ripe as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
     ("as-foo@ripe,as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
     ("as-foo@ripe, as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
+    (
+        "RIPE::AS12345:AS-FOO RIPE::AS12345:AS-FOO:AS9876",
+        "RIPE::AS12345:AS-FOO RIPE::AS12345:AS-FOO:AS9876"
+    ),
+    ("ripe::as-foo:as123:as345", "RIPE::AS-FOO:AS123:AS345"),
+    ("RIPE::AS12345", "RIPE::AS12345"),
+    ("AS12345@RIPE", "AS12345@RIPE"),
+    ("RIPE::AS123456:RS-FOO", "RIPE::AS123456:RS-FOO"),
 
     # fail validation
     ("AS-FOO", False),
@@ -170,6 +179,11 @@ def test_validate_prefix_overlap():
     ("UNKNOWN::ASFOO", False),
     ("AS-FOO RIPE:AS-FOO", False),
     ("AS-FOO AS-FOO@RIPE", False),
+    ("RIPE::RS15562:RS-FOO", False),
+    ("RIPE::AS123456:RS-FOO:AS-FOO", False),
+
+    # > DATA_QUALITY_MAX_IRR_DEPTH
+    ("ripe::as-foo:as123:as345:as678", False),
 ])
 def test_validate_irr_as_set(value, validated):
     if not validated:
