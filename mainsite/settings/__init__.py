@@ -146,10 +146,10 @@ API_THROTTLE_RATE_ANON = "100/second"
 API_THROTTLE_RATE_USER = "100/second"
 
 # maximum value to allow in network.info_prefixes4
-set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 500000)
+set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 1000000)
 
 # maximum value to allow in network.info_prefixes6
-set_option("DATA_QUALITY_MAX_PREFIX_V6_LIMIT", 50000)
+set_option("DATA_QUALITY_MAX_PREFIX_V6_LIMIT", 100000)
 
 # minimum value to allow for prefix length on a v4 prefix
 set_option("DATA_QUALITY_MIN_PREFIXLEN_V4", 18)
