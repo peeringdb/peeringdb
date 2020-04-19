@@ -1174,6 +1174,11 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["org"])
 
+    def validate_phonenumbers(self):
+        self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
+        self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
+
+
 
 @reversion.register
 class InternetExchange(pdb_models.InternetExchangeBase):
