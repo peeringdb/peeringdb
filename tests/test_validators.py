@@ -159,8 +159,6 @@ def test_validate_prefix_overlap():
     ("AS-FOO-BAR@RIPE", "AS-FOO-BAR@RIPE"),
     ("ripe::as-foo", "RIPE::AS-FOO"),
     ("as-foo@ripe", "AS-FOO@RIPE"),
-    ("as-foo", "AS-FOO"),
-    ("AS15562", "AS15562"),
     ("as-foo@ripe as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
     ("as-foo@ripe,as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
     ("as-foo@ripe, as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
