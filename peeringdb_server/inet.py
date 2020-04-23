@@ -24,6 +24,7 @@ IRR_SOURCE = (
     "EPOCH",
     "HOST",
     "JPIRR",
+    "LACNIC",
     "LEVEL3",
     "NESTEGG",
     "NTTCOM",
@@ -119,6 +120,7 @@ class RdapLookup(rdap.RdapClient):
         config = dict(
             bootstrap_url=settings.RDAP_URL.rstrip("/"),
             lacnic_apikey=settings.RDAP_LACNIC_APIKEY,
+            timeout=2.5,
         )
         super(RdapLookup, self).__init__(config)
 

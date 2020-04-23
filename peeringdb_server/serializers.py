@@ -978,6 +978,9 @@ class FacilitySerializer(ModelSerializer):
     city = serializers.CharField()
     zipcode = serializers.CharField()
 
+    tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
+    sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
+
     validators = [FieldMethodValidator("suggest", ["POST"])]
 
     def has_create_perms(self, user, data):
@@ -1973,6 +1976,9 @@ class InternetExchangeSerializer(ModelSerializer):
 
     website = serializers.URLField(required=True)
     tech_email = serializers.EmailField(required=True)
+
+    tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
+    policy_phone = serializers.CharField(required=False, allow_blank=True, default="")
 
     # For the creation of the initial prefix during exchange
     # creation. It will be a required field during `POST` requests

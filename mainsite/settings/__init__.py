@@ -146,10 +146,10 @@ API_THROTTLE_RATE_ANON = "100/second"
 API_THROTTLE_RATE_USER = "100/second"
 
 # maximum value to allow in network.info_prefixes4
-set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 500000)
+set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 1000000)
 
 # maximum value to allow in network.info_prefixes6
-set_option("DATA_QUALITY_MAX_PREFIX_V6_LIMIT", 50000)
+set_option("DATA_QUALITY_MAX_PREFIX_V6_LIMIT", 100000)
 
 # minimum value to allow for prefix length on a v4 prefix
 set_option("DATA_QUALITY_MIN_PREFIXLEN_V4", 18)
@@ -162,6 +162,9 @@ set_option("DATA_QUALITY_MIN_PREFIXLEN_V6", 64)
 
 # maximum value to allow for prefix length on a v6 prefix
 set_option("DATA_QUALITY_MAX_PREFIXLEN_V6", 116)
+
+# maximum value to allow for irr set hierarchy depth
+set_option("DATA_QUALITY_MAX_IRR_DEPTH", 3)
 
 RATELIMITS = {
     "request_login_POST": "4/m",
@@ -514,8 +517,8 @@ COUNTRIES_OVERRIDE = {
 set_option(
     "CLIENT_COMPAT",
     {
-        "client": {"min": "0,6", "max": "255,0",},
-        "backends": {"django_peeringdb": {"min": "0,6", "max": "255,0",},},
+        "client": {"min": (0,6), "max": (255,0),},
+        "backends": {"django_peeringdb": {"min": (0,6), "max": (255,0),},},
     },
 )
 

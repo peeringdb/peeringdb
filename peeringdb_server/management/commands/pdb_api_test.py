@@ -1123,6 +1123,7 @@ class TestJSON(unittest.TestCase):
             test_failure=SHARED["fac_r_ok"].id,
         )
 
+
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_net(self):
@@ -2889,6 +2890,34 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
     # MISC TESTS
     ##########################################################################
+
+
+    def test_z_misc_POST_ix_fac_missing_phone_fields(self):
+        """
+        Test that omitting the *_phone fields during fac
+        and ix object creation doesnt error 500
+
+        TODO: a test that drops all the non-required fields
+        and tests for every reftag model
+        """
+
+        data = self.make_data_fac()
+        db = self.db_org_admin
+        del data["tech_phone"]
+        r = db.create("fac", data, return_response=True).get("data")
+
+        data = self.make_data_fac()
+        del data["sales_phone"]
+        r = db.create("fac", data, return_response=True).get("data")
+
+        data = self.make_data_ix(prefix=self.get_prefix4())
+        del data["tech_phone"]
+        r = db.create("ix", data, return_response=True).get("data")
+
+        data = self.make_data_ix(prefix=self.get_prefix4())
+        del data["policy_phone"]
+        r = db.create("ix", data, return_response=True).get("data")
+
 
     def test_z_misc_002_dupe_netixlan_ip(self):
 

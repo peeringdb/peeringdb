@@ -164,6 +164,14 @@ urlpatterns = [
 urlpatterns += [
     url(r"^api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     url(
+        r"^apidocs/swagger/",
+        TemplateView.as_view(
+            template_name="apidocs/swagger.html",
+            extra_context={"schema_url": "openapi-schema"},
+        ),
+        name="swagger-ui",
+    ),
+    url(
         r"^apidocs/",
         TemplateView.as_view(
             template_name="apidocs/redoc.html",
