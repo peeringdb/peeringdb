@@ -195,9 +195,12 @@ def validate_irr_as_set(value):
                 source = parts_match.group(1)
                 as_set = parts_match.group(2)
             else:
-                raise ValidationError(_("Invalid formatting: {} - should be AS-SET@SOURCE or SOURCE::AS-SET").format(item))
+                sourceless_match = re.match("^([\w\d\-:]+)$", item)
+                as_set = sourceless_match.group(1)
+                if not sourceless_match:
+                    raise ValidationError(_("Invalid formatting: {} - should be AS-SET, ASx, AS-SET@SOURCE or SOURCE::AS-SET").format(item))
 
-        if source not in IRR_SOURCE:
+        if source and source not in IRR_SOURCE:
             raise ValidationError(_("Unknown IRR source: {}").format(source))
 
 
