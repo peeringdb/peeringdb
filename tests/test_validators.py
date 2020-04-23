@@ -159,6 +159,8 @@ def test_validate_prefix_overlap():
     ("AS-FOO-BAR@RIPE", "AS-FOO-BAR@RIPE"),
     ("ripe::as-foo", "RIPE::AS-FOO"),
     ("as-foo@ripe", "AS-FOO@RIPE"),
+    ("as-foo", "AS-FOO"),
+    ("AS15562", "AS15562"),
     ("as-foo@ripe as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
     ("as-foo@ripe,as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
     ("as-foo@ripe, as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
@@ -172,13 +174,10 @@ def test_validate_prefix_overlap():
     ("RIPE::AS123456:RS-FOO", "RIPE::AS123456:RS-FOO"),
 
     # fail validation
-    ("AS-FOO", False),
     ("UNKNOWN::AS-FOO", False),
     ("AS-FOO@UNKNOWN", False),
     ("ASFOO@UNKNOWN", False),
     ("UNKNOWN::ASFOO", False),
-    ("AS-FOO RIPE:AS-FOO", False),
-    ("AS-FOO AS-FOO@RIPE", False),
     ("RIPE::RS15562:RS-FOO", False),
     ("RIPE::AS123456:RS-FOO:AS-FOO", False),
 
