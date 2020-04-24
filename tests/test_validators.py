@@ -176,6 +176,7 @@ def test_validate_prefix_overlap():
     ("rs-foo as-bar", "RS-FOO AS-BAR"),
     ("rs-foo rs-bar", "RS-FOO RS-BAR"),
     ("AS15562", "AS15562"),
+    ("AS-15562", "AS-15562"),
     ("AS15562 AS33333", "AS15562 AS33333"),
 
     # fail validation
