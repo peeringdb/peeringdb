@@ -262,7 +262,7 @@
         {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
         {% endif %}
-        <div class="facility" data-sort-value="{{ f.facility.name }}" data-filter-value="{{ f.facility.name }}">
+        <div class="facility" data-sort-value="{{ f.facility.name|lower }}" data-filter-value="{{ f.facility.name }}">
           <a href="/{{f.facility|ref_tag}}/{{f.facility_id}}">{{f.facility.name}}</a>
         </div>
         <div class="local_asn{% if permissions.can_write and f.local_asn != f.network.asn %} mark-value-error{% endif %}"

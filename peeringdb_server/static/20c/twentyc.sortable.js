@@ -1,14 +1,14 @@
 /**
  * Makes a content listing sortable.
  *
- * Requirements: 
+ * Requirements:
  *
  *   1. jquery 1.11.3
  *   2. twentyc.core.js
  */
 
 (function($) {
-  
+
 tc.u.require_namespace("twentyc.listutil");
 
 twentyc.listutil.sortable = {
@@ -22,8 +22,11 @@ twentyc.listutil.sortable = {
   sorter : function(dir) {
     return this["_sort_"+dir];
   },
-  
+
   _sort_asc : function(a,b) {
+    if(a && a.localeCompare)
+      return a.localeCompare(b);
+
     if(a > b)
       return 1;
     if(a < b)
@@ -32,6 +35,9 @@ twentyc.listutil.sortable = {
   },
 
   _sort_desc : function(a,b) {
+    if(b && b.localeCompare)
+      return b.localeCompare(a);
+
     if(a > b)
       return -1;
     if(a < b)
@@ -45,13 +51,13 @@ twentyc.jq.plugin(
   "sortable",
   {
     init : function(opt) {
-      
+
       this.each(function(idx) {
-        
+
         var list = $(this);
 
         list.find("[data-sort-target]").each(function(idx) {
-          
+
           var button = $(this);
 
           button.click(function(e) {
@@ -84,10 +90,10 @@ twentyc.jq.plugin(
     },
 
     sort : function(target, button, sortdir) {
-      
+
       if(sortdir == undefined) {
         sortdir = button.data("sort-dir");
-      
+
         if(!sortdir || sortdir == "desc")
           sortdir = "asc";
         else
@@ -103,7 +109,7 @@ twentyc.jq.plugin(
         var container = list.find(list.data("sort-container")).first()
 
         list.find("[data-sort-target]").removeClass("sort-desc").removeClass("sort-asc");
-  
+
         var rows = container.find(list.data("sort-row"));
 
         rows.sort(function(a,b) {
@@ -111,9 +117,9 @@ twentyc.jq.plugin(
           var bv = $(b).find(target).first().data("sort-value");
           return sorter(av, bv);
         });
-  
+
         rows.detach().appendTo(container);
-  
+
 
       });
 
