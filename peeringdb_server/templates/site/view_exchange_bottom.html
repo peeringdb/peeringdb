@@ -14,8 +14,11 @@
     <div class="col-xs-3">
       <div data-sort-target=".protocol" data-sort-initial="asc">{% trans "Protocol" %}</div>
     </div>
-    <div class="col-xs-9">
+    <div class="col-xs-7">
       <div data-sort-target=".prefix" class="ambiguous">{% trans "Prefix" %}</div>
+    </div>
+    <div class="col-xs-2">
+      <div data-sort-target=".in_dfz" class="ambiguous">{% trans "In DFZ" %}</div>
     </div>
   </div>
 
@@ -37,12 +40,20 @@
         {% endif %}
         {{ prefix.protocol }}
       </div>
-      <div class="col-xs-9"
+      <div class="col-xs-7"
            {% if permissions.can_write %}
            data-edit-type="string"
            {% endif %}
            data-edit-name="prefix"
            data-edit-required="yes">{{ prefix.prefix }}</div>
+
+      <div class="col-xs-2"
+        data-edit-type="bool"
+        data-edit-value="{{ prefix.in_dfz }}"
+        data-edit-template="check"
+        data-edit-name="in_dfz">
+          <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not prefix.in_dfz %}-off{% endif %}.png" />
+        </div>
     </div>
     {% endfor %}
   </div>

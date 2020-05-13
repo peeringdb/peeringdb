@@ -378,6 +378,7 @@ class TestJSON(unittest.TestCase):
             "ixlan_id": SHARED["ixlan_r_ok"].id,
             "protocol": "IPv4",
             "prefix": "10.%d.10.0/23" % (self.PREFIX_COUNT + 1),
+            "in_dfz": False
         }
         if "prefix" not in kwargs:
             self.PREFIX_COUNT += 1
@@ -1464,6 +1465,7 @@ class TestJSON(unittest.TestCase):
                 "perms": {"ixlan_id": SHARED["ixlan_r_ok"].id},
             },
         )
+
 
         self.assert_delete(
             self.db_org_admin,

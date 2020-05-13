@@ -1806,6 +1806,7 @@ class IXLanPrefixSerializer(ModelSerializer):
             "ixlan_id",
             "protocol",
             "prefix",
+            "in_dfz",
         ] + HandleRefSerializer.Meta.fields
 
         related_fields = ["ixlan"]
