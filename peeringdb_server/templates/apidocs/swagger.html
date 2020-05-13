@@ -10,10 +10,29 @@
     .parameters-col_description > input[disabled] {
       display: none;
     }
+
+    div.footer,
+    div.header {
+      color: #2c8fb2;
+      background-color: #fff;
+      font-family: Roboto, sans-serif;
+      font-weight: 400;
+      padding: 5px;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    div.footer a,
+    div.header a {
+      color: #2c8fb2;
+    }
+
     </style>
   </head>
   <body>
+    <div class="header">{% include "apidocs/resources.html" %}</div>
     <div id="swagger-ui"></div>
+    <div class="footer">{% include "apidocs/resources.html" %}</div>
     <script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
     <script>
     const ui = SwaggerUIBundle({
