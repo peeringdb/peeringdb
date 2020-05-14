@@ -1078,6 +1078,20 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_org_admin_002_POST_ix_looking_glass_url(self):
+        for scheme in ["http","https","ssh","telnet"]:
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "ix",
+                self.make_data_ix(prefix=self.get_prefix4(), looking_glass="{}://foo.bar".format(scheme)),
+                ignore=["prefix"],
+                test_failures={"invalid": {"looking_glass": "foo://www.bar.com"}}
+            )
+            InternetExchange.objects.get(id=r_data["id"]).delete(hard=True)
+
+
+    ##########################################################################
+
     def test_org_admin_002_POST_PUT_DELETE_fac(self):
         data = self.make_data_fac()
 
