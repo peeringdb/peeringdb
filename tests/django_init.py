@@ -12,6 +12,7 @@ settings.configure(
     INSTALLED_APPS=[
         "django.contrib.auth",
         "django.contrib.contenttypes",
+        "grappelli",
         "django.contrib.admin",
         "django.contrib.sessions",
         "django.contrib.sites",
@@ -129,7 +130,7 @@ settings.configure(
     ROOT_URLCONF="mainsite.urls",
     LOGGING={
         "version": 1,
-        "disable_existing_loggers": False,
+        "disable_existing_loggers": True,
         "handlers": {"stderr": {"level": "DEBUG", "class": "logging.StreamHandler",},},
         "loggers": {
             "": {"handlers": ["stderr"], "level": "DEBUG", "propagate": False},

@@ -15,6 +15,7 @@ from django.contrib.auth import forms
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.views.main import ChangeList
+from django.http import HttpResponseForbidden
 from django import forms as baseForms
 from django.utils import html
 from django.core.exceptions import ValidationError
@@ -72,9 +73,17 @@ delete_selected.short_description = "HARD DELETE - Proceed with caution"
 
 from django.utils.translation import ugettext_lazy as _
 
-# def _(x):
-#    return x
+# these app labels control permissions for the views
+# currently exposed in admin
 
+PERMISSION_APP_LABELS = [
+    "peeringdb_server",
+    "socialaccount",
+    "sites",
+    "auth",
+    "account",
+    "oauth2_provider"
+]
 
 class StatusFilter(admin.SimpleListFilter):
     """
@@ -131,7 +140,8 @@ def fk_handleref_filter(form, field, tag=None):
         except Exception:
             pass
 
-        form.fields[field].queryset = qset
+        if field in form.fields:
+            form.fields[field].queryset = qset
 
 
 ###############################################################################
@@ -828,7 +838,8 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
 
     def org_merge_tool_view(self, request):
         if not request.user.is_superuser:
-            return redirect("admin:login")
+            return HttpResponseForbidden()
+
         context = dict(
             self.admin_site.each_context(request),
             undo_url=django.urls.reverse(
@@ -861,7 +872,11 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
 
     def undo_merge(self, obj):
         return mark_safe(
-            '<a class="grp-button grp-delete-link" href="action/undo">{}</a>'.format(
+            '<a class="grp-button grp-delete-link" href="{}">{}</a>'.format(
+                django.urls.reverse(
+                    "admin:peeringdb_server_organizationmerge_actions",
+                    args=(obj.id,"undo")
+                ),
                 _("Undo merge")
             )
         )
@@ -874,6 +889,7 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
             each.undo()
 
     undo.short_description = _("Undo merge")
+    undo.allowed_permissions = ('change',)
 
     actions = [undo]
 
@@ -1099,12 +1115,14 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
                 each.approve()
 
     vq_approve.short_description = _("APPROVE selected items")
+    vq_approve.allowed_permissions = ('change',)
 
     def vq_deny(modeladmin, request, queryset):
         for each in queryset:
             each.deny()
 
     vq_deny.short_description = _("DENY and delete selected items")
+    vq_deny.allowed_permissions = ('change',)
 
     actions = [vq_approve, vq_deny]
 
@@ -1570,8 +1588,8 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         This view has the user select which command they want to run and
         with which arguments.
         """
-        if not request.user.is_superuser:
-            return redirect("admin:login")
+        if not self.has_add_permission(request):
+            return HttpResponseForbidden()
 
         context = dict(self.admin_site.each_context(request))
         title = "Commandline Tools"
@@ -1611,8 +1629,8 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         """
         This view has the user preview the result of running the command
         """
-        if not request.user.is_superuser:
-            return redirect("admin:login")
+        if not self.has_add_permission(request):
+            return HttpResponseForbidden()
 
         context = dict(self.admin_site.each_context(request))
         if request.method == "POST":
@@ -1622,7 +1640,7 @@ class CommandLineToolAdmin(admin.ModelAdmin):
                 action = "run"
                 tool.run(request.user, commit=False)
             else:
-                print((tool.form_instance.errors))
+                action = "run"
             form = tool.form_instance
         else:
             raise Exception(_("Only POST requests allowed."))
@@ -1651,8 +1669,9 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         This view has the user running the command and commiting changes
         to the database.
         """
-        if not request.user.is_superuser:
-            return redirect("admin:login")
+        if not self.has_add_permission(request):
+            return HttpResponseForbidden()
+
         context = dict(self.admin_site.each_context(request))
         if request.method == "POST":
             tool = acltools.get_tool_from_data(request.POST)
