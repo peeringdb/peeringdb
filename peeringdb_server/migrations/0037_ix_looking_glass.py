@@ -7,7 +7,7 @@ import django_peeringdb.models.abstract
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0035_ixlanprefix_in_dfz'),
+        ('peeringdb_server', '0036_ixlanprefix_in_dfz'),
     ]
 
     operations = [
