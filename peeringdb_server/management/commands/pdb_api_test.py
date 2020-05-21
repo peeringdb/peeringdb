@@ -317,7 +317,7 @@ class TestJSON(unittest.TestCase):
             "info_type": "NSP",
             "info_prefixes4": 11000,
             "info_prefixes6": 12000,
-            "info_traffic": "1 Tbps+",
+            "info_traffic": "1-5Tbps",
             "info_ratio": "Mostly Outbound",
             "info_scope": "Global",
             "info_unicast": True,

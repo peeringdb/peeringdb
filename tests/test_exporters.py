@@ -56,7 +56,7 @@ class AdvancedSearchExportTest(ClientCase):
                 status="ok",
                 aka="AKA {}".format(i),
                 policy_general="Open",
-                info_traffic="0-20 Mbps",
+                info_traffic="0-20Mbps",
                 asn=i,
                 org=cls.org[i - 1],
             )
