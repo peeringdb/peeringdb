@@ -1,3 +1,4 @@
+import os
 from django.conf import settings
 
 # lazy init for translations
@@ -12,6 +13,11 @@ settings.configure(
     INSTALLED_APPS=[
         "django.contrib.auth",
         "django.contrib.contenttypes",
+        "django_otp",
+        "django_otp.plugins.otp_static",
+        "django_otp.plugins.otp_totp",
+        "django_otp.plugins.otp_email",
+        "two_factor",
         "grappelli",
         "django.contrib.admin",
         "django.contrib.sessions",
@@ -41,6 +47,9 @@ settings.configure(
         {
             "BACKEND": "django.template.backends.django.DjangoTemplates",
             "APP_DIRS": True,
+            "DIRS": (
+                os.path.join(os.path.dirname(__file__), "..", "peeringdb_server", "templates"),
+            ),
             "OPTIONS": {
                 "context_processors": [
                     "django.contrib.auth.context_processors.auth",
@@ -52,7 +61,6 @@ settings.configure(
                     "django.template.context_processors.tz",
                     "django.contrib.messages.context_processors.messages",
                 ],
-                # "loaders" : TEMPLATE_LOADERS
             },
         }
     ],
@@ -143,6 +151,8 @@ settings.configure(
         "delete": "delete object",
         "create": "create object",
     },
+    LOGIN_URL = "/account/login",
+    LOGIN_REDIRECT_URL = "/",
     OAUTH_ENABLED=False,
     RECAPTCHA_PUBLIC_KEY="",
     EMAIL_SUBJECT_PREFIX="[test]",

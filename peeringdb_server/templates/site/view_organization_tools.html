@@ -592,7 +592,7 @@
         <div class="row item editable" data-edit-id="{{ user.id }}" data-edit-label="{{ user.full_name }}">
           <div class="col-xs-4 col-sm-5 col-md-4">
             <div>{{ user.full_name }}</div>
-            <div>{{ user.username }}</div>
+            <div>{{ user.username }} {% if user.totpdevice_set.exists %}<span class="badge-2fa">2FA</span>{% endif %}</div>
           </div>
           <div class="col-xs-4 col-sm-5 col-md-4">
             <div>{{ user.email }}</div>

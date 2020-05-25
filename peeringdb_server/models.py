@@ -352,7 +352,7 @@ class UserOrgAffiliationRequest(models.Model):
                 self.org.admin_usergroup.user_set.add(self.user)
 
             # we set user to verified
-            if not self.user.is_verified:
+            if not self.user.is_verified_user:
                 self.user.set_verified()
 
             # since it was approved, we dont need to keep the
@@ -2904,7 +2904,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return email.verified
 
     @property
-    def is_verified(self):
+    def is_verified_user(self):
         """
         Returns whether the user is verified (eg has been validated
         by pdb staff)

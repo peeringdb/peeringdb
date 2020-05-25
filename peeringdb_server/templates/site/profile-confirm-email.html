@@ -22,7 +22,7 @@
         </form>
       </div>
       </p>
-      {% elif not request.user.is_verified %}
+      {% elif not request.user.is_verified_user %}
       <p>
       {% trans "You won't have full access until we or the organization you are affiliated with have reviewed your account. Thank you for your patience." %}
       </p>

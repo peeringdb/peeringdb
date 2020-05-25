@@ -1,5 +1,5 @@
 from django.conf.urls import include, url
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, RedirectView
 from django.conf import settings
 
 import peeringdb_server.rest
@@ -38,7 +38,6 @@ from django.views.i18n import JavaScriptCatalog
 
 from peeringdb_server.views import (
     view_index,
-    view_login,
     view_registration,
     view_password_reset,
     view_password_change,
@@ -65,7 +64,6 @@ from peeringdb_server.views import (
     view_username_retrieve_complete,
     view_maintenance,
     resend_confirmation_mail,
-    request_login,
     request_logout,
     request_api_search,
     request_search,
@@ -79,9 +77,8 @@ urlpatterns = [
     url(r"^api_search$", request_api_search),
     url(r"^search$", request_search),
     url(r"^advanced_search", view_advanced_search),
-    url(r"^auth$", request_login),
     url(r"^logout$", request_logout),
-    url(r"^login$", view_login),
+    url(r"^login$", RedirectView.as_view(pattern_name='two_factor:login', permanent=True)),
     url(r"^register$", view_registration),
     url(r"^reset-password$", view_password_reset),
     url(r"^change-password$", view_password_change),

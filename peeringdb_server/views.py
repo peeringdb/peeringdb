@@ -22,6 +22,8 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.urls import resolve, reverse, Resolver404
 from django.template import loader
+from django.utils import translation
+from django.utils.translation import ugettext_lazy as _
 from django.utils.crypto import constant_time_compare
 from django_namespace_perms.util import (
     get_perms,
@@ -38,6 +40,9 @@ import requests
 
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.oauth2_backends import get_oauthlib_core
+
+from django_otp.plugins.otp_email.models import EmailDevice
+import two_factor.views
 
 from peeringdb_server import settings
 from peeringdb_server.search import search
@@ -85,10 +90,6 @@ from ratelimit.decorators import ratelimit, is_ratelimited
 
 RATELIMITS = dj_settings.RATELIMITS
 
-from django.utils.translation import ugettext_lazy as _
-
-# lazy init for translations
-# _ = lambda s: s
 
 BASE_ENV = {
     "RECAPTCHA_PUBLIC_KEY": dj_settings.RECAPTCHA_PUBLIC_KEY,
@@ -333,15 +334,13 @@ def cancel_affiliation_request(request, uoar_id):
 
 @csrf_protect
 @ensure_csrf_cookie
+@login_required
 @ratelimit(key="ip", method="POST", rate=RATELIMITS["view_affiliate_to_org_POST"])
 def view_affiliate_to_org(request):
     """
     Allows the user to request affiliation with an organization through
     an ASN they provide
     """
-
-    if not request.user.is_authenticated:
-        return view_login(request)
 
     if request.method == "POST":
 
@@ -413,6 +412,7 @@ def view_affiliate_to_org(request):
 
 @csrf_protect
 @ensure_csrf_cookie
+@login_required
 @ratelimit(key="ip", rate=RATELIMITS["resend_confirmation_mail"])
 def resend_confirmation_mail(request):
     was_limited = getattr(request, "limited", False)
@@ -426,9 +426,6 @@ def resend_confirmation_mail(request):
             ],
         )
 
-    if not request.user.is_authenticated:
-        return view_login(request)
-
     request.user.send_email_confirmation(request=request)
     return view_index(request, errors=[_("We have resent your confirmation email")])
 
@@ -441,10 +438,8 @@ def view_profile(request):
 
 @csrf_protect
 @ensure_csrf_cookie
+@login_required
 def view_set_user_locale(request):
-
-    if not request.user.is_authenticated:
-        return view_login(request)
 
     if request.method in ["GET", "HEAD"]:
         return view_verify(request)
@@ -457,8 +452,6 @@ def view_set_user_locale(request):
         loc = form.cleaned_data.get("locale")
         request.user.set_locale(loc)
 
-        from django.utils import translation
-
         translation.activate(loc)
         request.session[translation.LANGUAGE_SESSION_KEY] = loc
 
@@ -467,8 +460,6 @@ def view_set_user_locale(request):
 
 @protected_resource(scopes=["profile"])
 def view_profile_v1(request):
-    #    if not request.user.is_authenticated:
-    #        return view_login(request)
     oauth = get_oauthlib_core()
     scope_email, _request = oauth.verify_request(request, scopes=["email"])
     scope_networks, _request = oauth.verify_request(request, scopes=["networks"])
@@ -483,7 +474,7 @@ def view_profile_v1(request):
         given_name=request.user.first_name,
         family_name=request.user.last_name,
         name=request.user.full_name,
-        verified_user=user.is_verified,
+        verified_user=user.is_verified_user,
     )
 
     # only add email fields if email scope is present
@@ -507,11 +498,9 @@ def view_profile_v1(request):
 
 @csrf_protect
 @ensure_csrf_cookie
+@login_required
 @ratelimit(key="ip", rate=RATELIMITS["view_verify_POST"], method="POST")
 def view_verify(request):
-
-    if not request.user.is_authenticated:
-        return view_login(request)
 
     if request.method in ["GET", "HEAD"]:
         template = loader.get_template("site/verify.html")
@@ -568,10 +557,8 @@ def view_verify(request):
 
 @csrf_protect
 @ensure_csrf_cookie
+@login_required
 def view_password_change(request):
-
-    if not request.user.is_authenticated:
-        return view_login(request)
 
     if request.method in ["GET", "HEAD"]:
         return view_verify(request)
@@ -824,27 +811,6 @@ def view_registration(request):
         form.delete_captcha()
 
         return JsonResponse({"status": "ok"})
-
-
-@ensure_csrf_cookie
-def view_login(request, errors=None):
-    """
-    login page view
-    """
-    if not errors:
-        errors = []
-
-    if request.user.is_authenticated:
-        return view_index(request, errors=[_("Already logged in")])
-
-    template = loader.get_template("site/login.html")
-
-    redir = request.GET.get("next", request.POST.get("next"))
-
-    env = BASE_ENV.copy()
-    env.update({"errors": errors, "next": redir})
-    update_env_beta_sync_dt(env)
-    return HttpResponse(template.render(env, request))
 
 
 @ensure_csrf_cookie
@@ -1678,7 +1644,7 @@ def view_network(request, id):
     # Add POC data to dataset
     data["poc_set"] = network_d.get("poc_set")
 
-    if not request.user.is_authenticated or not request.user.is_verified:
+    if not request.user.is_authenticated or not request.user.is_verified_user:
         cnt = network.poc_set.filter(status="ok", visible="Users").count()
         data["poc_hidden"] = cnt > 0
     else:
@@ -1865,52 +1831,198 @@ def request_search(request):
 
 def request_logout(request):
     logout(request)
-    return view_index(request)
+    return redirect("/")
 
 
-@csrf_protect
-@ensure_csrf_cookie
-@ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
-def request_login(request):
 
-    if request.user.is_authenticated:
-        return view_index(request)
+# We are using django-otp's EmailDevice model
+# to handle email as a recovery option for one
+# time passwords.
+#
+# Unlike all the other devices supported by
+# django-two-factor-auth it's token field is
+# not an integer field. So the token to be verified
+# needs to be turned into a string
+#
+# So we monkey patch it's verify_token function
+# to do just that
 
-    if request.method in ["GET", "HEAD"]:
-        return view_login(request)
+EmailDevice._verify_token = EmailDevice.verify_token
+def verify_token(self, token):
+    return self._verify_token(str(token))
+EmailDevice.verify_token = verify_token
 
-    was_limited = getattr(request, "limited", False)
-    if was_limited:
-        return view_login(
-            request, errors=[_("Please wait a bit before trying to login again.")]
-        )
 
-    username = request.POST["username"]
-    password = request.POST["password"]
-    redir = request.POST.get("next") or "/"
-    if redir == "/logout":
-        redir = "/"
+class LoginView(two_factor.views.LoginView):
 
-    try:
-        resolve(redir)
-    except Resolver404:
-        if not is_oauth_authorize(redir):
+    """
+    We extend the `LoginView` class provided
+    by `two_factor` because we need to add some
+    pdb specific functionality and checks
+    """
+
+    def get(self, *args, **kwargs):
+
+        """
+        If a user is already authenticated, don't show the
+        login process, instead redirect to /
+        """
+
+        if self.request.user.is_authenticated:
+            return redirect("/")
+
+        return super().get(*args, **kwargs)
+
+    @ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
+    def post(self, *args, **kwargs):
+
+        """
+        Posts to the `auth` step of the authentication
+        process need to be rate limited
+        """
+
+        was_limited = getattr(self.request, "limited", False)
+        if self.get_step_index() == 0 and  was_limited:
+            self.rate_limit_message = _("Please wait a bit before trying to login again.")
+            return self.render_goto_step("auth")
+
+        return super().post(*args, **kwargs)
+
+    def get_context_data(self, form, **kwargs):
+
+        """
+        If post request was rate limited the rate limit message
+        needs to be communicated via the template context
+        """
+
+        context = super().get_context_data(form, **kwargs)
+        context.update(rate_limit_message=getattr(self, "rate_limit_message", None))
+
+        if "other_devices" in context:
+            context["other_devices"] += [
+                self.get_email_device()
+            ]
+
+        return context
+
+    def get_email_device(self):
+
+        """
+        Returns an EmailDevice instance for the requesting user
+        which can be used for one time passwords.
+        """
+
+        user = self.get_user()
+
+        if user.email_confirmed:
+
+            # only users with confirmed emails should have
+            # the option to request otp to their email address
+
+            try:
+
+                # check if user already has an EmailDevice instance
+
+                device = EmailDevice.objects.get(user=user)
+
+                if not device.confirmed:
+
+                    # sync confirmed status
+
+                    device.confirmed = True
+                    device.save()
+            except EmailDevice.DoesNotExist:
+
+                # create EmaiLDevice object for user if it does
+                # not exist
+
+                device = EmailDevice.objects.create(user=user, confirmed=True)
+
+            # django-two-factor-auth needs this property set to something
+            device.method = "email"
+
+            return device
+        else:
+
+            # if user does NOT have a confirmed email address but
+            # somehow has an EmailDevice object, delete it.
+
+            try:
+                device = EmailDevice.objects.get(user=user)
+                device.delete()
+            except EmailDevice.DoesNotExist:
+                pass
+
+        return None
+
+    def get_device(self, step=None):
+
+        """
+        We override this so we can enable EmailDevice as a
+        challenge device for one time passwords
+        """
+
+        if not self.device_cache:
+            challenge_device_id = self.request.POST.get('challenge_device', None)
+            if challenge_device_id:
+                device = self.get_email_device()
+                if device.persistent_id == challenge_device_id:
+                    self.device_cache = device
+                    return self.device_cache
+
+        return super().get_device(step=step)
+
+    def get_success_url(self):
+        return self.get_redirect_url()
+
+    def get_redirect_url(self):
+
+        """
+        Specifies which redirect urls are valid
+        """
+
+        redir = self.request.POST.get("next") or "/"
+
+        # if the redirect url is to logout that makes little
+        # sense as the user would get logged out immediately
+        # after logging in, substitute with a redirect to `/` instead
+
+        if redir == "/logout":
             redir = "/"
 
-    user = authenticate(username=username, password=password)
-    if user is not None:
-        if user.is_active:
-            login(request, user)
+        # check if the redirect url can be resolved to a view
+        # if yes, it's a valid redirect
 
-            from django.utils import translation
+        try:
+            resolve(redir)
+        except Resolver404:
 
-            user_language = user.get_locale()
-            translation.activate(user_language)
-            request.session[translation.LANGUAGE_SESSION_KEY] = user_language
+            # url could not be resolved to a view, so it's likely
+            # invalid or pointing somewhere externally, the only
+            # external urls we want to allow are the redirect urls
+            # of oauth applications set up in peeringdb
 
-            return HttpResponseRedirect(redir)
-        return view_login(request, errors=[_("Account disabled.")])
-    return view_login(request, errors=[_("Invalid username/password.")])
+            if not is_oauth_authorize(redir):
+                redir = "/"
+
+        return redir
+
+    def done(self, form_list, **kwargs):
+
+        """
+        User authenticated succesfully, set language options
+        """
+
+        response = super().done(form_list, **kwargs)
+
+        # TODO: do this via signal instead?
+
+        user_language = self.get_user().get_locale()
+        translation.activate(user_language)
+        self.request.session[translation.LANGUAGE_SESSION_KEY] = user_language
+
+        return redirect(self.get_success_url())
+
 
 
 @require_http_methods(["POST"])

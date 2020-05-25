@@ -3,6 +3,10 @@ from django.conf.urls.static import static
 from django.conf import settings
 from django.views.generic.base import RedirectView
 
+from peeringdb_server.views import LoginView
+
+from two_factor.urls import urlpatterns as tf_urls
+
 # auto admin
 from django.contrib import admin
 
@@ -12,8 +16,11 @@ import peeringdb_server.urls
 
 import allauth.account.views
 
-from peeringdb_server.views import view_login
-
+tf_urls[0][0] = url(
+    regex=r'^account/login/$',
+    view=LoginView.as_view(),
+    name='login',
+)
 
 urlpatterns = [
     url(r"^grappelli/", include("grappelli.urls")),
@@ -33,9 +40,8 @@ urlpatterns = [
             url="/cp/peeringdb_server/organization/org-merge-tool", permanent=False
         ),
     ),
-    # we want to use default pdb login for admin area, since that is rate limited.
-    url(r"^cp/login/", view_login),
     url(r"^cp/", admin.site.urls),
+    url(r'', include(tf_urls)),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

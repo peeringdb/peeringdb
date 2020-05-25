@@ -62,7 +62,7 @@ $(window).bind("load", function() {
         {% if request.user.is_authenticated %}
           <div class="user">
             <a href="/profile">{{ request.user.username }}</a>
-          {% if not request.user.is_verified %}
+          {% if not request.user.is_verified_user %}
           <div class="status">({% if not request.user.email %}<span class="attention">!</span>{%endif %}
             {% if request.user.email_confirmed %}
             <a href="/profile">{% trans "pending" %}</a>
@@ -80,7 +80,7 @@ $(window).bind("load", function() {
               {% for org in user.organizations %}
               <li><a href="/org/{{ org.id }}">{{ org.name }}</a></li>
               {% endfor %}
-              {% if request.user.is_verified %}
+              {% if request.user.is_verified_user %}
               <li><a href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
               {% endif %}
               <li><a href="/profile">{% trans "Profile" %}</a></li>
@@ -88,7 +88,7 @@ $(window).bind("load", function() {
             </ul>
           </div>
         {% else %}
-          <a href="/register">{% trans "Register" %}</a> {% trans "or" %} <a href="/login?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
+          <a href="/register">{% trans "Register" %}</a> {% trans "or" %} <a href="{% url "two_factor:login" %}?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
         {% endif %}
         </div>
       </div>
