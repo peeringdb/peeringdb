@@ -572,6 +572,7 @@ LANGUAGES = [
     ("it", _("Italian")),
     ("ja-jp", _("Japanese")),
     #    ("ko", _("Korean")),
+    ("oc", _("Occitan")),
     ("pt", _("Portuguese")),
     ("ro-ro", _("Romanian")),
     ("ru-ru", _("Russian")),
