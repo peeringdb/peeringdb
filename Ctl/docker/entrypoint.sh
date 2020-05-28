@@ -37,6 +37,10 @@ case "$1" in
     echo dropping to shell
     exec /bin/sh
     ;;
+  "makemessages" | "compilemessages" )
+    cd /mnt
+    exec django-admin $@
+    ;;
   * )
     exec manage $@
     ;;
