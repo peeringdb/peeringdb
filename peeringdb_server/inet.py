@@ -17,6 +17,7 @@ IRR_SOURCE = (
     "AOLTW",
     "APNIC",
     "ARIN",
+    "ARIN-NONAUTH",
     "BELL",
     "BBOI",
     "CANARIE",
