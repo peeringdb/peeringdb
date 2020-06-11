@@ -187,6 +187,9 @@ def test_validate_prefix_overlap():
     ("RIPE:AS-FOO", False),
     ("RIPE::RS15562:RS-FOO", False),
     ("RIPE::AS123456:RS-FOO:AS-FOO", False),
+    ("!\"*([])?.=+/\\", False),
+    ("RIPE::!\"*([])?.=+/\\", False),
+    ("!\"*([])?.=+/\\@RIPE", False),
 
     # > DATA_QUALITY_MAX_IRR_DEPTH
     ("ripe::as-foo:as123:as345:as678", False),
