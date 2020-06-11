@@ -973,6 +973,12 @@ def view_organization(request, id):
                 "value": data.get("country", dismiss),
             },
             {
+                "readonly": True,
+                "name": "updated",
+                "label": _("Last Updated"),
+                "value": data.get("updated", dismiss),
+            },
+            {
                 "name": "notes",
                 "label": _("Notes"),
                 "help_text": _("Markdown enabled"),
@@ -1117,6 +1123,12 @@ def view_facility(request, id):
                 "value": data.get("npanxx", dismiss),
             },
             {
+                "readonly": True,
+                "name": "updated",
+                "label": _("Last Updated"),
+                "value": data.get("updated", dismiss),
+            },
+            {
                 "name": "notes",
                 "label": _("Notes"),
                 "help_text": _("Markdown enabled"),
@@ -1147,7 +1159,6 @@ def view_facility(request, id):
                 "label": _("Sales Phone"),
                 "value": data.get("sales_phone", dismiss),
             },
-
         ],
     }
 
@@ -1260,6 +1271,12 @@ def view_exchange(request, id):
                 "label": _("Looking Glass URL"),
                 "notify_incomplete": False,
                 "value": data.get("looking_glass", dismiss),
+            },
+            {
+                "readonly": True,
+                "name": "updated",
+                "label": _("Last Updated"),
+                "value": data.get("updated", dismiss),
             },
 
             {
