@@ -38,10 +38,18 @@ $(window).bind("load", function() {
   {% if request.user.is_superuser %}
   PeeringDB.confirmation_prompts.approve = false;
   {% endif %}
+
 });
 </script>
 </head>
+
+{% get_current_language_bidi as RTL_LANGUAGE %}
+{% if RTL_LANGUAGE %}
+<body dir="rtl">
+{% else %}
 <body>
+{% endif %}
+
 <div class="header" id="header">
   <div class="container">
     <div class="row">

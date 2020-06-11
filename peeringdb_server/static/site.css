@@ -1446,3 +1446,31 @@ div.captcha .fallback {
   color: #fff;
   font-weight: bold;
 }
+
+/**
+ * right to left direction
+ */
+
+body[dir="rtl"] div.row > div {
+  text-align: right;
+  float: right;
+}
+
+body[dir="rtl"] div.view_fields {
+  padding-right: 15px;
+}
+
+body[dir="rtl"] div.popin,
+body[dir="rtl"] p,
+body[dir="rtl"] h1,
+body[dir="rtl"] h2,
+body[dir="rtl"] h3,
+body[dir="rtl"] h4,
+body[dir="rtl"] h5,
+body[dir="rtl"] li,
+body[dir="rtl"] li > a {
+  text-align: right;
+}
+
+
+
