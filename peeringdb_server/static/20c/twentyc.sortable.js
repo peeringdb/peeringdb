@@ -23,6 +23,10 @@ twentyc.listutil.sortable = {
     return this["_sort_"+dir];
   },
 
+  natural_sorter : function(dir) {
+    return this["_natural_sort_"+dir];
+  },
+
   _sort_asc : function(a,b) {
     if(a && a.localeCompare)
       return a.localeCompare(b);
@@ -43,6 +47,14 @@ twentyc.listutil.sortable = {
     if(a < b)
       return 1;
     return 0;
+  },
+
+  _natural_sort_asc : function(a,b) {
+    return a.localeCompare(b, undefined, {numeric:true, sensitivity: 'base'})
+  },
+
+  _natural_sort_desc : function(a,b) {
+    return b.localeCompare(a, undefined, {numeric:true, sensitivity: 'base'})
   }
 
 }
@@ -82,7 +94,12 @@ twentyc.jq.plugin(
         list.find("[data-sort-target]").each(function(idx) {
           var button = $(this);
           if(button.data("sort-initial")) {
-            list.sortable("sort", button.data("sort-target"), button, button.data("sort-initial"));
+            list.sortable(
+              "sort",
+              button.data("sort-target"),
+              button,
+              button.data("sort-initial"),
+            );
           }
         });
       });
@@ -100,7 +117,13 @@ twentyc.jq.plugin(
           sortdir = "desc";
       }
 
-      var sorter = twentyc.listutil.sortable.sorter(sortdir);
+      var sort_type = button.data("sort-type")
+
+      if(sort_type == "natural") {
+        var sorter = twentyc.listutil.sortable.natural_sorter(sortdir)
+      } else {
+        var sorter = twentyc.listutil.sortable.sorter(sortdir);
+      }
 
       button.data("sort-dir", sortdir);
 

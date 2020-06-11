@@ -24,8 +24,8 @@
       <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
     </div>
     <div class="col-xs-5 col-sm-5 col-md-4">
-      <div>{% trans "IPv4" %}</div>
-      <div>{% trans "IPv6" %}</div>
+      <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
+      <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
     <div class="col-xs-3 col-sm-3 col-md-2">
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
@@ -86,17 +86,21 @@
 
       </div>
       <div class="col-xs-5 col-sm-5 col-md-4">
-        <div {% if permissions.can_write %}
+        <div class="ip4"
+             {% if permissions.can_write %}
              data-edit-type="string"
              {% endif %}
              data-filter-value="{{ x.ipaddr4|none_blank }}"
+             data-sort-value="{{ x.ipaddr4|none_blank }} {{ x.ipaddr6|none_blank }}"
              data-edit-name="ipaddr4">
              {{ x.ipaddr4|none_blank }}
         </div>
-        <div {% if permissions.can_write %}
+        <div class="ip6"
+             {% if permissions.can_write %}
              data-edit-type="string"
              {% endif %}
              data-filter-value="{{ x.ipaddr6|none_blank }}"
+             data-sort-value="{{ x.ipaddr6|none_blank }} {{ x.ipaddr4|none_blank }}"
              data-edit-name="ipaddr6">
              {{ x.ipaddr6|none_blank }}
          </div>

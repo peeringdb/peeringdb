@@ -18,8 +18,8 @@
       <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
     </div>
     <div class="col-xs-4 col-sm-4 col-md-4">
-      <div>{% trans "IPv4" %}</div>
-      <div>{% trans "IPv6" %}</div>
+      <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
+      <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
     <div class="col-xs-3 col-sm-3 col-md-3">
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
@@ -53,8 +53,8 @@
         <div class="asn" data-sort-value="{{ x.asn }}" data-filter-value="{{ x.asn }}">{{ x.asn }}</div>
       </div>
       <div class="col-xs-4 col-sm-4 col-md-4">
-        <div class="ip4" data-filter-value="{{x.ipaddr4}}">{{ x.ipaddr4 }}</div>
-        <div class="ip6" data-filter-value="{{x.ipaddr6}}">{{ x.ipaddr6 }}</div>
+        <div class="ip4" data-sort-value="{{ x.ipaddr4|none_blank }} {{ x.ipaddr6|none_blank }}" data-filter-value="{{x.ipaddr4}}">{{ x.ipaddr4|none_blank }}</div>
+        <div class="ip6" data-sort-value="{{ x.ipaddr6|none_blank }} {{ x.ipaddr4|none_blank }}" data-filter-value="{{x.ipaddr6}}">{{ x.ipaddr6|none_blank }}</div>
       </div>
       <div class="col-xs-3 col-sm-3 col-md-3">
         <div class="speed" data-sort-value="{{ x.speed }}" data-filter-value="{{ x.speed|pretty_speed}}">{{ x.speed|pretty_speed }}</div>
