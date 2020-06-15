@@ -493,7 +493,7 @@ class OrgAdminTests(TestCase):
 
     def test_uoar_approve(self):
         """
-        Test approving of a user-org-affiliation-request 
+        Test approving of a user-org-affiliation-request
         org_admin_views.uoar_approve
         """
 
@@ -567,7 +567,7 @@ class OrgAdminTests(TestCase):
 
     def test_uoar_deny(self):
         """
-        Test denying of a user-org-affiliation-request 
+        Test denying of a user-org-affiliation-request
         org_admin_views.uoar_deny
         """
 
@@ -628,3 +628,31 @@ class OrgAdminTests(TestCase):
         self.assertEqual(json.loads(resp.content), {})
 
         uoar_b.delete()
+
+    def test_uoar_cancel_on_delete(self):
+        """
+        Test that user affiliation requests get canceled if the
+        organization is deleted
+        """
+
+        org = models.Organization.objects.create(name="TestCoD", status="ok")
+
+        uoar = models.UserOrgAffiliationRequest.objects.create(
+            user=self.user_c, org=org, status="pending"
+        )
+
+        assert uoar.status == "pending"
+        assert uoar.id
+
+        org.delete()
+
+        with pytest.raises(models.UserOrgAffiliationRequest.DoesNotExist):
+            uoar.refresh_from_db()
+
+        org.refresh_from_db()
+        assert org.status == "deleted"
+
+
+
+
+

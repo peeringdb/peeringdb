@@ -174,6 +174,51 @@ class URLField(pdb_models.URLField):
 
     pass
 
+class ProtectedAction(ValueError):
+    pass
+
+class ProtectedMixin:
+
+    """
+    Mixin that implements checks for changing
+    / deleting a model instance that will block
+    such actions under certain circumstances
+    """
+
+    @property
+    def deletable(self):
+        """
+        Should return whether the object is currently
+        in a state where it can safely be soft-deleted
+
+        If not not deletable, should specify reason in
+        `_not_deletable_reason` property.
+
+        If deletable should, set `_not_deletable_reason`
+        property to None
+        """
+        return True
+
+    @property
+    def not_deletable_reason(self):
+        return getattr(self, "_not_deletable_reason", None)
+
+    def delete(self, hard=False, force=False):
+        if not self.deletable and not force:
+            raise ProtectedAction(self.not_deletable_reason)
+
+        self.delete_cleanup()
+        return super().delete(hard=hard)
+
+    def delete_cleanup(self):
+        """
+        Runs cleanup before delete
+
+        Override this in the class that uses this mixin (if needed)
+        """
+        return
+
+
 
 class GeocodeBaseMixin(models.Model):
     """
@@ -511,7 +556,7 @@ class DeskProTicket(models.Model):
 
 
 @reversion.register
-class Organization(pdb_models.OrganizationBase):
+class Organization(ProtectedMixin, pdb_models.OrganizationBase):
     """
     Describes a peeringdb organization
     """
@@ -575,6 +620,43 @@ class Organization(pdb_models.OrganizationBase):
         return "{}{}".format(
             settings.BASE_URL, django.urls.reverse("org-view", args=(self.id,))
         )
+
+    @property
+    def deletable(self):
+        """
+        Returns whether or not the organization is currently
+        in a state where it can be marked as deleted.
+
+        This will be False for organization's of which ANY
+        of the following is True:
+
+        - has a network under it with status=ok
+        - has a facility under it with status=ok
+        - has an exchange under it with status=ok
+        """
+
+        is_empty = (
+            self.ix_set_active.count() == 0 and
+            self.fac_set_active.count() == 0 and
+            self.net_set_active.count() == 0
+        )
+
+        if not is_empty:
+            self._not_deletable_reason = _(
+                "Organization currently has one or more active " \
+                "objects under it."
+            )
+            return False
+        elif self.sponsorship and self.sponsorship.active:
+            self._not_deletable_reason = _(
+                "Organization is currently an active sponsor. "\
+                "Please contact PeeringDB support to help facilitate "\
+                "the removal of this organization."
+            )
+            return False
+        else:
+            self._not_deletable_reason = None
+            return True
 
     @property
     def owned(self):
@@ -752,6 +834,9 @@ class Organization(pdb_models.OrganizationBase):
             org = cls.objects.create(name=name, status="ok")
         return org, True
 
+    def delete_cleanup(self, hard=False):
+        for affiliation in self.affiliation_requests.filter(status="pending"):
+            affiliation.cancel()
 
 def default_time_s():
     """
@@ -806,6 +891,11 @@ class Sponsorship(models.Model):
         for sponsorship in qset:
             for org in sponsorship.orgs.all():
                 yield org, sponsorship
+
+    @property
+    def active(self):
+        now = datetime.datetime.now().replace(tzinfo=UTC())
+        return (self.start_date <= now and self.end_date >= now)
 
     @property
     def label(self):

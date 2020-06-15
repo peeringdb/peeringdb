@@ -37,6 +37,12 @@
         {% trans "Permissions" %}
       </a>
     </li>
+    <li role="presentation" class="danger">
+      <a href="#manage_delete" aria-controls="manage_delete" role="tab" data-toggle="tab">
+        {% trans "Delete Organization" %}
+      </a>
+    </li>
+
     {% endif %}
   </ul>
 
@@ -737,6 +743,37 @@
       </div>
 
     </div>
+
+    <div role="tabpanel" class="tab-pane" id="manage_delete">
+      <div class="alert alert-danger">
+      {% if not instance.deletable %}
+      <p>
+      {% blocktrans trimmed with name=instance.name %}
+      {{ name }} cannot be deleted.
+      {% endblocktrans %}
+      </p>
+      <p>
+      {{ instance.not_deletable_reason }}
+      </p>
+      {% else %}
+      <p>
+      {% blocktrans trimmed %}
+      Remove this organization from PeeringDB.
+      {% endblocktrans %}
+      </p>
+      <p>
+        <div class="editable always auto-toggled create-form"
+          data-edit-debug="yes"
+          data-edit-always-submit="yes"
+          data-edit-target="api:org:delete"
+          id="frm-delete-org"
+          data-edit-id="{{ instance.id }}">
+          <a class="btn btn-danger" data-confirm="{% trans "Delete organization?" %}" data-edit-action="submit">{% blocktrans trimmed with name=instance.name %}Delete {{ name }}{% endblocktrans %}</a>
+        </div>
+      </p>
+      {% endif %}
+      </div>
+    </div>
     <!-- END CAN MANAGE -->
     {% endif %}
   </div>
@@ -755,6 +792,11 @@ $(document).ready(function() {
   if(window.location.hash == "#users") {
     $('a[href="#users"]').tab('show');
   }
+
+  $('#frm-delete-org').on("action-success", (e) => {
+    alert(gettext("Organization deleted."));
+    window.document.location.href= "/";
+  });
 });
 
 </script>

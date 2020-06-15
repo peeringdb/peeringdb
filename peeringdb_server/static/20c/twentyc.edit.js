@@ -1269,7 +1269,6 @@ $.fn.editable = function(action, arg, dbg) {
       // mark as initialized so there is no duplicate init
       me.data("edit-initialized", true);
 
-
       // CONTAINER
 
       if(hasTarget) {
