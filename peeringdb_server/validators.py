@@ -97,6 +97,8 @@ def validate_address_space(prefix):
 
 
 def validate_info_prefixes4(value):
+    if not value:
+        value = 0
     if value > settings.DATA_QUALITY_MAX_PREFIX_V4_LIMIT:
         raise ValidationError(
             _("Maximum value allowed {}").format(
@@ -105,9 +107,12 @@ def validate_info_prefixes4(value):
         )
     if value < 0:
         raise ValidationError(_("Negative value not allowed"))
+    return value
 
 
 def validate_info_prefixes6(value):
+    if not value:
+        value = 0
     if value > settings.DATA_QUALITY_MAX_PREFIX_V6_LIMIT:
         raise ValidationError(
             _("Maximum value allowed {}").format(
@@ -117,6 +122,7 @@ def validate_info_prefixes6(value):
 
     if value < 0:
         raise ValidationError(_("Negative value not allowed"))
+    return value
 
 
 def validate_prefix_overlap(prefix):
