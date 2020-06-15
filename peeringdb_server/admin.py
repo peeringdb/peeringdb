@@ -475,48 +475,12 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
     }
 
 
-class NetworkIXLanValidationMixin(object):
-    """
-    For issue #70
-
-    Makes sure netixlans cannot be saved if they have a duplicate ip address
-
-    This should ideally be done in mysql, however we need to clear out the other
-    duplicates first, so we validate on the django side for now
-    """
-
-    def clean_ipaddr4(self):
-        ipaddr4 = self.cleaned_data["ipaddr4"]
-        instance = self.instance
-        if (
-            NetworkIXLan.objects.filter(ipaddr4=ipaddr4, status="ok")
-            .exclude(id=getattr(instance, "id", 0))
-            .exists()
-        ):
-            raise ValidationError(_("Ipaddress already exists elsewhere"))
-        return ipaddr4
-
-    def clean_ipaddr6(self):
-        ipaddr6 = self.cleaned_data["ipaddr6"]
-        instance = self.instance
-        if (
-            NetworkIXLan.objects.filter(ipaddr6=ipaddr6, status="ok")
-            .exclude(id=getattr(instance, "id", 0))
-            .exists()
-        ):
-            raise ValidationError(_("Ipaddress already exists elsewhere"))
-        return ipaddr6
-
-
-class NetworkIXLanForm(NetworkIXLanValidationMixin, StatusForm):
-    pass
-
 
 class NetworkInternetExchangeInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkIXLan
     extra = 0
     raw_id_fields = ("ixlan", "network")
-    form = NetworkIXLanForm
+    form = StatusForm
 
 
 class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
@@ -1462,7 +1426,7 @@ class DuplicateIPAdmin(SoftDeleteAdmin):
 
     list_display = ("id_ro", "ip", "asn", "ix", "net", "updated_ro", "status_ro")
     readonly_fields = ("id_ro", "ip", "net", "ix", "asn", "updated_ro", "status_ro")
-    form = NetworkIXLanForm
+    form = StatusForm
     list_per_page = 1000
     fieldsets = (
         (
@@ -1476,7 +1440,7 @@ class DuplicateIPAdmin(SoftDeleteAdmin):
                     "ipaddr6",
                     "ix",
                     "net",
-                    "updated",
+                    "updated_ro",
                 ),
             },
         ),

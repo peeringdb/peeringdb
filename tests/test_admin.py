@@ -318,6 +318,87 @@ class AdminTests(TestCase):
         self.assertEqual(str(self.entities["netixlan"][2].ipaddr4), "207.41.111.39")
 
 
+    def test_netixlan_inline(self):
+
+        """
+        test that inline netixlan admin forms can handle blank
+        values in ipaddress fields (#644)
+
+        also tests that duplicate ipaddr values are blocked
+        """
+
+        ixlan = self.entities["ixlan"][0]
+        netixlan = ixlan.netixlan_set.all()[0]
+        netixlan_b = ixlan.netixlan_set.all()[1]
+
+        url = reverse(
+            'admin:{}_{}_change'.format(
+               ixlan._meta.app_label, ixlan._meta.object_name,
+            ).lower(), args=(ixlan.id,)
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        def post_data(ipaddr4, ipaddr6):
+
+            """
+            helper function that builds data to send to
+            the ixlan django admin form with inline
+            netixlan data
+            """
+
+            return {
+                # required ixlan form data
+
+                "arp_sponge": "00:0a:95:9d:68:16",
+                "ix": ixlan.ix.id,
+                "status": ixlan.status,
+
+                # required management form data
+
+                "ixpfx_set-TOTAL_FORMS": 0,
+                "ixpfx_set-INITIAL_FORMS": 0,
+                "ixpfx_set-MIN_NUM_FORMS": 0,
+                "ixpfx_set-MAX_NUM_FORMS": 1000,
+                "netixlan_set-TOTAL_FORMS": 1,
+                "netixlan_set-INITIAL_FORMS": 1,
+                "netixlan_set-MIN_NUM_FORMS": 0,
+                "netixlan_set-MAX_NUM_FORMS": 1000,
+
+                # inline netixlan data
+
+                "netixlan_set-0-ipaddr4": ipaddr4 or "",
+                "netixlan_set-0-ipaddr6": ipaddr6 or "",
+                "netixlan_set-0-speed": netixlan.speed,
+                "netixlan_set-0-network": netixlan.network.id,
+                "netixlan_set-0-ixlan": ixlan.id,
+                "netixlan_set-0-id": netixlan.id,
+                "netixlan_set-0-status": netixlan.status,
+                "netixlan_set-0-asn": netixlan.network.asn,
+            }
+
+
+        # test #1: post request to ixlan change operation passing
+        # blank values to ipaddress fields
+
+        response = client.post(url, post_data("", ""))
+        netixlan.refresh_from_db()
+        assert netixlan.ipaddr6 is None
+        assert netixlan.ipaddr4 is None
+
+        # test #2: block dupe ipv4
+
+        response = client.post(url, post_data(
+            netixlan_b.ipaddr4, netixlan_b.ipaddr6
+        ))
+        assert netixlan.ipaddr6 is None
+        assert netixlan.ipaddr4 is None
+        assert "Ip address already exists elsewhere" in response.content.decode("utf-8")
+
+
+
+
     def test_all_views_readonly(self):
         self._test_all_views(
             self.readonly_admin,
