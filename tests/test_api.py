@@ -107,6 +107,9 @@ class DummyRestClient(RestClient):
         if params:
             data.update(**params)
         res = fnc(url, data, format="json")
+
+        assert res.charset == "utf-8"
+
         return DummyResponse(res.status_code, res.content)
 
 
