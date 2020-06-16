@@ -425,7 +425,7 @@ class IXLanInline(SanitizedAdmin, admin.StackedInline):
     extra = 0
     form = StatusForm
     exclude = ["arp_sponge"]
-    readonly_fields = ["id", "ixf_import_attempt_info", "prefixes"]
+    readonly_fields = ["ixf_import_attempt_info", "prefixes"]
 
     def has_add_permission(self, request):
         return False
