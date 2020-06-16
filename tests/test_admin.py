@@ -1,4 +1,5 @@
 import os
+import json
 import pytest
 
 from django.test import Client, TestCase, RequestFactory
@@ -591,4 +592,68 @@ class AdminTests(TestCase):
 
 
 
+    def test_grappelli_autocomplete(self):
+        """
+        test that grappelli autocomplete works correctly
+        as we are overriding it with our own handler that
+        respects soft-deleted objects (#664)
+        """
 
+        client = Client()
+        client.force_login(self.admin_user)
+
+        # these are the handle models we currently have auto-complete
+        # fields setup for in admin
+
+        tags = [
+            "fac",
+            "org",
+            "ix",
+            "net",
+            "ixlan",
+        ]
+
+        # we also do auto complete on user relationships
+
+        check_models = [models.User]
+
+        for reftag in tags:
+            check_models.append(models.REFTAG_MAP[reftag])
+
+        for model in check_models:
+            instance = model.objects.first()
+
+
+            # make sure we have at least once instance
+            # available
+
+            assert instance
+
+            # determine partial search term (min. 3 chars)
+
+            if model == models.User:
+                term = instance.username
+            elif hasattr(instance, "name"):
+                term = instance.name
+            elif model == models.IXLan:
+                term = instance.ix.name
+            else:
+                raise ValueError(f"could not get search term for {model}")
+
+            term = term[:3]
+            app_label = model._meta.app_label
+            model_name = model._meta.object_name
+
+            # grappelli autocomplete request
+
+            response = client.get(
+                "/grappelli/lookup/autocomplete/?" \
+                f"term={term}&app_label={app_label}&" \
+                f"model_name={model_name}&query_string=" \
+                "_to_field=id&to_field=id"
+            )
+
+            assert response.status_code == 200
+
+            data = json.loads(response.content.decode("utf8"))
+            assert len(data)

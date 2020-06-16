@@ -14,6 +14,8 @@ admin.autodiscover()
 
 import peeringdb_server.urls
 
+from peeringdb_server.autocomplete_views import GrappelliHandlerefAutocomplete
+
 import allauth.account.views
 
 tf_urls[0][0] = url(
@@ -23,7 +25,11 @@ tf_urls[0][0] = url(
 )
 
 urlpatterns = [
+    # override grappelli autocomplete handler
+    url(r'^grappelli/lookup/autocomplete/$', GrappelliHandlerefAutocomplete.as_view(), name="grp_autocomplete_lookup"),
+    # grappelli admin interface improvements
     url(r"^grappelli/", include("grappelli.urls")),
+
     # FIXME: adapt to DAL3 changes
     # url(r'^autocomplete/',  include('dal.urls')),
     # FIXME: can remove this if we upgrade to allauth > 0.24.2, upgrade
