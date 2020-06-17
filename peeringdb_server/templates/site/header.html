@@ -5,6 +5,31 @@
 <head>
 <title>PeeringDB</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+
+{% with img_square="pdb-logo-square-coloured.png" img_rect="pdb-logo-rect-coloured.png" %}
+<meta property="og:title" content="PeeringDB" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="The Interconnection Database" />
+<meta property="og:url" content="https://{{ request.get_host }}{{ request.get_full_path }}" />
+
+<!-- open graph -->
+
+<meta property="og:image" content="https://{{ request.get_host }}{{ STATIC_URL }}{{ img_rect }}" />
+<meta property="og:image:secure_url" content="https://{{ request.get_host }}{{ STATIC_URL }}{{ img_rect }}" />
+<meta property="og:image:alt" content="PeeringDB" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+
+<!-- twitter -->
+
+<meta property="twitter:card" content="summary" />
+<meta property="twitter:site" content="@PeeringDB" />
+<meta property="twitter:title" content="PeeringDB" />
+<meta property="twitter:description" content="The Interconnection Database" />
+<meta property="twitter:url" content="https://{{ request.get_host }}{{ request.get_full_path }}" />
+<meta property="twitter:image" content="https://{{ request.get_host }}{{ STATIC_URL }}{{ img_square }}" />
+{% endwith %}
+
 <link rel="shortcut icon" type="image/png" href="{{STATIC_URL}}/favicon.ico"/>
 {% block css %}
 <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" />
