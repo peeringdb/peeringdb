@@ -812,28 +812,87 @@ class ModelSerializer(PermissionedModelSerializer):
                     return slz_fld.queryset.get(id=data[_fld])
 
     def run_validation(self, data=serializers.empty):
+
+        """
+        Custom validation handling
+
+        Will run the vanilla django-rest-framework validation but
+        wrap it with logic to handle unique constraint errors to
+        restore soft-deleted objects that are blocking a save on basis
+        of a unique constraint violation
+        """
+
         try:
             return super(ModelSerializer, self).run_validation(data=data)
         except RestValidationError as exc:
+
             filters = {}
             for k, v in list(exc.detail.items()):
+                v = v[0]
+
+                # if code is not set on the error detail it's
+                # useless to us
+
+                if not hasattr(v, "code"):
+                    continue
 
                 # During `ix` creation `prefix` is passed to create
                 # an `ixpfx` object alongside the ix, it's not part of ix
                 # so ignore it (#718)
+
                 if k == "prefix" and self.Meta.model == InternetExchange:
                     continue
 
-                v = v[0]
-                if k == "non_field_errors" and v.find("unique set") > -1:
-                    m = re.match("The fields (.+) must make a unique set.", v)
-                    if m:
-                        for fld in [i.strip() for i in m.group(1).split(",")]:
-                            filters[fld] = data.get(fld, self._unique_filter(fld, data))
-                elif v.find("must be unique") > -1:
+                # when handling unique constraint database errors
+                # we want to check if the offending object is
+                # currently soft-deleted and can gracefully be
+                # restored.
+
+                if v.code == "unique" and k == "non_field_errors":
+
+                    # unique-set errors - database blocked save
+                    # because of a unique multi key constraint
+
+                    # find out which fields caused the issues
+                    # this is done by checking all serializer fields
+                    # against the error message.
+                    #
+                    # If a field is contained in the error message
+                    # it can be safely  assumed to be part of the
+                    # unique set that caused the collision
+
+                    columns = "|".join(self.Meta.fields)
+                    m = re.findall(r"\b({})\b".format(columns), v)
+
+                    # build django queryset filters we can use
+                    # to retrieve the blocking object
+
+                    for fld in m:
+                        _value = data.get(fld, self._unique_filter(fld, data))
+                        if _value is not None:
+                            filters[fld] = _value
+
+                elif v.code == "unique":
+
+                    # unique single field error
+
+                    # build django queryset filter we can use to
+                    # retrieve the blocking object
+
                     filters[k] = data.get(k, self._unique_filter(k, data))
 
             request = self._context.get("request")
+
+            # handle graceful restore of soft-deleted object
+            # that is causing the unique constraint error
+            #
+            # if `filters` is set it means that we were able
+            # to identify a soft-deleted object that we want
+            # to restore
+            #
+            # At this point only `POST` (create) requests
+            # should ever attempt a restoration like this
+
             if filters and request and request.user and request.method == "POST":
 
                 if "fac_id" in filters:
@@ -844,18 +903,21 @@ class ModelSerializer(PermissionedModelSerializer):
                     del filters["net_id"]
 
                 try:
+                    filters.update(status="deleted")
                     self.instance = self.Meta.model.objects.get(**filters)
                 except self.Meta.model.DoesNotExist:
                     raise exc
                 except FieldError as exc:
                     raise exc
-                if (
-                    has_perms(request.user, self.instance, "update")
-                    and self.instance.status == "deleted"
-                ):
+
+                if has_perms(request.user, self.instance, "update"):
                     rv = super(ModelSerializer, self).run_validation(data=data)
                     self._undelete = True
                     return rv
+                else:
+                    raise RestValidationError({"non_field_errors": [_(
+                        "Permission denied to restore deleted object/relationship"
+                    )]})
                 raise
             else:
                 raise
