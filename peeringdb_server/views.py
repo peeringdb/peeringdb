@@ -1229,7 +1229,6 @@ def view_exchange(request, id):
                 "label": _("Country"),
                 "value": data.get("country", dismiss),
             },
-
             {
                 "name": "region_continent",
                 "type": "list",
@@ -1266,19 +1265,11 @@ def view_exchange(request, id):
                 ],
             },
             {
-                "name": "looking_glass",
-                "type": "url",
-                "label": _("Looking Glass URL"),
-                "notify_incomplete": False,
-                "value": data.get("looking_glass", dismiss),
-            },
-            {
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),
                 "value": data.get("updated", dismiss),
             },
-
             {
                 "name": "notes",
                 "label": _("Notes"),

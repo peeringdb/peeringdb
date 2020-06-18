@@ -818,13 +818,6 @@ class ModelSerializer(PermissionedModelSerializer):
             filters = {}
             for k, v in list(exc.detail.items()):
                 v = v[0]
-
-                # During `ix` creation `prefix` is passed to create
-                # an `ixpfx` object alongside the ix, it's not part of ix
-                # so ignore it (#718)
-                if k == "prefix" and self.Meta.model == InternetExchange:
-                    continue
-
                 if k == "non_field_errors" and v.find("unique set") > -1:
                     m = re.match("The fields (.+) must make a unique set.", v)
                     if m:
@@ -1984,11 +1977,6 @@ class InternetExchangeSerializer(ModelSerializer):
 
     website = serializers.URLField(required=True)
     tech_email = serializers.EmailField(required=True)
-    looking_glass = serializers.CharField(
-        required=False, allow_blank=True,
-        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])]
-    )
-
 
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
     policy_phone = serializers.CharField(required=False, allow_blank=True, default="")
@@ -2036,7 +2024,6 @@ class InternetExchangeSerializer(ModelSerializer):
             "proto_ipv6",
             "website",
             "url_stats",
-            "looking_glass",
             "tech_email",
             "tech_phone",
             "policy_email",
