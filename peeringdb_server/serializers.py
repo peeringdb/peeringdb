@@ -817,6 +817,13 @@ class ModelSerializer(PermissionedModelSerializer):
         except RestValidationError as exc:
             filters = {}
             for k, v in list(exc.detail.items()):
+
+                # During `ix` creation `prefix` is passed to create
+                # an `ixpfx` object alongside the ix, it's not part of ix
+                # so ignore it (#718)
+                if k == "prefix" and self.Meta.model == InternetExchange:
+                    continue
+
                 v = v[0]
                 if k == "non_field_errors" and v.find("unique set") > -1:
                     m = re.match("The fields (.+) must make a unique set.", v)
