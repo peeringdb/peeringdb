@@ -1295,6 +1295,20 @@ class NetworkContactSerializer(ModelSerializer):
     def validate_phone(self, value):
         return validate_phonenumber(value)
 
+    def to_representation(self, data):
+        # When a network contact is marked as deleted we
+        # want to return blank values for any sensitive
+        # fields (#569)
+
+        representation = super().to_representation(data)
+
+        if isinstance(representation,dict) and representation.get("status") == "deleted":
+            for field in ["name", "phone", "email", "url"]:
+                representation[field] = ""
+
+        return representation
+
+
 
 
 class NetworkIXLanSerializer(ModelSerializer):

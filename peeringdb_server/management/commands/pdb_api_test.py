@@ -1388,6 +1388,15 @@ class TestJSON(unittest.TestCase):
             test_failure=SHARED["poc_r_ok_users"].id,
         )
 
+        # soft-deleted pocs should return blank
+        # values for sensitive fields (#569)
+
+        poc = self.db_org_admin.all("poc", id=SHARED["poc_id"], since=1)[0]
+        assert poc["name"] == ""
+        assert poc["phone"] == ""
+        assert poc["email"] == ""
+        assert poc["url"] == ""
+
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_ixlan(self):

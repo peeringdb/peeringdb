@@ -182,6 +182,11 @@ RATELIMITS = {
 # maximum number of affiliation requests a user can have pending
 MAX_USER_AFFILIATION_REQUESTS = 5
 
+# Determines age of network contact objects that get hard deleted
+# during `pdb_delete_poc` execution. (days)
+set_option("POC_DELETION_PERIOD", 30)
+
+
 # Django config
 
 ALLOWED_HOSTS = ["*"]

@@ -134,6 +134,7 @@ settings.configure(
     DEBUG_EMAIL=True,
     TIME_ZONE="UTC",
     USE_TZ=True,
+    POC_DELETION_PERIOD=30,
     AUTHENTICATION_BACKENDS=("django_namespace_perms.auth.backends.NSPBackend",),
     ROOT_URLCONF="mainsite.urls",
     LOGGING={
