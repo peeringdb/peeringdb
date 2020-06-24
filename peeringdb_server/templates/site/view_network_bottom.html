@@ -19,7 +19,7 @@
        <div class="note info marg-bot-15">
        {% if not request.user.is_authenticated %}
        {% trans "Some of this network's contacts are hidden because they are only visible to authenticated users and you are currently not logged in." %}
-       {% elif not request.user.is_verified %}
+       {% elif not request.user.is_verified_user %}
        {% trans "Some of this network's contacts are hidden because your user account is not affiliated with any organization." %}
        {% endif %}
        </div>
@@ -196,7 +196,7 @@
      <div class="note info marg-bot-15">
        {% if not request.user.is_authenticated %}
        {% trans "Some of this network's contacts are hidden because they are only visible to authenticated users and you are currently not logged in." %}
-       {% elif not request.user.is_verified %}
+       {% elif not request.user.is_verified_user %}
        {% trans "Some of this network's contacts are hidden because your user account is not affiliated with any organization." %}
        {% endif %}
      </div>

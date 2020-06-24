@@ -5,6 +5,31 @@
 <head>
 <title>PeeringDB</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+
+{% with img_square="pdb-logo-square-coloured.png" img_rect="pdb-logo-rect-coloured.png" %}
+<meta property="og:title" content="PeeringDB" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="The Interconnection Database" />
+<meta property="og:url" content="https://{{ request.get_host }}{{ request.get_full_path }}" />
+
+<!-- open graph -->
+
+<meta property="og:image" content="https://{{ request.get_host }}{{ STATIC_URL }}{{ img_rect }}" />
+<meta property="og:image:secure_url" content="https://{{ request.get_host }}{{ STATIC_URL }}{{ img_rect }}" />
+<meta property="og:image:alt" content="PeeringDB" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+
+<!-- twitter -->
+
+<meta property="twitter:card" content="summary" />
+<meta property="twitter:site" content="@PeeringDB" />
+<meta property="twitter:title" content="PeeringDB" />
+<meta property="twitter:description" content="The Interconnection Database" />
+<meta property="twitter:url" content="https://{{ request.get_host }}{{ request.get_full_path }}" />
+<meta property="twitter:image" content="https://{{ request.get_host }}{{ STATIC_URL }}{{ img_square }}" />
+{% endwith %}
+
 <link rel="shortcut icon" type="image/png" href="{{STATIC_URL}}/favicon.ico"/>
 {% block css %}
 <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" />
@@ -38,10 +63,18 @@ $(window).bind("load", function() {
   {% if request.user.is_superuser %}
   PeeringDB.confirmation_prompts.approve = false;
   {% endif %}
+
 });
 </script>
 </head>
+
+{% get_current_language_bidi as RTL_LANGUAGE %}
+{% if RTL_LANGUAGE %}
+<body dir="rtl">
+{% else %}
 <body>
+{% endif %}
+
 <div class="header" id="header">
   <div class="container">
     <div class="row">
@@ -62,7 +95,7 @@ $(window).bind("load", function() {
         {% if request.user.is_authenticated %}
           <div class="user">
             <a href="/profile">{{ request.user.username }}</a>
-          {% if not request.user.is_verified %}
+          {% if not request.user.is_verified_user %}
           <div class="status">({% if not request.user.email %}<span class="attention">!</span>{%endif %}
             {% if request.user.email_confirmed %}
             <a href="/profile">{% trans "pending" %}</a>
@@ -80,7 +113,7 @@ $(window).bind("load", function() {
               {% for org in user.organizations %}
               <li><a href="/org/{{ org.id }}">{{ org.name }}</a></li>
               {% endfor %}
-              {% if request.user.is_verified %}
+              {% if request.user.is_verified_user %}
               <li><a href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
               {% endif %}
               <li><a href="/profile">{% trans "Profile" %}</a></li>
@@ -88,7 +121,7 @@ $(window).bind("load", function() {
             </ul>
           </div>
         {% else %}
-          <a href="/register">{% trans "Register" %}</a> {% trans "or" %} <a href="/login?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
+          <a href="/register">{% trans "Register" %}</a> {% trans "or" %} <a href="{% url "two_factor:login" %}?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
         {% endif %}
         </div>
       </div>

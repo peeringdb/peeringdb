@@ -198,6 +198,9 @@ class TestJSON(unittest.TestCase):
         self.db_user = self.rest_client(URL, verbose=VERBOSE, **USER)
         self.db_org_member = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_MEMBER)
         self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_ADMIN)
+
+        self.user_org_admin = User.objects.get(username="api_test_org_admin")
+
         for p, specs in list(USER_CRUD.items()):
             setattr(
                 self, "db_crud_%s" % p, self.rest_client(URL, verbose=VERBOSE, **specs)
@@ -378,6 +381,7 @@ class TestJSON(unittest.TestCase):
             "ixlan_id": SHARED["ixlan_r_ok"].id,
             "protocol": "IPv4",
             "prefix": "10.%d.10.0/23" % (self.PREFIX_COUNT + 1),
+            "in_dfz": False
         }
         if "prefix" not in kwargs:
             self.PREFIX_COUNT += 1
@@ -1384,6 +1388,15 @@ class TestJSON(unittest.TestCase):
             test_failure=SHARED["poc_r_ok_users"].id,
         )
 
+        # soft-deleted pocs should return blank
+        # values for sensitive fields (#569)
+
+        poc = self.db_org_admin.all("poc", id=SHARED["poc_id"], since=1)[0]
+        assert poc["name"] == ""
+        assert poc["phone"] == ""
+        assert poc["email"] == ""
+        assert poc["url"] == ""
+
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_ixlan(self):
@@ -1464,6 +1477,7 @@ class TestJSON(unittest.TestCase):
                 "perms": {"ixlan_id": SHARED["ixlan_r_ok"].id},
             },
         )
+
 
         self.assert_delete(
             self.db_org_admin,
@@ -1633,11 +1647,24 @@ class TestJSON(unittest.TestCase):
 
     def test_zz_org_admin_004_DELETE_org(self):
 
+        org = Organization.objects.create(name="Deletable org", status="ok")
+        org.admin_usergroup.user_set.add(self.user_org_admin)
+
         self.assert_delete(
             self.db_org_admin,
             "org",
-            test_success=SHARED["org_rw_ok"].id,
+            # can delete the org we just made
+            test_success=org.id,
+
+            # cant delete the org we dont have write perms to
             test_failure=SHARED["org_r_ok"].id,
+        )
+        self.assert_delete(
+            self.db_org_admin,
+            "org",
+            # cant delete the org that we have write perms to
+            # but is not empty
+            test_failure=SHARED["org_rw_ok"].id,
         )
 
     ##########################################################################

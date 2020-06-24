@@ -1,10 +1,18 @@
 import os
+import json
 import pytest
 
 from django.test import Client, TestCase, RequestFactory
+from django.contrib.auth.models import Group
+from django.urls import reverse
+from django.core.management import call_command
+
+import django_namespace_perms as nsp
 
 import peeringdb_server.models as models
 import peeringdb_server.admin as admin
+
+
 
 
 class AdminTests(TestCase):
@@ -66,6 +74,17 @@ class AdminTests(TestCase):
         cls.admin_user.save()
         cls.admin_user.set_password("admin")
         cls.admin_user.save()
+
+        # user and group for read-only access to /cp
+        cls.readonly_admin = models.User.objects.create_user(
+            "ro_admin", "ro_admin@localhost", password="admin", is_staff=True
+        )
+        readonly_group = Group.objects.create(name="readonly")
+        for app_label in admin.PERMISSION_APP_LABELS:
+            nsp.models.GroupPermission.objects.create(
+                group=readonly_group, namespace=app_label, permissions=0x01
+            )
+        readonly_group.user_set.add(cls.readonly_admin)
 
         # set up some ixlans
         cls.entities["ixlan"] = [ix.ixlan for ix in cls.entities["ix"]]
@@ -248,8 +267,8 @@ class AdminTests(TestCase):
         response = c.post(url, data, follow=True)
         cont = response.content.decode("utf-8")
         assert response.status_code == 200
-        assert '<label class="required" for="id_old_prefix">Old prefix:</label>' in cont
-        assert '<label class="required" for="id_exchange">Exchange:</label>' in cont
+        assert 'Old prefix' in cont
+        assert 'Exchange' in cont
 
         # test post to renumber lans command form (preview)
         data = {
@@ -298,3 +317,343 @@ class AdminTests(TestCase):
         self.assertEqual(str(self.entities["netixlan"][0].ipaddr4), "207.41.111.37")
         self.assertEqual(str(self.entities["netixlan"][1].ipaddr4), "207.41.111.38")
         self.assertEqual(str(self.entities["netixlan"][2].ipaddr4), "207.41.111.39")
+
+
+    def test_netixlan_inline(self):
+
+        """
+        test that inline netixlan admin forms can handle blank
+        values in ipaddress fields (#644)
+
+        also tests that duplicate ipaddr values are blocked
+        """
+
+        ixlan = self.entities["ixlan"][0]
+        netixlan = ixlan.netixlan_set.all()[0]
+        netixlan_b = ixlan.netixlan_set.all()[1]
+
+        url = reverse(
+            'admin:{}_{}_change'.format(
+               ixlan._meta.app_label, ixlan._meta.object_name,
+            ).lower(), args=(ixlan.id,)
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        def post_data(ipaddr4, ipaddr6):
+
+            """
+            helper function that builds data to send to
+            the ixlan django admin form with inline
+            netixlan data
+            """
+
+            return {
+                # required ixlan form data
+
+                "arp_sponge": "00:0a:95:9d:68:16",
+                "ix": ixlan.ix.id,
+                "status": ixlan.status,
+
+                # required management form data
+
+                "ixpfx_set-TOTAL_FORMS": 0,
+                "ixpfx_set-INITIAL_FORMS": 0,
+                "ixpfx_set-MIN_NUM_FORMS": 0,
+                "ixpfx_set-MAX_NUM_FORMS": 1000,
+                "netixlan_set-TOTAL_FORMS": 1,
+                "netixlan_set-INITIAL_FORMS": 1,
+                "netixlan_set-MIN_NUM_FORMS": 0,
+                "netixlan_set-MAX_NUM_FORMS": 1000,
+
+                # inline netixlan data
+
+                "netixlan_set-0-ipaddr4": ipaddr4 or "",
+                "netixlan_set-0-ipaddr6": ipaddr6 or "",
+                "netixlan_set-0-speed": netixlan.speed,
+                "netixlan_set-0-network": netixlan.network.id,
+                "netixlan_set-0-ixlan": ixlan.id,
+                "netixlan_set-0-id": netixlan.id,
+                "netixlan_set-0-status": netixlan.status,
+                "netixlan_set-0-asn": netixlan.network.asn,
+            }
+
+
+        # test #1: post request to ixlan change operation passing
+        # blank values to ipaddress fields
+
+        response = client.post(url, post_data("", ""))
+        netixlan.refresh_from_db()
+        assert netixlan.ipaddr6 is None
+        assert netixlan.ipaddr4 is None
+
+        # test #2: block dupe ipv4
+
+        response = client.post(url, post_data(
+            netixlan_b.ipaddr4, netixlan_b.ipaddr6
+        ))
+        assert netixlan.ipaddr6 is None
+        assert netixlan.ipaddr4 is None
+        assert "Ip address already exists elsewhere" in response.content.decode("utf-8")
+
+
+
+
+    def test_all_views_readonly(self):
+        self._test_all_views(
+            self.readonly_admin,
+            status_add=403,
+            status_get_orgmerge=403,
+            status_get_orgmerge_undo=403,
+            status_get_vq_approve=403,
+            status_get_vq_deny=403,
+        )
+
+    def test_all_views_superuser(self):
+        self._test_all_views(self.admin_user)
+
+
+    def _test_all_views(self, user, **kwargs):
+        call_command("pdb_generate_test_data", limit=2, commit=True)
+
+        # create a verification queue item we can check
+        org = models.Organization.objects.all().first()
+        net = models.Network.objects.create(name="Unverified network", org=org, asn=33333, status="pending")
+        vqitem = models.VerificationQueueItem.objects.all().first()
+        assert vqitem
+
+
+
+        # create sponsorhship we can check
+        sponsorship = models.Sponsorship.objects.create()
+        models.SponsorshipOrganization.objects.create(
+            sponsorship=sponsorship, org=org
+        )
+
+        # create partnership we can check
+        partnership = models.Partnership.objects.create(
+            org=org
+        )
+
+        # create ixlan ix-f import log we can check
+        importlog = models.IXLanIXFMemberImportLog.objects.create(
+            ixlan = models.IXLan.objects.all().first()
+        )
+
+        # create user to organization affiliation request
+        affil = models.UserOrgAffiliationRequest.objects.create(
+            org = org,
+            user = self.readonly_admin
+        )
+
+        # create command line tool instance
+        cmdtool = models.CommandLineTool.objects.create(
+            user = self.readonly_admin,
+            arguments = "{}",
+            tool = "pdb_renumber_lans"
+        )
+
+        # create organization merge
+        orgmerge = models.OrganizationMerge.objects.create(
+            from_org=org,
+            to_org=models.Organization.objects.all()[1]
+        )
+
+
+        # set up testing for all pdb models that have
+        # admin views registered
+        ops = ["changelist", "change", "add"]
+        classes = [
+            models.Organization,
+            models.Facility,
+            models.InternetExchange,
+            models.InternetExchangeFacility,
+            models.Network,
+            models.NetworkFacility,
+            models.NetworkIXLan,
+            models.NetworkContact,
+            models.IXLan,
+            models.IXLanPrefix,
+            models.User,
+            models.UserOrgAffiliationRequest,
+            models.Sponsorship,
+            models.Partnership,
+            models.IXLanIXFMemberImportLog,
+            models.VerificationQueueItem,
+            models.CommandLineTool,
+            admin.UserPermission,
+            admin.DuplicateIPNetworkIXLan,
+            models.OrganizationMerge,
+        ]
+
+        ignore_add = [
+            admin.UserPermission,
+            admin.DuplicateIPNetworkIXLan,
+            models.OrganizationMerge
+        ]
+
+        ignore_change = [
+            admin.DuplicateIPNetworkIXLan,
+        ]
+
+        # any other urls we want to test
+        extra_urls = [
+            (
+                "/cp/peeringdb_server/organization/org-merge-tool/",
+                "get",
+                kwargs.get("status_get_orgmerge", 200)
+            ),
+            (
+                reverse(
+                    "admin:peeringdb_server_commandlinetool_prepare",
+                ),
+                "get",
+                kwargs.get("status_add", 200)
+            ),
+            (
+                reverse(
+                    "admin:peeringdb_server_organizationmerge_actions",
+                    args=(orgmerge.id, "undo")
+                ),
+                "get",
+                kwargs.get("status_get_orgmerge_undo", 200)
+            ),
+            (
+                reverse(
+                    "admin:peeringdb_server_verificationqueueitem_actions",
+                    args=(vqitem.id, "vq_approve")
+                ),
+                "get",
+                kwargs.get("status_get_vq_approve", 200)
+            ),
+            (
+                reverse(
+                    "admin:peeringdb_server_verificationqueueitem_actions",
+                    args=(vqitem.id, "vq_deny")
+                ),
+                "get",
+                kwargs.get("status_get_vq_deny", 200)
+            )
+
+        ]
+
+        client = Client()
+        client.force_login(user)
+
+        assert user.is_staff
+
+        search_str = '<a href="/cp/logout/"';
+
+        for op in ops:
+            for cls in classes:
+                args = None
+
+                if op == "change":
+
+                    # change op required object id
+
+                    args = (cls.objects.all().first().id,)
+
+                    if cls in ignore_change:
+                        continue
+
+                elif op == "add":
+
+                    if cls in ignore_add:
+                        continue
+
+                url = reverse(
+                    'admin:{}_{}_{}'.format(
+                        cls._meta.app_label, cls._meta.object_name, op
+                    ).lower(), args=args
+                )
+                response = client.get(url)
+                cont = response.content.decode("utf-8")
+                assert response.status_code == kwargs.get("status_{}".format(op), 200)
+                if response.status_code == 200:
+                    assert search_str in cont
+
+        for url, method, status in extra_urls:
+            fn = getattr(client, method)
+            response = fn(url, follow=True)
+            assert response.status_code == status
+            if response.status_code == 200:
+                assert search_str in cont
+
+
+        response = client.post(
+            reverse("admin:peeringdb_server_commandlinetool_preview"),
+            data={"tool":"pdb_fac_merge"}
+        )
+        assert response.status_code == kwargs.get("status_add", 200)
+        if response.status_code == 200:
+            assert search_str in cont
+
+
+
+    def test_grappelli_autocomplete(self):
+        """
+        test that grappelli autocomplete works correctly
+        as we are overriding it with our own handler that
+        respects soft-deleted objects (#664)
+        """
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        # these are the handle models we currently have auto-complete
+        # fields setup for in admin
+
+        tags = [
+            "fac",
+            "org",
+            "ix",
+            "net",
+            "ixlan",
+        ]
+
+        # we also do auto complete on user relationships
+
+        check_models = [models.User]
+
+        for reftag in tags:
+            check_models.append(models.REFTAG_MAP[reftag])
+
+        for model in check_models:
+            instance = model.objects.first()
+
+
+            # make sure we have at least once instance
+            # available
+
+            assert instance
+
+            # determine partial search term (min. 3 chars)
+
+            if model == models.User:
+                term = instance.username
+            elif hasattr(instance, "name"):
+                term = instance.name
+            elif model == models.IXLan:
+                term = instance.ix.name
+            else:
+                raise ValueError(f"could not get search term for {model}")
+
+            term = term[:3]
+            app_label = model._meta.app_label
+            model_name = model._meta.object_name
+
+            # grappelli autocomplete request
+
+            response = client.get(
+                "/grappelli/lookup/autocomplete/?" \
+                f"term={term}&app_label={app_label}&" \
+                f"model_name={model_name}&query_string=" \
+                "_to_field=id&to_field=id"
+            )
+
+            assert response.status_code == 200
+
+            data = json.loads(response.content.decode("utf8"))
+            assert len(data)

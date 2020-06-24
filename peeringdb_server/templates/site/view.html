@@ -43,7 +43,7 @@
         <div>
 
         {% if instance.org and not instance.org.owned and request.user.is_authenticated %}
-          {% if request.user.is_verified or request.user.email_confirmed %}
+          {% if request.user.is_verified_user or request.user.email_confirmed %}
           <a class="btn btn-default" href="/request-ownership?id={{ instance.org.id }}">Request Ownership</a>
           {% endif %}
         {% endif %}

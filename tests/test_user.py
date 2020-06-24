@@ -89,14 +89,14 @@ class UserTests(TestCase):
         self.assertEqual(self.user_b.is_org_admin(self.org_a), False)
         self.assertEqual(self.user_b.is_org_member(self.org_a), False)
 
-    def test_is_verified(self):
+    def test_is_verified_user(self):
         """
-        Test User.is_verified
+        Test User.is_verified_user
         """
 
-        self.assertEqual(self.user_a.is_verified, True)
-        self.assertEqual(self.user_b.is_verified, False)
-        self.assertEqual(self.user_c.is_verified, False)
+        self.assertEqual(self.user_a.is_verified_user, True)
+        self.assertEqual(self.user_b.is_verified_user, False)
+        self.assertEqual(self.user_c.is_verified_user, False)
 
     def test_set_verified(self):
         """
@@ -107,7 +107,7 @@ class UserTests(TestCase):
         self.user_c.refresh_from_db()
 
         self.assertEqual(self.user_c.status, "ok")
-        self.assertEqual(self.user_c.is_verified, True)
+        self.assertEqual(self.user_c.is_verified_user, True)
 
         self.assertEqual(self.user_c.groups.filter(name="guest").exists(), False)
         self.assertEqual(self.user_c.groups.filter(name="user").exists(), True)
@@ -121,7 +121,7 @@ class UserTests(TestCase):
         self.user_c.refresh_from_db()
 
         self.assertEqual(self.user_c.status, "pending")
-        self.assertEqual(self.user_c.is_verified, False)
+        self.assertEqual(self.user_c.is_verified_user, False)
 
         self.assertEqual(self.user_c.groups.filter(name="guest").exists(), True)
         self.assertEqual(self.user_c.groups.filter(name="user").exists(), False)
@@ -229,14 +229,25 @@ class UserTests(TestCase):
         self.assertEqual(resp.status_code, 400)
 
     def test_login_redirect(self):
-        data = {"next": "/org/1", "username": "user_d", "password": "user_d"}
+        data = {
+            "next": "/org/1",
+            "auth-username": "user_d",
+            "auth-password": "user_d",
+            "login_view-current_step": "auth"
+        }
         C = Client()
-        resp = C.post("/auth", data, follow=True)
+        resp = C.post("/account/login/", data, follow=True)
         self.assertEqual(resp.redirect_chain, [("/org/1", 302)])
 
-        data = {"next": "/logout", "username": "user_d", "password": "user_d"}
+        data = {
+            "next": "/logout",
+            "auth-username": "user_d",
+            "auth-password": "user_d",
+            "login_view-current_step": "auth"
+        }
+
         C = Client()
-        resp = C.post("/auth", data, follow=True)
+        resp = C.post("/account/login/", data, follow=True)
         self.assertEqual(resp.redirect_chain, [("/", 302)])
         self.assertEqual(resp.context["user"].is_authenticated, True)
 

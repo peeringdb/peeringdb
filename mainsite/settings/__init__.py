@@ -182,6 +182,11 @@ RATELIMITS = {
 # maximum number of affiliation requests a user can have pending
 MAX_USER_AFFILIATION_REQUESTS = 5
 
+# Determines age of network contact objects that get hard deleted
+# during `pdb_delete_poc` execution. (days)
+set_option("POC_DELETION_PERIOD", 30)
+
+
 # Django config
 
 ALLOWED_HOSTS = ["*"]
@@ -273,6 +278,11 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_otp",
+    "django_otp.plugins.otp_static",
+    "django_otp.plugins.otp_totp",
+    "django_otp.plugins.otp_email",
+    "two_factor",
     "dal",
     "dal_select2",
     "grappelli",
@@ -345,6 +355,7 @@ MIDDLEWARE = (
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 )
@@ -381,6 +392,9 @@ set_option("SECURE_PROXY_SSL_HEADER", ("HTTP_X_FWD_PROTO", "https"))
 
 DEFAULT_FROM_EMAIL = SERVER_EMAIL
 
+OTP_EMAIL_SENDER = SERVER_EMAIL
+OTP_EMAIL_SUBJECT = "One time password request"
+
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = "mainsite.wsgi.application"
@@ -393,7 +407,7 @@ GRAPPELLI_ADMIN_TITLE = "PeeringDB"
 TABLE_PREFIX = "peeringdb_"
 ABSTRACT_ONLY = True
 
-LOGIN_URL = "/login"
+LOGIN_URL = "two_factor:login"
 LOGIN_REDIRECT_URL = "/"
 
 # App config
@@ -518,7 +532,7 @@ set_option(
     "CLIENT_COMPAT",
     {
         "client": {"min": (0,6), "max": (255,0),},
-        "backends": {"django_peeringdb": {"min": (0,6), "max": (255,0),},},
+        "backends": {"django_peeringdb": {"min": (2,0,0,2), "max": (255,0),},},
     },
 )
 

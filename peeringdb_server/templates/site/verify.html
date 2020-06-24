@@ -24,6 +24,9 @@
       <!-- PICK LANGUAGE -->
       {% include "site/profile-pick-language.html" %}
 
+      <!-- 2FA -->
+      {% include "site/profile-2fa.html" %}
+
       {% if not request.user.has_oauth %}
       <!-- CHANGE EMAIL -->
       {% include "site/profile-change-email.html" %}

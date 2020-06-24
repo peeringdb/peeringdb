@@ -97,6 +97,8 @@ def validate_address_space(prefix):
 
 
 def validate_info_prefixes4(value):
+    if not value:
+        value = 0
     if value > settings.DATA_QUALITY_MAX_PREFIX_V4_LIMIT:
         raise ValidationError(
             _("Maximum value allowed {}").format(
@@ -105,9 +107,12 @@ def validate_info_prefixes4(value):
         )
     if value < 0:
         raise ValidationError(_("Negative value not allowed"))
+    return value
 
 
 def validate_info_prefixes6(value):
+    if not value:
+        value = 0
     if value > settings.DATA_QUALITY_MAX_PREFIX_V6_LIMIT:
         raise ValidationError(
             _("Maximum value allowed {}").format(
@@ -117,6 +122,7 @@ def validate_info_prefixes6(value):
 
     if value < 0:
         raise ValidationError(_("Negative value not allowed"))
+    return value
 
 
 def validate_prefix_overlap(prefix):
@@ -196,9 +202,9 @@ def validate_irr_as_set(value):
                 as_set = parts_match.group(2)
             else:
                 sourceless_match = re.match("^([\w\d\-:]+)$", item)
-                as_set = sourceless_match.group(1)
                 if not sourceless_match:
                     raise ValidationError(_("Invalid formatting: {} - should be AS-SET, ASx, AS-SET@SOURCE or SOURCE::AS-SET").format(item))
+                as_set = sourceless_match.group(1)
 
         if source and source not in IRR_SOURCE:
             raise ValidationError(_("Unknown IRR source: {}").format(source))

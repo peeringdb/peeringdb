@@ -102,6 +102,8 @@ def test_validate_info_prefixes4():
     with pytest.raises(ValidationError):
         validate_info_prefixes4(-1)
     validate_info_prefixes4(500000)
+    assert validate_info_prefixes4(None) == 0
+    assert validate_info_prefixes4("") == 0
 
 
 @override_settings(DATA_QUALITY_MAX_PREFIX_V6_LIMIT=500000)
@@ -114,6 +116,8 @@ def test_validate_info_prefixes6():
     with pytest.raises(ValidationError):
         validate_info_prefixes6(-1)
     validate_info_prefixes6(500000)
+    assert validate_info_prefixes6(None) == 0
+    assert validate_info_prefixes6("") == 0
 
 
 @override_settings(
@@ -187,6 +191,9 @@ def test_validate_prefix_overlap():
     ("RIPE:AS-FOO", False),
     ("RIPE::RS15562:RS-FOO", False),
     ("RIPE::AS123456:RS-FOO:AS-FOO", False),
+    ("!\"*([])?.=+/\\", False),
+    ("RIPE::!\"*([])?.=+/\\", False),
+    ("!\"*([])?.=+/\\@RIPE", False),
 
     # > DATA_QUALITY_MAX_IRR_DEPTH
     ("ripe::as-foo:as123:as345:as678", False),

@@ -5,6 +5,7 @@ from django import http
 from django.utils import html
 from django.core.exceptions import ObjectDoesNotExist
 from reversion.models import Version
+from grappelli.views.related import AutocompleteLookup as GrappelliAutocomplete
 from dal import autocomplete
 from peeringdb_server.models import (
     InternetExchange,
@@ -18,6 +19,22 @@ from peeringdb_server.models import (
 )
 
 from peeringdb_server.admin_commandline_tools import TOOL_MAP
+
+
+
+class GrappelliHandlerefAutocomplete(GrappelliAutocomplete):
+    """
+    makes sure that the auto-complete fields managed
+    by grappelli in django admin exclude soft-deleted
+    objects
+    """
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        if hasattr(self.model, "HandleRef"):
+            qs = qs.exclude(status="deleted")
+
+        return qs
 
 
 class AutocompleteHTMLResponse(autocomplete.Select2QuerySetView):

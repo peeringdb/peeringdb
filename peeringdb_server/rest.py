@@ -23,7 +23,7 @@ import django_namespace_perms.rest as nsp_rest
 
 import reversion
 
-from peeringdb_server.models import Network, UTC
+from peeringdb_server.models import Network, UTC, ProtectedAction
 from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
 from peeringdb_server.api_schema import BaseSchema
@@ -601,6 +601,8 @@ class ModelViewSet(viewsets.ModelViewSet):
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
                 return Response(status=status.HTTP_403_FORBIDDEN)
+        except ProtectedAction as exc:
+            return Response(status=status.HTTP_403_FORBIDDEN, data={"detail": f"{exc}"})
         finally:
             self.get_serializer().finalize_delete(request)
 

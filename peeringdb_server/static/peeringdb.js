@@ -1090,6 +1090,13 @@ twentyc.editable.target.register(
         throw(gettext("Unknown request type:") + " "+requestType); ///
       }
 
+      if(button.data("confirm")) {
+        if(!PeeringDB.confirm(button.data("confirm"))) {
+          this.sender.editable("loading-shim", "hide")
+          return;
+        }
+      }
+
       PeeringDB.API.request(
         method,
         endpoint,

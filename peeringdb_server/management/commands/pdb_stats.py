@@ -65,7 +65,7 @@ class Command(BaseCommand):
         stats = {"users": 0}
 
         for user in get_user_model().objects.filter(created__lte=dt):
-            if user.is_verified:
+            if user.is_verified_user:
                 stats["users"] += 1
 
         return stats

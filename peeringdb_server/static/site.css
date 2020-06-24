@@ -166,7 +166,6 @@ h5 {
 .btn-primary,
 .btn-default {
   background-color: #33744a;
-  margin-left: 10px;
   color: #ffffff;
   display: inline-block;
   text-decoration: none;
@@ -1405,3 +1404,73 @@ div.captcha .g-recaptcha {
 div.captcha .fallback {
   display: none;
 }
+
+/*
+ * v2 login with otp support
+ */
+
+.v2-login {
+
+}
+
+.v2-login h1 {
+  font-size: 24px;
+}
+
+.v2-login h2 {
+  font-size: 20px;
+}
+
+.v2-login div.panel h3 {
+  text-align: left;
+}
+
+.v2-login .btn-link,
+.v2-login .btn-block {
+  background-color: #82969a;
+}
+
+.v2-login .errors {
+  color: darkred;
+}
+
+.v2-login ul.errorlist {
+  list-style-type: none;
+  padding-left: 0px;
+}
+
+.badge-2fa {
+  border-radius: 3px;
+  background-color: orange;
+  padding: 1px 3px;
+  color: #fff;
+  font-weight: bold;
+}
+
+/**
+ * right to left direction
+ */
+
+body[dir="rtl"] div.row > div {
+  text-align: right;
+  float: right;
+}
+
+body[dir="rtl"] div.view_fields {
+  padding-right: 15px;
+}
+
+body[dir="rtl"] div.popin,
+body[dir="rtl"] p,
+body[dir="rtl"] h1,
+body[dir="rtl"] h2,
+body[dir="rtl"] h3,
+body[dir="rtl"] h4,
+body[dir="rtl"] h5,
+body[dir="rtl"] li,
+body[dir="rtl"] li > a {
+  text-align: right;
+}
+
+
+

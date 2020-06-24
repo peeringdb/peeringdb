@@ -60,17 +60,31 @@ class UserLocaleTests(TestCase):
         # print(u_pt.get_locale())
 
         c = Client()
-        resp = c.get("/profile", follow=True)
-        data = {"next": "/profile", "username": "user_en", "password": "user_en"}
-        resp = c.post("/auth", data, follow=True)
+        data = {
+            "next": "/profile",
+            "auth-username": "user_en",
+            "auth-password": "user_en",
+            "login_view-current_step": "auth",
+        }
+        resp = c.post("/account/login/", data, follow=True)
         assert "<!-- Current language: en -->" in resp.content.decode()
 
         c.logout()
-        data = {"next": "/profile", "username": "user_pt", "password": "user_pt"}
-        resp = c.post("/auth", data, follow=True)
+        data = {
+            "next": "/profile",
+            "login_view-current_step": "auth",
+            "auth-username": "user_pt",
+            "auth-password": "user_pt"
+        }
+        resp = c.post("/account/login/", data, follow=True)
         assert "<!-- Current language: pt -->" in resp.content.decode()
 
         c.logout()
-        data = {"next": "/profile", "username": "user_undef", "password": "user_undef"}
-        resp = c.post("/auth", data, follow=True)
+        data = {
+            "next": "/profile",
+            "login_view-current_step": "auth",
+            "auth-username": "user_undef",
+            "auth-password": "user_undef"
+        }
+        resp = c.post("/account/login/", data, follow=True)
         assert "<!-- Current language: en -->" in resp.content.decode()

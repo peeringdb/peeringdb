@@ -37,6 +37,12 @@
         {% trans "Permissions" %}
       </a>
     </li>
+    <li role="presentation" class="danger">
+      <a href="#manage_delete" aria-controls="manage_delete" role="tab" data-toggle="tab">
+        {% trans "Delete Organization" %}
+      </a>
+    </li>
+
     {% endif %}
   </ul>
 
@@ -344,6 +350,7 @@
           <div class="col-xs-12 col-sm-6 col-md-6">
 
             <div class="editable note info">
+              <p><strong>{% trans "Only use this if you own the network" %}</strong></p>
               {% trans "Add a new Network to your Organization." %}
               <div class="marg-top-15">{% trans "We will attempt to automatically verify your relationship to the network by checking for your email address in the ASN's RiR entry." %}
               </div>
@@ -591,7 +598,7 @@
         <div class="row item editable" data-edit-id="{{ user.id }}" data-edit-label="{{ user.full_name }}">
           <div class="col-xs-4 col-sm-5 col-md-4">
             <div>{{ user.full_name }}</div>
-            <div>{{ user.username }}</div>
+            <div>{{ user.username }} {% if user.totpdevice_set.exists %}<span class="badge-2fa">2FA</span>{% endif %}</div>
           </div>
           <div class="col-xs-4 col-sm-5 col-md-4">
             <div>{{ user.email }}</div>
@@ -736,6 +743,37 @@
       </div>
 
     </div>
+
+    <div role="tabpanel" class="tab-pane" id="manage_delete">
+      <div class="alert alert-danger">
+      {% if not instance.deletable %}
+      <p>
+      {% blocktrans trimmed with name=instance.name %}
+      {{ name }} cannot be deleted.
+      {% endblocktrans %}
+      </p>
+      <p>
+      {{ instance.not_deletable_reason }}
+      </p>
+      {% else %}
+      <p>
+      {% blocktrans trimmed %}
+      Remove this organization from PeeringDB.
+      {% endblocktrans %}
+      </p>
+      <p>
+        <div class="editable always auto-toggled create-form"
+          data-edit-debug="yes"
+          data-edit-always-submit="yes"
+          data-edit-target="api:org:delete"
+          id="frm-delete-org"
+          data-edit-id="{{ instance.id }}">
+          <a class="btn btn-danger" data-confirm="{% trans "Delete organization?" %}" data-edit-action="submit">{% blocktrans trimmed with name=instance.name %}Delete {{ name }}{% endblocktrans %}</a>
+        </div>
+      </p>
+      {% endif %}
+      </div>
+    </div>
     <!-- END CAN MANAGE -->
     {% endif %}
   </div>
@@ -754,6 +792,11 @@ $(document).ready(function() {
   if(window.location.hash == "#users") {
     $('a[href="#users"]').tab('show');
   }
+
+  $('#frm-delete-org').on("action-success", (e) => {
+    alert(gettext("Organization deleted."));
+    window.document.location.href= "/";
+  });
 });
 
 </script>

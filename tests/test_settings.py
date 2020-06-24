@@ -16,7 +16,7 @@ class TestAutoVerifyUser(SettingsCase):
             "user_a", "user_a@localhost", "user_a"
         )
         signals.new_user_to_guests(None, user)
-        assert user.is_verified == True
+        assert user.is_verified_user == True
         assert user.status == "ok"
 
 
