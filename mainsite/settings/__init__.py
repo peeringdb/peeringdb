@@ -532,7 +532,7 @@ set_option(
     "CLIENT_COMPAT",
     {
         "client": {"min": (0,6), "max": (255,0),},
-        "backends": {"django_peeringdb": {"min": (0,6), "max": (255,0),},},
+        "backends": {"django_peeringdb": {"min": (2,0,0,2), "max": (255,0),},},
     },
 )
 
