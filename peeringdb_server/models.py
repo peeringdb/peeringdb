@@ -2122,6 +2122,300 @@ class IXLanIXFMemberImportLogEntry(models.Model):
         return 1
 
 
+class IXFMemberData(pdb_models.NetworkIXLanBase):
+
+    """
+    Describes a potential data update that arose during an ix-f import
+    attempt for a specific member (asn, ip4, ip6) to netixlan
+    (asn, ip4, ip6) where the importer could not complete the
+    update automatically.
+    """
+
+    data = models.TextField(
+        null=False, default="{}",
+        help_text=_(
+            "JSON snapshot of the ix-f member data that " \
+            "created this entry"
+        )
+    )
+
+    error = models.TextField(null=True, blank=True, help_text=_(
+        "Trying to apply data to peeringdb raised an issue"
+    ))
+
+    ixlan = models.ForeignKey(
+        IXLan,
+        related_name="ixf_set",
+        on_delete=models.CASCADE
+    )
+
+
+    class Meta:
+        db_table = "peeringdb_ixf_data_conflict"
+
+    class HandleRef:
+        tag = "ixfmember"
+
+    @classmethod
+    def id_filters(cls, asn, ipaddr4, ipaddr6):
+
+        filters = {"asn": asn}
+
+        if ipaddr4 is None:
+            filters["ipaddr4__isnull"] = True
+        else:
+            filters["ipaddr4"] = ipaddr4
+
+
+        if ipaddr6 is None:
+            filters["ipaddr6__isnull"] = True
+        else:
+            filters["ipaddr6"] = ipaddr6
+
+        return filters
+
+
+    @classmethod
+    def instantiate(cls, asn, ipaddr4, ipaddr6, ixlan, **kwargs):
+
+        try:
+            instance = cls.objects.get(cls.id_filters(asn, ipaddr4, ipaddr6))
+            instance.previous_data = instance.data
+        except cls.DoesNotExist:
+            instance = cls(asn=asn, ipaddr4=ipaddr4, ipaddr6=ipaddr6)
+
+
+        instance.speed = kwargs.get("speed")
+        instance.is_operational = kwargs.get("is_operational")
+        instance.is_rs_peer = kwargs.get("is_rs_peer")
+        instance.ixlan = ixlan
+
+        if "data" in kwargs:
+            instance.set_data(kwargs.get("data"))
+
+        return instance
+
+
+    @property
+    def json(self):
+        return json.loads(self.data)
+
+
+    @property
+    def net(self):
+        """
+        Returns the Network instance related to
+        this entry
+        """
+
+        if not hasattr(self, "_net"):
+            self._net = Network.objects.get(asn=self.asn)
+        return self._net
+
+
+    @property
+    def ixf_id(self):
+
+        """
+        Returns a tuple that identifies the ix-f member
+        as a unqiue record by asn, ip4 and ip6 address
+        """
+
+        return (self.asn, self.ipaddr4, self.ipaddr6)
+
+    @property
+    def changes(self):
+
+        """
+        Returns a dict of changes (field, value)
+        between this entry and the related netixlan
+
+        If an empty dict is returned that means no changes
+        """
+
+        netixlan = self.netixlan
+        changes = {}
+
+        if netixlan.is_rs_peer != self.is_rs_peer:
+            changes.update(is_rs_peer = self.is_rs_peer)
+
+        if netixlan.speed != self.speed:
+            changes.update(speed = self.speed)
+
+        if netixlan.is_operational != self.is_operational:
+            changes.update(is_operational = self.is_operational)
+
+        if netixlan.status != self.status:
+            changes.update(status = self.status)
+
+        return changes
+
+    @property
+    def marked_for_removal(self):
+        """
+        Returns whether or not this entry implies that
+        the related netixlan should be removed.
+
+        We do this by checking if the ix-f data was provided
+        or not
+        """
+
+        if not self.netixlan.id:
+
+            # edge-case that should not really happen
+            # non-existing netixlan cannot be removed
+
+            return False
+
+        return (self.data == "{}" or not self.data)
+
+    @property
+    def action(self):
+        """
+        Returns the implied action of applying this
+        entry to peeringdb
+
+        Will return either "add", "update", "delete" or "noop"
+        """
+
+        if not self.netixlan.id:
+            return "add"
+
+        if self.changes:
+            return "update"
+
+        if self.marked_for_removal:
+            return "delete"
+
+        return "noop"
+
+
+    @property
+    def netixlan(self):
+
+        """
+        Will either return a matching existing netixlan
+        instance (asn,ip4,ip6) or a new netixlan if
+        a matching netixlan does not currently exist.
+
+        Any new netixlan will NOT be saved at this point.
+
+        Note that the netixlan that matched may be currently
+        soft-deleted (status=="deleted")
+        """
+
+        if not hasattr(self, "_netixlan"):
+            try:
+
+                filters = {"asn": self.asn}
+
+                if self.ipaddr4 is None:
+                    filters["ipaddr4__isnull"] = True
+                else:
+                    filters["ipaddr4"] = self.ipaddr4
+
+
+                if self.ipaddr6 is None:
+                    filters["ipaddr6__isnull"] = True
+                else:
+                    filters["ipaddr6"] = self.ipaddr6
+
+                self._netixlan = NetworkIXLan.objects.get(**filters)
+            except NetworkIXLan.DoesNotExist:
+                self._netixlan = NetworkIXLan(
+                    ipaddr4 = self.ipaddr4,
+                    ipaddr6 = self.ipaddr6,
+                    speed = self.speed,
+                    asn = self.asn,
+                    is_operational = self.is_operational,
+                    is_rs_peer = self.is_rs_peer,
+                    ixlan=self.ixlan,
+                    network=self.net,
+                    status="ok"
+                )
+
+        return self._netixlan
+
+
+    @reversion.create_revision()
+    def apply(self, user=None, comment=None):
+        """
+        Applies the data.
+
+        This will either create, update or delete a netixlan
+        object
+        """
+
+        if user:
+            reversion.set_user(user)
+
+        if comment:
+            reversion.set_comment(comment)
+
+        action = self.action
+        netixlan = self.netixlan
+        changes = self.changes
+
+        if action == "add":
+            netixlan.full_clean()
+            netixlan.save()
+        elif action == "update":
+            netixlan.speed = self.speed
+            netixlan.is_rs_peer = self.is_rs_peer
+            netixlan.is_operational = self.is_operational
+            netixlan.full_clean()
+            netixlan.save()
+        elif action == "delete":
+            netixlan.delete()
+
+        self.resolve()
+
+        return {"action":action, "netixlan":netixlan}
+
+
+    def set_resolved(self):
+        if self.id:
+            self.notify_resolve(ac=True, ix=True, net=True)
+            self.delete()
+
+    def set_conflict(self, error=None):
+        if self.remote_changes:
+            self.error = error
+            self.notify_remote_changes(ac=True, ix=True, net=True)
+            self.save()
+
+    def set_update(self):
+        if self.remote_changes:
+            self.notify_remote_changes(ac=True, ix=True, net=True)
+            self.save()
+
+    def set_add(self):
+        if not self.id:
+            if self.net_present_at_ix:
+                self.notify_add(ac=True, ix=True, net=True)
+            else:
+                self.notify_add(net=True)
+            self.save()
+
+    def set_remove(self):
+        if not self.id or not self.marked_for_removal():
+            self.notify_removal(ac=True, ix=True, net=True)
+            self.save()
+
+
+
+
+    def set_data(self, data):
+        if self.json:
+            self.old_data = self.data
+        self.data = json.dumps(data)
+
+
+
+
+
+
+
 # read only, or can make bigger, making smaller could break links
 # validate could check
 
@@ -2727,6 +3021,18 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         Returns the exchange id for this netixlan
         """
         return self.ixlan.ix_id
+
+    @property
+    def ixf_id(self):
+
+        """
+        Returns a tuple that identifies the netixlan
+        in the context of an ix-f member data entry
+
+        as a unqiue record by asn, ip4 and ip6 address
+        """
+
+        return (self.asn, self.ipaddr4, self.ipaddr6)
 
     # FIXME
     # permission namespacing

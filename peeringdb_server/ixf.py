@@ -45,7 +45,7 @@ class Importer(object):
         self.reset_log()
         self.netixlans = []
         self.netixlans_deleted = []
-        self.ipaddresses = []
+        self.ixf_ids = []
         self.asns = []
         self.archive_info = {}
         self.ixlan = ixlan
@@ -235,46 +235,20 @@ class Importer(object):
             netixlan_qset = netixlan_qset.filter(asn=self.asn)
 
         for netixlan in netixlan_qset:
-
-            ipv4 = "{}-{}".format(netixlan.asn, netixlan.ipaddr4)
-            ipv6 = "{}-{}".format(netixlan.asn, netixlan.ipaddr6)
-
-            if netixlan.asn not in self.asns:
-                self.log_peer(
-                    netixlan.asn, "delete", _("ASN no longer in data"), netixlan
-                )
-                self.netixlans_deleted.append(netixlan)
-                if self.save:
-                    netixlan.delete()
-            elif ipv4 not in self.ipaddresses and ipv6 not in self.ipaddresses:
-                self.log_peer(
+            if netixlan.ixf_id not in self.ixf_ids:
+                ixf_member_data = IXFMemberData.instantiate(
                     netixlan.asn,
-                    "delete",
-                    _(
-                        "Ip addresses no longer exist in validated data or are "
-                        "no longer with this asn"
-                    ),
-                    netixlan,
+                    netixlan.ipaddr4,
+                    netixlan.ipaddr6,
+                    netixlan.ixlan
                 )
-                self.netixlans_deleted.append(netixlan)
-                if self.save:
-                    netixlan.delete()
-            elif (netixlan.ipaddr4 and ipv4 not in self.ipaddresses) or (
-                netixlan.ipaddr6 and ipv6 not in self.ipaddresses
-            ):
-                if not netixlan.network.allow_ixp_update:
-                    self.log_peer(
-                        netixlan.asn,
-                        "delete",
-                        _(
-                            "At least one ipaddress mismatched and "
-                            "network has disabled updates"
-                        ),
-                        netixlan,
-                    )
-                    self.netixlans_deleted.append(netixlan)
-                    if self.save:
-                        netixlan.delete()
+
+                if netixlan.network.allow_ixp_updates:
+                    self.log_apply(ixf_member_data.apply())
+
+                else:
+                    ixf_member_data.set_remove()
+
 
     @transaction.atomic()
     def archive(self):
@@ -414,22 +388,28 @@ class Importer(object):
             ipv6_addr = ipv6.get("address")
 
             # parse and validate the ipaddresses attached to the vlan
-            # append the ipaddresses to self.ipaddresses so we can
-            # later check them to see which netixlans need to be
+            # append a unqiue ixf identifier to self.ixf_ids
+            #
+            # identifier is a tuple of (asn, ip4, ip6)
+            #
+            # we will later check them to see which netixlans need to be
             # dropped during `process_deletions`
             try:
+                ixf_id = [asn]
+
                 if ipv4_addr:
-                    self.ipaddresses.append(
-                        "{}-{}".format(
-                            asn, ipaddress.ip_address(u"{}".format(ipv4_addr))
-                        )
-                    )
+                    ixf_id.append(ipaddress.ip_address(f"{ipv4_addr}"))
+                else:
+                    ixf_id.append(None)
+
                 if ipv6_addr:
-                    self.ipaddresses.append(
-                        "{}-{}".format(
-                            asn, ipaddress.ip_address(u"{}".format(ipv6_addr))
-                        )
-                    )
+                    ixf_id.append(ipaddress.ip_address(f"{ipv6_addr}"))
+                else:
+                    ixf_id.append(None)
+
+                ixf_id = tuple(ixf_id)
+                self.ixf_ids.append(ixf_id)
+
             except (ipaddress.AddressValueError, ValueError) as exc:
                 self.log_error(
                     _("Ip address error '{}' in vlan_list entry for vlan_id {}").format(
@@ -437,18 +417,6 @@ class Importer(object):
                     )
                 )
                 continue
-
-            netixlan_info = NetworkIXLan(
-                ixlan=self.ixlan,
-                network=network,
-                ipaddr4=ipv4_addr,
-                ipaddr6=ipv6_addr,
-                speed=speed,
-                asn=asn,
-                is_rs_peer=(
-                    ipv4.get("routeserver", False) or ipv6.get("routeserver", False)
-                ),
-            )
 
             if not self.save and (
                 not self.ixlan.test_ipv4_address(ipv4_addr)
@@ -458,46 +426,28 @@ class Importer(object):
                 # not at the ixlan if they dont match the prefix
                 continue
 
-            # if connection state is inactive we won't create or update
             if connection.get("state", "active") == "inactive":
-                self.log_peer(
-                    asn,
-                    "noop",
-                    _("Connection is currently marked as inactive"),
-                    netixlan_info,
-                )
-                continue
+                is_operational = False
+            else:
+                is_operational = True
 
-            # after this point we either add or modify the netixlan, so
-            # now is a good time to check if the related network allows
-            # such updates, bail if not
-            if not network.allow_ixp_update:
-                self.log_peer(
-                    asn, "noop", _("Network has disabled ixp updates"), netixlan_info
-                )
-                continue
-
-            # add / modify the netixlan
-            result = self.ixlan.add_netixlan(
-                netixlan_info, save=self.save, save_others=self.save
+            is_rs_peer = (
+                ipv4.get("routeserver", False) or ipv6.get("routeserver", False)
             )
 
-            if result["netixlan"] and result["changed"]:
-                self.netixlans.append(result["netixlan"])
-                if result["created"]:
-                    action = "add"
-                    reason = _("New ip-address")
-                else:
-                    action = "modify"
-                    reason = _("Fields changed: {}").format(
-                        ", ".join(result.get("changed"))
-                    )
+            ixf_member_data = IXFMemberData.instantiate(
+                asn,
+                ipv4_addr,
+                ipv6_addr,
+                speed=speed,
+                is_operational=is_operational,
+                is_rs_peer=is_rs_peer,
+                data=json.dumps(member),
+                ixlan=self.ixlan,
+            )
 
-                self.log_peer(asn, action, reason, result["netixlan"])
-            elif result["netixlan"]:
-                self.log_peer(asn, "noop", _("No changes"), result["netixlan"])
-            elif result["log"]:
-                self.log_peer(asn, "ignore", "\n".join(result["log"]), netixlan_info)
+            self.apply_add_or_update(ixf_member_data)
+
 
     def parse_speed(self, if_list):
         """
@@ -518,6 +468,61 @@ class Importer(object):
                     _("Invalid speed value: {}").format(iface.get("if_speed"))
                 )
         return speed
+
+
+    def apply_add_or_update(self, ixf_member_data):
+
+        if ixf_member_data.netixlan.id:
+
+            # importer-protocol: netixlan exists
+
+            if not ifx_member_data.changes:
+
+                # importer-protocol: no changes
+
+                self.resolve(ixf_member_data)
+
+            else:
+
+                # importer-protocol: data changes
+
+                self.apply_update(ixf_member_data)
+
+        else:
+
+            # importer-protocol: netixlan does not exist
+
+            self.apply_add(ixf_member_data)
+
+
+    def resolve(self, ixf_member_data):
+        ixf_member_data.set_resolved()
+
+
+    def apply_update(self, ixf_member_data):
+
+        if ixf_member_data.net.allow_ixp_updates:
+            try:
+                self.log_apply(ixf_member_data.apply())
+            except ValidationError as exc:
+                ixf_member_data.set_conflict(error=exc)
+        else:
+            ixf_member_data.set_update()
+
+
+    def apply_add(self, ixf_member_data):
+
+        if ixf_member_data.net.allow_ixp_updates:
+
+            try:
+                self.log_apply(ixf_member_data.apply())
+            except ValidationError as exc:
+                ixf_member_data.set_conflict(error=exc)
+
+        else:
+            ixf_member_data.set_add()
+
+
 
     def save_log(self):
         """
@@ -573,6 +578,7 @@ class Importer(object):
         self.log["data"].append(
             {"peer": peer, "action": action, "reason": "{}".format(reason),}
         )
+
 
     def log_error(self, error, save=False):
         """
