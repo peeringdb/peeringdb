@@ -284,7 +284,7 @@ class TestJSON(unittest.TestCase):
             "zipcode": ZIPCODE,
             "address1": "Some street",
             "clli": str(uuid.uuid4())[:6].upper(),
-            "rencode": str(uuid.uuid4())[:6].upper(),
+            "rencode": '',
             "npanxx": "000-111",
             "latitude": None,
             "longitude": None,
@@ -1089,7 +1089,9 @@ class TestJSON(unittest.TestCase):
             "fac",
             data,
             test_failures={
-                "invalid": {"name": ""},
+                "invalid": {
+                    "name": "",
+                },
                 "perms": {
                     # need to set name again so it doesnt fail unique validation
                     "name": self.make_name("Test"),
@@ -1116,6 +1118,7 @@ class TestJSON(unittest.TestCase):
                 "readonly": {
                     "latitude": 1,  # this should not take as it is read only
                     "longitude": 1,  # this should not take as it is read only
+                    "rencode": str(uuid.uuid4())[:6].upper(),
                 },
             },
         )
