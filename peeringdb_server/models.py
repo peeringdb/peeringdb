@@ -2151,7 +2151,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
 
     class Meta:
-        db_table = "peeringdb_ixf_data_conflict"
+        db_table = "peeringdb_ixf_member_data"
 
     class HandleRef:
         tag = "ixfmember"
