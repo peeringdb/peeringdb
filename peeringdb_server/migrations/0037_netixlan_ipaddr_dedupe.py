@@ -5,11 +5,10 @@ from django.db.models import Count, Q
 
 def dedupe_ipaddrs(apps, schema_editor):
     NetIXLan = apps.get_model("peeringdb_server", "NetworkIXLan")
-    
+
     duplicate_ippr4s = NetIXLan.handleref.filter(
-        status='deleted' 
-        ).values('ipaddr4' 
-        ).annotate(ipaddr4_count=Count('ipaddr4') 
+        ).values('ipaddr4'
+        ).annotate(ipaddr4_count=Count('ipaddr4')
         ).filter(ipaddr4_count__gt=1).values('ipaddr4')
 
     netixlans_to_dedupe_4 = NetIXLan.handleref.filter(
@@ -22,7 +21,6 @@ def dedupe_ipaddrs(apps, schema_editor):
         n.save()
 
     duplicate_ippr6s = NetIXLan.handleref.filter(
-        status='deleted'
         ).values('ipaddr6'
         ).annotate(ipaddr6_count=Count('ipaddr6')
         ).filter(ipaddr6_count__gt=1
@@ -39,14 +37,12 @@ def dedupe_ipaddrs(apps, schema_editor):
         n.save()
 
     active_duplicate_ippr4s = NetIXLan.handleref.filter(
-        status='ok'
         ).values('ipaddr4'
         ).annotate(ipaddr4_count=Count('ipaddr4')
         ).filter(ipaddr4_count__gt=1
         ).values('ipaddr4')
-    
+
     active_duplicate_ippr6s = NetIXLan.handleref.filter(
-        status='ok'
         ).values('ipaddr6'
         ).annotate(ipaddr6_count=Count('ipaddr6')
         ).filter(ipaddr6_count__gt=1
@@ -55,7 +51,7 @@ def dedupe_ipaddrs(apps, schema_editor):
 
     active_dupes = NetIXLan.handleref.filter(
         Q(ipaddr4__in=active_duplicate_ippr4s) | Q(ipaddr6__in=active_duplicate_ippr6s),
-        status='deleted',
+        status='ok',
     )
 
     if active_dupes.count() == 0:
@@ -64,7 +60,7 @@ def dedupe_ipaddrs(apps, schema_editor):
     else:
         raise migrations.exceptions.DatabaseError(
             'There are active NetIXLan objects with repeated ipaddr4 or ipaddr6 values: {}'.format(active_dupes))
-            
+
 
 
 
