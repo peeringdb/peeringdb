@@ -1,4 +1,5 @@
 import re
+import json
 import datetime
 from itertools import chain
 import uuid
@@ -1812,7 +1813,7 @@ class IXLan(pdb_models.IXLanBase):
             - save (bool): if true commit changes to db
 
         Returns:
-            - Tuple(netixlan<NetworkIXLan>, changed<bool>, log<list>)
+            - {netixlan, created, changed, log}
         """
 
         log = []
@@ -1922,42 +1923,37 @@ class IXLan(pdb_models.IXLanBase):
 
         # IPv4
         if ipv4 != netixlan.ipaddr4:
-            # we need to check if this ipaddress exists on a soft-deleted netixlan elsewhere, and
+
+            # we need to check if this ipaddress exists on a
+            # soft-deleted netixlan elsewhere, and
             # reset if so.
+
             for other in NetworkIXLan.objects.filter(
                 ipaddr4=ipv4, status="deleted"
             ).exclude(asn=asn):
-                # FIXME: this is not practical until
-                # https://github.com/peeringdb/peeringdb/issues/90 is resolved
-                # so skipping for now
-                continue
-
-                # other.ipaddr4 = None
-                # other.notes = "Ip address {} was claimed by other netixlan".format(
-                #    ipv4)
-                # if save or save_others:
-                #    other.save()
+                other.ipaddr4 = None
+                other.notes = f"Ip address {ipv4} was claimed by other netixlan"
+                if save or save_others:
+                    other.save()
 
             netixlan.ipaddr4 = ipv4
             changed.append("ipaddr4")
 
         # IPv6
         if ipv6 != netixlan.ipaddr6:
-            # we need to check if this ipaddress exists on a soft-deleted netixlan elsewhere, and
+
+            # we need to check if this ipaddress exists on a
+            # soft-deleted netixlan elsewhere, and
             # reset if so.
+
             for other in NetworkIXLan.objects.filter(
                 ipaddr6=ipv6, status="deleted"
             ).exclude(asn=asn):
-                # FIXME: this is not practical until
-                # https://github.com/peeringdb/peeringdb/issues/90 is resolved
-                # so skipping for now
-                continue
+                other.ipaddr6 = None
+                other.notes = f"Ip address {ipv6} was claimed by other netixlan"
+                if save or save_others:
+                   other.save()
 
-                # other.ipaddr6 = None
-                # other.notes = "Ip address {} was claimed by other netixlan".format(
-                #    ipv6)
-                # if save or save_others:
-                #    other.save()
             netixlan.ipaddr6 = ipv6
             changed.append("ipaddr6")
 
@@ -2080,6 +2076,8 @@ class IXLanIXFMemberImportLogEntry(models.Model):
         verbose_name = _("IXF Import Log Entry")
         verbose_name_plural = _("IXF Import Log Entries")
 
+
+
     @property
     def changes(self):
         """
@@ -2142,6 +2140,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     error = models.TextField(null=True, blank=True, help_text=_(
         "Trying to apply data to peeringdb raised an issue"
     ))
+    reason = models.CharField(max_length=255, default="")
+
+    fetched = models.DateTimeField(
+        _("Last Fetched"),
+    )
 
     ixlan = models.ForeignKey(
         IXLan,
@@ -2149,9 +2152,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         on_delete=models.CASCADE
     )
 
+    data_fields = [
+        "speed",
+        "operational",
+        "is_rs_peer",
+    ]
 
     class Meta:
         db_table = "peeringdb_ixf_member_data"
+        verbose_name = _("IXF Member Data")
+        verbose_name_plural = _("IXF Member Data")
 
     class HandleRef:
         tag = "ixfmember"
@@ -2178,17 +2188,27 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     @classmethod
     def instantiate(cls, asn, ipaddr4, ipaddr6, ixlan, **kwargs):
 
+        fetched = datetime.datetime.now().replace(tzinfo=UTC())
+
         try:
-            instance = cls.objects.get(cls.id_filters(asn, ipaddr4, ipaddr6))
-            instance.previous_data = instance.data
+            instance = cls.objects.get(**cls.id_filters(asn, ipaddr4, ipaddr6))
+            for field in cls.data_fields:
+                setattr(instance, f"previous_{field}", getattr(instance,field))
+
+            instance.fetched = fetched
+            instance._meta.get_field("updated").auto_now = False
+            instance.save()
+            instance._meta.get_field("updated").auto_now = True
+
         except cls.DoesNotExist:
-            instance = cls(asn=asn, ipaddr4=ipaddr4, ipaddr6=ipaddr6)
+            instance = cls(asn=asn, ipaddr4=ipaddr4, ipaddr6=ipaddr6, status="ok")
 
 
-        instance.speed = kwargs.get("speed")
-        instance.is_operational = kwargs.get("is_operational")
-        instance.is_rs_peer = kwargs.get("is_rs_peer")
+        instance.speed = kwargs.get("speed", 0)
+        instance.operational = kwargs.get("operational", True)
+        instance.is_rs_peer = kwargs.get("is_rs_peer", False)
         instance.ixlan = ixlan
+        instance.fetched = fetched
 
         if "data" in kwargs:
             instance.set_data(kwargs.get("data"))
@@ -2236,17 +2256,39 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         netixlan = self.netixlan
         changes = {}
 
+        if self.marked_for_removal:
+            return changes
+
         if netixlan.is_rs_peer != self.is_rs_peer:
             changes.update(is_rs_peer = self.is_rs_peer)
 
         if netixlan.speed != self.speed:
             changes.update(speed = self.speed)
 
-        if netixlan.is_operational != self.is_operational:
-            changes.update(is_operational = self.is_operational)
+        if netixlan.operational != self.operational:
+            changes.update(operational = self.operational)
 
         if netixlan.status != self.status:
             changes.update(status = self.status)
+
+        return changes
+
+    @property
+    def changed_fields(self):
+        return ", ".join(list(self.changes.keys()))
+
+    @property
+    def remote_changes(self):
+
+        if not self.id and self.netixlan.id:
+            return self.changes
+
+        changes = {}
+
+        for field in self.data_fields:
+            v = getattr(self, f"previous_{field}", None)
+            if v is not None and v != getattr(self, field):
+                changes[field] = v
 
         return changes
 
@@ -2270,25 +2312,32 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         return (self.data == "{}" or not self.data)
 
     @property
+    def net_present_at_ix(self):
+        return NetworkIXLan.objects.filter(
+            ixlan=self.ixlan,
+            network=self.net
+        ).exists()
+
+
+    @property
     def action(self):
         """
         Returns the implied action of applying this
         entry to peeringdb
 
-        Will return either "add", "update", "delete" or "noop"
+        Will return either "add", "modify", "delete" or "noop"
         """
 
         if not self.netixlan.id:
             return "add"
 
-        if self.changes:
-            return "update"
-
         if self.marked_for_removal:
             return "delete"
 
-        return "noop"
+        if self.changes:
+            return "modify"
 
+        return "noop"
 
     @property
     def netixlan(self):
@@ -2327,7 +2376,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                     ipaddr6 = self.ipaddr6,
                     speed = self.speed,
                     asn = self.asn,
-                    is_operational = self.is_operational,
+                    operational = self.operational,
                     is_rs_peer = self.is_rs_peer,
                     ixlan=self.ixlan,
                     network=self.net,
@@ -2338,7 +2387,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
 
     @reversion.create_revision()
-    def apply(self, user=None, comment=None):
+    def apply(self, user=None, comment=None, save=True):
         """
         Applies the data.
 
@@ -2357,58 +2406,78 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         changes = self.changes
 
         if action == "add":
-            netixlan.full_clean()
-            netixlan.save()
-        elif action == "update":
+            result = self.ixlan.add_netixlan(
+                netixlan,
+                save=save,
+                save_others=save
+            )
+            self._netixlan = result["netixlan"]
+        elif action == "modify":
             netixlan.speed = self.speed
             netixlan.is_rs_peer = self.is_rs_peer
-            netixlan.is_operational = self.is_operational
+            netixlan.operational = self.operational
             netixlan.full_clean()
-            netixlan.save()
+            if save:
+                netixlan.save()
         elif action == "delete":
-            netixlan.delete()
+            if save:
+                netixlan.delete()
 
-        self.resolve()
+        if save:
+            self.set_resolved()
 
         return {"action":action, "netixlan":netixlan}
 
 
-    def set_resolved(self):
-        if self.id:
+    def set_resolved(self, save=True):
+        if self.id and save:
             self.notify_resolve(ac=True, ix=True, net=True)
-            self.delete()
+            self.delete(hard=True)
 
-    def set_conflict(self, error=None):
-        if self.remote_changes:
+    def set_conflict(self, error=None, save=True):
+        if self.remote_changes and save:
             self.error = error
             self.notify_remote_changes(ac=True, ix=True, net=True)
             self.save()
 
-    def set_update(self):
-        if self.remote_changes:
+    def set_update(self, save=True, reason=""):
+        self.reason = reason
+        if self.remote_changes and save:
             self.notify_remote_changes(ac=True, ix=True, net=True)
             self.save()
 
-    def set_add(self):
-        if not self.id:
+    def set_add(self, save=True, reason=""):
+        self.reason = reason
+        if not self.id and save:
             if self.net_present_at_ix:
                 self.notify_add(ac=True, ix=True, net=True)
             else:
                 self.notify_add(net=True)
             self.save()
 
-    def set_remove(self):
-        if not self.id or not self.marked_for_removal():
-            self.notify_removal(ac=True, ix=True, net=True)
+    def set_remove(self, save=True, reason=""):
+        self.reason = reason
+        if (not self.id or not self.marked_for_removal) and save:
+            self.notify_remove(ac=True, ix=True, net=True)
             self.save()
 
-
-
-
     def set_data(self, data):
-        if self.json:
-            self.old_data = self.data
         self.data = json.dumps(data)
+
+    def notify_resolve(self, **kwargs):
+        print("notify", "resolve", kwargs)
+
+    def notify_remote_changes(self, **kwargs):
+        print("notify", "remote-changes", kwargs)
+
+    def notify_update(self, **kwargs):
+        print("notify", "update", kwargs)
+
+    def notify_add(self,  **kwargs):
+        print("notify", "add", kwargs)
+
+    def notify_remove(self, **kwargs):
+        print("notify", "remove", kwargs)
 
 
 

@@ -58,6 +58,7 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLog,
     IXLanIXFMemberImportLogEntry,
     IXLanPrefix,
+    IXFMemberData,
     NetworkContact,
     NetworkFacility,
     NetworkIXLan,
@@ -1669,6 +1670,15 @@ class DeskProTicketAdmin(admin.ModelAdmin):
     readonly_fields = ("user",)
 
 
+class IXFMemberDataAdmin(admin.ModelAdmin):
+    list_display = ("asn","ipaddr4", "ipaddr6", "action", "ix", "speed", "operational", "is_rs_peer", "created", "updated", "fetched", "changes", "reason")
+    readonly_fields = ("marked_for_removal", "fetched", "ix", "action", "changes", "asn", "ipaddr4", "ipaddr6", "reason")
+
+    def ix(self, obj):
+        return obj.ixlan.ix
+
+
+admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)
 admin.site.register(InternetExchangeFacility, InternetExchangeFacilityAdmin)

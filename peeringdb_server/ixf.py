@@ -7,6 +7,7 @@ import ipaddress
 from django.db import transaction
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError
 
 import reversion
 
@@ -16,7 +17,27 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLogEntry,
     Network,
     NetworkIXLan,
+    IXFMemberData,
 )
+
+REASON_AUTO_DISABLED = _(
+    "Network has disabled automatic IX-F updates"
+)
+
+REASON_ENTRY_GONE_FROM_REMOTE = _(
+    "The entry for (asn, IPv4 and IPv6) does not exist " \
+    "in IX-F"
+)
+
+REASON_NEW_ENTRY = _(
+    "The entry for (asn, IPv4 and IPv6) does not exist " \
+    "in PeeringDB"
+)
+
+REASON_VALUES_CHANGED = _(
+    "Value changes found"
+)
+
 
 
 class Importer(object):
@@ -235,19 +256,29 @@ class Importer(object):
             netixlan_qset = netixlan_qset.filter(asn=self.asn)
 
         for netixlan in netixlan_qset:
+            print(netixlan)
             if netixlan.ixf_id not in self.ixf_ids:
                 ixf_member_data = IXFMemberData.instantiate(
                     netixlan.asn,
                     netixlan.ipaddr4,
                     netixlan.ipaddr6,
-                    netixlan.ixlan
+                    netixlan.ixlan,
+                    data={}
                 )
 
-                if netixlan.network.allow_ixp_updates:
-                    self.log_apply(ixf_member_data.apply())
-
+                if netixlan.network.allow_ixp_update:
+                    print("DELETING", netixlan)
+                    self.log_apply(
+                        ixf_member_data.apply(save=self.save),
+                        reason=REASON_ENTRY_GONE_FROM_REMOTE
+                    )
                 else:
-                    ixf_member_data.set_remove()
+                    ixf_member_data.set_remove(
+                        save=self.save,
+                        reason = f"{REASON_ENTRY_GONE_FROM_REMOTE}; " \
+                                 f"{REASON_AUTO_DISABLED}"
+                    )
+                    self.log_ixf_member_data(ixf_member_data)
 
 
     @transaction.atomic()
@@ -444,6 +475,7 @@ class Importer(object):
                 is_rs_peer=is_rs_peer,
                 data=json.dumps(member),
                 ixlan=self.ixlan,
+                save=self.save,
             )
 
             self.apply_add_or_update(ixf_member_data)
@@ -476,7 +508,7 @@ class Importer(object):
 
             # importer-protocol: netixlan exists
 
-            if not ifx_member_data.changes:
+            if not ixf_member_data.changes:
 
                 # importer-protocol: no changes
 
@@ -496,33 +528,47 @@ class Importer(object):
 
 
     def resolve(self, ixf_member_data):
-        ixf_member_data.set_resolved()
+        ixf_member_data.set_resolved(save=self.save)
 
 
     def apply_update(self, ixf_member_data):
+        reason = f"{REASON_VALUES_CHANGED}: "\
+                 f"{ixf_member_data.changed_fields}"
 
-        if ixf_member_data.net.allow_ixp_updates:
+        if ixf_member_data.net.allow_ixp_update:
             try:
-                self.log_apply(ixf_member_data.apply())
+               self.log_apply(
+                    ixf_member_data.apply(save=self.save),
+                    reason=reason
+                )
             except ValidationError as exc:
-                ixf_member_data.set_conflict(error=exc)
+                ixf_member_data.set_conflict(error=exc, save=self.save)
         else:
-            ixf_member_data.set_update()
+            ixf_member_data.set_update(
+                save=self.save,
+                reason=f"{reason}; {REASON_AUTO_DISABLED}"
+            )
+            self.log_ixf_member_data(ixf_member_data)
 
 
     def apply_add(self, ixf_member_data):
 
-        if ixf_member_data.net.allow_ixp_updates:
+        if ixf_member_data.net.allow_ixp_update:
 
             try:
-                self.log_apply(ixf_member_data.apply())
+                self.log_apply(
+                    ixf_member_data.apply(save=self.save),
+                    reason=REASON_NEW_ENTRY
+                )
             except ValidationError as exc:
-                ixf_member_data.set_conflict(error=exc)
+                ixf_member_data.set_conflict(error=exc, save=self.save)
 
         else:
-            ixf_member_data.set_add()
-
-
+            ixf_member_data.set_add(
+                save=self.save,
+                reason=f"{REASON_NEW_ENTRY}; {REASON_AUTO_DISABLED}"
+            )
+            self.log_ixf_member_data(ixf_member_data)
 
     def save_log(self):
         """
@@ -537,6 +583,24 @@ class Importer(object):
         Reset the attempt log
         """
         self.log = {"data": [], "errors": []}
+
+    def log_apply(self, apply_result, reason=""):
+
+        return self.log_peer(
+            apply_result["netixlan"].asn,
+            apply_result["action"],
+            reason,
+            netixlan=apply_result["netixlan"]
+        )
+
+    def log_ixf_member_data(self, ixf_member_data):
+        return self.log_peer(
+            ixf_member_data.net.asn,
+            f"suggest-{ixf_member_data.action}",
+            ixf_member_data.reason,
+            netixlan=ixf_member_data
+        )
+
 
     def log_peer(self, asn, action, reason, netixlan=None):
         """
@@ -559,9 +623,15 @@ class Importer(object):
         }
 
         if netixlan:
+
+            if hasattr(netixlan, "network_id"):
+                net_id = netixlan.network_id
+            else:
+                net_id = netixlan.net.id
+
             peer.update(
                 {
-                    "net_id": netixlan.network_id,
+                    "net_id": net_id,
                     "ipaddr4": "{}".format(netixlan.ipaddr4 or ""),
                     "ipaddr6": "{}".format(netixlan.ipaddr6 or ""),
                     "speed": netixlan.speed,
