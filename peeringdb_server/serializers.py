@@ -1361,6 +1361,10 @@ class NetworkIXLanSerializer(ModelSerializer):
             SoftRequiredValidator(
                 fields=("ipaddr4", "ipaddr6"), message="Input required for IPv4 or IPv6"
             ),
+            UniqueFieldValidator(
+                fields=("ipaddr4", "ipaddr6"), message="IP already exists",
+                check_deleted=True
+            ),
         ]
 
         model = NetworkIXLan
