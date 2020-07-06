@@ -9,7 +9,8 @@ def dedupe_ipaddrs(apps, schema_editor):
     duplicate_ippr4s = NetIXLan.handleref.filter(
         ).values('ipaddr4'
         ).annotate(ipaddr4_count=Count('ipaddr4')
-        ).filter(ipaddr4_count__gt=1).values('ipaddr4')
+        ).filter(ipaddr4_count__gt=1
+        ).values('ipaddr4')
 
     netixlans_to_dedupe_4 = NetIXLan.handleref.filter(
         status='deleted',
@@ -36,21 +37,9 @@ def dedupe_ipaddrs(apps, schema_editor):
         n.ipaddr6 = None
         n.save()
 
-    active_duplicate_ippr4s = NetIXLan.handleref.filter(
-        ).values('ipaddr4'
-        ).annotate(ipaddr4_count=Count('ipaddr4')
-        ).filter(ipaddr4_count__gt=1
-        ).values('ipaddr4')
-
-    active_duplicate_ippr6s = NetIXLan.handleref.filter(
-        ).values('ipaddr6'
-        ).annotate(ipaddr6_count=Count('ipaddr6')
-        ).filter(ipaddr6_count__gt=1
-        ).values('ipaddr6')
-
 
     active_dupes = NetIXLan.handleref.filter(
-        Q(ipaddr4__in=active_duplicate_ippr4s) | Q(ipaddr6__in=active_duplicate_ippr6s),
+        Q(ipaddr4__in=duplicate_ippr4s) | Q(ipaddr6__in=duplicate_ippr6s),
         status='ok',
     )
 
