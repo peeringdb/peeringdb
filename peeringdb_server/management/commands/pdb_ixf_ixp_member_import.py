@@ -8,6 +8,7 @@ from peeringdb_server.models import (
     IXLan,
     NetworkIXLan,
     Network,
+    IXFMemberData,
 )
 from peeringdb_server import ixf
 
@@ -36,6 +37,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Just update IX-F cache, do NOT perform any import logic",
         )
+        parser.add_argument(
+            "--delete-all-ixfmemberdata",
+            action="store_true",
+            help="This removes all IXFMemberData objects"
+        )
 
     def log(self, msg, debug=False):
         if self.preview:
@@ -53,6 +59,10 @@ class Command(BaseCommand):
         self.preview = options.get("preview", False)
         self.cache = options.get("cache", False)
         self.skip_import = options.get("skip_import", False)
+
+        if options.get("delete_all_ixfmemberdata"):
+            self.log("Deleting IXFMemberData Instances ...")
+            IXFMemberData.objects.all().delete()
 
         if self.preview and self.commit:
             self.commit = False

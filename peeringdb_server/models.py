@@ -2232,6 +2232,17 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self._net = Network.objects.get(asn=self.asn)
         return self._net
 
+    @property
+    def ix(self):
+        """
+        Returns the InternetExchange instance related to
+        this entry
+        """
+
+        if not hasattr(self, "_ix"):
+            self._ix = self.ixlan.ix
+        return self._ix
+
 
     @property
     def ixf_id(self):
@@ -2260,16 +2271,30 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             return changes
 
         if netixlan.is_rs_peer != self.is_rs_peer:
-            changes.update(is_rs_peer = self.is_rs_peer)
+            changes.update(
+                is_rs_peer = {
+                    "from": netixlan.is_rs_peer,
+                    "to": self.is_rs_peer
+                }
+            )
 
         if netixlan.speed != self.speed:
-            changes.update(speed = self.speed)
+            changes.update(
+                speed = {"from":netixlan.speed, "to": self.speed}
+            )
 
         if netixlan.operational != self.operational:
-            changes.update(operational = self.operational)
+            changes.update(
+                operational = {
+                    "from": netixlan.operational,
+                    "to": self.operational
+                }
+            )
 
         if netixlan.status != self.status:
-            changes.update(status = self.status)
+            changes.update(
+                status = {"from": netixlan.status, "to": self.status}
+            )
 
         return changes
 
@@ -2281,14 +2306,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def remote_changes(self):
 
         if not self.id and self.netixlan.id:
-            return self.changes
+            return {}
 
         changes = {}
 
         for field in self.data_fields:
             v = getattr(self, f"previous_{field}", None)
-            if v is not None and v != getattr(self, field):
-                changes[field] = v
+            old_v = getattr(self, field)
+            if v is not None and v != old_v:
+                changes[field] = {"from": old_v, "to": v}
 
         return changes
 
@@ -2385,6 +2411,24 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         return self._netixlan
 
+    def __str__(self):
+        parts = [
+            self.ixlan.ix.name,
+            f"AS{self.asn}",
+        ]
+
+        if self.ipaddr4:
+            parts.append(f"{self.ipaddr4}")
+        else:
+            parse.append("No IPv4")
+
+        if self.ipaddr6:
+            parts.append(f"{self.ipaddr6}")
+        else:
+            parts.append("No IPv6")
+
+        return " ".join(parts)
+
 
     @reversion.create_revision()
     def apply(self, user=None, comment=None, save=True):
@@ -2437,47 +2481,121 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def set_conflict(self, error=None, save=True):
         if self.remote_changes and save:
             self.error = error
-            self.notify_remote_changes(ac=True, ix=True, net=True)
             self.save()
+            self.notify_update(ac=True, ix=True, net=True)
 
     def set_update(self, save=True, reason=""):
         self.reason = reason
-        if self.remote_changes and save:
-            self.notify_remote_changes(ac=True, ix=True, net=True)
+        if ((self.changes and not self.id) or self.remote_changes) and save:
             self.save()
+            self.notify_update(ac=True, ix=True, net=True)
 
     def set_add(self, save=True, reason=""):
         self.reason = reason
         if not self.id and save:
+            self.save()
             if self.net_present_at_ix:
                 self.notify_add(ac=True, ix=True, net=True)
             else:
                 self.notify_add(net=True)
-            self.save()
 
     def set_remove(self, save=True, reason=""):
         self.reason = reason
         if (not self.id or not self.marked_for_removal) and save:
-            self.notify_remove(ac=True, ix=True, net=True)
             self.save()
+            self.notify_remove(ac=True, ix=True, net=True)
 
     def set_data(self, data):
         self.data = json.dumps(data)
 
+    def notify(self, template_file, recipient, subject, context=None):
+        _context = {
+            "instance": self,
+            "recipient": recipient,
+        }
+        if context:
+            _context.update(context)
+
+        template = loader.get_template(template_file)
+        message = template.render(_context)
+        subject = f"[IX-F] {self}: {subject}"
+
+        print(recipient, subject)
+        print("-"*50)
+        print(message)
+        print("-"*50)
+
+
+    def _notify(self, template_file, subject, context=None, **recipients):
+        for recipient in ["ac", "ix", "net"]:
+            if not recipients.get(recipient):
+                continue
+            self.notify(
+                template_file,
+                recipient,
+                subject,
+                context,
+            )
+
     def notify_resolve(self, **kwargs):
-        print("notify", "resolve", kwargs)
+        return self._notify(
+            "email/notify-ixf-resolved.txt", "Resolved", **kwargs
+        )
 
     def notify_remote_changes(self, **kwargs):
-        print("notify", "remote-changes", kwargs)
+        return self._notify(
+            "email/notify-ixf-update.txt", _("IX-F changed"), **kwargs
+        )
 
     def notify_update(self, **kwargs):
-        print("notify", "update", kwargs)
+        return self._notify(
+            "email/notify-ixf-update.txt", _("Modify"), **kwargs
+        )
 
     def notify_add(self,  **kwargs):
-        print("notify", "add", kwargs)
+        return self._notify(
+            "email/notify-ixf-add.txt", _("Add"), **kwargs
+        )
 
     def notify_remove(self, **kwargs):
-        print("notify", "remove", kwargs)
+        return self._notify(
+            "email/notify-ixf-remove.txt", _("Remove"), **kwargs
+        )
+
+
+
+
+    @property
+    def ac_netixlan_url(self):
+        if not self.netixlan.id:
+            return ""
+        path = django.urls.reverse(
+            "admin:peeringdb_server_networkixlan_change",
+            args=(self.netixlan.id,),
+        )
+        return f"{settings.BASE_URL}{path}"
+
+
+    @property
+    def ac_url(self):
+        if not self.id:
+            return ""
+        path = django.urls.reverse(
+            "admin:peeringdb_server_ixfmemberdata_change",
+            args=(self.id,),
+        )
+        return f"{settings.BASE_URL}{path}"
+
+
+    @property
+    def net_url(self):
+        return "NOTIMPL"
+
+    @property
+    def ix_url(self):
+        return "NOTIMPL"
+
+
 
 
 

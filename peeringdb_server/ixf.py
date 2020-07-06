@@ -458,9 +458,9 @@ class Importer(object):
                 continue
 
             if connection.get("state", "active") == "inactive":
-                is_operational = False
+                operational = False
             else:
-                is_operational = True
+                operational = True
 
             is_rs_peer = (
                 ipv4.get("routeserver", False) or ipv6.get("routeserver", False)
@@ -471,7 +471,7 @@ class Importer(object):
                 ipv4_addr,
                 ipv6_addr,
                 speed=speed,
-                is_operational=is_operational,
+                operational=operational,
                 is_rs_peer=is_rs_peer,
                 data=json.dumps(member),
                 ixlan=self.ixlan,
@@ -636,6 +636,7 @@ class Importer(object):
                     "ipaddr6": "{}".format(netixlan.ipaddr6 or ""),
                     "speed": netixlan.speed,
                     "is_rs_peer": netixlan.is_rs_peer,
+                    "operational": netixlan.operational,
                 }
             )
 

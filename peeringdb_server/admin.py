@@ -1671,11 +1671,53 @@ class DeskProTicketAdmin(admin.ModelAdmin):
 
 
 class IXFMemberDataAdmin(admin.ModelAdmin):
-    list_display = ("asn","ipaddr4", "ipaddr6", "action", "ix", "speed", "operational", "is_rs_peer", "created", "updated", "fetched", "changes", "reason")
-    readonly_fields = ("marked_for_removal", "fetched", "ix", "action", "changes", "asn", "ipaddr4", "ipaddr6", "reason")
+    list_display = (
+        "ix",
+        "asn",
+        "ipaddr4",
+        "ipaddr6",
+        "action",
+        "netixlan",
+        "speed",
+        "operational",
+        "is_rs_peer",
+        "created",
+        "updated",
+        "fetched",
+        "changes"
+    )
+    readonly_fields = (
+        "marked_for_removal",
+        "fetched",
+        "ix",
+        "action",
+        "changes",
+        "asn",
+        "ipaddr4",
+        "ipaddr6",
+        "reason",
+        "netixlan"
+    )
+
+    search_fields = (
+        "asn",
+        "ixlan__id",
+        "ixlan__ix__name",
+        "ipaddr4",
+        "ipaddr6"
+    )
 
     def ix(self, obj):
         return obj.ixlan.ix
+
+    def netixlan(self, obj):
+        if not obj.netixlan.id:
+            return "-"
+        url = django.urls.reverse(
+            "admin:peeringdb_server_networkixlan_change",
+            args=(obj.netixlan.id,)
+        )
+        return mark_safe(f'<a href="{url}">{obj.netixlan.id}</a>')
 
 
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
