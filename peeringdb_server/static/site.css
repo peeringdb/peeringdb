@@ -1072,8 +1072,8 @@ div[data-edit-component="add"] {
 }
 
 @keyframes newrow_animation {
-  from {background-color: #4b6063;}
-  to {background-color: #4b6063;}
+  from {background-color: #5ba479;}
+  to {background-color: #f1f1f1;}
 }
 
 div.list div.newrow {

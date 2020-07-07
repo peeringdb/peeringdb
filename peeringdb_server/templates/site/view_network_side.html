@@ -4,13 +4,36 @@
 
 {% if permissions.can_write %}
 
-{% for ix_id, ixf_proposals in data.ixf.items %}
+
+{% if data.ixf.add or data.ixf.remove or data.ixf.modify %}
+<div data-edit-toggled="view" class="alert alert-info">
+<p>
+{% blocktrans trimmed %}
+Some exchanges suggest changes to your data. Toggle edit mode to
+review, apply or dismiss those suggestions.
+{% endblocktrans %}
+</p>
+{% if not instance.allow_ixp_update %}
+<p><small>
+{% blocktrans trimmed %}
+You can automatically accept such such suggestions in the future
+by turning this network's "Allow IXP Update" setting on.
+{% endblocktrans %}
+</small></p>
+{% endif %}
+</div>
+{% endif %}
+
+<div data-edit-toggled="edit">
+
+{% for ix_id, ixf_proposals in data.ixf.add.items %}
 <div class="list"
   data-ixf-proposals-ix="{{ ixf_proposals.ix.id }}"
+  data-ixf-proposals-ix-name="{{ ixf_proposals.ix.name }}"
   data-ixf-proposals-net="{{ instance.id }}">
   <div class="row">
     <div class="col-xs-12">
-      <h5><a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{{ ixf_proposals.ix.name }}</a> - {% trans "Suggestions" %}</h5>
+      <h5><a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{{ ixf_proposals.ix.name }}</a> - {% trans "Suggested entries" %}</h5>
     </div>
   </div>
 
@@ -29,10 +52,9 @@
   </div>
 
 
-  <div class="scrollable">
+  <div>
 
     {% for x in ixf_proposals.entries %}
-    {% if x.action == "add" %}
 
     <div class="row item">
       <div class="col-xs-6">
@@ -68,7 +90,6 @@
       </div>
     </div>
 
-    {% endif %}
     {% endfor %}
 
   </div>
@@ -81,6 +102,8 @@ $(document).ready(() => {
   var ixf_proposals = new PeeringDB.IXFProposals();
 });
 </script>
+
+</div>
 
 {% endif %}
 

@@ -2233,21 +2233,24 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def actionable_for_network(cls, net):
         qset = cls.get_for_network(net).select_related("ixlan", "ixlan__ix")
 
-        suggestions = {}
+        suggestions = {"add":{}, "remove":{}, "modify":{}}
 
         for ixf_member_data in qset:
-            if ixf_member_data.action == "noop":
+
+            action = ixf_member_data.action
+
+            if action == "noop":
                 continue
 
             ix_id = ixf_member_data.ix.id
 
-            if ix_id not in suggestions:
-                suggestions[ix_id] = {
+            if ix_id not in suggestions[action]:
+                suggestions[action][ix_id] = {
                     "ix": ixf_member_data.ix,
                     "entries": []
                 }
 
-            suggestions[ix_id]["entries"].append(ixf_member_data)
+            suggestions[action][ix_id]["entries"].append(ixf_member_data)
 
         return suggestions
 
