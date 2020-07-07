@@ -326,6 +326,51 @@ PeeringDB.ViewActions.actions.net_ixf_postmortem = function(netId) {
 }
 
 
+PeeringDB.IXFProposals = twentyc.cls.define(
+  "IXFProposals",
+  {
+    IXFProposals : function() {
+
+      var ixf_proposals = this;
+
+      $("[data-ixf-proposals-ix]").each(function() {
+        var proposals = $(this)
+        var ix_id = proposals.data("ixf-proposals-ix")
+        var net_id = proposals.data("ixf-proposals-net")
+        proposals.find('.row.item').each(function() {
+          var row = $(this)
+          var buttonAdd = row.find('button.add');
+          var buttonDismiss = row.find('button.dismiss');
+
+          buttonAdd.click(() => {
+            var data= ixf_proposals.collect(ix_id, net_id, row);
+            PeeringDB.API.request(
+              "POST",
+              "netixlan",
+              0,
+              data
+            ).done((a,b,c) => {
+              console.log("SUCCESS", {a,b,c})
+            }).fail((a,b,c) => {
+              console.log("FAILURE", {a,b,c})
+            })
+          })
+        })
+      })
+    },
+
+    collect : function(ix_id, net_id, row) {
+      var data = {ixlan_id:ix_id, net_id:net_id}
+      row.find('[data-field]').each(function() {
+        var field = $(this)
+        data[field.data("field")] = field.data("value")
+      });
+      return data;
+    }
+  }
+)
+
+
 PeeringDB.IXFPreview = twentyc.cls.define(
   "IXFPreview",
   {

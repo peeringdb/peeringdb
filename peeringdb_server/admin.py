@@ -1672,6 +1672,7 @@ class DeskProTicketAdmin(admin.ModelAdmin):
 
 class IXFMemberDataAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "ix",
         "asn",
         "ipaddr4",
@@ -1696,7 +1697,8 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "ipaddr4",
         "ipaddr6",
         "reason",
-        "netixlan"
+        "netixlan",
+        "log"
     )
 
     search_fields = (

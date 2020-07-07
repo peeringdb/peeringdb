@@ -59,6 +59,7 @@ from peeringdb_server.models import (
     NetworkIXLan,
     InternetExchange,
     InternetExchangeFacility,
+    IXFMemberData,
     Facility,
     Sponsorship,
     Partnership,
@@ -1438,10 +1439,13 @@ def view_network(request, id):
 
     org = network_d.get("org")
 
+    ixf_proposals = IXFMemberData.actionable_for_network(network)
+
     data = {
         "title": network_d.get("name", dismiss),
         "facilities": facilities,
         "exchanges": exchanges,
+        "ixf": ixf_proposals,
         "fields": [
             {
                 "name": "org",

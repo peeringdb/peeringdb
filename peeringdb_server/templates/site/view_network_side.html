@@ -1,5 +1,89 @@
-{% load util %}
-{% load i18n %}
+{% load util i18n static %}
+
+<!-- IX-F SUGGESTIONS -->
+
+{% if permissions.can_write %}
+
+{% for ix_id, ixf_proposals in data.ixf.items %}
+<div class="list"
+  data-ixf-proposals-ix="{{ ixf_proposals.ix.id }}"
+  data-ixf-proposals-net="{{ instance.id }}">
+  <div class="row">
+    <div class="col-xs-12">
+      <h5><a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{{ ixf_proposals.ix.name }}</a> - {% trans "Suggestions" %}</h5>
+    </div>
+  </div>
+
+  <div class="row header">
+    <div class="col-xs-6">
+      <div>{% trans "IPv4" %}</div>
+      <div>{% trans "IPv6" %}</div>
+    </div>
+    <div class="col-xs-3">
+      <div>{% trans "Speed" %}</div>
+      <div>{% trans "RS Peer" %}</div>
+    </div>
+    <div class="col-xs-3">
+      <div>{% trans "Operational" %}</div>
+    </div>
+  </div>
+
+
+  <div class="scrollable">
+
+    {% for x in ixf_proposals.entries %}
+    {% if x.action == "add" %}
+
+    <div class="row item">
+      <div class="col-xs-6">
+        <div data-field="ipaddr4" data-value="{{ x.ipaddr4 }}">
+          {{ x.ipaddr4|none_blank }}
+        </div>
+        <div data-field="ipaddr6" data-value="{{ x.ipaddr6 }}">
+          {{ x.ipaddr6|none_blank }}
+        </div>
+      </div>
+      <div class="col-xs-3">
+        <div data-field="speed" data-value="{{ x.speed }}">
+          {{ x.speed|pretty_speed }}
+        </div>
+        <div data-field="is_rs_peer" data-value="{{ x.is_rs_peer }}">
+          <img class="checkmark" src="{% static "checkmark" %}{% if not x.is_rs_peer|as_bool %}-off{% endif %}.png" alt="{% trans "RS Peer" %}" />
+        </div>
+      </div>
+      <div class="col-xs-3">
+        <div data-field="operational" data-value="{{ x.operational }}">
+          <img class="checkmark" src="{% static "checkmark" %}{% if not x.operational|as_bool %}-off{% endif %}.png" alt="{% trans "RS Peer" %}" />
+        </div>
+      </div>
+      <div class="col-xs-12">
+        <div class="row">
+          <div class="col-xs-6">
+            <button type="button" class="btn btn-danger btn-sm dismiss">{% trans "Dismiss" %}</button>
+          </div>
+          <div class="col-xs-6 right">
+            <button type="button" class="btn btn-default btn-sm add">{% trans "Add" %}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% endif %}
+    {% endfor %}
+
+  </div>
+
+</div>
+{% endfor %}
+
+<script>
+$(document).ready(() => {
+  var ixf_proposals = new PeeringDB.IXFProposals();
+});
+</script>
+
+{% endif %}
+
 
 <!-- EXCHANGE POINTS -->
 

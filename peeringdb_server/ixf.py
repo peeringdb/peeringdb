@@ -228,6 +228,8 @@ class Importer(object):
         # process any netixlans that need to be deleted
         self.process_deletions()
 
+        self.cleanup_ixf_member_data()
+
         # archive the import so we can roll it back later if needed
         self.archive()
 
@@ -279,6 +281,27 @@ class Importer(object):
                                  f"{REASON_AUTO_DISABLED}"
                     )
                     self.log_ixf_member_data(ixf_member_data)
+
+
+    def cleanup_ixf_member_data(self):
+
+        # clean up old ix-f memeber data objects
+
+        for ixf_member in IXFMemberData.objects.all():
+
+            # proposed deletion got fulfilled
+
+            if ixf_member.action == "delete":
+                if ixf_member.netixlan.status == "deleted":
+                    ixf_member.set_resolved()
+
+            # proposed change / addition is now gone from
+            # ix-f data
+
+            elif ixf_member.ixf_id not in self.ixf_ids:
+                if ixf_member.action in ["add","modify"]:
+                    ixf_member.set_resolved()
+
 
 
     @transaction.atomic()

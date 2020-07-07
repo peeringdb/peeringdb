@@ -2137,6 +2137,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         )
     )
 
+    log = models.TextField(blank=True, help_text=_(
+        "Activity for this entry"
+    ))
+
+    dismissed = models.BooleanField(default=False, help_text=_(
+        "Network's dismissal of this proposed change, which will hide it until" \
+        " from the customer facing network view"
+    ))
+
     error = models.TextField(null=True, blank=True, help_text=_(
         "Trying to apply data to peeringdb raised an issue"
     ))
@@ -2216,6 +2225,32 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         return instance
 
 
+    @classmethod
+    def get_for_network(cls, net):
+        return cls.objects.filter(asn = net.asn)
+
+    @classmethod
+    def actionable_for_network(cls, net):
+        qset = cls.get_for_network(net).select_related("ixlan", "ixlan__ix")
+
+        suggestions = {}
+
+        for ixf_member_data in qset:
+            if ixf_member_data.action == "noop":
+                continue
+
+            ix_id = ixf_member_data.ix.id
+
+            if ix_id not in suggestions:
+                suggestions[ix_id] = {
+                    "ix": ixf_member_data.ix,
+                    "entries": []
+                }
+
+            suggestions[ix_id]["entries"].append(ixf_member_data)
+
+        return suggestions
+
     @property
     def json(self):
         return json.loads(self.data)
@@ -2231,6 +2266,29 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if not hasattr(self, "_net"):
             self._net = Network.objects.get(asn=self.asn)
         return self._net
+
+    @property
+    def net_contacts(self):
+        qset = self.net.poc_set_active.exclude(email="")
+        qset = qset.exclude(email__isnull=True)
+
+        role_priority = ["Policy", "Technical", "NOC", "Maintenance"]
+
+        contacts = []
+
+        for role in role_priority:
+            for poc in qset.filter(role=role):
+                contacts.append(poc.email)
+            if contacts:
+                break
+
+        return list(set(contacts))
+
+
+    @property
+    def ix_contacts(self):
+        return [self.ix.tech_email or self.ix.policy_email]
+
 
     @property
     def ix(self):
@@ -2357,6 +2415,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if not self.netixlan.id:
             return "add"
 
+        if self.status == "ok" and self.netixlan.status == "deleted":
+            return "add"
+
         if self.marked_for_removal:
             return "delete"
 
@@ -2410,6 +2471,12 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 )
 
         return self._netixlan
+
+    @property
+    def ticket_user(self):
+        if not hasattr(self, "_ticket_user"):
+            self._ticket_user =  User.objects.get(username="ixf_importer")
+        return self._ticket_user
 
     def __str__(self):
         parts = [
@@ -2512,30 +2579,76 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         _context = {
             "instance": self,
             "recipient": recipient,
+            "ixf_url": self.ixlan.ixf_ixp_member_list_url,
         }
         if context:
             _context.update(context)
 
         template = loader.get_template(template_file)
         message = template.render(_context)
-        subject = f"[IX-F] {self}: {subject}"
+        subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {self}"
+        contacts = []
 
-        print(recipient, subject)
-        print("-"*50)
-        print(message)
-        print("-"*50)
+        if recipient == "ac":
+            contacts = [DeskProTicket.objects.create(
+                subject = subject,
+                body = message,
+                user = self.ticket_user,
+            )]
+        elif recipient == "net":
+            contacts = self.net_contacts
+            self._email(subject, message, contacts)
+        elif recipient == "ix":
+            contacts = self.ix_contacts
+            self._email(subject, message, contacts)
+
+        return {
+            "contacts": contacts,
+            "subject": subject,
+            "message": message
+        }
+
+
+    def _email(self, subject, message, recipients):
+        if not getattr(settings, "MAIL_DEBUG", False):
+            raise Exception("NOPE")
+            mail = EmailMultiAlternatives(
+                subject,
+                strip_tags(message),
+                settings.DEFAULT_FROM_EMAIL,
+                recipients,
+            )
+            mail.send(fail_silently=False)
+        else:
+            debug_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                recipients,
+            )
 
 
     def _notify(self, template_file, subject, context=None, **recipients):
+
+        log = []
+        now = datetime.datetime.now().replace(tzinfo=UTC())
+
+
         for recipient in ["ac", "ix", "net"]:
             if not recipients.get(recipient):
                 continue
-            self.notify(
+            result = self.notify(
                 template_file,
                 recipient,
                 subject,
                 context,
             )
+
+            log.append(f"[{now}] notified {recipient} ({result['contacts']}) about {subject}")
+
+        self.log = "\n".join(log) + "\n" + self.log
+
+        self.save()
 
     def notify_resolve(self, **kwargs):
         return self._notify(
