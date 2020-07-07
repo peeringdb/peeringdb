@@ -207,8 +207,7 @@ class UniqueFieldValidator(object):
             if self.model.objects.filter(**filters).exclude(id=id).exists():
                 collisions[field] = self.message
         if collisions:
-            raise RestValidationError(collisions)
-
+            raise RestValidationError(collisions, code="unique")
 
 class RequiredForMethodValidator(object):
     """
