@@ -553,6 +553,10 @@ class TestJSON(unittest.TestCase):
 
                 with pytest.raises(InvalidRequestException) as excinfo:
                     r = db.create(typ, data_invalid, return_response=True)
+                    #FIXME
+                    #The following lines will not be called since
+                    #the InvalidRequestException is raised
+                    #in the previous line
                     for k, v in list(test_failures["invalid"].items()):
                         self.assertIn(k, list(r.keys()))
                 assert "400 Bad Request" in str(excinfo.value)
