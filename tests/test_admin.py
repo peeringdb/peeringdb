@@ -483,18 +483,16 @@ class AdminTests(TestCase):
             models.VerificationQueueItem,
             models.CommandLineTool,
             admin.UserPermission,
-            admin.DuplicateIPNetworkIXLan,
             models.OrganizationMerge,
         ]
 
         ignore_add = [
             admin.UserPermission,
-            admin.DuplicateIPNetworkIXLan,
             models.OrganizationMerge
         ]
 
         ignore_change = [
-            admin.DuplicateIPNetworkIXLan,
+
         ]
 
         # any other urls we want to test
