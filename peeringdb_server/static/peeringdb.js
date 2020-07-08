@@ -332,49 +332,161 @@ PeeringDB.IXFProposals = twentyc.cls.define(
     IXFProposals : function() {
 
       var ixf_proposals = this;
-      var netixlan_list = $('[data-edit-target="api:netixlan"]')
-      var netixlan_mod = netixlan_list.data('editModuleInstance')
+      this.netixlan_list = $('[data-edit-target="api:netixlan"]')
+      this.netixlan_mod = this.netixlan_list.data('editModuleInstance')
 
       $("[data-ixf-proposals-ix]").each(function() {
         var proposals = $(this)
-        var ix_id = proposals.data("ixf-proposals-ix")
-        var ix_name = proposals.data("ixf-proposals-ix-name")
-        var net_id = proposals.data("ixf-proposals-net")
         proposals.find('.row.item').each(function() {
           var row = $(this)
           var buttonAdd = row.find('button.add');
           var buttonDismiss = row.find('button.dismiss');
+          var buttonDelete = row.find('button.delete')
+          var buttonModify = row.find('button.modify')
 
-          buttonAdd.click(function() {
-
-            var data= ixf_proposals.collect(ix_id, net_id, row);
-
-            PeeringDB.API.request(
-              "POST",
-              "netixlan",
-              0,
-              data
-            ).done((a,b,c) => {
-              var netixlan = a.data[0]
-              netixlan.ix = { name: ix_name, id :ix_id }
-              netixlan_mod.listing_add(netixlan.id, null, netixlan_list, netixlan);
-              row.detach();
-              if(!proposals.find('.row.item').length) {
-                proposals.detach();
-              }
-            }).fail((a,b,c) => {
-              console.log("FAILURE", {a,b,c})
-            })
+          buttonAdd.click(() => { ixf_proposals.add(row) })
+          buttonDismiss.click(() => { ixf_proposals.dismiss(row) })
+          buttonDelete.click(() => {
+            if(!PeeringDB.confirm(buttonDelete.data("confirm")))
+              return
+            ixf_proposals.delete(row)
           })
+          buttonModify.click(() => { ixf_proposals.modify(row) })
         })
       })
     },
 
-    collect : function(ix_id, net_id, row) {
-      var data = {ixlan_id:ix_id, net_id:net_id}
+    dismiss : function(row) {
+      var data= this.collect(row);
+      console.log("DISMISSING", row)
+      row.find('.loading-shim').show();
+      $.ajax({
+        method: "POST",
+        url: "/net/"+data.net_id+"/dismiss-ixf-proposal/"+data.suggestion_id+"/",
+        data: {}
+      }).
+      fail((response) => { this.render_errors(row, response); }).
+      done(() => { this.detach_row(row);}).
+      always(() => {
+        row.find('.loading-shim').hide();
+      })
+    },
+
+    modify : function(row) {
+
+      var data=this.collect(row);
+      var proposals = row.closest("[data-ixf-proposals-ix]")
+      var netixlan_row = this.netixlan_list.find('[data-edit-id="'+data.id+'"]')
+      netixlan_row.find('[data-edit-name="speed"] input').val(data.speed)
+      netixlan_row.find('[data-edit-name="is_rs_peer"] input').prop("checked", data.is_rs_peer)
+      netixlan_row.find('[data-edit-name="operational"] input').prop("checked", data.operational)
+      netixlan_row.addClass("newrow")
+      this.detach_row(row);
+      row.find('button').tooltip("hide")
+
+    },
+
+    delete : function(row) {
+      var data=this.collect(row);
+      var proposals = row.closest("[data-ixf-proposals-ix]")
+      row.find('.loading-shim').show();
+
+      return PeeringDB.API.request(
+        "DELETE",
+        "netixlan/"+data.id,
+        0,
+        {}
+      ).fail(
+        (response) => { this.render_errors(row, response); }
+      ).done(
+        () => {
+          this.netixlan_list.find('[data-edit-id="'+data.id+'"]').detach();
+          this.detach_row(row);
+        }
+      ).always(() => {
+        row.find('.loading-shim').hide();
+      })
+
+    },
+
+    add : function(row) {
+      var data=this.collect(row);
+      var proposals = row.closest("[data-ixf-proposals-ix]")
+
+      row.find('.loading-shim').show();
+      row.find('.errors').hide()
+      row.find('.validation-error').removeClass('validation-error')
+      row.find('.input-note').detach()
+
+      return PeeringDB.API.request(
+        "POST",
+        "netixlan",
+        0,
+        data
+      ).done((a) => {
+        var netixlan = a.data[0]
+        netixlan.ix = { name : data.ix_name, id : data.ix_id }
+        this.netixlan_mod.listing_add(
+          netixlan.id, null, this.netixlan_list, netixlan);
+        this.detach_row(row);
+      }).fail((response) => {
+        this.render_errors(row, response);
+      }).always(() => {
+        row.find('.loading-shim').hide();
+      })
+    },
+
+    detach_row : function(row) {
+      row.detach();
+      var proposals = row.closest("[data-ixf-proposals-ix]")
+      if(!proposals.find('.row.item').length) {
+        proposals.detach();
+      }
+    },
+
+    render_errors : function(row, response) {
+      var element, field, msg;
+      var errors = row.find('.errors')
+      var info = [response.status + " " + response.statusText]
+      if(response.status == 400) {
+        info = [gettext("The server rejected your data")];
+        for(field in response.responseJSON) {
+          msg = response.responseJSON[field]
+          if(msg && msg.join)
+            msg = msg.join(",")
+          element = row.find('[data-field="'+field+'"]')
+          $('<div>')
+            .addClass("editable input-note always-absolute validation-error")
+            .text(msg)
+            .insertBefore(element);
+          element.addClass('validation-error')
+        }
+      }
+     if(response.responseJSON && response.responseJSON.non_field_errors) {
+        info = [];
+        var i;
+        for(i in response.responseJSON.non_field_errors)
+          info.push(response.responseJSON.non_field_errors[i]);
+      }
+      errors.empty().text(info.join("\n")).show()
+    },
+
+    collect : function(row) {
+      var proposals = row.closest("[data-ixf-proposals-ix]")
+      var ix_id = proposals.data("ixf-proposals-ix")
+      var ix_name = proposals.data("ixf-proposals-ix-name")
+      var net_id = proposals.data("ixf-proposals-net")
+
+      var data = {ixlan_id:ix_id, net_id:net_id, ix_name:ix_name}
       row.find('[data-field]').each(function() {
         var field = $(this)
-        data[field.data("field")] = field.data("value")
+        if(field.data("value")) {
+          data[field.data("field")] = field.data("value");
+        } else if(field.attr("type") == "checkbox") {
+          data[field.data("field")] = field.prop("checked");
+        } else {
+          data[field.data("field")] = field.val()
+        }
       });
       return data;
     }

@@ -20,22 +20,18 @@ from peeringdb_server.models import (
     IXFMemberData,
 )
 
-REASON_AUTO_DISABLED = _(
-    "Network has disabled automatic IX-F updates"
-)
-
 REASON_ENTRY_GONE_FROM_REMOTE = _(
-    "The entry for (asn, IPv4 and IPv6) does not exist " \
-    "in IX-F"
+    "The entry for (asn and IPv4 and IPv6) does not exist " \
+    "in the exchange's IX-F data as a singular member connection"
 )
 
 REASON_NEW_ENTRY = _(
-    "The entry for (asn, IPv4 and IPv6) does not exist " \
-    "in PeeringDB"
+    "The entry for (asn and IPv4 and IPv6) does not exist " \
+    "in PeeringDB as a singular network -> ix connection"
 )
 
 REASON_VALUES_CHANGED = _(
-    "Value changes found"
+    "Data differences between PeeringDB and the exchange's IX-F data"
 )
 
 
@@ -269,7 +265,6 @@ class Importer(object):
                 )
 
                 if netixlan.network.allow_ixp_update:
-                    print("DELETING", netixlan)
                     self.log_apply(
                         ixf_member_data.apply(save=self.save),
                         reason=REASON_ENTRY_GONE_FROM_REMOTE
@@ -277,8 +272,7 @@ class Importer(object):
                 else:
                     ixf_member_data.set_remove(
                         save=self.save,
-                        reason = f"{REASON_ENTRY_GONE_FROM_REMOTE}; " \
-                                 f"{REASON_AUTO_DISABLED}"
+                        reason = REASON_ENTRY_GONE_FROM_REMOTE
                     )
                     self.log_ixf_member_data(ixf_member_data)
 
@@ -527,7 +521,7 @@ class Importer(object):
 
     def apply_add_or_update(self, ixf_member_data):
 
-        if ixf_member_data.netixlan.id:
+        if ixf_member_data.netixlan_exists:
 
             # importer-protocol: netixlan exists
 
@@ -555,8 +549,7 @@ class Importer(object):
 
 
     def apply_update(self, ixf_member_data):
-        reason = f"{REASON_VALUES_CHANGED}: "\
-                 f"{ixf_member_data.changed_fields}"
+        reason = REASON_VALUES_CHANGED
 
         if ixf_member_data.net.allow_ixp_update:
             try:
@@ -569,7 +562,7 @@ class Importer(object):
         else:
             ixf_member_data.set_update(
                 save=self.save,
-                reason=f"{reason}; {REASON_AUTO_DISABLED}"
+                reason=reason,
             )
             self.log_ixf_member_data(ixf_member_data)
 
@@ -589,7 +582,7 @@ class Importer(object):
         else:
             ixf_member_data.set_add(
                 save=self.save,
-                reason=f"{REASON_NEW_ENTRY}; {REASON_AUTO_DISABLED}"
+                reason=REASON_NEW_ENTRY
             )
             self.log_ixf_member_data(ixf_member_data)
 

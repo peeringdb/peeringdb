@@ -1,0 +1,359 @@
+{% load util i18n static %}
+<!-- IX-F SUGGESTIONS -->
+
+{% if permissions.can_write %}
+
+
+{% if data.ixf or data.ixf_dismissed %}
+<div data-edit-toggled="view" class="alert alert-info">
+
+{% if data.ixf %}
+<p>
+{% trans "Some exchanges suggest changes to your data." %}
+{% blocktrans trimmed %}
+Toggle edit mode to review, apply or dismiss those suggestions.
+{% endblocktrans %}
+</p>
+{% if not instance.allow_ixp_update %}
+<p><small>
+{% blocktrans trimmed %}
+You can automatically accept such such suggestions in the future
+by turning this network's "Allow IXP Update" setting on.
+{% endblocktrans %}
+</small></p>
+{% endif %}
+{% endif %}
+
+{% if data.ixf_dismissed %}
+<p>{% trans "You have dimissed some suggestions that are still available." %}</p>
+{% endif %}
+
+</div>
+{% endif %}
+
+
+<div data-edit-toggled="edit">
+
+{% if data.ixf %}
+<div class="marg-side-15">
+  <div class="row">
+    <div class="col-xs-12 alert alert-info">
+      <p>{% trans "Some exchanges suggest changes to your data." %}</p>
+      <p><small>
+      {% trans "Expand each exchange below to review, apply or dismiss those suggestions" %}
+      </small></p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% for ix_id, ixf_proposals in data.ixf.items %}
+<div class="ixf-proposals"
+  data-ixf-proposals-ix="{{ ixf_proposals.ix.id }}"
+  data-ixf-proposals-ix-name="{{ ixf_proposals.ix.name }}"
+  data-ixf-proposals-net="{{ instance.id }}">
+  <div class="marg-side-15">
+  <div class="row item">
+    <div class="col-xs-10">
+      <h4><a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{{ ixf_proposals.ix.name }}</a></h4>
+    </div>
+    <div class="col-xs-2 right">
+      <a role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">
+        <span class="collapsed">{% trans "Expand" %}</span>
+        <span class="expanded">{% trans "Collapse" %}</span>
+      </a>
+    </div>
+  </div>
+  </div>
+
+  <div id="ixf-proposals-{{ ix_id }}" class="list padded-rows collapse">
+
+  {% if ixf_proposals.add %}
+
+  <div class="row header">
+    <div class="col-xs-5">
+      <div>{% trans "Add" %}</div>
+    </div>
+    <div class="col-xs-3">
+      <div>{% trans "Speed" %}</div>
+    </div>
+    <div class="col-xs-4">
+      <div>{% trans "Options" %}</div>
+    </div>
+  </div>
+
+
+  <div class="suggestions-add">
+
+    <!-- SUGGESTIONS FOR NEW ENTRIES -->
+
+    {% for x in ixf_proposals.add %}
+    {% if not x.dismissed %}
+
+    <div class="row item">
+      <div class="loading-shim" style="display:none;"></div>
+      <div class="col-xs-5">
+        <div class="editable input-frame">
+          <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="{{ x.ipaddr4|none_blank }}">
+        </div>
+        <div class="editable input-frame">
+          <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr6" value="{{ x.ipaddr6|none_blank }}">
+        </div>
+      </div>
+      <div class="col-xs-3">
+        <div>
+          <div class="editable input-frame">
+            <input type="text" placeholder="{% trans "Speed" %}" data-field="speed" value="{{ x.speed }}" id="{{ x.id }}-speed">
+          </div>
+        </div>
+      </div>
+      <div class="col-xs-3">
+        <div>
+          <div class="editable input-frame">
+            <input type="checkbox"
+              data-field="operational"
+              {% if x.operational %}checked{% endif %}>
+            {% trans "Operational" %}
+          </div>
+        </div>
+        <div>
+          <div class="editable input-frame">
+            <input type="checkbox"
+              data-field="is_rs_peer"
+              {% if x.is_rs_peer %}checked{% endif %}>
+            {% trans "RS Peer" %}
+          </div>
+        </div>
+      </div>
+      <div class="col-xs-1 right">
+        <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" title="{{ x.reason }}"></span>
+      </div>
+      <div class="col-xs-12">
+        <div class="row marg-top-15">
+          <div class="col-xs-3">
+            <input type="hidden" data-field="suggestion_id" value="{{ x.id }}">
+            <button type="button"
+              class="btn btn-danger btn-sm dismiss"
+              title="{% trans "Hide this suggestion until the exchange updates it." %}"
+              data-toggle="tooltip">{% trans "Dismiss" %}</button>
+          </div>
+          <div class="col-xs-6 center">
+            <div class="alert alert-compact alert-danger errors" style="display:none;"></div>
+          </div>
+          <div class="col-xs-3 right">
+            <button type="button"
+              class="btn btn-default btn-sm add"
+              title="{% trans "Add this entry to public peering exchange points" %}"
+              data-toggle="tooltip">{% trans "Add" %}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% endif %}
+    {% endfor %}
+
+  </div>
+
+  {% endif %}
+
+  <!-- SUGGESTIONS: DELETE -->
+
+  {% if ixf_proposals.delete %}
+
+  <div class="row header">
+    <div class="col-xs-12">
+      <div>{% trans "Remove" %}</div>
+    </div>
+  </div>
+
+  <div class="suggestions-delete">
+
+    {% for x in ixf_proposals.delete %}
+    {% if not x.dismissed %}
+
+    <div class="row item">
+
+      <div class="loading-shim" style="display:none;"></div>
+      <div style="display:none">
+        <div data-field="suggestion_id" data-value="{{ x.id }}"></div>
+        <div data-field="id" data-value="{{ x.netixlan.id }}"></div>
+      </div>
+      <div class="col-xs-5">
+      {{ x.ipaddr4|none_blank }}
+      </div>
+      <div class="col-xs-6">
+      {{ x.ipaddr6|none_blank }}
+      </div>
+      <div class="col-xs-1 right">
+        <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" title="{{ x.reason }}"></span>
+      </div>
+      <div class="col-xs-12">
+        <div class="row marg-top-15">
+          <div class="col-xs-3">
+            <button type="button"
+              class="btn btn-danger btn-sm dismiss"
+              title="{% trans "Hide this suggestion until the exchange updates it." %}"
+              data-toggle="tooltip">{% trans "Dismiss" %}</button>
+          </div>
+          <div class="col-xs-6 center">
+            <div class="alert alert-compact alert-danger errors" style="display:none;"></div>
+          </div>
+          <div class="col-xs-3 right">
+            <button type="button"
+              class="btn btn-default btn-sm delete"
+              title="{% trans "Remove this entry from public peering exchange points" %}"
+              data-confirm="{% trans "Remove this public peering exchange point ?" %}"
+              data-toggle="tooltip">{% trans "Delete" %}</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    {% endif %}
+    {% endfor %}
+
+  </div>
+
+  {% endif %}
+
+  <!-- SUGGESTIONS: MODIFY -->
+
+  {% if ixf_proposals.modify %}
+
+  <div class="row header">
+    <div class="col-xs-5">
+      <div>{% trans "Update" %}</div>
+    </div>
+    <div class="col-xs-7">
+      <div>{% trans "Changes" %}</div>
+    </div>
+  </div>
+
+  <div class="suggestions-modify">
+
+    {% for x in ixf_proposals.modify %}
+    {% if not x.dismissed %}
+
+    <div class="row item">
+
+      <div class="loading-shim" style="display:none;"></div>
+      <div style="display:none">
+        <div data-field="suggestion_id" data-value="{{ x.id }}"></div>
+        <div data-field="id" data-value="{{ x.netixlan.id }}"></div>
+      </div>
+      <div class="col-xs-5">
+        <div data-field="ipaddr4" data-value="{{ x.ipaddr4|none_blank }}">
+        {{ x.ipaddr4|none_blank }}
+        </div>
+        <div data-field="ipaddr6" data-value="{{ x.ipaddr6|none_blank }}">
+        {{ x.ipaddr6|none_blank }}
+        </div>
+      </div>
+      <div class="col-xs-6">
+        <input type="hidden" data-field="id" value="{{ x.netixlan.id }}">
+        <input type="hidden" data-field="ixlan_id" value="{{ x.ixlan_id }}">
+        <input type="hidden" data-field="net_id" value="{{ x.net.id }}">
+        <input type="hidden" data-field="asn" value="{{ x.asn }}">
+        <input type="hidden" data-field="speed" value="{{ x.speed }}">
+        <input type="hidden" data-field="is_rs_peer" value="{{ x.is_rs_peer }}">
+        <input type="hidden" data-field="operational" value="{{ x.operational }}">
+        {% if x.changes.speed %}
+        <div class="ixf-suggested-change">
+          <span class="field_name">{% trans "Speed" %}</span>:
+          <span class="old-value">{{ x.changes.speed.from|pretty_speed }}</span>
+          <span class="glyphicon glyphicon-arrow-right" data-toggle="tooltip" title="{{ x.reason }}"></span>
+          <span class="new-value">{{ x.changes.speed.to|pretty_speed }}</span>
+        </div>
+        {% else %}
+        {% endif %}
+
+        {% if x.changes.is_rs_peer %}
+        <div class="ixf-suggested-change">
+          <span class="field_name">{% trans "RS Peer" %}</span>:
+          <span class="old-value">
+            <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.is_rs_peer.from %}-off{% endif %}.png" />
+          </span>
+          <span class="glyphicon glyphicon-arrow-right" data-toggle="tooltip" title="{{ x.reason }}"></span>
+          <span class="new-value">
+            <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.is_rs_peer.to %}-off{% endif %}.png" />
+          </span>
+        </div>
+        {% endif %}
+
+        {% if x.changes.operational %}
+        <div class="ixf-suggested-change">
+          <span class="field_name">{% trans "Operational" %}</span>:
+          <span class="old-value">
+            <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.operational.from %}-off{% endif %}.png" />
+          </span>
+          <span class="glyphicon glyphicon-arrow-right" data-toggle="tooltip" title="{{ x.reason }}"></span>
+          <span class="new-value">
+            <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.operational.to %}-off{% endif %}.png" />
+          </span>
+        </div>
+        {% endif %}
+
+
+      </div>
+      <div class="col-xs-1 right">
+        <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" title="{{ x.reason }}"></span>
+      </div>
+      <div class="col-xs-12">
+        <div class="row marg-top-15">
+          <div class="col-xs-3">
+            <button type="button"
+              class="btn btn-danger btn-sm dismiss"
+              title="{% trans "Hide this suggestion until the exchange updates it." %}"
+              data-toggle="tooltip">{% trans "Dismiss" %}</button>
+          </div>
+          <div class="col-xs-6 center">
+            <div class="alert alert-compact alert-danger errors" style="display:none;"></div>
+          </div>
+          <div class="col-xs-3 right">
+            <button type="button"
+              class="btn btn-default btn-sm modify"
+              title="{% trans "Update this public peering exchange point in the listing below. You will also need to save the network record to persist these changes after accepting them." %}"
+              data-toggle="tooltip">{% trans "Accept" %}</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    {% endif %}
+    {% endfor %}
+
+  </div>
+
+  {% endif %}
+
+  </div>
+
+
+<!--
+  <div class="row controls marg-top">
+    <div class="col-xs-6">
+      <button data-toggle="tooltip" title="{% trans "Will restore any active suggestions from this exchange that have been dismissed by the network" %}" type="button" class="btn btn-warning btn-sm reset-suggestions">{% trans "Reset Suggestions" %}</button>
+    </div>
+
+    <div class="col-xs-6 right">
+      <button data-toggle="tooltip" title="{% trans "Will add all suggested entries" %}" type="button" class="btn btn-default btn-sm add">{% trans "Auto Add" %}</button>
+    </div>
+  </div>
+-->
+</div>
+{% endfor %}
+
+<script>
+$(document).ready(() => {
+  var ixf_proposals = new PeeringDB.IXFProposals();
+});
+</script>
+
+</div>
+
+{% endif %}
+
+

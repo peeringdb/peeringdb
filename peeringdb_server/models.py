@@ -2229,28 +2229,55 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def get_for_network(cls, net):
         return cls.objects.filter(asn = net.asn)
 
+
+    @classmethod
+    def dismissed_for_network(cls, net):
+        qset = cls.get_for_network(net).select_related("ixlan", "ixlan__ix")
+        qset = qset.filter(dismissed=True)
+
+        dismissed = {}
+
+        for ixf_member_data in qset:
+
+            ix = ixf_member_data.ix
+            if ix.id not in dismissed:
+                dismissed[ix.id] = ix
+
+        return dismissed
+
+
     @classmethod
     def actionable_for_network(cls, net):
         qset = cls.get_for_network(net).select_related("ixlan", "ixlan__ix")
 
-        suggestions = {"add":{}, "remove":{}, "modify":{}}
+        suggestions = {}
 
         for ixf_member_data in qset:
 
             action = ixf_member_data.action
+            error = ixf_member_data.error
 
             if action == "noop":
                 continue
 
+            if error and "IPv4 address outside of prefix" in error:
+                continue
+
+            if ixf_member_data.dismissed:
+                continue
+
+
             ix_id = ixf_member_data.ix.id
 
-            if ix_id not in suggestions[action]:
-                suggestions[action][ix_id] = {
+            if ix_id not in suggestions:
+                suggestions[ix_id] = {
                     "ix": ixf_member_data.ix,
-                    "entries": []
+                    "add": [],
+                    "delete": [],
+                    "modify": [],
                 }
 
-            suggestions[action][ix_id]["entries"].append(ixf_member_data)
+            suggestions[ix_id][action].append(ixf_member_data)
 
         return suggestions
 
@@ -2476,6 +2503,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         return self._netixlan
 
     @property
+    def netixlan_exists(self):
+        return (self.netixlan.id and self.netixlan.status != "deleted")
+
+    @property
     def ticket_user(self):
         if not hasattr(self, "_ticket_user"):
             self._ticket_user =  User.objects.get(username="ixf_importer")
@@ -2543,6 +2574,13 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         return {"action":action, "netixlan":netixlan}
 
 
+    def grab_validation_errors(self):
+        try:
+            self.netixlan.full_clean()
+        except ValidationError as exc:
+            self.error = f"{exc}"
+
+
     def set_resolved(self, save=True):
         if self.id and save:
             self.notify_resolve(ac=True, ix=True, net=True)
@@ -2557,12 +2595,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def set_update(self, save=True, reason=""):
         self.reason = reason
         if ((self.changes and not self.id) or self.remote_changes) and save:
+            self.grab_validation_errors()
             self.save()
             self.notify_update(ac=True, ix=True, net=True)
 
     def set_add(self, save=True, reason=""):
         self.reason = reason
         if not self.id and save:
+            self.grab_validation_errors()
             self.save()
             if self.net_present_at_ix:
                 self.notify_add(ac=True, ix=True, net=True)

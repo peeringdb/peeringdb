@@ -69,6 +69,7 @@ from peeringdb_server.views import (
     request_search,
     request_translation,
     cancel_affiliation_request,
+    network_dismiss_ixf_proposal,
 )
 import peeringdb_server.org_admin_views
 import peeringdb_server.data_views
@@ -97,6 +98,7 @@ urlpatterns = [
     url(r"^affiliate-to-org$", view_affiliate_to_org),
     url(r"^cancel-affiliation-request/(?P<uoar_id>\d+)/$", cancel_affiliation_request, name="cancel-affiliation-request"),
     url(r"^request-ownership$", view_request_ownership),
+    url(r"^%s/(?P<net_id>\d+)/dismiss-ixf-proposal/(?P<ixf_id>\d+)/?$" % Network.handleref.tag, network_dismiss_ixf_proposal, name="net-dismiss-ixf-proposal"),
     url(r"^%s/(?P<id>\d+)/?$" % Network.handleref.tag, view_network, name="net-view"),
     url(r"^%s/(?P<id>\d+)/?$" % InternetExchange.handleref.tag, view_exchange, name="ix-view"),
     url(r"^%s/(?P<id>\d+)/?$" % Facility.handleref.tag, view_facility, name="fac-view"),
