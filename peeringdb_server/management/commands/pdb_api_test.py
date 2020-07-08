@@ -1144,7 +1144,6 @@ class TestJSON(unittest.TestCase):
         )
         
         # But rencode should be null
-        assert r_data_new["rencode"] != obsolete_rencode
         assert r_data_new["rencode"] == ""
 
     ##########################################################################
