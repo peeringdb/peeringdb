@@ -2229,6 +2229,13 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
         """
         Custom model validation
         """
+        if self.status != self.ixlan.status:
+            raise ValidationError(
+                _(
+                    "IXLanPrefix with status '{}' cannot be linked to a IXLan with status '{}'."
+                ).format(self.status, self.ixlan.status)
+            )
+
         # validate the specified prefix address
         validate_address_space(self.prefix)
         validate_prefix_overlap(self.prefix)
