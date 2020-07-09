@@ -313,9 +313,22 @@ $(document).ready(function() {
 
   var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
   editForm.on('action-success:submit', function(e,data) {
-    PeeringDB.ViewTools.after_submit(editForm, data);
-    setTimeout(PeeringDB.incomplete_data_notify, 500);
+    console.log("SAVE", data)
+    if(PeeringDB.ixf_proposals && PeeringDB.ixf_proposals.require_refresh) {
+      document.location.href = document.location.href;
+    } else {
+      PeeringDB.ViewTools.after_submit(editForm, data);
+      setTimeout(PeeringDB.incomplete_data_notify, 500);
+    }
   });
+
+  editForm.on('action-success:toggle', function(e, payload) {
+    if(payload.mode == "view") {
+      if(PeeringDB.ixf_proposals && PeeringDB.ixf_proposals.require_refresh) {
+        document.location.href = document.location.href;
+      }
+    }
+  })
 
   $('[data-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
 

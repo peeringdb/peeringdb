@@ -1844,11 +1844,10 @@ class IXLan(pdb_models.IXLanBase):
         # If neither ipv4 nor ipv6 match any of the prefixes, log the issue
         # and bail
         if (ipv4 and not ipv4_valid) or (ipv6 and not ipv6_valid):
-            log.append(
-                "Ip addresses ({}, {}) do not match any prefix "
-                "on this ixlan".format(ipv4, ipv6)
+            raise ValidationError(
+                f"Ip addresses ({ipv4}, {ipv6}) do not match any prefix "
+                "on this ixlan"
             )
-            return result()
 
         # Next we check if an active netixlan with the ipaddress exists in ANOTHER lan, and bail
         # if it does.
@@ -1859,8 +1858,7 @@ class IXLan(pdb_models.IXLanBase):
             .count()
             > 0
         ):
-            log.append("Ip address {} already exists in another lan".format(ipv4))
-            return result()
+            raise ValidationError(f"Ip address {ipv4} already exists in another lan")
 
         if (
             ipv6
@@ -1869,8 +1867,7 @@ class IXLan(pdb_models.IXLanBase):
             .count()
             > 0
         ):
-            log.append("Ip address {} already exists in another lan".format(ipv6))
-            return result()
+            raise ValidationError(f"Ip address {ipv6} already exists in another lan")
 
         # now we need to figure out if the ipaddresses already exist in this ixlan,
         # we need to check ipv4 and ipv6 separately as they might exist on different
@@ -1878,7 +1875,7 @@ class IXLan(pdb_models.IXLanBase):
         try:
             if ipv4:
                 netixlan_existing_v4 = NetworkIXLan.objects.get(
-                    status="ok", ixlan=self, ipaddr4=ipv4
+                    ixlan=self, ipaddr4=ipv4
                 )
             else:
                 netixlan_existing_v4 = None
@@ -1888,7 +1885,7 @@ class IXLan(pdb_models.IXLanBase):
         try:
             if ipv6:
                 netixlan_existing_v6 = NetworkIXLan.objects.get(
-                    status="ok", ixlan=self, ipaddr6=ipv6
+                    ixlan=self, ipaddr6=ipv6
                 )
             else:
                 netixlan_existing_v6 = None
@@ -1980,15 +1977,7 @@ class IXLan(pdb_models.IXLanBase):
             changed.append("network_id")
 
         # Finally we attempt to validate the data and then save the netixlan instance
-        try:
-            netixlan.full_clean()
-        except Exception as inst:
-            log.append(
-                "Validation Failure AS{} {} {}: {}".format(
-                    netixlan.network.asn, netixlan.ipaddr4, netixlan.ipaddr6, inst
-                )
-            )
-            return result(None)
+        netixlan.full_clean()
 
         if save and changed:
             netixlan.status = "ok"
@@ -2343,6 +2332,13 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         return (self.asn, self.ipaddr4, self.ipaddr6)
 
     @property
+    def ixf_id_pretty_str(self):
+        ipaddr4 = self.ipaddr4 or _("IPv4 not set")
+        ipaddr6 = self.ipaddr6 or _("IPv6 not set")
+
+        return f"AS{self.asn} - {ipaddr4} - {ipaddr6}"
+
+    @property
     def changes(self):
 
         """
@@ -2399,12 +2395,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         changes = {}
 
         for field in self.data_fields:
-            v = getattr(self, f"previous_{field}", None)
-            old_v = getattr(self, field)
-            if v is not None and v != old_v:
+            old_v = getattr(self, f"previous_{field}", None)
+            v = getattr(self, field)
+            if old_v is not None and v != old_v:
                 changes[field] = {"from": old_v, "to": v}
 
         return changes
+
+    @property
+    def remote_data_missing(self):
+        return (self.data == "{}" or not self.data)
 
     @property
     def marked_for_removal(self):
@@ -2416,14 +2416,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         or not
         """
 
-        if not self.netixlan.id:
+        if not self.netixlan.id or self.netixlan.status == "deleted":
 
             # edge-case that should not really happen
             # non-existing netixlan cannot be removed
 
             return False
 
-        return (self.data == "{}" or not self.data)
+        return self.remote_data_missing
 
     @property
     def net_present_at_ix(self):
@@ -2442,17 +2442,20 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Will return either "add", "modify", "delete" or "noop"
         """
 
-        if not self.netixlan.id:
-            return "add"
+        has_data = (self.remote_data_missing == False)
 
-        if self.status == "ok" and self.netixlan.status == "deleted":
-            return "add"
+        if has_data:
+            if not self.netixlan.id:
+                return "add"
 
-        if self.marked_for_removal:
-            return "delete"
+            if self.status == "ok" and self.netixlan.status == "deleted":
+                return "add"
 
-        if self.changes:
-            return "modify"
+            if self.changes:
+                return "modify"
+        else:
+            if self.marked_for_removal:
+                return "delete"
 
         return "noop"
 
@@ -2587,8 +2590,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.delete(hard=True)
 
     def set_conflict(self, error=None, save=True):
-        if self.remote_changes and save:
+        if (self.remote_changes or (error and not self.error)) and save:
             self.error = error
+            self.dismissed = False
             self.save()
             self.notify_update(ac=True, ix=True, net=True)
 
@@ -2596,6 +2600,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         self.reason = reason
         if ((self.changes and not self.id) or self.remote_changes) and save:
             self.grab_validation_errors()
+            self.dismissed = False
             self.save()
             self.notify_update(ac=True, ix=True, net=True)
 

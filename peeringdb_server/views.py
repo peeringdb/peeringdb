@@ -2078,6 +2078,21 @@ def request_translation(request, data_type):
 
 
 @require_http_methods(["POST"])
+def network_reset_ixf_proposals(request, net_id):
+    net = Network.objects.get(id=net_id)
+
+    allowed = has_perms(request.user, net, PERM_CRUD)
+
+    if not allowed:
+        return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)
+
+    qset = IXFMemberData.objects.filter(asn=net.asn)
+    qset.update(dismissed=False)
+
+    return JsonResponse({"status":"ok"})
+
+
+@require_http_methods(["POST"])
 def network_dismiss_ixf_proposal(request, net_id, ixf_id):
     ixf_member_data = IXFMemberData.objects.get(id=ixf_id)
     net = ixf_member_data.net

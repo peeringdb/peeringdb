@@ -1685,7 +1685,8 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "created",
         "updated",
         "fetched",
-        "changes"
+        "changes",
+        "error",
     )
     readonly_fields = (
         "marked_for_removal",
@@ -1698,7 +1699,8 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "ipaddr6",
         "reason",
         "netixlan",
-        "log"
+        "log",
+        "error"
     )
 
     search_fields = (

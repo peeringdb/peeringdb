@@ -226,6 +226,10 @@ PeeringDB = {
     } else {
       return true;
     }
+  },
+
+  refresh: function() {
+    window.document.location.href = window.document.location.href;
   }
 }
 
@@ -334,31 +338,50 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       var ixf_proposals = this;
       this.netixlan_list = $('[data-edit-target="api:netixlan"]')
       this.netixlan_mod = this.netixlan_list.data('editModuleInstance')
+      this.require_refresh= false;
+
+      $('#btn-reset-proposals').click(function() {
+        ixf_proposals.reset_proposals($(this).data("reset-path"))
+      });
 
       $("[data-ixf-proposals-ix]").each(function() {
         var proposals = $(this)
+        var button_add_all = proposals.find('button.add-all')
+        var button_resolve_all = proposals.find('button.resolve-all');
+
+        button_add_all.click(() => { ixf_proposals.add_all(proposals); });
+        button_resolve_all.click(() => { ixf_proposals.resolve_all(proposals); });
+
+        ixf_proposals.sync_proposals_state(proposals);
+
         proposals.find('.row.item').each(function() {
           var row = $(this)
-          var buttonAdd = row.find('button.add');
-          var buttonDismiss = row.find('button.dismiss');
-          var buttonDelete = row.find('button.delete')
-          var buttonModify = row.find('button.modify')
+          var button_add = row.find('button.add');
+          var button_dismiss = row.find('button.dismiss');
+          var button_delete = row.find('button.delete')
+          var button_modify = row.find('button.modify')
 
-          buttonAdd.click(() => { ixf_proposals.add(row) })
-          buttonDismiss.click(() => { ixf_proposals.dismiss(row) })
-          buttonDelete.click(() => {
-            if(!PeeringDB.confirm(buttonDelete.data("confirm")))
+          button_add.click(() => { ixf_proposals.add(row) })
+          button_dismiss.click(() => { ixf_proposals.dismiss(row) })
+          button_delete.click(() => {
+            if(!PeeringDB.confirm(button_delete.data("confirm")))
               return
             ixf_proposals.delete(row)
           })
-          buttonModify.click(() => { ixf_proposals.modify(row) })
+          button_modify.click(() => { ixf_proposals.modify(row) })
         })
       })
     },
 
+    reset_proposals : function(path) {
+      $.ajax({
+        method: "POST",
+        url: path
+      }).done(PeeringDB.refresh);
+    },
+
     dismiss : function(row) {
       var data= this.collect(row);
-      console.log("DISMISSING", row)
       row.find('.loading-shim').show();
       $.ajax({
         method: "POST",
@@ -373,7 +396,6 @@ PeeringDB.IXFProposals = twentyc.cls.define(
     },
 
     modify : function(row) {
-
       var data=this.collect(row);
       var proposals = row.closest("[data-ixf-proposals-ix]")
       var netixlan_row = this.netixlan_list.find('[data-edit-id="'+data.id+'"]')
@@ -409,6 +431,76 @@ PeeringDB.IXFProposals = twentyc.cls.define(
 
     },
 
+    add_all : function(proposals) {
+
+      var entries = this.all_entries_for_action(proposals, "add");
+
+      if(!entries.rows.length)
+        return alert(gettext("Nothing to do"))
+
+      var confirm_text = [
+        gettext("This will create the following entries")
+      ]
+
+      var b = PeeringDB.confirm(
+        confirm_text.concat(entries.ixf_ids).join("\n")
+      )
+
+      if(b)
+        this.process_all_for_action(entries.rows, "add");
+    },
+
+    resolve_all : function(proposals) {
+
+      var entries_delete = this.all_entries_for_action(proposals, "delete")
+      var entries_modify = this.all_entries_for_action(proposals, "modify")
+
+      var confirm_text = []
+
+      if(!entries_delete.rows.length && !entries_modify.rows.length) {
+        alert(gettext("Nothing to do"))
+        return;
+      }
+
+      if(entries_delete.rows.length) {
+        confirm_text.push(gettext("Remove these entries"))
+        confirm_text = confirm_text.concat(entries_delete.ixf_ids)
+        confirm_text.push("")
+      }
+
+      if(entries_modify.rows.length) {
+        confirm_text.push(gettext("Update these entries"))
+        confirm_text = confirm_text.concat(entries_modify.ixf_ids)
+        confirm_text.push("")
+      }
+
+      var b = PeeringDB.confirm(confirm_text.join("\n"))
+
+      if(b) {
+        this.process_all_for_action(entries_delete.rows, "delete");
+        this.process_all_for_action(entries_modify.rows, "modify");
+      }
+    },
+
+    all_entries_for_action : function(proposals, action) {
+      var rows = proposals.find('.suggestions-'+action+' .row.item')
+
+      var ids = []
+      rows.each(function() {
+        var row = $(this)
+        ids.push(row.data("ixf-id"))
+      })
+      return {rows: rows, ixf_ids: ids}
+    },
+
+    process_all_for_action : function(rows, action) {
+      var ixf_proposals = this;
+      rows.each(function() {
+        var row = $(this);
+        ixf_proposals[action](row);
+      });
+    },
+
     add : function(row) {
       var data=this.collect(row);
       var proposals = row.closest("[data-ixf-proposals-ix]")
@@ -426,6 +518,10 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       ).done((a) => {
         var netixlan = a.data[0]
         netixlan.ix = { name : data.ix_name, id : data.ix_id }
+        if(!netixlan.ipaddr4)
+          netixlan.ipaddr4 = ""
+        if(!netixlan.ipaddr6)
+          netixlan.ipaddr6 = ""
         this.netixlan_mod.listing_add(
           netixlan.id, null, this.netixlan_list, netixlan);
         this.detach_row(row);
@@ -437,11 +533,36 @@ PeeringDB.IXFProposals = twentyc.cls.define(
     },
 
     detach_row : function(row) {
+
+      var par = row.parent()
+      var proposals = row.closest(".ixf-proposals");
+
       row.detach();
-      var proposals = row.closest("[data-ixf-proposals-ix]")
-      if(!proposals.find('.row.item').length) {
-        proposals.detach();
+      this.require_refresh = true;
+      if(!par.find('.row.item').length) {
+        par.prev(".header").detach()
+        par.detach()
+        this.sync_proposals_state(proposals);
       }
+    },
+
+    sync_proposals_state : function(proposals) {
+      var button_add_all = proposals.find('button.add-all')
+      var button_resolve_all = proposals.find('button.resolve-all')
+
+
+      if(!this.all_entries_for_action(proposals, 'add').rows.length) {
+        button_add_all.prop('disabled',true);
+      }
+      if(
+        !this.all_entries_for_action(proposals, 'delete').rows.length &&
+        !this.all_entries_for_action(proposals, 'modify').rows.length
+      ) {
+        button_resolve_all.prop('disabled',true);
+      }
+
+      if(button_resolve_all.prop('disabled') && button_add_all.prop('disabled'))
+        proposals.detach()
     },
 
     render_errors : function(row, response) {

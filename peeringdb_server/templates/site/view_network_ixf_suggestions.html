@@ -5,28 +5,27 @@
 
 
 {% if data.ixf or data.ixf_dismissed %}
-<div data-edit-toggled="view" class="alert alert-info">
+<div data-edit-toggled="view" class="editable note info">
+<p><strong>
+{% trans "Some exchanges suggest updates to your entries in their peering list." %}
+</strong></p>
 
-{% if data.ixf %}
+  {% if data.ixf %}
+
 <p>
-{% trans "Some exchanges suggest changes to your data." %}
-{% blocktrans trimmed %}
-Toggle edit mode to review, apply or dismiss those suggestions.
-{% endblocktrans %}
+<a data-edit-action="toggle-edit">{% trans "Review suggestions" %}</a>
 </p>
-{% if not instance.allow_ixp_update %}
-<p><small>
-{% blocktrans trimmed %}
-You can automatically accept such such suggestions in the future
-by turning this network's "Allow IXP Update" setting on.
-{% endblocktrans %}
-</small></p>
-{% endif %}
-{% endif %}
 
-{% if data.ixf_dismissed %}
-<p>{% trans "You have dimissed some suggestions that are still available." %}</p>
-{% endif %}
+  {% endif %}
+
+  {% if data.ixf_dismissed %}
+
+    <p><small>
+      {% trans "You have dismissed some suggestions that are still available." %}
+      <a id="btn-reset-proposals" class="interactive" data-reset-path="{% url "net-reset-ixf-proposals" net_id=instance.id %}" data-toggle="tooltip" title="{% trans "Will restore any suggestions you have previously dismissed" %}">{% trans "Reset Suggestions" %}</a>
+    </small></p>
+
+  {% endif %}
 
 </div>
 {% endif %}
@@ -37,8 +36,11 @@ by turning this network's "Allow IXP Update" setting on.
 {% if data.ixf %}
 <div class="marg-side-15">
   <div class="row">
-    <div class="col-xs-12 alert alert-info">
-      <p>{% trans "Some exchanges suggest changes to your data." %}</p>
+    <div class="col-xs-12 editable note info">
+    <p><strong>
+    {% trans "Some exchanges suggest updates to your entries in their peering list." %}
+    </strong></p>
+
       <p><small>
       {% trans "Expand each exchange below to review, apply or dismiss those suggestions" %}
       </small></p>
@@ -52,10 +54,10 @@ by turning this network's "Allow IXP Update" setting on.
   data-ixf-proposals-ix="{{ ixf_proposals.ix.id }}"
   data-ixf-proposals-ix-name="{{ ixf_proposals.ix.name }}"
   data-ixf-proposals-net="{{ instance.id }}">
-  <div class="marg-side-15">
+  <div class="marg-side-15 marg-top-15">
   <div class="row item">
     <div class="col-xs-10">
-      <h4><a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{{ ixf_proposals.ix.name }}</a></h4>
+      <h4 class="marg-top"><a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{{ ixf_proposals.ix.name }}</a></h4>
     </div>
     <div class="col-xs-2 right">
       <a role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">
@@ -68,9 +70,17 @@ by turning this network's "Allow IXP Update" setting on.
 
   <div id="ixf-proposals-{{ ix_id }}" class="list padded-rows collapse">
 
+  <div class="row controls">
+    <div class="col-xs-12 right">
+      <button data-toggle="tooltip" title="{% trans "Autoamtically update and remove all suggested entries" %}" class="btn btn-default btn-sm resolve-all" type="button">{% trans "Auto-resolve" %}</button>
+
+      <button data-toggle="tooltip" title="{% trans "Automatically add all suggested entries" %}" class="btn btn-default btn-sm add-all" type="button">{% trans "Auto-add" %}</button>
+    </div>
+  </div>
+
   {% if ixf_proposals.add %}
 
-  <div class="row header">
+  <div class="row header header-add">
     <div class="col-xs-5">
       <div>{% trans "Add" %}</div>
     </div>
@@ -90,7 +100,7 @@ by turning this network's "Allow IXP Update" setting on.
     {% for x in ixf_proposals.add %}
     {% if not x.dismissed %}
 
-    <div class="row item">
+    <div class="row item" data-ixf-id="{{ x.ixf_id_pretty_str }}">
       <div class="loading-shim" style="display:none;"></div>
       <div class="col-xs-5">
         <div class="editable input-frame">
@@ -161,7 +171,7 @@ by turning this network's "Allow IXP Update" setting on.
 
   {% if ixf_proposals.delete %}
 
-  <div class="row header">
+  <div class="row header header-delete">
     <div class="col-xs-12">
       <div>{% trans "Remove" %}</div>
     </div>
@@ -171,8 +181,9 @@ by turning this network's "Allow IXP Update" setting on.
 
     {% for x in ixf_proposals.delete %}
     {% if not x.dismissed %}
+    {% with ixf_id=x.ixf_id_pretty_str ix_name=x.ix.name %}
 
-    <div class="row item">
+    <div class="row item" data-ixf-id="{{ x.ixf_id_pretty_str }}">
 
       <div class="loading-shim" style="display:none;"></div>
       <div style="display:none">
@@ -202,8 +213,8 @@ by turning this network's "Allow IXP Update" setting on.
           <div class="col-xs-3 right">
             <button type="button"
               class="btn btn-default btn-sm delete"
-              title="{% trans "Remove this entry from public peering exchange points" %}"
-              data-confirm="{% trans "Remove this public peering exchange point ?" %}"
+              title="{% trans "Remove this entry from your public peering exchange points list" %}"
+              data-confirm="{% blocktrans trimmed %}Remove the entry {{ ixf_id }} for {{ ix_name }} from your public peering exchange points list?{% endblocktrans %}"
               data-toggle="tooltip">{% trans "Delete" %}</button>
           </div>
         </div>
@@ -211,6 +222,7 @@ by turning this network's "Allow IXP Update" setting on.
 
     </div>
 
+    {% endwith %}
     {% endif %}
     {% endfor %}
 
@@ -222,7 +234,7 @@ by turning this network's "Allow IXP Update" setting on.
 
   {% if ixf_proposals.modify %}
 
-  <div class="row header">
+  <div class="row header header-modify">
     <div class="col-xs-5">
       <div>{% trans "Update" %}</div>
     </div>
@@ -236,7 +248,7 @@ by turning this network's "Allow IXP Update" setting on.
     {% for x in ixf_proposals.modify %}
     {% if not x.dismissed %}
 
-    <div class="row item">
+    <div class="row item" data-ixf-id="{{ x.ixf_id_pretty_str }}">
 
       <div class="loading-shim" style="display:none;"></div>
       <div style="display:none">
@@ -257,8 +269,8 @@ by turning this network's "Allow IXP Update" setting on.
         <input type="hidden" data-field="net_id" value="{{ x.net.id }}">
         <input type="hidden" data-field="asn" value="{{ x.asn }}">
         <input type="hidden" data-field="speed" value="{{ x.speed }}">
-        <input type="hidden" data-field="is_rs_peer" value="{{ x.is_rs_peer }}">
-        <input type="hidden" data-field="operational" value="{{ x.operational }}">
+        <input type="checkbox" style="display:none" data-field="is_rs_peer" {% if x.is_rs_peer %}checked{% endif %}>
+        <input type="checkbox" style="display:none" data-field="operational" {% if x.operational %}checked{% endif %}>
         {% if x.changes.speed %}
         <div class="ixf-suggested-change">
           <span class="field_name">{% trans "Speed" %}</span>:
@@ -314,7 +326,7 @@ by turning this network's "Allow IXP Update" setting on.
           <div class="col-xs-3 right">
             <button type="button"
               class="btn btn-default btn-sm modify"
-              title="{% trans "Update this public peering exchange point in the listing below. You will also need to save the network record to persist these changes after accepting them." %}"
+              title="{% trans "Update this entry in your public peering exchange points list. You will also need to save the network record to persist these changes after accepting them." %}"
               data-toggle="tooltip">{% trans "Accept" %}</button>
           </div>
         </div>
@@ -348,7 +360,7 @@ by turning this network's "Allow IXP Update" setting on.
 
 <script>
 $(document).ready(() => {
-  var ixf_proposals = new PeeringDB.IXFProposals();
+  PeeringDB.ixf_proposals = new PeeringDB.IXFProposals();
 });
 </script>
 

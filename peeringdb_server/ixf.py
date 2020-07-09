@@ -63,6 +63,7 @@ class Importer(object):
         self.netixlans = []
         self.netixlans_deleted = []
         self.ixf_ids = []
+        self.pending_save = []
         self.asns = []
         self.archive_info = {}
         self.ixlan = ixlan
@@ -224,6 +225,12 @@ class Importer(object):
         # process any netixlans that need to be deleted
         self.process_deletions()
 
+        # process creation of new netixlans and updates
+        # of existing netixlans. This needs to happen
+        # after process_deletions in order to avoid potential
+        # ip conflicts
+        self.process_saves()
+
         self.cleanup_ixf_member_data()
 
         # archive the import so we can roll it back later if needed
@@ -233,6 +240,12 @@ class Importer(object):
             self.save_log()
 
         return (True, self.netixlans, self.netixlans_deleted, self.log)
+
+
+    @reversion.create_revision()
+    def process_saves(self):
+        for ixf_member in self.pending_save:
+            self.apply_add_or_update(ixf_member)
 
     @reversion.create_revision()
     def process_deletions(self):
@@ -254,7 +267,6 @@ class Importer(object):
             netixlan_qset = netixlan_qset.filter(asn=self.asn)
 
         for netixlan in netixlan_qset:
-            print(netixlan)
             if netixlan.ixf_id not in self.ixf_ids:
                 ixf_member_data = IXFMemberData.instantiate(
                     netixlan.asn,
@@ -281,13 +293,19 @@ class Importer(object):
 
         # clean up old ix-f memeber data objects
 
-        for ixf_member in IXFMemberData.objects.all():
+        for ixf_member in IXFMemberData.objects.filter(ixlan=self.ixlan):
 
             # proposed deletion got fulfilled
 
             if ixf_member.action == "delete":
                 if ixf_member.netixlan.status == "deleted":
                     ixf_member.set_resolved()
+
+            # noop means the ask has been fulfilled but the
+            # ixf member data entry has not been set to resolved yet
+
+            elif ixf_member.action == "noop":
+                ixf_member.set_resolved()
 
             # proposed change / addition is now gone from
             # ix-f data
@@ -495,7 +513,7 @@ class Importer(object):
                 save=self.save,
             )
 
-            self.apply_add_or_update(ixf_member_data)
+            self.pending_save.append(ixf_member_data)
 
 
     def parse_speed(self, if_list):

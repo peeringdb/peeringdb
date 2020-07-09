@@ -686,6 +686,10 @@ div.ixf-proposals {
   border-bottom: 1px #1c3f28 solid;
 }
 
+div.ixf-proposals div.controls {
+  padding: 5px 0px;
+}
+
 a[aria-expanded="false"] > span.expanded {
   display: none;
 }
@@ -705,6 +709,9 @@ a[aria-expanded="true"] > span.collapsed {
 div.list {
   margin-left: 15px;
   margin-right: 15px;
+}
+
+div.list:not(:first-child) {
   margin-top: 15px;
 }
 
@@ -717,6 +724,8 @@ div.list div.filter {
   padding: 5px;
 }
 
+
+div.row.item h4,
 div.list h4 {
   margin: 0px;
 }
@@ -928,6 +937,11 @@ textarea {
 }
 
 
+.interactive,
+a[data-edit-action]:not(.btn) {
+  cursor: pointer;
+}
+
 [data-edit-type="bool"] div.editable.input-frame {
   width: auto;
 }
@@ -1053,9 +1067,9 @@ div.note.error > div.details {
   position: absolute;
   z-index: 10;
   top: 0px;
-  right: 0px;
+  right: -15px;
   bottom: 0px;
-  left: 0px;
+  left: -15px;
 }
 
 .tab-pane .editable.loading-shim {
