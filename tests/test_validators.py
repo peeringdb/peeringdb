@@ -274,7 +274,17 @@ def test_validate_ixpfx_ixlan_status_match():
         status="ok",
     )
 
-    with pytest.raises(ValidationError) as exc:
+    with pytest.raises(ValidationError) as exc1:
         pfx.clean()
 
-    assert exc.value.args[0]  == "IXLanPrefix with status 'ok' cannot be linked to a IXLan with status 'pending'."
+    assert exc1.value.args[0]  == "IXLanPrefix with status 'ok' cannot be linked to a IXLan with status 'pending'."
+
+    ixlan.status = "deleted"
+    ixlan.save()
+    pfx.status = "pending"
+    pfx.save()
+
+    with pytest.raises(ValidationError) as exc2:
+        pfx.clean()
+
+    assert exc2.value.args[0]  == "IXLanPrefix with status 'pending' cannot be linked to a IXLan with status 'deleted'."
