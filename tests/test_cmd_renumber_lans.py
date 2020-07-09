@@ -56,11 +56,12 @@ class TestRenumberLans(ClientCase):
 
         ixlan = ix.ixlan_set_active.all().first()
 
+        for netixlan in ixlan.netixlan_set.all():
+            netixlan.delete()
+
         for ixpfx in ixlan.ixpfx_set.all():
             ixpfx.delete()
 
-        for netixlan in ixlan.netixlan_set.all():
-            netixlan.delete()
 
         call_command(
             "pdb_renumber_lans",
