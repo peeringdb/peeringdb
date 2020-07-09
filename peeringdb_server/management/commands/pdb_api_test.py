@@ -1491,8 +1491,8 @@ class TestJSON(unittest.TestCase):
         # re-delete
         self.assert_delete(self.db_org_admin, "ixpfx", test_success=SHARED["ixpfx_id"])
 
-        # re-creating a deleted ixpfx that we dont have write permissions do
-        # should fail
+        # re-creating a deleted ixpfx that is under another exchange
+        # that we dont have write perms too
         pfx = IXLanPrefix.objects.create(
             ixlan=SHARED["ixlan_r_ok"], prefix="205.127.237.0/24", protocol="IPv4"
         )
@@ -1503,8 +1503,6 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "ixpfx",
             data,
-            test_failures={"invalid": {}},
-            test_success=False,
         )
 
         # make sure protocols are validated

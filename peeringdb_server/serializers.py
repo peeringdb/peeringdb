@@ -909,15 +909,9 @@ class ModelSerializer(PermissionedModelSerializer):
                 except FieldError as exc:
                     raise exc
 
-                if has_perms(request.user, self.instance, "update"):
-                    rv = super(ModelSerializer, self).run_validation(data=data)
-                    self._undelete = True
-                    return rv
-                else:
-                    raise RestValidationError({"non_field_errors": [_(
-                        "Permission denied to restore deleted object/relationship"
-                    )]})
-                raise
+                rv = super(ModelSerializer, self).run_validation(data=data)
+                self._undelete = True
+                return rv
             else:
                 raise
 
