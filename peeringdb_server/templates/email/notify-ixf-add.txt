@@ -27,4 +27,6 @@ The network administrators of AS{{ instance.asn }} as well as the PeeringDB admi
 
 - Exchange: {{ instance.ix.view_url }}
 - Network: {{ instance.net.view_url}}
-- IX-F Data: {{ ixf_url }} 
+{% if recipient == "ac"  %}
+- IX-F Data: {{ ixf_url }}
+{% endif %}
