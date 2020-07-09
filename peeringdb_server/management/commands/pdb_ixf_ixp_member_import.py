@@ -96,22 +96,24 @@ class Command(BaseCommand):
                 importer = ixf.Importer()
                 importer.skip_import = self.skip_import
                 importer.cache_only = self.cache
-                self.log("Updating {}".format(ixlan))
+                self.log(f"Processing {ixlan.ix.name} ({ixlan.id})")
                 with transaction.atomic():
-                    success, netixlans, netixlans_deleted, log = importer.update(
-                        ixlan, save=self.commit, asn=asn
-                    )
-                self.log(json.dumps(log), debug=True)
+                    success = importer.update(ixlan, save=self.commit, asn=asn
+                )
+                self.log(json.dumps(importer.log), debug=True)
                 self.log(
-                    "Done: {} updated: {} deleted: {}".format(
-                        success, len(netixlans), len(netixlans_deleted)
+                    "Success: {}, added: {}, updated: {}, deleted: {}".format(
+                        success,
+                        len(importer.actions_taken["add"]),
+                        len(importer.actions_taken["modify"]),
+                        len(importer.actions_taken["delete"]),
                     )
                 )
-                total_log["data"].extend(log["data"])
+                total_log["data"].extend(importer.log["data"])
                 total_log["errors"].extend(
                     [
                         "{}({}): {}".format(ixlan.ix.name, ixlan.id, err)
-                        for err in log["errors"]
+                        for err in importer.log["errors"]
                     ]
                 )
 

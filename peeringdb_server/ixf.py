@@ -60,9 +60,13 @@ class Importer(object):
 
     def reset(self, ixlan=None, save=False, asn=None):
         self.reset_log()
-        self.netixlans = []
-        self.netixlans_deleted = []
         self.ixf_ids = []
+        self.actions_taken = {
+            "add": [],
+            "delete": [],
+            "modify": [],
+            "noop": [],
+        }
         self.pending_save = []
         self.asns = []
         self.archive_info = {}
@@ -203,15 +207,15 @@ class Importer(object):
         # bail if there has been any errors during sanitize() or fetch()
         if data.get("pdb_error"):
             self.log_error(data.get("pdb_error"), save=save)
-            return (False, [], [], self.log)
+            return False
 
         # bail if there are no active prefixes on the ixlan
         if ixlan.ixpfx_set_active.count() == 0:
             self.log_error(_("No prefixes defined on ixlan"), save=save)
-            return (False, [], [], self.log)
+            return False
 
         if self.skip_import:
-            return (True, [], [], self.log)
+            return True
 
         try:
             # parse the ixf data
@@ -220,7 +224,7 @@ class Importer(object):
             # any key erros mean that the data is invalid, log the error and
             # bail (transactions are atomic and will be rolled back)
             self.log_error("Internal Error 'KeyError': {}".format(exc), save=save)
-            return (False, self.netixlans, [], self.log)
+            return False
 
         # process any netixlans that need to be deleted
         self.process_deletions()
@@ -239,7 +243,7 @@ class Importer(object):
         if save:
             self.save_log()
 
-        return (True, self.netixlans, self.netixlans_deleted, self.log)
+        return True
 
 
     @reversion.create_revision()
@@ -322,9 +326,14 @@ class Importer(object):
         Create the IXLanIXFMemberImportLog for this import
         """
 
-        if self.save and (self.netixlans or self.netixlans_deleted):
+        added = self.actions_taken["add"]
+        updated = self.actions_taken["modify"]
+        deleted = self.actions_taken["delete"]
+        actions = added + updated + deleted
+
+        if self.save and actions:
             persist_log = IXLanIXFMemberImportLog.objects.create(ixlan=self.ixlan)
-            for netixlan in self.netixlans + self.netixlans_deleted:
+            for netixlan in actions:
                 versions = reversion.models.Version.objects.get_for_object(netixlan)
                 if len(versions) == 1:
                     version_before = None
@@ -567,7 +576,8 @@ class Importer(object):
 
 
     def apply_update(self, ixf_member_data):
-        reason = REASON_VALUES_CHANGED
+        changed_fields = ", ".join(ixf_member_data.changes.keys())
+        reason = f"{REASON_VALUES_CHANGED}: {changed_fields}"
 
         if ixf_member_data.net.allow_ixp_update:
             try:
@@ -619,6 +629,8 @@ class Importer(object):
         self.log = {"data": [], "errors": []}
 
     def log_apply(self, apply_result, reason=""):
+
+        self.actions_taken[apply_result["action"]].append(apply_result["netixlan"])
 
         return self.log_peer(
             apply_result["netixlan"].asn,
