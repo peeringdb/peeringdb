@@ -1082,7 +1082,7 @@ class OrganizationMergeEntity(models.Model):
 
 
 @reversion.register
-class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
+class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     """
     Describes a peeringdb facility
     """
@@ -1261,6 +1261,33 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
             settings.BASE_URL, django.urls.reverse("fac-view", args=(self.id,))
         )
 
+    @property
+    def deletable(self):
+        """
+        Returns whether or not the facility is currently
+        in a state where it can be marked as deleted.
+
+        This will be False for facilites of which ANY
+        of the following is True:
+
+        - has a network facility under it with status=ok
+        - has an exchange facility under it with status=ok
+        """
+
+        if self.ixfac_set_active.exists():
+            self._not_deletable_reason = _(
+                "Facility has active Exchange -> Facility connection"
+            )
+            return False
+        elif self.netfac_set_active.exists():
+            self._not_deletable_reason = _(
+                "Facility has active Network -> Facility connection"
+            )
+            return False
+        else:
+            self._not_deletable_reason = None
+            return True
+
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["org"])
@@ -1272,7 +1299,7 @@ class Facility(pdb_models.FacilityBase, GeocodeBaseMixin):
 
 
 @reversion.register
-class InternetExchange(pdb_models.InternetExchangeBase):
+class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     """
     Describes a peeringdb exchange
     """
@@ -1563,6 +1590,29 @@ class InternetExchange(pdb_models.InternetExchangeBase):
         return "{}{}".format(
             settings.BASE_URL, django.urls.reverse("ix-view", args=(self.id,))
         )
+
+
+    @property
+    def deletable(self):
+        """
+        Returns whether or not the exchange is currently
+        in a state where it can be marked as deleted.
+
+        This will be False for exchanges of which ANY
+        of the following is True:
+
+        - has netixlans connected to it
+        """
+
+        if self.network_count > 0:
+            self._not_deletable_reason = _(
+                "Exchange has active Exchange -> Network connection"
+            )
+            return False
+        else:
+            self._not_deletable_reason = None
+            return True
+
 
 
 
@@ -2775,7 +2825,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
 
 @reversion.register
-class IXLanPrefix(pdb_models.IXLanPrefixBase):
+class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
     """
     Descries a Prefix at an Exchange LAN
     """
@@ -2872,6 +2922,39 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
 
         except ValueError as inst:
             return False
+
+    @property
+    def deletable(self):
+        """
+        Returns whether or not the prefix is currently
+        in a state where it can be marked as deleted.
+
+        This will be False for prefixes of which ANY
+        of the following is True:
+
+        - parent ixlan has netixlans that fall into
+          it's address space
+        """
+
+        prefix = self.prefix
+        can_delete = True
+        for netixlan in self.ixlan.netixlan_set_active:
+            if self.protocol == "IPv4" and netixlan.ipaddr4 in prefix:
+                can_delete = False
+                break
+            if self.protocol == "IPv6" and netixlan.ipaddr6 in prefix:
+                can_delete = False
+                break
+
+        if not can_delete:
+            self._not_deletable_reason = _(
+                "There are active peers at this exchange that fall into " \
+                "this address space"
+            )
+        else:
+            self._not_deletable_reason = None
+
+        return can_delete
 
     def clean(self):
         """

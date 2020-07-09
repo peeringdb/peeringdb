@@ -933,12 +933,20 @@ class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
     }
 
 
+class IXLanPrefixForm(StatusForm):
+    def clean_prefix(self):
+        value = self.cleaned_data["prefix"]
+        if self.instance.prefix != value:
+            if not self.instance.deletable:
+                raise ValidationError(self.instance.not_deletable_reason)
+        return value
+
 class IXLanPrefixAdmin(SoftDeleteAdmin):
     list_display = ("id", "prefix", "ixlan", "ix", "status", "created", "updated")
     readonly_fields = ("ix", "id")
     search_fields = ("ixlan__name", "ixlan__ix__name", "prefix")
     list_filter = (StatusFilter,)
-    form = StatusForm
+    form = IXLanPrefixForm
 
     raw_id_fields = ("ixlan",)
     autocomplete_lookup_fields = {

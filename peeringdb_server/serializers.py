@@ -1943,6 +1943,15 @@ class IXLanPrefixSerializer(ModelSerializer):
             raise serializers.ValidationError(
                 "Prefix netmask invalid, needs to be valid according to the selected protocol"
             )
+
+
+        if self.instance:
+            prefix = data["prefix"]
+            if prefix != self.instance.prefix and not self.instance.deletable:
+                raise serializers.ValidationError({
+                    "prefix": self.instance.not_deletable_reason
+                })
+
         return data
 
 
