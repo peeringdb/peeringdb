@@ -215,6 +215,7 @@ class Importer(object):
             return False
 
         if self.skip_import:
+            self.cleanup_ixf_member_data()
             return True
 
         try:
@@ -314,7 +315,7 @@ class Importer(object):
             # proposed change / addition is now gone from
             # ix-f data
 
-            elif ixf_member.ixf_id not in self.ixf_ids:
+            elif not self.skip_import and ixf_member.ixf_id not in self.ixf_ids:
                 if ixf_member.action in ["add","modify"]:
                     ixf_member.set_resolved()
 
