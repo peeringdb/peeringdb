@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0039_ixf_member_data'),
+        ('peeringdb_server', '0040_ixf_member_data'),
     ]
 
     operations = [

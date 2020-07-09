@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0041_ixfmemberdata_reason'),
+        ('peeringdb_server', '0042_ixfmemberdata_reason'),
     ]
 
     operations = [

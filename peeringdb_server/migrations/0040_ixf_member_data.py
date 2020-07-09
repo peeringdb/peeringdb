@@ -10,7 +10,7 @@ import django_inet.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0038_netixlan_ipaddr_unique'),
+        ('peeringdb_server', '0039_delete_duplicateipnetworkixlan'),
     ]
 
     operations = [
