@@ -1710,7 +1710,6 @@ class NetworkSerializer(ModelSerializer):
             "poc_set",
         ]
         list_exclude = ["org"]
-        extra_kwargs = {"allow_ixp_update": {"write_only": True}}
 
         _ref_tag = model.handleref.tag
 

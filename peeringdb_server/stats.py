@@ -22,4 +22,5 @@ def stats():
         NetworkFacility.handleref.tag: NetworkFacility.handleref.filter(
             status="ok"
         ).count(),
+        "automated_nets": Network.handleref.filter(allow_ixp_update=True).count(),
     }
