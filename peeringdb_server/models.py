@@ -1843,11 +1843,17 @@ class IXLan(pdb_models.IXLanBase):
 
         # If neither ipv4 nor ipv6 match any of the prefixes, log the issue
         # and bail
-        if (ipv4 and not ipv4_valid) or (ipv6 and not ipv6_valid):
+        if (ipv4 and not ipv4_valid):
             raise ValidationError(
-                f"Ip addresses ({ipv4}, {ipv6}) do not match any prefix "
+                f"IPv4 {ipv4} does not match any prefix "
                 "on this ixlan"
             )
+        if (ipv6 and not ipv6_valid):
+            raise ValidationError(
+                f"IPv6 {ipv6} does not match any prefix "
+                "on this ixlan"
+            )
+
 
         # Next we check if an active netixlan with the ipaddress exists in ANOTHER lan, and bail
         # if it does.

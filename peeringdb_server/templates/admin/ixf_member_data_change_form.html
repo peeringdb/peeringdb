@@ -1,0 +1,16 @@
+{% extends 'admin/change_form.html' %}
+{% load i18n %}
+
+{% block submit_buttons_bottom %}
+<footer class="grp-module grp-submit-row grp-fixed-footer">
+    <header style="display:none"><h1>Submit Options</h1></header>
+    <ul>
+      <li>
+        <input type="submit" value="{% trans "Save and Apply" %}" name="_save-and-apply">
+      </li>
+      <li><input type="submit" value="{% trans "Save" %}" class="grp-button grp-default" name="_save"></li>
+      <li><input type="submit" value="{% trans "Save and continue editing" %}" class="grp-button" name="_continue"></li>
+
+    </ul>
+</footer>
+{% endblock %}

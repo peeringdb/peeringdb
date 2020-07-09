@@ -1490,7 +1490,24 @@ class DeskProTicketAdmin(admin.ModelAdmin):
     readonly_fields = ("user",)
 
 
+def apply_ixf_member_data(modeladmin, request, queryset):
+    for ixf_member_data in queryset:
+        try:
+            ixf_member_data.apply(user=request.user, comment="Applied IX-F suggestion")
+        except ValidationError as exc:
+            messages.error(
+                request,
+                f"{ixf_member_data.ixf_id_pretty_str}: {exc}"
+            )
+
+
+apply_ixf_member_data.short_description = _("Apply")
+
+
+
 class IXFMemberDataAdmin(admin.ModelAdmin):
+    change_form_template = "admin/ixf_member_data_change_form.html"
+
     list_display = (
         "id",
         "ix",
@@ -1520,7 +1537,9 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "reason",
         "netixlan",
         "log",
-        "error"
+        "error",
+        "created",
+        "updated",
     )
 
     search_fields = (
@@ -1530,6 +1549,35 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "ipaddr4",
         "ipaddr6"
     )
+
+    fields = (
+        "ix",
+        "asn",
+        "ipaddr4",
+        "ipaddr6",
+        "action",
+        "netixlan",
+        "speed",
+        "operational",
+        "is_rs_peer",
+        "created",
+        "updated",
+        "fetched",
+        "changes",
+        "reason",
+        "error",
+        "log",
+    )
+
+    actions = [apply_ixf_member_data]
+
+
+    raw_id_fields = ("ixlan",)
+
+    autocomplete_lookup_fields = {
+        "fk": ["ixlan",],
+    }
+
 
     def ix(self, obj):
         return obj.ixlan.ix
@@ -1543,6 +1591,20 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         )
         return mark_safe(f'<a href="{url}">{obj.netixlan.id}</a>')
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def response_change(self, request, obj):
+        if "_save-and-apply" in request.POST:
+            obj.save()
+            obj.apply(
+                user=request.user,
+                comment="Applied IX-F suggestion"
+            )
+        return super().response_change(request, obj)
 
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
