@@ -71,35 +71,3 @@ class TestUndelete(ClientCase):
         assert self.fac_a.status == "ok"
         assert self.fac_a.netfac_set_active.count() == 1
         assert self.fac_a.ixfac_set_active.count() == 1
-
-    def test_undelete_ixlan_netixlan_dupe_other(self):
-        netixlan_a = self.ixlan_a.netixlan_set.first()
-        self.ixlan_a.delete()
-        netixlan_c = REFTAG_MAP["netixlan"].objects.create(
-            asn=self.net_a.asn,
-            ixlan=self.ixlan_b,
-            status="ok",
-            ipaddr4=netixlan_a.ipaddr4,
-            network=self.net_a,
-            speed=100,
-        )
-        self._undelete(self.ixlan_a)
-
-        assert self.ixlan_a.status == "ok"
-        assert self.ixlan_a.netixlan_set_active.count() == 0
-
-    def test_undelete_ixlan_netixlan_dupe_other_ipv6(self):
-        netixlan_a = self.ixlan_a.netixlan_set.first()
-        self.ixlan_a.delete()
-        netixlan_c = REFTAG_MAP["netixlan"].objects.create(
-            asn=self.net_a.asn,
-            ixlan=self.ixlan_b,
-            status="ok",
-            ipaddr6=netixlan_a.ipaddr6,
-            network=self.net_a,
-            speed=100,
-        )
-        self._undelete(self.ixlan_a)
-
-        assert self.ixlan_a.status == "ok"
-        assert self.ixlan_a.netixlan_set_active.count() == 0
