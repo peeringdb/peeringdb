@@ -1439,7 +1439,7 @@ def view_network(request, id):
 
     org = network_d.get("org")
 
-    ixf_proposals = IXFMemberData.actionable_for_network(network)
+    ixf_proposals = IXFMemberData.proposals_for_network(network)
     ixf_proposals_dismissed = IXFMemberData.dismissed_for_network(network)
 
     data = {

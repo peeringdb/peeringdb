@@ -2292,10 +2292,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
 
     @classmethod
-    def actionable_for_network(cls, net):
+    def proposals_for_network(cls, net):
         qset = cls.get_for_network(net).select_related("ixlan", "ixlan__ix")
 
-        suggestions = {}
+        proposals = {}
 
         for ixf_member_data in qset:
 
@@ -2305,7 +2305,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             if action == "noop":
                 continue
 
-            if error and "IPv4 address outside of prefix" in error:
+            if not ixf_member_data.actionable_for_network:
                 continue
 
             if ixf_member_data.dismissed:
@@ -2314,17 +2314,17 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             ix_id = ixf_member_data.ix.id
 
-            if ix_id not in suggestions:
-                suggestions[ix_id] = {
+            if ix_id not in proposals:
+                proposals[ix_id] = {
                     "ix": ixf_member_data.ix,
                     "add": [],
                     "delete": [],
                     "modify": [],
                 }
 
-            suggestions[ix_id][action].append(ixf_member_data)
+            proposals[ix_id][action].append(ixf_member_data)
 
-        return suggestions
+        return proposals
 
     @property
     def json(self):
@@ -2341,6 +2341,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if not hasattr(self, "_net"):
             self._net = Network.objects.get(asn=self.asn)
         return self._net
+
+    @property
+    def actionable_for_network(self):
+        error = self.error
+
+        if error and "address outside of prefix" in error:
+            return False
+
+        return True
+
 
     @property
     def net_contacts(self):
@@ -2699,7 +2709,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 body = message,
                 user = self.ticket_user,
             )]
-        elif recipient == "net":
+        elif recipient == "net" and self.actionable_for_network:
             contacts = self.net_contacts
             self._email(subject, message, contacts)
         elif recipient == "ix":
@@ -2748,7 +2758,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 context,
             )
 
-            log.append(f"[{now}] notified {recipient} ({result['contacts']}) about {subject}")
+            if result["contacts"]:
+                log.append(f"[{now}] notified {recipient} ({result['contacts']}) about {subject}")
+            else:
+                log.append(f"[{now}] could not notify {recipient} about {subject}: no suitable contacts found")
 
         self.log = "\n".join(log) + "\n" + self.log
 

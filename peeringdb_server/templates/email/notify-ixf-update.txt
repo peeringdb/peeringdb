@@ -17,7 +17,7 @@ IX-F data has changed since the last notification:
 A validation error was raised when the IX-F importer attempted to process this change.
 
 ```
-{{ instance.error }}
+{{ instance.error|safe|striptags }}
 ```
 {% endif %}
 {% spaceless %}
@@ -28,7 +28,7 @@ You may review and manually accept the IX-F data at {{ instance.ac_url }}
 Your network currently has automatic IX-F updates disabled. You may review and manually accept this proposed change at {{ instance.net.view_url }}. We have also notified the PeeringDB admin committee about this proposed change.
 {% endif %}
 {% elif recipient == "ix" %}
-The network administrators of AS{{ instance.asn }} as well as the PeeringDB admin committee have been informed of this proposed change. If this proposed change is incorrect please review your IX-F data for this entry.
+{% if instance.actionable_for_network %}The network administrators of AS{{ instance.asn }} as well as the{% else %}The{% endif %} PeeringDB administrators have been informed of this proposed change. If this proposed change is incorrect please review your IX-F data for this entry.
 {% endif %}
 {% endspaceless %}
 

@@ -1539,9 +1539,6 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "ix",
         "action",
         "changes",
-        "asn",
-        "ipaddr4",
-        "ipaddr6",
         "reason",
         "netixlan",
         "log",
@@ -1598,6 +1595,14 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
             args=(obj.netixlan.id,)
         )
         return mark_safe(f'<a href="{url}">{obj.netixlan.id}</a>')
+
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.action != "add":
+            # make identifying fields read-only
+            # for modify / delete actions
+            return self.readonly_fields + ('asn', 'ipaddr4', 'ipaddr6')
+        return self.readonly_fields
 
     def has_add_permission(self, request):
         return False
