@@ -57,7 +57,7 @@
   <div class="marg-side-15 marg-top-15">
   <div class="row item">
     <div class="col-xs-10">
-      <h4 class="marg-top"><a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{{ ixf_proposals.ix.name }}</a></h4>
+      <h4 class="marg-top"><a role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">{{ ixf_proposals.ix.name }}</a></h4>
     </div>
     <div class="col-xs-2 right">
       <a role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">
@@ -71,7 +71,10 @@
   <div id="ixf-proposals-{{ ix_id }}" class="list padded-rows collapse">
 
   <div class="row controls">
-    <div class="col-xs-12 right">
+    <div class="col-xs-6">
+      <a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{% trans "Their PeeringDB entry" %}</a>
+    </div>
+    <div class="col-xs-6 right">
       <button data-toggle="tooltip" title="{% trans "Autoamtically update and remove all suggested entries" %}" class="btn btn-default btn-sm resolve-all" type="button">{% trans "Auto-resolve" %}</button>
 
       <button data-toggle="tooltip" title="{% trans "Automatically add all suggested entries" %}" class="btn btn-default btn-sm add-all" type="button">{% trans "Auto-add" %}</button>
