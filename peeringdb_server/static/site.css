@@ -690,19 +690,19 @@ div.ixf-proposals div.controls {
   padding: 5px 0px;
 }
 
-a[aria-expanded="false"] > span.expanded {
+[aria-expanded="false"] span.expanded {
   display: none;
 }
 
-a[aria-expanded="false"] > span.collapsed {
+[aria-expanded="false"] span.collapsed {
   display: inline;
 }
 
-a[aria-expanded="true"] > span.expanded {
+[aria-expanded="true"] span.expanded {
   display: inline;
 }
 
-a[aria-expanded="true"] > span.collapsed {
+[aria-expanded="true"] span.collapsed {
   display: none;
 }
 

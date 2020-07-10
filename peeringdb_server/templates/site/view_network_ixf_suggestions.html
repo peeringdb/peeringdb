@@ -55,15 +55,13 @@
   data-ixf-proposals-ix-name="{{ ixf_proposals.ix.name }}"
   data-ixf-proposals-net="{{ instance.id }}">
   <div class="marg-side-15 marg-top-15">
-  <div class="row item">
+  <div class="row item" role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">
     <div class="col-xs-10">
-      <h4 class="marg-top"><a role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">{{ ixf_proposals.ix.name }}</a></h4>
+      <h4 class="marg-top"><a>{{ ixf_proposals.ix.name }}</a></h4>
     </div>
     <div class="col-xs-2 right">
-      <a role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">
-        <span class="collapsed">{% trans "Expand" %}</span>
-        <span class="expanded">{% trans "Collapse" %}</span>
-      </a>
+      <span class="collapsed glyphicon glyphicon-expand"></span>
+      <span class="expanded glyphicon glyphicon-collapse-down"></span>
     </div>
   </div>
   </div>
