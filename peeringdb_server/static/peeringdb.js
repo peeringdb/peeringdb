@@ -329,6 +329,14 @@ PeeringDB.ViewActions.actions.net_ixf_postmortem = function(netId) {
   postmortem.request(netId, $("#ixf-postmortem"));
 }
 
+/**
+ * Handles the IX-F proposals UI for suggestions
+ * made to networks from exchanges through
+ * the exchange's IX-F data feeds
+ * @class IXFProposals
+ * @namespace PeeringDB
+ * @constructor
+ */
 
 PeeringDB.IXFProposals = twentyc.cls.define(
   "IXFProposals",
@@ -336,16 +344,32 @@ PeeringDB.IXFProposals = twentyc.cls.define(
     IXFProposals : function() {
 
       var ixf_proposals = this;
+
+      // the netixlan list element in the network
+      // view (Public peering exchange points)
       this.netixlan_list = $('[data-edit-target="api:netixlan"]')
+
+      // the netixlan list module
       this.netixlan_mod = this.netixlan_list.data('editModuleInstance')
+
+      // this will be true once the user as applied or dismissed
+      // a suggestion. If true once the network editor is closed
+      // either through cancel or save a page reload will be forced
       this.require_refresh= false;
 
+      // wire button to reset dismissed proposals
       $('#btn-reset-proposals').click(function() {
         ixf_proposals.reset_proposals($(this).data("reset-path"))
       });
 
+      // process and wire all proposals (per exchange)
       $("[data-ixf-proposals-ix]").each(function() {
+        // individual exchange
+
+        // container element for proposals
         var proposals = $(this)
+
+        // wire batch action buttons
         var button_add_all = proposals.find('button.add-all')
         var button_resolve_all = proposals.find('button.resolve-all');
 
@@ -354,6 +378,7 @@ PeeringDB.IXFProposals = twentyc.cls.define(
 
         ixf_proposals.sync_proposals_state(proposals);
 
+        // write proposals
         proposals.find('.row.item').each(function() {
           var row = $(this)
           var button_add = row.find('button.add');
@@ -373,12 +398,25 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       })
     },
 
+    /**
+     * Sends ajax request to reset dismissed proposals
+     * and upon success will force a page reload
+     * @method reset_proposals
+     * @param {String} path url path to reset proposals
+     */
+
     reset_proposals : function(path) {
       $.ajax({
         method: "POST",
         url: path
       }).done(PeeringDB.refresh);
     },
+
+    /**
+     * Dismisses a proposal
+     * @method dismiss
+     * @param {jQuery} row jquery result for proposal row
+     */
 
     dismiss : function(row) {
       var data= this.collect(row);
@@ -395,6 +433,14 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       })
     },
 
+    /**
+     * Apply modifications to netixlan form in
+     * public peering exchange points list
+     * from proposal row
+     * @method modify
+     * @param {jQuery} row jquery result for proposal row
+     */
+
     modify : function(row) {
       var data=this.collect(row);
       var proposals = row.closest("[data-ixf-proposals-ix]")
@@ -407,6 +453,12 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       row.find('button').tooltip("hide")
 
     },
+
+    /**
+     * Applies a proposed netixlan deletion
+     * @method delete
+     * @param {jQuery} row jquery result for proposal row
+     */
 
     delete : function(row) {
       var data=this.collect(row);
@@ -431,6 +483,12 @@ PeeringDB.IXFProposals = twentyc.cls.define(
 
     },
 
+    /**
+     * Batch applies all netixlan creations
+     * @method add_all
+     * @param {jQuery} jquery result for exchange proposals container
+     */
+
     add_all : function(proposals) {
 
       var entries = this.all_entries_for_action(proposals, "add");
@@ -449,6 +507,12 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       if(b)
         this.process_all_for_action(entries.rows, "add");
     },
+
+    /**
+     * Batch applies all netixlan modifications and removals
+     * @method resolve_all
+     * @param {jQuery} jquery result for exchange proposals container
+     */
 
     resolve_all : function(proposals) {
 
@@ -482,6 +546,14 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       }
     },
 
+    /**
+     * Returns object literal with rows and ixf_ids for
+     * specified action
+     * @method all_entries_for_action
+     * @param {jQuery} proposals
+     * @param {String} action add | modify | delete
+     */
+
     all_entries_for_action : function(proposals, action) {
       var rows = proposals.find('.suggestions-'+action+' .row.item')
 
@@ -493,6 +565,13 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       return {rows: rows, ixf_ids: ids}
     },
 
+    /**
+     * Batch apply all proposals for action
+     * @method process_all_for_action
+     * @param {jQuery} rows
+     * @param {String} action add | modify | delete
+     */
+
     process_all_for_action : function(rows, action) {
       var ixf_proposals = this;
       rows.each(function() {
@@ -500,6 +579,12 @@ PeeringDB.IXFProposals = twentyc.cls.define(
         ixf_proposals[action](row);
       });
     },
+
+    /**
+     * Create the proposed netixlan
+     * @method add
+     * @param {jQuery} row jquery result set for proposal row
+     */
 
     add : function(row) {
       var data=this.collect(row);
@@ -532,6 +617,12 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       })
     },
 
+    /**
+     * Removes the proposal row
+     * @method detach_row
+     * @param {jQuery} row
+     */
+
     detach_row : function(row) {
 
       var par = row.parent()
@@ -545,6 +636,17 @@ PeeringDB.IXFProposals = twentyc.cls.define(
         this.sync_proposals_state(proposals);
       }
     },
+
+    /**
+     * This will update the batch actions buttons to
+     * be disabled if no actions are left for them to
+     * apply
+     *
+     * This will also remove the proposals contaienr if
+     * no actions are left to apply
+     * @method sync_proposals_state
+     * @param {jQuery} proposals jquery result for exchange proposals
+     */
 
     sync_proposals_state : function(proposals) {
       var button_add_all = proposals.find('button.add-all')
@@ -564,6 +666,14 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       if(button_resolve_all.prop('disabled') && button_add_all.prop('disabled'))
         proposals.detach()
     },
+
+    /**
+     * Renders the errors of an API request
+     * to the proposal row
+     * @method render_errors
+     * @param {jQuery} row
+     * @param {jQuery XHR Response} response
+     */
 
     render_errors : function(row, response) {
       var element, field, msg;
@@ -591,6 +701,13 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       }
       errors.empty().text(info.join("\n")).show()
     },
+
+    /**
+     * Collect all the netixlan fields / values from
+     * a proposal row and return them as an object literal
+     * @method collect
+     * @param {jQuery} row
+     */
 
     collect : function(row) {
       var proposals = row.closest("[data-ixf-proposals-ix]")

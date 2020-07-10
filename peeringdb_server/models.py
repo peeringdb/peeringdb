@@ -1736,7 +1736,8 @@ class IXLan(pdb_models.IXLanBase):
     ixf_ixp_import_error_notified = models.DateTimeField(
         _("IX-F error notification date"),
         help_text=_("Last time we notified the exchange about the IX-F parsing issue"),
-        null=True
+        null=True,
+        blank=True,
     )
 
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
@@ -2220,6 +2221,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         on_delete=models.CASCADE
     )
 
+    # field names of fields that can receive
+    # modifications from ix-f
+
     data_fields = [
         "speed",
         "operational",
@@ -2236,6 +2240,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @classmethod
     def id_filters(cls, asn, ipaddr4, ipaddr6):
+        """
+        returns a dict of filters to use with a
+        IXFMemberData or NetworkIXLan query set
+        to retrieve a unique entry
+        """
 
         filters = {"asn": asn}
 
@@ -2255,6 +2264,21 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @classmethod
     def instantiate(cls, asn, ipaddr4, ipaddr6, ixlan, **kwargs):
+        """
+        Returns an IXFMemberData object.
+
+        It will take into consideration whether or not an instance
+        for this object already exists (as identified by asn and ip
+        addresses)
+
+        It will also update the value of `fetched` to now
+
+        Keyword Argument(s):
+
+        - speed(int=0) : network speed (mbit)
+        - operational(bool=True): peer is operational
+        - is_rs_peer(bool=False): peer is route server
+        """
 
         fetched = datetime.datetime.now().replace(tzinfo=UTC())
 
@@ -2286,11 +2310,27 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @classmethod
     def get_for_network(cls, net):
+        """
+        Returns aueryset for IXFMemberData objects that match
+        a network's asn
+
+        Argument(s):
+
+        - net(Network)
+        """
         return cls.objects.filter(asn = net.asn)
 
 
     @classmethod
     def dismissed_for_network(cls, net):
+        """
+        Returns queryset for IXFMemberData objects that match
+        a network's asn and are currenlty flagged as dismissed
+
+        Argument(s):
+
+        - net(Network)
+        """
         qset = cls.get_for_network(net).select_related("ixlan", "ixlan__ix")
         qset = qset.filter(dismissed=True)
 
@@ -2307,6 +2347,26 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @classmethod
     def proposals_for_network(cls, net):
+        """
+        Returns a dict containing actionable proposals for
+        a network
+
+        ```
+        {
+          <ix_id>: {
+            "ix": InternetExchange,
+            "add" : list(IXFMemberData),
+            "modify" : list(IXFMemberData),
+            "delete" : list(IXFMemberData),
+          }
+        }
+        ```
+
+        Argument(s):
+
+        - net(Network)
+        """
+
         qset = cls.get_for_network(net).select_related("ixlan", "ixlan__ix")
 
         proposals = {}
@@ -2342,6 +2402,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def json(self):
+        """
+        Returns dict for self.data
+        """
         return json.loads(self.data)
 
 
@@ -2358,6 +2421,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def actionable_for_network(self):
+        """
+        Returns whether or not the proposed action by
+        this IXFMemberData instance is actionable by
+        the network
+        """
         error = self.error
 
         if error and "address outside of prefix" in error:
@@ -2368,6 +2436,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def net_contacts(self):
+        """
+        Returns a list of email addresses that
+        are suitable contact points for conflict resolution
+        at the network's end
+        """
         qset = self.net.poc_set_active.exclude(email="")
         qset = qset.exclude(email__isnull=True)
 
@@ -2386,6 +2459,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def ix_contacts(self):
+        """
+        Returns a list of email addresses that
+        are suitable contact points for conflict resolution
+        at the exchange end
+        """
         return [self.ix.tech_email or self.ix.policy_email]
 
 
@@ -2426,6 +2504,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         between this entry and the related netixlan
 
         If an empty dict is returned that means no changes
+
+        ```
+        {
+            <field_name> : {
+                "from" : <value>,
+                "to : <value>
+            }
+        }
+        ```
         """
 
         netixlan = self.netixlan
@@ -2464,11 +2551,29 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def changed_fields(self):
+        """
+        Returns a comma separated string of field names
+        for changes proposed by this IXFMemberData instance
+        """
         return ", ".join(list(self.changes.keys()))
 
     @property
     def remote_changes(self):
+        """
+        Returns a dict of changed fields between previously
+        fetched IX-F data and current IX-F data
 
+        If an empty dict is returned that means no changes
+
+        ```
+        {
+            <field_name> : {
+                "from" : <value>,
+                "to : <value>
+            }
+        }
+        ```
+        """
         if not self.id and self.netixlan.id:
             return {}
 
@@ -2484,6 +2589,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def remote_data_missing(self):
+        """
+        Returns whether or not this IXFMemberData entry
+        had data at the IX-F source.
+
+        If not it indicates that it does not exist at the
+        ix-f source
+        """
+
         return (self.data == "{}" or not self.data)
 
     @property
@@ -2507,6 +2620,12 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def net_present_at_ix(self):
+        """
+        Returns whether or not the network associated with
+        this IXFMemberData instance currently has a presence
+        at the exchange associated with this IXFMemberData
+        instance
+        """
         return NetworkIXLan.objects.filter(
             ixlan=self.ixlan,
             network=self.net
@@ -2587,10 +2706,18 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def netixlan_exists(self):
+        """
+        Returns whether or not an active netixlan exists
+        for this IXFMemberData instance.
+        """
         return (self.netixlan.id and self.netixlan.status != "deleted")
 
     @property
     def ticket_user(self):
+        """
+        Returns the User instance for the user to use
+        to create DeskPRO tickets
+        """
         if not hasattr(self, "_ticket_user"):
             self._ticket_user =  User.objects.get(username="ixf_importer")
         return self._ticket_user
@@ -2621,6 +2748,25 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         This will either create, update or delete a netixlan
         object
+
+        Will return a dict containing action and netixlan
+        affected
+
+        ```
+        {
+            "action": <action(str)>
+            "netixlan": <NetworkIXLan>
+        }
+        ```
+
+        Keyword Argument(s):
+
+        - user(User): if set will set the user on the
+          reversion revision
+        - comment(str): if set will set the comment on the
+          reversion revision
+        - save(bool=True): only persist changes to the database
+          if this is True
         """
 
         if user:
@@ -2658,6 +2804,12 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
 
     def grab_validation_errors(self):
+        """
+        This will attempt to validate the netixlan associated
+        with this IXFMemberData instance.
+
+        Any validation errors will be stored to self.error
+        """
         try:
             self.netixlan.full_clean()
         except ValidationError as exc:
@@ -2665,11 +2817,24 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
 
     def set_resolved(self, save=True):
+        """
+        Marks this IXFMemberData instance as resolved and
+        send out notifications to ac,ix and net if
+        warranted
+
+        this will delete the IXFMemberData instance
+        """
         if self.id and save:
             self.notify_resolve(ac=True, ix=True, net=True)
             self.delete(hard=True)
 
     def set_conflict(self, error=None, save=True):
+        """
+        Persist this IXFMemberData instance and send out notifications
+        for conflict (validation issues) for modifications proposed
+        to the corresponding netixlan to ac, ix and net as warranted
+        as warranted
+        """
         if (self.remote_changes or (error and not self.error)) and save:
             self.error = error
             self.dismissed = False
@@ -2677,6 +2842,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.notify_update(ac=True, ix=True, net=True)
 
     def set_update(self, save=True, reason=""):
+        """
+        Persist this IXFMemberData instance and send out notifications
+        for proposed modification to the corresponding netixlan
+        instance to ac, ix and net as warranted
+        """
         self.reason = reason
         if ((self.changes and not self.id) or self.remote_changes) and save:
             self.grab_validation_errors()
@@ -2685,6 +2855,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.notify_update(ac=True, ix=True, net=True)
 
     def set_add(self, save=True, reason=""):
+        """
+        Persist this IXFMemberData instance and send out notifications
+        for proposed creation of netixlan instance to ac, ix and net
+        as warranted
+        """
         self.reason = reason
         if not self.id and save:
             self.grab_validation_errors()
@@ -2695,15 +2870,42 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 self.notify_add(net=True)
 
     def set_remove(self, save=True, reason=""):
+        """
+        Persist this IXFMemberData instance and send out notifications
+        for proposed removal of netixlan instance to ac, net and ix
+        as warranted
+        """
         self.reason = reason
         if (not self.id or not self.marked_for_removal) and save:
             self.save()
             self.notify_remove(ac=True, ix=True, net=True)
 
     def set_data(self, data):
+        """
+        Stores a dict in self.data as a json string
+        """
         self.data = json.dumps(data)
 
     def notify(self, template_file, recipient, subject, context=None):
+        """
+        Send notification
+
+        Returns a dict containing information about the notification
+
+        - contacts(list)
+        - subject(str)
+        - message(str)
+
+        Argument(s):
+
+        - template_file(str): email template file
+        - recipient(str): ac, ix or net
+        - subject(str): subject text, this will only be used if
+          this IXFMemberData instance does not have a valid
+          asn, ip4, ip6 identifier
+        - context(dict): if set will update the template context
+          from this
+        """
         _context = {
             "instance": self,
             "recipient": recipient,
@@ -2743,6 +2945,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
 
     def _email(self, subject, message, recipients):
+        """
+        Send email
+
+        Honors the MAIL_DEBUG setting
+
+        Called by self.notify depending on recipient
+        type
+        """
         if not getattr(settings, "MAIL_DEBUG", False):
             raise Exception("NOPE")
             mail = EmailMultiAlternatives(
@@ -2762,6 +2972,27 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
 
     def _notify(self, template_file, subject, context=None, save=True, **recipients):
+
+        """
+        Send notification to multiple recipient types
+
+        Argument(s):
+
+        - template_file(str): email template file
+        - subject(str): subject text, this will only be used if
+          this IXFMemberData instance does not have a valid
+          asn, ip4, ip6 identifier
+        - context(dict): if set will update the template context
+          from this
+        - save(bool=True): if True will save this IXFMemberData instance
+          (self.log will have been updated with notification lines)
+
+        Keyword Argument(s):
+
+        - ac(bool): if True send notification to admin committee
+        - net(bool): if True send notification to network
+        - ix(bool): if True send notification to exchange
+        """
 
         log = []
         now = datetime.datetime.now().replace(tzinfo=UTC())
@@ -2812,9 +3043,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             "email/notify-ixf-remove.txt", _("Remove"), **kwargs
         )
 
-
-
-
     @property
     def ac_netixlan_url(self):
         if not self.netixlan.id:
@@ -2835,21 +3063,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             args=(self.id,),
         )
         return f"{settings.BASE_URL}{path}"
-
-
-    @property
-    def net_url(self):
-        return "NOTIMPL"
-
-    @property
-    def ix_url(self):
-        return "NOTIMPL"
-
-
-
-
-
-
 
 
 
