@@ -1,5 +1,6 @@
 import json
 import re
+import datetime
 
 import requests
 import ipaddress
@@ -8,6 +9,7 @@ from django.db import transaction
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
 import reversion
 
@@ -206,8 +208,14 @@ class Importer(object):
 
         # bail if there has been any errors during sanitize() or fetch()
         if data.get("pdb_error"):
+            self.notify_error(data.get("pdb_error"))
             self.log_error(data.get("pdb_error"), save=save)
             return False
+
+        # null ix-f error note on ixlan if it had error'd before
+        if self.ixlan.ixf_ixp_import_error:
+            self.ixlan.ixf_ixp_import_error = None
+            self.ixlan.save()
 
         # bail if there are no active prefixes on the ixlan
         if ixlan.ixpfx_set_active.count() == 0:
@@ -696,6 +704,32 @@ class Importer(object):
         self.log["data"].append(
             {"peer": peer, "action": action, "reason": "{}".format(reason),}
         )
+
+
+    def notify_error(self, error):
+        now = datetime.datetime.now(datetime.timezone.utc)
+        notified = self.ixlan.ixf_ixp_import_error_notified
+        prev_error = self.ixlan.ixf_ixp_import_error
+
+        if notified:
+            diff = ((now - notified).total_seconds() / 3600)
+            if diff < settings.IXF_PARSE_ERROR_NOTIFICATION_PERIOD:
+                return
+
+        self.ixlan.ixf_ixp_import_error_notified = now
+        self.ixlan.ixf_ixp_import_error = error
+        self.ixlan.save()
+
+        ixf_member_data = IXFMemberData(ixlan=self.ixlan, asn=0)
+        ixf_member_data._notify(
+            "email/notify-ixf-source-error.txt",
+            "Could not process IX-F Data",
+            context={"error":error, "dt":now},
+            save=False,
+            ix=True,
+            ac=True
+        )
+
 
 
     def log_error(self, error, save=False):

@@ -1722,8 +1722,22 @@ class IXLan(pdb_models.IXLanBase):
     ix = models.ForeignKey(
         InternetExchange, on_delete=models.CASCADE, default=0, related_name="ixlan_set"
     )
+
+    # IX-F import fields
+
     ixf_ixp_member_list_url = models.URLField(null=True, blank=True)
     ixf_ixp_import_enabled = models.BooleanField(default=False)
+    ixf_ixp_import_error = models.TextField(
+        _("IX-F error"),
+        blank=True,
+        null=True,
+        help_text=_("Reason IX-F data could not be parsed")
+    )
+    ixf_ixp_import_error_notified = models.DateTimeField(
+        _("IX-F error notification date"),
+        help_text=_("Last time we notified the exchange about the IX-F parsing issue"),
+        null=True
+    )
 
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
@@ -2700,7 +2714,12 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         template = loader.get_template(template_file)
         message = template.render(_context)
-        subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {self}"
+
+        if self.asn and (self.ipaddr4 or self.ipaddr6):
+            subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {self}"
+        else:
+            subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {subject}"
+
         contacts = []
 
         if recipient == "ac":
@@ -2742,7 +2761,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             )
 
 
-    def _notify(self, template_file, subject, context=None, **recipients):
+    def _notify(self, template_file, subject, context=None, save=True, **recipients):
 
         log = []
         now = datetime.datetime.now().replace(tzinfo=UTC())
@@ -2765,7 +2784,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         self.log = "\n".join(log) + "\n" + self.log
 
-        self.save()
+        if save:
+            self.save()
 
     def notify_resolve(self, **kwargs):
         return self._notify(
@@ -2952,12 +2972,16 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         prefix = self.prefix
         can_delete = True
         for netixlan in self.ixlan.netixlan_set_active:
-            if self.protocol == "IPv4" and netixlan.ipaddr4 in prefix:
-                can_delete = False
-                break
-            if self.protocol == "IPv6" and netixlan.ipaddr6 in prefix:
-                can_delete = False
-                break
+            if self.protocol == "IPv4":
+                if netixlan.ipaddr4 and netixlan.ipaddr4 in prefix:
+                    can_delete = False
+                    break
+
+            if self.protocol == "IPv6":
+                if netixlan.ipaddr6 and netixlan.ipaddr6 in prefix:
+                    can_delete = False
+                    break
+
 
         if not can_delete:
             self._not_deletable_reason = _(

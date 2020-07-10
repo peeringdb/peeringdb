@@ -414,12 +414,22 @@ class ModelAdminWithVQCtrl(object):
             )
         return _("APPROVED")
 
+class IXLanPrefixForm(StatusForm):
+    def clean_prefix(self):
+        value = ipaddress.ip_network(self.cleaned_data["prefix"])
+        self.prefix_changed = (self.instance.prefix != value)
+        return value
+
+    def clean(self):
+        if self.prefix_changed and not self.instance.deletable:
+            raise ValidationError(self.instance.not_deletable_reason)
+
+
 
 class IXLanPrefixInline(SanitizedAdmin, admin.TabularInline):
     model = IXLanPrefix
     extra = 0
-    form = StatusForm
-
+    form = IXLanPrefixForm
 
 class IXLanInline(SanitizedAdmin, admin.StackedInline):
     model = IXLan
@@ -477,11 +487,25 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
 
 
 
+class NetworkIXLanForm(StatusForm):
+
+    def clean_ipaddr4(self):
+        value = self.cleaned_data["ipaddr4"]
+        if not value:
+            return None
+        return value
+
+    def clean_ipaddr6(self):
+        value = self.cleaned_data["ipaddr6"]
+        if not value:
+            return None
+        return value
+
 class NetworkInternetExchangeInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkIXLan
     extra = 0
     raw_id_fields = ("ixlan", "network")
-    form = StatusForm
+    form = NetworkIXLanForm
 
 
 class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
@@ -932,14 +956,6 @@ class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
         "fk": ["ix", "facility"],
     }
 
-
-class IXLanPrefixForm(StatusForm):
-    def clean_prefix(self):
-        value = self.cleaned_data["prefix"]
-        if self.instance.prefix != value:
-            if not self.instance.deletable:
-                raise ValidationError(self.instance.not_deletable_reason)
-        return value
 
 class IXLanPrefixAdmin(SoftDeleteAdmin):
     list_display = ("id", "prefix", "ixlan", "ix", "status", "created", "updated")
