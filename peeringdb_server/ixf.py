@@ -74,6 +74,7 @@ class Importer(object):
         self.ixlan = ixlan
         self.save = save
         self.asn = asn
+        self.now = datetime.datetime.now(datetime.timezone.utc)
 
     def fetch(self, url, timeout=5):
         """
@@ -249,9 +250,53 @@ class Importer(object):
         self.archive()
 
         if save:
+
+            # update exchange's ixf fields
+            self.update_ix()
+
             self.save_log()
 
         return True
+
+
+    @reversion.create_revision()
+    def update_ix(self):
+
+        """
+        Will see if any data was changed during this import
+        and update the exchange's ixf_last_import timestamp
+        if so
+
+        Also will set the ixf_net_count value if it has changed
+        from before
+        """
+
+        ix = self.ixlan.ix
+        save_ix = False
+
+        ixf_member_data_changed = IXFMemberData.objects.filter(
+            updated__gte = self.now, ixlan = self.ixlan
+        ).exists()
+
+        netixlan_data_changed = NetworkIXLan.objects.filter(
+            updated__gte = self.now, ixlan = self.ixlan
+        ).exists()
+
+        if ixf_member_data_changed or netixlan_data_changed:
+            ix.ixf_last_import = self.now
+            save_ix = True
+
+        ixf_net_count = len(self.pending_save)
+        if ixf_net_count != ix.ixf_net_count:
+            ix.ixf_net_count = ixf_net_count
+            save_ix =True
+
+        print(self.log["data"])
+        print(ix, ix.ixf_net_count, ix.ixf_last_import)
+
+        if save_ix:
+            ix.save()
+
 
 
     @reversion.create_revision()

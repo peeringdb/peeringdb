@@ -549,7 +549,13 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name",)
-    readonly_fields = ("id", "nsp_namespace", "ixf_import_history")
+    readonly_fields = (
+        "id",
+        "nsp_namespace",
+        "ixf_import_history",
+        "ixf_last_import",
+        "ixf_net_count"
+    )
     inlines = (InternetExchangeFacilityInline, IXLanInline)
     form = InternetExchangeAdminForm
 

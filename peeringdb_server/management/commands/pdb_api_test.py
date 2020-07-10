@@ -1039,6 +1039,10 @@ class TestJSON(unittest.TestCase):
             test_failures={
                 "invalid": {"name": ""},
                 "perms": {"id": SHARED["ix_r_ok"].id},
+                "readonly": {
+                    "ixf_net_count" : 50,
+                    "ixf_last_import" : "not even valid"
+                }
             },
         )
 

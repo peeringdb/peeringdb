@@ -2061,6 +2061,9 @@ class InternetExchangeSerializer(ModelSerializer):
 
     suggest = serializers.BooleanField(required=False, write_only=True)
 
+    ixf_net_count = serializers.IntegerField(read_only=True)
+    ixf_last_import = serializers.DateTimeField(read_only=True)
+
     website = serializers.URLField(required=True)
     tech_email = serializers.EmailField(required=True)
 
@@ -2119,6 +2122,8 @@ class InternetExchangeSerializer(ModelSerializer):
             "suggest",
             "prefix",
             "net_count",
+            "ixf_net_count",
+            "ixf_last_import",
         ] + HandleRefSerializer.Meta.fields
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]
