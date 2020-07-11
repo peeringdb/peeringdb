@@ -2731,7 +2731,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if self.ipaddr4:
             parts.append(f"{self.ipaddr4}")
         else:
-            parse.append("No IPv4")
+            parts.append("No IPv4")
 
         if self.ipaddr6:
             parts.append(f"{self.ipaddr6}")
