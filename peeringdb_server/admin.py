@@ -595,6 +595,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
     model = IXLanIXFMemberImportLogEntry
     fields = (
         "netixlan",
+        "versions",
         "ipv4",
         "ipv6",
         "asn",
@@ -612,6 +613,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
         "rollback_status",
         "action",
         "reason",
+        "versions",
     )
     raw_id_fields = ("netixlan",)
 
@@ -623,10 +625,31 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
     def has_add_permission(self, request, obj=None):
         return False
 
+    def versions(self, obj):
+        before = self.before_id(obj)
+        after = self.after_id(obj)
+        return f"{before} -> {after}"
+
+    def before_id(self, obj):
+        if obj.version_before:
+            return obj.version_before.id
+        return "-"
+
+    def after_id(self, obj):
+        if obj.version_after:
+            return obj.version_after.id
+        return "-"
+
     def ipv4(self, obj):
+        v = obj.version_after
+        if v:
+            return v.field_dict.get("ipaddr4")
         return obj.netixlan.ipaddr4 or ""
 
     def ipv6(self, obj):
+        v = obj.version_after
+        if v:
+            return v.field_dict.get("ipaddr6")
         return obj.netixlan.ipaddr6 or ""
 
     def asn(self, obj):

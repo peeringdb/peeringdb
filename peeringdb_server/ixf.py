@@ -71,7 +71,6 @@ class Importer(object):
         }
         self.pending_save = []
         self.asns = []
-        self.archive_info = {}
         self.ixlan = ixlan
         self.save = save
         self.asn = asn
@@ -335,25 +334,28 @@ class Importer(object):
         Create the IXLanIXFMemberImportLog for this import
         """
 
-        added = self.actions_taken["add"]
-        updated = self.actions_taken["modify"]
-        deleted = self.actions_taken["delete"]
-        actions = added + updated + deleted
+        if not self.save:
+            return
 
-        if self.save and actions:
-            persist_log = IXLanIXFMemberImportLog.objects.create(ixlan=self.ixlan)
-            for netixlan in actions:
+        persist_log = IXLanIXFMemberImportLog.objects.create(ixlan=self.ixlan)
+        for action in ["delete", "modify", "add"]:
+            for info in self.actions_taken[action]:
+
+                netixlan = info["netixlan"]
+                version_before = info["version"]
+
                 versions = reversion.models.Version.objects.get_for_object(netixlan)
-                if len(versions) == 1:
-                    version_before = None
+
+                if version_before:
+                    versions = versions.filter(id__gt=version_before.id)
+                    version_after = versions.last()
                 else:
-                    version_before = versions[1]
-                version_after = versions[0]
-                info = self.archive_info.get(netixlan.id, {})
+                    version_after = versions.first()
+
                 persist_log.entries.create(
                     netixlan=netixlan,
                     version_before=version_before,
-                    action=info.get("action"),
+                    action=action,
                     reason=info.get("reason"),
                     version_after=version_after,
                 )
@@ -639,13 +641,18 @@ class Importer(object):
 
     def log_apply(self, apply_result, reason=""):
 
-        self.actions_taken[apply_result["action"]].append(apply_result["netixlan"])
+        netixlan = apply_result["netixlan"]
+        self.actions_taken[apply_result["action"]].append({
+            "netixlan": netixlan,
+            "version":reversion.models.Version.objects.get_for_object(netixlan).first(),
+            "reason":reason
+        })
 
         return self.log_peer(
-            apply_result["netixlan"].asn,
+            netixlan.asn,
             apply_result["action"],
             reason,
-            netixlan=apply_result["netixlan"]
+            netixlan=netixlan
         )
 
     def log_ixf_member_data(self, ixf_member_data):
@@ -694,12 +701,6 @@ class Importer(object):
                     "operational": netixlan.operational,
                 }
             )
-
-            if netixlan.id:
-                self.archive_info[netixlan.id] = {
-                    "action": action,
-                    "reason": "{}".format(reason),
-                }
 
         self.log["data"].append(
             {"peer": peer, "action": action, "reason": "{}".format(reason),}
@@ -807,7 +808,7 @@ class PostMortem(object):
 
         qset = IXLanIXFMemberImportLogEntry.objects.filter(netixlan__asn=self.asn)
         qset = qset.exclude(action__isnull=True)
-        qset = qset.order_by("-log__created")
+        qset = qset.order_by("-log__created", "-id")
         qset = qset.select_related("log", "netixlan", "log__ixlan", "log__ixlan__ix")
 
         for entry in qset[:limit]:

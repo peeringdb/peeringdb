@@ -2785,7 +2785,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 save=save,
                 save_others=save
             )
-            self._netixlan = result["netixlan"]
+            self._netixlan = netixlan = result["netixlan"]
         elif action == "modify":
             netixlan.speed = self.speed
             netixlan.is_rs_peer = self.is_rs_peer
