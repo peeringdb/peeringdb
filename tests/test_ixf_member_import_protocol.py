@@ -263,10 +263,8 @@ def test_add_netixlan_conflict_local_ixf_exists(entities, capsys):
         is_rs_peer=True,
         status="ok",
         error=['IPv4 195.69.147.250 does not match any prefix on this ixlan'],
-        data={"test":"test"},
     )
 
-    original_update_timestamp = preexisting_ixfmember_data.updated
 
     assert IXFMemberData.objects.count() == 1
     importer = ixf.Importer()
@@ -277,14 +275,15 @@ def test_add_netixlan_conflict_local_ixf_exists(entities, capsys):
 
     ixfmemberdata = IXFMemberData.objects.first()
     assert IXFMemberData.objects.count() == 1
-    assert original_update_timestamp == ixfmemberdata.updated
 
     assert_no_ticket_exists()
 
     stdout = capsys.readouterr().out
     assert stdout == ''
     
-    
+    updated_timestamp = ixfmemberdata.updated
+    importer.update(ixlan, data=data)
+    assert updated_timestamp == IXFMemberData.objects.first().updated
 
 
 @pytest.mark.django_db
@@ -333,7 +332,6 @@ def test_no_netixlan_local_ixf_exists(entities, capsys):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        data={"test":"test"}
     )
 
     importer = ixf.Importer()
@@ -378,6 +376,7 @@ def test_no_netixlan_no_local_ixf(entities, capsys):
     # Currently fails
     assert_ticket_exists([(2906, '195.69.147.250', '2001:7f8:1::a500:2906:1')])
     pass
+
 
 def test_no_ix_local_ixf_exists():
     """
