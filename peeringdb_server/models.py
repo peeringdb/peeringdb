@@ -2630,7 +2630,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         return NetworkIXLan.objects.filter(
             ixlan=self.ixlan,
-            network=self.net
+            network=self.net,
+            status="ok"
         ).exists()
 
 
