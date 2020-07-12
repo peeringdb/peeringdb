@@ -186,4 +186,5 @@ settings.configure(
         "view_import_net_ixf_postmortem": "1/m",
     },
     MAX_USER_AFFILIATION_REQUESTS=10,
+    MAIL_DEBUG=True,
 )
