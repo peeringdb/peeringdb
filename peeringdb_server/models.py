@@ -2287,6 +2287,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             for field in cls.data_fields:
                 setattr(instance, f"previous_{field}", getattr(instance,field))
 
+            instance.previous_data = instance.data
+
             instance.fetched = fetched
             instance._meta.get_field("updated").auto_now = False
             instance.save()
@@ -2840,6 +2842,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.dismissed = False
             self.save()
             self.notify_update(ac=True, ix=True, net=True)
+        elif self.previous_data != self.data:
+
+            # since remote_changes only tracks changes to the
+            # relevant data fields speed, operational and is_rs_peer
+            # we check if the remote data has changed in general
+            # and force a save if it did
+
+            self.save()
+
 
     def set_update(self, save=True, reason=""):
         """
