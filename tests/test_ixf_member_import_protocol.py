@@ -287,7 +287,7 @@ def test_add_netixlan_conflict_local_ixf(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_add_netixlan_conflict_no_local_ixf(entities, capsys):
+def test_add_netixlan_conflict(entities, capsys):
     """
     No NetIXLan exists. Network allows auto updates. While remote IXF data has information
     to create a new NetIXLan, there are conflicts with the ipaddresses that
@@ -311,7 +311,7 @@ def test_add_netixlan_conflict_no_local_ixf(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_suggest_add_w_local_ixf(entities, capsys):
+def test_suggest_add_local_ixf(entities, capsys):
     """
     The netixlan described in the remote-ixf doesn't exist,
     but there is a relationship btw the network and ix (ie a different netixlan).
@@ -413,7 +413,7 @@ def test_suggest_add(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_no_netixlan_local_ixf_exists(entities, capsys):
+def test_suggest_add_no_netixlan_local_ixf(entities, capsys):
     """
     There isn't any netixlan between ix and network.
     Network does not have automatic updates.
@@ -447,7 +447,7 @@ def test_no_netixlan_local_ixf_exists(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_no_netixlan(entities, capsys):
+def test_suggest_add_no_netixlan(entities, capsys):
     """
     There isn't any netixlan between ix and network.
     Network does not have automatic updates.
@@ -474,7 +474,7 @@ def test_no_netixlan(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_single_ipaddr_match(entities, capsys):
+def test_single_ipaddr_matches(entities, capsys):
     """
     If only one ipaddr matches, it's the same as not matching at all.
     Here we expect to delete the two netixlans and create a new one
@@ -526,7 +526,7 @@ def test_single_ipaddr_match(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_delete_netixlan(entities):
+def test_delete(entities):
     """
     The ixf-remote doesn't contain an existing NetIXlan.
     Automatic updates are enabled so we delete it.
@@ -778,7 +778,7 @@ def test_suggest_delete_no_local_ixf(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_invalid_remote_local_ixf(entities, capsys):
+def test_mark_invalid_remote_w_local_ixf(entities, capsys):
     """
     Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
     There is already a local-ixf flagging that invalid data.
@@ -824,7 +824,7 @@ def test_invalid_remote_local_ixf(entities, capsys):
     
 
 @pytest.mark.django_db
-def test_invalid_remote_no_local_ixf(entities, capsys):
+def test_mark_invalid_remote(entities, capsys):
     """
     Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
     There is not a local-ixf flagging that invalid data.
@@ -858,7 +858,6 @@ def test_invalid_remote_no_local_ixf(entities, capsys):
     stdout = capsys.readouterr().out
     assert ERROR_MESSAGE in stdout
 
-# # Remote cannot be parsed
 @pytest.mark.django_db
 def test_remote_cannot_be_parsed(entities, capsys):
     """
@@ -877,6 +876,10 @@ def test_remote_cannot_be_parsed(entities, capsys):
     stdout = capsys.readouterr().out
     assert ERROR_MESSAGE in stdout
 
+
+
+
+# FIXTURES
 @pytest.fixture
 def entities():
     entities = {}
@@ -961,7 +964,7 @@ def entities():
     return entities
 
 
-
+# TEST FUNCTIONS
 def setup_test_data(filename):
     json_data = {}
     entities = {}
@@ -979,8 +982,7 @@ def setup_test_data(filename):
 
     return json_data
 
-
-
+# CUSTOM ASSERTIONS
 def assert_ticket_exists(ticket_info):
     """
     Input is a list of tuples containing (asn, ipaddr4, ipaddr6) that should appear
