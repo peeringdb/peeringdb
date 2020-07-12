@@ -120,7 +120,7 @@ def test_update_data_attributes(entities):
     assert netixlan.speed == 10000
 
 @pytest.mark.django_db
-def test_update_disabled_local_ixf_matches(entities):
+def test_suggest_modify_local_ixf(entities):
     """
     Netixlan is different from remote in terms of speed, operational, and is_rs_peer
     BUT there is already a local-ixf for the update.
@@ -164,7 +164,7 @@ def test_update_disabled_local_ixf_matches(entities):
     assert preexisting_ixfmember_data == IXFMemberData.objects.first()
 
 @pytest.mark.django_db
-def test_update_disabled_no_local_ixf(entities, capsys):
+def test_suggest_modify(entities, capsys):
     """
     Netixlan is different from remote in terms of speed, operational, and is_rs_peer.
     There is no local-ixf existing.
@@ -240,7 +240,7 @@ def test_add_netixlan(entities):
     assert NetworkIXLan.objects.count() == 1
 
 @pytest.mark.django_db
-def test_add_netixlan_conflict_local_ixf_exists(entities, capsys):
+def test_add_netixlan_conflict_local_ixf(entities, capsys):
     """
     No NetIXLan exists. Network allows auto updates. While remote IXF data has information
     to create a new NetIXLan, there are conflicts with the ipaddresses that
@@ -311,16 +311,33 @@ def test_add_netixlan_conflict_no_local_ixf(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_no_netixlan_local_ixf_exists(entities, capsys):
+def test_suggest_add_w_local_ixf(entities, capsys):
     """
-    No netixlan, there is a matching IX, network has automatic updates disabled.
-    But there is a local-ixf that matches the remote-ixf so do nothing.
+    The netixlan described in the remote-ixf doesn't exist,
+    but there is a relationship btw the network and ix (ie a different netixlan).
+    The network does not have automatic updates.
+    There's a local-ixf that matches the remote-ixf so we do nothing.
     """
-    data = setup_test_data("ixf.member.1")
+    data = setup_test_data("ixf.member.2")
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0] 
 
-    assert NetworkIXLan.objects.count() == 0
+    # This appears in the remote-ixf data so should not
+    # create a IXFMemberData instance
+
+    entities["netixlan"].append(
+                    NetworkIXLan.objects.create(
+                        network=network,
+                        ixlan=ixlan,
+                        asn=network.asn,
+                        speed=10000,
+                        ipaddr4="195.69.150.250",
+                        ipaddr6="2001:7f8:1::a500:2906:3",
+                        status="ok",
+                        is_rs_peer=True,
+                        operational=True,
+                    ))
+
 
     preexisting_ixfmember_data = IXFMemberData.objects.create(
         asn=1001, #Matches remote-ixf data
@@ -337,27 +354,109 @@ def test_no_netixlan_local_ixf_exists(entities, capsys):
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
 
-    # Currently failing
-    assert IXFMemberData.objects.count() == 1
-    assert NetworkIXLan.objects.count() == 0
+    assert IXFMemberData.objects.count() == 0
+    assert NetworkIXLan.objects.count() == 1
 
     stdout = capsys.readouterr().out
+    print(stdout)
+    # This is failing since it is emailing the network and ix
+    # saying that The data difference between IX-F and PeeringDB for this entry has been resolved 
     assert stdout == ''
     assert_no_ticket_exists()
-
+    
+    assert False
     
 
 @pytest.mark.django_db
-def test_no_netixlan_no_local_ixf(entities, capsys):
+def test_suggest_add(entities, capsys):
     """
-    No netixlan, there is a matching IX, network does not have automatic updates.
+    The netixlan described in the remote-ixf doesn't exist,
+    but there is a relationship btw the network and ix (ie a different netixlan).
+    The network does not have automatic updates.
     There isn't a local-ixf that matches the remote-ixf.
     We suggest adding the netixlan, create an admin ticket, and send emails to the 
     network and IX.
     """
 
-    data = setup_test_data("ixf.member.1")
-    network = entities["net"]["UPDATE_DISABLED"]
+    data = setup_test_data("ixf.member.2") #asn1001
+    network = entities["net"]["UPDATE_DISABLED"] #asn1001
+    ixlan = entities["ixlan"][0] 
+
+    # This appears in the remote-ixf data so should not
+    # create a IXFMemberData instance
+    entities["netixlan"].append(
+                    NetworkIXLan.objects.create(
+                        network=network,
+                        ixlan=ixlan,
+                        asn=network.asn,
+                        speed=10000,
+                        ipaddr4="195.69.150.250",
+                        ipaddr6="2001:7f8:1::a500:2906:3",
+                        status="ok",
+                        is_rs_peer=True,
+                        operational=True,
+                    ))
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    assert IXFMemberData.objects.count() == 1
+    assert NetworkIXLan.objects.count() == 1
+
+    log = importer.log["data"][0]
+    assert log["action"] == "suggest-add"
+
+    stdout = capsys.readouterr().out
+    assert_email_sent(stdout, (network.asn, '195.69.147.250', '2001:7f8:1::a500:2906:1'))
+
+    assert_ticket_exists([(1001, '195.69.147.250', '2001:7f8:1::a500:2906:1')])
+
+
+@pytest.mark.django_db
+def test_no_netixlan_local_ixf_exists(entities, capsys):
+    """
+    There isn't any netixlan between ix and network.
+    Network does not have automatic updates.
+    There is a local-ixf that matches the remote-ixf so we do nothing
+    """
+    data = setup_test_data("ixf.member.1") #asn1001
+    network = entities["net"]["UPDATE_DISABLED"] #asn1001
+    ixlan = entities["ixlan"][0] 
+
+    preexisting_ixfmember_data = IXFMemberData.objects.create(
+        asn=1001, #Matches remote-ixf data
+        ipaddr4="195.69.147.250", #Matches remote-ixf data
+        ipaddr6="2001:7f8:1::a500:2906:1", #Matches remote-ixf data
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+    )
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    assert IXFMemberData.objects.count() == 1
+    assert NetworkIXLan.objects.count() == 0
+
+    stdout = capsys.readouterr().out
+    assert stdout == ""
+    assert_no_ticket_exists()
+
+
+@pytest.mark.django_db
+def test_no_netixlan(entities, capsys):
+    """
+    There isn't any netixlan between ix and network.
+    Network does not have automatic updates.
+    There isn't a local-ixf that matches the remote-ixf.
+    We create local-ixf[as,ip4,ip6] and email the network
+    but don't create a ticket or email the IX.
+    """
+    data = setup_test_data("ixf.member.1") #asn1001
+    network = entities["net"]["UPDATE_DISABLED"] #asn1001
     ixlan = entities["ixlan"][0] 
 
     importer = ixf.Importer()
@@ -369,37 +468,61 @@ def test_no_netixlan_no_local_ixf(entities, capsys):
     log = importer.log["data"][0]
     assert log["action"] == "suggest-add"
 
-
     stdout = capsys.readouterr().out
     assert_email_sent(stdout, (network.asn, '195.69.147.250', '2001:7f8:1::a500:2906:1'))
-
-    # Currently fails
-    assert_ticket_exists([(2906, '195.69.147.250', '2001:7f8:1::a500:2906:1')])
-    pass
+    assert_no_ticket_exists()
 
 
-def test_no_ix_local_ixf_exists():
-    """
-    No netixlan, no IX, network does not have automatic updates.
-    But there is a local-ixf that matches the remote-ixf so do nothing.
-    """
-    pass
-
-def test_no_ix_no_local_ixf():
-    """
-    No netixlan, no IX, network does not have automatic updates.
-    There isn't a local-ixf that matches the remote-ixf.
-    We create local-ixf[as,ip4,ip6] and email the network
-    but don't create a ticket or email the IX.
-    """
-    pass
-
-
-def test_single_ipaddr_match():
+@pytest.mark.django_db
+def test_single_ipaddr_match(entities, capsys):
     """
     If only one ipaddr matches, it's the same as not matching at all.
+    Here we expect to delete the two netixlans and create a new one
+    from the remote-ixf.
     """
-    pass
+
+    data = setup_test_data("ixf.member.0")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    entities["netixlan"].append(
+                    NetworkIXLan.objects.create(
+                        network=network,
+                        ixlan=ixlan,
+                        asn=network.asn,
+                        speed=10000,
+                        ipaddr4="195.69.147.250",
+                        ipaddr6=None,
+                        status="ok",
+                        is_rs_peer=True,
+                        operational=True
+                    ))
+
+    entities["netixlan"].append(
+                    NetworkIXLan.objects.create(
+                        network=network,
+                        ixlan=ixlan,
+                        asn=network.asn,
+                        speed=10000,
+                        ipaddr4=None,
+                        ipaddr6="2001:7f8:1::a500:2906:1",
+                        status="ok",
+                        is_rs_peer=True,
+                        operational=True,
+                    ))
+
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    assert len(importer.log["data"]) == 3
+    assert NetworkIXLan.objects.filter(status="ok").count() == 1
+
+    assert importer.log["data"][0]["action"] == "delete"
+    assert importer.log["data"][1]["action"] == "delete"
+    assert importer.log["data"][2]["action"] == "add"
+
+    
 
 
 @pytest.mark.django_db
@@ -437,7 +560,6 @@ def test_delete_netixlan(entities):
                     is_rs_peer=False,
                     operational=False,
                 ))
-    assert NetworkIXLan.objects.filter(status="ok").count() == 2
 
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
@@ -448,38 +570,312 @@ def test_delete_netixlan(entities):
     assert log["action"] == "delete"
     assert NetworkIXLan.objects.filter(status="ok").count() == 1
 
-# # Update disabled
-# def test_delete_netixlan_local_ixf_exists():
-#     # Check deletion flag
-#     # do nothing
-#     pass
-# def test_delete_netixlan_local_ixf_exists():
-#     # Check deletion flag
-#     # add deletion flag
-#     pass
-# def test_delete_no_local_ixf():
-#     pass
-#     # Create local-ixf w deletion flag
 
-# # Check that we've emailed the IX???
+@pytest.mark.django_db
+def test_suggest_delete_local_ixf_has_flag(entities, capsys):
+    """
+    Automatic updates for network are disabled.
+    There is no remote-ixf corresponding to an existing netixlan.
+    There is a local-ixf flagging that netixlan for deletion.
+    We want to do nothing.
 
-# # invalid_but_parseable_data
-# def local_matches_remote():
-#     pass
-# def no_local():
-#     pass
-#     # create INVALID local
-#     # email ix
+    """
+    data = setup_test_data("ixf.member.1")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    
+    entities["netixlan"].append(
+                NetworkIXLan.objects.create(
+                    network=network,
+                    ixlan=ixlan,
+                    asn=network.asn,
+                    speed=10000,
+                    ipaddr4="195.69.147.250",
+                    ipaddr6="2001:7f8:1::a500:2906:1",
+                    status="ok",
+                    is_rs_peer=True,
+                    operational=True
+                ))
 
+    entities["netixlan"].append(
+                NetworkIXLan.objects.create(
+                    network=network,
+                    ixlan=ixlan,
+                    asn=network.asn,
+                    speed=20000,
+                    ipaddr4="195.69.147.251",
+                    ipaddr6=None,
+                    status="ok",
+                    is_rs_peer=False,
+                    operational=False,
+                ))
+
+    preexisting_ixfmember_data = IXFMemberData.objects.create(
+        asn=1001,
+        ipaddr4="195.69.147.251",
+        ipaddr6=None,
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+        data={} # Makes self.remote_data_missing and self.marked_for_removal True
+    )
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    assert NetworkIXLan.objects.count() == 2
+    assert IXFMemberData.objects.count() == 1
+
+    assert_no_ticket_exists()
+
+
+@pytest.mark.django_db
+def test_suggest_delete_local_ixf_no_flag(entities, capsys):
+    """
+    Automatic updates for network are disabled.
+    There is no remote-ixf corresponding to an existing netixlan.
+    There is a local-ixf corresponding to that netixlan but it does not flag it 
+    for deletion.
+    We flag the local-ixf for deletion, make a ticket, and email the ix and network.
+
+    """
+    data = setup_test_data("ixf.member.1")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    
+    entities["netixlan"].append(
+                NetworkIXLan.objects.create(
+                    network=network,
+                    ixlan=ixlan,
+                    asn=network.asn,
+                    speed=10000,
+                    ipaddr4="195.69.147.250",
+                    ipaddr6="2001:7f8:1::a500:2906:1",
+                    status="ok",
+                    is_rs_peer=True,
+                    operational=True
+                ))
+
+    entities["netixlan"].append(
+                NetworkIXLan.objects.create(
+                    network=network,
+                    ixlan=ixlan,
+                    asn=network.asn,
+                    speed=20000,
+                    ipaddr4="195.69.147.251",
+                    ipaddr6=None,
+                    status="ok",
+                    is_rs_peer=False,
+                    operational=False,
+                ))
+
+    ixf_member_data_field = {
+                    "ixp_id": 42,
+                    "connected_since": "2009-02-04T00:00:00Z",
+                    "state": "connected",
+                    "if_list": [
+                        {
+                            "switch_id": 1,
+                            "if_speed": 10000,
+                            "if_type": "LR4"
+                        }
+                    ],
+                    "vlan_list": [
+                        {
+                            "vlan_id": 0,
+                            "ipv4": {
+                                "address": "195.69.147.251",
+                                "routeserver": True,
+                                "max_prefix": 42,
+                                "as_macro": "AS-NFLX-V4",
+                                "mac_address" : [
+                                    "00:0a:95:9d:68:16"
+                                ]
+                            }
+                        }
+                    ]
+    }
+    preexisting_ixfmember_data = IXFMemberData.objects.create(
+        asn=1001,
+        ipaddr4="195.69.147.251",
+        ipaddr6=None,
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+        data=ixf_member_data_field
+    )
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    assert importer.log["data"][0]["action"] == "suggest-delete"
+    assert NetworkIXLan.objects.count() == 2
+
+    # Test failing, IXFMember is getting resolved
+    # instead of being flagged for deletion.
+    assert IXFMemberData.objects.count() == 1
+    assert_ticket_exists(["AS1001", "195.69.147.251", "None"])
+
+    stdout = capsys.readouterr().out
+    assert_email_sent(stdout, (1001, '195.69.147.251', "No IPv6"))
+
+@pytest.mark.django_db
+def test_suggest_delete_no_local_ixf(entities, capsys):
+    """
+    Automatic updates for network are disabled.
+    There is no remote-ixf corresponding to an existing netixlan.
+    We flag the local-ixf for deletion, make a ticket, and email the ix and network.
+    """
+
+    data = setup_test_data("ixf.member.1")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    
+    entities["netixlan"].append(
+                NetworkIXLan.objects.create(
+                    network=network,
+                    ixlan=ixlan,
+                    asn=network.asn,
+                    speed=10000,
+                    ipaddr4="195.69.147.250",
+                    ipaddr6="2001:7f8:1::a500:2906:1",
+                    status="ok",
+                    is_rs_peer=True,
+                    operational=True
+                ))
+
+    entities["netixlan"].append(
+                NetworkIXLan.objects.create(
+                    network=network,
+                    ixlan=ixlan,
+                    asn=network.asn,
+                    speed=20000,
+                    ipaddr4="195.69.147.251",
+                    ipaddr6=None,
+                    status="ok",
+                    is_rs_peer=False,
+                    operational=False,
+                ))
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    assert importer.log["data"][0]["action"] == "suggest-delete"
+    assert NetworkIXLan.objects.count() == 2
+
+    assert IXFMemberData.objects.count() == 1
+    assert_ticket_exists([("AS1001", "195.69.147.251", "No IPv6")])
+
+    stdout = capsys.readouterr().out
+    assert_email_sent(stdout, ("AS1001", '195.69.147.251', "No IPv6"))
+    pass
+
+
+@pytest.mark.django_db
+def test_invalid_remote_local_ixf(entities, capsys):
+    """
+    Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
+    There is already a local-ixf flagging that invalid data.
+    Do nothing.
+    """
+    data = setup_test_data("ixf.member.invalid")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+    
+    entities["netixlan"].append(
+                NetworkIXLan.objects.create(
+                    network=network,
+                    ixlan=ixlan,
+                    asn=network.asn,
+                    speed=10000,
+                    ipaddr4="195.69.147.250",
+                    ipaddr6="2001:7f8:1::a500:2906:1",
+                    status="ok",
+                    is_rs_peer=True,
+                    operational=True
+                ))
+    preexisting_ixfmember_data = IXFMemberData.objects.create(
+        asn=1001,
+        ipaddr4="195.69.147.251",
+        ipaddr6=None,
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+        error="Ip address error ''195.69.147.error' does not appear to be an IPv4 or IPv6 address' in vlan_list entry for vlan_id 0"     
+    )
+
+    importer = ixf.Importer()
+    data = importer.sanitize(data)
+    importer.update(ixlan, data=data)
+
+    assert IXFMemberData.objects.count() == 1
+    stdout = capsys.readouterr().out
+    assert stdout == ""
+    assert_no_ticket_exists()
+    
+
+@pytest.mark.django_db
+def test_invalid_remote_no_local_ixf(entities, capsys):
+    """
+    Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
+    There is not a local-ixf flagging that invalid data.
+    We create a local-ixf[as,ip4,ip6] and flag as invalid
+    Email the ix
+    Create/Update a ticket for admin com
+    """
+    data = setup_test_data("ixf.member.invalid")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+    
+    entities["netixlan"].append(
+                NetworkIXLan.objects.create(
+                    network=network,
+                    ixlan=ixlan,
+                    asn=network.asn,
+                    speed=10000,
+                    ipaddr4="195.69.147.250",
+                    ipaddr6="2001:7f8:1::a500:2906:1",
+                    status="ok",
+                    is_rs_peer=True,
+                    operational=True
+                ))
+
+    importer = ixf.Importer()
+    data = importer.sanitize(data)
+    importer.update(ixlan, data=data)
+
+    assert IXFMemberData.objects.count() == 1
+    ERROR_MESSAGE = "Ip address error"
+    stdout = capsys.readouterr().out
+    assert ERROR_MESSAGE in stdout
 
 # # Remote cannot be parsed
-# def remote_cannot_be_parsed():
-#     #Create ticket
-#     # Email ix
-#     # Create LOCK
-#     pass
-
-
+@pytest.mark.django_db
+def test_remote_cannot_be_parsed(entities, capsys):
+    """
+    Remote cannot be parsed. We create a ticket, email the IX, and create a lock.
+    """
+    data = setup_test_data("ixf.member.unparsable")
+    ixlan = entities["ixlan"][0]
+    start = datetime.datetime.now(datetime.timezone.utc)
+    importer = ixf.Importer()
+    importer.sanitize(data)
+    importer.update(ixlan, data=data)
+    
+    ERROR_MESSAGE = "No entries in any of the vlan_list lists, aborting"
+    assert importer.ixlan.ixf_ixp_import_error_notified > start # This sets the lock
+    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error 
+    stdout = capsys.readouterr().out
+    assert ERROR_MESSAGE in stdout
 
 @pytest.fixture
 def entities():
