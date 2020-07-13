@@ -2805,6 +2805,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         return {"action":action, "netixlan":netixlan}
 
+    def save_without_update(self):
+        self._meta.get_field("updated").auto_now = False
+        self.save()
+        self._meta.get_field("updated").auto_now = True
 
     def grab_validation_errors(self):
         """
@@ -2850,7 +2854,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             # we check if the remote data has changed in general
             # and force a save if it did
 
-            self.save()
+            self.save_without_update()
 
 
     def set_update(self, save=True, reason=""):
@@ -2872,7 +2876,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             # we check if the remote data has changed in general
             # and force a save if it did
 
-            self.save()
+            self.save_without_update()
 
 
 
@@ -2898,7 +2902,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             # we check if the remote data has changed in general
             # and force a save if it did
 
-            self.save()
+            self.save_without_update()
 
 
     def set_remove(self, save=True, reason=""):
