@@ -74,6 +74,7 @@ class Importer(object):
         self.ixlan = ixlan
         self.save = save
         self.asn = asn
+        self.invalid_ip_errors = []
 
     def fetch(self, url, timeout=5):
         """
@@ -247,6 +248,9 @@ class Importer(object):
 
         # archive the import so we can roll it back later if needed
         self.archive()
+
+        if self.invalid_ip_errors:
+            self.notify_error("\n".join(self.invalid_ip_errors))
 
         if save:
             self.save_log()
@@ -497,6 +501,7 @@ class Importer(object):
                 self.ixf_ids.append(ixf_id)
 
             except (ipaddress.AddressValueError, ValueError) as exc:
+                self.invalid_ip_errors.append(f"{exc}")
                 self.log_error(
                     _("Ip address error '{}' in vlan_list entry for vlan_id {}").format(
                         exc, lan.get("vlan_id")
