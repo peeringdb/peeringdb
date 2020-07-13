@@ -543,6 +543,8 @@ class Importer(object):
                 ixf_member_data.error = "\n".join(
                     self.connection_errors
                 )
+            else:
+                ixf_member_data.error = None
 
             self.pending_save.append(ixf_member_data)
 
