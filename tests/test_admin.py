@@ -353,6 +353,7 @@ class AdminTests(TestCase):
                 # required ixlan form data
 
                 "arp_sponge": "00:0a:95:9d:68:16",
+                "ixf_ixp_member_list_url_visible": "Private",
                 "ix": ixlan.ix.id,
                 "status": ixlan.status,
 

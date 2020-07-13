@@ -566,6 +566,7 @@ img.profile {
 
 div.view_row {
   border-bottom: 1px #1c3f28 solid;
+  display: flex;
 }
 
 div.view_row > div.help {
@@ -581,7 +582,6 @@ div.view_field {
   /* font-weight: bold; */
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 div.view_field.help-text {

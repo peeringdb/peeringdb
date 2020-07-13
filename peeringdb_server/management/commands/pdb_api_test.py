@@ -365,6 +365,7 @@ class TestJSON(unittest.TestCase):
             "descr": NOTE,
             "mtu": 12345,
             "dot1q_support": False,
+            "ixf_ixp_member_list_url_visible":"Private",
             "rs_asn": 12345,
             "arp_sponge": None,
         }
@@ -921,6 +922,15 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_user_001_GET_ixlan_ixf_ixp_member_list_url(self):
+        for ixlan in self.db_user.all("ixlan", ixf_ixp_member_list_url__startswith="http"):
+            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public","Users"]:
+                assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+            else:
+                assert "ixf_ixp_member_list_url" not in ixlan
+
+    ##########################################################################
+
     def test_user_001_GET_ixpfx(self):
         self.assert_get_handleref(self.db_user, "ixpfx", SHARED["ixpfx_r_ok"].id)
 
@@ -965,6 +975,18 @@ class TestJSON(unittest.TestCase):
             self.db_org_member, "poc", SHARED["poc_r_ok_private"].id
         )
 
+    #########################################################################
+    def test_org_member_001_GET_ixlan_ixf_ixp_member_list_url(self):
+        for ixlan in self.db_org_member.all("ixlan", ixf_ixp_member_list_url__startswith="http"):
+            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public","Users"]:
+                assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+            else:
+                if ixlan["id"] == SHARED["ixlan_r3_ok"].id:
+                    assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+                else:
+                    assert "ixf_ixp_member_list_url" not in ixlan
+
+
     ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION ADMINISTRATOR
     ##########################################################################
@@ -989,6 +1011,20 @@ class TestJSON(unittest.TestCase):
         self.assert_get_forbidden(
             self.db_org_admin, "poc", SHARED["poc_r_ok_private"].id
         )
+
+    #########################################################################
+
+    def test_org_admin_001_GET_ixlan_ixf_ixp_member_list_url(self):
+        for ixlan in self.db_org_admin.all("ixlan", ixf_ixp_member_list_url__startswith="http"):
+            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public","Users"]:
+                assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+            else:
+                if ixlan["id"] == SHARED["ixlan_rw3_ok"].id:
+                    assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+                else:
+                    assert "ixf_ixp_member_list_url" not in ixlan
+
+
 
     ##########################################################################
 
@@ -1727,6 +1763,16 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_001_GET_ixlan(self):
         self.assert_get_handleref(self.db_guest, "ixlan", SHARED["ixlan_r_ok"].id)
+
+    ##########################################################################
+
+    def test_guest_001_GET_ixlan_ixf_ixp_member_list_url(self):
+        for ixlan in self.db_guest.all("ixlan", ixf_ixp_member_list_url__startswith="http"):
+            if ixlan["ixf_ixp_member_list_url_visible"] == "Public":
+                assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+            else:
+                assert "ixf_ixp_member_list_url" not in ixlan
+
 
     ##########################################################################
 
@@ -2921,6 +2967,75 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
 
+    def _test_GET_ixf_ixp_member_list_url(self, db, tests=[], suffix="r"):
+        ixlan = SHARED[f"ixlan_{suffix}_ok"]
+        ixlan.ixf_ixp_member_list_url = "http://localhost"
+        ixlan.save()
+
+        for visible, expected in tests:
+
+            ixlan.ixf_ixp_member_list_url_visible = visible
+            ixlan.full_clean()
+            ixlan.save()
+
+            data = db.get("ixlan", id=ixlan.id)[0]
+
+            assert data["ixf_ixp_member_list_url_visible"] == visible
+
+            if expected:
+                assert data["ixf_ixp_member_list_url"] == ixlan.ixf_ixp_member_list_url
+            else:
+                assert "ixf_ixp_member_list_url" not in data
+
+
+    def test_z_misc_GET_ixf_ixp_member_list_url(self):
+
+        """
+        Test the visibility of ixlan.ixf_ixp_member_list_url for
+        Guest, User, Org member and org admin
+        """
+
+        self._test_GET_ixf_ixp_member_list_url(
+            self.db_user,
+            [
+                ("Private", False),
+                ("Users", True),
+                ("Public", True)
+            ]
+        )
+
+        self._test_GET_ixf_ixp_member_list_url(
+            self.db_guest,
+            [
+                ("Private", False),
+                ("Users", False),
+                ("Public", True)
+            ]
+        )
+
+        self._test_GET_ixf_ixp_member_list_url(
+            self.db_org_member,
+            [
+                ("Private", True),
+                ("Users", True),
+                ("Public", True)
+            ]
+        )
+
+        self._test_GET_ixf_ixp_member_list_url(
+            self.db_org_admin,
+            [
+                ("Private", True),
+                ("Users", True),
+                ("Public", True)
+            ],
+            suffix="rw"
+        )
+
+
+
+
+
     def test_z_misc_POST_ix_fac_missing_phone_fields(self):
         """
         Test that omitting the *_phone fields during fac
@@ -3491,11 +3606,27 @@ class Command(BaseCommand):
                 org_id=SHARED["org_rw_ok"].id,
             )
 
+        visibility = {
+            "rw":"Public",
+            "rw2":"Users",
+            "rw3":"Private",
+            "r":"Public",
+            "r2":"Users",
+            "r3":"Private",
+        }
+
         for status in ["ok", "pending"]:
-            for prefix in ["r", "rw"]:
-                SHARED["ixlan_{}_{}".format(prefix, status)] = SHARED[
+            for prefix in ["r", "r2", "r3", "rw", "rw2", "rw3"]:
+                ixlan = SHARED["ixlan_{}_{}".format(prefix, status)] = SHARED[
                     "ix_{}_{}".format(prefix, status)
                 ].ixlan
+                if prefix in visibility:
+                    visible = visibility[prefix]
+                    ixlan.ixf_ixp_member_list_url_visible = visible
+                    ixlan.ixf_ixp_member_list_url = "http://localhost"
+                    ixlan.save()
+
+
 
         for status in ["ok", "pending"]:
             for prefix in ["r", "rw"]:

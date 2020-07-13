@@ -1725,7 +1725,6 @@ class IXLan(pdb_models.IXLanBase):
 
     # IX-F import fields
 
-    ixf_ixp_member_list_url = models.URLField(null=True, blank=True)
     ixf_ixp_import_enabled = models.BooleanField(default=False)
     ixf_ixp_import_error = models.TextField(
         _("IX-F error"),
@@ -1749,6 +1748,37 @@ class IXLan(pdb_models.IXLanBase):
     class Meta:
         db_table = "peeringdb_ixlan"
 
+    @classmethod
+    def api_cache_permissions_applicator(cls, row, ns, user):
+
+        """
+        Applies permissions to a row in an api-cache result
+        set for ixlan.
+
+        This will strip `ixf_ixp_member_list_url` fields for
+        users that dont have read permissions for them according
+        to `ixf_ixp_member_list_url_visible`
+
+        Argument(s):
+
+        - row (dict): ixlan row from api-cache result
+        - ns (str): ixlan namespace as determined during api-cache
+          result rendering
+        - user (User)
+        """
+
+        visible = row.get("ixf_ixp_member_list_url_visible").lower()
+        if not user and visible == "public":
+            return
+        namespace = f"{ns}.ixf_ixp_member_list_url.{visible}"
+
+        if not has_perms(user, namespace, 0x01, explicit=True):
+            try:
+                del row["ixf_ixp_member_list_url"]
+            except KeyError:
+                pass
+
+
     @property
     def descriptive_name(self):
         """
@@ -1761,10 +1791,12 @@ class IXLan(pdb_models.IXLanBase):
         """
         Returns permissioning namespace for an ixlan
         """
-        return "%s.ixlan.%s" % (
-            InternetExchange.nsp_namespace_from_id(org_id, ix_id),
-            id,
-        )
+
+        # ixlan will be removed in v3 and we are already only allowing
+        # one ixlan per ix with matching ids so it makes sense to
+        # simply use the exchange's permissioning namespace here
+
+        return InternetExchange.nsp_namespace_from_id(org_id, ix_id)
 
     @property
     def nsp_namespace(self):
@@ -1808,6 +1840,14 @@ class IXLan(pdb_models.IXLanBase):
         fields to search in
         """
         return ("ix__name__icontains",)
+
+
+    def ixf_ixp_member_list_url_viewable(self, user):
+        visible = self.ixf_ixp_member_list_url_visible.lower()
+        if not user and visible == "public":
+            return True
+        namespace = f"{self.nsp_namespace}.ixf_ixp_member_list_url.{visible}"
+        return has_perms(user, namespace, 0x01, explicit=True)
 
 
     def related_label(self):
