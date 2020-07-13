@@ -2912,9 +2912,24 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         as warranted
         """
         self.reason = reason
-        if (not self.id or not self.marked_for_removal) and save:
+
+        # we perist this ix-f member data that proposes removal
+        # if any of these conditions are met
+
+        # marked for removal, but not saved
+
+        not_saved = (not self.id and self.marked_for_removal)
+
+        # was in remote-data last time, gone now
+
+        gone = (self.id and getattr(self, "previous_data", "{}") != "{}" and self.remote_data_missing)
+
+        if (not_saved or gone) and save:
+            self.set_data({})
             self.save()
             self.notify_remove(ac=True, ix=True, net=True)
+
+
 
     def set_data(self, data):
         """
