@@ -2865,6 +2865,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.dismissed = False
             self.save()
             self.notify_update(ac=True, ix=True, net=True)
+        elif self.previous_data != self.data:
+
+            # since remote_changes only tracks changes to the
+            # relevant data fields speed, operational and is_rs_peer
+            # we check if the remote data has changed in general
+            # and force a save if it did
+
+            self.save()
+
+
 
     def set_add(self, save=True, reason=""):
         """
@@ -2880,6 +2890,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 self.notify_add(ac=True, ix=True, net=True)
             else:
                 self.notify_add(net=True)
+
+        elif self.previous_data != self.data:
+
+            # since remote_changes only tracks changes to the
+            # relevant data fields speed, operational and is_rs_peer
+            # we check if the remote data has changed in general
+            # and force a save if it did
+
+            self.save()
+
 
     def set_remove(self, save=True, reason=""):
         """
