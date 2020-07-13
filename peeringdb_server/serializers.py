@@ -1846,6 +1846,13 @@ class NetworkSerializer(ModelSerializer):
 
         return super(ModelSerializer, self).create(validated_data)
 
+    def update(self, instance, validated_data):
+        if validated_data.get("asn") != instance.asn:
+            raise serializers.ValidationError({
+                'asn': _('ASN cannot be changed.'),
+            })
+        return super(ModelSerializer, self).update(instance, validated_data)
+
 
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)

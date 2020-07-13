@@ -1174,6 +1174,7 @@ class TestJSON(unittest.TestCase):
 
         SHARED["net_id"] = r_data.get("id")
 
+
         self.assert_update(
             self.db_org_admin,
             "net",
@@ -1182,6 +1183,19 @@ class TestJSON(unittest.TestCase):
             test_failures={
                 "invalid": {"name": ""},
                 "perms": {"id": SHARED["net_r_ok"].id},
+            },
+        )
+
+        # Test ASN cannot update
+        self.assert_update(
+            self.db_org_admin,
+            "net",
+            SHARED["net_id"],
+            data,
+            test_failures={
+                "invalid": {
+                    "asn": data["asn"] + 1
+                },
             },
         )
 
