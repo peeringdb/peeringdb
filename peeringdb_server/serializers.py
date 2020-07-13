@@ -1090,6 +1090,8 @@ class FacilitySerializer(ModelSerializer):
             + AddressSerializer.Meta.fields
         )
 
+        read_only_fields = ["rencode"]
+        
         related_fields = ["org"]
 
         list_exclude = ["org"]

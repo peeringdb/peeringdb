@@ -284,7 +284,7 @@ class TestJSON(unittest.TestCase):
             "zipcode": ZIPCODE,
             "address1": "Some street",
             "clli": str(uuid.uuid4())[:6].upper(),
-            "rencode": str(uuid.uuid4())[:6].upper(),
+            "rencode": '',
             "npanxx": "000-111",
             "latitude": None,
             "longitude": None,
@@ -553,9 +553,12 @@ class TestJSON(unittest.TestCase):
 
                 with pytest.raises(InvalidRequestException) as excinfo:
                     r = db.create(typ, data_invalid, return_response=True)
+                    #FIXME
+                    #The following lines will not be called since
+                    #the InvalidRequestException is raised
+                    #in the previous line
                     for k, v in list(test_failures["invalid"].items()):
                         self.assertIn(k, list(r.keys()))
-
                 assert "400 Bad Request" in str(excinfo.value)
 
             # we test fail because of parent entity status
@@ -1089,7 +1092,9 @@ class TestJSON(unittest.TestCase):
             "fac",
             data,
             test_failures={
-                "invalid": {"name": ""},
+                "invalid": {
+                    "name": "",
+                },
                 "perms": {
                     # need to set name again so it doesnt fail unique validation
                     "name": self.make_name("Test"),
@@ -1116,6 +1121,7 @@ class TestJSON(unittest.TestCase):
                 "readonly": {
                     "latitude": 1,  # this should not take as it is read only
                     "longitude": 1,  # this should not take as it is read only
+                    "rencode": str(uuid.uuid4())[:6].upper(), # this should not take as it is read only
                 },
             },
         )
@@ -1127,6 +1133,18 @@ class TestJSON(unittest.TestCase):
             test_failure=SHARED["fac_r_ok"].id,
         )
 
+        # Create new data with a non-null rencode
+        data_new = self.make_data_fac()
+        obsolete_rencode = str(uuid.uuid4())[:6].upper()
+        data_new["rencode"] = obsolete_rencode
+
+        # Data should be successfully created
+        r_data_new = self.assert_get_single(
+            self.db_org_admin.create("fac", data_new, return_response=True).get("data")
+        )
+        
+        # But rencode should be null
+        assert r_data_new["rencode"] == ""
 
     ##########################################################################
 
