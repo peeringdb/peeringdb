@@ -1584,6 +1584,7 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "error",
         "created",
         "updated",
+        "remote_data",
     )
 
     search_fields = (
@@ -1611,6 +1612,7 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "reason",
         "error",
         "log",
+        "remote_data",
     )
 
     actions = [apply_ixf_member_data]
@@ -1648,6 +1650,9 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def remote_data(self, obj):
+        return obj.json
 
     def response_change(self, request, obj):
         if "_save-and-apply" in request.POST:
