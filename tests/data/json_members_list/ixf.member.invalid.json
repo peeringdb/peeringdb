@@ -26,7 +26,7 @@
                     "if_list": [
                         {
                             "switch_id": 1,
-                            "if_speed": 10000,
+                            "if_speed": -10000,
                             "if_type": "LR4"
                         }
                     ],
@@ -34,7 +34,7 @@
                         {
                             "vlan_id": 0,
                             "ipv4": {
-                                "address": "195.69.147.error",
+                                "address": "195.69.147.100",
                                 "routeserver": true,
                                 "max_prefix": 42,
                                 "as_macro": "AS-NFLX-V4",
@@ -43,7 +43,7 @@
                                 ]
                             },
                             "ipv6": {
-                                "address": "2001:7f8:1::a500:2906:1",
+                                "address": "2001:7f8:1::a500:2906:4",
                                 "routeserver": true,
                                 "max_prefix": 42,
                                 "as_macro": "AS-NFLX-V6",

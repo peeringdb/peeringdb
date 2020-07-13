@@ -266,16 +266,15 @@ def test_add_netixlan_conflict_local_ixf(entities, capsys):
         error=['IPv4 195.69.147.250 does not match any prefix on this ixlan'],
     )
 
-
-    assert IXFMemberData.objects.count() == 1
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
 
 
+    assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 0
 
     ixfmemberdata = IXFMemberData.objects.first()
-    assert IXFMemberData.objects.count() == 1
+    assert "IPv4 195.69.147.250 does not match any prefix on this ixlan" in ixfmemberdata.error
 
     assert_no_ticket_exists()
 
@@ -304,6 +303,7 @@ def test_add_netixlan_conflict(entities, capsys):
     
     ixfmemberdata = IXFMemberData.objects.first()
     assert IXFMemberData.objects.count() == 1
+    assert "IPv4 195.69.147.250 does not match any prefix on this ixlan" in ixfmemberdata.error
 
     assert_ticket_exists([(network.asn, '195.69.147.250', '2001:7f8:1::a500:2906:1')])
    
@@ -662,8 +662,8 @@ def test_suggest_delete_local_ixf_no_flag(entities, capsys):
                     ipaddr4="195.69.147.251",
                     ipaddr6=None,
                     status="ok",
-                    is_rs_peer=False,
-                    operational=False,
+                    is_rs_peer=True,
+                    operational=True,
                 ))
 
     ixf_member_data_field = {
@@ -673,7 +673,7 @@ def test_suggest_delete_local_ixf_no_flag(entities, capsys):
                     "if_list": [
                         {
                             "switch_id": 1,
-                            "if_speed": 10000,
+                            "if_speed": 20000,
                             "if_type": "LR4"
                         }
                     ],
@@ -697,7 +697,7 @@ def test_suggest_delete_local_ixf_no_flag(entities, capsys):
         ipaddr4="195.69.147.251",
         ipaddr6=None,
         ixlan=ixlan,
-        speed=10000,
+        speed=20000,
         fetched=datetime.datetime.now(datetime.timezone.utc),
         operational=True,
         is_rs_peer=True,
@@ -718,6 +718,8 @@ def test_suggest_delete_local_ixf_no_flag(entities, capsys):
 
     stdout = capsys.readouterr().out
     assert_email_sent(stdout, (1001, '195.69.147.251', "No IPv6"))
+
+
     assert False
 
 @pytest.mark.django_db
@@ -769,7 +771,7 @@ def test_suggest_delete_no_local_ixf(entities, capsys):
 
     stdout = capsys.readouterr().out
     assert_email_sent(stdout, ("AS1001", '195.69.147.251', "No IPv6"))
-    pass
+    
 
 
 @pytest.mark.django_db
@@ -851,9 +853,13 @@ def test_mark_invalid_remote(entities, capsys):
     data = importer.sanitize(data)
     importer.update(ixlan, data=data)
 
+    print(importer.log)
+
     assert IXFMemberData.objects.count() == 1
     ERROR_MESSAGE = "Ip address error"
     stdout = capsys.readouterr().out
+    print(stdout)
+
     assert ERROR_MESSAGE in stdout
     assert False
 
