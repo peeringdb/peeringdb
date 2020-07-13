@@ -17,6 +17,7 @@ from peeringdb_server.models import (
     Organization,
     Network,
     NetworkIXLan,
+    NetworkContact,
     IXLan,
     IXLanPrefix,
     InternetExchange,
@@ -354,18 +355,13 @@ def test_suggest_add_local_ixf(entities, capsys):
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
 
-    assert IXFMemberData.objects.count() == 0
+    assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 1
 
     stdout = capsys.readouterr().out
-    print(stdout)
-    # This is failing since it is emailing the network and ix
-    # saying that The data difference between IX-F and PeeringDB for this entry has been resolved 
     assert stdout == ''
     assert_no_ticket_exists()
-    
-    assert False
-    
+
 
 @pytest.mark.django_db
 def test_suggest_add(entities, capsys):
@@ -432,7 +428,7 @@ def test_suggest_add_no_netixlan_local_ixf(entities, capsys):
         fetched=datetime.datetime.now(datetime.timezone.utc),
         operational=True,
         is_rs_peer=True,
-        status="ok",
+        status="ok"
     )
 
     importer = ixf.Importer()
@@ -444,7 +440,6 @@ def test_suggest_add_no_netixlan_local_ixf(entities, capsys):
     stdout = capsys.readouterr().out
     assert stdout == ""
     assert_no_ticket_exists()
-
 
 @pytest.mark.django_db
 def test_suggest_add_no_netixlan(entities, capsys):
@@ -640,7 +635,6 @@ def test_suggest_delete_local_ixf_no_flag(entities, capsys):
     There is a local-ixf corresponding to that netixlan but it does not flag it 
     for deletion.
     We flag the local-ixf for deletion, make a ticket, and email the ix and network.
-
     """
     data = setup_test_data("ixf.member.1")
     network = entities["net"]["UPDATE_DISABLED"]
@@ -724,6 +718,7 @@ def test_suggest_delete_local_ixf_no_flag(entities, capsys):
 
     stdout = capsys.readouterr().out
     assert_email_sent(stdout, (1001, '195.69.147.251', "No IPv6"))
+    assert False
 
 @pytest.mark.django_db
 def test_suggest_delete_no_local_ixf(entities, capsys):
@@ -810,7 +805,9 @@ def test_mark_invalid_remote_w_local_ixf(entities, capsys):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error="Ip address error ''195.69.147.error' does not appear to be an IPv4 or IPv6 address' in vlan_list entry for vlan_id 0"     
+        error="Ip address error ''195.69.147.error' does not appear to be an IPv4 or IPv6 address' in vlan_list entry for vlan_id 0",
+        data={"test":"test"}   
+        
     )
 
     importer = ixf.Importer()
@@ -821,6 +818,7 @@ def test_mark_invalid_remote_w_local_ixf(entities, capsys):
     stdout = capsys.readouterr().out
     assert stdout == ""
     assert_no_ticket_exists()
+    assert False
     
 
 @pytest.mark.django_db
@@ -857,6 +855,7 @@ def test_mark_invalid_remote(entities, capsys):
     ERROR_MESSAGE = "Ip address error"
     stdout = capsys.readouterr().out
     assert ERROR_MESSAGE in stdout
+    assert False
 
 @pytest.mark.django_db
 def test_remote_cannot_be_parsed(entities, capsys):
@@ -957,6 +956,16 @@ def entities():
             )
         }
 
+        entities["netcontact"] = [
+            NetworkContact.objects.create(
+                email="network1@localhost",
+                network=entities["net"]["UPDATE_ENABLED"]
+            ),
+            NetworkContact.objects.create(
+                email="network2@localhost",
+                network=entities["net"]["UPDATE_DISABLED"]
+            )
+        ]
         entities["netixlan"] = []
         admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
         ixf_importer_user = User.objects.create_user("ixf_importer", "ixf_importer@localhost", "ixf_importer")
