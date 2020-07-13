@@ -2288,6 +2288,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 setattr(instance, f"previous_{field}", getattr(instance,field))
 
             instance._previous_data = instance.data
+            instance._previous_error = instance.error
 
             instance.fetched = fetched
             instance._meta.get_field("updated").auto_now = False
@@ -2405,6 +2406,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     @property
     def previous_data(self):
         return getattr(self, "_previous_data", "{}")
+
+    @property
+    def previous_error(self):
+        return getattr(self, "_previous_error", None)
 
     @property
     def json(self):

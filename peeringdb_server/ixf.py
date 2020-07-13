@@ -544,7 +544,7 @@ class Importer(object):
                     self.connection_errors
                 )
             else:
-                ixf_member_data.error = None
+                ixf_member_data.error = ixf_member_data.previous_error
 
             self.pending_save.append(ixf_member_data)
 
