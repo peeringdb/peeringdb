@@ -2287,7 +2287,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             for field in cls.data_fields:
                 setattr(instance, f"previous_{field}", getattr(instance,field))
 
-            instance.previous_data = instance.data
+            instance._previous_data = instance.data
 
             instance.fetched = fetched
             instance._meta.get_field("updated").auto_now = False
@@ -2401,6 +2401,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             proposals[ix_id][action].append(ixf_member_data)
 
         return proposals
+
+    @property
+    def previous_data(self):
+        return getattr(self, "_previous_data", "{}")
 
     @property
     def json(self):
@@ -2790,6 +2794,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             )
             self._netixlan = netixlan = result["netixlan"]
         elif action == "modify":
+
             netixlan.speed = self.speed
             netixlan.is_rs_peer = self.is_rs_peer
             netixlan.operational = self.operational
@@ -2847,7 +2852,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.dismissed = False
             self.save()
             self.notify_update(ac=True, ix=True, net=True)
-        elif self.previous_data != self.data:
+        elif self.previous_data != self.data and save:
 
             # since remote_changes only tracks changes to the
             # relevant data fields speed, operational and is_rs_peer
@@ -2869,7 +2874,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.dismissed = False
             self.save()
             self.notify_update(ac=True, ix=True, net=True)
-        elif self.previous_data != self.data:
+        elif self.previous_data != self.data and save:
 
             # since remote_changes only tracks changes to the
             # relevant data fields speed, operational and is_rs_peer
@@ -2895,7 +2900,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             else:
                 self.notify_add(net=True)
 
-        elif self.previous_data != self.data:
+        elif self.previous_data != self.data and save:
 
             # since remote_changes only tracks changes to the
             # relevant data fields speed, operational and is_rs_peer
