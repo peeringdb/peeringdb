@@ -797,17 +797,15 @@ def test_mark_invalid_remote_w_local_ixf(entities, capsys):
                 ))
     preexisting_ixfmember_data = IXFMemberData.objects.create(
         asn=1001,
-        ipaddr4="195.69.147.251",
-        ipaddr6=None,
+        ipaddr4="195.69.147.100",
+        ipaddr6="2001:7f8:1::a500:2906:4",
         ixlan=ixlan,
-        speed=10000,
+        speed=1000,
         fetched=datetime.datetime.now(datetime.timezone.utc),
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error="Ip address error ''195.69.147.error' does not appear to be an IPv4 or IPv6 address' in vlan_list entry for vlan_id 0",
-        data={"test":"test"}
-
+        error="Invalid speed value: this is not valid",
     )
 
     importer = ixf.Importer()
@@ -818,7 +816,6 @@ def test_mark_invalid_remote_w_local_ixf(entities, capsys):
     stdout = capsys.readouterr().out
     assert stdout == ""
     assert_no_ticket_exists()
-    assert False
 
 
 @pytest.mark.django_db
@@ -851,15 +848,10 @@ def test_mark_invalid_remote(entities, capsys):
     data = importer.sanitize(data)
     importer.update(ixlan, data=data)
 
-    print(importer.log)
-
     assert IXFMemberData.objects.count() == 1
-    ERROR_MESSAGE = "Ip address error"
+    ERROR_MESSAGE = "speed"
     stdout = capsys.readouterr().out
-    print(stdout)
-
     assert ERROR_MESSAGE in stdout
-    assert False
 
 @pytest.mark.django_db
 def test_remote_cannot_be_parsed(entities, capsys):
