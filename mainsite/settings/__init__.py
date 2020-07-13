@@ -481,7 +481,7 @@ REST_FRAMEWORK = {
         "django_namespace_perms.rest.BasePermission",
     ],
     "DEFAULT_RENDERER_CLASSES": ("peeringdb_server.renderers.MetaJSONRenderer",),
-    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "peeringdb_server.api_schema.BaseSchema",
 }
 
 if API_THROTTLE_ENABLED:
