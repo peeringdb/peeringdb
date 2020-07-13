@@ -176,7 +176,10 @@ class URLField(pdb_models.URLField):
     pass
 
 class ProtectedAction(ValueError):
-    pass
+
+    def __init__(self, obj):
+        super().__init__(obj.not_deletable_reason)
+        self.protected_object = obj
 
 class ProtectedMixin:
 
@@ -206,7 +209,7 @@ class ProtectedMixin:
 
     def delete(self, hard=False, force=False):
         if not self.deletable and not force:
-            raise ProtectedAction(self.not_deletable_reason)
+            raise ProtectedAction(self)
 
         self.delete_cleanup()
         return super().delete(hard=hard)
@@ -644,8 +647,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase):
 
         if not is_empty:
             self._not_deletable_reason = _(
-                "Organization currently has one or more active " \
-                "objects under it."
+                "Organization has active objects under it."
             )
             return False
         elif self.sponsorship and self.sponsorship.active:
@@ -1275,14 +1277,26 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         """
 
         if self.ixfac_set_active.exists():
-            self._not_deletable_reason = _(
-                "Facility has active Exchange -> Facility connection"
+            facility_names = ", ".join(
+                [
+                    ixfac.ix.name for ixfac in
+                    self.ixfac_set_active.all()[:5]
+                ]
             )
+            self._not_deletable_reason = _(
+                "Facility has active exchange presence(s): {} ..."
+            ).format(facility_names)
             return False
         elif self.netfac_set_active.exists():
-            self._not_deletable_reason = _(
-                "Facility has active Network -> Facility connection"
+            network_names = ", ".join(
+                [
+                    netfac.network.name for netfac in
+                    self.netfac_set_active.all()[:5]
+                ]
             )
+            self._not_deletable_reason = _(
+                "Facility has active network presence(s): {} ..."
+            ).format(network_names)
             return False
         else:
             self._not_deletable_reason = None
@@ -1602,11 +1616,23 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         of the following is True:
 
         - has netixlans connected to it
+        - ixfac relationship
         """
 
-        if self.network_count > 0:
+        if self.ixfac_set_active.exists():
+            facility_names = ", ".join(
+                [
+                    ixfac.facility.name for ixfac in
+                    self.ixfac_set_active.all()[:5]
+                ]
+            )
             self._not_deletable_reason = _(
-                "Exchange has active Exchange -> Network connection"
+                "Exchange has active facility connection(s): {} ..."
+            ).format(facility_names)
+            return False
+        elif self.network_count > 0:
+            self._not_deletable_reason = _(
+                "Exchange has active peer(s)"
             )
             return False
         else:
@@ -3190,6 +3216,9 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         return self.nsp_namespace_from_id(
             self.ixlan.ix.org_id, self.ixlan.ix.id, self.ixlan.id, self.id
         )
+
+    def __str__(self):
+        return f"{self.prefix}"
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["ixlan"])
