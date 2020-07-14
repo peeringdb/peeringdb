@@ -399,6 +399,9 @@ class Importer(object):
                 else:
                     version_after = versions.first()
 
+                if not version_after:
+                    continue
+
                 persist_log.entries.create(
                     netixlan=netixlan,
                     version_before=version_before,

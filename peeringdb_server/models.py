@@ -2161,11 +2161,22 @@ class IXLanIXFMemberImportLog(models.Model):
         Attempt to rollback the changes described in this log
         """
 
-        for entry in self.entries.all():
+        for entry in self.entries.all().order_by("-id"):
             if entry.rollback_status() == 0:
                 if entry.version_before:
                     entry.version_before.revert()
+                    related = self.entries.filter(
+                        netixlan=entry.netixlan,
+                    ).exclude(id=entry.id)
+                    for _entry in related.order_by("-id"):
+                        try:
+                            _entry.version_before.revert()
+                        except:
+                            break
+
                 elif entry.netixlan.status == "ok":
+                    entry.netixlan.ipaddr4 = None
+                    entry.netixlan.ipaddr6 = None
                     entry.netixlan.delete()
 
 
