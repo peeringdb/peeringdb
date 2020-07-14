@@ -25,6 +25,8 @@ Your network currently has automatic IX-F updates disabled. You may review and m
 {% endif %}
 {% endspaceless %}
 
+{% if recipient == "ac" %}{% include "email/ixf-contact-points.txt" with instance=instance %}{% endif %}
+
 - Exchange: {{ instance.ix.view_url }}
 - Network: {{ instance.net.view_url}}
 {% if recipient == "ac"  %}
