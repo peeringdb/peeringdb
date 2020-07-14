@@ -8,11 +8,6 @@ import time
 import io
 import datetime
 
-from django.db import transaction
-from django.core.cache import cache
-from django.test import TestCase, Client, RequestFactory
-from django.core.management import call_command
-
 from peeringdb_server.models import (
     Organization,
     Network,
@@ -22,21 +17,10 @@ from peeringdb_server.models import (
     IXLanPrefix,
     InternetExchange,
     IXFMemberData,
-    IXLanIXFMemberImportAttempt,
-    IXLanIXFMemberImportLog,
-    IXLanIXFMemberImportLogEntry,
     User,
     DeskProTicket
 )
-from peeringdb_server.import_views import (
-    view_import_ixlan_ixf_preview,
-    view_import_net_ixf_preview,
-    view_import_net_ixf_postmortem,
-)
 from peeringdb_server import ixf
-
-from .util import ClientCase
-
 import pytest
 
 @pytest.mark.django_db
@@ -872,6 +856,19 @@ def test_remote_cannot_be_parsed(entities, capsys):
     assert ERROR_MESSAGE in stdout
 
 
+def test_validate_json_schema():
+    schema_url_base = "https://raw.githubusercontent.com/euro-ix/json-schemas/master/versions/ixp-member-list-{}.schema.json"
+    
+    for v in ["0.4","0.5","0.6","0.7"]:
+        schema = requests.get(schema_url_base.format(v)).json()
+
+        for fn in ["ixf.member.0", "ixf.member.1", "ixf.member.2", "ixf.member.unparsable"]:
+            data = setup_test_data(fn)
+            jsonschema.validate(data, schema)
+
+        data = setup_test_data("ixf.member.invalid")
+        with pytest.raises(jsonschema.exceptions.ValidationError):
+            jsonschema.validate(data, schema)
 
 
 # FIXTURES
@@ -1005,9 +1002,5 @@ def assert_no_ticket_exists():
     """
     assert DeskProTicket.objects.count() == 0
 
-
 def assert_email_sent(email_text, email_info):
     assert all([str(s) in email_text for s in email_info])
-
-
-

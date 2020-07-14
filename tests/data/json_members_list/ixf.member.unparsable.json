@@ -1,6 +1,13 @@
 {
-    "timestamp": "2017-10-18T09:23:47Z",
-    "version": "0.6",
+    "timestamp": "2020-07-13T09:23:47Z",
+    "version": "1.0",
+    "ixp_list": [
+        {
+          "shortname": "Test Exchange",
+          "ixp_id": 1,
+          "ixf_id": 1
+        }
+    ],
     "member_list": [
         {
             "asnum": 1001,
