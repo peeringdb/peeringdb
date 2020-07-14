@@ -1468,6 +1468,7 @@ class NetworkIXLanSerializer(ModelSerializer):
         return data
 
 
+
 class NetworkFacilitySerializer(ModelSerializer):
     """
     Serializer for peeringdb_server.models.NetworkFacility
@@ -2008,6 +2009,7 @@ class IXLanSerializer(ModelSerializer):
             "net_set",
             "ixpfx_set",
             "ixf_ixp_member_list_url",
+            "ixf_ixp_member_list_url_visible",
             "ixf_ixp_import_enabled",
         ] + HandleRefSerializer.Meta.fields
         related_fields = ["ix", "net_set", "ixpfx_set"]
@@ -2015,7 +2017,6 @@ class IXLanSerializer(ModelSerializer):
         list_exclude = ["ix"]
 
         extra_kwargs = {
-            "ixf_ixp_member_list_url": {"write_only": True},
             "ixf_ixp_import_enabled": {"write_only": True},
         }
 
@@ -2027,6 +2028,24 @@ class IXLanSerializer(ModelSerializer):
 
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if not isinstance(data, dict):
+            return data
+
+        user = self.context.get("user")
+        request = self.context.get("request")
+
+        if not user and request:
+            user = request.user
+
+        if instance and not instance.ixf_ixp_member_list_url_viewable(user):
+            del data["ixf_ixp_member_list_url"]
+
+        return data
+
 
 
 class InternetExchangeSerializer(ModelSerializer):
@@ -2060,6 +2079,9 @@ class InternetExchangeSerializer(ModelSerializer):
     net_count = serializers.SerializerMethodField()
 
     suggest = serializers.BooleanField(required=False, write_only=True)
+
+    ixf_net_count = serializers.IntegerField(read_only=True)
+    ixf_last_import = serializers.DateTimeField(read_only=True)
 
     website = serializers.URLField(required=True)
     tech_email = serializers.EmailField(required=True)
@@ -2119,6 +2141,8 @@ class InternetExchangeSerializer(ModelSerializer):
             "suggest",
             "prefix",
             "net_count",
+            "ixf_net_count",
+            "ixf_last_import",
         ] + HandleRefSerializer.Meta.fields
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]

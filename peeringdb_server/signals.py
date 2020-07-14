@@ -27,6 +27,7 @@ from peeringdb_server.models import (
     is_suggested,
     VerificationQueueItem,
     Organization,
+    InternetExchange,
     Facility,
     Network,
     NetworkContact,
@@ -68,6 +69,7 @@ def org_save(sender, **kwargs):
     """
 
     inst = kwargs.get("instance")
+    ix_namespace = InternetExchange.nsp_namespace_from_id(inst.id, "*")
 
     # make the general member group for the org
     try:
@@ -86,6 +88,13 @@ def org_save(sender, **kwargs):
             namespace=NetworkContact.nsp_namespace_from_id(inst.id, "*", "private"),
             permissions=PERM_READ,
         ).save()
+
+        GroupPermission(
+            group=group,
+            namespace=f"{ix_namespace}.ixf_ixp_member_list_url.private",
+            permissions=PERM_READ,
+        ).save()
+
 
     # make the admin group for the org
     try:
@@ -108,6 +117,13 @@ def org_save(sender, **kwargs):
             namespace=NetworkContact.nsp_namespace_from_id(inst.id, "*", "private"),
             permissions=PERM_CRUD,
         ).save()
+
+        GroupPermission(
+            group=group,
+            namespace=f"{ix_namespace}.ixf_ixp_member_list_url.private",
+            permissions=PERM_CRUD,
+        ).save()
+
 
     if inst.status == "deleted":
         for ar in inst.affiliation_requests.all():

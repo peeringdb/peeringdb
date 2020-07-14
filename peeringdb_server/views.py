@@ -154,6 +154,22 @@ class DoNotRender(object):
     rows while still allowing attributes with nonetype values to be rendered
     """
 
+    @classmethod
+    def permissioned(cls, value, user, namespace, explicit=False):
+
+        """
+        Check if the user has permissions to the supplied namespace
+        returns a DoNotRender instance if not, otherwise returns
+        the supplied value
+        """
+
+        b = has_perms(user, namespace.lower(), 0x01, explicit=explicit)
+        print(namespace, b)
+        print(user)
+        if not b:
+            return cls()
+        return value
+
     def all(self):
         return []
 
@@ -1357,9 +1373,22 @@ def view_exchange(request, id):
                 "type": "url",
                 "label": _("IX-F Member Export URL"),
                 "name": "ixf_ixp_member_list_url",
-                "value": ixlan.ixf_ixp_member_list_url,
-                "admin": True,
+                "value": DoNotRender.permissioned(
+                    ixlan.ixf_ixp_member_list_url,
+                    request.user,
+                    f"{ixlan.nsp_namespace}.ixf_ixp_member_list_url"\
+                    f".{ixlan.ixf_ixp_member_list_url_visible}",
+                    explicit=True
+                )
             },
+            {
+                "type": "list",
+                "name": "ixf_ixp_member_list_url_visible",
+                "data": "enum/visibility",
+                "label": _("IX-F Member Export URL Visibility"),
+                "value": ixlan.ixf_ixp_member_list_url_visible,
+            },
+
             {
                 "type": "action",
                 "label": _("IX-F Import Preview"),

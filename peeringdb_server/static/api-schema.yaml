@@ -186,10 +186,7 @@ paths:
           type: integer
       - name: latitude
         in: query
-        description: 'Latitude
-
-
-          Filter results by matching a value against this field.
+        description: 'Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -205,10 +202,7 @@ paths:
           type: integer
       - name: longitude
         in: query
-        description: 'Longitude
-
-
-          Filter results by matching a value against this field.
+        description: 'Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -421,6 +415,24 @@ paths:
         required: false
         schema:
           type: string
+      - name: sales_email
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: sales_phone
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: since
         in: query
         required: false
@@ -445,6 +457,24 @@ paths:
         schema:
           type: string
       - name: status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: tech_email
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: tech_phone
         in: query
         description: 'Filter results by matching a value against this field.
 
@@ -540,6 +570,18 @@ paths:
                     longitude:
                       type: number
                       readOnly: true
+                    sales_email:
+                      type: string
+                      format: email
+                      maxLength: 254
+                    sales_phone:
+                      type: string
+                    tech_email:
+                      type: string
+                      format: email
+                      maxLength: 254
+                    tech_phone:
+                      type: string
                     created:
                       type: string
                       format: date-time
@@ -873,6 +915,18 @@ paths:
                 suggest:
                   type: boolean
                   writeOnly: true
+                sales_email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                sales_phone:
+                  type: string
+                tech_email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                tech_phone:
+                  type: string
                 status:
                   type: string
                   maxLength: 255
@@ -1200,6 +1254,18 @@ paths:
                   longitude:
                     type: number
                     readOnly: true
+                  sales_email:
+                    type: string
+                    format: email
+                    maxLength: 254
+                  sales_phone:
+                    type: string
+                  tech_email:
+                    type: string
+                    format: email
+                    maxLength: 254
+                  tech_phone:
+                    type: string
                   created:
                     type: string
                     format: date-time
@@ -1560,6 +1626,18 @@ paths:
                   longitude:
                     type: number
                     readOnly: true
+                  sales_email:
+                    type: string
+                    format: email
+                    maxLength: 254
+                  sales_phone:
+                    type: string
+                  tech_email:
+                    type: string
+                    format: email
+                    maxLength: 254
+                  tech_phone:
+                    type: string
                   created:
                     type: string
                     format: date-time
@@ -1889,6 +1967,18 @@ paths:
                   maxLength: 21
                 notes:
                   type: string
+                sales_email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                sales_phone:
+                  type: string
+                tech_email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                tech_phone:
+                  type: string
                 status:
                   type: string
                   maxLength: 255
@@ -2216,6 +2306,18 @@ paths:
                   longitude:
                     type: number
                     readOnly: true
+                  sales_email:
+                    type: string
+                    format: email
+                    maxLength: 254
+                  sales_phone:
+                    type: string
+                  tech_email:
+                    type: string
+                    format: email
+                    maxLength: 254
+                  tech_phone:
+                    type: string
                   created:
                     type: string
                     format: date-time
@@ -2545,6 +2647,18 @@ paths:
                 suggest:
                   type: boolean
                   writeOnly: true
+                sales_email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                sales_phone:
+                  type: string
+                tech_email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                tech_phone:
+                  type: string
                 status:
                   type: string
                   maxLength: 255
@@ -2865,6 +2979,18 @@ paths:
                   longitude:
                     type: number
                     readOnly: true
+                  sales_email:
+                    type: string
+                    format: email
+                    maxLength: 254
+                  sales_phone:
+                    type: string
+                  tech_email:
+                    type: string
+                    format: email
+                    maxLength: 254
+                  tech_phone:
+                    type: string
                   created:
                     type: string
                     format: date-time
@@ -3285,6 +3411,24 @@ paths:
         schema:
           type: number
       - name: id
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: ixf_last_import
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: ixf_net_count
         in: query
         description: 'Filter results by matching a value against this field.
 
@@ -3985,14 +4129,12 @@ paths:
                       format: email
                     tech_phone:
                       type: string
-                      maxLength: 192
                     policy_email:
                       type: string
                       format: email
                       maxLength: 254
                     policy_phone:
                       type: string
-                      maxLength: 192
                     fac_set:
                       type: array
                       items:
@@ -4044,6 +4186,18 @@ paths:
                           suggest:
                             type: boolean
                             writeOnly: true
+                          sales_email:
+                            type: string
+                            format: email
+                            maxLength: 254
+                          sales_phone:
+                            type: string
+                          tech_email:
+                            type: string
+                            format: email
+                            maxLength: 254
+                          tech_phone:
+                            type: string
                           created:
                             type: string
                             format: date-time
@@ -4395,7 +4549,6 @@ paths:
                                 looking_glass:
                                   type: string
                                   format: uri
-                                  maxLength: 255
                                   pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                                     s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\\
                                     d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
@@ -4438,21 +4591,24 @@ paths:
                                 info_traffic:
                                   enum:
                                   - ''
-                                  - 0-20 Mbps
+                                  - 0-20Mbps
                                   - 20-100Mbps
                                   - 100-1000Mbps
                                   - 1-5Gbps
                                   - 5-10Gbps
                                   - 10-20Gbps
-                                  - 20-50 Gbps
-                                  - 50-100 Gbps
-                                  - 100+ Gbps
-                                  - 100-200 Gbps
-                                  - 200-300 Gbps
-                                  - 300-500 Gbps
-                                  - 500-1000 Gbps
-                                  - 1 Tbps+
-                                  - 10 Tbps+
+                                  - 20-50Gbps
+                                  - 50-100Gbps
+                                  - 100-200Gbps
+                                  - 200-300Gbps
+                                  - 300-500Gbps
+                                  - 500-1000Gbps
+                                  - 1-5Tbps
+                                  - 5-10Tbps
+                                  - 10-20Tbps
+                                  - 20-50Tbps
+                                  - 50-100Tbps
+                                  - 100+Tbps
                                 info_ratio:
                                   enum:
                                   - ''
@@ -4484,7 +4640,7 @@ paths:
                                 info_never_via_route_servers:
                                   type: boolean
                                   description: Indicates if this network will announce
-                                    its routes via rout servers or not
+                                    its routes via route servers or not
                                 notes:
                                   type: string
                                 policy_url:
@@ -4596,6 +4752,8 @@ paths:
                                       ipaddr6:
                                         type: string
                                       is_rs_peer:
+                                        type: boolean
+                                      operational:
                                         type: boolean
                                       created:
                                         type: string
@@ -4712,6 +4870,8 @@ paths:
                                   - IPv6
                                 prefix:
                                   type: string
+                                in_dfz:
+                                  type: boolean
                                 created:
                                   type: string
                                   format: date-time
@@ -4730,7 +4890,6 @@ paths:
                           ixf_ixp_member_list_url:
                             type: string
                             format: uri
-                            writeOnly: true
                             nullable: true
                             maxLength: 200
                             pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
@@ -4740,6 +4899,11 @@ paths:
                               -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                               .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                               .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                          ixf_ixp_member_list_url_visible:
+                            enum:
+                            - Private
+                            - Users
+                            - Public
                           ixf_ixp_import_enabled:
                             type: boolean
                             writeOnly: true
@@ -4757,6 +4921,13 @@ paths:
                       readOnly: true
                     net_count:
                       type: string
+                      readOnly: true
+                    ixf_net_count:
+                      type: integer
+                      readOnly: true
+                    ixf_last_import:
+                      type: string
+                      format: date-time
                       readOnly: true
                     created:
                       type: string
@@ -5163,14 +5334,12 @@ paths:
                   format: email
                 tech_phone:
                   type: string
-                  maxLength: 192
                 policy_email:
                   type: string
                   format: email
                   maxLength: 254
                 policy_phone:
                   type: string
-                  maxLength: 192
                 suggest:
                   type: boolean
                   writeOnly: true
@@ -5515,14 +5684,12 @@ paths:
                     format: email
                   tech_phone:
                     type: string
-                    maxLength: 192
                   policy_email:
                     type: string
                     format: email
                     maxLength: 254
                   policy_phone:
                     type: string
-                    maxLength: 192
                   fac_set:
                     type: array
                     items:
@@ -5574,6 +5741,18 @@ paths:
                         suggest:
                           type: boolean
                           writeOnly: true
+                        sales_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        sales_phone:
+                          type: string
+                        tech_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        tech_phone:
+                          type: string
                         created:
                           type: string
                           format: date-time
@@ -5925,7 +6104,6 @@ paths:
                               looking_glass:
                                 type: string
                                 format: uri
-                                maxLength: 255
                                 pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                                   s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\\
                                   d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
@@ -5968,21 +6146,24 @@ paths:
                               info_traffic:
                                 enum:
                                 - ''
-                                - 0-20 Mbps
+                                - 0-20Mbps
                                 - 20-100Mbps
                                 - 100-1000Mbps
                                 - 1-5Gbps
                                 - 5-10Gbps
                                 - 10-20Gbps
-                                - 20-50 Gbps
-                                - 50-100 Gbps
-                                - 100+ Gbps
-                                - 100-200 Gbps
-                                - 200-300 Gbps
-                                - 300-500 Gbps
-                                - 500-1000 Gbps
-                                - 1 Tbps+
-                                - 10 Tbps+
+                                - 20-50Gbps
+                                - 50-100Gbps
+                                - 100-200Gbps
+                                - 200-300Gbps
+                                - 300-500Gbps
+                                - 500-1000Gbps
+                                - 1-5Tbps
+                                - 5-10Tbps
+                                - 10-20Tbps
+                                - 20-50Tbps
+                                - 50-100Tbps
+                                - 100+Tbps
                               info_ratio:
                                 enum:
                                 - ''
@@ -6014,7 +6195,7 @@ paths:
                               info_never_via_route_servers:
                                 type: boolean
                                 description: Indicates if this network will announce
-                                  its routes via rout servers or not
+                                  its routes via route servers or not
                               notes:
                                 type: string
                               policy_url:
@@ -6126,6 +6307,8 @@ paths:
                                     ipaddr6:
                                       type: string
                                     is_rs_peer:
+                                      type: boolean
+                                    operational:
                                       type: boolean
                                     created:
                                       type: string
@@ -6241,6 +6424,8 @@ paths:
                                 - IPv6
                               prefix:
                                 type: string
+                              in_dfz:
+                                type: boolean
                               created:
                                 type: string
                                 format: date-time
@@ -6259,7 +6444,6 @@ paths:
                         ixf_ixp_member_list_url:
                           type: string
                           format: uri
-                          writeOnly: true
                           nullable: true
                           maxLength: 200
                           pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
@@ -6269,6 +6453,11 @@ paths:
                             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                             .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                             .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                        ixf_ixp_member_list_url_visible:
+                          enum:
+                          - Private
+                          - Users
+                          - Public
                         ixf_ixp_import_enabled:
                           type: boolean
                           writeOnly: true
@@ -6286,6 +6475,13 @@ paths:
                     readOnly: true
                   net_count:
                     type: string
+                    readOnly: true
+                  ixf_net_count:
+                    type: integer
+                    readOnly: true
+                  ixf_last_import:
+                    type: string
+                    format: date-time
                     readOnly: true
                   created:
                     type: string
@@ -6657,14 +6853,12 @@ paths:
                     format: email
                   tech_phone:
                     type: string
-                    maxLength: 192
                   policy_email:
                     type: string
                     format: email
                     maxLength: 254
                   policy_phone:
                     type: string
-                    maxLength: 192
                   fac_set:
                     type: array
                     items:
@@ -6716,6 +6910,18 @@ paths:
                         suggest:
                           type: boolean
                           writeOnly: true
+                        sales_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        sales_phone:
+                          type: string
+                        tech_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        tech_phone:
+                          type: string
                         created:
                           type: string
                           format: date-time
@@ -7067,7 +7273,6 @@ paths:
                               looking_glass:
                                 type: string
                                 format: uri
-                                maxLength: 255
                                 pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                                   s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\\
                                   d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
@@ -7110,21 +7315,24 @@ paths:
                               info_traffic:
                                 enum:
                                 - ''
-                                - 0-20 Mbps
+                                - 0-20Mbps
                                 - 20-100Mbps
                                 - 100-1000Mbps
                                 - 1-5Gbps
                                 - 5-10Gbps
                                 - 10-20Gbps
-                                - 20-50 Gbps
-                                - 50-100 Gbps
-                                - 100+ Gbps
-                                - 100-200 Gbps
-                                - 200-300 Gbps
-                                - 300-500 Gbps
-                                - 500-1000 Gbps
-                                - 1 Tbps+
-                                - 10 Tbps+
+                                - 20-50Gbps
+                                - 50-100Gbps
+                                - 100-200Gbps
+                                - 200-300Gbps
+                                - 300-500Gbps
+                                - 500-1000Gbps
+                                - 1-5Tbps
+                                - 5-10Tbps
+                                - 10-20Tbps
+                                - 20-50Tbps
+                                - 50-100Tbps
+                                - 100+Tbps
                               info_ratio:
                                 enum:
                                 - ''
@@ -7156,7 +7364,7 @@ paths:
                               info_never_via_route_servers:
                                 type: boolean
                                 description: Indicates if this network will announce
-                                  its routes via rout servers or not
+                                  its routes via route servers or not
                               notes:
                                 type: string
                               policy_url:
@@ -7268,6 +7476,8 @@ paths:
                                     ipaddr6:
                                       type: string
                                     is_rs_peer:
+                                      type: boolean
+                                    operational:
                                       type: boolean
                                     created:
                                       type: string
@@ -7383,6 +7593,8 @@ paths:
                                 - IPv6
                               prefix:
                                 type: string
+                              in_dfz:
+                                type: boolean
                               created:
                                 type: string
                                 format: date-time
@@ -7401,7 +7613,6 @@ paths:
                         ixf_ixp_member_list_url:
                           type: string
                           format: uri
-                          writeOnly: true
                           nullable: true
                           maxLength: 200
                           pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
@@ -7411,6 +7622,11 @@ paths:
                             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                             .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                             .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                        ixf_ixp_member_list_url_visible:
+                          enum:
+                          - Private
+                          - Users
+                          - Public
                         ixf_ixp_import_enabled:
                           type: boolean
                           writeOnly: true
@@ -7428,6 +7644,13 @@ paths:
                     readOnly: true
                   net_count:
                     type: string
+                    readOnly: true
+                  ixf_net_count:
+                    type: integer
+                    readOnly: true
+                  ixf_last_import:
+                    type: string
+                    format: date-time
                     readOnly: true
                   created:
                     type: string
@@ -7807,14 +8030,12 @@ paths:
                   format: email
                 tech_phone:
                   type: string
-                  maxLength: 192
                 policy_email:
                   type: string
                   format: email
                   maxLength: 254
                 policy_phone:
                   type: string
-                  maxLength: 192
                 status:
                   type: string
                   maxLength: 255
@@ -8152,14 +8373,12 @@ paths:
                     format: email
                   tech_phone:
                     type: string
-                    maxLength: 192
                   policy_email:
                     type: string
                     format: email
                     maxLength: 254
                   policy_phone:
                     type: string
-                    maxLength: 192
                   fac_set:
                     type: array
                     items:
@@ -8211,6 +8430,18 @@ paths:
                         suggest:
                           type: boolean
                           writeOnly: true
+                        sales_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        sales_phone:
+                          type: string
+                        tech_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        tech_phone:
+                          type: string
                         created:
                           type: string
                           format: date-time
@@ -8562,7 +8793,6 @@ paths:
                               looking_glass:
                                 type: string
                                 format: uri
-                                maxLength: 255
                                 pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                                   s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\\
                                   d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
@@ -8605,21 +8835,24 @@ paths:
                               info_traffic:
                                 enum:
                                 - ''
-                                - 0-20 Mbps
+                                - 0-20Mbps
                                 - 20-100Mbps
                                 - 100-1000Mbps
                                 - 1-5Gbps
                                 - 5-10Gbps
                                 - 10-20Gbps
-                                - 20-50 Gbps
-                                - 50-100 Gbps
-                                - 100+ Gbps
-                                - 100-200 Gbps
-                                - 200-300 Gbps
-                                - 300-500 Gbps
-                                - 500-1000 Gbps
-                                - 1 Tbps+
-                                - 10 Tbps+
+                                - 20-50Gbps
+                                - 50-100Gbps
+                                - 100-200Gbps
+                                - 200-300Gbps
+                                - 300-500Gbps
+                                - 500-1000Gbps
+                                - 1-5Tbps
+                                - 5-10Tbps
+                                - 10-20Tbps
+                                - 20-50Tbps
+                                - 50-100Tbps
+                                - 100+Tbps
                               info_ratio:
                                 enum:
                                 - ''
@@ -8651,7 +8884,7 @@ paths:
                               info_never_via_route_servers:
                                 type: boolean
                                 description: Indicates if this network will announce
-                                  its routes via rout servers or not
+                                  its routes via route servers or not
                               notes:
                                 type: string
                               policy_url:
@@ -8763,6 +8996,8 @@ paths:
                                     ipaddr6:
                                       type: string
                                     is_rs_peer:
+                                      type: boolean
+                                    operational:
                                       type: boolean
                                     created:
                                       type: string
@@ -8878,6 +9113,8 @@ paths:
                                 - IPv6
                               prefix:
                                 type: string
+                              in_dfz:
+                                type: boolean
                               created:
                                 type: string
                                 format: date-time
@@ -8896,7 +9133,6 @@ paths:
                         ixf_ixp_member_list_url:
                           type: string
                           format: uri
-                          writeOnly: true
                           nullable: true
                           maxLength: 200
                           pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
@@ -8906,6 +9142,11 @@ paths:
                             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                             .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                             .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                        ixf_ixp_member_list_url_visible:
+                          enum:
+                          - Private
+                          - Users
+                          - Public
                         ixf_ixp_import_enabled:
                           type: boolean
                           writeOnly: true
@@ -8923,6 +9164,13 @@ paths:
                     readOnly: true
                   net_count:
                     type: string
+                    readOnly: true
+                  ixf_net_count:
+                    type: integer
+                    readOnly: true
+                  ixf_last_import:
+                    type: string
+                    format: date-time
                     readOnly: true
                   created:
                     type: string
@@ -9291,14 +9539,12 @@ paths:
                   format: email
                 tech_phone:
                   type: string
-                  maxLength: 192
                 policy_email:
                   type: string
                   format: email
                   maxLength: 254
                 policy_phone:
                   type: string
-                  maxLength: 192
                 suggest:
                   type: boolean
                   writeOnly: true
@@ -9633,14 +9879,12 @@ paths:
                     format: email
                   tech_phone:
                     type: string
-                    maxLength: 192
                   policy_email:
                     type: string
                     format: email
                     maxLength: 254
                   policy_phone:
                     type: string
-                    maxLength: 192
                   fac_set:
                     type: array
                     items:
@@ -9692,6 +9936,18 @@ paths:
                         suggest:
                           type: boolean
                           writeOnly: true
+                        sales_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        sales_phone:
+                          type: string
+                        tech_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        tech_phone:
+                          type: string
                         created:
                           type: string
                           format: date-time
@@ -10043,7 +10299,6 @@ paths:
                               looking_glass:
                                 type: string
                                 format: uri
-                                maxLength: 255
                                 pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                                   s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\\
                                   d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
@@ -10086,21 +10341,24 @@ paths:
                               info_traffic:
                                 enum:
                                 - ''
-                                - 0-20 Mbps
+                                - 0-20Mbps
                                 - 20-100Mbps
                                 - 100-1000Mbps
                                 - 1-5Gbps
                                 - 5-10Gbps
                                 - 10-20Gbps
-                                - 20-50 Gbps
-                                - 50-100 Gbps
-                                - 100+ Gbps
-                                - 100-200 Gbps
-                                - 200-300 Gbps
-                                - 300-500 Gbps
-                                - 500-1000 Gbps
-                                - 1 Tbps+
-                                - 10 Tbps+
+                                - 20-50Gbps
+                                - 50-100Gbps
+                                - 100-200Gbps
+                                - 200-300Gbps
+                                - 300-500Gbps
+                                - 500-1000Gbps
+                                - 1-5Tbps
+                                - 5-10Tbps
+                                - 10-20Tbps
+                                - 20-50Tbps
+                                - 50-100Tbps
+                                - 100+Tbps
                               info_ratio:
                                 enum:
                                 - ''
@@ -10132,7 +10390,7 @@ paths:
                               info_never_via_route_servers:
                                 type: boolean
                                 description: Indicates if this network will announce
-                                  its routes via rout servers or not
+                                  its routes via route servers or not
                               notes:
                                 type: string
                               policy_url:
@@ -10244,6 +10502,8 @@ paths:
                                     ipaddr6:
                                       type: string
                                     is_rs_peer:
+                                      type: boolean
+                                    operational:
                                       type: boolean
                                     created:
                                       type: string
@@ -10359,6 +10619,8 @@ paths:
                                 - IPv6
                               prefix:
                                 type: string
+                              in_dfz:
+                                type: boolean
                               created:
                                 type: string
                                 format: date-time
@@ -10377,7 +10639,6 @@ paths:
                         ixf_ixp_member_list_url:
                           type: string
                           format: uri
-                          writeOnly: true
                           nullable: true
                           maxLength: 200
                           pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
@@ -10387,6 +10648,11 @@ paths:
                             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                             .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                             .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                        ixf_ixp_member_list_url_visible:
+                          enum:
+                          - Private
+                          - Users
+                          - Public
                         ixf_ixp_import_enabled:
                           type: boolean
                           writeOnly: true
@@ -10404,6 +10670,13 @@ paths:
                     readOnly: true
                   net_count:
                     type: string
+                    readOnly: true
+                  ixf_net_count:
+                    type: integer
+                    readOnly: true
+                  ixf_last_import:
+                    type: string
+                    format: date-time
                     readOnly: true
                   created:
                     type: string
@@ -10657,10 +10930,7 @@ paths:
           type: integer
       - name: fac__latitude
         in: query
-        description: 'Latitude
-
-
-          Filter results by matching a value against this field.
+        description: 'Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -10669,10 +10939,7 @@ paths:
           type: number
       - name: fac__longitude
         in: query
-        description: 'Longitude
-
-
-          Filter results by matching a value against this field.
+        description: 'Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -10715,6 +10982,24 @@ paths:
         required: false
         schema:
           type: string
+      - name: fac__sales_email
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: fac__sales_phone
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: fac__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -10725,6 +11010,24 @@ paths:
         schema:
           type: string
       - name: fac__status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: fac__tech_email
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: fac__tech_phone
         in: query
         description: 'Filter results by matching a value against this field.
 
@@ -10847,6 +11150,24 @@ paths:
         schema:
           type: date-time
       - name: ix__id
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: ix__ixf_last_import
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: ix__ixf_net_count
         in: query
         description: 'Filter results by matching a value against this field.
 
@@ -11539,6 +11860,24 @@ paths:
         required: false
         schema:
           type: integer
+      - name: ix__ixf_last_import
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: ix__ixf_net_count
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: ix__media
         in: query
         description: 'Filter results by matching a value against this field.
@@ -11696,9 +12035,45 @@ paths:
         required: false
         schema:
           type: integer
+      - name: ixf_ixp_import_error
+        in: query
+        description: 'Reason IX-F data could not be parsed
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: ixf_ixp_import_error_notified
+        in: query
+        description: 'Last time we notified the exchange about the IX-F parsing issue
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: ixf_ixp_member_list_url
         in: query
         description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: ixf_ixp_member_list_url_visible
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `Private`, `Users`, `Public`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
@@ -11865,7 +12240,6 @@ paths:
                           looking_glass:
                             type: string
                             format: uri
-                            maxLength: 255
                             pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                               s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\\
                               .(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\[[0-9a-f:\\\
@@ -11906,21 +12280,24 @@ paths:
                           info_traffic:
                             enum:
                             - ''
-                            - 0-20 Mbps
+                            - 0-20Mbps
                             - 20-100Mbps
                             - 100-1000Mbps
                             - 1-5Gbps
                             - 5-10Gbps
                             - 10-20Gbps
-                            - 20-50 Gbps
-                            - 50-100 Gbps
-                            - 100+ Gbps
-                            - 100-200 Gbps
-                            - 200-300 Gbps
-                            - 300-500 Gbps
-                            - 500-1000 Gbps
-                            - 1 Tbps+
-                            - 10 Tbps+
+                            - 20-50Gbps
+                            - 50-100Gbps
+                            - 100-200Gbps
+                            - 200-300Gbps
+                            - 300-500Gbps
+                            - 500-1000Gbps
+                            - 1-5Tbps
+                            - 5-10Tbps
+                            - 10-20Tbps
+                            - 20-50Tbps
+                            - 50-100Tbps
+                            - 100+Tbps
                           info_ratio:
                             enum:
                             - ''
@@ -11952,7 +12329,7 @@ paths:
                           info_never_via_route_servers:
                             type: boolean
                             description: Indicates if this network will announce its
-                              routes via rout servers or not
+                              routes via route servers or not
                           notes:
                             type: string
                           policy_url:
@@ -12063,6 +12440,8 @@ paths:
                                 ipaddr6:
                                   type: string
                                 is_rs_peer:
+                                  type: boolean
+                                operational:
                                   type: boolean
                                 created:
                                   type: string
@@ -12177,6 +12556,8 @@ paths:
                             - IPv6
                           prefix:
                             type: string
+                          in_dfz:
+                            type: boolean
                           created:
                             type: string
                             format: date-time
@@ -12192,6 +12573,22 @@ paths:
                         - protocol
                         - prefix
                       readOnly: true
+                    ixf_ixp_member_list_url:
+                      type: string
+                      format: uri
+                      nullable: true
+                      maxLength: 200
+                      pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
+                        d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
+                        [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+                        -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                        .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                        .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                    ixf_ixp_member_list_url_visible:
+                      enum:
+                      - Private
+                      - Users
+                      - Public
                     created:
                       type: string
                       format: date-time
@@ -12309,7 +12706,6 @@ paths:
                         looking_glass:
                           type: string
                           format: uri
-                          maxLength: 255
                           pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                             s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\\
                             .(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\[[0-9a-f:\\\
@@ -12350,21 +12746,24 @@ paths:
                         info_traffic:
                           enum:
                           - ''
-                          - 0-20 Mbps
+                          - 0-20Mbps
                           - 20-100Mbps
                           - 100-1000Mbps
                           - 1-5Gbps
                           - 5-10Gbps
                           - 10-20Gbps
-                          - 20-50 Gbps
-                          - 50-100 Gbps
-                          - 100+ Gbps
-                          - 100-200 Gbps
-                          - 200-300 Gbps
-                          - 300-500 Gbps
-                          - 500-1000 Gbps
-                          - 1 Tbps+
-                          - 10 Tbps+
+                          - 20-50Gbps
+                          - 50-100Gbps
+                          - 100-200Gbps
+                          - 200-300Gbps
+                          - 300-500Gbps
+                          - 500-1000Gbps
+                          - 1-5Tbps
+                          - 5-10Tbps
+                          - 10-20Tbps
+                          - 20-50Tbps
+                          - 50-100Tbps
+                          - 100+Tbps
                         info_ratio:
                           enum:
                           - ''
@@ -12396,7 +12795,7 @@ paths:
                         info_never_via_route_servers:
                           type: boolean
                           description: Indicates if this network will announce its
-                            routes via rout servers or not
+                            routes via route servers or not
                         notes:
                           type: string
                         policy_url:
@@ -12507,6 +12906,8 @@ paths:
                               ipaddr6:
                                 type: string
                               is_rs_peer:
+                                type: boolean
+                              operational:
                                 type: boolean
                               created:
                                 type: string
@@ -12621,6 +13022,8 @@ paths:
                           - IPv6
                         prefix:
                           type: string
+                        in_dfz:
+                          type: boolean
                         created:
                           type: string
                           format: date-time
@@ -12636,6 +13039,22 @@ paths:
                       - protocol
                       - prefix
                     readOnly: true
+                  ixf_ixp_member_list_url:
+                    type: string
+                    format: uri
+                    nullable: true
+                    maxLength: 200
+                    pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
+                      d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
+                      [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+                      -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                      .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                      .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                  ixf_ixp_member_list_url_visible:
+                    enum:
+                    - Private
+                    - Users
+                    - Public
                   created:
                     type: string
                     format: date-time
@@ -12726,7 +13145,6 @@ paths:
                 ixf_ixp_member_list_url:
                   type: string
                   format: uri
-                  writeOnly: true
                   nullable: true
                   maxLength: 200
                   pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
@@ -12735,6 +13153,11 @@ paths:
                     -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                ixf_ixp_member_list_url_visible:
+                  enum:
+                  - Private
+                  - Users
+                  - Public
                 ixf_ixp_import_enabled:
                   type: boolean
                   writeOnly: true
@@ -12821,7 +13244,6 @@ paths:
                         looking_glass:
                           type: string
                           format: uri
-                          maxLength: 255
                           pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                             s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\\
                             .(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\[[0-9a-f:\\\
@@ -12862,21 +13284,24 @@ paths:
                         info_traffic:
                           enum:
                           - ''
-                          - 0-20 Mbps
+                          - 0-20Mbps
                           - 20-100Mbps
                           - 100-1000Mbps
                           - 1-5Gbps
                           - 5-10Gbps
                           - 10-20Gbps
-                          - 20-50 Gbps
-                          - 50-100 Gbps
-                          - 100+ Gbps
-                          - 100-200 Gbps
-                          - 200-300 Gbps
-                          - 300-500 Gbps
-                          - 500-1000 Gbps
-                          - 1 Tbps+
-                          - 10 Tbps+
+                          - 20-50Gbps
+                          - 50-100Gbps
+                          - 100-200Gbps
+                          - 200-300Gbps
+                          - 300-500Gbps
+                          - 500-1000Gbps
+                          - 1-5Tbps
+                          - 5-10Tbps
+                          - 10-20Tbps
+                          - 20-50Tbps
+                          - 50-100Tbps
+                          - 100+Tbps
                         info_ratio:
                           enum:
                           - ''
@@ -12908,7 +13333,7 @@ paths:
                         info_never_via_route_servers:
                           type: boolean
                           description: Indicates if this network will announce its
-                            routes via rout servers or not
+                            routes via route servers or not
                         notes:
                           type: string
                         policy_url:
@@ -13019,6 +13444,8 @@ paths:
                               ipaddr6:
                                 type: string
                               is_rs_peer:
+                                type: boolean
+                              operational:
                                 type: boolean
                               created:
                                 type: string
@@ -13133,6 +13560,8 @@ paths:
                           - IPv6
                         prefix:
                           type: string
+                        in_dfz:
+                          type: boolean
                         created:
                           type: string
                           format: date-time
@@ -13148,6 +13577,22 @@ paths:
                       - protocol
                       - prefix
                     readOnly: true
+                  ixf_ixp_member_list_url:
+                    type: string
+                    format: uri
+                    nullable: true
+                    maxLength: 200
+                    pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
+                      d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
+                      [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+                      -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                      .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                      .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                  ixf_ixp_member_list_url_visible:
+                    enum:
+                    - Private
+                    - Users
+                    - Public
                   created:
                     type: string
                     format: date-time
@@ -13240,6 +13685,12 @@ paths:
         required: false
         schema:
           type: integer
+      - name: in_dfz
+        in: query
+        description: Filter results by matching a value against this field.
+        required: false
+        schema:
+          type: integer
       - name: ix
         in: query
         description: 'Find prefixes by exchange (exchange id)
@@ -13297,6 +13748,42 @@ paths:
         required: false
         schema:
           type: integer
+      - name: ixlan__ixf_ixp_import_error
+        in: query
+        description: 'Reason IX-F data could not be parsed
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: ixlan__ixf_ixp_import_error_notified
+        in: query
+        description: 'Last time we notified the exchange about the IX-F parsing issue
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: ixlan__ixf_ixp_member_list_url_visible
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `Private`, `Users`, `Public`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: ixlan__mtu
         in: query
         description: 'Filter results by matching a value against this field.
@@ -13469,6 +13956,8 @@ paths:
                       - IPv6
                     prefix:
                       type: string
+                    in_dfz:
+                      type: boolean
                     created:
                       type: string
                       format: date-time
@@ -13514,6 +14003,8 @@ paths:
                   - IPv6
                 prefix:
                   type: string
+                in_dfz:
+                  type: boolean
                 status:
                   type: string
                   maxLength: 255
@@ -13545,6 +14036,8 @@ paths:
                     - IPv6
                   prefix:
                     type: string
+                  in_dfz:
+                    type: boolean
                   created:
                     type: string
                     format: date-time
@@ -13609,6 +14102,8 @@ paths:
                     - IPv6
                   prefix:
                     type: string
+                  in_dfz:
+                    type: boolean
                   created:
                     type: string
                     format: date-time
@@ -13653,6 +14148,8 @@ paths:
                   - IPv6
                 prefix:
                   type: string
+                in_dfz:
+                  type: boolean
                 status:
                   type: string
                   maxLength: 255
@@ -13684,6 +14181,8 @@ paths:
                     - IPv6
                   prefix:
                     type: string
+                  in_dfz:
+                    type: boolean
                   created:
                     type: string
                     format: date-time
@@ -13725,6 +14224,8 @@ paths:
                   - IPv6
                 prefix:
                   type: string
+                in_dfz:
+                  type: boolean
                 status:
                   type: string
                   maxLength: 255
@@ -13752,6 +14253,8 @@ paths:
                     - IPv6
                   prefix:
                     type: string
+                  in_dfz:
+                    type: boolean
                   created:
                     type: string
                     format: date-time
@@ -13915,7 +14418,7 @@ paths:
           type: integer
       - name: info_never_via_route_servers
         in: query
-        description: 'Indicates if this network will announce its routes via rout
+        description: 'Indicates if this network will announce its routes via route
           servers or not
 
 
@@ -13980,9 +14483,10 @@ paths:
         description: 'Filter results by matching a value against this field.
 
 
-          ``, `0-20 Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
-          `20-50 Gbps`, `50-100 Gbps`, `100+ Gbps`, `100-200 Gbps`, `200-300 Gbps`,
-          `300-500 Gbps`, `500-1000 Gbps`, `1 Tbps+`, `10 Tbps+`
+          ``, `0-20Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
+          `20-50Gbps`, `50-100Gbps`, `100-200Gbps`, `200-300Gbps`, `300-500Gbps`,
+          `500-1000Gbps`, `1-5Tbps`, `5-10Tbps`, `10-20Tbps`, `20-50Tbps`, `50-100Tbps`,
+          `100+Tbps`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
@@ -14436,7 +14940,6 @@ paths:
                     looking_glass:
                       type: string
                       format: uri
-                      maxLength: 255
                       pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                         d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
                         [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
@@ -14475,21 +14978,24 @@ paths:
                     info_traffic:
                       enum:
                       - ''
-                      - 0-20 Mbps
+                      - 0-20Mbps
                       - 20-100Mbps
                       - 100-1000Mbps
                       - 1-5Gbps
                       - 5-10Gbps
                       - 10-20Gbps
-                      - 20-50 Gbps
-                      - 50-100 Gbps
-                      - 100+ Gbps
-                      - 100-200 Gbps
-                      - 200-300 Gbps
-                      - 300-500 Gbps
-                      - 500-1000 Gbps
-                      - 1 Tbps+
-                      - 10 Tbps+
+                      - 20-50Gbps
+                      - 50-100Gbps
+                      - 100-200Gbps
+                      - 200-300Gbps
+                      - 300-500Gbps
+                      - 500-1000Gbps
+                      - 1-5Tbps
+                      - 5-10Tbps
+                      - 10-20Tbps
+                      - 20-50Tbps
+                      - 50-100Tbps
+                      - 100+Tbps
                     info_ratio:
                       enum:
                       - ''
@@ -14521,7 +15027,7 @@ paths:
                     info_never_via_route_servers:
                       type: boolean
                       description: Indicates if this network will announce its routes
-                        via rout servers or not
+                        via route servers or not
                     notes:
                       type: string
                     policy_url:
@@ -14631,6 +15137,8 @@ paths:
                           ipaddr6:
                             type: string
                           is_rs_peer:
+                            type: boolean
+                          operational:
                             type: boolean
                           created:
                             type: string
@@ -14825,7 +15333,6 @@ paths:
                 looking_glass:
                   type: string
                   format: uri
-                  maxLength: 255
                   pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                     d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
                     [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
@@ -14864,21 +15371,24 @@ paths:
                 info_traffic:
                   enum:
                   - ''
-                  - 0-20 Mbps
+                  - 0-20Mbps
                   - 20-100Mbps
                   - 100-1000Mbps
                   - 1-5Gbps
                   - 5-10Gbps
                   - 10-20Gbps
-                  - 20-50 Gbps
-                  - 50-100 Gbps
-                  - 100+ Gbps
-                  - 100-200 Gbps
-                  - 200-300 Gbps
-                  - 300-500 Gbps
-                  - 500-1000 Gbps
-                  - 1 Tbps+
-                  - 10 Tbps+
+                  - 20-50Gbps
+                  - 50-100Gbps
+                  - 100-200Gbps
+                  - 200-300Gbps
+                  - 300-500Gbps
+                  - 500-1000Gbps
+                  - 1-5Tbps
+                  - 5-10Tbps
+                  - 10-20Tbps
+                  - 20-50Tbps
+                  - 50-100Tbps
+                  - 100+Tbps
                 info_ratio:
                   enum:
                   - ''
@@ -14910,7 +15420,7 @@ paths:
                 info_never_via_route_servers:
                   type: boolean
                   description: Indicates if this network will announce its routes
-                    via rout servers or not
+                    via route servers or not
                 notes:
                   type: string
                 policy_url:
@@ -15000,7 +15510,6 @@ paths:
                   looking_glass:
                     type: string
                     format: uri
-                    maxLength: 255
                     pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                       d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
                       [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
@@ -15039,21 +15548,24 @@ paths:
                   info_traffic:
                     enum:
                     - ''
-                    - 0-20 Mbps
+                    - 0-20Mbps
                     - 20-100Mbps
                     - 100-1000Mbps
                     - 1-5Gbps
                     - 5-10Gbps
                     - 10-20Gbps
-                    - 20-50 Gbps
-                    - 50-100 Gbps
-                    - 100+ Gbps
-                    - 100-200 Gbps
-                    - 200-300 Gbps
-                    - 300-500 Gbps
-                    - 500-1000 Gbps
-                    - 1 Tbps+
-                    - 10 Tbps+
+                    - 20-50Gbps
+                    - 50-100Gbps
+                    - 100-200Gbps
+                    - 200-300Gbps
+                    - 300-500Gbps
+                    - 500-1000Gbps
+                    - 1-5Tbps
+                    - 5-10Tbps
+                    - 10-20Tbps
+                    - 20-50Tbps
+                    - 50-100Tbps
+                    - 100+Tbps
                   info_ratio:
                     enum:
                     - ''
@@ -15085,7 +15597,7 @@ paths:
                   info_never_via_route_servers:
                     type: boolean
                     description: Indicates if this network will announce its routes
-                      via rout servers or not
+                      via route servers or not
                   notes:
                     type: string
                   policy_url:
@@ -15195,6 +15707,8 @@ paths:
                         ipaddr6:
                           type: string
                         is_rs_peer:
+                          type: boolean
+                        operational:
                           type: boolean
                         created:
                           type: string
@@ -15353,7 +15867,6 @@ paths:
                   looking_glass:
                     type: string
                     format: uri
-                    maxLength: 255
                     pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                       d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
                       [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
@@ -15392,21 +15905,24 @@ paths:
                   info_traffic:
                     enum:
                     - ''
-                    - 0-20 Mbps
+                    - 0-20Mbps
                     - 20-100Mbps
                     - 100-1000Mbps
                     - 1-5Gbps
                     - 5-10Gbps
                     - 10-20Gbps
-                    - 20-50 Gbps
-                    - 50-100 Gbps
-                    - 100+ Gbps
-                    - 100-200 Gbps
-                    - 200-300 Gbps
-                    - 300-500 Gbps
-                    - 500-1000 Gbps
-                    - 1 Tbps+
-                    - 10 Tbps+
+                    - 20-50Gbps
+                    - 50-100Gbps
+                    - 100-200Gbps
+                    - 200-300Gbps
+                    - 300-500Gbps
+                    - 500-1000Gbps
+                    - 1-5Tbps
+                    - 5-10Tbps
+                    - 10-20Tbps
+                    - 20-50Tbps
+                    - 50-100Tbps
+                    - 100+Tbps
                   info_ratio:
                     enum:
                     - ''
@@ -15438,7 +15954,7 @@ paths:
                   info_never_via_route_servers:
                     type: boolean
                     description: Indicates if this network will announce its routes
-                      via rout servers or not
+                      via route servers or not
                   notes:
                     type: string
                   policy_url:
@@ -15548,6 +16064,8 @@ paths:
                         ipaddr6:
                           type: string
                         is_rs_peer:
+                          type: boolean
+                        operational:
                           type: boolean
                         created:
                           type: string
@@ -15715,7 +16233,6 @@ paths:
                 looking_glass:
                   type: string
                   format: uri
-                  maxLength: 255
                   pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                     d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
                     [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
@@ -15754,21 +16271,24 @@ paths:
                 info_traffic:
                   enum:
                   - ''
-                  - 0-20 Mbps
+                  - 0-20Mbps
                   - 20-100Mbps
                   - 100-1000Mbps
                   - 1-5Gbps
                   - 5-10Gbps
                   - 10-20Gbps
-                  - 20-50 Gbps
-                  - 50-100 Gbps
-                  - 100+ Gbps
-                  - 100-200 Gbps
-                  - 200-300 Gbps
-                  - 300-500 Gbps
-                  - 500-1000 Gbps
-                  - 1 Tbps+
-                  - 10 Tbps+
+                  - 20-50Gbps
+                  - 50-100Gbps
+                  - 100-200Gbps
+                  - 200-300Gbps
+                  - 300-500Gbps
+                  - 500-1000Gbps
+                  - 1-5Tbps
+                  - 5-10Tbps
+                  - 10-20Tbps
+                  - 20-50Tbps
+                  - 50-100Tbps
+                  - 100+Tbps
                 info_ratio:
                   enum:
                   - ''
@@ -15800,7 +16320,7 @@ paths:
                 info_never_via_route_servers:
                   type: boolean
                   description: Indicates if this network will announce its routes
-                    via rout servers or not
+                    via route servers or not
                 notes:
                   type: string
                 policy_url:
@@ -15887,7 +16407,6 @@ paths:
                   looking_glass:
                     type: string
                     format: uri
-                    maxLength: 255
                     pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                       d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
                       [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
@@ -15926,21 +16445,24 @@ paths:
                   info_traffic:
                     enum:
                     - ''
-                    - 0-20 Mbps
+                    - 0-20Mbps
                     - 20-100Mbps
                     - 100-1000Mbps
                     - 1-5Gbps
                     - 5-10Gbps
                     - 10-20Gbps
-                    - 20-50 Gbps
-                    - 50-100 Gbps
-                    - 100+ Gbps
-                    - 100-200 Gbps
-                    - 200-300 Gbps
-                    - 300-500 Gbps
-                    - 500-1000 Gbps
-                    - 1 Tbps+
-                    - 10 Tbps+
+                    - 20-50Gbps
+                    - 50-100Gbps
+                    - 100-200Gbps
+                    - 200-300Gbps
+                    - 300-500Gbps
+                    - 500-1000Gbps
+                    - 1-5Tbps
+                    - 5-10Tbps
+                    - 10-20Tbps
+                    - 20-50Tbps
+                    - 50-100Tbps
+                    - 100+Tbps
                   info_ratio:
                     enum:
                     - ''
@@ -15972,7 +16494,7 @@ paths:
                   info_never_via_route_servers:
                     type: boolean
                     description: Indicates if this network will announce its routes
-                      via rout servers or not
+                      via route servers or not
                   notes:
                     type: string
                   policy_url:
@@ -16082,6 +16604,8 @@ paths:
                         ipaddr6:
                           type: string
                         is_rs_peer:
+                          type: boolean
+                        operational:
                           type: boolean
                         created:
                           type: string
@@ -16238,7 +16762,6 @@ paths:
                 looking_glass:
                   type: string
                   format: uri
-                  maxLength: 255
                   pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                     d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
                     [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
@@ -16277,21 +16800,24 @@ paths:
                 info_traffic:
                   enum:
                   - ''
-                  - 0-20 Mbps
+                  - 0-20Mbps
                   - 20-100Mbps
                   - 100-1000Mbps
                   - 1-5Gbps
                   - 5-10Gbps
                   - 10-20Gbps
-                  - 20-50 Gbps
-                  - 50-100 Gbps
-                  - 100+ Gbps
-                  - 100-200 Gbps
-                  - 200-300 Gbps
-                  - 300-500 Gbps
-                  - 500-1000 Gbps
-                  - 1 Tbps+
-                  - 10 Tbps+
+                  - 20-50Gbps
+                  - 50-100Gbps
+                  - 100-200Gbps
+                  - 200-300Gbps
+                  - 300-500Gbps
+                  - 500-1000Gbps
+                  - 1-5Tbps
+                  - 5-10Tbps
+                  - 10-20Tbps
+                  - 20-50Tbps
+                  - 50-100Tbps
+                  - 100+Tbps
                 info_ratio:
                   enum:
                   - ''
@@ -16323,7 +16849,7 @@ paths:
                 info_never_via_route_servers:
                   type: boolean
                   description: Indicates if this network will announce its routes
-                    via rout servers or not
+                    via route servers or not
                 notes:
                   type: string
                 policy_url:
@@ -16409,7 +16935,6 @@ paths:
                   looking_glass:
                     type: string
                     format: uri
-                    maxLength: 255
                     pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                       d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\\
                       [[0-9a-f:\\.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
@@ -16448,21 +16973,24 @@ paths:
                   info_traffic:
                     enum:
                     - ''
-                    - 0-20 Mbps
+                    - 0-20Mbps
                     - 20-100Mbps
                     - 100-1000Mbps
                     - 1-5Gbps
                     - 5-10Gbps
                     - 10-20Gbps
-                    - 20-50 Gbps
-                    - 50-100 Gbps
-                    - 100+ Gbps
-                    - 100-200 Gbps
-                    - 200-300 Gbps
-                    - 300-500 Gbps
-                    - 500-1000 Gbps
-                    - 1 Tbps+
-                    - 10 Tbps+
+                    - 20-50Gbps
+                    - 50-100Gbps
+                    - 100-200Gbps
+                    - 200-300Gbps
+                    - 300-500Gbps
+                    - 500-1000Gbps
+                    - 1-5Tbps
+                    - 5-10Tbps
+                    - 10-20Tbps
+                    - 20-50Tbps
+                    - 50-100Tbps
+                    - 100+Tbps
                   info_ratio:
                     enum:
                     - ''
@@ -16494,7 +17022,7 @@ paths:
                   info_never_via_route_servers:
                     type: boolean
                     description: Indicates if this network will announce its routes
-                      via rout servers or not
+                      via route servers or not
                   notes:
                     type: string
                   policy_url:
@@ -16604,6 +17132,8 @@ paths:
                         ipaddr6:
                           type: string
                         is_rs_peer:
+                          type: boolean
+                        operational:
                           type: boolean
                         created:
                           type: string
@@ -16899,7 +17429,7 @@ paths:
           type: integer
       - name: net__info_never_via_route_servers
         in: query
-        description: 'Indicates if this network will announce its routes via rout
+        description: 'Indicates if this network will announce its routes via route
           servers or not
 
 
@@ -16964,9 +17494,10 @@ paths:
         description: 'Filter results by matching a value against this field.
 
 
-          ``, `0-20 Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
-          `20-50 Gbps`, `50-100 Gbps`, `100+ Gbps`, `100-200 Gbps`, `200-300 Gbps`,
-          `300-500 Gbps`, `500-1000 Gbps`, `1 Tbps+`, `10 Tbps+`
+          ``, `0-20Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
+          `20-50Gbps`, `50-100Gbps`, `100-200Gbps`, `200-300Gbps`, `300-500Gbps`,
+          `500-1000Gbps`, `1-5Tbps`, `5-10Tbps`, `10-20Tbps`, `20-50Tbps`, `50-100Tbps`,
+          `100+Tbps`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
@@ -18007,10 +18538,7 @@ paths:
           type: integer
       - name: fac__latitude
         in: query
-        description: 'Latitude
-
-
-          Filter results by matching a value against this field.
+        description: 'Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -18019,10 +18547,7 @@ paths:
           type: number
       - name: fac__longitude
         in: query
-        description: 'Longitude
-
-
-          Filter results by matching a value against this field.
+        description: 'Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -18065,6 +18590,24 @@ paths:
         required: false
         schema:
           type: string
+      - name: fac__sales_email
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: fac__sales_phone
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: fac__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -18075,6 +18618,24 @@ paths:
         schema:
           type: string
       - name: fac__status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: fac__tech_email
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: fac__tech_phone
         in: query
         description: 'Filter results by matching a value against this field.
 
@@ -18225,7 +18786,7 @@ paths:
           type: integer
       - name: net__info_never_via_route_servers
         in: query
-        description: 'Indicates if this network will announce its routes via rout
+        description: 'Indicates if this network will announce its routes via route
           servers or not
 
 
@@ -18290,9 +18851,10 @@ paths:
         description: 'Filter results by matching a value against this field.
 
 
-          ``, `0-20 Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
-          `20-50 Gbps`, `50-100 Gbps`, `100+ Gbps`, `100-200 Gbps`, `200-300 Gbps`,
-          `300-500 Gbps`, `500-1000 Gbps`, `1 Tbps+`, `10 Tbps+`
+          ``, `0-20Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
+          `20-50Gbps`, `50-100Gbps`, `100-200Gbps`, `200-300Gbps`, `300-500Gbps`,
+          `500-1000Gbps`, `1-5Tbps`, `5-10Tbps`, `10-20Tbps`, `20-50Tbps`, `50-100Tbps`,
+          `100+Tbps`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
@@ -19071,6 +19633,42 @@ paths:
         required: false
         schema:
           type: integer
+      - name: ixlan__ixf_ixp_import_error
+        in: query
+        description: 'Reason IX-F data could not be parsed
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: ixlan__ixf_ixp_import_error_notified
+        in: query
+        description: 'Last time we notified the exchange about the IX-F parsing issue
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: ixlan__ixf_ixp_member_list_url_visible
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `Private`, `Users`, `Public`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: ixlan__mtu
         in: query
         description: 'Filter results by matching a value against this field.
@@ -19213,7 +19811,7 @@ paths:
           type: integer
       - name: net__info_never_via_route_servers
         in: query
-        description: 'Indicates if this network will announce its routes via rout
+        description: 'Indicates if this network will announce its routes via route
           servers or not
 
 
@@ -19278,9 +19876,10 @@ paths:
         description: 'Filter results by matching a value against this field.
 
 
-          ``, `0-20 Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
-          `20-50 Gbps`, `50-100 Gbps`, `100+ Gbps`, `100-200 Gbps`, `200-300 Gbps`,
-          `300-500 Gbps`, `500-1000 Gbps`, `1 Tbps+`, `10 Tbps+`
+          ``, `0-20Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
+          `20-50Gbps`, `50-100Gbps`, `100-200Gbps`, `200-300Gbps`, `300-500Gbps`,
+          `500-1000Gbps`, `1-5Tbps`, `5-10Tbps`, `10-20Tbps`, `20-50Tbps`, `50-100Tbps`,
+          `100+Tbps`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
@@ -19461,6 +20060,12 @@ paths:
         required: false
         schema:
           type: string
+      - name: operational
+        in: query
+        description: Filter results by matching a value against this field.
+        required: false
+        schema:
+          type: integer
       - name: since
         in: query
         required: false
@@ -19557,6 +20162,8 @@ paths:
                       type: string
                     is_rs_peer:
                       type: boolean
+                    operational:
+                      type: boolean
                     created:
                       type: string
                       format: date-time
@@ -19621,6 +20228,8 @@ paths:
                   type: string
                 is_rs_peer:
                   type: boolean
+                operational:
+                  type: boolean
                 status:
                   type: string
                   maxLength: 255
@@ -19678,6 +20287,8 @@ paths:
                   ipaddr6:
                     type: string
                   is_rs_peer:
+                    type: boolean
+                  operational:
                     type: boolean
                   created:
                     type: string
@@ -19770,6 +20381,8 @@ paths:
                     type: string
                   is_rs_peer:
                     type: boolean
+                  operational:
+                    type: boolean
                   created:
                     type: string
                     format: date-time
@@ -19832,6 +20445,8 @@ paths:
                   type: string
                 is_rs_peer:
                   type: boolean
+                operational:
+                  type: boolean
                 status:
                   type: string
                   maxLength: 255
@@ -19889,6 +20504,8 @@ paths:
                   ipaddr6:
                     type: string
                   is_rs_peer:
+                    type: boolean
+                  operational:
                     type: boolean
                   created:
                     type: string
@@ -19950,6 +20567,8 @@ paths:
                   type: string
                 is_rs_peer:
                   type: boolean
+                operational:
+                  type: boolean
                 status:
                   type: string
                   maxLength: 255
@@ -20000,6 +20619,8 @@ paths:
                   ipaddr6:
                     type: string
                   is_rs_peer:
+                    type: boolean
+                  operational:
                     type: boolean
                   created:
                     type: string
@@ -20186,10 +20807,7 @@ paths:
           type: integer
       - name: latitude
         in: query
-        description: 'Latitude
-
-
-          Filter results by matching a value against this field.
+        description: 'Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -20205,10 +20823,7 @@ paths:
           type: integer
       - name: longitude
         in: query
-        description: 'Longitude
-
-
-          Filter results by matching a value against this field.
+        description: 'Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -20359,7 +20974,6 @@ paths:
                           looking_glass:
                             type: string
                             format: uri
-                            maxLength: 255
                             pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                               s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\\
                               .(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\[[0-9a-f:\\\
@@ -20400,21 +21014,24 @@ paths:
                           info_traffic:
                             enum:
                             - ''
-                            - 0-20 Mbps
+                            - 0-20Mbps
                             - 20-100Mbps
                             - 100-1000Mbps
                             - 1-5Gbps
                             - 5-10Gbps
                             - 10-20Gbps
-                            - 20-50 Gbps
-                            - 50-100 Gbps
-                            - 100+ Gbps
-                            - 100-200 Gbps
-                            - 200-300 Gbps
-                            - 300-500 Gbps
-                            - 500-1000 Gbps
-                            - 1 Tbps+
-                            - 10 Tbps+
+                            - 20-50Gbps
+                            - 50-100Gbps
+                            - 100-200Gbps
+                            - 200-300Gbps
+                            - 300-500Gbps
+                            - 500-1000Gbps
+                            - 1-5Tbps
+                            - 5-10Tbps
+                            - 10-20Tbps
+                            - 20-50Tbps
+                            - 50-100Tbps
+                            - 100+Tbps
                           info_ratio:
                             enum:
                             - ''
@@ -20446,7 +21063,7 @@ paths:
                           info_never_via_route_servers:
                             type: boolean
                             description: Indicates if this network will announce its
-                              routes via rout servers or not
+                              routes via route servers or not
                           notes:
                             type: string
                           policy_url:
@@ -20557,6 +21174,8 @@ paths:
                                 ipaddr6:
                                   type: string
                                 is_rs_peer:
+                                  type: boolean
+                                operational:
                                   type: boolean
                                 created:
                                   type: string
@@ -20703,6 +21322,18 @@ paths:
                           suggest:
                             type: boolean
                             writeOnly: true
+                          sales_email:
+                            type: string
+                            format: email
+                            maxLength: 254
+                          sales_phone:
+                            type: string
+                          tech_email:
+                            type: string
+                            format: email
+                            maxLength: 254
+                          tech_phone:
+                            type: string
                           created:
                             type: string
                             format: date-time
@@ -21301,14 +21932,12 @@ paths:
                             format: email
                           tech_phone:
                             type: string
-                            maxLength: 192
                           policy_email:
                             type: string
                             format: email
                             maxLength: 254
                           policy_phone:
                             type: string
-                            maxLength: 192
                           fac_set:
                             type: array
                             items:
@@ -21361,6 +21990,18 @@ paths:
                                 suggest:
                                   type: boolean
                                   writeOnly: true
+                                sales_email:
+                                  type: string
+                                  format: email
+                                  maxLength: 254
+                                sales_phone:
+                                  type: string
+                                tech_email:
+                                  type: string
+                                  format: email
+                                  maxLength: 254
+                                tech_phone:
+                                  type: string
                                 created:
                                   type: string
                                   format: date-time
@@ -21714,7 +22355,6 @@ paths:
                                       looking_glass:
                                         type: string
                                         format: uri
-                                        maxLength: 255
                                         pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\\
                                           s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                                           d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\\
@@ -21761,21 +22401,24 @@ paths:
                                       info_traffic:
                                         enum:
                                         - ''
-                                        - 0-20 Mbps
+                                        - 0-20Mbps
                                         - 20-100Mbps
                                         - 100-1000Mbps
                                         - 1-5Gbps
                                         - 5-10Gbps
                                         - 10-20Gbps
-                                        - 20-50 Gbps
-                                        - 50-100 Gbps
-                                        - 100+ Gbps
-                                        - 100-200 Gbps
-                                        - 200-300 Gbps
-                                        - 300-500 Gbps
-                                        - 500-1000 Gbps
-                                        - 1 Tbps+
-                                        - 10 Tbps+
+                                        - 20-50Gbps
+                                        - 50-100Gbps
+                                        - 100-200Gbps
+                                        - 200-300Gbps
+                                        - 300-500Gbps
+                                        - 500-1000Gbps
+                                        - 1-5Tbps
+                                        - 5-10Tbps
+                                        - 10-20Tbps
+                                        - 20-50Tbps
+                                        - 50-100Tbps
+                                        - 100+Tbps
                                       info_ratio:
                                         enum:
                                         - ''
@@ -21807,7 +22450,7 @@ paths:
                                       info_never_via_route_servers:
                                         type: boolean
                                         description: Indicates if this network will
-                                          announce its routes via rout servers or
+                                          announce its routes via route servers or
                                           not
                                       notes:
                                         type: string
@@ -21922,6 +22565,8 @@ paths:
                                             ipaddr6:
                                               type: string
                                             is_rs_peer:
+                                              type: boolean
+                                            operational:
                                               type: boolean
                                             created:
                                               type: string
@@ -22038,6 +22683,8 @@ paths:
                                         - IPv6
                                       prefix:
                                         type: string
+                                      in_dfz:
+                                        type: boolean
                                       created:
                                         type: string
                                         format: date-time
@@ -22056,7 +22703,6 @@ paths:
                                 ixf_ixp_member_list_url:
                                   type: string
                                   format: uri
-                                  writeOnly: true
                                   nullable: true
                                   maxLength: 200
                                   pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
@@ -22067,6 +22713,11 @@ paths:
                                     -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                     d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                                ixf_ixp_member_list_url_visible:
+                                  enum:
+                                  - Private
+                                  - Users
+                                  - Public
                                 ixf_ixp_import_enabled:
                                   type: boolean
                                   writeOnly: true
@@ -22090,6 +22741,13 @@ paths:
                             writeOnly: true
                           net_count:
                             type: string
+                            readOnly: true
+                          ixf_net_count:
+                            type: integer
+                            readOnly: true
+                          ixf_last_import:
+                            type: string
+                            format: date-time
                             readOnly: true
                           created:
                             type: string
@@ -22819,7 +23477,6 @@ paths:
                         looking_glass:
                           type: string
                           format: uri
-                          maxLength: 255
                           pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                             s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\\
                             .(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\[[0-9a-f:\\\
@@ -22860,21 +23517,24 @@ paths:
                         info_traffic:
                           enum:
                           - ''
-                          - 0-20 Mbps
+                          - 0-20Mbps
                           - 20-100Mbps
                           - 100-1000Mbps
                           - 1-5Gbps
                           - 5-10Gbps
                           - 10-20Gbps
-                          - 20-50 Gbps
-                          - 50-100 Gbps
-                          - 100+ Gbps
-                          - 100-200 Gbps
-                          - 200-300 Gbps
-                          - 300-500 Gbps
-                          - 500-1000 Gbps
-                          - 1 Tbps+
-                          - 10 Tbps+
+                          - 20-50Gbps
+                          - 50-100Gbps
+                          - 100-200Gbps
+                          - 200-300Gbps
+                          - 300-500Gbps
+                          - 500-1000Gbps
+                          - 1-5Tbps
+                          - 5-10Tbps
+                          - 10-20Tbps
+                          - 20-50Tbps
+                          - 50-100Tbps
+                          - 100+Tbps
                         info_ratio:
                           enum:
                           - ''
@@ -22906,7 +23566,7 @@ paths:
                         info_never_via_route_servers:
                           type: boolean
                           description: Indicates if this network will announce its
-                            routes via rout servers or not
+                            routes via route servers or not
                         notes:
                           type: string
                         policy_url:
@@ -23017,6 +23677,8 @@ paths:
                               ipaddr6:
                                 type: string
                               is_rs_peer:
+                                type: boolean
+                              operational:
                                 type: boolean
                               created:
                                 type: string
@@ -23163,6 +23825,18 @@ paths:
                         suggest:
                           type: boolean
                           writeOnly: true
+                        sales_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        sales_phone:
+                          type: string
+                        tech_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        tech_phone:
+                          type: string
                         created:
                           type: string
                           format: date-time
@@ -23761,14 +24435,12 @@ paths:
                           format: email
                         tech_phone:
                           type: string
-                          maxLength: 192
                         policy_email:
                           type: string
                           format: email
                           maxLength: 254
                         policy_phone:
                           type: string
-                          maxLength: 192
                         fac_set:
                           type: array
                           items:
@@ -23821,6 +24493,18 @@ paths:
                               suggest:
                                 type: boolean
                                 writeOnly: true
+                              sales_email:
+                                type: string
+                                format: email
+                                maxLength: 254
+                              sales_phone:
+                                type: string
+                              tech_email:
+                                type: string
+                                format: email
+                                maxLength: 254
+                              tech_phone:
+                                type: string
                               created:
                                 type: string
                                 format: date-time
@@ -24173,7 +24857,6 @@ paths:
                                     looking_glass:
                                       type: string
                                       format: uri
-                                      maxLength: 255
                                       pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\\
                                         s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                                         d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\\
@@ -24218,21 +24901,24 @@ paths:
                                     info_traffic:
                                       enum:
                                       - ''
-                                      - 0-20 Mbps
+                                      - 0-20Mbps
                                       - 20-100Mbps
                                       - 100-1000Mbps
                                       - 1-5Gbps
                                       - 5-10Gbps
                                       - 10-20Gbps
-                                      - 20-50 Gbps
-                                      - 50-100 Gbps
-                                      - 100+ Gbps
-                                      - 100-200 Gbps
-                                      - 200-300 Gbps
-                                      - 300-500 Gbps
-                                      - 500-1000 Gbps
-                                      - 1 Tbps+
-                                      - 10 Tbps+
+                                      - 20-50Gbps
+                                      - 50-100Gbps
+                                      - 100-200Gbps
+                                      - 200-300Gbps
+                                      - 300-500Gbps
+                                      - 500-1000Gbps
+                                      - 1-5Tbps
+                                      - 5-10Tbps
+                                      - 10-20Tbps
+                                      - 20-50Tbps
+                                      - 50-100Tbps
+                                      - 100+Tbps
                                     info_ratio:
                                       enum:
                                       - ''
@@ -24264,7 +24950,7 @@ paths:
                                     info_never_via_route_servers:
                                       type: boolean
                                       description: Indicates if this network will
-                                        announce its routes via rout servers or not
+                                        announce its routes via route servers or not
                                     notes:
                                       type: string
                                     policy_url:
@@ -24377,6 +25063,8 @@ paths:
                                           ipaddr6:
                                             type: string
                                           is_rs_peer:
+                                            type: boolean
+                                          operational:
                                             type: boolean
                                           created:
                                             type: string
@@ -24493,6 +25181,8 @@ paths:
                                       - IPv6
                                     prefix:
                                       type: string
+                                    in_dfz:
+                                      type: boolean
                                     created:
                                       type: string
                                       format: date-time
@@ -24511,7 +25201,6 @@ paths:
                               ixf_ixp_member_list_url:
                                 type: string
                                 format: uri
-                                writeOnly: true
                                 nullable: true
                                 maxLength: 200
                                 pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
@@ -24522,6 +25211,11 @@ paths:
                                   -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                   -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                   d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                              ixf_ixp_member_list_url_visible:
+                                enum:
+                                - Private
+                                - Users
+                                - Public
                               ixf_ixp_import_enabled:
                                 type: boolean
                                 writeOnly: true
@@ -24545,6 +25239,13 @@ paths:
                           writeOnly: true
                         net_count:
                           type: string
+                          readOnly: true
+                        ixf_net_count:
+                          type: integer
+                          readOnly: true
+                        ixf_last_import:
+                          type: string
+                          format: date-time
                           readOnly: true
                         created:
                           type: string
@@ -24932,7 +25633,6 @@ paths:
                         looking_glass:
                           type: string
                           format: uri
-                          maxLength: 255
                           pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                             s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\\
                             .(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\[[0-9a-f:\\\
@@ -24973,21 +25673,24 @@ paths:
                         info_traffic:
                           enum:
                           - ''
-                          - 0-20 Mbps
+                          - 0-20Mbps
                           - 20-100Mbps
                           - 100-1000Mbps
                           - 1-5Gbps
                           - 5-10Gbps
                           - 10-20Gbps
-                          - 20-50 Gbps
-                          - 50-100 Gbps
-                          - 100+ Gbps
-                          - 100-200 Gbps
-                          - 200-300 Gbps
-                          - 300-500 Gbps
-                          - 500-1000 Gbps
-                          - 1 Tbps+
-                          - 10 Tbps+
+                          - 20-50Gbps
+                          - 50-100Gbps
+                          - 100-200Gbps
+                          - 200-300Gbps
+                          - 300-500Gbps
+                          - 500-1000Gbps
+                          - 1-5Tbps
+                          - 5-10Tbps
+                          - 10-20Tbps
+                          - 20-50Tbps
+                          - 50-100Tbps
+                          - 100+Tbps
                         info_ratio:
                           enum:
                           - ''
@@ -25019,7 +25722,7 @@ paths:
                         info_never_via_route_servers:
                           type: boolean
                           description: Indicates if this network will announce its
-                            routes via rout servers or not
+                            routes via route servers or not
                         notes:
                           type: string
                         policy_url:
@@ -25130,6 +25833,8 @@ paths:
                               ipaddr6:
                                 type: string
                               is_rs_peer:
+                                type: boolean
+                              operational:
                                 type: boolean
                               created:
                                 type: string
@@ -25276,6 +25981,18 @@ paths:
                         suggest:
                           type: boolean
                           writeOnly: true
+                        sales_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        sales_phone:
+                          type: string
+                        tech_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        tech_phone:
+                          type: string
                         created:
                           type: string
                           format: date-time
@@ -25874,14 +26591,12 @@ paths:
                           format: email
                         tech_phone:
                           type: string
-                          maxLength: 192
                         policy_email:
                           type: string
                           format: email
                           maxLength: 254
                         policy_phone:
                           type: string
-                          maxLength: 192
                         fac_set:
                           type: array
                           items:
@@ -25934,6 +26649,18 @@ paths:
                               suggest:
                                 type: boolean
                                 writeOnly: true
+                              sales_email:
+                                type: string
+                                format: email
+                                maxLength: 254
+                              sales_phone:
+                                type: string
+                              tech_email:
+                                type: string
+                                format: email
+                                maxLength: 254
+                              tech_phone:
+                                type: string
                               created:
                                 type: string
                                 format: date-time
@@ -26286,7 +27013,6 @@ paths:
                                     looking_glass:
                                       type: string
                                       format: uri
-                                      maxLength: 255
                                       pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\\
                                         s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                                         d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\\
@@ -26331,21 +27057,24 @@ paths:
                                     info_traffic:
                                       enum:
                                       - ''
-                                      - 0-20 Mbps
+                                      - 0-20Mbps
                                       - 20-100Mbps
                                       - 100-1000Mbps
                                       - 1-5Gbps
                                       - 5-10Gbps
                                       - 10-20Gbps
-                                      - 20-50 Gbps
-                                      - 50-100 Gbps
-                                      - 100+ Gbps
-                                      - 100-200 Gbps
-                                      - 200-300 Gbps
-                                      - 300-500 Gbps
-                                      - 500-1000 Gbps
-                                      - 1 Tbps+
-                                      - 10 Tbps+
+                                      - 20-50Gbps
+                                      - 50-100Gbps
+                                      - 100-200Gbps
+                                      - 200-300Gbps
+                                      - 300-500Gbps
+                                      - 500-1000Gbps
+                                      - 1-5Tbps
+                                      - 5-10Tbps
+                                      - 10-20Tbps
+                                      - 20-50Tbps
+                                      - 50-100Tbps
+                                      - 100+Tbps
                                     info_ratio:
                                       enum:
                                       - ''
@@ -26377,7 +27106,7 @@ paths:
                                     info_never_via_route_servers:
                                       type: boolean
                                       description: Indicates if this network will
-                                        announce its routes via rout servers or not
+                                        announce its routes via route servers or not
                                     notes:
                                       type: string
                                     policy_url:
@@ -26490,6 +27219,8 @@ paths:
                                           ipaddr6:
                                             type: string
                                           is_rs_peer:
+                                            type: boolean
+                                          operational:
                                             type: boolean
                                           created:
                                             type: string
@@ -26606,6 +27337,8 @@ paths:
                                       - IPv6
                                     prefix:
                                       type: string
+                                    in_dfz:
+                                      type: boolean
                                     created:
                                       type: string
                                       format: date-time
@@ -26624,7 +27357,6 @@ paths:
                               ixf_ixp_member_list_url:
                                 type: string
                                 format: uri
-                                writeOnly: true
                                 nullable: true
                                 maxLength: 200
                                 pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
@@ -26635,6 +27367,11 @@ paths:
                                   -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                   -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                   d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                              ixf_ixp_member_list_url_visible:
+                                enum:
+                                - Private
+                                - Users
+                                - Public
                               ixf_ixp_import_enabled:
                                 type: boolean
                                 writeOnly: true
@@ -26658,6 +27395,13 @@ paths:
                           writeOnly: true
                         net_count:
                           type: string
+                          readOnly: true
+                        ixf_net_count:
+                          type: integer
+                          readOnly: true
+                        ixf_last_import:
+                          type: string
+                          format: date-time
                           readOnly: true
                         created:
                           type: string
@@ -27360,7 +28104,6 @@ paths:
                         looking_glass:
                           type: string
                           format: uri
-                          maxLength: 255
                           pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                             s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\\
                             .(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\[[0-9a-f:\\\
@@ -27401,21 +28144,24 @@ paths:
                         info_traffic:
                           enum:
                           - ''
-                          - 0-20 Mbps
+                          - 0-20Mbps
                           - 20-100Mbps
                           - 100-1000Mbps
                           - 1-5Gbps
                           - 5-10Gbps
                           - 10-20Gbps
-                          - 20-50 Gbps
-                          - 50-100 Gbps
-                          - 100+ Gbps
-                          - 100-200 Gbps
-                          - 200-300 Gbps
-                          - 300-500 Gbps
-                          - 500-1000 Gbps
-                          - 1 Tbps+
-                          - 10 Tbps+
+                          - 20-50Gbps
+                          - 50-100Gbps
+                          - 100-200Gbps
+                          - 200-300Gbps
+                          - 300-500Gbps
+                          - 500-1000Gbps
+                          - 1-5Tbps
+                          - 5-10Tbps
+                          - 10-20Tbps
+                          - 20-50Tbps
+                          - 50-100Tbps
+                          - 100+Tbps
                         info_ratio:
                           enum:
                           - ''
@@ -27447,7 +28193,7 @@ paths:
                         info_never_via_route_servers:
                           type: boolean
                           description: Indicates if this network will announce its
-                            routes via rout servers or not
+                            routes via route servers or not
                         notes:
                           type: string
                         policy_url:
@@ -27558,6 +28304,8 @@ paths:
                               ipaddr6:
                                 type: string
                               is_rs_peer:
+                                type: boolean
+                              operational:
                                 type: boolean
                               created:
                                 type: string
@@ -27704,6 +28452,18 @@ paths:
                         suggest:
                           type: boolean
                           writeOnly: true
+                        sales_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        sales_phone:
+                          type: string
+                        tech_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        tech_phone:
+                          type: string
                         created:
                           type: string
                           format: date-time
@@ -28302,14 +29062,12 @@ paths:
                           format: email
                         tech_phone:
                           type: string
-                          maxLength: 192
                         policy_email:
                           type: string
                           format: email
                           maxLength: 254
                         policy_phone:
                           type: string
-                          maxLength: 192
                         fac_set:
                           type: array
                           items:
@@ -28362,6 +29120,18 @@ paths:
                               suggest:
                                 type: boolean
                                 writeOnly: true
+                              sales_email:
+                                type: string
+                                format: email
+                                maxLength: 254
+                              sales_phone:
+                                type: string
+                              tech_email:
+                                type: string
+                                format: email
+                                maxLength: 254
+                              tech_phone:
+                                type: string
                               created:
                                 type: string
                                 format: date-time
@@ -28714,7 +29484,6 @@ paths:
                                     looking_glass:
                                       type: string
                                       format: uri
-                                      maxLength: 255
                                       pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\\
                                         s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                                         d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\\
@@ -28759,21 +29528,24 @@ paths:
                                     info_traffic:
                                       enum:
                                       - ''
-                                      - 0-20 Mbps
+                                      - 0-20Mbps
                                       - 20-100Mbps
                                       - 100-1000Mbps
                                       - 1-5Gbps
                                       - 5-10Gbps
                                       - 10-20Gbps
-                                      - 20-50 Gbps
-                                      - 50-100 Gbps
-                                      - 100+ Gbps
-                                      - 100-200 Gbps
-                                      - 200-300 Gbps
-                                      - 300-500 Gbps
-                                      - 500-1000 Gbps
-                                      - 1 Tbps+
-                                      - 10 Tbps+
+                                      - 20-50Gbps
+                                      - 50-100Gbps
+                                      - 100-200Gbps
+                                      - 200-300Gbps
+                                      - 300-500Gbps
+                                      - 500-1000Gbps
+                                      - 1-5Tbps
+                                      - 5-10Tbps
+                                      - 10-20Tbps
+                                      - 20-50Tbps
+                                      - 50-100Tbps
+                                      - 100+Tbps
                                     info_ratio:
                                       enum:
                                       - ''
@@ -28805,7 +29577,7 @@ paths:
                                     info_never_via_route_servers:
                                       type: boolean
                                       description: Indicates if this network will
-                                        announce its routes via rout servers or not
+                                        announce its routes via route servers or not
                                     notes:
                                       type: string
                                     policy_url:
@@ -28918,6 +29690,8 @@ paths:
                                           ipaddr6:
                                             type: string
                                           is_rs_peer:
+                                            type: boolean
+                                          operational:
                                             type: boolean
                                           created:
                                             type: string
@@ -29034,6 +29808,8 @@ paths:
                                       - IPv6
                                     prefix:
                                       type: string
+                                    in_dfz:
+                                      type: boolean
                                     created:
                                       type: string
                                       format: date-time
@@ -29052,7 +29828,6 @@ paths:
                               ixf_ixp_member_list_url:
                                 type: string
                                 format: uri
-                                writeOnly: true
                                 nullable: true
                                 maxLength: 200
                                 pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
@@ -29063,6 +29838,11 @@ paths:
                                   -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                   -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                   d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                              ixf_ixp_member_list_url_visible:
+                                enum:
+                                - Private
+                                - Users
+                                - Public
                               ixf_ixp_import_enabled:
                                 type: boolean
                                 writeOnly: true
@@ -29086,6 +29866,13 @@ paths:
                           writeOnly: true
                         net_count:
                           type: string
+                          readOnly: true
+                        ixf_net_count:
+                          type: integer
+                          readOnly: true
+                        ixf_last_import:
+                          type: string
+                          format: date-time
                           readOnly: true
                         created:
                           type: string
@@ -29775,7 +30562,6 @@ paths:
                         looking_glass:
                           type: string
                           format: uri
-                          maxLength: 255
                           pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
                             s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\\
                             .(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}|\\[[0-9a-f:\\\
@@ -29816,21 +30602,24 @@ paths:
                         info_traffic:
                           enum:
                           - ''
-                          - 0-20 Mbps
+                          - 0-20Mbps
                           - 20-100Mbps
                           - 100-1000Mbps
                           - 1-5Gbps
                           - 5-10Gbps
                           - 10-20Gbps
-                          - 20-50 Gbps
-                          - 50-100 Gbps
-                          - 100+ Gbps
-                          - 100-200 Gbps
-                          - 200-300 Gbps
-                          - 300-500 Gbps
-                          - 500-1000 Gbps
-                          - 1 Tbps+
-                          - 10 Tbps+
+                          - 20-50Gbps
+                          - 50-100Gbps
+                          - 100-200Gbps
+                          - 200-300Gbps
+                          - 300-500Gbps
+                          - 500-1000Gbps
+                          - 1-5Tbps
+                          - 5-10Tbps
+                          - 10-20Tbps
+                          - 20-50Tbps
+                          - 50-100Tbps
+                          - 100+Tbps
                         info_ratio:
                           enum:
                           - ''
@@ -29862,7 +30651,7 @@ paths:
                         info_never_via_route_servers:
                           type: boolean
                           description: Indicates if this network will announce its
-                            routes via rout servers or not
+                            routes via route servers or not
                         notes:
                           type: string
                         policy_url:
@@ -29973,6 +30762,8 @@ paths:
                               ipaddr6:
                                 type: string
                               is_rs_peer:
+                                type: boolean
+                              operational:
                                 type: boolean
                               created:
                                 type: string
@@ -30119,6 +30910,18 @@ paths:
                         suggest:
                           type: boolean
                           writeOnly: true
+                        sales_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        sales_phone:
+                          type: string
+                        tech_email:
+                          type: string
+                          format: email
+                          maxLength: 254
+                        tech_phone:
+                          type: string
                         created:
                           type: string
                           format: date-time
@@ -30717,14 +31520,12 @@ paths:
                           format: email
                         tech_phone:
                           type: string
-                          maxLength: 192
                         policy_email:
                           type: string
                           format: email
                           maxLength: 254
                         policy_phone:
                           type: string
-                          maxLength: 192
                         fac_set:
                           type: array
                           items:
@@ -30777,6 +31578,18 @@ paths:
                               suggest:
                                 type: boolean
                                 writeOnly: true
+                              sales_email:
+                                type: string
+                                format: email
+                                maxLength: 254
+                              sales_phone:
+                                type: string
+                              tech_email:
+                                type: string
+                                format: email
+                                maxLength: 254
+                              tech_phone:
+                                type: string
                               created:
                                 type: string
                                 format: date-time
@@ -31129,7 +31942,6 @@ paths:
                                     looking_glass:
                                       type: string
                                       format: uri
-                                      maxLength: 255
                                       pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\\
                                         s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:25[0-5]|2[0-4]\\\
                                         d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\\
@@ -31174,21 +31986,24 @@ paths:
                                     info_traffic:
                                       enum:
                                       - ''
-                                      - 0-20 Mbps
+                                      - 0-20Mbps
                                       - 20-100Mbps
                                       - 100-1000Mbps
                                       - 1-5Gbps
                                       - 5-10Gbps
                                       - 10-20Gbps
-                                      - 20-50 Gbps
-                                      - 50-100 Gbps
-                                      - 100+ Gbps
-                                      - 100-200 Gbps
-                                      - 200-300 Gbps
-                                      - 300-500 Gbps
-                                      - 500-1000 Gbps
-                                      - 1 Tbps+
-                                      - 10 Tbps+
+                                      - 20-50Gbps
+                                      - 50-100Gbps
+                                      - 100-200Gbps
+                                      - 200-300Gbps
+                                      - 300-500Gbps
+                                      - 500-1000Gbps
+                                      - 1-5Tbps
+                                      - 5-10Tbps
+                                      - 10-20Tbps
+                                      - 20-50Tbps
+                                      - 50-100Tbps
+                                      - 100+Tbps
                                     info_ratio:
                                       enum:
                                       - ''
@@ -31220,7 +32035,7 @@ paths:
                                     info_never_via_route_servers:
                                       type: boolean
                                       description: Indicates if this network will
-                                        announce its routes via rout servers or not
+                                        announce its routes via route servers or not
                                     notes:
                                       type: string
                                     policy_url:
@@ -31333,6 +32148,8 @@ paths:
                                           ipaddr6:
                                             type: string
                                           is_rs_peer:
+                                            type: boolean
+                                          operational:
                                             type: boolean
                                           created:
                                             type: string
@@ -31449,6 +32266,8 @@ paths:
                                       - IPv6
                                     prefix:
                                       type: string
+                                    in_dfz:
+                                      type: boolean
                                     created:
                                       type: string
                                       format: date-time
@@ -31467,7 +32286,6 @@ paths:
                               ixf_ixp_member_list_url:
                                 type: string
                                 format: uri
-                                writeOnly: true
                                 nullable: true
                                 maxLength: 200
                                 pattern: "^(?:[a-z0-9\\.\\-\\+]*)://(?:[^\\s:@/]+(?::[^\\\
@@ -31478,6 +32296,11 @@ paths:
                                   -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                   -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                   d{2,5})?(?:[/?#][^\\s]*)?\\Z"
+                              ixf_ixp_member_list_url_visible:
+                                enum:
+                                - Private
+                                - Users
+                                - Public
                               ixf_ixp_import_enabled:
                                 type: boolean
                                 writeOnly: true
@@ -31501,6 +32324,13 @@ paths:
                           writeOnly: true
                         net_count:
                           type: string
+                          readOnly: true
+                        ixf_net_count:
+                          type: integer
+                          readOnly: true
+                        ixf_last_import:
+                          type: string
+                          format: date-time
                           readOnly: true
                         created:
                           type: string
