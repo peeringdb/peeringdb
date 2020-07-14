@@ -75,6 +75,8 @@ class Importer(object):
         self.save = save
         self.asn = asn
         self.now = datetime.datetime.now(datetime.timezone.utc)
+        self.invalid_ip_errors = []
+
 
     def fetch(self, url, timeout=5):
         """
@@ -248,6 +250,9 @@ class Importer(object):
 
         # archive the import so we can roll it back later if needed
         self.archive()
+
+        if self.invalid_ip_errors:
+            self.notify_error("\n".join(self.invalid_ip_errors))
 
         if save:
 
@@ -472,6 +477,7 @@ class Importer(object):
 
         asn = member["asnum"]
         for connection in connection_list:
+            self.connection_errors = []
             state = connection.get("state", "active").lower()
             if state in self.allowed_states:
 
@@ -542,6 +548,7 @@ class Importer(object):
                 self.ixf_ids.append(ixf_id)
 
             except (ipaddress.AddressValueError, ValueError) as exc:
+                self.invalid_ip_errors.append(f"{exc}")
                 self.log_error(
                     _("Ip address error '{}' in vlan_list entry for vlan_id {}").format(
                         exc, lan.get("vlan_id")
@@ -578,6 +585,13 @@ class Importer(object):
                 save=self.save,
             )
 
+            if self.connection_errors:
+                ixf_member_data.error = "\n".join(
+                    self.connection_errors
+                )
+            else:
+                ixf_member_data.error = ixf_member_data.previous_error
+
             self.pending_save.append(ixf_member_data)
 
 
@@ -596,9 +610,9 @@ class Importer(object):
             try:
                 speed += int(iface.get("if_speed", 0))
             except ValueError:
-                self.log_error(
-                    _("Invalid speed value: {}").format(iface.get("if_speed"))
-                )
+                log_msg =_("Invalid speed value: {}").format(iface.get("if_speed"))
+                self.log_error(log_msg)
+                self.connection_errors.append(log_msg)
         return speed
 
 

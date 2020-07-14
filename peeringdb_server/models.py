@@ -2353,7 +2353,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             for field in cls.data_fields:
                 setattr(instance, f"previous_{field}", getattr(instance,field))
 
-            instance.previous_data = instance.data
+            instance._previous_data = instance.data
+            instance._previous_error = instance.error
 
             instance.fetched = fetched
             instance._meta.get_field("updated").auto_now = False
@@ -2467,6 +2468,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             proposals[ix_id][action].append(ixf_member_data)
 
         return proposals
+
+    @property
+    def previous_data(self):
+        return getattr(self, "_previous_data", "{}")
+
+    @property
+    def previous_error(self):
+        return getattr(self, "_previous_error", None)
 
     @property
     def json(self):
@@ -2800,7 +2809,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if self.ipaddr4:
             parts.append(f"{self.ipaddr4}")
         else:
-            parse.append("No IPv4")
+            parts.append("No IPv4")
 
         if self.ipaddr6:
             parts.append(f"{self.ipaddr6}")
@@ -2856,6 +2865,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             )
             self._netixlan = netixlan = result["netixlan"]
         elif action == "modify":
+
             netixlan.speed = self.speed
             netixlan.is_rs_peer = self.is_rs_peer
             netixlan.operational = self.operational
@@ -2871,6 +2881,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         return {"action":action, "netixlan":netixlan}
 
+    def save_without_update(self):
+        self._meta.get_field("updated").auto_now = False
+        self.save()
+        self._meta.get_field("updated").auto_now = True
 
     def grab_validation_errors(self):
         """
@@ -2909,14 +2923,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.dismissed = False
             self.save()
             self.notify_update(ac=True, ix=True, net=True)
-        elif self.previous_data != self.data:
+        elif self.previous_data != self.data and save:
 
             # since remote_changes only tracks changes to the
             # relevant data fields speed, operational and is_rs_peer
             # we check if the remote data has changed in general
             # and force a save if it did
 
-            self.save()
+            self.save_without_update()
 
 
     def set_update(self, save=True, reason=""):
@@ -2931,6 +2945,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.dismissed = False
             self.save()
             self.notify_update(ac=True, ix=True, net=True)
+        elif self.previous_data != self.data and save:
+
+            # since remote_changes only tracks changes to the
+            # relevant data fields speed, operational and is_rs_peer
+            # we check if the remote data has changed in general
+            # and force a save if it did
+
+            self.save_without_update()
+
+
 
     def set_add(self, save=True, reason=""):
         """
@@ -2947,6 +2971,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             else:
                 self.notify_add(net=True)
 
+        elif self.previous_data != self.data and save:
+
+            # since remote_changes only tracks changes to the
+            # relevant data fields speed, operational and is_rs_peer
+            # we check if the remote data has changed in general
+            # and force a save if it did
+
+            self.save_without_update()
+
+
     def set_remove(self, save=True, reason=""):
         """
         Persist this IXFMemberData instance and send out notifications
@@ -2954,9 +2988,24 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         as warranted
         """
         self.reason = reason
-        if (not self.id or not self.marked_for_removal) and save:
+
+        # we perist this ix-f member data that proposes removal
+        # if any of these conditions are met
+
+        # marked for removal, but not saved
+
+        not_saved = (not self.id and self.marked_for_removal)
+
+        # was in remote-data last time, gone now
+
+        gone = (self.id and getattr(self, "previous_data", "{}") != "{}" and self.remote_data_missing)
+
+        if (not_saved or gone) and save:
+            self.set_data({})
             self.save()
             self.notify_remove(ac=True, ix=True, net=True)
+
+
 
     def set_data(self, data):
         """
