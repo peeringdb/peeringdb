@@ -206,6 +206,15 @@ class APICacheLoader(object):
                 # apply permissions to tree
                 row = self.apply_permissions(ns, row, ruleset=ruleset)
 
+                applicator = getattr(
+                    self.model,
+                    "api_cache_permissions_applicator",
+                    None
+                )
+
+                if applicator:
+                    applicator(row, ns, self.request.user)
+
                 # if row still has data aftewards, append to results
                 if row:
                     rv.append(row)
@@ -274,6 +283,7 @@ class APICacheLoader(object):
             ix_id="ix_id",
             id="id",
         )
+
 
     def apply_permissions_ixfac(self, data):
         return self.apply_permissions_generic(
