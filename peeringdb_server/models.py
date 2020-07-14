@@ -2800,6 +2800,46 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self._ticket_user =  User.objects.get(username="ixf_importer")
         return self._ticket_user
 
+    @property
+    def tickets_enabled(self):
+        """
+        Returns whether or not deskpr ticket creation for ix-f
+        conflicts are enabled or not
+
+        This can be controlled by the IXF_TICKET_ON_CONFLICT
+        setting
+        """
+
+        return getattr(settings, "IXF_TICKET_ON_CONFLICT", True)
+
+
+    @property
+    def notify_ix_enabled(self):
+        """
+        Returns whether or not notifications to the exchange
+        are enabled.
+
+        This can be controlled by the IXF_NOTIFY_IX_ON_CONFLICT
+        setting
+        """
+
+        return getattr(settings, "IXF_NOTIFY_IX_ON_CONFLICT", True)
+
+
+    @property
+    def notify_net_enabled(self):
+        """
+        Returns whether or not notifications to the network
+        are enabled.
+
+        This can be controlled by the IXF_NOTIFY_NET_ON_CONFLICT
+        setting
+        """
+
+        return getattr(settings, "IXF_NOTIFY_NET_ON_CONFLICT", True)
+
+
+
     def __str__(self):
         parts = [
             self.ixlan.ix.name,
@@ -3013,6 +3053,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         self.data = json.dumps(data)
 
+
     def notify(self, template_file, recipient, subject, context=None):
         """
         Send notification
@@ -3051,17 +3092,17 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         contacts = []
 
-        if recipient == "ac":
-            if getattr(settings, "IXF_TICKET_ON_CONFLICT", True):
-                contacts = [DeskProTicket.objects.create(
-                    subject = subject,
-                    body = message,
-                    user = self.ticket_user,
-                )]
+        if recipient == "ac" and self.tickets_enabled:
+            contacts = [DeskProTicket.objects.create(
+                subject = subject,
+                body = message,
+                user = self.ticket_user,
+            )]
         elif recipient == "net" and self.actionable_for_network:
-            contacts = self.net_contacts
-            self._email(subject, message, contacts)
-        elif recipient == "ix":
+            if self.notify_net_enabled:
+                contacts = self.net_contacts
+                self._email(subject, message, contacts)
+        elif recipient == "ix" and self.notify_ix_enabled:
             contacts = self.ix_contacts
             self._email(subject, message, contacts)
 
@@ -3081,10 +3122,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Called by self.notify depending on recipient
         type
         """
-
-        # if ixf notifications are turned off, bail
-        if not getattr(settings, "IXF_NOTIFY_ON_CONFLICT", True):
-            return
 
         if not getattr(settings, "MAIL_DEBUG", False):
             raise Exception("NOPE")

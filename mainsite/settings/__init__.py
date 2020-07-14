@@ -547,9 +547,14 @@ set_option("IXF_PARSE_ERROR_NOTIFICATION_PERIOD", 36)
 # conflicts
 set_option("IXF_TICKET_ON_CONFLICT", True)
 
-# toggle the notification of networks / exchanges via email
+# toggle the notification of exchanges via email
 # for ix-f importer conflicts
-set_option("IXF_NOTIFY_ON_CONFLICT", True)
+set_option("IXF_NOTIFY_IX_ON_CONFLICT", True)
+
+# toggle the notification of networks via email
+# for ix-f importer conflicts
+set_option("IXF_NOTIFY_NET_ON_CONFLICT", True)
+
 
 # when a user tries to delete a protected object, a deskpro
 # ticket is dispatched. This setting throttles repeat
