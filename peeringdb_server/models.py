@@ -2898,6 +2898,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         changes = self.changes
 
         if action == "add":
+
+            self.validate_speed()
+
             result = self.ixlan.add_netixlan(
                 netixlan,
                 save=save,
@@ -2905,6 +2908,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             )
             self._netixlan = netixlan = result["netixlan"]
         elif action == "modify":
+
+            self.validate_speed()
 
             netixlan.speed = self.speed
             netixlan.is_rs_peer = self.is_rs_peer
@@ -2920,6 +2925,21 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.set_resolved()
 
         return {"action":action, "netixlan":netixlan}
+
+    def validate_speed(self):
+        """
+        Speed errors in ix-f data are raised during parse
+        and speed will be on the attribute
+
+        In order to properly handle invalid speed values
+        we check if speed is 0 and if there was a parsing
+        error for it, and if so raise a validation error
+
+        TODO: find a better way to do this
+        """
+        if self.speed == 0 and self.error:
+            if "Invalid speed value" in self.error:
+                raise ValidationError({"speed": self.error})
 
     def save_without_update(self):
         self._meta.get_field("updated").auto_now = False
@@ -2958,7 +2978,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         to the corresponding netixlan to ac, ix and net as warranted
         as warranted
         """
-        if (self.remote_changes or (error and not self.error)) and save:
+        if (self.remote_changes or (error and not self.previous_error)) and save:
             self.error = error
             self.dismissed = False
             self.save()
@@ -3124,7 +3144,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
 
         if not getattr(settings, "MAIL_DEBUG", False):
-            raise Exception("NOPE")
             mail = EmailMultiAlternatives(
                 subject,
                 strip_tags(message),
