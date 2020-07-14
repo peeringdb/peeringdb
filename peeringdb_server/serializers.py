@@ -207,8 +207,7 @@ class UniqueFieldValidator(object):
             if self.model.objects.filter(**filters).exclude(id=id).exists():
                 collisions[field] = self.message
         if collisions:
-            raise RestValidationError(collisions)
-
+            raise RestValidationError(collisions, code="unique")
 
 class RequiredForMethodValidator(object):
     """
@@ -1090,6 +1089,8 @@ class FacilitySerializer(ModelSerializer):
             + AddressSerializer.Meta.fields
         )
 
+        read_only_fields = ["rencode"]
+        
         related_fields = ["org"]
 
         list_exclude = ["org"]
@@ -1362,7 +1363,8 @@ class NetworkIXLanSerializer(ModelSerializer):
                 fields=("ipaddr4", "ipaddr6"), message="Input required for IPv4 or IPv6"
             ),
             UniqueFieldValidator(
-                fields=("ipaddr4", "ipaddr6"), message="IP already exists"
+                fields=("ipaddr4", "ipaddr6"), message="IP already exists",
+                check_deleted=True
             ),
         ]
 
@@ -1843,6 +1845,13 @@ class NetworkSerializer(ModelSerializer):
             validated_data["status"] = "ok"
 
         return super(ModelSerializer, self).create(validated_data)
+
+    def update(self, instance, validated_data):
+        if validated_data.get("asn") != instance.asn:
+            raise serializers.ValidationError({
+                'asn': _('ASN cannot be changed.'),
+            })
+        return super(ModelSerializer, self).update(instance, validated_data)
 
 
     def finalize_create(self, request):

@@ -2229,6 +2229,16 @@ class IXLanPrefix(pdb_models.IXLanPrefixBase):
         """
         Custom model validation
         """
+
+        status_error = _(
+            "IXLanPrefix with status '{}' cannot be linked to a IXLan with status '{}'."
+        ).format(self.status, self.ixlan.status)
+
+        if self.ixlan.status == "pending" and self.status == "ok":
+            raise ValidationError(status_error)
+        elif self.ixlan.status == "deleted" and self.status in ["ok", "pending"]:
+            raise ValidationError(status_error)
+
         # validate the specified prefix address
         validate_address_space(self.prefix)
         validate_prefix_overlap(self.prefix)
@@ -2700,6 +2710,10 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
     class Meta:
         db_table = "peeringdb_network_ixlan"
+        constraints = [
+            models.UniqueConstraint(fields=["ipaddr4"], name="unique_ipaddr4"),
+            models.UniqueConstraint(fields=["ipaddr6"], name="unique_ipaddr6"),
+        ]
 
     @property
     def name(self):
