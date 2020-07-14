@@ -2700,6 +2700,10 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
     class Meta:
         db_table = "peeringdb_network_ixlan"
+        constraints = [
+            models.UniqueConstraint(fields=["ipaddr4"], name="unique_ipaddr4"),
+            models.UniqueConstraint(fields=["ipaddr6"], name="unique_ipaddr6"),
+        ]
 
     @property
     def name(self):
