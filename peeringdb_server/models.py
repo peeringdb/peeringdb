@@ -3052,11 +3052,12 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         contacts = []
 
         if recipient == "ac":
-            contacts = [DeskProTicket.objects.create(
-                subject = subject,
-                body = message,
-                user = self.ticket_user,
-            )]
+            if getattr(settings, "IXF_TICKET_ON_CONFLICT", True):
+                contacts = [DeskProTicket.objects.create(
+                    subject = subject,
+                    body = message,
+                    user = self.ticket_user,
+                )]
         elif recipient == "net" and self.actionable_for_network:
             contacts = self.net_contacts
             self._email(subject, message, contacts)
@@ -3080,6 +3081,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Called by self.notify depending on recipient
         type
         """
+
+        # if ixf notifications are turned off, bail
+        if not getattr(settings, "IXF_NOTIFY_ON_CONFLICT", True):
+            return
+
         if not getattr(settings, "MAIL_DEBUG", False):
             raise Exception("NOPE")
             mail = EmailMultiAlternatives(
