@@ -296,9 +296,6 @@ class Importer(object):
             ix.ixf_net_count = ixf_net_count
             save_ix =True
 
-        print(self.log["data"])
-        print(ix, ix.ixf_net_count, ix.ixf_last_import)
-
         if save_ix:
             ix.save()
 
