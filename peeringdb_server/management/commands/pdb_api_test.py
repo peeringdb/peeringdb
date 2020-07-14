@@ -333,6 +333,7 @@ class TestJSON(unittest.TestCase):
             "policy_locations": "Required - International",
             "policy_ratio": True,
             "policy_contracts": "Required",
+            "allow_ixp_update": True,
         }
         data.update(**kwargs)
         return data
@@ -1268,32 +1269,6 @@ class TestJSON(unittest.TestCase):
             r_data = self.assert_create(self.db_org_admin, "net", data)
 
         pdb_settings.TUTORIAL_MODE = False
-
-    ##########################################################################
-
-    def test_org_admin_002_PUT_net_write_only_fields(self):
-        """
-        with this we check that certain fields that are allowed to be
-        set via the api, but sre not supposed to be rendered in the
-        api data, work correctly
-        """
-
-        def test_write_only_fields_missing(orig, updated):
-            assert ("allow_ixp_update" in updated) == False
-
-        net = SHARED["net_rw_ok"]
-        self.assertEqual(net.allow_ixp_update, False)
-
-        self.assert_update(
-            self.db_org_admin,
-            "net",
-            net.id,
-            {"allow_ixp_update": True},
-            test_success=[test_write_only_fields_missing],
-        )
-
-        net.refresh_from_db()
-        self.assertEqual(net.allow_ixp_update, True)
 
     ##########################################################################
 

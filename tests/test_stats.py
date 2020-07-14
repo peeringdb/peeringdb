@@ -8,8 +8,8 @@ from django.core.management import call_command
 from django.conf import settings
 from django.contrib.auth import get_user_model
 
-from peeringdb_server.models import REFTAG_MAP, UTC
-
+from peeringdb_server.models import REFTAG_MAP, UTC, Network
+from peeringdb_server.stats import stats
 
 DATE_PAST = datetime.datetime(year=2019, month=11, day=1)
 
@@ -61,3 +61,18 @@ def test_generate_for_current_date(db, data_stats_current):
     setup_data()
     call_command("pdb_stats", stdout=output)
     assert data_stats_current.txt in output.getvalue()
+
+
+@pytest.mark.django_db
+def test_global_stats(db, data_stats_global):
+    setup_data()
+
+    # test_automated_network_count shows that "automated networks" counts
+    # networks w allow_ixp_update=True
+    if data_stats_global.name == "test_automated_network_count":
+        network = Network.objects.first()
+        network.allow_ixp_update = False
+        network.save()
+
+    global_stats = stats()
+    assert global_stats == data_stats_global.expected
