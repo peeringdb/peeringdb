@@ -543,6 +543,15 @@ set_option("IXF_POSTMORTEM_LIMIT", 250)
 # the interval in which we communicate the issue to them (hours)
 set_option("IXF_PARSE_ERROR_NOTIFICATION_PERIOD", 36)
 
+# when a user tries to delete a protected object, a deskpro
+# ticket is dispatched. This setting throttles repeat
+# updates for the same object (hours)
+#
+# deskpro will sort messages with the same subject into
+# the same ticket, so this is mostly to avoid ticket spam
+# from users repeat-clicking the delete button
+set_option("PROTECTED_OBJECT_NOTIFICATION_PERIOD", 1)
+
 set_option("MAINTENANCE_MODE_LOCKFILE", "maintenance.lock")
 
 # django_peeringdb settings

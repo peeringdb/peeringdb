@@ -47,6 +47,7 @@ from peeringdb_server.models import (
     IXLan,
     IXLanPrefix,
     InternetExchangeFacility,
+    DeskProTicket,
 )
 
 from peeringdb_server.serializers import REFTAG_MAP as REFTAG_MAP_SLZ
@@ -507,7 +508,7 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def assert_delete(self, db, typ, test_success=None, test_failure=None):
+    def assert_delete(self, db, typ, test_success=None, test_failure=None, test_protected=None):
         if test_success:
             db.rm(typ, test_success)
             with pytest.raises(NotFoundException):
@@ -520,6 +521,13 @@ class TestJSON(unittest.TestCase):
                 self.assert_get_handleref(db, typ, test_failure)
             except PermissionDeniedException:
                 pass
+
+        if test_protected:
+            with pytest.raises(PermissionDeniedException):
+                db.rm(typ, test_protected)
+            assert DeskProTicket.objects.filter(
+                subject__icontains=f"{typ}-{test_protected}"
+            ).exists()
 
     ##########################################################################
 
@@ -1119,6 +1127,15 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_ix(prefix=self.get_prefix6())
         self.assert_create(self.db_org_admin, "ix", data, ignore=["prefix"])
 
+        # check protected ix validation
+        self.assert_delete(
+            self.db_org_admin,
+            "ix",
+            test_protected=SHARED["ix_rw_ok"].id,
+        )
+
+
+
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_fac(self):
@@ -1166,6 +1183,14 @@ class TestJSON(unittest.TestCase):
             test_success=SHARED["fac_id"],
             test_failure=SHARED["fac_r_ok"].id,
         )
+
+        # check protected ix validation
+        self.assert_delete(
+            self.db_org_admin,
+            "fac",
+            test_protected=SHARED["fac_rw_ok"].id,
+        )
+
 
 
     ##########################################################################
@@ -1555,6 +1580,25 @@ class TestJSON(unittest.TestCase):
             },
             test_success=False,
         )
+
+        # test protected ixpfx cant be deleted
+        prefix = IXLanPrefix.objects.get(id=SHARED["ixpfx_id"])
+        NetworkIXLan.objects.create(
+            network=SHARED["net_rw_ok"],
+            asn=SHARED["net_rw_ok"].asn,
+            ixlan=SHARED["ixlan_rw_ok"],
+            ipaddr4=prefix.prefix[0],
+            status="ok",
+            speed=1000
+        )
+
+        self.assert_delete(
+            self.db_org_admin,
+            "ixpfx",
+            test_protected=SHARED["ixpfx_id"]
+        )
+
+
 
     ##########################################################################
 
