@@ -18,7 +18,7 @@ def mail_admins_with_from(
     # set plain text message
     msg_raw = strip_tags(msg)
     mail = EmailMultiAlternatives(
-        "%s%s" % (settings.EMAIL_SUBJECT_PREFIX, subj),
+        f"{settings.EMAIL_SUBJECT_PREFIX}{subj}",
         msg,
         from_addr,
         [a[1] for a in settings.ADMINS],

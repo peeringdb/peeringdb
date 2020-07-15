@@ -73,7 +73,7 @@ class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
 
         nsp.models.GroupPermission.objects.create(
             group=user_group,
-            namespace="peeringdb.organization.{}".format(settings.SUGGEST_ENTITY_ORG),
+            namespace=f"peeringdb.organization.{settings.SUGGEST_ENTITY_ORG}",
             permissions=0x04,
         )
 
@@ -114,9 +114,9 @@ class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
     def setUp(self):
         settings.API_CACHE_ALL_LIMITS = True
         settings.API_CACHE_ENABLED = True
-        super(APICacheTests, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         settings.API_CACHE_ALL_LIMITS = False
         settings.API_CACHE_ENABLED = False
-        super(APICacheTests, self).tearDown()
+        super().tearDown()

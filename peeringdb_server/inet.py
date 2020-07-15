@@ -102,7 +102,7 @@ class BogonAsn(rdap.RdapAsn):
     """
 
     def __init__(self, asn):
-        name = "AS{}".format(asn)
+        name = f"AS{asn}"
         self._parsed = {
             "name": name,
             "org_name": name,
@@ -123,7 +123,7 @@ class RdapLookup(rdap.RdapClient):
             lacnic_apikey=settings.RDAP_LACNIC_APIKEY,
             timeout=2.5,
         )
-        super(RdapLookup, self).__init__(config)
+        super().__init__(config)
 
     def get_asn(self, asn):
         """
@@ -138,7 +138,7 @@ class RdapLookup(rdap.RdapClient):
                 raise RdapException(
                     _("ASNs in this range " "are not allowed in this environment")
                 )
-        return super(RdapLookup, self).get_asn(asn)
+        return super().get_asn(asn)
 
 
 def asn_is_bogon(asn):

@@ -82,7 +82,7 @@ def make_relation_filter(field, filt, value, prefix=None):
         if field == prefix:
             field = "id"
     if filt:
-        filt = {"%s__%s" % (field, filt): value}
+        filt = {f"{field}__{filt}": value}
     else:
         filt = {field: value}
     filt.update(status="ok")
@@ -244,7 +244,7 @@ class GeocodeBaseMixin(models.Model):
         blank=True, null=True, help_text=_("Error message of previous geocode attempt")
     )
 
-    class Meta(object):
+    class Meta:
         abstract = True
 
     @property
@@ -366,7 +366,7 @@ class UserOrgAffiliationRequest(models.Model):
         help_text=_("Status of this request"),
     )
 
-    class Meta(object):
+    class Meta:
         db_table = "peeringdb_user_org_affil_request"
         verbose_name = _("User to Organization Affiliation Request")
         verbose_name_plural = _("User to Organization Affiliation Requests")
@@ -444,7 +444,7 @@ class UserOrgAffiliationRequest(models.Model):
                 ).render(
                     {
                         "uoar": self,
-                        "org_url": "{}/org/{}".format(settings.BASE_URL, self.org.id),
+                        "org_url": f"{settings.BASE_URL}/org/{self.org.id}",
                         "support_email": settings.DEFAULT_FROM_EMAIL,
                     }
                 ),
@@ -475,7 +475,7 @@ class VerificationQueueItem(models.Model):
     created = CreatedDateTimeField()
     notified = models.BooleanField(default=False)
 
-    class Meta(object):
+    class Meta:
         db_table = "peeringdb_verification_queue"
         unique_together = (("content_type", "object_id"),)
 
@@ -509,7 +509,7 @@ class VerificationQueueItem(models.Model):
         Return admin url for approval of the verification queue item
         """
         return django.urls.reverse(
-            "admin:%s_%s_actions" % (self._meta.app_label, self._meta.model_name),
+            f"admin:{self._meta.app_label}_{self._meta.model_name}_actions",
             args=(self.id, "vq_approve"),
         )
 
@@ -519,7 +519,7 @@ class VerificationQueueItem(models.Model):
         Return admin url for denial of the verification queue item
         """
         return django.urls.reverse(
-            "admin:%s_%s_actions" % (self._meta.app_label, self._meta.model_name),
+            f"admin:{self._meta.app_label}_{self._meta.model_name}_actions",
             args=(self.id, "vq_deny"),
         )
 
@@ -597,8 +597,8 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase):
         are marked accordingly in the result
         """
         if self.status == "deleted":
-            return "[DELETED] {}".format(self)
-        return "{}".format(self)
+            return f"[DELETED] {self}"
+        return f"{self}"
 
     @property
     def search_result_name(self):
@@ -1123,7 +1123,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, fac_id):
-        return "%s.facility.%s" % (Organization.nsp_namespace_from_id(org_id), fac_id)
+        return "{}.facility.{}".format(Organization.nsp_namespace_from_id(org_id), fac_id)
 
     @classmethod
     def related_to_net(cls, value=None, filt=None, field="network_id", qset=None):
@@ -1504,7 +1504,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         """
         Returns permissioning namespace for an exchange
         """
-        return "%s.internetexchange.%s" % (
+        return "{}.internetexchange.{}".format(
             Organization.nsp_namespace_from_id(org_id),
             ix_id,
         )
@@ -1654,7 +1654,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         - create_ixlan (`bool`=True): if True and the ix is missing
           it's ixlan, create it
         """
-        r = super(InternetExchange, self).save(**kwargs)
+        r = super().save(**kwargs)
 
         if not self.ixlan and create_ixlan:
             ixlan = IXLan(ix=self, status=self.status, mtu=0)
@@ -1693,14 +1693,14 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
         """
         Returns a descriptive label of the ixfac for logging purposes
         """
-        return "ixfac{} {} <-> {}".format(self.id, self.ix.name, self.facility.name)
+        return f"ixfac{self.id} {self.ix.name} <-> {self.facility.name}"
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, id):
         """
         Returns permissioning namespace for an ixfac
         """
-        return "%s.fac.%s" % (InternetExchange.nsp_namespace_from_id(org_id, ix_id), id)
+        return "{}.fac.{}".format(InternetExchange.nsp_namespace_from_id(org_id, ix_id), id)
 
     @property
     def nsp_namespace(self):
@@ -1792,7 +1792,7 @@ class IXLan(pdb_models.IXLanBase):
         """
         Returns a descriptive label of the ixlan for logging purposes
         """
-        return "ixlan{} {}".format(self.id, self.ix.name)
+        return f"ixlan{self.id} {self.ix.name}"
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, id):
@@ -1860,7 +1860,7 @@ class IXLan(pdb_models.IXLanBase):
         """
         Used by grappelli autocomplete for representation
         """
-        return "{} IXLan ({})".format(self.ix.name, self.id)
+        return f"{self.ix.name} IXLan ({self.id})"
 
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["ix"])
@@ -1902,7 +1902,7 @@ class IXLan(pdb_models.IXLanBase):
 
         self.id = self.ix.id
 
-        return super(IXLan, self).clean()
+        return super().clean()
 
     @reversion.create_revision()
     def add_netixlan(self, netixlan_info, save=True, save_others=True):
@@ -2127,7 +2127,7 @@ class IXLanIXFMemberImportLog(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    class Meta(object):
+    class Meta:
         verbose_name = _("IXF Import Log")
         verbose_name_plural = _("IXF Import Logs")
 
@@ -2185,7 +2185,7 @@ class IXLanIXFMemberImportLogEntry(models.Model):
     action = models.CharField(max_length=255, null=True, blank=True)
     reason = models.CharField(max_length=255, null=True, blank=True)
 
-    class Meta(object):
+    class Meta:
         verbose_name = _("IXF Import Log Entry")
         verbose_name_plural = _("IXF Import Log Entries")
 
@@ -3187,14 +3187,14 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         """
         Returns a descriptive label of the ixpfx for logging purposes
         """
-        return "ixpfx{} {}".format(self.id, self.prefix)
+        return f"ixpfx{self.id} {self.prefix}"
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, ix_id, ixlan_id, id):
         """
         Returns permissioning namespace for an ixpfx
         """
-        return "%s.prefix.%s" % (
+        return "{}.prefix.{}".format(
             IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id),
             id,
         )
@@ -3327,7 +3327,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         # validate the specified prefix address
         validate_address_space(self.prefix)
         validate_prefix_overlap(self.prefix)
-        return super(IXLanPrefix, self).clean()
+        return super().clean()
 
 
 @reversion.register
@@ -3374,7 +3374,7 @@ class Network(pdb_models.NetworkBase):
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, net_id):
-        return "%s.network.%s" % (Organization.nsp_namespace_from_id(org_id), net_id)
+        return "{}.network.{}".format(Organization.nsp_namespace_from_id(org_id), net_id)
 
     @classmethod
     def related_to_fac(cls, value=None, filt=None, field="facility_id", qset=None):
@@ -3494,7 +3494,7 @@ class Network(pdb_models.NetworkBase):
         """
         if not qset:
             qset = cls.objects.filter(status="ok").order_by("asn")
-        return dict([(net.asn, net.irr_as_set) for net in qset])
+        return {net.asn: net.irr_as_set for net in qset}
 
     @property
     def search_result_name(self):
@@ -3503,7 +3503,7 @@ class Network(pdb_models.NetworkBase):
         of this entity
         """
 
-        return "%s (%s)" % (self.name, self.asn)
+        return f"{self.name} ({self.asn})"
 
     @property
     def netfac_set_active(self):
@@ -3604,7 +3604,7 @@ class Network(pdb_models.NetworkBase):
         except ValidationError as exc:
             raise ValidationError({"irr_as_set": exc})
 
-        return super(Network, self).clean()
+        return super().clean()
 
 
 # class NetworkContact(HandleRefModel):
@@ -3640,7 +3640,7 @@ class NetworkContact(pdb_models.ContactBase):
         """
         Returns permissioning namespace for a network contact
         """
-        return "%s.poc_set.%s" % (Network.nsp_namespace_from_id(org_id, net_id), vis)
+        return "{}.poc_set.{}".format(Network.nsp_namespace_from_id(org_id, net_id), vis)
 
     @property
     def nsp_namespace(self):
@@ -3688,7 +3688,7 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         """
         Returns permissioning namespace for a netfac
         """
-        return "%s.fac.%s" % (Network.nsp_namespace_from_id(org_id, net_id), fac_id)
+        return "{}.fac.{}".format(Network.nsp_namespace_from_id(org_id, net_id), fac_id)
 
     @property
     def nsp_namespace(self):
@@ -3846,7 +3846,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         """
         Returns permissioning namespace for a netixlan
         """
-        return "%s.ixlan.%s" % (Network.nsp_namespace_from_id(org_id, net_id), ixlan_id)
+        return "{}.ixlan.{}".format(Network.nsp_namespace_from_id(org_id, net_id), ixlan_id)
 
     @property
     def nsp_namespace(self):
@@ -3979,7 +3979,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             return self.ipaddr4
         elif version == 6:
             return self.ipaddr6
-        raise ValueError("Invalid ip version {}".format(version))
+        raise ValueError(f"Invalid ip version {version}")
 
     def descriptive_name_ipv(self, version):
         """
@@ -4083,7 +4083,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def full_name(self):
-        return "%s %s" % (self.first_name, self.last_name)
+        return f"{self.first_name} {self.last_name}"
 
     @property
     def has_oauth(self):
@@ -4128,7 +4128,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         Used by grappelli autocomplete for representation
         """
-        return "{} <{}> ({})".format(self.username, self.email, self.id)
+        return f"{self.username} <{self.email}> ({self.id})"
 
     def flush_affiliation_requests(self):
         """
@@ -4156,7 +4156,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         Returns the first_name plus the last_name, with a space in between.
         """
-        full_name = "%s %s" % (self.first_name, self.last_name)
+        full_name = f"{self.first_name} {self.last_name}"
         return full_name.strip()
 
     def get_short_name(self):
@@ -4378,7 +4378,7 @@ class CommandLineTool(models.Model):
     )
 
     def __str__(self):
-        return "{}: {}".format(self.tool, self.description)
+        return f"{self.tool}: {self.description}"
 
     def set_waiting(self):
         self.status = "waiting"
@@ -4390,9 +4390,8 @@ class CommandLineTool(models.Model):
         self.status = "running"
 
 
-REFTAG_MAP = dict(
-    [
-        (cls.handleref.tag, cls)
+REFTAG_MAP = {
+        cls.handleref.tag: cls
         for cls in [
             Organization,
             Network,
@@ -4405,8 +4404,7 @@ REFTAG_MAP = dict(
             IXLan,
             IXLanPrefix,
         ]
-    ]
-)
+}
 
 
 QUEUE_ENABLED = []

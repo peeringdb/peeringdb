@@ -239,7 +239,7 @@ class StatusForm(baseForms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        super(StatusForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if "instance" in kwargs and kwargs.get("instance"):
             inst = kwargs.get("instance")
             if inst.status == "ok":
@@ -253,7 +253,7 @@ class StatusForm(baseForms.ModelForm):
 class ModelAdminWithUrlActions(admin.ModelAdmin):
     def make_redirect(self, obj, action):
         opts = obj.model._meta
-        return redirect("admin:%s_%s_changelist" % (opts.app_label, opts.model_name))
+        return redirect(f"admin:{opts.app_label}_{opts.model_name}_changelist")
 
     def actions_view(self, request, object_id, action, **kwargs):
         """
@@ -288,7 +288,7 @@ class ModelAdminWithUrlActions(admin.ModelAdmin):
                 self.admin_site.admin_view(self.actions_view),
                 name="%s_%s_actions" % info,
             ),
-        ] + super(ModelAdminWithUrlActions, self).get_urls()
+        ] + super().get_urls()
         return urls
 
 
@@ -324,10 +324,10 @@ def soft_delete(modeladmin, request, queryset):
 soft_delete.short_description = _("SOFT DELETE")
 
 
-class SanitizedAdmin(object):
+class SanitizedAdmin:
     def get_readonly_fields(self, request, obj=None):
         return ("version",) + tuple(
-            super(SanitizedAdmin, self).get_readonly_fields(request, obj=obj)
+            super().get_readonly_fields(request, obj=obj)
         )
 
 
@@ -351,10 +351,10 @@ class SoftDeleteAdmin(
     def save_formset(self, request, form, formset, change):
         if request.user:
             reversion.set_user(request.user)
-        super(SoftDeleteAdmin, self).save_formset(request, form, formset, change)
+        super().save_formset(request, form, formset, change)
 
 
-class ModelAdminWithVQCtrl(object):
+class ModelAdminWithVQCtrl:
     """
     Extend from this model admin if you want to add verification queue
     approve | deny controls to the top of its form
@@ -368,7 +368,7 @@ class ModelAdminWithVQCtrl(object):
         """
 
         fieldsets = tuple(
-            super(ModelAdminWithVQCtrl, self).get_fieldsets(request, obj=obj)
+            super().get_fieldsets(request, obj=obj)
         )
 
         # on automatically defined fieldsets it will insert the controls
@@ -390,7 +390,7 @@ class ModelAdminWithVQCtrl(object):
         readonly field
         """
         return ("verification_queue",) + tuple(
-            super(ModelAdminWithVQCtrl, self).get_readonly_fields(request, obj=obj)
+            super().get_readonly_fields(request, obj=obj)
         )
 
     def verification_queue(self, obj):
@@ -448,7 +448,7 @@ class IXLanInline(SanitizedAdmin, admin.StackedInline):
 
     def ixf_import_attempt_info(self, obj):
         if obj.ixf_import_attempt:
-            return mark_safe("<pre>{}</pre>".format(obj.ixf_import_attempt.info))
+            return mark_safe(f"<pre>{obj.ixf_import_attempt.info}</pre>")
         return ""
 
     def prefixes(self, obj):
@@ -511,7 +511,7 @@ class NetworkInternetExchangeInline(SanitizedAdmin, admin.TabularInline):
 
 class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
     def clean(self):
-        super(UserOrgAffiliationRequestInlineForm, self).clean()
+        super().clean()
         try:
             asn = self.cleaned_data.get("asn")
             if asn:
@@ -533,7 +533,7 @@ class UserOrgAffiliationRequestInline(admin.TabularInline):
 
 class InternetExchangeAdminForm(StatusForm):
     def __init__(self, *args, **kwargs):
-        super(InternetExchangeAdminForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         fk_handleref_filter(self, "org")
 
 
@@ -579,7 +579,7 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
 
 class IXLanAdminForm(StatusForm):
     def __init__(self, *args, **kwargs):
-        super(IXLanAdminForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         fk_handleref_filter(self, "ix")
 
 
@@ -704,7 +704,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
             text = _("HAS BEEN ROLLED BACK")
             color = "#d6f0f3"
         return mark_safe(
-            '<div style="background-color:{}">{}</div>'.format(color, text)
+            f'<div style="background-color:{color}">{text}</div>'
         )
 
 
@@ -792,7 +792,7 @@ class SponsorshipAdmin(admin.ModelAdmin):
 
 class PartnershipAdminForm(baseForms.ModelForm):
     def __init__(self, *args, **kwargs):
-        super(PartnershipAdminForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         fk_handleref_filter(self, "org")
 
 
@@ -828,7 +828,7 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     form = StatusForm
 
     def get_urls(self):
-        urls = super(OrganizationAdmin, self).get_urls()
+        urls = super().get_urls()
         my_urls = [
             url(r"^org-merge-tool/merge$", self.org_merge_tool_merge_action),
             url(r"^org-merge-tool/$", self.org_merge_tool_view),
@@ -918,7 +918,7 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
 
 class FacilityAdminForm(StatusForm):
     def __init__(self, *args, **kwargs):
-        super(FacilityAdminForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         fk_handleref_filter(self, "org")
 
 
@@ -950,7 +950,7 @@ class NetworkAdminForm(StatusForm):
     info_prefixes6 = baseForms.IntegerField(required=False, initial=0)
 
     def __init__(self, *args, **kwargs):
-        super(NetworkAdminForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         fk_handleref_filter(self, "org")
 
 
@@ -1038,7 +1038,7 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
         return obj.ixlan.ix
 
     def net(self, obj):
-        return "{} (AS{})".format(obj.network.name, obj.network.asn)
+        return f"{obj.network.name} (AS{obj.network.asn})"
 
 
 class NetworkContactAdmin(SoftDeleteAdmin):
@@ -1064,7 +1064,7 @@ class NetworkContactAdmin(SoftDeleteAdmin):
     }
 
     def net(self, obj):
-        return "{} (AS{})".format(obj.network.name, obj.network.asn)
+        return f"{obj.network.name} (AS{obj.network.asn})"
 
 
 class NetworkFacilityAdmin(SoftDeleteAdmin):
@@ -1080,7 +1080,7 @@ class NetworkFacilityAdmin(SoftDeleteAdmin):
     }
 
     def net(self, obj):
-        return "{} (AS{})".format(obj.network.name, obj.network.asn)
+        return f"{obj.network.name} (AS{obj.network.asn})"
 
 
 class VerificationQueueAdmin(ModelAdminWithUrlActions):
@@ -1119,12 +1119,12 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
             opts = type(obj.first().item)._meta
             return redirect(
                 django.urls.reverse(
-                    "admin:%s_%s_change" % (opts.app_label, opts.model_name),
+                    f"admin:{opts.app_label}_{opts.model_name}_change",
                     args=(obj.first().item.id,),
                 )
             )
         opts = obj.model._meta
-        return redirect("admin:%s_%s_changelist" % (opts.app_label, opts.model_name))
+        return redirect(f"admin:{opts.app_label}_{opts.model_name}_changelist")
 
     def vq_approve(self, request, queryset):
         with reversion.create_revision():
@@ -1358,17 +1358,17 @@ class UserPermissionAdmin(UserAdmin):
     def get_form(self, request, obj=None, **kwargs):
         # we want to remove the password field from the form
         # since we dont send it and dont want to run clean for it
-        form = super(UserPermissionAdmin, self).get_form(request, obj, **kwargs)
+        form = super().get_form(request, obj, **kwargs)
         del form.base_fields["password"]
         return form
 
     def user(self, obj):
         url = django.urls.reverse(
-            "admin:%s_%s_change" % (User._meta.app_label, User._meta.model_name),
+            f"admin:{User._meta.app_label}_{User._meta.model_name}_change",
             args=(obj.id,),
         )
 
-        return mark_safe('<a href="%s">%s</a>' % (url, obj.username))
+        return mark_safe(f'<a href="{url}">{obj.username}</a>')
 
     def clean_password(self):
         pass
@@ -1406,7 +1406,7 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         return False
 
     def get_urls(self):
-        urls = super(CommandLineToolAdmin, self).get_urls()
+        urls = super().get_urls()
         my_urls = [
             url(
                 r"^prepare/$",

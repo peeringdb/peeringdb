@@ -147,7 +147,7 @@ def export_permissions(user, entity):
     return perms
 
 
-class DoNotRender(object):
+class DoNotRender:
     """
     Instance of this class is sent when a component attribute does not exist,
     this can then be type checked in the templates to remove non existant attribute
@@ -1008,9 +1008,9 @@ def view_organization(request, id):
     users = {}
     if perms.get("can_manage"):
         users.update(
-            dict([(user.id, user) for user in org.admin_usergroup.user_set.all()])
+            {user.id: user for user in org.admin_usergroup.user_set.all()}
         )
-        users.update(dict([(user.id, user) for user in org.usergroup.user_set.all()]))
+        users.update({user.id: user for user in org.usergroup.user_set.all()})
         users = sorted(list(users.values()), key=lambda x: x.full_name)
 
     # if user has rights to create sub entties or manage users, allow them
@@ -1702,7 +1702,7 @@ def view_suggest(request, reftag):
     if reftag not in ["net", "ix", "fac"]:
         return HttpResponseRedirect("/")
 
-    template = loader.get_template("site/view_suggest_{}.html".format(reftag))
+    template = loader.get_template(f"site/view_suggest_{reftag}.html")
     env = make_env()
     return HttpResponse(template.render(env, request))
 
@@ -1841,16 +1841,14 @@ def request_search(request):
     if m:
         net = Network.objects.filter(asn=m.group(2), status="ok")
         if net.exists() and net.count() == 1:
-            return HttpResponseRedirect("/net/{}".format(net.first().id))
+            return HttpResponseRedirect(f"/net/{net.first().id}")
 
     result = search(q)
 
-    sponsors = dict(
-        [
-            (org.id, sponsorship.label.lower())
+    sponsors = {
+            org.id: sponsorship.label.lower()
             for org, sponsorship in Sponsorship.active_by_org()
-        ]
-    )
+    }
 
     for tag, rows in list(result.items()):
         for item in rows:

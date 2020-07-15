@@ -9,7 +9,7 @@ import sys
 class TestWhois(ClientCase):
     @classmethod
     def setUpTestData(cls):
-        super(TestWhois, cls).setUpTestData()
+        super().setUpTestData()
         cls.org = REFTAG_MAP["org"].objects.create(name="Test org", status="ok")
         cls.net = REFTAG_MAP["net"].objects.create(
             name="Test net", status="ok", asn=63311, org=cls.org
@@ -21,8 +21,8 @@ class TestWhois(ClientCase):
                     network=cls.net,
                     status="ok",
                     role="Abuse",
-                    name="POC-{}".format(visibility),
-                    email="{}@localhost".format(visibility),
+                    name=f"POC-{visibility}",
+                    email=f"{visibility}@localhost",
                     visible=visibility,
                 )
             )

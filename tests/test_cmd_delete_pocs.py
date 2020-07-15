@@ -18,7 +18,7 @@ from peeringdb_server.models import Network, NetworkContact
 class TestRenumberLans(ClientCase):
     @classmethod
     def setUpTestData(cls):
-        super(TestRenumberLans, cls).setUpTestData()
+        super().setUpTestData()
         with reversion.create_revision():
             call_command("pdb_generate_test_data", limit=1, commit=True)
             cls.net = Network.objects.first()

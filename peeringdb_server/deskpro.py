@@ -18,7 +18,7 @@ def ticket_queue(subject, body, user):
     """ queue a deskpro ticket for creation """
 
     ticket = DeskProTicket.objects.create(
-        subject="{}{}".format(settings.EMAIL_SUBJECT_PREFIX, subject),
+        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
         body=body,
         user=user,
     )
@@ -26,7 +26,7 @@ def ticket_queue(subject, body, user):
 
 class APIError(IOError):
     def __init__(self, msg, data):
-        super(APIError, self).__init__(msg)
+        super().__init__(msg)
         self.data = data
 
 
@@ -46,7 +46,7 @@ def ticket_queue_asnauto_skipvq(user, org, net, rir_data):
         org_name = org.name
 
     ticket_queue(
-        "[ASNAUTO] Network '%s' approved for existing Org '%s'" % (net_name, org_name),
+        f"[ASNAUTO] Network '{net_name}' approved for existing Org '{org_name}'",
         loader.get_template("email/notify-pdb-admin-asnauto-skipvq.txt").render(
             {"user": user, "org": org, "net": net, "rir_data": rir_data}
         ),
@@ -109,12 +109,12 @@ def ticket_queue_asnauto_create(
 def ticket_queue_rdap_error(user, asn, error):
     if isinstance(error, RdapNotFoundError):
         return
-    error_message = "{}".format(error)
+    error_message = f"{error}"
 
     if re.match("(.+) returned 400", error_message):
         return
 
-    subject = "[RDAP_ERR] {} - AS{}".format(user.username, asn)
+    subject = f"[RDAP_ERR] {user.username} - AS{asn}"
     ticket_queue(
         subject,
         loader.get_template("email/notify-pdb-admin-rdap-error.txt").render(
@@ -124,14 +124,14 @@ def ticket_queue_rdap_error(user, asn, error):
     )
 
 
-class APIClient(object):
+class APIClient:
     def __init__(self, url, key):
         self.key = key
         self.url = url
 
     @property
     def auth_headers(self):
-        return {"Authorization": "key {}".format(self.key)}
+        return {"Authorization": f"key {self.key}"}
 
     def parse_response(self, response, many=False):
         r_json = response.json()
@@ -151,13 +151,13 @@ class APIClient(object):
 
     def get(self, endpoint, param):
         response = requests.get(
-            "{}/{}".format(self.url, endpoint), params=param, headers=self.auth_headers
+            f"{self.url}/{endpoint}", params=param, headers=self.auth_headers
         )
         return self.parse_response(response)
 
     def create(self, endpoint, param):
         response = requests.post(
-            "{}/{}".format(self.url, endpoint), json=param, headers=self.auth_headers
+            f"{self.url}/{endpoint}", json=param, headers=self.auth_headers
         )
         return self.parse_response(response)
 

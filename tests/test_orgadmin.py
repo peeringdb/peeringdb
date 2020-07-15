@@ -276,8 +276,8 @@ class OrgAdminTests(TestCase):
 
             for _tag in ["fac", "net", "ix"]:
                 if _tag != tag:
-                    assert "#add_{}".format(_tag) not in resp.content.decode()
-            assert "#add_{}".format(tag) in resp.content.decode()
+                    assert f"#add_{_tag}" not in resp.content.decode()
+            assert f"#add_{tag}" in resp.content.decode()
 
     def test_manage_user_delete(self):
         """
@@ -413,7 +413,7 @@ class OrgAdminTests(TestCase):
 
         self.assertEqual(resp["status"], "ok")
 
-        ids = dict([(r["id"], r["name"]) for r in resp["permissions"]])
+        ids = {r["id"]: r["name"] for r in resp["permissions"]}
         self.assertEqual(len(ids), 7)
         self.assertIn("org.%d" % self.org.id, ids)
         self.assertIn("ix.%d" % self.ix.id, ids)

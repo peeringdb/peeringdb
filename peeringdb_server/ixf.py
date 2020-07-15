@@ -37,7 +37,7 @@ REASON_VALUES_CHANGED = _(
 )
 
 
-class Importer(object):
+class Importer:
 
     allowed_member_types = [
         "peering",
@@ -100,7 +100,7 @@ class Importer(object):
             return {"pdb_error": exc}
 
         if result.status_code != 200:
-            return {"pdb_error": "Got HTTP status {}".format(result.status_code)}
+            return {"pdb_error": f"Got HTTP status {result.status_code}"}
 
         try:
             data = result.json()
@@ -126,7 +126,7 @@ class Importer(object):
             url <str>
         """
 
-        return "IXF-CACHE-{}".format(url)
+        return f"IXF-CACHE-{url}"
 
     def fetch_cached(self, url):
         """
@@ -232,7 +232,7 @@ class Importer(object):
         except KeyError as exc:
             # any key erros mean that the data is invalid, log the error and
             # bail (transactions are atomic and will be rolled back)
-            self.log_error("Internal Error 'KeyError': {}".format(exc), save=save)
+            self.log_error(f"Internal Error 'KeyError': {exc}", save=save)
             return False
 
         # process any netixlans that need to be deleted
@@ -738,7 +738,7 @@ class Importer(object):
             )
 
         self.log["data"].append(
-            {"peer": peer, "action": action, "reason": "{}".format(reason),}
+            {"peer": peer, "action": action, "reason": f"{reason}",}
         )
 
     def notify_error(self, error):
@@ -769,12 +769,12 @@ class Importer(object):
         """
         Append error to the attempt log
         """
-        self.log["errors"].append("{}".format(error))
+        self.log["errors"].append(f"{error}")
         if save:
             self.save_log()
 
 
-class PostMortem(object):
+class PostMortem:
 
     """
     Generate postmortem report for ix-f import

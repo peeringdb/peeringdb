@@ -251,9 +251,9 @@ urlpatterns += [
 
 urlpatterns += [
     url(
-        r"^autocomplete/admin/clt-history/{}/$".format(tool_id),
+        fr"^autocomplete/admin/clt-history/{tool_id}/$",
         ToolHistory.as_view(),
-        name="autocomplete-admin-clt-history-{}".format(tool_id),
+        name=f"autocomplete-admin-clt-history-{tool_id}",
     )
     for tool_id, ToolHistory in list(clt_history.items())
 ]

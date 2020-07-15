@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit-tests for quick search functionality - note that advanced search is not
 tested here as that is using the PDB API entirely.
@@ -28,10 +27,10 @@ class SearchTests(TestCase):
         if model.handleref.tag == "net":
             kwargs = {"asn": asn}
 
-        kwargs.update(status="ok", name=u"{} {}".format(prefix, model.handleref.tag))
+        kwargs.update(status="ok", name=f"{prefix} {model.handleref.tag}")
 
         if accented:
-            kwargs.update(name=u"ãccented {}".format(model.handleref.tag))
+            kwargs.update(name=f"ãccented {model.handleref.tag}")
 
         if model.handleref.tag != "org":
             kwargs.update(org=org)

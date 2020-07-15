@@ -67,14 +67,14 @@ def export_ixf_ix_members(ixlans, pretty=False):
 
                 if _netixlan.ipaddr4:
                     vlan_list[0]["ipv4"] = {
-                        "address": "{}".format(_netixlan.ipaddr4),
+                        "address": f"{_netixlan.ipaddr4}",
                         "routeserver": _netixlan.is_rs_peer,
                         "max_prefix": _netixlan.network.info_prefixes4,
                         "as_macro": _netixlan.network.irr_as_set,
                     }
                 if _netixlan.ipaddr6:
                     vlan_list[0]["ipv6"] = {
-                        "address": "{}".format(_netixlan.ipaddr6),
+                        "address": f"{_netixlan.ipaddr6}",
                         "routeserver": _netixlan.is_rs_peer,
                         "max_prefix": _netixlan.network.info_prefixes6,
                         "as_macro": _netixlan.network.irr_as_set,
@@ -134,7 +134,7 @@ class ExportView(View):
         if fmt not in self.formats:
             raise ValueError(_("Invalid export format"))
         try:
-            response_handler = getattr(self, "response_{}".format(fmt))
+            response_handler = getattr(self, f"response_{fmt}")
             response = response_handler(self.generate(request))
 
             if self.download == True:
@@ -211,7 +211,7 @@ class ExportView(View):
         for row in data:
             for k, v in list(row.items()):
                 if isinstance(v, str):
-                    row[k] = u"{}".format(v)
+                    row[k] = f"{v}"
             csv_writer.writerow(row)
 
         return response
@@ -261,7 +261,7 @@ class AdvancedSearchExportView(ExportView):
         Handle export
         """
         self.tag = tag
-        return super(AdvancedSearchExportView, self).get(request, fmt)
+        return super().get(request, fmt)
 
     def generate(self, request):
         """
@@ -277,7 +277,7 @@ class AdvancedSearchExportView(ExportView):
         """
         if self.tag not in ["net", "ix", "fac", "org"]:
             raise ValueError(_("Invalid tag"))
-        data_function = getattr(self, "generate_{}".format(self.tag))
+        data_function = getattr(self, f"generate_{self.tag}")
         return data_function(request)
 
     def generate_net(self, request):

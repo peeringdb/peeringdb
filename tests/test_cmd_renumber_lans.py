@@ -12,7 +12,7 @@ from peeringdb_server.models import REFTAG_MAP
 class TestRenumberLans(ClientCase):
     @classmethod
     def setUpTestData(cls):
-        super(TestRenumberLans, cls).setUpTestData()
+        super().setUpTestData()
         call_command("pdb_generate_test_data", limit=1, commit=True)
 
     def test_run(self):

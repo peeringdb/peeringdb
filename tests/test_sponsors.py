@@ -31,15 +31,13 @@ class ViewTestCase(TestCase):
 
         # create organizations
 
-        cls.organizations = dict(
-            (
-                "{}".format(k),
+        cls.organizations = {
+                f"{k}":
                 models.Organization.objects.create(
                     name="Sponsor Org %s" % k, status="ok"
-                ),
-            )
+                )
             for k in range(1, 7)
-        )
+        }
 
         # create sponsorships
 

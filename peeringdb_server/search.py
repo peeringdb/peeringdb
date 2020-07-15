@@ -126,9 +126,9 @@ def search(term):
         }
         for tag, objects in list(search_index_update.items()):
             if tag not in SEARCH_CACHE["search_index"]:
-                SEARCH_CACHE["search_index"][tag] = dict(
-                    [(obj.id, obj) for obj in ref_dict[tag].objects.filter(status="ok")]
-                )
+                SEARCH_CACHE["search_index"][tag] = {
+                    obj.id: obj for obj in ref_dict[tag].objects.filter(status="ok")
+                }
             SEARCH_CACHE["search_index"][tag].update(objects)
 
         SEARCH_CACHE["update_t"] = t

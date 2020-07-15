@@ -70,7 +70,7 @@ class VeriQueueTests(TestCase):
             vqi.save()
             self.assertEqual(
                 qs.filter(
-                    subject="[test]{} - {}".format(vqi.content_type, inst)
+                    subject=f"[test]{vqi.content_type} - {inst}"
                 ).exists(),
                 True,
             )

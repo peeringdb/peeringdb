@@ -22,7 +22,7 @@ class AdminTests(TestCase):
 
     @classmethod
     def entity_data(cls, org, tag):
-        kwargs = {"name": "%s %s" % (org.name, tag), "status": "ok", "org": org}
+        kwargs = {"name": f"{org.name} {tag}", "status": "ok", "org": org}
         if tag == "net":
             cls.asn_count += 1
             kwargs.update(asn=cls.asn_count)
@@ -133,7 +133,7 @@ class AdminTests(TestCase):
         c = Client()
         c.login(username="admin", password="admin")
         for model in m:
-            url = "/cp/%s/%s/" % (model._meta.app_label, model._meta.model_name)
+            url = f"/cp/{model._meta.app_label}/{model._meta.model_name}/"
             response = c.get(url, follow=True)
             self.assertEqual(response.status_code, 200)
 
@@ -141,7 +141,7 @@ class AdminTests(TestCase):
             response = c.get(url_add, follow=True)
             self.assertEqual(response.status_code, 200)
 
-            url_id = "%s%s" % (url, model.objects.first().id)
+            url_id = f"{url}{model.objects.first().id}"
             response = c.get(url_id, follow=True)
             self.assertEqual(response.status_code, 200)
 
@@ -250,7 +250,7 @@ class AdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         for i, n in models.COMMANDLINE_TOOLS:
             assert (
-                '<option value="{}">{}</option>'.format(i, n)
+                f'<option value="{i}">{n}</option>'
                 in response.content.decode()
             )
 
@@ -553,7 +553,7 @@ class AdminTests(TestCase):
                 )
                 response = client.get(url)
                 cont = response.content.decode("utf-8")
-                assert response.status_code == kwargs.get("status_{}".format(op), 200)
+                assert response.status_code == kwargs.get(f"status_{op}", 200)
                 if response.status_code == 200:
                     assert search_str in cont
 

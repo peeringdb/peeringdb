@@ -26,7 +26,7 @@ class CacheRedirect(Exception):
 # API CACHE LOADER
 
 
-class APICacheLoader(object):
+class APICacheLoader:
     """
     Checks if an API GET request qualifies for a cache load
     and if it does allows you to provide the cached result
@@ -48,7 +48,7 @@ class APICacheLoader(object):
             self.fields = self.fields.split(",")
         self.path = os.path.join(
             settings.API_CACHE_ROOT,
-            "%s-%s.json" % (viewset.model.handleref.tag, self.depth),
+            f"{viewset.model.handleref.tag}-{self.depth}.json",
         )
 
     def qualifies(self):
@@ -89,7 +89,7 @@ class APICacheLoader(object):
         """
 
         # read cache file
-        with open(self.path, "r") as f:
+        with open(self.path) as f:
             data = json.load(f)
 
         data = data.get("data")
@@ -124,7 +124,7 @@ class APICacheLoader(object):
             for section, rules in list(ruleset.items()):
                 _ruleset[section] = {}
                 for rule, perms in list(rules.items()):
-                    _ruleset[section]["%s.%s" % (namespace_str, rule)] = perms
+                    _ruleset[section][f"{namespace_str}.{rule}"] = perms
                     ruleset = _ruleset
 
         return nsp.dict_get_path(
@@ -174,7 +174,7 @@ class APICacheLoader(object):
 
             # create dict containing ids needed to build the permissioning
             # namespace
-            init = dict([(k, row.get(v)) for k, v in list(kwargs.items())])
+            init = {k: row.get(v) for k, v in list(kwargs.items())}
 
             # joined ids
             for t, j in list(joined_ids.items()):
@@ -242,12 +242,10 @@ class APICacheLoader(object):
         else:
             ids = [r[proxy_id] for r in data]
 
-        return dict(
-            [
-                (r["id"], r[target_id])
+        return {
+                r["id"]: r[target_id]
                 for r in model.objects.filter(id__in=ids).values("id", target_id)
-            ]
-        )
+        }
 
     # permissioning functions for each handlref type
 

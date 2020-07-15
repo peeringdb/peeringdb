@@ -10,7 +10,7 @@ from .util import ClientCase, Group
 class TestWipe(ClientCase):
     @classmethod
     def setUpTestData(cls):
-        super(TestWipe, cls).setUpTestData()
+        super().setUpTestData()
         cls.superuser = get_user_model().objects.create_user(
             "superuser", "superuser@localhost", "superuser", is_superuser=True
         )

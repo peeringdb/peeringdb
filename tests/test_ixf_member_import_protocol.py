@@ -1281,9 +1281,8 @@ def setup_test_data(filename):
             os.path.dirname(__file__),
             "data",
             "json_members_list",
-            "{}.json".format(filename),
+            f"{filename}.json",
         ),
-        "r",
     ) as fh:
         json_data = json.load(fh)
 

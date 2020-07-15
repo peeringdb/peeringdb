@@ -416,10 +416,10 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
             else:
                 rdap = None
 
-            title = "{} - {}".format(instance.content_type, item)
+            title = f"{instance.content_type} - {item}"
 
             if is_suggested(item):
-                title = "[SUGGEST] {}".format(title)
+                title = f"[SUGGEST] {title}"
 
             ticket_queue(
                 title,

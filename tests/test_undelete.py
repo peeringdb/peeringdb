@@ -15,7 +15,7 @@ from peeringdb_server.management.commands.pdb_undelete import Command
 class TestUndelete(ClientCase):
     @classmethod
     def setUpTestData(cls):
-        super(TestUndelete, cls).setUpTestData()
+        super().setUpTestData()
         call_command("pdb_generate_test_data", limit=2, commit=True)
 
         cls.org_a = REFTAG_MAP["org"].objects.get(id=1)

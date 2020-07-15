@@ -30,15 +30,13 @@ class ViewTestCase(TestCase):
         guest_group.user_set.add(cls.guest_user)
 
         # create organizations
-        cls.organizations = dict(
-            (
-                k,
+        cls.organizations = {
+                k:
                 models.Organization.objects.create(
                     name="Partner Org %s" % k, status="ok"
-                ),
-            )
+                )
             for k in ["a", "b", "c", "d"]
-        )
+        }
 
         # create partnerships
         cls.partnerships = {

@@ -113,7 +113,7 @@ class UserCreationForm(auth_forms.UserCreationForm):
         )
 
     def clean(self):
-        super(UserCreationForm, self).clean()
+        super().clean()
         recaptcha = self.cleaned_data.get("recaptcha", "")
         captcha = self.cleaned_data.get("captcha", "")
 

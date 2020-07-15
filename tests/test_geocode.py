@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 import json
 import uuid
@@ -20,22 +19,19 @@ class ViewTestCase(TestCase):
     def setUpTestData(cls):
 
         # create organizations
-        cls.organizations = dict(
-            (
-                k,
+        cls.organizations = {
+                k:
                 models.Organization.objects.create(
                     name="Geocode Org %s" % k, status="ok"
-                ),
-            )
+                )
             for k in ["a", "b", "c", "d"]
-        )
+        }
 
         # create facilities
-        cls.facilities = dict(
-            (
-                k,
+        cls.facilities = {
+                k:
                 models.Facility.objects.create(
-                    name="Geocode Fac {}".format(k),
+                    name=f"Geocode Fac {k}",
                     status="ok",
                     org=cls.organizations[k],
                     address1="Some street",
@@ -47,10 +43,9 @@ class ViewTestCase(TestCase):
                     latitude=1.23,
                     longitude=-1.23,
                     geocode_status=True,
-                ),
-            )
+                )
             for k in ["a", "b", "c", "d"]
-        )
+        }
 
     def test_base(self):
         self.assertEqual(
