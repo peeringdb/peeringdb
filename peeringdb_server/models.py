@@ -3413,6 +3413,16 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         """
         Custom model validation
         """
+
+        status_error = _(
+            "IXLanPrefix with status '{}' cannot be linked to a IXLan with status '{}'."
+        ).format(self.status, self.ixlan.status)
+
+        if self.ixlan.status == "pending" and self.status == "ok":
+            raise ValidationError(status_error)
+        elif self.ixlan.status == "deleted" and self.status in ["ok", "pending"]:
+            raise ValidationError(status_error)
+
         # validate the specified prefix address
         validate_address_space(self.prefix)
         validate_prefix_overlap(self.prefix)

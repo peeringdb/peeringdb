@@ -1500,9 +1500,10 @@ def view_network(request, id):
             },
             {
                 "name": "asn",
-                "label": _("Primary ASN"),
+                "label": _("ASN"),
                 "notify_incomplete": True,
                 "value": network_d.get("asn", dismiss),
+                "readonly": True,
             },
             {
                 "name": "irr_as_set",

@@ -209,7 +209,7 @@ def test_validate_irr_as_set(value, validated):
         assert validate_irr_as_set(value) == validated
 
 
-@pytest.mark.djangodb
+@pytest.mark.django_db
 def test_validate_phonenumber():
 
     # test standalone validator
@@ -264,5 +264,30 @@ def test_validate_phonenumber():
     ix.full_clean()
 
 
+@pytest.mark.django_db
+def test_validate_ixpfx_ixlan_status_match():
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(name="Text exchange", status="pending", org=org)
+    ixlan = ix.ixlan
 
+    pfx = IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        protocol="IPv4",
+        prefix=ipaddress.ip_network("198.32.125.0/24"),
+        status="ok",
+    )
 
+    with pytest.raises(ValidationError) as exc1:
+        pfx.clean()
+
+    assert exc1.value.args[0]  == "IXLanPrefix with status 'ok' cannot be linked to a IXLan with status 'pending'."
+
+    ixlan.status = "deleted"
+    ixlan.save()
+    pfx.status = "pending"
+    pfx.save()
+
+    with pytest.raises(ValidationError) as exc2:
+        pfx.clean()
+
+    assert exc2.value.args[0]  == "IXLanPrefix with status 'pending' cannot be linked to a IXLan with status 'deleted'."
