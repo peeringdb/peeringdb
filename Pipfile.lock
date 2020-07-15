@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "6d403d3741847159e39fb3843e2b2403bdb433a8db22e3a62bcad5495f75b2e2"
+            "sha256": "b2812edd3c3e2fb48806234e56469263ca2520f1f519f0120abec843701da895"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -137,11 +137,11 @@
         },
         "django-crispy-forms": {
             "hashes": [
-                "sha256:ad943285508f0ed0e271d00399b9399c22b8795a4f969029bce0fd29522a8e2d",
-                "sha256:fbe9c2c9698b6590afe37940cb08194d1e722015f6bc5bee83f679362406ea30"
+                "sha256:888bb316db89b60050a42ec35080facb361d823eec38010ccb0702f45642d3b8",
+                "sha256:f2f1e0fbb458851636447cfb6be1a611b40c8ac9e41a74ba923011378670b43b"
             ],
             "index": "pypi",
-            "version": "==1.9.1"
+            "version": "==1.9.2"
         },
         "django-debug-toolbar": {
             "hashes": [
@@ -153,11 +153,11 @@
         },
         "django-extensions": {
             "hashes": [
-                "sha256:2b96bb937329b4038809d0fa79c55f6c1e941bce5057ca9ff5f3207aadffcbb9",
-                "sha256:c4e8cff39a26bfb72438cd52ab37d760a2aa146b715b6cd27fa8b862ac29fdc5"
+                "sha256:6230898b1e1d5deb3ddab8335b2d270edb7afa4ef916a95e479a19fdfb0464cb",
+                "sha256:d5fcf8f3bab019487e07473c24453bccd5acfb4440f3ef36788294c307b09d4c"
             ],
             "index": "pypi",
-            "version": "==3.0.2"
+            "version": "==3.0.3"
         },
         "django-formtools": {
             "hashes": [
@@ -219,10 +219,10 @@
         },
         "django-peeringdb": {
             "hashes": [
-                "sha256:765fc90593a2689024599ba7b5a0443b0b4682d7abbdf5e905a4d36616c42e4b"
+                "sha256:2afb82f69608863f34f61574685806ca348bad7f4fae97cefecea186738bd665"
             ],
             "index": "pypi",
-            "version": "==2.1.1"
+            "version": "==2.2.0"
         },
         "django-phonenumber-field": {
             "hashes": [
@@ -898,11 +898,11 @@
         },
         "tox": {
             "hashes": [
-                "sha256:60c3793f8ab194097ec75b5a9866138444f63742b0f664ec80be1222a40687c5",
-                "sha256:9a746cda9cadb9e1e05c7ab99f98cfcea355140d2ecac5f97520be94657c3bc7"
+                "sha256:1abf2ff7add9fabe95848af14cfe3c412361bef1ce52f7ceb4ff88d289e306ac",
+                "sha256:df4e418bee73acf258dcba1b1d9c6af0caea5d9105005ecf1b10a9a45c91dbdc"
             ],
             "index": "pypi",
-            "version": "==3.16.1"
+            "version": "==3.17.0"
         },
         "twentyc.rpc": {
             "hashes": [
