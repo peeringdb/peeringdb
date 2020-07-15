@@ -8,6 +8,7 @@ from reversion.models import Version
 
 from peeringdb_server.models import NetworkContact
 
+
 class Command(BaseCommand):
 
     help = "Hard deletes old soft-deleted network contact instances"
@@ -27,7 +28,6 @@ class Command(BaseCommand):
         self.commit = options.get("commit")
         self._hard_delete_old_pocs()
 
-
     def _hard_delete_old_pocs(self):
 
         qset = NetworkContact.objects.filter(status="deleted")
@@ -41,7 +41,6 @@ class Command(BaseCommand):
         self.log(f"Network contacts flagged for hard delete: {count}")
 
         counter = 1
-
 
         for poc in qset:
 
@@ -58,5 +57,3 @@ class Command(BaseCommand):
                 # remove poc
 
                 poc.delete(hard=True)
-
-

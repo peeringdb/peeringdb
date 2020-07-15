@@ -13,8 +13,10 @@ def add_permissions(apps, schema_editor):
     guest_group = Group.objects.filter(id=settings.GUEST_GROUP_ID).first()
     user_group = Group.objects.filter(id=settings.USER_GROUP_ID).first()
 
-    namespace = "peeringdb.organization.{org}.internetexchange"\
-                ".*.ixf_ixp_member_list_url.{visible}"
+    namespace = (
+        "peeringdb.organization.{org}.internetexchange"
+        ".*.ixf_ixp_member_list_url.{visible}"
+    )
 
     if guest_group:
         GroupPermission.objects.create(

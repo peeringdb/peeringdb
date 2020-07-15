@@ -154,8 +154,6 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
             permissions=0x01,
         )
 
-
-
         nsp.models.GroupPermission.objects.create(
             group=user_group, namespace="peeringdb.organization", permissions=0x01
         )
@@ -178,13 +176,11 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
             permissions=0x01,
         )
 
-
         nsp.models.GroupPermission.objects.create(
             group=user_group,
             namespace="peeringdb.organization.*.internetexchange.*.ixf_ixp_member_list_url.users",
             permissions=0x01,
         )
-
 
         # prepare api test data
         cls.prepare()

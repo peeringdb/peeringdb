@@ -196,16 +196,18 @@ class APIClient(object):
             },
         )
 
+
 def ticket_queue_deletion_prevented(user, instance):
     """
     queue deskpro ticket to notify about the prevented
     deletion of an object #696
     """
 
-    subject = f"[PROTECTED] Deletion prevented: " \
-              f"{instance.HandleRef.tag}-{instance.id} "\
-              f"{instance}"
-
+    subject = (
+        f"[PROTECTED] Deletion prevented: "
+        f"{instance.HandleRef.tag}-{instance.id} "
+        f"{instance}"
+    )
 
     # we dont want to spam DeskPRO with tickets when a user
     # repeatedly clicks the delete button for an object
@@ -237,14 +239,11 @@ def ticket_queue_deletion_prevented(user, instance):
             {
                 "user": user,
                 "instance": instance,
-                "admin_url": settings.BASE_URL + django.urls.reverse(
-                    f"admin:peeringdb_server_{model_name}_change",
-                    args=(instance.id,)
-                )
+                "admin_url": settings.BASE_URL
+                + django.urls.reverse(
+                    f"admin:peeringdb_server_{model_name}_change", args=(instance.id,)
+                ),
             }
         ),
         user,
     )
-
-
-

@@ -9,11 +9,7 @@ import django_peeringdb.models.abstract
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0038_netixlan_ipaddr_unique'),
+        ("peeringdb_server", "0038_netixlan_ipaddr_unique"),
     ]
 
-    operations = [
-        migrations.DeleteModel(
-            name='DuplicateIPNetworkIXLan',
-        )
-    ]
+    operations = [migrations.DeleteModel(name="DuplicateIPNetworkIXLan",)]

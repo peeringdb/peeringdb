@@ -95,7 +95,6 @@ def org_save(sender, **kwargs):
             permissions=PERM_READ,
         ).save()
 
-
     # make the admin group for the org
     try:
         group = Group.objects.get(name=inst.admin_group_name)
@@ -123,7 +122,6 @@ def org_save(sender, **kwargs):
             namespace=f"{ix_namespace}.ixf_ixp_member_list_url.private",
             permissions=PERM_CRUD,
         ).save()
-
 
     if inst.status == "deleted":
         for ar in inst.affiliation_requests.all():

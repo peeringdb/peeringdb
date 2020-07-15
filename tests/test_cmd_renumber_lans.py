@@ -62,7 +62,6 @@ class TestRenumberLans(ClientCase):
         for ixpfx in ixlan.ixpfx_set.all():
             ixpfx.delete()
 
-
         call_command(
             "pdb_renumber_lans",
             ix=1,

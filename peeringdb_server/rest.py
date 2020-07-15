@@ -604,11 +604,15 @@ class ModelViewSet(viewsets.ModelViewSet):
             else:
                 return Response(status=status.HTTP_403_FORBIDDEN)
         except ProtectedAction as exc:
-            exc_message = f"{exc} - " + _("Please contact {} to help with the deletion of this object").format(settings.DEFAULT_FROM_EMAIL)
+            exc_message = f"{exc} - " + _(
+                "Please contact {} to help with the deletion of this object"
+            ).format(settings.DEFAULT_FROM_EMAIL)
 
             ticket_queue_deletion_prevented(request.user, exc.protected_object)
 
-            return Response(status=status.HTTP_403_FORBIDDEN, data={"detail": exc_message})
+            return Response(
+                status=status.HTTP_403_FORBIDDEN, data={"detail": exc_message}
+            )
         finally:
             self.get_serializer().finalize_delete(request)
 

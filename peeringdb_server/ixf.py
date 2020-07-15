@@ -23,19 +23,18 @@ from peeringdb_server.models import (
 )
 
 REASON_ENTRY_GONE_FROM_REMOTE = _(
-    "The entry for (asn and IPv4 and IPv6) does not exist " \
+    "The entry for (asn and IPv4 and IPv6) does not exist "
     "in the exchange's IX-F data as a singular member connection"
 )
 
 REASON_NEW_ENTRY = _(
-    "The entry for (asn and IPv4 and IPv6) does not exist " \
+    "The entry for (asn and IPv4 and IPv6) does not exist "
     "in PeeringDB as a singular network -> ix connection"
 )
 
 REASON_VALUES_CHANGED = _(
     "Data differences between PeeringDB and the exchange's IX-F data"
 )
-
 
 
 class Importer(object):
@@ -76,7 +75,6 @@ class Importer(object):
         self.asn = asn
         self.now = datetime.datetime.now(datetime.timezone.utc)
         self.invalid_ip_errors = []
-
 
     def fetch(self, url, timeout=5):
         """
@@ -263,7 +261,6 @@ class Importer(object):
 
         return True
 
-
     @reversion.create_revision()
     def update_ix(self):
 
@@ -280,11 +277,11 @@ class Importer(object):
         save_ix = False
 
         ixf_member_data_changed = IXFMemberData.objects.filter(
-            updated__gte = self.now, ixlan = self.ixlan
+            updated__gte=self.now, ixlan=self.ixlan
         ).exists()
 
         netixlan_data_changed = NetworkIXLan.objects.filter(
-            updated__gte = self.now, ixlan = self.ixlan
+            updated__gte=self.now, ixlan=self.ixlan
         ).exists()
 
         if ixf_member_data_changed or netixlan_data_changed:
@@ -294,12 +291,10 @@ class Importer(object):
         ixf_net_count = len(self.pending_save)
         if ixf_net_count != ix.ixf_net_count:
             ix.ixf_net_count = ixf_net_count
-            save_ix =True
+            save_ix = True
 
         if save_ix:
             ix.save()
-
-
 
     @reversion.create_revision()
     def process_saves(self):
@@ -332,21 +327,19 @@ class Importer(object):
                     netixlan.ipaddr4,
                     netixlan.ipaddr6,
                     netixlan.ixlan,
-                    data={}
+                    data={},
                 )
 
                 if netixlan.network.allow_ixp_update:
                     self.log_apply(
                         ixf_member_data.apply(save=self.save),
-                        reason=REASON_ENTRY_GONE_FROM_REMOTE
+                        reason=REASON_ENTRY_GONE_FROM_REMOTE,
                     )
                 else:
                     ixf_member_data.set_remove(
-                        save=self.save,
-                        reason = REASON_ENTRY_GONE_FROM_REMOTE
+                        save=self.save, reason=REASON_ENTRY_GONE_FROM_REMOTE
                     )
                     self.log_ixf_member_data(ixf_member_data)
-
 
     def cleanup_ixf_member_data(self):
 
@@ -370,10 +363,8 @@ class Importer(object):
             # ix-f data
 
             elif not self.skip_import and ixf_member.ixf_id not in self.ixf_ids:
-                if ixf_member.action in ["add","modify"]:
+                if ixf_member.action in ["add", "modify"]:
                     ixf_member.set_resolved()
-
-
 
     @transaction.atomic()
     def archive(self):
@@ -569,8 +560,8 @@ class Importer(object):
             else:
                 operational = True
 
-            is_rs_peer = (
-                ipv4.get("routeserver", False) or ipv6.get("routeserver", False)
+            is_rs_peer = ipv4.get("routeserver", False) or ipv6.get(
+                "routeserver", False
             )
 
             ixf_member_data = IXFMemberData.instantiate(
@@ -586,14 +577,11 @@ class Importer(object):
             )
 
             if self.connection_errors:
-                ixf_member_data.error = "\n".join(
-                    self.connection_errors
-                )
+                ixf_member_data.error = "\n".join(self.connection_errors)
             else:
                 ixf_member_data.error = ixf_member_data.previous_error
 
             self.pending_save.append(ixf_member_data)
-
 
     def parse_speed(self, if_list):
         """
@@ -610,11 +598,10 @@ class Importer(object):
             try:
                 speed += int(iface.get("if_speed", 0))
             except ValueError:
-                log_msg =_("Invalid speed value: {}").format(iface.get("if_speed"))
+                log_msg = _("Invalid speed value: {}").format(iface.get("if_speed"))
                 self.log_error(log_msg)
                 self.connection_errors.append(log_msg)
         return speed
-
 
     def apply_add_or_update(self, ixf_member_data):
 
@@ -640,10 +627,8 @@ class Importer(object):
 
             self.apply_add(ixf_member_data)
 
-
     def resolve(self, ixf_member_data):
         ixf_member_data.set_resolved(save=self.save)
-
 
     def apply_update(self, ixf_member_data):
         changed_fields = ", ".join(ixf_member_data.changes.keys())
@@ -651,19 +636,14 @@ class Importer(object):
 
         if ixf_member_data.net.allow_ixp_update:
             try:
-               self.log_apply(
-                    ixf_member_data.apply(save=self.save),
-                    reason=reason
-                )
+                self.log_apply(ixf_member_data.apply(save=self.save), reason=reason)
             except ValidationError as exc:
                 ixf_member_data.set_conflict(error=exc, save=self.save)
         else:
             ixf_member_data.set_update(
-                save=self.save,
-                reason=reason,
+                save=self.save, reason=reason,
             )
             self.log_ixf_member_data(ixf_member_data)
-
 
     def apply_add(self, ixf_member_data):
 
@@ -671,17 +651,13 @@ class Importer(object):
 
             try:
                 self.log_apply(
-                    ixf_member_data.apply(save=self.save),
-                    reason=REASON_NEW_ENTRY
+                    ixf_member_data.apply(save=self.save), reason=REASON_NEW_ENTRY
                 )
             except ValidationError as exc:
                 ixf_member_data.set_conflict(error=exc, save=self.save)
 
         else:
-            ixf_member_data.set_add(
-                save=self.save,
-                reason=REASON_NEW_ENTRY
-            )
+            ixf_member_data.set_add(save=self.save, reason=REASON_NEW_ENTRY)
             self.log_ixf_member_data(ixf_member_data)
 
     def save_log(self):
@@ -701,17 +677,18 @@ class Importer(object):
     def log_apply(self, apply_result, reason=""):
 
         netixlan = apply_result["netixlan"]
-        self.actions_taken[apply_result["action"]].append({
-            "netixlan": netixlan,
-            "version":reversion.models.Version.objects.get_for_object(netixlan).first(),
-            "reason":reason
-        })
+        self.actions_taken[apply_result["action"]].append(
+            {
+                "netixlan": netixlan,
+                "version": reversion.models.Version.objects.get_for_object(
+                    netixlan
+                ).first(),
+                "reason": reason,
+            }
+        )
 
         return self.log_peer(
-            netixlan.asn,
-            apply_result["action"],
-            reason,
-            netixlan=netixlan
+            netixlan.asn, apply_result["action"], reason, netixlan=netixlan
         )
 
     def log_ixf_member_data(self, ixf_member_data):
@@ -719,9 +696,8 @@ class Importer(object):
             ixf_member_data.net.asn,
             f"suggest-{ixf_member_data.action}",
             ixf_member_data.reason,
-            netixlan=ixf_member_data
+            netixlan=ixf_member_data,
         )
-
 
     def log_peer(self, asn, action, reason, netixlan=None):
         """
@@ -765,14 +741,13 @@ class Importer(object):
             {"peer": peer, "action": action, "reason": "{}".format(reason),}
         )
 
-
     def notify_error(self, error):
         now = datetime.datetime.now(datetime.timezone.utc)
         notified = self.ixlan.ixf_ixp_import_error_notified
         prev_error = self.ixlan.ixf_ixp_import_error
 
         if notified:
-            diff = ((now - notified).total_seconds() / 3600)
+            diff = (now - notified).total_seconds() / 3600
             if diff < settings.IXF_PARSE_ERROR_NOTIFICATION_PERIOD:
                 return
 
@@ -784,13 +759,11 @@ class Importer(object):
         ixf_member_data._notify(
             "email/notify-ixf-source-error.txt",
             "Could not process IX-F Data",
-            context={"error":error, "dt":now},
+            context={"error": error, "dt": now},
             save=False,
             ix=True,
-            ac=True
+            ac=True,
         )
-
-
 
     def log_error(self, error, save=False):
         """

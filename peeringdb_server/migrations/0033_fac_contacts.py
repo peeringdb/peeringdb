@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0032_net_lg_rs_url'),
+        ("peeringdb_server", "0032_net_lg_rs_url"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='facility',
-            name='sales_email',
+            model_name="facility",
+            name="sales_email",
             field=models.EmailField(blank=True, max_length=254),
         ),
         migrations.AddField(
-            model_name='facility',
-            name='sales_phone',
+            model_name="facility",
+            name="sales_phone",
             field=models.CharField(blank=True, max_length=192),
         ),
         migrations.AddField(
-            model_name='facility',
-            name='tech_email',
+            model_name="facility",
+            name="tech_email",
             field=models.EmailField(blank=True, max_length=254),
         ),
         migrations.AddField(
-            model_name='facility',
-            name='tech_phone',
+            model_name="facility",
+            name="tech_phone",
             field=models.CharField(blank=True, max_length=192),
         ),
     ]

@@ -233,7 +233,7 @@ class UserTests(TestCase):
             "next": "/org/1",
             "auth-username": "user_d",
             "auth-password": "user_d",
-            "login_view-current_step": "auth"
+            "login_view-current_step": "auth",
         }
         C = Client()
         resp = C.post("/account/login/", data, follow=True)
@@ -243,7 +243,7 @@ class UserTests(TestCase):
             "next": "/logout",
             "auth-username": "user_d",
             "auth-password": "user_d",
-            "login_view-current_step": "auth"
+            "login_view-current_step": "auth",
         }
 
         C = Client()

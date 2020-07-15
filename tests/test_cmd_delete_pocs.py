@@ -14,6 +14,7 @@ from reversion.models import Version
 
 from peeringdb_server.models import Network, NetworkContact
 
+
 class TestRenumberLans(ClientCase):
     @classmethod
     def setUpTestData(cls):
@@ -24,7 +25,7 @@ class TestRenumberLans(ClientCase):
 
             cls.poc_del = NetworkContact.objects.create(
                 status="ok",
-                network =cls.net,
+                network=cls.net,
                 phone="123467",
                 email="test@localhost",
                 name="John Smith",
@@ -83,7 +84,7 @@ class TestRenumberLans(ClientCase):
 
         # total poc count should have gone down by 1
 
-        assert NetworkContact.objects.count() == (count-1)
+        assert NetworkContact.objects.count() == (count - 1)
 
         # version objects for the poc should be gone as well
 
@@ -91,10 +92,9 @@ class TestRenumberLans(ClientCase):
 
         # no other version objects should have been touched
 
-        assert Version.objects.count() == (reversion_count-2)
+        assert Version.objects.count() == (reversion_count - 2)
 
         # set updated field to auto now again (otherwise it breaks
         # other tests)
 
         updated.auto_now = True
-

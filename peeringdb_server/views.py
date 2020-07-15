@@ -217,6 +217,7 @@ def view_http_error_403(request):
 def view_http_error_csrf(request, reason):
     return JsonResponse({"non_field_errors": [reason]}, status=403)
 
+
 def view_http_error_invalid(request, reason):
     return JsonResponse({"non_field_errors": [reason]}, status=400)
 
@@ -315,9 +316,9 @@ def view_request_ownership(request):
             return view_http_error_invalid(
                 request,
                 _(
-                    "You have too many affiliation requests pending, "\
+                    "You have too many affiliation requests pending, "
                     "please wait for them to be resolved before opening more."
-                )
+                ),
             )
 
         request.user.flush_affiliation_requests()
@@ -348,7 +349,6 @@ def cancel_affiliation_request(request, uoar_id):
     return redirect(reverse("user-profile"))
 
 
-
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
@@ -377,9 +377,9 @@ def view_affiliate_to_org(request):
             return view_http_error_invalid(
                 request,
                 _(
-                    "You have too many affiliation requests pending, "\
+                    "You have too many affiliation requests pending, "
                     "please wait for them to be resolved before opening more."
-                )
+                ),
             )
 
         form = AffiliateToOrgForm(request.POST)
@@ -1376,10 +1376,10 @@ def view_exchange(request, id):
                 "value": DoNotRender.permissioned(
                     ixlan.ixf_ixp_member_list_url,
                     request.user,
-                    f"{ixlan.nsp_namespace}.ixf_ixp_member_list_url"\
+                    f"{ixlan.nsp_namespace}.ixf_ixp_member_list_url"
                     f".{ixlan.ixf_ixp_member_list_url_visible}",
-                    explicit=True
-                )
+                    explicit=True,
+                ),
             },
             {
                 "type": "list",
@@ -1388,7 +1388,6 @@ def view_exchange(request, id):
                 "label": _("IX-F Member Export URL Visibility"),
                 "value": ixlan.ixf_ixp_member_list_url_visible,
             },
-
             {
                 "type": "action",
                 "label": _("IX-F Import Preview"),
@@ -1878,7 +1877,6 @@ def request_logout(request):
     return redirect("/")
 
 
-
 # We are using django-otp's EmailDevice model
 # to handle email as a recovery option for one
 # time passwords.
@@ -1892,8 +1890,12 @@ def request_logout(request):
 # to do just that
 
 EmailDevice._verify_token = EmailDevice.verify_token
+
+
 def verify_token(self, token):
     return self._verify_token(str(token))
+
+
 EmailDevice.verify_token = verify_token
 
 
@@ -1926,8 +1928,10 @@ class LoginView(two_factor.views.LoginView):
         """
 
         was_limited = getattr(self.request, "limited", False)
-        if self.get_step_index() == 0 and  was_limited:
-            self.rate_limit_message = _("Please wait a bit before trying to login again.")
+        if self.get_step_index() == 0 and was_limited:
+            self.rate_limit_message = _(
+                "Please wait a bit before trying to login again."
+            )
             return self.render_goto_step("auth")
 
         return super().post(*args, **kwargs)
@@ -1943,9 +1947,7 @@ class LoginView(two_factor.views.LoginView):
         context.update(rate_limit_message=getattr(self, "rate_limit_message", None))
 
         if "other_devices" in context:
-            context["other_devices"] += [
-                self.get_email_device()
-            ]
+            context["other_devices"] += [self.get_email_device()]
 
         return context
 
@@ -2007,7 +2009,7 @@ class LoginView(two_factor.views.LoginView):
         """
 
         if not self.device_cache:
-            challenge_device_id = self.request.POST.get('challenge_device', None)
+            challenge_device_id = self.request.POST.get("challenge_device", None)
             if challenge_device_id:
                 device = self.get_email_device()
                 if device.persistent_id == challenge_device_id:
@@ -2068,7 +2070,6 @@ class LoginView(two_factor.views.LoginView):
         return redirect(self.get_success_url())
 
 
-
 @require_http_methods(["POST"])
 @ratelimit(key="ip", rate=RATELIMITS["request_translation"], method="POST")
 def request_translation(request, data_type):
@@ -2119,7 +2120,7 @@ def network_reset_ixf_proposals(request, net_id):
     qset = IXFMemberData.objects.filter(asn=net.asn)
     qset.update(dismissed=False)
 
-    return JsonResponse({"status":"ok"})
+    return JsonResponse({"status": "ok"})
 
 
 @require_http_methods(["POST"])
@@ -2135,7 +2136,4 @@ def network_dismiss_ixf_proposal(request, net_id, ixf_id):
     ixf_member_data.dismissed = True
     ixf_member_data.save()
 
-    return JsonResponse({"status":"ok"})
-
-
-
+    return JsonResponse({"status": "ok"})

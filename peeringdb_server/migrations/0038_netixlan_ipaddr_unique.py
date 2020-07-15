@@ -10,16 +10,20 @@ import django_inet.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0037_netixlan_ipaddr_dedupe'),
+        ("peeringdb_server", "0037_netixlan_ipaddr_dedupe"),
     ]
 
     operations = [
         migrations.AddConstraint(
-            model_name='networkixlan',
-            constraint=models.UniqueConstraint(fields=('ipaddr4',), name='unique_ipaddr4'),
+            model_name="networkixlan",
+            constraint=models.UniqueConstraint(
+                fields=("ipaddr4",), name="unique_ipaddr4"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='networkixlan',
-            constraint=models.UniqueConstraint(fields=('ipaddr6',), name='unique_ipaddr6'),
+            model_name="networkixlan",
+            constraint=models.UniqueConstraint(
+                fields=("ipaddr6",), name="unique_ipaddr6"
+            ),
         ),
     ]

@@ -83,8 +83,9 @@ PERMISSION_APP_LABELS = [
     "sites",
     "auth",
     "account",
-    "oauth2_provider"
+    "oauth2_provider",
 ]
+
 
 class StatusFilter(admin.SimpleListFilter):
     """
@@ -414,10 +415,11 @@ class ModelAdminWithVQCtrl(object):
             )
         return _("APPROVED")
 
+
 class IXLanPrefixForm(StatusForm):
     def clean_prefix(self):
         value = ipaddress.ip_network(self.cleaned_data["prefix"])
-        self.prefix_changed = (self.instance.prefix != value)
+        self.prefix_changed = self.instance.prefix != value
         return value
 
     def clean(self):
@@ -425,11 +427,11 @@ class IXLanPrefixForm(StatusForm):
             raise ValidationError(self.instance.not_deletable_reason)
 
 
-
 class IXLanPrefixInline(SanitizedAdmin, admin.TabularInline):
     model = IXLanPrefix
     extra = 0
     form = IXLanPrefixForm
+
 
 class IXLanInline(SanitizedAdmin, admin.StackedInline):
     model = IXLan
@@ -486,9 +488,7 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
     }
 
 
-
 class NetworkIXLanForm(StatusForm):
-
     def clean_ipaddr4(self):
         value = self.cleaned_data["ipaddr4"]
         if not value:
@@ -500,6 +500,7 @@ class NetworkIXLanForm(StatusForm):
         if not value:
             return None
         return value
+
 
 class NetworkInternetExchangeInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkIXLan
@@ -554,7 +555,7 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "nsp_namespace",
         "ixf_import_history",
         "ixf_last_import",
-        "ixf_net_count"
+        "ixf_net_count",
     )
     inlines = (InternetExchangeFacilityInline, IXLanInline)
     form = InternetExchangeAdminForm
@@ -893,9 +894,9 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
             '<a class="grp-button grp-delete-link" href="{}">{}</a>'.format(
                 django.urls.reverse(
                     "admin:peeringdb_server_organizationmerge_actions",
-                    args=(obj.id,"undo")
+                    args=(obj.id, "undo"),
                 ),
-                _("Undo merge")
+                _("Undo merge"),
             )
         )
 
@@ -907,7 +908,7 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
             each.undo()
 
     undo.short_description = _("Undo merge")
-    undo.allowed_permissions = ('change',)
+    undo.allowed_permissions = ("change",)
 
     actions = [undo]
 
@@ -998,7 +999,6 @@ class IXLanPrefixAdmin(SoftDeleteAdmin):
         "fk": ["ixlan"],
     }
 
-
     def ix(self, obj):
         return obj.ixlan.ix
 
@@ -1029,9 +1029,9 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
     list_filter = (StatusFilter,)
     form = StatusForm
 
-    raw_id_fields = ("network","ixlan")
+    raw_id_fields = ("network", "ixlan")
     autocomplete_lookup_fields = {
-        "fk": ["network","ixlan"],
+        "fk": ["network", "ixlan"],
     }
 
     def ix(self, obj):
@@ -1133,14 +1133,14 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
                 each.approve()
 
     vq_approve.short_description = _("APPROVE selected items")
-    vq_approve.allowed_permissions = ('change',)
+    vq_approve.allowed_permissions = ("change",)
 
     def vq_deny(modeladmin, request, queryset):
         for each in queryset:
             each.deny()
 
     vq_deny.short_description = _("DENY and delete selected items")
-    vq_deny.allowed_permissions = ('change',)
+    vq_deny.allowed_permissions = ("change",)
 
     actions = [vq_approve, vq_deny]
 
@@ -1163,17 +1163,19 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
         "fk": ["user", "org"],
     }
 
-
     def approve_and_notify(self, request, queryset):
         for each in queryset:
             if each.status == "canceled":
-                messages.error(request, _("Cannot approve a canceled affiliation request"))
+                messages.error(
+                    request, _("Cannot approve a canceled affiliation request")
+                )
                 continue
 
             each.approve()
             each.notify_ownership_approved()
             self.message_user(
-                request, _("Affiliation request was approved and the user was notified.")
+                request,
+                _("Affiliation request was approved and the user was notified."),
             )
 
     approve_and_notify.short_description = _("Approve and notify User")
@@ -1181,7 +1183,9 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
     def approve(self, request, queryset):
         for each in queryset:
             if each.status == "canceled":
-                messages.error(request, _("Cannot approve a canceled affiliation request"))
+                messages.error(
+                    request, _("Cannot approve a canceled affiliation request")
+                )
                 continue
             each.approve()
 
@@ -1369,6 +1373,7 @@ class UserPermissionAdmin(UserAdmin):
     def clean_password(self):
         pass
 
+
 ## COMMANDLINE TOOL ADMIN
 
 
@@ -1548,14 +1553,10 @@ def apply_ixf_member_data(modeladmin, request, queryset):
         try:
             ixf_member_data.apply(user=request.user, comment="Applied IX-F suggestion")
         except ValidationError as exc:
-            messages.error(
-                request,
-                f"{ixf_member_data.ixf_id_pretty_str}: {exc}"
-            )
+            messages.error(request, f"{ixf_member_data.ixf_id_pretty_str}: {exc}")
 
 
 apply_ixf_member_data.short_description = _("Apply")
-
 
 
 class IXFMemberDataAdmin(admin.ModelAdmin):
@@ -1593,13 +1594,7 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "remote_data",
     )
 
-    search_fields = (
-        "asn",
-        "ixlan__id",
-        "ixlan__ix__name",
-        "ipaddr4",
-        "ipaddr6"
-    )
+    search_fields = ("asn", "ixlan__id", "ixlan__ix__name", "ipaddr4", "ipaddr6")
 
     fields = (
         "ix",
@@ -1623,13 +1618,11 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
 
     actions = [apply_ixf_member_data]
 
-
     raw_id_fields = ("ixlan",)
 
     autocomplete_lookup_fields = {
         "fk": ["ixlan",],
     }
-
 
     def ix(self, obj):
         return obj.ixlan.ix
@@ -1638,17 +1631,15 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         if not obj.netixlan.id:
             return "-"
         url = django.urls.reverse(
-            "admin:peeringdb_server_networkixlan_change",
-            args=(obj.netixlan.id,)
+            "admin:peeringdb_server_networkixlan_change", args=(obj.netixlan.id,)
         )
         return mark_safe(f'<a href="{url}">{obj.netixlan.id}</a>')
-
 
     def get_readonly_fields(self, request, obj=None):
         if obj and obj.action != "add":
             # make identifying fields read-only
             # for modify / delete actions
-            return self.readonly_fields + ('asn', 'ipaddr4', 'ipaddr6')
+            return self.readonly_fields + ("asn", "ipaddr4", "ipaddr6")
         return self.readonly_fields
 
     def has_add_permission(self, request):
@@ -1663,11 +1654,9 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
     def response_change(self, request, obj):
         if "_save-and-apply" in request.POST:
             obj.save()
-            obj.apply(
-                user=request.user,
-                comment="Applied IX-F suggestion"
-            )
+            obj.apply(user=request.user, comment="Applied IX-F suggestion")
         return super().response_change(request, obj)
+
 
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)

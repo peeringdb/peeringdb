@@ -285,7 +285,7 @@ class TestJSON(unittest.TestCase):
             "zipcode": ZIPCODE,
             "address1": "Some street",
             "clli": str(uuid.uuid4())[:6].upper(),
-            "rencode": '',
+            "rencode": "",
             "npanxx": "000-111",
             "latitude": None,
             "longitude": None,
@@ -367,7 +367,7 @@ class TestJSON(unittest.TestCase):
             "descr": NOTE,
             "mtu": 12345,
             "dot1q_support": False,
-            "ixf_ixp_member_list_url_visible":"Private",
+            "ixf_ixp_member_list_url_visible": "Private",
             "rs_asn": 12345,
             "arp_sponge": None,
         }
@@ -384,7 +384,7 @@ class TestJSON(unittest.TestCase):
             "ixlan_id": SHARED["ixlan_r_ok"].id,
             "protocol": "IPv4",
             "prefix": "10.%d.10.0/23" % (self.PREFIX_COUNT + 1),
-            "in_dfz": False
+            "in_dfz": False,
         }
         if "prefix" not in kwargs:
             self.PREFIX_COUNT += 1
@@ -509,7 +509,9 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def assert_delete(self, db, typ, test_success=None, test_failure=None, test_protected=None):
+    def assert_delete(
+        self, db, typ, test_success=None, test_failure=None, test_protected=None
+    ):
         if test_success:
             db.rm(typ, test_success)
             with pytest.raises(NotFoundException):
@@ -563,10 +565,10 @@ class TestJSON(unittest.TestCase):
 
                 with pytest.raises(InvalidRequestException) as excinfo:
                     r = db.create(typ, data_invalid, return_response=True)
-                    #FIXME
-                    #The following lines will not be called since
-                    #the InvalidRequestException is raised
-                    #in the previous line
+                    # FIXME
+                    # The following lines will not be called since
+                    # the InvalidRequestException is raised
+                    # in the previous line
                     for k, v in list(test_failures["invalid"].items()):
                         self.assertIn(k, list(r.keys()))
                 assert "400 Bad Request" in str(excinfo.value)
@@ -935,8 +937,10 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_ixlan_ixf_ixp_member_list_url(self):
-        for ixlan in self.db_user.all("ixlan", ixf_ixp_member_list_url__startswith="http"):
-            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public","Users"]:
+        for ixlan in self.db_user.all(
+            "ixlan", ixf_ixp_member_list_url__startswith="http"
+        ):
+            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public", "Users"]:
                 assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
             else:
                 assert "ixf_ixp_member_list_url" not in ixlan
@@ -989,15 +993,16 @@ class TestJSON(unittest.TestCase):
 
     #########################################################################
     def test_org_member_001_GET_ixlan_ixf_ixp_member_list_url(self):
-        for ixlan in self.db_org_member.all("ixlan", ixf_ixp_member_list_url__startswith="http"):
-            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public","Users"]:
+        for ixlan in self.db_org_member.all(
+            "ixlan", ixf_ixp_member_list_url__startswith="http"
+        ):
+            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public", "Users"]:
                 assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
             else:
                 if ixlan["id"] == SHARED["ixlan_r3_ok"].id:
                     assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
                 else:
                     assert "ixf_ixp_member_list_url" not in ixlan
-
 
     ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION ADMINISTRATOR
@@ -1027,16 +1032,16 @@ class TestJSON(unittest.TestCase):
     #########################################################################
 
     def test_org_admin_001_GET_ixlan_ixf_ixp_member_list_url(self):
-        for ixlan in self.db_org_admin.all("ixlan", ixf_ixp_member_list_url__startswith="http"):
-            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public","Users"]:
+        for ixlan in self.db_org_admin.all(
+            "ixlan", ixf_ixp_member_list_url__startswith="http"
+        ):
+            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public", "Users"]:
                 assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
             else:
                 if ixlan["id"] == SHARED["ixlan_rw3_ok"].id:
                     assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
                 else:
                     assert "ixf_ixp_member_list_url" not in ixlan
-
-
 
     ##########################################################################
 
@@ -1087,10 +1092,7 @@ class TestJSON(unittest.TestCase):
             test_failures={
                 "invalid": {"name": ""},
                 "perms": {"id": SHARED["ix_r_ok"].id},
-                "readonly": {
-                    "ixf_net_count" : 50,
-                    "ixf_last_import" : "not even valid"
-                }
+                "readonly": {"ixf_net_count": 50, "ixf_last_import": "not even valid"},
             },
         )
 
@@ -1133,12 +1135,8 @@ class TestJSON(unittest.TestCase):
 
         # check protected ix validation
         self.assert_delete(
-            self.db_org_admin,
-            "ix",
-            test_protected=SHARED["ix_rw_ok"].id,
+            self.db_org_admin, "ix", test_protected=SHARED["ix_rw_ok"].id,
         )
-
-
 
     ##########################################################################
 
@@ -1150,9 +1148,7 @@ class TestJSON(unittest.TestCase):
             "fac",
             data,
             test_failures={
-                "invalid": {
-                    "name": "",
-                },
+                "invalid": {"name": "",},
                 "perms": {
                     # need to set name again so it doesnt fail unique validation
                     "name": self.make_name("Test"),
@@ -1179,7 +1175,9 @@ class TestJSON(unittest.TestCase):
                 "readonly": {
                     "latitude": 1,  # this should not take as it is read only
                     "longitude": 1,  # this should not take as it is read only
-                    "rencode": str(uuid.uuid4())[:6].upper(), # this should not take as it is read only
+                    "rencode": str(uuid.uuid4())[
+                        :6
+                    ].upper(),  # this should not take as it is read only
                 },
             },
         )
@@ -1193,11 +1191,8 @@ class TestJSON(unittest.TestCase):
 
         # check protected ix validation
         self.assert_delete(
-            self.db_org_admin,
-            "fac",
-            test_protected=SHARED["fac_rw_ok"].id,
+            self.db_org_admin, "fac", test_protected=SHARED["fac_rw_ok"].id,
         )
-
 
         # Create new data with a non-null rencode
         data_new = self.make_data_fac()
@@ -1240,7 +1235,6 @@ class TestJSON(unittest.TestCase):
 
         SHARED["net_id"] = r_data.get("id")
 
-
         self.assert_update(
             self.db_org_admin,
             "net",
@@ -1258,11 +1252,7 @@ class TestJSON(unittest.TestCase):
             "net",
             SHARED["net_id"],
             data,
-            test_failures={
-                "invalid": {
-                    "asn": data["asn"] + 1
-                },
-            },
+            test_failures={"invalid": {"asn": data["asn"] + 1},},
         )
 
         self.assert_delete(
@@ -1285,24 +1275,28 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_net_looking_glass_url(self):
-        for scheme in ["http","https","ssh","telnet"]:
+        for scheme in ["http", "https", "ssh", "telnet"]:
             r_data = self.assert_create(
                 self.db_org_admin,
                 "net",
-                self.make_data_net(asn=9000900, looking_glass="{}://foo.bar".format(scheme)),
-                test_failures={"invalid": {"looking_glass": "foo://www.bar.com"}}
+                self.make_data_net(
+                    asn=9000900, looking_glass="{}://foo.bar".format(scheme)
+                ),
+                test_failures={"invalid": {"looking_glass": "foo://www.bar.com"}},
             )
             Network.objects.get(id=r_data["id"]).delete(hard=True)
 
     ##########################################################################
 
     def test_org_admin_002_POST_net_route_server_url(self):
-        for scheme in ["http","https","ssh","telnet"]:
+        for scheme in ["http", "https", "ssh", "telnet"]:
             r_data = self.assert_create(
                 self.db_org_admin,
                 "net",
-                self.make_data_net(asn=9000900, route_server="{}://foo.bar".format(scheme)),
-                test_failures={"invalid": {"route_server": "foo://www.bar.com"}}
+                self.make_data_net(
+                    asn=9000900, route_server="{}://foo.bar".format(scheme)
+                ),
+                test_failures={"invalid": {"route_server": "foo://www.bar.com"}},
             )
             Network.objects.get(id=r_data["id"]).delete(hard=True)
 
@@ -1550,7 +1544,6 @@ class TestJSON(unittest.TestCase):
             },
         )
 
-
         self.assert_delete(
             self.db_org_admin,
             "ixpfx",
@@ -1571,11 +1564,7 @@ class TestJSON(unittest.TestCase):
         pfx.delete()
 
         data.update(prefix="205.127.237.0/24")
-        r_data = self.assert_create(
-            self.db_org_admin,
-            "ixpfx",
-            data,
-        )
+        r_data = self.assert_create(self.db_org_admin, "ixpfx", data,)
 
         # make sure protocols are validated
         r_data = self.assert_create(
@@ -1596,16 +1585,12 @@ class TestJSON(unittest.TestCase):
             ixlan=SHARED["ixlan_rw_ok"],
             ipaddr4=prefix.prefix[0],
             status="ok",
-            speed=1000
+            speed=1000,
         )
 
         self.assert_delete(
-            self.db_org_admin,
-            "ixpfx",
-            test_protected=SHARED["ixpfx_id"]
+            self.db_org_admin, "ixpfx", test_protected=SHARED["ixpfx_id"]
         )
-
-
 
     ##########################################################################
 
@@ -1744,7 +1729,6 @@ class TestJSON(unittest.TestCase):
             "org",
             # can delete the org we just made
             test_success=org.id,
-
             # cant delete the org we dont have write perms to
             test_failure=SHARED["org_r_ok"].id,
         )
@@ -1818,12 +1802,13 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_001_GET_ixlan_ixf_ixp_member_list_url(self):
-        for ixlan in self.db_guest.all("ixlan", ixf_ixp_member_list_url__startswith="http"):
+        for ixlan in self.db_guest.all(
+            "ixlan", ixf_ixp_member_list_url__startswith="http"
+        ):
             if ixlan["ixf_ixp_member_list_url_visible"] == "Public":
                 assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
             else:
                 assert "ixf_ixp_member_list_url" not in ixlan
-
 
     ##########################################################################
 
@@ -2489,7 +2474,7 @@ class TestJSON(unittest.TestCase):
         # set one netixlan to not operational
 
         netixlan = NetworkIXLan.objects.first()
-        netixlan.operational=False
+        netixlan.operational = False
         netixlan.save()
 
         # assert that it is now returned in the operational=False
@@ -2498,7 +2483,6 @@ class TestJSON(unittest.TestCase):
         data = self.db_guest.all("netixlan", operational=0)
         assert len(data) == 1
         assert data[0]["id"] == netixlan.id
-
 
     ##########################################################################
 
@@ -2531,7 +2515,7 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_005_list_filter_netfac_related_country(self):
         data = self.db_guest.all(
-            "netfac", country=u"{}".format(SHARED["fac_rw_ok"].country)
+            "netfac", country="{}".format(SHARED["fac_rw_ok"].country)
         )
         self.assertEqual(len(data), 2)
         self.assert_data_integrity(data[0], "netfac")
@@ -3017,7 +3001,6 @@ class TestJSON(unittest.TestCase):
     # MISC TESTS
     ##########################################################################
 
-
     def _test_GET_ixf_ixp_member_list_url(self, db, tests=[], suffix="r"):
         ixlan = SHARED[f"ixlan_{suffix}_ok"]
         ixlan.ixf_ixp_member_list_url = "http://localhost"
@@ -3038,7 +3021,6 @@ class TestJSON(unittest.TestCase):
             else:
                 assert "ixf_ixp_member_list_url" not in data
 
-
     def test_z_misc_GET_ixf_ixp_member_list_url(self):
 
         """
@@ -3047,45 +3029,22 @@ class TestJSON(unittest.TestCase):
         """
 
         self._test_GET_ixf_ixp_member_list_url(
-            self.db_user,
-            [
-                ("Private", False),
-                ("Users", True),
-                ("Public", True)
-            ]
+            self.db_user, [("Private", False), ("Users", True), ("Public", True)]
         )
 
         self._test_GET_ixf_ixp_member_list_url(
-            self.db_guest,
-            [
-                ("Private", False),
-                ("Users", False),
-                ("Public", True)
-            ]
+            self.db_guest, [("Private", False), ("Users", False), ("Public", True)]
         )
 
         self._test_GET_ixf_ixp_member_list_url(
-            self.db_org_member,
-            [
-                ("Private", True),
-                ("Users", True),
-                ("Public", True)
-            ]
+            self.db_org_member, [("Private", True), ("Users", True), ("Public", True)]
         )
 
         self._test_GET_ixf_ixp_member_list_url(
             self.db_org_admin,
-            [
-                ("Private", True),
-                ("Users", True),
-                ("Public", True)
-            ],
-            suffix="rw"
+            [("Private", True), ("Users", True), ("Public", True)],
+            suffix="rw",
         )
-
-
-
-
 
     def test_z_misc_POST_ix_fac_missing_phone_fields(self):
         """
@@ -3112,7 +3071,6 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_ix(prefix=self.get_prefix4())
         del data["policy_phone"]
         r = db.create("ix", data, return_response=True).get("data")
-
 
     def test_z_misc_002_dupe_netixlan_ip(self):
 
@@ -3658,12 +3616,12 @@ class Command(BaseCommand):
             )
 
         visibility = {
-            "rw":"Public",
-            "rw2":"Users",
-            "rw3":"Private",
-            "r":"Public",
-            "r2":"Users",
-            "r3":"Private",
+            "rw": "Public",
+            "rw2": "Users",
+            "rw3": "Private",
+            "r": "Public",
+            "r2": "Users",
+            "r3": "Private",
         }
 
         for status in ["ok", "pending"]:
@@ -3676,8 +3634,6 @@ class Command(BaseCommand):
                     ixlan.ixf_ixp_member_list_url_visible = visible
                     ixlan.ixf_ixp_member_list_url = "http://localhost"
                     ixlan.save()
-
-
 
         for status in ["ok", "pending"]:
             for prefix in ["r", "rw"]:

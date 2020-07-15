@@ -299,8 +299,12 @@ class AsnAutomationTestCase(TestCase):
         the user is already affiliated to.
         """
 
-        org_1 = models.Organization.objects.create(name="Org with admin user", status="ok")
-        org_2 = models.Organization.objects.create(name="Org with normal user", status="ok")
+        org_1 = models.Organization.objects.create(
+            name="Org with admin user", status="ok"
+        )
+        org_2 = models.Organization.objects.create(
+            name="Org with normal user", status="ok"
+        )
         org_1.admin_usergroup.user_set.add(self.user_b)
         org_2.usergroup.user_set.add(self.user_b)
 
@@ -315,9 +319,9 @@ class AsnAutomationTestCase(TestCase):
         )
 
         self.assertEqual(
-            ticket.body, self.ticket["asnauto-9000002-affiliated-user-requested-ownership.txt"]
+            ticket.body,
+            self.ticket["asnauto-9000002-affiliated-user-requested-ownership.txt"],
         )
-
 
     def test_affiliate_to_bogon_asn(self):
         """

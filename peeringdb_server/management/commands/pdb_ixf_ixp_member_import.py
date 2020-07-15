@@ -40,7 +40,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--delete-all-ixfmemberdata",
             action="store_true",
-            help="This removes all IXFMemberData objects"
+            help="This removes all IXFMemberData objects",
         )
 
     def log(self, msg, debug=False):
@@ -98,8 +98,7 @@ class Command(BaseCommand):
                 importer.cache_only = self.cache
                 self.log(f"Processing {ixlan.ix.name} ({ixlan.id})")
                 with transaction.atomic():
-                    success = importer.update(ixlan, save=self.commit, asn=asn
-                )
+                    success = importer.update(ixlan, save=self.commit, asn=asn)
                 self.log(json.dumps(importer.log), debug=True)
                 self.log(
                     "Success: {}, added: {}, updated: {}, deleted: {}".format(

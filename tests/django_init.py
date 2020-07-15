@@ -48,7 +48,9 @@ settings.configure(
             "BACKEND": "django.template.backends.django.DjangoTemplates",
             "APP_DIRS": True,
             "DIRS": (
-                os.path.join(os.path.dirname(__file__), "..", "peeringdb_server", "templates"),
+                os.path.join(
+                    os.path.dirname(__file__), "..", "peeringdb_server", "templates"
+                ),
             ),
             "OPTIONS": {
                 "context_processors": [
@@ -153,8 +155,8 @@ settings.configure(
         "delete": "delete object",
         "create": "create object",
     },
-    LOGIN_URL = "/account/login",
-    LOGIN_REDIRECT_URL = "/",
+    LOGIN_URL="/account/login",
+    LOGIN_REDIRECT_URL="/",
     OAUTH_ENABLED=False,
     RECAPTCHA_PUBLIC_KEY="",
     EMAIL_SUBJECT_PREFIX="[test]",

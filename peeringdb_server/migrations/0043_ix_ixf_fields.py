@@ -6,18 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0042_djpdb_verbose_field_names'),
+        ("peeringdb_server", "0042_djpdb_verbose_field_names"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='internetexchange',
-            name='ixf_last_import',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='IX-F Last Import'),
+            model_name="internetexchange",
+            name="ixf_last_import",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="IX-F Last Import"
+            ),
         ),
         migrations.AddField(
-            model_name='internetexchange',
-            name='ixf_net_count',
-            field=models.IntegerField(default=0, verbose_name='IX-F Network Count'),
+            model_name="internetexchange",
+            name="ixf_net_count",
+            field=models.IntegerField(default=0, verbose_name="IX-F Network Count"),
         ),
     ]

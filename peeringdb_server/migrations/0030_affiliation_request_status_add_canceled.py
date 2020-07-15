@@ -6,13 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0029_auto_20200401_1006'),
+        ("peeringdb_server", "0029_auto_20200401_1006"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='userorgaffiliationrequest',
-            name='status',
-            field=models.CharField(choices=[('pending', 'Pending'), ('approved', 'Approved'), ('denied', 'Denied'), ('canceled', 'Canceled')], help_text='Status of this request', max_length=254),
+            model_name="userorgaffiliationrequest",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("pending", "Pending"),
+                    ("approved", "Approved"),
+                    ("denied", "Denied"),
+                    ("canceled", "Canceled"),
+                ],
+                help_text="Status of this request",
+                max_length=254,
+            ),
         ),
     ]

@@ -21,13 +21,13 @@ from peeringdb_server.models import (
 from peeringdb_server.admin_commandline_tools import TOOL_MAP
 
 
-
 class GrappelliHandlerefAutocomplete(GrappelliAutocomplete):
     """
     makes sure that the auto-complete fields managed
     by grappelli in django admin exclude soft-deleted
     objects
     """
+
     def get_queryset(self):
         qs = super().get_queryset()
 

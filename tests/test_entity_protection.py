@@ -8,8 +8,9 @@ from peeringdb_server.models import (
     Sponsorship,
     SponsorshipOrganization,
     ProtectedAction,
-    UTC
+    UTC,
 )
+
 
 @pytest.mark.djangodb
 def test_protected_entities(db):
@@ -35,7 +36,6 @@ def test_protected_entities(db):
         """
         with pytest.raises(ProtectedAction):
             entity.delete()
-
 
     # org has ix, net and fac under it, and should not be
     # deletable
@@ -140,8 +140,6 @@ def test_protected_entities(db):
     assert org.status == "deleted"
 
 
-
-
 @pytest.mark.django_db
 def test_org_protection_sponsor(db):
 
@@ -154,8 +152,8 @@ def test_org_protection_sponsor(db):
 
     org = Organization.objects.create(status="ok", name="SponsorOrg")
     sponsor = Sponsorship.objects.create(
-        start_date = now - datetime.timedelta(days=1),
-        end_date = now + datetime.timedelta(days=1)
+        start_date=now - datetime.timedelta(days=1),
+        end_date=now + datetime.timedelta(days=1),
     )
     sponsor.orgs.add(org)
 
@@ -170,4 +168,3 @@ def test_org_protection_sponsor(db):
     sponsor.delete()
 
     org.delete()
-

@@ -207,9 +207,7 @@ class APICacheLoader(object):
                 row = self.apply_permissions(ns, row, ruleset=ruleset)
 
                 applicator = getattr(
-                    self.model,
-                    "api_cache_permissions_applicator",
-                    None
+                    self.model, "api_cache_permissions_applicator", None
                 )
 
                 if applicator:
@@ -283,7 +281,6 @@ class APICacheLoader(object):
             ix_id="ix_id",
             id="id",
         )
-
 
     def apply_permissions_ixfac(self, data):
         return self.apply_permissions_generic(

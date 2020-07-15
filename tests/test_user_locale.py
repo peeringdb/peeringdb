@@ -74,7 +74,7 @@ class UserLocaleTests(TestCase):
             "next": "/profile",
             "login_view-current_step": "auth",
             "auth-username": "user_pt",
-            "auth-password": "user_pt"
+            "auth-password": "user_pt",
         }
         resp = c.post("/account/login/", data, follow=True)
         assert "<!-- Current language: pt -->" in resp.content.decode()
@@ -84,7 +84,7 @@ class UserLocaleTests(TestCase):
             "next": "/profile",
             "login_view-current_step": "auth",
             "auth-username": "user_undef",
-            "auth-password": "user_undef"
+            "auth-password": "user_undef",
         }
         resp = c.post("/account/login/", data, follow=True)
         assert "<!-- Current language: en -->" in resp.content.decode()

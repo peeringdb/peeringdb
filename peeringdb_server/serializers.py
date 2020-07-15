@@ -209,6 +209,7 @@ class UniqueFieldValidator(object):
         if collisions:
             raise RestValidationError(collisions, code="unique")
 
+
 class RequiredForMethodValidator(object):
     """
     A validator that makes a field required for certain
@@ -321,7 +322,9 @@ class ExtendedURLField(serializers.URLField):
     def __init__(self, **kwargs):
         schemes = kwargs.pop("schemes", None)
         super(ExtendedURLField, self).__init__(**kwargs)
-        validator = URLValidator(message=self.error_messages["invalid"], schemes=schemes)
+        validator = URLValidator(
+            message=self.error_messages["invalid"], schemes=schemes
+        )
         self.validators = []
         self.validators.append(validator)
 
@@ -1084,7 +1087,7 @@ class FacilitySerializer(ModelSerializer):
         )
 
         read_only_fields = ["rencode"]
-        
+
         related_fields = ["org"]
 
         list_exclude = ["org"]
@@ -1160,7 +1163,6 @@ class FacilitySerializer(ModelSerializer):
             raise serializers.ValidationError({"sales_phone": exc.message})
 
         return data
-
 
 
 class InternetExchangeFacilitySerializer(ModelSerializer):
@@ -1297,13 +1299,14 @@ class NetworkContactSerializer(ModelSerializer):
 
         representation = super().to_representation(data)
 
-        if isinstance(representation,dict) and representation.get("status") == "deleted":
+        if (
+            isinstance(representation, dict)
+            and representation.get("status") == "deleted"
+        ):
             for field in ["name", "phone", "email", "url"]:
                 representation[field] = ""
 
         return representation
-
-
 
 
 class NetworkIXLanSerializer(ModelSerializer):
@@ -1357,8 +1360,9 @@ class NetworkIXLanSerializer(ModelSerializer):
                 fields=("ipaddr4", "ipaddr6"), message="Input required for IPv4 or IPv6"
             ),
             UniqueFieldValidator(
-                fields=("ipaddr4", "ipaddr6"), message="IP already exists",
-                check_deleted=True
+                fields=("ipaddr4", "ipaddr6"),
+                message="IP already exists",
+                check_deleted=True,
             ),
         ]
 
@@ -1468,7 +1472,6 @@ class NetworkIXLanSerializer(ModelSerializer):
             )
 
         return data
-
 
 
 class NetworkFacilitySerializer(ModelSerializer):
@@ -1641,15 +1644,16 @@ class NetworkSerializer(ModelSerializer):
     org = serializers.SerializerMethodField()
 
     route_server = serializers.CharField(
-        required=False, allow_blank=True,
-        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])]
+        required=False,
+        allow_blank=True,
+        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])],
     )
 
     looking_glass = serializers.CharField(
-        required=False, allow_blank=True,
-        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])]
+        required=False,
+        allow_blank=True,
+        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])],
     )
-
 
     info_prefixes4 = SaneIntegerField(
         allow_null=False, required=False, validators=[validate_info_prefixes4]
@@ -1661,7 +1665,7 @@ class NetworkSerializer(ModelSerializer):
     suggest = serializers.BooleanField(required=False, write_only=True)
     validators = [AsnRdapValidator(), FieldMethodValidator("suggest", ["POST"])]
 
-    #irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
+    # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
     class Meta:
         model = Network
@@ -1825,9 +1829,7 @@ class NetworkSerializer(ModelSerializer):
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
             net = super(ModelSerializer, self).create(validated_data)
-            ticket_queue_asnauto_skipvq(
-                user, validated_data["org"], net, rdap
-            )
+            ticket_queue_asnauto_skipvq(user, validated_data["org"], net, rdap)
             return net
 
         elif self.Meta.model in QUEUE_ENABLED:
@@ -1842,17 +1844,15 @@ class NetworkSerializer(ModelSerializer):
 
     def update(self, instance, validated_data):
         if validated_data.get("asn") != instance.asn:
-            raise serializers.ValidationError({
-                'asn': _('ASN cannot be changed.'),
-            })
+            raise serializers.ValidationError(
+                {"asn": _("ASN cannot be changed."),}
+            )
         return super(ModelSerializer, self).update(instance, validated_data)
-
 
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)
         if rdap_error:
             ticket_queue_rdap_error(*rdap_error)
-
 
     def validate_irr_as_set(self, value):
         if value:
@@ -1953,13 +1953,12 @@ class IXLanPrefixSerializer(ModelSerializer):
                 "Prefix netmask invalid, needs to be valid according to the selected protocol"
             )
 
-
         if self.instance:
             prefix = data["prefix"]
             if prefix != self.instance.prefix and not self.instance.deletable:
-                raise serializers.ValidationError({
-                    "prefix": self.instance.not_deletable_reason
-                })
+                raise serializers.ValidationError(
+                    {"prefix": self.instance.not_deletable_reason}
+                )
 
         return data
 
@@ -2053,7 +2052,6 @@ class IXLanSerializer(ModelSerializer):
             del data["ixf_ixp_member_list_url"]
 
         return data
-
 
 
 class InternetExchangeSerializer(ModelSerializer):
@@ -2219,13 +2217,12 @@ class InternetExchangeSerializer(ModelSerializer):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
         return super(InternetExchangeSerializer, self).to_internal_value(data)
 
-
     def to_representation(self, data):
         # When an ix is created we want to add the ixlan_id and ixpfx_id
         # that were created to the representation (see #609)
 
         representation = super().to_representation(data)
-        request=  self.context.get("request")
+        request = self.context.get("request")
         if request and request.method == "POST" and self.instance:
             ixlan = self.instance.ixlan
             ixpfx = ixlan.ixpfx_set.first()

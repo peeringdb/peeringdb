@@ -224,7 +224,7 @@ class Mock(object):
         return str(uuid.uuid4())[:6].upper()
 
     def rencode(self, data, reftag=None):
-        return ''
+        return ""
 
     def npanxx(self, data, reftag=None):
         return "123-456"

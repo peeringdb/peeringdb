@@ -651,8 +651,3 @@ class OrgAdminTests(TestCase):
 
         org.refresh_from_db()
         assert org.status == "deleted"
-
-
-
-
-

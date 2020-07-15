@@ -6,18 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0040_ixf_member_data'),
+        ("peeringdb_server", "0040_ixf_member_data"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='ixlan',
-            name='ixf_ixp_import_error',
-            field=models.TextField(blank=True, help_text='Reason IX-F data could not be parsed', null=True, verbose_name='IX-F error'),
+            model_name="ixlan",
+            name="ixf_ixp_import_error",
+            field=models.TextField(
+                blank=True,
+                help_text="Reason IX-F data could not be parsed",
+                null=True,
+                verbose_name="IX-F error",
+            ),
         ),
         migrations.AddField(
-            model_name='ixlan',
-            name='ixf_ixp_import_error_notified',
-            field=models.DateTimeField(blank=True, help_text='Last time we notified the exchange about the IX-F parsing issue', null=True, verbose_name='IX-F error notification date'),
+            model_name="ixlan",
+            name="ixf_ixp_import_error_notified",
+            field=models.DateTimeField(
+                blank=True,
+                help_text="Last time we notified the exchange about the IX-F parsing issue",
+                null=True,
+                verbose_name="IX-F error notification date",
+            ),
         ),
     ]
