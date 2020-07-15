@@ -8,6 +8,9 @@
 {% if permissions.can_edit %}
 <div class="payload">
   <div data-edit-name="org_id">{{ instance.org_id }}</div>
+  {% if ref_tag == "net" %}
+  <div data-edit-name="asn">{{ instance.asn }}</div>
+  {% endif %}
 </div>
 {% endif %}
 
