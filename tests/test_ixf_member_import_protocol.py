@@ -17,6 +17,7 @@ from peeringdb_server.models import (
     IXLanPrefix,
     InternetExchange,
     IXFMemberData,
+    IXLanIXFMemberImportLog,
     User,
     DeskProTicket
 )
@@ -79,7 +80,8 @@ def test_update_data_attributes(entities):
     network = entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][0]
 
-    entities["netixlan"].append(
+    with reversion.create_revision():
+        entities["netixlan"].append(
                 NetworkIXLan.objects.create(
                     network=network,
                     ixlan=ixlan,
@@ -113,6 +115,15 @@ def test_update_data_attributes(entities):
     importer.update(ixlan, data=data)
     assert IXFMemberData.objects.count() == 0
     assert NetworkIXLan.objects.count() == 1
+
+    # test rollback
+    import_log = IXLanIXFMemberImportLog.objects.first()
+    import_log.rollback()
+    netixlan.refresh_from_db()
+    assert netixlan.operational == False
+    assert netixlan.is_rs_peer == False
+    assert netixlan.speed == 20000
+
 
 @pytest.mark.django_db
 def test_suggest_modify_local_ixf(entities):
@@ -238,6 +249,14 @@ def test_add_netixlan(entities):
     importer.update(ixlan, data=data)
     assert IXFMemberData.objects.count() == 0
     assert NetworkIXLan.objects.count() == 1
+
+    # test rollback
+    import_log = IXLanIXFMemberImportLog.objects.first()
+    import_log.rollback()
+    assert NetworkIXLan.objects.first().status == "deleted"
+    assert NetworkIXLan.objects.first().ipaddr4 == None
+    assert NetworkIXLan.objects.first().ipaddr6  == None
+
 
 
 @pytest.mark.django_db
@@ -572,31 +591,32 @@ def test_delete(entities):
     network = entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][0]
 
-    entities["netixlan"].append(
-                NetworkIXLan.objects.create(
-                    network=network,
-                    ixlan=ixlan,
-                    asn=network.asn,
-                    speed=10000,
-                    ipaddr4="195.69.147.250",
-                    ipaddr6="2001:7f8:1::a500:2906:1",
-                    status="ok",
-                    is_rs_peer=True,
-                    operational=True
-                ))
+    with reversion.create_revision():
+        entities["netixlan"].append(
+                    NetworkIXLan.objects.create(
+                        network=network,
+                        ixlan=ixlan,
+                        asn=network.asn,
+                        speed=10000,
+                        ipaddr4="195.69.147.250",
+                        ipaddr6="2001:7f8:1::a500:2906:1",
+                        status="ok",
+                        is_rs_peer=True,
+                        operational=True
+                    ))
 
-    entities["netixlan"].append(
-                NetworkIXLan.objects.create(
-                    network=network,
-                    ixlan=ixlan,
-                    asn=network.asn,
-                    speed=20000,
-                    ipaddr4="195.69.147.251",
-                    ipaddr6=None,
-                    status="ok",
-                    is_rs_peer=False,
-                    operational=False,
-                ))
+        entities["netixlan"].append(
+                    NetworkIXLan.objects.create(
+                        network=network,
+                        ixlan=ixlan,
+                        asn=network.asn,
+                        speed=20000,
+                        ipaddr4="195.69.147.251",
+                        ipaddr6=None,
+                        status="ok",
+                        is_rs_peer=False,
+                        operational=False,
+                    ))
 
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
@@ -612,6 +632,11 @@ def test_delete(entities):
     assert IXFMemberData.objects.count() == 0
     assert NetworkIXLan.objects.filter(status="ok").count() == 1
     assert_no_ticket_exists()
+
+    # test rollback
+    import_log = IXLanIXFMemberImportLog.objects.first()
+    import_log.rollback()
+    assert NetworkIXLan.objects.filter(status="ok").count() == 2
 
 
 @pytest.mark.django_db
@@ -829,7 +854,7 @@ def test_suggest_delete_no_local_ixf(entities, capsys):
 
     stdout = capsys.readouterr().out
     assert_email_sent(stdout, ("AS1001", '195.69.147.251', "No IPv6"))
-    
+
     # Test idempotent
     importer.update(ixlan, data=data)
     assert NetworkIXLan.objects.count() == 2
@@ -1105,7 +1130,7 @@ def test_remote_cannot_be_parsed(entities, capsys):
 
 def test_validate_json_schema():
     schema_url_base = "https://raw.githubusercontent.com/euro-ix/json-schemas/master/versions/ixp-member-list-{}.schema.json"
-    
+
     for v in ["0.4","0.5","0.6","0.7"]:
         schema = requests.get(schema_url_base.format(v)).json()
 
