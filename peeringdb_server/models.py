@@ -18,6 +18,7 @@ from django.core.mail.message import EmailMultiAlternatives
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
+from django.utils.html import strip_tags
 from django.utils.http import urlquote
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import override
