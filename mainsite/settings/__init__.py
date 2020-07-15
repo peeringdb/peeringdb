@@ -549,11 +549,11 @@ set_option("IXF_TICKET_ON_CONFLICT", True)
 
 # toggle the notification of exchanges via email
 # for ix-f importer conflicts
-set_option("IXF_NOTIFY_IX_ON_CONFLICT", True)
+set_option("IXF_NOTIFY_IX_ON_CONFLICT", False)
 
 # toggle the notification of networks via email
 # for ix-f importer conflicts
-set_option("IXF_NOTIFY_NET_ON_CONFLICT", True)
+set_option("IXF_NOTIFY_NET_ON_CONFLICT", False)
 
 
 # when a user tries to delete a protected object, a deskpro

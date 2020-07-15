@@ -2835,7 +2835,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         setting
         """
 
-        return getattr(settings, "IXF_NOTIFY_IX_ON_CONFLICT", True)
+        return getattr(settings, "IXF_NOTIFY_IX_ON_CONFLICT", False)
 
 
     @property
@@ -2848,7 +2848,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         setting
         """
 
-        return getattr(settings, "IXF_NOTIFY_NET_ON_CONFLICT", True)
+        return getattr(settings, "IXF_NOTIFY_NET_ON_CONFLICT", False)
 
 
 
