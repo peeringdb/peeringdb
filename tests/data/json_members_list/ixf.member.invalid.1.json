@@ -10,7 +10,7 @@
     ],
     "member_list": [
         {
-            "asnum": 2906,
+            "asnum": 1001,
             "member_type": "peering",
             "name": "Netflix",
             "url": "http://netflix.com/",
@@ -33,7 +33,7 @@
                     "if_list": [
                         {
                             "switch_id": 1,
-                            "if_speed": 10000,
+                            "if_speed": "This is invalid",
                             "if_type": "LR4"
                         }
                     ],
@@ -41,7 +41,7 @@
                         {
                             "vlan_id": 0,
                             "ipv4": {
-                                "address": "195.69.147.250",
+                                "address": "195.69.147.100",
                                 "routeserver": true,
                                 "max_prefix": 42,
                                 "as_macro": "AS-NFLX-V4",
@@ -50,7 +50,28 @@
                                 ]
                             },
                             "ipv6": {
-                                "address": "2001:7f8:1::a500:2906:1",
+                                "address": "2001:7f8:1::a500:2906:4",
+                                "routeserver": true,
+                                "max_prefix": 42,
+                                "as_macro": "AS-NFLX-V6",
+                                "mac_address" : [
+                                    "00:0a:95:9d:68:16"
+                                ]
+                            }
+                        },
+                        {
+                            "vlan_id": 1,
+                            "ipv4": {
+                                "address": "195.69.147.200",
+                                "routeserver": true,
+                                "max_prefix": 42,
+                                "as_macro": "AS-NFLX-V4",
+                                "mac_address" : [
+                                    "00:0a:95:9d:68:16"
+                                ]
+                            },
+                            "ipv6": {
+                                "address": "2001:7f8:1::a500:2906:2",
                                 "routeserver": true,
                                 "max_prefix": 42,
                                 "as_macro": "AS-NFLX-V6",
