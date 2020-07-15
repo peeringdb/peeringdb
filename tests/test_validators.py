@@ -5,6 +5,7 @@ import requests
 
 from django.test import override_settings
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 
 from peeringdb_server.validators import (
     validate_address_space,
@@ -22,6 +23,8 @@ from peeringdb_server.models import (
     IXLanPrefix,
     Network,
     NetworkContact,
+    Facility,
+    ProtectedAction,
 )
 
 pytestmark = pytest.mark.django_db
@@ -265,8 +268,8 @@ def test_validate_phonenumber():
 def test_validate_ixpfx_ixlan_status_match():
     org = Organization.objects.create(name="Test org", status="ok")
     ix = InternetExchange.objects.create(name="Text exchange", status="pending", org=org)
-    ixlan = ix.ixlan 
-       
+    ixlan = ix.ixlan
+
     pfx = IXLanPrefix.objects.create(
         ixlan=ixlan,
         protocol="IPv4",

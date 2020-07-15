@@ -59,6 +59,7 @@ from peeringdb_server.models import (
     NetworkIXLan,
     InternetExchange,
     InternetExchangeFacility,
+    IXFMemberData,
     Facility,
     Sponsorship,
     Partnership,
@@ -152,6 +153,22 @@ class DoNotRender(object):
     this can then be type checked in the templates to remove non existant attribute
     rows while still allowing attributes with nonetype values to be rendered
     """
+
+    @classmethod
+    def permissioned(cls, value, user, namespace, explicit=False):
+
+        """
+        Check if the user has permissions to the supplied namespace
+        returns a DoNotRender instance if not, otherwise returns
+        the supplied value
+        """
+
+        b = has_perms(user, namespace.lower(), 0x01, explicit=explicit)
+        print(namespace, b)
+        print(user)
+        if not b:
+            return cls()
+        return value
 
     def all(self):
         return []
@@ -1356,9 +1373,22 @@ def view_exchange(request, id):
                 "type": "url",
                 "label": _("IX-F Member Export URL"),
                 "name": "ixf_ixp_member_list_url",
-                "value": ixlan.ixf_ixp_member_list_url,
-                "admin": True,
+                "value": DoNotRender.permissioned(
+                    ixlan.ixf_ixp_member_list_url,
+                    request.user,
+                    f"{ixlan.nsp_namespace}.ixf_ixp_member_list_url"\
+                    f".{ixlan.ixf_ixp_member_list_url_visible}",
+                    explicit=True
+                )
             },
+            {
+                "type": "list",
+                "name": "ixf_ixp_member_list_url_visible",
+                "data": "enum/visibility",
+                "label": _("IX-F Member Export URL Visibility"),
+                "value": ixlan.ixf_ixp_member_list_url_visible,
+            },
+
             {
                 "type": "action",
                 "label": _("IX-F Import Preview"),
@@ -1438,10 +1468,15 @@ def view_network(request, id):
 
     org = network_d.get("org")
 
+    ixf_proposals = IXFMemberData.proposals_for_network(network)
+    ixf_proposals_dismissed = IXFMemberData.dismissed_for_network(network)
+
     data = {
         "title": network_d.get("name", dismiss),
         "facilities": facilities,
         "exchanges": exchanges,
+        "ixf": ixf_proposals,
+        "ixf_dismissed": ixf_proposals_dismissed,
         "fields": [
             {
                 "name": "org",
@@ -2070,3 +2105,37 @@ def request_translation(request, data_type):
     return JsonResponse(
         {"status": "error", "error": "No text or no language specified"}
     )
+
+
+@require_http_methods(["POST"])
+def network_reset_ixf_proposals(request, net_id):
+    net = Network.objects.get(id=net_id)
+
+    allowed = has_perms(request.user, net, PERM_CRUD)
+
+    if not allowed:
+        return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)
+
+    qset = IXFMemberData.objects.filter(asn=net.asn)
+    qset.update(dismissed=False)
+
+    return JsonResponse({"status":"ok"})
+
+
+@require_http_methods(["POST"])
+def network_dismiss_ixf_proposal(request, net_id, ixf_id):
+    ixf_member_data = IXFMemberData.objects.get(id=ixf_id)
+    net = ixf_member_data.net
+
+    allowed = has_perms(request.user, net, PERM_CRUD)
+
+    if not allowed:
+        return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)
+
+    ixf_member_data.dismissed = True
+    ixf_member_data.save()
+
+    return JsonResponse({"status":"ok"})
+
+
+

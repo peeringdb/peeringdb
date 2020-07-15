@@ -1,0 +1,9 @@
+Network Contacts
+{% for net_contact in instance.net_contacts %}
+- {{ net_contact }}
+{% endfor %}
+
+Exchange Contacts
+{% for ix_contact in instance.ix_contacts %}
+- {{ ix_contact }}
+{% endfor %}

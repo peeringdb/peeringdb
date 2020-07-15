@@ -153,12 +153,16 @@ def view_import_net_ixf_preview(request, net_id):
     for ixlan in net.ixlan_set_ixf_enabled:
         importer = ixf.Importer()
         importer.cache_only = True
-        success, netixlans, deleted, log = importer.update(
+        success = importer.update(
             ixlan, asn=net.asn, save=False
         )
-        total_log["data"].extend(log["data"])
+
+        # strip suggestions
+        log_data = [i for i in importer.log["data"] if not "suggest-" in i["action"]]
+
+        total_log["data"].extend(log_data)
         total_log["errors"].extend(
-            ["{}({}): {}".format(ixlan.ix.name, ixlan.id, err) for err in log["errors"]]
+            ["{}({}): {}".format(ixlan.ix.name, ixlan.id, err) for err in importer.log["errors"]]
         )
 
     return pretty_response(total_log)

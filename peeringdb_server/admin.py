@@ -58,6 +58,7 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLog,
     IXLanIXFMemberImportLogEntry,
     IXLanPrefix,
+    IXFMemberData,
     NetworkContact,
     NetworkFacility,
     NetworkIXLan,
@@ -413,12 +414,22 @@ class ModelAdminWithVQCtrl(object):
             )
         return _("APPROVED")
 
+class IXLanPrefixForm(StatusForm):
+    def clean_prefix(self):
+        value = ipaddress.ip_network(self.cleaned_data["prefix"])
+        self.prefix_changed = (self.instance.prefix != value)
+        return value
+
+    def clean(self):
+        if self.prefix_changed and not self.instance.deletable:
+            raise ValidationError(self.instance.not_deletable_reason)
+
+
 
 class IXLanPrefixInline(SanitizedAdmin, admin.TabularInline):
     model = IXLanPrefix
     extra = 0
-    form = StatusForm
-
+    form = IXLanPrefixForm
 
 class IXLanInline(SanitizedAdmin, admin.StackedInline):
     model = IXLan
@@ -476,11 +487,25 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
 
 
 
+class NetworkIXLanForm(StatusForm):
+
+    def clean_ipaddr4(self):
+        value = self.cleaned_data["ipaddr4"]
+        if not value:
+            return None
+        return value
+
+    def clean_ipaddr6(self):
+        value = self.cleaned_data["ipaddr6"]
+        if not value:
+            return None
+        return value
+
 class NetworkInternetExchangeInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkIXLan
     extra = 0
     raw_id_fields = ("ixlan", "network")
-    form = StatusForm
+    form = NetworkIXLanForm
 
 
 class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
@@ -524,7 +549,13 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name",)
-    readonly_fields = ("id", "nsp_namespace", "ixf_import_history")
+    readonly_fields = (
+        "id",
+        "nsp_namespace",
+        "ixf_import_history",
+        "ixf_last_import",
+        "ixf_net_count"
+    )
     inlines = (InternetExchangeFacilityInline, IXLanInline)
     form = InternetExchangeAdminForm
 
@@ -570,6 +601,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
     model = IXLanIXFMemberImportLogEntry
     fields = (
         "netixlan",
+        "versions",
         "ipv4",
         "ipv6",
         "asn",
@@ -587,6 +619,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
         "rollback_status",
         "action",
         "reason",
+        "versions",
     )
     raw_id_fields = ("netixlan",)
 
@@ -598,10 +631,31 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
     def has_add_permission(self, request, obj=None):
         return False
 
+    def versions(self, obj):
+        before = self.before_id(obj)
+        after = self.after_id(obj)
+        return f"{before} -> {after}"
+
+    def before_id(self, obj):
+        if obj.version_before:
+            return obj.version_before.id
+        return "-"
+
+    def after_id(self, obj):
+        if obj.version_after:
+            return obj.version_after.id
+        return "-"
+
     def ipv4(self, obj):
+        v = obj.version_after
+        if v:
+            return v.field_dict.get("ipaddr4")
         return obj.netixlan.ipaddr4 or ""
 
     def ipv6(self, obj):
+        v = obj.version_after
+        if v:
+            return v.field_dict.get("ipaddr6")
         return obj.netixlan.ipaddr6 or ""
 
     def asn(self, obj):
@@ -937,7 +991,7 @@ class IXLanPrefixAdmin(SoftDeleteAdmin):
     readonly_fields = ("ix", "id")
     search_fields = ("ixlan__name", "ixlan__ix__name", "prefix")
     list_filter = (StatusFilter,)
-    form = StatusForm
+    form = IXLanPrefixForm
 
     raw_id_fields = ("ixlan",)
     autocomplete_lookup_fields = {
@@ -1489,6 +1543,133 @@ class DeskProTicketAdmin(admin.ModelAdmin):
     readonly_fields = ("user",)
 
 
+def apply_ixf_member_data(modeladmin, request, queryset):
+    for ixf_member_data in queryset:
+        try:
+            ixf_member_data.apply(user=request.user, comment="Applied IX-F suggestion")
+        except ValidationError as exc:
+            messages.error(
+                request,
+                f"{ixf_member_data.ixf_id_pretty_str}: {exc}"
+            )
+
+
+apply_ixf_member_data.short_description = _("Apply")
+
+
+
+class IXFMemberDataAdmin(admin.ModelAdmin):
+    change_form_template = "admin/ixf_member_data_change_form.html"
+
+    list_display = (
+        "id",
+        "ix",
+        "asn",
+        "ipaddr4",
+        "ipaddr6",
+        "action",
+        "netixlan",
+        "speed",
+        "operational",
+        "is_rs_peer",
+        "created",
+        "updated",
+        "fetched",
+        "changes",
+        "error",
+    )
+    readonly_fields = (
+        "marked_for_removal",
+        "fetched",
+        "ix",
+        "action",
+        "changes",
+        "reason",
+        "netixlan",
+        "log",
+        "error",
+        "created",
+        "updated",
+        "remote_data",
+    )
+
+    search_fields = (
+        "asn",
+        "ixlan__id",
+        "ixlan__ix__name",
+        "ipaddr4",
+        "ipaddr6"
+    )
+
+    fields = (
+        "ix",
+        "asn",
+        "ipaddr4",
+        "ipaddr6",
+        "action",
+        "netixlan",
+        "speed",
+        "operational",
+        "is_rs_peer",
+        "created",
+        "updated",
+        "fetched",
+        "changes",
+        "reason",
+        "error",
+        "log",
+        "remote_data",
+    )
+
+    actions = [apply_ixf_member_data]
+
+
+    raw_id_fields = ("ixlan",)
+
+    autocomplete_lookup_fields = {
+        "fk": ["ixlan",],
+    }
+
+
+    def ix(self, obj):
+        return obj.ixlan.ix
+
+    def netixlan(self, obj):
+        if not obj.netixlan.id:
+            return "-"
+        url = django.urls.reverse(
+            "admin:peeringdb_server_networkixlan_change",
+            args=(obj.netixlan.id,)
+        )
+        return mark_safe(f'<a href="{url}">{obj.netixlan.id}</a>')
+
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.action != "add":
+            # make identifying fields read-only
+            # for modify / delete actions
+            return self.readonly_fields + ('asn', 'ipaddr4', 'ipaddr6')
+        return self.readonly_fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def remote_data(self, obj):
+        return obj.json
+
+    def response_change(self, request, obj):
+        if "_save-and-apply" in request.POST:
+            obj.save()
+            obj.apply(
+                user=request.user,
+                comment="Applied IX-F suggestion"
+            )
+        return super().response_change(request, obj)
+
+admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)
 admin.site.register(InternetExchangeFacility, InternetExchangeFacilityAdmin)

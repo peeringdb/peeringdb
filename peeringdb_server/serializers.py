@@ -909,15 +909,9 @@ class ModelSerializer(PermissionedModelSerializer):
                 except FieldError as exc:
                     raise exc
 
-                if has_perms(request.user, self.instance, "update"):
-                    rv = super(ModelSerializer, self).run_validation(data=data)
-                    self._undelete = True
-                    return rv
-                else:
-                    raise RestValidationError({"non_field_errors": [_(
-                        "Permission denied to restore deleted object/relationship"
-                    )]})
-                raise
+                rv = super(ModelSerializer, self).run_validation(data=data)
+                self._undelete = True
+                return rv
             else:
                 raise
 
@@ -1476,6 +1470,7 @@ class NetworkIXLanSerializer(ModelSerializer):
         return data
 
 
+
 class NetworkFacilitySerializer(ModelSerializer):
     """
     Serializer for peeringdb_server.models.NetworkFacility
@@ -1712,7 +1707,6 @@ class NetworkSerializer(ModelSerializer):
             "poc_set",
         ]
         list_exclude = ["org"]
-        extra_kwargs = {"allow_ixp_update": {"write_only": True}}
 
         _ref_tag = model.handleref.tag
 
@@ -1958,6 +1952,15 @@ class IXLanPrefixSerializer(ModelSerializer):
             raise serializers.ValidationError(
                 "Prefix netmask invalid, needs to be valid according to the selected protocol"
             )
+
+
+        if self.instance:
+            prefix = data["prefix"]
+            if prefix != self.instance.prefix and not self.instance.deletable:
+                raise serializers.ValidationError({
+                    "prefix": self.instance.not_deletable_reason
+                })
+
         return data
 
 
@@ -2014,6 +2017,7 @@ class IXLanSerializer(ModelSerializer):
             "net_set",
             "ixpfx_set",
             "ixf_ixp_member_list_url",
+            "ixf_ixp_member_list_url_visible",
             "ixf_ixp_import_enabled",
         ] + HandleRefSerializer.Meta.fields
         related_fields = ["ix", "net_set", "ixpfx_set"]
@@ -2021,7 +2025,6 @@ class IXLanSerializer(ModelSerializer):
         list_exclude = ["ix"]
 
         extra_kwargs = {
-            "ixf_ixp_member_list_url": {"write_only": True},
             "ixf_ixp_import_enabled": {"write_only": True},
         }
 
@@ -2033,6 +2036,24 @@ class IXLanSerializer(ModelSerializer):
 
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if not isinstance(data, dict):
+            return data
+
+        user = self.context.get("user")
+        request = self.context.get("request")
+
+        if not user and request:
+            user = request.user
+
+        if instance and not instance.ixf_ixp_member_list_url_viewable(user):
+            del data["ixf_ixp_member_list_url"]
+
+        return data
+
 
 
 class InternetExchangeSerializer(ModelSerializer):
@@ -2066,6 +2087,9 @@ class InternetExchangeSerializer(ModelSerializer):
     net_count = serializers.SerializerMethodField()
 
     suggest = serializers.BooleanField(required=False, write_only=True)
+
+    ixf_net_count = serializers.IntegerField(read_only=True)
+    ixf_last_import = serializers.DateTimeField(read_only=True)
 
     website = serializers.URLField(required=True)
     tech_email = serializers.EmailField(required=True)
@@ -2125,6 +2149,8 @@ class InternetExchangeSerializer(ModelSerializer):
             "suggest",
             "prefix",
             "net_count",
+            "ixf_net_count",
+            "ixf_last_import",
         ] + HandleRefSerializer.Meta.fields
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]

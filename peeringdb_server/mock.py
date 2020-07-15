@@ -263,3 +263,9 @@ class Mock(object):
 
     def speed(self, data, reftag=None):
         return 1000
+
+    def ixf_net_count(self, data, reftag=None):
+        return 0
+
+    def ixf_last_import(self, data, reftag=None):
+        return None

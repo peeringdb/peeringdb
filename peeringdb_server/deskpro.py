@@ -4,9 +4,11 @@ DeskPro API Client
 
 import re
 import requests
+import datetime
 
 from django.template import loader
 from django.conf import settings
+import django.urls
 
 from peeringdb_server.models import DeskProTicket
 from peeringdb_server.inet import RdapNotFoundError
@@ -193,3 +195,56 @@ class APIClient(object):
                 "format": "html",
             },
         )
+
+def ticket_queue_deletion_prevented(user, instance):
+    """
+    queue deskpro ticket to notify about the prevented
+    deletion of an object #696
+    """
+
+    subject = f"[PROTECTED] Deletion prevented: " \
+              f"{instance.HandleRef.tag}-{instance.id} "\
+              f"{instance}"
+
+
+    # we dont want to spam DeskPRO with tickets when a user
+    # repeatedly clicks the delete button for an object
+    #
+    # so we check if a ticket has recently been sent for it
+    # and opt out if it falls with in the spam protection
+    # period defined in settings
+
+    period = settings.PROTECTED_OBJECT_NOTIFICATION_PERIOD
+    now = datetime.datetime.now(datetime.timezone.utc)
+    max_age = now - datetime.timedelta(hours=period)
+    ticket = DeskProTicket.objects.filter(
+        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}"
+    )
+    ticket = ticket.filter(created__gt=max_age)
+
+    # recent ticket for object exists, bail
+
+    if ticket.exists():
+        return
+
+    model_name = instance.__class__.__name__.lower()
+
+    # create ticket
+
+    ticket_queue(
+        subject,
+        loader.get_template("email/notify-pdb-admin-deletion-prevented.txt").render(
+            {
+                "user": user,
+                "instance": instance,
+                "admin_url": settings.BASE_URL + django.urls.reverse(
+                    f"admin:peeringdb_server_{model_name}_change",
+                    args=(instance.id,)
+                )
+            }
+        ),
+        user,
+    )
+
+
+

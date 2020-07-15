@@ -8,14 +8,15 @@ def null_rencode(apps, schema_editor):
     Facility = apps.get_model("peeringdb_server", "Facility")
 
     for fac in Facility.handleref.all():
-        fac.rencode = ''
-        fac.save()
+        if fac.rencode:
+            fac.rencode = ''
+            fac.save()
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0036_ixlanprefix_in_dfz'),
+        ('peeringdb_server', '0044_ixlan_ixf_fields'),
     ]
 
     operations = [

@@ -106,12 +106,21 @@ span.tiny.suffix {
   padding-right: 15px;
 }
 
+.marg-side-15 {
+  margin-left: 15px;
+  margin-right: 15px;
+}
+
 .marg-bot-15 {
   margin-bottom: 15px;
 }
 
 .pad-top {
   padding-top: 3px;
+}
+
+div.alert-compact {
+  padding: 6px 3px 6px 3px;
 }
 
 a, a:hover, a:visited {
@@ -557,6 +566,7 @@ img.profile {
 
 div.view_row {
   border-bottom: 1px #1c3f28 solid;
+  display: flex;
 }
 
 div.view_row > div.help {
@@ -572,7 +582,6 @@ div.view_field {
   /* font-weight: bold; */
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 div.view_field.help-text {
@@ -673,9 +682,36 @@ table.result {
   width: 100%;
 }
 
+div.ixf-proposals {
+  border-bottom: 1px #1c3f28 solid;
+}
+
+div.ixf-proposals div.controls {
+  padding: 5px 0px;
+}
+
+[aria-expanded="false"] span.expanded {
+  display: none;
+}
+
+[aria-expanded="false"] span.collapsed {
+  display: inline;
+}
+
+[aria-expanded="true"] span.expanded {
+  display: inline;
+}
+
+[aria-expanded="true"] span.collapsed {
+  display: none;
+}
+
 div.list {
   margin-left: 15px;
   margin-right: 15px;
+}
+
+div.list:not(:first-child) {
   margin-top: 15px;
 }
 
@@ -686,6 +722,12 @@ div.list div.header {
 
 div.list div.filter {
   padding: 5px;
+}
+
+
+div.row.item h4,
+div.list h4 {
+  margin: 0px;
 }
 
 div.list h5 {
@@ -870,6 +912,8 @@ div.editable.input-frame > textarea.markdown {
   height: 150px;
 }
 
+
+div.view > input[type="text"],
 div.view div.editable.input-frame > input[type="text"] {
   width: 100%;
   padding: 3px;
@@ -893,6 +937,11 @@ textarea {
 }
 
 
+.interactive,
+a[data-edit-action]:not(.btn) {
+  cursor: pointer;
+}
+
 [data-edit-type="bool"] div.editable.input-frame {
   width: auto;
 }
@@ -904,16 +953,25 @@ div.editable.mode-edit div.view_field {
   border-color: #9e1e1e;
 }
 
+.input-note.validation-error + div[data-field] {
+  border: #9e1e1e 1px solid;
+  border-radius: 5px;
+  padding: 2px;
+}
+
 .editable.input-note.validation-error {
   background-color: #9e1e1e;
   z-index: 10;
 }
 
-div.row.item:nth-child(2) .editable.input-note.validation-error {
+
+div.row.item:nth-child(2) .editable.input-note.validation-error:not(.always-absolute) {
   position: relative;
   top: 0px;
   left: 0px;
 }
+
+
 
 .editable.readonly ~ .editable.input-note.validation-error {
   margin-top: 2px;
@@ -999,16 +1057,19 @@ div.note.error > div.details {
   max-width: 468px;
 }
 
+.loading-shim,
 .editable.loading-shim {
   background-color: #f1f1f1;
   background-image: url('loading.gif');
   background-position: center 20%;
-  background-attachment: fixed;
   background-repeat: no-repeat;
-  margin-top: 10px;
   opacity: 0.5;
-  margin-left: -15px;
-  margin-right: -15px;
+  position: absolute;
+  z-index: 10;
+  top: 0px;
+  right: -15px;
+  bottom: 0px;
+  left: -15px;
 }
 
 .tab-pane .editable.loading-shim {
@@ -1072,13 +1133,18 @@ div[data-edit-component="add"] {
 }
 
 @keyframes newrow_animation {
-  from {background-color: #4b6063;}
-  to {background-color: #4b6063;}
+  from {background-color: #5ba479;}
+  to {background-color: #f1f1f1;}
 }
 
 div.list div.newrow {
   animation-name: newrow_animation;
   animation-duration: 2s;
+}
+
+div.list.padded-rows .row.item {
+  padding-top: 3px;
+  padding-bottom: 3px;
 }
 
 /*

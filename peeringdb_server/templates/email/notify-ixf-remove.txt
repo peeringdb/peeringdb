@@ -1,0 +1,30 @@
+{% if recipient == "ix" %}Your{% else %}The{% endif %} IX-F data proposes the removal of peer {{ instance }}
+
+This is because the combination of ASN, IPv4 and IPv6 no longer exists in the IX-F data under one member connection.
+
+{% if instance.error %}
+A validation error was raised when the IX-F importer attempted to process this change.
+
+```
+{{ instance.error|safe|striptags }}
+```
+{% endif %}
+{% spaceless %}
+{% if recipient == "ac" %}
+You may review and manually accept the IX-F data at {{ instance.ac_url }}
+{% elif recipient == "net" %}
+{% if not instance.net.allow_ixp_update %}
+Your network currently has automatic IX-F updates disabled. You may review and manually accept this proposed change at {{ instance.net.view_url }}. We have also notified the PeeringDB admin committee about this proposed change.
+{% endif %}
+{% elif recipient == "ix" %}
+{% if instance.actionable_for_network %}The network administrators of AS{{ instance.asn }} as well as the{% else %}The{% endif %} PeeringDB administrators have been informed of this proposed change. If this proposed change is incorrect please review your IX-F data for this entry.
+{% endif %}
+{% endspaceless %}
+
+{% if recipient == "ac" %}{% include "email/ixf-contact-points.txt" with instance=instance %}{% endif %}
+
+- Exchange: {{ instance.ix.view_url }}
+- Network: {{ instance.net.view_url}}
+{% if recipient == "ac" %}
+- IX-F Data: {{ ixf_url }}
+{% endif %}
