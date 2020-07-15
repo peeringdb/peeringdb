@@ -1,0 +1,8 @@
+The data difference between IX-F and PeeringDB for this entry has been resolved.
+
+- Peer: {{ instance }}
+- Exchange: {{ instance.ix.view_url }}
+- Network: {{ instance.net.view_url}}
+{% if recipient == "ac" %}
+- IX-F Data: {{ ixf_url }} 
+{% endif %}

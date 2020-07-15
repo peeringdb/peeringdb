@@ -6,6 +6,8 @@ from django.core.management import call_command
 from django.contrib.auth import get_user_model
 from django.conf import settings
 
+import reversion
+
 from peeringdb_server.models import REFTAG_MAP
 from peeringdb_server.management.commands.pdb_undelete import Command
 
@@ -48,6 +50,10 @@ class TestUndelete(ClientCase):
         assert self.ixlan_a.netixlan_set_active.count() == 1
         assert self.ixlan_a.ixpfx_set_active.count() == 2
 
+        # need to manually delete all the netixlans so
+        # the ixlan becomes deletable
+
+        self.ixlan_a.netixlan_set_active.update(status="deleted")
         self.ixlan_a.delete()
 
         assert self.ixlan_a.status == "deleted"
@@ -55,13 +61,23 @@ class TestUndelete(ClientCase):
         self._undelete(self.ixlan_a)
 
         assert self.ixlan_a.status == "ok"
-        assert self.ixlan_a.netixlan_set_active.count() == 1
+
+        # as ixlans with active netixlans can no longer be deleted
+        # they will not be recoverable from the same revision
+        # TODO: broken and probably not needed anymore?
+        # assert self.ixlan_a.netixlan_set_active.count() == 1
+
         assert self.ixlan_a.ixpfx_set_active.count() == 2
 
     def test_undelete_fac(self):
         assert self.fac_a.netfac_set_active.count() == 1
         assert self.fac_a.ixfac_set_active.count() == 1
 
+        # need to manually delete ixfacs and netfacs so
+        # the facility becomes deletable
+
+        self.fac_a.ixfac_set_active.all().update(status="deleted")
+        self.fac_a.netfac_set_active.all().update(status="deleted")
         self.fac_a.delete()
 
         assert self.fac_a.status == "deleted"
@@ -69,37 +85,9 @@ class TestUndelete(ClientCase):
         self._undelete(self.fac_a)
 
         assert self.fac_a.status == "ok"
-        assert self.fac_a.netfac_set_active.count() == 1
-        assert self.fac_a.ixfac_set_active.count() == 1
 
-    def test_undelete_ixlan_netixlan_dupe_other(self):
-        netixlan_a = self.ixlan_a.netixlan_set.first()
-        self.ixlan_a.delete()
-        netixlan_c = REFTAG_MAP["netixlan"].objects.create(
-            asn=self.net_a.asn,
-            ixlan=self.ixlan_b,
-            status="ok",
-            ipaddr4=netixlan_a.ipaddr4,
-            network=self.net_a,
-            speed=100,
-        )
-        self._undelete(self.ixlan_a)
-
-        assert self.ixlan_a.status == "ok"
-        assert self.ixlan_a.netixlan_set_active.count() == 0
-
-    def test_undelete_ixlan_netixlan_dupe_other_ipv6(self):
-        netixlan_a = self.ixlan_a.netixlan_set.first()
-        self.ixlan_a.delete()
-        netixlan_c = REFTAG_MAP["netixlan"].objects.create(
-            asn=self.net_a.asn,
-            ixlan=self.ixlan_b,
-            status="ok",
-            ipaddr6=netixlan_a.ipaddr6,
-            network=self.net_a,
-            speed=100,
-        )
-        self._undelete(self.ixlan_a)
-
-        assert self.ixlan_a.status == "ok"
-        assert self.ixlan_a.netixlan_set_active.count() == 0
+        # as facilities with active ixfac or netfac can no longer
+        # be deleted they will not be recoverable from the same revision
+        # TODO: broken and probably not needed anymore?
+        # assert self.fac_a.netfac_set_active.count() == 1
+        # assert self.fac_a.ixfac_set_active.count() == 1

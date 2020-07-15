@@ -353,6 +353,7 @@ class AdminTests(TestCase):
                 # required ixlan form data
 
                 "arp_sponge": "00:0a:95:9d:68:16",
+                "ixf_ixp_member_list_url_visible": "Private",
                 "ix": ixlan.ix.id,
                 "status": ixlan.status,
 
@@ -436,6 +437,16 @@ class AdminTests(TestCase):
             org=org
         )
 
+
+        # create ixlan ix-f import log we can check
+        ixfmemberdata = models.IXFMemberData.instantiate(
+            ixlan=models.NetworkIXLan.objects.first().ixlan,
+            ipaddr4=models.NetworkIXLan.objects.first().ipaddr4,
+            ipaddr6=models.NetworkIXLan.objects.first().ipaddr6,
+            asn=models.NetworkIXLan.objects.first().network.asn
+        )
+        ixfmemberdata.save()
+
         # create ixlan ix-f import log we can check
         importlog = models.IXLanIXFMemberImportLog.objects.create(
             ixlan = models.IXLan.objects.all().first()
@@ -483,18 +494,18 @@ class AdminTests(TestCase):
             models.VerificationQueueItem,
             models.CommandLineTool,
             admin.UserPermission,
-            admin.DuplicateIPNetworkIXLan,
             models.OrganizationMerge,
+            models.IXFMemberData,
         ]
 
         ignore_add = [
             admin.UserPermission,
-            admin.DuplicateIPNetworkIXLan,
-            models.OrganizationMerge
+            models.OrganizationMerge,
+            models.IXFMemberData,
         ]
 
         ignore_change = [
-            admin.DuplicateIPNetworkIXLan,
+
         ]
 
         # any other urls we want to test

@@ -19,6 +19,7 @@ from django.core.exceptions import FieldError, ValidationError, ObjectDoesNotExi
 from django.db import connection
 from django.utils import timezone
 from django.db.models import DateTimeField
+from django.utils.translation import ugettext_lazy as _
 import django_namespace_perms.rest as nsp_rest
 
 import reversion
@@ -27,6 +28,7 @@ from peeringdb_server.models import Network, UTC, ProtectedAction
 from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
 from peeringdb_server.api_schema import BaseSchema
+from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 
 import django_namespace_perms.util as nsp
 from django_namespace_perms.exceptions import *
@@ -602,7 +604,11 @@ class ModelViewSet(viewsets.ModelViewSet):
             else:
                 return Response(status=status.HTTP_403_FORBIDDEN)
         except ProtectedAction as exc:
-            return Response(status=status.HTTP_403_FORBIDDEN, data={"detail": f"{exc}"})
+            exc_message = f"{exc} - " + _("Please contact {} to help with the deletion of this object").format(settings.DEFAULT_FROM_EMAIL)
+
+            ticket_queue_deletion_prevented(request.user, exc.protected_object)
+
+            return Response(status=status.HTTP_403_FORBIDDEN, data={"detail": exc_message})
         finally:
             self.get_serializer().finalize_delete(request)
 

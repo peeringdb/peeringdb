@@ -58,6 +58,7 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLog,
     IXLanIXFMemberImportLogEntry,
     IXLanPrefix,
+    IXFMemberData,
     NetworkContact,
     NetworkFacility,
     NetworkIXLan,
@@ -413,12 +414,22 @@ class ModelAdminWithVQCtrl(object):
             )
         return _("APPROVED")
 
+class IXLanPrefixForm(StatusForm):
+    def clean_prefix(self):
+        value = ipaddress.ip_network(self.cleaned_data["prefix"])
+        self.prefix_changed = (self.instance.prefix != value)
+        return value
+
+    def clean(self):
+        if self.prefix_changed and not self.instance.deletable:
+            raise ValidationError(self.instance.not_deletable_reason)
+
+
 
 class IXLanPrefixInline(SanitizedAdmin, admin.TabularInline):
     model = IXLanPrefix
     extra = 0
-    form = StatusForm
-
+    form = IXLanPrefixForm
 
 class IXLanInline(SanitizedAdmin, admin.StackedInline):
     model = IXLan
@@ -476,11 +487,25 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
 
 
 
+class NetworkIXLanForm(StatusForm):
+
+    def clean_ipaddr4(self):
+        value = self.cleaned_data["ipaddr4"]
+        if not value:
+            return None
+        return value
+
+    def clean_ipaddr6(self):
+        value = self.cleaned_data["ipaddr6"]
+        if not value:
+            return None
+        return value
+
 class NetworkInternetExchangeInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkIXLan
     extra = 0
     raw_id_fields = ("ixlan", "network")
-    form = StatusForm
+    form = NetworkIXLanForm
 
 
 class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
@@ -524,7 +549,13 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name",)
-    readonly_fields = ("id", "nsp_namespace", "ixf_import_history")
+    readonly_fields = (
+        "id",
+        "nsp_namespace",
+        "ixf_import_history",
+        "ixf_last_import",
+        "ixf_net_count"
+    )
     inlines = (InternetExchangeFacilityInline, IXLanInline)
     form = InternetExchangeAdminForm
 
@@ -570,6 +601,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
     model = IXLanIXFMemberImportLogEntry
     fields = (
         "netixlan",
+        "versions",
         "ipv4",
         "ipv6",
         "asn",
@@ -587,6 +619,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
         "rollback_status",
         "action",
         "reason",
+        "versions",
     )
     raw_id_fields = ("netixlan",)
 
@@ -598,10 +631,31 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
     def has_add_permission(self, request, obj=None):
         return False
 
+    def versions(self, obj):
+        before = self.before_id(obj)
+        after = self.after_id(obj)
+        return f"{before} -> {after}"
+
+    def before_id(self, obj):
+        if obj.version_before:
+            return obj.version_before.id
+        return "-"
+
+    def after_id(self, obj):
+        if obj.version_after:
+            return obj.version_after.id
+        return "-"
+
     def ipv4(self, obj):
+        v = obj.version_after
+        if v:
+            return v.field_dict.get("ipaddr4")
         return obj.netixlan.ipaddr4 or ""
 
     def ipv6(self, obj):
+        v = obj.version_after
+        if v:
+            return v.field_dict.get("ipaddr6")
         return obj.netixlan.ipaddr6 or ""
 
     def asn(self, obj):
@@ -937,7 +991,7 @@ class IXLanPrefixAdmin(SoftDeleteAdmin):
     readonly_fields = ("ix", "id")
     search_fields = ("ixlan__name", "ixlan__ix__name", "prefix")
     list_filter = (StatusFilter,)
-    form = StatusForm
+    form = IXLanPrefixForm
 
     raw_id_fields = ("ixlan",)
     autocomplete_lookup_fields = {
@@ -1315,186 +1369,6 @@ class UserPermissionAdmin(UserAdmin):
     def clean_password(self):
         pass
 
-
-class DuplicateIPNetworkIXLan(NetworkIXLan):
-    """
-    Issue #96, #92
-
-    Interface to streamline manual cleanup of duplicate netixlan ips
-
-    Can be removed after #92 is fully completed
-    """
-
-    class Meta(object):
-        proxy = True
-        verbose_name = _("Duplicate IP")
-        verbose_name_plural = _("Duplicate IPs")
-
-
-class DuplicateIPResultList(list):
-    def set_qs(self, qs):
-        self.qs = qs
-
-    def filter(self, **kwargs):
-        return self.qs.filter(**kwargs)
-
-    def _clone(self):
-        return self
-
-
-class DuplicateIPChangeList(ChangeList):
-    """
-    Issue #96, #92
-
-    Interface to streamline manual clean up of duplicate netixlan ips
-
-    Can be removed after #92 is fully completed
-    """
-
-    def get_queryset(self, request):
-        ip4s = {}
-        ip6s = {}
-        qs = super(DuplicateIPChangeList, self).get_queryset(request)
-        sort_keys = list(qs.query.order_by)
-        if "pk" in sort_keys:
-            sort_keys.remove("pk")
-        if "-pk" in sort_keys:
-            sort_keys.remove("-pk")
-
-        def sorters(item):
-            v = []
-            for key in sort_keys:
-                if key[0] == "-":
-                    key = key[1:]
-                    v.insert(0, -getattr(item, key))
-                else:
-                    v.insert(0, getattr(item, key))
-            return v
-
-        qs = NetworkIXLan.objects.filter(status="ok")
-        t = time.time()
-        for netixlan in qs:
-            if netixlan.ipaddr4:
-                ip4 = str(netixlan.ipaddr4)
-                if ip4 not in ip4s:
-                    ip4s[ip4] = [netixlan]
-                else:
-                    ip4s[ip4].append(netixlan)
-
-            if netixlan.ipaddr6:
-                ip6 = str(netixlan.ipaddr6)
-                if ip6 not in ip6s:
-                    ip6s[ip6] = [netixlan]
-                else:
-                    ip6s[ip6].append(netixlan)
-
-        collisions = []
-        for ip, netixlans in list(ip4s.items()):
-            if len(netixlans) > 1:
-                for netixlan in netixlans:
-                    netixlan.ip_dupe = 4
-                    netixlan.exchange = int(netixlan.ixlan.ix_id)
-                    netixlan.ip_sorter = int(netixlan.ipaddr4)
-                    netixlan.dt_sorter = int(netixlan.updated.strftime("%s"))
-                    collisions.append(netixlan)
-
-        for ip, netixlans in list(ip6s.items()):
-            if len(netixlans) > 1:
-                for netixlan in netixlans:
-                    netixlan.ip_dupe = 6
-                    netixlan.exchange = int(netixlan.ixlan.ix_id)
-                    netixlan.ip_sorter = int(netixlan.ipaddr6)
-                    netixlan.dt_sorter = int(netixlan.updated.strftime("%s"))
-                    collisions.append(netixlan)
-
-        if sort_keys != ["pk"] and sort_keys != ["-pk"]:
-            collisions = sorted(collisions, key=sorters)
-
-        collisions = DuplicateIPResultList(collisions)
-        collisions.set_qs(qs)
-        return collisions
-
-
-class DuplicateIPAdmin(SoftDeleteAdmin):
-    """
-    Issue #96, #92
-
-    Interface to streamline manual clean up of duplicate netixlan ips
-
-    Can be removed after #92 is fully completed
-    """
-
-    list_display = ("id_ro", "ip", "asn", "ix", "net", "updated_ro", "status_ro")
-    readonly_fields = ("id_ro", "ip", "net", "ix", "asn", "updated_ro", "status_ro")
-    form = StatusForm
-    list_per_page = 1000
-    fieldsets = (
-        (
-            None,
-            {
-                "classes": ("wide",),
-                "fields": (
-                    "status",
-                    "asn",
-                    "ipaddr4",
-                    "ipaddr6",
-                    "ix",
-                    "net",
-                    "updated_ro",
-                ),
-            },
-        ),
-    )
-
-    def get_changelist(self, request):
-        return DuplicateIPChangeList
-
-    def id_ro(self, obj):
-        return obj.id
-
-    id_ro.admin_order_field = "id"
-    id_ro.short_description = "Id"
-
-    def status_ro(self, obj):
-        return obj.status
-
-    status_ro.admin_order_field = None
-    status_ro.short_description = _("Status")
-
-    def updated_ro(self, obj):
-        return obj.updated
-
-    updated_ro.admin_order_field = "dt_sorter"
-    updated_ro.short_description = _("Updated")
-
-    def ip(self, obj):
-        if obj.ip_dupe == 4:
-            return obj.ipaddr4
-        elif obj.ip_dupe == 6:
-            return obj.ipaddr6
-
-    ip.admin_order_field = "ip_sorter"
-
-    def net(self, obj):
-        return mark_safe('<a href="/net/%d">%d</a>' % (obj.network_id, obj.network_id))
-
-    net.admin_order_field = "network_id"
-
-    def ix(self, obj):
-        return mark_safe('<a href="/ix/%d">%d</a>' % (obj.ixlan.ix.id, obj.ixlan.ix.id))
-
-    ix.admin_order_field = "exchange"
-
-    def changelist_view(self, request, extra_context=None):
-        extra_context = {"title": "Duplicate IPs"}
-        return super(DuplicateIPAdmin, self).changelist_view(
-            request, extra_context=extra_context
-        )
-
-    def has_add_permission(self, request):
-        return False
-
-
 ## COMMANDLINE TOOL ADMIN
 
 
@@ -1669,6 +1543,133 @@ class DeskProTicketAdmin(admin.ModelAdmin):
     readonly_fields = ("user",)
 
 
+def apply_ixf_member_data(modeladmin, request, queryset):
+    for ixf_member_data in queryset:
+        try:
+            ixf_member_data.apply(user=request.user, comment="Applied IX-F suggestion")
+        except ValidationError as exc:
+            messages.error(
+                request,
+                f"{ixf_member_data.ixf_id_pretty_str}: {exc}"
+            )
+
+
+apply_ixf_member_data.short_description = _("Apply")
+
+
+
+class IXFMemberDataAdmin(admin.ModelAdmin):
+    change_form_template = "admin/ixf_member_data_change_form.html"
+
+    list_display = (
+        "id",
+        "ix",
+        "asn",
+        "ipaddr4",
+        "ipaddr6",
+        "action",
+        "netixlan",
+        "speed",
+        "operational",
+        "is_rs_peer",
+        "created",
+        "updated",
+        "fetched",
+        "changes",
+        "error",
+    )
+    readonly_fields = (
+        "marked_for_removal",
+        "fetched",
+        "ix",
+        "action",
+        "changes",
+        "reason",
+        "netixlan",
+        "log",
+        "error",
+        "created",
+        "updated",
+        "remote_data",
+    )
+
+    search_fields = (
+        "asn",
+        "ixlan__id",
+        "ixlan__ix__name",
+        "ipaddr4",
+        "ipaddr6"
+    )
+
+    fields = (
+        "ix",
+        "asn",
+        "ipaddr4",
+        "ipaddr6",
+        "action",
+        "netixlan",
+        "speed",
+        "operational",
+        "is_rs_peer",
+        "created",
+        "updated",
+        "fetched",
+        "changes",
+        "reason",
+        "error",
+        "log",
+        "remote_data",
+    )
+
+    actions = [apply_ixf_member_data]
+
+
+    raw_id_fields = ("ixlan",)
+
+    autocomplete_lookup_fields = {
+        "fk": ["ixlan",],
+    }
+
+
+    def ix(self, obj):
+        return obj.ixlan.ix
+
+    def netixlan(self, obj):
+        if not obj.netixlan.id:
+            return "-"
+        url = django.urls.reverse(
+            "admin:peeringdb_server_networkixlan_change",
+            args=(obj.netixlan.id,)
+        )
+        return mark_safe(f'<a href="{url}">{obj.netixlan.id}</a>')
+
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.action != "add":
+            # make identifying fields read-only
+            # for modify / delete actions
+            return self.readonly_fields + ('asn', 'ipaddr4', 'ipaddr6')
+        return self.readonly_fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def remote_data(self, obj):
+        return obj.json
+
+    def response_change(self, request, obj):
+        if "_save-and-apply" in request.POST:
+            obj.save()
+            obj.apply(
+                user=request.user,
+                comment="Applied IX-F suggestion"
+            )
+        return super().response_change(request, obj)
+
+admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)
 admin.site.register(InternetExchangeFacility, InternetExchangeFacilityAdmin)
@@ -1684,7 +1685,6 @@ admin.site.register(Sponsorship, SponsorshipAdmin)
 admin.site.register(Partnership, PartnershipAdmin)
 admin.site.register(OrganizationMerge, OrganizationMergeLog)
 admin.site.register(UserPermission, UserPermissionAdmin)
-admin.site.register(DuplicateIPNetworkIXLan, DuplicateIPAdmin)
 admin.site.register(IXLanIXFMemberImportLog, IXLanIXFMemberImportLogAdmin)
 admin.site.register(CommandLineTool, CommandLineToolAdmin)
 admin.site.register(UserOrgAffiliationRequest, UserOrgAffiliationRequestAdmin)
