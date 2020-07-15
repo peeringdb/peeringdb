@@ -1,4 +1,4 @@
-class DatabaseRouter(object):
+class DatabaseRouter:
     """
     A very basic databases router that routes to a different
     read and write db

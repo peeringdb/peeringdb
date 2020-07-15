@@ -8,6 +8,7 @@ from peeringdb_server.models import (
     IXLan,
     NetworkIXLan,
     Network,
+    IXFMemberData,
 )
 from peeringdb_server import ixf
 
@@ -36,6 +37,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Just update IX-F cache, do NOT perform any import logic",
         )
+        parser.add_argument(
+            "--delete-all-ixfmemberdata",
+            action="store_true",
+            help="This removes all IXFMemberData objects",
+        )
 
     def log(self, msg, debug=False):
         if self.preview:
@@ -53,6 +59,10 @@ class Command(BaseCommand):
         self.preview = options.get("preview", False)
         self.cache = options.get("cache", False)
         self.skip_import = options.get("skip_import", False)
+
+        if options.get("delete_all_ixfmemberdata"):
+            self.log("Deleting IXFMemberData Instances ...")
+            IXFMemberData.objects.all().delete()
 
         if self.preview and self.commit:
             self.commit = False
@@ -86,22 +96,23 @@ class Command(BaseCommand):
                 importer = ixf.Importer()
                 importer.skip_import = self.skip_import
                 importer.cache_only = self.cache
-                self.log("Updating {}".format(ixlan))
+                self.log(f"Processing {ixlan.ix.name} ({ixlan.id})")
                 with transaction.atomic():
-                    success, netixlans, netixlans_deleted, log = importer.update(
-                        ixlan, save=self.commit, asn=asn
-                    )
-                self.log(json.dumps(log), debug=True)
+                    success = importer.update(ixlan, save=self.commit, asn=asn)
+                self.log(json.dumps(importer.log), debug=True)
                 self.log(
-                    "Done: {} updated: {} deleted: {}".format(
-                        success, len(netixlans), len(netixlans_deleted)
+                    "Success: {}, added: {}, updated: {}, deleted: {}".format(
+                        success,
+                        len(importer.actions_taken["add"]),
+                        len(importer.actions_taken["modify"]),
+                        len(importer.actions_taken["delete"]),
                     )
                 )
-                total_log["data"].extend(log["data"])
+                total_log["data"].extend(importer.log["data"])
                 total_log["errors"].extend(
                     [
                         "{}({}): {}".format(ixlan.ix.name, ixlan.id, err)
-                        for err in log["errors"]
+                        for err in importer.log["errors"]
                     ]
                 )
 

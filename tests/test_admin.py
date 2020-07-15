@@ -13,8 +13,6 @@ import peeringdb_server.models as models
 import peeringdb_server.admin as admin
 
 
-
-
 class AdminTests(TestCase):
     """
     Test peeringdb django admin functionality
@@ -24,7 +22,7 @@ class AdminTests(TestCase):
 
     @classmethod
     def entity_data(cls, org, tag):
-        kwargs = {"name": "%s %s" % (org.name, tag), "status": "ok", "org": org}
+        kwargs = {"name": f"{org.name} {tag}", "status": "ok", "org": org}
         if tag == "net":
             cls.asn_count += 1
             kwargs.update(asn=cls.asn_count)
@@ -135,7 +133,7 @@ class AdminTests(TestCase):
         c = Client()
         c.login(username="admin", password="admin")
         for model in m:
-            url = "/cp/%s/%s/" % (model._meta.app_label, model._meta.model_name)
+            url = f"/cp/{model._meta.app_label}/{model._meta.model_name}/"
             response = c.get(url, follow=True)
             self.assertEqual(response.status_code, 200)
 
@@ -143,7 +141,7 @@ class AdminTests(TestCase):
             response = c.get(url_add, follow=True)
             self.assertEqual(response.status_code, 200)
 
-            url_id = "%s%s" % (url, model.objects.first().id)
+            url_id = f"{url}{model.objects.first().id}"
             response = c.get(url_id, follow=True)
             self.assertEqual(response.status_code, 200)
 
@@ -252,7 +250,7 @@ class AdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         for i, n in models.COMMANDLINE_TOOLS:
             assert (
-                '<option value="{}">{}</option>'.format(i, n)
+                f'<option value="{i}">{n}</option>'
                 in response.content.decode()
             )
 
@@ -267,8 +265,8 @@ class AdminTests(TestCase):
         response = c.post(url, data, follow=True)
         cont = response.content.decode("utf-8")
         assert response.status_code == 200
-        assert 'Old prefix' in cont
-        assert 'Exchange' in cont
+        assert "Old prefix" in cont
+        assert "Exchange" in cont
 
         # test post to renumber lans command form (preview)
         data = {
@@ -318,7 +316,6 @@ class AdminTests(TestCase):
         self.assertEqual(str(self.entities["netixlan"][1].ipaddr4), "207.41.111.38")
         self.assertEqual(str(self.entities["netixlan"][2].ipaddr4), "207.41.111.39")
 
-
     def test_netixlan_inline(self):
 
         """
@@ -333,9 +330,10 @@ class AdminTests(TestCase):
         netixlan_b = ixlan.netixlan_set.all()[1]
 
         url = reverse(
-            'admin:{}_{}_change'.format(
-               ixlan._meta.app_label, ixlan._meta.object_name,
-            ).lower(), args=(ixlan.id,)
+            "admin:{}_{}_change".format(
+                ixlan._meta.app_label, ixlan._meta.object_name,
+            ).lower(),
+            args=(ixlan.id,),
         )
 
         client = Client()
@@ -351,13 +349,11 @@ class AdminTests(TestCase):
 
             return {
                 # required ixlan form data
-
                 "arp_sponge": "00:0a:95:9d:68:16",
+                "ixf_ixp_member_list_url_visible": "Private",
                 "ix": ixlan.ix.id,
                 "status": ixlan.status,
-
                 # required management form data
-
                 "ixpfx_set-TOTAL_FORMS": 0,
                 "ixpfx_set-INITIAL_FORMS": 0,
                 "ixpfx_set-MIN_NUM_FORMS": 0,
@@ -366,9 +362,7 @@ class AdminTests(TestCase):
                 "netixlan_set-INITIAL_FORMS": 1,
                 "netixlan_set-MIN_NUM_FORMS": 0,
                 "netixlan_set-MAX_NUM_FORMS": 1000,
-
                 # inline netixlan data
-
                 "netixlan_set-0-ipaddr4": ipaddr4 or "",
                 "netixlan_set-0-ipaddr6": ipaddr6 or "",
                 "netixlan_set-0-speed": netixlan.speed,
@@ -378,7 +372,6 @@ class AdminTests(TestCase):
                 "netixlan_set-0-status": netixlan.status,
                 "netixlan_set-0-asn": netixlan.network.asn,
             }
-
 
         # test #1: post request to ixlan change operation passing
         # blank values to ipaddress fields
@@ -390,15 +383,10 @@ class AdminTests(TestCase):
 
         # test #2: block dupe ipv4
 
-        response = client.post(url, post_data(
-            netixlan_b.ipaddr4, netixlan_b.ipaddr6
-        ))
+        response = client.post(url, post_data(netixlan_b.ipaddr4, netixlan_b.ipaddr6))
         assert netixlan.ipaddr6 is None
         assert netixlan.ipaddr4 is None
         assert "Ip address already exists elsewhere" in response.content.decode("utf-8")
-
-
-
 
     def test_all_views_readonly(self):
         self._test_all_views(
@@ -413,53 +401,52 @@ class AdminTests(TestCase):
     def test_all_views_superuser(self):
         self._test_all_views(self.admin_user)
 
-
     def _test_all_views(self, user, **kwargs):
         call_command("pdb_generate_test_data", limit=2, commit=True)
 
         # create a verification queue item we can check
         org = models.Organization.objects.all().first()
-        net = models.Network.objects.create(name="Unverified network", org=org, asn=33333, status="pending")
+        net = models.Network.objects.create(
+            name="Unverified network", org=org, asn=33333, status="pending"
+        )
         vqitem = models.VerificationQueueItem.objects.all().first()
         assert vqitem
 
-
-
         # create sponsorhship we can check
         sponsorship = models.Sponsorship.objects.create()
-        models.SponsorshipOrganization.objects.create(
-            sponsorship=sponsorship, org=org
-        )
+        models.SponsorshipOrganization.objects.create(sponsorship=sponsorship, org=org)
 
         # create partnership we can check
-        partnership = models.Partnership.objects.create(
-            org=org
+        partnership = models.Partnership.objects.create(org=org)
+
+        # create ixlan ix-f import log we can check
+        ixfmemberdata = models.IXFMemberData.instantiate(
+            ixlan=models.NetworkIXLan.objects.first().ixlan,
+            ipaddr4=models.NetworkIXLan.objects.first().ipaddr4,
+            ipaddr6=models.NetworkIXLan.objects.first().ipaddr6,
+            asn=models.NetworkIXLan.objects.first().network.asn,
         )
+        ixfmemberdata.save()
 
         # create ixlan ix-f import log we can check
         importlog = models.IXLanIXFMemberImportLog.objects.create(
-            ixlan = models.IXLan.objects.all().first()
+            ixlan=models.IXLan.objects.all().first()
         )
 
         # create user to organization affiliation request
         affil = models.UserOrgAffiliationRequest.objects.create(
-            org = org,
-            user = self.readonly_admin
+            org=org, user=self.readonly_admin
         )
 
         # create command line tool instance
         cmdtool = models.CommandLineTool.objects.create(
-            user = self.readonly_admin,
-            arguments = "{}",
-            tool = "pdb_renumber_lans"
+            user=self.readonly_admin, arguments="{}", tool="pdb_renumber_lans"
         )
 
         # create organization merge
         orgmerge = models.OrganizationMerge.objects.create(
-            from_org=org,
-            to_org=models.Organization.objects.all()[1]
+            from_org=org, to_org=models.Organization.objects.all()[1]
         )
-
 
         # set up testing for all pdb models that have
         # admin views registered
@@ -483,59 +470,54 @@ class AdminTests(TestCase):
             models.VerificationQueueItem,
             models.CommandLineTool,
             admin.UserPermission,
-            admin.DuplicateIPNetworkIXLan,
             models.OrganizationMerge,
+            models.IXFMemberData,
         ]
 
         ignore_add = [
             admin.UserPermission,
-            admin.DuplicateIPNetworkIXLan,
-            models.OrganizationMerge
+            models.OrganizationMerge,
+            models.IXFMemberData,
         ]
 
-        ignore_change = [
-            admin.DuplicateIPNetworkIXLan,
-        ]
+        ignore_change = []
 
         # any other urls we want to test
         extra_urls = [
             (
                 "/cp/peeringdb_server/organization/org-merge-tool/",
                 "get",
-                kwargs.get("status_get_orgmerge", 200)
+                kwargs.get("status_get_orgmerge", 200),
             ),
             (
-                reverse(
-                    "admin:peeringdb_server_commandlinetool_prepare",
-                ),
+                reverse("admin:peeringdb_server_commandlinetool_prepare",),
                 "get",
-                kwargs.get("status_add", 200)
+                kwargs.get("status_add", 200),
             ),
             (
                 reverse(
                     "admin:peeringdb_server_organizationmerge_actions",
-                    args=(orgmerge.id, "undo")
+                    args=(orgmerge.id, "undo"),
                 ),
                 "get",
-                kwargs.get("status_get_orgmerge_undo", 200)
+                kwargs.get("status_get_orgmerge_undo", 200),
             ),
             (
                 reverse(
                     "admin:peeringdb_server_verificationqueueitem_actions",
-                    args=(vqitem.id, "vq_approve")
+                    args=(vqitem.id, "vq_approve"),
                 ),
                 "get",
-                kwargs.get("status_get_vq_approve", 200)
+                kwargs.get("status_get_vq_approve", 200),
             ),
             (
                 reverse(
                     "admin:peeringdb_server_verificationqueueitem_actions",
-                    args=(vqitem.id, "vq_deny")
+                    args=(vqitem.id, "vq_deny"),
                 ),
                 "get",
-                kwargs.get("status_get_vq_deny", 200)
-            )
-
+                kwargs.get("status_get_vq_deny", 200),
+            ),
         ]
 
         client = Client()
@@ -543,7 +525,7 @@ class AdminTests(TestCase):
 
         assert user.is_staff
 
-        search_str = '<a href="/cp/logout/"';
+        search_str = '<a href="/cp/logout/"'
 
         for op in ops:
             for cls in classes:
@@ -564,13 +546,14 @@ class AdminTests(TestCase):
                         continue
 
                 url = reverse(
-                    'admin:{}_{}_{}'.format(
+                    "admin:{}_{}_{}".format(
                         cls._meta.app_label, cls._meta.object_name, op
-                    ).lower(), args=args
+                    ).lower(),
+                    args=args,
                 )
                 response = client.get(url)
                 cont = response.content.decode("utf-8")
-                assert response.status_code == kwargs.get("status_{}".format(op), 200)
+                assert response.status_code == kwargs.get(f"status_{op}", 200)
                 if response.status_code == 200:
                     assert search_str in cont
 
@@ -581,16 +564,13 @@ class AdminTests(TestCase):
             if response.status_code == 200:
                 assert search_str in cont
 
-
         response = client.post(
             reverse("admin:peeringdb_server_commandlinetool_preview"),
-            data={"tool":"pdb_fac_merge"}
+            data={"tool": "pdb_fac_merge"},
         )
         assert response.status_code == kwargs.get("status_add", 200)
         if response.status_code == 200:
             assert search_str in cont
-
-
 
     def test_grappelli_autocomplete(self):
         """
@@ -623,7 +603,6 @@ class AdminTests(TestCase):
         for model in check_models:
             instance = model.objects.first()
 
-
             # make sure we have at least once instance
             # available
 
@@ -647,9 +626,9 @@ class AdminTests(TestCase):
             # grappelli autocomplete request
 
             response = client.get(
-                "/grappelli/lookup/autocomplete/?" \
-                f"term={term}&app_label={app_label}&" \
-                f"model_name={model_name}&query_string=" \
+                "/grappelli/lookup/autocomplete/?"
+                f"term={term}&app_label={app_label}&"
+                f"model_name={model_name}&query_string="
                 "_to_field=id&to_field=id"
             )
 

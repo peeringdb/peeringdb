@@ -10,7 +10,7 @@ from rest_framework.test import APIClient, force_authenticate
 class TestAPIClientCompat(ClientCase):
     @classmethod
     def setUpTestData(cls):
-        super(TestAPIClientCompat, cls).setUpTestData()
+        super().setUpTestData()
         cls.superuser = User.objects.create_user(
             "su", "su@localhost", "su", is_superuser=True
         )
@@ -24,7 +24,7 @@ class TestAPIClientCompat(ClientCase):
 
     def _compat(self, ua_c, ua_be, error):
         if ua_c and ua_be:
-            useragent = "PeeringDB/{} django_peeringdb/{}".format(ua_c, ua_be)
+            useragent = f"PeeringDB/{ua_c} django_peeringdb/{ua_be}"
             self.client = APIClient(HTTP_USER_AGENT=useragent)
         else:
             self.client = APIClient()

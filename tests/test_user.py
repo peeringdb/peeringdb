@@ -233,7 +233,7 @@ class UserTests(TestCase):
             "next": "/org/1",
             "auth-username": "user_d",
             "auth-password": "user_d",
-            "login_view-current_step": "auth"
+            "login_view-current_step": "auth",
         }
         C = Client()
         resp = C.post("/account/login/", data, follow=True)
@@ -243,7 +243,7 @@ class UserTests(TestCase):
             "next": "/logout",
             "auth-username": "user_d",
             "auth-password": "user_d",
-            "login_view-current_step": "auth"
+            "login_view-current_step": "auth",
         }
 
         C = Client()
@@ -270,25 +270,25 @@ class UserTests(TestCase):
         response = c.get("/username-retrieve/complete?secret=123")
         assert self.user_a.email not in response.content.decode()
         assert (
-            '<p class="username">{}</p>'.format(self.user_a.username)
+            f'<p class="username">{self.user_a.username}</p>'
             not in response.content.decode()
         )
 
         # complete process
-        response = c.get("/username-retrieve/complete?secret={}".format(secret))
+        response = c.get(f"/username-retrieve/complete?secret={secret}")
 
         assert self.user_a.email in response.content.decode()
         assert (
-            '<p class="username">{}</p>'.format(self.user_a.username)
+            f'<p class="username">{self.user_a.username}</p>'
             in response.content.decode()
         )
 
         # process no longer valid
-        response = c.get("/username-retrieve/complete?secret={}".format(secret))
+        response = c.get(f"/username-retrieve/complete?secret={secret}")
 
         assert self.user_a.email not in response.content.decode()
         assert (
-            '<p class="username">{}</p>'.format(self.user_a.username)
+            f'<p class="username">{self.user_a.username}</p>'
             not in response.content.decode()
         )
 
@@ -319,7 +319,7 @@ class UserTests(TestCase):
                 "password1": "signuptest_123",
                 "password2": "signuptest_123",
                 "email": "signuptest@localhost",
-                "captcha": "{}:{}".format(captcha_obj.hashkey, captcha_obj.response),
+                "captcha": f"{captcha_obj.hashkey}:{captcha_obj.response}",
             },
         )
 

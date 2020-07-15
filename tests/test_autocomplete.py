@@ -13,7 +13,7 @@ from .util import ClientCase
 class TestAutocomplete(ClientCase):
     @classmethod
     def setUpTestData(cls):
-        super(TestAutocomplete, cls).setUpTestData()
+        super().setUpTestData()
         cls.staff_user = User.objects.create_user(
             "staff", "staff@localhost", "staff", is_staff=True
         )
@@ -34,7 +34,7 @@ class TestAutocomplete(ClientCase):
 
         url = reverse("autocomplete-admin-deleted-versions")
 
-        r = self.factory.get("{}?q=org {}".format(url, org.id))
+        r = self.factory.get(f"{url}?q=org {org.id}")
         r.user = self.staff_user
         r = autocomplete_views.DeletedVersionAutocomplete.as_view()(r)
 

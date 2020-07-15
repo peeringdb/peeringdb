@@ -37,9 +37,9 @@ from peeringdb_server.models import (
 )
 def test_enum(name):
     client = Client()
-    response = client.get("/data/enum/{}".format(name))
+    response = client.get(f"/data/enum/{name}")
     assert response.status_code == 200
-    assert len(response.json()["enum/{}".format(name)]) > 0
+    assert len(response.json()[f"enum/{name}"]) > 0
 
 
 @pytest.mark.django_db
@@ -77,7 +77,7 @@ def test_generic(name, user, count, status):
 
     client = Client()
     client.login(username="user_a", password="user_a")
-    response = client.get("/data/{}".format(name))
+    response = client.get(f"/data/{name}")
 
     assert response.status_code == status
     if status == 200:

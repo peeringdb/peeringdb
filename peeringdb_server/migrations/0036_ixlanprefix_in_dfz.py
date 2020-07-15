@@ -6,17 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0035_traffic_levels'),
+        ("peeringdb_server", "0035_traffic_levels"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='deskproticket',
-            options={'verbose_name': 'DeskPRO Ticket', 'verbose_name_plural': 'DeskPRO Tickets'},
+            name="deskproticket",
+            options={
+                "verbose_name": "DeskPRO Ticket",
+                "verbose_name_plural": "DeskPRO Tickets",
+            },
         ),
         migrations.AddField(
-            model_name='ixlanprefix',
-            name='in_dfz',
+            model_name="ixlanprefix",
+            name="in_dfz",
             field=models.BooleanField(default=False),
         ),
     ]

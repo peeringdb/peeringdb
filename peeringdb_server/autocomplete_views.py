@@ -21,13 +21,13 @@ from peeringdb_server.models import (
 from peeringdb_server.admin_commandline_tools import TOOL_MAP
 
 
-
 class GrappelliHandlerefAutocomplete(GrappelliAutocomplete):
     """
     makes sure that the auto-complete fields managed
     by grappelli in django admin exclude soft-deleted
     objects
     """
+
     def get_queryset(self):
         qs = super().get_queryset()
 
@@ -99,7 +99,7 @@ class FacilityAutocomplete(AutocompleteHTMLResponse):
 
 class FacilityAutocompleteForNetwork(FacilityAutocomplete):
     def get_queryset(self):
-        qs = super(FacilityAutocompleteForNetwork, self).get_queryset()
+        qs = super().get_queryset()
         net_id = self.request.resolver_match.kwargs.get("net_id")
         fac_ids = [
             nf.facility_id
@@ -111,7 +111,7 @@ class FacilityAutocompleteForNetwork(FacilityAutocomplete):
 
 class FacilityAutocompleteForExchange(FacilityAutocomplete):
     def get_queryset(self):
-        qs = super(FacilityAutocompleteForExchange, self).get_queryset()
+        qs = super().get_queryset()
         ix_id = self.request.resolver_match.kwargs.get("ix_id")
         fac_ids = [
             nf.facility_id
@@ -243,5 +243,5 @@ for tool_id, tool in list(TOOL_MAP.items()):
     class ToolHistory(CommandLineToolHistoryAutocomplete):
         tool = tool_id
 
-    ToolHistory.__name__ = "CLT_{}_Autocomplete".format(tool_id)
+    ToolHistory.__name__ = f"CLT_{tool_id}_Autocomplete"
     clt_history[tool_id] = ToolHistory

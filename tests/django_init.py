@@ -48,7 +48,9 @@ settings.configure(
             "BACKEND": "django.template.backends.django.DjangoTemplates",
             "APP_DIRS": True,
             "DIRS": (
-                os.path.join(os.path.dirname(__file__), "..", "peeringdb_server", "templates"),
+                os.path.join(
+                    os.path.dirname(__file__), "..", "peeringdb_server", "templates"
+                ),
             ),
             "OPTIONS": {
                 "context_processors": [
@@ -135,6 +137,7 @@ settings.configure(
     TIME_ZONE="UTC",
     USE_TZ=True,
     POC_DELETION_PERIOD=30,
+    PROTECTED_OBJECT_NOTIFICATION_PERIOD=1,
     AUTHENTICATION_BACKENDS=("django_namespace_perms.auth.backends.NSPBackend",),
     ROOT_URLCONF="mainsite.urls",
     LOGGING={
@@ -152,8 +155,8 @@ settings.configure(
         "delete": "delete object",
         "create": "create object",
     },
-    LOGIN_URL = "/account/login",
-    LOGIN_REDIRECT_URL = "/",
+    LOGIN_URL="/account/login",
+    LOGIN_REDIRECT_URL="/",
     OAUTH_ENABLED=False,
     RECAPTCHA_PUBLIC_KEY="",
     EMAIL_SUBJECT_PREFIX="[test]",
@@ -171,6 +174,9 @@ settings.configure(
     CAPTCHA_TEST_MODE=True,
     SITE_ID=1,
     IXF_POSTMORTEM_LIMIT=250,
+    IXF_NOTIFY_IX_ON_CONFLICT=True,
+    IXF_NOTIFY_NET_ON_CONFLICT=True,
+    IXF_TICKET_ON_CONFLICT=True,
     ABSTRACT_ONLY=True,
     GOOGLE_GEOLOC_API_KEY="AIzatest",
     RATELIMITS={
@@ -186,4 +192,6 @@ settings.configure(
         "view_import_net_ixf_postmortem": "1/m",
     },
     MAX_USER_AFFILIATION_REQUESTS=10,
+    MAIL_DEBUG=True,
+    IXF_PARSE_ERROR_NOTIFICATION_PERIOD=36,
 )

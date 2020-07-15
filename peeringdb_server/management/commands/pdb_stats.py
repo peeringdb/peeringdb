@@ -106,7 +106,7 @@ class Command(BaseCommand):
         `dict` with `stats` and `dt` keys
         """
 
-        dt = datetime.datetime.now().replace(tzinfo=UTC())
+        dt = datetime.datetime.now(datetime.timezone.utc)
 
         stats = self.stats(dt)
 

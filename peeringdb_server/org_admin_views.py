@@ -101,7 +101,7 @@ def load_all_user_permissions(org):
         rv[user.id] = {
             "id": user.id,
             "perms": perms,
-            "name": "%s <%s> %s" % (user.full_name, user.email, user.username),
+            "name": f"{user.full_name} <{user.email}> {user.username}",
         }
     return rv
 
@@ -112,14 +112,12 @@ def load_user_permissions(org, user):
     """
 
     # load all of the user's permissions related to this org
-    uperms = dict(
-        [
-            (p.namespace, p.permissions)
+    uperms = {
+            p.namespace: p.permissions
             for p in user.userpermission_set.filter(
                 namespace__startswith=org.nsp_namespace
             )
-        ]
-    )
+    }
 
     perms = {}
 
@@ -159,36 +157,26 @@ def permission_ids(org):
     }
 
     perms.update(
-        dict(
-            [
-                (
-                    "net.%d" % net.id,
-                    _("Network - %(net_name)s") % {"net_name": net.name},
-                )
+        {
+                    "net.%d" % net.id:
+                    _("Network - %(net_name)s") % {"net_name": net.name}
                 for net in org.net_set_active
-            ]
-        )
+        }
     )
 
     perms.update(
-        dict(
-            [
-                ("ix.%d" % ix.id, _("Exchange - %(ix_name)s") % {"ix_name": ix.name})
+        {
+                "ix.%d" % ix.id: _("Exchange - %(ix_name)s") % {"ix_name": ix.name}
                 for ix in org.ix_set_active
-            ]
-        )
+        }
     )
 
     perms.update(
-        dict(
-            [
-                (
-                    "fac.%d" % fac.id,
-                    _("Facility - %(fac_name)s") % {"fac_name": fac.name},
-                )
+        {
+                    "fac.%d" % fac.id:
+                    _("Facility - %(fac_name)s") % {"fac_name": fac.name}
                 for fac in org.fac_set_active
-            ]
-        )
+        }
     )
 
     return perms
@@ -296,7 +284,7 @@ def users(request, **kwargs):
         "users": [
             {
                 "id": user.id,
-                "name": "%s <%s, %s>" % (user.full_name, user.email, user.username),
+                "name": f"{user.full_name} <{user.email}, {user.username}>",
             }
             for user in org.usergroup.user_set.all()
         ]

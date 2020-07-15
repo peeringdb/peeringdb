@@ -59,11 +59,11 @@ def get_tool_from_data(data):
     return t
 
 
-class EmptyId(object):
+class EmptyId:
     id = 0
 
 
-class CommandLineToolWrapper(object):
+class CommandLineToolWrapper:
 
     tool = None
     queue = 0
@@ -99,11 +99,11 @@ class CommandLineToolWrapper(object):
         r = []
         for line in self.result.split("\n"):
             if line.find("[error]") > -1:
-                r.append('<div class="error">{}</div>'.format(line))
+                r.append(f'<div class="error">{line}</div>')
             elif line.find("[warning]") > -1:
-                r.append('<div class="warning">{}</div>'.format(line))
+                r.append(f'<div class="warning">{line}</div>')
             else:
-                r.append('<div class="info">{}</div>'.format(line))
+                r.append(f'<div class="info">{line}</div>')
         return "\n".join(r)
 
     def set_arguments(self, form_data):
@@ -128,7 +128,7 @@ class CommandLineToolWrapper(object):
                 call_command(self.tool, *self.args, stdout=r, **self.kwargs)
             self.result = r.getvalue()
         except Exception as inst:
-            self.result = "[error] {}".format(inst)
+            self.result = f"[error] {inst}"
             self.status = 1
         finally:
             if self.maintenance and commit:
@@ -224,7 +224,7 @@ class ToolRenumberLans(CommandLineToolWrapper):
             # if a version of this command was run before, we still need to able
             # to display a somewhat useful discription, so fall back to this basic
             # display
-            return "(Legacy) {}".format(self.args)
+            return f"(Legacy) {self.args}"
 
     def set_arguments(self, form_data):
         self.args = [
@@ -384,4 +384,4 @@ class ToolUndelete(CommandLineToolWrapper):
             id=self.kwargs.get("id")
         )
         if obj.status != "deleted":
-            raise ValueError("{} is not currently marked as deleted".format(obj))
+            raise ValueError(f"{obj} is not currently marked as deleted")

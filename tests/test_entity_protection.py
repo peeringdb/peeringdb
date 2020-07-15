@@ -8,36 +8,136 @@ from peeringdb_server.models import (
     Sponsorship,
     SponsorshipOrganization,
     ProtectedAction,
-    UTC
+    UTC,
 )
 
-@pytest.mark.django_db
-def test_org_protection(db):
 
+@pytest.mark.djangodb
+def test_protected_entities(db):
     """
-    test that organization cannot be deleted if it
-    has live entities under it
+    test that protected entities cannot be deleted
+    if their protection conditions are met
     """
 
-    call_command("pdb_generate_test_data", limit=3, commit=True)
+    call_command("pdb_generate_test_data", limit=2, commit=True)
+
     org = Organization.objects.first()
 
-    assert org.deletable == False
-    assert org.not_deletable_reason == "Organization currently has one or more active objects under it."
+    # assert that the org as active objects under it
 
-    with pytest.raises(ProtectedAction):
-        org.delete()
+    assert org.ix_set_active.exists()
+    assert org.fac_set_active.exists()
+    assert org.net_set_active.exists()
 
-    for net in org.net_set_active.all():
-        net.delete()
+    def assert_protected(entity):
+        """
+        helper function to test that an object is currently
+        not deletable
+        """
+        with pytest.raises(ProtectedAction):
+            entity.delete()
 
-    for ix in org.ix_set_active.all():
+    # org has ix, net and fac under it, and should not be
+    # deletable
+
+    assert_protected(org)
+
+    # process the exchanges under the org for deletion
+    # and checking their protected status as well
+
+    for ix in org.ix_set.all():
+
+        assert ix.ixlan.ixpfx_set.exists()
+        assert ix.ixlan.netixlan_set.exists()
+        assert ix.ixfac_set.exists()
+
+        # exchange currently has netixlans and prefixes
+        # under it that are active and should not be
+        # deletable
+
+        assert_protected(ix)
+
+        # process the ixfac objects under the exchange
+        for ixfac in ix.ixfac_set.all():
+            ixfac.delete()
+
+        # process the prefixes under the exchange
+
+        for ixpfx in ix.ixlan.ixpfx_set.all():
+
+            # exchange has netixlans under it that fall
+            # into the address space for the prefix so
+            # the prefix is currently not deletable
+
+            assert_protected(ixpfx)
+
+        # process the netixlans under the exchange and
+        # delete them
+
+        for netixlan in ix.ixlan.netixlan_set.all():
+            netixlan.delete()
+
+        # with the netixlans gone, the prefixes can now
+        # be deleted
+
+        for ixpfx in ix.ixlan.ixpfx_set.all():
+            ixpfx.delete()
+
+        # with netixlans gone the exchange can now be
+        # deleted
+
         ix.delete()
 
-    for fac in org.fac_set_active.all():
+    # org still has active fac and net under it
+    # and should still be protected
+
+    assert_protected(org)
+
+    # process the facilities under the org for deletion
+    # and checking their protected status as well
+
+    for fac in org.fac_set.all():
+        assert fac.ixfac_set.exists()
+        assert fac.netfac_set.exists()
+
+        # fac has active netfac and ixfac objects
+        # under it and should not be deletable
+
+        assert_protected(fac)
+
+        # delete ixfacs
+
+        for ixfac in fac.ixfac_set.all():
+            ixfac.delete()
+
+        # fac has active netfac under it and should
+        # still not be deletable
+
+        assert_protected(fac)
+
+        # delete netfacs
+
+        for netfac in fac.netfac_set.all():
+            netfac.delete()
+
+        # facility can now be deleted
+
         fac.delete()
 
+    # org still has active net objects under it
+    # and should not be deletable
+
+    assert_protected(org)
+
+    # delete nets
+
+    for net in org.net_set.all():
+        net.delete()
+
+    # org is now deletable
+
     org.delete()
+    assert org.status == "deleted"
 
 
 @pytest.mark.django_db
@@ -52,8 +152,8 @@ def test_org_protection_sponsor(db):
 
     org = Organization.objects.create(status="ok", name="SponsorOrg")
     sponsor = Sponsorship.objects.create(
-        start_date = now - datetime.timedelta(days=1),
-        end_date = now + datetime.timedelta(days=1)
+        start_date=now - datetime.timedelta(days=1),
+        end_date=now + datetime.timedelta(days=1),
     )
     sponsor.orgs.add(org)
 
@@ -68,4 +168,3 @@ def test_org_protection_sponsor(db):
     sponsor.delete()
 
     org.delete()
-

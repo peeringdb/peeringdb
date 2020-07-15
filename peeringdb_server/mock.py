@@ -5,7 +5,7 @@ from django.db import models
 from peeringdb_server.models import REFTAG_MAP
 
 
-class Mock(object):
+class Mock:
     """
     Class that allows us to create mock data in the database
 
@@ -47,20 +47,16 @@ class Mock(object):
                 yield host
 
         # Pool of IPv4 addresses (100 per prefix)
-        self.ipaddr_pool_v4 = dict(
-            [
-                (prefix, list(get_hosts(ipaddress.IPv4Network(prefix))))
+        self.ipaddr_pool_v4 = {
+                prefix: list(get_hosts(ipaddress.IPv4Network(prefix)))
                 for prefix in self.prefix_pool_v4
-            ]
-        )
+        }
 
         # Pool of IPv6 addresses (100 per prefix)
-        self.ipaddr_pool_v6 = dict(
-            [
-                (prefix, list(get_hosts(ipaddress.IPv6Network(prefix))))
+        self.ipaddr_pool_v6 = {
+                prefix: list(get_hosts(ipaddress.IPv6Network(prefix)))
                 for prefix in self.prefix_pool_v6
-            ]
-        )
+        }
 
     def create(self, reftag, **kwargs):
         """
@@ -224,7 +220,7 @@ class Mock(object):
         return str(uuid.uuid4())[:6].upper()
 
     def rencode(self, data, reftag=None):
-        return str(uuid.uuid4())[:6].upper()
+        return ""
 
     def npanxx(self, data, reftag=None):
         return "123-456"
@@ -249,17 +245,23 @@ class Mock(object):
 
     def prefix(self, data, reftag=None):
         if data.get("protocol") == "IPv4":
-            return "{}".format(self.prefix_pool_v4.pop())
+            return f"{self.prefix_pool_v4.pop()}"
         elif data.get("protocol") == "IPv6":
-            return "{}".format(self.prefix_pool_v6.pop())
+            return f"{self.prefix_pool_v6.pop()}"
 
     def ipaddr4(self, data, reftag=None):
         prefix = data["ixlan"].ixpfx_set.filter(protocol="IPv4").first().prefix
-        return "{}".format(self.ipaddr_pool_v4["{}".format(prefix)].pop())
+        return "{}".format(self.ipaddr_pool_v4[f"{prefix}"].pop())
 
     def ipaddr6(self, data, reftag=None):
         prefix = data["ixlan"].ixpfx_set.filter(protocol="IPv6").first().prefix
-        return "{}".format(self.ipaddr_pool_v6["{}".format(prefix)].pop())
+        return "{}".format(self.ipaddr_pool_v6[f"{prefix}"].pop())
 
     def speed(self, data, reftag=None):
         return 1000
+
+    def ixf_net_count(self, data, reftag=None):
+        return 0
+
+    def ixf_last_import(self, data, reftag=None):
+        return None

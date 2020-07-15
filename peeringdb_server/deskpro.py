@@ -4,9 +4,11 @@ DeskPro API Client
 
 import re
 import requests
+import datetime
 
 from django.template import loader
 from django.conf import settings
+import django.urls
 
 from peeringdb_server.models import DeskProTicket
 from peeringdb_server.inet import RdapNotFoundError
@@ -16,7 +18,7 @@ def ticket_queue(subject, body, user):
     """ queue a deskpro ticket for creation """
 
     ticket = DeskProTicket.objects.create(
-        subject="{}{}".format(settings.EMAIL_SUBJECT_PREFIX, subject),
+        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
         body=body,
         user=user,
     )
@@ -24,7 +26,7 @@ def ticket_queue(subject, body, user):
 
 class APIError(IOError):
     def __init__(self, msg, data):
-        super(APIError, self).__init__(msg)
+        super().__init__(msg)
         self.data = data
 
 
@@ -44,7 +46,7 @@ def ticket_queue_asnauto_skipvq(user, org, net, rir_data):
         org_name = org.name
 
     ticket_queue(
-        "[ASNAUTO] Network '%s' approved for existing Org '%s'" % (net_name, org_name),
+        f"[ASNAUTO] Network '{net_name}' approved for existing Org '{org_name}'",
         loader.get_template("email/notify-pdb-admin-asnauto-skipvq.txt").render(
             {"user": user, "org": org, "net": net, "rir_data": rir_data}
         ),
@@ -107,12 +109,12 @@ def ticket_queue_asnauto_create(
 def ticket_queue_rdap_error(user, asn, error):
     if isinstance(error, RdapNotFoundError):
         return
-    error_message = "{}".format(error)
+    error_message = f"{error}"
 
     if re.match("(.+) returned 400", error_message):
         return
 
-    subject = "[RDAP_ERR] {} - AS{}".format(user.username, asn)
+    subject = f"[RDAP_ERR] {user.username} - AS{asn}"
     ticket_queue(
         subject,
         loader.get_template("email/notify-pdb-admin-rdap-error.txt").render(
@@ -122,14 +124,14 @@ def ticket_queue_rdap_error(user, asn, error):
     )
 
 
-class APIClient(object):
+class APIClient:
     def __init__(self, url, key):
         self.key = key
         self.url = url
 
     @property
     def auth_headers(self):
-        return {"Authorization": "key {}".format(self.key)}
+        return {"Authorization": f"key {self.key}"}
 
     def parse_response(self, response, many=False):
         r_json = response.json()
@@ -149,13 +151,13 @@ class APIClient(object):
 
     def get(self, endpoint, param):
         response = requests.get(
-            "{}/{}".format(self.url, endpoint), params=param, headers=self.auth_headers
+            f"{self.url}/{endpoint}", params=param, headers=self.auth_headers
         )
         return self.parse_response(response)
 
     def create(self, endpoint, param):
         response = requests.post(
-            "{}/{}".format(self.url, endpoint), json=param, headers=self.auth_headers
+            f"{self.url}/{endpoint}", json=param, headers=self.auth_headers
         )
         return self.parse_response(response)
 
@@ -193,3 +195,55 @@ class APIClient(object):
                 "format": "html",
             },
         )
+
+
+def ticket_queue_deletion_prevented(user, instance):
+    """
+    queue deskpro ticket to notify about the prevented
+    deletion of an object #696
+    """
+
+    subject = (
+        f"[PROTECTED] Deletion prevented: "
+        f"{instance.HandleRef.tag}-{instance.id} "
+        f"{instance}"
+    )
+
+    # we dont want to spam DeskPRO with tickets when a user
+    # repeatedly clicks the delete button for an object
+    #
+    # so we check if a ticket has recently been sent for it
+    # and opt out if it falls with in the spam protection
+    # period defined in settings
+
+    period = settings.PROTECTED_OBJECT_NOTIFICATION_PERIOD
+    now = datetime.datetime.now(datetime.timezone.utc)
+    max_age = now - datetime.timedelta(hours=period)
+    ticket = DeskProTicket.objects.filter(
+        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}"
+    )
+    ticket = ticket.filter(created__gt=max_age)
+
+    # recent ticket for object exists, bail
+
+    if ticket.exists():
+        return
+
+    model_name = instance.__class__.__name__.lower()
+
+    # create ticket
+
+    ticket_queue(
+        subject,
+        loader.get_template("email/notify-pdb-admin-deletion-prevented.txt").render(
+            {
+                "user": user,
+                "instance": instance,
+                "admin_url": settings.BASE_URL
+                + django.urls.reverse(
+                    f"admin:peeringdb_server_{model_name}_change", args=(instance.id,)
+                ),
+            }
+        ),
+        user,
+    )

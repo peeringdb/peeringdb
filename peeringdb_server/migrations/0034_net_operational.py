@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0033_fac_contacts'),
+        ("peeringdb_server", "0033_fac_contacts"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='networkixlan',
-            name='operational',
+            model_name="networkixlan",
+            name="operational",
             field=models.BooleanField(default=True),
         ),
     ]

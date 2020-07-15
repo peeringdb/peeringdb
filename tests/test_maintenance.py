@@ -15,7 +15,7 @@ from .util import ClientCase
 class TestMaintenanceMode(ClientCase):
     @classmethod
     def setUpTestData(cls):
-        super(TestMaintenanceMode, cls).setUpTestData()
+        super().setUpTestData()
         cls.superuser = User.objects.create_user(
             "su", "su@localhost", "su", is_superuser=True
         )

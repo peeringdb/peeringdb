@@ -39,7 +39,7 @@ def raise_if_active():
         raise ActionBlocked()
 
 
-class Middleware(object):
+class Middleware:
 
     """
     Middleware will return 503 json responses for all write
@@ -83,6 +83,6 @@ class Middleware(object):
 
 class ActionBlocked(Exception):
     def __init__(self):
-        super(ActionBlocked, self).__init__(
+        super().__init__(
             "The site is currently in maintenance mode, during which this action is disabled, please try again in a few minutes"
         )

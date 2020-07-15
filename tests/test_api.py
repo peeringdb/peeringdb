@@ -34,7 +34,6 @@ def setup_module(module):
 
     with open(
         os.path.join(os.path.dirname(__file__), "data", "api", "rdap_override.json"),
-        "r",
     ) as fh:
         pdbinet.RdapLookup.override_result = json.load(fh)
 
@@ -53,7 +52,7 @@ def teardown_module(module):
     pdbinet.RdapLookup.get_asn = RdapLookup_get_asn
 
 
-class DummyResponse(object):
+class DummyResponse:
     """
     Simulate requests response object
     """
@@ -84,7 +83,7 @@ class DummyRestClient(RestClient):
     """
 
     def __init__(self, *args, **kwargs):
-        super(DummyRestClient, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.factory = APIRequestFactory()
         self.api_client = APIClient()
         self.useragent = kwargs.get("useragent")
@@ -97,9 +96,9 @@ class DummyRestClient(RestClient):
     def _request(self, typ, id=0, method="GET", params=None, data=None, url=None):
         if not url:
             if id:
-                url = "/api/%s/%s" % (typ, id)
+                url = f"/api/{typ}/{id}"
             else:
-                url = "/api/%s" % (typ,)
+                url = f"/api/{typ}"
 
         fnc = getattr(self.api_client, method.lower())
         if not data:
@@ -149,18 +148,36 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         )
 
         nsp.models.GroupPermission.objects.create(
+            group=guest_group,
+            namespace="peeringdb.organization.*.internetexchange.*.ixf_ixp_member_list_url.public",
+            permissions=0x01,
+        )
+
+        nsp.models.GroupPermission.objects.create(
             group=user_group, namespace="peeringdb.organization", permissions=0x01
         )
 
         nsp.models.GroupPermission.objects.create(
             group=user_group,
-            namespace="peeringdb.organization.{}".format(settings.SUGGEST_ENTITY_ORG),
+            namespace=f"peeringdb.organization.{settings.SUGGEST_ENTITY_ORG}",
             permissions=0x04,
         )
 
         nsp.models.GroupPermission.objects.create(
             group=user_group,
             namespace="peeringdb.organization.*.network.*.poc_set.users",
+            permissions=0x01,
+        )
+
+        nsp.models.GroupPermission.objects.create(
+            group=user_group,
+            namespace="peeringdb.organization.*.internetexchange.*.ixf_ixp_member_list_url.public",
+            permissions=0x01,
+        )
+
+        nsp.models.GroupPermission.objects.create(
+            group=user_group,
+            namespace="peeringdb.organization.*.internetexchange.*.ixf_ixp_member_list_url.users",
             permissions=0x01,
         )
 

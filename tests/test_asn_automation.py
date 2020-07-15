@@ -34,7 +34,6 @@ def setup_module(module):
 
     with open(
         os.path.join(os.path.dirname(__file__), "data", "api", "rdap_override.json"),
-        "r",
     ) as fh:
         pdbinet.RdapLookup.override_result = json.load(fh)
 
@@ -68,7 +67,6 @@ class AsnAutomationTestCase(TestCase):
             os.path.join(
                 os.path.dirname(__file__), "data", "api", "rdap_override.json"
             ),
-            "r",
         ) as fh:
             data = json.load(fh)
             cls.rdap_63311 = pdbinet.RdapAsn(data)
@@ -87,7 +85,6 @@ class AsnAutomationTestCase(TestCase):
         ]:
             with open(
                 os.path.join(os.path.dirname(__file__), "data", "deskpro", ticket_name),
-                "r",
             ) as fh:
                 cls.ticket[ticket_name] = fh.read()
 
@@ -225,7 +222,7 @@ class AsnAutomationTestCase(TestCase):
         for i in range(0, settings.MAX_USER_AFFILIATION_REQUESTS + 1):
 
             request = self.factory.post(
-                "/affiliate-to-org", data={"org": "AFFILORG{}".format(i)}
+                "/affiliate-to-org", data={"org": f"AFFILORG{i}"}
             )
             request.user = self.user_b
             request._dont_enforce_csrf_checks = True
@@ -253,7 +250,7 @@ class AsnAutomationTestCase(TestCase):
         assert affiliation_request
 
         request = self.factory.post(
-            "/cancel-affiliation-request/{}/".format(affiliation_request.id)
+            f"/cancel-affiliation-request/{affiliation_request.id}/"
         )
         request.user = self.user_b
         request._dont_enforce_csrf_checks = True
@@ -279,7 +276,7 @@ class AsnAutomationTestCase(TestCase):
         assert affiliation_request
 
         request = self.factory.post(
-            "/cancel-affiliation-request/{}/".format(affiliation_request.id)
+            f"/cancel-affiliation-request/{affiliation_request.id}/"
         )
         request.user = self.user_a
         request._dont_enforce_csrf_checks = True
@@ -299,8 +296,12 @@ class AsnAutomationTestCase(TestCase):
         the user is already affiliated to.
         """
 
-        org_1 = models.Organization.objects.create(name="Org with admin user", status="ok")
-        org_2 = models.Organization.objects.create(name="Org with normal user", status="ok")
+        org_1 = models.Organization.objects.create(
+            name="Org with admin user", status="ok"
+        )
+        org_2 = models.Organization.objects.create(
+            name="Org with normal user", status="ok"
+        )
         org_1.admin_usergroup.user_set.add(self.user_b)
         org_2.usergroup.user_set.add(self.user_b)
 
@@ -315,9 +316,9 @@ class AsnAutomationTestCase(TestCase):
         )
 
         self.assertEqual(
-            ticket.body, self.ticket["asnauto-9000002-affiliated-user-requested-ownership.txt"]
+            ticket.body,
+            self.ticket["asnauto-9000002-affiliated-user-requested-ownership.txt"],
         )
-
 
     def test_affiliate_to_bogon_asn(self):
         """
@@ -384,7 +385,7 @@ class TestTutorialMode(SettingsCase):
     settings = {"TUTORIAL_MODE": True}
 
     def setUp(self):
-        super(TestTutorialMode, self).setUp()
+        super().setUp()
         self.factory = RequestFactory()
 
     def test_affiliate_to_bogon_asn(self):

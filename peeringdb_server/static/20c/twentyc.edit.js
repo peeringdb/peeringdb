@@ -189,6 +189,7 @@ twentyc.editable.action.register(
 
         if(!targets) {
           if(!status.error && !me.noToggle) {
+            container.trigger("action-success:toggle", {mode:"view"})
             container.editable("toggle", { data:status.data });
           }
 

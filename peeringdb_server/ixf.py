@@ -1,5 +1,6 @@
 import json
 import re
+import datetime
 
 import requests
 import ipaddress
@@ -7,6 +8,8 @@ import ipaddress
 from django.db import transaction
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError
+from django.conf import settings
 
 import reversion
 
@@ -16,10 +19,25 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLogEntry,
     Network,
     NetworkIXLan,
+    IXFMemberData,
+)
+
+REASON_ENTRY_GONE_FROM_REMOTE = _(
+    "The entry for (asn and IPv4 and IPv6) does not exist "
+    "in the exchange's IX-F data as a singular member connection"
+)
+
+REASON_NEW_ENTRY = _(
+    "The entry for (asn and IPv4 and IPv6) does not exist "
+    "in PeeringDB as a singular network -> ix connection"
+)
+
+REASON_VALUES_CHANGED = _(
+    "Data differences between PeeringDB and the exchange's IX-F data"
 )
 
 
-class Importer(object):
+class Importer:
 
     allowed_member_types = [
         "peering",
@@ -43,14 +61,20 @@ class Importer(object):
 
     def reset(self, ixlan=None, save=False, asn=None):
         self.reset_log()
-        self.netixlans = []
-        self.netixlans_deleted = []
-        self.ipaddresses = []
+        self.ixf_ids = []
+        self.actions_taken = {
+            "add": [],
+            "delete": [],
+            "modify": [],
+            "noop": [],
+        }
+        self.pending_save = []
         self.asns = []
-        self.archive_info = {}
         self.ixlan = ixlan
         self.save = save
         self.asn = asn
+        self.now = datetime.datetime.now(datetime.timezone.utc)
+        self.invalid_ip_errors = []
 
     def fetch(self, url, timeout=5):
         """
@@ -76,7 +100,7 @@ class Importer(object):
             return {"pdb_error": exc}
 
         if result.status_code != 200:
-            return {"pdb_error": "Got HTTP status {}".format(result.status_code)}
+            return {"pdb_error": f"Got HTTP status {result.status_code}"}
 
         try:
             data = result.json()
@@ -102,7 +126,7 @@ class Importer(object):
             url <str>
         """
 
-        return "IXF-CACHE-{}".format(url)
+        return f"IXF-CACHE-{url}"
 
     def fetch_cached(self, url):
         """
@@ -184,16 +208,23 @@ class Importer(object):
 
         # bail if there has been any errors during sanitize() or fetch()
         if data.get("pdb_error"):
+            self.notify_error(data.get("pdb_error"))
             self.log_error(data.get("pdb_error"), save=save)
-            return (False, [], [], self.log)
+            return False
+
+        # null ix-f error note on ixlan if it had error'd before
+        if self.ixlan.ixf_ixp_import_error:
+            self.ixlan.ixf_ixp_import_error = None
+            self.ixlan.save()
 
         # bail if there are no active prefixes on the ixlan
         if ixlan.ixpfx_set_active.count() == 0:
             self.log_error(_("No prefixes defined on ixlan"), save=save)
-            return (False, [], [], self.log)
+            return False
 
         if self.skip_import:
-            return (True, [], [], self.log)
+            self.cleanup_ixf_member_data()
+            return True
 
         try:
             # parse the ixf data
@@ -201,19 +232,74 @@ class Importer(object):
         except KeyError as exc:
             # any key erros mean that the data is invalid, log the error and
             # bail (transactions are atomic and will be rolled back)
-            self.log_error("Internal Error 'KeyError': {}".format(exc), save=save)
-            return (False, self.netixlans, [], self.log)
+            self.log_error(f"Internal Error 'KeyError': {exc}", save=save)
+            return False
 
         # process any netixlans that need to be deleted
         self.process_deletions()
 
+        # process creation of new netixlans and updates
+        # of existing netixlans. This needs to happen
+        # after process_deletions in order to avoid potential
+        # ip conflicts
+        self.process_saves()
+
+        self.cleanup_ixf_member_data()
+
         # archive the import so we can roll it back later if needed
         self.archive()
 
+        if self.invalid_ip_errors:
+            self.notify_error("\n".join(self.invalid_ip_errors))
+
         if save:
+
+            # update exchange's ixf fields
+            self.update_ix()
+
             self.save_log()
 
-        return (True, self.netixlans, self.netixlans_deleted, self.log)
+        return True
+
+    @reversion.create_revision()
+    def update_ix(self):
+
+        """
+        Will see if any data was changed during this import
+        and update the exchange's ixf_last_import timestamp
+        if so
+
+        Also will set the ixf_net_count value if it has changed
+        from before
+        """
+
+        ix = self.ixlan.ix
+        save_ix = False
+
+        ixf_member_data_changed = IXFMemberData.objects.filter(
+            updated__gte=self.now, ixlan=self.ixlan
+        ).exists()
+
+        netixlan_data_changed = NetworkIXLan.objects.filter(
+            updated__gte=self.now, ixlan=self.ixlan
+        ).exists()
+
+        if ixf_member_data_changed or netixlan_data_changed:
+            ix.ixf_last_import = self.now
+            save_ix = True
+
+        ixf_net_count = len(self.pending_save)
+        if ixf_net_count != ix.ixf_net_count:
+            ix.ixf_net_count = ixf_net_count
+            save_ix = True
+
+        if save_ix:
+            ix.save()
+
+    @reversion.create_revision()
+    def process_saves(self):
+        for ixf_member in self.pending_save:
+            self.apply_add_or_update(ixf_member)
 
     @reversion.create_revision()
     def process_deletions(self):
@@ -235,46 +321,50 @@ class Importer(object):
             netixlan_qset = netixlan_qset.filter(asn=self.asn)
 
         for netixlan in netixlan_qset:
-
-            ipv4 = "{}-{}".format(netixlan.asn, netixlan.ipaddr4)
-            ipv6 = "{}-{}".format(netixlan.asn, netixlan.ipaddr6)
-
-            if netixlan.asn not in self.asns:
-                self.log_peer(
-                    netixlan.asn, "delete", _("ASN no longer in data"), netixlan
-                )
-                self.netixlans_deleted.append(netixlan)
-                if self.save:
-                    netixlan.delete()
-            elif ipv4 not in self.ipaddresses and ipv6 not in self.ipaddresses:
-                self.log_peer(
+            if netixlan.ixf_id not in self.ixf_ids:
+                ixf_member_data = IXFMemberData.instantiate(
                     netixlan.asn,
-                    "delete",
-                    _(
-                        "Ip addresses no longer exist in validated data or are "
-                        "no longer with this asn"
-                    ),
-                    netixlan,
+                    netixlan.ipaddr4,
+                    netixlan.ipaddr6,
+                    netixlan.ixlan,
+                    data={},
                 )
-                self.netixlans_deleted.append(netixlan)
-                if self.save:
-                    netixlan.delete()
-            elif (netixlan.ipaddr4 and ipv4 not in self.ipaddresses) or (
-                netixlan.ipaddr6 and ipv6 not in self.ipaddresses
-            ):
-                if not netixlan.network.allow_ixp_update:
-                    self.log_peer(
-                        netixlan.asn,
-                        "delete",
-                        _(
-                            "At least one ipaddress mismatched and "
-                            "network has disabled updates"
-                        ),
-                        netixlan,
+
+                if netixlan.network.allow_ixp_update:
+                    self.log_apply(
+                        ixf_member_data.apply(save=self.save),
+                        reason=REASON_ENTRY_GONE_FROM_REMOTE,
                     )
-                    self.netixlans_deleted.append(netixlan)
-                    if self.save:
-                        netixlan.delete()
+                else:
+                    ixf_member_data.set_remove(
+                        save=self.save, reason=REASON_ENTRY_GONE_FROM_REMOTE
+                    )
+                    self.log_ixf_member_data(ixf_member_data)
+
+    def cleanup_ixf_member_data(self):
+
+        # clean up old ix-f memeber data objects
+
+        for ixf_member in IXFMemberData.objects.filter(ixlan=self.ixlan):
+
+            # proposed deletion got fulfilled
+
+            if ixf_member.action == "delete":
+                if ixf_member.netixlan.status == "deleted":
+                    ixf_member.set_resolved()
+
+            # noop means the ask has been fulfilled but the
+            # ixf member data entry has not been set to resolved yet
+
+            elif ixf_member.action == "noop":
+                ixf_member.set_resolved()
+
+            # proposed change / addition is now gone from
+            # ix-f data
+
+            elif not self.skip_import and ixf_member.ixf_id not in self.ixf_ids:
+                if ixf_member.action in ["add", "modify"]:
+                    ixf_member.set_resolved()
 
     @transaction.atomic()
     def archive(self):
@@ -282,20 +372,31 @@ class Importer(object):
         Create the IXLanIXFMemberImportLog for this import
         """
 
-        if self.save and (self.netixlans or self.netixlans_deleted):
-            persist_log = IXLanIXFMemberImportLog.objects.create(ixlan=self.ixlan)
-            for netixlan in self.netixlans + self.netixlans_deleted:
+        if not self.save:
+            return
+
+        persist_log = IXLanIXFMemberImportLog.objects.create(ixlan=self.ixlan)
+        for action in ["delete", "modify", "add"]:
+            for info in self.actions_taken[action]:
+
+                netixlan = info["netixlan"]
+                version_before = info["version"]
+
                 versions = reversion.models.Version.objects.get_for_object(netixlan)
-                if len(versions) == 1:
-                    version_before = None
+
+                if version_before:
+                    versions = versions.filter(id__gt=version_before.id)
+                    version_after = versions.last()
                 else:
-                    version_before = versions[1]
-                version_after = versions[0]
-                info = self.archive_info.get(netixlan.id, {})
+                    version_after = versions.first()
+
+                if not version_after:
+                    continue
+
                 persist_log.entries.create(
                     netixlan=netixlan,
                     version_before=version_before,
-                    action=info.get("action"),
+                    action=action,
                     reason=info.get("reason"),
                     version_after=version_after,
                 )
@@ -367,6 +468,7 @@ class Importer(object):
 
         asn = member["asnum"]
         for connection in connection_list:
+            self.connection_errors = []
             state = connection.get("state", "active").lower()
             if state in self.allowed_states:
 
@@ -414,41 +516,36 @@ class Importer(object):
             ipv6_addr = ipv6.get("address")
 
             # parse and validate the ipaddresses attached to the vlan
-            # append the ipaddresses to self.ipaddresses so we can
-            # later check them to see which netixlans need to be
+            # append a unqiue ixf identifier to self.ixf_ids
+            #
+            # identifier is a tuple of (asn, ip4, ip6)
+            #
+            # we will later check them to see which netixlans need to be
             # dropped during `process_deletions`
             try:
+                ixf_id = [asn]
+
                 if ipv4_addr:
-                    self.ipaddresses.append(
-                        "{}-{}".format(
-                            asn, ipaddress.ip_address(u"{}".format(ipv4_addr))
-                        )
-                    )
+                    ixf_id.append(ipaddress.ip_address(f"{ipv4_addr}"))
+                else:
+                    ixf_id.append(None)
+
                 if ipv6_addr:
-                    self.ipaddresses.append(
-                        "{}-{}".format(
-                            asn, ipaddress.ip_address(u"{}".format(ipv6_addr))
-                        )
-                    )
+                    ixf_id.append(ipaddress.ip_address(f"{ipv6_addr}"))
+                else:
+                    ixf_id.append(None)
+
+                ixf_id = tuple(ixf_id)
+                self.ixf_ids.append(ixf_id)
+
             except (ipaddress.AddressValueError, ValueError) as exc:
+                self.invalid_ip_errors.append(f"{exc}")
                 self.log_error(
                     _("Ip address error '{}' in vlan_list entry for vlan_id {}").format(
                         exc, lan.get("vlan_id")
                     )
                 )
                 continue
-
-            netixlan_info = NetworkIXLan(
-                ixlan=self.ixlan,
-                network=network,
-                ipaddr4=ipv4_addr,
-                ipaddr6=ipv6_addr,
-                speed=speed,
-                asn=asn,
-                is_rs_peer=(
-                    ipv4.get("routeserver", False) or ipv6.get("routeserver", False)
-                ),
-            )
 
             if not self.save and (
                 not self.ixlan.test_ipv4_address(ipv4_addr)
@@ -458,46 +555,33 @@ class Importer(object):
                 # not at the ixlan if they dont match the prefix
                 continue
 
-            # if connection state is inactive we won't create or update
             if connection.get("state", "active") == "inactive":
-                self.log_peer(
-                    asn,
-                    "noop",
-                    _("Connection is currently marked as inactive"),
-                    netixlan_info,
-                )
-                continue
+                operational = False
+            else:
+                operational = True
 
-            # after this point we either add or modify the netixlan, so
-            # now is a good time to check if the related network allows
-            # such updates, bail if not
-            if not network.allow_ixp_update:
-                self.log_peer(
-                    asn, "noop", _("Network has disabled ixp updates"), netixlan_info
-                )
-                continue
-
-            # add / modify the netixlan
-            result = self.ixlan.add_netixlan(
-                netixlan_info, save=self.save, save_others=self.save
+            is_rs_peer = ipv4.get("routeserver", False) or ipv6.get(
+                "routeserver", False
             )
 
-            if result["netixlan"] and result["changed"]:
-                self.netixlans.append(result["netixlan"])
-                if result["created"]:
-                    action = "add"
-                    reason = _("New ip-address")
-                else:
-                    action = "modify"
-                    reason = _("Fields changed: {}").format(
-                        ", ".join(result.get("changed"))
-                    )
+            ixf_member_data = IXFMemberData.instantiate(
+                asn,
+                ipv4_addr,
+                ipv6_addr,
+                speed=speed,
+                operational=operational,
+                is_rs_peer=is_rs_peer,
+                data=json.dumps(member),
+                ixlan=self.ixlan,
+                save=self.save,
+            )
 
-                self.log_peer(asn, action, reason, result["netixlan"])
-            elif result["netixlan"]:
-                self.log_peer(asn, "noop", _("No changes"), result["netixlan"])
-            elif result["log"]:
-                self.log_peer(asn, "ignore", "\n".join(result["log"]), netixlan_info)
+            if self.connection_errors:
+                ixf_member_data.error = "\n".join(self.connection_errors)
+            else:
+                ixf_member_data.error = ixf_member_data.previous_error
+
+            self.pending_save.append(ixf_member_data)
 
     def parse_speed(self, if_list):
         """
@@ -514,10 +598,67 @@ class Importer(object):
             try:
                 speed += int(iface.get("if_speed", 0))
             except ValueError:
-                self.log_error(
-                    _("Invalid speed value: {}").format(iface.get("if_speed"))
-                )
+                log_msg = _("Invalid speed value: {}").format(iface.get("if_speed"))
+                self.log_error(log_msg)
+                self.connection_errors.append(log_msg)
         return speed
+
+    def apply_add_or_update(self, ixf_member_data):
+
+        if ixf_member_data.netixlan_exists:
+
+            # importer-protocol: netixlan exists
+
+            if not ixf_member_data.changes:
+
+                # importer-protocol: no changes
+
+                self.resolve(ixf_member_data)
+
+            else:
+
+                # importer-protocol: data changes
+
+                self.apply_update(ixf_member_data)
+
+        else:
+
+            # importer-protocol: netixlan does not exist
+
+            self.apply_add(ixf_member_data)
+
+    def resolve(self, ixf_member_data):
+        ixf_member_data.set_resolved(save=self.save)
+
+    def apply_update(self, ixf_member_data):
+        changed_fields = ", ".join(ixf_member_data.changes.keys())
+        reason = f"{REASON_VALUES_CHANGED}: {changed_fields}"
+
+        if ixf_member_data.net.allow_ixp_update:
+            try:
+                self.log_apply(ixf_member_data.apply(save=self.save), reason=reason)
+            except ValidationError as exc:
+                ixf_member_data.set_conflict(error=exc, save=self.save)
+        else:
+            ixf_member_data.set_update(
+                save=self.save, reason=reason,
+            )
+            self.log_ixf_member_data(ixf_member_data)
+
+    def apply_add(self, ixf_member_data):
+
+        if ixf_member_data.net.allow_ixp_update:
+
+            try:
+                self.log_apply(
+                    ixf_member_data.apply(save=self.save), reason=REASON_NEW_ENTRY
+                )
+            except ValidationError as exc:
+                ixf_member_data.set_conflict(error=exc, save=self.save)
+
+        else:
+            ixf_member_data.set_add(save=self.save, reason=REASON_NEW_ENTRY)
+            self.log_ixf_member_data(ixf_member_data)
 
     def save_log(self):
         """
@@ -532,6 +673,31 @@ class Importer(object):
         Reset the attempt log
         """
         self.log = {"data": [], "errors": []}
+
+    def log_apply(self, apply_result, reason=""):
+
+        netixlan = apply_result["netixlan"]
+        self.actions_taken[apply_result["action"]].append(
+            {
+                "netixlan": netixlan,
+                "version": reversion.models.Version.objects.get_for_object(
+                    netixlan
+                ).first(),
+                "reason": reason,
+            }
+        )
+
+        return self.log_peer(
+            netixlan.asn, apply_result["action"], reason, netixlan=netixlan
+        )
+
+    def log_ixf_member_data(self, ixf_member_data):
+        return self.log_peer(
+            ixf_member_data.net.asn,
+            f"suggest-{ixf_member_data.action}",
+            ixf_member_data.reason,
+            netixlan=ixf_member_data,
+        )
 
     def log_peer(self, asn, action, reason, netixlan=None):
         """
@@ -554,36 +720,61 @@ class Importer(object):
         }
 
         if netixlan:
+
+            if hasattr(netixlan, "network_id"):
+                net_id = netixlan.network_id
+            else:
+                net_id = netixlan.net.id
+
             peer.update(
                 {
-                    "net_id": netixlan.network_id,
+                    "net_id": net_id,
                     "ipaddr4": "{}".format(netixlan.ipaddr4 or ""),
                     "ipaddr6": "{}".format(netixlan.ipaddr6 or ""),
                     "speed": netixlan.speed,
                     "is_rs_peer": netixlan.is_rs_peer,
+                    "operational": netixlan.operational,
                 }
             )
 
-            if netixlan.id:
-                self.archive_info[netixlan.id] = {
-                    "action": action,
-                    "reason": "{}".format(reason),
-                }
-
         self.log["data"].append(
-            {"peer": peer, "action": action, "reason": "{}".format(reason),}
+            {"peer": peer, "action": action, "reason": f"{reason}",}
+        )
+
+    def notify_error(self, error):
+        now = datetime.datetime.now(datetime.timezone.utc)
+        notified = self.ixlan.ixf_ixp_import_error_notified
+        prev_error = self.ixlan.ixf_ixp_import_error
+
+        if notified:
+            diff = (now - notified).total_seconds() / 3600
+            if diff < settings.IXF_PARSE_ERROR_NOTIFICATION_PERIOD:
+                return
+
+        self.ixlan.ixf_ixp_import_error_notified = now
+        self.ixlan.ixf_ixp_import_error = error
+        self.ixlan.save()
+
+        ixf_member_data = IXFMemberData(ixlan=self.ixlan, asn=0)
+        ixf_member_data._notify(
+            "email/notify-ixf-source-error.txt",
+            "Could not process IX-F Data",
+            context={"error": error, "dt": now},
+            save=False,
+            ix=True,
+            ac=True,
         )
 
     def log_error(self, error, save=False):
         """
         Append error to the attempt log
         """
-        self.log["errors"].append("{}".format(error))
+        self.log["errors"].append(f"{error}")
         if save:
             self.save_log()
 
 
-class PostMortem(object):
+class PostMortem:
 
     """
     Generate postmortem report for ix-f import
@@ -649,7 +840,7 @@ class PostMortem(object):
 
         qset = IXLanIXFMemberImportLogEntry.objects.filter(netixlan__asn=self.asn)
         qset = qset.exclude(action__isnull=True)
-        qset = qset.order_by("-log__created")
+        qset = qset.order_by("-log__created", "-id")
         qset = qset.select_related("log", "netixlan", "log__ixlan", "log__ixlan__ix")
 
         for entry in qset[:limit]:

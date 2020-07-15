@@ -27,6 +27,7 @@ from peeringdb_server.models import (
     is_suggested,
     VerificationQueueItem,
     Organization,
+    InternetExchange,
     Facility,
     Network,
     NetworkContact,
@@ -68,6 +69,7 @@ def org_save(sender, **kwargs):
     """
 
     inst = kwargs.get("instance")
+    ix_namespace = InternetExchange.nsp_namespace_from_id(inst.id, "*")
 
     # make the general member group for the org
     try:
@@ -84,6 +86,12 @@ def org_save(sender, **kwargs):
         GroupPermission(
             group=group,
             namespace=NetworkContact.nsp_namespace_from_id(inst.id, "*", "private"),
+            permissions=PERM_READ,
+        ).save()
+
+        GroupPermission(
+            group=group,
+            namespace=f"{ix_namespace}.ixf_ixp_member_list_url.private",
             permissions=PERM_READ,
         ).save()
 
@@ -106,6 +114,12 @@ def org_save(sender, **kwargs):
         GroupPermission(
             group=group,
             namespace=NetworkContact.nsp_namespace_from_id(inst.id, "*", "private"),
+            permissions=PERM_CRUD,
+        ).save()
+
+        GroupPermission(
+            group=group,
+            namespace=f"{ix_namespace}.ixf_ixp_member_list_url.private",
             permissions=PERM_CRUD,
         ).save()
 
@@ -402,10 +416,10 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
             else:
                 rdap = None
 
-            title = "{} - {}".format(instance.content_type, item)
+            title = f"{instance.content_type} - {item}"
 
             if is_suggested(item):
-                title = "[SUGGEST] {}".format(title)
+                title = f"[SUGGEST] {title}"
 
             ticket_queue(
                 title,

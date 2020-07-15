@@ -12,7 +12,7 @@ from peeringdb_server.models import REFTAG_MAP
 class TestRenumberLans(ClientCase):
     @classmethod
     def setUpTestData(cls):
-        super(TestRenumberLans, cls).setUpTestData()
+        super().setUpTestData()
         call_command("pdb_generate_test_data", limit=1, commit=True)
 
     def test_run(self):
@@ -56,11 +56,11 @@ class TestRenumberLans(ClientCase):
 
         ixlan = ix.ixlan_set_active.all().first()
 
-        for ixpfx in ixlan.ixpfx_set.all():
-            ixpfx.delete()
-
         for netixlan in ixlan.netixlan_set.all():
             netixlan.delete()
+
+        for ixpfx in ixlan.ixpfx_set.all():
+            ixpfx.delete()
 
         call_command(
             "pdb_renumber_lans",

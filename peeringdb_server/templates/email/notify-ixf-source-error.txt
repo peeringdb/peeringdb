@@ -1,0 +1,9 @@
+There was an issue when we attempted to parse the IX-F data for {{ instance.ix.name }}
+
+```
+{{ error|safe|striptags }}
+```
+
+- IX-F data url: {{ ixf_url }}
+- Exchange: {{ instance.ix.view_url }}
+- Timestamp: {{ dt|date:"c" }}

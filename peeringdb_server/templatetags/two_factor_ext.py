@@ -7,6 +7,7 @@ from two_factor.templatetags import two_factor
 
 register = template.Library()
 
+
 @register.filter
 def device_action(device):
     if isinstance(device, EmailDevice):

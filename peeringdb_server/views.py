@@ -59,6 +59,7 @@ from peeringdb_server.models import (
     NetworkIXLan,
     InternetExchange,
     InternetExchangeFacility,
+    IXFMemberData,
     Facility,
     Sponsorship,
     Partnership,
@@ -146,12 +147,28 @@ def export_permissions(user, entity):
     return perms
 
 
-class DoNotRender(object):
+class DoNotRender:
     """
     Instance of this class is sent when a component attribute does not exist,
     this can then be type checked in the templates to remove non existant attribute
     rows while still allowing attributes with nonetype values to be rendered
     """
+
+    @classmethod
+    def permissioned(cls, value, user, namespace, explicit=False):
+
+        """
+        Check if the user has permissions to the supplied namespace
+        returns a DoNotRender instance if not, otherwise returns
+        the supplied value
+        """
+
+        b = has_perms(user, namespace.lower(), 0x01, explicit=explicit)
+        print(namespace, b)
+        print(user)
+        if not b:
+            return cls()
+        return value
 
     def all(self):
         return []
@@ -199,6 +216,7 @@ def view_http_error_403(request):
 
 def view_http_error_csrf(request, reason):
     return JsonResponse({"non_field_errors": [reason]}, status=403)
+
 
 def view_http_error_invalid(request, reason):
     return JsonResponse({"non_field_errors": [reason]}, status=400)
@@ -298,9 +316,9 @@ def view_request_ownership(request):
             return view_http_error_invalid(
                 request,
                 _(
-                    "You have too many affiliation requests pending, "\
+                    "You have too many affiliation requests pending, "
                     "please wait for them to be resolved before opening more."
-                )
+                ),
             )
 
         request.user.flush_affiliation_requests()
@@ -331,7 +349,6 @@ def cancel_affiliation_request(request, uoar_id):
     return redirect(reverse("user-profile"))
 
 
-
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
@@ -360,9 +377,9 @@ def view_affiliate_to_org(request):
             return view_http_error_invalid(
                 request,
                 _(
-                    "You have too many affiliation requests pending, "\
+                    "You have too many affiliation requests pending, "
                     "please wait for them to be resolved before opening more."
-                )
+                ),
             )
 
         form = AffiliateToOrgForm(request.POST)
@@ -991,9 +1008,9 @@ def view_organization(request, id):
     users = {}
     if perms.get("can_manage"):
         users.update(
-            dict([(user.id, user) for user in org.admin_usergroup.user_set.all()])
+            {user.id: user for user in org.admin_usergroup.user_set.all()}
         )
-        users.update(dict([(user.id, user) for user in org.usergroup.user_set.all()]))
+        users.update({user.id: user for user in org.usergroup.user_set.all()})
         users = sorted(list(users.values()), key=lambda x: x.full_name)
 
     # if user has rights to create sub entties or manage users, allow them
@@ -1356,8 +1373,20 @@ def view_exchange(request, id):
                 "type": "url",
                 "label": _("IX-F Member Export URL"),
                 "name": "ixf_ixp_member_list_url",
-                "value": ixlan.ixf_ixp_member_list_url,
-                "admin": True,
+                "value": DoNotRender.permissioned(
+                    ixlan.ixf_ixp_member_list_url,
+                    request.user,
+                    f"{ixlan.nsp_namespace}.ixf_ixp_member_list_url"
+                    f".{ixlan.ixf_ixp_member_list_url_visible}",
+                    explicit=True,
+                ),
+            },
+            {
+                "type": "list",
+                "name": "ixf_ixp_member_list_url_visible",
+                "data": "enum/visibility",
+                "label": _("IX-F Member Export URL Visibility"),
+                "value": ixlan.ixf_ixp_member_list_url_visible,
             },
             {
                 "type": "action",
@@ -1438,10 +1467,15 @@ def view_network(request, id):
 
     org = network_d.get("org")
 
+    ixf_proposals = IXFMemberData.proposals_for_network(network)
+    ixf_proposals_dismissed = IXFMemberData.dismissed_for_network(network)
+
     data = {
         "title": network_d.get("name", dismiss),
         "facilities": facilities,
         "exchanges": exchanges,
+        "ixf": ixf_proposals,
+        "ixf_dismissed": ixf_proposals_dismissed,
         "fields": [
             {
                 "name": "org",
@@ -1465,9 +1499,10 @@ def view_network(request, id):
             },
             {
                 "name": "asn",
-                "label": _("Primary ASN"),
+                "label": _("ASN"),
                 "notify_incomplete": True,
                 "value": network_d.get("asn", dismiss),
+                "readonly": True,
             },
             {
                 "name": "irr_as_set",
@@ -1667,7 +1702,7 @@ def view_suggest(request, reftag):
     if reftag not in ["net", "ix", "fac"]:
         return HttpResponseRedirect("/")
 
-    template = loader.get_template("site/view_suggest_{}.html".format(reftag))
+    template = loader.get_template(f"site/view_suggest_{reftag}.html")
     env = make_env()
     return HttpResponse(template.render(env, request))
 
@@ -1806,16 +1841,14 @@ def request_search(request):
     if m:
         net = Network.objects.filter(asn=m.group(2), status="ok")
         if net.exists() and net.count() == 1:
-            return HttpResponseRedirect("/net/{}".format(net.first().id))
+            return HttpResponseRedirect(f"/net/{net.first().id}")
 
     result = search(q)
 
-    sponsors = dict(
-        [
-            (org.id, sponsorship.label.lower())
+    sponsors = {
+            org.id: sponsorship.label.lower()
             for org, sponsorship in Sponsorship.active_by_org()
-        ]
-    )
+    }
 
     for tag, rows in list(result.items()):
         for item in rows:
@@ -1842,7 +1875,6 @@ def request_logout(request):
     return redirect("/")
 
 
-
 # We are using django-otp's EmailDevice model
 # to handle email as a recovery option for one
 # time passwords.
@@ -1856,8 +1888,12 @@ def request_logout(request):
 # to do just that
 
 EmailDevice._verify_token = EmailDevice.verify_token
+
+
 def verify_token(self, token):
     return self._verify_token(str(token))
+
+
 EmailDevice.verify_token = verify_token
 
 
@@ -1890,8 +1926,10 @@ class LoginView(two_factor.views.LoginView):
         """
 
         was_limited = getattr(self.request, "limited", False)
-        if self.get_step_index() == 0 and  was_limited:
-            self.rate_limit_message = _("Please wait a bit before trying to login again.")
+        if self.get_step_index() == 0 and was_limited:
+            self.rate_limit_message = _(
+                "Please wait a bit before trying to login again."
+            )
             return self.render_goto_step("auth")
 
         return super().post(*args, **kwargs)
@@ -1907,9 +1945,7 @@ class LoginView(two_factor.views.LoginView):
         context.update(rate_limit_message=getattr(self, "rate_limit_message", None))
 
         if "other_devices" in context:
-            context["other_devices"] += [
-                self.get_email_device()
-            ]
+            context["other_devices"] += [self.get_email_device()]
 
         return context
 
@@ -1971,7 +2007,7 @@ class LoginView(two_factor.views.LoginView):
         """
 
         if not self.device_cache:
-            challenge_device_id = self.request.POST.get('challenge_device', None)
+            challenge_device_id = self.request.POST.get("challenge_device", None)
             if challenge_device_id:
                 device = self.get_email_device()
                 if device.persistent_id == challenge_device_id:
@@ -2032,7 +2068,6 @@ class LoginView(two_factor.views.LoginView):
         return redirect(self.get_success_url())
 
 
-
 @require_http_methods(["POST"])
 @ratelimit(key="ip", rate=RATELIMITS["request_translation"], method="POST")
 def request_translation(request, data_type):
@@ -2069,3 +2104,34 @@ def request_translation(request, data_type):
     return JsonResponse(
         {"status": "error", "error": "No text or no language specified"}
     )
+
+
+@require_http_methods(["POST"])
+def network_reset_ixf_proposals(request, net_id):
+    net = Network.objects.get(id=net_id)
+
+    allowed = has_perms(request.user, net, PERM_CRUD)
+
+    if not allowed:
+        return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)
+
+    qset = IXFMemberData.objects.filter(asn=net.asn)
+    qset.update(dismissed=False)
+
+    return JsonResponse({"status": "ok"})
+
+
+@require_http_methods(["POST"])
+def network_dismiss_ixf_proposal(request, net_id, ixf_id):
+    ixf_member_data = IXFMemberData.objects.get(id=ixf_id)
+    net = ixf_member_data.net
+
+    allowed = has_perms(request.user, net, PERM_CRUD)
+
+    if not allowed:
+        return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)
+
+    ixf_member_data.dismissed = True
+    ixf_member_data.save()
+
+    return JsonResponse({"status": "ok"})

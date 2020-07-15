@@ -41,9 +41,9 @@ class AdvancedSearchExportTest(ClientCase):
         # create exchanges
         cls.org = [
             Organization.objects.create(
-                name="Organization {}".format(i),
+                name=f"Organization {i}",
                 country=countries[i - 1],
-                city="City {}".format(i),
+                city=f"City {i}",
                 status="ok",
             )
             for i in entity_count
@@ -52,9 +52,9 @@ class AdvancedSearchExportTest(ClientCase):
         # create networks
         cls.net = [
             Network.objects.create(
-                name="Network {}".format(i),
+                name=f"Network {i}",
                 status="ok",
-                aka="AKA {}".format(i),
+                aka=f"AKA {i}",
                 policy_general="Open",
                 info_traffic="0-20Mbps",
                 asn=i,
@@ -66,10 +66,10 @@ class AdvancedSearchExportTest(ClientCase):
         # create exchanges
         cls.ix = [
             InternetExchange.objects.create(
-                name="Exchange {}".format(i),
+                name=f"Exchange {i}",
                 media="Ethernet",
                 country=countries[i - 1],
-                city="City {}".format(i),
+                city=f"City {i}",
                 status="ok",
                 org=cls.org[i - 1],
             )
@@ -79,12 +79,12 @@ class AdvancedSearchExportTest(ClientCase):
         # create facilities
         cls.fac = [
             Facility.objects.create(
-                name="Facility {}".format(i),
+                name=f"Facility {i}",
                 status="ok",
-                city="City {}".format(i),
-                clli="CLLI{}".format(i),
-                state="State {}".format(i),
-                npanxx="{}-{}".format(i, i),
+                city=f"City {i}",
+                clli=f"CLLI{i}",
+                state=f"State {i}",
+                npanxx=f"{i}-{i}",
                 country=countries[i - 1],
                 zipcode=i,
                 org=cls.org[i - 1],
@@ -121,9 +121,9 @@ class AdvancedSearchExportTest(ClientCase):
             "data",
             "export",
             "advancedsearch",
-            "{}.{}".format(tag, fmt),
+            f"{tag}.{fmt}",
         )
-        with open(path, "r") as fh:
+        with open(path) as fh:
             data = fh.read().rstrip()
         return data
 

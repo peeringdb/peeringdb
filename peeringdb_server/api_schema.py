@@ -4,7 +4,7 @@ from django.conf import settings
 from rest_framework.schemas.openapi import AutoSchema
 
 
-class CustomField(object):
+class CustomField:
     def __init__(self, typ, help_text=""):
         self.typ = typ
         self.help_text = help_text
@@ -86,7 +86,7 @@ class BaseSchema(AutoSchema):
         op_type = self.get_operation_type(path, method)
 
         if model:
-            return "{} {}".format(op_type, model.HandleRef.tag)
+            return f"{op_type} {model.HandleRef.tag}"
 
         return super()._get_operation_id(path, method)
 
@@ -104,7 +104,7 @@ class BaseSchema(AutoSchema):
         # check if we have an augmentation method set for the
         # operation type, if so run it
 
-        augment = getattr(self, "augment_{}_operation".format(op_type), None)
+        augment = getattr(self, f"augment_{op_type}_operation", None)
 
         if augment:
             augment(op_dict, args)
@@ -118,26 +118,26 @@ class BaseSchema(AutoSchema):
 
         if model:
             obj_descr_file = settings.API_DOC_INCLUDES.get(
-                "obj_{}".format(model.HandleRef.tag), ""
+                f"obj_{model.HandleRef.tag}", ""
             )
             if obj_descr_file:
-                with open(obj_descr_file, "r") as fh:
+                with open(obj_descr_file) as fh:
                     op_dict["description"] += "\n\n" + fh.read()
 
             # check if we have an augmentation method set for the operation_type and object type
             # combination, if so run it
 
             augment = getattr(
-                self, "augment_{}_{}".format(op_type, model.HandleRef.tag), None
+                self, f"augment_{op_type}_{model.HandleRef.tag}", None
             )
             if augment:
                 augment(serializer, model, op_dict)
 
         # include the markdown documentation for the operation type (docs/api/op_*.md)
 
-        op_descr_file = settings.API_DOC_INCLUDES.get("op_{}".format(op_type), "")
+        op_descr_file = settings.API_DOC_INCLUDES.get(f"op_{op_type}", "")
         if op_descr_file:
-            with open(op_descr_file, "r") as fh:
+            with open(op_descr_file) as fh:
                 op_dict["description"] += "\n\n" + fh.read()
 
         return op_dict
@@ -257,7 +257,7 @@ class BaseSchema(AutoSchema):
         ] + serializer.queryable_relations()
 
         custom_filter_fields = getattr(
-            self, "{}_list_filter_fields".format(model.HandleRef.tag), None
+            self, f"{model.HandleRef.tag}_list_filter_fields", None
         )
         if custom_filter_fields:
             field_names.extend(custom_filter_fields())
@@ -287,7 +287,7 @@ class BaseSchema(AutoSchema):
                 # mark prefix of nested object as blocked so we
                 # dont expose it's fields to the documentation
 
-                blocked_prefixes.append("{}__".format(field))
+                blocked_prefixes.append(f"{field}__")
                 continue
             elif typ in self.numeric_fields:
                 supported_filters = ["`__lt`", "`__gt`", "`__lte`", "`__gte`", "`__in`"]
@@ -306,7 +306,7 @@ class BaseSchema(AutoSchema):
 
             help_text = getattr(fld, "help_text", None)
             if help_text:
-                description.insert(0, "{}".format(help_text))
+                description.insert(0, f"{help_text}")
 
             # if field has choices defined, append them to the description
 
@@ -314,7 +314,7 @@ class BaseSchema(AutoSchema):
             if choices:
                 description.append(
                     "{}".format(
-                        ", ".join(["`{}`".format(_id) for _id, label in choices])
+                        ", ".join([f"`{_id}`" for _id, label in choices])
                     )
                 )
 

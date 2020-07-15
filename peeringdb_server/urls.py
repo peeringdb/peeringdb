@@ -69,6 +69,8 @@ from peeringdb_server.views import (
     request_search,
     request_translation,
     cancel_affiliation_request,
+    network_dismiss_ixf_proposal,
+    network_reset_ixf_proposals,
 )
 import peeringdb_server.org_admin_views
 import peeringdb_server.data_views
@@ -78,7 +80,10 @@ urlpatterns = [
     url(r"^search$", request_search),
     url(r"^advanced_search", view_advanced_search),
     url(r"^logout$", request_logout),
-    url(r"^login$", RedirectView.as_view(pattern_name='two_factor:login', permanent=True)),
+    url(
+        r"^login$",
+        RedirectView.as_view(pattern_name="two_factor:login", permanent=True),
+    ),
     url(r"^register$", view_registration),
     url(r"^reset-password$", view_password_reset),
     url(r"^change-password$", view_password_change),
@@ -95,12 +100,35 @@ urlpatterns = [
     url(r"^aup$", view_aup),
     url(r"^about$", view_about),
     url(r"^affiliate-to-org$", view_affiliate_to_org),
-    url(r"^cancel-affiliation-request/(?P<uoar_id>\d+)/$", cancel_affiliation_request, name="cancel-affiliation-request"),
+    url(
+        r"^cancel-affiliation-request/(?P<uoar_id>\d+)/$",
+        cancel_affiliation_request,
+        name="cancel-affiliation-request",
+    ),
     url(r"^request-ownership$", view_request_ownership),
+    url(
+        r"^%s/(?P<net_id>\d+)/dismiss-ixf-proposal/(?P<ixf_id>\d+)/$"
+        % Network.handleref.tag,
+        network_dismiss_ixf_proposal,
+        name="net-dismiss-ixf-proposal",
+    ),
+    url(
+        r"^%s/(?P<net_id>\d+)/reset-ixf-proposals/$" % Network.handleref.tag,
+        network_reset_ixf_proposals,
+        name="net-reset-ixf-proposals",
+    ),
     url(r"^%s/(?P<id>\d+)/?$" % Network.handleref.tag, view_network, name="net-view"),
-    url(r"^%s/(?P<id>\d+)/?$" % InternetExchange.handleref.tag, view_exchange, name="ix-view"),
+    url(
+        r"^%s/(?P<id>\d+)/?$" % InternetExchange.handleref.tag,
+        view_exchange,
+        name="ix-view",
+    ),
     url(r"^%s/(?P<id>\d+)/?$" % Facility.handleref.tag, view_facility, name="fac-view"),
-    url(r"^%s/(?P<id>\d+)/?$" % Organization.handleref.tag, view_organization, name="org-view"),
+    url(
+        r"^%s/(?P<id>\d+)/?$" % Organization.handleref.tag,
+        view_organization,
+        name="org-view",
+    ),
     url(r"^%s$" % Network.handleref.tag, view_network_by_query),
     url(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn),
     url(r"^org_admin/users$", peeringdb_server.org_admin_views.users),
@@ -223,9 +251,9 @@ urlpatterns += [
 
 urlpatterns += [
     url(
-        r"^autocomplete/admin/clt-history/{}/$".format(tool_id),
+        fr"^autocomplete/admin/clt-history/{tool_id}/$",
         ToolHistory.as_view(),
-        name="autocomplete-admin-clt-history-{}".format(tool_id),
+        name=f"autocomplete-admin-clt-history-{tool_id}",
     )
     for tool_id, ToolHistory in list(clt_history.items())
 ]

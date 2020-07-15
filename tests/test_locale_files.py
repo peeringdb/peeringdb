@@ -11,7 +11,7 @@ class LocaleFilesTest(TestCase):
         path = os.path.join(
             os.path.dirname(__file__), "..", "locale", language, "LC_MESSAGES"
         )
-        with open(os.path.join(path, filename), "r") as fh:
+        with open(os.path.join(path, filename)) as fh:
             content = fh.read()
             message_id = re.findall(r"\nmsgid (.+)\n", content)
             message_str = re.findall(r"\nmsgstr (.+)\n", content)

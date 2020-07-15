@@ -171,7 +171,7 @@ def get_relation_filters(flds, serializer, **kwargs):
     return rv
 
 
-class UniqueFieldValidator(object):
+class UniqueFieldValidator:
     """
     For issue #70
 
@@ -207,10 +207,10 @@ class UniqueFieldValidator(object):
             if self.model.objects.filter(**filters).exclude(id=id).exists():
                 collisions[field] = self.message
         if collisions:
-            raise RestValidationError(collisions)
+            raise RestValidationError(collisions, code="unique")
 
 
-class RequiredForMethodValidator(object):
+class RequiredForMethodValidator:
     """
     A validator that makes a field required for certain
     methods
@@ -234,7 +234,7 @@ class RequiredForMethodValidator(object):
         self.request = serializer._context.get("request")
 
 
-class SoftRequiredValidator(object):
+class SoftRequiredValidator:
     """
     A validator that allows us to require that at least
     one of the specified fields is set
@@ -260,7 +260,7 @@ class SoftRequiredValidator(object):
             raise RestValidationError(missing)
 
 
-class AsnRdapValidator(object):
+class AsnRdapValidator:
     """
     A validator that queries rdap entries for the provided value (Asn)
     and will fail if no matching asn is found
@@ -286,14 +286,14 @@ class AsnRdapValidator(object):
             self.request.rdap_result = rdap
         except RdapException as exc:
             self.request.rdap_error = (self.request.user, asn, exc)
-            raise RestValidationError({self.field: "{}: {}".format(self.message, exc)})
+            raise RestValidationError({self.field: f"{self.message}: {exc}"})
 
     def set_context(self, serializer):
         self.instance = getattr(serializer, "instance", None)
         self.request = serializer._context.get("request")
 
 
-class FieldMethodValidator(object):
+class FieldMethodValidator:
     """
     A validator that will only allow a field to be set for certain
     methods
@@ -321,8 +321,10 @@ class FieldMethodValidator(object):
 class ExtendedURLField(serializers.URLField):
     def __init__(self, **kwargs):
         schemes = kwargs.pop("schemes", None)
-        super(ExtendedURLField, self).__init__(**kwargs)
-        validator = URLValidator(message=self.error_messages["invalid"], schemes=schemes)
+        super().__init__(**kwargs)
+        validator = URLValidator(
+            message=self.error_messages["invalid"], schemes=schemes
+        )
         self.validators = []
         self.validators.append(validator)
 
@@ -333,7 +335,7 @@ class SaneIntegerField(serializers.IntegerField):
     """
 
     def get_attribute(self, instance):
-        r = super(SaneIntegerField, self).get_attribute(instance)
+        r = super().get_attribute(instance)
         if r is None:
             return 0
         return r
@@ -363,7 +365,7 @@ class ParentStatusException(IOError):
 
 
 class AddressSerializer(serializers.ModelSerializer):
-    class Meta(object):
+    class Meta:
         model = (AddressModel,)
         fields = ["address1", "address2", "city", "country", "state", "zipcode"]
 
@@ -432,7 +434,7 @@ class ModelSerializer(PermissionedModelSerializer):
         self.nested_depth = self.depth_from_request(request, is_list)
 
         # Instantiate the superclass normally
-        super(ModelSerializer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if not request:
             return
@@ -477,7 +479,7 @@ class ModelSerializer(PermissionedModelSerializer):
             ):
                 model = fld.related_model
                 for _fld in model._meta.get_fields():
-                    field_name = "{}__{}".format(fld.name, _fld.name)
+                    field_name = f"{fld.name}__{_fld.name}"
 
                     if field_name in FILTER_EXCLUDE:
                         continue
@@ -613,9 +615,9 @@ class ModelSerializer(PermissionedModelSerializer):
                         attr_fld = "%s_active_prefetched" % fld
                     else:
                         if getter:
-                            src_fld = "%s__%s__%s" % (nested, getter, fld)
+                            src_fld = f"{nested}__{getter}__{fld}"
                         else:
-                            src_fld = "%s__%s" % (nested, fld)
+                            src_fld = f"{nested}__{fld}"
                         attr_fld = "%s_active_prefetched" % fld
 
                     route_fld = "%s_active_prefetched" % src_fld
@@ -659,9 +661,9 @@ class ModelSerializer(PermissionedModelSerializer):
                         related.append(fld)
                     else:
                         if getter:
-                            src_fld = "%s__%s__%s" % (nested, getter, fld)
+                            src_fld = f"{nested}__{getter}__{fld}"
                         else:
-                            src_fld = "%s__%s" % (nested, fld)
+                            src_fld = f"{nested}__{fld}"
 
                     route_fld = src_fld
 
@@ -779,7 +781,7 @@ class ModelSerializer(PermissionedModelSerializer):
 
         # return full object if depth limit allows, otherwise return id
         if return_full:
-            return super(ModelSerializer, self).to_representation(data)
+            return super().to_representation(data)
         else:
             return data.id
 
@@ -803,7 +805,7 @@ class ModelSerializer(PermissionedModelSerializer):
             validated_data["status"] = "ok"
         if "suggest" in validated_data:
             del validated_data["suggest"]
-        return super(ModelSerializer, self).create(validated_data)
+        return super().create(validated_data)
 
     def _unique_filter(self, fld, data):
         for _fld, slz_fld in list(self._declared_fields.items()):
@@ -823,7 +825,7 @@ class ModelSerializer(PermissionedModelSerializer):
         """
 
         try:
-            return super(ModelSerializer, self).run_validation(data=data)
+            return super().run_validation(data=data)
         except RestValidationError as exc:
 
             filters = {}
@@ -862,7 +864,7 @@ class ModelSerializer(PermissionedModelSerializer):
                     # unique set that caused the collision
 
                     columns = "|".join(self.Meta.fields)
-                    m = re.findall(r"\b({})\b".format(columns), v)
+                    m = re.findall(fr"\b({columns})\b", v)
 
                     # build django queryset filters we can use
                     # to retrieve the blocking object
@@ -910,15 +912,9 @@ class ModelSerializer(PermissionedModelSerializer):
                 except FieldError as exc:
                     raise exc
 
-                if has_perms(request.user, self.instance, "update"):
-                    rv = super(ModelSerializer, self).run_validation(data=data)
-                    self._undelete = True
-                    return rv
-                else:
-                    raise RestValidationError({"non_field_errors": [_(
-                        "Permission denied to restore deleted object/relationship"
-                    )]})
-                raise
+                rv = super().run_validation(data=data)
+                self._undelete = True
+                return rv
             else:
                 raise
 
@@ -928,7 +924,7 @@ class ModelSerializer(PermissionedModelSerializer):
         attempt to store which user created the item in the
         verification queue instance
         """
-        instance = super(ModelSerializer, self).save(**kwargs)
+        instance = super().save(**kwargs)
 
         if instance.status == "deleted" and getattr(self, "_undelete", False):
             instance.status = "ok"
@@ -1057,7 +1053,7 @@ class FacilitySerializer(ModelSerializer):
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super(FacilitySerializer, self).has_create_perms(user, data)
+        return super().has_create_perms(user, data)
 
     def nsp_namespace_create(self, data):
         return self.Meta.model.nsp_namespace_from_id(data.get("org").id, "create")
@@ -1089,6 +1085,8 @@ class FacilitySerializer(ModelSerializer):
             + HandleRefSerializer.Meta.fields
             + AddressSerializer.Meta.fields
         )
+
+        read_only_fields = ["rencode"]
 
         related_fields = ["org"]
 
@@ -1141,7 +1139,7 @@ class FacilitySerializer(ModelSerializer):
         # this happens here so it is done before the validators run
         if "suggest" in data:
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
-        return super(FacilitySerializer, self).to_internal_value(data)
+        return super().to_internal_value(data)
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
@@ -1165,7 +1163,6 @@ class FacilitySerializer(ModelSerializer):
             raise serializers.ValidationError({"sales_phone": exc.message})
 
         return data
-
 
 
 class InternetExchangeFacilitySerializer(ModelSerializer):
@@ -1194,7 +1191,7 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
         if data.get("fac") and data.get("fac").status != "ok":
             raise ParentStatusException(data.get("fac"), self.Meta.model.handleref.tag)
-        return super(InternetExchangeFacilitySerializer, self).has_create_perms(
+        return super().has_create_perms(
             user, data
         )
 
@@ -1256,7 +1253,7 @@ class NetworkContactSerializer(ModelSerializer):
             raise ParentStatusException(
                 data.get("network"), self.Meta.model.handleref.tag
             )
-        return super(NetworkContactSerializer, self).has_create_perms(user, data)
+        return super().has_create_perms(user, data)
 
     def nsp_namespace_create(self, data):
         return self.Meta.model.nsp_namespace_from_id(
@@ -1302,13 +1299,14 @@ class NetworkContactSerializer(ModelSerializer):
 
         representation = super().to_representation(data)
 
-        if isinstance(representation,dict) and representation.get("status") == "deleted":
+        if (
+            isinstance(representation, dict)
+            and representation.get("status") == "deleted"
+        ):
             for field in ["name", "phone", "email", "url"]:
                 representation[field] = ""
 
         return representation
-
-
 
 
 class NetworkIXLanSerializer(ModelSerializer):
@@ -1348,7 +1346,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             raise ParentStatusException(
                 data.get("ixlan"), self.Meta.model.handleref.tag
             )
-        return super(NetworkIXLanSerializer, self).has_create_perms(user, data)
+        return super().has_create_perms(user, data)
 
     def nsp_namespace_create(self, data):
         return self.Meta.model.nsp_namespace_from_id(
@@ -1362,7 +1360,9 @@ class NetworkIXLanSerializer(ModelSerializer):
                 fields=("ipaddr4", "ipaddr6"), message="Input required for IPv4 or IPv6"
             ),
             UniqueFieldValidator(
-                fields=("ipaddr4", "ipaddr6"), message="IP already exists"
+                fields=("ipaddr4", "ipaddr6"),
+                message="IP already exists",
+                check_deleted=True,
             ),
         ]
 
@@ -1422,7 +1422,7 @@ class NetworkIXLanSerializer(ModelSerializer):
     def get_name(self, inst):
         ixlan_name = inst.ixlan.name
         if ixlan_name:
-            return "%s: %s" % (inst.ix_name, ixlan_name)
+            return f"{inst.ix_name}: {ixlan_name}"
         return inst.ix_name
 
     def get_ix_id(self, inst):
@@ -1439,7 +1439,7 @@ class NetworkIXLanSerializer(ModelSerializer):
                 data["asn"] = net.asn
             except:
                 pass
-        return super(NetworkIXLanSerializer, self).run_validation(data=data)
+        return super().run_validation(data=data)
 
     def validate(self, data):
         netixlan = NetworkIXLan(**data)
@@ -1533,7 +1533,7 @@ class NetworkFacilitySerializer(ModelSerializer):
             for valid in ["name", "country", "city"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
-                    field = "facility__{}".format(valid)
+                    field = f"facility__{valid}"
                     qset = fn(qset=qset, field=field, **e)
                     break
 
@@ -1550,7 +1550,7 @@ class NetworkFacilitySerializer(ModelSerializer):
             raise ParentStatusException(
                 data.get("facility"), self.Meta.model.handleref.tag
             )
-        return super(NetworkFacilitySerializer, self).has_create_perms(user, data)
+        return super().has_create_perms(user, data)
 
     def nsp_namespace_create(self, data):
         return self.Meta.model.nsp_namespace_from_id(
@@ -1583,7 +1583,7 @@ class NetworkFacilitySerializer(ModelSerializer):
                 data["local_asn"] = net.asn
             except:
                 pass
-        return super(NetworkFacilitySerializer, self).run_validation(data=data)
+        return super().run_validation(data=data)
 
     def validate(self, data):
 
@@ -1644,15 +1644,16 @@ class NetworkSerializer(ModelSerializer):
     org = serializers.SerializerMethodField()
 
     route_server = serializers.CharField(
-        required=False, allow_blank=True,
-        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])]
+        required=False,
+        allow_blank=True,
+        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])],
     )
 
     looking_glass = serializers.CharField(
-        required=False, allow_blank=True,
-        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])]
+        required=False,
+        allow_blank=True,
+        validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])],
     )
-
 
     info_prefixes4 = SaneIntegerField(
         allow_null=False, required=False, validators=[validate_info_prefixes4]
@@ -1664,7 +1665,7 @@ class NetworkSerializer(ModelSerializer):
     suggest = serializers.BooleanField(required=False, write_only=True)
     validators = [AsnRdapValidator(), FieldMethodValidator("suggest", ["POST"])]
 
-    #irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
+    # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
     class Meta:
         model = Network
@@ -1710,7 +1711,6 @@ class NetworkSerializer(ModelSerializer):
             "poc_set",
         ]
         list_exclude = ["org"]
-        extra_kwargs = {"allow_ixp_update": {"write_only": True}}
 
         _ref_tag = model.handleref.tag
 
@@ -1788,14 +1788,14 @@ class NetworkSerializer(ModelSerializer):
             )
             raise RestValidationError({"asn": errmsg})
 
-        return super(NetworkSerializer, self).to_internal_value(data)
+        return super().to_internal_value(data)
 
     def has_create_perms(self, user, data):
         # we dont want users to be able to create networks if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super(NetworkSerializer, self).has_create_perms(user, data)
+        return super().has_create_perms(user, data)
 
     def nsp_namespace_create(self, data):
         return self.Meta.model.nsp_namespace_from_id(data.get("org").id, "create")
@@ -1829,9 +1829,7 @@ class NetworkSerializer(ModelSerializer):
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
             net = super(ModelSerializer, self).create(validated_data)
-            ticket_queue_asnauto_skipvq(
-                user, validated_data["org"], net, rdap
-            )
+            ticket_queue_asnauto_skipvq(user, validated_data["org"], net, rdap)
             return net
 
         elif self.Meta.model in QUEUE_ENABLED:
@@ -1844,12 +1842,17 @@ class NetworkSerializer(ModelSerializer):
 
         return super(ModelSerializer, self).create(validated_data)
 
+    def update(self, instance, validated_data):
+        if validated_data.get("asn") != instance.asn:
+            raise serializers.ValidationError(
+                {"asn": _("ASN cannot be changed."),}
+            )
+        return super(ModelSerializer, self).update(instance, validated_data)
 
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)
         if rdap_error:
             ticket_queue_rdap_error(*rdap_error)
-
 
     def validate_irr_as_set(self, value):
         if value:
@@ -1918,7 +1921,7 @@ class IXLanPrefixSerializer(ModelSerializer):
             raise ParentStatusException(
                 data.get("ixlan"), self.Meta.model.handleref.tag
             )
-        return super(IXLanPrefixSerializer, self).has_create_perms(user, data)
+        return super().has_create_perms(user, data)
 
     def nsp_namespace_create(self, data):
         return self.Meta.model.nsp_namespace_from_id(
@@ -1949,6 +1952,14 @@ class IXLanPrefixSerializer(ModelSerializer):
             raise serializers.ValidationError(
                 "Prefix netmask invalid, needs to be valid according to the selected protocol"
             )
+
+        if self.instance:
+            prefix = data["prefix"]
+            if prefix != self.instance.prefix and not self.instance.deletable:
+                raise serializers.ValidationError(
+                    {"prefix": self.instance.not_deletable_reason}
+                )
+
         return data
 
 
@@ -1983,7 +1994,7 @@ class IXLanSerializer(ModelSerializer):
         # ix status is pending or deleted
         if data.get("ix") and data.get("ix").status != "ok":
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
-        return super(IXLanSerializer, self).has_create_perms(user, data)
+        return super().has_create_perms(user, data)
 
     def nsp_namespace_create(self, data):
         return self.Meta.model.nsp_namespace_from_id(
@@ -2005,6 +2016,7 @@ class IXLanSerializer(ModelSerializer):
             "net_set",
             "ixpfx_set",
             "ixf_ixp_member_list_url",
+            "ixf_ixp_member_list_url_visible",
             "ixf_ixp_import_enabled",
         ] + HandleRefSerializer.Meta.fields
         related_fields = ["ix", "net_set", "ixpfx_set"]
@@ -2012,7 +2024,6 @@ class IXLanSerializer(ModelSerializer):
         list_exclude = ["ix"]
 
         extra_kwargs = {
-            "ixf_ixp_member_list_url": {"write_only": True},
             "ixf_ixp_import_enabled": {"write_only": True},
         }
 
@@ -2024,6 +2035,23 @@ class IXLanSerializer(ModelSerializer):
 
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if not isinstance(data, dict):
+            return data
+
+        user = self.context.get("user")
+        request = self.context.get("request")
+
+        if not user and request:
+            user = request.user
+
+        if instance and not instance.ixf_ixp_member_list_url_viewable(user):
+            del data["ixf_ixp_member_list_url"]
+
+        return data
 
 
 class InternetExchangeSerializer(ModelSerializer):
@@ -2057,6 +2085,9 @@ class InternetExchangeSerializer(ModelSerializer):
     net_count = serializers.SerializerMethodField()
 
     suggest = serializers.BooleanField(required=False, write_only=True)
+
+    ixf_net_count = serializers.IntegerField(read_only=True)
+    ixf_last_import = serializers.DateTimeField(read_only=True)
 
     website = serializers.URLField(required=True)
     tech_email = serializers.EmailField(required=True)
@@ -2116,6 +2147,8 @@ class InternetExchangeSerializer(ModelSerializer):
             "suggest",
             "prefix",
             "net_count",
+            "ixf_net_count",
+            "ixf_last_import",
         ] + HandleRefSerializer.Meta.fields
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]
@@ -2173,7 +2206,7 @@ class InternetExchangeSerializer(ModelSerializer):
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super(InternetExchangeSerializer, self).has_create_perms(user, data)
+        return super().has_create_perms(user, data)
 
     def to_internal_value(self, data):
         # if `suggest` keyword is provided, hard-set the org to
@@ -2182,15 +2215,14 @@ class InternetExchangeSerializer(ModelSerializer):
         # this happens here so it is done before the validators run
         if "suggest" in data:
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
-        return super(InternetExchangeSerializer, self).to_internal_value(data)
-
+        return super().to_internal_value(data)
 
     def to_representation(self, data):
         # When an ix is created we want to add the ixlan_id and ixpfx_id
         # that were created to the representation (see #609)
 
         representation = super().to_representation(data)
-        request=  self.context.get("request")
+        request = self.context.get("request")
         if request and request.method == "POST" and self.instance:
             ixlan = self.instance.ixlan
             ixpfx = ixlan.ixpfx_set.first()
@@ -2207,7 +2239,7 @@ class InternetExchangeSerializer(ModelSerializer):
         prefix = validated_data.pop("prefix")
 
         # create ix
-        r = super(InternetExchangeSerializer, self).create(validated_data)
+        r = super().create(validated_data)
 
         ixlan = r.ixlan
 
@@ -2322,9 +2354,8 @@ class OrganizationSerializer(ModelSerializer):
         return qset, filters
 
 
-REFTAG_MAP = dict(
-    [
-        (cls.Meta.model.handleref.tag, cls)
+REFTAG_MAP = {
+        cls.Meta.model.handleref.tag: cls
         for cls in [
             OrganizationSerializer,
             NetworkSerializer,
@@ -2337,5 +2368,4 @@ REFTAG_MAP = dict(
             IXLanSerializer,
             IXLanPrefixSerializer,
         ]
-    ]
-)
+}

@@ -5,6 +5,7 @@ import requests
 
 from django.test import override_settings
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 
 from peeringdb_server.validators import (
     validate_address_space,
@@ -22,6 +23,8 @@ from peeringdb_server.models import (
     IXLanPrefix,
     Network,
     NetworkContact,
+    Facility,
+    ProtectedAction,
 )
 
 pytestmark = pytest.mark.django_db
@@ -156,48 +159,50 @@ def test_validate_prefix_overlap():
     with pytest.raises(ValidationError) as exc:
         validate_prefix_overlap("198.32.124.0/23")
 
-@pytest.mark.parametrize("value,validated", [
-    # success validation
-    ("RIPE::AS-FOO", "RIPE::AS-FOO"),
-    ("AS-FOO@RIPE", "AS-FOO@RIPE"),
-    ("AS-FOO-BAR@RIPE", "AS-FOO-BAR@RIPE"),
-    ("ripe::as-foo", "RIPE::AS-FOO"),
-    ("as-foo@ripe", "AS-FOO@RIPE"),
-    ("as-foo@ripe as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
-    ("as-foo@ripe,as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
-    ("as-foo@ripe, as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
-    (
-        "RIPE::AS12345:AS-FOO RIPE::AS12345:AS-FOO:AS9876",
-        "RIPE::AS12345:AS-FOO RIPE::AS12345:AS-FOO:AS9876"
-    ),
-    ("ripe::as-foo:as123:as345", "RIPE::AS-FOO:AS123:AS345"),
-    ("RIPE::AS12345", "RIPE::AS12345"),
-    ("AS12345@RIPE", "AS12345@RIPE"),
-    ("RIPE::AS123456:RS-FOO", "RIPE::AS123456:RS-FOO"),
-    ("as-foo", "AS-FOO"),
-    ("rs-foo", "RS-FOO"),
-    ("as-foo as-bar", "AS-FOO AS-BAR"),
-    ("rs-foo as-bar", "RS-FOO AS-BAR"),
-    ("rs-foo rs-bar", "RS-FOO RS-BAR"),
-    ("AS15562", "AS15562"),
-    ("AS-15562", "AS-15562"),
-    ("AS15562 AS33333", "AS15562 AS33333"),
 
-    # fail validation
-    ("UNKNOWN::AS-FOO", False),
-    ("AS-FOO@UNKNOWN", False),
-    ("ASFOO@UNKNOWN", False),
-    ("UNKNOWN::ASFOO", False),
-    ("RIPE:AS-FOO", False),
-    ("RIPE::RS15562:RS-FOO", False),
-    ("RIPE::AS123456:RS-FOO:AS-FOO", False),
-    ("!\"*([])?.=+/\\", False),
-    ("RIPE::!\"*([])?.=+/\\", False),
-    ("!\"*([])?.=+/\\@RIPE", False),
-
-    # > DATA_QUALITY_MAX_IRR_DEPTH
-    ("ripe::as-foo:as123:as345:as678", False),
-])
+@pytest.mark.parametrize(
+    "value,validated",
+    [
+        # success validation
+        ("RIPE::AS-FOO", "RIPE::AS-FOO"),
+        ("AS-FOO@RIPE", "AS-FOO@RIPE"),
+        ("AS-FOO-BAR@RIPE", "AS-FOO-BAR@RIPE"),
+        ("ripe::as-foo", "RIPE::AS-FOO"),
+        ("as-foo@ripe", "AS-FOO@RIPE"),
+        ("as-foo@ripe as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
+        ("as-foo@ripe,as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
+        ("as-foo@ripe, as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
+        (
+            "RIPE::AS12345:AS-FOO RIPE::AS12345:AS-FOO:AS9876",
+            "RIPE::AS12345:AS-FOO RIPE::AS12345:AS-FOO:AS9876",
+        ),
+        ("ripe::as-foo:as123:as345", "RIPE::AS-FOO:AS123:AS345"),
+        ("RIPE::AS12345", "RIPE::AS12345"),
+        ("AS12345@RIPE", "AS12345@RIPE"),
+        ("RIPE::AS123456:RS-FOO", "RIPE::AS123456:RS-FOO"),
+        ("as-foo", "AS-FOO"),
+        ("rs-foo", "RS-FOO"),
+        ("as-foo as-bar", "AS-FOO AS-BAR"),
+        ("rs-foo as-bar", "RS-FOO AS-BAR"),
+        ("rs-foo rs-bar", "RS-FOO RS-BAR"),
+        ("AS15562", "AS15562"),
+        ("AS-15562", "AS-15562"),
+        ("AS15562 AS33333", "AS15562 AS33333"),
+        # fail validation
+        ("UNKNOWN::AS-FOO", False),
+        ("AS-FOO@UNKNOWN", False),
+        ("ASFOO@UNKNOWN", False),
+        ("UNKNOWN::ASFOO", False),
+        ("RIPE:AS-FOO", False),
+        ("RIPE::RS15562:RS-FOO", False),
+        ("RIPE::AS123456:RS-FOO:AS-FOO", False),
+        ('!"*([])?.=+/\\', False),
+        ('RIPE::!"*([])?.=+/\\', False),
+        ('!"*([])?.=+/\\@RIPE', False),
+        # > DATA_QUALITY_MAX_IRR_DEPTH
+        ("ripe::as-foo:as123:as345:as678", False),
+    ],
+)
 def test_validate_irr_as_set(value, validated):
     if not validated:
         with pytest.raises(ValidationError):
@@ -206,7 +211,7 @@ def test_validate_irr_as_set(value, validated):
         assert validate_irr_as_set(value) == validated
 
 
-@pytest.mark.djangodb
+@pytest.mark.django_db
 def test_validate_phonenumber():
 
     # test standalone validator
@@ -259,3 +264,40 @@ def test_validate_phonenumber():
 
     ix.policy_phone = "+1 206 555 0199"
     ix.full_clean()
+
+
+@pytest.mark.django_db
+def test_validate_ixpfx_ixlan_status_match():
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(
+        name="Text exchange", status="pending", org=org
+    )
+    ixlan = ix.ixlan
+
+    pfx = IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        protocol="IPv4",
+        prefix=ipaddress.ip_network("198.32.125.0/24"),
+        status="ok",
+    )
+
+    with pytest.raises(ValidationError) as exc1:
+        pfx.clean()
+
+    assert (
+        exc1.value.args[0]
+        == "IXLanPrefix with status 'ok' cannot be linked to a IXLan with status 'pending'."
+    )
+
+    ixlan.status = "deleted"
+    ixlan.save()
+    pfx.status = "pending"
+    pfx.save()
+
+    with pytest.raises(ValidationError) as exc2:
+        pfx.clean()
+
+    assert (
+        exc2.value.args[0]
+        == "IXLanPrefix with status 'pending' cannot be linked to a IXLan with status 'deleted'."
+    )

@@ -19,6 +19,7 @@ from django.core.exceptions import FieldError, ValidationError, ObjectDoesNotExi
 from django.db import connection
 from django.utils import timezone
 from django.db.models import DateTimeField
+from django.utils.translation import ugettext_lazy as _
 import django_namespace_perms.rest as nsp_rest
 
 import reversion
@@ -27,6 +28,7 @@ from peeringdb_server.models import Network, UTC, ProtectedAction
 from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
 from peeringdb_server.api_schema import BaseSchema
+from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 
 import django_namespace_perms.util as nsp
 from django_namespace_perms.exceptions import *
@@ -44,8 +46,8 @@ class DataMissingException(DataException):
     """
 
     def __init__(self, method):
-        super(DataMissingException, self).__init__(
-            "No data was supplied with the {} request".format(method)
+        super().__init__(
+            f"No data was supplied with the {method} request"
         )
 
 
@@ -57,7 +59,7 @@ class DataParseException(DataException):
     """
 
     def __init__(self, method, exc):
-        super(DataParseException, self).__init__(
+        super().__init__(
             "Data supplied with the {} request could not be parsed: {}".format(
                 method, exc
             )
@@ -128,7 +130,7 @@ def pdb_exception_handler(exc):
     return exception_handler(exc)
 
 
-class client_check(object):
+class client_check:
     """
     decorator that can be attached to rest viewset responses and will
     generate an error response if the requesting peeringdb client
@@ -385,7 +387,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                     if timezone.is_naive(v):
                         v = timezone.make_aware(v)
                     if "_ctf" in self.request.query_params:
-                        self.request._ctf = {"%s__%s" % (m.group(1), m.group(2)): v}
+                        self.request._ctf = {"{}__{}".format(m.group(1), m.group(2)): v}
 
                 # contains should become icontains because we always
                 # want it to do case-insensitive checks
@@ -474,7 +476,7 @@ class ModelViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         t = time.time()
         try:
-            r = super(ModelViewSet, self).list(request, *args, **kwargs)
+            r = super().list(request, *args, **kwargs)
         except ValueError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
@@ -503,7 +505,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         # populated
 
         t = time.time()
-        r = super(ModelViewSet, self).retrieve(request, *args, **kwargs)
+        r = super().retrieve(request, *args, **kwargs)
         d = time.time() - t
         print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
@@ -539,7 +541,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             with reversion.create_revision():
                 if request.user:
                     reversion.set_user(request.user)
-                return super(ModelViewSet, self).create(request, *args, **kwargs)
+                return super().create(request, *args, **kwargs)
         except PermissionDenied as inst:
             return Response(status=status.HTTP_403_FORBIDDEN)
         except (ParentStatusException, DataException) as inst:
@@ -560,7 +562,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 if request.user:
                     reversion.set_user(request.user)
 
-                return super(ModelViewSet, self).update(request, *args, **kwargs)
+                return super().update(request, *args, **kwargs)
         except TypeError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
@@ -602,7 +604,15 @@ class ModelViewSet(viewsets.ModelViewSet):
             else:
                 return Response(status=status.HTTP_403_FORBIDDEN)
         except ProtectedAction as exc:
-            return Response(status=status.HTTP_403_FORBIDDEN, data={"detail": f"{exc}"})
+            exc_message = f"{exc} - " + _(
+                "Please contact {} to help with the deletion of this object"
+            ).format(settings.DEFAULT_FROM_EMAIL)
+
+            ticket_queue_deletion_prevented(request.user, exc.protected_object)
+
+            return Response(
+                status=status.HTTP_403_FORBIDDEN, data={"detail": exc_message}
+            )
         finally:
             self.get_serializer().finalize_delete(request)
 
@@ -659,7 +669,7 @@ NetworkIXLanViewSet = model_view_set("NetworkIXLan")
 OrganizationViewSet = model_view_set("Organization")
 
 
-class ReadOnlyMixin(object):
+class ReadOnlyMixin:
     def destroy(self, request, pk, format=None):
         """
         This endpoint is readonly
@@ -720,9 +730,8 @@ router.register("as_set", ASSetViewSet, basename="as_set")
 # set here in case we want to add more urls later
 urls = router.urls
 
-REFTAG_MAP = dict(
-    [
-        (cls.model.handleref.tag, cls)
+REFTAG_MAP = {
+        cls.model.handleref.tag: cls
         for cls in [
             OrganizationViewSet,
             NetworkViewSet,
@@ -735,5 +744,4 @@ REFTAG_MAP = dict(
             IXLanViewSet,
             IXLanPrefixViewSet,
         ]
-    ]
-)
+}
