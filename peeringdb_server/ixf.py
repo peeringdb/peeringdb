@@ -536,7 +536,6 @@ class Importer:
                     ixf_id.append(None)
 
                 ixf_id = tuple(ixf_id)
-                self.ixf_ids.append(ixf_id)
 
             except (ipaddress.AddressValueError, ValueError) as exc:
                 self.invalid_ip_errors.append(f"{exc}")
@@ -547,13 +546,35 @@ class Importer:
                 )
                 continue
 
-            if not self.save and (
-                not self.ixlan.test_ipv4_address(ipv4_addr)
-                and not self.ixlan.test_ipv6_address(ipv6_addr)
+            ipv4_valid_for_ixlan = self.ixlan.test_ipv4_address(ipv4_addr)
+            ipv6_valid_for_ixlan = self.ixlan.test_ipv6_address(ipv6_addr)
+
+            if (
+                ipv4_addr
+                and not ipv4_valid_for_ixlan
+                and ipv6_addr
+                and not ipv6_valid_for_ixlan
             ):
-                # for the preview we don't care at all about new ip addresses
-                # not at the ixlan if they dont match the prefix
+                # neither ipaddress falls into address space
+                # for this ixlan, ignore
+
                 continue
+
+            elif not ipv4_valid_for_ixlan and not ipv6_addr:
+
+                # ipv4 address does not fall into address space
+                # and ipv6 is not provided, ignore
+
+                continue
+
+            elif not ipv6_valid_for_ixlan and not ipv4_addr:
+
+                # ipv6 address does not fall into address space
+                # and ipv4 is not provided, ignore
+
+                continue
+
+            self.ixf_ids.append(ixf_id)
 
             if connection.get("state", "active") == "inactive":
                 operational = False

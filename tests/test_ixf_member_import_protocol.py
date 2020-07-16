@@ -276,7 +276,16 @@ def test_add_netixlan_conflict_local_ixf(entities, capsys):
 
     data = setup_test_data("ixf.member.0")
     network = entities["net"]["UPDATE_ENABLED"]
+
     ixlan = entities["ixlan"][1]  # So we have conflicts with IPAddresses
+
+    # invalid prefix space error will only be raised if
+    # the other ipaddress (v6 in this case) matches
+    # so we move that prefix over
+
+    ixpfx = entities["ixlan"][0].ixpfx_set.filter(protocol="IPv6").first()
+    ixpfx.ixlan = entities["ixlan"][1]
+    ixpfx.save()
 
     preexisting_ixfmember_data = IXFMemberData.objects.create(
         asn=network.asn,
@@ -330,6 +339,15 @@ def test_add_netixlan_conflict(entities, capsys):
     data = setup_test_data("ixf.member.0")
     network = entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][1]  # So we have conflicts with IPAddresses
+
+    # invalid prefix space error will only be raised if
+    # the other ipaddress (v6 in this case) matches
+    # so we move that prefix over
+
+    ixpfx = entities["ixlan"][0].ixpfx_set.filter(protocol="IPv6").first()
+    ixpfx.ixlan = entities["ixlan"][1]
+    ixpfx.save()
+
 
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
