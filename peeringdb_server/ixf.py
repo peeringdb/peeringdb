@@ -343,9 +343,29 @@ class Importer:
 
     def cleanup_ixf_member_data(self):
 
+        if not self.save:
+
+            """
+            In some cases you dont want to run a cleanup process
+            For example when the importer runs in preview mode
+            triggered by a network admin
+            """
+
+            return
+
+        qset = IXFMemberData.objects.filter(ixlan=self.ixlan)
+
+        if self.asn:
+
+            # if we are only processing for a specified asn
+            # we only clean up member data for that asn
+
+            qset = qset.filter(asn=self.asn)
+
+
         # clean up old ix-f memeber data objects
 
-        for ixf_member in IXFMemberData.objects.filter(ixlan=self.ixlan):
+        for ixf_member in qset:
 
             # proposed deletion got fulfilled
 
@@ -763,6 +783,9 @@ class Importer:
         )
 
     def notify_error(self, error):
+        if not self.save:
+            return
+
         now = datetime.datetime.now(datetime.timezone.utc)
         notified = self.ixlan.ixf_ixp_import_error_notified
         prev_error = self.ixlan.ixf_ixp_import_error

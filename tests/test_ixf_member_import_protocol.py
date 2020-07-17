@@ -26,7 +26,7 @@ import pytest
 
 
 @pytest.mark.django_db
-def test_resolve_local_ixf(entities):
+def test_resolve_local_ixf(entities, save):
     """
     Netixlan exists, remote data matches the netixlan, and there is a local-ixf
     entry that also matches all the data.
@@ -63,17 +63,19 @@ def test_resolve_local_ixf(entities):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
     assert IXFMemberData.objects.count() == 0
     assert_ticket_exists([(network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")])
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 0
-
+    assert_idempotent(importer, ixlan, data)
 
 @pytest.mark.django_db
-def test_update_data_attributes(entities):
+def test_update_data_attributes(entities, save):
     """
     The NetIXLan differs from the remote data, but allow_ixp_update is enabled
     so we update automatically.
@@ -98,6 +100,10 @@ def test_update_data_attributes(entities):
         )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert len(importer.log["data"]) == 1
@@ -115,9 +121,7 @@ def test_update_data_attributes(entities):
     assert netixlan.speed == 10000
 
     # Assert idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 0
-    assert NetworkIXLan.objects.count() == 1
+    assert_idempotent(importer, ixlan, data)
 
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
@@ -129,7 +133,7 @@ def test_update_data_attributes(entities):
 
 
 @pytest.mark.django_db
-def test_suggest_modify_local_ixf(entities):
+def test_suggest_modify_local_ixf(entities, save):
     """
     Netixlan is different from remote in terms of speed, operational, and is_rs_peer
     BUT there is already a local-ixf for the update.
@@ -168,19 +172,22 @@ def test_suggest_modify_local_ixf(entities):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 1
     assert preexisting_ixfmember_data == IXFMemberData.objects.first()
 
     # Assert idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 1
-    assert preexisting_ixfmember_data == IXFMemberData.objects.first()
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_suggest_modify(entities, capsys):
+def test_suggest_modify(entities, capsys, save):
     """
     Netixlan is different from remote in terms of speed, operational, and is_rs_peer.
     There is no local-ixf existing.
@@ -206,6 +213,11 @@ def test_suggest_modify(entities, capsys):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+
     importer.update(ixlan, data=data)
 
     # Create local ixf
@@ -235,7 +247,7 @@ def test_suggest_modify(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_add_netixlan(entities):
+def test_add_netixlan(entities, save):
     """
     No NetIXLan exists but remote IXF data has information
     to create one (without conflicts). Updates are enabled
@@ -246,6 +258,10 @@ def test_add_netixlan(entities):
     ixlan = entities["ixlan"][0]
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     log = importer.log["data"][0]
@@ -266,7 +282,7 @@ def test_add_netixlan(entities):
 
 
 @pytest.mark.django_db
-def test_add_netixlan_conflict_local_ixf(entities, capsys):
+def test_add_netixlan_conflict_local_ixf(entities, save, capsys):
     """
     No NetIXLan exists. Network allows auto updates. While remote IXF data has information
     to create a new NetIXLan, there are conflicts with the ipaddresses that
@@ -301,6 +317,11 @@ def test_add_netixlan_conflict_local_ixf(entities, capsys):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 1
@@ -329,7 +350,7 @@ def test_add_netixlan_conflict_local_ixf(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_add_netixlan_conflict(entities, capsys):
+def test_add_netixlan_conflict(entities, save, capsys):
     """
     No NetIXLan exists. Network allows auto updates. While remote IXF data has information
     to create a new NetIXLan, there are conflicts with the ipaddresses that
@@ -350,6 +371,10 @@ def test_add_netixlan_conflict(entities, capsys):
 
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     ixfmemberdata = IXFMemberData.objects.first()
@@ -374,7 +399,7 @@ def test_add_netixlan_conflict(entities, capsys):
 
 
 @pytest.mark.django_db
-def test_suggest_add_local_ixf(entities, capsys):
+def test_suggest_add_local_ixf(entities, save, capsys):
     """
     The netixlan described in the remote-ixf doesn't exist,
     but there is a relationship btw the network and ix (ie a different netixlan).
@@ -415,6 +440,10 @@ def test_suggest_add_local_ixf(entities, capsys):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 1
@@ -425,10 +454,7 @@ def test_suggest_add_local_ixf(entities, capsys):
     assert_no_ticket_exists()
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 1
-    assert NetworkIXLan.objects.count() == 1
-    assert_no_ticket_exists()
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
@@ -463,6 +489,10 @@ def test_suggest_add(entities, capsys):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 1
@@ -479,14 +509,11 @@ def test_suggest_add(entities, capsys):
     assert_ticket_exists([(1001, "195.69.147.250", "2001:7f8:1::a500:2906:1")])
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 1
-    assert NetworkIXLan.objects.count() == 1
-    assert_ticket_exists([(1001, "195.69.147.250", "2001:7f8:1::a500:2906:1")])
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_suggest_add_no_netixlan_local_ixf(entities, capsys):
+def test_suggest_add_no_netixlan_local_ixf(entities, save, capsys):
     """
     There isn't any netixlan between ix and network.
     Network does not have automatic updates.
@@ -509,6 +536,10 @@ def test_suggest_add_no_netixlan_local_ixf(entities, capsys):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 1
@@ -519,14 +550,11 @@ def test_suggest_add_no_netixlan_local_ixf(entities, capsys):
     assert_no_ticket_exists()
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 1
-    assert NetworkIXLan.objects.count() == 0
-    assert_no_ticket_exists()
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_suggest_add_no_netixlan(entities, capsys):
+def test_suggest_add_no_netixlan(entities, save, capsys):
     """
     There isn't any netixlan between ix and network.
     Network does not have automatic updates.
@@ -539,6 +567,10 @@ def test_suggest_add_no_netixlan(entities, capsys):
     ixlan = entities["ixlan"][0]
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 1
@@ -554,10 +586,7 @@ def test_suggest_add_no_netixlan(entities, capsys):
     assert_no_ticket_exists()
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 1
-    assert NetworkIXLan.objects.count() == 0
-    assert_no_ticket_exists()
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
@@ -601,6 +630,10 @@ def test_single_ipaddr_matches(entities, capsys):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert len(importer.log["data"]) == 3
@@ -611,14 +644,88 @@ def test_single_ipaddr_matches(entities, capsys):
     assert importer.log["data"][2]["action"] == "add"
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 0
-    assert NetworkIXLan.objects.filter(status="ok").count() == 1
-    assert_no_ticket_exists()
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_delete(entities):
+def test_single_ipaddr_matches_no_auto_update(entities, save, capsys):
+    """
+    If only one ipaddr matches, it's the same as not matching at all.
+    Network does not have automatic updates enabled
+    Here we expect to suggest deletion the two netixlans and
+    suggest creation of a new one
+    """
+
+    data = setup_test_data("ixf.member.1")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.250",
+            ipaddr6=None,
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4=None,
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+
+    assert len(importer.log["data"]) == 3
+    assert NetworkIXLan.objects.filter(status="ok").count() == 2
+
+    assert importer.log["data"][0]["action"] == "suggest-delete"
+    assert importer.log["data"][1]["action"] == "suggest-delete"
+    assert importer.log["data"][2]["action"] == "suggest-add"
+
+    stdout = capsys.readouterr().out
+
+    assert_email_sent(
+        stdout, (network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")
+    )
+    assert_email_sent(
+        stdout, (network.asn, "195.69.147.250", "No IPv6")
+    )
+    assert_email_sent(
+        stdout, (network.asn, "No IPv4", "2001:7f8:1::a500:2906:1")
+    )
+
+    assert_ticket_exists([
+        (1001, "195.69.147.250", "2001:7f8:1::a500:2906:1"),
+        (1001, "195.69.147.250", "No IPv6"),
+        (1001, "No IPv4", "2001:7f8:1::a500:2906:1"),
+    ])
+
+    # Test idempotent
+    assert_idempotent(importer, ixlan, data)
+
+
+@pytest.mark.django_db
+def test_delete(entities, save):
     """
     The ixf-remote doesn't contain an existing NetIXlan.
     Automatic updates are enabled so we delete it.
@@ -657,6 +764,10 @@ def test_delete(entities):
         )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert len(importer.log["data"]) == 1
@@ -666,10 +777,7 @@ def test_delete(entities):
     assert NetworkIXLan.objects.filter(status="ok").count() == 1
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 0
-    assert NetworkIXLan.objects.filter(status="ok").count() == 1
-    assert_no_ticket_exists()
+    assert_idempotent(importer, ixlan, data)
 
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
@@ -678,7 +786,7 @@ def test_delete(entities):
 
 
 @pytest.mark.django_db
-def test_suggest_delete_local_ixf_has_flag(entities, capsys):
+def test_suggest_delete_local_ixf_has_flag(entities, save, capsys):
     """
     Automatic updates for network are disabled.
     There is no remote-ixf corresponding to an existing netixlan.
@@ -732,6 +840,10 @@ def test_suggest_delete_local_ixf_has_flag(entities, capsys):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert NetworkIXLan.objects.count() == 2
@@ -740,14 +852,11 @@ def test_suggest_delete_local_ixf_has_flag(entities, capsys):
     assert_no_ticket_exists()
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert NetworkIXLan.objects.count() == 2
-    assert IXFMemberData.objects.count() == 1
-    assert_no_ticket_exists()
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_suggest_delete_local_ixf_no_flag(entities, capsys):
+def test_suggest_delete_local_ixf_no_flag(entities, save, capsys):
     """
     Automatic updates for network are disabled.
     There is no remote-ixf corresponding to an existing netixlan.
@@ -820,6 +929,10 @@ def test_suggest_delete_local_ixf_no_flag(entities, capsys):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert importer.log["data"][0]["action"] == "suggest-delete"
@@ -828,20 +941,17 @@ def test_suggest_delete_local_ixf_no_flag(entities, capsys):
     # Test failing, IXFMember is getting resolved
     # instead of being flagged for deletion.
     assert IXFMemberData.objects.count() == 1
-    assert_ticket_exists([("AS1001", "195.69.147.251", "No IPv6")])
+    assert_ticket_exists([(1001, "195.69.147.251", "No IPv6")])
 
     stdout = capsys.readouterr().out
     assert_email_sent(stdout, (1001, "195.69.147.251", "No IPv6"))
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert NetworkIXLan.objects.count() == 2
-    assert IXFMemberData.objects.count() == 1
-    assert_ticket_exists([("AS1001", "195.69.147.251", "No IPv6")])
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_suggest_delete_no_local_ixf(entities, capsys):
+def test_suggest_delete_no_local_ixf(entities, save, capsys):
     """
     Automatic updates for network are disabled.
     There is no remote-ixf corresponding to an existing netixlan.
@@ -881,25 +991,26 @@ def test_suggest_delete_no_local_ixf(entities, capsys):
     )
 
     importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert importer.log["data"][0]["action"] == "suggest-delete"
     assert NetworkIXLan.objects.count() == 2
     assert IXFMemberData.objects.count() == 1
-    assert_ticket_exists([("AS1001", "195.69.147.251", "No IPv6")])
+    assert_ticket_exists([(1001, "195.69.147.251", "No IPv6")])
 
     stdout = capsys.readouterr().out
-    assert_email_sent(stdout, ("AS1001", "195.69.147.251", "No IPv6"))
+    assert_email_sent(stdout, (1001, "195.69.147.251", "No IPv6"))
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert NetworkIXLan.objects.count() == 2
-    assert IXFMemberData.objects.count() == 1
-    assert_ticket_exists([("AS1001", "195.69.147.251", "No IPv6")])
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_mark_invalid_remote_w_local_ixf_auto_update(entities, capsys):
+def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save, capsys):
     """
     Our network allows automatic updates.
     Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
@@ -953,6 +1064,10 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, capsys):
 
     importer = ixf.Importer()
     data = importer.sanitize(data)
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 2
@@ -961,13 +1076,11 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, capsys):
     assert_no_ticket_exists()
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 2
-    assert_no_ticket_exists()
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_mark_invalid_remote_auto_update(entities, capsys):
+def test_mark_invalid_remote_auto_update(entities, save, capsys):
     """
     The network does enable automatic updates.
     Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
@@ -997,6 +1110,10 @@ def test_mark_invalid_remote_auto_update(entities, capsys):
 
     importer = ixf.Importer()
     data = importer.sanitize(data)
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     print([(n.speed, n.ipaddr4, n.ipaddr6, n.asn) for n in NetworkIXLan.objects.all()])
@@ -1008,24 +1125,17 @@ def test_mark_invalid_remote_auto_update(entities, capsys):
     assert ERROR_MESSAGE in stdout
     assert_ticket_exists(
         [
-            ("AS2906", "195.69.147.100", "2001:7f8:1::a500:2906:4"),
-            ("AS2906", "195.69.147.200", "2001:7f8:1::a500:2906:2"),
+            (2906, "195.69.147.100", "2001:7f8:1::a500:2906:4"),
+            (2906, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
     )
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 2
-    assert_ticket_exists(
-        [
-            ("AS2906", "195.69.147.100", "2001:7f8:1::a500:2906:4"),
-            ("AS2906", "195.69.147.200", "2001:7f8:1::a500:2906:2"),
-        ]
-    )
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, capsys):
+def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save, capsys):
     """
     Our network does not allow automatic updates.
     Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
@@ -1079,6 +1189,10 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, capsys):
 
     importer = ixf.Importer()
     data = importer.sanitize(data)
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 2
@@ -1087,13 +1201,11 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, capsys):
     assert_no_ticket_exists()
 
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 2
-    assert_no_ticket_exists()
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_mark_invalid_remote_no_auto_update(entities, capsys):
+def test_mark_invalid_remote_no_auto_update(entities, save, capsys):
     """
     Our network does not allow automatic updates.
     Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
@@ -1123,6 +1235,10 @@ def test_mark_invalid_remote_no_auto_update(entities, capsys):
 
     importer = ixf.Importer()
     data = importer.sanitize(data)
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 2
@@ -1131,24 +1247,18 @@ def test_mark_invalid_remote_no_auto_update(entities, capsys):
     assert ERROR_MESSAGE in stdout
     assert_ticket_exists(
         [
-            ("AS1001", "195.69.147.100", "2001:7f8:1::a500:2906:4"),
-            ("AS1001", "195.69.147.200", "2001:7f8:1::a500:2906:2"),
+            (1001, "195.69.147.100", "2001:7f8:1::a500:2906:4"),
+            (1001, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
     )
 
+
     # Test idempotent
-    importer.update(ixlan, data=data)
-    assert IXFMemberData.objects.count() == 2
-    assert_ticket_exists(
-        [
-            ("AS1001", "195.69.147.100", "2001:7f8:1::a500:2906:4"),
-            ("AS1001", "195.69.147.200", "2001:7f8:1::a500:2906:2"),
-        ]
-    )
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_remote_cannot_be_parsed(entities, capsys):
+def test_remote_cannot_be_parsed(entities, save, capsys):
     """
     Remote cannot be parsed. We create a ticket, email the IX, and create a lock.
     """
@@ -1157,6 +1267,10 @@ def test_remote_cannot_be_parsed(entities, capsys):
     start = datetime.datetime.now(datetime.timezone.utc)
     importer = ixf.Importer()
     importer.sanitize(data)
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
     importer.update(ixlan, data=data)
 
     ERROR_MESSAGE = "No entries in any of the vlan_list lists, aborting"
@@ -1196,6 +1310,10 @@ def test_validate_json_schema():
 
 
 # FIXTURES
+@pytest.fixture(params=[True, False])
+def save(request):
+    return request.param
+
 @pytest.fixture
 def entities():
     entities = {}
@@ -1315,8 +1433,14 @@ def assert_ticket_exists(ticket_info):
     """
     assert DeskProTicket.objects.count() == len(ticket_info)
 
-    for i, dpt in enumerate(DeskProTicket.objects.all()):
-        assert all([str(s) in dpt.subject for s in ticket_info[i]])
+    for ticket in DeskProTicket.objects.all():
+        print(ticket.subject)
+        print("-"*80)
+
+    for asn, ip4, ip6 in ticket_info:
+        assert DeskProTicket.objects.filter(
+            subject__endswith=f"AS{asn} {ip4} {ip6}"
+        ).exists()
 
 
 def assert_no_ticket_exists():
@@ -1329,3 +1453,55 @@ def assert_no_ticket_exists():
 
 def assert_email_sent(email_text, email_info):
     assert all([str(s) in email_text for s in email_info])
+
+
+def ticket_list():
+    return [
+        (t.id, t.subject) for t in
+        DeskProTicket.objects.all().order_by("id")
+    ]
+
+def ixf_member_data_list():
+    return [
+        (m.id, m.ipaddr4, m.ipaddr6, m.updated) for m in
+        IXFMemberData.objects.all().order_by("id")
+    ]
+
+def netixlan_list():
+    return [
+        (n.id, n.status, n.ipaddr4, n.ipaddr6, n.updated) for n in
+        NetworkIXLan.objects.all().order_by("id")
+    ]
+
+
+def assert_idempotent(importer, ixlan, data, save=True):
+
+    """
+    run the importer for ixlan against data and
+    assert that there are
+
+    - no changes made to netixlan
+    - no changes made to deskpro ticket
+    - no changes made to ixf member data
+    """
+
+    ixf_members = ixf_member_data_list()
+    tickets = ticket_list()
+    netixlans = netixlan_list()
+
+    def assert_no_changes():
+        assert ixf_members == ixf_member_data_list()
+        assert tickets == ticket_list()
+        assert netixlans == netixlan_list()
+
+    # Test idempotent
+    importer.update(ixlan, data=data, save=save)
+    assert_no_changes()
+
+    # Test idempotent when running against single
+    # non-existing asn
+    importer.update(ixlan, data=data, asn=12345, save=save)
+    assert_no_changes()
+
+
+
