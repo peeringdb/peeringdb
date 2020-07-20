@@ -81,7 +81,7 @@ class Migration(migrations.Migration):
             name="geocode_status",
             field=models.BooleanField(
                 default=False,
-                help_text="Has this object's latitude and longitude been syncronized to it's address fields",
+                help_text="Has this object's latitude and longitude been synchronized to its address fields",
             ),
         ),
         migrations.AlterField(
