@@ -285,7 +285,7 @@ class BaseSchema(AutoSchema):
             elif typ == "ForeignKey" and (fld.one_to_many or hasattr(fld, "multiple")):
 
                 # mark prefix of nested object as blocked so we
-                # dont expose it's fields to the documentation
+                # don't expose it's fields to the documentation
 
                 blocked_prefixes.append(f"{field}__")
                 continue
