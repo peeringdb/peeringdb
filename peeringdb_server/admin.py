@@ -326,9 +326,7 @@ soft_delete.short_description = _("SOFT DELETE")
 
 class SanitizedAdmin:
     def get_readonly_fields(self, request, obj=None):
-        return ("version",) + tuple(
-            super().get_readonly_fields(request, obj=obj)
-        )
+        return ("version",) + tuple(super().get_readonly_fields(request, obj=obj))
 
 
 class SoftDeleteAdmin(
@@ -367,9 +365,7 @@ class ModelAdminWithVQCtrl:
         defined
         """
 
-        fieldsets = tuple(
-            super().get_fieldsets(request, obj=obj)
-        )
+        fieldsets = tuple(super().get_fieldsets(request, obj=obj))
 
         # on automatically defined fieldsets it will insert the controls
         # somewhere towards the bottom, we dont want that - so we look for it and
@@ -703,9 +699,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
         elif rs == -1:
             text = _("HAS BEEN ROLLED BACK")
             color = "#d6f0f3"
-        return mark_safe(
-            f'<div style="background-color:{color}">{text}</div>'
-        )
+        return mark_safe(f'<div style="background-color:{color}">{text}</div>')
 
 
 class IXLanIXFMemberImportLogAdmin(admin.ModelAdmin):

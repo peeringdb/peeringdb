@@ -69,10 +69,7 @@ class VeriQueueTests(TestCase):
             vqi.user = user
             vqi.save()
             self.assertEqual(
-                qs.filter(
-                    subject=f"[test]{vqi.content_type} - {inst}"
-                ).exists(),
-                True,
+                qs.filter(subject=f"[test]{vqi.content_type} - {inst}").exists(), True,
             )
 
     def test_approve(self):

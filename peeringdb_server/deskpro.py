@@ -18,9 +18,7 @@ def ticket_queue(subject, body, user):
     """ queue a deskpro ticket for creation """
 
     ticket = DeskProTicket.objects.create(
-        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
-        body=body,
-        user=user,
+        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}", body=body, user=user,
     )
 
 

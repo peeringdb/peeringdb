@@ -1191,9 +1191,7 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
         if data.get("fac") and data.get("fac").status != "ok":
             raise ParentStatusException(data.get("fac"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(
-            user, data
-        )
+        return super().has_create_perms(user, data)
 
     def nsp_namespace_create(self, data):
         return self.Meta.model.nsp_namespace_from_id(
@@ -1736,7 +1734,7 @@ class NetworkSerializer(ModelSerializer):
                 "fac_id",
             ],
             cls,
-            **kwargs
+            **kwargs,
         )
 
         for field, e in list(filters.items()):
@@ -2170,7 +2168,7 @@ class InternetExchangeSerializer(ModelSerializer):
                 "net_count",
             ],
             cls,
-            **kwargs
+            **kwargs,
         )
 
         for field, e in list(filters.items()):
@@ -2355,17 +2353,17 @@ class OrganizationSerializer(ModelSerializer):
 
 
 REFTAG_MAP = {
-        cls.Meta.model.handleref.tag: cls
-        for cls in [
-            OrganizationSerializer,
-            NetworkSerializer,
-            FacilitySerializer,
-            InternetExchangeSerializer,
-            InternetExchangeFacilitySerializer,
-            NetworkFacilitySerializer,
-            NetworkIXLanSerializer,
-            NetworkContactSerializer,
-            IXLanSerializer,
-            IXLanPrefixSerializer,
-        ]
+    cls.Meta.model.handleref.tag: cls
+    for cls in [
+        OrganizationSerializer,
+        NetworkSerializer,
+        FacilitySerializer,
+        InternetExchangeSerializer,
+        InternetExchangeFacilitySerializer,
+        NetworkFacilitySerializer,
+        NetworkIXLanSerializer,
+        NetworkContactSerializer,
+        IXLanSerializer,
+        IXLanPrefixSerializer,
+    ]
 }

@@ -362,7 +362,6 @@ class Importer:
 
             qset = qset.filter(asn=self.asn)
 
-
         # clean up old ix-f memeber data objects
 
         for ixf_member in qset:

@@ -1123,7 +1123,9 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, fac_id):
-        return "{}.facility.{}".format(Organization.nsp_namespace_from_id(org_id), fac_id)
+        return "{}.facility.{}".format(
+            Organization.nsp_namespace_from_id(org_id), fac_id
+        )
 
     @classmethod
     def related_to_net(cls, value=None, filt=None, field="network_id", qset=None):
@@ -1505,8 +1507,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Returns permissioning namespace for an exchange
         """
         return "{}.internetexchange.{}".format(
-            Organization.nsp_namespace_from_id(org_id),
-            ix_id,
+            Organization.nsp_namespace_from_id(org_id), ix_id,
         )
 
     @property
@@ -1700,7 +1701,9 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
         """
         Returns permissioning namespace for an ixfac
         """
-        return "{}.fac.{}".format(InternetExchange.nsp_namespace_from_id(org_id, ix_id), id)
+        return "{}.fac.{}".format(
+            InternetExchange.nsp_namespace_from_id(org_id, ix_id), id
+        )
 
     @property
     def nsp_namespace(self):
@@ -3195,8 +3198,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         Returns permissioning namespace for an ixpfx
         """
         return "{}.prefix.{}".format(
-            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id),
-            id,
+            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id), id,
         )
 
     @classmethod
@@ -3374,7 +3376,9 @@ class Network(pdb_models.NetworkBase):
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, net_id):
-        return "{}.network.{}".format(Organization.nsp_namespace_from_id(org_id), net_id)
+        return "{}.network.{}".format(
+            Organization.nsp_namespace_from_id(org_id), net_id
+        )
 
     @classmethod
     def related_to_fac(cls, value=None, filt=None, field="facility_id", qset=None):
@@ -3640,7 +3644,9 @@ class NetworkContact(pdb_models.ContactBase):
         """
         Returns permissioning namespace for a network contact
         """
-        return "{}.poc_set.{}".format(Network.nsp_namespace_from_id(org_id, net_id), vis)
+        return "{}.poc_set.{}".format(
+            Network.nsp_namespace_from_id(org_id, net_id), vis
+        )
 
     @property
     def nsp_namespace(self):
@@ -3846,7 +3852,9 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         """
         Returns permissioning namespace for a netixlan
         """
-        return "{}.ixlan.{}".format(Network.nsp_namespace_from_id(org_id, net_id), ixlan_id)
+        return "{}.ixlan.{}".format(
+            Network.nsp_namespace_from_id(org_id, net_id), ixlan_id
+        )
 
     @property
     def nsp_namespace(self):
@@ -4391,19 +4399,19 @@ class CommandLineTool(models.Model):
 
 
 REFTAG_MAP = {
-        cls.handleref.tag: cls
-        for cls in [
-            Organization,
-            Network,
-            Facility,
-            InternetExchange,
-            InternetExchangeFacility,
-            NetworkFacility,
-            NetworkIXLan,
-            NetworkContact,
-            IXLan,
-            IXLanPrefix,
-        ]
+    cls.handleref.tag: cls
+    for cls in [
+        Organization,
+        Network,
+        Facility,
+        InternetExchange,
+        InternetExchangeFacility,
+        NetworkFacility,
+        NetworkIXLan,
+        NetworkContact,
+        IXLan,
+        IXLanPrefix,
+    ]
 }
 
 

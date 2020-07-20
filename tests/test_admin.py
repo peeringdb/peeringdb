@@ -249,10 +249,7 @@ class AdminTests(TestCase):
         response = c.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         for i, n in models.COMMANDLINE_TOOLS:
-            assert (
-                f'<option value="{i}">{n}</option>'
-                in response.content.decode()
-            )
+            assert f'<option value="{i}">{n}</option>' in response.content.decode()
 
     def test_commandline_tool_renumber_lans(self):
         # test the form that runs the renumer ip space tool

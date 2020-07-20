@@ -74,6 +74,7 @@ def test_resolve_local_ixf(entities, save):
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
+
 @pytest.mark.django_db
 def test_update_data_attributes(entities, save):
     """
@@ -176,7 +177,6 @@ def test_suggest_modify_local_ixf(entities, save):
     if not save:
         return assert_idempotent(importer, ixlan, data, save=False)
 
-
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 1
@@ -216,7 +216,6 @@ def test_suggest_modify(entities, capsys, save):
 
     if not save:
         return assert_idempotent(importer, ixlan, data, save=False)
-
 
     importer.update(ixlan, data=data)
 
@@ -321,7 +320,6 @@ def test_add_netixlan_conflict_local_ixf(entities, save, capsys):
     if not save:
         return assert_idempotent(importer, ixlan, data, save=False)
 
-
     importer.update(ixlan, data=data)
 
     assert IXFMemberData.objects.count() == 1
@@ -368,7 +366,6 @@ def test_add_netixlan_conflict(entities, save, capsys):
     ixpfx = entities["ixlan"][0].ixpfx_set.filter(protocol="IPv6").first()
     ixpfx.ixlan = entities["ixlan"][1]
     ixpfx.save()
-
 
     importer = ixf.Importer()
 
@@ -707,18 +704,16 @@ def test_single_ipaddr_matches_no_auto_update(entities, save, capsys):
     assert_email_sent(
         stdout, (network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")
     )
-    assert_email_sent(
-        stdout, (network.asn, "195.69.147.250", "No IPv6")
-    )
-    assert_email_sent(
-        stdout, (network.asn, "No IPv4", "2001:7f8:1::a500:2906:1")
-    )
+    assert_email_sent(stdout, (network.asn, "195.69.147.250", "No IPv6"))
+    assert_email_sent(stdout, (network.asn, "No IPv4", "2001:7f8:1::a500:2906:1"))
 
-    assert_ticket_exists([
-        (1001, "195.69.147.250", "2001:7f8:1::a500:2906:1"),
-        (1001, "195.69.147.250", "No IPv6"),
-        (1001, "No IPv4", "2001:7f8:1::a500:2906:1"),
-    ])
+    assert_ticket_exists(
+        [
+            (1001, "195.69.147.250", "2001:7f8:1::a500:2906:1"),
+            (1001, "195.69.147.250", "No IPv6"),
+            (1001, "No IPv4", "2001:7f8:1::a500:2906:1"),
+        ]
+    )
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -1252,7 +1247,6 @@ def test_mark_invalid_remote_no_auto_update(entities, save, capsys):
         ]
     )
 
-
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
@@ -1313,6 +1307,7 @@ def test_validate_json_schema():
 @pytest.fixture(params=[True, False])
 def save(request):
     return request.param
+
 
 @pytest.fixture
 def entities():
@@ -1414,10 +1409,7 @@ def setup_test_data(filename):
 
     with open(
         os.path.join(
-            os.path.dirname(__file__),
-            "data",
-            "json_members_list",
-            f"{filename}.json",
+            os.path.dirname(__file__), "data", "json_members_list", f"{filename}.json",
         ),
     ) as fh:
         json_data = json.load(fh)
@@ -1435,7 +1427,7 @@ def assert_ticket_exists(ticket_info):
 
     for ticket in DeskProTicket.objects.all():
         print(ticket.subject)
-        print("-"*80)
+        print("-" * 80)
 
     for asn, ip4, ip6 in ticket_info:
         assert DeskProTicket.objects.filter(
@@ -1456,21 +1448,20 @@ def assert_email_sent(email_text, email_info):
 
 
 def ticket_list():
-    return [
-        (t.id, t.subject) for t in
-        DeskProTicket.objects.all().order_by("id")
-    ]
+    return [(t.id, t.subject) for t in DeskProTicket.objects.all().order_by("id")]
+
 
 def ixf_member_data_list():
     return [
-        (m.id, m.ipaddr4, m.ipaddr6, m.updated) for m in
-        IXFMemberData.objects.all().order_by("id")
+        (m.id, m.ipaddr4, m.ipaddr6, m.updated)
+        for m in IXFMemberData.objects.all().order_by("id")
     ]
+
 
 def netixlan_list():
     return [
-        (n.id, n.status, n.ipaddr4, n.ipaddr6, n.updated) for n in
-        NetworkIXLan.objects.all().order_by("id")
+        (n.id, n.status, n.ipaddr4, n.ipaddr6, n.updated)
+        for n in NetworkIXLan.objects.all().order_by("id")
     ]
 
 
@@ -1502,6 +1493,3 @@ def assert_idempotent(importer, ixlan, data, save=True):
     # non-existing asn
     importer.update(ixlan, data=data, asn=12345, save=save)
     assert_no_changes()
-
-
-
