@@ -1652,7 +1652,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Keyword Argument(s):
 
         - create_ixlan (`bool`=True): if True and the ix is missing
-          it's ixlan, create it
+          its ixlan, create it
         """
         r = super().save(**kwargs)
 
@@ -3284,7 +3284,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         of the following is True:
 
         - parent ixlan has netixlans that fall into
-          it's address space
+          its address space
         """
 
         prefix = self.prefix
