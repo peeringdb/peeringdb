@@ -234,7 +234,7 @@ class GeocodeBaseMixin(models.Model):
     geocode_status = models.BooleanField(
         default=False,
         help_text=_(
-            "Has this object's latitude and longitude been syncronized to it's address fields"
+            "Has this object's latitude and longitude been synchronized to its address fields"
         ),
     )
     geocode_date = models.DateTimeField(
@@ -687,7 +687,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase):
     @property
     def urls(self):
         """
-        Returns all the websites for the org based on it's
+        Returns all the websites for the org based on its
         website field and the website fields on all the entities it
         owns
         """
