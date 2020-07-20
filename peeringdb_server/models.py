@@ -318,7 +318,7 @@ class UserOrgAffiliationRequest(models.Model):
     When an ASN is entered that is not in the database yet it will
     notify PDB staff
 
-    When an ASN is entered that is already in the database the organzation
+    When an ASN is entered that is already in the database the organization
     adminstration is notified and they can then approve or deny
     the affiliation request themselves.
 
