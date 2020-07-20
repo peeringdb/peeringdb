@@ -315,7 +315,7 @@ class Importer:
         netixlan_qset = self.ixlan.netixlan_set_active
 
         # if we are only processing a specific asn ignore
-        # all that dont match
+        # all that don't match
 
         if self.asn:
             netixlan_qset = netixlan_qset.filter(asn=self.asn)
@@ -426,7 +426,7 @@ class Importer:
                 asn = member["asnum"]
 
                 # if we are only processing a specific asn, ignore all
-                # that dont match
+                # that don't match
                 if self.asn and asn != self.asn:
                     continue
 
@@ -552,7 +552,7 @@ class Importer:
                 and not self.ixlan.test_ipv6_address(ipv6_addr)
             ):
                 # for the preview we don't care at all about new ip addresses
-                # not at the ixlan if they dont match the prefix
+                # not at the ixlan if they don't match the prefix
                 continue
 
             if connection.get("state", "active") == "inactive":
