@@ -3343,7 +3343,7 @@ class Network(pdb_models.NetworkBase):
         null=False,
         default=False,
         help_text=_(
-            "Sepcifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data"
+            "Specifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data"
         ),
     )
 
