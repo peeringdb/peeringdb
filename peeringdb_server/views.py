@@ -2054,7 +2054,7 @@ class LoginView(two_factor.views.LoginView):
     def done(self, form_list, **kwargs):
 
         """
-        User authenticated succesfully, set language options
+        User authenticated successfully, set language options
         """
 
         response = super().done(form_list, **kwargs)
