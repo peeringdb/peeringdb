@@ -343,7 +343,7 @@ class SaneIntegerField(serializers.IntegerField):
 
 class ParentStatusException(IOError):
     """
-    Throw this when an object cannot be created because it's parent is
+    Throw this when an object cannot be created because its parent is
     either status pending or deleted
     """
 
@@ -351,14 +351,14 @@ class ParentStatusException(IOError):
         if parent.status == "pending":
             super(IOError, self).__init__(
                 _(
-                    "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
+                    "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
                 )
                 % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
             )
         elif parent.status == "deleted":
             super(IOError, self).__init__(
                 _(
-                    "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
+                    "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
                 )
                 % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
             )
