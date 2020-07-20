@@ -97,7 +97,7 @@ class Mock:
                 # elif reftag != "ixlan":
                 #    continue
 
-            # this we dont care about either
+            # this we don't care about either
             if field.name.find("geocode") == 0:
                 continue
 
