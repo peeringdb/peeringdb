@@ -650,7 +650,7 @@ class TestJSON(unittest.TestCase):
                 for k, v in list(test_failures["perms"].items()):
                     data_perms[k] = v
 
-                # if data is empty set something so we dont
+                # if data is empty set something so we don't
                 # trigger the empty data error
                 data_perms["_dummy_"] = 1
 
@@ -778,7 +778,7 @@ class TestJSON(unittest.TestCase):
         for pk_fld in pk_flds:
 
             # serializer has marked field as to be excluded from serialized data
-            # dont check for it
+            # don't check for it
             if pk_fld in list_exclude:
                 continue
 
@@ -1557,7 +1557,7 @@ class TestJSON(unittest.TestCase):
         self.assert_delete(self.db_org_admin, "ixpfx", test_success=SHARED["ixpfx_id"])
 
         # re-creating a deleted ixpfx that is under another exchange
-        # that we dont have write perms too
+        # that we don't have write perms too
         pfx = IXLanPrefix.objects.create(
             ixlan=SHARED["ixlan_r_ok"], prefix="205.127.237.0/24", protocol="IPv4"
         )
@@ -1729,7 +1729,7 @@ class TestJSON(unittest.TestCase):
             "org",
             # can delete the org we just made
             test_success=org.id,
-            # cant delete the org we dont have write perms to
+            # cant delete the org we don't have write perms to
             test_failure=SHARED["org_r_ok"].id,
         )
         self.assert_delete(
