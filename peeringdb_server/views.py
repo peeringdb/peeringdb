@@ -921,7 +921,7 @@ def view_organization(request, id):
         )
 
     # if the organization being viewed is the one used
-    # to store suggested entities, we dont want to show the editorial
+    # to store suggested entities, we don't want to show the editorial
     # tools
     if org.id == dj_settings.SUGGEST_ENTITY_ORG:
         perms["can_create"] = False
@@ -931,7 +931,7 @@ def view_organization(request, id):
             perms["can_delete_%s" % tag] = False
 
     # if user has writing perms to entity, we want to load sub entities
-    # that have status pending so we dont use the ones kicked back
+    # that have status pending so we don't use the ones kicked back
     # by the serializer
     if perms.get("can_delete_ix") or perms.get("can_create_ix"):
         exchanges = org.ix_set.filter(status__in=["ok", "pending"])
@@ -1459,7 +1459,7 @@ def view_network(request, id):
         .order_by("ixlan__ix__name")
     )
 
-    # This will be passed as default value for keys that dont exist - causing
+    # This will be passed as default value for keys that don't exist - causing
     # them not to be rendered in the template - also it is fairly
     # safe to assume that no existing keys have been dropped because permission
     # requirements to view them were not met.
