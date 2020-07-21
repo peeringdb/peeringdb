@@ -400,7 +400,7 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
         if instance.notified:
             return
 
-        # we dont sent notifications unless requesting user has been identified
+        # we don't sent notifications unless requesting user has been identified
         if not instance.user_id:
             return
 
