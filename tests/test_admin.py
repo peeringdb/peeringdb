@@ -184,7 +184,7 @@ class AdminTests(TestCase):
         t_org.refresh_from_db()
         self.assertEqual(t_org.status, "ok")
 
-        # TEST 2 - Dont allow merging of target org into target org
+        # TEST 2 - Don't allow merging of target org into target org
         with pytest.raises(ValueError):
             admin.merge_organizations([t_org], t_org, request)
 
