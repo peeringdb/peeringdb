@@ -405,7 +405,7 @@ class UserOrgAffiliationRequest(models.Model):
             if not self.user.is_verified_user:
                 self.user.set_verified()
 
-            # since it was approved, we dont need to keep the
+            # since it was approved, we don't need to keep the
             # request item around
             self.status = "approved"
             self.delete()
@@ -1765,7 +1765,7 @@ class IXLan(pdb_models.IXLanBase):
         set for ixlan.
 
         This will strip `ixf_ixp_member_list_url` fields for
-        users that dont have read permissions for them according
+        users that don't have read permissions for them according
         to `ixf_ixp_member_list_url_visible`
 
         Argument(s):
@@ -4220,7 +4220,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             return None
 
         # allauth supports multiple email addresses per user, however
-        # we dont need that, so we check for the primary email address
+        # we don't need that, so we check for the primary email address
         # and if it already exist we make sure to update it to the
         # email address currently specified on the user instance
         try:
