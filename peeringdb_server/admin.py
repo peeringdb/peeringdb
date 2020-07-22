@@ -2,9 +2,11 @@ import datetime
 import time
 import json
 import ipaddress
+import re
 from . import forms
 
 from operator import or_
+from MySQLdb._exceptions import OperationalError
 
 import django.urls
 from django.conf.urls import url
@@ -1540,7 +1542,25 @@ class CommandLineToolAdmin(admin.ModelAdmin):
 class DeskProTicketAdmin(admin.ModelAdmin):
     list_display = ("id", "subject", "user", "created", "published")
     readonly_fields = ("user",)
+    search_fields = ("subject",)
 
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        try:
+            search_term = search_term.encode('unicode-escape').decode() # Convert to raw string
+        except AttributeError:
+            return queryset, use_distinct
+        try:
+            re.compile(search_term)
+        except re.error:
+            return queryset, use_distinct
+
+        try:
+            queryset |= self.model.objects.filter(subject__regex=search_term)
+        except OperationalError:
+            return queryset, use_distinct
+
+        return queryset, use_distinct
 
 def apply_ixf_member_data(modeladmin, request, queryset):
     for ixf_member_data in queryset:
