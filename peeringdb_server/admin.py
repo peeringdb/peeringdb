@@ -6,7 +6,6 @@ import re
 from . import forms
 
 from operator import or_
-from MySQLdb._exceptions import OperationalError
 
 import django.urls
 from django.conf.urls import url
@@ -26,6 +25,7 @@ from django.template import loader
 from django.template.response import TemplateResponse
 from django.db.models import Q
 from django.db.models.functions import Concat
+from django.db.utils import OperationalError
 from django_namespace_perms.admin import (
     UserPermissionInline,
     UserPermissionInlineAdd,
