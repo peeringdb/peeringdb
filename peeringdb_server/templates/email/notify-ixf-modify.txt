@@ -5,6 +5,12 @@
 - {{ name }}: {{ value.from }} to {{ value.to }}
 {% endfor %}
 
+{% if instance.ipaddr4_on_requirement %}
+- Set IPv6 address
+{% elif instance.ipaddr6_on_requirement %}
+- Set IPv4 address
+{% endif %}
+
 {% if instance.remote_changes %}
 IX-F data has changed since the last notification:
 {% for name, value in instance.remote_changes.items %}

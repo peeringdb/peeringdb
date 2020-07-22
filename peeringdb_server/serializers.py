@@ -892,10 +892,18 @@ class ModelSerializer(PermissionedModelSerializer):
             # to identify a soft-deleted object that we want
             # to restore
             #
-            # At this point only `POST` (create) requests
-            # should ever attempt a restoration like this
+            # At this point  `POST` (create) requests and
+            # `PUT` (update) requests are supported
+            #
+            # POST will undelete the blocking entity and re-claim it
+            # PUT will null the offending fields on the blocking entity
 
-            if filters and request and request.user and request.method == "POST":
+            if (
+                filters
+                and request
+                and request.user
+                and request.method in ["POST", "PUT"]
+            ):
 
                 if "fac_id" in filters:
                     filters["facility_id"] = filters["fac_id"]
@@ -906,14 +914,23 @@ class ModelSerializer(PermissionedModelSerializer):
 
                 try:
                     filters.update(status="deleted")
-                    self.instance = self.Meta.model.objects.get(**filters)
+                    instance = self.Meta.model.objects.get(**filters)
                 except self.Meta.model.DoesNotExist:
                     raise exc
                 except FieldError as exc:
                     raise exc
 
+                if request.method == "POST":
+                    self.instance = instance
+                    self._undelete = True
+                elif request.method == "PUT":
+                    for field in filters.keys():
+                        if field == "status":
+                            continue
+                        setattr(instance, field, None)
+                    instance.save()
+
                 rv = super().run_validation(data=data)
-                self._undelete = True
                 return rv
             else:
                 raise

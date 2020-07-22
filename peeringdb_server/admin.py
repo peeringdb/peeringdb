@@ -1542,6 +1542,7 @@ class DeskProTicketAdmin(admin.ModelAdmin):
     readonly_fields = ("user",)
 
 
+@reversion.create_revision()
 def apply_ixf_member_data(modeladmin, request, queryset):
     for ixf_member_data in queryset:
         try:
@@ -1572,6 +1573,8 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "fetched",
         "changes",
         "error",
+        "reason",
+        "requirements",
     )
     readonly_fields = (
         "marked_for_removal",
@@ -1585,7 +1588,11 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "error",
         "created",
         "updated",
+        "status",
         "remote_data",
+        "requirements",
+        "requirement_of",
+        "requirement_detail",
     )
 
     search_fields = ("asn", "ixlan__id", "ixlan__ix__name", "ipaddr4", "ipaddr6")
@@ -1608,6 +1615,8 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "error",
         "log",
         "remote_data",
+        "requirement_of",
+        "requirement_detail",
     )
 
     actions = [apply_ixf_member_data]
@@ -1618,8 +1627,33 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "fk": ["ixlan",],
     }
 
+    def get_queryset(self, request):
+        qset = super().get_queryset(request)
+
+        if request.resolver_match.kwargs.get("object_id"):
+            return qset
+
+        return qset.exclude(requirement_of__isnull=False)
+
     def ix(self, obj):
         return obj.ixlan.ix
+
+    def requirements(self, obj):
+        return len(obj.requirements)
+
+    def requirement_detail(self, obj):
+        lines = []
+
+        for requirement in obj.requirements:
+            url = django.urls.reverse(
+                "admin:peeringdb_server_ixfmemberdata_change", args=(requirement.id,)
+            )
+            lines.append(f'<a href="{url}">{requirement} {requirement.action}</a>')
+
+        if not lines:
+            return _("No requirements")
+
+        return mark_safe("<br>".join(lines))
 
     def netixlan(self, obj):
         if not obj.netixlan.id:
@@ -1645,6 +1679,7 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
     def remote_data(self, obj):
         return obj.json
 
+    @reversion.create_revision()
     def response_change(self, request, obj):
         if "_save-and-apply" in request.POST:
             obj.save()
