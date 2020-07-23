@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0046_ixfmemberdata_requirement_of'),
+        ('peeringdb_server', '0045_fac_rencode_null_out'),
     ]
 
     operations = [
