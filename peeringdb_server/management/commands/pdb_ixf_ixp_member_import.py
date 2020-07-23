@@ -40,11 +40,6 @@ class Command(BaseCommand):
             help="Just update IX-F cache, do NOT perform any import logic",
         )
         parser.add_argument(
-            "--delete-all-ixfmemberdata",
-            action="store_true",
-            help="This removes all IXFMemberData objects",
-        )
-        parser.add_argument(
             "--reset-hints",
             action="store_true",
             help="This removes all IXFMemberData objects",
@@ -157,10 +152,6 @@ class Command(BaseCommand):
 
         if len(self.active_reset_flags) >= 1:
             self.create_reset_ticket()
-
-        if options.get("delete_all_ixfmemberdata"):
-            self.log("Deleting IXFMemberData Instances ...")
-            IXFMemberData.objects.all().delete()
 
         if self.preview and self.commit:
             self.commit = False
