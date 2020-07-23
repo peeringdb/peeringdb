@@ -21,6 +21,10 @@ from peeringdb_server.models import (
     Network,
     NetworkIXLan,
     IXFMemberData,
+    User,
+    DeskProTicket,
+    debug_mail,
+    IXFImportEmail
 )
 
 REASON_ENTRY_GONE_FROM_REMOTE = _(
@@ -792,6 +796,35 @@ class Importer:
         self.log["data"].append(
             {"peer": peer, "action": action, "reason": f"{reason}",}
         )
+        if ix:
+            message = ixf_member_data.render_notification(template_file, recipient="ix")
+            ix_email = IXFImportEmail.objects.create(
+                subject=subject,
+                message=message,
+                recipient=", ".join(ixf_member_data.ix_contacts),
+                ix=ixf_member_data.ix
+            )
+
+            if self.notify_ix_enabled:
+                self._email(subject, message, ixf_member_data.ix_contacts)
+                ix_email.sent = datetime.datetime.now(datetime.timezone.utc)
+                ix_email.save()
+
+        if net and ixf_member_data.actionable_for_network:
+            message = ixf_member_data.render_notification(
+                template_file, recipient="net"
+            )
+            net_email = IXFImportEmail.objects.create(
+                subject=subject,
+                message=message,
+                recipient=", ".join(ixf_member_data.net_contacts),
+                net=ixf_member_data.net
+            )
+
+            if self.notify_net_enabled:
+                self._email(subject, message, ixf_member_data.net_contacts)
+                net_email.sent = datetime.datetime.now(datetime.timezone.utc)
+                net_email.save()
 
     def notify_error(self, error):
         if not self.save:
