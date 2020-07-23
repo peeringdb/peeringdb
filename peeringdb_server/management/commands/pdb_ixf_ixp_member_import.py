@@ -9,7 +9,8 @@ from peeringdb_server.models import (
     NetworkIXLan,
     Network,
     IXFMemberData,
-    DeskProTicket
+    DeskProTicket,
+    IXFImportEmail,
 )
 from peeringdb_server import ixf
 
@@ -119,7 +120,7 @@ class Command(BaseCommand):
 
     def reset_all_email(self):
         self.log("Resetting email: emptying the IXFImportEmail table")
-
+        IXFImportEmail.objects.all().delete()
 
     def reset_all_tickets(self):
         self.log("Resetting tickets: removing DeskProTicket objects where subject contains '[IX-F]'")
