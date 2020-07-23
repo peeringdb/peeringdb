@@ -1543,6 +1543,7 @@ class DeskProTicketAdmin(admin.ModelAdmin):
     list_display = ("id", "subject", "user", "created", "published")
     readonly_fields = ("user",)
     search_fields = ("subject",)
+    change_list_template = "admin/change_list_with_regex_search.html"
 
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(request, queryset, search_term)
@@ -1568,6 +1569,7 @@ class DeskProTicketAdmin(admin.ModelAdmin):
                 return queryset, use_distinct
 
         return queryset, use_distinct
+
 
 def apply_ixf_member_data(modeladmin, request, queryset):
     for ixf_member_data in queryset:
