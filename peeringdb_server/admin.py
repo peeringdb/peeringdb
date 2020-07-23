@@ -3,6 +3,7 @@ import time
 import json
 import ipaddress
 from . import forms
+import re
 
 from operator import or_
 
@@ -15,6 +16,7 @@ from django.contrib.auth import forms
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.views.main import ChangeList
+from django.db.utils import OperationalError
 from django.http import HttpResponseForbidden
 from django import forms as baseForms
 from django.utils import html
@@ -66,6 +68,7 @@ from peeringdb_server.models import (
     CommandLineTool,
     UTC,
     DeskProTicket,
+    IXFImportEmail,
 )
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException
@@ -1537,6 +1540,33 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         )
 
 
+
+class IXFImportEmailAdmin(admin.ModelAdmin):
+    list_display = ("subject", "message", "recipients", "created", "sent", "net", "ix")
+    readonly_fields = ("net","ix",)
+    search_fields = ("subject",)
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        try:
+            # Convert to raw string
+            search_term = search_term.encode('unicode-escape').decode() 
+        except AttributeError:
+            return queryset, use_distinct
+        try:
+            re.compile(search_term)
+        except re.error:
+            return queryset, use_distinct
+
+        try:
+            queryset |= self.model.objects.filter(subject__regex=search_term)
+        except OperationalError:
+            return queryset, use_distinct
+
+        return queryset, use_distinct
+
+
+
+
 class DeskProTicketAdmin(admin.ModelAdmin):
     list_display = ("id", "subject", "user", "created", "published")
     readonly_fields = ("user",)
@@ -1707,3 +1737,4 @@ admin.site.register(IXLanIXFMemberImportLog, IXLanIXFMemberImportLogAdmin)
 admin.site.register(CommandLineTool, CommandLineToolAdmin)
 admin.site.register(UserOrgAffiliationRequest, UserOrgAffiliationRequestAdmin)
 admin.site.register(DeskProTicket, DeskProTicketAdmin)
+admin.site.register(IXFImportEmail, IXFImportEmailAdmin)
