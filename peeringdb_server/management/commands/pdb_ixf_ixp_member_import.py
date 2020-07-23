@@ -85,7 +85,7 @@ class Command(BaseCommand):
         else:
             raise PermissionError("Flag {} is not permitted to be used in production.")
 
-    def initiate_reset_flags(self):
+    def initiate_reset_flags(self, options):
         flags = ["reset", "reset-hints", "reset-dismisses", "reset-tickets", "reset-email"]
         active_flags = []
 
@@ -94,7 +94,7 @@ class Command(BaseCommand):
             if options.get(flag, False):
                 active_flags.append(flag)
         
-        release_env_check(active_flags)
+        self.release_env_check(active_flags)
         return active_flags
 
     def release_env_check(self, active_flags):
@@ -139,19 +139,19 @@ class Command(BaseCommand):
         self.cache = options.get("cache", False)
         self.skip_import = options.get("skip_import", False)
 
-        self.active_reset_flags = initiate_reset_flags()
+        self.active_reset_flags = self.initiate_reset_flags(options)
 
         if self.reset or self.reset_hints:
-            reset_hints()
+            self.reset_hints()
         if self.reset or self.reset_dismisses:
-            reset_dismisses()
+            self.reset_dismisses()
         if self.reset or self.reset_email:
-            reset_email()
+            self.reset_email()
         if self.reset or self.reset_tickets:
-            reset_tickets()
+            self.reset_tickets()
 
         if len(self.active_reset_flags) >= 1:
-            create_reset_ticket()
+            self.create_reset_ticket()
 
         if options.get("delete_all_ixfmemberdata"):
             self.log("Deleting IXFMemberData Instances ...")
