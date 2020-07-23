@@ -3,7 +3,7 @@ import json
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-
+from django.conf import settings 
 from peeringdb_server.models import (
     IXLan,
     NetworkIXLan,
@@ -42,6 +42,32 @@ class Command(BaseCommand):
             action="store_true",
             help="This removes all IXFMemberData objects",
         )
+        parser.add_argument(
+            "--reset-hints",
+            action="store_true",
+            help="This removes all IXFMemberData objects",
+        )
+        parser.add_argument(
+            "--reset-dismisses",
+            action="store_true",
+            help="This resets all dismissed IXFMemberData objects",
+        )
+        parser.add_argument(
+            "--reset-tickets",
+            action="store_true",
+            help="This removes DeskProTicket objects where subject contains '[IX-F]'",
+        )
+        parser.add_argument(
+            "--reset-email",
+            action="store_true",
+            help="This empties the IXFImportEmail table",
+        )
+        parser.add_argument(
+            "--reset",
+            action="store_true",
+            help="This removes all IXFMemberData objects",
+        )
+
 
     def log(self, msg, debug=False):
         if self.preview:
@@ -53,12 +79,79 @@ class Command(BaseCommand):
         else:
             self.stdout.write("[Pretend] {}".format(msg))
 
+    def release_env_check(self, flag):
+        if settings.RELEASE_ENV != "prod":
+            return True
+        else:
+            raise PermissionError("Flag {} is not permitted to be used in production.")
+
+    def initiate_reset_flags(self):
+        flags = ["reset", "reset-hints", "reset-dismisses", "reset-tickets", "reset-email"]
+        active_flags = []
+
+        for flag in flags:
+            setattr(self, flag.replace('-','_'), options.get(flag, False))
+            if options.get(flag, False):
+                active_flags.append(flag)
+        
+        release_env_check(active_flags)
+        return active_flags
+
+    def release_env_check(self, active_flags):
+        if settings.RELEASE_ENV == "prod":
+            if len(active_flags) == 1:
+                raise PermissionError(
+                    "Cannot use flag '{}'' in production".format(active_flags[0]))
+            elif len(active_flags) >= 1:
+                raise PermissionError(
+                    "Cannot use flags '{}' in production".format(", ".join(active_flags)))
+        return True
+
+    def reset_hints():
+        self.log("Resetting hints: deleting IXFMemberData instances")
+        IXFMemberData.objects.all().delete()
+
+    def reset_dismisses():
+        self.log("Resetting dismisses: setting IXFMemberData.dismissed=False on all IXFMemberData instances")
+        for ixfmemberdata in IXFMemberData.objects.all():
+            ixfmemberdata.dismissed = False
+            ixfmemberdata.save()
+
+    def reset_email():
+        self.log("Resetting email: emptying the IXFImportEmail table")
+
+
+    def reset_tickets():
+        self.log("Resetting tickets: removing DeskProTicket objects where subject contains '[IX-F]'")
+        DeskProTicket.objects.filter(subject__contains="[IX-F]").delete()
+
+    def create_reset_ticket():
+        DeskProTicket.objects.create(
+            subject="[IX-F] Commandline Reset",
+            body="Applied the following resets to the IX-F data: {}".format(
+                ", ".join(self.active_tickets)),
+        )
+
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
         self.debug = options.get("debug", False)
         self.preview = options.get("preview", False)
         self.cache = options.get("cache", False)
         self.skip_import = options.get("skip_import", False)
+
+        self.active_reset_flags = initiate_reset_flags()
+
+        if self.reset or self.reset_hints:
+            reset_hints()
+        if self.reset or self.reset_dismisses:
+            reset_dismisses()
+        if self.reset or self.reset_email:
+            reset_email()
+        if self.reset or self.reset_tickets:
+            reset_tickets()
+
+        if len(self.active_reset_flags) >= 1:
+            create_reset_ticket()
 
         if options.get("delete_all_ixfmemberdata"):
             self.log("Deleting IXFMemberData Instances ...")
