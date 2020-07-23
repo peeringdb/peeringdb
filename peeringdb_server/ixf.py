@@ -9,6 +9,7 @@ from django.db import transaction
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 from django.conf import settings
 
 import reversion
@@ -75,6 +76,17 @@ class Importer:
         self.asn = asn
         self.now = datetime.datetime.now(datetime.timezone.utc)
         self.invalid_ip_errors = []
+
+    #XXX remove dupe
+    @property
+    def ticket_user(self):
+        """
+        Returns the User instance for the user to use
+        to create DeskPRO tickets
+        """
+        if not hasattr(self, "_ticket_user"):
+            self._ticket_user = get_user_model().objects.get(username="ixf_importer")
+        return self._ticket_user
 
     def fetch(self, url, timeout=5):
         """
