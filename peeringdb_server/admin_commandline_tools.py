@@ -399,7 +399,6 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
             queryset=IXLan.objects.all(),
             #XXX Autocomplete here?
             help_text=_("Select an ixlan to perform an ix-f memberdata import"),
-            required=False,
         )
         reset = forms.BooleanField(
             required=False, initial=False, help_text=_("Reset all")
