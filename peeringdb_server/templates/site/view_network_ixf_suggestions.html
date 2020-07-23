@@ -105,10 +105,18 @@
       <div class="loading-shim" style="display:none;"></div>
       <div class="col-xs-5">
         <div class="editable input-frame">
+          {% if x.net.info_unicast %}
           <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="{{ x.ipaddr4|none_blank }}">
+          {% else %}
+          <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="">
+          {% endif %}
         </div>
         <div class="editable input-frame">
+          {% if x.net.info_ipv6 %}
           <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr6" value="{{ x.ipaddr6|none_blank }}">
+          {% else %}
+          <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr4" value="">
+          {% endif %}
         </div>
       </div>
       <div class="col-xs-3">
@@ -266,12 +274,25 @@
 
       </div>
       <div class="col-xs-5">
+        {% if x.net.info_unicast %}
         <div data-field="ipaddr4" data-value="{{ x.ipaddr4|none_blank }}">
         {{ x.ipaddr4|none_blank }}
         </div>
+        {% else %}
+        <div data-field="ipaddr4" data-value="{{ x.netixlan.ipaddr4|none_blank }}">
+        {{ x.netixlan.ipaddr4|none_blank }}
+        </div>
+        {% endif %}
+
+        {% if x.net.info_ip6 %}
         <div data-field="ipaddr6" data-value="{{ x.ipaddr6|none_blank }}">
         {{ x.ipaddr6|none_blank }}
         </div>
+        {% else %}
+        <div data-field="ipaddr6" data-value="{{ x.netixlan.ipaddr6|none_blank }}">
+        {{ x.netixlan.ipaddr6|none_blank }}
+        </div>
+        {% endif %}
       </div>
       <div class="col-xs-6">
         <input type="hidden" data-field="ixlan_id" value="{{ x.ixlan_id }}">

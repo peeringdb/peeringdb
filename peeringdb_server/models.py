@@ -2092,11 +2092,9 @@ class IXLan(pdb_models.IXLanBase):
             netixlan.network = netixlan_info.network
             changed.append("network_id")
 
-        # Finally we attempt to validate the data and then save the netixlan instance
-        netixlan.full_clean()
-
         if save and (changed or netixlan.status == "deleted"):
             netixlan.status = "ok"
+            netixlan.full_clean()
             netixlan.save()
 
         return result(netixlan)
@@ -2234,6 +2232,13 @@ class IXLanIXFMemberImportLogEntry(models.Model):
         return 1
 
 
+class NetworkProtocolsDisabled(ValueError):
+    """
+    raised when a network has both ipv6 and ipv4 support
+    disabled during ix-f import
+    """
+
+
 class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     """
@@ -2307,16 +2312,21 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         to retrieve a unique entry
         """
 
+        net = Network.objects.get(asn=asn)
+
+        ipv4_support = net.info_unicast
+        ipv6_support = net.info_ipv6
+
         filters = {"asn": asn}
 
-        if ipaddr4 is None:
+        if ipaddr4 is None and ipv4_support:
             filters["ipaddr4__isnull"] = True
-        else:
+        elif ipv4_support:
             filters["ipaddr4"] = ipaddr4
 
-        if ipaddr6 is None:
+        if ipaddr6 is None and ipv6_support:
             filters["ipaddr6__isnull"] = True
-        else:
+        elif ipv6_support:
             filters["ipaddr6"] = ipaddr6
 
         return filters
@@ -2340,9 +2350,32 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
 
         fetched = datetime.datetime.now().replace(tzinfo=UTC())
+        net = Network.objects.get(asn=asn)
+        validate_network_protocols = kwargs.get("validate_network_protocols", True)
 
         try:
-            instance = cls.objects.get(**cls.id_filters(asn, ipaddr4, ipaddr6))
+            id_filters = cls.id_filters(asn, ipaddr4, ipaddr6)
+
+            instances = cls.objects.filter(**id_filters)
+
+            if not instances.exists():
+                raise cls.DoesNotExist()
+
+            if instances.count() > 1:
+                # this only happens when a network switches on/off
+                # ipv4/ipv6 protocol support inbetween importer
+                # runs.
+
+                for instance in instances:
+                    if ipaddr4 and not instance.ipaddr4:
+                        instance.delete(hard=True)
+                    elif ipaddr6 and not instance.ipaddr6:
+                        instance.delete(hard=True)
+
+                instance = cls.objects.get(**id_filters)
+            else:
+                instance = instances.first()
+
             for field in cls.data_fields:
                 setattr(instance, f"previous_{field}", getattr(instance, field))
 
@@ -2355,7 +2388,22 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             instance._meta.get_field("updated").auto_now = True
 
         except cls.DoesNotExist:
-            instance = cls(asn=asn, ipaddr4=ipaddr4, ipaddr6=ipaddr6, status="ok")
+            ip_args = {}
+
+            if net.info_unicast or not ipaddr4:
+                ip_args.update(ipaddr4=ipaddr4)
+
+            if net.info_ipv6 or not ipaddr6:
+                ip_args.update(ipaddr6=ipaddr6)
+
+            if not ip_args and validate_network_protocols:
+                raise NetworkProtocolsDisabled(
+                    _(
+                        "No suitable ipaddresses when validating against the enabled network protocols"
+                    )
+                )
+
+            instance = cls(asn=asn, status="ok", **ip_args)
 
         instance.speed = kwargs.get("speed", 0)
         instance.operational = kwargs.get("operational", True)
@@ -2814,18 +2862,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         if not hasattr(self, "_netixlan"):
             try:
+                filters = self.id_filters(self.asn, self.ipaddr4, self.ipaddr6)
 
-                filters = {"asn": self.asn}
-
-                if self.ipaddr4 is None:
-                    filters["ipaddr4__isnull"] = True
-                else:
-                    filters["ipaddr4"] = self.ipaddr4
-
-                if self.ipaddr6 is None:
-                    filters["ipaddr6__isnull"] = True
-                else:
-                    filters["ipaddr6"] = self.ipaddr6
+                if filters == {"asn": self.asn}:
+                    raise NetworkIXLan.DoesNotExist()
 
                 self._netixlan = NetworkIXLan.objects.get(**filters)
             except NetworkIXLan.DoesNotExist:
@@ -2877,10 +2917,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if not ixf_member_data:
             return
 
+        if ixf_member_data.netixlan == self.netixlan:
+            return
+
         ixf_member_data.requirement_of = self
 
         if save:
             ixf_member_data.save()
+
+        return ixf_member_data
 
     def apply_requirements(self, save=True):
         """
@@ -2933,10 +2978,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             self.validate_speed()
 
+            if not self.net.info_ipv6:
+                netixlan.ipaddr6 = None
+            if not self.net.info_unicast:
+                netixlan.ipaddr4 = None
+
             result = self.ixlan.add_netixlan(netixlan, save=save, save_others=save)
 
             self._netixlan = netixlan = result["netixlan"]
-            print("ADDING", self, netixlan.status)
         elif action == "modify":
 
             self.validate_speed()
@@ -2944,8 +2993,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             netixlan.speed = self.speed
             netixlan.is_rs_peer = self.is_rs_peer
             netixlan.operational = self.operational
-            netixlan.full_clean()
             if save:
+                netixlan.full_clean()
                 netixlan.save()
         elif action == "delete":
             if save:
@@ -3808,7 +3857,16 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         as a unqiue record by asn, ip4 and ip6 address
         """
 
+        net = self.network
         return (self.asn, self.ipaddr4, self.ipaddr6)
+
+    @property
+    def ixf_id_pretty_str(self):
+        asn, ipaddr4, ipaddr6 = self.ixf_id
+        ipaddr4 = ipaddr4 or _("IPv4 not set")
+        ipaddr6 = ipaddr6 or _("IPv6 not set")
+
+        return f"AS{asn} - {ipaddr4} - {ipaddr6}"
 
     # FIXME
     # permission namespacing

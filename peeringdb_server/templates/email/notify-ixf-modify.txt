@@ -1,4 +1,4 @@
-{% if recipient == "ix" %}Your{% else %}The{% endif %} IX-F data suggests the following changes to the entry {{ instance }}
+{% if recipient == "ix" %}Your{% else %}The{% endif %} IX-F data suggests the following changes to the entry {{ instance.netixlan.ixf_id_pretty_str }}
 
 {% spaceless %}
 {% for name, value in instance.changes.items %}
