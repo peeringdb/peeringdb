@@ -1547,23 +1547,25 @@ class DeskProTicketAdmin(admin.ModelAdmin):
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(request, queryset, search_term)
 
-        # Convert search to raw string
-        try:
-            search_term = search_term.encode('unicode-escape').decode() 
-        except AttributeError:
-            return queryset, use_distinct
+        # Require ^ and $ for regex
+        if search_term.startswith("^") and search_term.endswith("$"):
+            # Convert search to raw string
+            try:
+                search_term = search_term.encode('unicode-escape').decode() 
+            except AttributeError:
+                return queryset, use_distinct
 
-        # Validate regex expression
-        try:
-            re.compile(search_term)
-        except re.error:
-            return queryset, use_distinct
+            # Validate regex expression
+            try:
+                re.compile(search_term)
+            except re.error:
+                return queryset, use_distinct
 
-        # Add (case insensitive) regex search results to standard search results
-        try:
-            queryset |= self.model.objects.filter(subject__iregex=search_term)
-        except OperationalError:
-            return queryset, use_distinct
+            # Add (case insensitive) regex search results to standard search results
+            try:
+                queryset = self.model.objects.filter(subject__iregex=search_term)
+            except OperationalError:
+                return queryset, use_distinct
 
         return queryset, use_distinct
 
