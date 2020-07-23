@@ -421,4 +421,6 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
         return "IX-F Member Import Tool"
 
     def set_arguments(self, form_data):
-        self.kwargs = form_data
+        self.kwargs = form_data 
+        if form_data.get("ixlan"):
+            self.kwargs["ixlan"] = [form_data.get("ixlan").id]
