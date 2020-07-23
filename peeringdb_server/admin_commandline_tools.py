@@ -385,3 +385,41 @@ class ToolUndelete(CommandLineToolWrapper):
         )
         if obj.status != "deleted":
             raise ValueError(f"{obj} is not currently marked as deleted")
+
+@register_tool
+class ToolIXFIXPMemberImport(CommandLineToolWrapper):
+    """
+    Allows resets for various parts of the ix-f member data import protocol.
+    And import ix-f member data for a single Ixlan at a time.
+    """
+    tool = "pdb_ixf_ixp_member_import"
+
+    class Form(forms.Form):
+        ixlan = forms.ModelChoiceField(
+            queryset=IXLan.objects.all(),
+            #XXX Autocomplete here?
+            help_text=_("Select an ixlan to perform an ix-f memberdata import"),
+            required=False,
+        )
+        reset = forms.BooleanField(
+            required=False, initial=False, help_text=_("Reset all")
+        )
+        reset_hints = forms.BooleanField(
+            required=False, initial=False, help_text=_("Reset hints")
+        )
+        reset_dismisses = forms.BooleanField(
+            required=False, initial=False, help_text=_("Reset dismisses")
+        )
+        reset_email = forms.BooleanField(
+            required=False, initial=False, help_text=_("Reset email")
+        )
+        reset_tickets = forms.BooleanField(
+            required=False, initial=False, help_text=_("Reset tickets")
+        )
+
+    @property
+    def description(self):
+        return "IX-F Member Import Tool"
+
+    def set_arguments(self, form_data):
+        self.kwargs = form_data
