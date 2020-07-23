@@ -1625,7 +1625,7 @@ def view_network(request, id):
                 "admin": True,
                 "label": _("Allow IXP Update"),
                 "help_text": _(
-                    "If enabled, an ixp may manage this network's entry in their peering list"
+                    "If enabled, an IXP may manage this network's entry in their peering list"
                 ),
                 "value": [
                     {
