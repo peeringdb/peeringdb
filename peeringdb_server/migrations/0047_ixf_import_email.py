@@ -20,8 +20,8 @@ class Migration(migrations.Migration):
                 ('recipients', models.CharField(max_length=255)),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('sent', models.DateTimeField(blank=True, null=True)),
-                ('ix', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='ix_email_set', to='peeringdb_server.InternetExchange')),
-                ('net', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='network_email_set', to='peeringdb_server.Network')),
+                ('ix', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='ix_email_set', to='peeringdb_server.InternetExchange', blank=True, null=True)),
+                ('net', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='network_email_set', to='peeringdb_server.Network', blank=True, null=True)),
             ],
         ),
     ]

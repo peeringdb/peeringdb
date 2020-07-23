@@ -4303,10 +4303,10 @@ class IXFImportEmail(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     sent = models.DateTimeField(blank=True, null=True)
     net = models.ForeignKey(
-        Network, on_delete=models.CASCADE, related_name="network_email_set"
+        Network, on_delete=models.CASCADE, related_name="network_email_set", blank=True, null=True
     )
     ix = models.ForeignKey(
-        InternetExchange, on_delete=models.CASCADE, related_name="ix_email_set"
+        InternetExchange, on_delete=models.CASCADE, related_name="ix_email_set", blank=True, null=True
     )
 
 class UserPasswordReset(models.Model):
