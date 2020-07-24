@@ -9,7 +9,6 @@ from django.db import transaction
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
-from django.contrib.auth import get_user_model
 from django.conf import settings
 
 import reversion
@@ -59,6 +58,52 @@ class Importer:
         "operational",
     ]
 
+    @property
+    def ticket_user(self):
+        """
+        Returns the User instance for the user to use
+        to create DeskPRO tickets
+        """
+        if not hasattr(self, "_ticket_user"):
+            self._ticket_user = User.objects.get(username="ixf_importer")
+        return self._ticket_user
+
+    @property
+    def tickets_enabled(self):
+        """
+        Returns whether or not deskpr ticket creation for ix-f
+        conflicts are enabled or not
+
+        This can be controlled by the IXF_TICKET_ON_CONFLICT
+        setting
+        """
+
+        return getattr(settings, "IXF_TICKET_ON_CONFLICT", True)
+
+    @property
+    def notify_ix_enabled(self):
+        """
+        Returns whether or not notifications to the exchange
+        are enabled.
+
+        This can be controlled by the IXF_NOTIFY_IX_ON_CONFLICT
+        setting
+        """
+
+        return getattr(settings, "IXF_NOTIFY_IX_ON_CONFLICT", False)
+
+    @property
+    def notify_net_enabled(self):
+        """
+        Returns whether or not notifications to the network
+        are enabled.
+
+        This can be controlled by the IXF_NOTIFY_NET_ON_CONFLICT
+        setting
+        """
+
+        return getattr(settings, "IXF_NOTIFY_NET_ON_CONFLICT", False)
+
     def __init__(self):
         self.cache_only = False
         self.skip_import = False
@@ -74,23 +119,14 @@ class Importer:
             "noop": [],
         }
         self.pending_save = []
+        self.deletions = {}
         self.asns = []
         self.ixlan = ixlan
         self.save = save
         self.asn = asn
         self.now = datetime.datetime.now(datetime.timezone.utc)
         self.invalid_ip_errors = []
-
-    #XXX remove dupe
-    @property
-    def ticket_user(self):
-        """
-        Returns the User instance for the user to use
-        to create DeskPRO tickets
-        """
-        if not hasattr(self, "_ticket_user"):
-            self._ticket_user = get_user_model().objects.get(username="ixf_importer")
-        return self._ticket_user
+        self.notifications = {"add": [], "delete": [], "modify": [], "noop": []}
 
     def fetch(self, url, timeout=5):
         """
@@ -251,16 +287,19 @@ class Importer:
             self.log_error(f"Internal Error 'KeyError': {exc}", save=save)
             return False
 
-        # process any netixlans that need to be deleted
-        self.process_deletions()
+        with transaction.atomic():
+            # process any netixlans that need to be deleted
+            self.process_deletions()
 
-        # process creation of new netixlans and updates
-        # of existing netixlans. This needs to happen
-        # after process_deletions in order to avoid potential
-        # ip conflicts
-        self.process_saves()
+            # process creation of new netixlans and updates
+            # of existing netixlans. This needs to happen
+            # after process_deletions in order to avoid potential
+            # ip conflicts
+            self.process_saves()
 
         self.cleanup_ixf_member_data()
+
+        self.notify_proposals()
 
         # archive the import so we can roll it back later if needed
         self.archive()
@@ -346,15 +385,18 @@ class Importer:
                     data={},
                 )
 
+                self.deletions[ixf_member_data.ixf_id] = ixf_member_data
                 if netixlan.network.allow_ixp_update:
                     self.log_apply(
                         ixf_member_data.apply(save=self.save),
                         reason=REASON_ENTRY_GONE_FROM_REMOTE,
                     )
                 else:
-                    ixf_member_data.set_remove(
+                    notify = ixf_member_data.set_remove(
                         save=self.save, reason=REASON_ENTRY_GONE_FROM_REMOTE
                     )
+                    if notify:
+                        self.queue_notification(ixf_member_data, "remove")
                     self.log_ixf_member_data(ixf_member_data)
 
     def cleanup_ixf_member_data(self):
@@ -386,20 +428,23 @@ class Importer:
 
             if ixf_member.action == "delete":
                 if ixf_member.netixlan.status == "deleted":
-                    ixf_member.set_resolved()
+                    if ixf_member.set_resolved(save=self.save):
+                        self.queue_notification(ixf_member, "resolved")
 
             # noop means the ask has been fulfilled but the
             # ixf member data entry has not been set to resolved yet
 
             elif ixf_member.action == "noop":
-                ixf_member.set_resolved()
+                if ixf_member.set_resolved(save=self.save):
+                    self.queue_notification(ixf_member, "resolved")
 
             # proposed change / addition is now gone from
             # ix-f data
 
             elif not self.skip_import and ixf_member.ixf_id not in self.ixf_ids:
                 if ixf_member.action in ["add", "modify"]:
-                    ixf_member.set_resolved()
+                    if ixf_member.set_resolved(save=self.save):
+                        self.queue_notification(ixf_member, "resolved")
 
     @transaction.atomic()
     def archive(self):
@@ -683,8 +728,20 @@ class Importer:
 
             self.apply_add(ixf_member_data)
 
+    def queue_notification(self, ixf_member_data, typ, ac=True, ix=True, net=True):
+        self.notifications[ixf_member_data.action].append(
+            {
+                "ixf_member_data": ixf_member_data,
+                "ac": ac,
+                "ix": ix,
+                "net": net,
+                "typ": typ,
+            }
+        )
+
     def resolve(self, ixf_member_data):
-        ixf_member_data.set_resolved(save=self.save)
+        if ixf_member_data.set_resolved(save=self.save):
+            self.queue_notification(ixf_member_data, "resolved")
 
     def apply_update(self, ixf_member_data):
         changed_fields = ", ".join(ixf_member_data.changes.keys())
@@ -694,11 +751,12 @@ class Importer:
             try:
                 self.log_apply(ixf_member_data.apply(save=self.save), reason=reason)
             except ValidationError as exc:
-                ixf_member_data.set_conflict(error=exc, save=self.save)
+                if ixf_member_data.set_conflict(error=exc, save=self.save):
+                    self.queue_notification(ixf_member_data, "conflict")
         else:
-            ixf_member_data.set_update(
-                save=self.save, reason=reason,
-            )
+            notify = ixf_member_data.set_update(save=self.save, reason=reason,)
+            if notify:
+                self.queue_notification(ixf_member_data, "modify")
             self.log_ixf_member_data(ixf_member_data)
 
     def apply_add(self, ixf_member_data):
@@ -709,12 +767,69 @@ class Importer:
                 self.log_apply(
                     ixf_member_data.apply(save=self.save), reason=REASON_NEW_ENTRY
                 )
+                if not self.save:
+                    self.consolidate_delete_add(ixf_member_data)
             except ValidationError as exc:
-                ixf_member_data.set_conflict(error=exc, save=self.save)
+                if ixf_member_data.set_conflict(error=exc, save=self.save):
+                    self.queue_notification(ixf_member_data, "conflict")
 
         else:
-            ixf_member_data.set_add(save=self.save, reason=REASON_NEW_ENTRY)
+            notify = ixf_member_data.set_add(save=self.save, reason=REASON_NEW_ENTRY)
+
+            if notify and ixf_member_data.net_present_at_ix:
+                self.queue_notification(ixf_member_data, "add")
+            elif notify:
+                self.queue_notification(ixf_memeber_data, "add", ix=False, ac=False)
+
             self.log_ixf_member_data(ixf_member_data)
+            self.consolidate_delete_add(ixf_member_data)
+
+    def consolidate_delete_add(self, ixf_member_data):
+        if not ixf_member_data.ipaddr4 or not ixf_member_data.ipaddr6:
+            return
+
+        ip4_deletion = self.deletions.get(
+            (ixf_member_data.asn, ixf_member_data.ipaddr4, None), None
+        )
+        ip6_deletion = self.deletions.get(
+            (ixf_member_data.asn, None, ixf_member_data.ipaddr6), None
+        )
+
+        ixf_member_data.set_requirement(ip4_deletion, save=self.save)
+        ixf_member_data.set_requirement(ip6_deletion, save=self.save)
+
+        if ip4_deletion:
+            self.log["data"].remove(ip4_deletion.ixf_log_entry)
+        if ip6_deletion:
+            self.log["data"].remove(ip6_deletion.ixf_log_entry)
+
+        log_entry = ixf_member_data.ixf_log_entry
+
+        log_entry["action"] = log_entry["action"].replace("add", "modify")
+        changed_fields = ", ".join(
+            ixf_member_data._changes(
+                getattr(ip4_deletion, "netixlan", None)
+                or getattr(ip6_deletion, "netixlan", None)
+            ).keys()
+        )
+
+        ipaddr_info = ""
+
+        if ip4_deletion and ip6_deletion:
+            ipaddr_info = _("IP addresses moved to same entry")
+        elif ip4_deletion:
+            ipaddr_info = _("IPv6 not set")
+        elif ip6_deletion:
+            ipaddr_info = _("IPv4 not set")
+
+        changed_fields = ", ".join(changed_fields)
+
+        log_entry["reason"] = f"{REASON_VALUES_CHANGED}: {changed_fields} {ipaddr_info}"
+
+        ixf_member_data.reason = log_entry["reason"]
+        ixf_member_data.error = None
+        if self.save:
+            ixf_member_data.save()
 
     def save_log(self):
         """
@@ -743,9 +858,13 @@ class Importer:
             }
         )
 
-        return self.log_peer(
+        result = self.log_peer(
             netixlan.asn, apply_result["action"], reason, netixlan=netixlan
         )
+
+        apply_result["ixf_member_data"].ixf_log_entry = netixlan.ixf_log_entry
+
+        return result
 
     def log_ixf_member_data(self, ixf_member_data):
         return self.log_peer(
@@ -792,10 +911,82 @@ class Importer:
                     "operational": netixlan.operational,
                 }
             )
+        entry = {
+            "peer": peer,
+            "action": action,
+            "reason": f"{reason}",
+        }
+        self.log["data"].append(entry)
 
-        self.log["data"].append(
-            {"peer": peer, "action": action, "reason": f"{reason}",}
-        )
+        netixlan.ixf_log_entry = entry
+
+    def _email(self, subject, message, recipients):
+        """
+        Send email
+
+        Honors the MAIL_DEBUG setting
+
+        Called by self.notify depending on recipient
+        type
+        """
+
+        if not getattr(settings, "MAIL_DEBUG", False):
+            mail = EmailMultiAlternatives(
+                subject, strip_tags(message), settings.DEFAULT_FROM_EMAIL, recipients,
+            )
+            mail.send(fail_silently=False)
+        else:
+            debug_mail(
+                subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
+            )
+
+    def notify_proposals(self):
+
+        """
+        Sends all collected notification proposals
+        """
+
+        for action in ["add", "modify", "delete", "noop"]:
+            for notification in self.notifications[action]:
+                ixf_member_data = notification["ixf_member_data"]
+
+                # IXFMemberData objects that are requirements
+                # are not to be acted on directly and thus
+                # dont require any notifications (#770)
+
+                if ixf_member_data.requirement_of:
+                    continue
+
+                self.notify_proposal(**notification)
+
+    def notify_proposal(self, ixf_member_data, typ, ac, ix, net):
+
+        """
+        Sends a proposal notification
+
+        Argument(s)
+
+        - ixf_member_data (IXFMemberData)
+        - typ (str): proposal type 'add','delete','modify','resolve','conflict'
+        - ac (bool): If true DeskProTicket will be created
+        - ix (bool): If true email will be sent to ix
+        - net (bool): If true email will be sent to net
+        """
+
+        if typ == "add" and ixf_member_data.requirements:
+            typ = ixf_member_data.action
+            subject = f"{ixf_member_data.primary_requirement}"
+        else:
+            subject = f"{ixf_member_data}"
+
+        template_file = f"email/notify-ixf-{typ}.txt"
+
+        if ac and self.tickets_enabled:
+            message = ixf_member_data.render_notification(template_file, recipient="ac")
+            DeskProTicket.objects.create(
+                subject=subject, body=message, user=self.ticket_user
+            )
+
         if ix:
             message = ixf_member_data.render_notification(template_file, recipient="ix")
             ix_email = IXFImportEmail.objects.create(
@@ -804,7 +995,6 @@ class Importer:
                 recipient=", ".join(ixf_member_data.ix_contacts),
                 ix=ixf_member_data.ix
             )
-
             if self.notify_ix_enabled:
                 self._email(subject, message, ixf_member_data.ix_contacts)
                 ix_email.sent = datetime.datetime.now(datetime.timezone.utc)
