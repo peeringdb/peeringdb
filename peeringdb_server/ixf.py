@@ -779,7 +779,7 @@ class Importer:
             if notify and ixf_member_data.net_present_at_ix:
                 self.queue_notification(ixf_member_data, "add")
             elif notify:
-                self.queue_notification(ixf_memeber_data, "add", ix=False, ac=False)
+                self.queue_notification(ixf_member_data, "add", ix=False, ac=False)
 
             self.log_ixf_member_data(ixf_member_data)
             self.consolidate_delete_add(ixf_member_data)
@@ -945,7 +945,6 @@ class Importer:
         """
         Sends all collected notification proposals
         """
-
         for action in ["add", "modify", "delete", "noop"]:
             for notification in self.notifications[action]:
                 ixf_member_data = notification["ixf_member_data"]
@@ -953,7 +952,6 @@ class Importer:
                 # IXFMemberData objects that are requirements
                 # are not to be acted on directly and thus
                 # dont require any notifications (#770)
-
                 if ixf_member_data.requirement_of:
                     continue
 
@@ -987,12 +985,13 @@ class Importer:
                 subject=subject, body=message, user=self.ticket_user
             )
 
+
         if ix:
             message = ixf_member_data.render_notification(template_file, recipient="ix")
             ix_email = IXFImportEmail.objects.create(
                 subject=subject,
                 message=message,
-                recipient=", ".join(ixf_member_data.ix_contacts),
+                recipients=", ".join(ixf_member_data.ix_contacts),
                 ix=ixf_member_data.ix
             )
             if self.notify_ix_enabled:
@@ -1007,7 +1006,7 @@ class Importer:
             net_email = IXFImportEmail.objects.create(
                 subject=subject,
                 message=message,
-                recipient=", ".join(ixf_member_data.net_contacts),
+                recipients=", ".join(ixf_member_data.net_contacts),
                 net=ixf_member_data.net
             )
 
