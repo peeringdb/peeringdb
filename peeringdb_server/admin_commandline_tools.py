@@ -395,10 +395,10 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
     tool = "pdb_ixf_ixp_member_import"
 
     class Form(forms.Form):
-        ixlan = forms.ModelChoiceField(
-            queryset=IXLan.objects.all(),
-            #XXX Autocomplete here?
-            help_text=_("Select an ixlan to perform an ix-f memberdata import"),
+        ix = forms.ModelChoiceField(
+            queryset=InternetExchange.objects.all(),
+            widget=autocomplete.ModelSelect2(url="/autocomplete/ix/json"),
+            help_text=_("Select an Internet Exchange to perform an ix-f memberdata import"),
         )
         reset = forms.BooleanField(
             required=False, initial=False, help_text=_("Reset all")
@@ -423,4 +423,4 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
     def set_arguments(self, form_data):
         self.kwargs = form_data 
         if form_data.get("ixlan"):
-            self.kwargs["ixlan"] = [form_data.get("ixlan").id]
+            self.kwargs["ixlan"] = [form_data.get("ix").id]
