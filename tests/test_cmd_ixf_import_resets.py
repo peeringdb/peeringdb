@@ -68,25 +68,41 @@ def test_reset_email(entities, data_cmd_ixf_email):
     # Create IXFMemberData
     importer.update(ixlan, data=ixf_import_data)
 
-    assert IXFImportEmail.objects.count() == 5
+    assert IXFImportEmail.objects.count() == 4
     call_command("pdb_ixf_ixp_member_import", reset_email=True)
 
     assert IXFImportEmail.objects.count() == 0
-    assert DeskProTicket.objects.filter(body__contains="reset_hints").count() == 1
+    assert DeskProTicket.objects.filter(body__contains="reset_email").count() == 1
 
-# @pytest.mark.django_db
-# def test_reset_tickets(entities, data_cmd_ixf_emails):
-#     ixf_import_data = json.loads(data_cmd_ixf_hints.json)
-#     importer = ixf.Importer()
-#     ixlan = entities["ixlan"]
-#     # Create IXFMemberData
-#     importer.update(ixlan, data=ixf_import_data)
+@pytest.mark.django_db
+def test_reset_tickets(deskprotickets):
+    assert DeskProTicket.objects.count() == 5
 
-#     call_command("pdb_ixf_ixp_member_import", reset_hints=True)
+    call_command("pdb_ixf_ixp_member_import", reset_tickets=True)
 
-#     assert IXFMemberData.objects.count() == 0
-#     assert DeskProTicket.objects.filter(body__contains="reset_hints").count() == 1
+    assert DeskProTicket.objects.count() == 2
+    assert DeskProTicket.objects.filter(body__contains="reset_tickets").count() == 1
 
+
+
+@pytest.mark.django_db
+def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
+    ixf_import_data = json.loads(data_cmd_ixf_reset.json)
+    importer = ixf.Importer()
+    ixlan = entities["ixlan"]
+    # Create IXFMemberData
+    importer.update(ixlan, data=ixf_import_data)
+
+    assert DeskProTicket.objects.count() == 5
+    assert IXFMemberData.objects.count() == 4
+    assert IXFImportEmail.objects.count() == 4
+
+    call_command("pdb_ixf_ixp_member_import", reset=True)
+
+    assert DeskProTicket.objects.count() == 2
+    assert DeskProTicket.objects.filter(body__contains="reset").count() == 1
+    assert IXFMemberData.objects.count() == 0
+    assert IXFImportEmail.objects.count() == 0 
 
 
 
@@ -138,3 +154,26 @@ def entities():
         )
         entities["org"].admin_usergroup.user_set.add(admin_user)
     return entities
+
+
+@pytest.fixture
+def deskprotickets():
+    """
+    Creates several deskprotickets. 4 begin with [IX-F], 1 doesn't.
+    """
+    user, _ = User.objects.get_or_create(username="ixf_importer")
+    message = "test"
+
+    subjects = [
+    "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.147.250 2001:7f8:1::a500:2906:1",
+    "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.148.250 2001:7f8:1::a500:2907:2",
+    "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.146.250 2001:7f8:1::a500:2908:2",
+    "[IX-F] Suggested:ADD Test Exchange One AS1001 195.69.149.250 2001:7f8:1::a500:2909:2",
+    "Unrelated Issue: Urgent!!!"
+    ]
+    for subject in subjects:
+        DeskProTicket.objects.create(
+                    subject=subject, body=message, user=user
+        )
+    return DeskProTicket.objects.all()
+
