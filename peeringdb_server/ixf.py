@@ -20,6 +20,7 @@ from peeringdb_server.models import (
     Network,
     NetworkIXLan,
     IXFMemberData,
+    NetworkProtocolsDisabled,
     User,
     DeskProTicket,
     debug_mail,
@@ -595,6 +596,9 @@ class Importer:
             ipv4_addr = ipv4.get("address")
             ipv6_addr = ipv6.get("address")
 
+            ipv4_support = network.info_unicast
+            ipv6_support = network.info_ipv6
+
             # parse and validate the ipaddresses attached to the vlan
             # append a unqiue ixf identifier to self.ixf_ids
             #
@@ -654,7 +658,42 @@ class Importer:
 
                 continue
 
+            protocol_conflicts = []
+
+            # keep track of conflicts between ix/net in terms of ip
+            # protocols supported.
+
+            if ipv4_addr and not ipv4_support:
+                protocol_conflicts.append(4)
+
+            if ipv6_addr and not ipv6_support:
+                protocol_conflicts.append(6)
+
+            if protocol_conflicts:
+                self.queue_notification(
+                    IXFMemberData.instantiate(
+                        asn,
+                        ipv4_addr,
+                        ipv6_addr,
+                        ixlan=self.ixlan,
+                        save=False,
+                        validate_network_protocols=False,
+                    ),
+                    "protocol-conflict",
+                    ac=False,
+                    net=True,
+                    ix=True,
+                    ipaddr4=ipv4_addr,
+                    ipaddr6=ipv6_addr,
+                )
+
             self.ixf_ids.append(ixf_id)
+
+            if ipv4_addr and ipv6_addr:
+                if not network.info_ipv6:
+                    self.ixf_ids.append((asn, ixf_id[1], None))
+                elif not network.info_unicast:
+                    self.ixf_ids.append((asn, None, ixf_id[2]))
 
             if connection.get("state", "active") == "inactive":
                 operational = False
@@ -665,17 +704,21 @@ class Importer:
                 "routeserver", False
             )
 
-            ixf_member_data = IXFMemberData.instantiate(
-                asn,
-                ipv4_addr,
-                ipv6_addr,
-                speed=speed,
-                operational=operational,
-                is_rs_peer=is_rs_peer,
-                data=json.dumps(member),
-                ixlan=self.ixlan,
-                save=self.save,
-            )
+            try:
+                ixf_member_data = IXFMemberData.instantiate(
+                    asn,
+                    ipv4_addr,
+                    ipv6_addr,
+                    speed=speed,
+                    operational=operational,
+                    is_rs_peer=is_rs_peer,
+                    data=json.dumps(member),
+                    ixlan=self.ixlan,
+                    save=self.save,
+                )
+            except NetworkProtocolsDisabled as exc:
+                self.log_error(f"{exc}")
+                continue
 
             if self.connection_errors:
                 ixf_member_data.error = "\n".join(self.connection_errors)
@@ -728,7 +771,9 @@ class Importer:
 
             self.apply_add(ixf_member_data)
 
-    def queue_notification(self, ixf_member_data, typ, ac=True, ix=True, net=True):
+    def queue_notification(
+        self, ixf_member_data, typ, ac=True, ix=True, net=True, **context
+    ):
         self.notifications[ixf_member_data.action].append(
             {
                 "ixf_member_data": ixf_member_data,
@@ -736,6 +781,7 @@ class Importer:
                 "ix": ix,
                 "net": net,
                 "typ": typ,
+                "context": context,
             }
         )
 
@@ -795,8 +841,14 @@ class Importer:
             (ixf_member_data.asn, None, ixf_member_data.ipaddr6), None
         )
 
+        if not ip4_deletion and not ip6_deletion:
+            return
+
         ixf_member_data.set_requirement(ip4_deletion, save=self.save)
         ixf_member_data.set_requirement(ip6_deletion, save=self.save)
+
+        if not ixf_member_data.has_requirements:
+            return
 
         if ip4_deletion:
             self.log["data"].remove(ip4_deletion.ixf_log_entry)
@@ -959,7 +1011,7 @@ class Importer:
 
                 self.notify_proposal(**notification)
 
-    def notify_proposal(self, ixf_member_data, typ, ac, ix, net):
+    def notify_proposal(self, ixf_member_data, typ, ac, ix, net, context):
 
         """
         Sends a proposal notification
@@ -971,6 +1023,7 @@ class Importer:
         - ac (bool): If true DeskProTicket will be created
         - ix (bool): If true email will be sent to ix
         - net (bool): If true email will be sent to net
+        - context (dict): extra template context
         """
 
         if typ == "add" and ixf_member_data.requirements:
@@ -982,20 +1035,17 @@ class Importer:
         template_file = f"email/notify-ixf-{typ}.txt"
 
         if ac and self.tickets_enabled:
-            message = ixf_member_data.render_notification(template_file, recipient="ac")
+            message = ixf_member_data.render_notification(
+                template_file, recipient="ac", context=context
+            )
             DeskProTicket.objects.create(
                 subject=subject, body=message, user=self.ticket_user
             )
 
         if ix:
-            message = ixf_member_data.render_notification(template_file, recipient="ix")
-            ix_email = IXFImportEmail.objects.create(
-                subject=subject,
-                message=message,
-                recipients=", ".join(ixf_member_data.ix_contacts),
-                ix=ixf_member_data.ix
+            message = ixf_member_data.render_notification(
+                template_file, recipient="ix", context=context
             )
-
             if self.notify_ix_enabled:
                 self._email(subject, message, ixf_member_data.ix_contacts)
                 ix_email.sent = datetime.datetime.now(datetime.timezone.utc)
@@ -1003,7 +1053,7 @@ class Importer:
 
         if net and ixf_member_data.actionable_for_network:
             message = ixf_member_data.render_notification(
-                template_file, recipient="net"
+                template_file, recipient="net", context=context
             )
             net_email = IXFImportEmail.objects.create(
                 subject=subject,
