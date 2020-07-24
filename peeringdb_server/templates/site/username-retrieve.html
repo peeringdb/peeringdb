@@ -34,7 +34,6 @@
 $('#username-retrieve-initiate').each(function(idx) {
   form = $(this)
   $(this).on("action-success:submit", function(ev, data) {
-    //XXX why doesn't that happen automatically ?
     form.editable('clear-error-popins')
     form.find("#success").show();
   })

@@ -20,29 +20,29 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         client = APIClient(settings.DESKPRO_URL, settings.DESKPRO_KEY)
-        self.log(u"DESKPRO: {}".format(settings.DESKPRO_URL))
+        self.log("DESKPRO: {}".format(settings.DESKPRO_URL))
         ticket_qs = models.DeskProTicket.objects.filter(
-            published__isnull=True).order_by("created")
+            published__isnull=True
+        ).order_by("created")
 
         if not ticket_qs.count():
             self.log("No tickets in queue")
             return
 
         for ticket in ticket_qs[:10]:
-            self.log(u"Posting to Deskpro: #{}".format(ticket.id))
+            self.log("Posting to Deskpro: #{}".format(ticket.id))
 
             try:
                 client.create_ticket(ticket)
-                ticket.published = datetime.datetime.now().replace(
-                    tzinfo=models.UTC())
+                ticket.published = datetime.datetime.now().replace(tzinfo=models.UTC())
                 ticket.save()
             except APIError as exc:
                 self.log(
-                    u"!!!! Could not create ticket #{} - error data has been attached to ticket body.".
-                    format(ticket.id))
-                ticket.published = datetime.datetime.now().replace(
-                    tzinfo=models.UTC())
-                ticket.subject = u"[FAILED] {}".format(ticket.subject)
-                ticket.body = u"{}\nAPI Delivery Error: {}".format(
-                    ticket.body, exc.data)
+                    "!!!! Could not create ticket #{} - error data has been attached to ticket body.".format(
+                        ticket.id
+                    )
+                )
+                ticket.published = datetime.datetime.now().replace(tzinfo=models.UTC())
+                ticket.subject = "[FAILED] {}".format(ticket.subject)
+                ticket.body = "{}\nAPI Delivery Error: {}".format(ticket.body, exc.data)
                 ticket.save()

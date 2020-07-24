@@ -1,4 +1,11 @@
 PeeringDB = {
+  // flip to false to disable js side confirmation
+  // prompts
+  confirmation_prompts: {
+    approve : true,
+    remove : true,
+    deny : true
+  },
   is_mobile : /Android|WebOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
   js_enabled : function() {
     return this.is_mobile ? false : true;
@@ -50,11 +57,12 @@ PeeringDB = {
 
     this.fix_list_offsets();
 
-    $('.sponsor-badge').after().click(function(e) {
+    $('.sponsor-badge').click(function(e) {
       // only redirect while not in edit mode
       if($(this).parents('.mode-edit').length == 0)
         window.location.href = "/sponsors";
     });
+
 
     $('.translate-btn').click(function(e){
       $(this).closest('.fmt_text').find('.popin').remove();
@@ -92,9 +100,12 @@ PeeringDB = {
       var converter = new showdown.Converter()
       var value = $(this).data("edit-value")
       // sanitize any html tags
+      var translate = $(this).find('div.translate').detach()
+
       var html = converter.makeHtml(value.replace(/>/g, '&gt;').replace(/</g, '&lt;'))
       // set html after further sanitizing output via DOMPurify
       $(this).html(DOMPurify.sanitize(html, {SAFE_FOR_JQUERY: true}))
+      $(this).append(translate);
     })
 
   },
@@ -155,8 +166,37 @@ PeeringDB = {
         var value = $(this).html().trim();
         var name = $(this).data("edit-name");
         var field = $(this).prev('.view_field');
+        var group = field.data("notify-incomplete-group")
+
         if(!field.length)
           field = $(this).parent().prev('.view_field');
+
+        // if field is part of a notify-incomplete-group
+        // it means we don't want to show a warning as long
+        // as one of the members of the group has it's value set
+
+        if(group && (value == "" || value == "0")) {
+          var other, i, others, _value;
+
+          // get other members of the group
+
+          others = $('[data-notify-incomplete-group="'+group+'"]')
+
+          for(i = 0; i < others.length; i++) {
+            other = $(others[i]).next('.view_value')
+            _value = other.html().trim()
+
+            // other group member's value is set, use that value
+            // to toggle that we do not want to show a notification
+            // warning for this field
+
+            if(_value != "" && _value != "0") {
+              value = _value
+              break;
+            }
+          }
+        }
+
         var check = (field.find('.incomplete').length == 1);
         if(check && (value == "" || value == "0")) {
           status.incomplete = true;
@@ -172,6 +212,24 @@ PeeringDB = {
         $(this).find('.editable.popin.incomplete').addClass("hidden").hide();
       }
     });
+  },
+
+  /**
+   * prompt user with a confirmation dialogue
+   *
+   * will take `confirmation_prompts` setting into account
+   */
+
+  confirm: function(msg, type) {
+    if(!type || this.confirmation_prompts[type]) {
+      return confirm(msg);
+    } else {
+      return true;
+    }
+  },
+
+  refresh: function() {
+    window.document.location.href = window.document.location.href;
   }
 }
 
@@ -186,116 +244,767 @@ function moveCursorToEnd(el) {
     }
 }
 
-PeeringDB.IXFPreview = {
+/**
+ * Tools to handle pre and post processing of ix/net/fac/org views
+ * submissions
+ * @class ViewTools
+ * @namespace PeeringDB
+ */
+
+PeeringDB.ViewTools = {
 
   /**
-   * Handle the IX-F import preview request and rendering
-   * to UI modal
+   * applies the value of a field as it was returned by the
+   * server in the response to the submissions to the corresponding
+   * form element on the page
    *
-   * @class IXFPreview
-   * @namespace PeeringDB
+   * this only needs to be done for fields that rely on server side
+   * data validation that can't be done locally
+   *
+   * @method apply_data
+   * @param {jQuery} container - main js-edit element for the submissions
+   * @param {Object} data - object literal containing server response for the entity
+   * @param {String} field - field name
    */
 
-  request : function(ixlanId, renderTo) {
+  apply_data : function(container, data, field) {
 
-    /**
-     * request a preview for the ixlan with ixlanId
-     *
-     * @method request
-     * @param {Number} ixlanId
-     * @param {jQuery} renderTo - render to this element (needs to have
-     *    the appropriate children elements to work, they are not
-     *    created automatically)
-     */
-
-    renderTo.find('.ixf-result').empty().
-      append($("<div>").addClass("center").text("... loading ..."));
-    renderTo.find('.ixf-error-counter').empty();
-    $.get('/import/ixlan/'+ixlanId+'/ixf/preview', function(result) {
-      this.render(result, renderTo);
-    }.bind(this)).error(function(result) {
-      if(result.responseJSON) {
-        this.render(result.responseJSON, renderTo);
-      } else {
-        this.render({"non_field_errors": ["HTTP error "+result.status]});
-      }
-    }.bind(this));
-  },
-
-  render : function(result, renderTo) {
-
-    /**
-     * Render preview result and errors
-     *
-     * @method render
-     * @param {Object} result - result as returned from the preview request
-     * @param {jQuery} renderTo
-     *
-     *    Needs to have child divs with the following classes
-     *
-     *
-     *    .ixf-errors-list: errors will be rendered to here
-     *    .ixf-result: changes will be rendered to here
-     *    .ixf-error-counter: will be updated with number of errors
-     *
-     */
-
-    renderTo.find('.ixf-errors-list').empty()
-    renderTo.find('.ixf-result').empty()
-    this.render_errors((result.errors || []).concat(result.non_field_errors || []), renderTo.find('.ixf-errors-list'));
-    this.render_data(result.data || [], renderTo.find('.ixf-result'));
-  },
-
-  render_errors : function(errors, renderTo) {
-    /**
-     * Render the errors, called automatically by `render`
-     *
-     * @method render_errors
-     * @param {Array} errors
-     * @param {jQuery} renderTo
-     */
-
-    var error, i;
-
-    if(!errors.length)
-      return;
-
-    $('.ixf-error-counter').text("("+errors.length+")");
-
-    for(i = 0; i < errors.length; i++) {
-      error = errors[i];
-      renderTo.append($('<div>').addClass("ixf-error").text(error));
+    var input;
+    input = $('[data-edit-name="'+field+'"]').data("edit-input-instance")
+    if(input) {
+      input.set(data[field]);
+      input.apply(data[field]);
     }
   },
 
-  render_data : function(data, renderTo) {
-    /**
-     * Renders the changes made by the ix-f import, called automatically
-     * by `render`
-     *
-     * @method render_data
-     * @param {Array} data
-     * @param {jQuery} renderTo
-     */
+  /**
+   * after submission cleanup / handling
+   *
+   * @method after_submit
+   * @param {jQuery} container - main js-edit element for the submissions
+   * @param {Object} data - object literal containing server response for the entity
+   */
 
-    var row, i;
-    for(i = 0; i < data.length; i++) {
-      row = data[i];
-      renderTo.append(
-        $('<div>').addClass("row ixf-row ixf-"+row.action).append(
-          $('<div>').addClass("col-sm-1").text(row.action),
-          $('<div>').addClass("col-sm-2").text("AS"+row.peer.asn),
-          $('<div>').addClass("col-sm-3").text(row.peer.ipaddr4 || "-"),
-          $('<div>').addClass("col-sm-3").text(row.peer.ipaddr6 || "-"),
-          $('<div>').addClass("col-sm-1").text(PeeringDB.pretty_speed(row.peer.speed)),
-          $('<div>').addClass("col-sm-2").text(row.peer.is_rs_peer?"yes":"no"),
-          $('<div>').addClass("col-sm-12 ixf-reason").text(row.reason)
-        )
-      );
+  after_submit : function(container, data) {
+    var target = container.data("edit-target")
+    if(target == "api:ix:update") {
+      this.apply_data(container, data, "tech_phone");
+      this.apply_data(container, data, "policy_phone");
     }
   }
 
 }
+
+PeeringDB.ViewActions = {
+
+  init : function() {
+    $('button[data-view-action]').each(function(){
+      $(this).click(function() {
+        var action = $(this).data("view-action")
+        var id = $(this).closest("[data-edit-id]").data("edit-id");
+        PeeringDB.ViewActions.actions[action](id);
+      });
+    });
+  },
+
+  actions : {}
+}
+
+PeeringDB.ViewActions.actions.ix_ixf_preview = function(netId) {
+  $("#ixf-preview-modal").modal("show");
+  var preview = new PeeringDB.IXFPreview()
+  preview.request(netId, $("#ixf-log"));
+}
+
+
+PeeringDB.ViewActions.actions.net_ixf_preview = function(netId) {
+  $("#ixf-preview-modal").modal("show");
+  var preview = new PeeringDB.IXFNetPreview()
+  preview.request(netId, $("#ixf-log"));
+}
+
+PeeringDB.ViewActions.actions.net_ixf_postmortem = function(netId) {
+  $("#ixf-postmortem-modal").modal("show");
+  var postmortem = new PeeringDB.IXFNetPostmortem()
+  postmortem.request(netId, $("#ixf-postmortem"));
+}
+
+/**
+ * Handles the IX-F proposals UI for suggestions
+ * made to networks from exchanges through
+ * the exchange's IX-F data feeds
+ * @class IXFProposals
+ * @namespace PeeringDB
+ * @constructor
+ */
+
+PeeringDB.IXFProposals = twentyc.cls.define(
+  "IXFProposals",
+  {
+    IXFProposals : function() {
+
+      var ixf_proposals = this;
+
+      // the netixlan list element in the network
+      // view (Public peering exchange points)
+      this.netixlan_list = $('[data-edit-target="api:netixlan"]')
+
+      // the netixlan list module
+      this.netixlan_mod = this.netixlan_list.data('editModuleInstance')
+
+      // this will be true once the user as applied or dismissed
+      // a suggestion. If true once the network editor is closed
+      // either through cancel or save a page reload will be forced
+      this.require_refresh= false;
+
+      // wire button to reset dismissed proposals
+      $('#btn-reset-proposals').click(function() {
+        ixf_proposals.reset_proposals($(this).data("reset-path"))
+      });
+
+      // process and wire all proposals (per exchange)
+      $("[data-ixf-proposals-ix]").each(function() {
+        // individual exchange
+
+        // container element for proposals
+        var proposals = $(this)
+
+        // wire batch action buttons
+        var button_add_all = proposals.find('button.add-all')
+        var button_resolve_all = proposals.find('button.resolve-all');
+
+        button_add_all.click(() => { ixf_proposals.add_all(proposals); });
+        button_resolve_all.click(() => { ixf_proposals.resolve_all(proposals); });
+
+        ixf_proposals.sync_proposals_state(proposals);
+
+        // write proposals
+        proposals.find('.row.item').each(function() {
+          var row = $(this)
+          var button_add = row.find('button.add');
+          var button_dismiss = row.find('button.dismiss');
+          var button_delete = row.find('button.delete')
+          var button_modify = row.find('button.modify')
+
+          button_add.click(() => { ixf_proposals.add(row) })
+          button_dismiss.click(() => { ixf_proposals.dismiss(row) })
+          button_delete.click(() => {
+            if(!PeeringDB.confirm(button_delete.data("confirm")))
+              return
+            ixf_proposals.delete(row)
+          })
+          button_modify.click(() => { ixf_proposals.modify(row) })
+        })
+      })
+    },
+
+    /**
+     * Sends ajax request to reset dismissed proposals
+     * and upon success will force a page reload
+     * @method reset_proposals
+     * @param {String} path url path to reset proposals
+     */
+
+    reset_proposals : function(path) {
+      $.ajax({
+        method: "POST",
+        url: path
+      }).done(PeeringDB.refresh);
+    },
+
+    /**
+     * Dismisses a proposal
+     * @method dismiss
+     * @param {jQuery} row jquery result for proposal row
+     */
+
+    dismiss : function(row) {
+      var data= this.collect(row);
+      row.find('.loading-shim').show();
+      $.ajax({
+        method: "POST",
+        url: "/net/"+data.net_id+"/dismiss-ixf-proposal/"+data.suggestion_id+"/",
+        data: {}
+      }).
+      fail((response) => { this.render_errors(row, response); }).
+      done(() => { this.detach_row(row);}).
+      always(() => {
+        row.find('.loading-shim').hide();
+      })
+    },
+
+    /**
+     * Apply modifications to netixlan form in
+     * public peering exchange points list
+     * from proposal row
+     * @method modify
+     * @param {jQuery} row jquery result for proposal row
+     */
+
+    modify : function(row) {
+      var data=this.collect(row);
+      var proposals = row.closest("[data-ixf-proposals-ix]")
+      var netixlan_row = this.netixlan_list.find('[data-edit-id="'+data.id+'"]')
+      netixlan_row.find('[data-edit-name="speed"] input').val(data.speed)
+      netixlan_row.find('[data-edit-name="is_rs_peer"] input').prop("checked", data.is_rs_peer)
+      netixlan_row.find('[data-edit-name="operational"] input').prop("checked", data.operational)
+      netixlan_row.addClass("newrow")
+      this.detach_row(row);
+      row.find('button').tooltip("hide")
+
+    },
+
+    /**
+     * Applies a proposed netixlan deletion
+     * @method delete
+     * @param {jQuery} row jquery result for proposal row
+     */
+
+    delete : function(row) {
+      var data=this.collect(row);
+      var proposals = row.closest("[data-ixf-proposals-ix]")
+      row.find('.loading-shim').show();
+
+      return PeeringDB.API.request(
+        "DELETE",
+        "netixlan/"+data.id,
+        0,
+        {}
+      ).fail(
+        (response) => { this.render_errors(row, response); }
+      ).done(
+        () => {
+          this.netixlan_list.find('[data-edit-id="'+data.id+'"]').detach();
+          this.detach_row(row);
+        }
+      ).always(() => {
+        row.find('.loading-shim').hide();
+      })
+
+    },
+
+    /**
+     * Batch applies all netixlan creations
+     * @method add_all
+     * @param {jQuery} jquery result for exchange proposals container
+     */
+
+    add_all : function(proposals) {
+
+      var entries = this.all_entries_for_action(proposals, "add");
+
+      if(!entries.rows.length)
+        return alert(gettext("Nothing to do"))
+
+      var confirm_text = [
+        gettext("This will create the following entries")
+      ]
+
+      var b = PeeringDB.confirm(
+        confirm_text.concat(entries.ixf_ids).join("\n")
+      )
+
+      if(b)
+        this.process_all_for_action(entries.rows, "add");
+    },
+
+    /**
+     * Batch applies all netixlan modifications and removals
+     * @method resolve_all
+     * @param {jQuery} jquery result for exchange proposals container
+     */
+
+    resolve_all : function(proposals) {
+
+      var entries_delete = this.all_entries_for_action(proposals, "delete")
+      var entries_modify = this.all_entries_for_action(proposals, "modify")
+
+      var confirm_text = []
+
+      if(!entries_delete.rows.length && !entries_modify.rows.length) {
+        alert(gettext("Nothing to do"))
+        return;
+      }
+
+      if(entries_delete.rows.length) {
+        confirm_text.push(gettext("Remove these entries"))
+        confirm_text = confirm_text.concat(entries_delete.ixf_ids)
+        confirm_text.push("")
+      }
+
+      if(entries_modify.rows.length) {
+        confirm_text.push(gettext("Update these entries"))
+        confirm_text = confirm_text.concat(entries_modify.ixf_ids)
+        confirm_text.push("")
+      }
+
+      var b = PeeringDB.confirm(confirm_text.join("\n"))
+
+      if(b) {
+        this.process_all_for_action(entries_delete.rows, "delete");
+        this.process_all_for_action(entries_modify.rows, "modify");
+      }
+    },
+
+    /**
+     * Returns object literal with rows and ixf_ids for
+     * specified action
+     * @method all_entries_for_action
+     * @param {jQuery} proposals
+     * @param {String} action add | modify | delete
+     */
+
+    all_entries_for_action : function(proposals, action) {
+      var rows = proposals.find('.suggestions-'+action+' .row.item')
+
+      var ids = []
+      rows.each(function() {
+        var row = $(this)
+        ids.push(row.data("ixf-id"))
+      })
+      return {rows: rows, ixf_ids: ids}
+    },
+
+    /**
+     * Batch apply all proposals for action
+     * @method process_all_for_action
+     * @param {jQuery} rows
+     * @param {String} action add | modify | delete
+     */
+
+    process_all_for_action : function(rows, action) {
+      var ixf_proposals = this;
+      rows.each(function() {
+        var row = $(this);
+        ixf_proposals[action](row);
+      });
+    },
+
+    /**
+     * Create the proposed netixlan
+     * @method add
+     * @param {jQuery} row jquery result set for proposal row
+     */
+
+    add : function(row) {
+      var data=this.collect(row);
+      var proposals = row.closest("[data-ixf-proposals-ix]")
+
+      row.find('.loading-shim').show();
+      row.find('.errors').hide()
+      row.find('.validation-error').removeClass('validation-error')
+      row.find('.input-note').detach()
+
+      return PeeringDB.API.request(
+        "POST",
+        "netixlan",
+        0,
+        data
+      ).done((a) => {
+        var netixlan = a.data[0]
+        netixlan.ix = { name : data.ix_name, id : data.ix_id }
+        if(!netixlan.ipaddr4)
+          netixlan.ipaddr4 = ""
+        if(!netixlan.ipaddr6)
+          netixlan.ipaddr6 = ""
+        this.netixlan_mod.listing_add(
+          netixlan.id, null, this.netixlan_list, netixlan);
+        this.detach_row(row);
+      }).fail((response) => {
+        this.render_errors(row, response);
+      }).always(() => {
+        row.find('.loading-shim').hide();
+      })
+    },
+
+    /**
+     * Removes the proposal row
+     * @method detach_row
+     * @param {jQuery} row
+     */
+
+    detach_row : function(row) {
+
+      var par = row.parent()
+      var proposals = row.closest(".ixf-proposals");
+
+      row.detach();
+      this.require_refresh = true;
+      if(!par.find('.row.item').length) {
+        par.prev(".header").detach()
+        par.detach()
+        this.sync_proposals_state(proposals);
+      }
+    },
+
+    /**
+     * This will update the batch actions buttons to
+     * be disabled if no actions are left for them to
+     * apply
+     *
+     * This will also remove the proposals contaienr if
+     * no actions are left to apply
+     * @method sync_proposals_state
+     * @param {jQuery} proposals jquery result for exchange proposals
+     */
+
+    sync_proposals_state : function(proposals) {
+      var button_add_all = proposals.find('button.add-all')
+      var button_resolve_all = proposals.find('button.resolve-all')
+
+
+      if(!this.all_entries_for_action(proposals, 'add').rows.length) {
+        button_add_all.prop('disabled',true);
+      }
+      if(
+        !this.all_entries_for_action(proposals, 'delete').rows.length &&
+        !this.all_entries_for_action(proposals, 'modify').rows.length
+      ) {
+        button_resolve_all.prop('disabled',true);
+      }
+
+      if(button_resolve_all.prop('disabled') && button_add_all.prop('disabled'))
+        proposals.detach()
+    },
+
+    /**
+     * Renders the errors of an API request
+     * to the proposal row
+     * @method render_errors
+     * @param {jQuery} row
+     * @param {jQuery XHR Response} response
+     */
+
+    render_errors : function(row, response) {
+      var element, field, msg;
+      var errors = row.find('.errors')
+      var info = [response.status + " " + response.statusText]
+      if(response.status == 400) {
+        info = [gettext("The server rejected your data")];
+        for(field in response.responseJSON) {
+          msg = response.responseJSON[field]
+          if(msg && msg.join)
+            msg = msg.join(",")
+          element = row.find('[data-field="'+field+'"]')
+          $('<div>')
+            .addClass("editable input-note always-absolute validation-error")
+            .text(msg)
+            .insertBefore(element);
+          element.addClass('validation-error')
+        }
+      }
+     if(response.responseJSON && response.responseJSON.non_field_errors) {
+        info = [];
+        var i;
+        for(i in response.responseJSON.non_field_errors)
+          info.push(response.responseJSON.non_field_errors[i]);
+      }
+      errors.empty().text(info.join("\n")).show()
+    },
+
+    /**
+     * Collect all the netixlan fields / values from
+     * a proposal row and return them as an object literal
+     * @method collect
+     * @param {jQuery} row
+     */
+
+    collect : function(row) {
+      var proposals = row.closest("[data-ixf-proposals-ix]")
+      var ix_id = proposals.data("ixf-proposals-ix")
+      var ix_name = proposals.data("ixf-proposals-ix-name")
+      var net_id = proposals.data("ixf-proposals-net")
+
+      var data = {ixlan_id:ix_id, net_id:net_id, ix_name:ix_name}
+      row.find('[data-field]').each(function() {
+        var field = $(this)
+        if(field.data("value")) {
+          data[field.data("field")] = field.data("value");
+        } else if(field.attr("type") == "checkbox") {
+          data[field.data("field")] = field.prop("checked");
+        } else {
+          data[field.data("field")] = field.val()
+        }
+      });
+      return data;
+    }
+  }
+)
+
+
+PeeringDB.IXFPreview = twentyc.cls.define(
+  "IXFPreview",
+  {
+
+    /**
+     * Handle the IX-F import preview request and rendering
+     * to UI modal
+     *
+     * @class IXFPreview
+     * @namespace PeeringDB
+     */
+
+    request : function(ixlanId, renderTo) {
+
+      /**
+       * request a preview for the ixlan with ixlanId
+       *
+       * @method request
+       * @param {Number} ixlanId
+       * @param {jQuery} renderTo - render to this element (needs to have
+       *    the appropriate children elements to work, they are not
+       *    created automatically)
+       */
+
+      renderTo.find("#tab-ixf-changes").tab("show");
+      renderTo.find('.ixf-result').empty().
+        append($("<div>").addClass("center").text("... loading ..."));
+      renderTo.find('.ixf-error-counter').empty();
+      $.get('/import/ixlan/'+ixlanId+'/ixf/preview', function(result) {
+        this.render(result, renderTo);
+      }.bind(this)).error(function(result) {
+        if(result.responseJSON) {
+          this.render(result.responseJSON, renderTo);
+        } else {
+          this.render({"non_field_errors": ["HTTP error "+result.status]});
+        }
+      }.bind(this));
+    },
+
+    render : function(result, renderTo) {
+
+      /**
+       * Render preview result and errors
+       *
+       * @method render
+       * @param {Object} result - result as returned from the preview request
+       * @param {jQuery} renderTo
+       *
+       *    Needs to have child divs with the following classes
+       *
+       *
+       *    .ixf-errors-list: errors will be rendered to here
+       *    .ixf-result: changes will be rendered to here
+       *    .ixf-error-counter: will be updated with number of errors
+       *
+       */
+
+      renderTo.find('.ixf-errors-list').empty()
+      renderTo.find('.ixf-result').empty()
+
+      var errors = (result.errors || []).concat(result.non_field_errors || []);
+
+      this.render_errors(errors, renderTo.find('.ixf-errors-list'));
+      this.render_data(result.data || [], renderTo.find('.ixf-result'));
+
+      if(!result.data || !result.data.length) {
+        if(errors && errors.length) {
+          renderTo.find("#tab-ixf-errors").tab("show");
+        }
+      }
+    },
+
+    render_errors : function(errors, renderTo) {
+      /**
+       * Render the errors, called automatically by `render`
+       *
+       * @method render_errors
+       * @param {Array} errors
+       * @param {jQuery} renderTo
+       */
+
+      var error, i;
+
+      if(!errors.length)
+        return;
+
+      $('.ixf-error-counter').text("("+errors.length+")");
+
+      for(i = 0; i < errors.length; i++) {
+        error = errors[i];
+        renderTo.append($('<div>').addClass("ixf-error").text(error));
+      }
+    },
+
+    render_data : function(data, renderTo) {
+      /**
+       * Renders the changes made by the ix-f import, called automatically
+       * by `render`
+       *
+       * @method render_data
+       * @param {Array} data
+       * @param {jQuery} renderTo
+       */
+
+      var row, i;
+      for(i = 0; i < data.length; i++) {
+        row = data[i];
+        renderTo.append(
+          $('<div>').addClass("row ixf-row ixf-"+row.action).append(
+            $('<div>').addClass("col-sm-1").text(row.action),
+            $('<div>').addClass("col-sm-2").text("AS"+row.peer.asn),
+            $('<div>').addClass("col-sm-3").text(row.peer.ipaddr4 || "-"),
+            $('<div>').addClass("col-sm-3").text(row.peer.ipaddr6 || "-"),
+            $('<div>').addClass("col-sm-1").text(PeeringDB.pretty_speed(row.peer.speed)),
+            $('<div>').addClass("col-sm-2").text(row.peer.is_rs_peer?"yes":"no"),
+            $('<div>').addClass("col-sm-12 ixf-reason").text(row.reason)
+          )
+        );
+      }
+    }
+  }
+);
+
+PeeringDB.IXFNetPreview =  twentyc.cls.extend(
+  "IXFNetPreview",
+  {
+    /**
+     * Handle the IX-F import preview for networks request and rendering
+     * to UI modal
+     *
+     * @class IXFNetPreview
+     * @namespace PeeringDB
+     */
+
+    request : function(netId, renderTo) {
+
+      /**
+       * request a preview for the ixlan with ixlanId
+       *
+       * @method request
+       * @param {Number} netId
+       * @param {jQuery} renderTo - render to this element (needs to have
+       *    the appropriate children elements to work, they are not
+       *    created automatically)
+       */
+
+      renderTo.find("#tab-ixf-changes").tab("show");
+      renderTo.find('.ixf-result').empty().
+        append($("<div>").addClass("center").text("... loading ..."));
+      renderTo.find('.ixf-error-counter').empty();
+      $.get('/import/net/'+netId+'/ixf/preview', function(result) {
+        this.render(result, renderTo);
+      }.bind(this)).error(function(result) {
+        if(result.responseJSON) {
+          this.render(result.responseJSON, renderTo);
+        } else {
+          this.render({"non_field_errors": ["HTTP error "+result.status]});
+        }
+      }.bind(this));
+    },
+
+    render_data : function(data, renderTo) {
+      /**
+       * Renders the changes made by the ix-f import, called automatically
+       * by `render`
+       *
+       * @method render_data
+       * @param {Array} data
+       * @param {jQuery} renderTo
+       */
+
+      var row, i;
+      for(i = 0; i < data.length; i++) {
+        row = data[i];
+        renderTo.append(
+          $('<div>').addClass("row ixf-row ixf-"+row.action).append(
+            $('<div>').addClass("col-sm-1").text(row.action),
+            $('<div>').addClass("col-sm-3").append(
+              $('<a>').attr("href", "/ix/"+row.peer.ix_id).text(row.peer.ix_name)
+            ),
+            $('<div>').addClass("col-sm-2").text(row.peer.ipaddr4 || "-"),
+            $('<div>').addClass("col-sm-3").text(row.peer.ipaddr6 || "-"),
+            $('<div>').addClass("col-sm-1").text(PeeringDB.pretty_speed(row.peer.speed)),
+            $('<div>').addClass("col-sm-2").text(row.peer.is_rs_peer?"yes":"no"),
+            $('<div>').addClass("col-sm-12 ixf-reason").text(row.reason)
+          )
+        );
+      }
+    }
+
+  },
+  PeeringDB.IXFPreview
+)
+
+PeeringDB.IXFNetPostmortem =  twentyc.cls.extend(
+  "IXFNetPostmortem",
+  {
+    /**
+     * Handle the IX-F import preview for networks request and rendering
+     * to UI modal
+     *
+     * @class IXFNetPostmortem
+     * @namespace PeeringDB
+     */
+
+    request : function(netId, renderTo) {
+
+      /**
+       * request a preview for the ixlan with ixlanId
+       *
+       * @method request
+       * @param {Number} netId
+       * @param {jQuery} renderTo - render to this element (needs to have
+       *    the appropriate children elements to work, they are not
+       *    created automatically)
+       */
+
+      renderTo.find("#tab-ixf-changes").tab("show");
+      renderTo.find('.ixf-result').empty().
+        append($("<div>").addClass("center").text("... loading ..."));
+      renderTo.find('.ixf-error-counter').empty();
+
+      var limit = $('#ixf-postmortem-limit').val()
+      var btnRefresh = $('#ixf-postmortem-refresh')
+
+      btnRefresh.off("click").click(function() {
+        this.request(netId, renderTo);
+      }.bind(this));
+
+      $.get('/import/net/'+netId+'/ixf/postmortem?limit='+limit, function(result) {
+        this.render(result, renderTo);
+      }.bind(this)).error(function(result) {
+        if(result.responseJSON) {
+          this.render(result.responseJSON, renderTo);
+        } else {
+          this.render({"non_field_errors": ["HTTP error "+result.status]});
+        }
+      }.bind(this));
+    },
+
+    render_data : function(data, renderTo) {
+      /**
+       * Renders the changes made by the ix-f import, called automatically
+       * by `render`
+       *
+       * @method render_data
+       * @param {Array} data
+       * @param {jQuery} renderTo
+       */
+
+      var row, i;
+      for(i = 0; i < data.length; i++) {
+        row = data[i];
+        renderTo.append(
+          $('<div>').addClass("row ixf-row ixf-"+row.action).append(
+            $('<div>').addClass("col-sm-1").text(row.action),
+            $('<div>').addClass("col-sm-3").append(
+              $('<a>').attr("href", "/ix/"+row.ix_id).text(row.ix_name)
+            ),
+            $('<div>').addClass("col-sm-2").text(row.ipaddr4 || "-"),
+            $('<div>').addClass("col-sm-3").text(row.ipaddr6 || "-"),
+            $('<div>').addClass("col-sm-1").text(PeeringDB.pretty_speed(row.speed)),
+            $('<div>').addClass("col-sm-2").text(row.is_rs_peer?"yes":"no"),
+            $('<div>').addClass("col-sm-12 ixf-reason").text(row.created + " - " +row.reason)
+          )
+        );
+      }
+    }
+
+  },
+  PeeringDB.IXFPreview
+)
+
 
 PeeringDB.InlineSearch = {
 
@@ -566,7 +1275,7 @@ twentyc.editable.module.register(
     },
 
     remove : function(id, row, trigger, container) {
-      var b = confirm(gettext("Remove") + " " +row.data("edit-label"));  ///
+      var b = PeeringDB.confirm(gettext("Remove") + " " +row.data("edit-label"), "remove");  ///
       var me = this;
       $(this.target).on("success", function(ev, data) {
         if(b)
@@ -600,7 +1309,7 @@ twentyc.editable.module.register(
     execute_approve : function(trigger, container) {
       var row = trigger.closest("[data-edit-id]").first()
 
-      var b = confirm(gettext("Add user") + " " +row.data("edit-label")+ " " + gettext("to Organization?")); ///
+      var b = PeeringDB.confirm(gettext("Add user") + " " +row.data("edit-label")+ " " + gettext("to Organization?"), "approve"); ///
       if(!b)
         return;
 
@@ -617,7 +1326,7 @@ twentyc.editable.module.register(
     execute_deny : function(trigger, container) {
       var row = trigger.closest("[data-edit-id]").first()
 
-      var b = confirm(gettext("Deny") +" "+row.data("edit-label")+"'s " + gettext("request to join the Organization?"));  ///
+      var b = PeeringDB.confirm(gettext("Deny") +" "+row.data("edit-label")+"'s " + gettext("request to join the Organization?"), "deny");  ///
       if(!b)
         return;
 
@@ -787,6 +1496,13 @@ twentyc.editable.target.register(
         throw(gettext("Unknown request type:") + " "+requestType); ///
       }
 
+      if(button.data("confirm")) {
+        if(!PeeringDB.confirm(button.data("confirm"))) {
+          this.sender.editable("loading-shim", "hide")
+          return;
+        }
+      }
+
       PeeringDB.API.request(
         method,
         endpoint,
@@ -844,6 +1560,7 @@ twentyc.editable.target.register(
   "base"
 );
 
+
 /*
  * editable api listing module
  */
@@ -855,6 +1572,7 @@ twentyc.editable.module.register(
 
     init : function() {
       this.listing_init();
+
       this.container.on("listing:row-add", function(e, rowId, row, data, me) {
         var target = me.target;
         if(!target)
@@ -908,14 +1626,23 @@ twentyc.editable.module.register(
 
     submit : function(id, data, row, trigger, container) {
       data._id = id;
+      var me = this;
+      var sentData = data;
       this.target.data = data;
       this.target.args[2] = "update"
       this.target.context = row;
+
+      $(this.target).on("success", function(ev, data) {
+        var finalizer = "finalize_update_"+me.target.args[1];
+        if(me[finalizer]) {
+          me[finalizer](id, row, data);
+        }
+      });
       this.target.execute();
     },
 
     remove : function(id, row, trigger, container) {
-      var b = confirm(gettext("Remove") + " "+row.data("edit-label")); ///
+      var b = PeeringDB.confirm(gettext("Remove") + " "+row.data("edit-label"), "remove"); ///
       var me = this;
       $(this.target).on("success", function(ev, data) {
         if(b)
@@ -982,11 +1709,19 @@ twentyc.editable.module.register(
 
     finalize_row_poc : function(rowId, row, data) {
       row.editable("payload", {
-        net_id : data.network,
+        net_id : data.net_id,
         role : data.role
       })
 
+      //row.find(".phone").val(data.phone);
+      var phone = row.find(".phone").data("edit-input-instance")
+      phone.set(data.phone)
+
       row.data("edit-label", gettext("Network Contact") + ": "+data.name);  ///
+    },
+
+    finalize_update_poc : function(rowId, row, data) {
+      row.find(".phone").text(data.phone);
     },
 
     // FINALIZERS: NETIX
@@ -1003,9 +1738,9 @@ twentyc.editable.module.register(
       ixlnk.text(data.ix.name);
       row.find(".exchange").html(ixlnk);
 
-      // if ixlan has a name, render it next to the exchange name
-      if(data.ixlan.name)
-        row.find(".exchange").append($('<span>').addClass('tiny suffix').text(data.ixlan.name));
+      if(data.operational)
+        row.addClass("operational")
+
       //row.find(".asn").html(data.asn)
       row.find(".speed").data("edit-content-backup", PeeringDB.pretty_speed(data.speed))
 
@@ -1042,6 +1777,13 @@ twentyc.editable.module.register(
         });
       });
 
+    },
+
+    finalize_update_netixlan : function(rowId, row, data) {
+      if(data.operational)
+        row.addClass("operational")
+      else
+        row.removeClass("operational")
     },
 
 
@@ -1082,34 +1824,6 @@ twentyc.editable.module.register(
         callback(data);
       });
 
-    },
-
-    // FINALIZERS: IXLAN
-
-    finalize_add_ixlan : function(data, callback, sentData) {
-
-      // we currently do not publish ix-f setting fields on the API
-      // so we need to set those from sent data
-      data.ixf_ixp_member_list_url = sentData.ixf_ixp_member_list_url;
-      data.ixf_ixp_import_enabled = sentData.ixf_ixp_import_enabled;
-      callback(data);
-    },
-
-
-    finalize_row_ixlan : function(rowId, row, data) {
-      row.editable("payload", {
-        ix_id : data.ix_id
-      })
-      row.data("edit-label", gettext("IXLAN") + ": "+data.name); ///
-
-      var modPrefix = row.find('[data-edit-module="api_listing"]');
-      modPrefix.editable("sync");
-      modPrefix.editable("toggle");
-
-      var cmpPrefixAdd = row.find('[data-edit-component="add"]')
-      cmpPrefixAdd.editable("payload", {
-        ixlan_id : data.id
-      });
     },
 
     // FINALIZERS: IXLAN PREFIX
@@ -1190,6 +1904,61 @@ twentyc.editable.input.register(
   },
   "text"
 );
+
+twentyc.editable.input.register(
+  "readonly",
+  {
+    make : function() {
+      return $('<span class="editable input-note-relative"></span>')
+    },
+    set : function(value) {
+      this.element.text(value)
+    },
+    get : function(value) {
+      return this.element.text()
+    }
+  },
+  "text"
+);
+
+/*
+ * mandatory boolean input type
+ * renders a drop down with 3 choices
+ *
+ * - `-`
+ * - `yes`
+ * - `no`
+ *
+ * Will raise input-required validation error if `-`
+ * is selected upon form submission
+ */
+
+twentyc.editable.input.register(
+  "mandatory_bool",
+  {
+
+    make : function() {
+      var node = this.select_make();
+      this.source.data("edit-required", "yes")
+      return node;
+    },
+
+    set : function() {
+      this.load();
+    },
+
+    load : function() {
+      this.select_load([
+        {id: "", name: "-"},
+        {id: "1", name: gettext("Yes")},
+        {id: "0", name: gettext("No")},
+      ])
+    }
+  },
+  "select"
+);
+
+
 /*
  * autocomplete input type
  */

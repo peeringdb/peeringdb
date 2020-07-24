@@ -1,4 +1,4 @@
 Name,Management,CLLI,NPA-NXX,City,Country,State,Postal Code,Networks
-Facility 1,Test Org,CLLI1,1-1,City 1,US,State 1,1,1
-Facility 2,Test Org,CLLI2,2-2,City 2,FI,State 2,2,1
-Facility 3,Test Org,CLLI3,3-3,City 3,,State 3,3,1
+Facility 1,Organization 1,CLLI1,1-1,City 1,US,State 1,1,1
+Facility 2,Organization 2,CLLI2,2-2,City 2,FI,State 2,2,1
+Facility 3,Organization 3,CLLI3,3-3,City 3,,State 3,3,1

@@ -1,8 +1,8 @@
 import json
 import datetime
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import csv
-import StringIO
+import io
 import collections
 
 from django.http import JsonResponse, HttpResponse
@@ -10,9 +10,8 @@ from django.views import View
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework.test import APIRequestFactory
-from peeringdb_server.models import (IXLan, NetworkIXLan, InternetExchange)
-from peeringdb_server.rest import (
-    REFTAG_MAP as RestViewSets, )
+from peeringdb_server.models import IXLan, NetworkIXLan, InternetExchange
+from peeringdb_server.rest import REFTAG_MAP as RestViewSets
 from peeringdb_server.renderers import JSONEncoder
 
 
@@ -28,10 +27,7 @@ def export_ixf_ix_members(ixlans, pretty=False):
         "version": "0.6",
         "timestamp": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
         "member_list": member_list,
-        "ixp_list": [{
-            "ixp_id": ixp.id,
-            "shortname": ixp.name
-        } for ixp in ixp_list]
+        "ixp_list": [{"ixp_id": ixp.id, "shortname": ixp.name} for ixp in ixp_list],
     }
 
     for ixlan in ixlans:
@@ -47,46 +43,41 @@ def export_ixf_ix_members(ixlans, pretty=False):
                 "url": netixlan.network.website,
                 "contact_email": [
                     poc.email
-                    for poc in netixlan.network.poc_set_active.filter(
-                        visible="Public")
+                    for poc in netixlan.network.poc_set_active.filter(visible="Public")
                 ],
                 "contact_phone": [
                     poc.phone
-                    for poc in netixlan.network.poc_set_active.filter(
-                        visible="Public")
+                    for poc in netixlan.network.poc_set_active.filter(visible="Public")
                 ],
                 "peering_policy": netixlan.network.policy_general.lower(),
                 "peering_policy_url": netixlan.network.policy_url,
-                "connection_list": connection_list
+                "connection_list": connection_list,
             }
             member_list.append(member)
             asns.append(netixlan.asn)
-            for _netixlan in ixlan.netixlan_set_active.filter(
-                    asn=netixlan.asn):
+            for _netixlan in ixlan.netixlan_set_active.filter(asn=netixlan.asn):
                 vlan_list = [{}]
                 connection = {
                     "ixp_id": _netixlan.ixlan.ix_id,
                     "state": "active",
-                    "if_list": [{
-                        "if_speed": _netixlan.speed
-                    }],
-                    "vlan_list": vlan_list
+                    "if_list": [{"if_speed": _netixlan.speed}],
+                    "vlan_list": vlan_list,
                 }
                 connection_list.append(connection)
 
                 if _netixlan.ipaddr4:
                     vlan_list[0]["ipv4"] = {
-                        "address": "{}".format(_netixlan.ipaddr4),
+                        "address": f"{_netixlan.ipaddr4}",
                         "routeserver": _netixlan.is_rs_peer,
                         "max_prefix": _netixlan.network.info_prefixes4,
-                        "as_macro": _netixlan.network.irr_as_set
+                        "as_macro": _netixlan.network.irr_as_set,
                     }
                 if _netixlan.ipaddr6:
                     vlan_list[0]["ipv6"] = {
-                        "address": "{}".format(_netixlan.ipaddr6),
+                        "address": f"{_netixlan.ipaddr6}",
                         "routeserver": _netixlan.is_rs_peer,
                         "max_prefix": _netixlan.network.info_prefixes6,
-                        "as_macro": _netixlan.network.irr_as_set
+                        "as_macro": _netixlan.network.irr_as_set,
                     }
 
     if pretty:
@@ -99,16 +90,20 @@ def view_export_ixf_ix_members(request, ix_id):
     return HttpResponse(
         export_ixf_ix_members(
             IXLan.objects.filter(ix_id=ix_id, status="ok"),
-            pretty=request.GET.has_key("pretty")),
-        content_type="application/json")
+            pretty="pretty" in request.GET,
+        ),
+        content_type="application/json",
+    )
 
 
 def view_export_ixf_ixlan_members(request, ixlan_id):
     return HttpResponse(
         export_ixf_ix_members(
             IXLan.objects.filter(id=ixlan_id, status="ok"),
-            pretty=request.GET.has_key("pretty")),
-        content_type="application/json")
+            pretty="pretty" in request.GET,
+        ),
+        content_type="application/json",
+    )
 
 
 class ExportView(View):
@@ -139,16 +134,15 @@ class ExportView(View):
         if fmt not in self.formats:
             raise ValueError(_("Invalid export format"))
         try:
-            response_handler = getattr(self, "response_{}".format(fmt))
+            response_handler = getattr(self, f"response_{fmt}")
             response = response_handler(self.generate(request))
 
             if self.download == True:
                 # send attachment header, triggering download on the client side
-                filename = self.download_name.format(
-                    extension=self.extensions.get(fmt))
-                response[
-                    'Content-Disposition'] = 'attachment; filename="{}"'.format(
-                        filename)
+                filename = self.download_name.format(extension=self.extensions.get(fmt))
+                response["Content-Disposition"] = 'attachment; filename="{}"'.format(
+                    filename
+                )
             return response
 
         except Exception as exc:
@@ -193,8 +187,8 @@ class ExportView(View):
         if self.json_root_key:
             data = {self.json_root_key: data}
         return HttpResponse(
-            json.dumps(data, indent=2, cls=JSONEncoder),
-            content_type="application/json")
+            json.dumps(data, indent=2, cls=JSONEncoder), content_type="application/json"
+        )
 
     def response_csv(self, data):
         """
@@ -210,14 +204,14 @@ class ExportView(View):
             return ""
 
         response = HttpResponse(content_type="text/csv")
-        csv_writer = csv.DictWriter(response, fieldnames=data[0].keys())
+        csv_writer = csv.DictWriter(response, fieldnames=list(data[0].keys()))
 
         csv_writer.writeheader()
 
         for row in data:
-            for k, v in row.items():
-                if isinstance(v, unicode):
-                    row[k] = v.encode("utf-8")
+            for k, v in list(row.items()):
+                if isinstance(v, str):
+                    row[k] = f"{v}"
             csv_writer.writerow(row)
 
         return response
@@ -250,8 +244,9 @@ class AdvancedSearchExportView(ExportView):
         request_factory = APIRequestFactory()
         viewset = RestViewSets[self.tag].as_view({"get": "list"})
 
-        api_request = request_factory.get("/api/{}/?{}".format(
-            self.tag, urllib.urlencode(params)))
+        api_request = request_factory.get(
+            "/api/{}/?{}".format(self.tag, urllib.parse.urlencode(params))
+        )
 
         # we want to use the same user as the original request
         # so permissions are applied correctly
@@ -266,7 +261,7 @@ class AdvancedSearchExportView(ExportView):
         Handle export
         """
         self.tag = tag
-        return super(AdvancedSearchExportView, self).get(request, fmt)
+        return super().get(request, fmt)
 
     def generate(self, request):
         """
@@ -280,9 +275,9 @@ class AdvancedSearchExportView(ExportView):
         Returns:
             - list: list containing rendered data rows ready for export
         """
-        if self.tag not in ["net", "ix", "fac"]:
+        if self.tag not in ["net", "ix", "fac", "org"]:
             raise ValueError(_("Invalid tag"))
-        data_function = getattr(self, "generate_{}".format(self.tag))
+        data_function = getattr(self, f"generate_{self.tag}")
         return data_function(request)
 
     def generate_net(self, request):
@@ -301,18 +296,21 @@ class AdvancedSearchExportView(ExportView):
         download_data = []
         for row in data:
             download_data.append(
-                collections.OrderedDict([
-                    ("Name", row["name"]),
-                    ("Also known as", row["aka"]),
-                    ("ASN", row["asn"]),
-                    ("General Policy", row["policy_general"]),
-                    ("Network Type", row["info_type"]),
-                    ("Network Scope", row["info_scope"]),
-                    ("Traffic Levels", row["info_traffic"]),
-                    ("Traffic Ratio", row["info_ratio"]),
-                    ("Exchanges", len(row["netixlan_set"])),
-                    ("Facilities", len(row["netfac_set"])),
-                ]))
+                collections.OrderedDict(
+                    [
+                        ("Name", row["name"]),
+                        ("Also known as", row["aka"]),
+                        ("ASN", row["asn"]),
+                        ("General Policy", row["policy_general"]),
+                        ("Network Type", row["info_type"]),
+                        ("Network Scope", row["info_scope"]),
+                        ("Traffic Levels", row["info_traffic"]),
+                        ("Traffic Ratio", row["info_ratio"]),
+                        ("Exchanges", len(row["netixlan_set"])),
+                        ("Facilities", len(row["netfac_set"])),
+                    ]
+                )
+            )
         return download_data
 
     def generate_fac(self, request):
@@ -332,13 +330,19 @@ class AdvancedSearchExportView(ExportView):
         for row in data:
             download_data.append(
                 collections.OrderedDict(
-                    [("Name", row["name"]), ("Management", row["org_name"]),
-                     ("CLLI", row["clli"]), ("NPA-NXX", row["npanxx"]),
-                     ("City", row["city"]), ("Country", row["country"]),
-                     ("State",
-                      row["state"]), ("Postal Code",
-                                      row["zipcode"]), ("Networks",
-                                                        row["net_count"])]))
+                    [
+                        ("Name", row["name"]),
+                        ("Management", row["org_name"]),
+                        ("CLLI", row["clli"]),
+                        ("NPA-NXX", row["npanxx"]),
+                        ("City", row["city"]),
+                        ("Country", row["country"]),
+                        ("State", row["state"]),
+                        ("Postal Code", row["zipcode"]),
+                        ("Networks", row["net_count"]),
+                    ]
+                )
+            )
         return download_data
 
     def generate_ix(self, request):
@@ -357,11 +361,40 @@ class AdvancedSearchExportView(ExportView):
         download_data = []
         for row in data:
             download_data.append(
-                collections.OrderedDict([
-                    ("Name", row["name"]),
-                    ("Media Type", row["media"]),
-                    ("Country", row["country"]),
-                    ("City", row["city"]),
-                    ("Networks", row["net_count"])
-                ]))
+                collections.OrderedDict(
+                    [
+                        ("Name", row["name"]),
+                        ("Media Type", row["media"]),
+                        ("Country", row["country"]),
+                        ("City", row["city"]),
+                        ("Networks", row["net_count"]),
+                    ]
+                )
+            )
+        return download_data
+
+    def generate_org(self, request):
+        """
+        Fetch organization data from the api according to request and then render
+        it ready for export
+
+        Arguments:
+            - request <Request>
+
+        Returns:
+            - list: list containing rendered data ready for export
+        """
+
+        data = self.fetch(request)
+        download_data = []
+        for row in data:
+            download_data.append(
+                collections.OrderedDict(
+                    [
+                        ("Name", row["name"]),
+                        ("Country", row["country"]),
+                        ("City", row["city"]),
+                    ]
+                )
+            )
         return download_data

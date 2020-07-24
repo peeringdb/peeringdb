@@ -6,11 +6,17 @@ from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
 from django.template import loader
 from django.conf import settings
-from forms import OrgAdminUserPermissionForm
+from .forms import OrgAdminUserPermissionForm
 
 from peeringdb_server.models import (
-    User, Organization, Network, NetworkContact, InternetExchange, Facility,
-    UserOrgAffiliationRequest)
+    User,
+    Organization,
+    Network,
+    NetworkContact,
+    InternetExchange,
+    Facility,
+    UserOrgAffiliationRequest,
+)
 
 import django_namespace_perms.util as nsp
 from django_namespace_perms.constants import *
@@ -31,49 +37,53 @@ def save_user_permissions(org, user, perms):
 
     # wipe all the user's perms for the targeted org
 
-    user.userpermission_set.filter(
-        namespace__startswith=org.nsp_namespace).delete()
+    user.userpermission_set.filter(namespace__startswith=org.nsp_namespace).delete()
 
     # collect permissioning namespaces from the provided permissioning ids
 
     nsp_perms = {}
 
-    for id, permissions in perms.items():
+    for id, permissions in list(perms.items()):
 
         if not permissions & PERM_READ:
             permissions = permissions | PERM_READ
 
         if id == "org.%d" % org.id:
             nsp_perms[org.nsp_namespace] = permissions
-            nsp_perms[NetworkContact.nsp_namespace_from_id(
-                org.id, "*", "private")] = permissions
+            nsp_perms[
+                NetworkContact.nsp_namespace_from_id(org.id, "*", "private")
+            ] = permissions
         elif id == "net":
-            nsp_perms[Network.nsp_namespace_from_id(
-                org.id, "*").strip(".*")] = permissions
-            nsp_perms[NetworkContact.nsp_namespace_from_id(
-                org.id, "*", "private")] = permissions
+            nsp_perms[
+                Network.nsp_namespace_from_id(org.id, "*").strip(".*")
+            ] = permissions
+            nsp_perms[
+                NetworkContact.nsp_namespace_from_id(org.id, "*", "private")
+            ] = permissions
         elif id == "ix":
-            nsp_perms[InternetExchange.nsp_namespace_from_id(
-                org.id, "*").strip(".*")] = permissions
+            nsp_perms[
+                InternetExchange.nsp_namespace_from_id(org.id, "*").strip(".*")
+            ] = permissions
         elif id == "fac":
-            nsp_perms[Facility.nsp_namespace_from_id(
-                org.id, "*").strip(".*")] = permissions
+            nsp_perms[
+                Facility.nsp_namespace_from_id(org.id, "*").strip(".*")
+            ] = permissions
         elif id.find(".") > -1:
             id = id.split(".")
             if id[0] == "net":
-                nsp_perms[Network.nsp_namespace_from_id(org.id,
-                                                        id[1])] = permissions
-                nsp_perms[NetworkContact.nsp_namespace_from_id(
-                    org.id, id[1], "private")] = permissions
+                nsp_perms[Network.nsp_namespace_from_id(org.id, id[1])] = permissions
+                nsp_perms[
+                    NetworkContact.nsp_namespace_from_id(org.id, id[1], "private")
+                ] = permissions
             elif id[0] == "ix":
-                nsp_perms[InternetExchange.nsp_namespace_from_id(
-                    org.id, id[1])] = permissions
+                nsp_perms[
+                    InternetExchange.nsp_namespace_from_id(org.id, id[1])
+                ] = permissions
             elif id[0] == "fac":
-                nsp_perms[Facility.nsp_namespace_from_id(org.id,
-                                                         id[1])] = permissions
+                nsp_perms[Facility.nsp_namespace_from_id(org.id, id[1])] = permissions
 
     # save
-    for ns, p in nsp_perms.items():
+    for ns, p in list(nsp_perms.items()):
         UserPermission.objects.create(namespace=ns, permissions=p, user=user)
 
     return nsp_perms
@@ -91,7 +101,7 @@ def load_all_user_permissions(org):
         rv[user.id] = {
             "id": user.id,
             "perms": perms,
-            "name": "%s <%s> %s" % (user.full_name, user.email, user.username)
+            "name": f"{user.full_name} <{user.email}> {user.username}",
         }
     return rv
 
@@ -102,9 +112,12 @@ def load_user_permissions(org, user):
     """
 
     # load all of the user's permissions related to this org
-    uperms = dict([(p.namespace, p.permissions)
-                   for p in user.userpermission_set.filter(
-                       namespace__startswith=org.nsp_namespace)])
+    uperms = {
+            p.namespace: p.permissions
+            for p in user.userpermission_set.filter(
+                namespace__startswith=org.nsp_namespace
+            )
+    }
 
     perms = {}
 
@@ -140,23 +153,31 @@ def permission_ids(org):
         "org.%d" % org.id: _("Organization and all Entities it owns"),
         "net": _("Any Network"),
         "fac": _("Any Facility"),
-        "ix": _("Any Exchange")
+        "ix": _("Any Exchange"),
     }
 
     perms.update(
-        dict([("net.%d" % net.id, _("Network - %(net_name)s") % {
-            'net_name': net.name
-        }) for net in org.net_set_active]))
+        {
+                    "net.%d" % net.id:
+                    _("Network - %(net_name)s") % {"net_name": net.name}
+                for net in org.net_set_active
+        }
+    )
 
     perms.update(
-        dict([("ix.%d" % ix.id, _("Exchange - %(ix_name)s") % {
-            'ix_name': ix.name
-        }) for ix in org.ix_set_active]))
+        {
+                "ix.%d" % ix.id: _("Exchange - %(ix_name)s") % {"ix_name": ix.name}
+                for ix in org.ix_set_active
+        }
+    )
 
     perms.update(
-        dict([("fac.%d" % fac.id, _("Facility - %(fac_name)s") % {
-            'fac_name': fac.name
-        }) for fac in org.fac_set_active]))
+        {
+                    "fac.%d" % fac.id:
+                    _("Facility - %(fac_name)s") % {"fac_name": fac.name}
+                for fac in org.fac_set_active
+        }
+    )
 
     return perms
 
@@ -206,15 +227,14 @@ def org_admin_required(fnc):
 
         try:
             org = Organization.objects.get(id=org_id)
-            if not nsp.has_perms(request.user, org.nsp_namespace_manage,
-                                 "update"):
+            if not nsp.has_perms(request.user, org.nsp_namespace_manage, "update"):
                 return JsonResponse({}, status=403)
             kwargs["org"] = org
             return fnc(request, **kwargs)
         except Organization.DoesNotExist:
-            return JsonResponse({
-                "non_field_errors": [_("Invalid organization specified")]
-            }, status=400)
+            return JsonResponse(
+                {"non_field_errors": [_("Invalid organization specified")]}, status=400
+            )
 
     return callback
 
@@ -261,10 +281,13 @@ def users(request, **kwargs):
     org = kwargs.get("org")
 
     rv = {
-        "users": [{
-            "id": user.id,
-            "name": "%s <%s, %s>" % (user.full_name, user.email, user.username)
-        } for user in org.usergroup.user_set.all()]
+        "users": [
+            {
+                "id": user.id,
+                "name": f"{user.full_name} <{user.email}, {user.username}>",
+            }
+            for user in org.usergroup.user_set.all()
+        ]
     }
 
     rv.update({"status": "ok"})
@@ -305,9 +328,7 @@ def manage_user_update(request, **kwargs):
     user = kwargs.get("user")
     group = request.POST.get("group")
     if group not in ["member", "admin"]:
-        return JsonResponse({
-            "group": _("Needs to be member or admin")
-        }, status=400)
+        return JsonResponse({"group": _("Needs to be member or admin")}, status=400)
 
     if group == "admin":
         org.usergroup.user_set.remove(user)
@@ -407,10 +428,7 @@ def permissions(request, **kwargs):
 
     org = kwargs.get("org")
 
-    perms = [{
-        "id": id,
-        "name": name
-    } for id, name in permission_ids(org).items()]
+    perms = [{"id": id, "name": name} for id, name in list(permission_ids(org).items())]
     perms = sorted(perms, key=lambda x: x.get("name"))
     return JsonResponse({"status": "ok", "permissions": perms})
 
@@ -445,23 +463,28 @@ def uoar_approve(request, **kwargs):
             if admin_user != request.user:
                 with override(admin_user.locale):
                     admin_user.email_user(
-                        _("%(user_name)s's afilliation request has been approved"
-                          ) % {'user_name': uoar.user.full_name},
+                        _("%(user_name)s's afilliation request has been approved")
+                        % {"user_name": uoar.user.full_name},
                         loader.get_template(
-                            'email/notify-org-admin-user-affil-approved.txt')
-                        .render({
-                            "user": request.user,
-                            "uoar": uoar,
-                            "org_management_url": '%s/org/%d#users' %
-                                                  (settings.BASE_URL, org.id)
-                        }))
+                            "email/notify-org-admin-user-affil-approved.txt"
+                        ).render(
+                            {
+                                "user": request.user,
+                                "uoar": uoar,
+                                "org_management_url": "%s/org/%d#users"
+                                % (settings.BASE_URL, org.id),
+                            }
+                        ),
+                    )
 
-        return JsonResponse({
-            "status": "ok",
-            "full_name": user.full_name,
-            "id": user.id,
-            "email": user.email
-        })
+        return JsonResponse(
+            {
+                "status": "ok",
+                "full_name": user.full_name,
+                "id": user.id,
+                "email": user.email,
+            }
+        )
 
     except UserOrgAffiliationRequest.DoesNotExist:
         return JsonResponse({"status": "ok"})
@@ -499,16 +522,19 @@ def uoar_deny(request, **kwargs):
             if user != request.user:
                 with override(user.locale):
                     user.email_user(
-                        _("%(user_name)s's afilliation request has been denied"
-                          ) % {'user_name': uoar.user.full_name},
+                        _("%(user_name)s's afilliation request has been denied")
+                        % {"user_name": uoar.user.full_name},
                         loader.get_template(
-                            'email/notify-org-admin-user-affil-denied.txt')
-                        .render({
-                            "user": request.user,
-                            "uoar": uoar,
-                            "org_management_url": '%s/org/%d#users' %
-                                                  (settings.BASE_URL, org.id)
-                        }))
+                            "email/notify-org-admin-user-affil-denied.txt"
+                        ).render(
+                            {
+                                "user": request.user,
+                                "uoar": uoar,
+                                "org_management_url": "%s/org/%d#users"
+                                % (settings.BASE_URL, org.id),
+                            }
+                        ),
+                    )
 
     except UserOrgAffiliationRequest.DoesNotExist:
         return JsonResponse({"status": "ok"})

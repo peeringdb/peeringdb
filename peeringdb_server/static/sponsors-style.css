@@ -93,3 +93,20 @@ html { font-size:20px }
         .sponsors-group.silver .sponsors img { max-height:15px ; max-width:105px }
 }
 
+
+/**
+ * right to left direction
+ */
+
+body[dir="rtl"] div.sponsors-group > h2 {
+  float: right;
+}
+
+body[dir="rtl"] div.sponsors-group > div {
+  margin-right: 230px;
+  margin-left: auto;
+  border-left: none;
+  border-right:5px solid #4b6063;
+}
+
+

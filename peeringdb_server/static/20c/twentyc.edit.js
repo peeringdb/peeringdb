@@ -174,7 +174,7 @@ twentyc.editable.action.register(
           modules = [],
           targets = 1,
           changed,
-          status={"error":false},
+          status={"error":false, "data":{}},
           i;
 
 
@@ -182,13 +182,17 @@ twentyc.editable.action.register(
         targets--;
         if(error)
           status.error = true;
+
+        if(data) {
+          $.extend(status.data, data);
+        }
+
         if(!targets) {
           if(!status.error && !me.noToggle) {
-            if(data)
-              container.editable("toggle", { data:data });
-            else
-              container.editable("toggle");
+            container.trigger("action-success:toggle", {mode:"view"})
+            container.editable("toggle", { data:status.data });
           }
+
           /*
           if(!status.error && container.data("edit-always")) {
             // if container is always toggled to edit mode
@@ -211,6 +215,8 @@ twentyc.editable.action.register(
 
         var target = twentyc.editable.target.instantiate(container);
         changed = target.data._changed;
+
+        $.extend(status.data, target.data);
 
         // prepare modules
         container.find("[data-edit-module]").
@@ -244,7 +250,14 @@ twentyc.editable.action.register(
       }
 
       var grouped = container.editable("filter", { grouped : true }).not("[data-edit-module]");
-      targets += grouped.length;
+
+      grouped.each(function(idx) {
+        var target = twentyc.editable.target.instantiate($(this));
+        $.extend(status.data, target.data);
+        if(target.data._changed) {
+          targets += 1
+        }
+      });
 
       if(changed || container.data("edit-always-submit") == "yes"){
         $(target).on("success", function(ev, data) {
@@ -258,8 +271,9 @@ twentyc.editable.action.register(
 
         // submit main target
         var result = target.execute();
-      } else
+      } else {
         dec_targets({}, {});
+      }
 
       // submit grouped targets
 
@@ -724,6 +738,7 @@ twentyc.editable.input = new (twentyc.cls.extend(
       it.set(source.data("edit-value"));
 
       it.original_value = it.get();
+      it.static_elements = source.find('[data-edit-static]')
       if(source.data().hasOwnProperty("editResetValue")) {
         it.reset_value = source.data("edit-reset-value") || null;
       } else {
@@ -792,9 +807,13 @@ twentyc.editable.input.register(
     },
 
     apply : function(value) {
-      if(!this.source.data("edit-template"))
+      if(!this.source.data("edit-template")) {
         this.source.text(this.get());
-      else {
+        this.source.data("edit-value", this.get());
+        if(this.static_elements) {
+          this.static_elements.appendTo(this.source)
+        }
+      } else {
         var tmplId = this.source.data("edit-template");
         var tmpl = twentyc.editable.templates.get(tmplId);
         var node = tmpl.clone(true);
@@ -1251,7 +1270,6 @@ $.fn.editable = function(action, arg, dbg) {
       // mark as initialized so there is no duplicate init
       me.data("edit-initialized", true);
 
-
       // CONTAINER
 
       if(hasTarget) {
@@ -1632,7 +1650,7 @@ $.fn.editable = function(action, arg, dbg) {
         if(input=me.data("edit-input-instance")) {
 
 
-          //XXX: why would this be here? breaks certain form submissions
+          //why would this be here? breaks certain form submissions
           //by doing a premature reset - taking it out does not break any tests
           //input.reset();
 

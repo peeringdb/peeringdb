@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+
+
+import logging
+import os
+import sys
+
+# print "path", sys.path
+
+try:
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mainsite.settings")
+
+    from django.core.management import execute_from_command_line
+
+    inp = sys.stdin.readline().strip()
+    if inp:
+        argv = ["in.whoisd", "pdb_whois", inp]
+        execute_from_command_line(argv)
+
+except BaseException as e:
+    # TODO log here - need to inherit
+    #    log = logging.getLogger('pdb.script.whois')
+    #    log.exception(e)
+    print("an error occurred: {}".format(e))
+    pass

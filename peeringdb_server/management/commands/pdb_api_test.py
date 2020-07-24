@@ -3,6 +3,7 @@
 """
 series of integration/unit tests for the pdb api
 """
+import pytest
 import copy
 import unittest
 import uuid
@@ -10,25 +11,48 @@ import random
 import re
 import time
 import datetime
+import json
 
-from types import NoneType
-
-from twentyc.rpc import RestClient, PermissionDeniedException, InvalidRequestException, NotFoundException
-from django_namespace_perms.constants import PERM_READ, PERM_UPDATE, PERM_CREATE, PERM_DELETE
+from twentyc.rpc import (
+    RestClient,
+    PermissionDeniedException,
+    InvalidRequestException,
+    NotFoundException,
+)
+from django_namespace_perms.constants import (
+    PERM_READ,
+    PERM_UPDATE,
+    PERM_CREATE,
+    PERM_DELETE,
+)
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group
 from django.conf import settings
 from django.db.utils import IntegrityError
 
 from rest_framework import serializers
+from rest_framework.test import APIRequestFactory
 
 from peeringdb_server.models import (
-    REFTAG_MAP, QUEUE_ENABLED, User, Organization, Network, InternetExchange,
-    Facility, NetworkContact, NetworkIXLan, NetworkFacility, IXLan,
-    IXLanPrefix, InternetExchangeFacility)
+    REFTAG_MAP,
+    QUEUE_ENABLED,
+    User,
+    Organization,
+    Network,
+    InternetExchange,
+    Facility,
+    NetworkContact,
+    NetworkIXLan,
+    NetworkFacility,
+    IXLan,
+    IXLanPrefix,
+    InternetExchangeFacility,
+    DeskProTicket,
+)
 
 from peeringdb_server.serializers import REFTAG_MAP as REFTAG_MAP_SLZ
 from peeringdb_server import inet, settings as pdb_settings
+from peeringdb_server.rest import NetworkViewSet
 
 START_TIMESTAMP = time.time()
 
@@ -39,7 +63,7 @@ NUMERIC_TESTS = {
     "lte": "LessEqual",
     "gt": "Greater",
     "gte": "GreaterEqual",
-    "": "Equal"
+    "": "Equal",
 }
 
 DATETIME = datetime.datetime.now()
@@ -49,7 +73,7 @@ DATE_TMRW = DATE - datetime.timedelta(days=-1)
 DATES = {
     "today": (DATE, DATE.strftime("%Y-%m-%d")),
     "yesterday": (DATE_YDAY, DATE_YDAY.strftime("%Y-%m-%d")),
-    "tomorrow": (DATE_TMRW, DATE_TMRW.strftime("%Y-%m-%d"))
+    "tomorrow": (DATE_TMRW, DATE_TMRW.strftime("%Y-%m-%d")),
 }
 
 # entity names
@@ -70,18 +94,9 @@ USER_ORG_ADMIN = {"user": "api_test_org_admin", "password": "89c8ec05-b897"}
 USER_ORG_MEMBER = {"user": "api_test_org_member", "password": "89c8ec05-b897"}
 
 USER_CRUD = {
-    "delete": {
-        "user": "api_test_crud_delete",
-        "password": "89c8ec05-b897"
-    },
-    "update": {
-        "user": "api_test_crud_update",
-        "password": "89c8ec05-b897"
-    },
-    "create": {
-        "user": "api_test_crud_create",
-        "password": "89c8ec05-b897"
-    }
+    "delete": {"user": "api_test_crud_delete", "password": "89c8ec05-b897"},
+    "update": {"user": "api_test_crud_update", "password": "89c8ec05-b897"},
+    "create": {"user": "api_test_crud_create", "password": "89c8ec05-b897"},
 }
 
 # server location
@@ -91,7 +106,7 @@ URL = settings.API_URL
 CITY = "Chicago"
 COUNTRY = "US"
 CONTINENT = "North America"
-PHONE = "12345"
+PHONE = "+12065550199"
 WEBSITE = "http://www.test.apitest"
 STATE = "IL"
 ZIPCODE = "1-2345"
@@ -101,27 +116,27 @@ EMAIL = "test@20c.com"
 VERBOSE = False
 
 PREFIXES_V4 = [
-    u"206.223.114.0/24",
-    u"206.223.115.0/24",
-    u"206.223.116.0/24",
-    u"206.223.117.0/24",
-    u"206.223.118.0/24",
-    u"206.223.119.0/24",
-    u"206.223.120.0/24",
-    u"206.223.121.0/24",
-    u"206.223.122.0/24",
+    "206.223.114.0/24",
+    "206.223.115.0/24",
+    "206.223.116.0/24",
+    "206.223.117.0/24",
+    "206.223.118.0/24",
+    "206.223.119.0/24",
+    "206.223.120.0/24",
+    "206.223.121.0/24",
+    "206.223.122.0/24",
 ]
 
 PREFIXES_V6 = [
-    u"2001:504:0:1::/64",
-    u"2001:504:0:2::/64",
-    u"2001:504:0:3::/64",
-    u"2001:504:0:4::/64",
-    u"2001:504:0:5::/64",
-    u"2001:504:0:6::/64",
-    u"2001:504:0:7::/64",
-    u"2001:504:0:8::/64",
-    u"2001:504:0:9::/64",
+    "2001:504:0:1::/64",
+    "2001:504:0:2::/64",
+    "2001:504:0:3::/64",
+    "2001:504:0:4::/64",
+    "2001:504:0:5::/64",
+    "2001:504:0:6::/64",
+    "2001:504:0:7::/64",
+    "2001:504:0:8::/64",
+    "2001:504:0:9::/64",
 ]
 
 
@@ -136,67 +151,81 @@ class TestJSON(unittest.TestCase):
     @classmethod
     def get_ip6(cls, ixlan):
         hosts = []
-        for host in ixlan.ixpfx_set.filter(status=ixlan.status, protocol=6).first().prefix.hosts():
+        for host in (
+            ixlan.ixpfx_set.filter(status=ixlan.status, protocol=6)
+            .first()
+            .prefix.hosts()
+        ):
             if len(hosts) < 100:
                 hosts.append(host)
             else:
                 break
 
-        r = u"{}".format(hosts[cls.IP6_COUNT])
+        r = "{}".format(hosts[cls.IP6_COUNT])
         cls.IP6_COUNT += 1
         return r
 
     @classmethod
     def get_ip4(cls, ixlan):
         hosts = []
-        for host in ixlan.ixpfx_set.filter(status=ixlan.status, protocol=4).first().prefix.hosts():
+        for host in (
+            ixlan.ixpfx_set.filter(status=ixlan.status, protocol=4)
+            .first()
+            .prefix.hosts()
+        ):
             if len(hosts) < 100:
                 hosts.append(host)
             else:
                 break
 
-        r = u"{}".format(hosts[cls.IP4_COUNT])
+        r = "{}".format(hosts[cls.IP4_COUNT])
         cls.IP4_COUNT += 1
         return r
 
-
     @classmethod
     def get_prefix4(cls):
-        r = u"206.41.{}.0/24".format(cls.PREFIX_COUNT)
+        r = "206.41.{}.0/24".format(cls.PREFIX_COUNT)
         cls.PREFIX_COUNT += 1
         return r
 
     @classmethod
     def get_prefix6(cls):
-        r = u"2001:504:41:{}::/64".format(cls.PREFIX_COUNT)
+        r = "2001:504:41:{}::/64".format(cls.PREFIX_COUNT)
         cls.PREFIX_COUNT += 1
         return r
-
 
     def setUp(self):
         self.db_guest = self.rest_client(URL, verbose=VERBOSE)
         self.db_user = self.rest_client(URL, verbose=VERBOSE, **USER)
-        self.db_org_member = self.rest_client(URL, verbose=VERBOSE,
-                                              **USER_ORG_MEMBER)
-        self.db_org_admin = self.rest_client(URL, verbose=VERBOSE,
-                                             **USER_ORG_ADMIN)
-        for p, specs in USER_CRUD.items():
-            setattr(self, "db_crud_%s" % p,
-                    self.rest_client(URL, verbose=VERBOSE, **specs))
+        self.db_org_member = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_MEMBER)
+        self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_ADMIN)
+
+        self.user_org_admin = User.objects.get(username="api_test_org_admin")
+
+        for p, specs in list(USER_CRUD.items()):
+            setattr(
+                self, "db_crud_%s" % p, self.rest_client(URL, verbose=VERBOSE, **specs)
+            )
 
     def all_dbs(self, exclude=[]):
         return [
             db
             for db in [
-                self.db_guest, self.db_org_member, self.db_user,
-                self.db_org_admin, self.db_crud_create, self.db_crud_delete,
-                self.db_crud_update
-            ] if db not in exclude
+                self.db_guest,
+                self.db_org_member,
+                self.db_user,
+                self.db_org_admin,
+                self.db_crud_create,
+                self.db_crud_delete,
+                self.db_crud_update,
+            ]
+            if db not in exclude
         ]
 
     def readonly_dbs(self, exclude=[]):
         return [
-            db for db in [self.db_guest, self.db_org_member, self.db_user]
+            db
+            for db in [self.db_guest, self.db_org_member, self.db_user]
             if db not in exclude
         ]
 
@@ -213,7 +242,7 @@ class TestJSON(unittest.TestCase):
             "city": CITY,
             "country": COUNTRY,
             "state": "state",
-            "zipcode": "12345"
+            "zipcode": "12345",
         }
         data.update(**kwargs)
         return data
@@ -239,7 +268,7 @@ class TestJSON(unittest.TestCase):
             "tech_email": EMAIL,
             "tech_phone": PHONE,
             "policy_email": EMAIL,
-            "policy_phone": PHONE
+            "policy_phone": PHONE,
         }
         data.update(**kwargs)
         return data
@@ -252,12 +281,20 @@ class TestJSON(unittest.TestCase):
             "name": self.make_name("Test"),
             "org_id": SHARED["org_rw_ok"].id,
             "website": WEBSITE,
+            "city": CITY,
+            "zipcode": ZIPCODE,
+            "address1": "Some street",
             "clli": str(uuid.uuid4())[:6].upper(),
-            "rencode": str(uuid.uuid4())[:6].upper(),
+            "rencode": "",
             "npanxx": "000-111",
             "latitude": None,
             "longitude": None,
-            "notes": NOTE
+            "notes": NOTE,
+            "country": COUNTRY,
+            "tech_email": EMAIL,
+            "tech_phone": PHONE,
+            "sales_email": EMAIL,
+            "sales_phone": PHONE,
         }
         data.update(**kwargs)
         return data
@@ -280,22 +317,24 @@ class TestJSON(unittest.TestCase):
             "aka": self.make_name("Also known as"),
             "asn": asn,
             "website": WEBSITE,
-            "irr_as_set": "AS-XX-XXXXXX",
+            "irr_as_set": "AS-ZZ-ZZZZZZ@RIPE",
             "info_type": "NSP",
             "info_prefixes4": 11000,
             "info_prefixes6": 12000,
-            "info_traffic": "1 Tbps+",
+            "info_traffic": "1-5Tbps",
             "info_ratio": "Mostly Outbound",
             "info_scope": "Global",
             "info_unicast": True,
             "info_multicast": False,
             "info_ipv6": True,
+            "info_never_via_route_servers": True,
             "notes": NOTE,
             "policy_url": "%s/policy" % WEBSITE,
             "policy_general": "Restrictive",
             "policy_locations": "Required - International",
             "policy_ratio": True,
-            "policy_contracts": "Required"
+            "policy_contracts": "Required",
+            "allow_ixp_update": True,
         }
         data.update(**kwargs)
         return data
@@ -312,7 +351,7 @@ class TestJSON(unittest.TestCase):
             "name": "NOC",
             "phone": PHONE,
             "email": EMAIL,
-            "url": WEBSITE
+            "url": WEBSITE,
         }
         data.update(**kwargs)
         return data
@@ -323,13 +362,17 @@ class TestJSON(unittest.TestCase):
     def make_data_ixlan(self, **kwargs):
         data = {
             "ix_id": 1,
+            "id": 1,
             "name": self.make_name("Test"),
             "descr": NOTE,
             "mtu": 12345,
             "dot1q_support": False,
+            "ixf_ixp_member_list_url_visible": "Private",
             "rs_asn": 12345,
-            "arp_sponge": None
+            "arp_sponge": None,
         }
+        if "ix_id" in kwargs:
+            data["id"] = kwargs.get("ix_id")
         data.update(**kwargs)
         return data
 
@@ -340,7 +383,8 @@ class TestJSON(unittest.TestCase):
         data = {
             "ixlan_id": SHARED["ixlan_r_ok"].id,
             "protocol": "IPv4",
-            "prefix": "10.%d.10.0/23" % (self.PREFIX_COUNT + 1)
+            "prefix": "10.%d.10.0/23" % (self.PREFIX_COUNT + 1),
+            "in_dfz": False,
         }
         if "prefix" not in kwargs:
             self.PREFIX_COUNT += 1
@@ -360,7 +404,7 @@ class TestJSON(unittest.TestCase):
         }
 
         data.update(**kwargs)
-        for k, v in rename.items():
+        for k, v in list(rename.items()):
             data[v] = data[k]
             del data[k]
 
@@ -391,7 +435,7 @@ class TestJSON(unittest.TestCase):
         pk_rel = []
         nested_rel = []
 
-        for name, fld in serializer_class._declared_fields.items():
+        for name, fld in list(serializer_class._declared_fields.items()):
             if type(fld) == serializers.PrimaryKeyRelatedField:
                 pk_rel.append(name[:-3])
             elif isinstance(fld, serializers.ListSerializer):
@@ -423,15 +467,13 @@ class TestJSON(unittest.TestCase):
         if hasattr(self, "make_data_%s" % typ):
             msg = "data integrity failed on key '%s'"
             func = getattr(self, "make_data_%s" % typ)
-            for k, v in func().items():
+            for k, v in list(func().items()):
                 if k in ignore:
                     continue
-                if type(v) in [str, unicode]:
-                    self.assertIn(
-                        type(data.get(k)),
-                        [str, unicode], msg=msg % k)
-                elif type(v) in [int, long]:
-                    self.assertIn(type(data.get(k)), [int, long], msg=msg % k)
+                if type(v) in [str, str]:
+                    self.assertIn(type(data.get(k)), [str, str], msg=msg % k)
+                elif type(v) in [int, int]:
+                    self.assertIn(type(data.get(k)), [int, int], msg=msg % k)
                 else:
                     self.assertEqual(type(v), type(data.get(k)), msg=msg % k)
 
@@ -444,7 +486,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def assert_get_forbidden(self, db, typ, id):
-        with self.assertRaises(PermissionDeniedException) as cm:
+        with pytest.raises(PermissionDeniedException):
             db.get(typ, id)
 
     ##########################################################################
@@ -458,7 +500,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def assert_existing_fields(self, a, b, ignore={}):
-        for k, v in a.items():
+        for k, v in list(a.items()):
             if ignore and k in ignore:
                 continue
             if k in ["suggest"]:
@@ -467,29 +509,39 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def assert_delete(self, db, typ, test_success=None, test_failure=None):
+    def assert_delete(
+        self, db, typ, test_success=None, test_failure=None, test_protected=None
+    ):
         if test_success:
             db.rm(typ, test_success)
-            with self.assertRaises(NotFoundException) as cm:
+            with pytest.raises(NotFoundException):
                 self.assert_get_handleref(db, typ, test_success)
 
         if test_failure:
-            with self.assertRaises(PermissionDeniedException) as cm:
+            with pytest.raises(PermissionDeniedException):
                 db.rm(typ, test_failure)
             try:
                 self.assert_get_handleref(db, typ, test_failure)
             except PermissionDeniedException:
                 pass
 
+        if test_protected:
+            with pytest.raises(PermissionDeniedException):
+                db.rm(typ, test_protected)
+            assert DeskProTicket.objects.filter(
+                subject__icontains=f"{typ}-{test_protected}"
+            ).exists()
+
     ##########################################################################
 
-    def assert_create(self, db, typ, data, test_failures=None,
-                      test_success=True, **kwargs):
+    def assert_create(
+        self, db, typ, data, test_failures=None, test_success=True, **kwargs
+    ):
         if test_success:
             r_data = self.assert_get_single(
-                db.create(typ, data, return_response=True).get("data"))
-            self.assert_existing_fields(data, r_data,
-                                        ignore=kwargs.get("ignore"))
+                db.create(typ, data, return_response=True).get("data")
+            )
+            self.assert_existing_fields(data, r_data, ignore=kwargs.get("ignore"))
             self.assertGreater(r_data.get("id"), 0)
             status_checked = False
             for model in QUEUE_ENABLED:
@@ -508,34 +560,36 @@ class TestJSON(unittest.TestCase):
             # we test fail because of invalid data
             if "invalid" in test_failures:
                 data_invalid = copy.copy(data)
-                for k, v in test_failures["invalid"].items():
+                for k, v in list(test_failures["invalid"].items()):
                     data_invalid[k] = v
 
-                with self.assertRaises(InvalidRequestException) as inst:
+                with pytest.raises(InvalidRequestException) as excinfo:
                     r = db.create(typ, data_invalid, return_response=True)
-                    for k, v in test_failures["invalid"].items():
-                        self.assertIn(k, r.keys())
-
-                self.assertEqual("400 Unknown", str(inst.exception[1]))
+                    # FIXME
+                    # The following lines will not be called since
+                    # the InvalidRequestException is raised
+                    # in the previous line
+                    for k, v in list(test_failures["invalid"].items()):
+                        self.assertIn(k, list(r.keys()))
+                assert "400 Bad Request" in str(excinfo.value)
 
             # we test fail because of parent entity status
             if "status" in test_failures:
                 data_status = copy.copy(data)
-                for k, v in test_failures["status"].items():
+                for k, v in list(test_failures["status"].items()):
                     data_status[k] = v
 
-                with self.assertRaises(InvalidRequestException) as inst_status:
+                with pytest.raises(InvalidRequestException) as excinfo:
                     r = db.create(typ, data_status, return_response=True)
-                self.assertIn("not yet been approved",
-                              str(inst_status.exception))
+                assert "not yet been approved" in str(excinfo.value)
 
             # we test fail because of permissions
             if "perms" in test_failures:
                 data_perms = copy.copy(data)
-                for k, v in test_failures["perms"].items():
+                for k, v in list(test_failures["perms"].items()):
                     data_perms[k] = v
 
-                with self.assertRaises(PermissionDeniedException) as inst:
+                with pytest.raises(PermissionDeniedException):
                     db.create(typ, data_perms, return_response=True)
 
         return r_data
@@ -546,13 +600,13 @@ class TestJSON(unittest.TestCase):
         """
         Wrapper for assert_create for assertion of permission failure
         """
-        self.assert_create(db, typ, data, test_failures={"status": {}},
-                           test_success=False)
+        self.assert_create(
+            db, typ, data, test_failures={"status": {}}, test_success=False
+        )
 
     ##########################################################################
 
-    def assert_update(self, db, typ, id, data, test_failures=False,
-                      test_success=True):
+    def assert_update(self, db, typ, id, data, test_failures=False, test_success=True):
 
         if test_success:
             orig = self.assert_get_handleref(db, typ, id)
@@ -561,7 +615,7 @@ class TestJSON(unittest.TestCase):
             orig = {"id": id}
             orig.update(**data)
 
-        for k, v in orig.items():
+        for k, v in list(orig.items()):
             if k[-3:] == "_id" and k[:-3] in orig:
                 del orig[k[:-3]]
 
@@ -574,7 +628,7 @@ class TestJSON(unittest.TestCase):
                         test(data, u_data)
             else:
                 # self.assertGreater(u_data["version"], orig["version"])
-                for k, v in data.items():
+                for k, v in list(data.items()):
                     self.assertEqual(u_data.get(k), v)
 
         # if test_failures is set we want to test fail conditions
@@ -583,21 +637,24 @@ class TestJSON(unittest.TestCase):
             # we test fail because of invalid data
             if "invalid" in test_failures:
                 data_invalid = copy.copy(orig)
-                for k, v in test_failures["invalid"].items():
+                for k, v in list(test_failures["invalid"].items()):
                     data_invalid[k] = v
 
-                with self.assertRaises(InvalidRequestException) as inst:
+                with pytest.raises(InvalidRequestException) as excinfo:
                     db.update(typ, **data_invalid)
-
-                self.assertEqual("400 Unknown", str(inst.exception[1]))
+                assert "400 Bad Request" in str(excinfo.value)
 
             # we test fail because of permissions
             if "perms" in test_failures:
                 data_perms = copy.copy(orig)
-                for k, v in test_failures["perms"].items():
+                for k, v in list(test_failures["perms"].items()):
                     data_perms[k] = v
 
-                with self.assertRaises(PermissionDeniedException) as inst:
+                # if data is empty set something so we dont
+                # trigger the empty data error
+                data_perms["_dummy_"] = 1
+
+                with pytest.raises(PermissionDeniedException):
                     db.update(typ, **data_perms)
 
             # we test failure to update readonly fields
@@ -607,14 +664,15 @@ class TestJSON(unittest.TestCase):
                 data_ro.update(**test_failures["readonly"])
                 db.update(typ, **data_ro)
                 u_data = self.assert_get_handleref(db, typ, id)
-                for k, v in test_failures["readonly"].items():
+                for k, v in list(test_failures["readonly"].items()):
                     self.assertEqual(u_data.get(k), b_data.get(k))
 
     ##########################################################################
 
-    def assert_list_filter_related(self, target, rel, fld="id", valid=None,
-                                   valid_m=None):
-        #if not valid:
+    def assert_list_filter_related(
+        self, target, rel, fld="id", valid=None, valid_m=None
+    ):
+        # if not valid:
         #    valid = [o.id for k, o in SHARED.items() if type(
         #             o) != int and k.find("%s_" % target) == 0]
 
@@ -625,29 +683,26 @@ class TestJSON(unittest.TestCase):
 
         ids = [
             getattr(SHARED["%s_r_ok" % rel], fld),
-            getattr(SHARED["%s_rw_ok" % rel], fld)
+            getattr(SHARED["%s_rw_ok" % rel], fld),
         ]
-        kwargs_s = {
-            "%s_%s" % (rel, qfld): getattr(SHARED["%s_r_ok" % rel], fld)
-        }
-        kwargs_m = {
-            "%s_%s__in" % (rel, qfld): ",".join([str(id) for id in ids])
-        }
+        kwargs_s = {"%s_%s" % (rel, qfld): getattr(SHARED["%s_r_ok" % rel], fld)}
+        kwargs_m = {"%s_%s__in" % (rel, qfld): ",".join([str(id) for id in ids])}
 
-        if hasattr(REFTAG_MAP[target], "%s" % rel):
+        attr = getattr(REFTAG_MAP[target], rel, None)
+        if attr and not isinstance(attr, property):
 
             valid_s = [
                 r.id
-                for r in REFTAG_MAP[target].objects.filter(**kwargs_s)
+                for r in REFTAG_MAP[target]
+                .objects.filter(**kwargs_s)
                 .filter(status="ok")
             ]
 
             valid_m = [
                 r.id
                 for r in REFTAG_MAP[target]
-                .objects.filter(**{
-                    "%s_%s__in" % (rel, qfld): ids
-                }).filter(status="ok")
+                .objects.filter(**{"%s_%s__in" % (rel, qfld): ids})
+                .filter(status="ok")
             ]
 
         elif target == "poc":
@@ -655,7 +710,7 @@ class TestJSON(unittest.TestCase):
 
             valid_m = [
                 SHARED["%s_r_ok_public" % target].id,
-                SHARED["%s_rw_ok_public" % target].id
+                SHARED["%s_rw_ok_public" % target].id,
             ]
         elif target == "ixpfx":
 
@@ -675,9 +730,7 @@ class TestJSON(unittest.TestCase):
 
             valid_s = [SHARED["%s_r_ok" % target].id]
 
-            valid_m = [
-                SHARED["%s_r_ok" % target].id, SHARED["%s_rw_ok" % target].id
-            ]
+            valid_m = [SHARED["%s_r_ok" % target].id, SHARED["%s_rw_ok" % target].id]
 
         # exact
         data = self.db_guest.all(target, **kwargs_s)
@@ -695,8 +748,16 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def assert_related_depth(self, obj, serializer_class, r_depth, t_depth,
-                             note_tag, typ="listing", list_exclude=[]):
+    def assert_related_depth(
+        self,
+        obj,
+        serializer_class,
+        r_depth,
+        t_depth,
+        note_tag,
+        typ="listing",
+        list_exclude=[],
+    ):
         """
         Assert the data indegrity of structures within a result that have
         been expanded via the depth parameter
@@ -711,7 +772,7 @@ class TestJSON(unittest.TestCase):
 
         # first check that the provided object is not None, as this should
         # never be the case
-        self.assertNotEqual(type(obj), NoneType, msg=note_tag)
+        self.assertNotEqual(obj, None, msg=note_tag)
 
         # single primary key relation fields
         for pk_fld in pk_flds:
@@ -724,68 +785,84 @@ class TestJSON(unittest.TestCase):
             if typ == "listing":
                 # in listing mode, depth should never expand pk relations
                 self.assertEqual(
-                    obj.get(pk_fld), None, msg="PK Relation %s %s" % (note_tag,
-                                                                      pk_fld))
+                    obj.get(pk_fld), None, msg="PK Relation %s %s" % (note_tag, pk_fld)
+                )
             else:
                 # in single get mode, expand everything as long as we are at
                 # a relative depth greater than 1
                 if r_depth >= 1:
                     self.assert_related_depth(
-                        obj.get(pk_fld), REFTAG_MAP_SLZ.get(pk_fld),
-                        r_depth - 1, t_depth, "%s.%s" % (note_tag,
-                                                         pk_fld), typ=typ)
+                        obj.get(pk_fld),
+                        REFTAG_MAP_SLZ.get(pk_fld),
+                        r_depth - 1,
+                        t_depth,
+                        "%s.%s" % (note_tag, pk_fld),
+                        typ=typ,
+                    )
                 else:
                     self.assertIn(
                         type(obj.get(pk_fld)),
-                        [int, long, NoneType],
-                        msg="PK Relation %s %s" % (note_tag, pk_fld))
+                        [int, type(None)],
+                        msg="PK Relation %s %s" % (note_tag, pk_fld),
+                    )
 
         # nested set relations
         for n_fld, n_fld_cls in n_flds:
             if r_depth > 1:
 
                 # sets should be expanded to objects
-                self.assertIn(n_fld, obj,
-                              msg="Nested set existing (dN) %s %s" % (note_tag,
-                                                                      n_fld))
+                self.assertIn(
+                    n_fld, obj, msg="Nested set existing (dN) %s %s" % (note_tag, n_fld)
+                )
 
                 # make sure set exists and is of the correct type
                 self.assertEqual(
-                    type(obj[n_fld]), list,
-                    msg="Nested set list type (dN) %s %s" % (note_tag, n_fld))
+                    type(obj[n_fld]),
+                    list,
+                    msg="Nested set list type (dN) %s %s" % (note_tag, n_fld),
+                )
 
                 # assert further depth expansions on all expanded objects in
                 # the set
                 for row in obj[n_fld]:
                     self.assert_related_depth(
-                        row, n_fld_cls, r_depth - 2, t_depth, "%s.%s" %
-                        (note_tag, n_fld), typ=typ, list_exclude=getattr(
-                            n_fld_cls.Meta, "list_exclude", []))
+                        row,
+                        n_fld_cls,
+                        r_depth - 2,
+                        t_depth,
+                        "%s.%s" % (note_tag, n_fld),
+                        typ=typ,
+                        list_exclude=getattr(n_fld_cls.Meta, "list_exclude", []),
+                    )
 
             elif r_depth == 1:
 
                 # sets should be expanded to ids
-                self.assertIn(n_fld, obj,
-                              msg="Nested set existing (d1) %s %s" % (note_tag,
-                                                                      n_fld))
+                self.assertIn(
+                    n_fld, obj, msg="Nested set existing (d1) %s %s" % (note_tag, n_fld)
+                )
 
                 # make sure set exists and is of the correct type
                 self.assertEqual(
-                    type(obj[n_fld]), list,
-                    msg="Nested set list type (d1) %s %s" % (note_tag, n_fld))
+                    type(obj[n_fld]),
+                    list,
+                    msg="Nested set list type (d1) %s %s" % (note_tag, n_fld),
+                )
 
                 # make all values in the set are of type int or long
                 for row in obj[n_fld]:
                     self.assertIn(
                         type(row),
-                        [long, int],
-                        msg="Nested set containing ids (d1) %s %s" % (note_tag,
-                                                                      n_fld))
+                        [int, int],
+                        msg="Nested set containing ids (d1) %s %s" % (note_tag, n_fld),
+                    )
             else:
                 # sets should not exist
-                self.assertNotIn(n_fld, obj,
-                                 msg="Netsted set not existing (d0) %s %s" %
-                                 (note_tag, n_fld))
+                self.assertNotIn(
+                    n_fld,
+                    obj,
+                    msg="Netsted set not existing (d0) %s %s" % (note_tag, n_fld),
+                )
 
     ##########################################################################
     # TESTS WITH USER THAT IS NOT A MEMBER OF AN ORGANIZATION
@@ -797,8 +874,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_net(self):
-        data = self.assert_get_handleref(self.db_user, "net",
-                                         SHARED["net_r_ok"].id)
+        data = self.assert_get_handleref(self.db_user, "net", SHARED["net_r_ok"].id)
         self.assertNotEqual(len(data.get("poc_set")), 0)
 
     ##########################################################################
@@ -809,8 +885,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_ix_net_count(self):
-        data = self.assert_get_handleref(self.db_user, "ix",
-                                         SHARED["ix_r_ok"].id)
+        data = self.assert_get_handleref(self.db_user, "ix", SHARED["ix_r_ok"].id)
         self.assertEqual(data.get("net_count"), 1)
 
     ##########################################################################
@@ -821,57 +896,59 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_fac_netcount(self):
-        data = self.assert_get_handleref(self.db_user, "fac",
-                                         SHARED["fac_r_ok"].id)
+        data = self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
         self.assertEqual(data.get("net_count"), 1)
 
     ##########################################################################
 
     def test_user_001_GET_poc_public(self):
-        self.assert_get_handleref(self.db_user, "poc",
-                                  SHARED["poc_r_ok_public"].id)
+        self.assert_get_handleref(self.db_user, "poc", SHARED["poc_r_ok_public"].id)
 
     ##########################################################################
 
     def test_user_001_GET_poc_users(self):
-        self.assert_get_handleref(self.db_user, "poc",
-                                  SHARED["poc_r_ok_users"].id)
+        self.assert_get_handleref(self.db_user, "poc", SHARED["poc_r_ok_users"].id)
 
     ##########################################################################
 
     def test_user_001_GET_poc_private(self):
-        self.assert_get_forbidden(self.db_user, "poc",
-                                  SHARED["poc_r_ok_private"].id)
+        self.assert_get_forbidden(self.db_user, "poc", SHARED["poc_r_ok_private"].id)
 
     ##########################################################################
 
     def test_user_001_GET_nefac(self):
-        self.assert_get_handleref(self.db_user, "netfac",
-                                  SHARED["netfac_r_ok"].id)
+        self.assert_get_handleref(self.db_user, "netfac", SHARED["netfac_r_ok"].id)
 
     ##########################################################################
 
     def test_user_001_GET_netixlan(self):
-        self.assert_get_handleref(self.db_user, "netixlan",
-                                  SHARED["netixlan_r_ok"].id)
+        self.assert_get_handleref(self.db_user, "netixlan", SHARED["netixlan_r_ok"].id)
 
     ##########################################################################
 
     def test_user_001_GET_ixfac(self):
-        self.assert_get_handleref(self.db_user, "ixfac",
-                                  SHARED["ixfac_r_ok"].id)
+        self.assert_get_handleref(self.db_user, "ixfac", SHARED["ixfac_r_ok"].id)
 
     ##########################################################################
 
     def test_user_001_GET_ixlan(self):
-        self.assert_get_handleref(self.db_user, "ixlan",
-                                  SHARED["ixlan_r_ok"].id)
+        self.assert_get_handleref(self.db_user, "ixlan", SHARED["ixlan_r_ok"].id)
+
+    ##########################################################################
+
+    def test_user_001_GET_ixlan_ixf_ixp_member_list_url(self):
+        for ixlan in self.db_user.all(
+            "ixlan", ixf_ixp_member_list_url__startswith="http"
+        ):
+            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public", "Users"]:
+                assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+            else:
+                assert "ixf_ixp_member_list_url" not in ixlan
 
     ##########################################################################
 
     def test_user_001_GET_ixpfx(self):
-        self.assert_get_handleref(self.db_user, "ixpfx",
-                                  SHARED["ixpfx_r_ok"].id)
+        self.assert_get_handleref(self.db_user, "ixpfx", SHARED["ixpfx_r_ok"].id)
 
     ##########################################################################
 
@@ -889,28 +966,43 @@ class TestJSON(unittest.TestCase):
         networks = Network.objects.filter(status="ok")
         print(data)
         for net in networks:
-            self.assertEqual(data[0].get(u"{}".format(net.asn)), net.irr_as_set)
-
+            self.assertEqual(data[0].get("{}".format(net.asn)), net.irr_as_set)
 
     ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION MEMBER
     ##########################################################################
 
     def test_org_member_001_GET_poc_public(self):
-        self.assert_get_handleref(self.db_org_member, "poc",
-                                  SHARED["poc_r_ok_public"].id)
+        self.assert_get_handleref(
+            self.db_org_member, "poc", SHARED["poc_r_ok_public"].id
+        )
 
     ##########################################################################
 
     def test_org_member_001_GET_poc_users(self):
-        self.assert_get_handleref(self.db_org_member, "poc",
-                                  SHARED["poc_r_ok_users"].id)
+        self.assert_get_handleref(
+            self.db_org_member, "poc", SHARED["poc_r_ok_users"].id
+        )
 
     ##########################################################################
 
     def test_org_member_001_GET_poc_private(self):
-        self.assert_get_handleref(self.db_org_member, "poc",
-                                  SHARED["poc_r_ok_private"].id)
+        self.assert_get_handleref(
+            self.db_org_member, "poc", SHARED["poc_r_ok_private"].id
+        )
+
+    #########################################################################
+    def test_org_member_001_GET_ixlan_ixf_ixp_member_list_url(self):
+        for ixlan in self.db_org_member.all(
+            "ixlan", ixf_ixp_member_list_url__startswith="http"
+        ):
+            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public", "Users"]:
+                assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+            else:
+                if ixlan["id"] == SHARED["ixlan_r3_ok"].id:
+                    assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+                else:
+                    assert "ixf_ixp_member_list_url" not in ixlan
 
     ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION ADMINISTRATOR
@@ -919,22 +1011,37 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_001_GET_poc_public(self):
-        self.assert_get_handleref(self.db_org_admin, "poc",
-                                  SHARED["poc_r_ok_public"].id)
+        self.assert_get_handleref(
+            self.db_org_admin, "poc", SHARED["poc_r_ok_public"].id
+        )
 
     ##########################################################################
 
     def test_org_admin_001_GET_poc_users(self):
-        self.assert_get_handleref(self.db_org_admin, "poc",
-                                  SHARED["poc_r_ok_users"].id)
+        self.assert_get_handleref(self.db_org_admin, "poc", SHARED["poc_r_ok_users"].id)
 
     ##########################################################################
 
     def test_org_admin_001_GET_poc_private(self):
         # org admin is admin of rw org, so trying to access the private poc of the r org
         # should still be forbidden
-        self.assert_get_forbidden(self.db_org_admin, "poc",
-                                  SHARED["poc_r_ok_private"].id)
+        self.assert_get_forbidden(
+            self.db_org_admin, "poc", SHARED["poc_r_ok_private"].id
+        )
+
+    #########################################################################
+
+    def test_org_admin_001_GET_ixlan_ixf_ixp_member_list_url(self):
+        for ixlan in self.db_org_admin.all(
+            "ixlan", ixf_ixp_member_list_url__startswith="http"
+        ):
+            if ixlan["ixf_ixp_member_list_url_visible"] in ["Public", "Users"]:
+                assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+            else:
+                if ixlan["id"] == SHARED["ixlan_rw3_ok"].id:
+                    assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+                else:
+                    assert "ixf_ixp_member_list_url" not in ixlan
 
     ##########################################################################
 
@@ -948,62 +1055,88 @@ class TestJSON(unittest.TestCase):
             data,
             ignore=["prefix"],
             test_failures={
-                "invalid": {
-                    "prefix": self.get_prefix4(),
-                    "name": ""
-                },
+                "invalid": {"prefix": self.get_prefix4(), "name": ""},
                 "perms": {
                     "prefix": self.get_prefix4(),
                     # need to set name again so it doesnt fail unique validation
                     "name": self.make_name("Test"),
                     # set org to an organization the user doesnt have perms to
-                    "org_id": SHARED["org_r_ok"].id
+                    "org_id": SHARED["org_r_ok"].id,
                 },
                 "status": {
                     # need to set name again so it doesnt fail unique validation
                     "prefix": self.get_prefix4(),
                     "name": self.make_name("Test"),
-                    "org_id": SHARED["org_rwp"].id
-                }
-            })
+                    "org_id": SHARED["org_rwp"].id,
+                },
+            },
+        )
+
+        # test that ixlan id and prefix id were return in the POST
+        # response (see #609)
+        assert r_data.get("ixlan_id") > 0
+        assert r_data.get("ixpfx_id") > 0
 
         SHARED["ix_id"] = r_data.get("id")
 
-        self.assert_update(self.db_org_admin, "ix", SHARED["ix_id"],
-                           {"name": self.make_name("Test")}, test_failures={
-                               "invalid": {
-                                   "name": ""
-                               },
-                               "perms": {
-                                   "id": SHARED["ix_r_ok"].id
-                               }
-                           })
+        # make sure ixlan was created and has matching id
+        ix = InternetExchange.objects.get(id=SHARED["ix_id"])
+        assert ix.ixlan
+        assert ix.ixlan.id == ix.id
 
-        self.assert_delete(self.db_org_admin, "ix",
-                           test_success=SHARED["ix_id"],
-                           test_failure=SHARED["ix_r_ok"].id)
+        self.assert_update(
+            self.db_org_admin,
+            "ix",
+            SHARED["ix_id"],
+            {"name": self.make_name("Test")},
+            test_failures={
+                "invalid": {"name": ""},
+                "perms": {"id": SHARED["ix_r_ok"].id},
+                "readonly": {"ixf_net_count": 50, "ixf_last_import": "not even valid"},
+            },
+        )
+
+        self.assert_delete(
+            self.db_org_admin,
+            "ix",
+            test_success=SHARED["ix_id"],
+            test_failure=SHARED["ix_r_ok"].id,
+        )
 
         self.assert_create(
-            self.db_org_admin, "ix", data, test_success=False, test_failures={
-                "invalid": {
-                    "prefix": self.get_prefix4(),
-                    "policy_email": "",
-                    "tech_email": ""
-                },
-            })
+            self.db_org_admin,
+            "ix",
+            data,
+            test_success=False,
+            test_failures={
+                "invalid": {"prefix": self.get_prefix4(), "tech_email": "",},
+            },
+        )
 
-        self.assert_create(self.db_org_admin, "ix", data, test_success=False,
-                           test_failures={
-                               "invalid": {
-                                   "prefix": ""
-                               },
-                           })
+        self.assert_create(
+            self.db_org_admin,
+            "ix",
+            data,
+            test_success=False,
+            test_failures={"invalid": {"prefix": self.get_prefix4(), "website": "",},},
+        )
+
+        self.assert_create(
+            self.db_org_admin,
+            "ix",
+            data,
+            test_success=False,
+            test_failures={"invalid": {"prefix": ""},},
+        )
 
         # test ix creation with a ipv6 prefix
         data = self.make_data_ix(prefix=self.get_prefix6())
         self.assert_create(self.db_org_admin, "ix", data, ignore=["prefix"])
 
-
+        # check protected ix validation
+        self.assert_delete(
+            self.db_org_admin, "ix", test_protected=SHARED["ix_rw_ok"].id,
+        )
 
     ##########################################################################
 
@@ -1015,20 +1148,19 @@ class TestJSON(unittest.TestCase):
             "fac",
             data,
             test_failures={
-                "invalid": {
-                    "name": ""
-                },
+                "invalid": {"name": "",},
                 "perms": {
                     # need to set name again so it doesnt fail unique validation
                     "name": self.make_name("Test"),
                     # set org to an organization the user doesnt have perms to
-                    "org_id": SHARED["org_r_ok"].id
+                    "org_id": SHARED["org_r_ok"].id,
                 },
                 "status": {
                     "name": self.make_name("Test"),
-                    "org_id": SHARED["org_rwp"].id
-                }
-            })
+                    "org_id": SHARED["org_rwp"].id,
+                },
+            },
+        )
 
         SHARED["fac_id"] = r_data.get("id")
 
@@ -1038,22 +1170,42 @@ class TestJSON(unittest.TestCase):
             SHARED["fac_id"],
             {"name": self.make_name("Test")},
             test_failures={
-                "invalid": {
-                    "name": ""
-                },
-                "perms": {
-                    "id": SHARED["fac_r_ok"].id
-                },
+                "invalid": {"name": ""},
+                "perms": {"id": SHARED["fac_r_ok"].id},
                 "readonly": {
-                    "latitude": 1,  #this should not take as it is read only
-                    "longitude": 1  #this should not take as it is read only
-                }
+                    "latitude": 1,  # this should not take as it is read only
+                    "longitude": 1,  # this should not take as it is read only
+                    "rencode": str(uuid.uuid4())[
+                        :6
+                    ].upper(),  # this should not take as it is read only
+                },
             },
         )
 
-        self.assert_delete(self.db_org_admin, "fac",
-                           test_success=SHARED["fac_id"],
-                           test_failure=SHARED["fac_r_ok"].id)
+        self.assert_delete(
+            self.db_org_admin,
+            "fac",
+            test_success=SHARED["fac_id"],
+            test_failure=SHARED["fac_r_ok"].id,
+        )
+
+        # check protected ix validation
+        self.assert_delete(
+            self.db_org_admin, "fac", test_protected=SHARED["fac_rw_ok"].id,
+        )
+
+        # Create new data with a non-null rencode
+        data_new = self.make_data_fac()
+        obsolete_rencode = str(uuid.uuid4())[:6].upper()
+        data_new["rencode"] = obsolete_rencode
+
+        # Data should be successfully created
+        r_data_new = self.assert_get_single(
+            self.db_org_admin.create("fac", data_new, return_response=True).get("data")
+        )
+
+        # But rencode should be null
+        assert r_data_new["rencode"] == ""
 
     ##########################################################################
 
@@ -1065,46 +1217,99 @@ class TestJSON(unittest.TestCase):
             "net",
             data,
             test_failures={
-                "invalid": {
-                    "name": ""
-                },
+                "invalid": {"name": ""},
                 "perms": {
                     # need to set name again so it doesnt fail unique validation
                     "name": self.make_name("Test"),
                     "asn": data["asn"] + 1,
                     # set org to an organization the user doesnt have perms to
-                    "org_id": SHARED["org_r_ok"].id
+                    "org_id": SHARED["org_r_ok"].id,
                 },
                 "status": {
                     "org_id": SHARED["org_rwp"].id,
                     "asn": data["asn"] + 1,
-                    "name": self.make_name("Test")
-                }
-            })
+                    "name": self.make_name("Test"),
+                },
+            },
+        )
 
         SHARED["net_id"] = r_data.get("id")
 
-        self.assert_update(self.db_org_admin, "net", SHARED["net_id"],
-                           {"name": self.make_name("Test")}, test_failures={
-                               "invalid": {
-                                   "name": ""
-                               },
-                               "perms": {
-                                   "id": SHARED["net_r_ok"].id
-                               }
-                           })
+        self.assert_update(
+            self.db_org_admin,
+            "net",
+            SHARED["net_id"],
+            {"name": self.make_name("Test")},
+            test_failures={
+                "invalid": {"name": ""},
+                "perms": {"id": SHARED["net_r_ok"].id},
+            },
+        )
 
-        self.assert_delete(self.db_org_admin, "net",
-                           test_success=SHARED["net_id"],
-                           test_failure=SHARED["net_r_ok"].id)
+        # Test ASN cannot update
+        self.assert_update(
+            self.db_org_admin,
+            "net",
+            SHARED["net_id"],
+            data,
+            test_failures={"invalid": {"asn": data["asn"] + 1},},
+        )
+
+        self.assert_delete(
+            self.db_org_admin,
+            "net",
+            test_success=SHARED["net_id"],
+            test_failure=SHARED["net_r_ok"].id,
+        )
 
         # Test RiR not found failure
 
         r_data = self.assert_create(
-            self.db_org_admin, "net", data,
-            test_failures={"invalid": {
-                "asn": 9999999
-            }}, test_success=False)
+            self.db_org_admin,
+            "net",
+            data,
+            test_failures={"invalid": {"asn": 9999999}},
+            test_success=False,
+        )
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_net_looking_glass_url(self):
+        for scheme in ["http", "https", "ssh", "telnet"]:
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "net",
+                self.make_data_net(
+                    asn=9000900, looking_glass="{}://foo.bar".format(scheme)
+                ),
+                test_failures={"invalid": {"looking_glass": "foo://www.bar.com"}},
+            )
+            Network.objects.get(id=r_data["id"]).delete(hard=True)
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_net_route_server_url(self):
+        for scheme in ["http", "https", "ssh", "telnet"]:
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "net",
+                self.make_data_net(
+                    asn=9000900, route_server="{}://foo.bar".format(scheme)
+                ),
+                test_failures={"invalid": {"route_server": "foo://www.bar.com"}},
+            )
+            Network.objects.get(id=r_data["id"]).delete(hard=True)
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_net_deleted(self):
+        data = self.make_data_net(asn=SHARED["net_rw_dupe_deleted"].asn)
+
+        with pytest.raises(InvalidRequestException) as excinfo:
+            r_data = self.db_org_admin.create("net", data, return_response=True)
+
+        # check exception vs value
+        assert "Network has been deleted. Please contact" in excinfo.value.extra["asn"]
 
     ##########################################################################
 
@@ -1116,17 +1321,17 @@ class TestJSON(unittest.TestCase):
         """
         data = self.make_data_net(asn=9000900)
 
-        with self.assertRaises(Exception) as exc:
-            r_data = self.assert_create(self.db_org_admin,"as_set",data)
-        self.assertIn("You do not have permission", str(exc.exception))
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            r_data = self.assert_create(self.db_org_admin, "as_set", data)
+        assert "You do not have permission" in str(excinfo.value)
 
-        with self.assertRaises(Exception) as exc:
-            self.db_org_admin.update("as_set", {"9000900":"AS-XXX"})
-        self.assertIn("You do not have permission", str(exc.exception))
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_org_admin.update("as_set", {"9000900": "AS-ZZZ"})
+        assert "You do not have permission" in str(excinfo.value)
 
-        with self.assertRaises(Exception) as exc:
+        with pytest.raises(PermissionDeniedException) as excinfo:
             self.db_org_admin.rm("as_set", SHARED["net_rw_ok"].asn)
-        self.assertIn("You do not have permission", str(exc.exception))
+        assert "You do not have permission" in str(excinfo.value)
 
     ##########################################################################
 
@@ -1137,10 +1342,12 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_net()
         for bogon_asn in inet.BOGON_ASN_RANGES:
             r_data = self.assert_create(
-                self.db_org_admin, "net", data,
-                test_failures={"invalid": {
-                    "asn": bogon_asn[0]
-                }}, test_success=False)
+                self.db_org_admin,
+                "net",
+                data,
+                test_failures={"invalid": {"asn": bogon_asn[0]}},
+                test_success=False,
+            )
 
         # server running in tutorial mode should be allowed
         # to create networks with bogon asns, so we test that
@@ -1156,34 +1363,11 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def test_org_admin_002_PUT_net_write_only_fields(self):
-        """
-        with this we check that certain fields that are allowed to be
-        set via the api, but sre not supposed to be rendered in the
-        api data, work correctly
-        """
-
-        def test_write_only_fields_missing(orig, updated):
-            assert (updated.has_key("allow_ixp_update") == False)
-
-        net = SHARED["net_rw_ok"]
-        self.assertEqual(net.allow_ixp_update, False)
-
-        self.assert_update(self.db_org_admin, "net", net.id,
-                           {"allow_ixp_update": True},
-                           test_success=[test_write_only_fields_missing])
-
-        net.refresh_from_db()
-        self.assertEqual(net.allow_ixp_update, True)
-
-    ##########################################################################
-
     def test_org_admin_002_POST_PUT_DELETE_netfac(self):
 
         data = {
             "net_id": SHARED["net_rw_ok"].id,
             "fac_id": SHARED["fac_rw_ok"].id,
-            "local_asn": 12345
         }
 
         r_data = self.assert_create(
@@ -1191,9 +1375,7 @@ class TestJSON(unittest.TestCase):
             "netfac",
             data,
             test_failures={
-                "invalid": {
-                    "net_id": ""
-                },
+                "invalid": {"net_id": ""},
                 "perms": {
                     # set network to one the user doesnt have perms to
                     "net_id": SHARED["net_r_ok"].id
@@ -1201,31 +1383,37 @@ class TestJSON(unittest.TestCase):
                 "status": {
                     "net_id": SHARED["net_rw_pending"].id,
                     "fac_id": SHARED["fac_rw_pending"].id,
-                }
-            })
+                },
+            },
+        )
 
         SHARED["netfac_id"] = r_data.get("id")
 
-        self.assert_update(self.db_org_admin, "netfac", SHARED["netfac_id"],
-                           {"local_asn": random.randint(999, 9999)},
-                           test_failures={
-                               "invalid": {
-                                   "fac_id": ""
-                               },
-                               "perms": {
-                                   "net_id": SHARED["net_r_ok"].id
-                               }
-                           })
+        self.assert_update(
+            self.db_org_admin,
+            "netfac",
+            SHARED["netfac_id"],
+            data,
+            test_success=False,
+            test_failures={
+                "invalid": {"fac_id": ""},
+                "perms": {"net_id": SHARED["net_r_ok"].id},
+            },
+        )
 
-        self.assert_delete(self.db_org_admin, "netfac",
-                           test_success=SHARED["netfac_id"],
-                           test_failure=SHARED["netfac_r_ok"].id)
+        self.assert_delete(
+            self.db_org_admin,
+            "netfac",
+            test_success=SHARED["netfac_id"],
+            test_failure=SHARED["netfac_r_ok"].id,
+        )
 
         # re-create deleted netfac
         r_data = self.assert_create(self.db_org_admin, "netfac", data)
         # re-delete
-        self.assert_delete(self.db_org_admin, "netfac",
-                           test_success=SHARED["netfac_id"])
+        self.assert_delete(
+            self.db_org_admin, "netfac", test_success=SHARED["netfac_id"]
+        )
 
     ##########################################################################
 
@@ -1237,260 +1425,320 @@ class TestJSON(unittest.TestCase):
             "poc",
             data,
             test_failures={
-                "invalid": {
-                    "net_id": ""
-                },
+                "invalid": {"net_id": ""},
                 "perms": {
                     # set network to one the user doesnt have perms to
                     "net_id": SHARED["net_r_ok"].id
                 },
-                "status": {
-                    "net_id": SHARED["net_rw_pending"].id
-                }
-            })
+                "status": {"net_id": SHARED["net_rw_pending"].id},
+            },
+        )
 
         SHARED["poc_id"] = r_data.get("id")
 
-        self.assert_update(self.db_org_admin, "poc", SHARED["poc_id"],
-                           {"role": "Sales"}, test_failures={
-                               "invalid": {
-                                   "role": "NOPE"
-                               },
-                               "perms": {
-                                   "net_id": SHARED["net_r_ok"].id
-                               }
-                           })
+        self.assert_update(
+            self.db_org_admin,
+            "poc",
+            SHARED["poc_id"],
+            {"role": "Sales"},
+            test_failures={
+                "invalid": {"role": "NOPE"},
+                "perms": {"net_id": SHARED["net_r_ok"].id},
+            },
+        )
 
-        self.assert_delete(self.db_org_admin, "poc",
-                           test_success=SHARED["poc_id"],
-                           test_failure=SHARED["poc_r_ok_users"].id)
+        self.assert_delete(
+            self.db_org_admin,
+            "poc",
+            test_success=SHARED["poc_id"],
+            test_failure=SHARED["poc_r_ok_users"].id,
+        )
+
+        # soft-deleted pocs should return blank
+        # values for sensitive fields (#569)
+
+        poc = self.db_org_admin.all("poc", id=SHARED["poc_id"], since=1)[0]
+        assert poc["name"] == ""
+        assert poc["phone"] == ""
+        assert poc["email"] == ""
+        assert poc["url"] == ""
 
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_ixlan(self):
         data = self.make_data_ixlan(ix_id=SHARED["ix_rw_ok"].id)
 
-        r_data = self.assert_create(
-            self.db_org_admin, "ixlan", data, test_failures={
-                "invalid": {
-                    "ix_id": ""
+        with self.assertRaises(Exception) as exc:
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "ixlan",
+                data,
+                test_failures={
+                    "invalid": {"ix_id": ""},
+                    "perms": {"ix_id": SHARED["ix_r_ok"].id},
+                    "status": {"ix_id": SHARED["ix_rw_pending"].id},
                 },
-                "perms": {
-                    "ix_id": SHARED["ix_r_ok"].id
-                },
-                "status": {
-                    "ix_id": SHARED["ix_rw_pending"].id
-                }
-            })
+            )
+        self.assertIn('Method "POST" not allowed', str(exc.exception))
 
-        SHARED["ixlan_id"] = r_data["id"]
+        self.assert_update(
+            self.db_org_admin,
+            "ixlan",
+            SHARED["ixlan_rw_ok"].id,
+            {"name": self.make_name("Test")},
+            test_failures={
+                "invalid": {"mtu": "NEEDS TO BE INT"},
+                "perms": {"ix_id": SHARED["ix_r_ok"].id},
+            },
+        )
 
-        self.assert_update(self.db_org_admin, "ixlan", SHARED["ixlan_id"],
-                           {"name": self.make_name("Test")}, test_failures={
-                               "invalid": {
-                                   "mtu": "NEEDS TO BE INT"
-                               },
-                               "perms": {
-                                   "ix_id": SHARED["ix_r_ok"].id
-                               }
-                           })
-
-        self.assert_delete(self.db_org_admin, "ixlan",
-                           test_success=SHARED["ixlan_id"],
-                           test_failure=SHARED["ixlan_r_ok"].id)
+        with self.assertRaises(Exception) as exc:
+            self.assert_delete(
+                self.db_org_admin,
+                "ixlan",
+                test_success=SHARED["ixlan_rw_ok"].id,
+                test_failure=SHARED["ixlan_r_ok"].id,
+            )
+        self.assertIn('Method "DELETE" not allowed', str(exc.exception))
 
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_ixpfx(self):
-        data = self.make_data_ixpfx(ixlan_id=SHARED["ixlan_rw_ok"].id,
-                                    prefix="206.126.236.0/25")
+        data = self.make_data_ixpfx(
+            ixlan_id=SHARED["ixlan_rw_ok"].id, prefix="206.126.236.0/25"
+        )
 
         r_data = self.assert_create(
-            self.db_org_admin, "ixpfx", data, test_failures={
-                "invalid": {
-                    "prefix": "127.0.0.0/8"
-                },
+            self.db_org_admin,
+            "ixpfx",
+            data,
+            test_failures={
+                "invalid": {"prefix": "127.0.0.0/8"},
                 "perms": {
                     "prefix": "205.127.237.0/24",
-                    "ixlan_id": SHARED["ixlan_r_ok"].id
+                    "ixlan_id": SHARED["ixlan_r_ok"].id,
                 },
                 "status": {
                     "prefix": "205.127.237.0/24",
-                    "ixlan_id": SHARED["ixlan_rw_pending"].id
-                }
-            })
+                    "ixlan_id": SHARED["ixlan_rw_pending"].id,
+                },
+            },
+        )
 
         SHARED["ixpfx_id"] = r_data["id"]
 
-        #self.assert_create(self.db_org_admin, "ixpfx", data, test_failures={
+        # self.assert_create(self.db_org_admin, "ixpfx", data, test_failures={
         #    "invalid": {
         #        "prefix": "206.126.236.0/25"
         #    },
-        #}, test_success=False)
+        # }, test_success=False)
 
-        self.assert_update(self.db_org_admin, "ixpfx", SHARED["ixpfx_id"],
-                           {"prefix": "206.127.236.0/26"}, test_failures={
-                               "invalid": {
-                                   "prefix": "NEEDS TO BE VALID PREFIX"
-                               },
-                               "perms": {
-                                   "ixlan_id": SHARED["ixlan_r_ok"].id
-                               }
-                           })
+        self.assert_update(
+            self.db_org_admin,
+            "ixpfx",
+            SHARED["ixpfx_id"],
+            {"prefix": "206.127.236.0/26"},
+            test_failures={
+                "invalid": {"prefix": "NEEDS TO BE VALID PREFIX"},
+                "perms": {"ixlan_id": SHARED["ixlan_r_ok"].id},
+            },
+        )
 
-        self.assert_delete(self.db_org_admin, "ixpfx",
-                           test_success=SHARED["ixpfx_id"],
-                           test_failure=SHARED["ixpfx_r_ok"].id)
+        self.assert_delete(
+            self.db_org_admin,
+            "ixpfx",
+            test_success=SHARED["ixpfx_id"],
+            test_failure=SHARED["ixpfx_r_ok"].id,
+        )
 
         # re-create deleted ixpfx
         r_data = self.assert_create(self.db_org_admin, "ixpfx", data)
         # re-delete
-        self.assert_delete(self.db_org_admin, "ixpfx",
-                           test_success=SHARED["ixpfx_id"])
+        self.assert_delete(self.db_org_admin, "ixpfx", test_success=SHARED["ixpfx_id"])
 
-        # re-creating a deleted ixpfx that we dont have write permissions do
-        # should fail
-        pfx = IXLanPrefix.objects.create(ixlan=SHARED["ixlan_r_ok"],
-                                         prefix=u"205.127.237.0/24",
-                                         protocol="IPv4")
+        # re-creating a deleted ixpfx that is under another exchange
+        # that we dont have write perms too
+        pfx = IXLanPrefix.objects.create(
+            ixlan=SHARED["ixlan_r_ok"], prefix="205.127.237.0/24", protocol="IPv4"
+        )
         pfx.delete()
 
         data.update(prefix="205.127.237.0/24")
-        r_data = self.assert_create(self.db_org_admin, "ixpfx", data,
-                                    test_failures={"invalid": {
-                                    }}, test_success=False)
+        r_data = self.assert_create(self.db_org_admin, "ixpfx", data,)
 
         # make sure protocols are validated
-        r_data = self.assert_create(self.db_org_admin, "ixpfx", data,
-                                    test_failures={
-                                        "invalid": {
-                                            "prefix": "207.128.238.0/24",
-                                            "protocol": "IPv6"
-                                        },
-                                    }, test_success=False)
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "ixpfx",
+            data,
+            test_failures={
+                "invalid": {"prefix": "207.128.238.0/24", "protocol": "IPv6"},
+            },
+            test_success=False,
+        )
+
+        # test protected ixpfx cant be deleted
+        prefix = IXLanPrefix.objects.get(id=SHARED["ixpfx_id"])
+        NetworkIXLan.objects.create(
+            network=SHARED["net_rw_ok"],
+            asn=SHARED["net_rw_ok"].asn,
+            ixlan=SHARED["ixlan_rw_ok"],
+            ipaddr4=prefix.prefix[0],
+            status="ok",
+            speed=1000,
+        )
+
+        self.assert_delete(
+            self.db_org_admin, "ixpfx", test_protected=SHARED["ixpfx_id"]
+        )
 
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_netixlan(self):
-        data = self.make_data_netixlan(net_id=SHARED["net_rw_ok"].id,
-                                       ixlan_id=SHARED["ixlan_rw_ok"].id)
+        data = self.make_data_netixlan(
+            net_id=SHARED["net_rw_ok"].id,
+            ixlan_id=SHARED["ixlan_rw_ok"].id,
+            asn=SHARED["net_rw_ok"].asn,
+        )
 
         r_data = self.assert_create(
             self.db_org_admin,
             "netixlan",
             data,
             test_failures={
-                "invalid": {
-                    "ipaddr4": u"a b c"
-                },
+                "invalid": {"ipaddr4": "a b c"},
                 "perms": {
                     # set network to one the user doesnt have perms to
                     "ipaddr4": self.get_ip4(SHARED["ixlan_rw_ok"]),
                     "ipaddr6": self.get_ip6(SHARED["ixlan_rw_ok"]),
-                    "net_id": SHARED["net_r_ok"].id
-                }
-            })
+                    "net_id": SHARED["net_r_ok"].id,
+                },
+            },
+        )
 
+        assert r_data["operational"]
 
         SHARED["netixlan_id"] = r_data.get("id")
 
-        self.assert_update(self.db_org_admin, "netixlan",
-                           SHARED["netixlan_id"], {"speed": 2000},
-                           test_failures={
-                               "invalid": {
-                                   "ipaddr4": "NEEDS TO BE VALID IP"
-                               },
-                               "perms": {
-                                   "net_id": SHARED["net_r_ok"].id
-                               }
-                           })
+        self.assert_update(
+            self.db_org_admin,
+            "netixlan",
+            SHARED["netixlan_id"],
+            {"speed": 2000},
+            test_failures={
+                "invalid": {"ipaddr4": "NEEDS TO BE VALID IP"},
+                "perms": {"net_id": SHARED["net_r_ok"].id},
+            },
+        )
 
-        self.assert_delete(self.db_org_admin, "netixlan",
-                           test_success=SHARED["netixlan_id"],
-                           test_failure=SHARED["netixlan_r_ok"].id)
-
+        self.assert_delete(
+            self.db_org_admin,
+            "netixlan",
+            test_success=SHARED["netixlan_id"],
+            test_failure=SHARED["netixlan_r_ok"].id,
+        )
 
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_netixlan_validation(self):
-        data = self.make_data_netixlan(net_id=SHARED["net_rw_ok"].id,
-                                       ixlan_id=SHARED["ixlan_rw_ok"].id)
+        data = self.make_data_netixlan(
+            net_id=SHARED["net_rw_ok"].id, ixlan_id=SHARED["ixlan_rw_ok"].id
+        )
 
         test_failures = [
             # test failure if ip4 not in prefix
-            {"invalid": { "ipaddr4": self.get_ip4(SHARED["ixlan_r_ok"]) }},
+            {"invalid": {"ipaddr4": self.get_ip4(SHARED["ixlan_r_ok"])}},
             # test failure if ip6 not in prefix
-            {"invalid": { "ipaddr6": self.get_ip6(SHARED["ixlan_r_ok"]) }},
+            {"invalid": {"ipaddr6": self.get_ip6(SHARED["ixlan_r_ok"])}},
         ]
 
         for test_failure in test_failures:
-            self.assert_create(self.db_org_admin, "netixlan", data,
-                               test_failures=test_failure, test_success=False)
-
-
+            self.assert_create(
+                self.db_org_admin,
+                "netixlan",
+                data,
+                test_failures=test_failure,
+                test_success=False,
+            )
 
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_ixfac(self):
-        data = {
-            "fac_id": SHARED["fac_rw2_ok"].id,
-            "ix_id": SHARED["ix_rw2_ok"].id
-        }
+        data = {"fac_id": SHARED["fac_rw2_ok"].id, "ix_id": SHARED["ix_rw2_ok"].id}
 
         r_data = self.assert_create(
             self.db_org_admin,
             "ixfac",
             data,
             test_failures={
-                "invalid": {
-                    "ix_id": ""
-                },
+                "invalid": {"ix_id": ""},
                 "perms": {
                     # set network to one the user doesnt have perms to
                     "ix_id": SHARED["ix_r_ok"].id
                 },
                 "status": {
                     "fac_id": SHARED["fac_rw2_pending"].id,
-                    "ix_id": SHARED["ix_rw2_pending"].id
-                }
-            })
+                    "ix_id": SHARED["ix_rw2_pending"].id,
+                },
+            },
+        )
 
         SHARED["ixfac_id"] = r_data.get("id")
 
-        self.assert_update(self.db_org_admin, "ixfac", SHARED["ixfac_id"],
-                           {"fac_id": SHARED["fac_r2_ok"].id}, test_failures={
-                               "invalid": {
-                                   "fac_id": ""
-                               },
-                               "perms": {
-                                   "ix_id": SHARED["ix_r_ok"].id
-                               }
-                           })
+        self.assert_update(
+            self.db_org_admin,
+            "ixfac",
+            SHARED["ixfac_id"],
+            {"fac_id": SHARED["fac_r2_ok"].id},
+            test_failures={
+                "invalid": {"fac_id": ""},
+                "perms": {"ix_id": SHARED["ix_r_ok"].id},
+            },
+        )
 
-        self.assert_delete(self.db_org_admin, "ixfac",
-                           test_success=SHARED["ixfac_id"],
-                           test_failure=SHARED["ixfac_r_ok"].id)
+        self.assert_delete(
+            self.db_org_admin,
+            "ixfac",
+            test_success=SHARED["ixfac_id"],
+            test_failure=SHARED["ixfac_r_ok"].id,
+        )
 
     ##########################################################################
 
     def test_org_admin_003_PUT_org(self):
-        self.assert_update(self.db_org_admin, "org", SHARED["org_rw_ok"].id,
-                           {"name": self.make_name("Test")}, test_failures={
-                               "invalid": {
-                                   "name": ""
-                               },
-                               "perms": {
-                                   "id": SHARED["org_r_ok"].id
-                               }
-                           })
+        self.assert_update(
+            self.db_org_admin,
+            "org",
+            SHARED["org_rw_ok"].id,
+            {"name": self.make_name("Test")},
+            test_failures={
+                "invalid": {"name": ""},
+                "perms": {"id": SHARED["org_r_ok"].id},
+            },
+        )
 
     ##########################################################################
 
     def test_zz_org_admin_004_DELETE_org(self):
 
-        self.assert_delete(self.db_org_admin, "org",
-                           test_success=SHARED["org_rw_ok"].id,
-                           test_failure=SHARED["org_r_ok"].id)
+        org = Organization.objects.create(name="Deletable org", status="ok")
+        org.admin_usergroup.user_set.add(self.user_org_admin)
+
+        self.assert_delete(
+            self.db_org_admin,
+            "org",
+            # can delete the org we just made
+            test_success=org.id,
+            # cant delete the org we dont have write perms to
+            test_failure=SHARED["org_r_ok"].id,
+        )
+        self.assert_delete(
+            self.db_org_admin,
+            "org",
+            # cant delete the org that we have write perms to
+            # but is not empty
+            test_failure=SHARED["org_rw_ok"].id,
+        )
 
     ##########################################################################
     # GUEST TESTS
@@ -1502,23 +1750,9 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_001_GET_net(self):
-        data = self.assert_get_handleref(self.db_guest, "net",
-                                         SHARED["net_r_ok"].id)
+        data = self.assert_get_handleref(self.db_guest, "net", SHARED["net_r_ok"].id)
         for poc in data.get("poc_set"):
             self.assertEqual(poc["visible"], "Public")
-
-    ##########################################################################
-
-    def __test_guest_001_GET_asn(self):
-        """
-        ASN endpoint is currently disabled
-        """
-        return
-        self.assert_get_handleref(self.db_guest, "asn", SHARED["net_r_ok"].asn)
-
-        with self.assertRaises(InvalidRequestException) as inst:
-            self.assert_get_handleref(self.db_guest, "asn",
-                                      "%s[" % SHARED["net_r_ok"].asn)
 
     ##########################################################################
 
@@ -1533,59 +1767,62 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_001_GET_poc_private(self):
-        self.assert_get_forbidden(self.db_guest, "poc",
-                                  SHARED["poc_r_ok_private"].id)
+        self.assert_get_forbidden(self.db_guest, "poc", SHARED["poc_r_ok_private"].id)
 
     ##########################################################################
 
     def test_guest_001_GET_poc_users(self):
-        self.assert_get_forbidden(self.db_guest, "poc",
-                                  SHARED["poc_r_ok_users"].id)
+        self.assert_get_forbidden(self.db_guest, "poc", SHARED["poc_r_ok_users"].id)
 
     ##########################################################################
 
     def test_guest_001_GET_poc_public(self):
-        self.assert_get_handleref(self.db_guest, "poc",
-                                  SHARED["poc_r_ok_public"].id)
+        self.assert_get_handleref(self.db_guest, "poc", SHARED["poc_r_ok_public"].id)
 
     ##########################################################################
 
     def test_guest_001_GET_nefac(self):
-        self.assert_get_handleref(self.db_guest, "netfac",
-                                  SHARED["netfac_r_ok"].id)
+        self.assert_get_handleref(self.db_guest, "netfac", SHARED["netfac_r_ok"].id)
 
     ##########################################################################
 
     def test_guest_001_GET_netixlan(self):
-        self.assert_get_handleref(self.db_guest, "netixlan",
-                                  SHARED["netixlan_r_ok"].id)
+        self.assert_get_handleref(self.db_guest, "netixlan", SHARED["netixlan_r_ok"].id)
 
     ##########################################################################
 
     def test_guest_001_GET_ixfac(self):
-        self.assert_get_handleref(self.db_guest, "ixfac",
-                                  SHARED["ixfac_r_ok"].id)
+        self.assert_get_handleref(self.db_guest, "ixfac", SHARED["ixfac_r_ok"].id)
 
     ##########################################################################
 
     def test_guest_001_GET_ixlan(self):
-        self.assert_get_handleref(self.db_guest, "ixlan",
-                                  SHARED["ixlan_r_ok"].id)
+        self.assert_get_handleref(self.db_guest, "ixlan", SHARED["ixlan_r_ok"].id)
+
+    ##########################################################################
+
+    def test_guest_001_GET_ixlan_ixf_ixp_member_list_url(self):
+        for ixlan in self.db_guest.all(
+            "ixlan", ixf_ixp_member_list_url__startswith="http"
+        ):
+            if ixlan["ixf_ixp_member_list_url_visible"] == "Public":
+                assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
+            else:
+                assert "ixf_ixp_member_list_url" not in ixlan
 
     ##########################################################################
 
     def test_guest_001_GET_ixpfx(self):
-        self.assert_get_handleref(self.db_guest, "ixpfx",
-                                  SHARED["ixpfx_r_ok"].id)
+        self.assert_get_handleref(self.db_guest, "ixpfx", SHARED["ixpfx_r_ok"].id)
 
     ##########################################################################
 
     def test_guest_001_GET_list_404(self):
         for tag in REFTAG_MAP:
-            with self.assertRaises(NotFoundException) as inst:
+            with pytest.raises(NotFoundException):
                 data = self.db_guest.all(tag, limit=1, id=99999999)
             if tag == "net":
-                with self.assertRaises(NotFoundException) as inst:
+                with pytest.raises(NotFoundException):
                     data = self.db_guest.all(tag, limit=1, asn=99999999999)
 
         for tag in REFTAG_MAP:
@@ -1632,15 +1869,14 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_fields_filter(self):
-        data = self.db_guest.all("org", limit=10, fields=",".join(
-            ["name", "status"]))
+        data = self.db_guest.all("org", limit=10, fields=",".join(["name", "status"]))
         self.assertGreater(len(data), 0)
         for row in data:
-            self.assertEqual(sorted(row.keys()), sorted([u"name", u"status"]))
+            self.assertEqual(sorted(row.keys()), sorted(["name", "status"]))
 
         data = self.db_guest.get("org", 1, fields=",".join(["name", "status"]))
         self.assertGreater(len(data), 0)
-        self.assertEqual(sorted(data[0].keys()), sorted([u"name", u"status"]))
+        self.assertEqual(sorted(data[0].keys()), sorted(["name", "status"]))
 
     ##########################################################################
 
@@ -1663,8 +1899,9 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_since(self):
-        data = self.db_guest.all("net", since=int(START_TIMESTAMP) - 10,
-                                 status="deleted")
+        data = self.db_guest.all(
+            "net", since=int(START_TIMESTAMP) - 10, status="deleted"
+        )
         self.assertEqual(len(data), 2)
         self.assert_handleref_integrity(data[0])
         self.assert_data_integrity(data[0], "net")
@@ -1679,7 +1916,7 @@ class TestJSON(unittest.TestCase):
         """
 
         for depth in [0, 1, 2, 3, 4]:
-            for tag, slz in REFTAG_MAP_SLZ.items():
+            for tag, slz in list(REFTAG_MAP_SLZ.items()):
                 note_tag = "(%s %s)" % (tag, depth)
                 if tag == "poc":
                     o = SHARED["%s_r_ok_public" % tag]
@@ -1690,8 +1927,9 @@ class TestJSON(unittest.TestCase):
                 pk_flds, n_flds = self.serializer_related_fields(slz)
 
                 obj = data[0]
-                self.assert_related_depth(obj, slz, depth, depth, note_tag,
-                                          typ="single")
+                self.assert_related_depth(
+                    obj, slz, depth, depth, note_tag, typ="single"
+                )
 
     ##########################################################################
 
@@ -1703,7 +1941,7 @@ class TestJSON(unittest.TestCase):
         """
 
         for depth in [0, 1, 2, 3]:
-            for tag, slz in REFTAG_MAP_SLZ.items():
+            for tag, slz in list(REFTAG_MAP_SLZ.items()):
                 note_tag = "(%s %s)" % (tag, depth)
                 if tag == "poc":
                     o = SHARED["%s_r_ok_public" % tag]
@@ -1714,8 +1952,9 @@ class TestJSON(unittest.TestCase):
                 pk_flds, n_flds = self.serializer_related_fields(slz)
 
                 obj = data[0]
-                self.assert_related_depth(obj, slz, depth, depth, note_tag,
-                                          typ="listing")
+                self.assert_related_depth(
+                    obj, slz, depth, depth, note_tag, typ="listing"
+                )
 
     ##########################################################################
 
@@ -1763,7 +2002,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_dates_numeric(self):
-        for flt, ass in NUMERIC_TESTS.items():
+        for flt, ass in list(NUMERIC_TESTS.items()):
             for fld in ["created", "updated"]:
 
                 if flt in ["gt", "gte"]:
@@ -1779,19 +2018,24 @@ class TestJSON(unittest.TestCase):
                     kwargs = {fld: DATE[1]}
                 data = self.db_guest.all("fac", limit=10, **kwargs)
                 self.assertGreater(
-                    len(data), 0, msg="%s_%s - data length assertion" % (fld,
-                                                                         flt))
+                    len(data), 0, msg="%s_%s - data length assertion" % (fld, flt)
+                )
                 for row in data:
                     self.assert_data_integrity(row, "fac")
                     try:
                         dt = datetime.datetime.strptime(
-                            row[fld], "%Y-%m-%dT%H:%M:%SZ").date()
+                            row[fld], "%Y-%m-%dT%H:%M:%SZ"
+                        ).date()
                     except ValueError:
                         dt = datetime.datetime.strptime(
-                            row[fld], "%Y-%m-%dT%H:%M:%S.%fZ").date()
+                            row[fld], "%Y-%m-%dT%H:%M:%S.%fZ"
+                        ).date()
                     fnc = getattr(self, "assert%s" % ass)
-                    fnc(dt, DATE[0],
-                        msg="%s__%s: %s, %s" % (fld, flt, row[fld], DATE[1]))
+                    fnc(
+                        dt,
+                        DATE[0],
+                        msg="%s__%s: %s, %s" % (fld, flt, row[fld], DATE[1]),
+                    )
 
     ##########################################################################
 
@@ -1808,7 +2052,7 @@ class TestJSON(unittest.TestCase):
         self.assertGreater(len(data), 0)
         self.assert_data_integrity(data[0], "fac")
         for fac in data:
-            self.assertLessEqual(long(fac["id"]), SHARED["fac_rw_ok"].id)
+            self.assertLessEqual(int(fac["id"]), SHARED["fac_rw_ok"].id)
 
     ##########################################################################
 
@@ -1817,7 +2061,7 @@ class TestJSON(unittest.TestCase):
         self.assertGreater(len(data), 0)
         self.assert_data_integrity(data[0], "fac")
         for fac in data:
-            self.assertLess(long(fac["id"]), SHARED["fac_rw_ok"].id)
+            self.assertLess(int(fac["id"]), SHARED["fac_rw_ok"].id)
 
     ##########################################################################
 
@@ -1826,7 +2070,7 @@ class TestJSON(unittest.TestCase):
         self.assertGreater(len(data), 0)
         self.assert_data_integrity(data[0], "fac")
         for fac in data:
-            self.assertGreaterEqual(long(fac["id"]), SHARED["fac_r_ok"].id)
+            self.assertGreaterEqual(int(fac["id"]), SHARED["fac_r_ok"].id)
 
     ##########################################################################
 
@@ -1835,7 +2079,7 @@ class TestJSON(unittest.TestCase):
         self.assertGreater(len(data), 0)
         self.assert_data_integrity(data[0], "fac")
         for fac in data:
-            self.assertGreater(long(fac["id"]), SHARED["fac_r_ok"].id)
+            self.assertGreater(int(fac["id"]), SHARED["fac_r_ok"].id)
 
     ##########################################################################
 
@@ -1845,7 +2089,7 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(len(data), len(ids))
         self.assert_data_integrity(data[0], "fac")
         for fac in data:
-            self.assertIn(long(fac["id"]), ids)
+            self.assertIn(int(fac["id"]), ids)
 
     ##########################################################################
 
@@ -1967,6 +2211,18 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_filter_ixpfx_whereis(self):
+        ixpfx = SHARED["ixpfx_r_ok"]
+
+        ipaddr = "{}".format(ixpfx.prefix[0])
+
+        data = self.db_guest.all("ixpfx", whereis=ipaddr)
+
+        assert len(data) == 1
+        assert data[0]["id"] == ixpfx.id
+
+    ##########################################################################
+
     def test_guest_005_list_filter_ix_related(self):
         self.assert_list_filter_related("ix", "ixlan")
         self.assert_list_filter_related("ix", "ixfac")
@@ -2012,46 +2268,47 @@ class TestJSON(unittest.TestCase):
             for i in range(0, 2)
         ]
 
-        # create ixlan at each exchange
-        ixlans = [
-            IXLan.objects.create(status="ok",
-                                 **self.make_data_ixlan(ix_id=ix.id))
-            for ix in exchanges
-        ]
+        # collect ixlans
+        ixlans = [ix.ixlan for ix in exchanges]
 
         # all three networks peer at first exchange
         for net in networks:
-            NetworkIXLan.objects.create(network=net, ixlan=ixlans[0],
-                                        status="ok", asn=net.asn, speed=0)
+            NetworkIXLan.objects.create(
+                network=net, ixlan=ixlans[0], status="ok", asn=net.asn, speed=0
+            )
 
         # only the first two networks peer at second exchange
         for net in networks[:2]:
-            NetworkIXLan.objects.create(network=net, ixlan=ixlans[1],
-                                        status="ok", asn=net.asn, speed=0)
+            NetworkIXLan.objects.create(
+                network=net, ixlan=ixlans[1], status="ok", asn=net.asn, speed=0
+            )
 
         # do test queries
 
         # query #1 - test overlapping exchanges for all 3 asns - should return first ix
-        data = self.db_guest.all("ix", asn_overlap=",".join(
-            [str(net.asn) for net in networks]))
+        data = self.db_guest.all(
+            "ix", asn_overlap=",".join([str(net.asn) for net in networks])
+        )
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["id"], exchanges[0].id)
 
         # query #2 - test overlapping exchanges for first 2 asns - should return both ixs
-        data = self.db_guest.all("ix", asn_overlap=",".join(
-            [str(net.asn) for net in networks[:2]]))
+        data = self.db_guest.all(
+            "ix", asn_overlap=",".join([str(net.asn) for net in networks[:2]])
+        )
         self.assertEqual(len(data), 2)
         for row in data:
             self.assertIn(row["id"], [ix.id for ix in exchanges])
 
         # query #3 - should error when only passing one asn
-        with self.assertRaises(InvalidRequestException) as inst:
+        with pytest.raises(InvalidRequestException):
             self.db_guest.all("ix", asn_overlap=networks[0].asn)
 
         # query #4 - should error when passing too many asns
-        with self.assertRaises(InvalidRequestException):
-            self.db_guest.all("ix", asn_overlap=",".join(
-                [str(i) for i in range(0, 30)]))
+        with pytest.raises(InvalidRequestException):
+            self.db_guest.all(
+                "ix", asn_overlap=",".join([str(i) for i in range(0, 30)])
+            )
 
         # clean up data
         for net in networks:
@@ -2129,8 +2386,6 @@ class TestJSON(unittest.TestCase):
             self.assert_data_integrity(row, "ix")
             self.assertGreaterEqual(row["net_count"], 1)
 
-
-
     ##########################################################################
 
     def test_guest_005_list_filter_fac_asn_overlap(self):
@@ -2148,37 +2403,42 @@ class TestJSON(unittest.TestCase):
 
         # all three networks peer at first facility
         for net in networks:
-            NetworkFacility.objects.create(network=net, facility=facilities[0],
-                                           status="ok")
+            NetworkFacility.objects.create(
+                network=net, facility=facilities[0], status="ok"
+            )
 
         # only the first two networks peer at second facility
         for net in networks[:2]:
-            NetworkFacility.objects.create(network=net, facility=facilities[1],
-                                           status="ok")
+            NetworkFacility.objects.create(
+                network=net, facility=facilities[1], status="ok"
+            )
 
         # do test queries
 
         # query #1 - test overlapping facilities for all 3 asns - should return first facility
-        data = self.db_guest.all("fac", asn_overlap=",".join(
-            [str(net.asn) for net in networks]))
+        data = self.db_guest.all(
+            "fac", asn_overlap=",".join([str(net.asn) for net in networks])
+        )
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["id"], facilities[0].id)
 
         # query #2 - test overlapping facilities for first 2 asns - should return both facs
-        data = self.db_guest.all("fac", asn_overlap=",".join(
-            [str(net.asn) for net in networks[:2]]))
+        data = self.db_guest.all(
+            "fac", asn_overlap=",".join([str(net.asn) for net in networks[:2]])
+        )
         self.assertEqual(len(data), 2)
         for row in data:
             self.assertIn(row["id"], [ix.id for ix in facilities])
 
         # query #3 - should error when only passing one asn
-        with self.assertRaises(InvalidRequestException):
+        with pytest.raises(InvalidRequestException):
             self.db_guest.all("fac", asn_overlap=networks[0].asn)
 
         # query #4 - should error when passing too many asns
-        with self.assertRaises(InvalidRequestException):
-            self.db_guest.all("fac", asn_overlap=",".join(
-                [str(i) for i in range(0, 30)]))
+        with pytest.raises(InvalidRequestException):
+            self.db_guest.all(
+                "fac", asn_overlap=",".join([str(i) for i in range(0, 30)])
+            )
 
         # clean up data
         for net in networks:
@@ -2188,10 +2448,41 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_filter_org_asn(self):
+        data = self.db_guest.all("org", asn=SHARED["net_r_ok"].asn)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], SHARED["org_r_ok"].id)
+
+    ##########################################################################
+
     def test_guest_005_list_filter_netixlan_related(self):
         self.assert_list_filter_related("netixlan", "net")
         self.assert_list_filter_related("netixlan", "ixlan")
         self.assert_list_filter_related("netixlan", "ix")
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_netixlan_operational(self):
+
+        # all netixlans are operational at this point,
+        # filtering by operational=False should return empty list
+
+        data = self.db_guest.all("netixlan", operational=0)
+        assert len(data) == 0
+
+        # set one netixlan to not operational
+
+        netixlan = NetworkIXLan.objects.first()
+        netixlan.operational = False
+        netixlan.save()
+
+        # assert that it is now returned in the operational=False
+        # result
+
+        data = self.db_guest.all("netixlan", operational=0)
+        assert len(data) == 1
+        assert data[0]["id"] == netixlan.id
 
     ##########################################################################
 
@@ -2223,7 +2514,9 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_netfac_related_country(self):
-        data = self.db_guest.all("netfac", country=SHARED["fac_rw_ok"].country)
+        data = self.db_guest.all(
+            "netfac", country="{}".format(SHARED["fac_rw_ok"].country)
+        )
         self.assertEqual(len(data), 2)
         self.assert_data_integrity(data[0], "netfac")
 
@@ -2273,25 +2566,24 @@ class TestJSON(unittest.TestCase):
         test filtering with accented search terms
         """
 
-        #TODO: sqlite3 is being used as the testing backend, and django 1.11
-        #seems to be unable to set a collation on it, so we can't properly test
-        #the other way atm, for now this test at least confirms that the term is
-        #unaccented correctly.
+        # TODO: sqlite3 is being used as the testing backend, and django 1.11
+        # seems to be unable to set a collation on it, so we can't properly test
+        # the other way atm, for now this test at least confirms that the term is
+        # unaccented correctly.
         #
-        #on production we run mysql with flattened accents so both ways should work
-        #there regardless.
+        # on production we run mysql with flattened accents so both ways should work
+        # there regardless.
 
         org = Organization.objects.create(name="org unaccented", status="ok")
-        net = Network.objects.create(asn=12345, name=u"net unaccented",
-                                     status="ok", org=org)
-        ix = InternetExchange.objects.create(org=org, name=u"ix unaccented", status="ok")
-        fac = Facility.objects.create(org=org, name=u"fac unaccented", status="ok")
+        net = Network.objects.create(
+            asn=12345, name="net unaccented", status="ok", org=org
+        )
+        ix = InternetExchange.objects.create(org=org, name="ix unaccented", status="ok")
+        fac = Facility.objects.create(org=org, name="fac unaccented", status="ok")
 
-        for tag in ["org","net","ix","fac"]:
-            data = self.db_guest.all(tag, name=u"{} unãccented".format(tag))
+        for tag in ["org", "net", "ix", "fac"]:
+            data = self.db_guest.all(tag, name="{} unãccented".format(tag))
             self.assertEqual(len(data), 1)
-
-
 
     ##########################################################################
     # READONLY PERMISSION TESTS
@@ -2302,222 +2594,321 @@ class TestJSON(unittest.TestCase):
 
     def test_readonly_users_003_PUT_org(self):
         for db in self.readonly_dbs():
-            self.assert_update(db, "org", SHARED["org_r_ok"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
+            self.assert_update(
+                db,
+                "org",
+                SHARED["org_r_ok"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
 
     ##########################################################################
 
     def test_readonly_users_002_POST_ix(self):
         for db in self.readonly_dbs():
-            self.assert_create(db, "ix",
-                               self.make_data_ix(prefix=self.get_prefix4()),
-                               test_failures={"perms": {}}, test_success=False)
+            self.assert_create(
+                db,
+                "ix",
+                self.make_data_ix(prefix=self.get_prefix4()),
+                test_failures={"perms": {}},
+                test_success=False,
+            )
 
     ##########################################################################
 
     def test_readonly_users_003_PUT_ix(self):
         for db in self.readonly_dbs():
-            self.assert_update(db, "ix", SHARED["ix_r_ok"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
+            self.assert_update(
+                db,
+                "ix",
+                SHARED["ix_r_ok"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
 
     ##########################################################################
 
     def test_readonly_users_004_DELETE_ix(self):
         for db in self.readonly_dbs():
-            self.assert_delete(db, "ix", test_success=False,
-                               test_failure=SHARED["ix_r_ok"].id)
+            self.assert_delete(
+                db, "ix", test_success=False, test_failure=SHARED["ix_r_ok"].id
+            )
 
     ##########################################################################
 
     def test_readonly_users_002_POST_fac(self):
         for db in self.readonly_dbs():
-            self.assert_create(db, "fac", self.make_data_fac(),
-                               test_failures={"perms": {}}, test_success=False)
+            self.assert_create(
+                db,
+                "fac",
+                self.make_data_fac(),
+                test_failures={"perms": {}},
+                test_success=False,
+            )
 
     ##########################################################################
 
     def test_readonly_users_003_PUT_fac(self):
         for db in self.readonly_dbs():
-            self.assert_update(db, "fac", SHARED["fac_r_ok"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
+            self.assert_update(
+                db,
+                "fac",
+                SHARED["fac_r_ok"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
 
     ##########################################################################
 
     def test_readonly_users_004_DELETE_fac(self):
         for db in self.readonly_dbs():
-            self.assert_delete(db, "fac", test_success=False,
-                               test_failure=SHARED["fac_r_ok"].id)
+            self.assert_delete(
+                db, "fac", test_success=False, test_failure=SHARED["fac_r_ok"].id
+            )
 
     ##########################################################################
 
     def test_readonly_users_002_POST_netfac(self):
         for db in self.readonly_dbs():
             self.assert_create(
-                db, "netfac", {
-                    "net_id": SHARED["net_r_ok"].id,
-                    "fac_id": SHARED["fac_r2_ok"].id,
-                    "local_asn": 12345
-                }, test_failures={"perms": {}}, test_success=False)
+                db,
+                "netfac",
+                {"net_id": SHARED["net_r_ok"].id, "fac_id": SHARED["fac_r2_ok"].id,},
+                test_failures={"perms": {}},
+                test_success=False,
+            )
 
     ##########################################################################
 
     def test_readonly_users_003_PUT_netfac(self):
         for db in self.readonly_dbs():
-            self.assert_update(db, "netfac", SHARED["netfac_r_ok"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
+            self.assert_update(
+                db,
+                "netfac",
+                SHARED["netfac_r_ok"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
 
     ##########################################################################
 
     def test_readonly_users_004_DELETE_netfac(self):
         for db in self.readonly_dbs():
-            self.assert_delete(db, "netfac", test_success=False,
-                               test_failure=SHARED["netfac_r_ok"].id)
+            self.assert_delete(
+                db, "netfac", test_success=False, test_failure=SHARED["netfac_r_ok"].id
+            )
 
     ##########################################################################
 
     def test_readonly_users_002_POST_ixfac(self):
         for db in self.readonly_dbs():
-            self.assert_create(db, "ixfac", {
-                "ix_id": SHARED["ix_r_ok"].id,
-                "fac_id": SHARED["fac_r2_ok"].id
-            }, test_failures={"perms": {}}, test_success=False)
+            self.assert_create(
+                db,
+                "ixfac",
+                {"ix_id": SHARED["ix_r_ok"].id, "fac_id": SHARED["fac_r2_ok"].id},
+                test_failures={"perms": {}},
+                test_success=False,
+            )
 
     ##########################################################################
 
     def test_readonly_users_003_PUT_ixfac(self):
         for db in self.readonly_dbs():
-            self.assert_update(db, "ixfac", SHARED["ixfac_r_ok"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
+            self.assert_update(
+                db,
+                "ixfac",
+                SHARED["ixfac_r_ok"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
 
     ##########################################################################
 
     def test_readonly_users_004_DELETE_ixfac(self):
         for db in self.readonly_dbs():
-            self.assert_delete(db, "ixfac", test_success=False,
-                               test_failure=SHARED["ixfac_r_ok"].id)
+            self.assert_delete(
+                db, "ixfac", test_success=False, test_failure=SHARED["ixfac_r_ok"].id
+            )
 
     ##########################################################################
 
     def test_readonly_users_002_POST_poc(self):
         for db in self.readonly_dbs():
             self.assert_create(
-                db, "poc", self.make_data_poc(net_id=SHARED["net_rw_ok"].id),
-                test_failures={"perms": {}}, test_success=False)
+                db,
+                "poc",
+                self.make_data_poc(net_id=SHARED["net_rw_ok"].id),
+                test_failures={"perms": {}},
+                test_success=False,
+            )
 
     ##########################################################################
 
     def test_readonly_users_003_PUT_poc(self):
         for db in self.readonly_dbs(exclude=[self.db_user]):
-            self.assert_update(db, "poc", SHARED["poc_r_ok_public"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
-            self.assert_update(db, "poc", SHARED["poc_r_ok_private"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
-            self.assert_update(db, "poc", SHARED["poc_r_ok_users"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
+            self.assert_update(
+                db,
+                "poc",
+                SHARED["poc_r_ok_public"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
+            self.assert_update(
+                db,
+                "poc",
+                SHARED["poc_r_ok_private"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
+            self.assert_update(
+                db,
+                "poc",
+                SHARED["poc_r_ok_users"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
 
     ##########################################################################
 
     def test_readonly_users_004_DELETE_poc(self):
         for db in self.readonly_dbs():
-            self.assert_delete(db, "poc", test_success=False,
-                               test_failure=SHARED["poc_r_ok_public"].id)
-            self.assert_delete(db, "poc", test_success=False,
-                               test_failure=SHARED["poc_r_ok_private"].id)
-            self.assert_delete(db, "poc", test_success=False,
-                               test_failure=SHARED["poc_r_ok_users"].id)
+            self.assert_delete(
+                db, "poc", test_success=False, test_failure=SHARED["poc_r_ok_public"].id
+            )
+            self.assert_delete(
+                db,
+                "poc",
+                test_success=False,
+                test_failure=SHARED["poc_r_ok_private"].id,
+            )
+            self.assert_delete(
+                db, "poc", test_success=False, test_failure=SHARED["poc_r_ok_users"].id
+            )
 
     ##########################################################################
 
     def test_readonly_users_002_POST_ixlan(self):
         for db in self.readonly_dbs():
-            self.assert_create(db, "ixlan", self.make_data_ixlan(),
-                               test_failures={"perms": {}}, test_success=False)
+            with self.assertRaises(Exception) as exc:
+                self.assert_create(
+                    db,
+                    "ixlan",
+                    self.make_data_ixlan(),
+                    test_failures={"perms": {}},
+                    test_success=False,
+                )
+            self.assertIn('Method "POST" not allowed', str(exc.exception))
 
     ##########################################################################
 
     def test_readonly_users_003_PUT_ixlan(self):
         for db in self.readonly_dbs():
-            self.assert_update(db, "ixlan", SHARED["ixlan_r_ok"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
+            self.assert_update(
+                db,
+                "ixlan",
+                SHARED["ixlan_r_ok"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
 
     ##########################################################################
 
     def test_readonly_users_004_DELETE_ixlan(self):
         for db in self.readonly_dbs():
-            self.assert_delete(db, "ixlan", test_success=False,
-                               test_failure=SHARED["ixlan_r_ok"].id)
+            with self.assertRaises(Exception) as exc:
+                self.assert_delete(
+                    db,
+                    "ixlan",
+                    test_success=False,
+                    test_failure=SHARED["ixlan_r_ok"].id,
+                )
+            self.assertIn('Method "DELETE" not allowed', str(exc.exception))
 
     ##########################################################################
 
     def test_readonly_users_002_POST_ixpfx(self):
         for db in self.readonly_dbs():
-            self.assert_create(db, "ixpfx",
-                               self.make_data_ixpfx(prefix="200.100.200.0/22"),
-                               test_failures={"perms": {}}, test_success=False)
+            self.assert_create(
+                db,
+                "ixpfx",
+                self.make_data_ixpfx(prefix="200.100.200.0/22"),
+                test_failures={"perms": {}},
+                test_success=False,
+            )
 
     ##########################################################################
 
     def test_readonly_users_003_PUT_ixpfx(self):
         for db in self.readonly_dbs():
-            self.assert_update(db, "ixpfx", SHARED["ixpfx_r_ok"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
+            self.assert_update(
+                db,
+                "ixpfx",
+                SHARED["ixpfx_r_ok"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
 
     ##########################################################################
 
     def test_readonly_users_004_DELETE_ixpfx(self):
         for db in self.readonly_dbs():
-            self.assert_delete(db, "ixpfx", test_success=False,
-                               test_failure=SHARED["ixpfx_r_ok"].id)
+            self.assert_delete(
+                db, "ixpfx", test_success=False, test_failure=SHARED["ixpfx_r_ok"].id
+            )
 
     ##########################################################################
 
     def test_readonly_users_002_POST_netixlan(self):
         for db in self.readonly_dbs():
-            self.assert_create(db, "netixlan", self.make_data_netixlan(),
-                               test_failures={"perms": {}}, test_success=False)
+            self.assert_create(
+                db,
+                "netixlan",
+                self.make_data_netixlan(),
+                test_failures={"perms": {}},
+                test_success=False,
+            )
 
     ##########################################################################
 
     def test_readonly_users_003_PUT_netixlan(self):
         for db in self.readonly_dbs():
-            self.assert_update(db, "netixlan", SHARED["netixlan_r_ok"].id, {},
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
+            self.assert_update(
+                db,
+                "netixlan",
+                SHARED["netixlan_r_ok"].id,
+                {},
+                test_success=False,
+                test_failures={"perms": {}},
+            )
 
     ##########################################################################
 
     def test_readonly_users_004_DELETE_netixlan(self):
         for db in self.readonly_dbs():
-            self.assert_delete(db, "netixlan", test_success=False,
-                               test_failure=SHARED["netixlan_r_ok"].id)
+            self.assert_delete(
+                db,
+                "netixlan",
+                test_success=False,
+                test_failure=SHARED["netixlan_r_ok"].id,
+            )
 
     ##########################################################################
 
     def test_readonly_users_004_DELETE_org(self):
         for db in self.readonly_dbs():
-            self.assert_delete(db, "org", test_success=False,
-                               test_failure=SHARED["org_r_ok"].id)
+            self.assert_delete(
+                db, "org", test_success=False, test_failure=SHARED["org_r_ok"].id
+            )
 
     ##########################################################################
     # CRUD PERMISSION TESTS
@@ -2527,50 +2918,56 @@ class TestJSON(unittest.TestCase):
 
         # user with create perms should be allowed to create a new poc under net_rw3_ok
         # but not under net_rw2_ok
-        self.assert_create(self.db_crud_create, "poc",
-                           self.make_data_poc(net_id=SHARED["net_rw3_ok"].id),
-                           test_failures={
-                               "perms": {
-                                   "net_id": SHARED["net_rw2_ok"].id
-                               }
-                           })
-
-        # user with create perms should not be able to create an ixlan under
-        # net_rw_ix
-        self.assert_create(self.db_crud_create, "ixlan",
-                           self.make_data_ixlan(ix_id=SHARED["ix_rw3_ok"].id),
-                           test_failures={"perms": {}}, test_success=False)
+        self.assert_create(
+            self.db_crud_create,
+            "poc",
+            self.make_data_poc(net_id=SHARED["net_rw3_ok"].id),
+            test_failures={"perms": {"net_id": SHARED["net_rw2_ok"].id}},
+        )
 
         # other crud test users should not be able to create a new poc under
         # net_rw3_ok
         for p in ["delete", "update"]:
             self.assert_create(
-                getattr(self, "db_crud_%s" % p), "poc",
+                getattr(self, "db_crud_%s" % p),
+                "poc",
                 self.make_data_poc(net_id=SHARED["net_rw3_ok"].id),
-                test_failures={"perms": {}}, test_success=False)
+                test_failures={"perms": {}},
+                test_success=False,
+            )
 
     def test_z_crud_003_update(self):
 
         # user with update perms should be allowed to update net_rw3_ok
         # but not net_rw2_ok
-        self.assert_update(self.db_crud_update, "net", SHARED["net_rw3_ok"].id,
-                           {"name": self.make_name("Test")}, test_failures={
-                               "perms": {
-                                   "id": SHARED["net_rw2_ok"].id
-                               }
-                           })
+        self.assert_update(
+            self.db_crud_update,
+            "net",
+            SHARED["net_rw3_ok"].id,
+            {"name": self.make_name("Test")},
+            test_failures={"perms": {"id": SHARED["net_rw2_ok"].id}},
+        )
 
         # user with update perms should not be allowed to update ix_rw3_ok
-        self.assert_update(self.db_crud_update, "ix", SHARED["ix_rw3_ok"].id,
-                           {"name": self.make_name("Test")},
-                           test_failures={"perms": {}}, test_success=False)
+        self.assert_update(
+            self.db_crud_update,
+            "ix",
+            SHARED["ix_rw3_ok"].id,
+            {"name": self.make_name("Test")},
+            test_failures={"perms": {}},
+            test_success=False,
+        )
 
         # other crud test users should not be able to update net_rw3_ok
         for p in ["delete", "create"]:
             self.assert_update(
-                getattr(self, "db_crud_%s" % p), "net",
-                SHARED["net_rw3_ok"].id, {"name": self.make_name("Test")},
-                test_failures={"perms": {}}, test_success=False)
+                getattr(self, "db_crud_%s" % p),
+                "net",
+                SHARED["net_rw3_ok"].id,
+                {"name": self.make_name("Test")},
+                test_failures={"perms": {}},
+                test_success=False,
+            )
 
     def test_z_crud_004_delete(self):
 
@@ -2585,8 +2982,12 @@ class TestJSON(unittest.TestCase):
 
         # user with delete perms should be allowed to update net_rw3_ok
         # but not net_rw2_ok
-        self.assert_delete(self.db_crud_delete, "net", SHARED["net_rw3_ok"].id,
-                           test_failure=SHARED["net_rw2_ok"].id)
+        self.assert_delete(
+            self.db_crud_delete,
+            "net",
+            SHARED["net_rw3_ok"].id,
+            test_failure=SHARED["net_rw2_ok"].id,
+        )
 
         # user with delete perms should not be allowed to delete ix_rw3_ok
         self.assert_delete(
@@ -2600,29 +3001,146 @@ class TestJSON(unittest.TestCase):
     # MISC TESTS
     ##########################################################################
 
+    def _test_GET_ixf_ixp_member_list_url(self, db, tests=[], suffix="r"):
+        ixlan = SHARED[f"ixlan_{suffix}_ok"]
+        ixlan.ixf_ixp_member_list_url = "http://localhost"
+        ixlan.save()
+
+        for visible, expected in tests:
+
+            ixlan.ixf_ixp_member_list_url_visible = visible
+            ixlan.full_clean()
+            ixlan.save()
+
+            data = db.get("ixlan", id=ixlan.id)[0]
+
+            assert data["ixf_ixp_member_list_url_visible"] == visible
+
+            if expected:
+                assert data["ixf_ixp_member_list_url"] == ixlan.ixf_ixp_member_list_url
+            else:
+                assert "ixf_ixp_member_list_url" not in data
+
+    def test_z_misc_GET_ixf_ixp_member_list_url(self):
+
+        """
+        Test the visibility of ixlan.ixf_ixp_member_list_url for
+        Guest, User, Org member and org admin
+        """
+
+        self._test_GET_ixf_ixp_member_list_url(
+            self.db_user, [("Private", False), ("Users", True), ("Public", True)]
+        )
+
+        self._test_GET_ixf_ixp_member_list_url(
+            self.db_guest, [("Private", False), ("Users", False), ("Public", True)]
+        )
+
+        self._test_GET_ixf_ixp_member_list_url(
+            self.db_org_member, [("Private", True), ("Users", True), ("Public", True)]
+        )
+
+        self._test_GET_ixf_ixp_member_list_url(
+            self.db_org_admin,
+            [("Private", True), ("Users", True), ("Public", True)],
+            suffix="rw",
+        )
+
+    def test_z_misc_POST_ix_fac_missing_phone_fields(self):
+        """
+        Test that omitting the *_phone fields during fac
+        and ix object creation doesnt error 500
+
+        TODO: a test that drops all the non-required fields
+        and tests for every reftag model
+        """
+
+        data = self.make_data_fac()
+        db = self.db_org_admin
+        del data["tech_phone"]
+        r = db.create("fac", data, return_response=True).get("data")
+
+        data = self.make_data_fac()
+        del data["sales_phone"]
+        r = db.create("fac", data, return_response=True).get("data")
+
+        data = self.make_data_ix(prefix=self.get_prefix4())
+        del data["tech_phone"]
+        r = db.create("ix", data, return_response=True).get("data")
+
+        data = self.make_data_ix(prefix=self.get_prefix4())
+        del data["policy_phone"]
+        r = db.create("ix", data, return_response=True).get("data")
+
     def test_z_misc_002_dupe_netixlan_ip(self):
 
         # test that addint duplicate netixlan ips is impossible
 
         A = SHARED["netixlan_rw_ok"]
-        self.assert_create(self.db_org_admin, "netixlan",
-                           self.make_data_netixlan(ixlan_id=A.ixlan_id,
-                                                   net_id=A.network_id),
-                           test_success=False, test_failures={
-                               "invalid": {
-                                   "ipaddr4": unicode(A.ipaddr4)
-                               }
-                           })
+        self.assert_create(
+            self.db_org_admin,
+            "netixlan",
+            self.make_data_netixlan(ixlan_id=A.ixlan_id, net_id=A.network_id),
+            test_success=False,
+            test_failures={"invalid": {"ipaddr4": str(A.ipaddr4)}},
+        )
 
-        self.assert_create(self.db_org_admin, "netixlan",
-                           self.make_data_netixlan(
-                               ixlan_id=A.ixlan_id,
-                               net_id=A.network_id,
-                           ), test_success=False, test_failures={
-                               "invalid": {
-                                   "ipaddr6": unicode(A.ipaddr6)
-                               }
-                           })
+        self.assert_create(
+            self.db_org_admin,
+            "netixlan",
+            self.make_data_netixlan(ixlan_id=A.ixlan_id, net_id=A.network_id,),
+            test_success=False,
+            test_failures={"invalid": {"ipaddr6": str(A.ipaddr6)}},
+        )
+
+    def test_z_misc_002_local_asn(self):
+
+        # test that local_asn gets enforced (#186)
+
+        net = SHARED["net_rw_ok"]
+        fac = SHARED["fac_rw_ok"]
+        ixlan = SHARED["ixlan_rw_ok"]
+
+        # test netfac create without asn sent (should auto set)
+
+        data = {"net_id": net.id, "fac_id": fac.id}
+        r_data = self.db_org_admin.create("netfac", data, return_response=True).get(
+            "data"
+        )[0]
+        assert r_data["local_asn"] == net.asn
+
+        NetworkFacility.objects.get(id=r_data["id"]).delete()
+
+        # test nefac create with local_asn sent (should ignore and auto set)
+
+        data = {"net_id": net.id, "fac_id": fac.id, "local_asn": 12345}
+        r_data = self.db_org_admin.create("netfac", data, return_response=True).get(
+            "data"
+        )[0]
+        assert r_data["local_asn"] == net.asn
+
+        NetworkFacility.objects.get(id=r_data["id"]).delete()
+
+        # test netixlan create without asn sent (should auto set)
+
+        data = self.make_data_netixlan(ixlan_id=ixlan.id, net_id=net.id)
+        del data["asn"]
+        r_data = self.db_org_admin.create("netixlan", data, return_response=True).get(
+            "data"
+        )[0]
+        assert r_data["asn"] == net.asn
+
+        NetworkIXLan.objects.get(id=r_data["id"]).delete()
+
+        # test neixlan create with asn sent (should ignore and auto set)
+
+        data = self.make_data_netixlan(ixlan_id=ixlan.id, net_id=net.id, asn=12345)
+        r_data = self.db_org_admin.create("netixlan", data, return_response=True).get(
+            "data"
+        )[0]
+        assert r_data["asn"] == net.asn
+
+        NetworkIXLan.objects.get(id=r_data["id"]).delete()
 
     def test_z_misc_002_dupe_name_update(self):
 
@@ -2636,14 +3154,75 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(A.status, "ok")
         self.assertEqual(B.status, "deleted")
 
-        self.assert_update(self.db_org_admin, "fac", A.id, {}, test_failures={
-            "invalid": {
-                "name": B.name
-            }
-        })
+        self.assert_update(
+            self.db_org_admin,
+            "fac",
+            A.id,
+            {},
+            test_failures={"invalid": {"name": B.name}},
+        )
 
         B.refresh_from_db()
         self.assertEqual(B.status, "deleted")
+
+    def test_z_misc_001_ix_phone_number_validation(self):
+        data = self.make_data_ix(org_id=SHARED["org_rw_ok"].id)
+
+        # test that valid number comes back properly formatted
+
+        data.update(
+            prefix=PREFIXES_V4[-1],
+            tech_phone="+1 206 555 0199",
+            policy_phone="+1 206 555 0199",
+        )
+
+        r_data = self.db_org_admin.create("ix", data, return_response=True).get("data")[
+            0
+        ]
+
+        assert r_data["tech_phone"] == "+12065550199"
+        assert r_data["policy_phone"] == "+12065550199"
+
+        # test that invalid numbers raise validation errors
+
+        self.assert_update(
+            self.db_org_admin,
+            "ix",
+            r_data["id"],
+            {},
+            test_failures={"invalid": {"tech_phone": "invalid number"}},
+        )
+
+        self.assert_update(
+            self.db_org_admin,
+            "ix",
+            r_data["id"],
+            {},
+            test_failures={"invalid": {"policy_phone": "invalid number"}},
+        )
+
+    def test_z_misc_001_poc_phone_number_validation(self):
+        data = self.make_data_poc(net_id=SHARED["net_rw_ok"].id)
+
+        # test that valid number comes back properly formatted
+
+        data.update(phone="+1 206 555 0199")
+
+        r_data = self.db_org_admin.create("poc", data, return_response=True).get(
+            "data"
+        )[0]
+
+        assert r_data["phone"] == "+12065550199"
+
+        # test that invalid numbers raise validation errors
+
+        self.assert_update(
+            self.db_org_admin,
+            "poc",
+            r_data["id"],
+            {},
+            test_failures={"invalid": {"phone": "invalid number"}},
+        )
 
     def test_z_misc_001_org_create(self):
 
@@ -2651,17 +3230,20 @@ class TestJSON(unittest.TestCase):
         # at this point in time
 
         for db in self.all_dbs():
-            self.assert_create(db, "org",
-                               self.make_data_org(name=self.make_name("Test")),
-                               test_success=False, test_failures={
-                                   "perms": {}
-                               })
+            self.assert_create(
+                db,
+                "org",
+                self.make_data_org(name=self.make_name("Test")),
+                test_success=False,
+                test_failures={"perms": {}},
+            )
 
     def test_z_misc_001_suggest_net(self):
         # test network suggestions
 
         data = self.make_data_net(
-            asn=9000901, org_id=settings.SUGGEST_ENTITY_ORG, suggest=True)
+            asn=9000901, org_id=settings.SUGGEST_ENTITY_ORG, suggest=True
+        )
 
         r_data = self.assert_create(self.db_user, "net", data)
 
@@ -2672,18 +3254,17 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(net.org_id, settings.SUGGEST_ENTITY_ORG)
 
         data = self.make_data_net(
-            asn=9000902, org_id=settings.SUGGEST_ENTITY_ORG, suggest=True)
+            asn=9000902, org_id=settings.SUGGEST_ENTITY_ORG, suggest=True
+        )
 
-        r_data = self.assert_create(self.db_guest, "net", data,
-                                    test_success=False, test_failures={
-                                        "perms": {}
-                                    })
+        r_data = self.assert_create(
+            self.db_guest, "net", data, test_success=False, test_failures={"perms": {}}
+        )
 
     def test_z_misc_001_suggest_fac(self):
         # test facility suggestions
 
-        data = self.make_data_fac(org_id=settings.SUGGEST_ENTITY_ORG,
-                                  suggest=True)
+        data = self.make_data_fac(org_id=settings.SUGGEST_ENTITY_ORG, suggest=True)
 
         r_data = self.assert_create(self.db_user, "fac", data)
 
@@ -2693,22 +3274,22 @@ class TestJSON(unittest.TestCase):
         fac = Facility.objects.get(id=r_data["id"])
         self.assertEqual(fac.org_id, settings.SUGGEST_ENTITY_ORG)
 
-        data = self.make_data_fac(org_id=settings.SUGGEST_ENTITY_ORG,
-                                  suggest=True)
+        data = self.make_data_fac(org_id=settings.SUGGEST_ENTITY_ORG, suggest=True)
 
-        r_data = self.assert_create(self.db_guest, "fac", data,
-                                    test_success=False, test_failures={
-                                        "perms": {}
-                                    })
+        r_data = self.assert_create(
+            self.db_guest, "fac", data, test_success=False, test_failures={"perms": {}}
+        )
 
     def test_z_misc_001_suggest_ix(self):
         # test exchange suggestions
 
-        data = self.make_data_ix(org_id=settings.SUGGEST_ENTITY_ORG,
-                                 suggest=True, prefix=self.get_prefix4())
+        data = self.make_data_ix(
+            org_id=settings.SUGGEST_ENTITY_ORG, suggest=True, prefix=self.get_prefix4()
+        )
 
-        r_data = self.assert_create(self.db_user, "ix", data,
-                                    ignore=["prefix", "suggest"])
+        r_data = self.assert_create(
+            self.db_user, "ix", data, ignore=["prefix", "suggest"]
+        )
 
         self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
         self.assertEqual(r_data["status"], "pending")
@@ -2716,14 +3297,18 @@ class TestJSON(unittest.TestCase):
         ix = InternetExchange.objects.get(id=r_data["id"])
         self.assertEqual(ix.org_id, settings.SUGGEST_ENTITY_ORG)
 
-        data = self.make_data_ix(org_id=settings.SUGGEST_ENTITY_ORG,
-                                 suggest=True, prefix=self.get_prefix4())
+        data = self.make_data_ix(
+            org_id=settings.SUGGEST_ENTITY_ORG, suggest=True, prefix=self.get_prefix4()
+        )
 
-        r_data = self.assert_create(self.db_guest, "ix", data, ignore=[
-            "prefix", "suggest"
-        ], test_success=False, test_failures={
-            "perms": {}
-        })
+        r_data = self.assert_create(
+            self.db_guest,
+            "ix",
+            data,
+            ignore=["prefix", "suggest"],
+            test_success=False,
+            test_failures={"perms": {}},
+        )
 
     def test_z_misc_001_suggest_outside_of_post(self):
         # The `suggest` keyword should only be allowed for
@@ -2732,12 +3317,13 @@ class TestJSON(unittest.TestCase):
         for reftag in ["ix", "fac", "net"]:
             ent = SHARED["{}_rw_ok".format(reftag)]
             org_id = ent.org_id
-            self.assert_update(self.db_org_admin, reftag, ent.id,
-                               {"notes": "bla"}, test_failures={
-                                   "invalid": {
-                                       "suggest": True
-                                   }
-                               })
+            self.assert_update(
+                self.db_org_admin,
+                reftag,
+                ent.id,
+                {"notes": "bla"},
+                test_failures={"invalid": {"suggest": True}},
+            )
 
             ent.refresh_from_db()
             self.assertEqual(ent.org_id, org_id)
@@ -2749,9 +3335,9 @@ class TestJSON(unittest.TestCase):
         fac.geocode_status = True
         fac.save()
 
-        self.assert_update(self.db_org_admin, "fac", fac.id, {
-            "address1": "This is a test"
-        })
+        self.assert_update(
+            self.db_org_admin, "fac", fac.id, {"address1": "This is a test"}
+        )
 
         fac.refresh_from_db()
         self.assertEqual(fac.geocode_status, False)
@@ -2763,12 +3349,56 @@ class TestJSON(unittest.TestCase):
         # test that facility does NOT get marked for geocode sync after non relevant
         # fields are changed
 
-        self.assert_update(self.db_org_admin, "fac", fac.id, {
-            "website": "http://example.com",
-            "name": fac.name + " Geocode Test"
-        })
+        self.assert_update(
+            self.db_org_admin,
+            "fac",
+            fac.id,
+            {"website": "http://example.com", "name": fac.name + " Geocode Test"},
+        )
         fac.refresh_from_db()
         self.assertEqual(fac.geocode_status, True)
+
+    def test_z_misc_001_api_errors(self):
+        """
+        Test empty POST, PUT data error response
+        Test parse error POST, PUT data error response
+        """
+        for reftag in list(REFTAG_MAP.keys()):
+            self._test_z_misc_001_api_errors(reftag, "post", "create")
+            self._test_z_misc_001_api_errors(reftag, "put", "update")
+
+    def _test_z_misc_001_api_errors(self, reftag, method, action):
+        factory = APIRequestFactory()
+        url = "/{}/".format(reftag)
+        view_action = {method: action}
+        view = NetworkViewSet.as_view(view_action)
+        fn = getattr(factory, method)
+
+        ERR_PARSE = "Data supplied with the {} request could not be parsed: JSON parse error - Expecting value: line 1 column 1 (char 0)".format(
+            method.upper()
+        )
+        ERR_MISSING = "No data was supplied with the {} request".format(method.upper())
+
+        # test posting invalid json error
+
+        request = fn(url, "in{valid json", content_type="application/json")
+        response = view(request)
+        response.render()
+        assert json.loads(response.content)["meta"]["error"] == ERR_PARSE
+
+        # test posting empty json error
+
+        request = fn("/net/", "{}", content_type="application/json")
+        response = view(request)
+        response.render()
+        assert json.loads(response.content)["meta"]["error"] == ERR_MISSING
+
+        # test posting empty json error
+
+        request = fn("/net/", "", content_type="application/json")
+        response = view(request)
+        response.render()
+        assert json.loads(response.content)["meta"]["error"] == ERR_MISSING
 
 
 class Command(BaseCommand):
@@ -2776,17 +3406,21 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--only", help="only run this test", dest="only")
-        parser.add_argument("--setup",
-                            help="runs api test setup (user, org create) only",
-                            dest="setup", action="store_true")
+        parser.add_argument(
+            "--setup",
+            help="runs api test setup (user, org create) only",
+            dest="setup",
+            action="store_true",
+        )
 
     @classmethod
     def log(cls, msg):
-        print msg
+        print(msg)
 
     @classmethod
-    def create_entity(cls, model, prefix="rw", unset=[], key_suffix=None,
-                      name_suffix=None, **kwargs):
+    def create_entity(
+        cls, model, prefix="rw", unset=[], key_suffix=None, name_suffix=None, **kwargs
+    ):
         tag = model.handleref.tag
         status = kwargs.get("status", "ok")
         name = "API Test:%s:%s:%s" % (tag.upper(), prefix.upper(), status)
@@ -2807,7 +3441,8 @@ class Command(BaseCommand):
             obj = model.objects.get(**data)
             cls.log(
                 "%s with status '%s' for %s testing already exists, skipping!"
-                % (tag.upper(), status, prefix.upper()))
+                % (tag.upper(), status, prefix.upper())
+            )
         except model.DoesNotExist:
             fn = getattr(TestJSON, "make_data_%s" % tag, None)
             if fn:
@@ -2815,9 +3450,13 @@ class Command(BaseCommand):
             for k in unset:
                 if k in data:
                     del data[k]
-            obj = model.objects.create(**data)
-            cls.log("%s with status '%s' for %s testing created! (%s)" %
-                    (tag.upper(), status, prefix.upper(), obj.updated))
+            obj = model(**data)
+            obj.save()
+
+            cls.log(
+                "%s with status '%s' for %s testing created! (%s)"
+                % (tag.upper(), status, prefix.upper(), obj.updated)
+            )
 
         id = "%s_%s_%s" % (tag, prefix, status)
         if key_suffix:
@@ -2862,7 +3501,7 @@ class Command(BaseCommand):
 
         # create API test user for crud testing
         crud_users = {}
-        for p, specs in USER_CRUD.items():
+        for p, specs in list(USER_CRUD.items()):
             crud_user = cls.create_user(specs)
             crud_users[p] = crud_user
             memberGroup.user_set.add(crud_user)
@@ -2885,7 +3524,7 @@ class Command(BaseCommand):
             cls.log("ORG for WRITE testing created!")
 
         org_rw.admin_usergroup.user_set.add(user_org_admin)
-        for crud_user in crud_users.values():
+        for crud_user in list(crud_users.values()):
             org_rw.usergroup.user_set.add(crud_user)
 
         SHARED["org_id"] = org_rw.id
@@ -2899,8 +3538,7 @@ class Command(BaseCommand):
                 "ORG for WRITE testing (with status pending) already exists, skipping!"
             )
         except Organization.DoesNotExist:
-            org_rwp = Organization.objects.create(status="pending",
-                                                  name=ORG_RW_PENDING)
+            org_rwp = Organization.objects.create(status="pending", name=ORG_RW_PENDING)
             cls.log("ORG for WRITE testing (with status pending) created!")
 
         org_rwp.admin_usergroup.user_set.add(user_org_admin)
@@ -2925,11 +3563,11 @@ class Command(BaseCommand):
 
         try:
             net_rd = Network.objects.get(name=NET_R_DELETED, org_id=org_r.id)
-            cls.log(
-                "NET for status 'deleted' testing already exists, skipping!")
+            cls.log("NET for status 'deleted' testing already exists, skipping!")
         except Network.DoesNotExist:
-            net_rd = Network.objects.create(**TestJSON.make_data_net(
-                name=NET_R_DELETED, org_id=org_r.id))
+            net_rd = Network.objects.create(
+                **TestJSON.make_data_net(name=NET_R_DELETED, org_id=org_r.id)
+            )
             cls.log("NET for status 'deleted' testing created!")
         net_rd.delete()
 
@@ -2940,31 +3578,65 @@ class Command(BaseCommand):
         for model in [Network, Facility, InternetExchange]:
             for status in ["ok", "pending"]:
                 for prefix in ["r", "rw"]:
-                    cls.create_entity(model, status=status, prefix=prefix,
-                                      org_id=SHARED["org_%s_%s" % (prefix,
-                                                                   status)].id)
                     cls.create_entity(
-                        model, status=status, prefix="%s2" % prefix,
-                        org_id=SHARED["org_%s_%s" % (prefix, status)].id)
+                        model,
+                        status=status,
+                        prefix=prefix,
+                        org_id=SHARED["org_%s_%s" % (prefix, status)].id,
+                    )
                     cls.create_entity(
-                        model, status=status, prefix="%s3" % prefix,
-                        org_id=SHARED["org_%s_%s" % (prefix, status)].id)
+                        model,
+                        status=status,
+                        prefix="%s2" % prefix,
+                        org_id=SHARED["org_%s_%s" % (prefix, status)].id,
+                    )
+                    cls.create_entity(
+                        model,
+                        status=status,
+                        prefix="%s3" % prefix,
+                        org_id=SHARED["org_%s_%s" % (prefix, status)].id,
+                    )
 
         # create entities for duplicate validation testing
 
         for model in [Network, Facility, InternetExchange]:
-            cls.create_entity(model, status="deleted", prefix="rw_dupe",
-                              name_suffix=" DUPE",
-                              org_id=SHARED["org_rw_ok"].id)
-            cls.create_entity(model, status="ok", prefix="rw_dupe",
-                              name_suffix=" DUPE !",
-                              org_id=SHARED["org_rw_ok"].id)
+            cls.create_entity(
+                model,
+                status="deleted",
+                prefix="rw_dupe",
+                name_suffix=" DUPE",
+                org_id=SHARED["org_rw_ok"].id,
+            )
+            cls.create_entity(
+                model,
+                status="ok",
+                prefix="rw_dupe",
+                name_suffix=" DUPE !",
+                org_id=SHARED["org_rw_ok"].id,
+            )
+
+        visibility = {
+            "rw": "Public",
+            "rw2": "Users",
+            "rw3": "Private",
+            "r": "Public",
+            "r2": "Users",
+            "r3": "Private",
+        }
+
+        for status in ["ok", "pending"]:
+            for prefix in ["r", "r2", "r3", "rw", "rw2", "rw3"]:
+                ixlan = SHARED["ixlan_{}_{}".format(prefix, status)] = SHARED[
+                    "ix_{}_{}".format(prefix, status)
+                ].ixlan
+                if prefix in visibility:
+                    visible = visibility[prefix]
+                    ixlan.ixf_ixp_member_list_url_visible = visible
+                    ixlan.ixf_ixp_member_list_url = "http://localhost"
+                    ixlan.save()
 
         for status in ["ok", "pending"]:
             for prefix in ["r", "rw"]:
-                cls.create_entity(IXLan, status=status, prefix=prefix,
-                                  ix_id=SHARED["ix_%s_%s" % (prefix,
-                                                             status)].id)
                 cls.create_entity(
                     IXLanPrefix,
                     status=status,
@@ -2980,49 +3652,68 @@ class Command(BaseCommand):
                     ixlan_id=SHARED["ixlan_%s_%s" % (prefix, status)].id,
                 )
                 cls.create_entity(
-                    InternetExchangeFacility, status=status, prefix=prefix,
+                    InternetExchangeFacility,
+                    status=status,
+                    prefix=prefix,
                     facility_id=SHARED["fac_%s_%s" % (prefix, status)].id,
-                    ix_id=SHARED["ix_%s_%s" % (prefix, status)].id)
+                    ix_id=SHARED["ix_%s_%s" % (prefix, status)].id,
+                )
                 cls.create_entity(
-                    NetworkFacility, status=status, prefix=prefix, unset=[
-                        "net_id"
-                    ], facility_id=SHARED["fac_%s_%s" % (prefix, status)].id,
-                    network_id=SHARED["net_%s_%s" % (prefix, status)].id)
+                    NetworkFacility,
+                    status=status,
+                    prefix=prefix,
+                    unset=["net_id"],
+                    facility_id=SHARED["fac_%s_%s" % (prefix, status)].id,
+                    network_id=SHARED["net_%s_%s" % (prefix, status)].id,
+                )
                 cls.create_entity(
-                    NetworkIXLan, status=status, prefix=prefix, unset=[
-                        "net_id"
-                    ], ixlan_id=SHARED["ixlan_%s_%s" % (prefix, status)].id,
-                    network_id=SHARED["net_%s_%s" % (prefix, status)].id)
+                    NetworkIXLan,
+                    status=status,
+                    prefix=prefix,
+                    unset=["net_id"],
+                    ixlan_id=SHARED["ixlan_%s_%s" % (prefix, status)].id,
+                    network_id=SHARED["net_%s_%s" % (prefix, status)].id,
+                )
 
                 for v in ["Private", "Users", "Public"]:
-                    cls.create_entity(NetworkContact, status=status,
-                                      prefix=prefix, visible=v,
-                                      network_id=SHARED["net_%s_%s" %
-                                                        (prefix, status)].id,
-                                      unset=["net_id"], key_suffix=v.lower())
+                    cls.create_entity(
+                        NetworkContact,
+                        status=status,
+                        prefix=prefix,
+                        visible=v,
+                        network_id=SHARED["net_%s_%s" % (prefix, status)].id,
+                        unset=["net_id"],
+                        key_suffix=v.lower(),
+                    )
 
         # set up permissions for crud permission tests
         crud_users["delete"].userpermission_set.create(
             namespace=SHARED["net_rw3_ok"].nsp_namespace,
-            permissions=PERM_READ | PERM_DELETE)
+            permissions=PERM_READ | PERM_DELETE,
+        )
         crud_users["create"].userpermission_set.create(
             namespace=SHARED["net_rw3_ok"].nsp_namespace,
-            permissions=PERM_READ | PERM_CREATE)
+            permissions=PERM_READ | PERM_CREATE,
+        )
         crud_users["update"].userpermission_set.create(
             namespace=SHARED["net_rw3_ok"].nsp_namespace,
-            permissions=PERM_READ | PERM_UPDATE)
+            permissions=PERM_READ | PERM_UPDATE,
+        )
 
         # undelete in case they got flagged as deleted
-        for name, obj in SHARED.items():
-            if hasattr(
-                    obj, "status"
-            ) and obj.status == "deleted" and obj != net_rd and getattr(
-                    obj, "name", "").find("DUPE") == -1:
+        for name, obj in list(SHARED.items()):
+            if (
+                hasattr(obj, "status")
+                and obj.status == "deleted"
+                and obj != net_rd
+                and getattr(obj, "name", "").find("DUPE") == -1
+            ):
                 obj.status = "ok"
                 obj.save()
 
-        Organization.objects.create(name="Suggested Entitites", status="ok",
-                                    id=settings.SUGGEST_ENTITY_ORG)
+        Organization.objects.create(
+            name="Suggested Entitites", status="ok", id=settings.SUGGEST_ENTITY_ORG
+        )
 
         cls.log("Setup for API testing completed!")
 
@@ -3032,7 +3723,7 @@ class Command(BaseCommand):
 
         deleted = 0
 
-        for k, obj in SHARED.items():
+        for k, obj in list(SHARED.items()):
             if hasattr(obj, "delete"):
                 # print "HARD deleting ", obj
                 try:
@@ -3052,29 +3743,30 @@ class Command(BaseCommand):
                     except cls.DoesNotExist:
                         pass
 
-        print "Deleted", deleted, "objects"
+        print("Deleted", deleted, "objects")
 
     def handle(self, *args, **options):
         try:
             self.prepare()
-        except IntegrityError, inst:
-            print inst
+        except IntegrityError as inst:
+            print(inst)
             self.cleanup()
-            print "Cleaned up after inegrity error, please try again .."
+            print("Cleaned up after inegrity error, please try again ..")
             return
-        if options['setup']:
+        if options["setup"]:
             return
-        if not options['only']:
+        if not options["only"]:
             suite = unittest.TestLoader().loadTestsFromTestCase(TestJSON)
         else:
             only = options["only"].split(",")
             funcs = []
-            for key in vars(TestJSON).keys():
+            for key in list(vars(TestJSON).keys()):
                 for o in only:
                     if key[:5] == "test_" and key.find(o) > -1:
                         funcs.append(
                             "peeringdb_server.management.commands.pdb_api_test.TestJSON.%s"
-                            % key)
+                            % key
+                        )
 
             funcs = sorted(funcs)
 

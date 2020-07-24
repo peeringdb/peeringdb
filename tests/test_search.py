@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit-tests for quick search functionality - note that advanced search is not
 tested here as that is using the PDB API entirely.
@@ -22,6 +21,28 @@ class SearchTests(TestCase):
     """
 
     @classmethod
+    def create_instance(cls, model, org, asn=1, prefix="Test", accented=False):
+
+        kwargs = {}
+        if model.handleref.tag == "net":
+            kwargs = {"asn": asn}
+
+        kwargs.update(status="ok", name=f"{prefix} {model.handleref.tag}")
+
+        if accented:
+            kwargs.update(name=f"ãccented {model.handleref.tag}")
+
+        if model.handleref.tag != "org":
+            kwargs.update(org=org)
+
+        instance = model.objects.create(**kwargs)
+
+        if model.handleref.tag == "org":
+            instance.org_id = instance.id
+
+        return instance
+
+    @classmethod
     def setUpTestData(cls):
 
         # in case other tests updated the search index through object
@@ -34,40 +55,34 @@ class SearchTests(TestCase):
 
         # create an instance of each searchable model, so we have something
         # to search for
-        cls.org = models.Organization.objects.create(name="Test org")
+        cls.org = models.Organization.objects.create(name="Parent org")
         for model in search.searchable_models:
-            kwargs = {}
-            if model.handleref.tag == "net":
-                kwargs = {"asn": 1}
-            cls.instances[model.handleref.tag] = model.objects.create(
-                status="ok", org=cls.org, name="Test %s" % model.handleref.tag,
-                **kwargs)
-
-            if model.handleref.tag == "net":
-                kwargs = {"asn": 2}
-            cls.instances_accented[model.handleref.tag] = model.objects.create(
-                status="ok", org=cls.org,
-                name=u"ãccented {}".format(model.handleref.tag), **kwargs)
+            cls.instances[model.handleref.tag] = cls.create_instance(model, cls.org)
+            cls.instances_accented[model.handleref.tag] = cls.create_instance(
+                model, cls.org, asn=2, accented=True
+            )
 
         # we also need to test that sponsor ship status comes through
         # accordingly
-        cls.org_w_sponsorship = models.Organization.objects.create(name="Sponsor org", status="ok")
+        cls.org_w_sponsorship = models.Organization.objects.create(
+            name="Sponsor Parent org", status="ok"
+        )
+
+        now = datetime.datetime.now().replace(tzinfo=models.UTC())
+
         cls.sponsorship = models.Sponsorship.objects.create(
-            org=cls.org_w_sponsorship,
-            start_date=datetime.datetime.now() - datetime.timedelta(days=1),
-            end_date=datetime.datetime.now() + datetime.timedelta(days=1),
-            level=1);
+            start_date=now - datetime.timedelta(days=1),
+            end_date=now + datetime.timedelta(days=1),
+            level=1,
+        )
+        models.SponsorshipOrganization.objects.create(
+            org=cls.org_w_sponsorship, sponsorship=cls.sponsorship
+        )
 
         for model in search.searchable_models:
-            if model.handleref.tag == "net":
-                kwargs = {"asn": 3}
-            else:
-                kwargs = {}
-            cls.instances_sponsored[model.handleref.tag] = model.objects.create(
-                status="ok", org=cls.org_w_sponsorship,
-                name="Sponsor %s" % model.handleref.tag,
-                **kwargs)
-
+            cls.instances_sponsored[model.handleref.tag] = cls.create_instance(
+                model, cls.org_w_sponsorship, asn=3, prefix="Sponsor"
+            )
 
     def test_search(self):
         """
@@ -76,7 +91,7 @@ class SearchTests(TestCase):
         """
 
         rv = search.search("Test")
-        for k, inst in self.instances.items():
+        for k, inst in list(self.instances.items()):
             assert k in rv
             assert len(rv[k]) == 1
             assert rv[k][0]["name"] == inst.search_result_name
@@ -98,14 +113,14 @@ class SearchTests(TestCase):
         """
 
         factory = RequestFactory()
-        request = factory.get("/search",{"q":"Sponsor"})
+        request = factory.get("/search", {"q": "Sponsor"})
         response = views.request_search(request)
-        m = re.findall(re.escape(
-            '<a href="/sponsors" class="sponsor silver">'),
-            response.content)
+        m = re.findall(
+            re.escape('<a href="/sponsors" class="sponsor silver">'),
+            response.content.decode(),
+        )
 
-        assert len(m) == 3
-
+        assert len(m) == 4
 
     def test_search_case(self):
         """
@@ -113,11 +128,10 @@ class SearchTests(TestCase):
         instances we created during setUp since matching is case-insensitive
         """
         rv = search.search("test")
-        for k, inst in self.instances.items():
+        for k, inst in list(self.instances.items()):
             assert k in rv
             assert len(rv[k]) == 1
             assert rv[k][0]["name"] == inst.search_result_name
-
 
     def test_index_updates(self):
         """
@@ -128,12 +142,14 @@ class SearchTests(TestCase):
         # this object will be status pending and should not be returned in the search
         # results
         new_ix_p = models.InternetExchange.objects.create(
-            status="pending", org=self.org, name="Test IU ix")
+            status="pending", org=self.org, name="Test IU ix"
+        )
         self.test_search()
 
         # this object will be status ok, and should show up in the index
         new_ix_o = models.InternetExchange.objects.create(
-            status="ok", org=self.org, name="Test IU P ix")
+            status="ok", org=self.org, name="Test IU P ix"
+        )
         rv = search.search("test")
         assert len(rv["ix"]) == 2
 
@@ -144,7 +160,7 @@ class SearchTests(TestCase):
         rv = search.search("test")
         assert len(rv["ix"]) == 3
 
-        #finally we delete both and they should disappear again
+        # finally we delete both and they should disappear again
         new_ix_p.delete()
         new_ix_o.delete()
         self.test_search()
@@ -154,16 +170,18 @@ class SearchTests(TestCase):
         search for entities containing 'ãccented' using accented and unaccented
         terms
         """
-        rv = search.search(u"accented")
-        for k, inst in self.instances_accented.items():
+        rv = search.search("accented")
+        for k, inst in list(self.instances_accented.items()):
             assert k in rv
             assert len(rv[k]) == 1
-            assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(inst.search_result_name)
+            assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(
+                inst.search_result_name
+            )
 
-        rv = search.search(u"ãccented")
-        for k, inst in self.instances_accented.items():
+        rv = search.search("ãccented")
+        for k, inst in list(self.instances_accented.items()):
             assert k in rv
             assert len(rv[k]) == 1
-            assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(inst.search_result_name)
-
-
+            assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(
+                inst.search_result_name
+            )

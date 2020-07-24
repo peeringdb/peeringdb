@@ -9,6 +9,38 @@ from django.utils.translation import ugettext_lazy as _
 
 from peeringdb_server import settings
 
+# Valid IRR Source values
+# reference: http://www.irr.net/docs/list.html
+IRR_SOURCE = (
+    "AFRINIC",
+    "ALTDB",
+    "AOLTW",
+    "APNIC",
+    "ARIN",
+    "ARIN-NONAUTH",
+    "BELL",
+    "BBOI",
+    "CANARIE",
+    "EASYNET",
+    "EPOCH",
+    "HOST",
+    "JPIRR",
+    "LACNIC",
+    "LEVEL3",
+    "NESTEGG",
+    "NTTCOM",
+    "OPENFACE",
+    "OTTIX",
+    "PANIX",
+    "RADB",
+    "REACH",
+    "RGNET",
+    "RIPE",
+    "RISQ",
+    "ROGERS",
+    "TC",
+)
+
 # RFC 5398 documentation asn range
 ASN_RFC_5398_16BIT = (64496, 64511)
 ASN_RFC_5398_32BIT = (65536, 65551)
@@ -21,6 +53,10 @@ ASN_RFC_6996_32BIT = (4200000000, 4294967294)
 ASN_LAST_16BIT = (65535, 65535)
 ASN_LAST_32BIT = (4294967295, 4294967295)
 
+# IANA reserved ASNs
+# https://www.mail-archive.com/uknof@lists.uknof.org.uk/msg03395.html
+ASN_IANA_RESERVED = (65552, 131071)
+
 ASN_TRANS = (23456, 23456)
 
 BOGON_ASN_RANGES = [
@@ -28,6 +64,8 @@ BOGON_ASN_RANGES = [
     ASN_RFC_5398_16BIT,
     # RFC 5398 - documentation 32-bit
     ASN_RFC_5398_32BIT,
+    # IANA Reserved
+    ASN_IANA_RESERVED,
     # RFC 6996 - private 16-bit
     ASN_RFC_6996_16BIT,
     # RFC 6996 - private 32-bit
@@ -37,7 +75,7 @@ BOGON_ASN_RANGES = [
     # RFC 7003 - last asn 32-bit
     ASN_LAST_32BIT,
     # trans
-    ASN_TRANS
+    ASN_TRANS,
 ]
 
 # the following bogon asn ranges are allowed on envionments
@@ -64,12 +102,12 @@ class BogonAsn(rdap.RdapAsn):
     """
 
     def __init__(self, asn):
-        name = "AS{}".format(asn)
+        name = f"AS{asn}"
         self._parsed = {
-            "name":name,
-            "org_name":name,
-            "org_address":None,
-            "emails":[]
+            "name": name,
+            "org_name": name,
+            "org_address": None,
+            "emails": [],
         }
 
 
@@ -81,11 +119,11 @@ class RdapLookup(rdap.RdapClient):
     def __init__(self):
         # create rdap config
         config = dict(
-            bootstrap_url=settings.RDAP_URL.rstrip('/'),
+            bootstrap_url=settings.RDAP_URL.rstrip("/"),
             lacnic_apikey=settings.RDAP_LACNIC_APIKEY,
+            timeout=2.5,
         )
-        super(RdapLookup, self).__init__(config)
-
+        super().__init__(config)
 
     def get_asn(self, asn):
         """
@@ -97,10 +135,10 @@ class RdapLookup(rdap.RdapClient):
             if settings.TUTORIAL_MODE and asn_is_in_ranges(asn, TUTORIAL_ASN_RANGES):
                 return BogonAsn(asn)
             else:
-                raise RdapException(_("ASNs in this range " \
-                                   "are not allowed in this environment"))
-        return super(RdapLookup, self).get_asn(asn)
-
+                raise RdapException(
+                    _("ASNs in this range " "are not allowed in this environment")
+                )
+        return super().get_asn(asn)
 
 
 def asn_is_bogon(asn):
@@ -172,11 +210,11 @@ def network_is_pdb_valid(network):
         # 2002::/16 - RFC 3068 - 6to4 prefix
         0x2002,
         # 3ffe::/16 - RFC 5156 - used for the 6bone but was returned
-        0x3ffe,
+        0x3FFE,
         # fec0::/10 - RFC 4291 - Reserved by IETF
-        0xfec0,
+        0xFEC0,
         # ff00::/8 - RFC 4291 - Multicast
-        0xff00,
+        0xFF00,
     ]
 
     if int(network.network_address) >> 112 in v6_invalid:
@@ -261,14 +299,17 @@ def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
 
         # replace any octet that is not a zero in the netmask
 
-        if (ipaddr.version == 4 and int(octet) > 0) or \
-            (ipaddr.version == 6 and octet != "0000"):
+        if (ipaddr.version == 4 and int(octet) > 0) or (
+            ipaddr.version == 6 and octet != "0000"
+        ):
             ip_octets[i] = new_octets[i]
         i += 1
 
     # return renumbered ipaddress
 
-    return ipaddress.ip_address(u"{}".format(delimiter.join([str(o) for o in ip_octets])))
+    return ipaddress.ip_address(
+        "{}".format(delimiter.join([str(o) for o in ip_octets]))
+    )
 
 
 def get_client_ip(request):
@@ -278,6 +319,3 @@ def get_client_ip(request):
     else:
         ip = request.META.get("REMOTE_ADDR")
     return ip
-
-
-

@@ -8,10 +8,10 @@
      data-edit-module="api_listing"
      data-edit-group="#view"
      data-edit-target="api:poc">
-     
+
      <div class="row">
        <div class="col-xs-12 col-sm-12 col-md-12">
-         <h5>Contact Information</h5>
+         <h5>{% trans "Contact Information" %}</h5>
        </div>
      </div>
 
@@ -19,7 +19,7 @@
        <div class="note info marg-bot-15">
        {% if not request.user.is_authenticated %}
        {% trans "Some of this network's contacts are hidden because they are only visible to authenticated users and you are currently not logged in." %}
-       {% elif not request.user.is_verified %}
+       {% elif not request.user.is_verified_user %}
        {% trans "Some of this network's contacts are hidden because your user account is not affiliated with any organization." %}
        {% endif %}
        </div>
@@ -69,7 +69,7 @@
                  {% if permissions.can_delete %}
                  <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
                  {% endif %}
-                 <div class="role" 
+                 <div class="role"
                       data-sort-value="{{ p.role }}">
                    {{ p.role }}
                  </div>
@@ -90,7 +90,7 @@
                       data-edit-data="enum/visibility"
                       data-edit-name="visible">
                  </div>
-   
+
                </div>
                <div class="col-xs-5 col-sm-5 col-md-5">
                  <div class="phone"
@@ -110,7 +110,7 @@
                       data-edit-name="email">
                     {{ p.email }}
                  </div>
- 
+
                </div>
           </div>
           {% endfor %}
@@ -120,11 +120,11 @@
      <div class="editable"
           data-edit-toggled="edit"
           data-edit-component="add">
-          
+
           <div class="payload">
             <div data-edit-name="net_id">{{ instance.id }}</div>
           </div>
-          
+
           <div class="row view_row">
             <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Role" %}</div>
             <div class="view_value col-xs-8 col-sm-7 col-md-8">
@@ -134,7 +134,7 @@
               </div>
             </div>
           </div>
- 
+
           <div class="row view_row">
             <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
             <div class="view_value col-xs-8 col-sm-7 col-md-8">
@@ -144,7 +144,7 @@
               </div>
             </div>
           </div>
-   
+
           <div class="row view_row">
             <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Email" %}</div>
             <div class="view_value col-xs-8 col-sm-7 col-md-8">
@@ -153,7 +153,7 @@
               </div>
             </div>
           </div>
- 
+
           <div class="row view_row">
             <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Phone" %}</div>
             <div class="view_value col-xs-8 col-sm-7 col-md-8">
@@ -162,7 +162,7 @@
               </div>
             </div>
           </div>
- 
+
           <div class="row view_row">
             <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Visibility" %}</div>
             <div class="view_value col-xs-8 col-sm-7 col-md-8">
@@ -173,8 +173,8 @@
               </div>
             </div>
           </div>
- 
- 
+
+
           <div class="row marg-top">
             <div class="col-xs-12 right">
               <a class="btn btn-default" data-edit-action="add">{% trans "Add Contact" %}</a>
@@ -182,23 +182,130 @@
           </div>
      </div>
      {% endif %}
-   
+
 
 </div>
 {% elif data.poc_hidden %}
 <div class="list">
      <div class="row">
        <div class="col-xs-12 col-sm-12 col-md-12">
-         <h5>Contact Information</h5>
+         <h5>{% trans "Contact Information" %}</h5>
        </div>
      </div>
 
      <div class="note info marg-bot-15">
        {% if not request.user.is_authenticated %}
        {% trans "Some of this network's contacts are hidden because they are only visible to authenticated users and you are currently not logged in." %}
-       {% elif not request.user.is_verified %}
+       {% elif not request.user.is_verified_user %}
        {% trans "Some of this network's contacts are hidden because your user account is not affiliated with any organization." %}
        {% endif %}
      </div>
 </div>
+{% endif %}
+
+{% if permissions.can_write %}
+
+<div class="modal fade" id="ixf-preview-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">{% trans "IX-F Import Preview" %}</h4>
+      </div>
+      <div class="modal-body">
+        <p>{% blocktrans %}Below is a preview of changes that will be done to your network during the next IX-F data import. The actual import will run once per day at 00:00Z{% endblocktrans %}</p>
+        <p>{% blocktrans %}We use locally cached IX-F data to generate this preview - if you are expecting changes to an exchange's IX-F data please give it some time to be reflected here.{% endblocktrans %}</p>
+        <div class="ixf-log" id="ixf-log">
+          <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active">
+              <a href="#ixf-changes" id="tab-ixf-changes" aria-controls="add_fac" role="tab" data-toggle="tab">
+                {% trans "Changes" %}
+              </a>
+            </li>
+            <li role="presentation">
+              <a href="#ixf-errors" id="tab-ixf-errors" aria-controls="add_net" role="tab" data-toggle="tab">
+                {% trans "Errors" %}<span class="ixf-error-counter"></span>
+              </a>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="ixf-changes">
+              <div class="ixf-headers row">
+                <div class="col-sm-1"><strong>{% trans "action" %}</strong></div>
+                <div class="col-sm-3"><strong>{% trans "exchange" %}</strong></div>
+                <div class="col-sm-2"><strong>ipv4</strong></div>
+                <div class="col-sm-3"><strong>ipv6</strong></div>
+                <div class="col-sm-1"><strong>{% trans "speed" %}</strong></div>
+                <div class="col-sm-2"><strong>{% trans "routeserver" %}</strong></div>
+              </div>
+              <div class="ixf-result"></div>
+            </div>
+            <div role="tabpanel" class="tab-pane ixf-errors" id="ixf-errors">
+              <div>{% blocktrans %}Sometimes we encounter some errors when parsing ix-f data, these will usually affect the import, you can view any of those errors below{% endblocktrans %}</div>
+              <div class="ixf-errors-list"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Close" %}</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+<div class="modal fade" id="ixf-postmortem-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">{% trans "IX-F Import Preview" %}</h4>
+      </div>
+      <div class="modal-body">
+        <p>{% blocktrans %}Below is a log of changes done to you network -&gt; exchange connections as a result of IX-F data imports. Note that this does not contain any adjustments done by staff to rollback such changes, but should be viewed as a raw log of actions taken by the IX-F data import.{% endblocktrans %}</p>
+        <div class="ixf-log" id="ixf-postmortem">
+          <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active">
+              <a href="#ixf-postmortem-changes" id="tab-ixf-changes" aria-controls="add_fac" role="tab" data-toggle="tab">
+                {% trans "Changes" %}
+              </a>
+            </li>
+            <li role="presentation">
+              <a href="#ixf-postmortem-errors" id="tab-ixf-errors" aria-controls="add_net" role="tab" data-toggle="tab">
+                {% trans "Errors" %}<span class="ixf-error-counter"></span>
+              </a>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="ixf-postmortem-changes">
+              <div class="ixf-headers row">
+                <div class="col-sm-1"><strong>{% trans "action" %}</strong></div>
+                <div class="col-sm-3"><strong>{% trans "exchange" %}</strong></div>
+                <div class="col-sm-2"><strong>ipv4</strong></div>
+                <div class="col-sm-3"><strong>ipv6</strong></div>
+                <div class="col-sm-1"><strong>{% trans "speed" %}</strong></div>
+                <div class="col-sm-2"><strong>{% trans "routeserver" %}</strong></div>
+              </div>
+              <div class="ixf-result"></div>
+            </div>
+            <div role="tabpanel" class="tab-pane ixf-errors" id="ixf-postmortem-errors">
+              <div class="ixf-errors-list"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        {% trans "Showing most recent" %} <input type="text" id="ixf-postmortem-limit" value="25"> {% trans "changes" %}
+        <button type="button" class="btn btn-default" id="ixf-postmortem-refresh">{% trans "Refresh" %}</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Close" %}</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+
 {% endif %}

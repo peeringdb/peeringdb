@@ -1,3 +1,4 @@
+import django.urls
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.contrib.contenttypes.models import ContentType
 from django_namespace_perms.models import Group, GroupPermission
@@ -6,7 +7,6 @@ from django.template import loader
 from django.conf import settings
 from django.dispatch import receiver
 from allauth.account.signals import user_signed_up
-from django.core import urlresolvers
 
 from corsheaders.signals import check_request_enabled
 
@@ -14,12 +14,24 @@ from django_peeringdb.models.abstract import AddressModel
 
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError, RdapException
 
-from peeringdb_server.deskpro import (ticket_queue, ticket_queue_asnauto_affil,
-                                      ticket_queue_asnauto_create)
+from peeringdb_server.deskpro import (
+    ticket_queue,
+    ticket_queue_asnauto_affil,
+    ticket_queue_asnauto_create,
+)
 
 from peeringdb_server.models import (
-    QUEUE_ENABLED, QUEUE_NOTIFY, UserOrgAffiliationRequest, is_suggested,
-    VerificationQueueItem, Organization, Facility, Network, NetworkContact)
+    QUEUE_ENABLED,
+    QUEUE_NOTIFY,
+    UserOrgAffiliationRequest,
+    is_suggested,
+    VerificationQueueItem,
+    Organization,
+    InternetExchange,
+    Facility,
+    Network,
+    NetworkContact,
+)
 
 import peeringdb_server.settings as pdb_settings
 
@@ -42,7 +54,7 @@ def addressmodel_save(sender, instance=None, **kwargs):
             a = getattr(instance, field.name)
             b = getattr(old, field.name)
             if a != b:
-                #print("Change in field '%s' - '%s'(%s) to '%s'(%s) - marking %s for geocode sync" % (field.name, a, type(a), b, type(b), instance))
+                # print("Change in field '%s' - '%s'(%s) to '%s'(%s) - marking %s for geocode sync" % (field.name, a, type(a), b, type(b), instance))
                 # address model field has changed, mark for geocode sync
                 instance.geocode_status = False
 
@@ -57,6 +69,7 @@ def org_save(sender, **kwargs):
     """
 
     inst = kwargs.get("instance")
+    ix_namespace = InternetExchange.nsp_namespace_from_id(inst.id, "*")
 
     # make the general member group for the org
     try:
@@ -65,13 +78,22 @@ def org_save(sender, **kwargs):
         group = Group(name=inst.group_name)
         group.save()
 
-        perm = GroupPermission(group=group, namespace=inst.nsp_namespace,
-                               permissions=PERM_READ)
+        perm = GroupPermission(
+            group=group, namespace=inst.nsp_namespace, permissions=PERM_READ
+        )
         perm.save()
 
         GroupPermission(
-            group=group, namespace=NetworkContact.nsp_namespace_from_id(
-                inst.id, "*", "private"), permissions=PERM_READ).save()
+            group=group,
+            namespace=NetworkContact.nsp_namespace_from_id(inst.id, "*", "private"),
+            permissions=PERM_READ,
+        ).save()
+
+        GroupPermission(
+            group=group,
+            namespace=f"{ix_namespace}.ixf_ixp_member_list_url.private",
+            permissions=PERM_READ,
+        ).save()
 
     # make the admin group for the org
     try:
@@ -80,16 +102,26 @@ def org_save(sender, **kwargs):
         group = Group(name=inst.admin_group_name)
         group.save()
 
-        perm = GroupPermission(group=group, namespace=inst.nsp_namespace,
-                               permissions=PERM_CRUD)
+        perm = GroupPermission(
+            group=group, namespace=inst.nsp_namespace, permissions=PERM_CRUD
+        )
         perm.save()
 
-        GroupPermission(group=group, namespace=inst.nsp_namespace_manage,
-                        permissions=PERM_CRUD).save()
+        GroupPermission(
+            group=group, namespace=inst.nsp_namespace_manage, permissions=PERM_CRUD
+        ).save()
 
         GroupPermission(
-            group=group, namespace=NetworkContact.nsp_namespace_from_id(
-                inst.id, "*", "private"), permissions=PERM_CRUD).save()
+            group=group,
+            namespace=NetworkContact.nsp_namespace_from_id(inst.id, "*", "private"),
+            permissions=PERM_CRUD,
+        ).save()
+
+        GroupPermission(
+            group=group,
+            namespace=f"{ix_namespace}.ixf_ixp_member_list_url.private",
+            permissions=PERM_CRUD,
+        ).save()
 
     if inst.status == "deleted":
         for ar in inst.affiliation_requests.all():
@@ -162,12 +194,10 @@ def uoar_creation(sender, instance, created=False, **kwargs):
         instance.status = "pending"
         instance.save()
 
-        if instance.org_id and instance.org.admin_usergroup.user_set.count(
-        ) > 0:
+        if instance.org_id and instance.org.admin_usergroup.user_set.count() > 0:
 
             # check that user is not already a member of that org
-            if instance.user.groups.filter(
-                    name=instance.org.usergroup.name).exists():
+            if instance.user.groups.filter(name=instance.org.usergroup.name).exists():
                 instance.approve()
                 return
 
@@ -176,16 +206,21 @@ def uoar_creation(sender, instance, created=False, **kwargs):
             for user in instance.org.admin_usergroup.user_set.all():
                 with override(user.locale):
                     user.email_user(
-                        _(u"User %(u_name)s wishes to be affiliated to your Organization"
-                          ) % {'u_name': instance.user.full_name},
+                        _(
+                            "User %(u_name)s wishes to be affiliated to your Organization"
+                        )
+                        % {"u_name": instance.user.full_name},
                         loader.get_template(
-                            'email/notify-org-admin-user-affil.txt').render({
+                            "email/notify-org-admin-user-affil.txt"
+                        ).render(
+                            {
                                 "user": instance.user,
                                 "org": instance.org,
-                                "org_management_url": '%s/org/%d#users' %
-                                                      (settings.BASE_URL,
-                                                       instance.org.id)
-                            }))
+                                "org_management_url": "%s/org/%d#users"
+                                % (settings.BASE_URL, instance.org.id),
+                            }
+                        ),
+                    )
         else:
             request_type = "be affiliated to"
             rdap_data = {"emails": []}
@@ -198,18 +233,20 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                 try:
                     rdap_lookup = rdap = RdapLookup().get_asn(instance.asn)
                     ok = rdap_lookup.emails
-                except RdapException, inst:
+                except RdapException as inst:
                     instance.deny()
                     raise
 
                 # create organization
                 instance.org, org_created = Organization.create_from_rdap(
-                    rdap, instance.asn, instance.org_name)
+                    rdap, instance.asn, instance.org_name
+                )
                 instance.save()
 
                 # create network
                 net, net_created = Network.create_from_rdap(
-                    rdap, instance.asn, instance.org)
+                    rdap, instance.asn, instance.org
+                )
 
                 # if affiliate auto appove is on, auto approve at this point
                 if pdb_settings.AUTO_APPROVE_AFFILIATION:
@@ -217,15 +254,20 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     return
 
                 ticket_queue_asnauto_create(
-                    instance.user, instance.org, net, rdap, net.asn,
-                    org_created=org_created, net_created=net_created)
+                    instance.user,
+                    instance.org,
+                    net,
+                    rdap,
+                    net.asn,
+                    org_created=org_created,
+                    net_created=net_created,
+                )
 
                 # if user's relationship to network can be validated now
                 # we can approve the ownership request right away
                 if instance.user.validate_rdap_relationship(rdap):
                     instance.approve()
-                    ticket_queue_asnauto_affil(instance.user, instance.org,
-                                               net, rdap)
+                    ticket_queue_asnauto_affil(instance.user, instance.org, net, rdap)
                     return
 
             if instance.org:
@@ -243,55 +285,71 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     # if user's relationship to the org can be validated by
                     # checking the rdap information of the org's networks
                     # we can approve the affiliation (ownership) request right away
-                    for asn, rdap in instance.org.rdap_collect.items():
+                    for asn, rdap in list(instance.org.rdap_collect.items()):
                         rdap_data["emails"].extend(rdap.emails)
                         if instance.user.validate_rdap_relationship(rdap):
                             ticket_queue_asnauto_affil(
-                                instance.user, instance.org,
-                                Network.objects.get(asn=asn), rdap)
+                                instance.user,
+                                instance.org,
+                                Network.objects.get(asn=asn),
+                                rdap,
+                            )
                             instance.approve()
                             return
             else:
                 entity_name = instance.org_name
 
                 if pdb_settings.AUTO_APPROVE_AFFILIATION:
-                    org = Organization.objects.create(name=instance.org_name, status="ok")
+                    org = Organization.objects.create(
+                        name=instance.org_name, status="ok"
+                    )
                     instance.org = org
                     instance.approve()
                     return
 
-
-
             # organization has no owners and RDAP information could not verify the user's relationship to the organization, notify pdb staff for review
             ticket_queue(
-                u'User %s wishes to %s %s' % (instance.user.username,
-                                              request_type, entity_name),
-                loader.get_template('email/notify-pdb-admin-user-affil.txt')
-                .render({
-                    "user": instance.user,
-                    "instance": instance,
-                    "base_url": settings.BASE_URL,
-                    "org_add_url": "%s%s" % (
-                        settings.BASE_URL,
-                        urlresolvers.reverse(
-                            "admin:peeringdb_server_organization_add")),
-                    "net_add_url": "%s%s" %
-                                   (settings.BASE_URL,
-                                    urlresolvers.reverse(
-                                        "admin:peeringdb_server_network_add")),
-                    "review_url": "%s%s" %
-                                  (settings.BASE_URL,
-                                   urlresolvers.reverse(
-                                       "admin:peeringdb_server_user_change",
-                                       args=(instance.user.id, ))),
-                    "approve_url": "%s%s" % (
-                        settings.BASE_URL,
-                        urlresolvers.reverse(
-                            "admin:peeringdb_server_userorgaffiliationrequest_actions",
-                            args=(instance.id, "approve_and_notify"))),
-                    "emails": list(set(rdap_data["emails"])),
-                    "rdap_lookup": rdap_lookup
-                }), instance.user)
+                "User %s wishes to %s %s"
+                % (instance.user.username, request_type, entity_name),
+                loader.get_template("email/notify-pdb-admin-user-affil.txt").render(
+                    {
+                        "user": instance.user,
+                        "instance": instance,
+                        "base_url": settings.BASE_URL,
+                        "org_add_url": "%s%s"
+                        % (
+                            settings.BASE_URL,
+                            django.urls.reverse(
+                                "admin:peeringdb_server_organization_add"
+                            ),
+                        ),
+                        "net_add_url": "%s%s"
+                        % (
+                            settings.BASE_URL,
+                            django.urls.reverse("admin:peeringdb_server_network_add"),
+                        ),
+                        "review_url": "%s%s"
+                        % (
+                            settings.BASE_URL,
+                            django.urls.reverse(
+                                "admin:peeringdb_server_user_change",
+                                args=(instance.user.id,),
+                            ),
+                        ),
+                        "approve_url": "%s%s"
+                        % (
+                            settings.BASE_URL,
+                            django.urls.reverse(
+                                "admin:peeringdb_server_userorgaffiliationrequest_actions",
+                                args=(instance.id, "approve_and_notify"),
+                            ),
+                        ),
+                        "emails": list(set(rdap_data["emails"])),
+                        "rdap_lookup": rdap_lookup,
+                    }
+                ),
+                instance.user,
+            )
 
     elif instance.status == "approved" and instance.org_id:
 
@@ -312,7 +370,8 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
             try:
                 VerificationQueueItem.objects.get(
                     content_type=ContentType.objects.get_for_model(sender),
-                    object_id=instance.id)
+                    object_id=instance.id,
+                )
             except VerificationQueueItem.DoesNotExist:
                 q = VerificationQueueItem(item=instance)
                 q.save()
@@ -320,7 +379,8 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
             try:
                 q = VerificationQueueItem.objects.get(
                     content_type=ContentType.objects.get_for_model(sender),
-                    object_id=instance.id)
+                    object_id=instance.id,
+                )
                 q.delete()
             except VerificationQueueItem.DoesNotExist:
                 pass
@@ -329,7 +389,8 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
         try:
             q = VerificationQueueItem.objects.get(
                 content_type=ContentType.objects.get_for_model(sender),
-                object_id=instance.id)
+                object_id=instance.id,
+            )
             q.delete()
         except VerificationQueueItem.DoesNotExist:
             pass
@@ -347,29 +408,34 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
         user = instance.user
 
         if type(item) in QUEUE_NOTIFY and not getattr(
-                settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False):
+            settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False
+        ):
 
             if type(item) == Network:
                 rdap = RdapLookup().get_asn(item.asn)
             else:
                 rdap = None
 
-            title = u"{} - {}".format(instance.content_type, item)
+            title = f"{instance.content_type} - {item}"
 
             if is_suggested(item):
-                title = u"[SUGGEST] {}".format(title)
+                title = f"[SUGGEST] {title}"
 
             ticket_queue(
                 title,
-                loader.get_template('email/notify-pdb-admin-vq.txt').render({
-                    "entity_type_name": str(instance.content_type),
-                    "suggested": is_suggested(item),
-                    "item": item,
-                    "user": user,
-                    "rdap": rdap,
-                    "edit_url": "%s%s" % (settings.BASE_URL,
-                                          instance.item_admin_url)
-                }), instance.user)
+                loader.get_template("email/notify-pdb-admin-vq.txt").render(
+                    {
+                        "entity_type_name": str(instance.content_type),
+                        "suggested": is_suggested(item),
+                        "item": item,
+                        "user": user,
+                        "rdap": rdap,
+                        "edit_url": "%s%s"
+                        % (settings.BASE_URL, instance.item_admin_url),
+                    }
+                ),
+                instance.user,
+            )
 
             instance.notified = True
             instance.save()
@@ -382,9 +448,10 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
 
 
 def cors_allow_api_get_to_everyone(sender, request, **kwargs):
-    #FIXME: path name to look for should come from config
-    return ((request.path == "/api" or request.path.startswith('/api/'))
-            and request.method in ["GET", "OPTIONS"])
+    # FIXME: path name to look for should come from config
+    return (
+        request.path == "/api" or request.path.startswith("/api/")
+    ) and request.method in ["GET", "OPTIONS"]
 
 
 check_request_enabled.connect(cors_allow_api_get_to_everyone)

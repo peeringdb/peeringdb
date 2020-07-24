@@ -26,84 +26,13 @@
     </div>
   </div>
 
-  <div class="row item separator" id="ixlan-item">
-    <div class="col-xs-5 col-sm-5 col-md-5">
-      {% if permissions.can_delete %}
-      <a class="btn-row-delete next-to-input" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
-      {% endif %}
-      <div class="name"
-           data-edit-type="string"
-           data-edit-name="name">
-      </div>
-    </div>
-    <div class="col-xs-4 col-sm-4 col-md-4"
-         data-edit-name="dot1q_support"
-         data-edit-type="bool"
-         data-edit-template="check">
-    </div>
-    <div class="col-xs-3 col-sm-3 col-md-3">
-      <div data-edit-type="number"
-           data-edit-name="mtu">
-      </div>
-    </div>
-    <div class="col-xs-12">
-      <div data-edit-type="string"
-           data-edit-placeholder="{% trans "IXF Member Export URL" %}"
-           data-edit-name="ixf_ixp_member_list_url">
-      </div>
-    </div>
-    <div class="col-xs-12">
-      <div>
-        <span class="checkmark"
-             data-edit-type="bool"
-             data-edit-name="ixf_ixp_import_enabled"
-             data-edit-template="check">
-             </span>
-             <span class="enabled">{% trans "Enable IX-F Import" %}</span>
-      </div>
-
-    </div>
-    <div class="marg-top-80 pad-side-15"
-         data-edit-module="api_listing"
-         data-edit-group="#view"
-         data-edit-target="api:ixpfx">
-
-      <div id="list-prefixes"
-           data-edit-component="list"
-           data-edit-template="prefix-item">
-
-      </div>
-      <div class="editable"
-           data-edit-toggled="edit"
-           data-edit-component="add">
-
-        <div class="row sub add">
-          <div class="col-xs-4 col-sm-4 col-md-4"
-               data-edit-type="select"
-               data-edit-name="protocol"
-               data-edit-data="enum/protocols">
-          </div>
-          <div class="col-xs-5 col-sm-5 col-md-5"
-               data-edit-type="string"
-               data-edit-name="prefix"
-               data-edit-placeholder="{% trans "Prefix" %}"
-               data-edit-required="yes">
-          </div>
-          <div class="col-xs-3 col-sm-3 col-md-3">
-             <a class="btn btn-default" data-edit-action="add">{% trans "Add" %}</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="row sub" id="prefix-item">
-    <div class="col-xs-4 col-sm-4 col-md-4">
+    <div class="col-xs-3">
       {% if permissions.can_delete %}
       <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
       {% endif %}
       <span data-edit-name="protocol"></span>
     </div>
-    <div class="col-xs-8 col-sm-8 col-md-8" data-edit-type="string" data-edit-required="yes" data-edit-name="prefix"></div>
+    <div class="col-xs-9" data-edit-type="string" data-edit-required="yes" data-edit-name="prefix"></div>
   </div>
 </div>

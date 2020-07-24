@@ -101,7 +101,7 @@
       <div class="row">
         <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Exchange Presence" %}<span class="hint">{% trans "Search for networks that are present at one exchange and absent at another exchange" %}</span></div>
         <div class="col-xs-8 col-sm-7 col-md-8">
-           <div><span class="hint">Present</span></div>
+           <div><span class="hint">{% trans "Present" %}</span></div>
            <div data-edit-type="autocomplete"
                 data-edit-autocomplete="ix"
                 data-edit-autocomplete-text="{{ ix_name }}"
@@ -109,7 +109,7 @@
                 data-edit-reset-value=""
                 data-edit-value="{{request.GET.ix}}"></div>
 
-           <div><span class="hint">Absent</span></div>
+           <div><span class="hint">{% trans "Absent" %}</span></div>
            <div data-edit-type="autocomplete"
                 data-edit-autocomplete="ix"
                 data-edit-autocomplete-text="{{ not_ix_name }}"
@@ -185,7 +185,7 @@
         <div data-sort-target=".aka">{% trans "Also known as" %}</div>
       </div>
       <div class="col-xs-2 col-sm-2 col-md-2">
-        <div data-sort-target=".asn">{% trans "ASN" %}</div>
+        <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
         <div data-sort-target=".policy_general">{% trans "General Policy" %}</div>
       </div>
       <div class="col-xs-2 col-sm-2 col-md-2">
@@ -193,12 +193,12 @@
         <div data-sort-target=".info_scope">{% trans "Network Scope" %}</div>
       </div>
       <div class="col-xs-2 col-sm-2 col-md-2">
-        <div data-sort-target=".info_traffic">{% trans "Traffic Levels" %}</div>
+        <div data-sort-target=".info_traffic" class="numeric">{% trans "Traffic Levels" %}</div>
         <div data-sort-target=".info_ratio">{% trans "Traffic Ratio" %}</div>
       </div>
       <div class="col-xs-2 col-sm-2 col-md-2">
-        <div data-sort-target=".ix_count">{% trans "Exchanges" %}</div>
-        <div data-sort-target=".fac_count">{% trans "Facilities" %}</div>
+        <div data-sort-target=".ix_count" class="numeric">{% trans "Exchanges" %}</div>
+        <div data-sort-target=".fac_count" class="numeric">{% trans "Facilities" %}</div>
       </div>
 
     </div>

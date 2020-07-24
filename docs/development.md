@@ -102,6 +102,18 @@ facs peeringdb dev --src-dir=. ; whois -h 127.0.0.1 as63311
 pytest -v -rxs --cov-report term-missing --cov=peeringdb_server/ --capture=sys tests/
 ```
 
+## Dependencies
+
+All dependencies are now handled by the Pipfile.
+
+To update them, do a pipenv lock, and test.
+
+To update the requirements.txt file, from the base dir, run:
+
+```sh
+scripts/update_requirements_file.sh
+```
+
 
 ## Troubleshooting
 

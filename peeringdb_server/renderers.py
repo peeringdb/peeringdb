@@ -30,15 +30,15 @@ class JSONEncoder(encoders.JSONEncoder):
 
 
 class MungeRenderer(renderers.BaseRenderer):
-    media_type = 'text/plain'
-    format = 'txt'
-    charset = 'iso-8859-1'
+    media_type = "text/plain"
+    format = "txt"
+    charset = "utf-8"
 
     def render(self, data, media_type=None, renderer_context=None):
         # TODO use munge:
         indent = None
-        if 'request' in renderer_context:
-            request = renderer_context.get('request')
+        if "request" in renderer_context:
+            request = renderer_context.get("request")
             if "pretty" in request.GET:
                 indent = 2
         return json.dumps(data, cls=JSONEncoder, indent=indent)
@@ -49,6 +49,7 @@ class MetaJSONRenderer(MungeRenderer):
     Renderer which serializes to JSON.
     Does *not* apply JSON's character escaping for non-ascii characters.
     """
+
     ensure_ascii = False
 
     media_type = "application/json"
@@ -64,19 +65,19 @@ class MetaJSONRenderer(MungeRenderer):
 
         result = {}
 
-        if '__meta' in data:
-            meta = data.pop('__meta')
+        if "__meta" in data:
+            meta = data.pop("__meta")
         else:
             meta = dict()
 
-        if 'request' in renderer_context:
-            request = renderer_context.get('request')
-            meta.update(getattr(request, 'meta_response', {}))
+        if "request" in renderer_context:
+            request = renderer_context.get("request")
+            meta.update(getattr(request, "meta_response", {}))
 
-        res = renderer_context['response']
+        res = renderer_context["response"]
         if res.status_code < 400:
-            if 'results' in data:
-                result['data'] = data.pop('results')
+            if "results" in data:
+                result["data"] = data.pop("results")
             elif data:
                 if isinstance(data, dict):
                     result["data"] = [data]
@@ -86,10 +87,12 @@ class MetaJSONRenderer(MungeRenderer):
                 result["data"] = []
 
         elif res.status_code < 500:
-            meta['error'] = data.pop('detail', 'Unknown')
+            meta["error"] = data.pop("detail", res.reason_phrase)
+
             result.update(**data)
 
-        result['meta'] = meta
+        result["meta"] = meta
 
-        return super(self.__class__, self).render(result, accepted_media_type,
-                                                  renderer_context)
+        return super(self.__class__, self).render(
+            result, accepted_media_type, renderer_context
+        )

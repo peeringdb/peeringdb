@@ -6,10 +6,10 @@
 <div class="list" data-sort-container=".scrollable" data-sort-row=".row">
   <div class="row">
     <div class="col-xs-6 col-sm-8 col-md-8">
-      <h5>Local Exchanges</h5>
+      <h5>{% trans "Exchanges" %}</h5>
     </div>
     <div class="col-xs-6 col-sm-4 col-md-4 filter">
-      <input type="text" placeholder="Filter" data-filter-target="#list-exchanges" class="form-control" />
+      <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-exchanges" class="form-control" />
     </div>
   </div>
   <div class="row header">
@@ -20,7 +20,7 @@
       <div data-sort-target=".name">{% trans "Long Name" %}</div>
     </div>
     <div class="col-xs-3 col-sm-3 col-md-3">
-      <div data-sort-target=".participants">{% trans "Networks" %}</div>
+      <div data-sort-target=".participants" class="numeric">{% trans "Networks" %}</div>
     </div>
   </div>
 

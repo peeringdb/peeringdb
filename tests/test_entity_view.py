@@ -23,44 +23,54 @@ class ViewTestCase(TestCase):
         user_group = Group.objects.create(name="user")
 
         cls.guest_user = models.User.objects.create_user(
-            "guest", "guest@localhost", "guest")
+            "guest", "guest@localhost", "guest"
+        )
         cls.guest_user.set_password("guest")
         guest_group.user_set.add(cls.guest_user)
 
         nsp.models.GroupPermission.objects.create(
-            group=guest_group, namespace="peeringdb.organization",
-            permissions=0x01)
+            group=guest_group, namespace="peeringdb.organization", permissions=0x01
+        )
 
         nsp.models.GroupPermission.objects.create(
-            group=user_group, namespace="peeringdb.organization",
-            permissions=0x01)
+            group=user_group, namespace="peeringdb.organization", permissions=0x01
+        )
 
         nsp.models.GroupPermission.objects.create(
             group=user_group,
             namespace="peeringdb.organization.*.network.*.poc_set.users",
-            permissions=0x01)
+            permissions=0x01,
+        )
 
         nsp.models.GroupPermission.objects.create(
             group=guest_group,
             namespace="peeringdb.organization.*.network.*.poc_set.public",
-            permissions=0x01)
+            permissions=0x01,
+        )
 
         # create test users
         for name in [
-                "org_admin", "user_a", "user_b", "user_c", "user_d", "user_e",
-                "user_f"
+            "org_admin",
+            "user_a",
+            "user_b",
+            "user_c",
+            "user_d",
+            "user_e",
+            "user_f",
         ]:
-            setattr(cls, name,
-                    models.User.objects.create_user(
-                        name, "%s@localhost" % name, name))
+            setattr(
+                cls,
+                name,
+                models.User.objects.create_user(name, "%s@localhost" % name, name),
+            )
             getattr(cls, name).set_password(name)
             user_group.user_set.add(getattr(cls, name))
 
         # create test org
-        cls.org = models.Organization.objects.create(name="Test org",
-                                                     status="ok")
+        cls.org = models.Organization.objects.create(name="Test org", status="ok")
         cls.org_other = models.Organization.objects.create(
-            name="Test org other", status="ok")
+            name="Test org other", status="ok"
+        )
 
         # create test entities
         for tag in cls.entities:
@@ -120,14 +130,29 @@ class TestNetworkView(ViewTestCase):
         ViewTestCase.setUpTestData()
         # Create PoCs
         models.NetworkContact.objects.create(
-            network=cls.net, visible="Users", name="Contact Users",
-            phone="12345", email="a@a.a", status="ok")
+            network=cls.net,
+            visible="Users",
+            name="Contact Users",
+            phone="12345",
+            email="a@a.a",
+            status="ok",
+        )
         models.NetworkContact.objects.create(
-            network=cls.net, visible="Public", name="Contact Public",
-            phone="12345", email="a@a.a", status="ok")
+            network=cls.net,
+            visible="Public",
+            name="Contact Public",
+            phone="12345",
+            email="a@a.a",
+            status="ok",
+        )
         models.NetworkContact.objects.create(
-            network=cls.net, visible="Private", name="Contact Private",
-            phone="12345", email="a@a.a", status="ok")
+            network=cls.net,
+            visible="Private",
+            name="Contact Private",
+            phone="12345",
+            email="a@a.a",
+            status="ok",
+        )
 
     def test_view(self):
         self.run_view_test("net")
@@ -146,32 +171,33 @@ class TestNetworkView(ViewTestCase):
         c = Client()
         resp = c.get("/net/%d" % self.net.id, follow=True)
         self.assertEqual(resp.status_code, 200)
-        self.assertGreater(resp.content.find(TEXT_NOT_LOGGED_IN), -1)
+        assert resp.status_code == 200
+        assert TEXT_NOT_LOGGED_IN in resp.content.decode("utf-8")
 
         # test #2 - guest logged in (not affiliated to any org)
         c = Client()
         c.login(username="guest", password="guest")
         resp = c.get("/net/%d" % self.net.id)
-        self.assertEqual(resp.status_code, 200)
-        self.assertGreater(resp.content.find(TEXT_NOT_VERIFIED), -1)
+        assert resp.status_code == 200
+        assert TEXT_NOT_VERIFIED in resp.content.decode("utf-8")
 
         # test #3 - user logged in
         c = Client()
         c.login(username="user_a", password="user_a")
         resp = c.get("/net/%d" % self.net.id)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.content.find(TEXT_NOT_VERIFIED), -1)
-        self.assertEqual(resp.content.find(TEXT_NOT_LOGGED_IN), -1)
+        assert resp.status_code == 200
+        assert TEXT_NOT_LOGGED_IN not in resp.content.decode("utf-8")
+        assert TEXT_NOT_VERIFIED not in resp.content.decode("utf-8")
 
     def test_search_asn_redirect(self):
         """
-        When the user types ASXXX or ASNXXX and hits enter, if 
+        When the user types AS*** or ASN*** and hits enter, if
         a result is found it should redirect directly to the result
         """
 
         c = Client()
 
         for q in ["as1", "asn1", "AS1", "ASN1"]:
-            resp = c.get("/search?q={}".format(q), follow=True)
+            resp = c.get(f"/search?q={q}", follow=True)
             self.assertEqual(resp.status_code, 200)
-            self.assertEqual(resp.redirect_chain, [('/net/1', 302)])
+            self.assertEqual(resp.redirect_chain, [("/net/1", 302)])

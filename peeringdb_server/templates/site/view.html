@@ -8,18 +8,26 @@
 {% if permissions.can_edit %}
 <div class="payload">
   <div data-edit-name="org_id">{{ instance.org_id }}</div>
+  {% if ref_tag == "net" %}
+  <div data-edit-name="asn">{{ instance.asn }}</div>
+  {% endif %}
 </div>
 {% endif %}
 
 <div class="row">
   <div class="col-md-12 col-sm-12 col-xs-12">
     <div class="view_title row">
-      <div class="col-md-8 col-sm-8 col-xs-10{% if instance.sponsorship %} sponsor {{ instance.sponsorship.label|lower }} sponsor-badge{% endif %}"
+      <div class="col-md-8 col-sm-8 col-xs-10"
            {% if permissions.can_write %}
            data-edit-type="string"
            {% endif %}
            data-edit-required="yes"
-           data-edit-name="name">{{ data.title }}</div>
+           data-edit-value="{{ data.title }}"
+           data-edit-name="name">{{ data.title }}
+           {% if instance.sponsorship %}
+           <a data-edit-static="yes" href="/sponsors" class="sponsor {{ instance.sponsorship.label|lower }}">{{ instance.sponsorship.label }} sponsor</a>
+           {% endif %}
+           </div>
 
       <div class="col-md-4 col-sm-4 col-xs-2 right button-bar">
         {% if instance.status == "pending" %}
@@ -38,7 +46,7 @@
         <div>
 
         {% if instance.org and not instance.org.owned and request.user.is_authenticated %}
-          {% if request.user.is_verified or request.user.email_confirmed %}
+          {% if request.user.is_verified_user or request.user.email_confirmed %}
           <a class="btn btn-default" href="/request-ownership?id={{ instance.org.id }}">Request Ownership</a>
           {% endif %}
         {% endif %}
@@ -63,7 +71,27 @@
   <!-- fields -->
   <div class="view_fields">
   {% for row in data.fields %}
-    {% if not row.value|dont_render %}
+    {% if row.type == "group" %}
+      <div class="editable"
+           --data-edit-module="api_grouped_update"
+           data-edit-group="#view"
+           data-edit-target="{{ row.target }}"
+           data-edit-id="{{ row.id }}">
+           <div class="row view_row">
+             <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
+          </div>
+
+          <div class="editable payload">
+            {% for payload_row in row.payload %}
+            <div data-edit-name="{{ payload_row.name }}">{{ payload_row.value }}</div>
+            {% endfor %}
+          </div>
+
+    {% elif row.type == "group_end" %}
+      </div>
+    {% endif %}
+
+    {% if not row.value|dont_render and row.type != "group" and row.type != "group_end" %}
     {% if not row.admin or permissions.can_write %}
     <div class="row view_row">
 
@@ -72,10 +100,18 @@
         <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
       {% else %}
         <!-- row header -->
-        <div class="view_field col-xs-4 col-sm-5 col-md-4">{{ row.label }} {% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %}
-        {% if row.help_text %}
+        <div class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
+             {% if row.help_text %}
+             data-toggle="tooltip"
+             data-placement="top"
+             {% if row.notify_incomplete_group %}data-notify-incomplete-group="{{ row.notify_incomplete_group }}"{% endif %}
+             title="{{ row.help_text }}"
+             {% endif %}>{% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %} {{ row.label }}
+             {% if row.help_text %}<span class="glyphicon glyphicon-question-sign"></span>{% endif %}
+        {% if row.helper_text %}
           <div data-edit-toggled="edit" style="display:none;" class="help">{{ row.help_text }}</div>
-        {% endif %}</div>
+        {% endif %}
+        </div>
 
         <!-- row value -->
         {% if row.type == "url" %}
@@ -124,6 +160,12 @@
             <span class="enabled">{{ flag.label }}</span>
           {% endfor %}
           </div>
+        {% elif row.type == "action" %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8 action">
+            {% for action in row.actions %}
+            <button class="btn btn-sm" data-view-action="{{ref_tag}}_{{ action.action }}">{{ action.label }}</button>
+            {% endfor %}
+          </div>
         {% elif row.type == "fmt-text" %}
           <div class="view_value col-xs-8 col-sm-7 col-md-8 fmt_text"
                data-render-markdown="yes"
@@ -137,7 +179,7 @@
                data-edit-name="{{ row.name }}">
                     {{ row.value }}
                     {% if row.name == "notes" and row.value and request.user.is_authenticated %}
-                        <div>
+                        <div class="translate">
                             <!-- select name="language-from">
                               <option value="" selected="selected" selected>Detect</option>
                               {% for lang in LANGUAGES %} <option value="{{ lang.0 }}">{{ lang.1 }}</option> {% endfor %}
@@ -270,11 +312,29 @@
 <script language="javascript" type="text/javascript">
 $(document).ready(function() {
   PeeringDB.incomplete_data_notify();
+  PeeringDB.ViewActions.init();
+
   var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
-  editForm.on('action-success:submit', function() {
-    console.log("Incomplete data check after save");
-    setTimeout(PeeringDB.incomplete_data_notify, 500);
+  editForm.on('action-success:submit', function(e,data) {
+    console.log("SAVE", data)
+    if(PeeringDB.ixf_proposals && PeeringDB.ixf_proposals.require_refresh) {
+      document.location.href = document.location.href;
+    } else {
+      PeeringDB.ViewTools.after_submit(editForm, data);
+      setTimeout(PeeringDB.incomplete_data_notify, 500);
+    }
   });
+
+  editForm.on('action-success:toggle', function(e, payload) {
+    if(payload.mode == "view") {
+      if(PeeringDB.ixf_proposals && PeeringDB.ixf_proposals.require_refresh) {
+        document.location.href = document.location.href;
+      }
+    }
+  })
+
+  $('[data-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
+
 });
 </script>
 {% endif %}

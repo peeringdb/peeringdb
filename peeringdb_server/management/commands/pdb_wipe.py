@@ -1,26 +1,38 @@
 from django.core.management.base import BaseCommand
-from peeringdb_server.models import REFTAG_MAP, NetworkContact, User, Sponsorship, Partnership
+from peeringdb_server.models import (
+    REFTAG_MAP,
+    NetworkContact,
+    User,
+    Sponsorship,
+    Partnership,
+)
 from django.core.management import call_command
 from django.contrib.auth.models import Group
 from django.conf import settings
+
 
 class Command(BaseCommand):
     help = "Wipe all peering data, including users - superusers will be kept - cannot be used in production environments"
 
     def add_arguments(self, parser):
-        parser.add_argument('--commit', action='store_true',
-                            help="will commit the changes")
+        parser.add_argument(
+            "--commit", action="store_true", help="will commit the changes"
+        )
 
-        parser.add_argument('--keep-users', action='store_true',
-                            help="do not delete users")
+        parser.add_argument(
+            "--keep-users", action="store_true", help="do not delete users"
+        )
 
-        parser.add_argument('--load-data', action='store_true',
-                            help="load data after wipe")
+        parser.add_argument(
+            "--load-data", action="store_true", help="load data after wipe"
+        )
 
-        parser.add_argument('--load-data-url', type=str, default="https://www.peeringdb.com/api",
-                            help="load data from here")
-
-
+        parser.add_argument(
+            "--load-data-url",
+            type=str,
+            default="https://www.peeringdb.com/api",
+            help="load data from here",
+        )
 
     def log(self, msg):
         if self.commit:
@@ -67,5 +79,9 @@ class Command(BaseCommand):
         self.log("Cleared seassions")
 
         if self.load_data:
-            call_command("pdb_load_data", commit=self.commit,
-                         url=self.load_data_url, stdout=self.stdout)
+            call_command(
+                "pdb_load_data",
+                commit=self.commit,
+                url=self.load_data_url,
+                stdout=self.stdout,
+            )

@@ -2,8 +2,13 @@ from django import template
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
 import datetime
-from peeringdb_server.models import (InternetExchange, Network, Facility,
-                                     PARTNERSHIP_LEVELS)
+from peeringdb_server.models import (
+    InternetExchange,
+    Network,
+    Facility,
+    Organization,
+    PARTNERSHIP_LEVELS,
+)
 
 from peeringdb_server.views import DoNotRender
 from peeringdb_server.org_admin_views import permission_ids
@@ -22,10 +27,10 @@ register = template.Library()
 
 @register.filter
 def editable_list_value(row):
-    if row.get('value') or row.get('value_label'):
-        return _(row.get('value_label', row.get('value')))
-    elif row.get('blank') and row.get('value') == "":
-        return row.get('blank')
+    if row.get("value") or row.get("value_label"):
+        return _(row.get("value_label", row.get("value")))
+    elif row.get("blank") and row.get("value") == "":
+        return row.get("blank")
     return ""
 
 
@@ -51,7 +56,7 @@ def org_permission_id_xl(org, id):
 @register.filter
 def check_perms(v, op):
     flg = get_permission_flag(op)
-    return (v & flg == flg)
+    return v & flg == flg
 
 
 @register.filter
@@ -72,7 +77,7 @@ def ownership_warning(org, user):
             b = True
             break
     if not b:
-        for rdap in org.rdap_collect.values():
+        for rdap in list(org.rdap_collect.values()):
             try:
                 if user.validate_rdap_relationship(rdap):
                     b = True
@@ -83,15 +88,19 @@ def ownership_warning(org, user):
                 pass
 
     if not b:
-        return mark_safe('<span class="attention">{}</span>'.format(
-            _("Your email address does not match the domain information we have on file for this organization."
-              )))
-    return ''
+        return mark_safe(
+            '<span class="attention">{}</span>'.format(
+                _(
+                    "Your email address does not match the domain information we have on file for this organization."
+                )
+            )
+        )
+    return ""
 
 
 @register.filter
 def long_country_name(v):
-    if type(v) == unicode:
+    if type(v) == str:
         return countries_dict.get(v, v)
     else:
         return v.name
@@ -140,8 +149,7 @@ def dont_render(value):
 
 @register.filter
 def age(dt):
-    seconds = (datetime.datetime.now().replace(tzinfo=dt.tzinfo) -
-               dt).total_seconds()
+    seconds = (datetime.datetime.now().replace(tzinfo=dt.tzinfo) - dt).total_seconds()
     if seconds < 60:
         return "%d %s" % (seconds, _("seconds ago"))
     elif seconds < 3600:
@@ -162,19 +170,21 @@ def ref_tag(value):
         return Network.handleref.tag
     elif value == "Facility":
         return Facility.handleref.tag
+    elif value == "Organization":
+        return Organization.handleref.tag
     return "unknown"
 
 
 @register.filter
 def pretty_speed(value):
     if not value:
-        return ''
+        return ""
     try:
         value = int(value)
         if value >= 1000000:
-            return "%dT" % (value / 10**6)
+            return "%dT" % (value / 10 ** 6)
         elif value >= 1000:
-            return "%dG" % (value / 10**3)
+            return "%dG" % (value / 10 ** 3)
         else:
             return "%dM" % value
     except ValueError:
@@ -215,5 +225,5 @@ def render_markdown(value):
         "a",
     ]
     return bleach.clean(
-        markdown.markdown(value), tags=markdown_tags,
-        protocols=['http', 'https'])
+        markdown.markdown(value), tags=markdown_tags, protocols=["http", "https"]
+    )

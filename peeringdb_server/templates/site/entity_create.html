@@ -1,6 +1,13 @@
 {% load util %}
 {% load i18n %}
 <div class="editable note info">
+{% if entity_name == "Facility" %}
+<p><strong>{% trans "Only use this if you own the facility" %}</strong></p>
+{% elif entity_name == "Exchange" %}
+<p><strong>{% trans "Only use this if you own the exchange" %}</strong></p>
+{% endif %}
+
+
 {% blocktrans trimmed %}
 Add a new {{ entity_name }} to your Organization.
 Note that the newly created {{ entity_name }} will need to be

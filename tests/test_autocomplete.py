@@ -7,15 +7,16 @@ import reversion
 
 from peeringdb_server.models import User, Organization
 from peeringdb_server import autocomplete_views
-from util import ClientCase
+from .util import ClientCase
 
 
 class TestAutocomplete(ClientCase):
     @classmethod
     def setUpTestData(cls):
-        super(TestAutocomplete, cls).setUpTestData()
-        cls.staff_user = User.objects.create_user("staff", "staff@localhost",
-                                                  "staff", is_staff=True)
+        super().setUpTestData()
+        cls.staff_user = User.objects.create_user(
+            "staff", "staff@localhost", "staff", is_staff=True
+        )
 
     def setUp(self):
         self.factory = RequestFactory()
@@ -33,7 +34,7 @@ class TestAutocomplete(ClientCase):
 
         url = reverse("autocomplete-admin-deleted-versions")
 
-        r = self.factory.get("{}?q=org {}".format(url, org.id))
+        r = self.factory.get(f"{url}?q=org {org.id}")
         r.user = self.staff_user
         r = autocomplete_views.DeletedVersionAutocomplete.as_view()(r)
 

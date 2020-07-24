@@ -34,15 +34,11 @@
         </div>
       <p> </p>
       <h4><b>{% trans "Resources" %}</b></h4>
-        <div><a href="http://status.peeringdb.com/">{% trans "Status" %}</a></div>
-        <div><a href="http://docs.peeringdb.com/faq/">{% trans "FAQ" %}</a></div>
-
-        <div>
-        <a href="/docs">{% trans "Documentation" %}</a>
-        </div>
-        <div>
-        <a href="/apidocs">{% trans "API Documentation" %}</a>
-        </div>
+        <div><a href="/apidocs" target="_blank">{% trans "API" %}</a></div>
+        <div><a href="/docs" target="_blank">{% trans "Documentation" %}</a></div>
+        <div><a href="http://docs.peeringdb.com/faq/" target="_blank">{% trans "FAQ" %}</a></div>
+        <div><a href="http://gov.peeringdb.com/" target="_blank">{% trans "Governance" %}</a></div>
+        <div><a href="http://status.peeringdb.com/" target="_blank">{% trans "Status" %}</a></div>
       <p> </p>
       <h4><b>{% trans "Contact Us" %}</b></h4>
       <a href="mailto:support@peeringdb.com">support@peeringdb.com</a>
@@ -56,6 +52,7 @@
         <div>{{ global_stats.fac }} {% trans "Facilities" %}</div>
         <div>{{ global_stats.netixlan }} {% trans "Connections to Exchanges" %}</div>
         <div>{{ global_stats.netfac }} {% trans "Connections to Facilities" %}</div>
+        <div>{{ global_stats.automated_nets }} {% trans "Automated Networks" %}</div>
       </div>
     </div>
   </div>

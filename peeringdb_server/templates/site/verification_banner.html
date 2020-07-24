@@ -1,5 +1,5 @@
 {% load i18n %}
-{% if request.user.is_authenticated and not request.user.is_verified %}
+{% if request.user.is_authenticated and not request.user.is_verified_user %}
 <div class="marg-bot-15">
 <div class="editable popin error">
 <p>

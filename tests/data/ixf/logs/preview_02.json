@@ -1,0 +1,149 @@
+{
+  "errors": [
+    "Test Exchange(1): Invalid speed value: fast",
+    "Test Exchange(1): Could not find ipv4 or 6 address in vlan_list entry for vlan_id 1 (AS2906)",
+    "Test Exchange(1): Ip address error ''195.69.146.error' does not appear to be an IPv4 or IPv6 address' in vlan_list entry for vlan_id 2"
+  ],
+  "data": [
+    {
+      "peer": {
+        "ix_id": 1,
+        "ixlan_id": 1,
+        "ix_name": "Test Exchange",
+        "asn": 2906
+      },
+      "action": "ignore",
+      "reason": "Invalid connection state: disabled"
+    },
+    {
+      "peer": {
+        "ix_id": 1,
+        "asn": 2906,
+        "ix_name": "Test Exchange",
+        "ixlan_id": 1,
+        "ipaddr4": "195.69.146.250",
+        "ipaddr6": "2001:7f8:1::a500:2906:2",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "net_id": 1
+      },
+      "action": "add",
+      "reason": "New ip-address"
+    },
+    {
+      "peer": {
+        "ix_id": 1,
+        "asn": 2906,
+        "ix_name": "Test Exchange",
+        "ixlan_id": 1,
+        "ipaddr4": "195.69.147.250",
+        "ipaddr6": "2001:7f8:1::a500:2906:1",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "net_id": 1
+      },
+      "action": "add",
+      "reason": "New ip-address"
+    },
+    {
+      "peer": {
+        "ix_id": 1,
+        "asn": 2906,
+        "ix_name": "Test Exchange",
+        "ixlan_id": 1,
+        "ipaddr4": "195.69.147.251",
+        "ipaddr6": "2001:7f8:1::a500:2906:5",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "net_id": 1
+      },
+      "action": "modify",
+      "reason": "Fields changed: ipaddr6, is_rs_peer, speed"
+    },
+    {
+      "peer": {
+        "ix_id": 1,
+        "asn": 2906,
+        "ix_name": "Test Exchange",
+        "ixlan_id": 1,
+        "ipaddr4": "195.69.147.253",
+        "ipaddr6": "",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "net_id": 1
+      },
+      "action": "add",
+      "reason": "New ip-address"
+    },
+    {
+      "peer": {
+        "ix_id": 1,
+        "asn": 2906,
+        "ix_name": "Test Exchange",
+        "ixlan_id": 1,
+        "ipaddr4": "",
+        "ipaddr6": "2001:7f8:1::a500:2906:6",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "net_id": 1
+      },
+      "action": "add",
+      "reason": "New ip-address"
+    },
+    {
+      "peer": {
+        "ix_id": 1,
+        "asn": 2906,
+        "ix_name": "Test Exchange",
+        "ixlan_id": 1,
+        "ipaddr4": "195.69.146.251",
+        "ipaddr6": "2001:7f8:1::a500:2906:3",
+        "is_rs_peer": true,
+        "speed": 20000,
+        "net_id": 1
+      },
+      "action": "noop",
+      "reason": "Connection is currently marked as inactive"
+    },
+    {
+      "peer": {
+        "ix_id": 1,
+        "asn": 2906,
+        "ix_name": "Test Exchange",
+        "ixlan_id": 1,
+        "ipaddr4": "195.69.146.252",
+        "ipaddr6": "2001:7f8:1::a500:2906:4",
+        "is_rs_peer": true,
+        "speed": 10000,
+        "net_id": 1
+      },
+      "action": "noop",
+      "reason": "Connection is currently marked as inactive"
+    },
+    {
+      "peer": {
+        "ix_id": 1,
+        "ixlan_id": 1,
+        "ix_name": "Test Exchange",
+        "asn": 2906
+      },
+      "action": "ignore",
+      "reason": "Invalid member type: other"
+    },
+    {
+      "peer": {
+        "ix_id": 1,
+        "asn": 2906,
+        "ix_name": "Test Exchange",
+        "ixlan_id": 1,
+        "ipaddr4": "195.69.146.249",
+        "ipaddr6": "",
+        "is_rs_peer": false,
+        "speed": 10000,
+        "net_id": 1
+      },
+      "action": "delete",
+      "reason": "Ip addresses no longer exist in validated data or are no longer with this asn"
+    }
+  ]
+}

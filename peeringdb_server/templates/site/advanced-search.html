@@ -13,6 +13,9 @@
     <li role="presentation" class="{% if request.GET.reftag == "fac" %}active{% else %}inactive{% endif %}">
       <a href="#fac" aria-controls="fac" role="tab" data-toggle="tab">{% trans "Facilities" %}</a>
     </li>
+    <li role="presentation" class="{% if request.GET.reftag == "org" %}active{% else %}inactive{% endif %}">
+      <a href="#org" aria-controls="org" role="tab" data-toggle="tab">{% trans "Organizations" %}</a>
+    </li>
   </ul>
 
   <div class="tab-content">
@@ -25,6 +28,9 @@
     <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "fac" %} active{% endif %}" id="fac">
       {% include "site/advanced-search-fac.html" with row_limit=row_limit%}
     </div>
+    <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "org" %} active{% endif %}" id="org">
+      {% include "site/advanced-search-org.html" with row_limit=row_limit%}
+
   </div>
 
   <script language="javascript" type="text/javascript">
@@ -34,7 +40,7 @@
     var run_search = function() {
 
       var reftag = $.urlParam("reftag")
-      if(reftag == "net" || reftag == "ix" || reftag == "fac") {
+      if(reftag == "net" || reftag == "ix" || reftag == "fac" || reftag == "org") {
         var searchForm = $('[data-edit-target="advanced_search:'+reftag+'"]')
         searchForm.editable("loading-shim","show");
         twentyc.data.done(function() {

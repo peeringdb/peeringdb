@@ -4,9 +4,11 @@ DeskPro API Client
 
 import re
 import requests
+import datetime
 
 from django.template import loader
 from django.conf import settings
+import django.urls
 
 from peeringdb_server.models import DeskProTicket
 from peeringdb_server.inet import RdapNotFoundError
@@ -15,13 +17,16 @@ from peeringdb_server.inet import RdapNotFoundError
 def ticket_queue(subject, body, user):
     """ queue a deskpro ticket for creation """
 
-    ticket = DeskProTicket.objects.create(subject=u"{}{}".format(
-        settings.EMAIL_SUBJECT_PREFIX, subject), body=body, user=user)
+    ticket = DeskProTicket.objects.create(
+        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
+        body=body,
+        user=user,
+    )
 
 
 class APIError(IOError):
     def __init__(self, msg, data):
-        super(APIError, self).__init__(msg)
+        super().__init__(msg)
         self.data = data
 
 
@@ -40,15 +45,13 @@ def ticket_queue_asnauto_skipvq(user, org, net, rir_data):
     else:
         org_name = org.name
 
-    ticket_queue("[ASNAUTO] Network '%s' approved for existing Org '%s'" %
-                 (net_name, org_name),
-                 loader.get_template(
-                     'email/notify-pdb-admin-asnauto-skipvq.txt').render({
-                         "user": user,
-                         "org": org,
-                         "net": net,
-                         "rir_data": rir_data
-                     }), user)
+    ticket_queue(
+        f"[ASNAUTO] Network '{net_name}' approved for existing Org '{org_name}'",
+        loader.get_template("email/notify-pdb-admin-asnauto-skipvq.txt").render(
+            {"user": user, "org": org, "net": net, "rir_data": rir_data}
+        ),
+        user,
+    )
 
 
 def ticket_queue_asnauto_affil(user, org, net, rir_data):
@@ -57,19 +60,18 @@ def ticket_queue_asnauto_affil(user, org, net, rir_data):
     """
 
     ticket_queue(
-        "[ASNAUTO] Ownership claim granted to Org '%s' for user '%s'" %
-        (org.name, user.username),
-        loader.get_template('email/notify-pdb-admin-asnauto-affil.txt').render(
-            {
-                "user": user,
-                "org": org,
-                "net": net,
-                "rir_data": rir_data
-            }), user)
+        "[ASNAUTO] Ownership claim granted to Org '%s' for user '%s'"
+        % (org.name, user.username),
+        loader.get_template("email/notify-pdb-admin-asnauto-affil.txt").render(
+            {"user": user, "org": org, "net": net, "rir_data": rir_data}
+        ),
+        user,
+    )
 
 
-def ticket_queue_asnauto_create(user, org, net, rir_data, asn,
-                                org_created=False, net_created=False):
+def ticket_queue_asnauto_create(
+    user, org, net, rir_data, asn, org_created=False, net_created=False
+):
     """
     queue deskro ticket creation for asn automation action: create
     """
@@ -88,43 +90,48 @@ def ticket_queue_asnauto_create(user, org, net, rir_data, asn,
     ticket_queue(
         "[ASNAUTO] %s created" % subject,
         loader.get_template(
-            'email/notify-pdb-admin-asnauto-entity-creation.txt').render({
+            "email/notify-pdb-admin-asnauto-entity-creation.txt"
+        ).render(
+            {
                 "user": user,
                 "org": org,
                 "net": net,
                 "asn": asn,
                 "org_created": org_created,
                 "net_created": net_created,
-                "rir_data": rir_data
-            }), user)
+                "rir_data": rir_data,
+            }
+        ),
+        user,
+    )
 
 
 def ticket_queue_rdap_error(user, asn, error):
     if isinstance(error, RdapNotFoundError):
         return
-    error_message = "{}".format(error)
+    error_message = f"{error}"
 
     if re.match("(.+) returned 400", error_message):
         return
 
-    subject = "[RDAP_ERR] {} - AS{}".format(user.username, asn)
+    subject = f"[RDAP_ERR] {user.username} - AS{asn}"
     ticket_queue(
         subject,
-        loader.get_template('email/notify-pdb-admin-rdap-error.txt').render({
-            "user": user,
-            "asn": asn,
-            "error_details": error_message
-        }), user)
+        loader.get_template("email/notify-pdb-admin-rdap-error.txt").render(
+            {"user": user, "asn": asn, "error_details": error_message}
+        ),
+        user,
+    )
 
 
-class APIClient(object):
+class APIClient:
     def __init__(self, url, key):
         self.key = key
         self.url = url
 
     @property
     def auth_headers(self):
-        return {"Authorization": "key {}".format(self.key)}
+        return {"Authorization": f"key {self.key}"}
 
     def parse_response(self, response, many=False):
         r_json = response.json()
@@ -143,42 +150,100 @@ class APIClient(object):
             return data
 
     def get(self, endpoint, param):
-        response = requests.get("{}/{}".format(self.url, endpoint),
-                                params=param, headers=self.auth_headers)
+        response = requests.get(
+            f"{self.url}/{endpoint}", params=param, headers=self.auth_headers
+        )
         return self.parse_response(response)
 
     def create(self, endpoint, param):
-        response = requests.post("{}/{}".format(self.url, endpoint),
-                                 json=param, headers=self.auth_headers)
+        response = requests.post(
+            f"{self.url}/{endpoint}", json=param, headers=self.auth_headers
+        )
         return self.parse_response(response)
 
     def require_person(self, user):
         person = self.get("people", {"primary_email": user.email})
         if not person:
             person = self.create(
-                "people", {
+                "people",
+                {
                     "primary_email": user.email,
                     "first_name": user.first_name,
                     "last_name": user.last_name,
-                    "name": user.full_name
-                })
+                    "name": user.full_name,
+                },
+            )
 
         return person
 
     def create_ticket(self, ticket):
         person = self.require_person(ticket.user)
         ticket_response = self.create(
-            "tickets", {
+            "tickets",
+            {
                 "subject": ticket.subject,
-                "person": {
-                    "id": person["id"]
-                },
-                "status": "awaiting_agent"
-            })
+                "person": {"id": person["id"]},
+                "status": "awaiting_agent",
+            },
+        )
 
         self.create(
-            "tickets/{}/messages".format(ticket_response["id"]), {
+            "tickets/{}/messages".format(ticket_response["id"]),
+            {
                 "message": ticket.body.replace("\n", "<br />\n"),
                 "person": person["id"],
-                "format": "html"
-            })
+                "format": "html",
+            },
+        )
+
+
+def ticket_queue_deletion_prevented(user, instance):
+    """
+    queue deskpro ticket to notify about the prevented
+    deletion of an object #696
+    """
+
+    subject = (
+        f"[PROTECTED] Deletion prevented: "
+        f"{instance.HandleRef.tag}-{instance.id} "
+        f"{instance}"
+    )
+
+    # we dont want to spam DeskPRO with tickets when a user
+    # repeatedly clicks the delete button for an object
+    #
+    # so we check if a ticket has recently been sent for it
+    # and opt out if it falls with in the spam protection
+    # period defined in settings
+
+    period = settings.PROTECTED_OBJECT_NOTIFICATION_PERIOD
+    now = datetime.datetime.now(datetime.timezone.utc)
+    max_age = now - datetime.timedelta(hours=period)
+    ticket = DeskProTicket.objects.filter(
+        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}"
+    )
+    ticket = ticket.filter(created__gt=max_age)
+
+    # recent ticket for object exists, bail
+
+    if ticket.exists():
+        return
+
+    model_name = instance.__class__.__name__.lower()
+
+    # create ticket
+
+    ticket_queue(
+        subject,
+        loader.get_template("email/notify-pdb-admin-deletion-prevented.txt").render(
+            {
+                "user": user,
+                "instance": instance,
+                "admin_url": settings.BASE_URL
+                + django.urls.reverse(
+                    f"admin:peeringdb_server_{model_name}_change", args=(instance.id,)
+                ),
+            }
+        ),
+        user,
+    )

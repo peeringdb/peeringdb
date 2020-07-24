@@ -1,0 +1,11 @@
+ctl:
+  permissions:
+    - namespace: "ctl"
+      permission: "r"
+
+  plugins:
+    - name: version
+      type: version
+      config:
+        branch_dev: master
+        branch_release: master

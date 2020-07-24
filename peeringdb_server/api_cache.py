@@ -4,7 +4,7 @@ import collections
 
 from django.conf import settings
 
-from peeringdb_server.models import (InternetExchange, IXLan, Network)
+from peeringdb_server.models import InternetExchange, IXLan, Network
 
 import django_namespace_perms.util as nsp
 
@@ -26,7 +26,7 @@ class CacheRedirect(Exception):
 # API CACHE LOADER
 
 
-class APICacheLoader(object):
+class APICacheLoader:
     """
     Checks if an API GET request qualifies for a cache load
     and if it does allows you to provide the cached result
@@ -46,8 +46,10 @@ class APICacheLoader(object):
         self.fields = request.query_params.get("fields")
         if self.fields:
             self.fields = self.fields.split(",")
-        self.path = os.path.join(settings.API_CACHE_ROOT, "%s-%s.json" %
-                                 (viewset.model.handleref.tag, self.depth))
+        self.path = os.path.join(
+            settings.API_CACHE_ROOT,
+            f"{viewset.model.handleref.tag}-{self.depth}.json",
+        )
 
     def qualifies(self):
         """
@@ -59,8 +61,12 @@ class APICacheLoader(object):
             return False
         # no depth and a limit lower than 251 seems like a tipping point
         # were non-cache retrieval is faster still
-        if not self.depth and self.limit and self.limit <= 250 and getattr(
-                settings, "API_CACHE_ALL_LIMITS", False) is False:
+        if (
+            not self.depth
+            and self.limit
+            and self.limit <= 250
+            and getattr(settings, "API_CACHE_ALL_LIMITS", False) is False
+        ):
             return False
         # filters have been specified, no
         if self.filters or self.since:
@@ -83,31 +89,25 @@ class APICacheLoader(object):
         """
 
         # read cache file
-        with open(self.path, "r") as f:
+        with open(self.path) as f:
             data = json.load(f)
 
         data = data.get("data")
 
         # apply permissions to data
-        fnc = getattr(self, "apply_permissions_%s" % self.model.handleref.tag,
-                      None)
+        fnc = getattr(self, "apply_permissions_%s" % self.model.handleref.tag, None)
         if fnc:
             data = fnc(data)
 
         # apply pagination
         if self.skip and self.limit:
-            data = data[self.skip:self.skip + self.limit]
+            data = data[self.skip : self.skip + self.limit]
         elif self.skip:
-            data = data[self.skip:]
+            data = data[self.skip :]
         elif self.limit:
-            data = data[:self.limit]
+            data = data[: self.limit]
 
-        return {
-            "results": data,
-            "__meta": {
-                "generated": os.path.getmtime(self.path)
-            }
-        }
+        return {"results": data, "__meta": {"generated": os.path.getmtime(self.path)}}
 
     def apply_permissions(self, ns, data, ruleset={}):
         """
@@ -121,19 +121,20 @@ class APICacheLoader(object):
         if ruleset:
             _ruleset = {}
             namespace_str = ".".join(ns)
-            for section, rules in ruleset.items():
+            for section, rules in list(ruleset.items()):
                 _ruleset[section] = {}
-                for rule, perms in rules.items():
-                    _ruleset[section]["%s.%s" % (namespace_str, rule)] = perms
+                for rule, perms in list(rules.items()):
+                    _ruleset[section][f"{namespace_str}.{rule}"] = perms
                     ruleset = _ruleset
 
         return nsp.dict_get_path(
             nsp.permissions_apply(
-                nsp.dict_from_namespace(ns, data), self.request.user,
-                ruleset=ruleset), ns)
+                nsp.dict_from_namespace(ns, data), self.request.user, ruleset=ruleset
+            ),
+            ns,
+        )
 
-    def apply_permissions_generic(self, data, explicit=False, join_ids=[],
-                                  **kwargs):
+    def apply_permissions_generic(self, data, explicit=False, join_ids=[], **kwargs):
         """
         Apply permissions to all rows according to rules
         specified in parameters
@@ -160,19 +161,23 @@ class APICacheLoader(object):
             for t, p, model in join_ids:
                 joined_ids[t] = {
                     "p": p,
-                    "ids": self.join_ids(data, t, p, model,
-                                         joined_ids.get(p, e).get("ids",
-                                                                  e).values())
+                    "ids": self.join_ids(
+                        data,
+                        t,
+                        p,
+                        model,
+                        list(joined_ids.get(p, e).get("ids", e).values()),
+                    ),
                 }
 
         for row in data:
 
             # create dict containing ids needed to build the permissioning
             # namespace
-            init = dict([(k, row.get(v)) for k, v in kwargs.items()])
+            init = {k: row.get(v) for k, v in list(kwargs.items())}
 
             # joined ids
-            for t, j in joined_ids.items():
+            for t, j in list(joined_ids.items()):
                 if j["p"] in row:
                     init[t] = j["ids"].get(row.get(j["p"]))
                 elif t in joined_ids:
@@ -183,7 +188,7 @@ class APICacheLoader(object):
 
             # apply fields filter
             if self.fields:
-                for k in row.keys():
+                for k in list(row.keys()):
                     if k not in self.fields:
                         del row[k]
 
@@ -200,6 +205,13 @@ class APICacheLoader(object):
 
                 # apply permissions to tree
                 row = self.apply_permissions(ns, row, ruleset=ruleset)
+
+                applicator = getattr(
+                    self.model, "api_cache_permissions_applicator", None
+                )
+
+                if applicator:
+                    applicator(row, ns, self.request.user)
 
                 # if row still has data aftewards, append to results
                 if row:
@@ -230,10 +242,10 @@ class APICacheLoader(object):
         else:
             ids = [r[proxy_id] for r in data]
 
-        return dict([
-            (r["id"], r[target_id])
-            for r in model.objects.filter(id__in=ids).values("id", target_id)
-        ])
+        return {
+                r["id"]: r[target_id]
+                for r in model.objects.filter(id__in=ids).values("id", target_id)
+        }
 
     # permissioning functions for each handlref type
 
@@ -241,45 +253,62 @@ class APICacheLoader(object):
         return self.apply_permissions_generic(data, id="id")
 
     def apply_permissions_fac(self, data):
-        return self.apply_permissions_generic(data, fac_id="id",
-                                              org_id="org_id")
+        return self.apply_permissions_generic(data, fac_id="id", org_id="org_id")
 
     def apply_permissions_ix(self, data):
-        return self.apply_permissions_generic(data, ix_id="id",
-                                              org_id="org_id")
+        return self.apply_permissions_generic(data, ix_id="id", org_id="org_id")
 
     def apply_permissions_net(self, data):
-        return self.apply_permissions_generic(data, net_id="id",
-                                              org_id="org_id")
+        return self.apply_permissions_generic(data, net_id="id", org_id="org_id")
 
     def apply_permissions_ixpfx(self, data):
         return self.apply_permissions_generic(
-            data, join_ids=[("ix_id", "ixlan_id", IXLan),
-                            ("org_id", "ix_id",
-                             InternetExchange)], ixlan_id="ixlan_id", id="id")
+            data,
+            join_ids=[
+                ("ix_id", "ixlan_id", IXLan),
+                ("org_id", "ix_id", InternetExchange),
+            ],
+            ixlan_id="ixlan_id",
+            id="id",
+        )
 
     def apply_permissions_ixlan(self, data):
         return self.apply_permissions_generic(
-            data, join_ids=[("org_id", "ix_id",
-                             InternetExchange)], ix_id="ix_id", id="id")
+            data,
+            join_ids=[("org_id", "ix_id", InternetExchange)],
+            ix_id="ix_id",
+            id="id",
+        )
 
     def apply_permissions_ixfac(self, data):
         return self.apply_permissions_generic(
-            data, join_ids=[("org_id", "ix_id",
-                             InternetExchange)], ix_id="ix_id", id="id")
+            data,
+            join_ids=[("org_id", "ix_id", InternetExchange)],
+            ix_id="ix_id",
+            id="id",
+        )
 
     def apply_permissions_netfac(self, data):
         return self.apply_permissions_generic(
-            data, join_ids=[("org_id", "net_id",
-                             Network)], net_id="net_id", fac_id="fac_id")
+            data,
+            join_ids=[("org_id", "net_id", Network)],
+            net_id="net_id",
+            fac_id="fac_id",
+        )
 
     def apply_permissions_netixlan(self, data):
         return self.apply_permissions_generic(
-            data, join_ids=[("org_id", "net_id",
-                             Network)], net_id="net_id", ixlan_id="ixlan_id")
+            data,
+            join_ids=[("org_id", "net_id", Network)],
+            net_id="net_id",
+            ixlan_id="ixlan_id",
+        )
 
     def apply_permissions_poc(self, data):
         return self.apply_permissions_generic(
-            data, explicit=lambda x: (x.get("visible") != "Public"),
-            join_ids=[("org_id", "net_id",
-                       Network)], vis="visible", net_id="net_id")
+            data,
+            explicit=lambda x: (x.get("visible") != "Public"),
+            join_ids=[("org_id", "net_id", Network)],
+            vis="visible",
+            net_id="net_id",
+        )
