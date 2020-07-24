@@ -553,7 +553,18 @@ class DeskProTicket(models.Model):
     body = models.TextField()
     user = models.ForeignKey("peeringdb_server.User", on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
-    published = models.DateTimeField(null=True)
+    published = models.DateTimeField(null=True, blank=True)
+
+    deskpro_ref = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        help_text=_("Ticket reference on the DeskPRO side"),
+    )
+
+    deskpro_id = models.IntegerField(
+        null=True, blank=True, help_text=_("Ticket id on the DeskPRO side")
+    )
 
     class Meta:
         verbose_name = _("DeskPRO Ticket")
@@ -2287,6 +2298,17 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         ),
     )
 
+    deskpro_ref = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        help_text=_("Ticket reference on the DeskPRO side"),
+    )
+
+    deskpro_id = models.IntegerField(
+        null=True, blank=True, help_text=_("Ticket id on the DeskPRO side")
+    )
+
     # field names of fields that can receive
     # modifications from ix-f
 
@@ -2561,7 +2583,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         qset = self.net.poc_set_active.exclude(email="")
         qset = qset.exclude(email__isnull=True)
 
-        role_priority = ["Policy", "Technical", "NOC", "Maintenance"]
+        role_priority = ["Technical", "NOC", "Policy"]
 
         contacts = []
 
@@ -3601,6 +3623,15 @@ class Network(pdb_models.NetworkBase):
             settings.BASE_URL, django.urls.reverse("net-view", args=(self.id,))
         )
 
+    @property
+    def view_url_asn(self):
+        """
+        Return the URL to this networks web view
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("net-view-asn", args=(self.asn,))
+        )
+
     def nsp_has_perms_PUT(self, user, request):
         return validate_PUT_ownership(user, self, request.data, ["org"])
 
@@ -4351,21 +4382,36 @@ def password_reset_token():
     hashed = sha256_crypt.hash(token)
     return token, hashed
 
+
 class IXFImportEmail(models.Model):
     """
     A copy of all emails sent by the IX-F importer.
     """
+
     subject = models.CharField(max_length=255, blank=False)
     message = models.TextField(blank=False)
     recipients = models.CharField(max_length=255, blank=False)
     created = models.DateTimeField(auto_now_add=True)
     sent = models.DateTimeField(blank=True, null=True)
     net = models.ForeignKey(
-        Network, on_delete=models.CASCADE, related_name="network_email_set", blank=True, null=True
+        Network,
+        on_delete=models.CASCADE,
+        related_name="network_email_set",
+        blank=True,
+        null=True,
     )
     ix = models.ForeignKey(
-        InternetExchange, on_delete=models.CASCADE, related_name="ix_email_set", blank=True, null=True
+        InternetExchange,
+        on_delete=models.CASCADE,
+        related_name="ix_email_set",
+        blank=True,
+        null=True,
     )
+
+    class Meta:
+        verbose_name = _("IXF Import Email")
+        verbose_name_plural = _("IXF Import Emails")
+
 
 class UserPasswordReset(models.Model):
     class Meta:
@@ -4437,6 +4483,86 @@ class CommandLineTool(models.Model):
 
     def set_running(self):
         self.status = "running"
+
+
+class EnvironmentSetting(models.Model):
+
+    """
+    Environment settings overrides controlled through
+    django admin (/cp)
+    """
+
+    class Meta:
+        db_table = "peeringdb_settings"
+        verbose_name = _("Environment Setting")
+        verbose_name_plural = _("Environment Settings")
+
+    setting = models.CharField(
+        max_length=255,
+        choices=(
+            (
+                "IXF_IMPORTER_DAYS_UNTIL_TICKET",
+                _("IX-F Importer: Days until DeskPRO ticket is created"),
+            ),
+        ),
+        unique=True,
+    )
+
+    value_str = models.CharField(max_length=255, blank=True, null=True)
+    value_int = models.IntegerField(blank=True, null=True)
+    value_bool = models.BooleanField(blank=True, default=False)
+    value_float = models.FloatField(blank=True, null=True)
+
+    updated = models.DateTimeField(
+        _("Last Updated"), auto_now=True, null=True, blank=True,
+    )
+
+    created = models.DateTimeField(
+        _("Configured on"), auto_now_add=True, blank=True, null=True,
+    )
+
+    user = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="admincom_setting_set",
+        help_text=_("Last updated by this user"),
+    )
+
+    setting_to_field = {
+        "IXF_IMPORTER_DAYS_UNTIL_TICKET": "value_int",
+    }
+
+    @classmethod
+    def get_setting_value(cls, setting):
+
+        """
+        Get the current value of the setting specified by
+        it's setting name
+
+        If no instance has been saved for the specified setting
+        the default value will be returned
+        """
+        try:
+            instance = cls.objects.get(setting=setting)
+            return instance.value
+        except cls.DoesNotExist:
+            return getattr(settings, setting)
+
+    @property
+    def value(self):
+        """
+        Get the value for this setting
+        """
+        return getattr(self, self.setting_to_field[self.setting])
+
+    def set_value(self, value):
+        """
+        Update the value for this setting
+        """
+        setattr(self, self.setting_to_field[self.setting], value)
+        self.full_clean()
+        self.save()
 
 
 REFTAG_MAP = {
