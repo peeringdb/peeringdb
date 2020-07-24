@@ -127,7 +127,7 @@ class Command(BaseCommand):
         ))
         DeskProTicket.objects.create(
             user=ixf.Importer().ticket_user,
-            subject="[IX-F] Commandline Reset",
+            subject="[IX-F] command-line reset",
             body="Applied the following resets to the IX-F data: {}".format(
                 ", ".join(self.active_flags)),
         )
