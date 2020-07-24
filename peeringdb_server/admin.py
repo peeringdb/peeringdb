@@ -2,6 +2,7 @@ import datetime
 import time
 import json
 import ipaddress
+import re
 from . import forms
 import re
 
@@ -26,6 +27,7 @@ from django.template import loader
 from django.template.response import TemplateResponse
 from django.db.models import Q
 from django.db.models.functions import Concat
+from django.db.utils import OperationalError
 from django_namespace_perms.admin import (
     UserPermissionInline,
     UserPermissionInlineAdd,
@@ -1570,6 +1572,33 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
 class DeskProTicketAdmin(admin.ModelAdmin):
     list_display = ("id", "subject", "user", "created", "published")
     readonly_fields = ("user",)
+    search_fields = ("subject",)
+    change_list_template = "admin/change_list_with_regex_search.html"
+
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+
+        # Require ^ and $ for regex
+        if search_term.startswith("^") and search_term.endswith("$"):
+            # Convert search to raw string
+            try:
+                search_term = search_term.encode('unicode-escape').decode() 
+            except AttributeError:
+                return queryset, use_distinct
+
+            # Validate regex expression
+            try:
+                re.compile(search_term)
+            except re.error:
+                return queryset, use_distinct
+
+            # Add (case insensitive) regex search results to standard search results
+            try:
+                queryset = self.model.objects.filter(subject__iregex=search_term)
+            except OperationalError:
+                return queryset, use_distinct
+
+        return queryset, use_distinct
 
 
 @reversion.create_revision()
