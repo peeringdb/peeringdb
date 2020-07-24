@@ -2,6 +2,7 @@
 DeskPro API Client
 """
 
+import uuid
 import re
 import requests
 import datetime
@@ -176,23 +177,55 @@ class APIClient:
 
     def create_ticket(self, ticket):
         person = self.require_person(ticket.user)
-        ticket_response = self.create(
-            "tickets",
-            {
-                "subject": ticket.subject,
-                "person": {"id": person["id"]},
-                "status": "awaiting_agent",
-            },
-        )
+
+        if not ticket.deskpro_id:
+            ticket_response = self.create(
+                "tickets",
+                {
+                    "subject": ticket.subject,
+                    "person": {"id": person["id"]},
+                    "status": "awaiting_agent",
+                },
+            )
+
+            ticket.deskpro_ref = ticket_response["ref"]
+            ticket.deskpro_id = ticket_response["id"]
 
         self.create(
-            "tickets/{}/messages".format(ticket_response["id"]),
+            "tickets/{}/messages".format(ticket.deskpro_id),
             {
                 "message": ticket.body.replace("\n", "<br />\n"),
                 "person": person["id"],
                 "format": "html",
             },
         )
+
+
+class MockAPIClient(APIClient):
+
+    """
+    A mock api client for the deskpro API
+
+    The IX-F importer uses this when
+    IXF_SEND_TICKETS=False
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.ticket_count = 0
+
+    def get(self, endpoint, param):
+
+        if endpoint == "people":
+            return {"id": 1}
+
+        return {}
+
+    def create(self, endpoint, param):
+        if endpoint == "tickets":
+            self.ticket_count += 1
+            ref = "{}".format(uuid.uuid4())
+            return {"ref": ref[:16], "id": self.ticket_count}
+        return {}
 
 
 def ticket_queue_deletion_prevented(user, instance):

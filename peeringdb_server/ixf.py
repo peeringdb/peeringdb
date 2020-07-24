@@ -9,6 +9,7 @@ from django.db import transaction
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
+from django.template import loader
 from django.conf import settings
 
 import reversion
@@ -23,9 +24,11 @@ from peeringdb_server.models import (
     NetworkProtocolsDisabled,
     User,
     DeskProTicket,
+    EnvironmentSetting,
     debug_mail,
-    IXFImportEmail
+    IXFImportEmail,
 )
+import peeringdb_server.deskpro as deskpro
 
 REASON_ENTRY_GONE_FROM_REMOTE = _(
     "The entry for (asn and IPv4 and IPv6) does not exist "
@@ -68,6 +71,17 @@ class Importer:
         if not hasattr(self, "_ticket_user"):
             self._ticket_user = User.objects.get(username="ixf_importer")
         return self._ticket_user
+
+    @property
+    def deskpro_client(self):
+        if not hasattr(self, "_deskpro_client"):
+            if settings.IXF_SEND_TICKETS:
+                cls = deskpro.APIClient
+            else:
+                cls = deskpro.MockAPIClient
+
+            self._deskpro_client = cls(settings.DESKPRO_URL, settings.DESKPRO_KEY)
+        return self._deskpro_client
 
     @property
     def tickets_enabled(self):
@@ -127,7 +141,7 @@ class Importer:
         self.asn = asn
         self.now = datetime.datetime.now(datetime.timezone.utc)
         self.invalid_ip_errors = []
-        self.notifications = {"add": [], "delete": [], "modify": [], "noop": []}
+        self.notifications = []
 
     def fetch(self, url, timeout=5):
         """
@@ -301,6 +315,8 @@ class Importer:
         self.cleanup_ixf_member_data()
 
         self.notify_proposals()
+
+        self.ticket_aged_proposals()
 
         # archive the import so we can roll it back later if needed
         self.archive()
@@ -774,13 +790,14 @@ class Importer:
     def queue_notification(
         self, ixf_member_data, typ, ac=True, ix=True, net=True, **context
     ):
-        self.notifications[ixf_member_data.action].append(
+        self.notifications.append(
             {
                 "ixf_member_data": ixf_member_data,
                 "ac": ac,
                 "ix": ix,
                 "net": net,
                 "typ": typ,
+                "action": ixf_member_data.action,
                 "context": context,
             }
         )
@@ -972,15 +989,40 @@ class Importer:
 
         netixlan.ixf_log_entry = entry
 
-    def _email(self, subject, message, recipients):
+    def _email(self, subject, message, recipients, net=None, ix=None):
         """
         Send email
 
         Honors the MAIL_DEBUG setting
 
-        Called by self.notify depending on recipient
-        type
+        Will create IXFImportEmail entry
         """
+
+        email_log = None
+
+        logged_subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {subject}"
+
+        if net:
+            email_log = IXFImportEmail.objects.create(
+                subject=logged_subject,
+                message=message,
+                recipients=",".join(recipients),
+                net=net,
+            )
+
+            if not self.notify_net_enabled:
+                return
+
+        if ix:
+            email_log = IXFImportEmail.objects.create(
+                subject=logged_subject,
+                message=message,
+                recipients=",".join(recipients),
+                ix=ix,
+            )
+
+            if not self.notify_ix_enabled:
+                return
 
         if not getattr(settings, "MAIL_DEBUG", False):
             mail = EmailMultiAlternatives(
@@ -992,29 +1034,294 @@ class Importer:
                 subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
             )
 
+        if email_log:
+            email_log.sent = datetime.datetime.now(datetime.timezone.utc)
+            email_log.save()
+
+    def _ticket(self, ixf_member_data, subject, message):
+
+        """
+        Create and send a deskpro ticket
+
+        Return the DeskPROTicket instance
+
+        Argument(s):
+
+        - ixf_member_data (`IXFMemberData`)
+        - subject (`str`)
+        - message (`str`)
+
+        """
+
+        subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {subject}"
+
+        client = self.deskpro_client
+
+        if not ixf_member_data.deskpro_id:
+            old_ticket = DeskProTicket.objects.filter(
+                subject=subject, deskpro_id__isnull=False
+            ).first()
+            if old_ticket:
+                ixf_member_data.deskpro_id = old_ticket.deskpro_id
+                ixf_member_data.deskpro_ref = old_ticket.deskpro_ref
+
+        ticket = DeskProTicket.objects.create(
+            subject=subject,
+            body=message,
+            user=self.ticket_user,
+            deskpro_id=ixf_member_data.deskpro_id,
+            deskpro_ref=ixf_member_data.deskpro_ref,
+        )
+
+        try:
+            client.create_ticket(ticket)
+            ticket.published = datetime.datetime.now(datetime.timezone.utc)
+            ticket.save()
+        except Exception as exc:
+            ticket.subject = f"[FAILED]{ticket.subject}"
+            ticket.body = f"{ticket.body}\n\n{exc.data}"
+            ticket.save()
+        return ticket
+
+    def consolidate_proposals(self):
+
+        """
+        Renders and consolidates all proposals for each net and ix
+        (#772)
+
+        Returns a dict
+
+        {
+            "net": {
+                Network : {
+                    "proposals": {
+                        InternetExchange {
+                            "add" : [<str>, ...],
+                            "modify" : [<str>, ...],
+                            "delete" : [<str>, ...],
+                        },
+                    },
+                    "count": <int>
+                    "entity": Network,
+                    "contacts": [<str>, ...]
+                }
+            },
+            "ix": {
+                InternetExchange : {
+                    "proposals": {
+                        Network : {
+                            "add" : [<str>, ...],
+                            "modify" : [<str>, ...],
+                            "delete" : [<str>, ...],
+                        },
+                    },
+                    "count": <int>
+                    "entity": InternetExchange,
+                    "contacts": [<str>, ...]
+                }
+            }
+        }
+        """
+
+        net_notifications = {}
+        ix_notifications = {}
+
+        for notification in self.notifications:
+
+            ixf_member_data = notification["ixf_member_data"]
+            action = notification["action"]
+            typ = notification["typ"]
+            notify_ix = notification["ix"]
+            notify_net = notification["net"]
+            context = notification["context"]
+
+            # we don't care about resolved proposals
+
+            if typ == "resolved":
+                continue
+
+            # we don't care about proposals that are hidden
+            # requirements of other proposals
+
+            if ixf_member_data.requirement_of:
+                continue
+
+            asn = ixf_member_data.net
+            ix = ixf_member_data.ix
+            ix_contacts = ixf_member_data.ix_contacts
+            net_contacts = ixf_member_data.net_contacts
+
+            # no suitable contact points found for
+            # one of the sides, immediately make a ticket
+
+            if not ix_contacts or not net_contacts:
+                self.ticket_proposal(**notification)
+
+            template_file = f"email/notify-ixf-{typ}-inline.txt"
+
+            # prepare consolidation rocketship
+
+            if asn not in net_notifications:
+                net_notifications[asn] = {
+                    "proposals": {},
+                    "count": 0,
+                    "entity": ixf_member_data.net,
+                    "contacts": ixf_member_data.net_contacts,
+                }
+
+            if ix not in net_notifications[asn]["proposals"]:
+                net_notifications[asn]["proposals"][ix] = {
+                    "add": [],
+                    "modify": [],
+                    "delete": [],
+                }
+
+            if ix not in ix_notifications:
+                ix_notifications[ix] = {
+                    "proposals": {},
+                    "count": 0,
+                    "entity": ixf_member_data.ix,
+                    "contacts": ixf_member_data.ix_contacts,
+                }
+
+            if asn not in ix_notifications[ix]["proposals"]:
+                ix_notifications[ix]["proposals"][asn] = {
+                    "add": [],
+                    "modify": [],
+                    "delete": [],
+                }
+
+            # render and push proposal text for network
+
+            if notify_net:
+                net_notifications[asn]["proposals"][ix][action].append(
+                    ixf_member_data.render_notification(
+                        template_file, recipient="net", context=context,
+                    )
+                )
+                net_notifications[asn]["count"] += 1
+
+            # render and push proposal text for exchange
+
+            if notify_ix:
+                ix_notifications[ix]["proposals"][asn][action].append(
+                    ixf_member_data.render_notification(
+                        template_file, recipient="ix", context=context,
+                    )
+                )
+                ix_notifications[ix]["count"] += 1
+
+        return {
+            "net": net_notifications,
+            "ix": ix_notifications,
+        }
+
     def notify_proposals(self):
 
         """
         Sends all collected notification proposals
         """
 
-        for action in ["add", "modify", "delete", "noop"]:
-            for notification in self.notifications[action]:
-                ixf_member_data = notification["ixf_member_data"]
+        if not self.save:
+            return
 
-                # IXFMemberData objects that are requirements
-                # are not to be acted on directly and thus
-                # dont require any notifications (#770)
+        # consolidate proposals into net,ix and ix,net
+        # groupings
 
-                if ixf_member_data.requirement_of:
+        consolidated = self.consolidate_proposals()
+
+        ticket_days = EnvironmentSetting.get_setting_value(
+            "IXF_IMPORTER_DAYS_UNTIL_TICKET"
+        )
+
+        template = loader.get_template("email/notify-ixf-consolidated.txt")
+
+        for recipient in ["ix", "net"]:
+            for other_entity, data in consolidated[recipient].items():
+                contacts = data["contacts"]
+
+                # render the consolidated message
+
+                message = template.render(
+                    {
+                        "recipient": recipient,
+                        "entity": data["entity"],
+                        "count": data["count"],
+                        "ticket_days": ticket_days,
+                        "proposals": data["proposals"],
+                    }
+                )
+
+                # we did not find any suitable contact points
+                # skip
+
+                if not contacts:
                     continue
 
-                self.notify_proposal(**notification)
+                if recipient == "net":
+                    subject = _(
+                        "PeeringDB: Action May Be Needed: IX-F Importer "
+                        "data mismatch between AS{} and one or more IXPs"
+                    ).format(data["entity"].asn)
+                    self._email(subject, message, contacts, net=data["entity"])
+                else:
+                    subject = _(
+                        "PeeringDB: Action May Be Needed: IX-F Importer "
+                        "data mismatch between {} and one or more networks"
+                    ).format(data["entity"].name)
+                    self._email(subject, message, contacts, ix=data["entity"])
 
-    def notify_proposal(self, ixf_member_data, typ, ac, ix, net, context):
+    def ticket_aged_proposals(self):
 
         """
-        Sends a proposal notification
+        Cycle through all IXFMemberData objects that
+        and create tickets for those that are older
+        than the period specified in IXF_IMPORTER_DAYS_UNTIL_TICKET
+        and that don't have any ticket associated with
+        them yet
+        """
+
+        if not self.save:
+            return
+
+        qset = IXFMemberData.objects.filter(
+            deskpro_id__isnull=True, requirement_of__isnull=True
+        )
+
+        # get ticket days period
+        ticket_days = EnvironmentSetting.get_setting_value(
+            "IXF_IMPORTER_DAYS_UNTIL_TICKET"
+        )
+
+        if ticket_days > 0:
+
+            # we adjust the query to only get proposals
+            # that are older than the specified period
+
+            now = datetime.datetime.now(datetime.timezone.utc)
+            max_age = now - datetime.timedelta(days=ticket_days)
+            qset = qset.filter(created__lte=max_age)
+
+        for ixf_member_data in qset:
+
+            action = ixf_member_data.action
+            if action == "delete":
+                action = "remove"
+            typ = action
+
+            # create the ticket
+            # and also notify the net and ix with
+            # a reference to the ticket in the subject
+
+            self.ticket_proposal(
+                ixf_member_data, typ, True, True, True, {}, ixf_member_data.action
+            )
+
+    def ticket_proposal(self, ixf_member_data, typ, ac, ix, net, context, action):
+
+        """
+        Creates a deskpro ticket and contexts net and ix with
+        ticket reference in the subject
 
         Argument(s)
 
@@ -1032,49 +1339,57 @@ class Importer:
         else:
             subject = f"{ixf_member_data}"
 
+        subject = f"{subject} IX-F Conflict Resolution"
+
         template_file = f"email/notify-ixf-{typ}.txt"
+
+        # DeskPRO ticket
 
         if ac and self.tickets_enabled:
             message = ixf_member_data.render_notification(
                 template_file, recipient="ac", context=context
             )
-            DeskProTicket.objects.create(
-                subject=subject, body=message, user=self.ticket_user
-            )
+
+            ticket = self._ticket(ixf_member_data, subject, message)
+            ixf_member_data.deskpro_id = ticket.deskpro_id
+            ixf_member_data.deskpro_ref = ticket.deskpro_ref
+            if ixf_member_data.id:
+                ixf_member_data.save()
+
+        # we have deskpro reference number, put it in the
+        # subject
+
+        if ixf_member_data.deskpro_ref:
+            subject = f"{subject} [#{ixf_member_data.deskpro_ref}]"
+
+        # Notify Exchange
 
         if ix:
             message = ixf_member_data.render_notification(
                 template_file, recipient="ix", context=context
             )
-            ix_email = IXFImportEmail.objects.create(
-                subject=subject,
-                message=message,
-                recipient=", ".join(ixf_member_data.ix_contacts),
-                ix=ixf_member_data.ix
+            self._email(
+                subject, message, ixf_member_data.ix_contacts, ix=ixf_member_data.ix
             )
 
-            if self.notify_ix_enabled:
-                self._email(subject, message, ixf_member_data.ix_contacts)
-                ix_email.sent = datetime.datetime.now(datetime.timezone.utc)
-                ix_email.save()
+        # Notify network
 
         if net and ixf_member_data.actionable_for_network:
             message = ixf_member_data.render_notification(
                 template_file, recipient="net", context=context
             )
-            net_email = IXFImportEmail.objects.create(
-                subject=subject,
-                message=message,
-                recipient=", ".join(ixf_member_data.net_contacts),
-                net=ixf_member_data.net
+            self._email(
+                subject, message, ixf_member_data.net_contacts, net=ixf_member_data.net
             )
 
-            if self.notify_net_enabled:
-                self._email(subject, message, ixf_member_data.net_contacts)
-                net_email.sent = datetime.datetime.now(datetime.timezone.utc)
-                net_email.save()
-
     def notify_error(self, error):
+
+        """
+        Notifies the exchange and AC of any errors that
+        were encountered when the IX-F data was
+        parsed
+        """
+
         if not self.save:
             return
 
@@ -1092,14 +1407,18 @@ class Importer:
         self.ixlan.save()
 
         ixf_member_data = IXFMemberData(ixlan=self.ixlan, asn=0)
-        ixf_member_data._notify(
-            "email/notify-ixf-source-error.txt",
-            "Could not process IX-F Data",
-            context={"error": error, "dt": now},
-            save=False,
-            ix=True,
-            ac=True,
+
+        subject = "Could not process IX-F Data"
+        template = loader.get_template("email/notify-ixf-source-error.txt")
+        message = template.render(
+            {"error": error, "dt": now, "instance": ixf_member_data}
         )
+        self._ticket(ixf_member_data, subject, message)
+
+        if ixf_member_data.ix_contacts:
+            self._email(
+                subject, message, ixf_member_data.ix_contacts, ix=ixf_member_data.ix
+            )
 
     def log_error(self, error, save=False):
         """

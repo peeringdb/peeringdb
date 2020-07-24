@@ -1,4 +1,4 @@
-The data difference between IX-F and PeeringDB for this entry has been resolved.
+{% include "email/notify-ixf-resolved-inline.txt" with instance=instance %}
 
 - Peer: {{ instance }}
 - Exchange: {{ instance.ix.view_url }}

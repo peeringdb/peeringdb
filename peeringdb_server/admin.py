@@ -69,6 +69,7 @@ from peeringdb_server.models import (
     UTC,
     DeskProTicket,
     IXFImportEmail,
+    EnvironmentSetting,
 )
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException
@@ -1540,16 +1541,21 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         )
 
 
-
 class IXFImportEmailAdmin(admin.ModelAdmin):
-    list_display = ("subject", "message", "recipients", "created", "sent", "net", "ix")
-    readonly_fields = ("net","ix",)
+    list_display = ("subject", "recipients", "created", "sent", "net", "ix")
+    readonly_fields = (
+        "net",
+        "ix",
+    )
     search_fields = ("subject",)
+
     def get_search_results(self, request, queryset, search_term):
-        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        queryset, use_distinct = super().get_search_results(
+            request, queryset, search_term
+        )
         try:
             # Convert to raw string
-            search_term = search_term.encode('unicode-escape').decode() 
+            search_term = search_term.encode("unicode-escape").decode()
         except AttributeError:
             return queryset, use_distinct
         try:
@@ -1565,11 +1571,22 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
         return queryset, use_distinct
 
 
-
-
 class DeskProTicketAdmin(admin.ModelAdmin):
-    list_display = ("id", "subject", "user", "created", "published")
+    list_display = (
+        "id",
+        "subject",
+        "user",
+        "created",
+        "published",
+        "deskpro_ref",
+        "deskpro_id",
+    )
     readonly_fields = ("user",)
+
+    def save_model(self, request, obj, form, change):
+        if not obj.id and not obj.user_id:
+            obj.user = request.user
+        return super().save_model(request, obj, form, change)
 
 
 @reversion.create_revision()
@@ -1647,6 +1664,8 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "remote_data",
         "requirement_of",
         "requirement_detail",
+        "deskpro_id",
+        "deskpro_ref",
     )
 
     actions = [apply_ixf_member_data]
@@ -1717,6 +1736,30 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         return super().response_change(request, obj)
 
 
+class EnvironmentSettingForm(baseForms.ModelForm):
+
+    value = baseForms.CharField(required=True, label=_("Value"))
+
+    class Meta:
+        fields = ["setting", "value"]
+
+
+class EnvironmentSettingAdmin(admin.ModelAdmin):
+    list_display = ["setting", "value", "created", "updated", "user"]
+
+    fields = ["setting", "value"]
+
+    readonly_fields = ["created", "updated"]
+    search_fields = ["setting"]
+
+    form = EnvironmentSettingForm
+
+    def save_model(self, request, obj, form, save):
+        obj.user = request.user
+        return obj.set_value(form.cleaned_data["value"])
+
+
+admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)

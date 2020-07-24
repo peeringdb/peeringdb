@@ -1,0 +1,24 @@
+{% spaceless %}
+{% if ipaddr4 and not instance.net.info_unicast %}
+{% if recipient == "net" %}
+{{ instance.ix.name }}'s IX-F data provides IPv4 addresses for some of your peer entries, but your network has IPv4 support disabled
+{% elif recipient == "ix" %}
+Your IX-F data provides IPv4 addresses for some of AS{{ instance.asn }}'s peer entries, but the network has IPv4 support disabled
+{% elif recipient == "ac" %}
+{{ instance.ix.name }}'s IX-F data provides IPv4 addresses for some of AS{{ instance.asn }}'s peer entries, but the network has IPv4 support disabled
+{% endif %}
+{% endif %}
+{% endspaceless %}
+
+{% spaceless %}
+{% if ipaddr6 and not instance.net.info_ipv6 %}
+{% if recipient == "net" %}
+{{ instance.ix.name }}'s IX-F data provides IPv6 addresses for some of your peer entries, but your network has IPv6 support disabled
+{% elif recipient == "ix" %}
+Your IX-F data provides IPv6 addresses for some of AS{{ instance.asn }}'s peer entries, but the network has IPv6 support disabled
+{% elif recipient == "ac" %}
+{{ instance.ix.name }}'s IX-F data provides IPv6 addresses for some of AS{{ instance.asn }}'s peer entries, but the network has IPv6 support disabled
+{% endif %}
+{% endif %}
+{% endspaceless %}
+{% if recipient == "ac" %}{% include "email/ixf-contact-points.txt" with instance=instance %}{% endif %}
