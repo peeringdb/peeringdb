@@ -1550,25 +1550,31 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
         "ix",
     )
     search_fields = ("subject",)
+    change_list_template = "admin/change_list_with_regex_search.html"
 
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(
             request, queryset, search_term
         )
-        try:
-            # Convert to raw string
-            search_term = search_term.encode("unicode-escape").decode()
-        except AttributeError:
-            return queryset, use_distinct
-        try:
-            re.compile(search_term)
-        except re.error:
-            return queryset, use_distinct
+        # Require ^ and $ for regex
+        if search_term.startswith("^") and search_term.endswith("$"):
+            # Convert search to raw string
+            try:
+                search_term = search_term.encode('unicode-escape').decode() 
+            except AttributeError:
+                return queryset, use_distinct
 
-        try:
-            queryset |= self.model.objects.filter(subject__regex=search_term)
-        except OperationalError:
-            return queryset, use_distinct
+            # Validate regex expression
+            try:
+                re.compile(search_term)
+            except re.error:
+                return queryset, use_distinct
+
+            # Add (case insensitive) regex search results to standard search results
+            try:
+                queryset = self.model.objects.filter(subject__iregex=search_term)
+            except OperationalError:
+                return queryset, use_distinct
 
         return queryset, use_distinct
 
