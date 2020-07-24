@@ -27,6 +27,5 @@ class Migration(migrations.Migration):
                 'verbose_name': 'IXF Import Email',
                 'verbose_name_plural': 'IXF Import Emails',
             }
-
         ),
     ]
