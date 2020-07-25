@@ -987,7 +987,8 @@ class Importer:
         }
         self.log["data"].append(entry)
 
-        netixlan.ixf_log_entry = entry
+        if netixlan:
+            netixlan.ixf_log_entry = entry
 
     def _email(self, subject, message, recipients, net=None, ix=None):
         """
