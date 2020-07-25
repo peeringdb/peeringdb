@@ -20,6 +20,7 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLog,
     User,
     DeskProTicket,
+    IXFImportEmail
 )
 from peeringdb_server import ixf
 import pytest
@@ -68,8 +69,12 @@ def test_resolve_local_ixf(entities, save):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
     assert IXFMemberData.objects.count() == 0
-    assert_ticket_exists([(network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")])
+
+    # We do not email upon resolve
+    assert_no_emails()
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -106,6 +111,8 @@ def test_update_data_attributes(entities, save):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
 
     assert len(importer.log["data"]) == 1
     assert IXFMemberData.objects.count() == 0
@@ -123,6 +130,9 @@ def test_update_data_attributes(entities, save):
 
     # Assert idempotent
     assert_idempotent(importer, ixlan, data)
+
+    # Assert no emails
+    assert_no_emails()
 
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
@@ -178,6 +188,9 @@ def test_suggest_modify_local_ixf(entities, save):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert_no_emails()
 
     assert IXFMemberData.objects.count() == 1
     assert preexisting_ixfmember_data == IXFMemberData.objects.first()
@@ -187,7 +200,7 @@ def test_suggest_modify_local_ixf(entities, save):
 
 
 @pytest.mark.django_db
-def test_suggest_modify(entities, capsys, save):
+def test_suggest_modify(entities, save):
     """
     Netixlan is different from remote in terms of speed, operational, and is_rs_peer.
     There is no local-ixf existing.
@@ -197,7 +210,6 @@ def test_suggest_modify(entities, capsys, save):
     data = setup_test_data("ixf.member.1")
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
-
     entities["netixlan"].append(
         NetworkIXLan.objects.create(
             network=network,
@@ -218,6 +230,7 @@ def test_suggest_modify(entities, capsys, save):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     # Create local ixf
     assert IXFMemberData.objects.count() == 1
@@ -225,24 +238,21 @@ def test_suggest_modify(entities, capsys, save):
     log = importer.log["data"][0]
     assert log["action"] == "suggest-modify"
 
-    # Create a ticket for Admin Com
-    assert_ticket_exists([(network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")])
-
     # NetIXLAN is unchanged
     assert NetworkIXLan.objects.first().speed == 20000
     assert NetworkIXLan.objects.first().is_rs_peer == False
     assert NetworkIXLan.objects.first().operational == False
 
-    # Email is sent to the Network and the IX
-    stdout = capsys.readouterr().out
-    assert_email_sent(
-        stdout, (network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")
-    )
+    # Consolidated email is sent to the Network and the IX
+    email_info = [("MODIFY", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
+    assert_ix_email(ixlan.ix, email_info)
+    assert_network_email(network, email_info)
 
     # Test idempotent
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
     assert IXFMemberData.objects.count() == 1
-    assert_ticket_exists([(network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")])
 
 
 @pytest.mark.django_db
@@ -262,6 +272,7 @@ def test_add_netixlan(entities, save):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     log = importer.log["data"][0]
     assert log["action"] == "add"
@@ -269,8 +280,12 @@ def test_add_netixlan(entities, save):
 
     # Test idempotent
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
     assert IXFMemberData.objects.count() == 0
     assert NetworkIXLan.objects.count() == 1
+
+    assert_no_emails()
 
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
@@ -281,7 +296,7 @@ def test_add_netixlan(entities, save):
 
 
 @pytest.mark.django_db
-def test_add_netixlan_conflict_local_ixf(entities, save, capsys):
+def test_add_netixlan_conflict_local_ixf(entities, save):
     """
     No NetIXLan exists. Network allows auto updates. While remote IXF data has information
     to create a new NetIXLan, there are conflicts with the ipaddresses that
@@ -321,6 +336,7 @@ def test_add_netixlan_conflict_local_ixf(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 0
@@ -331,24 +347,24 @@ def test_add_netixlan_conflict_local_ixf(entities, save, capsys):
         in ixfmemberdata.error
     )
 
-    assert_no_ticket_exists()
-
-    stdout = capsys.readouterr().out
-    assert stdout == ""
+    assert_no_emails()
 
     updated_timestamp = ixfmemberdata.updated
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
     assert updated_timestamp == IXFMemberData.objects.first().updated
 
     # Test idempotent
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
     assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 0
-    assert_no_ticket_exists()
+    assert_no_emails()
 
 
 @pytest.mark.django_db
-def test_add_netixlan_conflict(entities, save, capsys):
+def test_add_netixlan_conflict(entities, save):
     """
     No NetIXLan exists. Network allows auto updates. While remote IXF data has information
     to create a new NetIXLan, there are conflicts with the ipaddresses that
@@ -373,6 +389,7 @@ def test_add_netixlan_conflict(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     ixfmemberdata = IXFMemberData.objects.first()
     assert IXFMemberData.objects.count() == 1
@@ -380,19 +397,18 @@ def test_add_netixlan_conflict(entities, save, capsys):
         "IPv4 195.69.147.250 does not match any prefix on this ixlan"
         in ixfmemberdata.error
     )
-
-    assert_ticket_exists([(network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")])
-
-    stdout = capsys.readouterr().out
-    assert_email_sent(
-        stdout, (network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")
-    )
+    
+    email_info = [("ADD", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
+    assert_ix_email_sent(ixlan.ix, email_info)
+    assert_network_email_sent(network, email_info)
 
     # Test idempotent
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
     assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 0
-    assert_ticket_exists([(network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")])
+    
 
 
 @pytest.mark.django_db
@@ -1318,10 +1334,10 @@ def entities():
         # create exchange(s)
         entities["ix"] = [
             InternetExchange.objects.create(
-                name="Test Exchange One", org=entities["org"][0], status="ok"
+                name="Test Exchange One", org=entities["org"][0], status="ok", tech_email="ix1@localhost"
             ),
             InternetExchange.objects.create(
-                name="Test Exchange Two", org=entities["org"][0], status="ok"
+                name="Test Exchange Two", org=entities["org"][0], status="ok", tech_email="ix2@localhost"
             ),
         ]
 
@@ -1370,6 +1386,8 @@ def entities():
                 allow_ixp_update=True,
                 status="ok",
                 irr_as_set="AS-NFLX",
+                info_unicast=True,
+                info_ipv6=True
             ),
             "UPDATE_DISABLED": Network.objects.create(
                 name="Network w allow ixp update disabled",
@@ -1382,15 +1400,17 @@ def entities():
                 website="http://netflix.com/",
                 policy_general="Open",
                 policy_url="https://www.netflix.com/openconnect/",
+                info_unicast=True,
+                info_ipv6=True
             ),
         }
 
         entities["netcontact"] = [
             NetworkContact.objects.create(
-                email="network1@localhost", network=entities["net"]["UPDATE_ENABLED"]
+                email="network1@localhost", network=entities["net"]["UPDATE_ENABLED"], status="ok", role="Policy"
             ),
             NetworkContact.objects.create(
-                email="network2@localhost", network=entities["net"]["UPDATE_DISABLED"]
+                email="network2@localhost", network=entities["net"]["UPDATE_DISABLED"], status="ok", role="Policy"
             ),
         ]
         entities["netixlan"] = []
@@ -1435,6 +1455,28 @@ def assert_ticket_exists(ticket_info):
         ).exists()
 
 
+def assert_network_email(network, email_info):
+    network_email = IXFImportEmail.objects.filter(net=network.id).first()
+    print("Network email")
+    print("Body:")
+    print(network_email.message)
+
+    for email_i in email_info:
+        email_str = create_email_str(email_i)
+        assert email_str in network_email.message
+
+def assert_ix_email(ix, email_info):
+    ix_email = IXFImportEmail.objects.filter(ix=ix.id).first()
+    print("IX email")
+    print("Body:")
+    print(ix_email.message)
+    for email_i in email_info:
+        email_str = create_email_str(email_i)
+        assert email_str in ix_email.message
+
+def create_email_str(email):
+    return '{} AS{} - {} - {}'.format(*email)
+
 def assert_no_ticket_exists():
     """
     Input is a list of tuples containing (asn, ipaddr4, ipaddr6) that should appear
@@ -1442,10 +1484,11 @@ def assert_no_ticket_exists():
     """
     assert DeskProTicket.objects.count() == 0
 
-
 def assert_email_sent(email_text, email_info):
     assert all([str(s) in email_text for s in email_info])
 
+def assert_no_emails():
+    assert IXFImportEmail.objects.count() == 0
 
 def ticket_list():
     return [(t.id, t.subject) for t in DeskProTicket.objects.all().order_by("id")]
