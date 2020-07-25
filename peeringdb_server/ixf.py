@@ -565,7 +565,7 @@ class Importer:
 
         asn = member["asnum"]
         for connection in connection_list:
-            self.connection_errors = []
+            self.connection_errors = {}
             state = connection.get("state", "active").lower()
             if state in self.allowed_states:
 
@@ -750,7 +750,7 @@ class Importer:
                 continue
 
             if self.connection_errors:
-                ixf_member_data.error = "\n".join(self.connection_errors)
+                ixf_member_data.error = json.dumps(self.connection_errors)
             else:
                 ixf_member_data.error = ixf_member_data.previous_error
 
@@ -773,7 +773,9 @@ class Importer:
             except ValueError:
                 log_msg = _("Invalid speed value: {}").format(iface.get("if_speed"))
                 self.log_error(log_msg)
-                self.connection_errors.append(log_msg)
+                if "speed" not in self.connection_errors:
+                    self.connection_errors["speed"] = []
+                self.connection_errors["speed"].append(log_msg)
         return speed
 
     def apply_add_or_update(self, ixf_member_data):
@@ -828,7 +830,7 @@ class Importer:
                 self.log_apply(ixf_member_data.apply(save=self.save), reason=reason)
             except ValidationError as exc:
                 if ixf_member_data.set_conflict(error=exc, save=self.save):
-                    self.queue_notification(ixf_member_data, "conflict")
+                    self.queue_notification(ixf_member_data, ixf_member_data.action)
         else:
             notify = ixf_member_data.set_update(save=self.save, reason=reason,)
             if notify:
@@ -847,7 +849,7 @@ class Importer:
                     self.consolidate_delete_add(ixf_member_data)
             except ValidationError as exc:
                 if ixf_member_data.set_conflict(error=exc, save=self.save):
-                    self.queue_notification(ixf_member_data, "conflict")
+                    self.queue_notification(ixf_member_data, ixf_member_data.action)
 
         else:
             notify = ixf_member_data.set_add(save=self.save, reason=REASON_NEW_ENTRY)
@@ -1219,7 +1221,7 @@ class Importer:
 
             # render and push proposal text for network
 
-            if notify_net:
+            if notify_net and ixf_member_data.actionable_for_network:
                 proposals = net_notifications[asn]["proposals"][ix]
                 message = ixf_member_data.render_notification(
                     template_file, recipient="net", context=context,

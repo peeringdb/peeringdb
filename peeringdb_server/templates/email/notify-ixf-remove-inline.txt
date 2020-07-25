@@ -1,7 +1,7 @@
 {% spaceless %}
 REMOVE {{ instance.ixf_id_pretty_str }}
 The combination of ASN, IPv4 and IPv6 do not exist in the IX-F data under one member connection.
-{% if instance.error and recipient == "ac" %}
+{% if instance.actionable_error %}
 A validation error was raised when the IX-F importer attempted to process this change.
 
 ```

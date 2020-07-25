@@ -393,6 +393,7 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
     And import ix-f member data for a single Ixlan at a time.
     """
     tool = "pdb_ixf_ixp_member_import"
+    queue = 1
 
     class Form(forms.Form):
         ix = forms.ModelChoiceField(

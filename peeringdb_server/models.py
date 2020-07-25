@@ -2570,7 +2570,54 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if error and "address outside of prefix" in error:
             return False
 
+        if error and "speed value" in error:
+            return False
+
         return True
+
+    @property
+    def actionable_error(self):
+        """
+        Returns whether or not the error is actionable
+        by exchange or network.
+
+        If actionable will return self.error otherwise
+        will return None
+        """
+
+        if not self.error:
+            return None
+
+        try:
+            error_data = json.loads(self.error.replace("'",'"'))
+        except:
+            return None
+
+        IPADDR_EXIST = "already exists"
+        DELETED_NETIXLAN_BAD_ASN = "This entity was created for the ASN"
+
+        if IPADDR_EXIST in error_data.get("ipaddr4",[""])[0]:
+            for requirement in self.requirements:
+                if requirement.netixlan.ipaddr4 == self.ipaddr4:
+                    return None
+            if NetworkIXLan.objects.filter(ipaddr4=self.ipaddr4, status="deleted").exists():
+                return None
+
+        if IPADDR_EXIST in error_data.get("ipaddr6",[""])[0]:
+            for requirement in self.requirements:
+                if requirement.netixlan.ipaddr6 == self.ipaddr6:
+                    return None
+
+            if NetworkIXLan.objects.filter(ipaddr6=self.ipaddr6, status="deleted").exists():
+                return None
+
+
+        if DELETED_NETIXLAN_BAD_ASN in error_data.get("__all__",[""])[0]:
+            if self.netixlan.status == "deleted":
+                return None
+
+        return self.error
+
 
     @property
     def net_contacts(self):
@@ -3018,6 +3065,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 netixlan.full_clean()
                 netixlan.save()
         elif action == "delete":
+
             if save:
                 netixlan.delete()
 

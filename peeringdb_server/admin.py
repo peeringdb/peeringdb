@@ -1654,7 +1654,7 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "updated",
         "fetched",
         "changes",
-        "error",
+        "actionable_error",
         "reason",
         "requirements",
     )
@@ -1668,6 +1668,7 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "netixlan",
         "log",
         "error",
+        "actionable_error",
         "created",
         "updated",
         "status",

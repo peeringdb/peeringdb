@@ -5,7 +5,7 @@ CREATE {{ instance.ixf_id_pretty_str }}
 - operational: {{ instance.operational }}
 - is_rs_peer: {{ instance.is_rs_peer }}
 - status: {{ instance.status }}
-{% if instance.error and recipient == "ac" %}
+{% if instance.actionable_error %}
 A validation error was raised when the IX-F importer attempted to process this change.
 
 ```

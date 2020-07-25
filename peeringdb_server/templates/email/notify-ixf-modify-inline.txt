@@ -15,7 +15,7 @@ IX-F data has changed since the last notification:
 {% endfor %}
 {% endif %}
 
-{% if instance.error and recipient == "ac" %}
+{% if instance.actionable_error %}
 A validation error was raised when the IX-F importer attempted to process this change.
 
 ```
