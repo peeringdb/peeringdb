@@ -4408,22 +4408,6 @@ class IXFImportEmail(models.Model):
     """
     A copy of all emails sent by the IX-F importer.
     """
-    subject = models.CharField(max_length=255, blank=False)
-    message = models.TextField(blank=False)
-    recipients = models.CharField(max_length=255, blank=False)
-    created = models.DateTimeField(auto_now_add=True)
-    sent = models.DateTimeField(blank=True, null=True)
-    net = models.ForeignKey(
-        Network, on_delete=models.CASCADE, related_name="network_email_set", blank=True, null=True
-    )
-    ix = models.ForeignKey(
-        InternetExchange, on_delete=models.CASCADE, related_name="ix_email_set", blank=True, null=True
-    )
-
-class IXFImportEmail(models.Model):
-    """
-    A copy of all emails sent by the IX-F importer.
-    """
 
     subject = models.CharField(max_length=255, blank=False)
     message = models.TextField(blank=False)
