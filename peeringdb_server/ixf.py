@@ -290,7 +290,6 @@ class Importer:
             return False
 
         if self.skip_import:
-            self.cleanup_ixf_member_data()
             return True
 
         try:
@@ -1013,6 +1012,9 @@ class Importer:
         Will create IXFImportEmail entry
         """
 
+        if not recipients:
+            return
+
         email_log = None
 
         logged_subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {subject}"
@@ -1154,6 +1156,8 @@ class Importer:
             # we don't care about resolved proposals
 
             if typ == "resolved":
+                if ixf_member_data.deskpro_id:
+                    self.ticket_proposal(**notification)
                 continue
 
             if typ == "protocol-conflict":

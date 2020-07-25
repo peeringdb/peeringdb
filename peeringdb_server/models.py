@@ -3021,9 +3021,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             if save:
                 netixlan.delete()
 
-        if save:
-            self.set_resolved()
-
         return {"action": action, "netixlan": netixlan, "ixf_member_data": self}
 
     def validate_speed(self):
