@@ -371,6 +371,10 @@ def test_add_netixlan_conflict(entities, save):
     prevent it from being created.
     There is no local-ixf so we create one.
     """
+
+    #TODO: Failing bc missing template
+    assert 0
+
     data = setup_test_data("ixf.member.0")
     network = entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][1]  # So we have conflicts with IPAddresses
@@ -410,9 +414,8 @@ def test_add_netixlan_conflict(entities, save):
     assert NetworkIXLan.objects.count() == 0
     
 
-
 @pytest.mark.django_db
-def test_suggest_add_local_ixf(entities, save, capsys):
+def test_suggest_add_local_ixf(entities, save):
     """
     The netixlan described in the remote-ixf doesn't exist,
     but there is a relationship btw the network and ix (ie a different netixlan).
@@ -458,20 +461,19 @@ def test_suggest_add_local_ixf(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 1
 
-    stdout = capsys.readouterr().out
-    assert stdout == ""
-    assert_no_ticket_exists()
+    assert_no_emails()
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_suggest_add(entities, capsys):
+def test_suggest_add(entities, save):
     """
     The netixlan described in the remote-ixf doesn't exist,
     but there is a relationship btw the network and ix (ie a different netixlan).
@@ -507,6 +509,7 @@ def test_suggest_add(entities, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 1
@@ -514,19 +517,17 @@ def test_suggest_add(entities, capsys):
     log = importer.log["data"][0]
     assert log["action"] == "suggest-add"
 
-    stdout = capsys.readouterr().out
-    assert_email_sent(
-        stdout, (network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")
-    )
+    email_info  = [("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
 
-    assert_ticket_exists([(1001, "195.69.147.250", "2001:7f8:1::a500:2906:1")])
+    assert_ix_email(ixlan.ix, email_info)
+    assert_network_email(network, email_info)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_suggest_add_no_netixlan_local_ixf(entities, save, capsys):
+def test_suggest_add_no_netixlan_local_ixf(entities, save):
     """
     There isn't any netixlan between ix and network.
     Network does not have automatic updates.
@@ -554,20 +555,19 @@ def test_suggest_add_no_netixlan_local_ixf(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 0
 
-    stdout = capsys.readouterr().out
-    assert stdout == ""
-    assert_no_ticket_exists()
+    assert_no_emails()
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_suggest_add_no_netixlan(entities, save, capsys):
+def test_suggest_add_no_netixlan(entities, save):
     """
     There isn't any netixlan between ix and network.
     Network does not have automatic updates.
@@ -585,6 +585,7 @@ def test_suggest_add_no_netixlan(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 0
@@ -592,22 +593,23 @@ def test_suggest_add_no_netixlan(entities, save, capsys):
     log = importer.log["data"][0]
     assert log["action"] == "suggest-add"
 
-    stdout = capsys.readouterr().out
-    assert_email_sent(
-        stdout, (network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")
-    )
-    assert_no_ticket_exists()
+    email_info = [("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
+    
+    assert_network_email(network, email_info)
+    assert_no_ix_email(ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_single_ipaddr_matches(entities, capsys):
+def test_single_ipaddr_matches(entities, save):
     """
-    If only one ipaddr matches, it's the same as not matching at all.
+    If only one ipaddr matches, that's still a conflict.
     Here we expect to delete the two netixlans and create a new one
     from the remote-ixf.
+
+    There are no notifications since updates are enabled.
     """
 
     data = setup_test_data("ixf.member.0")
@@ -648,6 +650,7 @@ def test_single_ipaddr_matches(entities, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert len(importer.log["data"]) == 3
     assert NetworkIXLan.objects.filter(status="ok").count() == 1
@@ -656,17 +659,148 @@ def test_single_ipaddr_matches(entities, capsys):
     assert importer.log["data"][1]["action"] == "delete"
     assert importer.log["data"][2]["action"] == "add"
 
+    assert_no_emails()
+
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_single_ipaddr_matches_no_auto_update(entities, save, capsys):
+def test_ipaddr4_matches_no_auto_update(entities, save):
     """
-    If only one ipaddr matches, it's the same as not matching at all.
-    Network does not have automatic updates enabled
-    Here we expect to suggest deletion the two netixlans and
-    suggest creation of a new one
+    For the Netixlan, Ipaddr4 matches the remote date but Ipaddr6 is Null.
+    In terms of IXFMemberData, we suggest delete the two Netixlans and create a new one.
+    In terms of notifications, we consolidate that deletions + addition into a single 
+    MODIFY proposal.
+    This tests the changes in issue #770.
+    """
+
+    data = setup_test_data("ixf.member.1")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.250",
+            ipaddr6=None,
+            status="ok",
+            is_rs_peer=True,
+            operational=True
+        )
+    )
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    # Assert NetworkIXLan is unchanged
+    assert NetworkIXLan.objects.filter(status="ok").count() == 1
+
+    # On the IXFMemberData side, we create instances for a deletion and addition.
+    # The deletion will be the requirement of the addition.
+    ixfmdata_d = IXFMemberData.objects.filter(ipaddr4="195.69.147.250", ipaddr6=None).first()
+    ixfmdata_m = IXFMemberData.objects.filter(ipaddr4="195.69.147.250", ipaddr6="2001:7f8:1::a500:2906:1").first()
+
+    assert IXFMemberData.objects.count() == 2
+    assert ixfmdata_d.action == "delete"
+    assert ixfmdata_m.action == "modify"
+    assert ixfmdata_d.requirement_of == ixfmdata_m
+
+
+    # We consolidate notifications into a single MODIFY
+    assert len(importer.log["data"]) == 1
+    assert importer.log["data"][0]["action"] == "suggest-modify"
+
+    
+    email_info = [("MODIFY", network.asn, "195.69.147.250", "IPv6 not set")]
+    assert_ix_email(ixlan.ix, email_info)
+    assert_network_email(network, email_info)
+
+    # Test idempotent
+    assert_idempotent(importer, ixlan, data)
+
+
+
+@pytest.mark.django_db
+def test_ipaddr6_matches_no_auto_update(entities, save):
+    """
+    For the Netixlan, Ipaddr6 matches the remote date but Ipaddr4 is Null.
+    In terms of IXFMemberData, we suggest delete the two Netixlans and create a new one.
+    In terms of notifications, we consolidate that deletions + addition into a single 
+    MODIFY proposal.
+
+    This tests the changes in issue #770.
+    """
+
+    data = setup_test_data("ixf.member.1")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4=None,
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True
+        )
+    )
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    # Assert NetworkIXLan is unchanged
+    assert NetworkIXLan.objects.filter(status="ok").count() == 1
+
+    # On the IXFMemberData side, we create instances for a deletion and addition.
+    # The deletion will be the requirement of the addition.
+    ixfmdata_d = IXFMemberData.objects.filter(ipaddr4=None, ipaddr6="2001:7f8:1::a500:2906:1").first()
+    ixfmdata_m = IXFMemberData.objects.filter(ipaddr4="195.69.147.250", ipaddr6="2001:7f8:1::a500:2906:1").first()
+
+    assert IXFMemberData.objects.count() == 2
+    assert ixfmdata_d.action == "delete"
+    assert ixfmdata_m.action == "modify"
+    assert ixfmdata_d.requirement_of == ixfmdata_m
+
+
+    # We consolidate notifications into a single MODIFY
+    assert len(importer.log["data"]) == 1
+    assert importer.log["data"][0]["action"] == "suggest-modify"
+
+    email_info = [("MODIFY", network.asn, "IPv4 not set", "2001:7f8:1::a500:2906:1")]
+    assert_ix_email(ixlan.ix, email_info)
+    assert_network_email(network, email_info)
+
+    # Test idempotent
+    assert_idempotent(importer, ixlan, data)
+
+
+@pytest.mark.django_db
+def test_two_missing_ipaddrs_no_auto_update(entities, save):
+    """
+    Now we have two Netixlans, each missing 1 ipaddr. The remote has data for a single netixlan with 
+    both ip addressses.
+
+    In terms of IXFMemberData, we suggest delete the two Netixlans and create a new one.
+    In terms of notifications, we consolidate that deletions + addition into a single 
+    MODIFY proposal.
+
+    This tests the changes in issue #770.
     """
 
     data = setup_test_data("ixf.member.1")
@@ -707,33 +841,39 @@ def test_single_ipaddr_matches_no_auto_update(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
-
-    assert len(importer.log["data"]) == 3
+    importer.notify_proposals()
+    # Assert NetworkIXLans are unchanged
     assert NetworkIXLan.objects.filter(status="ok").count() == 2
 
-    assert importer.log["data"][0]["action"] == "suggest-delete"
-    assert importer.log["data"][1]["action"] == "suggest-delete"
-    assert importer.log["data"][2]["action"] == "suggest-add"
+    # On the IXFMemberData side, we create instances for two deletions and one addition.
+    # The deletions will be the requirement of the addition.
+    assert IXFMemberData.objects.count() == 3
+    ixfmdata_d4 = IXFMemberData.objects.filter(ipaddr4="195.69.147.250", ipaddr6=None).first()
+    ixfmdata_d6 = IXFMemberData.objects.filter(ipaddr4=None, ipaddr6="2001:7f8:1::a500:2906:1").first()
+    ixfmdata_m = IXFMemberData.objects.filter(ipaddr4="195.69.147.250", ipaddr6="2001:7f8:1::a500:2906:1").first()
 
-    stdout = capsys.readouterr().out
+    assert ixfmdata_d4.action == "delete"
+    assert ixfmdata_d6.action == "delete"
+    assert ixfmdata_m.action == "modify"
+    assert ixfmdata_d4.requirement_of == ixfmdata_m
+    assert ixfmdata_d6.requirement_of == ixfmdata_m
 
-    assert_email_sent(
-        stdout, (network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")
-    )
-    assert_email_sent(stdout, (network.asn, "195.69.147.250", "No IPv6"))
-    assert_email_sent(stdout, (network.asn, "No IPv4", "2001:7f8:1::a500:2906:1"))
+    assert ixfmdata_m.primary_requirement == ixfmdata_d4
+    assert ixfmdata_m.secondary_requirements == [ixfmdata_d6]
 
-    assert_ticket_exists(
-        [
-            (1001, "195.69.147.250", "2001:7f8:1::a500:2906:1"),
-            (1001, "195.69.147.250", "No IPv6"),
-            (1001, "No IPv4", "2001:7f8:1::a500:2906:1"),
-        ]
-    )
+    # We consolidate notifications into a single MODIFY
+    assert len(importer.log["data"]) == 1
+    assert importer.log["data"][0]["action"] == "suggest-modify"
 
+
+    # We only create an email for the primary requirement 
+    email_info_4 = [("MODIFY", network.asn, "195.69.147.250", "IPv6 not set")]
+    assert IXFImportEmail.objects.count() == 2
+    assert_ix_email(ixlan.ix, email_info_4)
+    assert_network_email(network, email_info_4)
+    
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
-
 
 @pytest.mark.django_db
 def test_delete(entities, save):
@@ -780,12 +920,14 @@ def test_delete(entities, save):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert len(importer.log["data"]) == 1
     log = importer.log["data"][0]
 
     assert log["action"] == "delete"
     assert NetworkIXLan.objects.filter(status="ok").count() == 1
+    assert_no_emails()
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -797,7 +939,7 @@ def test_delete(entities, save):
 
 
 @pytest.mark.django_db
-def test_suggest_delete_local_ixf_has_flag(entities, save, capsys):
+def test_suggest_delete_local_ixf_has_flag(entities, save):
     """
     Automatic updates for network are disabled.
     There is no remote-ixf corresponding to an existing netixlan.
@@ -856,24 +998,25 @@ def test_suggest_delete_local_ixf_has_flag(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert NetworkIXLan.objects.count() == 2
     assert IXFMemberData.objects.count() == 1
 
-    assert_no_ticket_exists()
+    assert_no_emails()
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_suggest_delete_local_ixf_no_flag(entities, save, capsys):
+def test_suggest_delete_local_ixf_no_flag(entities, save):
     """
     Automatic updates for network are disabled.
     There is no remote-ixf corresponding to an existing netixlan.
     There is a local-ixf corresponding to that netixlan but it does not flag it
     for deletion.
-    We flag the local-ixf for deletion, make a ticket, and email the ix and network.
+    We flag the local-ixf for deletion, and email the ix and network.
     """
     data = setup_test_data("ixf.member.1")
     network = entities["net"]["UPDATE_DISABLED"]
@@ -945,28 +1088,27 @@ def test_suggest_delete_local_ixf_no_flag(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert importer.log["data"][0]["action"] == "suggest-delete"
     assert NetworkIXLan.objects.count() == 2
 
-    # Test failing, IXFMember is getting resolved
-    # instead of being flagged for deletion.
     assert IXFMemberData.objects.count() == 1
-    assert_ticket_exists([(1001, "195.69.147.251", "No IPv6")])
 
-    stdout = capsys.readouterr().out
-    assert_email_sent(stdout, (1001, "195.69.147.251", "No IPv6"))
+    email_info = [("REMOVE", 1001, "195.69.147.251", "IPv6 not set")]
+    assert_ix_email(ixlan.ix, email_info)
+    assert_network_email(network, email_info)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_suggest_delete_no_local_ixf(entities, save, capsys):
+def test_suggest_delete_no_local_ixf(entities, save):
     """
     Automatic updates for network are disabled.
     There is no remote-ixf corresponding to an existing netixlan.
-    We flag the local-ixf for deletion, make a ticket, and email the ix and network.
+    We flag the local-ixf for deletion, and email the ix and network.
     """
 
     data = setup_test_data("ixf.member.1")
@@ -1007,21 +1149,22 @@ def test_suggest_delete_no_local_ixf(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert importer.log["data"][0]["action"] == "suggest-delete"
     assert NetworkIXLan.objects.count() == 2
     assert IXFMemberData.objects.count() == 1
-    assert_ticket_exists([(1001, "195.69.147.251", "No IPv6")])
 
-    stdout = capsys.readouterr().out
-    assert_email_sent(stdout, (1001, "195.69.147.251", "No IPv6"))
+    email_info = [("REMOVE", 1001, "195.69.147.251", "IPv6 not set")]
+    assert_ix_email(ixlan.ix, email_info)
+    assert_network_email(network, email_info)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save, capsys):
+def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
     """
     Our network allows automatic updates.
     Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
@@ -1080,26 +1223,28 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 2
-    stdout = capsys.readouterr().out
-    assert stdout == ""
-    assert_no_ticket_exists()
+    assert_no_emails()
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_mark_invalid_remote_auto_update(entities, save, capsys):
+def test_mark_invalid_remote_auto_update(entities, save):
     """
     The network does enable automatic updates.
     Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
     There is not a local-ixf flagging that invalid data.
     We create a local-ixf[as,ip4,ip6] and flag as invalid
     Email the ix
-    Create/Update a ticket for admin com
     """
+
+
+    #TODO Missing conflict template
+    assert 0
     data = setup_test_data("ixf.member.invalid.0")
     network = entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][0]
@@ -1126,14 +1271,13 @@ def test_mark_invalid_remote_auto_update(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     print([(n.speed, n.ipaddr4, n.ipaddr6, n.asn) for n in NetworkIXLan.objects.all()])
     print(importer.log)
     assert NetworkIXLan.objects.count() == 1
     assert IXFMemberData.objects.count() == 2
     ERROR_MESSAGE = "Invalid speed value"
-    stdout = capsys.readouterr().out
-    assert ERROR_MESSAGE in stdout
     assert_ticket_exists(
         [
             (2906, "195.69.147.100", "2001:7f8:1::a500:2906:4"),
@@ -1146,13 +1290,15 @@ def test_mark_invalid_remote_auto_update(entities, save, capsys):
 
 
 @pytest.mark.django_db
-def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save, capsys):
+def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
     """
     Our network does not allow automatic updates.
     Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
     There is already a local-ixf flagging that invalid data.
     Do nothing.
     """
+
+
     data = setup_test_data("ixf.member.invalid.1")
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
@@ -1205,26 +1351,29 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 2
-    stdout = capsys.readouterr().out
-    assert stdout == ""
-    assert_no_ticket_exists()
+    assert_no_emails()
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
-def test_mark_invalid_remote_no_auto_update(entities, save, capsys):
+def test_mark_invalid_remote_no_auto_update(entities, save):
     """
     Our network does not allow automatic updates.
     Remote-ixf[as,ip4,ip6] contains invalid data **but** it can be parsed.
     There is not a local-ixf flagging that invalid data.
     We create a local-ixf[as,ip4,ip6] and flag as invalid
     Email the ix
-    Create/Update a ticket for admin com
     """
+
+    #TODO: Figure out what the email should be.
+    assert 0
+
+
     data = setup_test_data("ixf.member.invalid.1")
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
@@ -1251,24 +1400,20 @@ def test_mark_invalid_remote_no_auto_update(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
 
     assert IXFMemberData.objects.count() == 2
-    ERROR_MESSAGE = "Invalid speed value"
-    stdout = capsys.readouterr().out
-    assert ERROR_MESSAGE in stdout
-    assert_ticket_exists(
-        [
-            (1001, "195.69.147.100", "2001:7f8:1::a500:2906:4"),
-            (1001, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
-        ]
-    )
+    email_info = []
+    assert_ix_email(ixlan.ix, email_info)
+    assert_no_network_email(network)
+
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
-
 @pytest.mark.django_db
-def test_remote_cannot_be_parsed(entities, save, capsys):
+def test_remote_cannot_be_parsed(entities, save):
     """
     Remote cannot be parsed. We create a ticket, email the IX, and create a lock.
     """
@@ -1282,20 +1427,19 @@ def test_remote_cannot_be_parsed(entities, save, capsys):
         return assert_idempotent(importer, ixlan, data, save=False)
 
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     ERROR_MESSAGE = "No entries in any of the vlan_list lists, aborting"
     assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
-    stdout = capsys.readouterr().out
-    assert ERROR_MESSAGE in stdout
-    assert DeskProTicket.objects.count() == 1
+    assert ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
 
     # Assert idempotent / lock
     importer.sanitize(data)
     importer.update(ixlan, data=data)
-    stdout = capsys.readouterr().out
-    assert stdout == ""
-    assert DeskProTicket.objects.count() == 1
+
+    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+    assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
 
 
 def test_validate_json_schema():
@@ -1489,6 +1633,12 @@ def assert_email_sent(email_text, email_info):
 
 def assert_no_emails():
     assert IXFImportEmail.objects.count() == 0
+
+def assert_no_ix_email(ix):
+    assert IXFImportEmail.objects.filter(ix=ix.id).count() == 0
+
+def assert_no_network_email(network):
+    assert IXFImportEmail.objects.filter(net=network.id).count() == 0
 
 def ticket_list():
     return [(t.id, t.subject) for t in DeskProTicket.objects.all().order_by("id")]
