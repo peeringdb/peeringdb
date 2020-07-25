@@ -424,5 +424,5 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
         for key in ["reset", "reset_hints", "reset_dismisses", "reset_email", "reset_tickets"]:
             self.kwargs[key] = form_data.get(key)
 
-        if form_data.get("ixlan"):
+        if form_data.get("ix"):
             self.kwargs["ixlan"] = [form_data.get("ix").id]
