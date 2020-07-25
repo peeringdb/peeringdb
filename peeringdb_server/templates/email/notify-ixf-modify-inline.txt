@@ -8,9 +8,7 @@ MODIFY {% if instance.primary_requirement %}{{ instance.primary_requirement.ixf_
 - Set IPv6 address {{ instance.ipaddr6 }}
 {% elif instance.ipaddr6_on_requirement %}
 - Set IPv4 address {{ instance.ipaddr4 }}
-{% endif %}
-
-{% if instance.remote_changes %}
+{% endif %}{% if instance.remote_changes %}
 IX-F data has changed since the last notification:
 {% for name, value in instance.remote_changes.items %}
 - {{ name }}: {{ value.from }} to {{ value.to }}
