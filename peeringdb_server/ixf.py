@@ -290,7 +290,6 @@ class Importer:
             return False
 
         if self.skip_import:
-            self.cleanup_ixf_member_data()
             return True
 
         try:
@@ -394,6 +393,7 @@ class Importer:
 
         for netixlan in netixlan_qset:
             if netixlan.ixf_id not in self.ixf_ids:
+
                 ixf_member_data = IXFMemberData.instantiate(
                     netixlan.asn,
                     netixlan.ipaddr4,
@@ -705,11 +705,24 @@ class Importer:
 
             self.ixf_ids.append(ixf_id)
 
-            if ipv4_addr and ipv6_addr:
-                if not network.ipv6_support:
-                    self.ixf_ids.append((asn, ixf_id[1], None))
-                elif not network.ipv4_support:
-                    self.ixf_ids.append((asn, None, ixf_id[2]))
+            if not network.ipv6_support:
+                self.ixf_ids.append((asn, ixf_id[1], None))
+                netixlan = NetworkIXLan.objects.filter(
+                    status="ok",
+                    ipaddr4=ixf_id[1]
+                ).first()
+                if netixlan:
+                    self.ixf_ids.append((asn, ixf_id[1], netixlan.ipaddr6))
+
+            elif not network.ipv4_support:
+                self.ixf_ids.append((asn, None, ixf_id[2]))
+                netixlan = NetworkIXLan.objects.filter(
+                    status="ok",
+                    ipaddr6=ixf_id[1]
+                ).first()
+                if netixlan:
+                    self.ixf_ids.append((asn, netixlan.ipaddr4, ixf_id[2]))
+
 
             if connection.get("state", "active") == "inactive":
                 operational = False
@@ -999,6 +1012,9 @@ class Importer:
         Will create IXFImportEmail entry
         """
 
+        if not recipients:
+            return
+
         email_log = None
 
         logged_subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {subject}"
@@ -1031,9 +1047,10 @@ class Importer:
             )
             mail.send(fail_silently=False)
         else:
-            debug_mail(
-                subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
-            )
+            print("EMAIL", subject, recipients)
+            #debug_mail(
+            #    subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
+            #)
 
         if email_log:
             email_log.sent = datetime.datetime.now(datetime.timezone.utc)
@@ -1139,6 +1156,8 @@ class Importer:
             # we don't care about resolved proposals
 
             if typ == "resolved":
+                if ixf_member_data.deskpro_id:
+                    self.ticket_proposal(**notification)
                 continue
 
             if typ == "protocol-conflict":
@@ -1159,7 +1178,8 @@ class Importer:
             # one of the sides, immediately make a ticket
 
             if not ix_contacts or not net_contacts:
-                self.ticket_proposal(**notification)
+                if typ != "protocol-conflict":
+                    self.ticket_proposal(**notification)
 
             template_file = f"email/notify-ixf-{typ}-inline.txt"
 
