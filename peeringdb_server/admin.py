@@ -1549,7 +1549,7 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
         "net",
         "ix",
     )
-    search_fields = ("subject",)
+    search_fields = ("subject","ix__name","net__name")
     change_list_template = "admin/change_list_with_regex_search.html"
 
     def get_search_results(self, request, queryset, search_term):
@@ -1560,7 +1560,7 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
         if search_term.startswith("^") and search_term.endswith("$"):
             # Convert search to raw string
             try:
-                search_term = search_term.encode('unicode-escape').decode() 
+                search_term = search_term.encode('unicode-escape').decode()
             except AttributeError:
                 return queryset, use_distinct
 
@@ -1600,7 +1600,7 @@ class DeskProTicketAdmin(admin.ModelAdmin):
         if search_term.startswith("^") and search_term.endswith("$"):
             # Convert search to raw string
             try:
-                search_term = search_term.encode('unicode-escape').decode() 
+                search_term = search_term.encode('unicode-escape').decode()
             except AttributeError:
                 return queryset, use_distinct
 
