@@ -105,32 +105,37 @@ class Command(BaseCommand):
 
     def reset_all_hints(self):
         self.log("Resetting hints: deleting IXFMemberData instances")
-        IXFMemberData.objects.all().delete()
+        if self.commit:
+            IXFMemberData.objects.all().delete()
 
     def reset_all_dismisses(self):
         self.log("Resetting dismisses: setting IXFMemberData.dismissed=False on all IXFMemberData instances")
-        for ixfmemberdata in IXFMemberData.objects.all():
-            ixfmemberdata.dismissed = False
-            ixfmemberdata.save()
+        if self.commit:
+            for ixfmemberdata in IXFMemberData.objects.all():
+                ixfmemberdata.dismissed = False
+                ixfmemberdata.save()
 
     def reset_all_email(self):
         self.log("Resetting email: emptying the IXFImportEmail table")
-        IXFImportEmail.objects.all().delete()
+        if self.commit:
+            IXFImportEmail.objects.all().delete()
 
     def reset_all_tickets(self):
         self.log("Resetting tickets: removing DeskProTicket objects where subject contains '[IX-F]'")
-        DeskProTicket.objects.filter(subject__contains="[IX-F]").delete()
+        if self.commit:
+            DeskProTicket.objects.filter(subject__contains="[IX-F]").delete()
 
     def create_reset_ticket(self):
         self.log("Creating deskproticket for the following resets: {}".format(
             ", ".join(self.active_flags)
         ))
-        DeskProTicket.objects.create(
-            user=ixf.Importer().ticket_user,
-            subject="[IX-F] command-line reset",
-            body="Applied the following resets to the IX-F data: {}".format(
-                ", ".join(self.active_flags)),
-        )
+        if self.commit:
+            DeskProTicket.objects.create(
+                user=ixf.Importer().ticket_user,
+                subject="[IX-F] command-line reset",
+                body="Applied the following resets to the IX-F data: {}".format(
+                    ", ".join(self.active_flags)),
+            )
 
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
