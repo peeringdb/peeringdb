@@ -1,4 +1,4 @@
-MODIFY {% if instance.primary_requirement %}{{ instance.primary_requirement.ixf_id_pretty_str }}{% else %}{{ instance }}{% endif %}
+MODIFY {% if instance.primary_requirement %}{{ instance.primary_requirement.ixf_id_pretty_str }}{% else %}{{ instance.ixf_id_pretty_str }}{% endif %}
 {% spaceless %}
 {% for name, value in instance.changes.items %}
 - {{ name }}: {{ value.from }} to {{ value.to }}
