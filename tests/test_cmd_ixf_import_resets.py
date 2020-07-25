@@ -67,8 +67,18 @@ def test_reset_email(entities, data_cmd_ixf_email):
     ixlan = entities["ixlan"]
     # Create IXFMemberData
     importer.update(ixlan, data=ixf_import_data)
+    importer.notify_proposals()
 
-    assert IXFImportEmail.objects.count() == 4
+    print(importer.log)
+    print("PRINTING PRINTING PRINTING BRRRRR")
+    for i in IXFImportEmail.objects.all():
+        print(i.subject)
+        print(i.message)
+        print('\b'*4)
+        print(' --- ')
+    assert IXFImportEmail.objects.count() == 2
+
+
     call_command("pdb_ixf_ixp_member_import", reset_email=True)
 
     assert IXFImportEmail.objects.count() == 0
@@ -92,10 +102,11 @@ def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
     ixlan = entities["ixlan"]
     # Create IXFMemberData
     importer.update(ixlan, data=ixf_import_data)
+    importer.notify_proposals()
 
     assert DeskProTicket.objects.count() == 5
     assert IXFMemberData.objects.count() == 4
-    assert IXFImportEmail.objects.count() == 4
+    assert IXFImportEmail.objects.count() == 2
 
     call_command("pdb_ixf_ixp_member_import", reset=True)
 
@@ -112,7 +123,8 @@ def entities():
     with reversion.create_revision():
         entities["org"] = Organization.objects.create(name="Netflix", status="ok")
         entities["ix"] = InternetExchange.objects.create(
-                name="Test Exchange One", org=entities["org"], status="ok"
+                name="Test Exchange One", org=entities["org"], status="ok",
+                tech_email="ix1@localhost"
         )
         entities["ixlan"] = entities["ix"].ixlan
 
@@ -142,6 +154,8 @@ def entities():
                 website="http://netflix.com/",
                 policy_general="Open",
                 policy_url="https://www.netflix.com/openconnect/",
+                info_unicast=True,
+                info_ipv6=True,
         )
 
         entities["netcontact"] = NetworkContact.objects.create(
