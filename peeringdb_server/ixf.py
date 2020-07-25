@@ -842,7 +842,7 @@ class Importer:
             if notify and ixf_member_data.net_present_at_ix:
                 self.queue_notification(ixf_member_data, "add")
             elif notify:
-                self.queue_notification(ixf_memeber_data, "add", ix=False, ac=False)
+                self.queue_notification(ixf_member_data, "add", ix=False, ac=False)
 
             self.log_ixf_member_data(ixf_member_data)
             self.consolidate_delete_add(ixf_member_data)
@@ -1127,7 +1127,7 @@ class Importer:
         ix_notifications = {}
 
         for notification in self.notifications:
-
+            
             ixf_member_data = notification["ixf_member_data"]
             action = notification["action"]
             typ = notification["typ"]
