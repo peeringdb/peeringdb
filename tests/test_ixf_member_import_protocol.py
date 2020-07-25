@@ -372,9 +372,6 @@ def test_add_netixlan_conflict(entities, save):
     There is no local-ixf so we create one.
     """
 
-    #TODO: Failing bc missing template
-    assert 0
-
     data = setup_test_data("ixf.member.0")
     network = entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][1]  # So we have conflicts with IPAddresses
@@ -402,9 +399,9 @@ def test_add_netixlan_conflict(entities, save):
         in ixfmemberdata.error
     )
     
-    email_info = [("ADD", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
-    assert_ix_email_sent(ixlan.ix, email_info)
-    assert_network_email_sent(network, email_info)
+    email_info = [("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
+    assert_ix_email(ixlan.ix, email_info)
+    assert_network_email(network, email_info)
 
     # Test idempotent
     importer.update(ixlan, data=data)
@@ -1242,9 +1239,6 @@ def test_mark_invalid_remote_auto_update(entities, save):
     Email the ix
     """
 
-
-    #TODO Missing conflict template
-    assert 0
     data = setup_test_data("ixf.member.invalid.0")
     network = entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][0]
@@ -1273,21 +1267,21 @@ def test_mark_invalid_remote_auto_update(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    print([(n.speed, n.ipaddr4, n.ipaddr6, n.asn) for n in NetworkIXLan.objects.all()])
-    print(importer.log)
     assert NetworkIXLan.objects.count() == 1
     assert IXFMemberData.objects.count() == 2
-    ERROR_MESSAGE = "Invalid speed value"
-    assert_ticket_exists(
-        [
-            (2906, "195.69.147.100", "2001:7f8:1::a500:2906:4"),
-            (2906, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
-        ]
-    )
+
+    # We email to say there is invalid data
+    email_info = [
+        ("CREATE", network.asn,"195.69.147.100","2001:7f8:1::a500:2906:4"),
+        ("MODIFY", network.asn,"195.69.147.200","2001:7f8:1::a500:2906:2")
+    ]
+    assert_network_email(network, email_info)
+    assert_ix_email(ixlan.ix, email_info)
+    assert "Invalid speed value: This is invalid" in IXFImportEmail.objects.filter(net=network.id).first().message
+    assert "Invalid speed value: This is invalid" in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
-
 
 @pytest.mark.django_db
 def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
@@ -1370,10 +1364,6 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
     Email the ix
     """
 
-    #TODO: Figure out what the email should be.
-    assert 0
-
-
     data = setup_test_data("ixf.member.invalid.1")
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
@@ -1404,10 +1394,16 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
 
 
     assert IXFMemberData.objects.count() == 2
-    email_info = []
-    assert_ix_email(ixlan.ix, email_info)
-    assert_no_network_email(network)
 
+    # We send an email about the updates 
+    # But it also contains information about the invalid speed
+    email_info = [
+        ("CREATE", network.asn,"195.69.147.100","2001:7f8:1::a500:2906:4"),
+        ("MODIFY", network.asn,"195.69.147.200","2001:7f8:1::a500:2906:2")
+    ]
+    assert_ix_email(ixlan.ix, email_info)
+    assert "Invalid speed value: This is invalid" in IXFImportEmail.objects.first().message
+    assert_no_network_email(network)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
