@@ -37,7 +37,7 @@ def test_reset_hints(entities, data_cmd_ixf_hints):
     # Create IXFMemberData
     importer.update(ixlan, data=ixf_import_data)
 
-    call_command("pdb_ixf_ixp_member_import", reset_hints=True)
+    call_command("pdb_ixf_ixp_member_import", reset_hints=True, commit=True)
 
     assert IXFMemberData.objects.count() == 0
     assert DeskProTicket.objects.filter(body__contains="reset_hints").count() == 1
@@ -55,7 +55,7 @@ def test_reset_dismissals(entities, data_cmd_ixf_dismissals):
         ixfm.dismissed = True
         ixfm.save()
 
-    call_command("pdb_ixf_ixp_member_import", reset_dismisses=True)
+    call_command("pdb_ixf_ixp_member_import", reset_dismisses=True, commit=True)
 
     assert IXFMemberData.objects.filter(dismissed=False).count() == 4
     assert DeskProTicket.objects.filter(body__contains="reset_dismisses").count() == 1
@@ -68,18 +68,10 @@ def test_reset_email(entities, data_cmd_ixf_email):
     # Create IXFMemberData
     importer.update(ixlan, data=ixf_import_data)
     importer.notify_proposals()
-
-    print(importer.log)
-    print("PRINTING PRINTING PRINTING BRRRRR")
-    for i in IXFImportEmail.objects.all():
-        print(i.subject)
-        print(i.message)
-        print('\b'*4)
-        print(' --- ')
     assert IXFImportEmail.objects.count() == 2
 
 
-    call_command("pdb_ixf_ixp_member_import", reset_email=True)
+    call_command("pdb_ixf_ixp_member_import", reset_email=True, commit=True)
 
     assert IXFImportEmail.objects.count() == 0
     assert DeskProTicket.objects.filter(body__contains="reset_email").count() == 1
@@ -88,7 +80,7 @@ def test_reset_email(entities, data_cmd_ixf_email):
 def test_reset_tickets(deskprotickets):
     assert DeskProTicket.objects.count() == 5
 
-    call_command("pdb_ixf_ixp_member_import", reset_tickets=True)
+    call_command("pdb_ixf_ixp_member_import", reset_tickets=True, commit=True)
 
     assert DeskProTicket.objects.count() == 2
     assert DeskProTicket.objects.filter(body__contains="reset_tickets").count() == 1
@@ -108,7 +100,7 @@ def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
     assert IXFMemberData.objects.count() == 4
     assert IXFImportEmail.objects.count() == 2
 
-    call_command("pdb_ixf_ixp_member_import", reset=True)
+    call_command("pdb_ixf_ixp_member_import", reset=True, commit=True)
 
     assert DeskProTicket.objects.count() == 2
     assert DeskProTicket.objects.filter(body__contains="reset").count() == 1
