@@ -314,7 +314,7 @@ class Importer:
 
         self.cleanup_ixf_member_data()
 
-        self.notify_proposals()
+        # create tickets for unresolved proposals
 
         self.ticket_aged_proposals()
 
@@ -612,8 +612,8 @@ class Importer:
             ipv4_addr = ipv4.get("address")
             ipv6_addr = ipv6.get("address")
 
-            ipv4_support = network.info_unicast
-            ipv6_support = network.info_ipv6
+            ipv4_support = network.ipv4_support
+            ipv6_support = network.ipv6_support
 
             # parse and validate the ipaddresses attached to the vlan
             # append a unqiue ixf identifier to self.ixf_ids
@@ -706,9 +706,9 @@ class Importer:
             self.ixf_ids.append(ixf_id)
 
             if ipv4_addr and ipv6_addr:
-                if not network.info_ipv6:
+                if not network.ipv6_support:
                     self.ixf_ids.append((asn, ixf_id[1], None))
-                elif not network.info_unicast:
+                elif not network.ipv4_support:
                     self.ixf_ids.append((asn, None, ixf_id[2]))
 
             if connection.get("state", "active") == "inactive":
@@ -839,13 +839,13 @@ class Importer:
         else:
             notify = ixf_member_data.set_add(save=self.save, reason=REASON_NEW_ENTRY)
 
-            if notify and ixf_member_data.net_present_at_ix:
-                self.queue_notification(ixf_member_data, "add")
-            elif notify:
-                self.queue_notification(ixf_member_data, "add", ix=False, ac=False)
-
             self.log_ixf_member_data(ixf_member_data)
             self.consolidate_delete_add(ixf_member_data)
+
+            if notify and ixf_member_data.net_present_at_ix:
+                self.queue_notification(ixf_member_data, ixf_member_data.action)
+            elif notify:
+                self.queue_notification(ixf_member_data, ixf_member_data.action, ix=False, ac=False)
 
     def consolidate_delete_add(self, ixf_member_data):
         if not ixf_member_data.ipaddr4 or not ixf_member_data.ipaddr6:
@@ -1127,7 +1127,7 @@ class Importer:
         ix_notifications = {}
 
         for notification in self.notifications:
-            
+
             ixf_member_data = notification["ixf_member_data"]
             action = notification["action"]
             typ = notification["typ"]
@@ -1139,6 +1139,9 @@ class Importer:
 
             if typ == "resolved":
                 continue
+
+            if typ == "protocol-conflict":
+                action = "protocol_conflict"
 
             # we don't care about proposals that are hidden
             # requirements of other proposals
@@ -1174,6 +1177,7 @@ class Importer:
                     "add": [],
                     "modify": [],
                     "delete": [],
+                    "protocol_conflict":None,
                 }
 
             if ix not in ix_notifications:
@@ -1189,27 +1193,37 @@ class Importer:
                     "add": [],
                     "modify": [],
                     "delete": [],
+                    "protocol_conflict":None,
                 }
 
             # render and push proposal text for network
 
             if notify_net:
-                net_notifications[asn]["proposals"][ix][action].append(
-                    ixf_member_data.render_notification(
-                        template_file, recipient="net", context=context,
-                    )
+                proposals = net_notifications[asn]["proposals"][ix]
+                message = ixf_member_data.render_notification(
+                    template_file, recipient="net", context=context,
                 )
-                net_notifications[asn]["count"] += 1
+
+                if action == "protocol_conflict":
+                    proposals[action] = message
+                else:
+                    proposals[action].append(message)
+                    net_notifications[asn]["count"] += 1
 
             # render and push proposal text for exchange
 
             if notify_ix:
-                ix_notifications[ix]["proposals"][asn][action].append(
-                    ixf_member_data.render_notification(
-                        template_file, recipient="ix", context=context,
-                    )
+                proposals = ix_notifications[ix]["proposals"][asn]
+                message = ixf_member_data.render_notification(
+                    template_file, recipient="ix", context=context,
                 )
-                ix_notifications[ix]["count"] += 1
+
+                if action == "protocol_conflict":
+                    proposals[action] = message
+                else:
+                    proposals[action].append(message)
+                    ix_notifications[ix]["count"] += 1
+
 
         return {
             "net": net_notifications,
@@ -1240,6 +1254,17 @@ class Importer:
             for other_entity, data in consolidated[recipient].items():
                 contacts = data["contacts"]
 
+                # we did not find any suitable contact points
+                # skip
+
+                if not contacts:
+                    continue
+
+                # no messages
+
+                if not data["count"]:
+                    continue
+
                 # render the consolidated message
 
                 message = template.render(
@@ -1251,12 +1276,6 @@ class Importer:
                         "proposals": data["proposals"],
                     }
                 )
-
-                # we did not find any suitable contact points
-                # skip
-
-                if not contacts:
-                    continue
 
                 if recipient == "net":
                     subject = _(

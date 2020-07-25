@@ -3,7 +3,7 @@ import json
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.conf import settings 
+from django.conf import settings
 from peeringdb_server.models import (
     IXLan,
     NetworkIXLan,
@@ -89,7 +89,7 @@ class Command(BaseCommand):
             setattr(self, flag, options.get(flag, False))
             if options.get(flag, False):
                 self.active_flags.append(flag)
-        
+
         self.release_env_check(self.active_flags)
         return self.active_flags
 
@@ -174,6 +174,7 @@ class Command(BaseCommand):
                 qset = qset.filter(id__in=ixlan_ids)
 
         total_log = {"data": [], "errors": []}
+        total_notifications = []
 
         for ixlan in qset:
             self.log(
@@ -204,6 +205,7 @@ class Command(BaseCommand):
                         for err in importer.log["errors"]
                     ]
                 )
+                total_notifications += importer.notifications
 
             except Exception as inst:
                 self.log("ERROR: {}".format(inst))
@@ -211,3 +213,11 @@ class Command(BaseCommand):
 
         if self.preview:
             self.stdout.write(json.dumps(total_log, indent=2))
+
+        # send cosolidated notifications to ix and net for
+        # new proposals (#771)
+
+        importer = ixf.Importer()
+        importer.reset(save=self.commit)
+        importer.notifications = total_notifications
+        importer.notify_proposals()

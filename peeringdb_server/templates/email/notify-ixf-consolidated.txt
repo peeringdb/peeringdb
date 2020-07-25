@@ -18,5 +18,9 @@ This email details {{ count }} new data mismatch[es] discovered by the PeeringDB
 {% include "email/notify-ixf-conflict-insert.txt" with entity=entity other=other ticket_days=ticket_days %}
 {{ message }}
 -----------------------------{% endfor %}
+{% if messages.protocol_conflict %}
+{% include "email/notify-ixf-conflict-insert.txt" with entity=entity other=other ticket_days=ticket_days %}
+{{ messages.protocol_conflict }}
+-----------------------------{% endif %}
 {% endfor %}
 {% endspaceless %}

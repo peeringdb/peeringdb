@@ -2336,8 +2336,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         net = Network.objects.get(asn=asn)
 
-        ipv4_support = net.info_unicast
-        ipv6_support = net.info_ipv6
+        ipv4_support = net.ipv4_support
+        ipv6_support = net.ipv6_support
 
         filters = {"asn": asn}
 
@@ -2384,14 +2384,13 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 raise cls.DoesNotExist()
 
             if instances.count() > 1:
+
                 # this only happens when a network switches on/off
                 # ipv4/ipv6 protocol support inbetween importer
                 # runs.
 
                 for instance in instances:
-                    if ipaddr4 and not instance.ipaddr4:
-                        instance.delete(hard=True)
-                    elif ipaddr6 and not instance.ipaddr6:
+                    if ipaddr4 != instance.ipaddr4 or ipaddr6 != instance.ipaddr6:
                         instance.delete(hard=True)
 
                 instance = cls.objects.get(**id_filters)
@@ -2412,10 +2411,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         except cls.DoesNotExist:
             ip_args = {}
 
-            if net.info_unicast or not ipaddr4:
+            if net.ipv4_support or not ipaddr4:
                 ip_args.update(ipaddr4=ipaddr4)
 
-            if net.info_ipv6 or not ipaddr6:
+            if net.ipv6_support or not ipaddr6:
                 ip_args.update(ipaddr6=ipaddr6)
 
             if not ip_args and validate_network_protocols:
@@ -2886,7 +2885,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             try:
                 filters = self.id_filters(self.asn, self.ipaddr4, self.ipaddr6)
 
-                if filters == {"asn": self.asn}:
+                if "ipaddr6" not in filters and "ipaddr4" not in filters:
                     raise NetworkIXLan.DoesNotExist()
 
                 self._netixlan = NetworkIXLan.objects.get(**filters)
@@ -3000,9 +2999,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             self.validate_speed()
 
-            if not self.net.info_ipv6:
+            if not self.net.ipv6_support:
                 netixlan.ipaddr6 = None
-            if not self.net.info_unicast:
+            if not self.net.ipv4_support:
                 netixlan.ipaddr4 = None
 
             result = self.ixlan.add_netixlan(netixlan, save=save, save_others=save)
@@ -3609,6 +3608,29 @@ class Network(pdb_models.NetworkBase):
                 "poc_set": {"namespace": NetworkContact.nsp_namespace_in_list}
             },
         }
+
+
+    @property
+    def ipv4_support(self):
+
+        # network has not indicated either ip4 or ip6 support
+        # so assume True (#771)
+
+        if not self.info_unicast and not self.info_ipv6:
+            return True
+
+        return self.info_unicast
+
+    @property
+    def ipv6_support(self):
+
+        # network has not indicated either ip4 or ip6 support
+        # so assume True (#771)
+
+        if not self.info_unicast and not self.info_ipv6:
+            return True
+
+        return self.info_ipv6
 
     @property
     def sponsorship(self):

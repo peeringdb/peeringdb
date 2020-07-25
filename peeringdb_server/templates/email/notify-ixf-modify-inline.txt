@@ -1,13 +1,13 @@
-MODIFY {{ instance.ixf_id_pretty_str }}
+MODIFY {% if instance.primary_requirement %}{{ instance.primary_requirement.ixf_id_pretty_str }}{% else %}{{ instance }}{% endif %}
 {% spaceless %}
 {% for name, value in instance.changes.items %}
 - {{ name }}: {{ value.from }} to {{ value.to }}
 {% endfor %}
 
 {% if instance.ipaddr4_on_requirement %}
-- Set IPv6 address
+- Set IPv6 address {{ instance.ipaddr6 }}
 {% elif instance.ipaddr6_on_requirement %}
-- Set IPv4 address
+- Set IPv4 address {{ instance.ipaddr4 }}
 {% endif %}
 
 {% if instance.remote_changes %}
