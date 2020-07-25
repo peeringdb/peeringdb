@@ -68,8 +68,7 @@ def test_reset_email(entities, data_cmd_ixf_email):
     # Create IXFMemberData
     importer.update(ixlan, data=ixf_import_data)
     importer.notify_proposals()
-    assert IXFImportEmail.objects.count() == 2
-
+    assert IXFImportEmail.objects.count() == 1
 
     call_command("pdb_ixf_ixp_member_import", reset_email=True, commit=True)
 
@@ -98,7 +97,7 @@ def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
 
     assert DeskProTicket.objects.count() == 5
     assert IXFMemberData.objects.count() == 4
-    assert IXFImportEmail.objects.count() == 2
+    assert IXFImportEmail.objects.count() == 1
 
     call_command("pdb_ixf_ixp_member_import", reset=True, commit=True)
 
@@ -115,8 +114,7 @@ def entities():
     with reversion.create_revision():
         entities["org"] = Organization.objects.create(name="Netflix", status="ok")
         entities["ix"] = InternetExchange.objects.create(
-                name="Test Exchange One", org=entities["org"], status="ok",
-                tech_email="ix1@localhost"
+                name="Test Exchange One", org=entities["org"], status="ok", tech_email="ix1@localhost"
         )
         entities["ixlan"] = entities["ix"].ixlan
 
@@ -151,7 +149,7 @@ def entities():
         )
 
         entities["netcontact"] = NetworkContact.objects.create(
-                email="network1@localhost", network=entities["net"]
+                email="network1@localhost", network=entities["net"], status="ok", role="Policy"
             )
         
         admin_user = User.objects.create_user("admin", "admin@localhost", "admin")

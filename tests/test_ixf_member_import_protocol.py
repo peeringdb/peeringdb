@@ -1676,9 +1676,11 @@ def assert_idempotent(importer, ixlan, data, save=True):
 
     # Test idempotent
     importer.update(ixlan, data=data, save=save)
+    importer.notify_proposals()
     assert_no_changes()
 
     # Test idempotent when running against single
     # non-existing asn
     importer.update(ixlan, data=data, asn=12345, save=save)
+    importer.notify_proposals()
     assert_no_changes()
