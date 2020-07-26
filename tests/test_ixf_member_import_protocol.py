@@ -327,7 +327,7 @@ def test_add_netixlan_conflict_local_ixf(entities, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error=["IPv4 195.69.147.250 does not match any prefix on this ixlan"],
+        error=json.dumps({"ipaddr4":["IPv4 195.69.147.250 does not match any prefix on this ixlan"]}),
     )
 
     importer = ixf.Importer()
@@ -398,7 +398,7 @@ def test_add_netixlan_conflict(entities, save):
         "IPv4 195.69.147.250 does not match any prefix on this ixlan"
         in ixfmemberdata.error
     )
-    
+
     email_info = [("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
     assert_ix_email(ixlan.ix, email_info)
     assert_network_email(network, email_info)
@@ -409,7 +409,7 @@ def test_add_netixlan_conflict(entities, save):
 
     assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 0
-    
+
 
 @pytest.mark.django_db
 def test_suggest_add_local_ixf(entities, save):
@@ -591,7 +591,7 @@ def test_suggest_add_no_netixlan(entities, save):
     assert log["action"] == "suggest-add"
 
     email_info = [("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
-    
+
     assert_network_email(network, email_info)
     assert_no_ix_email(ixlan.ix)
 
@@ -667,7 +667,7 @@ def test_ipaddr4_matches_no_auto_update(entities, save):
     """
     For the Netixlan, Ipaddr4 matches the remote date but Ipaddr6 is Null.
     In terms of IXFMemberData, we suggest delete the two Netixlans and create a new one.
-    In terms of notifications, we consolidate that deletions + addition into a single 
+    In terms of notifications, we consolidate that deletions + addition into a single
     MODIFY proposal.
     This tests the changes in issue #770.
     """
@@ -715,7 +715,7 @@ def test_ipaddr4_matches_no_auto_update(entities, save):
     assert len(importer.log["data"]) == 1
     assert importer.log["data"][0]["action"] == "suggest-modify"
 
-    
+
     email_info = [("MODIFY", network.asn, "195.69.147.250", "IPv6 not set")]
     assert_ix_email(ixlan.ix, email_info)
     assert_network_email(network, email_info)
@@ -730,7 +730,7 @@ def test_ipaddr6_matches_no_auto_update(entities, save):
     """
     For the Netixlan, Ipaddr6 matches the remote date but Ipaddr4 is Null.
     In terms of IXFMemberData, we suggest delete the two Netixlans and create a new one.
-    In terms of notifications, we consolidate that deletions + addition into a single 
+    In terms of notifications, we consolidate that deletions + addition into a single
     MODIFY proposal.
 
     This tests the changes in issue #770.
@@ -790,11 +790,11 @@ def test_ipaddr6_matches_no_auto_update(entities, save):
 @pytest.mark.django_db
 def test_two_missing_ipaddrs_no_auto_update(entities, save):
     """
-    Now we have two Netixlans, each missing 1 ipaddr. The remote has data for a single netixlan with 
+    Now we have two Netixlans, each missing 1 ipaddr. The remote has data for a single netixlan with
     both ip addressses.
 
     In terms of IXFMemberData, we suggest delete the two Netixlans and create a new one.
-    In terms of notifications, we consolidate that deletions + addition into a single 
+    In terms of notifications, we consolidate that deletions + addition into a single
     MODIFY proposal.
 
     This tests the changes in issue #770.
@@ -863,12 +863,12 @@ def test_two_missing_ipaddrs_no_auto_update(entities, save):
     assert importer.log["data"][0]["action"] == "suggest-modify"
 
 
-    # We only create an email for the primary requirement 
+    # We only create an email for the primary requirement
     email_info_4 = [("MODIFY", network.asn, "195.69.147.250", "IPv6 not set")]
     assert IXFImportEmail.objects.count() == 2
     assert_ix_email(ixlan.ix, email_info_4)
     assert_network_email(network, email_info_4)
-    
+
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
@@ -1197,7 +1197,7 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error="Invalid speed value: this is not valid",
+        error=json.dumps({"speed":"Invalid speed value: this is not valid"}),
     )
 
     preexisting_ixfmember_data = IXFMemberData.objects.create(
@@ -1210,7 +1210,7 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error="Invalid speed value: this is not valid",
+        error=json.dumps({"speed":"Invalid speed value: this is not valid"}),
     )
 
     importer = ixf.Importer()
@@ -1275,9 +1275,7 @@ def test_mark_invalid_remote_auto_update(entities, save):
         ("CREATE", network.asn,"195.69.147.100","2001:7f8:1::a500:2906:4"),
         ("MODIFY", network.asn,"195.69.147.200","2001:7f8:1::a500:2906:2")
     ]
-    assert_network_email(network, email_info)
     assert_ix_email(ixlan.ix, email_info)
-    assert "Invalid speed value: This is invalid" in IXFImportEmail.objects.filter(net=network.id).first().message
     assert "Invalid speed value: This is invalid" in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
 
     # Test idempotent
@@ -1322,7 +1320,7 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error="Invalid speed value: this is not valid",
+        error=json.dumps({"speed":"Invalid speed value: this is not valid"}),
     )
 
     preexisting_ixfmember_data = IXFMemberData.objects.create(
@@ -1335,7 +1333,7 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error="Invalid speed value: this is not valid",
+        error=json.dumps({"speed":"Invalid speed value: this is not valid"}),
     )
 
     importer = ixf.Importer()
@@ -1395,7 +1393,7 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
 
     assert IXFMemberData.objects.count() == 2
 
-    # We send an email about the updates 
+    # We send an email about the updates
     # But it also contains information about the invalid speed
     email_info = [
         ("CREATE", network.asn,"195.69.147.100","2001:7f8:1::a500:2906:4"),

@@ -22,6 +22,7 @@ from django.utils.html import strip_tags
 from django.utils.http import urlquote
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import override
+from django.utils.functional import Promise
 from django.conf import settings
 from django.template import loader
 from django_namespace_perms.util import autodiscover_namespaces, has_perms
@@ -175,6 +176,18 @@ class URLField(pdb_models.URLField):
     """
 
     pass
+
+
+class ValidationErrorEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, ValidationError):
+            if hasattr(obj, "error_dict"):
+                return obj.error_dict
+            return obj.message
+        elif isinstance(obj, Promise):
+            return f"{obj}"
+        return super().default(obj)
 
 
 class ProtectedAction(ValueError):
@@ -1969,11 +1982,11 @@ class IXLan(pdb_models.IXLanBase):
         # and bail
         if ipv4 and not ipv4_valid:
             raise ValidationError(
-                f"IPv4 {ipv4} does not match any prefix " "on this ixlan"
+                {"ipaddr4" : f"IPv4 {ipv4} does not match any prefix on this ixlan"}
             )
         if ipv6 and not ipv6_valid:
             raise ValidationError(
-                f"IPv6 {ipv6} does not match any prefix " "on this ixlan"
+                {"ipaddr6" : f"IPv6 {ipv6} does not match any prefix on this ixlan"}
             )
 
         # Next we check if an active netixlan with the ipaddress exists in ANOTHER lan, and bail
@@ -1985,7 +1998,7 @@ class IXLan(pdb_models.IXLanBase):
             .count()
             > 0
         ):
-            raise ValidationError(f"Ip address {ipv4} already exists in another lan")
+            raise ValidationError({"ipaddr4":f"Ip address {ipv4} already exists in another lan"})
 
         if (
             ipv6
@@ -1994,7 +2007,7 @@ class IXLan(pdb_models.IXLanBase):
             .count()
             > 0
         ):
-            raise ValidationError(f"Ip address {ipv6} already exists in another lan")
+            raise ValidationError({"ipaddr6":f"Ip address {ipv6} already exists in another lan"})
 
         # now we need to figure out if the ipaddresses already exist in this ixlan,
         # we need to check ipv4 and ipv6 separately as they might exist on different
@@ -2589,7 +2602,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             return None
 
         try:
-            error_data = json.loads(self.error.replace("'",'"'))
+            error_data = json.loads(self.error)
         except:
             return None
 
@@ -3083,8 +3096,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         TODO: find a better way to do this
         """
         if self.speed == 0 and self.error:
-            if "Invalid speed value" in self.error:
-                raise ValidationError({"speed": self.error})
+            error_data = json.loads(self.error)
+            if "speed" in self.error:
+                raise ValidationError(error_data)
 
     def save_without_update(self):
         self._meta.get_field("updated").auto_now = False
@@ -3101,7 +3115,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         try:
             self.netixlan.full_clean()
         except ValidationError as exc:
-            self.error = f"{exc}"
+            self.error = json.dumps(exc, cls=ValidationErrorEncoder)
 
     def set_resolved(self, save=True):
         """
@@ -3123,7 +3137,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         as warranted
         """
         if (self.remote_changes or (error and not self.previous_error)) and save:
-            self.error = error
+            if error:
+                self.error = json.dumps(error, cls=ValidationErrorEncoder)
+            else:
+                self.error = None
             self.dismissed = False
             self.save()
             return True

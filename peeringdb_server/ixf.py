@@ -714,7 +714,7 @@ class Importer:
                 if netixlan:
                     self.ixf_ids.append((asn, ixf_id[1], netixlan.ipaddr6))
 
-            elif not network.ipv4_support:
+            if not network.ipv4_support:
                 self.ixf_ids.append((asn, None, ixf_id[2]))
                 netixlan = NetworkIXLan.objects.filter(
                     status="ok",
@@ -863,15 +863,19 @@ class Importer:
                 self.queue_notification(ixf_member_data, ixf_member_data.action, ix=False, ac=False)
 
     def consolidate_delete_add(self, ixf_member_data):
-        if not ixf_member_data.ipaddr4 or not ixf_member_data.ipaddr6:
-            return
 
-        ip4_deletion = self.deletions.get(
-            (ixf_member_data.asn, ixf_member_data.ipaddr4, None), None
-        )
-        ip6_deletion = self.deletions.get(
-            (ixf_member_data.asn, None, ixf_member_data.ipaddr6), None
-        )
+        ip4_deletion = None
+        ip6_deletion = None
+
+        for ixf_id, deletion in self.deletions.items():
+            if ixf_id[0] == ixf_member_data.asn:
+                if ixf_id[1] == ixf_member_data.ipaddr4:
+                    ip4_deletion = deletion
+                if ixf_id[2] == ixf_member_data.ipaddr6:
+                    ip6_deletion = deletion
+
+            if ip4_deletion and ip6_deletion:
+                break
 
         if not ip4_deletion and not ip6_deletion:
             return
