@@ -880,8 +880,11 @@ class Importer:
         if not ip4_deletion and not ip6_deletion:
             return
 
-        ixf_member_data.set_requirement(ip4_deletion, save=self.save)
-        ixf_member_data.set_requirement(ip6_deletion, save=self.save)
+        ip4_req = ixf_member_data.set_requirement(ip4_deletion, save=self.save)
+        ip6_req = ixf_member_data.set_requirement(ip6_deletion, save=self.save)
+
+        if not ip4_req and not ip6_req:
+            return
 
         if not ixf_member_data.has_requirements:
             return

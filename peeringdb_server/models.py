@@ -2998,6 +2998,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if not ixf_member_data:
             return
 
+        if ixf_member_data in self.requirements:
+            return
+
         if ixf_member_data.netixlan == self.netixlan:
             return
 
