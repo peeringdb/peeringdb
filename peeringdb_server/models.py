@@ -2099,6 +2099,12 @@ class IXLan(pdb_models.IXLanBase):
             netixlan.is_rs_peer = netixlan_info.is_rs_peer
             changed.append("is_rs_peer")
 
+        # Is the netixlan operational?
+        if netixlan_info.operational != netixlan.operational:
+            netixlan.operational = netixlan_info.operational
+            changed.append("operational")
+
+
         # Speed
         if netixlan_info.speed != netixlan.speed and (
             netixlan_info.speed > 0 or netixlan.speed is None
@@ -2340,7 +2346,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         tag = "ixfmember"
 
     @classmethod
-    def id_filters(cls, asn, ipaddr4, ipaddr6):
+    def id_filters(cls, asn, ipaddr4, ipaddr6, check_protocols=True):
         """
         returns a dict of filters to use with a
         IXFMemberData or NetworkIXLan query set
@@ -2349,20 +2355,22 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         net = Network.objects.get(asn=asn)
 
-        ipv4_support = net.ipv4_support
-        ipv6_support = net.ipv6_support
+        ipv4_support = (net.ipv4_support or not check_protocols)
+        ipv6_support = (net.ipv6_support or not check_protocols)
 
         filters = {"asn": asn}
 
-        if ipaddr4 is None and ipv4_support:
-            filters["ipaddr4__isnull"] = True
-        elif ipv4_support:
-            filters["ipaddr4"] = ipaddr4
+        if ipv4_support:
+            if ipaddr4:
+                filters["ipaddr4"] = ipaddr4
+            else:
+                filters["ipaddr4__isnull"] = True
 
-        if ipaddr6 is None and ipv6_support:
-            filters["ipaddr6__isnull"] = True
-        elif ipv6_support:
-            filters["ipaddr6"] = ipaddr6
+        if ipv6_support:
+            if ipaddr6:
+                filters["ipaddr6"] = ipaddr6
+            else:
+                filters["ipaddr6__isnull"] = True
 
         return filters
 
@@ -2387,6 +2395,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         fetched = datetime.datetime.now().replace(tzinfo=UTC())
         net = Network.objects.get(asn=asn)
         validate_network_protocols = kwargs.get("validate_network_protocols", True)
+        for_deletion = kwargs.get("delete", False)
 
         try:
             id_filters = cls.id_filters(asn, ipaddr4, ipaddr6)
@@ -2424,10 +2433,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         except cls.DoesNotExist:
             ip_args = {}
 
-            if net.ipv4_support or not ipaddr4:
+            if net.ipv4_support or not ipaddr4 or for_deletion:
                 ip_args.update(ipaddr4=ipaddr4)
 
-            if net.ipv6_support or not ipaddr6:
+            if net.ipv6_support or not ipaddr6 or for_deletion:
                 ip_args.update(ipaddr6=ipaddr6)
 
             if not ip_args and validate_network_protocols:
@@ -2444,6 +2453,18 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         instance.is_rs_peer = kwargs.get("is_rs_peer", False)
         instance.ixlan = ixlan
         instance.fetched = fetched
+        instance.for_deletion = for_deletion
+
+        if ipaddr4:
+            instance.init_ipaddr4 = ipaddress.ip_address(ipaddr4)
+        else:
+            instance.init_ipaddr4 = None
+
+        if ipaddr6:
+            instance.init_ipaddr6 = ipaddress.ip_address(ipaddr6)
+        else:
+            instance.init_ipaddr6 = None
+
 
         if "data" in kwargs:
             instance.set_data(kwargs.get("data"))
@@ -2583,6 +2604,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if error and "address outside of prefix" in error:
             return False
 
+        if error and "does not match any prefix" in error:
+            return False
+
         if error and "speed value" in error:
             return False
 
@@ -2690,6 +2714,23 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         ipaddr6 = self.ipaddr6 or _("IPv6 not set")
 
         return f"AS{self.asn} - {ipaddr4} - {ipaddr6}"
+
+    @property
+    def actionable_changes(self):
+
+        requirements = self.requirements
+
+        _changes = self.changes
+
+        for requirement in self.requirements:
+            _changes.update(self._changes(requirement.netixlan))
+
+        if self.ipaddr4_on_requirement:
+            _changes.update(ipaddr4=self.ipaddr4_on_requirement)
+        if self.ipaddr6_on_requirement:
+            _changes.update(ipaddr6=self.ipaddr6_on_requirement)
+
+        return _changes
 
     @property
     def changes(self):
@@ -2874,8 +2915,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         return [
             requirement
             for requirement in self.requirement_set.all()
-            if requirement.action != "noop"
+            # if requirement.action != "noop"
         ]
+
 
     @property
     def primary_requirement(self):
@@ -2907,10 +2949,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         object exists on one of it's requirement IXFMemberData objects
         """
 
-        if not self.ipaddr4:
+        ipaddr4 = self.ipaddr4
+        if not ipaddr4 and hasattr(self, "init_ipaddr4"):
+            ipaddr4 = self.init_ipaddr4
+
+        if not ipaddr4:
             return False
         for requirement in self.requirements:
-            if requirement.ipaddr4 == self.ipaddr4:
+            if requirement.ipaddr4 == ipaddr4:
                 return True
         return False
 
@@ -2920,12 +2966,18 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Returns true if the ipv6 address claimed by this IXFMemberData
         object exists on one of it's requirement IXFMemberData objects
         """
-        if not self.ipaddr6:
+
+        ipaddr6 = self.ipaddr6
+        if not ipaddr6 and hasattr(self, "init_ipaddr6"):
+            ipaddr6 = self.init_ipaddr6
+
+        if not ipaddr6:
             return False
         for requirement in self.requirements:
-            if requirement.ipaddr6 == self.ipaddr6:
+            if requirement.ipaddr6 == ipaddr6:
                 return True
         return False
+
 
     @property
     def netixlan(self):
@@ -2942,8 +2994,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
 
         if not hasattr(self, "_netixlan"):
+
+            if not hasattr(self, "for_deletion"):
+                self.for_deletion = self.remote_data_missing
+
             try:
-                filters = self.id_filters(self.asn, self.ipaddr4, self.ipaddr6)
+                if self.for_deletion:
+                    filters = self.id_filters(self.asn, self.ipaddr4, self.ipaddr6, check_protocols=False)
+                else:
+                    filters = self.id_filters(self.asn, self.ipaddr4, self.ipaddr6)
 
                 if "ipaddr6" not in filters and "ipaddr4" not in filters:
                     raise NetworkIXLan.DoesNotExist()
@@ -3128,7 +3187,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         this will delete the IXFMemberData instance
         """
-        if self.id and save:
+        if self.id and save and not self.requirement_of:
             self.delete(hard=True)
             return True
 
@@ -3139,6 +3198,24 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         to the corresponding netixlan to ac, ix and net as warranted
         as warranted
         """
+
+        if not self.id:
+            existing_conflict = IXFMemberData.objects.filter(
+                asn=self.asn, error__isnull=False
+            )
+
+            if self.ipaddr4 and self.ipaddr6:
+                existing_conflict = existing_conflict.filter(
+                    models.Q(ipaddr4=self.ipaddr4) | models.Q(ipaddr6=self.ipaddr6)
+                )
+            elif self.ipaddr4:
+                existing_conflict = existing_conflict.filter(ipaddr4=self.ipaddr4)
+            elif self.ipaddr6:
+                existing_conflict = existing_conflict.filter(ipaddr6=self.ipaddr6)
+
+            if existing_conflict.exists():
+                return None
+
         if (self.remote_changes or (error and not self.previous_error)) and save:
             if error:
                 self.error = json.dumps(error, cls=ValidationErrorEncoder)
@@ -3184,7 +3261,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         as warranted
         """
         self.reason = reason
+
         if not self.id and save:
+            print("SAVING", self)
             self.grab_validation_errors()
             self.save()
             return True
@@ -3220,6 +3299,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             and getattr(self, "previous_data", "{}") != "{}"
             and self.remote_data_missing
         )
+
 
         if (not_saved or gone) and save:
             self.set_data({})

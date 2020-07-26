@@ -399,8 +399,13 @@ class Importer:
                     netixlan.ipaddr4,
                     netixlan.ipaddr6,
                     netixlan.ixlan,
+                    speed=netixlan.speed,
+                    operational=netixlan.operational,
+                    is_rs_peer=netixlan.is_rs_peer,
+                    delete=True,
                     data={},
                 )
+
 
                 self.deletions[ixf_member_data.ixf_id] = ixf_member_data
                 if netixlan.network.allow_ixp_update:
@@ -444,15 +449,16 @@ class Importer:
             # proposed deletion got fulfilled
 
             if ixf_member.action == "delete":
-                if ixf_member.netixlan.status == "deleted":
+                if ixf_member.netixlan.status == "deleted" :
                     if ixf_member.set_resolved(save=self.save):
+                        print("RESOLVE", ixf_member)
                         self.queue_notification(ixf_member, "resolved")
 
             # noop means the ask has been fulfilled but the
             # ixf member data entry has not been set to resolved yet
 
             elif ixf_member.action == "noop":
-                if ixf_member.set_resolved(save=self.save):
+                if ixf_member.set_resolved(save=self.save) and not ixf_member.requirement_of:
                     self.queue_notification(ixf_member, "resolved")
 
             # proposed change / addition is now gone from
@@ -718,7 +724,7 @@ class Importer:
                 self.ixf_ids.append((asn, None, ixf_id[2]))
                 netixlan = NetworkIXLan.objects.filter(
                     status="ok",
-                    ipaddr6=ixf_id[1]
+                    ipaddr6=ixf_id[2]
                 ).first()
                 if netixlan:
                     self.ixf_ids.append((asn, netixlan.ipaddr4, ixf_id[2]))
@@ -868,10 +874,10 @@ class Importer:
         ip6_deletion = None
 
         for ixf_id, deletion in self.deletions.items():
-            if ixf_id[0] == ixf_member_data.asn:
-                if ixf_id[1] == ixf_member_data.ipaddr4:
+            if deletion.asn == ixf_member_data.asn:
+                if deletion.ipaddr4 == ixf_member_data.init_ipaddr4:
                     ip4_deletion = deletion
-                if ixf_id[2] == ixf_member_data.ipaddr6:
+                if deletion.ipaddr6 == ixf_member_data.init_ipaddr6:
                     ip6_deletion = deletion
 
             if ip4_deletion and ip6_deletion:
@@ -913,14 +919,15 @@ class Importer:
         elif ip6_deletion:
             ipaddr_info = _("IPv4 not set")
 
-        changed_fields = ", ".join(changed_fields)
-
         log_entry["reason"] = f"{REASON_VALUES_CHANGED}: {changed_fields} {ipaddr_info}"
 
         ixf_member_data.reason = log_entry["reason"]
         ixf_member_data.error = None
         if self.save:
-            ixf_member_data.save()
+            if ixf_member_data.updated:
+                ixf_member_data.save_without_update()
+            else:
+                ixf_member_data.save()
 
     def save_log(self):
         """
@@ -1171,6 +1178,14 @@ class Importer:
 
             if typ == "protocol-conflict":
                 action = "protocol_conflict"
+
+            # in some edge cases (ip4 set on netixlan, network indicating
+            # only ipv6 support) we can get empty modify notifications
+            # that we need to throw out. (#771)
+            if typ == "modify":
+                if not ixf_member_data.actionable_changes:
+                    continue
+
 
             # we don't care about proposals that are hidden
             # requirements of other proposals

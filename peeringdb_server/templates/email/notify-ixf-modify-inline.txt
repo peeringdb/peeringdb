@@ -1,7 +1,7 @@
-MODIFY {% if instance.primary_requirement %}{{ instance.primary_requirement.ixf_id_pretty_str }}{% else %}{{ instance.ixf_id_pretty_str }}{% endif %}
+MODIFY {% if instance.primary_requirement %}{{ instance.primary_requirement.netixlan.ixf_id_pretty_str }}{% else %}{{ instance.netixlan.ixf_id_pretty_str }}{% endif %}
 {% spaceless %}
-{% for name, value in instance.changes.items %}
-- {{ name }}: {{ value.from }} to {{ value.to }}
+{% for name, value in instance.actionable_changes.items %}
+{% if name != "ipaddr4" and name != "ipaddr6" %}- {{ name }}: {{ value.from }} to {{ value.to }}{% endif %}
 {% endfor %}
 
 {% if instance.ipaddr4_on_requirement %}
