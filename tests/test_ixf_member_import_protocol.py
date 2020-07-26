@@ -566,6 +566,11 @@ def test_add_netixlan_conflict(entities, save):
             in ixfmemberdata.error
         )
 
+        # Assert that message to IX also includes the error 
+        assert (
+            "A validation error was raised when the IX-F importer attempted to process this change."
+            in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
+        )
 
     else:
 
@@ -577,6 +582,7 @@ def test_add_netixlan_conflict(entities, save):
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data, save=save)
+
 
 
 @pytest.mark.django_db
@@ -1834,6 +1840,151 @@ def test_validate_json_schema():
             with pytest.raises(jsonschema.exceptions.ValidationError):
                 jsonschema.validate(data, schema)
 
+@pytest.mark.django_db
+def test_create_deskpro_tickets_after_x_days(entities):
+    data = setup_test_data("ixf.member.2")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.250",
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        ))
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.240",
+            ipaddr6="2001:7f8:1::a500:2905:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()    
+
+    for ixfmd in IXFMemberData.objects.all():
+        # Edit so that they've been created two weeks ago
+        ixfmd.created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=14)
+        ixfmd.save()
+
+    importer.update(ixlan, data=data)
+
+    # Assert IXFMemberData still the same
+    assert IXFMemberData.objects.count() == 4
+
+    # Assert DeskProTickets are created
+    assert DeskProTicket.objects.count() == 4
+
+    # Assert emails go to IX and Network for each Ticket
+    deskpro_refs = [dpt.deskpro_ref for dpt in DeskProTicket.objects.all()]
+    for dpt in deskpro_refs:
+        assert IXFImportEmail.objects.filter(subject__contains=dpt, ix=ixlan.ix.id).exists()
+        assert IXFImportEmail.objects.filter(subject__contains=dpt, net=network.id).exists()
+
+@pytest.mark.django_db
+def test_create_deskpro_tickets_no_contacts(entities):
+    data = setup_test_data("ixf.member.2")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+
+    # Delete contacts
+    for netcontact in entities["netcontact"]:
+        netcontact.delete()
+
+    ix.tech_email = ""
+    ix.save()
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.250",
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        ))
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.240",
+            ipaddr6="2001:7f8:1::a500:2905:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()    
+
+    # Assert Tickets are created immediately
+    assert DeskProTicket.objects.count() == 4
+
+
+@pytest.mark.django_db
+def test_resolve_deskpro_ticket(entities):
+    data = setup_test_data("ixf.member.1")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=20000,
+            ipaddr4="195.69.147.250",
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+    ))
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()    
+
+    for ixfmd in IXFMemberData.objects.all():
+        # Edit so that they've been created two weeks ago
+        ixfmd.created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=14)
+        ixfmd.save()
+    importer.update(ixlan, data=data)
+
+    assert DeskProTicket.objects.count() == 1
+
+    # Resolve issue
+    netixlan = entities["netixlan"][0]
+    netixlan.speed = 10000
+    netixlan.save()
+
+    deskpro_id = DeskProTicket.objects.first().id
+
+    assert deskpro_id > 0
+    assert IXFMemberData.objects.first().deskpro_id == deskpro_id
+
+    # Re run import
+    importer.update(ixlan, data=data)
+
+    assert IXFMemberData.objects.count() == 0
 
 # FIXTURES
 @pytest.fixture(params=[True, False])
@@ -2098,14 +2249,7 @@ def create_email_str(email):
     return '{} AS{} - {} - {}'.format(*email)
 
 def assert_no_ticket_exists():
-    """
-    Input is a list of tuples containing (asn, ipaddr4, ipaddr6) that should appear
-    in deskpro tickets
-    """
     assert DeskProTicket.objects.count() == 0
-
-def assert_email_sent(email_text, email_info):
-    assert all([str(s) in email_text for s in email_info])
 
 def assert_no_emails():
     assert IXFImportEmail.objects.count() == 0
