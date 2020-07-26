@@ -1,10 +1,11 @@
 import os
 import json
 import pytest
+import urllib
 
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group
-from django.urls import reverse
+from django.urls import reverse, resolve
 from django.core.management import call_command
 
 import django_namespace_perms as nsp
@@ -384,6 +385,59 @@ class AdminTests(TestCase):
         assert netixlan.ipaddr6 is None
         assert netixlan.ipaddr4 is None
         assert "Ip address already exists elsewhere" in response.content.decode("utf-8")
+
+    def _run_regex_search(self, model, search_term):
+        c = Client()
+        c.login(username="admin", password="admin")
+        url = reverse("admin:peeringdb_server_{}_changelist".format(model))
+        search = url + '?q=' + urllib.parse.quote_plus(search_term)
+        response = c.get(search)
+        content = response.content.decode("utf-8")
+        return content
+
+    def test_search_deskprotickets(self):
+        # Set up data
+        ixf_importer, _ = models.User.objects.get_or_create(username="ixf_importer")
+        for i in range(10):
+            models.DeskProTicket.objects.create(
+                subject="test number {}".format(i),
+                body="test",
+                user=ixf_importer
+            )
+
+        search_term =  "^.*[0-5]$"
+        content = self._run_regex_search("deskproticket", search_term)
+        print(content)
+        expected = ["test number {}".format(i) for i in range(5)]
+        expected_not = ["test number {}".format(i) for i in range(6,10)]
+        
+        for e in expected:
+            assert e in content
+        
+        for e in expected_not:
+            assert e not in content
+
+
+    def test_search_ixfimportemails(self):
+        for i in range(10):
+            models.IXFImportEmail.objects.create(
+                subject="test number {}".format(i),
+                message="test",
+                recipients="test"
+            )
+        search_term =  "^.*[2-4]$"
+        content = self._run_regex_search("ixfimportemail", search_term)
+        print(content)
+        expected = ["test number {}".format(i) for i in range(2,5)]
+        expected_not = ["test number 1"] + ["test number {}".format(i) for i in range(6,10)]
+
+        for e in expected:
+            assert e in content
+
+        for e in expected_not:
+            assert e not in content
+
+
 
     def test_all_views_readonly(self):
         self._test_all_views(
