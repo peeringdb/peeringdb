@@ -896,9 +896,15 @@ class Importer:
             return
 
         if ip4_deletion:
-            self.log["data"].remove(ip4_deletion.ixf_log_entry)
+            try:
+                self.log["data"].remove(ip4_deletion.ixf_log_entry)
+            except ValueError:
+                pass
         if ip6_deletion:
-            self.log["data"].remove(ip6_deletion.ixf_log_entry)
+            try:
+                self.log["data"].remove(ip6_deletion.ixf_log_entry)
+            except ValueError:
+                pass
 
         log_entry = ixf_member_data.ixf_log_entry
 
