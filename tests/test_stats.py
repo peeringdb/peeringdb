@@ -33,9 +33,7 @@ def setup_data():
     User = get_user_model()
 
     for i in range(1, 7):
-        User.objects.create_user(
-            f"user_{i}", f"user_{i}@localhost", "secret"
-        )
+        User.objects.create_user(f"user_{i}", f"user_{i}@localhost", "secret")
 
     # move users 4, 5, 6 to the past
 

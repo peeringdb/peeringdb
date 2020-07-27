@@ -1,6 +1,5 @@
-{% include "email/notify-ixf-resolved-inline.txt" with instance=instance %}
+{% include "email/notify-ixf-protocol-conflict-inline.txt" with instance=instance recipient=recipient ipaddr4=ipaddr4 ipaddr6=ipaddr6 %}
 
-- Peer: {{ instance }}
 - Exchange: {{ instance.ix.view_url }}
 - Network: {{ instance.net.view_url}}
 {% if recipient == "ac" %}

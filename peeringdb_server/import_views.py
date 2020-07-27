@@ -160,10 +160,7 @@ def view_import_net_ixf_preview(request, net_id):
 
         total_log["data"].extend(log_data)
         total_log["errors"].extend(
-            [
-                f"{ixlan.ix.name}({ixlan.id}): {err}"
-                for err in importer.log["errors"]
-            ]
+            [f"{ixlan.ix.name}({ixlan.id}): {err}" for err in importer.log["errors"]]
         )
 
     return pretty_response(total_log)

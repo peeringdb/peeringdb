@@ -1,25 +1,7 @@
-{% if recipient == "ix" %}Your{% else %}The{% endif %} IX-F data suggests the following changes to the entry {{ instance }}
+{% if recipient == "ix" %}Your{% else %}The{% endif %} IX-F data suggests the following changes to the entry {{ instance.netixlan.ixf_id_pretty_str }}
 
-{% spaceless %}
-{% for name, value in instance.changes.items %}
-- {{ name }}: {{ value.from }} to {{ value.to }}
-{% endfor %}
+{% include "email/notify-ixf-modify-inline.txt" with instance=instance %}
 
-{% if instance.remote_changes %}
-IX-F data has changed since the last notification:
-{% for name, value in instance.remote_changes.items %}
-- {{ name }}: {{ value.from }} to {{ value.to }}
-{% endfor %}
-{% endif %}
-{% endspaceless %}
-
-{% if instance.error %}
-A validation error was raised when the IX-F importer attempted to process this change.
-
-```
-{{ instance.error|safe|striptags }}
-```
-{% endif %}
 {% spaceless %}
 {% if recipient == "ac" %}
 You may review and manually accept the IX-F data at {{ instance.ac_url }}

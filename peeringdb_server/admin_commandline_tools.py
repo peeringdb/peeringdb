@@ -6,6 +6,7 @@ from reversion.models import Version
 
 from dal import autocomplete
 from django import forms
+from django.conf import settings
 from django.core.management import call_command
 from peeringdb_server.models import (
     REFTAG_MAP,
@@ -385,3 +386,61 @@ class ToolUndelete(CommandLineToolWrapper):
         )
         if obj.status != "deleted":
             raise ValueError(f"{obj} is not currently marked as deleted")
+
+
+@register_tool
+class ToolIXFIXPMemberImport(CommandLineToolWrapper):
+    """
+    Allows resets for various parts of the ix-f member data import protocol.
+    And import ix-f member data for a single Ixlan at a time.
+    """
+
+    tool = "pdb_ixf_ixp_member_import"
+    queue = 1
+
+    class Form(forms.Form):
+        ix = forms.ModelChoiceField(
+            queryset=InternetExchange.objects.all(),
+            widget=autocomplete.ModelSelect2(url="/autocomplete/ix/json"),
+            help_text=_(
+                "Select an Internet Exchange to perform an ix-f memberdata import"
+            ),
+        )
+
+        if settings.RELEASE_ENV != "prod":
+
+            # reset toggles are not available on production
+            # environment
+
+            reset = forms.BooleanField(
+                required=False, initial=False, help_text=_("Reset all")
+            )
+            reset_hints = forms.BooleanField(
+                required=False, initial=False, help_text=_("Reset hints")
+            )
+            reset_dismisses = forms.BooleanField(
+                required=False, initial=False, help_text=_("Reset dismisses")
+            )
+            reset_email = forms.BooleanField(
+                required=False, initial=False, help_text=_("Reset email")
+            )
+            reset_tickets = forms.BooleanField(
+                required=False, initial=False, help_text=_("Reset tickets")
+            )
+
+    @property
+    def description(self):
+        return "IX-F Member Import Tool"
+
+    def set_arguments(self, form_data):
+        for key in [
+            "reset",
+            "reset_hints",
+            "reset_dismisses",
+            "reset_email",
+            "reset_tickets",
+        ]:
+            self.kwargs[key] = form_data.get(key, False)
+
+        if form_data.get("ix"):
+            self.kwargs["ixlan"] = [form_data.get("ix").id]

@@ -47,8 +47,7 @@ class APICacheLoader:
         if self.fields:
             self.fields = self.fields.split(",")
         self.path = os.path.join(
-            settings.API_CACHE_ROOT,
-            f"{viewset.model.handleref.tag}-{self.depth}.json",
+            settings.API_CACHE_ROOT, f"{viewset.model.handleref.tag}-{self.depth}.json",
         )
 
     def qualifies(self):
@@ -243,8 +242,8 @@ class APICacheLoader:
             ids = [r[proxy_id] for r in data]
 
         return {
-                r["id"]: r[target_id]
-                for r in model.objects.filter(id__in=ids).values("id", target_id)
+            r["id"]: r[target_id]
+            for r in model.objects.filter(id__in=ids).values("id", target_id)
         }
 
     # permissioning functions for each handlref type

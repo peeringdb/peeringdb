@@ -1,0 +1,26 @@
+{% spaceless %}
+{% if recipient == "net" %}
+This email details {{ count }} new data mismatch[es] discovered by the PeeringDB IX-F Importer.  Please review and correct these mismatches at your PeeringDB network page ({{ entity.view_url_asn }}) or work with the indicated IXPs to correct the data.
+{% elif recipient == "ix" %}
+This email details {{ count }} new data mismatch[es] discovered by the PeeringDB IX-F Importer.  Please review and correct these mismatches in your IX-F JSON export ({{ entity.ixlan.ixf_ixp_member_list_url }}) or work with the indicated networks to correct the data.
+{% endif %}
+-----------------------------
+{% for other, messages in proposals.items %}
+{% for message in messages.add %}
+{% include "email/notify-ixf-conflict-insert.txt" with entity=entity other=other ticket_days=ticket_days %}
+{{ message }}
+-----------------------------{% endfor %}
+{% for message in messages.modify %}
+{% include "email/notify-ixf-conflict-insert.txt" with entity=entity other=other ticket_days=ticket_days %}
+{{ message }}
+-----------------------------{% endfor %}
+{% for message in messages.delete %}
+{% include "email/notify-ixf-conflict-insert.txt" with entity=entity other=other ticket_days=ticket_days %}
+{{ message }}
+-----------------------------{% endfor %}
+{% if messages.protocol_conflict %}
+{% include "email/notify-ixf-conflict-insert.txt" with entity=entity other=other ticket_days=ticket_days %}
+{{ messages.protocol_conflict }}
+-----------------------------{% endif %}
+{% endfor %}
+{% endspaceless %}

@@ -130,7 +130,7 @@ urlpatterns = [
         name="org-view",
     ),
     url(r"^%s$" % Network.handleref.tag, view_network_by_query),
-    url(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn),
+    url(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn, name="net-view-asn"),
     url(r"^org_admin/users$", peeringdb_server.org_admin_views.users),
     url(
         r"^org_admin/user_permissions$",

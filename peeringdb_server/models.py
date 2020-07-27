@@ -22,6 +22,7 @@ from django.utils.html import strip_tags
 from django.utils.http import urlquote
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import override
+from django.utils.functional import Promise
 from django.conf import settings
 from django.template import loader
 from django_namespace_perms.util import autodiscover_namespaces, has_perms
@@ -175,6 +176,17 @@ class URLField(pdb_models.URLField):
     """
 
     pass
+
+
+class ValidationErrorEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, ValidationError):
+            if hasattr(obj, "error_dict"):
+                return obj.error_dict
+            return obj.message
+        elif isinstance(obj, Promise):
+            return f"{obj}"
+        return super().default(obj)
 
 
 class ProtectedAction(ValueError):
@@ -553,7 +565,18 @@ class DeskProTicket(models.Model):
     body = models.TextField()
     user = models.ForeignKey("peeringdb_server.User", on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
-    published = models.DateTimeField(null=True)
+    published = models.DateTimeField(null=True, blank=True)
+
+    deskpro_ref = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        help_text=_("Ticket reference on the DeskPRO side"),
+    )
+
+    deskpro_id = models.IntegerField(
+        null=True, blank=True, help_text=_("Ticket id on the DeskPRO side")
+    )
 
     class Meta:
         verbose_name = _("DeskPRO Ticket")
@@ -1123,7 +1146,9 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, fac_id):
-        return "{}.facility.{}".format(Organization.nsp_namespace_from_id(org_id), fac_id)
+        return "{}.facility.{}".format(
+            Organization.nsp_namespace_from_id(org_id), fac_id
+        )
 
     @classmethod
     def related_to_net(cls, value=None, filt=None, field="network_id", qset=None):
@@ -1505,8 +1530,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Returns permissioning namespace for an exchange
         """
         return "{}.internetexchange.{}".format(
-            Organization.nsp_namespace_from_id(org_id),
-            ix_id,
+            Organization.nsp_namespace_from_id(org_id), ix_id,
         )
 
     @property
@@ -1700,7 +1724,9 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
         """
         Returns permissioning namespace for an ixfac
         """
-        return "{}.fac.{}".format(InternetExchange.nsp_namespace_from_id(org_id, ix_id), id)
+        return "{}.fac.{}".format(
+            InternetExchange.nsp_namespace_from_id(org_id, ix_id), id
+        )
 
     @property
     def nsp_namespace(self):
@@ -1955,11 +1981,11 @@ class IXLan(pdb_models.IXLanBase):
         # and bail
         if ipv4 and not ipv4_valid:
             raise ValidationError(
-                f"IPv4 {ipv4} does not match any prefix " "on this ixlan"
+                {"ipaddr4": f"IPv4 {ipv4} does not match any prefix on this ixlan"}
             )
         if ipv6 and not ipv6_valid:
             raise ValidationError(
-                f"IPv6 {ipv6} does not match any prefix " "on this ixlan"
+                {"ipaddr6": f"IPv6 {ipv6} does not match any prefix on this ixlan"}
             )
 
         # Next we check if an active netixlan with the ipaddress exists in ANOTHER lan, and bail
@@ -1971,7 +1997,9 @@ class IXLan(pdb_models.IXLanBase):
             .count()
             > 0
         ):
-            raise ValidationError(f"Ip address {ipv4} already exists in another lan")
+            raise ValidationError(
+                {"ipaddr4": f"Ip address {ipv4} already exists in another lan"}
+            )
 
         if (
             ipv6
@@ -1980,7 +2008,9 @@ class IXLan(pdb_models.IXLanBase):
             .count()
             > 0
         ):
-            raise ValidationError(f"Ip address {ipv6} already exists in another lan")
+            raise ValidationError(
+                {"ipaddr6": f"Ip address {ipv6} already exists in another lan"}
+            )
 
         # now we need to figure out if the ipaddresses already exist in this ixlan,
         # we need to check ipv4 and ipv6 separately as they might exist on different
@@ -2072,6 +2102,11 @@ class IXLan(pdb_models.IXLanBase):
             netixlan.is_rs_peer = netixlan_info.is_rs_peer
             changed.append("is_rs_peer")
 
+        # Is the netixlan operational?
+        if netixlan_info.operational != netixlan.operational:
+            netixlan.operational = netixlan_info.operational
+            changed.append("operational")
+
         # Speed
         if netixlan_info.speed != netixlan.speed and (
             netixlan_info.speed > 0 or netixlan.speed is None
@@ -2089,11 +2124,9 @@ class IXLan(pdb_models.IXLanBase):
             netixlan.network = netixlan_info.network
             changed.append("network_id")
 
-        # Finally we attempt to validate the data and then save the netixlan instance
-        netixlan.full_clean()
-
-        if save and changed:
+        if save and (changed or netixlan.status == "deleted"):
             netixlan.status = "ok"
+            netixlan.full_clean()
             netixlan.save()
 
         return result(netixlan)
@@ -2231,6 +2264,13 @@ class IXLanIXFMemberImportLogEntry(models.Model):
         return 1
 
 
+class NetworkProtocolsDisabled(ValueError):
+    """
+    raised when a network has both ipv6 and ipv4 support
+    disabled during ix-f import
+    """
+
+
 class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     """
@@ -2267,6 +2307,29 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     ixlan = models.ForeignKey(IXLan, related_name="ixf_set", on_delete=models.CASCADE)
 
+    requirement_of = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="requirement_set",
+        null=True,
+        blank=True,
+        help_text=_(
+            "Requirement of another IXFMemberData entry "
+            "and will be applied alongside it"
+        ),
+    )
+
+    deskpro_ref = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        help_text=_("Ticket reference on the DeskPRO side"),
+    )
+
+    deskpro_id = models.IntegerField(
+        null=True, blank=True, help_text=_("Ticket id on the DeskPRO side")
+    )
+
     # field names of fields that can receive
     # modifications from ix-f
 
@@ -2285,24 +2348,31 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         tag = "ixfmember"
 
     @classmethod
-    def id_filters(cls, asn, ipaddr4, ipaddr6):
+    def id_filters(cls, asn, ipaddr4, ipaddr6, check_protocols=True):
         """
         returns a dict of filters to use with a
         IXFMemberData or NetworkIXLan query set
         to retrieve a unique entry
         """
 
+        net = Network.objects.get(asn=asn)
+
+        ipv4_support = net.ipv4_support or not check_protocols
+        ipv6_support = net.ipv6_support or not check_protocols
+
         filters = {"asn": asn}
 
-        if ipaddr4 is None:
-            filters["ipaddr4__isnull"] = True
-        else:
-            filters["ipaddr4"] = ipaddr4
+        if ipv4_support:
+            if ipaddr4:
+                filters["ipaddr4"] = ipaddr4
+            else:
+                filters["ipaddr4__isnull"] = True
 
-        if ipaddr6 is None:
-            filters["ipaddr6__isnull"] = True
-        else:
-            filters["ipaddr6"] = ipaddr6
+        if ipv6_support:
+            if ipaddr6:
+                filters["ipaddr6"] = ipaddr6
+            else:
+                filters["ipaddr6__isnull"] = True
 
         return filters
 
@@ -2325,9 +2395,32 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
 
         fetched = datetime.datetime.now().replace(tzinfo=UTC())
+        net = Network.objects.get(asn=asn)
+        validate_network_protocols = kwargs.get("validate_network_protocols", True)
+        for_deletion = kwargs.get("delete", False)
 
         try:
-            instance = cls.objects.get(**cls.id_filters(asn, ipaddr4, ipaddr6))
+            id_filters = cls.id_filters(asn, ipaddr4, ipaddr6)
+
+            instances = cls.objects.filter(**id_filters)
+
+            if not instances.exists():
+                raise cls.DoesNotExist()
+
+            if instances.count() > 1:
+
+                # this only happens when a network switches on/off
+                # ipv4/ipv6 protocol support inbetween importer
+                # runs.
+
+                for instance in instances:
+                    if ipaddr4 != instance.ipaddr4 or ipaddr6 != instance.ipaddr6:
+                        instance.delete(hard=True)
+
+                instance = cls.objects.get(**id_filters)
+            else:
+                instance = instances.first()
+
             for field in cls.data_fields:
                 setattr(instance, f"previous_{field}", getattr(instance, field))
 
@@ -2340,13 +2433,39 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             instance._meta.get_field("updated").auto_now = True
 
         except cls.DoesNotExist:
-            instance = cls(asn=asn, ipaddr4=ipaddr4, ipaddr6=ipaddr6, status="ok")
+            ip_args = {}
+
+            if net.ipv4_support or not ipaddr4 or for_deletion:
+                ip_args.update(ipaddr4=ipaddr4)
+
+            if net.ipv6_support or not ipaddr6 or for_deletion:
+                ip_args.update(ipaddr6=ipaddr6)
+
+            if not ip_args and validate_network_protocols:
+                raise NetworkProtocolsDisabled(
+                    _(
+                        "No suitable ipaddresses when validating against the enabled network protocols"
+                    )
+                )
+
+            instance = cls(asn=asn, status="ok", **ip_args)
 
         instance.speed = kwargs.get("speed", 0)
         instance.operational = kwargs.get("operational", True)
         instance.is_rs_peer = kwargs.get("is_rs_peer", False)
         instance.ixlan = ixlan
         instance.fetched = fetched
+        instance.for_deletion = for_deletion
+
+        if ipaddr4:
+            instance.init_ipaddr4 = ipaddress.ip_address(ipaddr4)
+        else:
+            instance.init_ipaddr4 = None
+
+        if ipaddr6:
+            instance.init_ipaddr6 = ipaddress.ip_address(ipaddr6)
+        else:
+            instance.init_ipaddr6 = None
 
         if "data" in kwargs:
             instance.set_data(kwargs.get("data"))
@@ -2419,11 +2538,17 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             action = ixf_member_data.action
             error = ixf_member_data.error
 
+            # not actionable for anyone
+
             if action == "noop":
                 continue
 
+            # not actionable for network
+
             if not ixf_member_data.actionable_for_network:
                 continue
+
+            # dismissed by network
 
             if ixf_member_data.dismissed:
                 continue
@@ -2480,7 +2605,59 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if error and "address outside of prefix" in error:
             return False
 
+        if error and "does not match any prefix" in error:
+            return False
+
+        if error and "speed value" in error:
+            return False
+
         return True
+
+    @property
+    def actionable_error(self):
+        """
+        Returns whether or not the error is actionable
+        by exchange or network.
+
+        If actionable will return self.error otherwise
+        will return None
+        """
+
+        if not self.error:
+            return None
+
+        try:
+            error_data = json.loads(self.error)
+        except:
+            return None
+
+        IPADDR_EXIST = "already exists"
+        DELETED_NETIXLAN_BAD_ASN = "This entity was created for the ASN"
+
+        if IPADDR_EXIST in error_data.get("ipaddr4", [""])[0]:
+            for requirement in self.requirements:
+                if requirement.netixlan.ipaddr4 == self.ipaddr4:
+                    return None
+            if NetworkIXLan.objects.filter(
+                ipaddr4=self.ipaddr4, status="deleted"
+            ).exists():
+                return None
+
+        if IPADDR_EXIST in error_data.get("ipaddr6", [""])[0]:
+            for requirement in self.requirements:
+                if requirement.netixlan.ipaddr6 == self.ipaddr6:
+                    return None
+
+            if NetworkIXLan.objects.filter(
+                ipaddr6=self.ipaddr6, status="deleted"
+            ).exists():
+                return None
+
+        if DELETED_NETIXLAN_BAD_ASN in error_data.get("__all__", [""])[0]:
+            if self.netixlan.status == "deleted":
+                return None
+
+        return self.error
 
     @property
     def net_contacts(self):
@@ -2492,7 +2669,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         qset = self.net.poc_set_active.exclude(email="")
         qset = qset.exclude(email__isnull=True)
 
-        role_priority = ["Policy", "Technical", "NOC", "Maintenance"]
+        role_priority = ["Technical", "NOC", "Policy"]
 
         contacts = []
 
@@ -2542,6 +2719,23 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         return f"AS{self.asn} - {ipaddr4} - {ipaddr6}"
 
     @property
+    def actionable_changes(self):
+
+        requirements = self.requirements
+
+        _changes = self.changes
+
+        for requirement in self.requirements:
+            _changes.update(self._changes(requirement.netixlan))
+
+        if self.ipaddr4_on_requirement:
+            _changes.update(ipaddr4=self.ipaddr4_on_requirement)
+        if self.ipaddr6_on_requirement:
+            _changes.update(ipaddr6=self.ipaddr6_on_requirement)
+
+        return _changes
+
+    @property
     def changes(self):
 
         """
@@ -2561,9 +2755,13 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
 
         netixlan = self.netixlan
+        return self._changes(netixlan)
+
+    def _changes(self, netixlan):
+
         changes = {}
 
-        if self.marked_for_removal:
+        if self.marked_for_removal or not netixlan:
             return changes
 
         if netixlan.is_rs_peer != self.is_rs_peer:
@@ -2676,20 +2874,111 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         has_data = self.remote_data_missing == False
 
+        action = "noop"
+
         if has_data:
             if not self.netixlan.id:
-                return "add"
+                action = "add"
 
-            if self.status == "ok" and self.netixlan.status == "deleted":
-                return "add"
+            elif self.status == "ok" and self.netixlan.status == "deleted":
+                action = "add"
 
-            if self.changes:
-                return "modify"
+            elif self.changes:
+                action = "modify"
         else:
             if self.marked_for_removal:
-                return "delete"
+                action = "delete"
 
-        return "noop"
+        # the proposal is to add a netixlan, but we have
+        # the requirement of a deletion of another netixlan
+        # that has one of the ips set but not the other.
+        #
+        # action re-classified to modify (#770)
+        if action == "add" and self.has_requirements:
+            action = "modify"
+
+        return action
+
+    @property
+    def has_requirements(self):
+        """
+        Return whether or not this IXFMemberData has
+        other IXFMemberData objects as requirements
+        """
+
+        return len(self.requirements) > 0
+
+    @property
+    def requirements(self):
+        """
+        Returns list of all IXFMemberData objects
+        that are still active requirements for this
+        IXFMemberData object
+        """
+        return [
+            requirement
+            for requirement in self.requirement_set.all()
+            # if requirement.action != "noop"
+        ]
+
+    @property
+    def primary_requirement(self):
+        """
+        Return the initial requirement IXFMemberData
+        for this IXFMemberData instance, None if there
+        isn't any
+        """
+        try:
+            return self.requirements[0]
+        except IndexError:
+            return None
+
+    @property
+    def secondary_requirements(self):
+        """
+        Return a list of secondary requirement IXFMemberData
+        objects for this IXFMemberData object. Currently this
+        only happens on add proposals that require two netixlans
+        to be deleted because both ipaddresses exist on separate
+        netixlans (#770)
+        """
+        return self.requirements[1:]
+
+    @property
+    def ipaddr4_on_requirement(self):
+        """
+        Returns true if the ipv4 address claimed by this IXFMemberData
+        object exists on one of it's requirement IXFMemberData objects
+        """
+
+        ipaddr4 = self.ipaddr4
+        if not ipaddr4 and hasattr(self, "init_ipaddr4"):
+            ipaddr4 = self.init_ipaddr4
+
+        if not ipaddr4:
+            return False
+        for requirement in self.requirements:
+            if requirement.ipaddr4 == ipaddr4:
+                return True
+        return False
+
+    @property
+    def ipaddr6_on_requirement(self):
+        """
+        Returns true if the ipv6 address claimed by this IXFMemberData
+        object exists on one of it's requirement IXFMemberData objects
+        """
+
+        ipaddr6 = self.ipaddr6
+        if not ipaddr6 and hasattr(self, "init_ipaddr6"):
+            ipaddr6 = self.init_ipaddr6
+
+        if not ipaddr6:
+            return False
+        for requirement in self.requirements:
+            if requirement.ipaddr6 == ipaddr6:
+                return True
+        return False
 
     @property
     def netixlan(self):
@@ -2706,19 +2995,20 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
 
         if not hasattr(self, "_netixlan"):
+
+            if not hasattr(self, "for_deletion"):
+                self.for_deletion = self.remote_data_missing
+
             try:
-
-                filters = {"asn": self.asn}
-
-                if self.ipaddr4 is None:
-                    filters["ipaddr4__isnull"] = True
+                if self.for_deletion:
+                    filters = self.id_filters(
+                        self.asn, self.ipaddr4, self.ipaddr6, check_protocols=False
+                    )
                 else:
-                    filters["ipaddr4"] = self.ipaddr4
+                    filters = self.id_filters(self.asn, self.ipaddr4, self.ipaddr6)
 
-                if self.ipaddr6 is None:
-                    filters["ipaddr6__isnull"] = True
-                else:
-                    filters["ipaddr6"] = self.ipaddr6
+                if "ipaddr6" not in filters and "ipaddr4" not in filters:
+                    raise NetworkIXLan.DoesNotExist()
 
                 self._netixlan = NetworkIXLan.objects.get(**filters)
             except NetworkIXLan.DoesNotExist:
@@ -2744,52 +3034,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         return self.netixlan.id and self.netixlan.status != "deleted"
 
-    @property
-    def ticket_user(self):
-        """
-        Returns the User instance for the user to use
-        to create DeskPRO tickets
-        """
-        if not hasattr(self, "_ticket_user"):
-            self._ticket_user = User.objects.get(username="ixf_importer")
-        return self._ticket_user
-
-    @property
-    def tickets_enabled(self):
-        """
-        Returns whether or not deskpr ticket creation for ix-f
-        conflicts are enabled or not
-
-        This can be controlled by the IXF_TICKET_ON_CONFLICT
-        setting
-        """
-
-        return getattr(settings, "IXF_TICKET_ON_CONFLICT", True)
-
-    @property
-    def notify_ix_enabled(self):
-        """
-        Returns whether or not notifications to the exchange
-        are enabled.
-
-        This can be controlled by the IXF_NOTIFY_IX_ON_CONFLICT
-        setting
-        """
-
-        return getattr(settings, "IXF_NOTIFY_IX_ON_CONFLICT", False)
-
-    @property
-    def notify_net_enabled(self):
-        """
-        Returns whether or not notifications to the network
-        are enabled.
-
-        This can be controlled by the IXF_NOTIFY_NET_ON_CONFLICT
-        setting
-        """
-
-        return getattr(settings, "IXF_NOTIFY_NET_ON_CONFLICT", False)
-
     def __str__(self):
         parts = [
             self.ixlan.ix.name,
@@ -2808,7 +3052,35 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         return " ".join(parts)
 
-    @reversion.create_revision()
+    def set_requirement(self, ixf_member_data, save=True):
+        """
+        Sets another IXFMemberData object to be a requirement
+        of the resolution of this IXFMemberData object
+        """
+        if not ixf_member_data:
+            return
+
+        if ixf_member_data in self.requirements:
+            return
+
+        if ixf_member_data.netixlan == self.netixlan:
+            return
+
+        ixf_member_data.requirement_of = self
+
+        if save:
+            ixf_member_data.save()
+
+        return ixf_member_data
+
+    def apply_requirements(self, save=True):
+        """
+        Apply all requirements
+        """
+
+        for requirement in self.requirements:
+            requirement.apply(save=save)
+
     def apply(self, user=None, comment=None, save=True):
         """
         Applies the data.
@@ -2842,6 +3114,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if comment:
             reversion.set_comment(comment)
 
+        self.apply_requirements(save=save)
+
         action = self.action
         netixlan = self.netixlan
         changes = self.changes
@@ -2850,7 +3124,13 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             self.validate_speed()
 
+            if not self.net.ipv6_support:
+                netixlan.ipaddr6 = None
+            if not self.net.ipv4_support:
+                netixlan.ipaddr4 = None
+
             result = self.ixlan.add_netixlan(netixlan, save=save, save_others=save)
+
             self._netixlan = netixlan = result["netixlan"]
         elif action == "modify":
 
@@ -2859,17 +3139,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             netixlan.speed = self.speed
             netixlan.is_rs_peer = self.is_rs_peer
             netixlan.operational = self.operational
-            netixlan.full_clean()
             if save:
+                netixlan.full_clean()
                 netixlan.save()
         elif action == "delete":
+
             if save:
                 netixlan.delete()
 
-        if save:
-            self.set_resolved()
-
-        return {"action": action, "netixlan": netixlan}
+        return {"action": action, "netixlan": netixlan, "ixf_member_data": self}
 
     def validate_speed(self):
         """
@@ -2883,8 +3161,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         TODO: find a better way to do this
         """
         if self.speed == 0 and self.error:
-            if "Invalid speed value" in self.error:
-                raise ValidationError({"speed": self.error})
+            error_data = json.loads(self.error)
+            if "speed" in self.error:
+                raise ValidationError(error_data)
 
     def save_without_update(self):
         self._meta.get_field("updated").auto_now = False
@@ -2901,7 +3180,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         try:
             self.netixlan.full_clean()
         except ValidationError as exc:
-            self.error = f"{exc}"
+            self.error = json.dumps(exc, cls=ValidationErrorEncoder)
 
     def set_resolved(self, save=True):
         """
@@ -2911,9 +3190,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         this will delete the IXFMemberData instance
         """
-        if self.id and save:
-            self.notify_resolve(ac=True, ix=True, net=True)
+        if self.id and save and not self.requirement_of:
             self.delete(hard=True)
+            return True
 
     def set_conflict(self, error=None, save=True):
         """
@@ -2922,11 +3201,32 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         to the corresponding netixlan to ac, ix and net as warranted
         as warranted
         """
+
+        if not self.id:
+            existing_conflict = IXFMemberData.objects.filter(
+                asn=self.asn, error__isnull=False
+            )
+
+            if self.ipaddr4 and self.ipaddr6:
+                existing_conflict = existing_conflict.filter(
+                    models.Q(ipaddr4=self.ipaddr4) | models.Q(ipaddr6=self.ipaddr6)
+                )
+            elif self.ipaddr4:
+                existing_conflict = existing_conflict.filter(ipaddr4=self.ipaddr4)
+            elif self.ipaddr6:
+                existing_conflict = existing_conflict.filter(ipaddr6=self.ipaddr6)
+
+            if existing_conflict.exists():
+                return None
+
         if (self.remote_changes or (error and not self.previous_error)) and save:
-            self.error = error
+            if error:
+                self.error = json.dumps(error, cls=ValidationErrorEncoder)
+            else:
+                self.error = None
             self.dismissed = False
             self.save()
-            self.notify_update(ac=True, ix=True, net=True)
+            return True
         elif self.previous_data != self.data and save:
 
             # since remote_changes only tracks changes to the
@@ -2947,7 +3247,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.grab_validation_errors()
             self.dismissed = False
             self.save()
-            self.notify_update(ac=True, ix=True, net=True)
+            return True
         elif self.previous_data != self.data and save:
 
             # since remote_changes only tracks changes to the
@@ -2964,13 +3264,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         as warranted
         """
         self.reason = reason
+
         if not self.id and save:
             self.grab_validation_errors()
             self.save()
-            if self.net_present_at_ix:
-                self.notify_add(ac=True, ix=True, net=True)
-            else:
-                self.notify_add(net=True)
+            return True
 
         elif self.previous_data != self.data and save:
 
@@ -3007,7 +3305,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if (not_saved or gone) and save:
             self.set_data({})
             self.save()
-            self.notify_remove(ac=True, ix=True, net=True)
+            return True
 
     def set_data(self, data):
         """
@@ -3015,23 +3313,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         self.data = json.dumps(data)
 
-    def notify(self, template_file, recipient, subject, context=None):
+    def render_notification(self, template_file, recipient, context=None):
         """
-        Send notification
-
-        Returns a dict containing information about the notification
-
-        - contacts(list)
-        - subject(str)
-        - message(str)
+        Renders notification text for this ixfmemberdata
+        instance
 
         Argument(s):
 
         - template_file(str): email template file
         - recipient(str): ac, ix or net
-        - subject(str): subject text, this will only be used if
-          this IXFMemberData instance does not have a valid
-          asn, ip4, ip6 identifier
         - context(dict): if set will update the template context
           from this
         """
@@ -3044,110 +3334,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             _context.update(context)
 
         template = loader.get_template(template_file)
-        message = template.render(_context)
-
-        if self.asn and (self.ipaddr4 or self.ipaddr6):
-            subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {self}"
-        else:
-            subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {subject}"
-
-        contacts = []
-
-        if recipient == "ac" and self.tickets_enabled:
-            contacts = [
-                DeskProTicket.objects.create(
-                    subject=subject, body=message, user=self.ticket_user,
-                )
-            ]
-        elif recipient == "net" and self.actionable_for_network:
-            if self.notify_net_enabled:
-                contacts = self.net_contacts
-                self._email(subject, message, contacts)
-        elif recipient == "ix" and self.notify_ix_enabled:
-            contacts = self.ix_contacts
-            self._email(subject, message, contacts)
-
-        return {"contacts": contacts, "subject": subject, "message": message}
-
-    def _email(self, subject, message, recipients):
-        """
-        Send email
-
-        Honors the MAIL_DEBUG setting
-
-        Called by self.notify depending on recipient
-        type
-        """
-
-        if not getattr(settings, "MAIL_DEBUG", False):
-            mail = EmailMultiAlternatives(
-                subject, strip_tags(message), settings.DEFAULT_FROM_EMAIL, recipients,
-            )
-            mail.send(fail_silently=False)
-        else:
-            debug_mail(
-                subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
-            )
-
-    def _notify(self, template_file, subject, context=None, save=True, **recipients):
-
-        """
-        Send notification to multiple recipient types
-
-        Argument(s):
-
-        - template_file(str): email template file
-        - subject(str): subject text, this will only be used if
-          this IXFMemberData instance does not have a valid
-          asn, ip4, ip6 identifier
-        - context(dict): if set will update the template context
-          from this
-        - save(bool=True): if True will save this IXFMemberData instance
-          (self.log will have been updated with notification lines)
-
-        Keyword Argument(s):
-
-        - ac(bool): if True send notification to admin committee
-        - net(bool): if True send notification to network
-        - ix(bool): if True send notification to exchange
-        """
-
-        log = []
-        now = datetime.datetime.now().replace(tzinfo=UTC())
-
-        for recipient in ["ac", "ix", "net"]:
-            if not recipients.get(recipient):
-                continue
-            result = self.notify(template_file, recipient, subject, context,)
-
-            if result["contacts"]:
-                log.append(
-                    f"[{now}] notified {recipient} ({result['contacts']}) about {subject}"
-                )
-            else:
-                log.append(
-                    f"[{now}] could not notify {recipient} about {subject}: no suitable contacts found"
-                )
-
-        self.log = "\n".join(log) + "\n" + self.log
-
-        if save:
-            self.save()
-
-    def notify_resolve(self, **kwargs):
-        return self._notify("email/notify-ixf-resolved.txt", "Resolved", **kwargs)
-
-    def notify_remote_changes(self, **kwargs):
-        return self._notify("email/notify-ixf-update.txt", _("IX-F changed"), **kwargs)
-
-    def notify_update(self, **kwargs):
-        return self._notify("email/notify-ixf-update.txt", _("Modify"), **kwargs)
-
-    def notify_add(self, **kwargs):
-        return self._notify("email/notify-ixf-add.txt", _("Add"), **kwargs)
-
-    def notify_remove(self, **kwargs):
-        return self._notify("email/notify-ixf-remove.txt", _("Remove"), **kwargs)
+        return template.render(_context)
 
     @property
     def ac_netixlan_url(self):
@@ -3195,8 +3382,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         Returns permissioning namespace for an ixpfx
         """
         return "{}.prefix.{}".format(
-            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id),
-            id,
+            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id), id,
         )
 
     @classmethod
@@ -3343,7 +3529,7 @@ class Network(pdb_models.NetworkBase):
         null=False,
         default=False,
         help_text=_(
-            "Sepcifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data"
+            "Sepcifies whether an IXP is allowed to add a netixlan entry for this network via their ixp_member data"
         ),
     )
 
@@ -3374,7 +3560,9 @@ class Network(pdb_models.NetworkBase):
 
     @classmethod
     def nsp_namespace_from_id(cls, org_id, net_id):
-        return "{}.network.{}".format(Organization.nsp_namespace_from_id(org_id), net_id)
+        return "{}.network.{}".format(
+            Organization.nsp_namespace_from_id(org_id), net_id
+        )
 
     @classmethod
     def related_to_fac(cls, value=None, filt=None, field="facility_id", qset=None):
@@ -3568,6 +3756,28 @@ class Network(pdb_models.NetworkBase):
         }
 
     @property
+    def ipv4_support(self):
+
+        # network has not indicated either ip4 or ip6 support
+        # so assume True (#771)
+
+        if not self.info_unicast and not self.info_ipv6:
+            return True
+
+        return self.info_unicast
+
+    @property
+    def ipv6_support(self):
+
+        # network has not indicated either ip4 or ip6 support
+        # so assume True (#771)
+
+        if not self.info_unicast and not self.info_ipv6:
+            return True
+
+        return self.info_ipv6
+
+    @property
     def sponsorship(self):
         return self.org.sponsorship
 
@@ -3578,6 +3788,15 @@ class Network(pdb_models.NetworkBase):
         """
         return "{}{}".format(
             settings.BASE_URL, django.urls.reverse("net-view", args=(self.id,))
+        )
+
+    @property
+    def view_url_asn(self):
+        """
+        Return the URL to this networks web view
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("net-view-asn", args=(self.asn,))
         )
 
     def nsp_has_perms_PUT(self, user, request):
@@ -3640,7 +3859,9 @@ class NetworkContact(pdb_models.ContactBase):
         """
         Returns permissioning namespace for a network contact
         """
-        return "{}.poc_set.{}".format(Network.nsp_namespace_from_id(org_id, net_id), vis)
+        return "{}.poc_set.{}".format(
+            Network.nsp_namespace_from_id(org_id, net_id), vis
+        )
 
     @property
     def nsp_namespace(self):
@@ -3834,7 +4055,16 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         as a unqiue record by asn, ip4 and ip6 address
         """
 
+        net = self.network
         return (self.asn, self.ipaddr4, self.ipaddr6)
+
+    @property
+    def ixf_id_pretty_str(self):
+        asn, ipaddr4, ipaddr6 = self.ixf_id
+        ipaddr4 = ipaddr4 or _("IPv4 not set")
+        ipaddr6 = ipaddr6 or _("IPv6 not set")
+
+        return f"AS{asn} - {ipaddr4} - {ipaddr6}"
 
     # FIXME
     # permission namespacing
@@ -3846,7 +4076,9 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         """
         Returns permissioning namespace for a netixlan
         """
-        return "{}.ixlan.{}".format(Network.nsp_namespace_from_id(org_id, net_id), ixlan_id)
+        return "{}.ixlan.{}".format(
+            Network.nsp_namespace_from_id(org_id, net_id), ixlan_id
+        )
 
     @property
     def nsp_namespace(self):
@@ -4318,6 +4550,36 @@ def password_reset_token():
     return token, hashed
 
 
+class IXFImportEmail(models.Model):
+    """
+    A copy of all emails sent by the IX-F importer.
+    """
+
+    subject = models.CharField(max_length=255, blank=False)
+    message = models.TextField(blank=False)
+    recipients = models.CharField(max_length=255, blank=False)
+    created = models.DateTimeField(auto_now_add=True)
+    sent = models.DateTimeField(blank=True, null=True)
+    net = models.ForeignKey(
+        Network,
+        on_delete=models.CASCADE,
+        related_name="network_email_set",
+        blank=True,
+        null=True,
+    )
+    ix = models.ForeignKey(
+        InternetExchange,
+        on_delete=models.CASCADE,
+        related_name="ix_email_set",
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = _("IXF Import Email")
+        verbose_name_plural = _("IXF Import Emails")
+
+
 class UserPasswordReset(models.Model):
     class Meta:
         db_table = "peeringdb_user_password_reset"
@@ -4390,20 +4652,100 @@ class CommandLineTool(models.Model):
         self.status = "running"
 
 
+class EnvironmentSetting(models.Model):
+
+    """
+    Environment settings overrides controlled through
+    django admin (/cp)
+    """
+
+    class Meta:
+        db_table = "peeringdb_settings"
+        verbose_name = _("Environment Setting")
+        verbose_name_plural = _("Environment Settings")
+
+    setting = models.CharField(
+        max_length=255,
+        choices=(
+            (
+                "IXF_IMPORTER_DAYS_UNTIL_TICKET",
+                _("IX-F Importer: Days until DeskPRO ticket is created"),
+            ),
+        ),
+        unique=True,
+    )
+
+    value_str = models.CharField(max_length=255, blank=True, null=True)
+    value_int = models.IntegerField(blank=True, null=True)
+    value_bool = models.BooleanField(blank=True, default=False)
+    value_float = models.FloatField(blank=True, null=True)
+
+    updated = models.DateTimeField(
+        _("Last Updated"), auto_now=True, null=True, blank=True,
+    )
+
+    created = models.DateTimeField(
+        _("Configured on"), auto_now_add=True, blank=True, null=True,
+    )
+
+    user = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="admincom_setting_set",
+        help_text=_("Last updated by this user"),
+    )
+
+    setting_to_field = {
+        "IXF_IMPORTER_DAYS_UNTIL_TICKET": "value_int",
+    }
+
+    @classmethod
+    def get_setting_value(cls, setting):
+
+        """
+        Get the current value of the setting specified by
+        it's setting name
+
+        If no instance has been saved for the specified setting
+        the default value will be returned
+        """
+        try:
+            instance = cls.objects.get(setting=setting)
+            return instance.value
+        except cls.DoesNotExist:
+            return getattr(settings, setting)
+
+    @property
+    def value(self):
+        """
+        Get the value for this setting
+        """
+        return getattr(self, self.setting_to_field[self.setting])
+
+    def set_value(self, value):
+        """
+        Update the value for this setting
+        """
+        setattr(self, self.setting_to_field[self.setting], value)
+        self.full_clean()
+        self.save()
+
+
 REFTAG_MAP = {
-        cls.handleref.tag: cls
-        for cls in [
-            Organization,
-            Network,
-            Facility,
-            InternetExchange,
-            InternetExchangeFacility,
-            NetworkFacility,
-            NetworkIXLan,
-            NetworkContact,
-            IXLan,
-            IXLanPrefix,
-        ]
+    cls.handleref.tag: cls
+    for cls in [
+        Organization,
+        Network,
+        Facility,
+        InternetExchange,
+        InternetExchangeFacility,
+        NetworkFacility,
+        NetworkIXLan,
+        NetworkContact,
+        IXLan,
+        IXLanPrefix,
+    ]
 }
 
 
