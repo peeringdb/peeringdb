@@ -6,6 +6,7 @@ from reversion.models import Version
 
 from dal import autocomplete
 from django import forms
+from django.conf import settings
 from django.core.management import call_command
 from peeringdb_server.models import (
     REFTAG_MAP,
@@ -401,21 +402,27 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
             widget=autocomplete.ModelSelect2(url="/autocomplete/ix/json"),
             help_text=_("Select an Internet Exchange to perform an ix-f memberdata import"),
         )
-        reset = forms.BooleanField(
-            required=False, initial=False, help_text=_("Reset all")
-        )
-        reset_hints = forms.BooleanField(
-            required=False, initial=False, help_text=_("Reset hints")
-        )
-        reset_dismisses = forms.BooleanField(
-            required=False, initial=False, help_text=_("Reset dismisses")
-        )
-        reset_email = forms.BooleanField(
-            required=False, initial=False, help_text=_("Reset email")
-        )
-        reset_tickets = forms.BooleanField(
-            required=False, initial=False, help_text=_("Reset tickets")
-        )
+
+        if settings.RELEASE_ENV != "prod":
+
+            # reset toggles are not available on production
+            # environment
+
+            reset = forms.BooleanField(
+                required=False, initial=False, help_text=_("Reset all")
+            )
+            reset_hints = forms.BooleanField(
+                required=False, initial=False, help_text=_("Reset hints")
+            )
+            reset_dismisses = forms.BooleanField(
+                required=False, initial=False, help_text=_("Reset dismisses")
+            )
+            reset_email = forms.BooleanField(
+                required=False, initial=False, help_text=_("Reset email")
+            )
+            reset_tickets = forms.BooleanField(
+                required=False, initial=False, help_text=_("Reset tickets")
+            )
 
     @property
     def description(self):
@@ -423,7 +430,7 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
 
     def set_arguments(self, form_data):
         for key in ["reset", "reset_hints", "reset_dismisses", "reset_email", "reset_tickets"]:
-            self.kwargs[key] = form_data.get(key)
+            self.kwargs[key] = form_data.get(key, False)
 
         if form_data.get("ix"):
             self.kwargs["ixlan"] = [form_data.get("ix").id]

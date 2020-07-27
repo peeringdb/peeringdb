@@ -3263,7 +3263,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         self.reason = reason
 
         if not self.id and save:
-            print("SAVING", self)
             self.grab_validation_errors()
             self.save()
             return True

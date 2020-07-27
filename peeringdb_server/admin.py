@@ -1718,6 +1718,8 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         if request.resolver_match.kwargs.get("object_id"):
             return qset
 
+        return qset.filter(requirement_of__isnull=True)
+
         ids = [row.id for row in qset.exclude(requirement_of__isnull=False) if row.action != "noop"]
 
         return qset.filter(id__in=ids)
