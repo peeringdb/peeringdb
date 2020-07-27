@@ -4,7 +4,6 @@ import json
 import ipaddress
 import re
 from . import forms
-import re
 
 from operator import or_
 
