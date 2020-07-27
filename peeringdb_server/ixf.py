@@ -451,7 +451,6 @@ class Importer:
             if ixf_member.action == "delete":
                 if ixf_member.netixlan.status == "deleted" :
                     if ixf_member.set_resolved(save=self.save):
-                        print("RESOLVE", ixf_member)
                         self.queue_notification(ixf_member, "resolved")
 
             # noop means the ask has been fulfilled but the
