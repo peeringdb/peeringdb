@@ -32,10 +32,9 @@ class ViewTestCase(TestCase):
         # create organizations
 
         cls.organizations = {
-                f"{k}":
-                models.Organization.objects.create(
-                    name="Sponsor Org %s" % k, status="ok"
-                )
+            f"{k}": models.Organization.objects.create(
+                name="Sponsor Org %s" % k, status="ok"
+            )
             for k in range(1, 7)
         }
 

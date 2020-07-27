@@ -2,6 +2,7 @@ import datetime
 import time
 import json
 import ipaddress
+import re
 from . import forms
 
 from operator import or_
@@ -15,6 +16,7 @@ from django.contrib.auth import forms
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.views.main import ChangeList
+from django.db.utils import OperationalError
 from django.http import HttpResponseForbidden
 from django import forms as baseForms
 from django.utils import html
@@ -24,6 +26,7 @@ from django.template import loader
 from django.template.response import TemplateResponse
 from django.db.models import Q
 from django.db.models.functions import Concat
+from django.db.utils import OperationalError
 from django_namespace_perms.admin import (
     UserPermissionInline,
     UserPermissionInlineAdd,
@@ -66,6 +69,8 @@ from peeringdb_server.models import (
     CommandLineTool,
     UTC,
     DeskProTicket,
+    IXFImportEmail,
+    EnvironmentSetting,
 )
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException
@@ -326,9 +331,7 @@ soft_delete.short_description = _("SOFT DELETE")
 
 class SanitizedAdmin:
     def get_readonly_fields(self, request, obj=None):
-        return ("version",) + tuple(
-            super().get_readonly_fields(request, obj=obj)
-        )
+        return ("version",) + tuple(super().get_readonly_fields(request, obj=obj))
 
 
 class SoftDeleteAdmin(
@@ -367,9 +370,7 @@ class ModelAdminWithVQCtrl:
         defined
         """
 
-        fieldsets = tuple(
-            super().get_fieldsets(request, obj=obj)
-        )
+        fieldsets = tuple(super().get_fieldsets(request, obj=obj))
 
         # on automatically defined fieldsets it will insert the controls
         # somewhere towards the bottom, we dont want that - so we look for it and
@@ -703,9 +704,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
         elif rs == -1:
             text = _("HAS BEEN ROLLED BACK")
             color = "#d6f0f3"
-        return mark_safe(
-            f'<div style="background-color:{color}">{text}</div>'
-        )
+        return mark_safe(f'<div style="background-color:{color}">{text}</div>')
 
 
 class IXLanIXFMemberImportLogAdmin(admin.ModelAdmin):
@@ -1543,11 +1542,90 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         )
 
 
+class IXFImportEmailAdmin(admin.ModelAdmin):
+    list_display = ("subject", "recipients", "created", "sent", "net", "ix")
+    readonly_fields = (
+        "net",
+        "ix",
+    )
+    search_fields = ("subject", "ix__name", "net__name")
+    change_list_template = "admin/change_list_with_regex_search.html"
+
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(
+            request, queryset, search_term
+        )
+        # Require ^ and $ for regex
+        if search_term.startswith("^") and search_term.endswith("$"):
+            # Convert search to raw string
+            try:
+                search_term = search_term.encode("unicode-escape").decode()
+            except AttributeError:
+                return queryset, use_distinct
+
+            # Validate regex expression
+            try:
+                re.compile(search_term)
+            except re.error:
+                return queryset, use_distinct
+
+            # Add (case insensitive) regex search results to standard search results
+            try:
+                queryset = self.model.objects.filter(subject__iregex=search_term)
+            except OperationalError:
+                return queryset, use_distinct
+
+        return queryset, use_distinct
+
+
 class DeskProTicketAdmin(admin.ModelAdmin):
-    list_display = ("id", "subject", "user", "created", "published")
+    list_display = (
+        "id",
+        "subject",
+        "user",
+        "created",
+        "published",
+        "deskpro_ref",
+        "deskpro_id",
+    )
     readonly_fields = ("user",)
+    search_fields = ("subject",)
+    change_list_template = "admin/change_list_with_regex_search.html"
+
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(
+            request, queryset, search_term
+        )
+
+        # Require ^ and $ for regex
+        if search_term.startswith("^") and search_term.endswith("$"):
+            # Convert search to raw string
+            try:
+                search_term = search_term.encode("unicode-escape").decode()
+            except AttributeError:
+                return queryset, use_distinct
+
+            # Validate regex expression
+            try:
+                re.compile(search_term)
+            except re.error:
+                return queryset, use_distinct
+
+            # Add (case insensitive) regex search results to standard search results
+            try:
+                queryset = self.model.objects.filter(subject__iregex=search_term)
+            except OperationalError:
+                return queryset, use_distinct
+
+        return queryset, use_distinct
+
+    def save_model(self, request, obj, form, change):
+        if not obj.id and not obj.user_id:
+            obj.user = request.user
+        return super().save_model(request, obj, form, change)
 
 
+@reversion.create_revision()
 def apply_ixf_member_data(modeladmin, request, queryset):
     for ixf_member_data in queryset:
         try:
@@ -1577,7 +1655,9 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "updated",
         "fetched",
         "changes",
-        "error",
+        "actionable_error",
+        "reason",
+        "requirements",
     )
     readonly_fields = (
         "marked_for_removal",
@@ -1589,9 +1669,14 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "netixlan",
         "log",
         "error",
+        "actionable_error",
         "created",
         "updated",
+        "status",
         "remote_data",
+        "requirements",
+        "requirement_of",
+        "requirement_detail",
     )
 
     search_fields = ("asn", "ixlan__id", "ixlan__ix__name", "ipaddr4", "ipaddr6")
@@ -1614,6 +1699,10 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "error",
         "log",
         "remote_data",
+        "requirement_of",
+        "requirement_detail",
+        "deskpro_id",
+        "deskpro_ref",
     )
 
     actions = [apply_ixf_member_data]
@@ -1624,8 +1713,41 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         "fk": ["ixlan",],
     }
 
+    def get_queryset(self, request):
+        qset = super().get_queryset(request)
+
+        if request.resolver_match.kwargs.get("object_id"):
+            return qset
+
+        return qset.filter(requirement_of__isnull=True)
+
+        ids = [
+            row.id
+            for row in qset.exclude(requirement_of__isnull=False)
+            if row.action != "noop"
+        ]
+
+        return qset.filter(id__in=ids)
+
     def ix(self, obj):
         return obj.ixlan.ix
+
+    def requirements(self, obj):
+        return len(obj.requirements)
+
+    def requirement_detail(self, obj):
+        lines = []
+
+        for requirement in obj.requirements:
+            url = django.urls.reverse(
+                "admin:peeringdb_server_ixfmemberdata_change", args=(requirement.id,)
+            )
+            lines.append(f'<a href="{url}">{requirement} {requirement.action}</a>')
+
+        if not lines:
+            return _("No requirements")
+
+        return mark_safe("<br>".join(lines))
 
     def netixlan(self, obj):
         if not obj.netixlan.id:
@@ -1651,6 +1773,7 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
     def remote_data(self, obj):
         return obj.json
 
+    @reversion.create_revision()
     def response_change(self, request, obj):
         if "_save-and-apply" in request.POST:
             obj.save()
@@ -1658,6 +1781,30 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
         return super().response_change(request, obj)
 
 
+class EnvironmentSettingForm(baseForms.ModelForm):
+
+    value = baseForms.CharField(required=True, label=_("Value"))
+
+    class Meta:
+        fields = ["setting", "value"]
+
+
+class EnvironmentSettingAdmin(admin.ModelAdmin):
+    list_display = ["setting", "value", "created", "updated", "user"]
+
+    fields = ["setting", "value"]
+
+    readonly_fields = ["created", "updated"]
+    search_fields = ["setting"]
+
+    form = EnvironmentSettingForm
+
+    def save_model(self, request, obj, form, save):
+        obj.user = request.user
+        return obj.set_value(form.cleaned_data["value"])
+
+
+admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)
@@ -1678,3 +1825,4 @@ admin.site.register(IXLanIXFMemberImportLog, IXLanIXFMemberImportLogAdmin)
 admin.site.register(CommandLineTool, CommandLineToolAdmin)
 admin.site.register(UserOrgAffiliationRequest, UserOrgAffiliationRequestAdmin)
 admin.site.register(DeskProTicket, DeskProTicketAdmin)
+admin.site.register(IXFImportEmail, IXFImportEmailAdmin)

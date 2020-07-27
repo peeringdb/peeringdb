@@ -48,14 +48,14 @@ class Mock:
 
         # Pool of IPv4 addresses (100 per prefix)
         self.ipaddr_pool_v4 = {
-                prefix: list(get_hosts(ipaddress.IPv4Network(prefix)))
-                for prefix in self.prefix_pool_v4
+            prefix: list(get_hosts(ipaddress.IPv4Network(prefix)))
+            for prefix in self.prefix_pool_v4
         }
 
         # Pool of IPv6 addresses (100 per prefix)
         self.ipaddr_pool_v6 = {
-                prefix: list(get_hosts(ipaddress.IPv6Network(prefix)))
-                for prefix in self.prefix_pool_v6
+            prefix: list(get_hosts(ipaddress.IPv6Network(prefix)))
+            for prefix in self.prefix_pool_v6
         }
 
     def create(self, reftag, **kwargs):

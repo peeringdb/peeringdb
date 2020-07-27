@@ -892,10 +892,18 @@ class ModelSerializer(PermissionedModelSerializer):
             # to identify a soft-deleted object that we want
             # to restore
             #
-            # At this point only `POST` (create) requests
-            # should ever attempt a restoration like this
+            # At this point  `POST` (create) requests and
+            # `PUT` (update) requests are supported
+            #
+            # POST will undelete the blocking entity and re-claim it
+            # PUT will null the offending fields on the blocking entity
 
-            if filters and request and request.user and request.method == "POST":
+            if (
+                filters
+                and request
+                and request.user
+                and request.method in ["POST", "PUT"]
+            ):
 
                 if "fac_id" in filters:
                     filters["facility_id"] = filters["fac_id"]
@@ -906,14 +914,29 @@ class ModelSerializer(PermissionedModelSerializer):
 
                 try:
                     filters.update(status="deleted")
-                    self.instance = self.Meta.model.objects.get(**filters)
+                    instance = self.Meta.model.objects.get(**filters)
                 except self.Meta.model.DoesNotExist:
                     raise exc
                 except FieldError as exc:
                     raise exc
 
+                if request.method == "POST":
+                    self.instance = instance
+                    self._undelete = True
+                elif request.method == "PUT":
+                    for field in filters.keys():
+                        if field == "status":
+                            continue
+                        setattr(instance, field, None)
+
+                    try:
+                        # if field can't be nulled this will
+                        # fail and raise the original error
+                        instance.save()
+                    except:
+                        raise exc
+
                 rv = super().run_validation(data=data)
-                self._undelete = True
                 return rv
             else:
                 raise
@@ -1191,9 +1214,7 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
         if data.get("fac") and data.get("fac").status != "ok":
             raise ParentStatusException(data.get("fac"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(
-            user, data
-        )
+        return super().has_create_perms(user, data)
 
     def nsp_namespace_create(self, data):
         return self.Meta.model.nsp_namespace_from_id(
@@ -1736,7 +1757,7 @@ class NetworkSerializer(ModelSerializer):
                 "fac_id",
             ],
             cls,
-            **kwargs
+            **kwargs,
         )
 
         for field, e in list(filters.items()):
@@ -2170,7 +2191,7 @@ class InternetExchangeSerializer(ModelSerializer):
                 "net_count",
             ],
             cls,
-            **kwargs
+            **kwargs,
         )
 
         for field, e in list(filters.items()):
@@ -2355,17 +2376,17 @@ class OrganizationSerializer(ModelSerializer):
 
 
 REFTAG_MAP = {
-        cls.Meta.model.handleref.tag: cls
-        for cls in [
-            OrganizationSerializer,
-            NetworkSerializer,
-            FacilitySerializer,
-            InternetExchangeSerializer,
-            InternetExchangeFacilitySerializer,
-            NetworkFacilitySerializer,
-            NetworkIXLanSerializer,
-            NetworkContactSerializer,
-            IXLanSerializer,
-            IXLanPrefixSerializer,
-        ]
+    cls.Meta.model.handleref.tag: cls
+    for cls in [
+        OrganizationSerializer,
+        NetworkSerializer,
+        FacilitySerializer,
+        InternetExchangeSerializer,
+        InternetExchangeFacilitySerializer,
+        NetworkFacilitySerializer,
+        NetworkIXLanSerializer,
+        NetworkContactSerializer,
+        IXLanSerializer,
+        IXLanPrefixSerializer,
+    ]
 }

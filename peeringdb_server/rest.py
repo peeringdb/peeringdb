@@ -46,9 +46,7 @@ class DataMissingException(DataException):
     """
 
     def __init__(self, method):
-        super().__init__(
-            f"No data was supplied with the {method} request"
-        )
+        super().__init__(f"No data was supplied with the {method} request")
 
 
 class DataParseException(DataException):
@@ -731,17 +729,17 @@ router.register("as_set", ASSetViewSet, basename="as_set")
 urls = router.urls
 
 REFTAG_MAP = {
-        cls.model.handleref.tag: cls
-        for cls in [
-            OrganizationViewSet,
-            NetworkViewSet,
-            FacilityViewSet,
-            InternetExchangeViewSet,
-            InternetExchangeFacilityViewSet,
-            NetworkFacilityViewSet,
-            NetworkIXLanViewSet,
-            NetworkContactViewSet,
-            IXLanViewSet,
-            IXLanPrefixViewSet,
-        ]
+    cls.model.handleref.tag: cls
+    for cls in [
+        OrganizationViewSet,
+        NetworkViewSet,
+        FacilityViewSet,
+        InternetExchangeViewSet,
+        InternetExchangeFacilityViewSet,
+        NetworkFacilityViewSet,
+        NetworkIXLanViewSet,
+        NetworkContactViewSet,
+        IXLanViewSet,
+        IXLanPrefixViewSet,
+    ]
 }

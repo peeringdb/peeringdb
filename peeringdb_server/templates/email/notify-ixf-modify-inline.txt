@@ -1,0 +1,25 @@
+MODIFY {% if instance.primary_requirement %}{{ instance.primary_requirement.netixlan.ixf_id_pretty_str }}{% else %}{{ instance.netixlan.ixf_id_pretty_str }}{% endif %}
+{% spaceless %}
+{% for name, value in instance.actionable_changes.items %}
+{% if name != "ipaddr4" and name != "ipaddr6" %}- {{ name }}: {{ value.from }} to {{ value.to }}{% endif %}
+{% endfor %}
+
+{% if instance.ipaddr4_on_requirement %}
+- Set IPv6 address {{ instance.ipaddr6 }}
+{% elif instance.ipaddr6_on_requirement %}
+- Set IPv4 address {{ instance.ipaddr4 }}
+{% endif %}{% if instance.remote_changes %}
+IX-F data has changed since the last notification:
+{% for name, value in instance.remote_changes.items %}
+- {{ name }}: {{ value.from }} to {{ value.to }}
+{% endfor %}
+{% endif %}
+
+{% if instance.actionable_error %}
+A validation error was raised when the IX-F importer attempted to process this change.
+
+```
+{{ instance.error|safe|striptags }}
+```
+{% endif %}
+{% endspaceless %}

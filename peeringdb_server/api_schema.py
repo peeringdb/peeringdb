@@ -127,9 +127,7 @@ class BaseSchema(AutoSchema):
             # check if we have an augmentation method set for the operation_type and object type
             # combination, if so run it
 
-            augment = getattr(
-                self, f"augment_{op_type}_{model.HandleRef.tag}", None
-            )
+            augment = getattr(self, f"augment_{op_type}_{model.HandleRef.tag}", None)
             if augment:
                 augment(serializer, model, op_dict)
 
@@ -313,9 +311,7 @@ class BaseSchema(AutoSchema):
             choices = getattr(fld, "choices", None)
             if choices:
                 description.append(
-                    "{}".format(
-                        ", ".join([f"`{_id}`" for _id, label in choices])
-                    )
+                    "{}".format(", ".join([f"`{_id}`" for _id, label in choices]))
                 )
 
             if supported_filters:
