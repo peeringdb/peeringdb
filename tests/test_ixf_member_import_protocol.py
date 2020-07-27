@@ -566,7 +566,7 @@ def test_add_netixlan_conflict(entities, save):
             in ixfmemberdata.error
         )
 
-        # Assert that message to IX also includes the error 
+        # Assert that message to IX also includes the error
         assert (
             "A validation error was raised when the IX-F importer attempted to process this change."
             in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
@@ -1873,7 +1873,7 @@ def test_create_deskpro_tickets_after_x_days(entities):
     )
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
-    importer.notify_proposals()    
+    importer.notify_proposals()
 
     for ixfmd in IXFMemberData.objects.all():
         # Edit so that they've been created two weeks ago
@@ -1935,7 +1935,7 @@ def test_create_deskpro_tickets_no_contacts(entities):
     )
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
-    importer.notify_proposals()    
+    importer.notify_proposals()
 
     # Assert Tickets are created immediately
     assert DeskProTicket.objects.count() == 4
@@ -1961,30 +1961,75 @@ def test_resolve_deskpro_ticket(entities):
     ))
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
-    importer.notify_proposals()    
+    importer.notify_proposals()
 
-    for ixfmd in IXFMemberData.objects.all():
-        # Edit so that they've been created two weeks ago
-        ixfmd.created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=14)
-        ixfmd.save()
+    assert IXFMemberData.objects.count() == 1
+    ixf_member_data = IXFMemberData.objects.first()
+
+    assert not ixf_member_data.deskpro_id
+    assert not ixf_member_data.deskpro_ref
+
+    # Edit so that they've been created two weeks ago
+    ixf_member_data.created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=14)
+    ixf_member_data.save_without_update()
+
+    # re run importer to create tickets
+    importer.notifications = []
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
     assert DeskProTicket.objects.count() == 1
+
+    ticket = DeskProTicket.objects.first()
+    assert ticket.deskpro_id
+    assert ticket.deskpro_ref
+
+    # 1 member data instance
+    assert IXFMemberData.objects.count() == 1
+    ixf_member_data = IXFMemberData.objects.first()
+    assert ixf_member_data.deskpro_id == ticket.deskpro_id
+    assert ixf_member_data.deskpro_ref == ticket.deskpro_ref
+
+    # 4 emails total
+    # 2 emails for initial consolidated notification
+    # 2 emails for ticket
+    assert IXFImportEmail.objects.count() == 4
+    conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
+    assert conflict_emails.count() == 2
+
+    for email in conflict_emails:
+        assert ticket.deskpro_ref in email.subject
+
 
     # Resolve issue
     netixlan = entities["netixlan"][0]
     netixlan.speed = 10000
     netixlan.save()
 
-    deskpro_id = DeskProTicket.objects.first().id
-
-    assert deskpro_id > 0
-    assert IXFMemberData.objects.first().deskpro_id == deskpro_id
-
-    # Re run import
+    # Re run import to notify resolution
+    importer.notifications = []
     importer.update(ixlan, data=data)
+    importer.notify_proposals()
 
+    # resolved
     assert IXFMemberData.objects.count() == 0
+
+    # resolution tickets created
+    assert DeskProTicket.objects.count() == 2
+
+    ticket_r = DeskProTicket.objects.last()
+    assert ticket_r.deskpro_id == ticket.deskpro_id
+    assert ticket_r.deskpro_ref == ticket.deskpro_ref
+    assert "resolved" in ticket_r.body
+
+    conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
+    assert conflict_emails.count() == 4
+
+    for email in conflict_emails.order_by("-id")[:2]:
+        assert "resolved" in email.message
+        assert ticket.deskpro_ref in email.subject
+
+
 
 # FIXTURES
 @pytest.fixture(params=[True, False])
