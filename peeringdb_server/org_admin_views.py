@@ -113,10 +113,8 @@ def load_user_permissions(org, user):
 
     # load all of the user's permissions related to this org
     uperms = {
-            p.namespace: p.permissions
-            for p in user.userpermission_set.filter(
-                namespace__startswith=org.nsp_namespace
-            )
+        p.namespace: p.permissions
+        for p in user.userpermission_set.filter(namespace__startswith=org.nsp_namespace)
     }
 
     perms = {}
@@ -158,24 +156,22 @@ def permission_ids(org):
 
     perms.update(
         {
-                    "net.%d" % net.id:
-                    _("Network - %(net_name)s") % {"net_name": net.name}
-                for net in org.net_set_active
+            "net.%d" % net.id: _("Network - %(net_name)s") % {"net_name": net.name}
+            for net in org.net_set_active
         }
     )
 
     perms.update(
         {
-                "ix.%d" % ix.id: _("Exchange - %(ix_name)s") % {"ix_name": ix.name}
-                for ix in org.ix_set_active
+            "ix.%d" % ix.id: _("Exchange - %(ix_name)s") % {"ix_name": ix.name}
+            for ix in org.ix_set_active
         }
     )
 
     perms.update(
         {
-                    "fac.%d" % fac.id:
-                    _("Facility - %(fac_name)s") % {"fac_name": fac.name}
-                for fac in org.fac_set_active
+            "fac.%d" % fac.id: _("Facility - %(fac_name)s") % {"fac_name": fac.name}
+            for fac in org.fac_set_active
         }
     )
 

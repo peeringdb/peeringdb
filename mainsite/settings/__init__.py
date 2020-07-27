@@ -547,6 +547,9 @@ set_option("IXF_PARSE_ERROR_NOTIFICATION_PERIOD", 36)
 # conflicts
 set_option("IXF_TICKET_ON_CONFLICT", True)
 
+# send the ix-f importer generated tickets to deskpro
+set_option("IXF_SEND_TICKETS", False)
+
 # toggle the notification of exchanges via email
 # for ix-f importer conflicts
 set_option("IXF_NOTIFY_IX_ON_CONFLICT", False)
@@ -554,6 +557,10 @@ set_option("IXF_NOTIFY_IX_ON_CONFLICT", False)
 # toggle the notification of networks via email
 # for ix-f importer conflicts
 set_option("IXF_NOTIFY_NET_ON_CONFLICT", False)
+
+# number of days of a conflict being unresolved before
+# deskpro ticket is created
+set_option("IXF_IMPORTER_DAYS_UNTIL_TICKET", 6)
 
 
 # when a user tries to delete a protected object, a deskpro

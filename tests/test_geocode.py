@@ -20,30 +20,28 @@ class ViewTestCase(TestCase):
 
         # create organizations
         cls.organizations = {
-                k:
-                models.Organization.objects.create(
-                    name="Geocode Org %s" % k, status="ok"
-                )
+            k: models.Organization.objects.create(
+                name="Geocode Org %s" % k, status="ok"
+            )
             for k in ["a", "b", "c", "d"]
         }
 
         # create facilities
         cls.facilities = {
-                k:
-                models.Facility.objects.create(
-                    name=f"Geocode Fac {k}",
-                    status="ok",
-                    org=cls.organizations[k],
-                    address1="Some street",
-                    address2=k,
-                    city="Chicago",
-                    country="US",
-                    state="IL",
-                    zipcode="1234",
-                    latitude=1.23,
-                    longitude=-1.23,
-                    geocode_status=True,
-                )
+            k: models.Facility.objects.create(
+                name=f"Geocode Fac {k}",
+                status="ok",
+                org=cls.organizations[k],
+                address1="Some street",
+                address2=k,
+                city="Chicago",
+                country="US",
+                state="IL",
+                zipcode="1234",
+                latitude=1.23,
+                longitude=-1.23,
+                geocode_status=True,
+            )
             for k in ["a", "b", "c", "d"]
         }
 

@@ -1,0 +1,5 @@
+{% if recipient == "net" %}
+Data supplied by your network {{ entity.name }} is in conflict with that provided by {{ other.name }}. Please work with {{ other.name }} to resolve this conflict or correct your data at {{ entity.view_url_asn }} as appropriate. Your network page will contain hints to assist with this. The Peering Admin Committee will assist with this conflict if it is not resolved in {{ ticket_days }} days.
+{% else %}
+Data supplied by your exchange {{ entity.name }} is in conflict with that provided by {{ other.name }}. Please work with {{ other.name }} to resolve this conflict or correct your data as appropriate. The Peering Admin Committee will assist with this conflict if it is not resolved in {{ ticket_days }} days.
+{% endif %}

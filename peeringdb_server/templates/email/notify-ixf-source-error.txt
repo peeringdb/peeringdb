@@ -4,6 +4,6 @@ There was an issue when we attempted to parse the IX-F data for {{ instance.ix.n
 {{ error|safe|striptags }}
 ```
 
-- IX-F data url: {{ ixf_url }}
+- IX-F data url: {{ instance.ix.ixlan.ixf_ixp_member_list_url }}
 - Exchange: {{ instance.ix.view_url }}
 - Timestamp: {{ dt|date:"c" }}

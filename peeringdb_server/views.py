@@ -1007,9 +1007,7 @@ def view_organization(request, id):
 
     users = {}
     if perms.get("can_manage"):
-        users.update(
-            {user.id: user for user in org.admin_usergroup.user_set.all()}
-        )
+        users.update({user.id: user for user in org.admin_usergroup.user_set.all()})
         users.update({user.id: user for user in org.usergroup.user_set.all()})
         users = sorted(list(users.values()), key=lambda x: x.full_name)
 
@@ -1846,8 +1844,8 @@ def request_search(request):
     result = search(q)
 
     sponsors = {
-            org.id: sponsorship.label.lower()
-            for org, sponsorship in Sponsorship.active_by_org()
+        org.id: sponsorship.label.lower()
+        for org, sponsorship in Sponsorship.active_by_org()
     }
 
     for tag, rows in list(result.items()):

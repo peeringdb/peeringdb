@@ -444,14 +444,36 @@ PeeringDB.IXFProposals = twentyc.cls.define(
     modify : function(row) {
       var data=this.collect(row);
       var proposals = row.closest("[data-ixf-proposals-ix]")
-      var netixlan_row = this.netixlan_list.find('[data-edit-id="'+data.id+'"]')
-      netixlan_row.find('[data-edit-name="speed"] input').val(data.speed)
-      netixlan_row.find('[data-edit-name="is_rs_peer"] input').prop("checked", data.is_rs_peer)
-      netixlan_row.find('[data-edit-name="operational"] input').prop("checked", data.operational)
-      netixlan_row.addClass("newrow")
-      this.detach_row(row);
-      row.find('button').tooltip("hide")
+      var ixf_proposals = this;
 
+      var requirements = row.find("[data-ixf-require-delete]")
+
+      var apply = () => {
+        var netixlan_row = this.netixlan_list.find('[data-edit-id="'+data.id+'"]')
+        netixlan_row.find('[data-edit-name="speed"] input').val(data.speed)
+        netixlan_row.find('[data-edit-name="ipaddr4"] input').val(data.ipaddr4)
+        netixlan_row.find('[data-edit-name="ipaddr6"] input').val(data.ipaddr6)
+        netixlan_row.find('[data-edit-name="is_rs_peer"] input').prop("checked", data.is_rs_peer)
+        netixlan_row.find('[data-edit-name="operational"] input').prop("checked", data.operational)
+        netixlan_row.addClass("newrow")
+        this.detach_row(row);
+        row.find('button').tooltip("hide")
+      }
+
+
+      if(!requirements.length)
+        return apply();
+
+      var promise = new Promise((resolve, reject) => { resolve(); });
+
+      requirements.each(function() {
+        var req_id = $(this).data("ixf-require-delete")
+        promise.then(ixf_proposals.delete(
+          proposals.find('.suggestions-delete [data-ixf-id="'+req_id+'"]')
+        ))
+      });
+
+      promise.then(apply)
     },
 
     /**
@@ -556,6 +578,7 @@ PeeringDB.IXFProposals = twentyc.cls.define(
 
     all_entries_for_action : function(proposals, action) {
       var rows = proposals.find('.suggestions-'+action+' .row.item')
+      rows = rows.not('.hidden')
 
       var ids = []
       rows.each(function() {
@@ -630,7 +653,7 @@ PeeringDB.IXFProposals = twentyc.cls.define(
 
       row.detach();
       this.require_refresh = true;
-      if(!par.find('.row.item').length) {
+      if(!par.find('.row.item').not('.hidden').length) {
         par.prev(".header").detach()
         par.detach()
         this.sync_proposals_state(proposals);
@@ -652,6 +675,9 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       var button_add_all = proposals.find('button.add-all')
       var button_resolve_all = proposals.find('button.resolve-all')
 
+      if(!this.all_entries_for_action(proposals, 'delete').rows.length) {
+        proposals.find('.suggestions-delete').prev('.header').detach();
+      }
 
       if(!this.all_entries_for_action(proposals, 'add').rows.length) {
         button_add_all.prop('disabled',true);

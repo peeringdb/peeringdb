@@ -1,14 +1,5 @@
-{% if recipient == "ix" %}Your{% else %}The{% endif %} IX-F data proposes the removal of peer {{ instance }}
+{% include "email/notify-ixf-remove-inline.txt" with instance=instance recipient=recipient %}
 
-This is because the combination of ASN, IPv4 and IPv6 no longer exists in the IX-F data under one member connection.
-
-{% if instance.error %}
-A validation error was raised when the IX-F importer attempted to process this change.
-
-```
-{{ instance.error|safe|striptags }}
-```
-{% endif %}
 {% spaceless %}
 {% if recipient == "ac" %}
 You may review and manually accept the IX-F data at {{ instance.ac_url }}

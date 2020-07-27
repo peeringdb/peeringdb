@@ -105,10 +105,18 @@
       <div class="loading-shim" style="display:none;"></div>
       <div class="col-xs-5">
         <div class="editable input-frame">
+          {% if x.net.info_unicast %}
           <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="{{ x.ipaddr4|none_blank }}">
+          {% else %}
+          <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="">
+          {% endif %}
         </div>
         <div class="editable input-frame">
+          {% if x.net.info_ipv6 %}
           <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr6" value="{{ x.ipaddr6|none_blank }}">
+          {% else %}
+          <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr4" value="">
+          {% endif %}
         </div>
       </div>
       <div class="col-xs-3">
@@ -184,7 +192,7 @@
     {% if not x.dismissed %}
     {% with ixf_id=x.ixf_id_pretty_str ix_name=x.ix.name %}
 
-    <div class="row item" data-ixf-id="{{ x.ixf_id_pretty_str }}">
+    <div class="row item {% if x.requirement_of %}hidden{% endif %}" data-ixf-id="{{ x.ixf_id_pretty_str }}">
 
       <div class="loading-shim" style="display:none;"></div>
       <div style="display:none">
@@ -192,10 +200,10 @@
         <div data-field="id" data-value="{{ x.netixlan.id }}"></div>
       </div>
       <div class="col-xs-5">
-      {{ x.ipaddr4|none_blank }}
+      {% if x.ipaddr4 %}{{ x.ipaddr4 }}{% else %}{% trans "IPv4 not set" %}{% endif %}
       </div>
       <div class="col-xs-6">
-      {{ x.ipaddr6|none_blank }}
+      {% if x.ipaddr6 %}{{ x.ipaddr6 }}{% else %}{% trans "IPv6 not set" %}{% endif %}
       </div>
       <div class="col-xs-1 right">
         <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" title="{{ x.reason }}"></span>
@@ -254,24 +262,56 @@
       <div class="loading-shim" style="display:none;"></div>
       <div style="display:none">
         <div data-field="suggestion_id" data-value="{{ x.id }}"></div>
+        {% if x.primary_requirement %}
+        <div data-field="id" data-value="{{ x.primary_requirement.netixlan.id }}"></div>
+        {% else %}
         <div data-field="id" data-value="{{ x.netixlan.id }}"></div>
+        {% endif %}
+
+        {% for requirement in x.secondary_requirements %}
+        <div data-ixf-require-delete="{{ requirement.ixf_id_pretty_str }}"></div>
+        {% endfor %}
+
       </div>
       <div class="col-xs-5">
+        {% if x.net.info_unicast %}
         <div data-field="ipaddr4" data-value="{{ x.ipaddr4|none_blank }}">
         {{ x.ipaddr4|none_blank }}
         </div>
+        {% else %}
+        <div data-field="ipaddr4" data-value="{{ x.netixlan.ipaddr4|none_blank }}">
+        {{ x.netixlan.ipaddr4|none_blank }}
+        </div>
+        {% endif %}
+
+        {% if x.net.info_ip6 %}
         <div data-field="ipaddr6" data-value="{{ x.ipaddr6|none_blank }}">
         {{ x.ipaddr6|none_blank }}
         </div>
+        {% else %}
+        <div data-field="ipaddr6" data-value="{{ x.netixlan.ipaddr6|none_blank }}">
+        {{ x.netixlan.ipaddr6|none_blank }}
+        </div>
+        {% endif %}
       </div>
       <div class="col-xs-6">
-        <input type="hidden" data-field="id" value="{{ x.netixlan.id }}">
         <input type="hidden" data-field="ixlan_id" value="{{ x.ixlan_id }}">
         <input type="hidden" data-field="net_id" value="{{ x.net.id }}">
         <input type="hidden" data-field="asn" value="{{ x.asn }}">
         <input type="hidden" data-field="speed" value="{{ x.speed }}">
         <input type="checkbox" style="display:none" data-field="is_rs_peer" {% if x.is_rs_peer %}checked{% endif %}>
         <input type="checkbox" style="display:none" data-field="operational" {% if x.operational %}checked{% endif %}>
+
+        {% if x.ipaddr4_on_requirement  %}
+        <div class="ixf-suggested-change">
+          <span class="field_name">{% trans "Set IPv6 address" %}</span>
+        </div>
+        {% elif x.ipaddr6_on_requirement %}
+        <div class="ixf-suggested-change">
+          <span class="field_name">{% trans "Set IPv4 address" %}</span>
+        </div>
+        {% endif %}
+
         {% if x.changes.speed %}
         <div class="ixf-suggested-change">
           <span class="field_name">{% trans "Speed" %}</span>:
@@ -279,7 +319,6 @@
           <span class="glyphicon glyphicon-arrow-right" data-toggle="tooltip" title="{{ x.reason }}"></span>
           <span class="new-value">{{ x.changes.speed.to|pretty_speed }}</span>
         </div>
-        {% else %}
         {% endif %}
 
         {% if x.changes.is_rs_peer %}
