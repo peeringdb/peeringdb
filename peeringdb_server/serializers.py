@@ -928,7 +928,13 @@ class ModelSerializer(PermissionedModelSerializer):
                         if field == "status":
                             continue
                         setattr(instance, field, None)
-                    instance.save()
+
+                    try:
+                        # if field can't be nulled this will
+                        # fail and raise the original error
+                        instance.save()
+                    except:
+                        raise exc
 
                 rv = super().run_validation(data=data)
                 return rv
