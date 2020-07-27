@@ -2000,7 +2000,18 @@ def test_resolve_deskpro_ticket(entities):
     # 2 emails for ticket
     assert IXFImportEmail.objects.count() == 4
     conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
+    consolid_emails = IXFImportEmail.objects.exclude(subject__icontains="conflict")
     assert conflict_emails.count() == 2
+
+    for email in consolid_emails:
+
+        # if network is only supporting one ip protocol
+        # since the ix is sending both it should be mentioned
+        if not network.ipv4_support:
+            assert "IX-F data provides IPv4 addresses" in email.message
+        if not network.ipv6_support:
+            assert "IX-F data provides IPv6 addresses" in email.message
+
 
     for email in conflict_emails:
         assert ticket.deskpro_ref in email.subject
