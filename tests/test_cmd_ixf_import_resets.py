@@ -22,11 +22,10 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLog,
     User,
     DeskProTicket,
-    IXFImportEmail
+    IXFImportEmail,
 )
 from peeringdb_server import ixf
 import pytest
-
 
 
 @pytest.mark.django_db
@@ -41,6 +40,7 @@ def test_reset_hints(entities, data_cmd_ixf_hints):
 
     assert IXFMemberData.objects.count() == 0
     assert DeskProTicket.objects.filter(body__contains="reset_hints").count() == 1
+
 
 @pytest.mark.django_db
 def test_reset_dismissals(entities, data_cmd_ixf_dismissals):
@@ -60,6 +60,7 @@ def test_reset_dismissals(entities, data_cmd_ixf_dismissals):
     assert IXFMemberData.objects.filter(dismissed=False).count() == 4
     assert DeskProTicket.objects.filter(body__contains="reset_dismisses").count() == 1
 
+
 @pytest.mark.django_db
 def test_reset_email(entities, data_cmd_ixf_email):
     ixf_import_data = json.loads(data_cmd_ixf_email.json)
@@ -75,6 +76,7 @@ def test_reset_email(entities, data_cmd_ixf_email):
     assert IXFImportEmail.objects.count() == 0
     assert DeskProTicket.objects.filter(body__contains="reset_email").count() == 1
 
+
 @pytest.mark.django_db
 def test_reset_tickets(deskprotickets):
     assert DeskProTicket.objects.count() == 5
@@ -83,7 +85,6 @@ def test_reset_tickets(deskprotickets):
 
     assert DeskProTicket.objects.count() == 2
     assert DeskProTicket.objects.filter(body__contains="reset_tickets").count() == 1
-
 
 
 @pytest.mark.django_db
@@ -104,8 +105,7 @@ def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
     assert DeskProTicket.objects.count() == 2
     assert DeskProTicket.objects.filter(body__contains="reset").count() == 1
     assert IXFMemberData.objects.count() == 0
-    assert IXFImportEmail.objects.count() == 0 
-
+    assert IXFImportEmail.objects.count() == 0
 
 
 @pytest.fixture
@@ -114,7 +114,10 @@ def entities():
     with reversion.create_revision():
         entities["org"] = Organization.objects.create(name="Netflix", status="ok")
         entities["ix"] = InternetExchange.objects.create(
-                name="Test Exchange One", org=entities["org"], status="ok", tech_email="ix1@localhost"
+            name="Test Exchange One",
+            org=entities["org"],
+            status="ok",
+            tech_email="ix1@localhost",
         )
         entities["ixlan"] = entities["ix"].ixlan
 
@@ -131,27 +134,30 @@ def entities():
                 status="ok",
                 prefix="2001:7f8:1::/64",
                 protocol="IPv6",
-            )
+            ),
         ]
         entities["net"] = Network.objects.create(
-                name="Network w allow ixp update disabled",
-                org=entities["org"],
-                asn=1001,
-                allow_ixp_update=False,
-                status="ok",
-                info_prefixes4=42,
-                info_prefixes6=42,
-                website="http://netflix.com/",
-                policy_general="Open",
-                policy_url="https://www.netflix.com/openconnect/",
-                info_unicast=True,
-                info_ipv6=True,
+            name="Network w allow ixp update disabled",
+            org=entities["org"],
+            asn=1001,
+            allow_ixp_update=False,
+            status="ok",
+            info_prefixes4=42,
+            info_prefixes6=42,
+            website="http://netflix.com/",
+            policy_general="Open",
+            policy_url="https://www.netflix.com/openconnect/",
+            info_unicast=True,
+            info_ipv6=True,
         )
 
         entities["netcontact"] = NetworkContact.objects.create(
-                email="network1@localhost", network=entities["net"], status="ok", role="Policy"
-            )
-        
+            email="network1@localhost",
+            network=entities["net"],
+            status="ok",
+            role="Policy",
+        )
+
         admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
         ixf_importer_user = User.objects.create_user(
             "ixf_importer", "ixf_importer@localhost", "ixf_importer"
@@ -169,15 +175,12 @@ def deskprotickets():
     message = "test"
 
     subjects = [
-    "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.147.250 2001:7f8:1::a500:2906:1",
-    "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.148.250 2001:7f8:1::a500:2907:2",
-    "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.146.250 2001:7f8:1::a500:2908:2",
-    "[IX-F] Suggested:ADD Test Exchange One AS1001 195.69.149.250 2001:7f8:1::a500:2909:2",
-    "Unrelated Issue: Urgent!!!"
+        "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.147.250 2001:7f8:1::a500:2906:1",
+        "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.148.250 2001:7f8:1::a500:2907:2",
+        "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.146.250 2001:7f8:1::a500:2908:2",
+        "[IX-F] Suggested:ADD Test Exchange One AS1001 195.69.149.250 2001:7f8:1::a500:2909:2",
+        "Unrelated Issue: Urgent!!!",
     ]
     for subject in subjects:
-        DeskProTicket.objects.create(
-                    subject=subject, body=message, user=user
-        )
+        DeskProTicket.objects.create(subject=subject, body=message, user=user)
     return DeskProTicket.objects.all()
-

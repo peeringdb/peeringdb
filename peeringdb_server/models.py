@@ -179,7 +179,6 @@ class URLField(pdb_models.URLField):
 
 
 class ValidationErrorEncoder(json.JSONEncoder):
-
     def default(self, obj):
         if isinstance(obj, ValidationError):
             if hasattr(obj, "error_dict"):
@@ -1982,11 +1981,11 @@ class IXLan(pdb_models.IXLanBase):
         # and bail
         if ipv4 and not ipv4_valid:
             raise ValidationError(
-                {"ipaddr4" : f"IPv4 {ipv4} does not match any prefix on this ixlan"}
+                {"ipaddr4": f"IPv4 {ipv4} does not match any prefix on this ixlan"}
             )
         if ipv6 and not ipv6_valid:
             raise ValidationError(
-                {"ipaddr6" : f"IPv6 {ipv6} does not match any prefix on this ixlan"}
+                {"ipaddr6": f"IPv6 {ipv6} does not match any prefix on this ixlan"}
             )
 
         # Next we check if an active netixlan with the ipaddress exists in ANOTHER lan, and bail
@@ -1998,7 +1997,9 @@ class IXLan(pdb_models.IXLanBase):
             .count()
             > 0
         ):
-            raise ValidationError({"ipaddr4":f"Ip address {ipv4} already exists in another lan"})
+            raise ValidationError(
+                {"ipaddr4": f"Ip address {ipv4} already exists in another lan"}
+            )
 
         if (
             ipv6
@@ -2007,7 +2008,9 @@ class IXLan(pdb_models.IXLanBase):
             .count()
             > 0
         ):
-            raise ValidationError({"ipaddr6":f"Ip address {ipv6} already exists in another lan"})
+            raise ValidationError(
+                {"ipaddr6": f"Ip address {ipv6} already exists in another lan"}
+            )
 
         # now we need to figure out if the ipaddresses already exist in this ixlan,
         # we need to check ipv4 and ipv6 separately as they might exist on different
@@ -2103,7 +2106,6 @@ class IXLan(pdb_models.IXLanBase):
         if netixlan_info.operational != netixlan.operational:
             netixlan.operational = netixlan_info.operational
             changed.append("operational")
-
 
         # Speed
         if netixlan_info.speed != netixlan.speed and (
@@ -2355,8 +2357,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         net = Network.objects.get(asn=asn)
 
-        ipv4_support = (net.ipv4_support or not check_protocols)
-        ipv6_support = (net.ipv6_support or not check_protocols)
+        ipv4_support = net.ipv4_support or not check_protocols
+        ipv6_support = net.ipv6_support or not check_protocols
 
         filters = {"asn": asn}
 
@@ -2464,7 +2466,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             instance.init_ipaddr6 = ipaddress.ip_address(ipaddr6)
         else:
             instance.init_ipaddr6 = None
-
 
         if "data" in kwargs:
             instance.set_data(kwargs.get("data"))
@@ -2633,28 +2634,30 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         IPADDR_EXIST = "already exists"
         DELETED_NETIXLAN_BAD_ASN = "This entity was created for the ASN"
 
-        if IPADDR_EXIST in error_data.get("ipaddr4",[""])[0]:
+        if IPADDR_EXIST in error_data.get("ipaddr4", [""])[0]:
             for requirement in self.requirements:
                 if requirement.netixlan.ipaddr4 == self.ipaddr4:
                     return None
-            if NetworkIXLan.objects.filter(ipaddr4=self.ipaddr4, status="deleted").exists():
+            if NetworkIXLan.objects.filter(
+                ipaddr4=self.ipaddr4, status="deleted"
+            ).exists():
                 return None
 
-        if IPADDR_EXIST in error_data.get("ipaddr6",[""])[0]:
+        if IPADDR_EXIST in error_data.get("ipaddr6", [""])[0]:
             for requirement in self.requirements:
                 if requirement.netixlan.ipaddr6 == self.ipaddr6:
                     return None
 
-            if NetworkIXLan.objects.filter(ipaddr6=self.ipaddr6, status="deleted").exists():
+            if NetworkIXLan.objects.filter(
+                ipaddr6=self.ipaddr6, status="deleted"
+            ).exists():
                 return None
 
-
-        if DELETED_NETIXLAN_BAD_ASN in error_data.get("__all__",[""])[0]:
+        if DELETED_NETIXLAN_BAD_ASN in error_data.get("__all__", [""])[0]:
             if self.netixlan.status == "deleted":
                 return None
 
         return self.error
-
 
     @property
     def net_contacts(self):
@@ -2918,7 +2921,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             # if requirement.action != "noop"
         ]
 
-
     @property
     def primary_requirement(self):
         """
@@ -2978,7 +2980,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 return True
         return False
 
-
     @property
     def netixlan(self):
 
@@ -3000,7 +3001,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             try:
                 if self.for_deletion:
-                    filters = self.id_filters(self.asn, self.ipaddr4, self.ipaddr6, check_protocols=False)
+                    filters = self.id_filters(
+                        self.asn, self.ipaddr4, self.ipaddr6, check_protocols=False
+                    )
                 else:
                     filters = self.id_filters(self.asn, self.ipaddr4, self.ipaddr6)
 
@@ -3298,7 +3301,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             and getattr(self, "previous_data", "{}") != "{}"
             and self.remote_data_missing
         )
-
 
         if (not_saved or gone) and save:
             self.set_data({})
@@ -3752,7 +3754,6 @@ class Network(pdb_models.NetworkBase):
                 "poc_set": {"namespace": NetworkContact.nsp_namespace_in_list}
             },
         }
-
 
     @property
     def ipv4_support(self):
@@ -4547,6 +4548,7 @@ def password_reset_token():
     token = str(uuid.uuid4())
     hashed = sha256_crypt.hash(token)
     return token, hashed
+
 
 class IXFImportEmail(models.Model):
     """

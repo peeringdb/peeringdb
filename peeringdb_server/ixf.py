@@ -406,7 +406,6 @@ class Importer:
                     data={},
                 )
 
-
                 self.deletions[ixf_member_data.ixf_id] = ixf_member_data
                 if netixlan.network.allow_ixp_update:
                     self.log_apply(
@@ -449,7 +448,7 @@ class Importer:
             # proposed deletion got fulfilled
 
             if ixf_member.action == "delete":
-                if ixf_member.netixlan.status == "deleted" :
+                if ixf_member.netixlan.status == "deleted":
                     if ixf_member.set_resolved(save=self.save):
                         self.queue_notification(ixf_member, "resolved")
 
@@ -457,7 +456,10 @@ class Importer:
             # ixf member data entry has not been set to resolved yet
 
             elif ixf_member.action == "noop":
-                if ixf_member.set_resolved(save=self.save) and not ixf_member.requirement_of:
+                if (
+                    ixf_member.set_resolved(save=self.save)
+                    and not ixf_member.requirement_of
+                ):
                     self.queue_notification(ixf_member, "resolved")
 
             # proposed change / addition is now gone from
@@ -713,8 +715,7 @@ class Importer:
             if not network.ipv6_support:
                 self.ixf_ids.append((asn, ixf_id[1], None))
                 netixlan = NetworkIXLan.objects.filter(
-                    status="ok",
-                    ipaddr4=ixf_id[1]
+                    status="ok", ipaddr4=ixf_id[1]
                 ).first()
                 if netixlan:
                     self.ixf_ids.append((asn, ixf_id[1], netixlan.ipaddr6))
@@ -722,12 +723,10 @@ class Importer:
             if not network.ipv4_support:
                 self.ixf_ids.append((asn, None, ixf_id[2]))
                 netixlan = NetworkIXLan.objects.filter(
-                    status="ok",
-                    ipaddr6=ixf_id[2]
+                    status="ok", ipaddr6=ixf_id[2]
                 ).first()
                 if netixlan:
                     self.ixf_ids.append((asn, netixlan.ipaddr4, ixf_id[2]))
-
 
             if connection.get("state", "active") == "inactive":
                 operational = False
@@ -865,7 +864,9 @@ class Importer:
             if notify and ixf_member_data.net_present_at_ix:
                 self.queue_notification(ixf_member_data, ixf_member_data.action)
             elif notify:
-                self.queue_notification(ixf_member_data, ixf_member_data.action, ix=False, ac=False)
+                self.queue_notification(
+                    ixf_member_data, ixf_member_data.action, ix=False, ac=False
+                )
 
     def consolidate_delete_add(self, ixf_member_data):
 
@@ -1069,9 +1070,9 @@ class Importer:
             mail.send(fail_silently=False)
         else:
             print("EMAIL", subject, recipients)
-            #debug_mail(
+            # debug_mail(
             #    subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
-            #)
+            # )
 
         if email_log:
             email_log.sent = datetime.datetime.now(datetime.timezone.utc)
@@ -1191,7 +1192,6 @@ class Importer:
                 if not ixf_member_data.actionable_changes:
                     continue
 
-
             # we don't care about proposals that are hidden
             # requirements of other proposals
 
@@ -1227,7 +1227,7 @@ class Importer:
                     "add": [],
                     "modify": [],
                     "delete": [],
-                    "protocol_conflict":None,
+                    "protocol_conflict": None,
                 }
 
             if ix not in ix_notifications:
@@ -1243,7 +1243,7 @@ class Importer:
                     "add": [],
                     "modify": [],
                     "delete": [],
-                    "protocol_conflict":None,
+                    "protocol_conflict": None,
                 }
 
             # render and push proposal text for network
@@ -1273,7 +1273,6 @@ class Importer:
                 else:
                     proposals[action].append(message)
                     ix_notifications[ix]["count"] += 1
-
 
         return {
             "net": net_notifications,

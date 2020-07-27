@@ -390,7 +390,7 @@ class AdminTests(TestCase):
         c = Client()
         c.login(username="admin", password="admin")
         url = reverse("admin:peeringdb_server_{}_changelist".format(model))
-        search = url + '?q=' + urllib.parse.quote_plus(search_term)
+        search = url + "?q=" + urllib.parse.quote_plus(search_term)
         response = c.get(search)
         content = response.content.decode("utf-8")
         return content
@@ -400,44 +400,39 @@ class AdminTests(TestCase):
         ixf_importer, _ = models.User.objects.get_or_create(username="ixf_importer")
         for i in range(10):
             models.DeskProTicket.objects.create(
-                subject="test number {}".format(i),
-                body="test",
-                user=ixf_importer
+                subject="test number {}".format(i), body="test", user=ixf_importer
             )
 
-        search_term =  "^.*[0-5]$"
+        search_term = "^.*[0-5]$"
         content = self._run_regex_search("deskproticket", search_term)
         print(content)
         expected = ["test number {}".format(i) for i in range(5)]
-        expected_not = ["test number {}".format(i) for i in range(6,10)]
-        
+        expected_not = ["test number {}".format(i) for i in range(6, 10)]
+
         for e in expected:
             assert e in content
-        
+
         for e in expected_not:
             assert e not in content
-
 
     def test_search_ixfimportemails(self):
         for i in range(10):
             models.IXFImportEmail.objects.create(
-                subject="test number {}".format(i),
-                message="test",
-                recipients="test"
+                subject="test number {}".format(i), message="test", recipients="test"
             )
-        search_term =  "^.*[2-4]$"
+        search_term = "^.*[2-4]$"
         content = self._run_regex_search("ixfimportemail", search_term)
         print(content)
-        expected = ["test number {}".format(i) for i in range(2,5)]
-        expected_not = ["test number 1"] + ["test number {}".format(i) for i in range(6,10)]
+        expected = ["test number {}".format(i) for i in range(2, 5)]
+        expected_not = ["test number 1"] + [
+            "test number {}".format(i) for i in range(6, 10)
+        ]
 
         for e in expected:
             assert e in content
 
         for e in expected_not:
             assert e not in content
-
-
 
     def test_all_views_readonly(self):
         self._test_all_views(

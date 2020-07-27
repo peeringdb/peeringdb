@@ -387,12 +387,14 @@ class ToolUndelete(CommandLineToolWrapper):
         if obj.status != "deleted":
             raise ValueError(f"{obj} is not currently marked as deleted")
 
+
 @register_tool
 class ToolIXFIXPMemberImport(CommandLineToolWrapper):
     """
     Allows resets for various parts of the ix-f member data import protocol.
     And import ix-f member data for a single Ixlan at a time.
     """
+
     tool = "pdb_ixf_ixp_member_import"
     queue = 1
 
@@ -400,7 +402,9 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
         ix = forms.ModelChoiceField(
             queryset=InternetExchange.objects.all(),
             widget=autocomplete.ModelSelect2(url="/autocomplete/ix/json"),
-            help_text=_("Select an Internet Exchange to perform an ix-f memberdata import"),
+            help_text=_(
+                "Select an Internet Exchange to perform an ix-f memberdata import"
+            ),
         )
 
         if settings.RELEASE_ENV != "prod":
@@ -429,7 +433,13 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
         return "IX-F Member Import Tool"
 
     def set_arguments(self, form_data):
-        for key in ["reset", "reset_hints", "reset_dismisses", "reset_email", "reset_tickets"]:
+        for key in [
+            "reset",
+            "reset_hints",
+            "reset_dismisses",
+            "reset_email",
+            "reset_tickets",
+        ]:
             self.kwargs[key] = form_data.get(key, False)
 
         if form_data.get("ix"):

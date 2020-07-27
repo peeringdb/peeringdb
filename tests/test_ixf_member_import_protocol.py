@@ -21,7 +21,7 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLog,
     User,
     DeskProTicket,
-    IXFImportEmail
+    IXFImportEmail,
 )
 from peeringdb_server import ixf
 import pytest
@@ -119,8 +119,9 @@ def test_update_data_attributes(entities, use_ip, save):
     print(importer.log)
     print(use_ip(4), use_ip(6))
 
-    if (network.ipv4_support and not use_ip(4)) or \
-       (network.ipv6_support and not use_ip(6)):
+    if (network.ipv4_support and not use_ip(4)) or (
+        network.ipv6_support and not use_ip(6)
+    ):
 
         # test (delete+add) consolidation (#770)
 
@@ -141,7 +142,6 @@ def test_update_data_attributes(entities, use_ip, save):
         assert "operational" in log["reason"]
         assert "speed" in log["reason"]
 
-
     netixlan = NetworkIXLan.objects.filter(status="ok").first()
     assert netixlan.operational == True
     assert netixlan.is_rs_peer == True
@@ -160,8 +160,8 @@ def test_update_data_attributes(entities, use_ip, save):
     assert netixlan.operational == False
     assert netixlan.is_rs_peer == False
     assert netixlan.speed == 20000
-    assert netixlan.ipaddr4 == use_ip(4,"195.69.147.250")
-    assert netixlan.ipaddr6 == use_ip(6,"2001:7f8:1::a500:2906:1")
+    assert netixlan.ipaddr4 == use_ip(4, "195.69.147.250")
+    assert netixlan.ipaddr6 == use_ip(6, "2001:7f8:1::a500:2906:1")
 
 
 @pytest.mark.django_db
@@ -188,8 +188,8 @@ def test_suggest_modify_local_ixf(entities, use_ip, save):
             ixlan=ixlan,
             asn=network.asn,
             speed=20000,
-            ipaddr4=use_ip(4,"195.69.147.250"),
-            ipaddr6=use_ip(6,"2001:7f8:1::a500:2906:1"),
+            ipaddr4=use_ip(4, "195.69.147.250"),
+            ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
             status="ok",
             is_rs_peer=False,
             operational=False,
@@ -207,7 +207,7 @@ def test_suggest_modify_local_ixf(entities, use_ip, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        data={"foo":"bar"}
+        data={"foo": "bar"},
     )
 
     importer = ixf.Importer()
@@ -215,17 +215,15 @@ def test_suggest_modify_local_ixf(entities, use_ip, save):
     if not save:
         return assert_idempotent(importer, ixlan, data, save=False)
 
-
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
     for email in IXFImportEmail.objects.all():
         print(email.message)
 
-
-
-    if (network.ipv4_support and not network.ipv6_support and not use_ip(4)) or \
-       (network.ipv6_support and not network.ipv4_support and not use_ip(6)):
+    if (network.ipv4_support and not network.ipv6_support and not use_ip(4)) or (
+        network.ipv6_support and not network.ipv4_support and not use_ip(6)
+    ):
 
         # edge case where network has the one ip set that
         # its not supporting and the other ip nto set at all
@@ -257,8 +255,9 @@ def test_suggest_modify_local_ixf(entities, use_ip, save):
 
         assert ixf_member_data_delete.requirement_of == ixf_member_data_modify
 
-    elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or \
-         (network.ipv6_support and network.ipv4_support and not use_ip(6)):
+    elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or (
+        network.ipv6_support and network.ipv4_support and not use_ip(6)
+    ):
 
         # network supports both protocols, old ix-f data only has one
         # of the ips set, suggest adding the other
@@ -329,16 +328,18 @@ def test_suggest_modify(entities, use_ip, save):
     print(importer.log)
 
     # Create local ixf
-    if (not network.ipv4_support and not use_ip(6)) or \
-       (not network.ipv6_support and not use_ip(4)):
+    if (not network.ipv4_support and not use_ip(6)) or (
+        not network.ipv6_support and not use_ip(4)
+    ):
 
         # data changes and signature (ip) change with
         # partial ip protocol support
         # #770 and #771
 
         assert IXFMemberData.objects.count() == 2
-    elif (network.ipv4_support and network.ipv6_support) and \
-       (not use_ip(6) or not use_ip(4)):
+    elif (network.ipv4_support and network.ipv6_support) and (
+        not use_ip(6) or not use_ip(4)
+    ):
 
         # data changes and signature (ip) change with
         # full ip protocol support
@@ -357,7 +358,14 @@ def test_suggest_modify(entities, use_ip, save):
     assert NetworkIXLan.objects.first().operational == False
 
     # Consolidated email is sent to the Network and the IX
-    email_info = [("MODIFY", network.asn, use_ip(4, "195.69.147.250"), use_ip(6, "2001:7f8:1::a500:2906:1"))]
+    email_info = [
+        (
+            "MODIFY",
+            network.asn,
+            use_ip(4, "195.69.147.250"),
+            use_ip(6, "2001:7f8:1::a500:2906:1"),
+        )
+    ]
     assert_ix_email(ixlan.ix, email_info)
     assert_network_email(network, email_info)
 
@@ -444,8 +452,10 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        data=json.dumps({"foo":"bar"}),
-        error=json.dumps({"ipaddr4":["IPv4 195.69.147.250 does not match any prefix on this ixlan"]}),
+        data=json.dumps({"foo": "bar"}),
+        error=json.dumps(
+            {"ipaddr4": ["IPv4 195.69.147.250 does not match any prefix on this ixlan"]}
+        ),
     )
 
     importer = ixf.Importer()
@@ -456,14 +466,14 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-
     ixfmemberdata = IXFMemberData.objects.first()
 
     for email in IXFImportEmail.objects.all():
         print(email.message)
 
-    if (not network.ipv4_support and invalid_ip == 4) or \
-       (not network.ipv6_support and invalid_ip == 6):
+    if (not network.ipv4_support and invalid_ip == 4) or (
+        not network.ipv6_support and invalid_ip == 6
+    ):
 
         # edge case, signature changed, and invalid ip
         # is on unsupported protocol, making the proposal
@@ -473,8 +483,9 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
         assert_no_emails()
         assert_idempotent(importer, ixlan, data, save=save)
 
-    elif (network.ipv4_support and not use_ip(4)) or \
-         (network.ipv6_support and not use_ip(6)):
+    elif (network.ipv4_support and not use_ip(4)) or (
+        network.ipv6_support and not use_ip(6)
+    ):
 
         # edge case, signature changed, and invalid and
         # conflicting ip changed causing a drop of the original
@@ -482,12 +493,7 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
         # on the next one
 
         email_info = [
-            (
-                "CREATE",
-                network.asn,
-                "195.69.147.250",
-                "2001:7f8:1::a500:2906:1",
-            )
+            ("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1",)
         ]
         assert_no_emails()
 
@@ -510,11 +516,10 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
         assert NetworkIXLan.objects.count() == 0
         assert_no_emails()
 
-        #assert (
+        # assert (
         #    "IPv4 195.69.147.250 does not match any prefix on this ixlan"
         #    in ixfmemberdata.error
-        #)
-
+        # )
 
         assert_idempotent(importer, ixlan, data, save=save)
 
@@ -554,17 +559,15 @@ def test_add_netixlan_conflict(entities, save):
 
     ixfmemberdata = IXFMemberData.objects.first()
 
-
     if network.ipv4_support and network.ipv6_support:
         assert IXFMemberData.objects.count() == 1
-        email_info = [("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
+        email_info = [
+            ("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")
+        ]
         assert_ix_email(ixlan.ix, email_info)
         assert_no_network_email(network)
 
-        assert (
-            "does not match any prefix on this ixlan"
-            in ixfmemberdata.error
-        )
+        assert "does not match any prefix on this ixlan" in ixfmemberdata.error
 
         # Assert that message to IX also includes the error
         assert (
@@ -582,7 +585,6 @@ def test_add_netixlan_conflict(entities, save):
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data, save=save)
-
 
 
 @pytest.mark.django_db
@@ -626,7 +628,7 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
         fetched=datetime.datetime.now(datetime.timezone.utc),
         operational=True,
         is_rs_peer=True,
-        data=json.dumps({"foo":"bar"}),
+        data=json.dumps({"foo": "bar"}),
         status="ok",
     )
 
@@ -638,9 +640,9 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-
-    if (not network.ipv4_support and use_ip(4) and not use_ip(6)) or \
-       (not network.ipv6_support and use_ip(6) and not use_ip(4)):
+    if (not network.ipv4_support and use_ip(4) and not use_ip(6)) or (
+        not network.ipv6_support and use_ip(6) and not use_ip(4)
+    ):
         # edge case, supported protocols changed
         # one of the ips on an unsupported protocol
         # effectively changing the signature, send
@@ -654,15 +656,16 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
                 "CREATE",
                 network.asn,
                 use_ip(6, "195.69.147.251"),
-                use_ip(4, "2001:7f8:1::a500:2906:3")
+                use_ip(4, "2001:7f8:1::a500:2906:3"),
             )
         ]
 
         assert_ix_email(ixlan.ix, email_info)
         assert_network_email(network, email_info)
 
-    elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or \
-         (network.ipv4_support and network.ipv6_support and not use_ip(6)):
+    elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or (
+        network.ipv4_support and network.ipv6_support and not use_ip(6)
+    ):
 
         # edge case, supported protocols changed
         # effectively changing the signature, send
@@ -673,24 +676,17 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
         assert NetworkIXLan.objects.count() == 1
 
         email_info = [
-            (
-                "CREATE",
-                network.asn,
-                "195.69.147.250",
-                "2001:7f8:1::a500:2906:1"
-            ),
+            ("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1"),
             (
                 "MODIFY",
                 network.asn,
                 use_ip(4, "195.69.147.251"),
-                use_ip(6, "2001:7f8:1::a500:2906:3")
-            )
+                use_ip(6, "2001:7f8:1::a500:2906:3"),
+            ),
         ]
 
         assert_ix_email(ixlan.ix, email_info)
         assert_network_email(network, email_info)
-
-
 
     else:
         assert IXFMemberData.objects.count() == 1
@@ -725,8 +721,8 @@ def test_suggest_add(entities, use_ip, save):
             ixlan=ixlan,
             asn=network.asn,
             speed=10000,
-            ipaddr4=use_ip(4,"195.69.147.251"),
-            ipaddr6=use_ip(6,"2001:7f8:1::a500:2906:3"),
+            ipaddr4=use_ip(4, "195.69.147.251"),
+            ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:3"),
             status="ok",
             is_rs_peer=True,
             operational=True,
@@ -743,9 +739,9 @@ def test_suggest_add(entities, use_ip, save):
 
     print(importer.log)
 
-
-    if (not network.ipv4_support and use_ip(4) and not use_ip(6)) or \
-       (not network.ipv6_support and use_ip(6) and not use_ip(4)):
+    if (not network.ipv4_support and use_ip(4) and not use_ip(6)) or (
+        not network.ipv6_support and use_ip(6) and not use_ip(4)
+    ):
         # edge case, supported protocols changed
         # one of the ips on an unsupported protocol
         # effectively changing the signature, send
@@ -759,7 +755,7 @@ def test_suggest_add(entities, use_ip, save):
                 "CREATE",
                 network.asn,
                 use_ip(6, "195.69.147.250"),
-                use_ip(4, "2001:7f8:1::a500:2906:1")
+                use_ip(4, "2001:7f8:1::a500:2906:1"),
             )
         ]
 
@@ -783,8 +779,9 @@ def test_suggest_add(entities, use_ip, save):
         assert_ix_email(ixlan.ix, email_info)
         assert_network_email(network, email_info)
 
-    elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or \
-         (network.ipv4_support and network.ipv6_support and not use_ip(6)):
+    elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or (
+        network.ipv4_support and network.ipv6_support and not use_ip(6)
+    ):
 
         # edge case, supported protocols changed
         # effectively changing the signature, send
@@ -795,39 +792,33 @@ def test_suggest_add(entities, use_ip, save):
         assert NetworkIXLan.objects.count() == 1
 
         email_info = [
-            (
-                "CREATE",
-                network.asn,
-                "195.69.147.250",
-                "2001:7f8:1::a500:2906:1"
-            ),
+            ("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1"),
             (
                 "MODIFY",
                 network.asn,
                 use_ip(4, "195.69.147.251"),
-                use_ip(6, "2001:7f8:1::a500:2906:3")
-            )
+                use_ip(6, "2001:7f8:1::a500:2906:3"),
+            ),
         ]
 
         assert_ix_email(ixlan.ix, email_info)
         assert_network_email(network, email_info)
 
-
-
     else:
         assert IXFMemberData.objects.count() == 1
         assert NetworkIXLan.objects.count() == 1
-
 
         log = importer.log["data"][0]
         assert log["action"] == "suggest-add"
 
         if network.ipv4_support and network.ipv6_support:
-            email_info  = [("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
+            email_info = [
+                ("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")
+            ]
         elif network.ipv4_support:
-            email_info  = [("CREATE", network.asn, "195.69.147.250", None)]
+            email_info = [("CREATE", network.asn, "195.69.147.250", None)]
         elif network.ipv6_support:
-            email_info  = [("CREATE", network.asn, None, "2001:7f8:1::a500:2906:1")]
+            email_info = [("CREATE", network.asn, None, "2001:7f8:1::a500:2906:1")]
 
         assert_ix_email(ixlan.ix, email_info)
         assert_network_email(network, email_info)
@@ -873,9 +864,9 @@ def test_suggest_add_no_netixlan_local_ixf(entities, use_ip, save):
     assert IXFMemberData.objects.count() == 1
     assert NetworkIXLan.objects.count() == 0
 
-
-    if (not network.ipv4_support and use_ip(4) and not use_ip(6)) or \
-       (not network.ipv6_support and use_ip(6) and not use_ip(4)):
+    if (not network.ipv4_support and use_ip(4) and not use_ip(6)) or (
+        not network.ipv6_support and use_ip(6) and not use_ip(4)
+    ):
 
         # edge case where the network has only one ip
         # set and its on an unsupported protocol
@@ -886,15 +877,16 @@ def test_suggest_add_no_netixlan_local_ixf(entities, use_ip, save):
             (
                 "CREATE",
                 network.asn,
-                use_ip(6,"195.69.147.250"),
-                use_ip(4,"2001:7f8:1::a500:2906:1"),
+                use_ip(6, "195.69.147.250"),
+                use_ip(4, "2001:7f8:1::a500:2906:1"),
             )
         ]
 
         assert_network_email(network, email_info)
 
-    elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or \
-         (network.ipv4_support and network.ipv6_support and not use_ip(6)):
+    elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or (
+        network.ipv4_support and network.ipv6_support and not use_ip(6)
+    ):
 
         # edge case, supported protocols changed
         # effectively changing the signature, send
@@ -902,12 +894,7 @@ def test_suggest_add_no_netixlan_local_ixf(entities, use_ip, save):
         # network
 
         email_info = [
-            (
-                "CREATE",
-                network.asn,
-                "195.69.147.250",
-                "2001:7f8:1::a500:2906:1"
-            ),
+            ("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1"),
         ]
 
         assert_network_email(network, email_info)
@@ -947,12 +934,13 @@ def test_suggest_add_no_netixlan(entities, use_ip, save):
     assert log["action"] == "suggest-add"
 
     if network.ipv4_support and network.ipv6_support:
-        email_info  = [("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
+        email_info = [
+            ("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")
+        ]
     elif network.ipv4_support:
-        email_info  = [("CREATE", network.asn, "195.69.147.250", None)]
+        email_info = [("CREATE", network.asn, "195.69.147.250", None)]
     elif network.ipv6_support:
-        email_info  = [("CREATE", network.asn, None, "2001:7f8:1::a500:2906:1")]
-
+        email_info = [("CREATE", network.asn, None, "2001:7f8:1::a500:2906:1")]
 
     assert_network_email(network, email_info)
     assert_no_ix_email(ixlan.ix)
@@ -1011,7 +999,6 @@ def test_single_ipaddr_matches(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-
     if not network.ipv4_support or not network.ipv6_support:
 
         # edge case
@@ -1062,7 +1049,7 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
             ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
             status="ok",
             is_rs_peer=True,
-            operational=True
+            operational=True,
         )
     )
     importer = ixf.Importer()
@@ -1078,9 +1065,11 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
         assert IXFMemberData.objects.count() == 0
         assert NetworkIXLan.objects.count() == 1
 
-    elif (not network.ipv6_support or not network.ipv4_support) and not \
-        (network.ipv4_support and use_ip(6) and not use_ip(4)) and not \
-        (network.ipv6_support and use_ip(4) and not use_ip(6)):
+    elif (
+        (not network.ipv6_support or not network.ipv4_support)
+        and not (network.ipv4_support and use_ip(6) and not use_ip(4))
+        and not (network.ipv6_support and use_ip(4) and not use_ip(6))
+    ):
 
         assert len(importer.log["data"]) == 0
         assert_no_emails()
@@ -1165,7 +1154,7 @@ def test_two_missing_ipaddrs_no_auto_update(entities, save):
     # Assert NetworkIXLans are unchanged
     assert NetworkIXLan.objects.filter(status="ok").count() == 2
 
-    if (not network.ipv4_support or not network.ipv6_support):
+    if not network.ipv4_support or not network.ipv6_support:
 
         # only one of the protocols is supported by the network
         # suggest deletion of the other ip address
@@ -1184,13 +1173,7 @@ def test_two_missing_ipaddrs_no_auto_update(entities, save):
         else:
             ipaddr6 = None
 
-
-        email_info = [(
-            "REMOVE",
-            network.asn,
-            ipaddr4,
-            ipaddr6
-        )]
+        email_info = [("REMOVE", network.asn, ipaddr4, ipaddr6)]
 
         assert_network_email(network, email_info)
         assert_ix_email(ixlan.ix, email_info)
@@ -1200,11 +1183,16 @@ def test_two_missing_ipaddrs_no_auto_update(entities, save):
         # for two deletions and one addition.
         # The deletions will be the requirement of the addition.
 
-
         assert IXFMemberData.objects.count() == 3
-        ixfmdata_d4 = IXFMemberData.objects.filter(ipaddr4="195.69.147.250", ipaddr6=None).first()
-        ixfmdata_d6 = IXFMemberData.objects.filter(ipaddr4=None, ipaddr6="2001:7f8:1::a500:2906:1").first()
-        ixfmdata_m = IXFMemberData.objects.filter(ipaddr4="195.69.147.250", ipaddr6="2001:7f8:1::a500:2906:1").first()
+        ixfmdata_d4 = IXFMemberData.objects.filter(
+            ipaddr4="195.69.147.250", ipaddr6=None
+        ).first()
+        ixfmdata_d6 = IXFMemberData.objects.filter(
+            ipaddr4=None, ipaddr6="2001:7f8:1::a500:2906:1"
+        ).first()
+        ixfmdata_m = IXFMemberData.objects.filter(
+            ipaddr4="195.69.147.250", ipaddr6="2001:7f8:1::a500:2906:1"
+        ).first()
 
         assert ixfmdata_d4.action == "delete"
         assert ixfmdata_d6.action == "delete"
@@ -1219,7 +1207,6 @@ def test_two_missing_ipaddrs_no_auto_update(entities, save):
         assert len(importer.log["data"]) == 1
         assert importer.log["data"][0]["action"] == "suggest-modify"
 
-
         # We only create an email for the primary requirement
         email_info_4 = [("MODIFY", network.asn, "195.69.147.250", "IPv6 not set")]
         assert IXFImportEmail.objects.count() == 2
@@ -1228,6 +1215,7 @@ def test_two_missing_ipaddrs_no_auto_update(entities, save):
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
+
 
 @pytest.mark.django_db
 def test_delete(entities, save):
@@ -1554,7 +1542,7 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error=json.dumps({"speed":"Invalid speed value: this is not valid"}),
+        error=json.dumps({"speed": "Invalid speed value: this is not valid"}),
     )
 
     preexisting_ixfmember_data = IXFMemberData.objects.create(
@@ -1567,7 +1555,7 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error=json.dumps({"speed":"Invalid speed value: this is not valid"}),
+        error=json.dumps({"speed": "Invalid speed value: this is not valid"}),
     )
 
     importer = ixf.Importer()
@@ -1630,27 +1618,29 @@ def test_mark_invalid_remote_auto_update(entities, save):
     # We email to say there is invalid data
     if network.ipv4_support and network.ipv6_support:
         email_info = [
-            ("CREATE", network.asn,"195.69.147.100","2001:7f8:1::a500:2906:4"),
-            ("MODIFY", network.asn,"195.69.147.200","2001:7f8:1::a500:2906:2")
+            ("CREATE", network.asn, "195.69.147.100", "2001:7f8:1::a500:2906:4"),
+            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
     elif network.ipv4_support:
         email_info = [
-            ("CREATE", network.asn,"195.69.147.100",None),
-            ("MODIFY", network.asn,"195.69.147.200","2001:7f8:1::a500:2906:2")
+            ("CREATE", network.asn, "195.69.147.100", None),
+            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
     elif network.ipv6_support:
         email_info = [
-            ("CREATE", network.asn,None,"2001:7f8:1::a500:2906:4"),
-            ("MODIFY", network.asn,"195.69.147.200","2001:7f8:1::a500:2906:2")
+            ("CREATE", network.asn, None, "2001:7f8:1::a500:2906:4"),
+            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
 
-
-
     assert_ix_email(ixlan.ix, email_info)
-    assert "Invalid speed value: This is invalid" in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
+    assert (
+        "Invalid speed value: This is invalid"
+        in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
+    )
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
+
 
 @pytest.mark.django_db
 def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
@@ -1660,7 +1650,6 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
     There is already a local-ixf flagging that invalid data.
     Do nothing.
     """
-
 
     data = setup_test_data("ixf.member.invalid.1")
     network = entities["net"]["UPDATE_DISABLED"]
@@ -1691,7 +1680,7 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error=json.dumps({"speed":"Invalid speed value: this is not valid"}),
+        error=json.dumps({"speed": "Invalid speed value: this is not valid"}),
     )
 
     preexisting_ixfmember_data = IXFMemberData.objects.create(
@@ -1704,7 +1693,7 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
         operational=True,
         is_rs_peer=True,
         status="ok",
-        error=json.dumps({"speed":"Invalid speed value: this is not valid"}),
+        error=json.dumps({"speed": "Invalid speed value: this is not valid"}),
     )
 
     importer = ixf.Importer()
@@ -1761,34 +1750,35 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-
     assert IXFMemberData.objects.count() == 2
 
     # We send an email about the updates
     # But it also contains information about the invalid speed
     if network.ipv4_support and network.ipv6_support:
         email_info = [
-            ("CREATE", network.asn,"195.69.147.100","2001:7f8:1::a500:2906:4"),
-            ("MODIFY", network.asn,"195.69.147.200","2001:7f8:1::a500:2906:2")
+            ("CREATE", network.asn, "195.69.147.100", "2001:7f8:1::a500:2906:4"),
+            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
     elif network.ipv4_support:
         email_info = [
-            ("CREATE", network.asn,"195.69.147.100",None),
-            ("MODIFY", network.asn,"195.69.147.200","2001:7f8:1::a500:2906:2")
+            ("CREATE", network.asn, "195.69.147.100", None),
+            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
     elif network.ipv6_support:
         email_info = [
-            ("CREATE", network.asn,None,"2001:7f8:1::a500:2906:4"),
-            ("MODIFY", network.asn,"195.69.147.200","2001:7f8:1::a500:2906:2")
+            ("CREATE", network.asn, None, "2001:7f8:1::a500:2906:4"),
+            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
 
-
     assert_ix_email(ixlan.ix, email_info)
-    assert "Invalid speed value: This is invalid" in IXFImportEmail.objects.first().message
+    assert (
+        "Invalid speed value: This is invalid" in IXFImportEmail.objects.first().message
+    )
     assert_no_network_email(network)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
+
 
 @pytest.mark.django_db
 def test_remote_cannot_be_parsed(entities, save):
@@ -1810,7 +1800,9 @@ def test_remote_cannot_be_parsed(entities, save):
     ERROR_MESSAGE = "No entries in any of the vlan_list lists, aborting"
     assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
-    assert ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
+    assert (
+        ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
+    )
 
     # Assert idempotent / lock
     importer.sanitize(data)
@@ -1840,6 +1832,7 @@ def test_validate_json_schema():
             with pytest.raises(jsonschema.exceptions.ValidationError):
                 jsonschema.validate(data, schema)
 
+
 @pytest.mark.django_db
 def test_create_deskpro_tickets_after_x_days(entities):
     data = setup_test_data("ixf.member.2")
@@ -1857,7 +1850,8 @@ def test_create_deskpro_tickets_after_x_days(entities):
             status="ok",
             is_rs_peer=True,
             operational=True,
-        ))
+        )
+    )
     entities["netixlan"].append(
         NetworkIXLan.objects.create(
             network=network,
@@ -1877,7 +1871,9 @@ def test_create_deskpro_tickets_after_x_days(entities):
 
     for ixfmd in IXFMemberData.objects.all():
         # Edit so that they've been created two weeks ago
-        ixfmd.created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=14)
+        ixfmd.created = datetime.datetime.now(
+            datetime.timezone.utc
+        ) - datetime.timedelta(days=14)
         ixfmd.save()
 
     importer.update(ixlan, data=data)
@@ -1891,8 +1887,13 @@ def test_create_deskpro_tickets_after_x_days(entities):
     # Assert emails go to IX and Network for each Ticket
     deskpro_refs = [dpt.deskpro_ref for dpt in DeskProTicket.objects.all()]
     for dpt in deskpro_refs:
-        assert IXFImportEmail.objects.filter(subject__contains=dpt, ix=ixlan.ix.id).exists()
-        assert IXFImportEmail.objects.filter(subject__contains=dpt, net=network.id).exists()
+        assert IXFImportEmail.objects.filter(
+            subject__contains=dpt, ix=ixlan.ix.id
+        ).exists()
+        assert IXFImportEmail.objects.filter(
+            subject__contains=dpt, net=network.id
+        ).exists()
+
 
 @pytest.mark.django_db
 def test_create_deskpro_tickets_no_contacts(entities):
@@ -1919,7 +1920,8 @@ def test_create_deskpro_tickets_no_contacts(entities):
             status="ok",
             is_rs_peer=True,
             operational=True,
-        ))
+        )
+    )
     entities["netixlan"].append(
         NetworkIXLan.objects.create(
             network=network,
@@ -1958,7 +1960,8 @@ def test_resolve_deskpro_ticket(entities):
             status="ok",
             is_rs_peer=True,
             operational=True,
-    ))
+        )
+    )
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
     importer.notify_proposals()
@@ -1970,7 +1973,9 @@ def test_resolve_deskpro_ticket(entities):
     assert not ixf_member_data.deskpro_ref
 
     # Edit so that they've been created two weeks ago
-    ixf_member_data.created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=14)
+    ixf_member_data.created = datetime.datetime.now(
+        datetime.timezone.utc
+    ) - datetime.timedelta(days=14)
     ixf_member_data.save_without_update()
 
     # re run importer to create tickets
@@ -2000,7 +2005,6 @@ def test_resolve_deskpro_ticket(entities):
     for email in conflict_emails:
         assert ticket.deskpro_ref in email.subject
 
-
     # Resolve issue
     netixlan = entities["netixlan"][0]
     netixlan.speed = 10000
@@ -2028,7 +2032,6 @@ def test_resolve_deskpro_ticket(entities):
     for email in conflict_emails.order_by("-id")[:2]:
         assert "resolved" in email.message
         assert ticket.deskpro_ref in email.subject
-
 
 
 # FIXTURES
@@ -2073,6 +2076,7 @@ def entities_ipv4_ipv6_implied(_entities):
         net.save()
     return _entities
 
+
 def entities_ipv4_ipv6(_entities):
     for net in _entities["net"].values():
         net.info_unicast = True
@@ -2089,10 +2093,16 @@ def entities_base():
         # create exchange(s)
         entities["ix"] = [
             InternetExchange.objects.create(
-                name="Test Exchange One", org=entities["org"][0], status="ok", tech_email="ix1@localhost"
+                name="Test Exchange One",
+                org=entities["org"][0],
+                status="ok",
+                tech_email="ix1@localhost",
             ),
             InternetExchange.objects.create(
-                name="Test Exchange Two", org=entities["org"][0], status="ok", tech_email="ix2@localhost"
+                name="Test Exchange Two",
+                org=entities["org"][0],
+                status="ok",
+                tech_email="ix2@localhost",
             ),
         ]
 
@@ -2142,7 +2152,7 @@ def entities_base():
                 status="ok",
                 irr_as_set="AS-NFLX",
                 info_unicast=True,
-                info_ipv6=True
+                info_ipv6=True,
             ),
             "UPDATE_DISABLED": Network.objects.create(
                 name="Network w allow ixp update disabled",
@@ -2156,16 +2166,22 @@ def entities_base():
                 policy_general="Open",
                 policy_url="https://www.netflix.com/openconnect/",
                 info_unicast=True,
-                info_ipv6=True
+                info_ipv6=True,
             ),
         }
 
         entities["netcontact"] = [
             NetworkContact.objects.create(
-                email="network1@localhost", network=entities["net"]["UPDATE_ENABLED"], status="ok", role="Policy"
+                email="network1@localhost",
+                network=entities["net"]["UPDATE_ENABLED"],
+                status="ok",
+                role="Policy",
             ),
             NetworkContact.objects.create(
-                email="network2@localhost", network=entities["net"]["UPDATE_DISABLED"], status="ok", role="Policy"
+                email="network2@localhost",
+                network=entities["net"]["UPDATE_DISABLED"],
+                status="ok",
+                role="Policy",
             ),
         ]
         entities["netixlan"] = []
@@ -2176,16 +2192,20 @@ def entities_base():
         entities["org"][0].admin_usergroup.user_set.add(admin_user)
     return entities
 
-@pytest.fixture(params=[
-    entities_ipv4_ipv6,
-    entities_ipv4_ipv6_implied,
-    entities_ipv4_only,
-    entities_ipv6_only,
-])
+
+@pytest.fixture(
+    params=[
+        entities_ipv4_ipv6,
+        entities_ipv4_ipv6_implied,
+        entities_ipv4_only,
+        entities_ipv6_only,
+    ]
+)
 def entities(request):
     _entities = entities_base()
     _func = request.param
     return _func(_entities)
+
 
 class UseIPAddrWrapper:
 
@@ -2211,11 +2231,7 @@ class UseIPAddrWrapper:
         raise ValueError(ipv)
 
 
-@pytest.fixture(params=[
-    (True, True),
-    (True, False),
-    (False, True)
-])
+@pytest.fixture(params=[(True, True), (True, False), (False, True)])
 def use_ip(request):
     """
     Fixture that gives back 3 instances of UseIpAddrWrapper
@@ -2273,6 +2289,7 @@ def assert_network_email(network, email_info):
         email_str = create_email_str(email_i)
         assert email_str in network_email.message
 
+
 def assert_ix_email(ix, email_info):
     ix_email = IXFImportEmail.objects.filter(ix=ix.id).first()
     print("IX email")
@@ -2281,6 +2298,7 @@ def assert_ix_email(ix, email_info):
     for email_i in email_info:
         email_str = create_email_str(email_i)
         assert email_str in ix_email.message
+
 
 def create_email_str(email):
 
@@ -2291,25 +2309,32 @@ def create_email_str(email):
     if not email[3]:
         email[3] = "IPv6 not set"
 
-    return '{} AS{} - {} - {}'.format(*email)
+    return "{} AS{} - {} - {}".format(*email)
+
 
 def assert_no_ticket_exists():
     assert DeskProTicket.objects.count() == 0
 
+
 def assert_no_emails():
     assert IXFImportEmail.objects.count() == 0
+
 
 def assert_no_ix_email(ix):
     assert IXFImportEmail.objects.filter(ix=ix.id).count() == 0
 
+
 def assert_no_network_email(network):
     assert IXFImportEmail.objects.filter(net=network.id).count() == 0
+
 
 def ticket_list():
     return [(t.id, t.subject) for t in DeskProTicket.objects.all().order_by("id")]
 
+
 def email_list():
     return [(t.id, t.subject) for t in IXFImportEmail.objects.all().order_by("id")]
+
 
 def ixf_member_data_list():
     return [

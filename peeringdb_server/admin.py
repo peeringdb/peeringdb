@@ -1549,7 +1549,7 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
         "net",
         "ix",
     )
-    search_fields = ("subject","ix__name","net__name")
+    search_fields = ("subject", "ix__name", "net__name")
     change_list_template = "admin/change_list_with_regex_search.html"
 
     def get_search_results(self, request, queryset, search_term):
@@ -1560,7 +1560,7 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
         if search_term.startswith("^") and search_term.endswith("$"):
             # Convert search to raw string
             try:
-                search_term = search_term.encode('unicode-escape').decode()
+                search_term = search_term.encode("unicode-escape").decode()
             except AttributeError:
                 return queryset, use_distinct
 
@@ -1594,13 +1594,15 @@ class DeskProTicketAdmin(admin.ModelAdmin):
     change_list_template = "admin/change_list_with_regex_search.html"
 
     def get_search_results(self, request, queryset, search_term):
-        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        queryset, use_distinct = super().get_search_results(
+            request, queryset, search_term
+        )
 
         # Require ^ and $ for regex
         if search_term.startswith("^") and search_term.endswith("$"):
             # Convert search to raw string
             try:
-                search_term = search_term.encode('unicode-escape').decode()
+                search_term = search_term.encode("unicode-escape").decode()
             except AttributeError:
                 return queryset, use_distinct
 
@@ -1720,7 +1722,11 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
 
         return qset.filter(requirement_of__isnull=True)
 
-        ids = [row.id for row in qset.exclude(requirement_of__isnull=False) if row.action != "noop"]
+        ids = [
+            row.id
+            for row in qset.exclude(requirement_of__isnull=False)
+            if row.action != "noop"
+        ]
 
         return qset.filter(id__in=ids)
 
