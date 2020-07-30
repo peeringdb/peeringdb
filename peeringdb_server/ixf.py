@@ -1230,7 +1230,7 @@ class Importer:
 
             # prepare consolidation rocketship
 
-            if asn not in net_notifications:
+            if notify_net and asn not in net_notifications:
                 net_notifications[asn] = {
                     "proposals": {},
                     "count": 0,
@@ -1238,7 +1238,7 @@ class Importer:
                     "contacts": ixf_member_data.net_contacts,
                 }
 
-            if ix not in net_notifications[asn]["proposals"]:
+            if notify_net and ix not in net_notifications[asn]["proposals"]:
                 net_notifications[asn]["proposals"][ix] = {
                     "add": [],
                     "modify": [],
@@ -1246,7 +1246,7 @@ class Importer:
                     "protocol_conflict": None,
                 }
 
-            if ix not in ix_notifications:
+            if notify_ix and ix not in ix_notifications:
                 ix_notifications[ix] = {
                     "proposals": {},
                     "count": 0,
@@ -1254,7 +1254,7 @@ class Importer:
                     "contacts": ixf_member_data.ix_contacts,
                 }
 
-            if asn not in ix_notifications[ix]["proposals"]:
+            if notify_ix and asn not in ix_notifications[ix]["proposals"]:
                 ix_notifications[ix]["proposals"][asn] = {
                     "add": [],
                     "modify": [],
