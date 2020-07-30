@@ -1637,7 +1637,7 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
             ipaddr4="195.69.147.200",
             ipaddr6="2001:7f8:1::a500:2906:2",
             status="ok",
-            is_rs_peer=True,
+            is_rs_peer=False,
             operational=True,
         )
     )
@@ -1708,7 +1708,7 @@ def test_mark_invalid_remote_auto_update(entities, save):
             ipaddr4="195.69.147.200",
             ipaddr6="2001:7f8:1::a500:2906:2",
             status="ok",
-            is_rs_peer=True,
+            is_rs_peer=False,
             operational=True,
         )
     )
@@ -1780,6 +1780,9 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
         )
     )
 
+    # this will get resolved since invalid speed means no changes
+    # to the existing netixlan, thus it becomes noop (#792)
+
     preexisting_ixfmember_data = IXFMemberData.objects.create(
         asn=1001,
         ipaddr4="195.69.147.200",
@@ -1792,6 +1795,10 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
         status="ok",
         error=json.dumps({"speed": "Invalid speed value: this is not valid"}),
     )
+
+    # this suggests adding a new netixlan, and will be made
+    # but with an error note attached that the speed could
+    # not be parsed (#792)
 
     preexisting_ixfmember_data = IXFMemberData.objects.create(
         asn=1001,
@@ -1815,7 +1822,13 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    assert IXFMemberData.objects.count() == 2
+    #for email in IXFImportEmail.objects.all():
+    #   print(email.message)
+
+    for ixf_member in IXFMemberData.objects.all():
+        print(ixf_member, ixf_member.id)
+
+    assert IXFMemberData.objects.count() == 1
     assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
@@ -1832,7 +1845,7 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
     Email the ix
     """
 
-    data = setup_test_data("ixf.member.invalid.1")
+    data = setup_test_data("ixf.member.invalid.2")
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
 

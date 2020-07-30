@@ -2785,7 +2785,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 is_rs_peer={"from": netixlan.is_rs_peer, "to": self.is_rs_peer}
             )
 
-        if netixlan.speed != self.speed:
+        if self.speed > 0 and netixlan.speed != self.speed:
             changes.update(speed={"from": netixlan.speed, "to": self.speed})
 
         if netixlan.operational != self.operational:
@@ -3156,9 +3156,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             self.validate_speed()
 
-            netixlan.speed = self.speed
+            if self.speed:
+                netixlan.speed = self.speed
             if self.is_rs_peer is not None:
                 netixlan.is_rs_peer = self.is_rs_peer
+
             netixlan.operational = self.operational
             if save:
                 netixlan.full_clean()
