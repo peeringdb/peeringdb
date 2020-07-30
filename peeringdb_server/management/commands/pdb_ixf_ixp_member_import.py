@@ -108,6 +108,9 @@ class Command(BaseCommand):
         if self.commit:
             IXFMemberData.objects.all().delete()
 
+            # also reset and protocol conflict hints (#771)
+            IXLan.objects.filter(ixf_ixp_import_protocol_conflict__gt=0).update(ixf_ixp_import_protocol_conflict=0)
+
     def reset_all_dismisses(self):
         self.log("Resetting dismisses: setting IXFMemberData.dismissed=False on all IXFMemberData instances")
         if self.commit:

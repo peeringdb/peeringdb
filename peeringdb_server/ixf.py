@@ -142,6 +142,7 @@ class Importer:
         self.now = datetime.datetime.now(datetime.timezone.utc)
         self.invalid_ip_errors = []
         self.notifications = []
+        self.protocol_conflict = 0
 
     def fetch(self, url, timeout=5):
         """
@@ -327,6 +328,13 @@ class Importer:
 
             # update exchange's ixf fields
             self.update_ix()
+
+            if (
+                not self.protocol_conflict
+                and self.ixlan.ixf_ixp_import_protocol_conflict
+            ):
+                self.ixlan.ixf_ixp_import_protocol_conflict = 0
+                self.ixlan.save()
 
             self.save_log()
 
@@ -681,18 +689,26 @@ class Importer:
 
                 continue
 
-            protocol_conflicts = []
+            protocol_conflict = 0
 
             # keep track of conflicts between ix/net in terms of ip
             # protocols supported.
 
             if ipv4_addr and not ipv4_support:
-                protocol_conflicts.append(4)
+                protocol_conflict = 4
+            elif ipv6_addr and not ipv6_support:
+                protocol_conflict = 6
 
-            if ipv6_addr and not ipv6_support:
-                protocol_conflicts.append(6)
+            if (
+                protocol_conflict
+                and self.ixlan.ixf_ixp_import_protocol_conflict != protocol_conflict
+            ):
+                self.ixlan.ixf_ixp_import_protocol_conflict = protocol_conflict
+                self.protocol_conflict = protocol_conflict
 
-            if protocol_conflicts:
+                if self.save:
+                    self.ixlan.save()
+
                 self.queue_notification(
                     IXFMemberData.instantiate(
                         asn,
@@ -1248,14 +1264,17 @@ class Importer:
 
             # render and push proposal text for network
 
-            if notify_net and ixf_member_data.actionable_for_network:
+            if notify_net and (
+                ixf_member_data.actionable_for_network or action == "protocol_conflict"
+            ):
                 proposals = net_notifications[asn]["proposals"][ix]
                 message = ixf_member_data.render_notification(
                     template_file, recipient="net", context=context,
                 )
 
-                if action == "protocol_conflict":
+                if action == "protocol_conflict" and not proposals[action]:
                     proposals[action] = message
+                    net_notifications[asn]["count"] += 1
                 else:
                     proposals[action].append(message)
                     net_notifications[asn]["count"] += 1
@@ -1268,8 +1287,9 @@ class Importer:
                     template_file, recipient="ix", context=context,
                 )
 
-                if action == "protocol_conflict":
+                if action == "protocol_conflict" and not proposals[action]:
                     proposals[action] = message
+                    ix_notifications[ix]["count"] += 1
                 else:
                     proposals[action].append(message)
                     ix_notifications[ix]["count"] += 1

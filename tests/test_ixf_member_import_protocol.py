@@ -75,7 +75,7 @@ def test_resolve_local_ixf(entities, use_ip, save):
     assert IXFMemberData.objects.count() == 0
 
     # We do not email upon resolve
-    assert_no_emails()
+    assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -151,7 +151,7 @@ def test_update_data_attributes(entities, use_ip, save):
     assert_idempotent(importer, ixlan, data)
 
     # Assert no emails
-    assert_no_emails()
+    assert_no_emails(network, ixlan.ix)
 
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
@@ -284,7 +284,7 @@ def test_suggest_modify_local_ixf(entities, use_ip, save):
 
     else:
 
-        assert_no_emails()
+        assert_no_emails(network, ixlan.ix)
         assert IXFMemberData.objects.count() == 1
         assert preexisting_ixfmember_data == IXFMemberData.objects.first()
 
@@ -403,7 +403,7 @@ def test_add_netixlan(entities, use_ip, save):
     assert IXFMemberData.objects.count() == 0
     assert NetworkIXLan.objects.count() == 1
 
-    assert_no_emails()
+    assert_no_emails(network, ixlan.ix)
 
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
@@ -480,7 +480,7 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
         # irrelevant
 
         assert IXFMemberData.objects.count() == 0
-        assert_no_emails()
+        assert_no_emails(network, ixlan.ix)
         assert_idempotent(importer, ixlan, data, save=save)
 
     elif (network.ipv4_support and not use_ip(4)) or (
@@ -495,7 +495,7 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
         email_info = [
             ("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1",)
         ]
-        assert_no_emails()
+        assert_no_emails(network, ixlan.ix)
 
         assert IXFMemberData.objects.count() == 0
         assert NetworkIXLan.objects.count() == 0
@@ -514,13 +514,8 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
     else:
         assert IXFMemberData.objects.count() == 1
         assert NetworkIXLan.objects.count() == 0
-        assert_no_emails()
 
-        # assert (
-        #    "IPv4 195.69.147.250 does not match any prefix on this ixlan"
-        #    in ixfmemberdata.error
-        # )
-
+        assert_no_emails(network, ixlan.ix)
         assert_idempotent(importer, ixlan, data, save=save)
 
 
@@ -581,7 +576,7 @@ def test_add_netixlan_conflict(entities, save):
         # #771
 
         assert IXFMemberData.objects.count() == 0
-        assert_no_emails()
+        assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data, save=save)
@@ -692,7 +687,7 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
         assert IXFMemberData.objects.count() == 1
         assert NetworkIXLan.objects.count() == 1
 
-        assert_no_emails()
+        assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data, save=save)
@@ -900,7 +895,7 @@ def test_suggest_add_no_netixlan_local_ixf(entities, use_ip, save):
         assert_network_email(network, email_info)
 
     else:
-        assert_no_emails()
+        assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -943,7 +938,11 @@ def test_suggest_add_no_netixlan(entities, use_ip, save):
         email_info = [("CREATE", network.asn, None, "2001:7f8:1::a500:2906:1")]
 
     assert_network_email(network, email_info)
-    assert_no_ix_email(ixlan.ix)
+
+    if network.ipv4_support and network.ipv6_support:
+        assert_no_ix_email(ixlan.ix)
+    else:
+        assert_protocol_conflict_email(network, ix=ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -1019,7 +1018,7 @@ def test_single_ipaddr_matches(entities, save):
         assert importer.log["data"][1]["action"] == "delete"
         assert importer.log["data"][2]["action"] == "add"
 
-    assert_no_emails()
+    assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -1061,7 +1060,7 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
     importer.notify_proposals()
 
     if use_ip(4) and use_ip(6):
-        assert_no_emails()
+        assert_no_emails(network, ixlan.ix)
         assert IXFMemberData.objects.count() == 0
         assert NetworkIXLan.objects.count() == 1
 
@@ -1072,7 +1071,7 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
     ):
 
         assert len(importer.log["data"]) == 0
-        assert_no_emails()
+        assert_no_emails(network, ixlan.ix)
 
     else:
 
@@ -1269,7 +1268,7 @@ def test_delete(entities, save):
 
     assert log["action"] == "delete"
     assert NetworkIXLan.objects.filter(status="ok").count() == 1
-    assert_no_emails()
+    assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -1345,7 +1344,7 @@ def test_suggest_delete_local_ixf_has_flag(entities, save):
     assert NetworkIXLan.objects.count() == 2
     assert IXFMemberData.objects.count() == 1
 
-    assert_no_emails()
+    assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -1568,7 +1567,7 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
     importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 2
-    assert_no_emails()
+    assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -1706,7 +1705,7 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
     importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 2
-    assert_no_emails()
+    assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -2011,7 +2010,6 @@ def test_resolve_deskpro_ticket(entities):
             assert "IX-F data provides IPv4 addresses" in email.message
         if not network.ipv6_support:
             assert "IX-F data provides IPv6 addresses" in email.message
-
 
     for email in conflict_emails:
         assert ticket.deskpro_ref in email.subject
@@ -2327,16 +2325,69 @@ def assert_no_ticket_exists():
     assert DeskProTicket.objects.count() == 0
 
 
-def assert_no_emails():
-    assert IXFImportEmail.objects.count() == 0
+def assert_no_emails(network=None, ix=None):
+    if network and (not network.ipv4_support or not network.ipv6_support):
+        assert_protocol_conflict_email(network, ix=ix, network=network)
+    else:
+        assert IXFImportEmail.objects.count() == 0
 
 
 def assert_no_ix_email(ix):
     assert IXFImportEmail.objects.filter(ix=ix.id).count() == 0
 
 
+def assert_protocol_conflict_email(protocols, ix=None, network=None, solo=True):
+
+    """
+    Here we assert that protocol conflict notifications go out
+
+    protocols should be the network instance that defines the protocol
+    support
+
+    if ix is set we assert the notification exists for the ix
+    if network is set we assert the notification exists for the network
+    if solo is True we assert that this is the only notification that exists
+    """
+
+    if not protocols.ipv4_support:
+        unsupported = 4
+    elif not protocols.ipv6_support:
+        unsupported = 6
+    else:
+        raise Exception("Both protocols appear supported")
+
+    search = f"data provides IPv{unsupported} addresses for some "
+
+    if network:
+        qset = IXFImportEmail.objects.filter(net=network)
+        if solo:
+            assert qset.count() == 1
+            assert qset.filter(message__contains=search).count() == 1
+            assert not qset.filter(message__contains="CREATE").exists()
+            assert not qset.filter(message__contains="MODIFY").exists()
+            assert not qset.filter(message__contains="REMOVE").exists()
+        else:
+            assert qset.filter(message__contains=search).exists
+
+    if ix:
+        qset = IXFImportEmail.objects.filter(ix=ix)
+        if solo:
+            assert qset.count() == 1
+            assert qset.filter(message__contains=search).count() == 1
+            assert not qset.filter(message__contains="CREATE").exists()
+            assert not qset.filter(message__contains="MODIFY").exists()
+            assert not qset.filter(message__contains="REMOVE").exists()
+        else:
+            assert qset.filter(message__contains=search).exists
+
+
 def assert_no_network_email(network):
-    assert IXFImportEmail.objects.filter(net=network.id).count() == 0
+    if network.ipv4_support and network.ipv6_support:
+        assert IXFImportEmail.objects.filter(net=network.id).count() == 0
+    else:
+        assert_protocol_conflict_email(
+            protocols=network, network=network,
+        )
 
 
 def ticket_list():

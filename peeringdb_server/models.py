@@ -1773,6 +1773,15 @@ class IXLan(pdb_models.IXLanBase):
         null=True,
         blank=True,
     )
+    ixf_ixp_import_protocol_conflict = models.IntegerField(
+        _("IX-F sent IPs for unsupported protocol"),
+        help_text=_(
+            "IX has been sending IP addresses for protocol not supported by network"
+        ),
+        null=True,
+        blank=True,
+        default=0,
+    )
 
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
