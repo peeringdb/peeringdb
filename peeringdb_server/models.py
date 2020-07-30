@@ -2305,6 +2305,13 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         ),
     )
 
+    is_rs_peer = models.BooleanField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_("RS Peer")
+    )
+
     error = models.TextField(
         null=True,
         blank=True,
@@ -2461,7 +2468,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         instance.speed = kwargs.get("speed", 0)
         instance.operational = kwargs.get("operational", True)
-        instance.is_rs_peer = kwargs.get("is_rs_peer", False)
+        instance.is_rs_peer = kwargs.get("is_rs_peer")
         instance.ixlan = ixlan
         instance.fetched = fetched
         instance.for_deletion = for_deletion
@@ -2773,7 +2780,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if self.marked_for_removal or not netixlan:
             return changes
 
-        if netixlan.is_rs_peer != self.is_rs_peer:
+        if self.is_rs_peer is not None and netixlan.is_rs_peer != self.is_rs_peer:
             changes.update(
                 is_rs_peer={"from": netixlan.is_rs_peer, "to": self.is_rs_peer}
             )
@@ -3021,13 +3028,17 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
                 self._netixlan = NetworkIXLan.objects.get(**filters)
             except NetworkIXLan.DoesNotExist:
+                is_rs_peer = self.is_rs_peer
+                if is_rs_peer is None:
+                    is_rs_peer = False
+
                 self._netixlan = NetworkIXLan(
                     ipaddr4=self.ipaddr4,
                     ipaddr6=self.ipaddr6,
                     speed=self.speed,
                     asn=self.asn,
                     operational=self.operational,
-                    is_rs_peer=self.is_rs_peer,
+                    is_rs_peer=is_rs_peer,
                     ixlan=self.ixlan,
                     network=self.net,
                     status="ok",
@@ -3146,7 +3157,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.validate_speed()
 
             netixlan.speed = self.speed
-            netixlan.is_rs_peer = self.is_rs_peer
+            if self.is_rs_peer is not None:
+                netixlan.is_rs_peer = self.is_rs_peer
             netixlan.operational = self.operational
             if save:
                 netixlan.full_clean()

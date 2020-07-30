@@ -163,6 +163,48 @@ def test_update_data_attributes(entities, use_ip, save):
     assert netixlan.ipaddr4 == use_ip(4, "195.69.147.250")
     assert netixlan.ipaddr6 == use_ip(6, "2001:7f8:1::a500:2906:1")
 
+@pytest.mark.django_db
+def test_update_data_attributes_no_routeserver(entities, save):
+    """
+    The NetIXLan differs from the remote data, but allow_ixp_update is enabled
+    so we update automatically.
+
+    routeserver attribute is missing from remote, we ignore it
+    """
+    data = setup_test_data("ixf.member.4")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    with reversion.create_revision():
+        entities["netixlan"].append(
+            NetworkIXLan.objects.create(
+                network=network,
+                ixlan=ixlan,
+                asn=network.asn,
+                speed=20000,
+                ipaddr4="195.69.147.250",
+                ipaddr6="2001:7f8:1::a500:2906:1",
+                status="ok",
+                is_rs_peer=True,
+                operational=False,
+            )
+        )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert IXFMemberData.objects.count() == 0
+
+    netixlan = entities["netixlan"][-1]
+    netixlan.refresh_from_db()
+    assert netixlan.is_rs_peer == True
+
+
 
 @pytest.mark.django_db
 def test_suggest_modify_local_ixf(entities, use_ip, save):
@@ -374,6 +416,48 @@ def test_suggest_modify(entities, use_ip, save):
 
 
 @pytest.mark.django_db
+def test_suggest_modify_no_routeserver(entities, save):
+    """
+    Netixlan is different from remote in terms of speed, operational, and is_rs_peer.
+    There is no local-ixf existing.
+
+    We need to send out notifications to net and ix
+
+    Routerserver attribute missing from remote, we ignore it
+    """
+    data = setup_test_data("ixf.member.5")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=20000,
+            ipaddr4="195.69.147.250",
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=False,
+        )
+    )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert NetworkIXLan.objects.last().is_rs_peer == True
+    assert IXFMemberData.objects.first().is_rs_peer == None
+
+    # Test idempotent
+    assert_idempotent(importer, ixlan, data, save=save)
+
+
+@pytest.mark.django_db
 def test_add_netixlan(entities, use_ip, save):
     """
     No NetIXLan exists but remote IXF data has information
@@ -411,6 +495,33 @@ def test_add_netixlan(entities, use_ip, save):
     assert NetworkIXLan.objects.first().status == "deleted"
     assert NetworkIXLan.objects.first().ipaddr4 == None
     assert NetworkIXLan.objects.first().ipaddr6 == None
+
+
+@pytest.mark.django_db
+def test_add_netixlan_no_routeserver(entities, use_ip, save):
+    """
+    No NetIXLan exists but remote IXF data has information
+    to create one (without conflicts). Updates are enabled
+    so we create the NetIXLan.
+
+    routeserver attribute isnt present at remote ,we ignore it
+    """
+    data = setup_test_data("ixf.member.4")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert IXFMemberData.objects.count() == 0
+    assert NetworkIXLan.objects.count() == 1
+    assert NetworkIXLan.objects.first().is_rs_peer == False
+
 
 
 @pytest.mark.django_db

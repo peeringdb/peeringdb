@@ -749,9 +749,10 @@ class Importer:
             else:
                 operational = True
 
-            is_rs_peer = ipv4.get("routeserver", False) or ipv6.get(
-                "routeserver", False
-            )
+            if "routeserver" not in ipv4 and "routeserver" not in ipv6:
+                is_rs_peer = None
+            else:
+                is_rs_peer = ipv4.get("routeserver", ipv6.get("routeserver"))
 
             try:
                 ixf_member_data = IXFMemberData.instantiate(
