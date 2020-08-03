@@ -143,6 +143,8 @@ class Importer:
         self.invalid_ip_errors = []
         self.notifications = []
         self.protocol_conflict = 0
+        self.emails = 0
+
 
     def fetch(self, url, timeout=5):
         """
@@ -224,6 +226,8 @@ class Importer:
 
         invalid = None
         vlan_list_found = False
+        ipv4_addresses = {}
+        ipv6_addresses = {}
 
         # This fixes instances where ixps provide two separate entries for
         # vlans in vlan_list for ipv4 and ipv6 (AMS-IX for example)
@@ -240,6 +244,21 @@ class Importer:
                     if keys.count("ipv4") == 1 and keys.count("ipv6") == 1:
                         vlans[0].update(**vlans[1])
                         conn["vlan_list"] = [vlans[0]]
+
+                # de-dupe re-occurring ipv4 / ipv6 addresses
+
+                ipv4 = vlans[0].get("ipv4", {}).get("address")
+                ipv6 = vlans[0].get("ipv6", {}).get("address")
+
+                if ipv4 and ipv4 in ipv4_addresses:
+                    conn.update(ipv4_dupe=ipv4)
+                ipv4_addresses[ipv4] = True
+
+                if ipv6 and ipv6 in ipv6_addresses:
+                    conn.update(ipv6_dupe=ipv6)
+                ipv6_addresses[ipv6] = True
+
+
 
         if not vlan_list_found:
             invalid = _("No entries in any of the vlan_list lists, aborting.")
@@ -608,6 +627,10 @@ class Importer:
 
         asn = member["asnum"]
         for connection in connection_list:
+
+            if connection.get("ipv4_dupe") or connection.get("ipv6_dupe"):
+                continue
+
             self.connection_errors = {}
             state = connection.get("state", "active").lower()
             if state in self.allowed_states:
@@ -1114,7 +1137,7 @@ class Importer:
             )
             mail.send(fail_silently=False)
         else:
-            print("EMAIL", subject, recipients)
+            self.emails += 1
             # debug_mail(
             #    subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
             # )

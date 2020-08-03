@@ -229,3 +229,5 @@ class Command(BaseCommand):
         importer.reset(save=self.commit)
         importer.notifications = total_notifications
         importer.notify_proposals()
+
+        self.stdout.write(f"Emails: {importer.emails}")
