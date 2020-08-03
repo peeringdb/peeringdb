@@ -353,6 +353,7 @@ class Importer:
                 and self.ixlan.ixf_ixp_import_protocol_conflict
             ):
                 self.ixlan.ixf_ixp_import_protocol_conflict = 0
+                print("resetting ixlan protocol conflict")
                 self.ixlan.save()
 
             self.save_log()
@@ -692,12 +693,14 @@ class Importer:
                 ixf_id = [asn]
 
                 if ipv4_addr:
-                    ixf_id.append(ipaddress.ip_address(f"{ipv4_addr}"))
+                    ipv4_addr = ipaddress.ip_address(f"{ipv4_addr}")
+                    ixf_id.append(ipv4_addr)
                 else:
                     ixf_id.append(None)
 
                 if ipv6_addr:
-                    ixf_id.append(ipaddress.ip_address(f"{ipv6_addr}"))
+                    ipv6_addr = ipaddress.ip_address(f"{ipv6_addr}")
+                    ixf_id.append(ipv6_addr)
                 else:
                     ixf_id.append(None)
 
@@ -750,12 +753,14 @@ class Importer:
             elif ipv6_addr and not ipv6_support:
                 protocol_conflict = 6
 
+            if protocol_conflict and not self.protocol_conflict:
+                self.protocol_conflict = protocol_conflict
+
             if (
                 protocol_conflict
-                and self.ixlan.ixf_ixp_import_protocol_conflict != protocol_conflict
+                and not self.ixlan.ixf_ixp_import_protocol_conflict
             ):
                 self.ixlan.ixf_ixp_import_protocol_conflict = protocol_conflict
-                self.protocol_conflict = protocol_conflict
 
                 if self.save:
                     self.ixlan.save()
@@ -842,7 +847,7 @@ class Importer:
         for iface in if_list:
             try:
                 speed += int(iface.get("if_speed", 0))
-            except ValueError:
+            except (ValueError, AttributeError):
                 log_msg = _("Invalid speed value: {}").format(iface.get("if_speed"))
                 self.log_error(log_msg)
                 if "speed" not in self.connection_errors:
