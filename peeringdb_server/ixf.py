@@ -245,7 +245,7 @@ class Importer:
                         vlans[0].update(**vlans[1])
                         conn["vlan_list"] = [vlans[0]]
 
-                # de-dupe re-occurring ipv4 / ipv6 addresses
+                # de-dupe reoccurring ipv4 / ipv6 addresses
 
                 ipv4 = vlans[0].get("ipv4", {}).get("address")
                 ipv6 = vlans[0].get("ipv6", {}).get("address")
@@ -353,7 +353,6 @@ class Importer:
                 and self.ixlan.ixf_ixp_import_protocol_conflict
             ):
                 self.ixlan.ixf_ixp_import_protocol_conflict = 0
-                print("resetting ixlan protocol conflict")
                 self.ixlan.save()
 
             self.save_log()
