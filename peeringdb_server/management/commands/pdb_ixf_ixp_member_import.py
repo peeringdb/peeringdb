@@ -108,6 +108,9 @@ class Command(BaseCommand):
         if self.commit:
             IXFMemberData.objects.all().delete()
 
+            # also reset and protocol conflict hints (#771)
+            IXLan.objects.filter(ixf_ixp_import_protocol_conflict__gt=0).update(ixf_ixp_import_protocol_conflict=0)
+
     def reset_all_dismisses(self):
         self.log("Resetting dismisses: setting IXFMemberData.dismissed=False on all IXFMemberData instances")
         if self.commit:
@@ -119,6 +122,7 @@ class Command(BaseCommand):
         self.log("Resetting email: emptying the IXFImportEmail table")
         if self.commit:
             IXFImportEmail.objects.all().delete()
+            IXLan.objects.filter(ixf_ixp_import_error_notified__isnull=False).update(ixf_ixp_import_error_notified=None)
 
     def reset_all_tickets(self):
         self.log("Resetting tickets: removing DeskProTicket objects where subject contains '[IX-F]'")
@@ -226,3 +230,5 @@ class Command(BaseCommand):
         importer.reset(save=self.commit)
         importer.notifications = total_notifications
         importer.notify_proposals()
+
+        self.stdout.write(f"Emails: {importer.emails}")

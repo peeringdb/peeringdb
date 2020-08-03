@@ -29,7 +29,11 @@ def enable_basic_auth(fn):
             auth = request.META["HTTP_AUTHORIZATION"].split()
             if len(auth) == 2:
                 if auth[0].lower() == "basic":
-                    username, password = base64.b64decode(auth[1]).split(":", 1)
+                    username, password = (
+                        base64.b64decode(auth[1].encode("utf-8"))
+                        .decode("utf-8")
+                        .split(":", 1)
+                    )
                     request.user = authenticate(username=username, password=password)
                     if not request.user:
                         return JsonResponse(

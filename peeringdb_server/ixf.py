@@ -27,6 +27,7 @@ from peeringdb_server.models import (
     EnvironmentSetting,
     debug_mail,
     IXFImportEmail,
+    ValidationErrorEncoder,
 )
 import peeringdb_server.deskpro as deskpro
 
@@ -142,6 +143,8 @@ class Importer:
         self.now = datetime.datetime.now(datetime.timezone.utc)
         self.invalid_ip_errors = []
         self.notifications = []
+        self.protocol_conflict = 0
+        self.emails = 0
 
     def fetch(self, url, timeout=5):
         """
@@ -223,10 +226,16 @@ class Importer:
 
         invalid = None
         vlan_list_found = False
+        ipv4_addresses = {}
+        ipv6_addresses = {}
+
+        # dedupe identical entries in member list
+        member_list = [json.dumps(m) for m in data.get("member_list", [])]
+        member_list = [json.loads(m) for m in set(member_list)]
 
         # This fixes instances where ixps provide two separate entries for
         # vlans in vlan_list for ipv4 and ipv6 (AMS-IX for example)
-        for member in data.get("member_list", []):
+        for member in member_list:
             asn = member.get("asnum")
             for conn in member.get("connection_list", []):
                 vlans = conn.get("vlan_list", [])
@@ -239,6 +248,29 @@ class Importer:
                     if keys.count("ipv4") == 1 and keys.count("ipv6") == 1:
                         vlans[0].update(**vlans[1])
                         conn["vlan_list"] = [vlans[0]]
+
+                # de-dupe reoccurring ipv4 / ipv6 addresses
+
+                ipv4 = vlans[0].get("ipv4", {}).get("address")
+                ipv6 = vlans[0].get("ipv6", {}).get("address")
+
+                ixf_id = (asn, ipv4, ipv6)
+
+                if ipv4 and ipv4 in ipv4_addresses:
+                    invalid = _(
+                        "Address {} assigned to more than one distinct connection"
+                    ).format(ipv4)
+                    break
+
+                ipv4_addresses[ipv4] = ixf_id
+
+                if ipv6 and ipv6 in ipv6_addresses:
+                    invalid = _(
+                        "Address {} assigned to more than one distinct connection"
+                    ).format(ipv6)
+                    break
+
+                ipv6_addresses[ipv6] = ixf_id
 
         if not vlan_list_found:
             invalid = _("No entries in any of the vlan_list lists, aborting.")
@@ -282,6 +314,7 @@ class Importer:
         # null ix-f error note on ixlan if it had error'd before
         if self.ixlan.ixf_ixp_import_error:
             self.ixlan.ixf_ixp_import_error = None
+            self.ixlan.ixf_ixp_import_error_notified = None
             self.ixlan.save()
 
         # bail if there are no active prefixes on the ixlan
@@ -328,6 +361,13 @@ class Importer:
             # update exchange's ixf fields
             self.update_ix()
 
+            if (
+                not self.protocol_conflict
+                and self.ixlan.ixf_ixp_import_protocol_conflict
+            ):
+                self.ixlan.ixf_ixp_import_protocol_conflict = 0
+                self.ixlan.save()
+
             self.save_log()
 
         return True
@@ -367,6 +407,30 @@ class Importer:
         if save_ix:
             ix.save()
 
+    def fix_consolidated_modify(self, ixf_member_data):
+        """
+        fix consolidated modify (#770) to retain value
+        for speed and is_rs_peer (#793)
+        """
+
+        for other in self.pending_save:
+            if other.asn == ixf_member_data.asn:
+                if (
+                    other.init_ipaddr4
+                    and other.init_ipaddr4 == ixf_member_data.init_ipaddr4
+                ) or (
+                    other.init_ipaddr6
+                    and other.init_ipaddr6 == ixf_member_data.init_ipaddr6
+                ):
+
+                    if not other.modify_speed:
+                        other.speed = ixf_member_data.speed
+
+                    if not other.modify_is_rs_peer:
+                        other.is_rs_peer = ixf_member_data.is_rs_peer
+
+                    break
+
     @reversion.create_revision()
     def process_saves(self):
         for ixf_member in self.pending_save:
@@ -405,6 +469,10 @@ class Importer:
                     delete=True,
                     data={},
                 )
+
+                # fix consolidated modify (#770) to retain values
+                # for speed and is_rs_peer (#793)
+                self.fix_consolidated_modify(ixf_member_data)
 
                 self.deletions[ixf_member_data.ixf_id] = ixf_member_data
                 if netixlan.network.allow_ixp_update:
@@ -572,6 +640,7 @@ class Importer:
 
         asn = member["asnum"]
         for connection in connection_list:
+
             self.connection_errors = {}
             state = connection.get("state", "active").lower()
             if state in self.allowed_states:
@@ -633,12 +702,14 @@ class Importer:
                 ixf_id = [asn]
 
                 if ipv4_addr:
-                    ixf_id.append(ipaddress.ip_address(f"{ipv4_addr}"))
+                    ipv4_addr = ipaddress.ip_address(f"{ipv4_addr}")
+                    ixf_id.append(ipv4_addr)
                 else:
                     ixf_id.append(None)
 
                 if ipv6_addr:
-                    ixf_id.append(ipaddress.ip_address(f"{ipv6_addr}"))
+                    ipv6_addr = ipaddress.ip_address(f"{ipv6_addr}")
+                    ixf_id.append(ipv6_addr)
                 else:
                     ixf_id.append(None)
 
@@ -681,18 +752,25 @@ class Importer:
 
                 continue
 
-            protocol_conflicts = []
+            protocol_conflict = 0
 
             # keep track of conflicts between ix/net in terms of ip
             # protocols supported.
 
             if ipv4_addr and not ipv4_support:
-                protocol_conflicts.append(4)
+                protocol_conflict = 4
+            elif ipv6_addr and not ipv6_support:
+                protocol_conflict = 6
 
-            if ipv6_addr and not ipv6_support:
-                protocol_conflicts.append(6)
+            if protocol_conflict and not self.protocol_conflict:
+                self.protocol_conflict = protocol_conflict
 
-            if protocol_conflicts:
+            if protocol_conflict and not self.ixlan.ixf_ixp_import_protocol_conflict:
+                self.ixlan.ixf_ixp_import_protocol_conflict = protocol_conflict
+
+                if self.save:
+                    self.ixlan.save()
+
                 self.queue_notification(
                     IXFMemberData.instantiate(
                         asn,
@@ -733,9 +811,10 @@ class Importer:
             else:
                 operational = True
 
-            is_rs_peer = ipv4.get("routeserver", False) or ipv6.get(
-                "routeserver", False
-            )
+            if "routeserver" not in ipv4 and "routeserver" not in ipv6:
+                is_rs_peer = None
+            else:
+                is_rs_peer = ipv4.get("routeserver", ipv6.get("routeserver"))
 
             try:
                 ixf_member_data = IXFMemberData.instantiate(
@@ -749,12 +828,18 @@ class Importer:
                     ixlan=self.ixlan,
                     save=self.save,
                 )
+
+                if not ixf_member_data.ipaddr4 and not ixf_member_data.ipaddr6:
+                    continue
+
             except NetworkProtocolsDisabled as exc:
                 self.log_error(f"{exc}")
                 continue
 
             if self.connection_errors:
-                ixf_member_data.error = json.dumps(self.connection_errors)
+                ixf_member_data.error = json.dumps(
+                    self.connection_errors, cls=ValidationErrorEncoder
+                )
             else:
                 ixf_member_data.error = ixf_member_data.previous_error
 
@@ -774,8 +859,11 @@ class Importer:
         for iface in if_list:
             try:
                 speed += int(iface.get("if_speed", 0))
-            except ValueError:
-                log_msg = _("Invalid speed value: {}").format(iface.get("if_speed"))
+            except (ValueError, AttributeError):
+                try:
+                    log_msg = _("Invalid speed value: {}").format(iface.get("if_speed"))
+                except AttributeError:
+                    log_msg = _("Invalid speed value: could not be parsed")
                 self.log_error(log_msg)
                 if "speed" not in self.connection_errors:
                     self.connection_errors["speed"] = []
@@ -1069,7 +1157,7 @@ class Importer:
             )
             mail.send(fail_silently=False)
         else:
-            print("EMAIL", subject, recipients)
+            self.emails += 1
             # debug_mail(
             #    subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
             # )
@@ -1214,7 +1302,7 @@ class Importer:
 
             # prepare consolidation rocketship
 
-            if asn not in net_notifications:
+            if notify_net and asn not in net_notifications:
                 net_notifications[asn] = {
                     "proposals": {},
                     "count": 0,
@@ -1222,7 +1310,7 @@ class Importer:
                     "contacts": ixf_member_data.net_contacts,
                 }
 
-            if ix not in net_notifications[asn]["proposals"]:
+            if notify_net and ix not in net_notifications[asn]["proposals"]:
                 net_notifications[asn]["proposals"][ix] = {
                     "add": [],
                     "modify": [],
@@ -1230,7 +1318,7 @@ class Importer:
                     "protocol_conflict": None,
                 }
 
-            if ix not in ix_notifications:
+            if notify_ix and ix not in ix_notifications:
                 ix_notifications[ix] = {
                     "proposals": {},
                     "count": 0,
@@ -1238,7 +1326,7 @@ class Importer:
                     "contacts": ixf_member_data.ix_contacts,
                 }
 
-            if asn not in ix_notifications[ix]["proposals"]:
+            if notify_ix and asn not in ix_notifications[ix]["proposals"]:
                 ix_notifications[ix]["proposals"][asn] = {
                     "add": [],
                     "modify": [],
@@ -1248,14 +1336,17 @@ class Importer:
 
             # render and push proposal text for network
 
-            if notify_net and ixf_member_data.actionable_for_network:
+            if notify_net and (
+                ixf_member_data.actionable_for_network or action == "protocol_conflict"
+            ):
                 proposals = net_notifications[asn]["proposals"][ix]
                 message = ixf_member_data.render_notification(
                     template_file, recipient="net", context=context,
                 )
 
-                if action == "protocol_conflict":
+                if action == "protocol_conflict" and not proposals[action]:
                     proposals[action] = message
+                    net_notifications[asn]["count"] += 1
                 else:
                     proposals[action].append(message)
                     net_notifications[asn]["count"] += 1
@@ -1268,8 +1359,9 @@ class Importer:
                     template_file, recipient="ix", context=context,
                 )
 
-                if action == "protocol_conflict":
+                if action == "protocol_conflict" and not proposals[action]:
                     proposals[action] = message
+                    ix_notifications[ix]["count"] += 1
                 else:
                     proposals[action].append(message)
                     ix_notifications[ix]["count"] += 1
@@ -1481,7 +1573,9 @@ class Importer:
         message = template.render(
             {"error": error, "dt": now, "instance": ixf_member_data}
         )
-        self._ticket(ixf_member_data, subject, message)
+
+        # AC does not want ticket here as per #794
+        # self._ticket(ixf_member_data, subject, message)
 
         if ixf_member_data.ix_contacts:
             self._email(

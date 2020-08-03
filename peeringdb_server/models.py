@@ -1773,6 +1773,15 @@ class IXLan(pdb_models.IXLanBase):
         null=True,
         blank=True,
     )
+    ixf_ixp_import_protocol_conflict = models.IntegerField(
+        _("IX-F sent IPs for unsupported protocol"),
+        help_text=_(
+            "IX has been sending IP addresses for protocol not supported by network"
+        ),
+        null=True,
+        blank=True,
+        default=0,
+    )
 
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
@@ -2296,6 +2305,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         ),
     )
 
+    is_rs_peer = models.BooleanField(
+        default=None, null=True, blank=True, help_text=_("RS Peer")
+    )
+
     error = models.TextField(
         null=True,
         blank=True,
@@ -2401,7 +2414,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         try:
             id_filters = cls.id_filters(asn, ipaddr4, ipaddr6)
-
             instances = cls.objects.filter(**id_filters)
 
             if not instances.exists():
@@ -2452,7 +2464,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         instance.speed = kwargs.get("speed", 0)
         instance.operational = kwargs.get("operational", True)
-        instance.is_rs_peer = kwargs.get("is_rs_peer", False)
+        instance.is_rs_peer = kwargs.get("is_rs_peer")
         instance.ixlan = ixlan
         instance.fetched = fetched
         instance.for_deletion = for_deletion
@@ -2764,12 +2776,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if self.marked_for_removal or not netixlan:
             return changes
 
-        if netixlan.is_rs_peer != self.is_rs_peer:
+        if (
+            self.modify_is_rs_peer
+            and self.is_rs_peer is not None
+            and netixlan.is_rs_peer != self.is_rs_peer
+        ):
             changes.update(
                 is_rs_peer={"from": netixlan.is_rs_peer, "to": self.is_rs_peer}
             )
 
-        if netixlan.speed != self.speed:
+        if self.modify_speed and self.speed > 0 and netixlan.speed != self.speed:
             changes.update(speed={"from": netixlan.speed, "to": self.speed})
 
         if netixlan.operational != self.operational:
@@ -2781,6 +2797,22 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             changes.update(status={"from": netixlan.status, "to": self.status})
 
         return changes
+
+    @property
+    def modify_speed(self):
+        """
+        Returns whether or not the `speed` property
+        is enabled to receive modify updates or not (#793)
+        """
+        return False
+
+    @property
+    def modify_is_rs_peer(self):
+        """
+        Returns whether or not the `is_rs_peer` property
+        is enabled to receive modify updates or not (#793)
+        """
+        return False
 
     @property
     def changed_fields(self):
@@ -3012,13 +3044,17 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
                 self._netixlan = NetworkIXLan.objects.get(**filters)
             except NetworkIXLan.DoesNotExist:
+                is_rs_peer = self.is_rs_peer
+                if is_rs_peer is None:
+                    is_rs_peer = False
+
                 self._netixlan = NetworkIXLan(
                     ipaddr4=self.ipaddr4,
                     ipaddr6=self.ipaddr6,
                     speed=self.speed,
                     asn=self.asn,
                     operational=self.operational,
-                    is_rs_peer=self.is_rs_peer,
+                    is_rs_peer=is_rs_peer,
                     ixlan=self.ixlan,
                     network=self.net,
                     status="ok",
@@ -3136,8 +3172,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             self.validate_speed()
 
-            netixlan.speed = self.speed
-            netixlan.is_rs_peer = self.is_rs_peer
+            if self.modify_speed and self.speed:
+                netixlan.speed = self.speed
+            if self.modify_is_rs_peer and self.is_rs_peer is not None:
+                netixlan.is_rs_peer = self.is_rs_peer
+
             netixlan.operational = self.operational
             if save:
                 netixlan.full_clean()
@@ -3267,6 +3306,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         if not self.id and save:
             self.grab_validation_errors()
+
             self.save()
             return True
 
