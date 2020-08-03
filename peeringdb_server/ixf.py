@@ -314,6 +314,7 @@ class Importer:
         # null ix-f error note on ixlan if it had error'd before
         if self.ixlan.ixf_ixp_import_error:
             self.ixlan.ixf_ixp_import_error = None
+            self.ixlan.ixf_ixp_import_error_notified = None
             self.ixlan.save()
 
         # bail if there are no active prefixes on the ixlan
