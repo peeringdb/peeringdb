@@ -375,6 +375,30 @@ class Importer:
         if save_ix:
             ix.save()
 
+    def fix_consolidated_modify(self, ixf_member_data):
+        """
+        fix consolidated modify (#770) to retain value
+        for speed and is_rs_peer (#793)
+        """
+
+        for other in self.pending_save:
+            if other.asn == ixf_member_data.asn:
+                if (
+                    other.init_ipaddr4
+                    and other.init_ipaddr4 == ixf_member_data.init_ipaddr4
+                ) or (
+                    other.init_ipaddr6
+                    and other.init_ipaddr6 == ixf_member_data.init_ipaddr6
+                ):
+
+                    if not other.modify_speed:
+                        other.speed = ixf_member_data.speed
+
+                    if not other.modify_is_rs_peer:
+                        other.is_rs_peer = ixf_member_data.is_rs_peer
+
+                    break
+
     @reversion.create_revision()
     def process_saves(self):
         for ixf_member in self.pending_save:
@@ -413,6 +437,10 @@ class Importer:
                     delete=True,
                     data={},
                 )
+
+                # fix consolidated modify (#770) to retain values
+                # for speed and is_rs_peer (#793)
+                self.fix_consolidated_modify(ixf_member_data)
 
                 self.deletions[ixf_member_data.ixf_id] = ixf_member_data
                 if netixlan.network.allow_ixp_update:

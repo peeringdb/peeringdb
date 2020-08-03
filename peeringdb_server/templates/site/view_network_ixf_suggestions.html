@@ -298,8 +298,22 @@
         <input type="hidden" data-field="ixlan_id" value="{{ x.ixlan_id }}">
         <input type="hidden" data-field="net_id" value="{{ x.net.id }}">
         <input type="hidden" data-field="asn" value="{{ x.asn }}">
+
+        {% if x.modify_speed %}
         <input type="hidden" data-field="speed" value="{{ x.speed }}">
+        {% else %}
+        <input type="hidden" data-field="speed" value="{% if x.primary_requirement %}{{ x.primary_requirement.speed }}{% else %}{{ x.netixlan.speed }}{% endif %}">
+        {% endif %}
+
+
+        {% if x.modify_is_rs_peer %}
         <input type="checkbox" style="display:none" data-field="is_rs_peer" {% if x.is_rs_peer %}checked{% endif %}>
+        {% elif x.primary_requirement %}
+        <input type="checkbox" style="display:none" data-field="is_rs_peer" {% if x.primary_requirement.is_rs_peer %}checked{% endif %}>
+        {% else %}
+        <input type="checkbox" style="display:none" data-field="is_rs_peer" {% if x.netixlan.is_rs_peer %}checked{% endif %}>
+        {% endif %}
+
         <input type="checkbox" style="display:none" data-field="operational" {% if x.operational %}checked{% endif %}>
 
         {% if x.ipaddr4_on_requirement  %}

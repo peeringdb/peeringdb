@@ -138,14 +138,20 @@ def test_update_data_attributes(entities, use_ip, save):
         log = importer.log["data"][0]
 
         assert log["action"] == "modify"
-        assert "is_rs_peer" in log["reason"]
         assert "operational" in log["reason"]
-        assert "speed" in log["reason"]
+
+        # #793 we are currently ignoring is_rs_peer
+        # and speed for modifies
+        assert "is_rs_peer" not in log["reason"]
+        assert "speed" not in log["reason"]
 
     netixlan = NetworkIXLan.objects.filter(status="ok").first()
     assert netixlan.operational == True
-    assert netixlan.is_rs_peer == True
-    assert netixlan.speed == 10000
+
+    # #793 we are currently ignoring is_rs_peer
+    # and speed for modifies
+    assert netixlan.is_rs_peer == False
+    assert netixlan.speed == 20000
 
     # Assert idempotent
     assert_idempotent(importer, ixlan, data)
@@ -162,6 +168,7 @@ def test_update_data_attributes(entities, use_ip, save):
     assert netixlan.speed == 20000
     assert netixlan.ipaddr4 == use_ip(4, "195.69.147.250")
     assert netixlan.ipaddr6 == use_ip(6, "2001:7f8:1::a500:2906:1")
+
 
 @pytest.mark.django_db
 def test_update_data_attributes_no_routeserver(entities, save):
@@ -203,7 +210,6 @@ def test_update_data_attributes_no_routeserver(entities, save):
     netixlan = entities["netixlan"][-1]
     netixlan.refresh_from_db()
     assert netixlan.is_rs_peer == True
-
 
 
 @pytest.mark.django_db
@@ -521,7 +527,6 @@ def test_add_netixlan_no_routeserver(entities, use_ip, save):
     assert IXFMemberData.objects.count() == 0
     assert NetworkIXLan.objects.count() == 1
     assert NetworkIXLan.objects.first().is_rs_peer == False
-
 
 
 @pytest.mark.django_db
@@ -1677,7 +1682,11 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    assert IXFMemberData.objects.count() == 2
+    # #793 count should be 2 if we were not ignoring changes
+    # to is_rs_peer and speed, but because we currently are
+    # one of the pre-existing ixfmemberdata entries gets resolved
+    assert IXFMemberData.objects.count() == 1
+
     assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
@@ -1723,23 +1732,26 @@ def test_mark_invalid_remote_auto_update(entities, save):
     importer.notify_proposals()
 
     assert NetworkIXLan.objects.count() == 1
-    assert IXFMemberData.objects.count() == 2
+    assert IXFMemberData.objects.count() == 1
 
     # We email to say there is invalid data
     if network.ipv4_support and network.ipv6_support:
         email_info = [
             ("CREATE", network.asn, "195.69.147.100", "2001:7f8:1::a500:2906:4"),
-            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
+            # #793 no modifies to speed or is_rs_peer for now
+            # ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
     elif network.ipv4_support:
         email_info = [
             ("CREATE", network.asn, "195.69.147.100", None),
-            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
+            # #793 no modifies to speed or is_rs_peer for now
+            # ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
     elif network.ipv6_support:
         email_info = [
             ("CREATE", network.asn, None, "2001:7f8:1::a500:2906:4"),
-            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
+            # #793 no modifies to speed or is_rs_peer for now
+            # ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
 
     assert_ix_email(ixlan.ix, email_info)
@@ -1822,7 +1834,7 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    #for email in IXFImportEmail.objects.all():
+    # for email in IXFImportEmail.objects.all():
     #   print(email.message)
 
     for ixf_member in IXFMemberData.objects.all():
@@ -1873,27 +1885,31 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    assert IXFMemberData.objects.count() == 2
+    assert IXFMemberData.objects.count() == 1
 
     # We send an email about the updates
     # But it also contains information about the invalid speed
     if network.ipv4_support and network.ipv6_support:
         email_info = [
             ("CREATE", network.asn, "195.69.147.100", "2001:7f8:1::a500:2906:4"),
-            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
+            # #793 no modifies to speed or is_rs_peer for now
+            # ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
     elif network.ipv4_support:
         email_info = [
             ("CREATE", network.asn, "195.69.147.100", None),
-            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
+            # #793 no modifies to speed or is_rs_peer for now
+            # ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
     elif network.ipv6_support:
         email_info = [
             ("CREATE", network.asn, None, "2001:7f8:1::a500:2906:4"),
-            ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
+            # #793 no modifies to speed or is_rs_peer for now
+            # ("MODIFY", network.asn, "195.69.147.200", "2001:7f8:1::a500:2906:2"),
         ]
 
     assert_ix_email(ixlan.ix, email_info)
+
     assert (
         "Invalid speed value: This is invalid" in IXFImportEmail.objects.first().message
     )
@@ -1962,19 +1978,23 @@ def test_create_deskpro_tickets_after_x_days(entities):
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
 
+    # disable while #793 is active
+    """
     entities["netixlan"].append(
         NetworkIXLan.objects.create(
             network=network,
             ixlan=ixlan,
             asn=network.asn,
             speed=10000,
-            ipaddr4="195.69.147.250",
-            ipaddr6="2001:7f8:1::a500:2906:1",
+            ipaddr4="195.69.147.252",
+            ipaddr6="2001:7f8:1::a500:2906:2",
             status="ok",
             is_rs_peer=True,
             operational=True,
         )
     )
+    """
+
     entities["netixlan"].append(
         NetworkIXLan.objects.create(
             network=network,
@@ -1998,6 +2018,7 @@ def test_create_deskpro_tickets_after_x_days(entities):
             datetime.timezone.utc
         ) - datetime.timedelta(days=14)
         ixfmd.save()
+        print(ixfmd.ixf_id, ixfmd.action)
 
     importer.update(ixlan, data=data)
 
@@ -2038,8 +2059,8 @@ def test_create_deskpro_tickets_no_contacts(entities):
             ixlan=ixlan,
             asn=network.asn,
             speed=10000,
-            ipaddr4="195.69.147.250",
-            ipaddr6="2001:7f8:1::a500:2906:1",
+            ipaddr4="195.69.147.251",
+            ipaddr6="2001:7f8:1::a500:2906:2",
             status="ok",
             is_rs_peer=True,
             operational=True,
@@ -2063,7 +2084,10 @@ def test_create_deskpro_tickets_no_contacts(entities):
     importer.notify_proposals()
 
     # Assert Tickets are created immediately
-    assert DeskProTicket.objects.count() == 4
+    if network.ipv6_support:
+        assert DeskProTicket.objects.count() == 4
+    else:
+        assert DeskProTicket.objects.count() == 3
 
 
 @pytest.mark.django_db
@@ -2072,19 +2096,6 @@ def test_resolve_deskpro_ticket(entities):
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
 
-    entities["netixlan"].append(
-        NetworkIXLan.objects.create(
-            network=network,
-            ixlan=ixlan,
-            asn=network.asn,
-            speed=20000,
-            ipaddr4="195.69.147.250",
-            ipaddr6="2001:7f8:1::a500:2906:1",
-            status="ok",
-            is_rs_peer=True,
-            operational=True,
-        )
-    )
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
     importer.notify_proposals()
@@ -2121,7 +2132,10 @@ def test_resolve_deskpro_ticket(entities):
     # 4 emails total
     # 2 emails for initial consolidated notification
     # 2 emails for ticket
-    assert IXFImportEmail.objects.count() == 4
+    if network.ipv4_support and network.ipv6_support:
+        assert IXFImportEmail.objects.count() == 3
+    else:
+        assert IXFImportEmail.objects.count() == 4
     conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
     consolid_emails = IXFImportEmail.objects.exclude(subject__icontains="conflict")
     assert conflict_emails.count() == 2
@@ -2139,9 +2153,19 @@ def test_resolve_deskpro_ticket(entities):
         assert ticket.deskpro_ref in email.subject
 
     # Resolve issue
-    netixlan = entities["netixlan"][0]
-    netixlan.speed = 10000
-    netixlan.save()
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.250",
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
 
     # Re run import to notify resolution
     importer.notifications = []

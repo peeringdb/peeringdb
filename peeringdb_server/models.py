@@ -2306,10 +2306,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     )
 
     is_rs_peer = models.BooleanField(
-        default=None,
-        null=True,
-        blank=True,
-        help_text=_("RS Peer")
+        default=None, null=True, blank=True, help_text=_("RS Peer")
     )
 
     error = models.TextField(
@@ -2780,12 +2777,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if self.marked_for_removal or not netixlan:
             return changes
 
-        if self.is_rs_peer is not None and netixlan.is_rs_peer != self.is_rs_peer:
+        if (
+            self.modify_is_rs_peer
+            and self.is_rs_peer is not None
+            and netixlan.is_rs_peer != self.is_rs_peer
+        ):
             changes.update(
                 is_rs_peer={"from": netixlan.is_rs_peer, "to": self.is_rs_peer}
             )
 
-        if self.speed > 0 and netixlan.speed != self.speed:
+        if self.modify_speed and self.speed > 0 and netixlan.speed != self.speed:
             changes.update(speed={"from": netixlan.speed, "to": self.speed})
 
         if netixlan.operational != self.operational:
@@ -2797,6 +2798,22 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             changes.update(status={"from": netixlan.status, "to": self.status})
 
         return changes
+
+    @property
+    def modify_speed(self):
+        """
+        Returns whether or not the `speed` property
+        is enabled to receive modify updates or not (#793)
+        """
+        return False
+
+    @property
+    def modify_is_rs_peer(self):
+        """
+        Returns whether or not the `is_rs_peer` property
+        is enabled to receive modify updates or not (#793)
+        """
+        return False
 
     @property
     def changed_fields(self):
@@ -3156,9 +3173,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             self.validate_speed()
 
-            if self.speed:
+            if self.modify_speed and self.speed:
                 netixlan.speed = self.speed
-            if self.is_rs_peer is not None:
+            if self.modify_is_rs_peer and self.is_rs_peer is not None:
                 netixlan.is_rs_peer = self.is_rs_peer
 
             netixlan.operational = self.operational
