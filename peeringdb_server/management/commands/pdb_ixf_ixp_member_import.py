@@ -122,6 +122,7 @@ class Command(BaseCommand):
         self.log("Resetting email: emptying the IXFImportEmail table")
         if self.commit:
             IXFImportEmail.objects.all().delete()
+            IXLan.objects.filter(ixf_ixp_import_error_notified__isnull=False).update(ixf_ixp_import_error_notified=None)
 
     def reset_all_tickets(self):
         self.log("Resetting tickets: removing DeskProTicket objects where subject contains '[IX-F]'")

@@ -2414,7 +2414,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         try:
             id_filters = cls.id_filters(asn, ipaddr4, ipaddr6)
-
             instances = cls.objects.filter(**id_filters)
 
             if not instances.exists():
@@ -3307,6 +3306,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         if not self.id and save:
             self.grab_validation_errors()
+
             self.save()
             return True
 

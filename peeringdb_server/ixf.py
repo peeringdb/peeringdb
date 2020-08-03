@@ -27,6 +27,7 @@ from peeringdb_server.models import (
     EnvironmentSetting,
     debug_mail,
     IXFImportEmail,
+    ValidationErrorEncoder,
 )
 import peeringdb_server.deskpro as deskpro
 
@@ -145,7 +146,6 @@ class Importer:
         self.protocol_conflict = 0
         self.emails = 0
 
-
     def fetch(self, url, timeout=5):
         """
         Retrieves ixf member export data from the url
@@ -229,9 +229,13 @@ class Importer:
         ipv4_addresses = {}
         ipv6_addresses = {}
 
+        # dedupe identical entries in member list
+        member_list = [json.dumps(m) for m in data.get("member_list", [])]
+        member_list = [json.loads(m) for m in set(member_list)]
+
         # This fixes instances where ixps provide two separate entries for
         # vlans in vlan_list for ipv4 and ipv6 (AMS-IX for example)
-        for member in data.get("member_list", []):
+        for member in member_list:
             asn = member.get("asnum")
             for conn in member.get("connection_list", []):
                 vlans = conn.get("vlan_list", [])
@@ -250,23 +254,23 @@ class Importer:
                 ipv4 = vlans[0].get("ipv4", {}).get("address")
                 ipv6 = vlans[0].get("ipv6", {}).get("address")
 
-                if ipv4 and ipv4_addresses.get(ipv4) == (asn, ipv4, ipv6):
-                    conn.update(ipv4_dupe=ipv4)
-                elif ipv4 and ipv4 in ipv4_addresses:
-                    invalid = _("Address {} assigned to more than one distinct connection").format(ipv4)
+                ixf_id = (asn, ipv4, ipv6)
+
+                if ipv4 and ipv4 in ipv4_addresses:
+                    invalid = _(
+                        "Address {} assigned to more than one distinct connection"
+                    ).format(ipv4)
                     break
 
-                ipv4_addresses[ipv4] = (asn, ipv4, ipv6)
+                ipv4_addresses[ipv4] = ixf_id
 
-                if ipv6 and ipv6_addresses.get(ipv6) == (asn, ipv4, ipv6):
-                    conn.update(ipv6_dupe=ipv6)
-                elif ipv6 and ipv6 in ipv6_addresses:
-                    invalid = _("Address {} assigned to more than one distinct connection").format(ipv6)
+                if ipv6 and ipv6 in ipv6_addresses:
+                    invalid = _(
+                        "Address {} assigned to more than one distinct connection"
+                    ).format(ipv6)
                     break
 
-                ipv6_addresses[ipv6] = (asn, ipv4, ipv6)
-
-
+                ipv6_addresses[ipv6] = ixf_id
 
         if not vlan_list_found:
             invalid = _("No entries in any of the vlan_list lists, aborting.")
@@ -636,9 +640,6 @@ class Importer:
         asn = member["asnum"]
         for connection in connection_list:
 
-            if connection.get("ipv4_dupe") or connection.get("ipv6_dupe"):
-                continue
-
             self.connection_errors = {}
             state = connection.get("state", "active").lower()
             if state in self.allowed_states:
@@ -763,10 +764,7 @@ class Importer:
             if protocol_conflict and not self.protocol_conflict:
                 self.protocol_conflict = protocol_conflict
 
-            if (
-                protocol_conflict
-                and not self.ixlan.ixf_ixp_import_protocol_conflict
-            ):
+            if protocol_conflict and not self.ixlan.ixf_ixp_import_protocol_conflict:
                 self.ixlan.ixf_ixp_import_protocol_conflict = protocol_conflict
 
                 if self.save:
@@ -829,12 +827,18 @@ class Importer:
                     ixlan=self.ixlan,
                     save=self.save,
                 )
+
+                if not ixf_member_data.ipaddr4 and not ixf_member_data.ipaddr6:
+                    continue
+
             except NetworkProtocolsDisabled as exc:
                 self.log_error(f"{exc}")
                 continue
 
             if self.connection_errors:
-                ixf_member_data.error = json.dumps(self.connection_errors)
+                ixf_member_data.error = json.dumps(
+                    self.connection_errors, cls=ValidationErrorEncoder
+                )
             else:
                 ixf_member_data.error = ixf_member_data.previous_error
 
@@ -855,7 +859,10 @@ class Importer:
             try:
                 speed += int(iface.get("if_speed", 0))
             except (ValueError, AttributeError):
-                log_msg = _("Invalid speed value: {}").format(iface.get("if_speed"))
+                try:
+                    log_msg = _("Invalid speed value: {}").format(iface.get("if_speed"))
+                except AttributeError:
+                    log_msg = _("Invalid speed value: could not be parsed")
                 self.log_error(log_msg)
                 if "speed" not in self.connection_errors:
                     self.connection_errors["speed"] = []
