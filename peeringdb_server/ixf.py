@@ -250,13 +250,21 @@ class Importer:
                 ipv4 = vlans[0].get("ipv4", {}).get("address")
                 ipv6 = vlans[0].get("ipv6", {}).get("address")
 
-                if ipv4 and ipv4 in ipv4_addresses:
+                if ipv4 and ipv4_addresses.get(ipv4) == (asn, ipv4, ipv6):
                     conn.update(ipv4_dupe=ipv4)
-                ipv4_addresses[ipv4] = True
+                elif ipv4 and ipv4 in ipv4_addresses:
+                    invalid = _("Address {} assigned to more than one distinct connection").format(ipv4)
+                    break
 
-                if ipv6 and ipv6 in ipv6_addresses:
+                ipv4_addresses[ipv4] = (asn, ipv4, ipv6)
+
+                if ipv6 and ipv6_addresses.get(ipv6) == (asn, ipv4, ipv6):
                     conn.update(ipv6_dupe=ipv6)
-                ipv6_addresses[ipv6] = True
+                elif ipv6 and ipv6 in ipv6_addresses:
+                    invalid = _("Address {} assigned to more than one distinct connection").format(ipv6)
+                    break
+
+                ipv6_addresses[ipv6] = (asn, ipv4, ipv6)
 
 
 
@@ -1557,7 +1565,9 @@ class Importer:
         message = template.render(
             {"error": error, "dt": now, "instance": ixf_member_data}
         )
-        self._ticket(ixf_member_data, subject, message)
+
+        # AC does not want ticket here as per #794
+        # self._ticket(ixf_member_data, subject, message)
 
         if ixf_member_data.ix_contacts:
             self._email(
