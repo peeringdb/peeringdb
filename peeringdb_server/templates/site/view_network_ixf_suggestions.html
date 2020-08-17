@@ -49,7 +49,9 @@
 </div>
 {% endif %}
 
-{% for ix_id, ixf_proposals in data.ixf.items %}
+{% for ixf_proposals in data.ixf %}
+{% with ix_id=ixf_proposals.ix.id %}
+
 <div class="ixf-proposals"
   data-ixf-proposals-ix="{{ ixf_proposals.ix.id }}"
   data-ixf-proposals-ix-name="{{ ixf_proposals.ix.name }}"
@@ -57,7 +59,7 @@
   <div class="marg-side-15 marg-top-15">
   <div class="row item" role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">
     <div class="col-xs-10">
-      <h4 class="marg-top"><a>{{ ixf_proposals.ix.name }}</a></h4>
+      <h4 class="marg-top"><a class="ix-name">{{ ixf_proposals.ix.name }}</a></h4>
     </div>
     <div class="col-xs-2 right">
       <span class="collapsed glyphicon glyphicon-expand"></span>
@@ -410,6 +412,7 @@
   </div>
 -->
 </div>
+{% endwith %}
 {% endfor %}
 
 <script>

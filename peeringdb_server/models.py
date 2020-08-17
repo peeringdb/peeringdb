@@ -2577,7 +2577,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             proposals[ix_id][action].append(ixf_member_data)
 
-        return proposals
+        return sorted(proposals.values(), key=lambda x: x["ix"].name.lower())
 
     @property
     def previous_data(self):
