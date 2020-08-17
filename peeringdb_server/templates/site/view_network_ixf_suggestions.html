@@ -276,7 +276,7 @@
 
       </div>
       <div class="col-xs-5">
-        {% if x.net.info_unicast %}
+        {% if x.net.ipv4_support %}
         <div data-field="ipaddr4" data-value="{{ x.ipaddr4|none_blank }}">
         {{ x.ipaddr4|none_blank }}
         </div>
@@ -286,7 +286,7 @@
         </div>
         {% endif %}
 
-        {% if x.net.info_ip6 %}
+        {% if x.net.ipv6_support %}
         <div data-field="ipaddr6" data-value="{{ x.ipaddr6|none_blank }}">
         {{ x.ipaddr6|none_blank }}
         </div>
