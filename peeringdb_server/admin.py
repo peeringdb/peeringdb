@@ -71,6 +71,7 @@ from peeringdb_server.models import (
     DeskProTicket,
     IXFImportEmail,
     EnvironmentSetting,
+    ProtectedAction
 )
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException
@@ -322,8 +323,19 @@ def soft_delete(modeladmin, request, queryset):
         )
         return
 
+
     for row in queryset:
-        row.delete()
+        try:
+            row.delete()
+        except ProtectedAction as err:
+            msg = _("cannot be soft-deleted:")
+            messages.error(
+                request, 
+                f"{row} {msg} {err}"
+            )
+            continue
+
+
 
 
 soft_delete.short_description = _("SOFT DELETE")
