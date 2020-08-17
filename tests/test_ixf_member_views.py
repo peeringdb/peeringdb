@@ -132,6 +132,64 @@ def test_ix_order(admin_user, entities, ip_addresses, ip_addresses_other):
 
 
 
+@pytest.mark.django_db
+def test_check_ixf_proposals(admin_user, entities, prefixes):
+    network = Network.objects.create(
+        name="Network w allow ixp update disabled",
+        org=entities["org"][0],
+        asn=1001,
+        allow_ixp_update=False,
+        status="ok",
+        info_prefixes4=42,
+        info_prefixes6=42,
+        website="http://netflix.com/",
+        policy_general="Open",
+        policy_url="https://www.netflix.com/openconnect/",
+        info_unicast=False,
+        info_ipv6=False
+    )
+    ixlan = entities["ixlan"]
+
+    # We create one Netixlan that matches the ASN and ipaddr6 of the import.json
+    # Therefore, the hint will suggest we modify this netixlan
+    netixlan = NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        ipaddr4="195.69.147.251",
+        ipaddr6="2001:7f8:1::a500:2906:3",
+        status="ok",
+        is_rs_peer=True,
+        operational=True,
+    )
+
+    with open(
+        os.path.join(
+            os.path.dirname(__file__), "data", "ixf", "views", "import.json",
+        ),
+    ) as fh:
+        json_data = json.load(fh)
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=json_data)
+
+
+    client = setup_client(admin_user)
+    url = reverse("net-view", args=(network.id,))
+    response = client.get(url)
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+
+    # Suggest add
+    assert 'data-field="ipaddr4" value="195.69.147.250"' in content
+    assert 'data-field="ipaddr6" value="2001:7f8:1::a500:2906:1"' in content
+
+    # Suggest modify
+    assert 'data-field="ipaddr4" data-value=""' in content
+    assert 'data-field="ipaddr6" data-value="2001:7f8:1::a500:2906:3"' in content
+    
+
 # Functions and fixtures
 
 
