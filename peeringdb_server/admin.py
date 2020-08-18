@@ -322,6 +322,15 @@ def soft_delete(modeladmin, request, queryset):
         )
         return
 
+    for obj in queryset:
+        if hasattr(obj, "deletable") and not obj.deletable:
+            messages.error(
+                request, _("Protected object '{}': {}").format(
+                    obj, obj.not_deletable_reason
+                )
+            )
+            return
+
     for row in queryset:
         row.delete()
 
