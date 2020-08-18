@@ -107,14 +107,14 @@
       <div class="loading-shim" style="display:none;"></div>
       <div class="col-xs-5">
         <div class="editable input-frame">
-          {% if x.net.info_unicast %}
+          {% if x.net.ipv4_support %}
           <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="{{ x.ipaddr4|none_blank }}">
           {% else %}
           <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="">
           {% endif %}
         </div>
         <div class="editable input-frame">
-          {% if x.net.info_ipv6 %}
+          {% if x.net.ipv6_support %}
           <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr6" value="{{ x.ipaddr6|none_blank }}">
           {% else %}
           <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr6" value="">
@@ -276,7 +276,7 @@
 
       </div>
       <div class="col-xs-5">
-        {% if x.net.info_unicast %}
+        {% if x.net.ipv4_support %}
         <div data-field="ipaddr4" data-value="{{ x.ipaddr4|none_blank }}">
         {{ x.ipaddr4|none_blank }}
         </div>
@@ -286,7 +286,7 @@
         </div>
         {% endif %}
 
-        {% if x.net.info_ip6 %}
+        {% if x.net.ipv6_support %}
         <div data-field="ipaddr6" data-value="{{ x.ipaddr6|none_blank }}">
         {{ x.ipaddr6|none_blank }}
         </div>
