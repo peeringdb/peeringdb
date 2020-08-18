@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 
+
 def noop_in_dfz(apps, schema_editor):
 
     IXLanPrefix = apps.get_model("peeringdb_server", "IXLanPrefix")
@@ -14,13 +15,13 @@ def noop_in_dfz(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0051_auto_20200730_1622'),
+        ("peeringdb_server", "0051_auto_20200730_1622"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='ixlanprefix',
-            name='in_dfz',
+            model_name="ixlanprefix",
+            name="in_dfz",
             field=models.BooleanField(default=True),
         ),
         migrations.RunPython(noop_in_dfz),

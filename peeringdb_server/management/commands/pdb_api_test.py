@@ -1526,10 +1526,7 @@ class TestJSON(unittest.TestCase):
             "ixpfx",
             data,
             test_failures={
-                "invalid": [
-                    {"prefix": "127.0.0.0/8"},
-                    {"in_dfz": False}
-                ],
+                "invalid": [{"prefix": "127.0.0.0/8"}, {"in_dfz": False}],
                 "perms": {
                     "prefix": "205.127.237.0/24",
                     "ixlan_id": SHARED["ixlan_r_ok"].id,
@@ -1549,10 +1546,7 @@ class TestJSON(unittest.TestCase):
             SHARED["ixpfx_id"],
             {"prefix": "206.127.236.0/26"},
             test_failures={
-                "invalid": [
-                    {"prefix": "NEEDS TO BE VALID PREFIX"},
-                    {"in_dfz": False}
-                ],
+                "invalid": [{"prefix": "NEEDS TO BE VALID PREFIX"}, {"in_dfz": False}],
                 "perms": {"ixlan_id": SHARED["ixlan_r_ok"].id},
             },
         )
@@ -1604,7 +1598,6 @@ class TestJSON(unittest.TestCase):
         self.assert_delete(
             self.db_org_admin, "ixpfx", test_protected=SHARED["ixpfx_id"]
         )
-
 
     ##########################################################################
 

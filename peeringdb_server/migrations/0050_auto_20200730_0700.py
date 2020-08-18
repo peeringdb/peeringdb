@@ -6,18 +6,27 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0049_deskrpo_ticket_additions'),
+        ("peeringdb_server", "0049_deskrpo_ticket_additions"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='ixlan',
-            name='ixf_ixp_import_protocol_conflict',
-            field=models.IntegerField(blank=True, default=0, help_text='IX has been sending IP addresses for protocol not supported by network', null=True, verbose_name='IX-F sent IPs for unsupported protocol'),
+            model_name="ixlan",
+            name="ixf_ixp_import_protocol_conflict",
+            field=models.IntegerField(
+                blank=True,
+                default=0,
+                help_text="IX has been sending IP addresses for protocol not supported by network",
+                null=True,
+                verbose_name="IX-F sent IPs for unsupported protocol",
+            ),
         ),
         migrations.AlterField(
-            model_name='network',
-            name='allow_ixp_update',
-            field=models.BooleanField(default=False, help_text='Sepcifies whether an IXP is allowed to add a netixlan entry for this network via their ixp_member data'),
+            model_name="network",
+            name="allow_ixp_update",
+            field=models.BooleanField(
+                default=False,
+                help_text="Sepcifies whether an IXP is allowed to add a netixlan entry for this network via their ixp_member data",
+            ),
         ),
     ]

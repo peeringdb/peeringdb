@@ -7,18 +7,27 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0045_fac_rencode_null_out'),
+        ("peeringdb_server", "0045_fac_rencode_null_out"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='ixfmemberdata',
-            name='requirement_of',
-            field=models.ForeignKey(blank=True, help_text='Requirement of another IXFMemberData entry and will be applied alongside it', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='requirement_set', to='peeringdb_server.IXFMemberData'),
+            model_name="ixfmemberdata",
+            name="requirement_of",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Requirement of another IXFMemberData entry and will be applied alongside it",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="requirement_set",
+                to="peeringdb_server.IXFMemberData",
+            ),
         ),
         migrations.AlterField(
-            model_name='ixlan',
-            name='ixf_ixp_member_list_url',
-            field=models.URLField(blank=True, null=True, verbose_name='IX-F Member Export URL'),
+            model_name="ixlan",
+            name="ixf_ixp_member_list_url",
+            field=models.URLField(
+                blank=True, null=True, verbose_name="IX-F Member Export URL"
+            ),
         ),
     ]
