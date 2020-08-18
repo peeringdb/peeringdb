@@ -2191,6 +2191,16 @@ def test_resolve_deskpro_ticket(entities):
         assert ticket.deskpro_ref in email.subject
 
 
+def test_vlan_sanitize(data_ixf_vlan):
+    """
+    test that various vlan_list setups are sanitized correctly
+    """
+    importer = ixf.Importer()
+    sanitized = importer.sanitize_vlans(json.loads(data_ixf_vlan.input)["vlan_list"])
+    assert sanitized == data_ixf_vlan.expected["vlan_list"]
+
+
+
 # FIXTURES
 @pytest.fixture(params=[True, False])
 def save(request):

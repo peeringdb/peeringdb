@@ -219,6 +219,65 @@ class Importer:
 
         return data
 
+    def sanitize_vlans(self, vlans):
+        """
+        Sanitize vlan lists where ip 4 and 6 addresses
+        for the same vlan (determined by vlan id) exist
+        in separate entries by combining those
+        list entries to one
+        """
+
+        _vlans = {}
+        sanitized = []
+
+        for vlan in vlans:
+
+            # if the vlan_id is not specified we want
+            # to default to 0 so we can still group based
+            # on that
+
+            id = vlan.get("vlan_id", 0)
+
+            # neither ipv4 nor ipv6 is specified, there is
+            # nothing to sanitize here, so skip
+
+            if "ipv4" not in vlan and "ipv6" not in vlan:
+                continue
+
+            if id not in _vlans:
+
+                # first occurance of vlan id gets appended
+                # as is
+
+                _vlans[id] = [vlan]
+            else:
+
+                # additional occurances of vlan id get checked
+                # on whether or not they will fill in a missing
+                # ipv4 or ipv6 address, and if so will update
+                # the existing vlan entry.
+                #
+                # otherwise append as a new entry for that vlan id
+
+                current = _vlans[id][-1]
+
+                update = None
+
+                if "ipv4" in vlan and "ipv4" not in current:
+                    update = "ipv4"
+                elif "ipv6" in vlan and "ipv6" not in current:
+                    update = "ipv6"
+
+                if update:
+                    current[update] = vlan[update]
+                else:
+                    _vlans[id].append(vlan)
+
+        for vlan_id, entries in _vlans.items():
+            sanitized.extend(entries)
+
+        return sanitized
+
     def sanitize(self, data):
         """
         Takes ixf data dict and runs some sanitization on it
@@ -238,16 +297,13 @@ class Importer:
         for member in member_list:
             asn = member.get("asnum")
             for conn in member.get("connection_list", []):
-                vlans = conn.get("vlan_list", [])
+
+                conn["vlan_list"] = self.sanitize_vlans(conn.get("vlan_list", []))
+                vlans = conn["vlan_list"]
+
                 if not vlans:
                     continue
                 vlan_list_found = True
-                if len(vlans) == 2:
-                    # if vlans[0].get("vlan_id") == vlans[1].get("vlan_id"):
-                    keys = list(vlans[0].keys()) + list(vlans[1].keys())
-                    if keys.count("ipv4") == 1 and keys.count("ipv6") == 1:
-                        vlans[0].update(**vlans[1])
-                        conn["vlan_list"] = [vlans[0]]
 
                 # de-dupe reoccurring ipv4 / ipv6 addresses
 
@@ -276,6 +332,9 @@ class Importer:
             invalid = _("No entries in any of the vlan_list lists, aborting.")
 
         data["pdb_error"] = invalid
+
+        # set member_list to the sanitized copy
+        data["member_list"] = member_list
 
         return data
 
