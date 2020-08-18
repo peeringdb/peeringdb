@@ -49,7 +49,9 @@
 </div>
 {% endif %}
 
-{% for ix_id, ixf_proposals in data.ixf.items %}
+{% for ixf_proposals in data.ixf %}
+{% with ix_id=ixf_proposals.ix.id %}
+
 <div class="ixf-proposals"
   data-ixf-proposals-ix="{{ ixf_proposals.ix.id }}"
   data-ixf-proposals-ix-name="{{ ixf_proposals.ix.name }}"
@@ -57,7 +59,7 @@
   <div class="marg-side-15 marg-top-15">
   <div class="row item" role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">
     <div class="col-xs-10">
-      <h4 class="marg-top"><a>{{ ixf_proposals.ix.name }}</a></h4>
+      <h4 class="marg-top"><a class="ix-name">{{ ixf_proposals.ix.name }}</a></h4>
     </div>
     <div class="col-xs-2 right">
       <span class="collapsed glyphicon glyphicon-expand"></span>
@@ -105,14 +107,14 @@
       <div class="loading-shim" style="display:none;"></div>
       <div class="col-xs-5">
         <div class="editable input-frame">
-          {% if x.net.info_unicast %}
+          {% if x.net.ipv4_support %}
           <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="{{ x.ipaddr4|none_blank }}">
           {% else %}
           <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="">
           {% endif %}
         </div>
         <div class="editable input-frame">
-          {% if x.net.info_ipv6 %}
+          {% if x.net.ipv6_support %}
           <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr6" value="{{ x.ipaddr6|none_blank }}">
           {% else %}
           <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr6" value="">
@@ -274,7 +276,7 @@
 
       </div>
       <div class="col-xs-5">
-        {% if x.net.info_unicast %}
+        {% if x.net.ipv4_support %}
         <div data-field="ipaddr4" data-value="{{ x.ipaddr4|none_blank }}">
         {{ x.ipaddr4|none_blank }}
         </div>
@@ -284,7 +286,7 @@
         </div>
         {% endif %}
 
-        {% if x.net.info_ip6 %}
+        {% if x.net.ipv6_support %}
         <div data-field="ipaddr6" data-value="{{ x.ipaddr6|none_blank }}">
         {{ x.ipaddr6|none_blank }}
         </div>
@@ -410,6 +412,7 @@
   </div>
 -->
 </div>
+{% endwith %}
 {% endfor %}
 
 <script>
