@@ -71,6 +71,7 @@ from peeringdb_server.models import (
     DeskProTicket,
     IXFImportEmail,
     EnvironmentSetting,
+    ProtectedAction
 )
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException
@@ -254,6 +255,21 @@ class StatusForm(baseForms.ModelForm):
             elif inst.status == "deleted":
                 self.fields["status"].choices = [("ok", "ok"), ("deleted", "deleted")]
 
+    def clean(self):
+
+        """
+        Catches and raises validation errors where an object
+        is to be soft-deleted but cannot be because it is currently
+        protected.
+        """
+
+        if self.cleaned_data.get("DELETE"):
+            if self.instance and hasattr(self.instance, "deletable"):
+                if not self.instance.deletable:
+                    self.cleaned_data["DELETE"] = False
+                    raise ValidationError(self.instance.not_deletable_reason)
+
+
 
 class ModelAdminWithUrlActions(admin.ModelAdmin):
     def make_redirect(self, obj, action):
@@ -323,7 +339,17 @@ def soft_delete(modeladmin, request, queryset):
         return
 
     for row in queryset:
-        row.delete()
+        try:
+            row.delete()
+        except ProtectedAction as err:
+            messages.error(
+                request, _("Protected object '{}': {}").format(
+                    row, err
+                )
+            )
+            continue
+
+
 
 
 soft_delete.short_description = _("SOFT DELETE")
@@ -424,6 +450,7 @@ class IXLanPrefixForm(StatusForm):
         return value
 
     def clean(self):
+        super().clean()
         if self.prefix_changed and not self.instance.deletable:
             raise ValidationError(self.instance.not_deletable_reason)
 
