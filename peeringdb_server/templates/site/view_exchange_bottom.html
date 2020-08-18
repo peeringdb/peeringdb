@@ -11,14 +11,11 @@
   <h5>{% trans "Prefixes" %}</h5>
 
   <div class="row header">
-    <div class="col-xs-3">
+    <div class="col-xs-5">
       <div data-sort-target=".protocol" data-sort-initial="asc">{% trans "Protocol" %}</div>
     </div>
     <div class="col-xs-7">
       <div data-sort-target=".prefix" class="ambiguous">{% trans "Prefix" %}</div>
-    </div>
-    <div class="col-xs-2">
-      <div data-sort-target=".in_dfz" class="ambiguous">{% trans "In DFZ" %}</div>
     </div>
   </div>
 
@@ -34,7 +31,7 @@
         <div data-edit-name="ixlan_id">{{ x.id }}</div>
         <div data-edit-name="protocol">{{ prefix.protocol }}</div>
       </div>
-      <div class="col-xs-3">
+      <div class="col-xs-5">
         {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
         {% endif %}
@@ -47,14 +44,7 @@
            data-edit-name="prefix"
            data-edit-required="yes">{{ prefix.prefix }}</div>
 
-      <div class="col-xs-2"
-        data-edit-type="bool"
-        data-edit-value="{{ prefix.in_dfz }}"
-        data-edit-template="check"
-        data-edit-name="in_dfz">
-          <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not prefix.in_dfz %}-off{% endif %}.png" />
-        </div>
-    </div>
+      </div>
     {% endfor %}
   </div>
   {% if permissions.can_create %}
@@ -237,5 +227,3 @@
 </div><!-- /.modal -->
 
 {% endif %}
-
-

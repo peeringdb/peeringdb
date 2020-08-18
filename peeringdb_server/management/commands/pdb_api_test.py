@@ -384,7 +384,7 @@ class TestJSON(unittest.TestCase):
             "ixlan_id": SHARED["ixlan_r_ok"].id,
             "protocol": "IPv4",
             "prefix": "10.%d.10.0/23" % (self.PREFIX_COUNT + 1),
-            "in_dfz": False,
+            "in_dfz": True,
         }
         if "prefix" not in kwargs:
             self.PREFIX_COUNT += 1
@@ -1527,12 +1527,6 @@ class TestJSON(unittest.TestCase):
 
         SHARED["ixpfx_id"] = r_data["id"]
 
-        # self.assert_create(self.db_org_admin, "ixpfx", data, test_failures={
-        #    "invalid": {
-        #        "prefix": "206.126.236.0/25"
-        #    },
-        # }, test_success=False)
-
         self.assert_update(
             self.db_org_admin,
             "ixpfx",
@@ -1541,6 +1535,7 @@ class TestJSON(unittest.TestCase):
             test_failures={
                 "invalid": {"prefix": "NEEDS TO BE VALID PREFIX"},
                 "perms": {"ixlan_id": SHARED["ixlan_r_ok"].id},
+                "readonly": {"in_dfz": False}
             },
         )
 
@@ -1591,6 +1586,7 @@ class TestJSON(unittest.TestCase):
         self.assert_delete(
             self.db_org_admin, "ixpfx", test_protected=SHARED["ixpfx_id"]
         )
+
 
     ##########################################################################
 
