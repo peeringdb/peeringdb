@@ -1988,7 +1988,7 @@ class IXLanPrefixSerializer(ModelSerializer):
             raise serializers.ValidationError(
                 _(
                     "The `in_dfz` property has been deprecated " \
-                    "and setting it to `False` via the API is no " \
+                    "and setting it to `False` is no " \
                     "longer supported"
                 )
             )
