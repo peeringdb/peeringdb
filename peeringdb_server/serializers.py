@@ -1987,12 +1987,11 @@ class IXLanPrefixSerializer(ModelSerializer):
         if self.initial_data.get("in_dfz", True) == False:
             raise serializers.ValidationError(
                 _(
-                    "The `in_dfz` property has been deprecated " \
-                    "and setting it to `False` is no " \
+                    "The `in_dfz` property has been deprecated "
+                    "and setting it to `False` is no "
                     "longer supported"
                 )
             )
-
 
         if self.instance:
             prefix = data["prefix"]
