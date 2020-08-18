@@ -431,7 +431,6 @@ class Importer:
 
         return True
 
-    @reversion.create_revision()
     def update_ix(self):
 
         """
@@ -454,17 +453,25 @@ class Importer:
             updated__gte=self.now, ixlan=self.ixlan
         ).exists()
 
-        if ixf_member_data_changed or netixlan_data_changed:
-            ix.ixf_last_import = self.now
-            save_ix = True
+        ix.ixf_last_import = self.now
 
         ixf_net_count = len(self.pending_save)
         if ixf_net_count != ix.ixf_net_count:
             ix.ixf_net_count = ixf_net_count
-            save_ix = True
 
-        if save_ix:
-            ix.save()
+        # we do not want these updates to affect the
+        # exchanges `updated` timestamp as per #812
+        # so we temporarily disable auto_now
+
+        ix._meta.get_field("updated").auto_now = False
+        try:
+            with reversion.create_revision():
+                ix.save()
+        finally:
+
+            # always turn auto_now back on afterwards
+
+            ix._meta.get_field("updated").auto_now = True
 
     def fix_consolidated_modify(self, ixf_member_data):
         """

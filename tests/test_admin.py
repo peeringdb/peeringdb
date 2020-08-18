@@ -7,6 +7,7 @@ from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group
 from django.urls import reverse, resolve
 from django.core.management import call_command
+from django.contrib.messages import get_messages
 
 import django_namespace_perms as nsp
 
@@ -682,3 +683,31 @@ class AdminTests(TestCase):
 
             data = json.loads(response.content.decode("utf8"))
             assert len(data)
+
+    def test_protected_entity_errors(self):
+        """
+        Test that attempting to delete a protected
+        entity shows an error message and doesnt raise a 500
+        """
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        org = models.Organization.objects.first()
+
+        url = reverse(
+            "admin:peeringdb_server_organization_changelist",
+        )
+
+        response = client.post(url, {
+            "_selected_action": org.id,
+            "action": "soft_delete"
+        }, follow=True)
+
+        assert response.status_code == 200
+
+        messages = list(get_messages(response.wsgi_request))
+        assert len(messages) == 1
+        assert "Protected object" in str(messages[0])
+
+

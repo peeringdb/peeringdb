@@ -90,6 +90,7 @@ def test_update_data_attributes(entities, use_ip, save):
     data = setup_test_data("ixf.member.0")
     network = entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][0]
+    ix_updated = ixlan.ix.updated
 
     with reversion.create_revision():
         entities["netixlan"].append(
@@ -114,10 +115,12 @@ def test_update_data_attributes(entities, use_ip, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    assert IXFMemberData.objects.count() == 0
+    # assert that the exchange's `updated` field was not
+    # altered by the import (#812)
+    ixlan.ix.refresh_from_db()
+    assert ixlan.ix.updated == ix_updated
 
-    print(importer.log)
-    print(use_ip(4), use_ip(6))
+    assert IXFMemberData.objects.count() == 0
 
     if (network.ipv4_support and not use_ip(4)) or (
         network.ipv6_support and not use_ip(6)
@@ -474,6 +477,8 @@ def test_add_netixlan(entities, use_ip, save):
     network = entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][0]
 
+    ix_updated = ixlan.ix.updated
+
     importer = ixf.Importer()
 
     if not save:
@@ -481,6 +486,11 @@ def test_add_netixlan(entities, use_ip, save):
 
     importer.update(ixlan, data=data)
     importer.notify_proposals()
+
+    # assert that the exchange's `updated` field was not
+    # altered by the import (#812)
+    ixlan.ix.refresh_from_db()
+    assert ixlan.ix.updated == ix_updated
 
     log = importer.log["data"][0]
     assert log["action"] == "add"
@@ -709,6 +719,7 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
     data = setup_test_data("ixf.member.3")
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
+    ix_updated = ixlan.ix.updated
 
     # This appears in the remote-ixf data so should not
     # create a IXFMemberData instance
@@ -750,6 +761,12 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
 
     importer.update(ixlan, data=data)
     importer.notify_proposals()
+
+    # assert that the exchange's `updated` field was not
+    # altered by the import (#812)
+    ixlan.ix.refresh_from_db()
+    assert ixlan.ix.updated == ix_updated
+
 
     if (not network.ipv4_support and use_ip(4) and not use_ip(6)) or (
         not network.ipv6_support and use_ip(6) and not use_ip(4)
@@ -1213,6 +1230,48 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
+@pytest.mark.django_db
+def test_816_edge_case(entities, use_ip, save):
+    """
+    Test that #770 protocol only triggers when the
+    depending deletion is towards the same asn AND
+    not already handled (dependency == noop)
+    """
+
+    data = setup_test_data("ixf.member.1")
+    network = entities["net"]["UPDATE_DISABLED_2"]
+    ixlan = entities["ixlan"][0]
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4=use_ip(4, "195.69.147.250"),
+            ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert IXFMemberData.objects.count() == 2
+    assert IXFMemberData.objects.get(asn=1001).action == "add"
+
+    assert IXFImportEmail.objects.filter(net__asn=1001, message__contains='CREATE').exists()
+    assert not IXFImportEmail.objects.filter(net__asn=1001, message__contains='MODIFY').exists()
+
+    # Test idempotent
+    assert_idempotent(importer, ixlan, data)
+
 
 @pytest.mark.django_db
 def test_two_missing_ipaddrs_no_auto_update(entities, save):
@@ -1341,6 +1400,7 @@ def test_delete(entities, save):
     data = setup_test_data("ixf.member.0")
     network = entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][0]
+    ix_updated = ixlan.ix.updated
 
     with reversion.create_revision():
         entities["netixlan"].append(
@@ -1378,6 +1438,11 @@ def test_delete(entities, save):
 
     importer.update(ixlan, data=data)
     importer.notify_proposals()
+
+    # assert that the exchange's `updated` field was not
+    # altered by the import (#812)
+    ixlan.ix.refresh_from_db()
+    assert ixlan.ix.updated == ix_updated
 
     assert len(importer.log["data"]) == 1
     log = importer.log["data"][0]
@@ -2325,6 +2390,20 @@ def entities_base():
                 name="Network w allow ixp update disabled",
                 org=entities["org"][0],
                 asn=1001,
+                allow_ixp_update=False,
+                status="ok",
+                info_prefixes4=42,
+                info_prefixes6=42,
+                website="http://netflix.com/",
+                policy_general="Open",
+                policy_url="https://www.netflix.com/openconnect/",
+                info_unicast=True,
+                info_ipv6=True,
+            ),
+            "UPDATE_DISABLED_2": Network.objects.create(
+                name="Network w allow ixp update disabled (2)",
+                org=entities["org"][0],
+                asn=1101,
                 allow_ixp_update=False,
                 status="ok",
                 info_prefixes4=42,
