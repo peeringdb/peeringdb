@@ -11,10 +11,10 @@
   <h5>{% trans "Prefixes" %}</h5>
 
   <div class="row header">
-    <div class="col-xs-5">
+    <div class="col-xs-3">
       <div data-sort-target=".protocol" data-sort-initial="asc">{% trans "Protocol" %}</div>
     </div>
-    <div class="col-xs-7">
+    <div class="col-xs-9">
       <div data-sort-target=".prefix" class="ambiguous">{% trans "Prefix" %}</div>
     </div>
   </div>
@@ -31,13 +31,13 @@
         <div data-edit-name="ixlan_id">{{ x.id }}</div>
         <div data-edit-name="protocol">{{ prefix.protocol }}</div>
       </div>
-      <div class="col-xs-5">
+      <div class="col-xs-3">
         {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
         {% endif %}
         {{ prefix.protocol }}
       </div>
-      <div class="col-xs-7"
+      <div class="col-xs-9"
            {% if permissions.can_write %}
            data-edit-type="string"
            {% endif %}

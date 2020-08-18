@@ -559,19 +559,19 @@ class TestJSON(unittest.TestCase):
 
             # we test fail because of invalid data
             if "invalid" in test_failures:
-                data_invalid = copy.copy(data)
-                for k, v in list(test_failures["invalid"].items()):
-                    data_invalid[k] = v
 
-                with pytest.raises(InvalidRequestException) as excinfo:
-                    r = db.create(typ, data_invalid, return_response=True)
-                    # FIXME
-                    # The following lines will not be called since
-                    # the InvalidRequestException is raised
-                    # in the previous line
-                    for k, v in list(test_failures["invalid"].items()):
-                        self.assertIn(k, list(r.keys()))
-                assert "400 Bad Request" in str(excinfo.value)
+                tests = test_failures["invalid"]
+                if not isinstance(tests, list):
+                    tests = [tests]
+
+                for test in tests:
+                    data_invalid = copy.copy(data)
+                    for k, v in list(test.items()):
+                        data_invalid[k] = v
+
+                    with pytest.raises(InvalidRequestException) as excinfo:
+                        r = db.create(typ, data_invalid, return_response=True)
+                    assert "400 Bad Request" in str(excinfo.value)
 
             # we test fail because of parent entity status
             if "status" in test_failures:
@@ -636,13 +636,26 @@ class TestJSON(unittest.TestCase):
 
             # we test fail because of invalid data
             if "invalid" in test_failures:
-                data_invalid = copy.copy(orig)
-                for k, v in list(test_failures["invalid"].items()):
-                    data_invalid[k] = v
 
-                with pytest.raises(InvalidRequestException) as excinfo:
-                    db.update(typ, **data_invalid)
-                assert "400 Bad Request" in str(excinfo.value)
+                tests = test_failures["invalid"]
+
+                # `invalid` test_failures can be a list to
+                # test multiple instances of invalid values
+                # however we also support passing a single
+                # dict of fields, in which case we wrap
+                # it in a list here.
+
+                if not isinstance(tests, list):
+                    tests = [tests]
+
+                for test in tests:
+                    data_invalid = copy.copy(orig)
+                    for k, v in list(test.items()):
+                        data_invalid[k] = v
+
+                    with pytest.raises(InvalidRequestException) as excinfo:
+                        db.update(typ, **data_invalid)
+                    assert "400 Bad Request" in str(excinfo.value)
 
             # we test fail because of permissions
             if "perms" in test_failures:
@@ -1513,7 +1526,10 @@ class TestJSON(unittest.TestCase):
             "ixpfx",
             data,
             test_failures={
-                "invalid": {"prefix": "127.0.0.0/8"},
+                "invalid": [
+                    {"prefix": "127.0.0.0/8"},
+                    {"in_dfz": False}
+                ],
                 "perms": {
                     "prefix": "205.127.237.0/24",
                     "ixlan_id": SHARED["ixlan_r_ok"].id,
@@ -1533,9 +1549,11 @@ class TestJSON(unittest.TestCase):
             SHARED["ixpfx_id"],
             {"prefix": "206.127.236.0/26"},
             test_failures={
-                "invalid": {"prefix": "NEEDS TO BE VALID PREFIX"},
+                "invalid": [
+                    {"prefix": "NEEDS TO BE VALID PREFIX"},
+                    {"in_dfz": False}
+                ],
                 "perms": {"ixlan_id": SHARED["ixlan_r_ok"].id},
-                "readonly": {"in_dfz": False}
             },
         )
 

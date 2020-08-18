@@ -1979,6 +1979,21 @@ class IXLanPrefixSerializer(ModelSerializer):
                 "Prefix netmask invalid, needs to be valid according to the selected protocol"
             )
 
+        # The implementation of #761 has deprecated the in_dfz
+        # property as a writeable setting, if someone tries
+        # to actively set it to `False` let them know it is no
+        # longer supported
+
+        if self.initial_data.get("in_dfz", True) == False:
+            raise serializers.ValidationError(
+                _(
+                    "The `in_dfz` property has been deprecated " \
+                    "and setting it to `False` via the API is no " \
+                    "longer supported"
+                )
+            )
+
+
         if self.instance:
             prefix = data["prefix"]
             if prefix != self.instance.prefix and not self.instance.deletable:
