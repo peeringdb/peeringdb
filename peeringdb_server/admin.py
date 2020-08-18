@@ -432,6 +432,7 @@ class IXLanPrefixInline(SanitizedAdmin, admin.TabularInline):
     model = IXLanPrefix
     extra = 0
     form = IXLanPrefixForm
+    fields = ["status", "protocol", "prefix"]
 
 
 class IXLanInline(SanitizedAdmin, admin.StackedInline):
@@ -988,7 +989,7 @@ class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
 
 class IXLanPrefixAdmin(SoftDeleteAdmin):
     list_display = ("id", "prefix", "ixlan", "ix", "status", "created", "updated")
-    readonly_fields = ("ix", "id")
+    readonly_fields = ("ix", "id", "in_dfz")
     search_fields = ("ixlan__name", "ixlan__ix__name", "prefix")
     list_filter = (StatusFilter,)
     form = IXLanPrefixForm

@@ -3409,6 +3409,10 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         IXLan, on_delete=models.CASCADE, default=0, related_name="ixpfx_set"
     )
 
+    # override in_dfz to default it to True on the schema level (#761)
+
+    in_dfz = models.BooleanField(default=True)
+
     @property
     def descriptive_name(self):
         """
