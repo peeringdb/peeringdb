@@ -2935,8 +2935,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         #
         # action re-classified to modify (#770)
         if action == "add" and self.has_requirements:
-            if self.primary_requirement.asn == self.asn and \
-               self.primary_requirement.action == "delete":
+            if (
+                self.primary_requirement.asn == self.asn
+                and self.primary_requirement.action == "delete"
+            ):
                 action = "modify"
 
         return action

@@ -71,7 +71,7 @@ from peeringdb_server.models import (
     DeskProTicket,
     IXFImportEmail,
     EnvironmentSetting,
-    ProtectedAction
+    ProtectedAction,
 )
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException
@@ -270,7 +270,6 @@ class StatusForm(baseForms.ModelForm):
                     raise ValidationError(self.instance.not_deletable_reason)
 
 
-
 class ModelAdminWithUrlActions(admin.ModelAdmin):
     def make_redirect(self, obj, action):
         opts = obj.model._meta
@@ -342,14 +341,8 @@ def soft_delete(modeladmin, request, queryset):
         try:
             row.delete()
         except ProtectedAction as err:
-            messages.error(
-                request, _("Protected object '{}': {}").format(
-                    row, err
-                )
-            )
+            messages.error(request, _("Protected object '{}': {}").format(row, err))
             continue
-
-
 
 
 soft_delete.short_description = _("SOFT DELETE")
