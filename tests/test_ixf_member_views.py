@@ -130,6 +130,51 @@ def test_ix_order(admin_user, entities, ip_addresses, ip_addresses_other):
     matches = re.findall('<a class="ix-name">([^<]+)</a>', content)
     assert matches == ['Test Exchange One', 'Test Exchange Two']
 
+@pytest.mark.django_db
+def test_dismissed_note(admin_user, entities, ip_addresses):
+
+    """
+    Test that dismissed hints that are no longer relevant (noop)
+    don't show the "you have dimissed suggestions" notification (#809)
+    """
+
+    network = entities["network"]
+    ixlan_a = entities["ixlan"][0]
+
+    create_IXFMemberData(network, ixlan_a, [ip_addresses[0]], True)
+
+    client = setup_client(admin_user)
+    url = reverse("net-view", args=(network.id,))
+
+    response = client.get(url)
+    content = response.content.decode("utf-8")
+
+    # dismissed suggestion still relevant, confirm note is shown
+
+    assert response.status_code == 200
+    assert "You have dismissed some suggestions" in content
+
+    # create netixlan, causing the suggestion to become noop
+
+    NetworkIXLan.objects.create(
+        network = network,
+        asn = network.asn,
+        ixlan = ixlan_a,
+        status = "ok",
+        speed = 0,
+        ipaddr4 = ip_addresses[0][0],
+        ipaddr6 = ip_addresses[0][1],
+    )
+
+    response = client.get(url)
+    content = response.content.decode("utf-8")
+
+    # dismissed suggestion no longer relevant, confirm note is gibe
+
+    assert response.status_code == 200
+    assert "You have dismissed some suggestions" not in content
+
+
 
 
 # Functions and fixtures

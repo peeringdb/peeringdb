@@ -2508,16 +2508,24 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         qset = cls.get_for_network(net).select_related("ixlan", "ixlan__ix")
         qset = qset.filter(dismissed=True)
+        return qset
 
-        dismissed = {}
+    @classmethod
+    def network_has_dismissed_actionable(cls, net):
+        """
+        Returns whether or not the specified network has
+        any dismissed IXFMemberData suggestions that are
+        actionable
 
-        for ixf_member_data in qset:
+        Argument(s):
 
-            ix = ixf_member_data.ix
-            if ix.id not in dismissed:
-                dismissed[ix.id] = ix
+        - net(Network)
+        """
 
-        return dismissed
+        for ixf_member_data in cls.dismissed_for_network(net):
+            if ixf_member_data.action != "noop":
+                return True
+        return False
 
     @classmethod
     def proposals_for_network(cls, net):
