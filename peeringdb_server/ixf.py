@@ -278,8 +278,6 @@ class Importer:
 
         return sanitized
 
-
-
     def sanitize(self, data):
         """
         Takes ixf data dict and runs some sanitization on it
