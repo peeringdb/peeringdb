@@ -133,7 +133,7 @@ def test_ix_order(admin_user, entities, ip_addresses, ip_addresses_other):
 
 
 @pytest.mark.django_db
-def test_check_ixf_proposals(admin_user, entities, prefixes):
+def test_check_ixf_proposals(admin_user, entities, ip_addresses):
     network = Network.objects.create(
         name="Network w allow ixp update disabled",
         org=entities["org"][0],
@@ -148,7 +148,7 @@ def test_check_ixf_proposals(admin_user, entities, prefixes):
         info_unicast=False,
         info_ipv6=False
     )
-    ixlan = entities["ixlan"]
+    ixlan = entities["ixlan"][0]
 
     # We create one Netixlan that matches the ASN and ipaddr6 of the import.json
     # Therefore, the hint will suggest we modify this netixlan
@@ -188,7 +188,7 @@ def test_check_ixf_proposals(admin_user, entities, prefixes):
     # Suggest modify
     assert 'data-field="ipaddr4" data-value=""' in content
     assert 'data-field="ipaddr6" data-value="2001:7f8:1::a500:2906:3"' in content
-    
+
 
 # Functions and fixtures
 
