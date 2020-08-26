@@ -2088,7 +2088,8 @@ class IXLanSerializer(ModelSerializer):
             user = request.user
 
         if instance and not instance.ixf_ixp_member_list_url_viewable(user):
-            del data["ixf_ixp_member_list_url"]
+            if "ixf_ixp_member_list_url" in data:
+                del data["ixf_ixp_member_list_url"]
 
         return data
 

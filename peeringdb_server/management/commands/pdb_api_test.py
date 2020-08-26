@@ -1887,6 +1887,19 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_ixlan_fields_filter(self):
+        """
+        Tests the specific issue of #829 where a get to an ixlan
+        with fields parameter set would raise a 500 error for
+        unauthenticated users
+        """
+        data = self.db_guest.get("ixlan", SHARED["ixlan_rw_ok"].id, fields="ixpfx_set", depth=2)
+        assert len(data) == 1
+        row = data[0]
+        assert list(row.keys()) == ["ixpfx_set"]
+
+    ##########################################################################
+
     def test_guest_005_list_limit(self):
         data = self.db_guest.all("org", limit=10)
         self.assertEqual(len(data), 10)
