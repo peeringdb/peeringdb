@@ -7,6 +7,7 @@ import ipaddress
 
 from django.db import transaction
 from django.core.cache import cache
+from django.core.mail.message import EmailMultiAlternatives
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.template import loader
