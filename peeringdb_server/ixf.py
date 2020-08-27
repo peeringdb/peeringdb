@@ -8,6 +8,7 @@ import ipaddress
 from django.db import transaction
 from django.core.cache import cache
 from django.core.mail.message import EmailMultiAlternatives
+from django.utils.html import strip_tags
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.template import loader
@@ -1214,7 +1215,6 @@ class Importer:
                 recipients=",".join(recipients),
                 ix=ix,
             )
-
             if not self.notify_ix_enabled:
                 return
 
@@ -1228,7 +1228,6 @@ class Importer:
             # debug_mail(
             #    subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
             # )
-
         if email_log:
             email_log.sent = datetime.datetime.now(datetime.timezone.utc)
             email_log.save()
