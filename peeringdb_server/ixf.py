@@ -1223,6 +1223,7 @@ class Importer:
                 subject, strip_tags(message), settings.DEFAULT_FROM_EMAIL, recipients,
             )
             mail.send(fail_silently=False)
+            self.emails += 1
         else:
             self.emails += 1
             # debug_mail(

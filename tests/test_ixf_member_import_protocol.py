@@ -2298,7 +2298,7 @@ def test_send_email(entities, use_ip):
 
     # This should actually send an email
     importer.notify_proposals()
-    assert importer.emails == 0
+    assert importer.emails == 2
 
 
 # FIXTURES
