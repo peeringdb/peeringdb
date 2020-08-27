@@ -1031,9 +1031,9 @@ class Importer:
 
         for ixf_id, deletion in self.deletions.items():
             if deletion.asn == ixf_member_data.asn:
-                if deletion.ipaddr4 == ixf_member_data.init_ipaddr4:
+                if deletion.ipaddr4 and deletion.ipaddr4 == ixf_member_data.init_ipaddr4:
                     ip4_deletion = deletion
-                if deletion.ipaddr6 == ixf_member_data.init_ipaddr6:
+                if deletion.ipaddr6 and deletion.ipaddr6 == ixf_member_data.init_ipaddr6:
                     ip6_deletion = deletion
 
             if ip4_deletion and ip6_deletion:
