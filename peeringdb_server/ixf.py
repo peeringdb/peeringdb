@@ -1223,12 +1223,9 @@ class Importer:
                 subject, strip_tags(message), settings.DEFAULT_FROM_EMAIL, recipients,
             )
             mail.send(fail_silently=False)
-            self.emails += 1
-        else:
-            self.emails += 1
-            # debug_mail(
-            #    subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
-            # )
+
+        self.emails += 1
+        
         if email_log:
             email_log.sent = datetime.datetime.now(datetime.timezone.utc)
             email_log.save()
