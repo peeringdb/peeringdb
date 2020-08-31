@@ -1,6 +1,7 @@
 import json
 import os
 from pprint import pprint
+import pytest
 import reversion
 import requests
 import jsonschema
@@ -8,6 +9,9 @@ import time
 import io
 import datetime
 import ipaddress
+
+from django.test import override_settings
+from django.conf import settings
 
 from peeringdb_server.models import (
     Organization,
@@ -24,7 +28,6 @@ from peeringdb_server.models import (
     IXFImportEmail,
 )
 from peeringdb_server import ixf
-import pytest
 
 
 @pytest.mark.django_db
@@ -2264,6 +2267,38 @@ def test_vlan_sanitize(data_ixf_vlan):
     sanitized = importer.sanitize_vlans(json.loads(data_ixf_vlan.input)["vlan_list"])
     assert sanitized == data_ixf_vlan.expected["vlan_list"]
 
+
+@override_settings(MAIL_DEBUG=False)
+@pytest.mark.django_db
+def test_send_email(entities, use_ip):
+    # Setup is from test_suggest_add()
+    print(f"Debug mode for mail: {settings.MAIL_DEBUG}")
+    data = setup_test_data("ixf.member.3")  # asn1001
+    network = entities["net"]["UPDATE_DISABLED"]  # asn1001
+    ixlan = entities["ixlan"][0]
+
+    # This appears in the remote-ixf data so should not
+    # create a IXFMemberData instance
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4=use_ip(4, "195.69.147.251"),
+            ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:3"),
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    # This should actually send an email
+    importer.notify_proposals()
+    assert importer.emails == 2
 
 
 # FIXTURES
