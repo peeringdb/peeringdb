@@ -4205,6 +4205,15 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         if self.ipaddr6 and not self.ixlan.test_ipv6_address(self.ipaddr6):
             raise ValidationError(_("IPv6 address outside of prefix"))
 
+    def validate_speed(self):
+        if self.speed is None:
+            raise ValidationError(_(f"Speed cannot be none"))
+        if self.speed > settings.DATA_QUALITY_MAX_SPEED:
+            raise ValidationError(_(f"Speed is above max speed {settings.DATA_QUALITY_MAX_SPEED}M"))
+        elif self.speed < settings.DATA_QUALITY_MIN_SPEED:
+            raise ValidationError(_(f"Speed is below min speed {settings.DATA_QUALITY_MIN_SPEED}M"))
+
+
     def clean(self):
         """
         Custom model validation
@@ -4223,6 +4232,11 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             self.validate_ipaddr6()
         except ValidationError as exc:
             errors["ipaddr6"] = exc.message
+
+        try:
+            self.validate_speed()
+        except ValidationError as exc:
+            errors["speed"] = exc.message
 
         if errors:
             raise ValidationError(errors)

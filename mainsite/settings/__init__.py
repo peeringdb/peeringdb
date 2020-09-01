@@ -166,6 +166,12 @@ set_option("DATA_QUALITY_MAX_PREFIXLEN_V6", 116)
 # maximum value to allow for irr set hierarchy depth
 set_option("DATA_QUALITY_MAX_IRR_DEPTH", 3)
 
+# minimum value to allow for speed on an netixlan (currently 100Mbit)
+set_option("DATA_QUALITY_MIN_SPEED", 100)
+
+# maximum value to allow for speed on an netixlan (currently 1Tbit)
+set_option("DATA_QUALITY_MAX_SPEED", 1000000)
+
 RATELIMITS = {
     "request_login_POST": "4/m",
     "request_translation": "2/m",

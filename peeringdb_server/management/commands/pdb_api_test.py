@@ -1657,6 +1657,12 @@ class TestJSON(unittest.TestCase):
             {"invalid": {"ipaddr4": self.get_ip4(SHARED["ixlan_r_ok"])}},
             # test failure if ip6 not in prefix
             {"invalid": {"ipaddr6": self.get_ip6(SHARED["ixlan_r_ok"])}},
+            # test failure if speed is below limit
+            {"invalid": {"speed": 1}},
+            # test failure if speed is above limit
+            {"invalid": {"speed": 1250000}},
+            # test failure if speed is None
+            {"invalid": {"speed": None}},
         ]
 
         for test_failure in test_failures:
