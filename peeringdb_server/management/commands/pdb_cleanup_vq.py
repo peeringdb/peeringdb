@@ -54,22 +54,23 @@ class Command(CustomBaseCommand):
     def _clean_users(self):
         model = User
         content_type = ContentType.objects.get_for_model(model)
-        date = datetime.now(timezone.utc) - timedelta(days=90)
+        date = datetime.now(timezone.utc) - timedelta(days=settings.VQUEUE_USER_MAX_AGE)
 
         qset = VerificationQueueItem.objects.filter(
             content_type=content_type,
             created__lte=date
         )
         count = qset.count()
-        
+
         self.log(f"Deleting VerificationQueueItems for Users created before {date:%x}")
         self.log(f"Items flagged for deletion: {count}")
 
         counter = 0
 
         for vqi in qset:
-            count += 1
-            self.log(f"Deleting VerificationQueueItem for ={poc.id} ... {counter} / {count}")
+            counter += 1
+            self.log(f"Deleting VerificationQueueItem for {vqi.content_type} "
+                     f"id #{vqi.object_id}... {counter} / {count}")
     
             if self.commit:
                 vqi.delete()

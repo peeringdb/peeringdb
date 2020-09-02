@@ -186,6 +186,9 @@ MAX_USER_AFFILIATION_REQUESTS = 5
 # during `pdb_delete_poc` execution. (days)
 set_option("POC_DELETION_PERIOD", 30)
 
+# Sets maximum age for a user-request in the verification queue
+# Otherwise we delete with the pdb_cleanup_vq tool
+set_option("VQUEUE_USER_MAX_AGE", 90)
 
 # Django config
 
