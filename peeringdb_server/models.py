@@ -4206,12 +4206,13 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             raise ValidationError(_("IPv6 address outside of prefix"))
 
     def validate_speed(self):
-        if self.speed is None:
-            raise ValidationError(_(f"Speed cannot be none"))
-        if self.speed > settings.DATA_QUALITY_MAX_SPEED:
-            raise ValidationError(_(f"Speed is above max speed {settings.DATA_QUALITY_MAX_SPEED}M"))
-        elif self.speed < settings.DATA_QUALITY_MIN_SPEED:
-            raise ValidationError(_(f"Speed is below min speed {settings.DATA_QUALITY_MIN_SPEED}M"))
+        if self.speed is not None:
+            if self.speed > settings.DATA_QUALITY_MAX_SPEED:
+                raise ValidationError(
+                    _(f"Speed is above max speed {settings.DATA_QUALITY_MAX_SPEED}M"))
+            elif self.speed < settings.DATA_QUALITY_MIN_SPEED:
+                raise ValidationError(
+                    _(f"Speed is below min speed {settings.DATA_QUALITY_MIN_SPEED}M"))
 
 
     def clean(self):
