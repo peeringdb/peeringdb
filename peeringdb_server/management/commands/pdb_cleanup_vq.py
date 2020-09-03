@@ -6,33 +6,18 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
 from peeringdb_server.models import VerificationQueueItem, User
+from peeringdb_server.management.commands.pdb_base_command import PeeringDBBaseCommand
 
-class CustomBaseCommand(BaseCommand):
-
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--commit", action="store_true", help="will commit the changes"
-        )
-
-    def log(self, msg):
-        if self.commit:
-            self.stdout.write(msg)
-        else:
-            self.stdout.write("[pretend] {}".format(msg))
-
-    def handle(self, *args, **options):
-        self.commit = options.get("commit")
-
-
-class Command(CustomBaseCommand):
+class Command(PeeringDBBaseCommand):
 
     help = "Use this tool to clean up the Verification Queue"
     
     def add_arguments(self, parser):
         super().add_arguments(parser)
-        parser.add_argument(
-            "--users", action="store_true", help="will commit the changes"
-        )
+        subparsers = parser.add_subparsers()
+        parser_users = subparsers.add_parser('users',
+             help='Tool to remove outdated user verification requests')
+        parser_users.set_defaults(func=self._clean_users)
 
     def log(self, msg):
         if self.commit:
@@ -42,14 +27,9 @@ class Command(CustomBaseCommand):
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
-        self.users = options.get("users")
 
-        if self.users:
-            self._clean_users()
-        else:
-            self.log(
-                "Users option is currently the only one supported,"
-                " and the --users flag must be provided to use it.")
+        if options.get("func"):
+            options["func"]()
 
     def _clean_users(self):
         model = User

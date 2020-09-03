@@ -19,7 +19,7 @@ NUM_DAY_OLD_USERS = 10
 def test_cleanup_users(year_old_users, month_old_users, day_old_users):
     vqi_count = VerificationQueueItem.objects.count()
     users_count = User.objects.count()
-    call_command("pdb_cleanup_vq", commit=True, users=True)
+    call_command("pdb_cleanup_vq", "users", commit=True)
 
     # Assert we deleted VQI instances
     assert VerificationQueueItem.objects.count() == vqi_count - NUM_YEAR_OLD_USERS
@@ -33,7 +33,7 @@ def test_cleanup_users_override_settings(year_old_users, month_old_users, day_ol
     vqi_count = VerificationQueueItem.objects.count()
     users_count = User.objects.count()
 
-    call_command("pdb_cleanup_vq", commit=True, users=True)
+    call_command("pdb_cleanup_vq", "users", commit=True)
     # Assert we deleted more VQI instances
     assert VerificationQueueItem.objects.count() == vqi_count - (NUM_YEAR_OLD_USERS + NUM_MONTH_OLD_USERS)
     # Assert users themselves are not deleted
@@ -44,7 +44,7 @@ def test_cleanup_users_no_commit(year_old_users, month_old_users, day_old_users)
     vqi_count = VerificationQueueItem.objects.count()
     users_count = User.objects.count()
 
-    call_command("pdb_cleanup_vq", commit=False, users=True)
+    call_command("pdb_cleanup_vq", "users", commit=False)
     # Assert we didn't delete VQI instances
     assert VerificationQueueItem.objects.count() == vqi_count
     # Assert users themselves are not deleted
@@ -55,7 +55,7 @@ def test_cleanup_users_no_users(year_old_users, month_old_users, day_old_users):
     vqi_count = VerificationQueueItem.objects.count()
     users_count = User.objects.count()
 
-    call_command("pdb_cleanup_vq", commit=True, users=False)
+    call_command("pdb_cleanup_vq", commit=True)
     # Assert we didn't delete VQI instances
     assert VerificationQueueItem.objects.count() == vqi_count
     # Assert users themselves are not deleted
