@@ -4,7 +4,7 @@ class PeeringDBBaseCommand(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--commit", action="store_true", help="will commit the changes"
+            "--commit", action="store_true", help="Commit the changes."
         )
 
     def log(self, msg):

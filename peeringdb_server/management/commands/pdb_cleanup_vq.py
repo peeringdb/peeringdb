@@ -15,15 +15,12 @@ class Command(PeeringDBBaseCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
         subparsers = parser.add_subparsers()
-        parser_users = subparsers.add_parser('users',
-             help='Tool to remove outdated user verification requests')
+        parser_users = subparsers.add_parser(
+            'users',
+            parents=[parser],
+            add_help=False,
+            help='Tool to remove outdated user verification requests')
         parser_users.set_defaults(func=self._clean_users)
-
-    def log(self, msg):
-        if self.commit:
-            self.stdout.write(msg)
-        else:
-            self.stdout.write("[pretend] {}".format(msg))
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
