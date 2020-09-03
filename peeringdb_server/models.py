@@ -4054,6 +4054,14 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
 # ip in prefix
 # prefix on lan
 # FIXME - need unique constraint at save time, allow empty string for ipv4/ipv6
+def format_speed(value):
+    if value >= 1000000:
+        return "%dT" % (value / 10 ** 6)
+    elif value >= 1000:
+        return "%dG" % (value / 10 ** 3)
+    else:
+        return "%dM" % value
+
 @reversion.register
 class NetworkIXLan(pdb_models.NetworkIXLanBase):
     """
@@ -4206,24 +4214,16 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             raise ValidationError(_("IPv6 address outside of prefix"))
 
     def validate_speed(self):
-        def pretty_speed(value):
-            if value >= 1000000:
-                return "%dT" % (value / 10 ** 6)
-            elif value >= 1000:
-                return "%dG" % (value / 10 ** 3)
-            else:
-                return "%dM" % value
-
         if self.speed in [None, 0]:
             pass
         elif self.speed > settings.DATA_QUALITY_MAX_SPEED:
             raise ValidationError(_("Maximum speed: {}").format(
-                    pretty_speed(settings.DATA_QUALITY_MAX_SPEED)
+                    format_speed(settings.DATA_QUALITY_MAX_SPEED)
                     )
             )
         elif self.speed < settings.DATA_QUALITY_MIN_SPEED:
             raise ValidationError(_("Minimum speed: {}").format(
-                    pretty_speed(settings.DATA_QUALITY_MIN_SPEED)
+                    format_speed(settings.DATA_QUALITY_MIN_SPEED)
                     )
             )
 

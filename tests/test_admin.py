@@ -397,7 +397,6 @@ class AdminTests(TestCase):
             ).lower(),
             args=(netixlan.id,),
         )
-        print(url)
         original_speed = netixlan.speed
         data =  {
             "status": netixlan.status,
@@ -416,13 +415,13 @@ class AdminTests(TestCase):
 
         response = client.post(url, data)
         netixlan.refresh_from_db()
-        assert "Speed is above max speed 1000000M" in response.content.decode("utf-8")
+        assert "Maximum speed: 1T" in response.content.decode("utf-8")
         assert netixlan.speed == original_speed
 
         data["speed"] = 10
         response = client.post(url, data)
         netixlan.refresh_from_db()
-        assert "Speed is below min speed 100M" in response.content.decode("utf-8")
+        assert "Minimum speed: 100M" in response.content.decode("utf-8")
         assert netixlan.speed == original_speed
 
     def _run_regex_search(self, model, search_term):
