@@ -407,6 +407,7 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
         item = instance.item
         user = instance.user
 
+
         if type(item) in QUEUE_NOTIFY and not getattr(
             settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False
         ):
@@ -416,26 +417,27 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
             else:
                 rdap = None
 
-            title = f"{instance.content_type} - {item}"
+            with override('en'):
+                title = f"{instance.content_type} - {item}"
 
-            if is_suggested(item):
-                title = f"[SUGGEST] {title}"
+                if is_suggested(item):
+                    title = f"[SUGGEST] {title}"
 
-            ticket_queue(
-                title,
-                loader.get_template("email/notify-pdb-admin-vq.txt").render(
-                    {
-                        "entity_type_name": str(instance.content_type),
-                        "suggested": is_suggested(item),
-                        "item": item,
-                        "user": user,
-                        "rdap": rdap,
-                        "edit_url": "%s%s"
-                        % (settings.BASE_URL, instance.item_admin_url),
-                    }
-                ),
-                instance.user,
-            )
+                ticket_queue(
+                    title,
+                    loader.get_template("email/notify-pdb-admin-vq.txt").render(
+                        {
+                            "entity_type_name": str(instance.content_type),
+                            "suggested": is_suggested(item),
+                            "item": item,
+                            "user": user,
+                            "rdap": rdap,
+                            "edit_url": "%s%s"
+                            % (settings.BASE_URL, instance.item_admin_url),
+                        }
+                    ),
+                    instance.user,
+                )
 
             instance.notified = True
             instance.save()
