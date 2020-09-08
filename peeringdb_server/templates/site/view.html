@@ -155,7 +155,12 @@
                   data-edit-name="{{ flag.name }}"
                   data-edit-value="{{ flag.value }}"
                   data-edit-template="check">
-                  <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not flag.value %}-off{% endif %}.png" />
+                  <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not flag.value %}-off{% endif %}.png" 
+                  {% if flag.help_text %}
+                  data-toggle="tooltip"
+                  title="{{ flag.help_text }}"
+                  {% endif %}
+                  />
             </span>
             <span class="enabled">{{ flag.label }}</span>
           {% endfor %}
