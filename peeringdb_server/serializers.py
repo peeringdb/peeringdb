@@ -1464,6 +1464,16 @@ class NetworkIXLanSerializer(ModelSerializer):
 
     def validate(self, data):
         netixlan = NetworkIXLan(**data)
+        network = data["network"]
+
+        poc = network.poc_set_active.filter(
+            role__in=["Technical", "NOC", "Policy"], visible__in=["Users", "Public"]
+        ).count()
+
+        if poc == 0:
+            raise serializers.ValidationError(
+                _("Must set technical POC for network before adding exchange point")
+            )
 
         try:
             netixlan.validate_ipaddr4()
@@ -1866,7 +1876,9 @@ class NetworkSerializer(ModelSerializer):
     def update(self, instance, validated_data):
         if validated_data.get("asn") != instance.asn:
             raise serializers.ValidationError(
-                {"asn": _("ASN cannot be changed."),}
+                {
+                    "asn": _("ASN cannot be changed."),
+                }
             )
         return super(ModelSerializer, self).update(instance, validated_data)
 
