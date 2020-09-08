@@ -1115,7 +1115,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="fac_set"
     )
-
+    website = models.URLField(_("Website"), blank=False)
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
     class HandleRef:
@@ -1530,7 +1530,8 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Returns permissioning namespace for an exchange
         """
         return "{}.internetexchange.{}".format(
-            Organization.nsp_namespace_from_id(org_id), ix_id,
+            Organization.nsp_namespace_from_id(org_id),
+            ix_id,
         )
 
     @property
@@ -2183,9 +2184,9 @@ class IXLanIXFMemberImportLog(models.Model):
             if entry.rollback_status() == 0:
                 if entry.version_before:
                     entry.version_before.revert()
-                    related = self.entries.filter(netixlan=entry.netixlan,).exclude(
-                        id=entry.id
-                    )
+                    related = self.entries.filter(
+                        netixlan=entry.netixlan,
+                    ).exclude(id=entry.id)
                     for _entry in related.order_by("-id"):
                         try:
                             _entry.version_before.revert()
@@ -2316,7 +2317,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     )
     reason = models.CharField(max_length=255, default="")
 
-    fetched = models.DateTimeField(_("Last Fetched"),)
+    fetched = models.DateTimeField(
+        _("Last Fetched"),
+    )
 
     ixlan = models.ForeignKey(IXLan, related_name="ixf_set", on_delete=models.CASCADE)
 
@@ -3393,7 +3396,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if not self.netixlan.id:
             return ""
         path = django.urls.reverse(
-            "admin:peeringdb_server_networkixlan_change", args=(self.netixlan.id,),
+            "admin:peeringdb_server_networkixlan_change",
+            args=(self.netixlan.id,),
         )
         return f"{settings.BASE_URL}{path}"
 
@@ -3402,7 +3406,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if not self.id:
             return ""
         path = django.urls.reverse(
-            "admin:peeringdb_server_ixfmemberdata_change", args=(self.id,),
+            "admin:peeringdb_server_ixfmemberdata_change",
+            args=(self.id,),
         )
         return f"{settings.BASE_URL}{path}"
 
@@ -3438,7 +3443,8 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         Returns permissioning namespace for an ixpfx
         """
         return "{}.prefix.{}".format(
-            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id), id,
+            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id),
+            id,
         )
 
     @classmethod
@@ -4737,11 +4743,17 @@ class EnvironmentSetting(models.Model):
     value_float = models.FloatField(blank=True, null=True)
 
     updated = models.DateTimeField(
-        _("Last Updated"), auto_now=True, null=True, blank=True,
+        _("Last Updated"),
+        auto_now=True,
+        null=True,
+        blank=True,
     )
 
     created = models.DateTimeField(
-        _("Configured on"), auto_now_add=True, blank=True, null=True,
+        _("Configured on"),
+        auto_now_add=True,
+        blank=True,
+        null=True,
     )
 
     user = models.ForeignKey(
