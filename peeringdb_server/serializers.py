@@ -1477,8 +1477,8 @@ class NetworkIXLanSerializer(ModelSerializer):
         if poc == 0:
             raise serializers.ValidationError(
                 _(
-                    "Must set a Technical, NOC or Policy point of contact "
-                    "for network before adding exchange point."
+                    "Network must have a Technical, NOC, or Policy point of contact "
+                    "with valid email before adding exchange point."
                 )
             )
 
