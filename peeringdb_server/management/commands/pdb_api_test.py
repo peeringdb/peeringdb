@@ -571,6 +571,7 @@ class TestJSON(unittest.TestCase):
 
                     with pytest.raises(InvalidRequestException) as excinfo:
                         r = db.create(typ, data_invalid, return_response=True)
+
                     assert "400 Bad Request" in str(excinfo.value)
 
             # we test fail because of parent entity status
@@ -1122,7 +1123,10 @@ class TestJSON(unittest.TestCase):
             data,
             test_success=False,
             test_failures={
-                "invalid": {"prefix": self.get_prefix4(), "tech_email": "",},
+                "invalid": {
+                    "prefix": self.get_prefix4(),
+                    "tech_email": "",
+                },
             },
         )
 
@@ -1131,7 +1135,12 @@ class TestJSON(unittest.TestCase):
             "ix",
             data,
             test_success=False,
-            test_failures={"invalid": {"prefix": self.get_prefix4(), "website": "",},},
+            test_failures={
+                "invalid": {
+                    "prefix": self.get_prefix4(),
+                    "website": "",
+                },
+            },
         )
 
         self.assert_create(
@@ -1139,7 +1148,9 @@ class TestJSON(unittest.TestCase):
             "ix",
             data,
             test_success=False,
-            test_failures={"invalid": {"prefix": ""},},
+            test_failures={
+                "invalid": {"prefix": ""},
+            },
         )
 
         # test ix creation with a ipv6 prefix
@@ -1148,7 +1159,9 @@ class TestJSON(unittest.TestCase):
 
         # check protected ix validation
         self.assert_delete(
-            self.db_org_admin, "ix", test_protected=SHARED["ix_rw_ok"].id,
+            self.db_org_admin,
+            "ix",
+            test_protected=SHARED["ix_rw_ok"].id,
         )
 
     ##########################################################################
@@ -1161,7 +1174,10 @@ class TestJSON(unittest.TestCase):
             "fac",
             data,
             test_failures={
-                "invalid": {"name": "",},
+                "invalid": [
+                    {"name": ""},
+                    {"name": self.make_name("Test"), "website": ""},
+                ],
                 "perms": {
                     # need to set name again so it doesnt fail unique validation
                     "name": self.make_name("Test"),
@@ -1204,7 +1220,9 @@ class TestJSON(unittest.TestCase):
 
         # check protected ix validation
         self.assert_delete(
-            self.db_org_admin, "fac", test_protected=SHARED["fac_rw_ok"].id,
+            self.db_org_admin,
+            "fac",
+            test_protected=SHARED["fac_rw_ok"].id,
         )
 
         # Create new data with a non-null rencode
@@ -1219,6 +1237,36 @@ class TestJSON(unittest.TestCase):
 
         # But rencode should be null
         assert r_data_new["rencode"] == ""
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_PUT_DELETE_fac_zipcode(self):
+        data = self.make_data_fac()
+
+        # Requires a zipcode if country is a country
+        # with postal codes (ie US)
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "fac",
+            data,
+            test_failures={
+                "invalid": [
+                    {"name": self.make_name("Test"), "zipcode": ""},
+                ],
+            },
+            test_success=False,
+        )
+
+        # Change to country w/o postal codes
+        data["country"] = "ZW"
+        data["zipcode"] = ""
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "fac",
+            data,
+        )
+        assert r_data["zipcode"] == ""
 
     ##########################################################################
 
@@ -1265,7 +1313,9 @@ class TestJSON(unittest.TestCase):
             "net",
             SHARED["net_id"],
             data,
-            test_failures={"invalid": {"asn": data["asn"] + 1},},
+            test_failures={
+                "invalid": {"asn": data["asn"] + 1},
+            },
         )
 
         self.assert_delete(
@@ -1571,7 +1621,11 @@ class TestJSON(unittest.TestCase):
         pfx.delete()
 
         data.update(prefix="205.127.237.0/24")
-        r_data = self.assert_create(self.db_org_admin, "ixpfx", data,)
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "ixpfx",
+            data,
+        )
 
         # make sure protocols are validated
         r_data = self.assert_create(
@@ -1893,7 +1947,9 @@ class TestJSON(unittest.TestCase):
         with fields parameter set would raise a 500 error for
         unauthenticated users
         """
-        data = self.db_guest.get("ixlan", SHARED["ixlan_rw_ok"].id, fields="ixpfx_set", depth=2)
+        data = self.db_guest.get(
+            "ixlan", SHARED["ixlan_rw_ok"].id, fields="ixpfx_set", depth=2
+        )
         assert len(data) == 1
         row = data[0]
         assert list(row.keys()) == ["ixpfx_set"]
@@ -2696,7 +2752,10 @@ class TestJSON(unittest.TestCase):
             self.assert_create(
                 db,
                 "netfac",
-                {"net_id": SHARED["net_r_ok"].id, "fac_id": SHARED["fac_r2_ok"].id,},
+                {
+                    "net_id": SHARED["net_r_ok"].id,
+                    "fac_id": SHARED["fac_r2_ok"].id,
+                },
                 test_failures={"perms": {}},
                 test_success=False,
             )
@@ -3108,7 +3167,10 @@ class TestJSON(unittest.TestCase):
         self.assert_create(
             self.db_org_admin,
             "netixlan",
-            self.make_data_netixlan(ixlan_id=A.ixlan_id, net_id=A.network_id,),
+            self.make_data_netixlan(
+                ixlan_id=A.ixlan_id,
+                net_id=A.network_id,
+            ),
             test_success=False,
             test_failures={"invalid": {"ipaddr6": str(A.ipaddr6)}},
         )

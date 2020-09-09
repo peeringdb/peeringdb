@@ -60,7 +60,7 @@ def validate_zipcode(zipcode, country):
         return ""
     else:
         if (zipcode is None) or (zipcode == ""):
-            raise ValidationError(_("Zipcode is required for this country."))
+            raise ValidationError(_("Input required"))
         else:
             return zipcode
 
