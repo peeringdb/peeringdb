@@ -1466,9 +1466,13 @@ class NetworkIXLanSerializer(ModelSerializer):
         netixlan = NetworkIXLan(**data)
         network = data["network"]
 
-        poc = network.poc_set_active.filter(
-            role__in=["Technical", "NOC", "Policy"], visible__in=["Users", "Public"]
-        ).count()
+        poc = (
+            network.poc_set_active.filter(
+                role__in=["Technical", "NOC", "Policy"], visible__in=["Users", "Public"]
+            )
+            .exclude(email="")
+            .count()
+        )
 
         if poc == 0:
             raise serializers.ValidationError(
