@@ -167,7 +167,10 @@
               </span>
               <span class="enabled">
                   {{ flag.label }}
-                </span>
+              </span>
+              {% if flag.help_text %}
+                <span class="glyphicon glyphicon-question-sign"/>
+              {% endif %}
             </span>
           {% endfor %}
           </div>
