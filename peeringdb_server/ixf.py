@@ -4,7 +4,7 @@ import datetime
 
 import requests
 import ipaddress
-
+from smtplib import SMTPException 
 from django.db import transaction
 from django.core.cache import cache
 from django.core.mail.message import EmailMultiAlternatives
@@ -1673,10 +1673,19 @@ class Importer:
         Resend emails that weren't sent.
         """
 
-        emails_to_resend = IXFImportEmail.objects.filter(sent__isnull=True).all()
+        resent_emails = []
+        for email in self.emails_to_resend:
+            try:
+                resent_email = self._resend_email(email)
+                resent_emails.append(resent_email)
+            except SMTPException as email_exception:
+                pass
 
-        for email in emails_to_resend:
-            self._resend_email(email)
+        return resent_emails
+
+    @property
+    def emails_to_resend(self):
+        return IXFImportEmail.objects.filter(sent__isnull=True).all()
 
     def _resend_email(self, email):
 
@@ -1684,9 +1693,6 @@ class Importer:
         resend_message = "This email could not be delivered initially and may contain stale information. \n"
         resend_message += strip_tags(email.message)
         recipients = email.recipients.split(",")
-
-        print(email.message)
-        print(strip_tags(email.message))
 
         if email.net and not self.notify_net_enabled:
             return False
@@ -1701,7 +1707,7 @@ class Importer:
         email.message = resend_message
         email.save()
 
-        return True
+        return email
 
 
 class PostMortem:
