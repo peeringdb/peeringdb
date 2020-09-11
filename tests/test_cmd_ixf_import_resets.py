@@ -166,6 +166,43 @@ def test_runtime_errors(entities, capsys, mocker):
     assert pytest_wrapped_exit.value.code == 1
 
 
+# Want to test that other uncaught errors also exit with
+# exit code 1
+@pytest.mark.django_db
+def test_runtime_errors_uncaught(entities, capsys, mocker):
+    ixlan = entities["ixlan"]
+    ixlan.ixf_ixp_import_enabled = True
+    ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
+    ixlan.save()
+    asn = entities["net"].asn
+
+    """
+    When importer.notify_proposals() is called within the commandline
+    tool, we want to throw an unexpected error. This happens outside
+    the error logging.
+    """
+    mocker.patch(
+        "peeringdb_server.management.commands.pdb_ixf_ixp_member_import.ixf.Importer.notify_proposals",
+        side_effect=ImportError("Uncaught bug"),
+    )
+
+    """
+    Here we have to just assert that the commandline tool will raise that error
+    itself, as opposed to being wrapped in a system exit
+    """
+    with pytest.raises(ImportError) as pytest_uncaught_error:
+        call_command(
+            "pdb_ixf_ixp_member_import",
+            skip_import=True,
+            commit=True,
+            ixlan=[ixlan.id],
+            asn=asn,
+        )
+
+    # Assert we are outputting the exception and traceback to the stderr
+    assert "Uncaught bug" in str(pytest_uncaught_error.value)
+
+
 @pytest.fixture
 def entities():
     entities = {}
