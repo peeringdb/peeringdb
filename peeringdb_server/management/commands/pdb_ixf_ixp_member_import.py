@@ -85,15 +85,6 @@ class Command(BaseCommand):
         for error in self.runtime_errors:
             self.stderr.write(error)
 
-    def raise_error(self):
-        raise ImportError("Fake import error")
-
-    def release_env_check(self, flag):
-        if settings.RELEASE_ENV != "prod":
-            return True
-        else:
-            raise PermissionError("Flag {} is not permitted to be used in production.")
-
     def initiate_reset_flags(self, **options):
         flags = [
             "reset",
