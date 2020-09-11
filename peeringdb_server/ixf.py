@@ -1656,6 +1656,24 @@ class Importer:
         if save:
             self.save_log()
 
+    def resend_emails(self):
+        """
+        Resend emails that weren't sent.
+        """
+
+        emails_to_resend = IXFImportEmail.objects.filter(
+            sent__is_null=True
+            ).all()
+
+        for email in emails_to_resend:
+            self._resend_email(email)
+
+    def _resend_email(self, email):
+
+        subject = email.subject
+        message = email.message
+        recipients = email.recipients.split(",")
+
 
 class PostMortem:
 
