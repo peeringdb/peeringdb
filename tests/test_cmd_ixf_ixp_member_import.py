@@ -140,7 +140,6 @@ def test_cmd_resend_emails(unsent_emails):
     assert (
         IXFImportEmail.objects.filter(sent__isnull=False).count() == unsent_email_count
     )
-    assert 0
 
 
 @pytest.fixture
