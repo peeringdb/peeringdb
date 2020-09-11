@@ -992,7 +992,10 @@ class Importer:
                 if ixf_member_data.set_conflict(error=exc, save=self.save):
                     self.queue_notification(ixf_member_data, ixf_member_data.action)
         else:
-            notify = ixf_member_data.set_update(save=self.save, reason=reason,)
+            notify = ixf_member_data.set_update(
+                save=self.save,
+                reason=reason,
+            )
             if notify:
                 self.queue_notification(ixf_member_data, "modify")
             self.log_ixf_member_data(ixf_member_data)
@@ -1222,14 +1225,20 @@ class Importer:
         self.emails += 1
 
         if not getattr(settings, "MAIL_DEBUG", False):
-            mail = EmailMultiAlternatives(
-                subject, strip_tags(message), settings.DEFAULT_FROM_EMAIL, recipients,
-            )
-            mail.send(fail_silently=False)
+            self._send_email(subject, strip_tags(message), recipients)
 
         if email_log:
             email_log.sent = datetime.datetime.now(datetime.timezone.utc)
             email_log.save()
+
+    def _send_email(self, subject, message, recipients):
+        mail = EmailMultiAlternatives(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            recipients,
+        )
+        mail.send(fail_silently=False)
 
     def _ticket(self, ixf_member_data, subject, message):
 
@@ -1406,7 +1415,9 @@ class Importer:
             ):
                 proposals = net_notifications[asn]["proposals"][ix]
                 message = ixf_member_data.render_notification(
-                    template_file, recipient="net", context=context,
+                    template_file,
+                    recipient="net",
+                    context=context,
                 )
 
                 if action == "protocol_conflict" and not proposals[action]:
@@ -1421,7 +1432,9 @@ class Importer:
             if notify_ix:
                 proposals = ix_notifications[ix]["proposals"][asn]
                 message = ixf_member_data.render_notification(
-                    template_file, recipient="ix", context=context,
+                    template_file,
+                    recipient="ix",
+                    context=context,
                 )
 
                 if action == "protocol_conflict" and not proposals[action]:
@@ -1660,9 +1673,7 @@ class Importer:
         Resend emails that weren't sent.
         """
 
-        emails_to_resend = IXFImportEmail.objects.filter(
-            sent__is_null=True
-            ).all()
+        emails_to_resend = IXFImportEmail.objects.filter(sent__isnull=True).all()
 
         for email in emails_to_resend:
             self._resend_email(email)
@@ -1670,8 +1681,27 @@ class Importer:
     def _resend_email(self, email):
 
         subject = email.subject
-        message = email.message
+        resend_message = "This email could not be delivered initially and may contain stale information. \n"
+        resend_message += strip_tags(email.message)
         recipients = email.recipients.split(",")
+
+        print(email.message)
+        print(strip_tags(email.message))
+
+        if email.net and not self.notify_net_enabled:
+            return False
+
+        if email.ix and not self.notify_ix_enabled:
+            return False
+
+        if not getattr(settings, "MAIL_DEBUG", False):
+            self._send_email(subject, resend_message, recipients)
+
+        email.sent = datetime.datetime.now(datetime.timezone.utc)
+        email.message = resend_message
+        email.save()
+
+        return True
 
 
 class PostMortem:
