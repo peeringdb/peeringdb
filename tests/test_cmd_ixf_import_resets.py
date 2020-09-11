@@ -108,6 +108,64 @@ def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
     assert IXFImportEmail.objects.count() == 0
 
 
+@pytest.mark.django_db
+def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
+    ixf_import_data = json.loads(data_cmd_ixf_reset.json)
+    importer = ixf.Importer()
+    ixlan = entities["ixlan"]
+    # Create IXFMemberData
+    importer.update(ixlan, data=ixf_import_data)
+    importer.notify_proposals()
+
+    assert DeskProTicket.objects.count() == 5
+    assert IXFMemberData.objects.count() == 4
+    assert IXFImportEmail.objects.count() == 1
+
+    call_command("pdb_ixf_ixp_member_import", reset=True, commit=True)
+
+    assert DeskProTicket.objects.count() == 2
+    assert DeskProTicket.objects.filter(body__contains="reset").count() == 1
+    assert IXFMemberData.objects.count() == 0
+    assert IXFImportEmail.objects.count() == 0
+
+
+# Want to test that runtime errors are captured, output
+# to stderr, and that the commandline tool exits with
+# a status of 1
+@pytest.mark.django_db
+def test_runtime_errors(entities, capsys, mocker):
+    ixlan = entities["ixlan"]
+    ixlan.ixf_ixp_import_enabled = True
+    ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
+    ixlan.save()
+    asn = entities["net"].asn
+
+    """
+    When importer.update() is called within the commandline
+    tool, we want to throw an unexpected error.
+    """
+    mocker.patch(
+        "peeringdb_server.management.commands.pdb_ixf_ixp_member_import.ixf.Importer.update",
+        side_effect=RuntimeError("Unexpected error"),
+    )
+
+    with pytest.raises(SystemExit) as pytest_wrapped_exit:
+        call_command(
+            "pdb_ixf_ixp_member_import",
+            skip_import=True,
+            commit=True,
+            ixlan=[ixlan.id],
+            asn=asn,
+        )
+
+    # Assert we are outputting the exception and traceback to the stderr
+    captured = capsys.readouterr()
+    assert "Unexpected error" in captured.err
+
+    # Assert we are exiting with status code 1
+    assert pytest_wrapped_exit.value.code == 1
+
+
 @pytest.fixture
 def entities():
     entities = {}
