@@ -4,7 +4,7 @@ import datetime
 
 import requests
 import ipaddress
-from smtplib import SMTPException 
+from smtplib import SMTPException
 from django.db import transaction
 from django.core.cache import cache
 from django.core.mail.message import EmailMultiAlternatives
@@ -1545,6 +1545,9 @@ class Importer:
             action = ixf_member_data.action
             if action == "delete":
                 action = "remove"
+            elif action == "noop":
+                continue
+
             typ = action
 
             # create the ticket
