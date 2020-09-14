@@ -110,9 +110,7 @@ def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
 
 
 @pytest.mark.django_db
-@override_settings(MAIL_DEBUG=False)
-@override_settings(IXF_NOTIFY_NET_ON_CONFLICT=True)
-@override_settings(IXF_NOTIFY_IX_ON_CONFLICT=True)
+@override_settings(MAIL_DEBUG=False, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
 def test_resend_emails(unsent_emails):
     importer = ixf.Importer()
     unsent_email_count = len(unsent_emails)
@@ -126,9 +124,38 @@ def test_resend_emails(unsent_emails):
     )
 
 @pytest.mark.django_db
-@override_settings(MAIL_DEBUG=False)
-@override_settings(IXF_NOTIFY_NET_ON_CONFLICT=True)
-@override_settings(IXF_NOTIFY_IX_ON_CONFLICT=True)
+@override_settings(MAIL_DEBUG=False, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_resend_emails_messages(unsent_emails):
+    importer = ixf.Importer()
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    assert IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+
+    importer.resend_emails()
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == unsent_email_count
+    )
+
+    # Check that "stale info" message has been appended
+    for email in IXFImportEmail.objects.filter(sent__isnull=False).all():
+        assert email.message.startswith("This email could not be delivered initially and may contain stale information")
+    
+    # Make it appear if re-send failed 
+    for email in IXFImportEmail.objects.filter(sent__isnull=False).all():
+        email.sent = None
+        email.save()
+    
+    importer.resend_emails()
+
+    # Check that "stale info" message is not re-appended
+    for email in IXFImportEmail.objects.filter(sent__isnull=False).all():
+        assert email.message.count(
+            "This email could not be delivered initially and may contain stale information") == 1
+
+
+@pytest.mark.django_db
+@override_settings(MAIL_DEBUG=False, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
 def test_cmd_resend_emails(unsent_emails):
     unsent_email_count = len(unsent_emails)
 
@@ -141,6 +168,16 @@ def test_cmd_resend_emails(unsent_emails):
         IXFImportEmail.objects.filter(sent__isnull=False).count() == unsent_email_count
     )
 
+@pytest.mark.django_db
+@override_settings(MAIL_DEBUG=False, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_cmd_resend_emails_non_commit(unsent_emails):
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    call_command("pdb_ixf_ixp_member_import", commit=False)
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+    )
 
 @pytest.fixture
 def entities():
