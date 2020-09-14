@@ -1224,7 +1224,8 @@ class Importer:
 
         self.emails += 1
 
-        if not getattr(settings, "MAIL_DEBUG", False):
+        prod_mail_mode = not getattr(settings, "MAIL_DEBUG", True)
+        if prod_mail_mode:
             self._send_email(subject, strip_tags(message), recipients)
 
         if email_log:
@@ -1706,8 +1707,11 @@ class Importer:
         if email.ix and not self.notify_ix_enabled:
             return False
 
-        if not getattr(settings, "MAIL_DEBUG", False):
-            self._send_email(subject, message, recipients)
+        prod_mail_mode = not getattr(settings, "MAIL_DEBUG", True)
+        prod_resend_mode = getattr(settings, "IXF_RESEND_FAILED_EMAILS", False)
+
+        if prod_mail_mode and prod_resend_mode:
+            self._send_email(subject, strip_tags(message), recipients)
             email.sent = datetime.datetime.now(datetime.timezone.utc)
             email.message = message
             email.save()

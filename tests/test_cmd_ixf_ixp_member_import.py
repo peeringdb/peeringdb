@@ -109,8 +109,9 @@ def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
     assert IXFImportEmail.objects.count() == 0
 
 
+# This is the normal test case for resending emails
 @pytest.mark.django_db
-@override_settings(MAIL_DEBUG=False, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+@override_settings(MAIL_DEBUG=False, IXF_RESEND_FAILED_EMAILS=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
 def test_resend_emails(unsent_emails):
     importer = ixf.Importer()
     unsent_email_count = len(unsent_emails)
@@ -123,8 +124,36 @@ def test_resend_emails(unsent_emails):
         IXFImportEmail.objects.filter(sent__isnull=False).count() == unsent_email_count
     )
 
+
+# MAIL DEBUG must be FALSE to send emails - here they don't send
 @pytest.mark.django_db
-@override_settings(MAIL_DEBUG=False, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+@override_settings(MAIL_DEBUG=True, IXF_RESEND_FAILED_EMAILS=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_resend_emails_mail_debug(unsent_emails):
+    importer = ixf.Importer()
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    importer.resend_emails()
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+    )
+
+# IXF_RESEND_FAILED_EMAILS must be TRUE to send emails - here they don't send
+@pytest.mark.django_db
+@override_settings(IXF_RESEND_FAILED_EMAILS=False, MAIL_DEBUG=False, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_resend_emails_resend_mode_off(unsent_emails):
+    importer = ixf.Importer()
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    importer.resend_emails()
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+    )
+
+# Here we check that the "stale info" is only ever appended once
+@pytest.mark.django_db
+@override_settings(MAIL_DEBUG=False, IXF_RESEND_FAILED_EMAILS=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
 def test_resend_emails_messages(unsent_emails):
     importer = ixf.Importer()
     unsent_email_count = len(unsent_emails)
@@ -153,9 +182,9 @@ def test_resend_emails_messages(unsent_emails):
         assert email.message.count(
             "This email could not be delivered initially and may contain stale information") == 1
 
-
+# Now we call the email resending from the commandline
 @pytest.mark.django_db
-@override_settings(MAIL_DEBUG=False, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+@override_settings(MAIL_DEBUG=False, IXF_RESEND_FAILED_EMAILS=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
 def test_cmd_resend_emails(unsent_emails):
     unsent_email_count = len(unsent_emails)
 
@@ -168,8 +197,9 @@ def test_cmd_resend_emails(unsent_emails):
         IXFImportEmail.objects.filter(sent__isnull=False).count() == unsent_email_count
     )
 
+# Commit mode extends to email resending as well
 @pytest.mark.django_db
-@override_settings(MAIL_DEBUG=False, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+@override_settings(MAIL_DEBUG=False, IXF_RESEND_FAILED_EMAILS=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
 def test_cmd_resend_emails_non_commit(unsent_emails):
     unsent_email_count = len(unsent_emails)
 
@@ -179,16 +209,6 @@ def test_cmd_resend_emails_non_commit(unsent_emails):
         IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
     )
 
-@pytest.mark.django_db
-@override_settings(MAIL_DEBUG=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
-def test_cmd_resend_emails_mail_debug_on(unsent_emails):
-    unsent_email_count = len(unsent_emails)
-
-    assert IXFImportEmail.objects.count() == unsent_email_count
-    call_command("pdb_ixf_ixp_member_import", commit=True)
-    assert (
-        IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
-    )
 
 @pytest.fixture
 def entities():

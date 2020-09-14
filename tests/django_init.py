@@ -198,4 +198,5 @@ settings.configure(
     IXF_IMPORTER_DAYS_UNTIL_TICKET=6,
     DESKPRO_URL="test",
     DESKPRO_KEY="test",
+    IXF_RESEND_FAILED_EMAILS=False
 )
