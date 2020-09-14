@@ -179,6 +179,17 @@ def test_cmd_resend_emails_non_commit(unsent_emails):
         IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
     )
 
+@pytest.mark.django_db
+@override_settings(MAIL_DEBUG=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_cmd_resend_emails_mail_debug_on(unsent_emails):
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    call_command("pdb_ixf_ixp_member_import", commit=True)
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+    )
+
 @pytest.fixture
 def entities():
     entities = {}

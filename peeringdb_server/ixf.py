@@ -1693,8 +1693,11 @@ class Importer:
     def _resend_email(self, email):
 
         subject = email.subject
-        resend_message = "This email could not be delivered initially and may contain stale information. \n"
-        resend_message += strip_tags(email.message)
+        message = email.message
+        resend_str = "This email could not be delivered initially and may contain stale information. \n"
+        if not message.startswith(resend_str):
+            message = resend_str + message
+
         recipients = email.recipients.split(",")
 
         if email.net and not self.notify_net_enabled:
@@ -1704,11 +1707,10 @@ class Importer:
             return False
 
         if not getattr(settings, "MAIL_DEBUG", False):
-            self._send_email(subject, resend_message, recipients)
-
-        email.sent = datetime.datetime.now(datetime.timezone.utc)
-        email.message = resend_message
-        email.save()
+            self._send_email(subject, message, recipients)
+            email.sent = datetime.datetime.now(datetime.timezone.utc)
+            email.message = message
+            email.save()
 
         return email
 
