@@ -659,8 +659,8 @@ for _, _, files in os.walk(API_DOC_PATH):
 
 MAIL_DEBUG = DEBUG
 
-# Sending for automated resending of failed ixf import emails
-set_option('IXF_RESEND_FAILED_EMAILS', True)
+# Setting for automated resending of failed ixf import emails
+set_option('IXF_RESEND_FAILED_EMAILS', False)
 
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 

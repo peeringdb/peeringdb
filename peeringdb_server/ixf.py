@@ -1227,9 +1227,10 @@ class Importer:
         prod_mail_mode = not getattr(settings, "MAIL_DEBUG", True)
         if prod_mail_mode:
             self._send_email(subject, strip_tags(message), recipients)
+            if email_log:
+                email_log.sent = datetime.datetime.now(datetime.timezone.utc)
 
         if email_log:
-            email_log.sent = datetime.datetime.now(datetime.timezone.utc)
             email_log.save()
 
     def _send_email(self, subject, message, recipients):
@@ -1681,7 +1682,8 @@ class Importer:
         for email in self.emails_to_resend:
             try:
                 resent_email = self._resend_email(email)
-                resent_emails.append(resent_email)
+                if resent_email:
+                    resent_emails.append(resent_email)
             except SMTPException as email_exception:
                 pass
 
@@ -1715,6 +1717,8 @@ class Importer:
             email.sent = datetime.datetime.now(datetime.timezone.utc)
             email.message = message
             email.save()
+        else:
+            return False
 
         return email
 
