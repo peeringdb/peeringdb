@@ -992,10 +992,7 @@ class Importer:
                 if ixf_member_data.set_conflict(error=exc, save=self.save):
                     self.queue_notification(ixf_member_data, ixf_member_data.action)
         else:
-            notify = ixf_member_data.set_update(
-                save=self.save,
-                reason=reason,
-            )
+            notify = ixf_member_data.set_update(save=self.save, reason=reason,)
             if notify:
                 self.queue_notification(ixf_member_data, "modify")
             self.log_ixf_member_data(ixf_member_data)
@@ -1235,10 +1232,7 @@ class Importer:
 
     def _send_email(self, subject, message, recipients):
         mail = EmailMultiAlternatives(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            recipients,
+            subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
         )
         mail.send(fail_silently=False)
 
@@ -1417,9 +1411,7 @@ class Importer:
             ):
                 proposals = net_notifications[asn]["proposals"][ix]
                 message = ixf_member_data.render_notification(
-                    template_file,
-                    recipient="net",
-                    context=context,
+                    template_file, recipient="net", context=context,
                 )
 
                 if action == "protocol_conflict" and not proposals[action]:
@@ -1434,9 +1426,7 @@ class Importer:
             if notify_ix:
                 proposals = ix_notifications[ix]["proposals"][asn]
                 message = ixf_member_data.render_notification(
-                    template_file,
-                    recipient="ix",
-                    context=context,
+                    template_file, recipient="ix", context=context,
                 )
 
                 if action == "protocol_conflict" and not proposals[action]:

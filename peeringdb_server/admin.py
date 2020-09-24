@@ -486,9 +486,7 @@ class InternetExchangeFacilityInline(SanitizedAdmin, admin.TabularInline):
     form = StatusForm
 
     autocomplete_lookup_fields = {
-        "fk": [
-            "facility",
-        ],
+        "fk": ["facility",],
     }
 
 
@@ -508,9 +506,7 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
     form = StatusForm
     raw_id_fields = ("facility",)
     autocomplete_lookup_fields = {
-        "fk": [
-            "facility",
-        ],
+        "fk": ["facility",],
     }
 
 
@@ -619,9 +615,7 @@ class IXLanAdmin(SoftDeleteAdmin):
     form = IXLanAdminForm
     raw_id_fields = ("ix",)
     autocomplete_lookup_fields = {
-        "fk": [
-            "ix",
-        ],
+        "fk": ["ix",],
     }
 
 
@@ -996,9 +990,7 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
 
     raw_id_fields = ("org",)
     autocomplete_lookup_fields = {
-        "fk": [
-            "org",
-        ],
+        "fk": ["org",],
     }
 
 
@@ -1088,9 +1080,7 @@ class NetworkContactAdmin(SoftDeleteAdmin):
 
     raw_id_fields = ("network",)
     autocomplete_lookup_fields = {
-        "fk": [
-            "network",
-        ],
+        "fk": ["network",],
     }
 
     def net(self, obj):
@@ -1758,9 +1748,7 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
     raw_id_fields = ("ixlan",)
 
     autocomplete_lookup_fields = {
-        "fk": [
-            "ixlan",
-        ],
+        "fk": ["ixlan",],
     }
 
     def get_queryset(self, request):

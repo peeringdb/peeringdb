@@ -1893,7 +1893,9 @@ class TestJSON(unittest.TestCase):
         with fields parameter set would raise a 500 error for
         unauthenticated users
         """
-        data = self.db_guest.get("ixlan", SHARED["ixlan_rw_ok"].id, fields="ixpfx_set", depth=2)
+        data = self.db_guest.get(
+            "ixlan", SHARED["ixlan_rw_ok"].id, fields="ixpfx_set", depth=2
+        )
         assert len(data) == 1
         row = data[0]
         assert list(row.keys()) == ["ixpfx_set"]
