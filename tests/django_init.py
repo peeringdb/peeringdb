@@ -67,10 +67,7 @@ settings.configure(
         }
     ],
     LANGUAGE_CODE="en-us",
-    LANGUAGES=[
-        ("en", _("English")),
-        ("pt", _("Portuguese")),
-    ],
+    LANGUAGES=[("en", _("English")), ("pt", _("Portuguese")),],
     USE_L10N=True,
     USE_I18N=True,
     MEDIA_URL="/m/",
@@ -97,10 +94,7 @@ settings.configure(
     },
     DATABASE_ENGINE="django.db.backends.sqlite3",
     DATABASES={
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",
-        },
+        "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:",},
         # TODO - this is supposed to work to mimic replication
         # during tests, but doesnt. So instead we use the
         # peeringdb_server.db_router.TestRouter class instead
@@ -149,12 +143,7 @@ settings.configure(
     LOGGING={
         "version": 1,
         "disable_existing_loggers": True,
-        "handlers": {
-            "stderr": {
-                "level": "DEBUG",
-                "class": "logging.StreamHandler",
-            },
-        },
+        "handlers": {"stderr": {"level": "DEBUG", "class": "logging.StreamHandler",},},
         "loggers": {
             "": {"handlers": ["stderr"], "level": "DEBUG", "propagate": False},
         },
