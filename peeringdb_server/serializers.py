@@ -1892,9 +1892,7 @@ class NetworkSerializer(ModelSerializer):
     def update(self, instance, validated_data):
         if validated_data.get("asn") != instance.asn:
             raise serializers.ValidationError(
-                {
-                    "asn": _("ASN cannot be changed."),
-                }
+                {"asn": _("ASN cannot be changed."),}
             )
         return super(ModelSerializer, self).update(instance, validated_data)
 

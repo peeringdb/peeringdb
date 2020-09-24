@@ -767,7 +767,6 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
     ixlan.ix.refresh_from_db()
     assert ixlan.ix.updated == ix_updated
 
-
     if (not network.ipv4_support and use_ip(4) and not use_ip(6)) or (
         not network.ipv6_support and use_ip(6) and not use_ip(4)
     ):
@@ -1230,6 +1229,7 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
+
 @pytest.mark.django_db
 def test_816_edge_case(entities, use_ip, save):
     """
@@ -1266,8 +1266,12 @@ def test_816_edge_case(entities, use_ip, save):
     assert IXFMemberData.objects.count() == 2
     assert IXFMemberData.objects.get(asn=1001).action == "add"
 
-    assert IXFImportEmail.objects.filter(net__asn=1001, message__contains='CREATE').exists()
-    assert not IXFImportEmail.objects.filter(net__asn=1001, message__contains='MODIFY').exists()
+    assert IXFImportEmail.objects.filter(
+        net__asn=1001, message__contains="CREATE"
+    ).exists()
+    assert not IXFImportEmail.objects.filter(
+        net__asn=1001, message__contains="MODIFY"
+    ).exists()
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -2263,7 +2267,6 @@ def test_vlan_sanitize(data_ixf_vlan):
     importer = ixf.Importer()
     sanitized = importer.sanitize_vlans(json.loads(data_ixf_vlan.input)["vlan_list"])
     assert sanitized == data_ixf_vlan.expected["vlan_list"]
-
 
 
 # FIXTURES

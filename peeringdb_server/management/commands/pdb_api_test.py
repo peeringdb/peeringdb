@@ -1122,10 +1122,7 @@ class TestJSON(unittest.TestCase):
             data,
             test_success=False,
             test_failures={
-                "invalid": {
-                    "prefix": self.get_prefix4(),
-                    "tech_email": "",
-                },
+                "invalid": {"prefix": self.get_prefix4(), "tech_email": "",},
             },
         )
 
@@ -1134,12 +1131,7 @@ class TestJSON(unittest.TestCase):
             "ix",
             data,
             test_success=False,
-            test_failures={
-                "invalid": {
-                    "prefix": self.get_prefix4(),
-                    "website": "",
-                },
-            },
+            test_failures={"invalid": {"prefix": self.get_prefix4(), "website": "",},},
         )
 
         self.assert_create(
@@ -1147,9 +1139,7 @@ class TestJSON(unittest.TestCase):
             "ix",
             data,
             test_success=False,
-            test_failures={
-                "invalid": {"prefix": ""},
-            },
+            test_failures={"invalid": {"prefix": ""},},
         )
 
         # test ix creation with a ipv6 prefix
@@ -1158,9 +1148,7 @@ class TestJSON(unittest.TestCase):
 
         # check protected ix validation
         self.assert_delete(
-            self.db_org_admin,
-            "ix",
-            test_protected=SHARED["ix_rw_ok"].id,
+            self.db_org_admin, "ix", test_protected=SHARED["ix_rw_ok"].id,
         )
 
     ##########################################################################
@@ -1173,9 +1161,7 @@ class TestJSON(unittest.TestCase):
             "fac",
             data,
             test_failures={
-                "invalid": {
-                    "name": "",
-                },
+                "invalid": {"name": "",},
                 "perms": {
                     # need to set name again so it doesnt fail unique validation
                     "name": self.make_name("Test"),
@@ -1218,9 +1204,7 @@ class TestJSON(unittest.TestCase):
 
         # check protected ix validation
         self.assert_delete(
-            self.db_org_admin,
-            "fac",
-            test_protected=SHARED["fac_rw_ok"].id,
+            self.db_org_admin, "fac", test_protected=SHARED["fac_rw_ok"].id,
         )
 
         # Create new data with a non-null rencode
@@ -1281,9 +1265,7 @@ class TestJSON(unittest.TestCase):
             "net",
             SHARED["net_id"],
             data,
-            test_failures={
-                "invalid": {"asn": data["asn"] + 1},
-            },
+            test_failures={"invalid": {"asn": data["asn"] + 1},},
         )
 
         self.assert_delete(
@@ -1589,11 +1571,7 @@ class TestJSON(unittest.TestCase):
         pfx.delete()
 
         data.update(prefix="205.127.237.0/24")
-        r_data = self.assert_create(
-            self.db_org_admin,
-            "ixpfx",
-            data,
-        )
+        r_data = self.assert_create(self.db_org_admin, "ixpfx", data,)
 
         # make sure protocols are validated
         r_data = self.assert_create(
@@ -2763,10 +2741,7 @@ class TestJSON(unittest.TestCase):
             self.assert_create(
                 db,
                 "netfac",
-                {
-                    "net_id": SHARED["net_r_ok"].id,
-                    "fac_id": SHARED["fac_r2_ok"].id,
-                },
+                {"net_id": SHARED["net_r_ok"].id, "fac_id": SHARED["fac_r2_ok"].id,},
                 test_failures={"perms": {}},
                 test_success=False,
             )
@@ -3178,10 +3153,7 @@ class TestJSON(unittest.TestCase):
         self.assert_create(
             self.db_org_admin,
             "netixlan",
-            self.make_data_netixlan(
-                ixlan_id=A.ixlan_id,
-                net_id=A.network_id,
-            ),
+            self.make_data_netixlan(ixlan_id=A.ixlan_id, net_id=A.network_id,),
             test_success=False,
             test_failures={"invalid": {"ipaddr6": str(A.ipaddr6)}},
         )
