@@ -8,6 +8,7 @@ from peeringdb_server.models import (
     Facility,
     Organization,
     PARTNERSHIP_LEVELS,
+    format_speed,
 )
 
 from peeringdb_server.views import DoNotRender
@@ -180,13 +181,7 @@ def pretty_speed(value):
     if not value:
         return ""
     try:
-        value = int(value)
-        if value >= 1000000:
-            return "%dT" % (value / 10 ** 6)
-        elif value >= 1000:
-            return "%dG" % (value / 10 ** 3)
-        else:
-            return "%dM" % value
+        return format_speed(value)
     except ValueError:
         return value
 

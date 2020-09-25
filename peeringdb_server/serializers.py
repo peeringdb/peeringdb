@@ -1481,6 +1481,11 @@ class NetworkIXLanSerializer(ModelSerializer):
         except ValidationError as exc:
             raise serializers.ValidationError({"ipaddr6": exc.message})
 
+        try:
+            netixlan.validate_speed()
+        except ValidationError as exc:
+            raise serializers.ValidationError({"speed": exc.message})
+
         # when validating an existing netixlan that has a mismatching
         # asn value raise a validation error stating that it needs
         # to be moved
