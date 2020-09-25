@@ -268,4 +268,5 @@ settings.configure(
         "ZA": "South Africa",
         "ZW": "Zimbabwe",
     },
+    VQUEUE_USER_MAX_AGE=90,
 )
