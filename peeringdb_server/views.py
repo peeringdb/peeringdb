@@ -1596,10 +1596,7 @@ def view_network(request, id):
                     {
                         "name": "info_never_via_route_servers",
                         "label": _("Never via route servers"),
-                        # FIXME: change to `field_help` after merging with #228
-                        "help_text": Network._meta.get_field(
-                            "info_never_via_route_servers"
-                        ).help_text,
+                        "help_text": field_help(Network, "info_never_via_route_servers"),
                         "value": network_d.get("info_never_via_route_servers", False),
                     },
                 ],

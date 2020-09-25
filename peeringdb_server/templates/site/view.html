@@ -148,16 +148,30 @@
         {% elif row.type == "flags" %}
           <div class="view_value flags col-xs-8 col-sm-7 col-md-8">
           {% for flag in row.value %}
-            <span class="checkmark"
-                  {% if not row.readonly and permissions.can_write %}
-                  data-edit-type="bool"
-                  {% endif %}
-                  data-edit-name="{{ flag.name }}"
-                  data-edit-value="{{ flag.value }}"
-                  data-edit-template="check">
-                  <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not flag.value %}-off{% endif %}.png" />
+            <span
+                {% if flag.help_text %}
+                data-toggle="tooltip"
+                title="{{ flag.help_text }}"
+                data-placement="right"
+                {% endif %}
+            >
+              <span class="checkmark"
+                    {% if not row.readonly and permissions.can_write %}
+                    data-edit-type="bool"
+                    {% endif %}
+                    data-edit-name="{{ flag.name }}"
+                    data-edit-value="{{ flag.value }}"
+                    data-edit-template="check">
+                    <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not flag.value %}-off{% endif %}.png" 
+                    />
+              </span>
+              <span class="enabled">
+                  {{ flag.label }}
+              </span>
+              {% if flag.help_text %}
+                <span class="glyphicon glyphicon-question-sign"/>
+              {% endif %}
             </span>
-            <span class="enabled">{{ flag.label }}</span>
           {% endfor %}
           </div>
         {% elif row.type == "action" %}
