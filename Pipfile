@@ -16,6 +16,7 @@ pytest-mock = ">=3.3.1"
 jsonschema = ">=2.6.0"
 facsimile = ">=1.1.1"
 "twentyc.rpc" = ">=0.3.5,<0.5"
+black = "==19.10b0"
 
 [packages]
 # core requirements
