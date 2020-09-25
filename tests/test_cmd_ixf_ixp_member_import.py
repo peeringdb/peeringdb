@@ -167,10 +167,10 @@ def test_runtime_errors(entities, capsys, mocker):
     assert pytest_wrapped_exit.value.code == 1
 
 
-# Want to test that other errors also exit with
+# Want to test that other uncaught errors also exit with
 # exit code 1
 @pytest.mark.django_db
-def test_runtime_errors_email(entities, capsys, mocker):
+def test_runtime_errors_uncaught(entities, capsys, mocker):
     ixlan = entities["ixlan"]
     ixlan.ixf_ixp_import_enabled = True
     ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
@@ -178,72 +178,130 @@ def test_runtime_errors_email(entities, capsys, mocker):
     asn = entities["net"].asn
 
     """
-    This should be the error that Django raises if an email cannot be sent
-    and fail_silently=False.
-    This email error gets caught in the commandline too because it
-    occurs in importer.update()
+    When importer.notify_proposals() is called within the commandline
+    tool, we want to throw an unexpected error. This happens outside
+    the error logging.
     """
-    from smtplib import SMTPException
-
-    mocker.patch(
-        "peeringdb_server.ixf.EmailMultiAlternatives.send",
-        side_effect=SMTPException("Email error"),
-    )
-
-    with override_settings(MAIL_DEBUG=False):
-        with pytest.raises(SystemExit) as pytest_sys_exit:
-            call_command(
-                "pdb_ixf_ixp_member_import",
-                skip_import=True,
-                commit=True,
-                ixlan=[ixlan.id],
-                asn=asn,
-            )
-
-    # Assert we are outputting the exception and traceback to the stderr
-    captured = capsys.readouterr()
-    assert "Email error" in captured.err
-
-    # Assert we are exiting with status code 1
-    assert pytest_sys_exit.value.code == 1
-
-
-"""
-This is a runtime error that wouldn't get caught in the try-except.
-Notify_proposals is called after the import happens.
-"""
-
-
-@pytest.mark.django_db
-def test_runtime_errors_uncaught(entities, mocker):
-    ixlan = entities["ixlan"]
-    ixlan.ixf_ixp_import_enabled = True
-    ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
-    ixlan.save()
-    asn = entities["net"].asn
-
-    from smtplib import SMTPException
-
     mocker.patch(
         "peeringdb_server.management.commands.pdb_ixf_ixp_member_import.ixf.Importer.notify_proposals",
-        side_effect=SMTPException("Email error"),
+        side_effect=ImportError("Uncaught bug"),
     )
 
     """
-    Here we do pytest.raises(SMTPException) instead of pytest.raises(SystemExit)
-    because the commandline tool would actually just raise this error.
+    Here we have to just assert that the commandline tool will raise that error
+    itself, as opposed to being wrapped in a system exit
     """
-    with override_settings(MAIL_DEBUG=False):
-        with pytest.raises(SMTPException) as pytest_email_error:
-            call_command(
-                "pdb_ixf_ixp_member_import",
-                skip_import=True,
-                commit=True,
-                ixlan=[ixlan.id],
-                asn=asn,
-            )
+    with pytest.raises(ImportError) as pytest_uncaught_error:
+        call_command(
+            "pdb_ixf_ixp_member_import",
+            skip_import=True,
+            commit=True,
+            ixlan=[ixlan.id],
+            asn=asn,
+        )
 
-    assert "Email error" in str(pytest_email_error)
+    # Assert we are outputting the exception and traceback to the stderr
+    assert "Uncaught bug" in str(pytest_uncaught_error.value)
+
+# This is the normal test case for resending emails
+@pytest.mark.django_db
+@override_settings(MAIL_DEBUG=False, IXF_RESEND_FAILED_EMAILS=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_resend_emails(unsent_emails):
+    importer = ixf.Importer()
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    assert IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+
+    importer.resend_emails()
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == unsent_email_count
+    )
+
+
+# MAIL DEBUG must be FALSE to send emails - here they don't send
+@pytest.mark.django_db
+@override_settings(MAIL_DEBUG=True, IXF_RESEND_FAILED_EMAILS=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_resend_emails_mail_debug(unsent_emails):
+    importer = ixf.Importer()
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    importer.resend_emails()
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+    )
+
+# IXF_RESEND_FAILED_EMAILS must be TRUE to send emails - here they don't send
+@pytest.mark.django_db
+@override_settings(IXF_RESEND_FAILED_EMAILS=False, MAIL_DEBUG=False, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_resend_emails_resend_mode_off(unsent_emails):
+    importer = ixf.Importer()
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    importer.resend_emails()
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+    )
+
+# Here we check that the "stale info" is only ever appended once
+@pytest.mark.django_db
+@override_settings(MAIL_DEBUG=False, IXF_RESEND_FAILED_EMAILS=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_resend_emails_messages(unsent_emails):
+    importer = ixf.Importer()
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    assert IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+
+    importer.resend_emails()
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == unsent_email_count
+    )
+
+    # Check that "stale info" message has been appended
+    for email in IXFImportEmail.objects.filter(sent__isnull=False).all():
+        assert email.message.startswith("This email could not be delivered initially and may contain stale information")
+
+    # Make it appear if re-send failed
+    for email in IXFImportEmail.objects.filter(sent__isnull=False).all():
+        email.sent = None
+        email.save()
+
+    importer.resend_emails()
+
+    # Check that "stale info" message is not re-appended
+    for email in IXFImportEmail.objects.filter(sent__isnull=False).all():
+        assert email.message.count(
+            "This email could not be delivered initially and may contain stale information") == 1
+
+# Now we call the email resending from the commandline
+@pytest.mark.django_db
+@override_settings(MAIL_DEBUG=False, IXF_RESEND_FAILED_EMAILS=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_cmd_resend_emails(unsent_emails):
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    assert IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+
+    call_command("pdb_ixf_ixp_member_import", commit=True)
+
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == unsent_email_count
+    )
+
+# Commit mode extends to email resending as well
+@pytest.mark.django_db
+@override_settings(MAIL_DEBUG=False, IXF_RESEND_FAILED_EMAILS=True, IXF_NOTIFY_NET_ON_CONFLICT=True, IXF_NOTIFY_IX_ON_CONFLICT=True)
+def test_cmd_resend_emails_non_commit(unsent_emails):
+    unsent_email_count = len(unsent_emails)
+
+    assert IXFImportEmail.objects.count() == unsent_email_count
+    call_command("pdb_ixf_ixp_member_import", commit=False)
+    assert (
+        IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+    )
 
 
 @pytest.fixture
@@ -316,9 +374,44 @@ def deskprotickets():
         "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.147.250 2001:7f8:1::a500:2906:1",
         "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.148.250 2001:7f8:1::a500:2907:2",
         "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.146.250 2001:7f8:1::a500:2908:2",
-        "[IX-F] Suggested:ADD Test Exchange One AS1001 195.69.149.250 2001:7f8:1::a500:2909:2",
+        "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.149.250 2001:7f8:1::a500:2909:2",
         "Unrelated Issue: Urgent!!!",
     ]
     for subject in subjects:
         DeskProTicket.objects.create(subject=subject, body=message, user=user)
     return DeskProTicket.objects.all()
+
+
+@pytest.fixture
+def unsent_emails(entities):
+    """
+    Creates several unsent emails.
+    """
+    user, _ = User.objects.get_or_create(username="ixf_importer")
+    message = "test"
+    # This will actually try to send so do not put a real email here.
+    recipients = entities["netcontact"].email
+    subjects = [
+        "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.147.250 2001:7f8:1::a500:2906:1",
+        "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.148.250 2001:7f8:1::a500:2907:2",
+        "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.146.250 2001:7f8:1::a500:2908:2",
+        "[IX-F] Suggested:Add Test Exchange One AS1001 195.69.149.250 2001:7f8:1::a500:2909:2",
+    ]
+
+    ix = entities["ix"]
+    net = entities["net"]
+
+    emails = []
+    for subject in subjects:
+        net_email = IXFImportEmail.objects.create(
+            subject=subject, message=message, recipients=recipients, sent=None, ix=ix
+        )
+
+        ix_email = IXFImportEmail.objects.create(
+            subject=subject, message=message, recipients=recipients, sent=None, net=net
+        )
+
+        emails.append(ix_email)
+        emails.append(net_email)
+
+    return emails

@@ -165,6 +165,12 @@ class Command(BaseCommand):
                 ),
             )
 
+    def resend_emails(self, importer):
+        num_emails_to_resend = len(importer.emails_to_resend)
+        self.log(f"Attemping to resend {num_emails_to_resend} emails.")
+        resent_emails = importer.resend_emails()
+        self.log(f"RE-SENT EMAILS: {len(resent_emails)}.")
+
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
         self.debug = options.get("debug", False)
@@ -255,9 +261,11 @@ class Command(BaseCommand):
         importer.reset(save=self.commit)
         importer.notifications = total_notifications
         importer.notify_proposals()
-
-        self.stdout.write(f"Emails: {importer.emails}")
+        self.stdout.write(f"New Emails: {importer.emails}")
 
         if len(self.runtime_errors) > 0:
             self.write_runtime_errors()
             sys.exit(1)
+
+        if self.commit:
+            self.resend_emails(importer)

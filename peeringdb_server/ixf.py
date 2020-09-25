@@ -4,7 +4,7 @@ import datetime
 
 import requests
 import ipaddress
-
+from smtplib import SMTPException
 from django.db import transaction
 from django.core.cache import cache
 from django.core.mail.message import EmailMultiAlternatives
@@ -1229,17 +1229,20 @@ class Importer:
 
         self.emails += 1
 
-        if not getattr(settings, "MAIL_DEBUG", False):
-            mail = EmailMultiAlternatives(
-                subject, strip_tags(message), settings.DEFAULT_FROM_EMAIL, recipients,
-            )
-            mail.send(fail_silently=False)
-
-        self.emails += 1
+        prod_mail_mode = not getattr(settings, "MAIL_DEBUG", True)
+        if prod_mail_mode:
+            self._send_email(subject, strip_tags(message), recipients)
+            if email_log:
+                email_log.sent = datetime.datetime.now(datetime.timezone.utc)
 
         if email_log:
-            email_log.sent = datetime.datetime.now(datetime.timezone.utc)
             email_log.save()
+
+    def _send_email(self, subject, message, recipients):
+        mail = EmailMultiAlternatives(
+            subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
+        )
+        mail.send(fail_silently=False)
 
     def _ticket(self, ixf_member_data, subject, message):
 
@@ -1542,6 +1545,9 @@ class Importer:
             action = ixf_member_data.action
             if action == "delete":
                 action = "remove"
+            elif action == "noop":
+                continue
+
             typ = action
 
             # create the ticket
@@ -1664,6 +1670,55 @@ class Importer:
         self.log["errors"].append(f"{error}")
         if save:
             self.save_log()
+
+    def resend_emails(self):
+        """
+        Resend emails that weren't sent.
+        """
+
+        resent_emails = []
+        for email in self.emails_to_resend:
+            try:
+                resent_email = self._resend_email(email)
+                if resent_email:
+                    resent_emails.append(resent_email)
+            except SMTPException as email_exception:
+                pass
+
+        return resent_emails
+
+    @property
+    def emails_to_resend(self):
+        return IXFImportEmail.objects.filter(sent__isnull=True).all()
+
+    def _resend_email(self, email):
+
+        subject = email.subject
+        message = email.message
+        resend_str = "This email could not be delivered initially and may contain stale information. \n"
+        if not message.startswith(resend_str):
+            message = resend_str + message
+
+        recipients = email.recipients.split(",")
+
+        if email.net and not self.notify_net_enabled:
+            return False
+
+        if email.ix and not self.notify_ix_enabled:
+            return False
+
+        prod_mail_mode = not getattr(settings, "MAIL_DEBUG", True)
+        prod_resend_mode = getattr(settings, "IXF_RESEND_FAILED_EMAILS", False)
+
+        if prod_mail_mode and prod_resend_mode:
+            self._send_email(subject, strip_tags(message), recipients)
+            email.sent = datetime.datetime.now(datetime.timezone.utc)
+            email.message = message
+            email.save()
+        else:
+            return False
+
+        return email
 
 
 class PostMortem:

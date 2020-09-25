@@ -269,4 +269,5 @@ settings.configure(
         "ZW": "Zimbabwe",
     },
     VQUEUE_USER_MAX_AGE=90,
+    IXF_RESEND_FAILED_EMAILS=False
 )
