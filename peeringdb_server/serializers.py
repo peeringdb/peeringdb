@@ -1468,9 +1468,35 @@ class NetworkIXLanSerializer(ModelSerializer):
                 pass
         return super().run_validation(data=data)
 
-    def validate(self, data):
-        netixlan = NetworkIXLan(**data)
+    def _validate_network_contact(self, data):
+        """
+        Per github ticket #826, we only allow a Netixlan to be added
+        if there is a network contact that the AC can get in touch
+        with to resolve issues.
+        """
+        network = data["network"]
 
+        poc = (
+            network.poc_set_active.filter(
+                role__in=["Technical", "NOC", "Policy"], visible__in=["Users", "Public"]
+            )
+            .exclude(email="")
+            .count()
+        )
+
+        if poc == 0:
+            raise serializers.ValidationError(
+                _(
+                    "Network must have a Technical, NOC, or Policy point of contact "
+                    "with valid email before adding exchange point."
+                )
+            )
+
+    def validate(self, data):
+
+        self._validate_network_contact(data)
+
+        netixlan = NetworkIXLan(**data)
         try:
             netixlan.validate_ipaddr4()
         except ValidationError as exc:

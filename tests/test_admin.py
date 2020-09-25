@@ -732,19 +732,14 @@ class AdminTests(TestCase):
 
         org = models.Organization.objects.first()
 
-        url = reverse(
-            "admin:peeringdb_server_organization_changelist",
-        )
+        url = reverse("admin:peeringdb_server_organization_changelist",)
 
-        response = client.post(url, {
-            "_selected_action": org.id,
-            "action": "soft_delete"
-        }, follow=True)
+        response = client.post(
+            url, {"_selected_action": org.id, "action": "soft_delete"}, follow=True
+        )
 
         assert response.status_code == 200
 
         messages = list(get_messages(response.wsgi_request))
         assert len(messages) == 1
         assert "Protected object" in str(messages[0])
-
-

@@ -1675,6 +1675,49 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_org_admin_002_POST_netixlan_no_net_contact(self):
+        network = SHARED["net_rw_ok"]
+
+        for poc in network.poc_set_active.all():
+            poc.delete()
+
+        data = self.make_data_netixlan(
+            net_id=SHARED["net_rw_ok"].id,
+            ixlan_id=SHARED["ixlan_rw_ok"].id,
+            asn=SHARED["net_rw_ok"].asn,
+        )
+
+        # When we create this netixlan it should fail with a
+        # non-field-error.
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "netixlan",
+            data,
+            test_failures={"invalid": {"n/a": "n/a"}},
+            test_success=False,
+        )
+
+        # Undelete poc but blank email
+        poc = network.poc_set.first()
+        poc.status = "ok"
+        poc.email = ""
+        poc.visible = "Public"
+        poc.save()
+        network.refresh_from_db()
+
+        # Also fails with network contact that is
+        # missing an email
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "netixlan",
+            data,
+            test_failures={"invalid": {"n/a": "n/a"}},
+            test_success=False,
+        )
+
+    ##########################################################################
+
     def test_org_admin_002_POST_PUT_netixlan_validation(self):
         data = self.make_data_netixlan(
             net_id=SHARED["net_rw_ok"].id, ixlan_id=SHARED["ixlan_rw_ok"].id

@@ -104,6 +104,7 @@ def test_dismiss_ixf_proposals_no_perm(regular_user, entities, ip_addresses):
     assert response.status_code == 401
     assert "Permission denied" in content
 
+
 @pytest.mark.django_db
 def test_ix_order(admin_user, entities, ip_addresses, ip_addresses_other):
 
@@ -128,7 +129,8 @@ def test_ix_order(admin_user, entities, ip_addresses, ip_addresses_other):
     assert response.status_code == 200
 
     matches = re.findall('<a class="ix-name">([^<]+)</a>', content)
-    assert matches == ['Test Exchange One', 'Test Exchange Two']
+    assert matches == ["Test Exchange One", "Test Exchange Two"]
+
 
 @pytest.mark.django_db
 def test_dismissed_note(admin_user, entities, ip_addresses):
@@ -157,13 +159,13 @@ def test_dismissed_note(admin_user, entities, ip_addresses):
     # create netixlan, causing the suggestion to become noop
 
     NetworkIXLan.objects.create(
-        network = network,
-        asn = network.asn,
-        ixlan = ixlan_a,
-        status = "ok",
-        speed = 0,
-        ipaddr4 = ip_addresses[0][0],
-        ipaddr6 = ip_addresses[0][1],
+        network=network,
+        asn=network.asn,
+        ixlan=ixlan_a,
+        status="ok",
+        speed=0,
+        ipaddr4=ip_addresses[0][0],
+        ipaddr6=ip_addresses[0][1],
     )
 
     response = client.get(url)
@@ -173,8 +175,6 @@ def test_dismissed_note(admin_user, entities, ip_addresses):
 
     assert response.status_code == 200
     assert "You have dismissed some suggestions" not in content
-
-
 
 
 @pytest.mark.django_db
@@ -191,7 +191,7 @@ def test_check_ixf_proposals(admin_user, entities, ip_addresses):
         policy_general="Open",
         policy_url="https://www.netflix.com/openconnect/",
         info_unicast=False,
-        info_ipv6=False
+        info_ipv6=False,
     )
     ixlan = entities["ixlan"][0]
 
@@ -210,15 +210,12 @@ def test_check_ixf_proposals(admin_user, entities, ip_addresses):
     )
 
     with open(
-        os.path.join(
-            os.path.dirname(__file__), "data", "ixf", "views", "import.json",
-        ),
+        os.path.join(os.path.dirname(__file__), "data", "ixf", "views", "import.json",),
     ) as fh:
         json_data = json.load(fh)
 
     importer = ixf.Importer()
     importer.update(ixlan, data=json_data)
-
 
     client = setup_client(admin_user)
     url = reverse("net-view", args=(network.id,))
@@ -249,7 +246,9 @@ def create_IXFMemberData(network, ixlan, ip_addresses, dismissed):
     Creates IXFMember data
     """
     for ip_address in ip_addresses:
-        ixfmember = IXFMemberData.instantiate(network.asn, ip_address[0], ip_address[1], ixlan, data={"foo":"bar"})
+        ixfmember = IXFMemberData.instantiate(
+            network.asn, ip_address[0], ip_address[1], ixlan, data={"foo": "bar"}
+        )
         ixfmember.save()
         ixfmember.dismissed = dismissed
         ixfmember.save()
@@ -268,6 +267,7 @@ def ip_addresses():
         ("195.69.144.5", "2001:7f8:1::a500:2906:5"),
     ]
 
+
 @pytest.fixture
 def ip_addresses_other():
     """
@@ -280,7 +280,6 @@ def ip_addresses_other():
         ("195.70.144.4", "2001:7f8:2::a500:2906:4"),
         ("195.70.144.5", "2001:7f8:2::a500:2906:5"),
     ]
-
 
 
 @pytest.fixture
@@ -296,7 +295,7 @@ def entities():
             ),
             InternetExchange.objects.create(
                 name="Test Exchange Two", org=entities["org"][0], status="ok"
-            )
+            ),
         ]
 
         # create ixlan(s)
