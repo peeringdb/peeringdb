@@ -9,6 +9,7 @@ import io
 import datetime
 
 from django.core.management import call_command
+from django.test import override_settings
 
 from peeringdb_server.models import (
     Organization,
@@ -166,10 +167,10 @@ def test_runtime_errors(entities, capsys, mocker):
     assert pytest_wrapped_exit.value.code == 1
 
 
-# Want to test that other uncaught errors also exit with
+# Want to test that other errors also exit with
 # exit code 1
 @pytest.mark.django_db
-def test_runtime_errors_uncaught(entities, capsys, mocker):
+def test_runtime_errors_email(entities, capsys, mocker):
     ixlan = entities["ixlan"]
     ixlan.ixf_ixp_import_enabled = True
     ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
@@ -177,30 +178,72 @@ def test_runtime_errors_uncaught(entities, capsys, mocker):
     asn = entities["net"].asn
 
     """
-    When importer.notify_proposals() is called within the commandline
-    tool, we want to throw an unexpected error. This happens outside
-    the error logging.
+    This should be the error that Django raises if an email cannot be sent
+    and fail_silently=False.
+    This email error gets caught in the commandline too because it
+    occurs in importer.update()
     """
+    from smtplib import SMTPException
+
+    mocker.patch(
+        "peeringdb_server.ixf.EmailMultiAlternatives.send",
+        side_effect=SMTPException("Email error"),
+    )
+
+    with override_settings(MAIL_DEBUG=False):
+        with pytest.raises(SystemExit) as pytest_sys_exit:
+            call_command(
+                "pdb_ixf_ixp_member_import",
+                skip_import=True,
+                commit=True,
+                ixlan=[ixlan.id],
+                asn=asn,
+            )
+
+    # Assert we are outputting the exception and traceback to the stderr
+    captured = capsys.readouterr()
+    assert "Email error" in captured.err
+
+    # Assert we are exiting with status code 1
+    assert pytest_sys_exit.value.code == 1
+
+
+"""
+This is a runtime error that wouldn't get caught in the try-except.
+Notify_proposals is called after the import happens.
+"""
+
+
+@pytest.mark.django_db
+def test_runtime_errors_uncaught(entities, mocker):
+    ixlan = entities["ixlan"]
+    ixlan.ixf_ixp_import_enabled = True
+    ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
+    ixlan.save()
+    asn = entities["net"].asn
+
+    from smtplib import SMTPException
+
     mocker.patch(
         "peeringdb_server.management.commands.pdb_ixf_ixp_member_import.ixf.Importer.notify_proposals",
-        side_effect=ImportError("Uncaught bug"),
+        side_effect=SMTPException("Email error"),
     )
 
     """
-    Here we have to just assert that the commandline tool will raise that error
-    itself, as opposed to being wrapped in a system exit
+    Here we do pytest.raises(SMTPException) instead of pytest.raises(SystemExit)
+    because the commandline tool would actually just raise this error.
     """
-    with pytest.raises(ImportError) as pytest_uncaught_error:
-        call_command(
-            "pdb_ixf_ixp_member_import",
-            skip_import=True,
-            commit=True,
-            ixlan=[ixlan.id],
-            asn=asn,
-        )
+    with override_settings(MAIL_DEBUG=False):
+        with pytest.raises(SMTPException) as pytest_email_error:
+            call_command(
+                "pdb_ixf_ixp_member_import",
+                skip_import=True,
+                commit=True,
+                ixlan=[ixlan.id],
+                asn=asn,
+            )
 
-    # Assert we are outputting the exception and traceback to the stderr
-    assert "Uncaught bug" in str(pytest_uncaught_error.value)
+    assert "Email error" in str(pytest_email_error)
 
 
 @pytest.fixture

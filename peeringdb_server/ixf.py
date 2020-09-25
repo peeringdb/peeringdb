@@ -8,11 +8,11 @@ import ipaddress
 from django.db import transaction
 from django.core.cache import cache
 from django.core.mail.message import EmailMultiAlternatives
-from django.utils.html import strip_tags
-from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
-from django.template import loader
 from django.conf import settings
+from django.template import loader
+from django.utils.translation import ugettext_lazy as _
+from django.utils.html import strip_tags
 
 import reversion
 
@@ -1227,6 +1227,8 @@ class Importer:
             if not self.notify_ix_enabled:
                 return
 
+        self.emails += 1
+
         if not getattr(settings, "MAIL_DEBUG", False):
             mail = EmailMultiAlternatives(
                 subject, strip_tags(message), settings.DEFAULT_FROM_EMAIL, recipients,
@@ -1234,7 +1236,7 @@ class Importer:
             mail.send(fail_silently=False)
 
         self.emails += 1
-        
+
         if email_log:
             email_log.sent = datetime.datetime.now(datetime.timezone.utc)
             email_log.save()
