@@ -41,6 +41,30 @@ def validate_phonenumber(phonenumber, country=None):
         raise ValidationError(_("Not a valid phone number (E.164)"))
 
 
+def validate_zipcode(zipcode, country):
+    """
+    Validate a zipcode for a country. If a country has zipcodes, a zipcode
+    is required. If a country does not have zipcodes, it's not required.
+
+
+    Arguments:
+        - zipcode (can be Str or None at this point)
+        - country (two-letter country-code provided in data)
+    Raises:
+        - ValidationError if Zipcode is missing from a country WITH
+        zipcodes
+    Returns:
+        - str: zipcode
+    """
+    if country in settings.NON_ZIPCODE_COUNTRIES:
+        return ""
+    else:
+        if (zipcode is None) or (zipcode == ""):
+            raise ValidationError(_("Input required"))
+        else:
+            return zipcode
+
+
 def validate_prefix(prefix):
     """
     validate ip prefix

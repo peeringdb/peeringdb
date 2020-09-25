@@ -1115,7 +1115,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="fac_set"
     )
-
+    website = models.URLField(_("Website"), blank=False)
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
     class HandleRef:

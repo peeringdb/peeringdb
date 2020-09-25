@@ -571,6 +571,7 @@ class TestJSON(unittest.TestCase):
 
                     with pytest.raises(InvalidRequestException) as excinfo:
                         r = db.create(typ, data_invalid, return_response=True)
+
                     assert "400 Bad Request" in str(excinfo.value)
 
             # we test fail because of parent entity status
@@ -1161,7 +1162,10 @@ class TestJSON(unittest.TestCase):
             "fac",
             data,
             test_failures={
-                "invalid": {"name": "",},
+                "invalid": [
+                    {"name": ""},
+                    {"name": self.make_name("Test"), "website": ""},
+                ],
                 "perms": {
                     # need to set name again so it doesnt fail unique validation
                     "name": self.make_name("Test"),
@@ -1219,6 +1223,30 @@ class TestJSON(unittest.TestCase):
 
         # But rencode should be null
         assert r_data_new["rencode"] == ""
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_PUT_DELETE_fac_zipcode(self):
+        data = self.make_data_fac()
+
+        # Requires a zipcode if country is a country
+        # with postal codes (ie US)
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "fac",
+            data,
+            test_failures={
+                "invalid": [{"name": self.make_name("Test"), "zipcode": ""},],
+            },
+            test_success=False,
+        )
+
+        # Change to country w/o postal codes
+        data["country"] = "ZW"
+        data["zipcode"] = ""
+
+        r_data = self.assert_create(self.db_org_admin, "fac", data,)
+        assert r_data["zipcode"] == ""
 
     ##########################################################################
 
@@ -1893,7 +1921,9 @@ class TestJSON(unittest.TestCase):
         with fields parameter set would raise a 500 error for
         unauthenticated users
         """
-        data = self.db_guest.get("ixlan", SHARED["ixlan_rw_ok"].id, fields="ixpfx_set", depth=2)
+        data = self.db_guest.get(
+            "ixlan", SHARED["ixlan_rw_ok"].id, fields="ixpfx_set", depth=2
+        )
         assert len(data) == 1
         row = data[0]
         assert list(row.keys()) == ["ixpfx_set"]

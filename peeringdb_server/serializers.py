@@ -50,6 +50,7 @@ from peeringdb_server.validators import (
     validate_prefix_overlap,
     validate_phonenumber,
     validate_irr_as_set,
+    validate_zipcode,
 )
 
 from django.utils.translation import ugettext_lazy as _
@@ -1064,7 +1065,7 @@ class FacilitySerializer(ModelSerializer):
     website = serializers.URLField()
     address1 = serializers.CharField()
     city = serializers.CharField()
-    zipcode = serializers.CharField()
+    zipcode = serializers.CharField(required=False, allow_blank=True, default="")
 
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
     sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
@@ -1184,6 +1185,11 @@ class FacilitySerializer(ModelSerializer):
             )
         except ValidationError as exc:
             raise serializers.ValidationError({"sales_phone": exc.message})
+
+        try:
+            data["zipcode"] = validate_zipcode(data["zipcode"], data["country"])
+        except ValidationError as exc:
+            raise serializers.ValidationError({"zipcode": exc.message})
 
         return data
 
