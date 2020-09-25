@@ -260,7 +260,8 @@ class Command(BaseCommand):
         importer = ixf.Importer()
         importer.reset(save=self.commit)
         importer.notifications = total_notifications
-        importer.notify_proposals()
+        importer.notify_proposals(error_handler=self.store_runtime_error)
+
         self.stdout.write(f"New Emails: {importer.emails}")
 
         if len(self.runtime_errors) > 0:

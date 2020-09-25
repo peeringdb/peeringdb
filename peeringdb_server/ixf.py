@@ -1449,7 +1449,7 @@ class Importer:
             "ix": ix_notifications,
         }
 
-    def notify_proposals(self):
+    def notify_proposals(self, error_handler=None):
 
         """
         Sends all collected notification proposals
@@ -1469,45 +1469,57 @@ class Importer:
 
         template = loader.get_template("email/notify-ixf-consolidated.txt")
 
+        errors = []
+
         for recipient in ["ix", "net"]:
             for other_entity, data in consolidated[recipient].items():
-                contacts = data["contacts"]
+                try:
+                    self._notify_proposal(recipient, data, ticket_days, template)
+                except Exception as exc:
+                    if error_handler:
+                        error_handler(exc)
+                    else:
+                        raise
 
-                # we did not find any suitable contact points
-                # skip
 
-                if not contacts:
-                    continue
+    def _notify_proposal(self, recipient, data, ticket_days, template):
+        contacts = data["contacts"]
 
-                # no messages
+        # we did not find any suitable contact points
+        # skip
 
-                if not data["count"]:
-                    continue
+        if not contacts:
+            return
 
-                # render the consolidated message
+        # no messages
 
-                message = template.render(
-                    {
-                        "recipient": recipient,
-                        "entity": data["entity"],
-                        "count": data["count"],
-                        "ticket_days": ticket_days,
-                        "proposals": data["proposals"],
-                    }
-                )
+        if not data["count"]:
+            return
 
-                if recipient == "net":
-                    subject = _(
-                        "PeeringDB: Action May Be Needed: IX-F Importer "
-                        "data mismatch between AS{} and one or more IXPs"
-                    ).format(data["entity"].asn)
-                    self._email(subject, message, contacts, net=data["entity"])
-                else:
-                    subject = _(
-                        "PeeringDB: Action May Be Needed: IX-F Importer "
-                        "data mismatch between {} and one or more networks"
-                    ).format(data["entity"].name)
-                    self._email(subject, message, contacts, ix=data["entity"])
+        # render the consolidated message
+
+        message = template.render(
+            {
+                "recipient": recipient,
+                "entity": data["entity"],
+                "count": data["count"],
+                "ticket_days": ticket_days,
+                "proposals": data["proposals"],
+            }
+        )
+
+        if recipient == "net":
+            subject = _(
+                "PeeringDB: Action May Be Needed: IX-F Importer "
+                "data mismatch between AS{} and one or more IXPs"
+            ).format(data["entity"].asn)
+            self._email(subject, message, contacts, net=data["entity"])
+        else:
+            subject = _(
+                "PeeringDB: Action May Be Needed: IX-F Importer "
+                "data mismatch between {} and one or more networks"
+            ).format(data["entity"].name)
+            self._email(subject, message, contacts, ix=data["entity"])
 
     def ticket_aged_proposals(self):
 
