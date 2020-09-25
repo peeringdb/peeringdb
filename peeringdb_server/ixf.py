@@ -1156,6 +1156,14 @@ class Importer:
 
         if netixlan:
 
+            # ixf-memberdata actions that are consolidated
+            # requirements of other actions should be kept
+            # out of the log as they are already implied by
+            # the log entry of the requirement (#824)
+
+            if getattr(netixlan, "requirement_of", None):
+                return
+
             if hasattr(netixlan, "network_id"):
                 net_id = netixlan.network_id
             else:
@@ -1176,6 +1184,7 @@ class Importer:
             "action": action,
             "reason": f"{reason}",
         }
+
         self.log["data"].append(entry)
 
         if netixlan:
