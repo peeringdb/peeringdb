@@ -81,7 +81,7 @@ class Migration(migrations.Migration):
             name="geocode_status",
             field=models.BooleanField(
                 default=False,
-                help_text="Has this object's latitude and longitude been syncronized to it's address fields",
+                help_text="Has this object's latitude and longitude been synchronized to its address fields",
             ),
         ),
         migrations.AlterField(
@@ -146,7 +146,7 @@ class Migration(migrations.Migration):
             name="allow_ixp_update",
             field=models.BooleanField(
                 default=False,
-                help_text="Sepcifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data",
+                help_text="Specifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data",
             ),
         ),
         migrations.AlterField(

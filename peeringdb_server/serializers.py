@@ -344,7 +344,7 @@ class SaneIntegerField(serializers.IntegerField):
 
 class ParentStatusException(IOError):
     """
-    Throw this when an object cannot be created because it's parent is
+    Throw this when an object cannot be created because its parent is
     either status pending or deleted
     """
 
@@ -352,14 +352,14 @@ class ParentStatusException(IOError):
         if parent.status == "pending":
             super(IOError, self).__init__(
                 _(
-                    "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
+                    "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
                 )
                 % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
             )
         elif parent.status == "deleted":
             super(IOError, self).__init__(
                 _(
-                    "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
+                    "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
                 )
                 % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
             )
@@ -1073,7 +1073,7 @@ class FacilitySerializer(ModelSerializer):
     validators = [FieldMethodValidator("suggest", ["POST"])]
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create facilities if the parent
+        # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
@@ -1214,7 +1214,7 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
     fac = serializers.SerializerMethodField()
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create ixfacs if the parent
+        # we don't want users to be able to create ixfacs if the parent
         # ix or fac status is pending or deleted
         if data.get("ix") and data.get("ix").status != "ok":
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
@@ -1274,7 +1274,7 @@ class NetworkContactSerializer(ModelSerializer):
     net = serializers.SerializerMethodField()
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create contacts if the parent
+        # we don't want users to be able to create contacts if the parent
         # network status is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
             raise ParentStatusException(
@@ -1363,7 +1363,7 @@ class NetworkIXLanSerializer(ModelSerializer):
     ipaddr6 = IPAddressField(version=6, allow_blank=True)
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create netixlans if the parent
+        # we don't want users to be able to create netixlans if the parent
         # network or ixlan is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
             raise ParentStatusException(
@@ -1598,7 +1598,7 @@ class NetworkFacilitySerializer(ModelSerializer):
         return qset.select_related("network", "facility"), filters
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create netfac links if the parent
+        # we don't want users to be able to create netfac links if the parent
         # network or facility status is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
             raise ParentStatusException(
@@ -1849,7 +1849,7 @@ class NetworkSerializer(ModelSerializer):
         return super().to_internal_value(data)
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create networks if the parent
+        # we don't want users to be able to create networks if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
@@ -1978,7 +1978,7 @@ class IXLanPrefixSerializer(ModelSerializer):
         return qset.select_related("ixlan", "ixlan__ix"), filters
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create prefixes if the parent
+        # we don't want users to be able to create prefixes if the parent
         # ixlan status is pending or deleted
         if data.get("ixlan") and data.get("ixlan").status != "ok":
             raise ParentStatusException(
@@ -2066,7 +2066,7 @@ class IXLanSerializer(ModelSerializer):
     )
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create ixlans if the parent
+        # we don't want users to be able to create ixlans if the parent
         # ix status is pending or deleted
         if data.get("ix") and data.get("ix").status != "ok":
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
@@ -2279,7 +2279,7 @@ class InternetExchangeSerializer(ModelSerializer):
         return qset, filters
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create internet exchanges if the parent
+        # we don't want users to be able to create internet exchanges if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
@@ -2312,7 +2312,7 @@ class InternetExchangeSerializer(ModelSerializer):
         # object is created and connected to the ix
 
         # the prefix that was provided, we pop it off the validated
-        # data because we dont need it during the ix creation
+        # data because we don't need it during the ix creation
         prefix = validated_data.pop("prefix")
 
         # create ix

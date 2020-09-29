@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
             name="allow_ixp_update",
             field=models.BooleanField(
                 default=False,
-                help_text=b"Sepcifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data",
+                help_text=b"Specifies whether an ixp is allowed to add a netixlan entry for this network via their ixp_member data",
             ),
         ),
     ]

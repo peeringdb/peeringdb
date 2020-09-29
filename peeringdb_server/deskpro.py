@@ -240,7 +240,7 @@ def ticket_queue_deletion_prevented(user, instance):
         f"{instance}"
     )
 
-    # we dont want to spam DeskPRO with tickets when a user
+    # we don't want to spam DeskPRO with tickets when a user
     # repeatedly clicks the delete button for an object
     #
     # so we check if a ticket has recently been sent for it

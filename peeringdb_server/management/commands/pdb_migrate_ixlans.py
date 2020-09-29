@@ -432,7 +432,7 @@ class Command(BaseCommand):
     def migrate_ixlan_id_sql(self, old_id, new_id):
 
         """
-        Migrate ixlan id so it matches it's parent id
+        Migrate ixlan id so it matches its parent id
 
         This is called automatically during `migrate_ixlan_id` and should not be
         called manually

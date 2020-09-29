@@ -511,7 +511,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
     def require_data(self, request):
         """
-        Test that the request contains data in it's body that
+        Test that the request contains data in its body that
         can be parsed to the required format (json) and is not
         empty
 

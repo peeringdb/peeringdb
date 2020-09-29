@@ -246,7 +246,7 @@ class GeocodeBaseMixin(models.Model):
     geocode_status = models.BooleanField(
         default=False,
         help_text=_(
-            "Has this object's latitude and longitude been syncronized to it's address fields"
+            "Has this object's latitude and longitude been synchronized to its address fields"
         ),
     )
     geocode_date = models.DateTimeField(
@@ -330,7 +330,7 @@ class UserOrgAffiliationRequest(models.Model):
     When an ASN is entered that is not in the database yet it will
     notify PDB staff
 
-    When an ASN is entered that is already in the database the organzation
+    When an ASN is entered that is already in the database the organization
     adminstration is notified and they can then approve or deny
     the affiliation request themselves.
 
@@ -417,7 +417,7 @@ class UserOrgAffiliationRequest(models.Model):
             if not self.user.is_verified_user:
                 self.user.set_verified()
 
-            # since it was approved, we dont need to keep the
+            # since it was approved, we don't need to keep the
             # request item around
             self.status = "approved"
             self.delete()
@@ -710,7 +710,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase):
     @property
     def urls(self):
         """
-        Returns all the websites for the org based on it's
+        Returns all the websites for the org based on its
         website field and the website fields on all the entities it
         owns
         """
@@ -1676,7 +1676,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Keyword Argument(s):
 
         - create_ixlan (`bool`=True): if True and the ix is missing
-          it's ixlan, create it
+          its ixlan, create it
         """
         r = super().save(**kwargs)
 
@@ -1800,7 +1800,7 @@ class IXLan(pdb_models.IXLanBase):
         set for ixlan.
 
         This will strip `ixf_ixp_member_list_url` fields for
-        users that dont have read permissions for them according
+        users that don't have read permissions for them according
         to `ixf_ixp_member_list_url_visible`
 
         Argument(s):
@@ -3526,7 +3526,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         of the following is True:
 
         - parent ixlan has netixlans that fall into
-          it's address space
+          its address space
         """
 
         prefix = self.prefix
@@ -3585,7 +3585,7 @@ class Network(pdb_models.NetworkBase):
         null=False,
         default=False,
         help_text=_(
-            "Sepcifies whether an IXP is allowed to add a netixlan entry for this network via their ixp_member data"
+            "Specifies whether an IXP is allowed to add a netixlan entry for this network via their ixp_member data"
         ),
     )
 
@@ -4536,7 +4536,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             return None
 
         # allauth supports multiple email addresses per user, however
-        # we dont need that, so we check for the primary email address
+        # we don't need that, so we check for the primary email address
         # and if it already exist we make sure to update it to the
         # email address currently specified on the user instance
         try:
