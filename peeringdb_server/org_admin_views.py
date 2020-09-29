@@ -459,7 +459,7 @@ def uoar_approve(request, **kwargs):
             if admin_user != request.user:
                 with override(admin_user.locale):
                     admin_user.email_user(
-                        _("%(user_name)s's afilliation request has been approved")
+                        _("%(user_name)s's affiliation request has been approved")
                         % {"user_name": uoar.user.full_name},
                         loader.get_template(
                             "email/notify-org-admin-user-affil-approved.txt"
@@ -518,7 +518,7 @@ def uoar_deny(request, **kwargs):
             if user != request.user:
                 with override(user.locale):
                     user.email_user(
-                        _("%(user_name)s's afilliation request has been denied")
+                        _("%(user_name)s's affiliation request has been denied")
                         % {"user_name": uoar.user.full_name},
                         loader.get_template(
                             "email/notify-org-admin-user-affil-denied.txt"

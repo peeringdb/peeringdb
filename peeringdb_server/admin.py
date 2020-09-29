@@ -392,7 +392,7 @@ class ModelAdminWithVQCtrl:
         fieldsets = tuple(super().get_fieldsets(request, obj=obj))
 
         # on automatically defined fieldsets it will insert the controls
-        # somewhere towards the bottom, we dont want that - so we look for it and
+        # somewhere towards the bottom, we don't want that - so we look for it and
         # remove it
         for k, s in fieldsets:
             if "verification_queue" in s["fields"]:
@@ -1377,7 +1377,7 @@ class UserPermissionAdmin(UserAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         # we want to remove the password field from the form
-        # since we dont send it and dont want to run clean for it
+        # since we don't send it and don't want to run clean for it
         form = super().get_form(request, obj, **kwargs)
         del form.base_fields["password"]
         return form

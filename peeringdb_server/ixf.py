@@ -518,7 +518,7 @@ class Importer:
         netixlan_qset = self.ixlan.netixlan_set_active
 
         # if we are only processing a specific asn ignore
-        # all that dont match
+        # all that don't match
 
         if self.asn:
             netixlan_qset = netixlan_qset.filter(asn=self.asn)
@@ -666,7 +666,7 @@ class Importer:
                 asn = member["asnum"]
 
                 # if we are only processing a specific asn, ignore all
-                # that dont match
+                # that don't match
                 if self.asn and asn != self.asn:
                     continue
 

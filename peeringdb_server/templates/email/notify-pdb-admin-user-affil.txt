@@ -7,7 +7,7 @@
     {% if instance.org_name %}
       {% trans "They also provided this organization name in their request" %}: {{ instance.org_name }}
     {% endif %}
-    {% trans "There was no entry in our database that matches that ASN, so it is likely that a network and organzation for it will need to be created." %}
+    {% trans "There was no entry in our database that matches that ASN, so it is likely that a network and organization for it will need to be created." %}
   {% else %}
     {% blocktrans with u_name=user.full_name u_email=user.email o_name=instance.org_name trimmed %}
     User {{ u_name }} ({{ u_email }}) wishes to create an organization called {{ o_name }}.
@@ -25,7 +25,7 @@
     {% trans "ATTENTION: This is an ownership request, approving it will grant the user administration rights over the organization and any entities it owns." %}
   {% endif %}
   {% if instance.org.urls %}
-    {% trans "These are the website addresses were able to derive from the organzation and it's entities" %}:
+    {% trans "These are the website addresses were able to derive from the organization and it's entities" %}:
     {% for url in instance.org.urls %}- <a href="{{ url }}">{{ url }}</a> {% endfor %}
   {%endif %}
   {% trans "These are the email addresses we could fetch from the ASNs belonging to this organization" %}:

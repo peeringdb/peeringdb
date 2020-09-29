@@ -19,5 +19,5 @@ Currently this is the case for:
 To be able to create an object, the requesting user requires `create` permissions to one of the
 object's parents in the relationship hierarchy.
 
-For example to create a `net` type object, the user needs to be permissioned to create in the organzation
+For example to create a `net` type object, the user needs to be permissioned to create in the organization
 that is to be the network's holder entity.
