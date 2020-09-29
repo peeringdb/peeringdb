@@ -4,13 +4,15 @@ import datetime
 
 import requests
 import ipaddress
-
+from smtplib import SMTPException
 from django.db import transaction
 from django.core.cache import cache
-from django.utils.translation import ugettext_lazy as _
+from django.core.mail.message import EmailMultiAlternatives
 from django.core.exceptions import ValidationError
-from django.template import loader
 from django.conf import settings
+from django.template import loader
+from django.utils.translation import ugettext_lazy as _
+from django.utils.html import strip_tags
 
 import reversion
 
@@ -1029,9 +1031,9 @@ class Importer:
 
         for ixf_id, deletion in self.deletions.items():
             if deletion.asn == ixf_member_data.asn:
-                if deletion.ipaddr4 == ixf_member_data.init_ipaddr4:
+                if deletion.ipaddr4 and deletion.ipaddr4 == ixf_member_data.init_ipaddr4:
                     ip4_deletion = deletion
-                if deletion.ipaddr6 == ixf_member_data.init_ipaddr6:
+                if deletion.ipaddr6 and deletion.ipaddr6 == ixf_member_data.init_ipaddr6:
                     ip6_deletion = deletion
 
             if ip4_deletion and ip6_deletion:
@@ -1154,6 +1156,14 @@ class Importer:
 
         if netixlan:
 
+            # ixf-memberdata actions that are consolidated
+            # requirements of other actions should be kept
+            # out of the log as they are already implied by
+            # the log entry of the requirement (#824)
+
+            if getattr(netixlan, "requirement_of", None):
+                return
+
             if hasattr(netixlan, "network_id"):
                 net_id = netixlan.network_id
             else:
@@ -1174,6 +1184,7 @@ class Importer:
             "action": action,
             "reason": f"{reason}",
         }
+
         self.log["data"].append(entry)
 
         if netixlan:
@@ -1213,24 +1224,25 @@ class Importer:
                 recipients=",".join(recipients),
                 ix=ix,
             )
-
             if not self.notify_ix_enabled:
                 return
 
-        if not getattr(settings, "MAIL_DEBUG", False):
-            mail = EmailMultiAlternatives(
-                subject, strip_tags(message), settings.DEFAULT_FROM_EMAIL, recipients,
-            )
-            mail.send(fail_silently=False)
-        else:
-            self.emails += 1
-            # debug_mail(
-            #    subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
-            # )
+        self.emails += 1
+
+        prod_mail_mode = not getattr(settings, "MAIL_DEBUG", True)
+        if prod_mail_mode:
+            self._send_email(subject, strip_tags(message), recipients)
+            if email_log:
+                email_log.sent = datetime.datetime.now(datetime.timezone.utc)
 
         if email_log:
-            email_log.sent = datetime.datetime.now(datetime.timezone.utc)
             email_log.save()
+
+    def _send_email(self, subject, message, recipients):
+        mail = EmailMultiAlternatives(
+            subject, message, settings.DEFAULT_FROM_EMAIL, recipients,
+        )
+        mail.send(fail_silently=False)
 
     def _ticket(self, ixf_member_data, subject, message):
 
@@ -1437,7 +1449,7 @@ class Importer:
             "ix": ix_notifications,
         }
 
-    def notify_proposals(self):
+    def notify_proposals(self, error_handler=None):
 
         """
         Sends all collected notification proposals
@@ -1457,45 +1469,57 @@ class Importer:
 
         template = loader.get_template("email/notify-ixf-consolidated.txt")
 
+        errors = []
+
         for recipient in ["ix", "net"]:
             for other_entity, data in consolidated[recipient].items():
-                contacts = data["contacts"]
+                try:
+                    self._notify_proposal(recipient, data, ticket_days, template)
+                except Exception as exc:
+                    if error_handler:
+                        error_handler(exc)
+                    else:
+                        raise
 
-                # we did not find any suitable contact points
-                # skip
 
-                if not contacts:
-                    continue
+    def _notify_proposal(self, recipient, data, ticket_days, template):
+        contacts = data["contacts"]
 
-                # no messages
+        # we did not find any suitable contact points
+        # skip
 
-                if not data["count"]:
-                    continue
+        if not contacts:
+            return
 
-                # render the consolidated message
+        # no messages
 
-                message = template.render(
-                    {
-                        "recipient": recipient,
-                        "entity": data["entity"],
-                        "count": data["count"],
-                        "ticket_days": ticket_days,
-                        "proposals": data["proposals"],
-                    }
-                )
+        if not data["count"]:
+            return
 
-                if recipient == "net":
-                    subject = _(
-                        "PeeringDB: Action May Be Needed: IX-F Importer "
-                        "data mismatch between AS{} and one or more IXPs"
-                    ).format(data["entity"].asn)
-                    self._email(subject, message, contacts, net=data["entity"])
-                else:
-                    subject = _(
-                        "PeeringDB: Action May Be Needed: IX-F Importer "
-                        "data mismatch between {} and one or more networks"
-                    ).format(data["entity"].name)
-                    self._email(subject, message, contacts, ix=data["entity"])
+        # render the consolidated message
+
+        message = template.render(
+            {
+                "recipient": recipient,
+                "entity": data["entity"],
+                "count": data["count"],
+                "ticket_days": ticket_days,
+                "proposals": data["proposals"],
+            }
+        )
+
+        if recipient == "net":
+            subject = _(
+                "PeeringDB: Action May Be Needed: IX-F Importer "
+                "data mismatch between AS{} and one or more IXPs"
+            ).format(data["entity"].asn)
+            self._email(subject, message, contacts, net=data["entity"])
+        else:
+            subject = _(
+                "PeeringDB: Action May Be Needed: IX-F Importer "
+                "data mismatch between {} and one or more networks"
+            ).format(data["entity"].name)
+            self._email(subject, message, contacts, ix=data["entity"])
 
     def ticket_aged_proposals(self):
 
@@ -1533,6 +1557,9 @@ class Importer:
             action = ixf_member_data.action
             if action == "delete":
                 action = "remove"
+            elif action == "noop":
+                continue
+
             typ = action
 
             # create the ticket
@@ -1655,6 +1682,55 @@ class Importer:
         self.log["errors"].append(f"{error}")
         if save:
             self.save_log()
+
+    def resend_emails(self):
+        """
+        Resend emails that weren't sent.
+        """
+
+        resent_emails = []
+        for email in self.emails_to_resend:
+            try:
+                resent_email = self._resend_email(email)
+                if resent_email:
+                    resent_emails.append(resent_email)
+            except SMTPException as email_exception:
+                pass
+
+        return resent_emails
+
+    @property
+    def emails_to_resend(self):
+        return IXFImportEmail.objects.filter(sent__isnull=True).all()
+
+    def _resend_email(self, email):
+
+        subject = email.subject
+        message = email.message
+        resend_str = "This email could not be delivered initially and may contain stale information. \n"
+        if not message.startswith(resend_str):
+            message = resend_str + message
+
+        recipients = email.recipients.split(",")
+
+        if email.net and not self.notify_net_enabled:
+            return False
+
+        if email.ix and not self.notify_ix_enabled:
+            return False
+
+        prod_mail_mode = not getattr(settings, "MAIL_DEBUG", True)
+        prod_resend_mode = getattr(settings, "IXF_RESEND_FAILED_EMAILS", False)
+
+        if prod_mail_mode and prod_resend_mode:
+            self._send_email(subject, strip_tags(message), recipients)
+            email.sent = datetime.datetime.now(datetime.timezone.utc)
+            email.message = message
+            email.save()
+        else:
+            return False
+
+        return email
 
 
 class PostMortem:

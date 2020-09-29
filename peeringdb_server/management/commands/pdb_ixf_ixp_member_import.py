@@ -1,5 +1,6 @@
 import traceback
 import json
+import sys
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -75,11 +76,14 @@ class Command(BaseCommand):
         else:
             self.stdout.write("[Pretend] {}".format(msg))
 
-    def release_env_check(self, flag):
-        if settings.RELEASE_ENV != "prod":
-            return True
-        else:
-            raise PermissionError("Flag {} is not permitted to be used in production.")
+    def store_runtime_error(self, error):
+        error_str = "ERROR: {}".format(error) + "\n"
+        error_str += traceback.format_exc()
+        self.runtime_errors.append(error_str)
+
+    def write_runtime_errors(self):
+        for error in self.runtime_errors:
+            self.stderr.write(error)
 
     def initiate_reset_flags(self, **options):
         flags = [
@@ -161,6 +165,12 @@ class Command(BaseCommand):
                 ),
             )
 
+    def resend_emails(self, importer):
+        num_emails_to_resend = len(importer.emails_to_resend)
+        self.log(f"Attemping to resend {num_emails_to_resend} emails.")
+        resent_emails = importer.resend_emails()
+        self.log(f"RE-SENT EMAILS: {len(resent_emails)}.")
+
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
         self.debug = options.get("debug", False)
@@ -169,6 +179,8 @@ class Command(BaseCommand):
         self.skip_import = options.get("skip_import", False)
 
         self.active_reset_flags = self.initiate_reset_flags(**options)
+
+        self.runtime_errors = []
 
         if self.reset or self.reset_hints:
             self.reset_all_hints()
@@ -237,8 +249,7 @@ class Command(BaseCommand):
                 total_notifications += importer.notifications
 
             except Exception as inst:
-                self.log("ERROR: {}".format(inst))
-                self.log(traceback.format_exc())
+                self.store_runtime_error(inst)
 
         if self.preview:
             self.stdout.write(json.dumps(total_log, indent=2))
@@ -249,6 +260,13 @@ class Command(BaseCommand):
         importer = ixf.Importer()
         importer.reset(save=self.commit)
         importer.notifications = total_notifications
-        importer.notify_proposals()
+        importer.notify_proposals(error_handler=self.store_runtime_error)
 
-        self.stdout.write(f"Emails: {importer.emails}")
+        self.stdout.write(f"New Emails: {importer.emails}")
+
+        if len(self.runtime_errors) > 0:
+            self.write_runtime_errors()
+            sys.exit(1)
+
+        if self.commit:
+            self.resend_emails(importer)

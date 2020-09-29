@@ -1115,7 +1115,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="fac_set"
     )
-
+    website = models.URLField(_("Website"), blank=False)
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
     class HandleRef:
@@ -4054,6 +4054,14 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
 # ip in prefix
 # prefix on lan
 # FIXME - need unique constraint at save time, allow empty string for ipv4/ipv6
+def format_speed(value):
+    if value >= 1000000:
+        return "%dT" % (value / 10 ** 6)
+    elif value >= 1000:
+        return "%dG" % (value / 10 ** 3)
+    else:
+        return "%dM" % value
+
 @reversion.register
 class NetworkIXLan(pdb_models.NetworkIXLanBase):
     """
@@ -4205,6 +4213,21 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         if self.ipaddr6 and not self.ixlan.test_ipv6_address(self.ipaddr6):
             raise ValidationError(_("IPv6 address outside of prefix"))
 
+    def validate_speed(self):
+        if self.speed in [None, 0]:
+            pass
+        elif self.speed > settings.DATA_QUALITY_MAX_SPEED:
+            raise ValidationError(_("Maximum speed: {}").format(
+                    format_speed(settings.DATA_QUALITY_MAX_SPEED)
+                    )
+            )
+        elif self.speed < settings.DATA_QUALITY_MIN_SPEED:
+            raise ValidationError(_("Minimum speed: {}").format(
+                    format_speed(settings.DATA_QUALITY_MIN_SPEED)
+                    )
+            )
+
+
     def clean(self):
         """
         Custom model validation
@@ -4223,6 +4246,11 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             self.validate_ipaddr6()
         except ValidationError as exc:
             errors["ipaddr6"] = exc.message
+
+        try:
+            self.validate_speed()
+        except ValidationError as exc:
+            errors["speed"] = exc.message
 
         if errors:
             raise ValidationError(errors)

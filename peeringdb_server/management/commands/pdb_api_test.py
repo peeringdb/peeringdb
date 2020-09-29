@@ -571,6 +571,7 @@ class TestJSON(unittest.TestCase):
 
                     with pytest.raises(InvalidRequestException) as excinfo:
                         r = db.create(typ, data_invalid, return_response=True)
+
                     assert "400 Bad Request" in str(excinfo.value)
 
             # we test fail because of parent entity status
@@ -1161,7 +1162,10 @@ class TestJSON(unittest.TestCase):
             "fac",
             data,
             test_failures={
-                "invalid": {"name": "",},
+                "invalid": [
+                    {"name": ""},
+                    {"name": self.make_name("Test"), "website": ""},
+                ],
                 "perms": {
                     # need to set name again so it doesnt fail unique validation
                     "name": self.make_name("Test"),
@@ -1219,6 +1223,30 @@ class TestJSON(unittest.TestCase):
 
         # But rencode should be null
         assert r_data_new["rencode"] == ""
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_PUT_DELETE_fac_zipcode(self):
+        data = self.make_data_fac()
+
+        # Requires a zipcode if country is a country
+        # with postal codes (ie US)
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "fac",
+            data,
+            test_failures={
+                "invalid": [{"name": self.make_name("Test"), "zipcode": ""},],
+            },
+            test_success=False,
+        )
+
+        # Change to country w/o postal codes
+        data["country"] = "ZW"
+        data["zipcode"] = ""
+
+        r_data = self.assert_create(self.db_org_admin, "fac", data,)
+        assert r_data["zipcode"] == ""
 
     ##########################################################################
 
@@ -1647,6 +1675,49 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_org_admin_002_POST_netixlan_no_net_contact(self):
+        network = SHARED["net_rw_ok"]
+
+        for poc in network.poc_set_active.all():
+            poc.delete()
+
+        data = self.make_data_netixlan(
+            net_id=SHARED["net_rw_ok"].id,
+            ixlan_id=SHARED["ixlan_rw_ok"].id,
+            asn=SHARED["net_rw_ok"].asn,
+        )
+
+        # When we create this netixlan it should fail with a
+        # non-field-error.
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "netixlan",
+            data,
+            test_failures={"invalid": {"n/a": "n/a"}},
+            test_success=False,
+        )
+
+        # Undelete poc but blank email
+        poc = network.poc_set.first()
+        poc.status = "ok"
+        poc.email = ""
+        poc.visible = "Public"
+        poc.save()
+        network.refresh_from_db()
+
+        # Also fails with network contact that is
+        # missing an email
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "netixlan",
+            data,
+            test_failures={"invalid": {"n/a": "n/a"}},
+            test_success=False,
+        )
+
+    ##########################################################################
+
     def test_org_admin_002_POST_PUT_netixlan_validation(self):
         data = self.make_data_netixlan(
             net_id=SHARED["net_rw_ok"].id, ixlan_id=SHARED["ixlan_rw_ok"].id
@@ -1657,6 +1728,12 @@ class TestJSON(unittest.TestCase):
             {"invalid": {"ipaddr4": self.get_ip4(SHARED["ixlan_r_ok"])}},
             # test failure if ip6 not in prefix
             {"invalid": {"ipaddr6": self.get_ip6(SHARED["ixlan_r_ok"])}},
+            # test failure if speed is below limit
+            {"invalid": {"speed": 1}},
+            # test failure if speed is above limit
+            {"invalid": {"speed": 1250000}},
+            # test failure if speed is None
+            {"invalid": {"speed": None}},
         ]
 
         for test_failure in test_failures:
@@ -1893,7 +1970,9 @@ class TestJSON(unittest.TestCase):
         with fields parameter set would raise a 500 error for
         unauthenticated users
         """
-        data = self.db_guest.get("ixlan", SHARED["ixlan_rw_ok"].id, fields="ixpfx_set", depth=2)
+        data = self.db_guest.get(
+            "ixlan", SHARED["ixlan_rw_ok"].id, fields="ixpfx_set", depth=2
+        )
         assert len(data) == 1
         row = data[0]
         assert list(row.keys()) == ["ixpfx_set"]

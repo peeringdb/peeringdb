@@ -50,6 +50,7 @@ from peeringdb_server.validators import (
     validate_prefix_overlap,
     validate_phonenumber,
     validate_irr_as_set,
+    validate_zipcode,
 )
 
 from django.utils.translation import ugettext_lazy as _
@@ -1064,7 +1065,7 @@ class FacilitySerializer(ModelSerializer):
     website = serializers.URLField()
     address1 = serializers.CharField()
     city = serializers.CharField()
-    zipcode = serializers.CharField()
+    zipcode = serializers.CharField(required=False, allow_blank=True, default="")
 
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
     sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
@@ -1184,6 +1185,11 @@ class FacilitySerializer(ModelSerializer):
             )
         except ValidationError as exc:
             raise serializers.ValidationError({"sales_phone": exc.message})
+
+        try:
+            data["zipcode"] = validate_zipcode(data["zipcode"], data["country"])
+        except ValidationError as exc:
+            raise serializers.ValidationError({"zipcode": exc.message})
 
         return data
 
@@ -1462,9 +1468,35 @@ class NetworkIXLanSerializer(ModelSerializer):
                 pass
         return super().run_validation(data=data)
 
-    def validate(self, data):
-        netixlan = NetworkIXLan(**data)
+    def _validate_network_contact(self, data):
+        """
+        Per github ticket #826, we only allow a Netixlan to be added
+        if there is a network contact that the AC can get in touch
+        with to resolve issues.
+        """
+        network = data["network"]
 
+        poc = (
+            network.poc_set_active.filter(
+                role__in=["Technical", "NOC", "Policy"], visible__in=["Users", "Public"]
+            )
+            .exclude(email="")
+            .count()
+        )
+
+        if poc == 0:
+            raise serializers.ValidationError(
+                _(
+                    "Network must have a Technical, NOC, or Policy point of contact "
+                    "with valid email before adding exchange point."
+                )
+            )
+
+    def validate(self, data):
+
+        self._validate_network_contact(data)
+
+        netixlan = NetworkIXLan(**data)
         try:
             netixlan.validate_ipaddr4()
         except ValidationError as exc:
@@ -1474,6 +1506,11 @@ class NetworkIXLanSerializer(ModelSerializer):
             netixlan.validate_ipaddr6()
         except ValidationError as exc:
             raise serializers.ValidationError({"ipaddr6": exc.message})
+
+        try:
+            netixlan.validate_speed()
+        except ValidationError as exc:
+            raise serializers.ValidationError({"speed": exc.message})
 
         # when validating an existing netixlan that has a mismatching
         # asn value raise a validation error stating that it needs

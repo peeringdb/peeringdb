@@ -1,6 +1,7 @@
 import json
 import os
 from pprint import pprint
+import pytest
 import reversion
 import requests
 import jsonschema
@@ -8,6 +9,9 @@ import time
 import io
 import datetime
 import ipaddress
+
+from django.test import override_settings
+from django.conf import settings
 
 from peeringdb_server.models import (
     Organization,
@@ -24,7 +28,6 @@ from peeringdb_server.models import (
     IXFImportEmail,
 )
 from peeringdb_server import ixf
-import pytest
 
 
 @pytest.mark.django_db
@@ -767,7 +770,6 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
     ixlan.ix.refresh_from_db()
     assert ixlan.ix.updated == ix_updated
 
-
     if (not network.ipv4_support and use_ip(4) and not use_ip(6)) or (
         not network.ipv6_support and use_ip(6) and not use_ip(4)
     ):
@@ -953,6 +955,88 @@ def test_suggest_add(entities, use_ip, save):
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
+
+@pytest.mark.django_db
+def test_suggest_add_delete(entities, use_ip_alt, save):
+    """
+    Tests suggesting a netixlan create and a deletion
+    at the same time while one of the ips is nulled.
+
+    This was observed in issue #832
+    """
+
+    data = setup_test_data("ixf.member.3")  # asn1001
+    network = entities["net"]["UPDATE_DISABLED"]  # asn1001
+    ixlan = entities["ixlan"][0]
+
+    # remove ip from ix-f data as per use_ip_alt fixture
+    if not use_ip_alt(4):
+        del data["member_list"][0]["connection_list"][0]["vlan_list"][0]["ipv4"]
+    elif not use_ip_alt(6):
+        del data["member_list"][0]["connection_list"][0]["vlan_list"][0]["ipv6"]
+
+
+    # we don't want the extra ix-f entry for this test
+    del data["member_list"][0]["connection_list"][1]
+
+    # This appears in the remote-ixf data so should not
+    # create a IXFMemberData instance
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4=use_ip_alt(4, "195.69.147.252"),
+            ipaddr6=use_ip_alt(6, "2001:7f8:1::a500:2906:2"),
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    if (not network.ipv6_support and not use_ip_alt(4)) or \
+       (not network.ipv4_support and not use_ip_alt(6)):
+
+        #edge case: network not supporting the only provided ip
+        #do nothing
+        assert IXFMemberData.objects.all().count() == 0
+
+        assert_no_emails(network, ixlan.ix)
+
+    else:
+        assert IXFMemberData.objects.all().count() == 2
+
+        email_info = [
+            ("REMOVE", network.asn, use_ip_alt(4, "195.69.147.252"), use_ip_alt(6, "2001:7f8:1::a500:2906:2")),
+            ("CREATE", network.asn, use_ip_alt(4, "195.69.147.250"), use_ip_alt(6, "2001:7f8:1::a500:2906:1"))
+        ]
+
+        assert_ix_email(ixlan.ix, email_info)
+        assert_network_email(network, email_info)
+
+        assert IXFMemberData.objects.get(
+            ipaddr4=use_ip_alt(4,"195.69.147.252"),
+            ipaddr6=use_ip_alt(6,"2001:7f8:1::a500:2906:2")
+        ).action == "delete"
+
+        assert IXFMemberData.objects.get(
+            ipaddr4=use_ip_alt(4,"195.69.147.250"),
+            ipaddr6=use_ip_alt(6,"2001:7f8:1::a500:2906:1")
+        ).action == "add"
+
+
+    # Test idempotent
+    assert_idempotent(importer, ixlan, data)
+
 
 
 @pytest.mark.django_db
@@ -1230,6 +1314,7 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
+
 @pytest.mark.django_db
 def test_816_edge_case(entities, use_ip, save):
     """
@@ -1266,8 +1351,12 @@ def test_816_edge_case(entities, use_ip, save):
     assert IXFMemberData.objects.count() == 2
     assert IXFMemberData.objects.get(asn=1001).action == "add"
 
-    assert IXFImportEmail.objects.filter(net__asn=1001, message__contains='CREATE').exists()
-    assert not IXFImportEmail.objects.filter(net__asn=1001, message__contains='MODIFY').exists()
+    assert IXFImportEmail.objects.filter(
+        net__asn=1001, message__contains="CREATE"
+    ).exists()
+    assert not IXFImportEmail.objects.filter(
+        net__asn=1001, message__contains="MODIFY"
+    ).exists()
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
@@ -2265,6 +2354,38 @@ def test_vlan_sanitize(data_ixf_vlan):
     assert sanitized == data_ixf_vlan.expected["vlan_list"]
 
 
+@override_settings(MAIL_DEBUG=False)
+@pytest.mark.django_db
+def test_send_email(entities, use_ip):
+    # Setup is from test_suggest_add()
+    print(f"Debug mode for mail: {settings.MAIL_DEBUG}")
+    data = setup_test_data("ixf.member.3")  # asn1001
+    network = entities["net"]["UPDATE_DISABLED"]  # asn1001
+    ixlan = entities["ixlan"][0]
+
+    # This appears in the remote-ixf data so should not
+    # create a IXFMemberData instance
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4=use_ip(4, "195.69.147.251"),
+            ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:3"),
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    # This should actually send an email
+    importer.notify_proposals()
+    assert importer.emails == 2
+
 
 # FIXTURES
 @pytest.fixture(params=[True, False])
@@ -2485,6 +2606,20 @@ def use_ip(request):
     1) use ip4, use ip6
     2) use ip4, dont use ip6
     3) dont use ip4, use ip6
+    """
+
+    use_ipv4, use_ipv6 = request.param
+
+    return UseIPAddrWrapper(use_ipv4, use_ipv6)
+
+
+@pytest.fixture(params=[(True, False), (False, True)])
+def use_ip_alt(request):
+    """
+    Fixture that gives back 2 instances of UseIpAddrWrapper
+
+    1) use ip4, dont use ip6
+    2) dont use ip4, use ip6
     """
 
     use_ipv4, use_ipv6 = request.param

@@ -387,6 +387,43 @@ class AdminTests(TestCase):
         assert netixlan.ipaddr4 is None
         assert "Ip address already exists elsewhere" in response.content.decode("utf-8")
 
+    def test_validate_netixlan_speed(self):
+        ixlan = self.entities["ixlan"][0]
+        netixlan = ixlan.netixlan_set.first()
+
+        url = reverse(
+            "admin:{}_{}_change".format(
+                netixlan._meta.app_label, netixlan._meta.object_name,
+            ).lower(),
+            args=(netixlan.id,),
+        )
+        original_speed = netixlan.speed
+        data =  {
+            "status": netixlan.status,
+            "asn": netixlan.asn,
+            "ipaddr4": netixlan.ipaddr4,
+            "ipaddr6": "",
+            "notes": netixlan.notes,
+            "speed": 1200000,
+            "operational": netixlan.operational,
+            "network": netixlan.network_id,
+            "ixlan": netixlan.ixlan_id,
+            "_save": "Save",
+        }
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.post(url, data)
+        netixlan.refresh_from_db()
+        assert "Maximum speed: 1T" in response.content.decode("utf-8")
+        assert netixlan.speed == original_speed
+
+        data["speed"] = 10
+        response = client.post(url, data)
+        netixlan.refresh_from_db()
+        assert "Minimum speed: 100M" in response.content.decode("utf-8")
+        assert netixlan.speed == original_speed
+
     def _run_regex_search(self, model, search_term):
         c = Client()
         c.login(username="admin", password="admin")
@@ -695,19 +732,14 @@ class AdminTests(TestCase):
 
         org = models.Organization.objects.first()
 
-        url = reverse(
-            "admin:peeringdb_server_organization_changelist",
-        )
+        url = reverse("admin:peeringdb_server_organization_changelist",)
 
-        response = client.post(url, {
-            "_selected_action": org.id,
-            "action": "soft_delete"
-        }, follow=True)
+        response = client.post(
+            url, {"_selected_action": org.id, "action": "soft_delete"}, follow=True
+        )
 
         assert response.status_code == 200
 
         messages = list(get_messages(response.wsgi_request))
         assert len(messages) == 1
         assert "Protected object" in str(messages[0])
-
-
