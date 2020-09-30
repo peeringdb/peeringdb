@@ -12,15 +12,23 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RenameField(
-            model_name="facility", old_name="lat", new_name="latitude",
+            model_name="facility",
+            old_name="lat",
+            new_name="latitude",
         ),
         migrations.RenameField(
-            model_name="facility", old_name="lon", new_name="longitude",
+            model_name="facility",
+            old_name="lon",
+            new_name="longitude",
         ),
         migrations.RenameField(
-            model_name="organization", old_name="lat", new_name="latitude",
+            model_name="organization",
+            old_name="lat",
+            new_name="latitude",
         ),
         migrations.RenameField(
-            model_name="organization", old_name="lon", new_name="longitude",
+            model_name="organization",
+            old_name="lon",
+            new_name="longitude",
         ),
     ]

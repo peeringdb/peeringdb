@@ -34,12 +34,12 @@ class Command(BaseCommand):
         ixp_from = pdbm.InternetExchange.objects.get(id=options.get("ids"))
         ixp_to = pdbm.InternetExchange.objects.get(id=options.get("target"))
 
-        self.log("Merging %s into %s" % (ixp_from.name, ixp_to.name))
+        self.log(f"Merging {ixp_from.name} into {ixp_to.name}")
 
         ixlans_from = pdbm.IXLan.objects.filter(ix=ixp_from).exclude(status="deleted")
         for ixlan in ixlans_from:
             ixlan.ix = ixp_to
-            self.log("Moving IXLAN %s to %s" % (ixlan.id, ixp_to.name))
+            self.log(f"Moving IXLAN {ixlan.id} to {ixp_to.name}")
             if self.commit:
                 ixlan.save()
         self.log("Soft Deleting %s" % ixp_from.name)

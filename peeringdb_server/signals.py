@@ -407,7 +407,6 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
         item = instance.item
         user = instance.user
 
-
         if type(item) in QUEUE_NOTIFY and not getattr(
             settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False
         ):
@@ -417,7 +416,7 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
             else:
                 rdap = None
 
-            with override('en'):
+            with override("en"):
                 entity_type_name = str(instance.content_type)
 
             title = f"{entity_type_name} - {item}"

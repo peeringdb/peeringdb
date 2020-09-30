@@ -21,7 +21,7 @@ class Command(BaseCommand):
     help = "Check data status/health"
 
     def log(self, id, msg):
-        print("%s: %s" % (id, msg))
+        print(f"{id}: {msg}")
 
     def print_line(self):
         print("".join(["-" for i in range(0, 80)]))
@@ -141,5 +141,8 @@ class Command(BaseCommand):
             if count > 0:
                 print(
                     "%d orphaned %ss (org status='deleted')"
-                    % (count, model.handleref.tag,)
+                    % (
+                        count,
+                        model.handleref.tag,
+                    )
                 )

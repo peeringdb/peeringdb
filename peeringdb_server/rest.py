@@ -106,7 +106,9 @@ class RestRouter(routers.DefaultRouter):
         # viewset.
         routers.Route(
             url=r"^{prefix}/{lookup}/{methodname}{trailing_slash}$",
-            mapping={"{httpmethod}": "{methodname}",},
+            mapping={
+                "{httpmethod}": "{methodname}",
+            },
             name="{basename}-{methodnamehyphen}",
             detail=False,
             initkwargs={},

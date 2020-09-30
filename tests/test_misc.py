@@ -13,7 +13,12 @@ def test_requests_ssl():
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "env,result", [("beta", True), ("dev", False), ("prod", False),]
+    "env,result",
+    [
+        ("beta", True),
+        ("dev", False),
+        ("prod", False),
+    ],
 )
 def test_beta_banner(env, result):
     _release_env = views.BASE_ENV["RELEASE_ENV"]
@@ -32,7 +37,12 @@ def test_beta_banner(env, result):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "env,result", [("beta", True), ("dev", False), ("prod", False),]
+    "env,result",
+    [
+        ("beta", True),
+        ("dev", False),
+        ("prod", False),
+    ],
 )
 def test_beta_banner_show_prod_sync_warning(env, result):
     _release_env = views.BASE_ENV["RELEASE_ENV"]

@@ -45,9 +45,7 @@ def _fix_number(tag, instance, field_name, list_fixed, list_invalid):
             print("FIXED", tag, instance.id, field_name, number, validated_number)
             instance.save()
         except Exception as exc:
-            _push_invalid(
-                tag, instance, field_name, number, list_invalid, f"{exc}"
-            )
+            _push_invalid(tag, instance, field_name, number, list_invalid, f"{exc}")
             print("INVALID", tag, instance.id, field_name, number)
 
 

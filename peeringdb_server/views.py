@@ -497,7 +497,10 @@ def view_profile_v1(request):
     # only add email fields if email scope is present
     if scope_email:
         data.update(
-            dict(email=request.user.email, verified_email=user.email_confirmed,)
+            dict(
+                email=request.user.email,
+                verified_email=user.email_confirmed,
+            )
         )
 
     # only add ddnetworks if networks scope is present
@@ -506,7 +509,14 @@ def view_profile_v1(request):
         load_perms(user)
         for net in user.networks:
             crud = get_perms(user._nsp_perms_struct, net.nsp_namespace.split(".")).value
-            networks.append(dict(id=net.id, name=net.name, asn=net.asn, perms=crud,))
+            networks.append(
+                dict(
+                    id=net.id,
+                    name=net.name,
+                    asn=net.asn,
+                    perms=crud,
+                )
+            )
 
         data["networks"] = networks
 
@@ -609,7 +619,9 @@ def view_username_retrieve(request):
     """
     env = BASE_ENV.copy()
     env.update(
-        {"global_stats": global_stats(),}
+        {
+            "global_stats": global_stats(),
+        }
     )
     return render(request, "site/username-retrieve.html", env)
 
@@ -695,7 +707,9 @@ def view_password_reset(request):
     if request.method in ["GET", "HEAD"]:
         env = BASE_ENV.copy()
         env.update(
-            {"global_stats": global_stats(),}
+            {
+                "global_stats": global_stats(),
+            }
         )
 
         env["token"] = token = request.GET.get("token")
@@ -783,7 +797,10 @@ def view_registration(request):
         template = loader.get_template("site/register.html")
         env = BASE_ENV.copy()
         env.update(
-            {"global_stats": global_stats(), "register_form": UserCreationForm(),}
+            {
+                "global_stats": global_stats(),
+                "register_form": UserCreationForm(),
+            }
         )
         update_env_beta_sync_dt(env)
         return HttpResponse(template.render(env, request))
@@ -1343,7 +1360,9 @@ def view_exchange(request, id):
                 "target": "api:ixlan:update",
                 "id": ixlan.id,
                 "label": _("LAN"),
-                "payload": [{"name": "ix_id", "value": exchange.id},],
+                "payload": [
+                    {"name": "ix_id", "value": exchange.id},
+                ],
             },
             {
                 "type": "flags",
@@ -1389,7 +1408,12 @@ def view_exchange(request, id):
             {
                 "type": "action",
                 "label": _("IX-F Import Preview"),
-                "actions": [{"label": _("Preview"), "action": "ixf_preview",},],
+                "actions": [
+                    {
+                        "label": _("Preview"),
+                        "action": "ixf_preview",
+                    },
+                ],
                 "admin": True,
             },
             {"type": "group_end"},
@@ -1596,7 +1620,9 @@ def view_network(request, id):
                     {
                         "name": "info_never_via_route_servers",
                         "label": _("Never via route servers"),
-                        "help_text": field_help(Network, "info_never_via_route_servers"),
+                        "help_text": field_help(
+                            Network, "info_never_via_route_servers"
+                        ),
                         "value": network_d.get("info_never_via_route_servers", False),
                     },
                 ],
@@ -1635,7 +1661,10 @@ def view_network(request, id):
                 "admin": True,
                 "label": _("IXP Update Tools"),
                 "actions": [
-                    {"label": _("Preview"), "action": "ixf_preview",},
+                    {
+                        "label": _("Preview"),
+                        "action": "ixf_preview",
+                    },
                     {"label": _("Postmortem"), "action": "ixf_postmortem"},
                 ],
             },

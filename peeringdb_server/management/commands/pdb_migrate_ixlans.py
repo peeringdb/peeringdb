@@ -68,7 +68,7 @@ class Command(BaseCommand):
 
     def log(self, msg):
         if not self.commit:
-            self.stdout.write(u"[pretend] {}".format(msg))
+            self.stdout.write(f"[pretend] {msg}")
         else:
             self.stdout.write(msg)
 
@@ -126,7 +126,7 @@ class Command(BaseCommand):
         stats = sorted(list(self.stats.items()), key=lambda x: x[0])
 
         for stat, count in stats:
-            self.log("{}: {}".format(stat, count))
+            self.log(f"{stat}: {count}")
 
     def get_primary_ixlan(self, ix):
         """
@@ -184,8 +184,8 @@ class Command(BaseCommand):
                 ix.save()
                 ix.org.save()
 
-        self.log(u"Created [{}] ixlan for {} ({})".format(ix.status, ix.name, ix.id))
-        self.stats["created_{}".format(ix.status)] += 1
+        self.log(f"Created [{ix.status}] ixlan for {ix.name} ({ix.id})")
+        self.stats[f"created_{ix.status}"] += 1
 
     def reparent_extra_ixlans(self):
 
@@ -233,17 +233,15 @@ class Command(BaseCommand):
 
         if ixlan.name:
             suffix = ixlan.name
-            if InternetExchange.objects.filter(
-                name=u"{} {}".format(ix.name, suffix)
-            ).exists():
-                suffix = "{} ixlan{}".format(ixlan.name, ixlan.id)
+            if InternetExchange.objects.filter(name=f"{ix.name} {suffix}").exists():
+                suffix = f"{ixlan.name} ixlan{ixlan.id}"
         else:
-            suffix = "ixlan{}".format(ixlan.id)
+            suffix = f"ixlan{ixlan.id}"
 
         # create new exchange
 
         new_ix = InternetExchange(
-            name=u"{} {}".format(ix.name, suffix),
+            name=f"{ix.name} {suffix}",
             org=ix.org,
             status=ixlan.status,
             city=ix.city,
@@ -279,12 +277,12 @@ class Command(BaseCommand):
             ixlan.save()
 
         self.log(
-            u"Reparented [{}] ixlan {} from ix {} ({}) to new ix {} ({})".format(
+            "Reparented [{}] ixlan {} from ix {} ({}) to new ix {} ({})".format(
                 ixlan.status, ixlan.id, ix.name, ix.id, new_ix.name, new_ix.id
             )
         )
 
-        self.stats["reparented_{}".format(ixlan.status)] += 1
+        self.stats[f"reparented_{ixlan.status}"] += 1
 
     def migrate_ixlan_ids(self):
         """
@@ -294,7 +292,7 @@ class Command(BaseCommand):
 
         self.log("Phase 3: Migrate ixlan ids to match parent ix")
 
-        ixlans = dict([(ixlan.id, ixlan) for ixlan in IXLan.objects.all()])
+        ixlans = {ixlan.id: ixlan for ixlan in IXLan.objects.all()}
 
         loop = True
 
@@ -377,7 +375,7 @@ class Command(BaseCommand):
             self.report_migration(old_id, new_id, ixlan)
 
         self.log(
-            u"Migrated [{}] ixlan id {} -> {} - Exchange: {}".format(
+            "Migrated [{}] ixlan id {} -> {} - Exchange: {}".format(
                 ixlan.status, old_id, new_id, ix.name
             )
         )
@@ -427,7 +425,7 @@ class Command(BaseCommand):
 
         # update migration stats
 
-        self.stats["migrated_{}".format(ixlan.status)] += 1
+        self.stats[f"migrated_{ixlan.status}"] += 1
 
     def migrate_ixlan_id_sql(self, old_id, new_id):
 
@@ -510,7 +508,7 @@ class Command(BaseCommand):
             return
 
         for model in self.fk_relations:
-            self.log("ForeignKey sanity check: {}".format(model.__name__))
+            self.log(f"ForeignKey sanity check: {model.__name__}")
             for obj in model.objects.all():
                 assert obj.ixlan
 

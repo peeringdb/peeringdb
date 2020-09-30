@@ -38,7 +38,7 @@ class Command(BaseCommand):
         if self.commit:
             self.stdout.write(msg)
         else:
-            self.stdout.write("[pretend] {}".format(msg))
+            self.stdout.write(f"[pretend] {msg}")
 
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)

@@ -143,17 +143,15 @@ def set_bool(name, value):
 
 def try_include(filename):
     """ Tries to include another file from the settings directory. """
-    print_debug("including {} {}".format(filename, RELEASE_ENV))
+    print_debug(f"including {filename} {RELEASE_ENV}")
     try:
         with open(filename) as f:
             exec(compile(f.read(), filename, "exec"), globals())
 
-        print_debug("loaded additional settings file '{}'".format(filename))
+        print_debug(f"loaded additional settings file '{filename}'")
 
     except FileNotFoundError:
-        print_debug(
-            "additional settings file '{}' was not found, skipping".format(filename)
-        )
+        print_debug(f"additional settings file '{filename}' was not found, skipping")
         pass
 
 
@@ -175,10 +173,10 @@ else:
     set_bool("DEBUG", False)
 
 # look for mainsite/settings/${RELEASE_ENV}.py and load if it exists
-env_file = os.path.join(os.path.dirname(__file__), "{}.py".format(RELEASE_ENV))
+env_file = os.path.join(os.path.dirname(__file__), f"{RELEASE_ENV}.py")
 try_include(env_file)
 
-print_debug("Release env is '{}'".format(RELEASE_ENV))
+print_debug(f"Release env is '{RELEASE_ENV}'")
 
 # set version, default from /srv/www.peeringdb.com/etc/VERSION
 set_option(
@@ -279,10 +277,10 @@ ADMINS = ("Support", SERVER_EMAIL)
 MANAGERS = ADMINS
 
 MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, "media"))
-MEDIA_URL = "/m/{}/".format(PEERINGDB_VERSION)
+MEDIA_URL = f"/m/{PEERINGDB_VERSION}/"
 
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
-STATIC_URL = "/s/{}/".format(PEERINGDB_VERSION)
+STATIC_URL = f"/s/{PEERINGDB_VERSION}/"
 
 CACHES = {
     "default": {
@@ -299,7 +297,7 @@ CACHES = {
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.{}".format(DATABASE_ENGINE),
+        "ENGINE": f"django.db.backends.{DATABASE_ENGINE}",
         "HOST": DATABASE_HOST,
         "PORT": DATABASE_PORT,
         "NAME": DATABASE_NAME,
@@ -754,7 +752,7 @@ for _, _, files in os.walk(API_DOC_PATH):
 MAIL_DEBUG = DEBUG
 
 # Setting for automated resending of failed ixf import emails
-set_option('IXF_RESEND_FAILED_EMAILS', False)
+set_option("IXF_RESEND_FAILED_EMAILS", False)
 
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 
@@ -771,8 +769,6 @@ if TUTORIAL_MODE:
     AUTO_APPROVE_AFFILIATION = True
     AUTO_VERIFY_USERS = True
 else:
-    EMAIL_SUBJECT_PREFIX = "[{}] ".format(RELEASE_ENV)
+    EMAIL_SUBJECT_PREFIX = f"[{RELEASE_ENV}] "
 
-print_debug(
-    "loaded settings for PeeringDB {} (DEBUG: {})".format(PEERINGDB_VERSION, DEBUG)
-)
+print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

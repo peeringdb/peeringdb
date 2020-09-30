@@ -90,7 +90,11 @@ def sponsorships(request):
     for org, sponsorship in Sponsorship.active_by_org():
         sponsors[org.id] = {"id": org.id, "name": sponsorship.label.lower()}
 
-    return JsonResponse({"sponsors": sponsors,})
+    return JsonResponse(
+        {
+            "sponsors": sponsors,
+        }
+    )
 
 
 @login_required

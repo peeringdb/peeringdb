@@ -47,7 +47,8 @@ class APICacheLoader:
         if self.fields:
             self.fields = self.fields.split(",")
         self.path = os.path.join(
-            settings.API_CACHE_ROOT, f"{viewset.model.handleref.tag}-{self.depth}.json",
+            settings.API_CACHE_ROOT,
+            f"{viewset.model.handleref.tag}-{self.depth}.json",
         )
 
     def qualifies(self):

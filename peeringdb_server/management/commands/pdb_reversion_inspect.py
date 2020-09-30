@@ -23,7 +23,7 @@ class Command(BaseCommand):
     help = "Inspect an object's reversion history"
 
     def log(self, id, msg):
-        print("%s: %s" % (id, msg))
+        print(f"{id}: {msg}")
 
     def print_line(self):
         print("".join(["-" for i in range(0, 80)]))
@@ -65,17 +65,22 @@ class Command(BaseCommand):
                 n += 1
                 print(
                     "VERSION: %d (%d) - %s - User: %s"
-                    % (n, version.id, data.get("updated"), version.revision.user,)
+                    % (
+                        n,
+                        version.id,
+                        data.get("updated"),
+                        version.revision.user,
+                    )
                 )
                 if not prev:
                     for k, v in list(data.items()):
-                        print("%s: '%s'" % (k, v))
+                        print(f"{k}: '{v}'")
                     self.print_line()
                     prev = data
                     continue
                 for k, v in list(data.items()):
                     if prev.get(k) != v:
-                        print("%s: '%s' => '%s'" % (k, prev.get(k), v))
+                        print("{}: '{}' => '{}'".format(k, prev.get(k), v))
 
                 prev = data
                 self.print_line()

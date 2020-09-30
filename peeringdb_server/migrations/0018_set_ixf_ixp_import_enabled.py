@@ -19,6 +19,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterModelManagers(name="ixlan", managers=[],),
+        migrations.AlterModelManagers(
+            name="ixlan",
+            managers=[],
+        ),
         migrations.RunPython(forwards_func, migrations.RunPython.noop),
     ]

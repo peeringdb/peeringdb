@@ -13,7 +13,10 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterModelManagers(
-            name="ixlan", managers=[("handleref", django.db.models.manager.Manager()),],
+            name="ixlan",
+            managers=[
+                ("handleref", django.db.models.manager.Manager()),
+            ],
         ),
         migrations.AddField(
             model_name="ixlanixfmemberimportlogentry",

@@ -76,7 +76,8 @@ class ViewTestCase(TestCase):
         # org sponsorship without logo or url set lvl1
 
         models.SponsorshipOrganization.objects.create(
-            sponsorship=cls.sponsorships["4"], org=cls.organizations["4"],
+            sponsorship=cls.sponsorships["4"],
+            org=cls.organizations["4"],
         )
 
         # two orgs in one sponsorship

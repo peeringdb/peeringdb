@@ -210,7 +210,13 @@ def test_check_ixf_proposals(admin_user, entities, ip_addresses):
     )
 
     with open(
-        os.path.join(os.path.dirname(__file__), "data", "ixf", "views", "import.json",),
+        os.path.join(
+            os.path.dirname(__file__),
+            "data",
+            "ixf",
+            "views",
+            "import.json",
+        ),
     ) as fh:
         json_data = json.load(fh)
 

@@ -588,7 +588,12 @@ class OrgAdminTests(TestCase):
 
         resp = json.loads(org_admin.uoar_deny(request).content)
 
-        self.assertEqual({"status": "ok",}, resp)
+        self.assertEqual(
+            {
+                "status": "ok",
+            },
+            resp,
+        )
 
         # check that user is not a member of the org
         self.assertEqual(

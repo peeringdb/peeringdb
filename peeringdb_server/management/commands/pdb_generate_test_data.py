@@ -25,7 +25,7 @@ class Command(BaseCommand):
         if self.commit:
             self.stdout.write(msg)
         else:
-            self.stdout.write("[pretend] {}".format(msg))
+            self.stdout.write(f"[pretend] {msg}")
 
     def handle(self, *args, **options):
         self.commit = options.get("commit")
@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
     @reversion.create_revision()
     def generate(self):
-        self.entities = dict([(k, []) for k in list(models.REFTAG_MAP.keys())])
+        self.entities = {k: [] for k in list(models.REFTAG_MAP.keys())}
         queue = [
             "org",
             "net",

@@ -40,7 +40,8 @@ def dedupe_ipaddrs(apps, schema_editor):
         n.save()
 
     active_dupes = NetIXLan.handleref.filter(
-        Q(ipaddr4__in=duplicate_ippr4s) | Q(ipaddr6__in=duplicate_ippr6s), status="ok",
+        Q(ipaddr4__in=duplicate_ippr4s) | Q(ipaddr6__in=duplicate_ippr6s),
+        status="ok",
     )
 
     if active_dupes.count() == 0:

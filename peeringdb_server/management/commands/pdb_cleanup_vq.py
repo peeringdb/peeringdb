@@ -8,18 +8,20 @@ from django.utils import timezone
 from peeringdb_server.models import VerificationQueueItem, User
 from peeringdb_server.management.commands.pdb_base_command import PeeringDBBaseCommand
 
+
 class Command(PeeringDBBaseCommand):
 
     help = "Use this tool to clean up the Verification Queue"
-    
+
     def add_arguments(self, parser):
         super().add_arguments(parser)
         subparsers = parser.add_subparsers()
         parser_users = subparsers.add_parser(
-            'users',
+            "users",
             parents=[parser],
             add_help=False,
-            help='Tool to remove outdated user verification requests')
+            help="Tool to remove outdated user verification requests",
+        )
         parser_users.set_defaults(func=self._clean_users)
 
     def handle(self, *args, **options):
@@ -34,8 +36,7 @@ class Command(PeeringDBBaseCommand):
         date = datetime.now(timezone.utc) - timedelta(days=settings.VQUEUE_USER_MAX_AGE)
 
         qset = VerificationQueueItem.objects.filter(
-            content_type=content_type,
-            created__lte=date
+            content_type=content_type, created__lte=date
         )
         count = qset.count()
 
@@ -46,8 +47,10 @@ class Command(PeeringDBBaseCommand):
 
         for vqi in qset:
             counter += 1
-            self.log(f"Deleting VerificationQueueItem for {vqi.content_type} "
-                     f"id #{vqi.object_id}... {counter} / {count}")
-    
+            self.log(
+                f"Deleting VerificationQueueItem for {vqi.content_type} "
+                f"id #{vqi.object_id}... {counter} / {count}"
+            )
+
             if self.commit:
                 vqi.delete()

@@ -3,6 +3,18 @@
 
 PeeringDB currently only runs on python2.7 - all instructions below are to be taken with that in mind.
 
+## Updates and formatting
+
+
+For each release, everything should be updated and formatted, using the following commands.
+
+```sh
+pipenv lock
+pipenv install --dev
+pipenv run find . -type f -name \*.py -exec pyupgrade --py37-plus {} \;
+pipenv run find . -type f -name \*.py -exec black -t py37 {} \;
+```
+
 ## Getting Started
 
 This document uses the following variables
