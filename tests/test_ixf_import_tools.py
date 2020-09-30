@@ -42,7 +42,7 @@ class TestImportPreview(ClientCase):
 
     @classmethod
     def setUpTestData(cls):
-        super(TestImportPreview, cls).setUpTestData()
+        super().setUpTestData()
         cls.org = Organization.objects.create(name="Test Org", status="ok")
         cls.ix = InternetExchange.objects.create(
             name="Test IX", status="ok", org=cls.org
@@ -69,9 +69,7 @@ class TestImportPreview(ClientCase):
         cls.org.admin_usergroup.user_set.add(cls.admin_user)
 
     def test_import_preview(self):
-        request = RequestFactory().get(
-            "/import/ixlan/{}/ixf/preview/".format(self.ixlan.id)
-        )
+        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
         request.user = self.admin_user
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
@@ -82,10 +80,8 @@ class TestImportPreview(ClientCase):
         ]
 
     def test_import_preview_basic_auth(self):
-        request = RequestFactory().get(
-            "/import/ixlan/{}/ixf/preview/".format(self.ixlan.id)
-        )
-        auth = base64.b64encode("admin:admin".encode("utf-8")).decode("utf-8")
+        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
+        auth = base64.b64encode(b"admin:admin").decode("utf-8")
         request.META["HTTP_AUTHORIZATION"] = f"Basic {auth}"
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
@@ -96,9 +92,7 @@ class TestImportPreview(ClientCase):
         ]
 
     def test_import_preview_fail_ratelimit(self):
-        request = RequestFactory().get(
-            "/import/ixlan/{}/ixf/preview/".format(self.ixlan.id)
-        )
+        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
         request.user = self.admin_user
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
@@ -108,18 +102,14 @@ class TestImportPreview(ClientCase):
         assert response.status_code == 400
 
     def test_import_preview_fail_permission(self):
-        request = RequestFactory().get(
-            "/import/ixlan/{}/ixf/preview/".format(self.ixlan.id)
-        )
+        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
         request.user = self.guest_user
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
         assert response.status_code == 403
 
     def test_import_net_preview(self):
-        request = RequestFactory().get(
-            "/import/net/{}/ixf/preview/".format(self.net.id)
-        )
+        request = RequestFactory().get(f"/import/net/{self.net.id}/ixf/preview/")
         request.user = self.admin_user
 
         response = view_import_net_ixf_preview(request, self.net.id)
@@ -127,19 +117,15 @@ class TestImportPreview(ClientCase):
         assert response.status_code == 200
 
     def test_import_net_preview_basic_auth(self):
-        request = RequestFactory().get(
-            "/import/net/{}/ixf/preview/".format(self.net.id)
-        )
-        auth = base64.b64encode("admin:admin".encode("utf-8")).decode("utf-8")
+        request = RequestFactory().get(f"/import/net/{self.net.id}/ixf/preview/")
+        auth = base64.b64encode(b"admin:admin").decode("utf-8")
         request.META["HTTP_AUTHORIZATION"] = f"Basic {auth}"
         response = view_import_net_ixf_preview(request, self.net.id)
 
         assert response.status_code == 200
 
     def test_import_net_preview_fail_ratelimit(self):
-        request = RequestFactory().get(
-            "/import/net/{}/ixf/preview/".format(self.net.id)
-        )
+        request = RequestFactory().get(f"/import/net/{self.net.id}/ixf/preview/")
         request.user = self.admin_user
 
         response = view_import_net_ixf_preview(request, self.net.id)
@@ -149,9 +135,7 @@ class TestImportPreview(ClientCase):
         assert response.status_code == 400
 
     def test_import_net_preview_fail_permission(self):
-        request = RequestFactory().get(
-            "/import/net/{}/ixf/preview/".format(self.net.id)
-        )
+        request = RequestFactory().get(f"/import/net/{self.net.id}/ixf/preview/")
         request.user = self.guest_user
 
         response = view_import_net_ixf_preview(request, self.net.id)

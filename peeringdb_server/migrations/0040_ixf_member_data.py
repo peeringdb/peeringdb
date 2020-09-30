@@ -94,6 +94,8 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": "IXF Member Data",
                 "db_table": "peeringdb_ixf_member_data",
             },
-            managers=[("handleref", django.db.models.manager.Manager()),],
+            managers=[
+                ("handleref", django.db.models.manager.Manager()),
+            ],
         ),
     ]

@@ -51,7 +51,7 @@ class Command(DBCommand):
         # elif ref_tag == 'ixnets':
 
         if not model:
-            msg = "Unknown ref tag: {}".format(ref_tag)
+            msg = f"Unknown ref tag: {ref_tag}"
             log.error("Unknown ref tag: %s" % ref_tag)
             raise ValueError(msg)
 

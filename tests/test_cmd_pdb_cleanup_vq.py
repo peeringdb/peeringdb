@@ -26,18 +26,24 @@ def test_cleanup_users(year_old_users, month_old_users, day_old_users):
     # Assert users themselves are not deleted
     assert User.objects.count() == users_count
 
+
 # Try test with maximum age of vqi to be 14 days
 @pytest.mark.django_db
 @override_settings(VQUEUE_USER_MAX_AGE=14)
-def test_cleanup_users_override_settings(year_old_users, month_old_users, day_old_users):
+def test_cleanup_users_override_settings(
+    year_old_users, month_old_users, day_old_users
+):
     vqi_count = VerificationQueueItem.objects.count()
     users_count = User.objects.count()
 
     call_command("pdb_cleanup_vq", "users", commit=True)
     # Assert we deleted more VQI instances
-    assert VerificationQueueItem.objects.count() == vqi_count - (NUM_YEAR_OLD_USERS + NUM_MONTH_OLD_USERS)
+    assert VerificationQueueItem.objects.count() == vqi_count - (
+        NUM_YEAR_OLD_USERS + NUM_MONTH_OLD_USERS
+    )
     # Assert users themselves are not deleted
     assert User.objects.count() == users_count
+
 
 @pytest.mark.django_db
 def test_cleanup_users_no_commit(year_old_users, month_old_users, day_old_users):
@@ -50,6 +56,7 @@ def test_cleanup_users_no_commit(year_old_users, month_old_users, day_old_users)
     # Assert users themselves are not deleted
     assert User.objects.count() == users_count
 
+
 @pytest.mark.django_db
 def test_cleanup_users_no_users(year_old_users, month_old_users, day_old_users):
     vqi_count = VerificationQueueItem.objects.count()
@@ -61,7 +68,9 @@ def test_cleanup_users_no_users(year_old_users, month_old_users, day_old_users):
     # Assert users themselves are not deleted
     assert User.objects.count() == users_count
 
+
 # --------- FIXTURES AND HELPERS -----------------
+
 
 def create_users_and_vqi(users_to_generate, days_old):
     """
@@ -71,7 +80,7 @@ def create_users_and_vqi(users_to_generate, days_old):
     """
 
     def random_str():
-        return ''.join(random.choice(string.ascii_letters) for i in range(4))
+        return "".join(random.choice(string.ascii_letters) for i in range(4))
 
     def admin_user():
         user, _ = User.objects.get_or_create(username="admin")
@@ -84,28 +93,30 @@ def create_users_and_vqi(users_to_generate, days_old):
 
     for i in range(users_to_generate):
         user = User.objects.create(
-                username=f'User {random_str()}',
-            )
+            username=f"User {random_str()}",
+        )
         vqi = VerificationQueueItem.objects.create(
-                content_type=ContentType.objects.get_for_model(User),
-                object_id=user.id,
-                user=admin_user,
-            )
+            content_type=ContentType.objects.get_for_model(User),
+            object_id=user.id,
+            user=admin_user,
+        )
         vqi.created = created_date
         vqi.save()
         output.append((user, vqi))
 
     return output
 
+
 @pytest.fixture()
 def year_old_users():
     create_users_and_vqi(NUM_YEAR_OLD_USERS, 365)
+
 
 @pytest.fixture()
 def month_old_users():
     create_users_and_vqi(NUM_MONTH_OLD_USERS, 60)
 
+
 @pytest.fixture()
 def day_old_users():
     create_users_and_vqi(NUM_DAY_OLD_USERS, 1)
-

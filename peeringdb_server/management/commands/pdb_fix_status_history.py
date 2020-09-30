@@ -22,7 +22,7 @@ class Command(BaseCommand):
 
     def log(self, msg):
         if not self.commit:
-            self.stdout.write("[pretend] {}".format(msg))
+            self.stdout.write(f"[pretend] {msg}")
         else:
             self.stdout.write(msg)
 
@@ -42,7 +42,7 @@ class Command(BaseCommand):
         """
 
         model = REFTAG_MAP[tag]
-        self.log("Processing {} ...".format(model.__name__))
+        self.log(f"Processing {model.__name__} ...")
 
         # no data is getting updated but object versions will be bumped
         # by one because of the revision fix - in order to not spam "recently updated"
@@ -77,7 +77,7 @@ class Command(BaseCommand):
                 if self.commit:
                     self.process_entity(entity, version)
 
-        self.log("{} revisions fixed for {}".format(fixed, model.__name__))
+        self.log(f"{fixed} revisions fixed for {model.__name__}")
 
     @reversion.create_revision()
     def process_entity(self, entity, most_recent_version):

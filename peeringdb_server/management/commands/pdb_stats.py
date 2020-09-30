@@ -95,7 +95,7 @@ class Command(BaseCommand):
         elif output_format == "json":
             self.stdout.write(json.dumps({date: stats}))
         else:
-            raise Exception("unknown format {}".format(output_format))
+            raise Exception(f"unknown format {output_format}")
 
     def generate_for_current_date(self):
         """

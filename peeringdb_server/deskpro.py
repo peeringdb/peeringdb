@@ -19,7 +19,9 @@ def ticket_queue(subject, body, user):
     """ queue a deskpro ticket for creation """
 
     ticket = DeskProTicket.objects.create(
-        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}", body=body, user=user,
+        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
+        body=body,
+        user=user,
     )
 
 
@@ -192,7 +194,7 @@ class APIClient:
             ticket.deskpro_id = ticket_response["id"]
 
         self.create(
-            "tickets/{}/messages".format(ticket.deskpro_id),
+            f"tickets/{ticket.deskpro_id}/messages",
             {
                 "message": ticket.body.replace("\n", "<br />\n"),
                 "person": person["id"],
@@ -223,7 +225,7 @@ class MockAPIClient(APIClient):
     def create(self, endpoint, param):
         if endpoint == "tickets":
             self.ticket_count += 1
-            ref = "{}".format(uuid.uuid4())
+            ref = f"{uuid.uuid4()}"
             return {"ref": ref[:16], "id": self.ticket_count}
         return {}
 

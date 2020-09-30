@@ -26,13 +26,13 @@ class Command(BaseCommand):
         if self.commit:
             self.stdout.write(msg)
         else:
-            self.stdout.write("[pretend] {}".format(msg))
+            self.stdout.write(f"[pretend] {msg}")
 
     def log_err(self, msg):
-        self.log("[error] {}".format(msg))
+        self.log(f"[error] {msg}")
 
     def log_warn(self, msg):
-        self.log("[warning] {}".format(msg))
+        self.log(f"[warning] {msg}")
 
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
@@ -42,7 +42,7 @@ class Command(BaseCommand):
             id=self.version_id
         )
         self.date = version.revision.date_created
-        self.log("UNDELETING FROM DATE: {}".format(self.date))
+        self.log(f"UNDELETING FROM DATE: {self.date}")
         self.undelete(options.get("reftag"), options.get("id"))
 
     def handle_netixlan(self, netixlan):
@@ -149,7 +149,7 @@ class Command(BaseCommand):
             obj.status = "ok"
             self.log("Undeleting {}".format(_label(obj)))
 
-            handler = getattr(self, "handle_{}".format(reftag), None)
+            handler = getattr(self, f"handle_{reftag}", None)
             if handler:
                 handler(obj)
 

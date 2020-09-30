@@ -622,7 +622,12 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
         # on the next one
 
         email_info = [
-            ("CREATE", network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1",)
+            (
+                "CREATE",
+                network.asn,
+                "195.69.147.250",
+                "2001:7f8:1::a500:2906:1",
+            )
         ]
         assert_no_emails(network, ixlan.ix)
 
@@ -956,6 +961,7 @@ def test_suggest_add(entities, use_ip, save):
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
+
 @pytest.mark.django_db
 def test_suggest_add_delete(entities, use_ip_alt, save):
     """
@@ -974,7 +980,6 @@ def test_suggest_add_delete(entities, use_ip_alt, save):
         del data["member_list"][0]["connection_list"][0]["vlan_list"][0]["ipv4"]
     elif not use_ip_alt(6):
         del data["member_list"][0]["connection_list"][0]["vlan_list"][0]["ipv6"]
-
 
     # we don't want the extra ix-f entry for this test
     del data["member_list"][0]["connection_list"][1]
@@ -1003,11 +1008,12 @@ def test_suggest_add_delete(entities, use_ip_alt, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    if (not network.ipv6_support and not use_ip_alt(4)) or \
-       (not network.ipv4_support and not use_ip_alt(6)):
+    if (not network.ipv6_support and not use_ip_alt(4)) or (
+        not network.ipv4_support and not use_ip_alt(6)
+    ):
 
-        #edge case: network not supporting the only provided ip
-        #do nothing
+        # edge case: network not supporting the only provided ip
+        # do nothing
         assert IXFMemberData.objects.all().count() == 0
 
         assert_no_emails(network, ixlan.ix)
@@ -1016,27 +1022,41 @@ def test_suggest_add_delete(entities, use_ip_alt, save):
         assert IXFMemberData.objects.all().count() == 2
 
         email_info = [
-            ("REMOVE", network.asn, use_ip_alt(4, "195.69.147.252"), use_ip_alt(6, "2001:7f8:1::a500:2906:2")),
-            ("CREATE", network.asn, use_ip_alt(4, "195.69.147.250"), use_ip_alt(6, "2001:7f8:1::a500:2906:1"))
+            (
+                "REMOVE",
+                network.asn,
+                use_ip_alt(4, "195.69.147.252"),
+                use_ip_alt(6, "2001:7f8:1::a500:2906:2"),
+            ),
+            (
+                "CREATE",
+                network.asn,
+                use_ip_alt(4, "195.69.147.250"),
+                use_ip_alt(6, "2001:7f8:1::a500:2906:1"),
+            ),
         ]
 
         assert_ix_email(ixlan.ix, email_info)
         assert_network_email(network, email_info)
 
-        assert IXFMemberData.objects.get(
-            ipaddr4=use_ip_alt(4,"195.69.147.252"),
-            ipaddr6=use_ip_alt(6,"2001:7f8:1::a500:2906:2")
-        ).action == "delete"
+        assert (
+            IXFMemberData.objects.get(
+                ipaddr4=use_ip_alt(4, "195.69.147.252"),
+                ipaddr6=use_ip_alt(6, "2001:7f8:1::a500:2906:2"),
+            ).action
+            == "delete"
+        )
 
-        assert IXFMemberData.objects.get(
-            ipaddr4=use_ip_alt(4,"195.69.147.250"),
-            ipaddr6=use_ip_alt(6,"2001:7f8:1::a500:2906:1")
-        ).action == "add"
-
+        assert (
+            IXFMemberData.objects.get(
+                ipaddr4=use_ip_alt(4, "195.69.147.250"),
+                ipaddr6=use_ip_alt(6, "2001:7f8:1::a500:2906:1"),
+            ).action
+            == "add"
+        )
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
-
 
 
 @pytest.mark.django_db
@@ -2634,7 +2654,10 @@ def setup_test_data(filename):
 
     with open(
         os.path.join(
-            os.path.dirname(__file__), "data", "json_members_list", f"{filename}.json",
+            os.path.dirname(__file__),
+            "data",
+            "json_members_list",
+            f"{filename}.json",
         ),
     ) as fh:
         json_data = json.load(fh)
@@ -2758,7 +2781,8 @@ def assert_no_network_email(network):
         assert IXFImportEmail.objects.filter(net=network.id).count() == 0
     else:
         assert_protocol_conflict_email(
-            protocols=network, network=network,
+            protocols=network,
+            network=network,
         )
 
 

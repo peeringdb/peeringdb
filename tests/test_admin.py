@@ -330,7 +330,8 @@ class AdminTests(TestCase):
 
         url = reverse(
             "admin:{}_{}_change".format(
-                ixlan._meta.app_label, ixlan._meta.object_name,
+                ixlan._meta.app_label,
+                ixlan._meta.object_name,
             ).lower(),
             args=(ixlan.id,),
         )
@@ -393,12 +394,13 @@ class AdminTests(TestCase):
 
         url = reverse(
             "admin:{}_{}_change".format(
-                netixlan._meta.app_label, netixlan._meta.object_name,
+                netixlan._meta.app_label,
+                netixlan._meta.object_name,
             ).lower(),
             args=(netixlan.id,),
         )
         original_speed = netixlan.speed
-        data =  {
+        data = {
             "status": netixlan.status,
             "asn": netixlan.asn,
             "ipaddr4": netixlan.ipaddr4,
@@ -427,7 +429,7 @@ class AdminTests(TestCase):
     def _run_regex_search(self, model, search_term):
         c = Client()
         c.login(username="admin", password="admin")
-        url = reverse("admin:peeringdb_server_{}_changelist".format(model))
+        url = reverse(f"admin:peeringdb_server_{model}_changelist")
         search = url + "?q=" + urllib.parse.quote_plus(search_term)
         response = c.get(search)
         content = response.content.decode("utf-8")
@@ -438,14 +440,14 @@ class AdminTests(TestCase):
         ixf_importer, _ = models.User.objects.get_or_create(username="ixf_importer")
         for i in range(10):
             models.DeskProTicket.objects.create(
-                subject="test number {}".format(i), body="test", user=ixf_importer
+                subject=f"test number {i}", body="test", user=ixf_importer
             )
 
         search_term = "^.*[0-5]$"
         content = self._run_regex_search("deskproticket", search_term)
         print(content)
-        expected = ["test number {}".format(i) for i in range(5)]
-        expected_not = ["test number {}".format(i) for i in range(6, 10)]
+        expected = [f"test number {i}" for i in range(5)]
+        expected_not = [f"test number {i}" for i in range(6, 10)]
 
         for e in expected:
             assert e in content
@@ -456,15 +458,13 @@ class AdminTests(TestCase):
     def test_search_ixfimportemails(self):
         for i in range(10):
             models.IXFImportEmail.objects.create(
-                subject="test number {}".format(i), message="test", recipients="test"
+                subject=f"test number {i}", message="test", recipients="test"
             )
         search_term = "^.*[2-4]$"
         content = self._run_regex_search("ixfimportemail", search_term)
         print(content)
-        expected = ["test number {}".format(i) for i in range(2, 5)]
-        expected_not = ["test number 1"] + [
-            "test number {}".format(i) for i in range(6, 10)
-        ]
+        expected = [f"test number {i}" for i in range(2, 5)]
+        expected_not = ["test number 1"] + [f"test number {i}" for i in range(6, 10)]
 
         for e in expected:
             assert e in content
@@ -574,7 +574,9 @@ class AdminTests(TestCase):
                 kwargs.get("status_get_orgmerge", 200),
             ),
             (
-                reverse("admin:peeringdb_server_commandlinetool_prepare",),
+                reverse(
+                    "admin:peeringdb_server_commandlinetool_prepare",
+                ),
                 "get",
                 kwargs.get("status_add", 200),
             ),
@@ -732,7 +734,9 @@ class AdminTests(TestCase):
 
         org = models.Organization.objects.first()
 
-        url = reverse("admin:peeringdb_server_organization_changelist",)
+        url = reverse(
+            "admin:peeringdb_server_organization_changelist",
+        )
 
         response = client.post(
             url, {"_selected_action": org.id, "action": "soft_delete"}, follow=True

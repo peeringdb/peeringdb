@@ -74,10 +74,10 @@ class Command(BaseCommand):
         if self.commit:
             self.stdout.write(msg)
         else:
-            self.stdout.write("[Pretend] {}".format(msg))
+            self.stdout.write(f"[Pretend] {msg}")
 
     def store_runtime_error(self, error):
-        error_str = "ERROR: {}".format(error) + "\n"
+        error_str = f"ERROR: {error}" + "\n"
         error_str += traceback.format_exc()
         self.runtime_errors.append(error_str)
 
@@ -242,7 +242,7 @@ class Command(BaseCommand):
                 total_log["data"].extend(importer.log["data"])
                 total_log["errors"].extend(
                     [
-                        "{}({}): {}".format(ixlan.ix.name, ixlan.id, err)
+                        f"{ixlan.ix.name}({ixlan.id}): {err}"
                         for err in importer.log["errors"]
                     ]
                 )

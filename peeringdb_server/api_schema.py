@@ -216,7 +216,9 @@ class BaseSchema(AutoSchema):
                     "description": _(
                         "Limit the number of rows returned in the result set (use for pagination in combination with `skip`)"
                     ),
-                    "schema": {"type": "integer",},
+                    "schema": {
+                        "type": "integer",
+                    },
                 },
                 {
                     "name": "skip",
@@ -225,7 +227,9 @@ class BaseSchema(AutoSchema):
                     "description": _(
                         "Skip n results in the result set (use for pagination in combination with `limit`)"
                     ),
-                    "schema": {"type": "integer",},
+                    "schema": {
+                        "type": "integer",
+                    },
                 },
                 {
                     "name": "since",
@@ -329,7 +333,9 @@ class BaseSchema(AutoSchema):
                     "in": "query",
                     "description": "\n\n".join(description),
                     "required": False,
-                    "schema": {"type": self.type_map.get(typ, "string"),},
+                    "schema": {
+                        "type": self.type_map.get(typ, "string"),
+                    },
                 }
             )
 

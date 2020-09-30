@@ -12,4 +12,8 @@ class Migration(migrations.Migration):
         ("peeringdb_server", "0038_netixlan_ipaddr_unique"),
     ]
 
-    operations = [migrations.DeleteModel(name="DuplicateIPNetworkIXLan",)]
+    operations = [
+        migrations.DeleteModel(
+            name="DuplicateIPNetworkIXLan",
+        )
+    ]
