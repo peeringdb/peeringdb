@@ -68,7 +68,7 @@ class Backend(BaseBackend):
         Here we make sure to not process OneToOneRel relationships
         """
 
-        _fields = super(Backend, self).get_fields(concrete)
+        _fields = super().get_fields(concrete)
         fields = []
         for field in _fields:
             if isinstance(field, OneToOneRel):
@@ -85,7 +85,7 @@ class Backend(BaseBackend):
 
         if field_name in ["sponsorship_set"]:
             return
-        return super(Backend, self).set_relation_many_to_many(obj, field_name, objs)
+        return super().set_relation_many_to_many(obj, field_name, objs)
 
     def clean(self, obj):
         """
