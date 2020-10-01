@@ -49,7 +49,9 @@
 </div>
 {% endif %}
 
-{% for ix_id, ixf_proposals in data.ixf.items %}
+{% for ixf_proposals in data.ixf %}
+{% with ix_id=ixf_proposals.ix.id %}
+
 <div class="ixf-proposals"
   data-ixf-proposals-ix="{{ ixf_proposals.ix.id }}"
   data-ixf-proposals-ix-name="{{ ixf_proposals.ix.name }}"
@@ -57,7 +59,7 @@
   <div class="marg-side-15 marg-top-15">
   <div class="row item" role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">
     <div class="col-xs-10">
-      <h4 class="marg-top"><a>{{ ixf_proposals.ix.name }}</a></h4>
+      <h4 class="marg-top"><a class="ix-name">{{ ixf_proposals.ix.name }}</a></h4>
     </div>
     <div class="col-xs-2 right">
       <span class="collapsed glyphicon glyphicon-expand"></span>
@@ -73,7 +75,7 @@
       <a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{% trans "Their PeeringDB entry" %}</a>
     </div>
     <div class="col-xs-6 right">
-      <button data-toggle="tooltip" title="{% trans "Autoamtically update and remove all suggested entries" %}" class="btn btn-default btn-sm resolve-all" type="button">{% trans "Auto-resolve" %}</button>
+      <button data-toggle="tooltip" title="{% trans "Automatically update and remove all suggested entries" %}" class="btn btn-default btn-sm resolve-all" type="button">{% trans "Auto-resolve" %}</button>
 
       <button data-toggle="tooltip" title="{% trans "Automatically add all suggested entries" %}" class="btn btn-default btn-sm add-all" type="button">{% trans "Auto-add" %}</button>
     </div>
@@ -105,17 +107,17 @@
       <div class="loading-shim" style="display:none;"></div>
       <div class="col-xs-5">
         <div class="editable input-frame">
-          {% if x.net.info_unicast %}
+          {% if x.net.ipv4_support %}
           <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="{{ x.ipaddr4|none_blank }}">
           {% else %}
           <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="">
           {% endif %}
         </div>
         <div class="editable input-frame">
-          {% if x.net.info_ipv6 %}
+          {% if x.net.ipv6_support %}
           <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr6" value="{{ x.ipaddr6|none_blank }}">
           {% else %}
-          <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr4" value="">
+          <input type="text" placeholder="{% trans "IPv6" %}" data-field="ipaddr6" value="">
           {% endif %}
         </div>
       </div>
@@ -274,7 +276,7 @@
 
       </div>
       <div class="col-xs-5">
-        {% if x.net.info_unicast %}
+        {% if x.net.ipv4_support %}
         <div data-field="ipaddr4" data-value="{{ x.ipaddr4|none_blank }}">
         {{ x.ipaddr4|none_blank }}
         </div>
@@ -284,7 +286,7 @@
         </div>
         {% endif %}
 
-        {% if x.net.info_ip6 %}
+        {% if x.net.ipv6_support %}
         <div data-field="ipaddr6" data-value="{{ x.ipaddr6|none_blank }}">
         {{ x.ipaddr6|none_blank }}
         </div>
@@ -298,8 +300,22 @@
         <input type="hidden" data-field="ixlan_id" value="{{ x.ixlan_id }}">
         <input type="hidden" data-field="net_id" value="{{ x.net.id }}">
         <input type="hidden" data-field="asn" value="{{ x.asn }}">
+
+        {% if x.modify_speed %}
         <input type="hidden" data-field="speed" value="{{ x.speed }}">
+        {% else %}
+        <input type="hidden" data-field="speed" value="{% if x.primary_requirement %}{{ x.primary_requirement.speed }}{% else %}{{ x.netixlan.speed }}{% endif %}">
+        {% endif %}
+
+
+        {% if x.modify_is_rs_peer %}
         <input type="checkbox" style="display:none" data-field="is_rs_peer" {% if x.is_rs_peer %}checked{% endif %}>
+        {% elif x.primary_requirement %}
+        <input type="checkbox" style="display:none" data-field="is_rs_peer" {% if x.primary_requirement.is_rs_peer %}checked{% endif %}>
+        {% else %}
+        <input type="checkbox" style="display:none" data-field="is_rs_peer" {% if x.netixlan.is_rs_peer %}checked{% endif %}>
+        {% endif %}
+
         <input type="checkbox" style="display:none" data-field="operational" {% if x.operational %}checked{% endif %}>
 
         {% if x.ipaddr4_on_requirement  %}
@@ -396,6 +412,7 @@
   </div>
 -->
 </div>
+{% endwith %}
 {% endfor %}
 
 <script>

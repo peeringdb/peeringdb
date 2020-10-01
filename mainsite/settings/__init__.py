@@ -8,6 +8,77 @@ import django.conf.global_settings
 _DEFAULT_ARG = object()
 
 
+def non_zipcode_countries():
+    return {
+        "AE": "United Arab Emirates",
+        "AG": "Antigua and Barbuda",
+        "AN": "Netherlands Antilles",
+        "AO": "Angola",
+        "AW": "Aruba",
+        "BF": "Burkina Faso",
+        "BI": "Burundi",
+        "BJ": "Benin",
+        "BS": "Bahamas",
+        "BW": "Botswana",
+        "BZ": "Belize",
+        "CD": "Congo, the Democratic Republic of the",
+        "CF": "Central African Republic",
+        "CG": "Congo",
+        "CI": "Cote d'Ivoire",
+        "CK": "Cook Islands",
+        "CM": "Cameroon",
+        "DJ": "Djibouti",
+        "DM": "Dominica",
+        "ER": "Eritrea",
+        "FJ": "Fiji",
+        "GD": "Grenada",
+        "GH": "Ghana",
+        "GM": "Gambia",
+        "GN": "Guinea",
+        "GQ": "Equatorial Guinea",
+        "GY": "Guyana",
+        "HK": "Hong Kong",
+        "IE": "Ireland",
+        "JM": "Jamaica",
+        "KE": "Kenya",
+        "KI": "Kiribati",
+        "KM": "Comoros",
+        "KN": "Saint Kitts and Nevis",
+        "KP": "North Korea",
+        "LC": "Saint Lucia",
+        "ML": "Mali",
+        "MO": "Macao",
+        "MR": "Mauritania",
+        "MS": "Montserrat",
+        "MU": "Mauritius",
+        "MW": "Malawi",
+        "NR": "Nauru",
+        "NU": "Niue",
+        "PA": "Panama",
+        "QA": "Qatar",
+        "RW": "Rwanda",
+        "SB": "Solomon Islands",
+        "SC": "Seychelles",
+        "SL": "Sierra Leone",
+        "SO": "Somalia",
+        "SR": "Suriname",
+        "ST": "Sao Tome and Principe",
+        "SY": "Syria",
+        "TF": "French Southern Territories",
+        "TK": "Tokelau",
+        "TL": "Timor-Leste",
+        "TO": "Tonga",
+        "TT": "Trinidad and Tobago",
+        "TV": "Tuvalu",
+        "TZ": "Tanzania, United Republic of",
+        "UG": "Uganda",
+        "VU": "Vanuatu",
+        "YE": "Yemen",
+        "ZA": "South Africa",
+        "ZW": "Zimbabwe",
+    }
+
+
 def print_debug(*args, **kwargs):
     if DEBUG:
         print(*args, **kwargs)
@@ -72,17 +143,15 @@ def set_bool(name, value):
 
 def try_include(filename):
     """ Tries to include another file from the settings directory. """
-    print_debug("including {} {}".format(filename, RELEASE_ENV))
+    print_debug(f"including {filename} {RELEASE_ENV}")
     try:
         with open(filename) as f:
             exec(compile(f.read(), filename, "exec"), globals())
 
-        print_debug("loaded additional settings file '{}'".format(filename))
+        print_debug(f"loaded additional settings file '{filename}'")
 
     except FileNotFoundError:
-        print_debug(
-            "additional settings file '{}' was not found, skipping".format(filename)
-        )
+        print_debug(f"additional settings file '{filename}' was not found, skipping")
         pass
 
 
@@ -104,10 +173,10 @@ else:
     set_bool("DEBUG", False)
 
 # look for mainsite/settings/${RELEASE_ENV}.py and load if it exists
-env_file = os.path.join(os.path.dirname(__file__), "{}.py".format(RELEASE_ENV))
+env_file = os.path.join(os.path.dirname(__file__), f"{RELEASE_ENV}.py")
 try_include(env_file)
 
-print_debug("Release env is '{}'".format(RELEASE_ENV))
+print_debug(f"Release env is '{RELEASE_ENV}'")
 
 # set version, default from /srv/www.peeringdb.com/etc/VERSION
 set_option(
@@ -166,6 +235,12 @@ set_option("DATA_QUALITY_MAX_PREFIXLEN_V6", 116)
 # maximum value to allow for irr set hierarchy depth
 set_option("DATA_QUALITY_MAX_IRR_DEPTH", 3)
 
+# minimum value to allow for speed on an netixlan (currently 100Mbit)
+set_option("DATA_QUALITY_MIN_SPEED", 100)
+
+# maximum value to allow for speed on an netixlan (currently 1Tbit)
+set_option("DATA_QUALITY_MAX_SPEED", 1000000)
+
 RATELIMITS = {
     "request_login_POST": "4/m",
     "request_translation": "2/m",
@@ -186,6 +261,9 @@ MAX_USER_AFFILIATION_REQUESTS = 5
 # during `pdb_delete_poc` execution. (days)
 set_option("POC_DELETION_PERIOD", 30)
 
+# Sets maximum age for a user-request in the verification queue
+# Otherwise we delete with the pdb_cleanup_vq tool
+set_option("VQUEUE_USER_MAX_AGE", 90)
 
 # Django config
 
@@ -199,10 +277,10 @@ ADMINS = ("Support", SERVER_EMAIL)
 MANAGERS = ADMINS
 
 MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, "media"))
-MEDIA_URL = "/m/{}/".format(PEERINGDB_VERSION)
+MEDIA_URL = f"/m/{PEERINGDB_VERSION}/"
 
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
-STATIC_URL = "/s/{}/".format(PEERINGDB_VERSION)
+STATIC_URL = f"/s/{PEERINGDB_VERSION}/"
 
 CACHES = {
     "default": {
@@ -219,7 +297,7 @@ CACHES = {
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.{}".format(DATABASE_ENGINE),
+        "ENGINE": f"django.db.backends.{DATABASE_ENGINE}",
         "HOST": DATABASE_HOST,
         "PORT": DATABASE_PORT,
         "NAME": DATABASE_NAME,
@@ -246,7 +324,10 @@ LOGGING = {
             "class": "logging.handlers.WatchedFileHandler",
             "filename": os.path.join(BASE_DIR, "var/log/django.log"),
         },
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler",},
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+        },
     },
     "loggers": {
         # Again, default Django configuration to email unhandled exceptions
@@ -531,8 +612,16 @@ COUNTRIES_OVERRIDE = {
 set_option(
     "CLIENT_COMPAT",
     {
-        "client": {"min": (0,6), "max": (255,0),},
-        "backends": {"django_peeringdb": {"min": (2,0,0,2), "max": (255,0),},},
+        "client": {
+            "min": (0, 6),
+            "max": (255, 0),
+        },
+        "backends": {
+            "django_peeringdb": {
+                "min": (2, 0, 0, 2),
+                "max": (255, 0),
+            },
+        },
     },
 )
 
@@ -601,6 +690,9 @@ CSRF_FAILURE_VIEW = "peeringdb_server.views.view_http_error_csrf"
 RECAPTCHA_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
 
 
+# Set countries that don't use zipcodes
+set_option("NON_ZIPCODE_COUNTRIES", non_zipcode_countries())
+
 ## Locale
 
 LANGUAGE_CODE = "en-us"
@@ -651,13 +743,17 @@ if ENABLE_ALL_LANGUAGES:
 API_DOC_INCLUDES = {}
 API_DOC_PATH = os.path.join(BASE_DIR, "docs", "api")
 for _, _, files in os.walk(API_DOC_PATH):
-  for file in files:
-    base, ext = os.path.splitext(file)
-    if ext == ".md":
-        API_DOC_INCLUDES[base] = os.path.join(API_DOC_PATH, file)
+    for file in files:
+        base, ext = os.path.splitext(file)
+        if ext == ".md":
+            API_DOC_INCLUDES[base] = os.path.join(API_DOC_PATH, file)
 
 
 MAIL_DEBUG = DEBUG
+
+# Setting for automated resending of failed ixf import emails
+set_option("IXF_RESEND_FAILED_EMAILS", False)
+
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 
 if DEBUG:
@@ -673,8 +769,6 @@ if TUTORIAL_MODE:
     AUTO_APPROVE_AFFILIATION = True
     AUTO_VERIFY_USERS = True
 else:
-    EMAIL_SUBJECT_PREFIX = "[{}] ".format(RELEASE_ENV)
+    EMAIL_SUBJECT_PREFIX = f"[{RELEASE_ENV}] "
 
-print_debug(
-    "loaded settings for PeeringDB {} (DEBUG: {})".format(PEERINGDB_VERSION, DEBUG)
-)
+print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

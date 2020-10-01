@@ -50,6 +50,7 @@ from peeringdb_server.validators import (
     validate_prefix_overlap,
     validate_phonenumber,
     validate_irr_as_set,
+    validate_zipcode,
 )
 
 from django.utils.translation import ugettext_lazy as _
@@ -343,7 +344,7 @@ class SaneIntegerField(serializers.IntegerField):
 
 class ParentStatusException(IOError):
     """
-    Throw this when an object cannot be created because it's parent is
+    Throw this when an object cannot be created because its parent is
     either status pending or deleted
     """
 
@@ -351,14 +352,14 @@ class ParentStatusException(IOError):
         if parent.status == "pending":
             super(IOError, self).__init__(
                 _(
-                    "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
+                    "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
                 )
                 % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
             )
         elif parent.status == "deleted":
             super(IOError, self).__init__(
                 _(
-                    "Object of type '%(type)s' cannot be created because it's parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
+                    "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
                 )
                 % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
             )
@@ -1064,7 +1065,7 @@ class FacilitySerializer(ModelSerializer):
     website = serializers.URLField()
     address1 = serializers.CharField()
     city = serializers.CharField()
-    zipcode = serializers.CharField()
+    zipcode = serializers.CharField(required=False, allow_blank=True, default="")
 
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
     sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
@@ -1072,7 +1073,7 @@ class FacilitySerializer(ModelSerializer):
     validators = [FieldMethodValidator("suggest", ["POST"])]
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create facilities if the parent
+        # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
@@ -1185,6 +1186,11 @@ class FacilitySerializer(ModelSerializer):
         except ValidationError as exc:
             raise serializers.ValidationError({"sales_phone": exc.message})
 
+        try:
+            data["zipcode"] = validate_zipcode(data["zipcode"], data["country"])
+        except ValidationError as exc:
+            raise serializers.ValidationError({"zipcode": exc.message})
+
         return data
 
 
@@ -1208,7 +1214,7 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
     fac = serializers.SerializerMethodField()
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create ixfacs if the parent
+        # we don't want users to be able to create ixfacs if the parent
         # ix or fac status is pending or deleted
         if data.get("ix") and data.get("ix").status != "ok":
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
@@ -1268,7 +1274,7 @@ class NetworkContactSerializer(ModelSerializer):
     net = serializers.SerializerMethodField()
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create contacts if the parent
+        # we don't want users to be able to create contacts if the parent
         # network status is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
             raise ParentStatusException(
@@ -1357,7 +1363,7 @@ class NetworkIXLanSerializer(ModelSerializer):
     ipaddr6 = IPAddressField(version=6, allow_blank=True)
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create netixlans if the parent
+        # we don't want users to be able to create netixlans if the parent
         # network or ixlan is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
             raise ParentStatusException(
@@ -1462,9 +1468,35 @@ class NetworkIXLanSerializer(ModelSerializer):
                 pass
         return super().run_validation(data=data)
 
-    def validate(self, data):
-        netixlan = NetworkIXLan(**data)
+    def _validate_network_contact(self, data):
+        """
+        Per github ticket #826, we only allow a Netixlan to be added
+        if there is a network contact that the AC can get in touch
+        with to resolve issues.
+        """
+        network = data["network"]
 
+        poc = (
+            network.poc_set_active.filter(
+                role__in=["Technical", "NOC", "Policy"], visible__in=["Users", "Public"]
+            )
+            .exclude(email="")
+            .count()
+        )
+
+        if poc == 0:
+            raise serializers.ValidationError(
+                _(
+                    "Network must have a Technical, NOC, or Policy point of contact "
+                    "with valid email before adding exchange point."
+                )
+            )
+
+    def validate(self, data):
+
+        self._validate_network_contact(data)
+
+        netixlan = NetworkIXLan(**data)
         try:
             netixlan.validate_ipaddr4()
         except ValidationError as exc:
@@ -1474,6 +1506,11 @@ class NetworkIXLanSerializer(ModelSerializer):
             netixlan.validate_ipaddr6()
         except ValidationError as exc:
             raise serializers.ValidationError({"ipaddr6": exc.message})
+
+        try:
+            netixlan.validate_speed()
+        except ValidationError as exc:
+            raise serializers.ValidationError({"speed": exc.message})
 
         # when validating an existing netixlan that has a mismatching
         # asn value raise a validation error stating that it needs
@@ -1561,7 +1598,7 @@ class NetworkFacilitySerializer(ModelSerializer):
         return qset.select_related("network", "facility"), filters
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create netfac links if the parent
+        # we don't want users to be able to create netfac links if the parent
         # network or facility status is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
             raise ParentStatusException(
@@ -1812,7 +1849,7 @@ class NetworkSerializer(ModelSerializer):
         return super().to_internal_value(data)
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create networks if the parent
+        # we don't want users to be able to create networks if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
@@ -1866,7 +1903,9 @@ class NetworkSerializer(ModelSerializer):
     def update(self, instance, validated_data):
         if validated_data.get("asn") != instance.asn:
             raise serializers.ValidationError(
-                {"asn": _("ASN cannot be changed."),}
+                {
+                    "asn": _("ASN cannot be changed."),
+                }
             )
         return super(ModelSerializer, self).update(instance, validated_data)
 
@@ -1904,6 +1943,7 @@ class IXLanPrefixSerializer(ModelSerializer):
             validate_prefix_overlap,
         ]
     )
+    in_dfz = serializers.SerializerMethodField(read_only=False)
 
     class Meta:
         model = IXLanPrefix
@@ -1919,6 +1959,10 @@ class IXLanPrefixSerializer(ModelSerializer):
         related_fields = ["ixlan"]
 
         list_exclude = ["ixlan"]
+
+    @staticmethod
+    def get_in_dfz(obj):
+        return True
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
@@ -1936,7 +1980,7 @@ class IXLanPrefixSerializer(ModelSerializer):
         return qset.select_related("ixlan", "ixlan__ix"), filters
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create prefixes if the parent
+        # we don't want users to be able to create prefixes if the parent
         # ixlan status is pending or deleted
         if data.get("ixlan") and data.get("ixlan").status != "ok":
             raise ParentStatusException(
@@ -1974,13 +2018,26 @@ class IXLanPrefixSerializer(ModelSerializer):
                 "Prefix netmask invalid, needs to be valid according to the selected protocol"
             )
 
+        # The implementation of #761 has deprecated the in_dfz
+        # property as a writeable setting, if someone tries
+        # to actively set it to `False` let them know it is no
+        # longer supported
+
+        if self.initial_data.get("in_dfz", True) == False:
+            raise serializers.ValidationError(
+                _(
+                    "The `in_dfz` property has been deprecated "
+                    "and setting it to `False` is no "
+                    "longer supported"
+                )
+            )
+
         if self.instance:
             prefix = data["prefix"]
             if prefix != self.instance.prefix and not self.instance.deletable:
                 raise serializers.ValidationError(
                     {"prefix": self.instance.not_deletable_reason}
                 )
-
         return data
 
 
@@ -2011,7 +2068,7 @@ class IXLanSerializer(ModelSerializer):
     )
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create ixlans if the parent
+        # we don't want users to be able to create ixlans if the parent
         # ix status is pending or deleted
         if data.get("ix") and data.get("ix").status != "ok":
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
@@ -2070,7 +2127,8 @@ class IXLanSerializer(ModelSerializer):
             user = request.user
 
         if instance and not instance.ixf_ixp_member_list_url_viewable(user):
-            del data["ixf_ixp_member_list_url"]
+            if "ixf_ixp_member_list_url" in data:
+                del data["ixf_ixp_member_list_url"]
 
         return data
 
@@ -2223,7 +2281,7 @@ class InternetExchangeSerializer(ModelSerializer):
         return qset, filters
 
     def has_create_perms(self, user, data):
-        # we dont want users to be able to create internet exchanges if the parent
+        # we don't want users to be able to create internet exchanges if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
@@ -2256,7 +2314,7 @@ class InternetExchangeSerializer(ModelSerializer):
         # object is created and connected to the ix
 
         # the prefix that was provided, we pop it off the validated
-        # data because we dont need it during the ix creation
+        # data because we don't need it during the ix creation
         prefix = validated_data.pop("prefix")
 
         # create ix

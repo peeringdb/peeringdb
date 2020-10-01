@@ -71,7 +71,9 @@ class Command(BaseCommand):
 
         elif self.ids:
             self.ids = self.ids.split(",")
-            self.log("Merging facilities %s -> %s" % (", ".join(self.ids), self.target))
+            self.log(
+                "Merging facilities {} -> {}".format(", ".join(self.ids), self.target)
+            )
             for fac in pdbm.Facility.objects.filter(id__in=self.ids):
                 facs.append(fac)
 

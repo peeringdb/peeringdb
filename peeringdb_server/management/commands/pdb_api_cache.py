@@ -54,9 +54,9 @@ class Command(BaseCommand):
 
     def log(self, id, msg):
         if self.log_file:
-            self.log_file.write("%s: %s" % (id, msg))
+            self.log_file.write(f"{id}: {msg}")
             self.log_file.flush()
-        print("%s: %s" % (id, msg))
+        print(f"{id}: {msg}")
 
     def row_datetime(self, row, field="created"):
         return datetime.datetime.strptime(row.get(field), "%Y-%m-%dT%H:%M:%SZ")
@@ -100,11 +100,11 @@ class Command(BaseCommand):
                             % (tag, depth, dtstr)
                         )
                     else:
-                        req = rf.get("/api/%s?updated__lte=%s&_ctf" % (tag, dtstr))
+                        req = rf.get(f"/api/{tag}?updated__lte={dtstr}&_ctf")
                     req.user = su
                     vs = viewset.as_view({"get": "list"})
                     res = vs(req)
-                    cache["%s-%s" % (tag, depth)] = renderer.render(
+                    cache[f"{tag}-{depth}"] = renderer.render(
                         res.data, renderer_context={"response": res}
                     )
                     del res

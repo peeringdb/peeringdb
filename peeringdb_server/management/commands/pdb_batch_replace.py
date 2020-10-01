@@ -25,9 +25,9 @@ class Command(BaseCommand):
 
     def log(self, msg):
         if not self.commit:
-            print("[%s] %s [pretend]" % (self.target, msg))
+            print(f"[{self.target}] {msg} [pretend]")
         else:
-            print("[%s] %s" % (self.target, msg))
+            print(f"[{self.target}] {msg}")
 
     @reversion.create_revision()
     def handle(self, *args, **options):
@@ -65,7 +65,7 @@ class Command(BaseCommand):
         # if replace_field not in self.valid_targets.get(ref_tag,[]):
         #    raise CommandError("%s.%s is not a valid target for this script at this point, please add it to the valid_targets map" % (ref_tag, replace_field))
 
-        self.target = "%s.%s" % (ref_tag, search_field)
+        self.target = f"{ref_tag}.{search_field}"
 
         self.log(
             "Searching for %s where %s matches '%s' ..."

@@ -66,7 +66,7 @@ Depth can be one of three values:
 
   - 1 : expand sets into ids (slow)
   - 2 : expand sets into objects (slower)
-  - 0 : dont expand sets at all (default behaviour)
+  - 0 : don't expand sets at all (default behaviour)
 
 **example**
 

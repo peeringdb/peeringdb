@@ -497,7 +497,10 @@ def view_profile_v1(request):
     # only add email fields if email scope is present
     if scope_email:
         data.update(
-            dict(email=request.user.email, verified_email=user.email_confirmed,)
+            dict(
+                email=request.user.email,
+                verified_email=user.email_confirmed,
+            )
         )
 
     # only add ddnetworks if networks scope is present
@@ -506,7 +509,14 @@ def view_profile_v1(request):
         load_perms(user)
         for net in user.networks:
             crud = get_perms(user._nsp_perms_struct, net.nsp_namespace.split(".")).value
-            networks.append(dict(id=net.id, name=net.name, asn=net.asn, perms=crud,))
+            networks.append(
+                dict(
+                    id=net.id,
+                    name=net.name,
+                    asn=net.asn,
+                    perms=crud,
+                )
+            )
 
         data["networks"] = networks
 
@@ -609,7 +619,9 @@ def view_username_retrieve(request):
     """
     env = BASE_ENV.copy()
     env.update(
-        {"global_stats": global_stats(),}
+        {
+            "global_stats": global_stats(),
+        }
     )
     return render(request, "site/username-retrieve.html", env)
 
@@ -695,7 +707,9 @@ def view_password_reset(request):
     if request.method in ["GET", "HEAD"]:
         env = BASE_ENV.copy()
         env.update(
-            {"global_stats": global_stats(),}
+            {
+                "global_stats": global_stats(),
+            }
         )
 
         env["token"] = token = request.GET.get("token")
@@ -783,7 +797,10 @@ def view_registration(request):
         template = loader.get_template("site/register.html")
         env = BASE_ENV.copy()
         env.update(
-            {"global_stats": global_stats(), "register_form": UserCreationForm(),}
+            {
+                "global_stats": global_stats(),
+                "register_form": UserCreationForm(),
+            }
         )
         update_env_beta_sync_dt(env)
         return HttpResponse(template.render(env, request))
@@ -921,7 +938,7 @@ def view_organization(request, id):
         )
 
     # if the organization being viewed is the one used
-    # to store suggested entities, we dont want to show the editorial
+    # to store suggested entities, we don't want to show the editorial
     # tools
     if org.id == dj_settings.SUGGEST_ENTITY_ORG:
         perms["can_create"] = False
@@ -931,7 +948,7 @@ def view_organization(request, id):
             perms["can_delete_%s" % tag] = False
 
     # if user has writing perms to entity, we want to load sub entities
-    # that have status pending so we dont use the ones kicked back
+    # that have status pending so we don't use the ones kicked back
     # by the serializer
     if perms.get("can_delete_ix") or perms.get("can_create_ix"):
         exchanges = org.ix_set.filter(status__in=["ok", "pending"])
@@ -1343,7 +1360,9 @@ def view_exchange(request, id):
                 "target": "api:ixlan:update",
                 "id": ixlan.id,
                 "label": _("LAN"),
-                "payload": [{"name": "ix_id", "value": exchange.id},],
+                "payload": [
+                    {"name": "ix_id", "value": exchange.id},
+                ],
             },
             {
                 "type": "flags",
@@ -1389,7 +1408,12 @@ def view_exchange(request, id):
             {
                 "type": "action",
                 "label": _("IX-F Import Preview"),
-                "actions": [{"label": _("Preview"), "action": "ixf_preview",},],
+                "actions": [
+                    {
+                        "label": _("Preview"),
+                        "action": "ixf_preview",
+                    },
+                ],
                 "admin": True,
             },
             {"type": "group_end"},
@@ -1457,7 +1481,7 @@ def view_network(request, id):
         .order_by("ixlan__ix__name")
     )
 
-    # This will be passed as default value for keys that dont exist - causing
+    # This will be passed as default value for keys that don't exist - causing
     # them not to be rendered in the template - also it is fairly
     # safe to assume that no existing keys have been dropped because permission
     # requirements to view them were not met.
@@ -1466,7 +1490,7 @@ def view_network(request, id):
     org = network_d.get("org")
 
     ixf_proposals = IXFMemberData.proposals_for_network(network)
-    ixf_proposals_dismissed = IXFMemberData.dismissed_for_network(network)
+    ixf_proposals_dismissed = IXFMemberData.network_has_dismissed_actionable(network)
 
     data = {
         "title": network_d.get("name", dismiss),
@@ -1596,10 +1620,9 @@ def view_network(request, id):
                     {
                         "name": "info_never_via_route_servers",
                         "label": _("Never via route servers"),
-                        # FIXME: change to `field_help` after merging with #228
-                        "help_text": Network._meta.get_field(
-                            "info_never_via_route_servers"
-                        ).help_text,
+                        "help_text": field_help(
+                            Network, "info_never_via_route_servers"
+                        ),
                         "value": network_d.get("info_never_via_route_servers", False),
                     },
                 ],
@@ -1638,7 +1661,10 @@ def view_network(request, id):
                 "admin": True,
                 "label": _("IXP Update Tools"),
                 "actions": [
-                    {"label": _("Preview"), "action": "ixf_preview",},
+                    {
+                        "label": _("Preview"),
+                        "action": "ixf_preview",
+                    },
                     {"label": _("Postmortem"), "action": "ixf_postmortem"},
                 ],
             },
@@ -2052,7 +2078,7 @@ class LoginView(two_factor.views.LoginView):
     def done(self, form_list, **kwargs):
 
         """
-        User authenticated succesfully, set language options
+        User authenticated successfully, set language options
         """
 
         response = super().done(form_list, **kwargs)

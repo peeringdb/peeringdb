@@ -94,7 +94,7 @@ class Command(BaseCommand):
                 "secret_key": settings.SECRET_KEY,
                 "backend": "peeringdb_server",
                 "migrate": False,
-                "database": dict([(k.lower(), v) for k, v in db_settings.items()]),
+                "database": {k.lower(): v for k, v in db_settings.items()},
             },
         }
 

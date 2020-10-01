@@ -246,7 +246,7 @@ class GeocodeBaseMixin(models.Model):
     geocode_status = models.BooleanField(
         default=False,
         help_text=_(
-            "Has this object's latitude and longitude been syncronized to it's address fields"
+            "Has this object's latitude and longitude been synchronized to its address fields"
         ),
     )
     geocode_date = models.DateTimeField(
@@ -330,7 +330,7 @@ class UserOrgAffiliationRequest(models.Model):
     When an ASN is entered that is not in the database yet it will
     notify PDB staff
 
-    When an ASN is entered that is already in the database the organzation
+    When an ASN is entered that is already in the database the organization
     adminstration is notified and they can then approve or deny
     the affiliation request themselves.
 
@@ -417,7 +417,7 @@ class UserOrgAffiliationRequest(models.Model):
             if not self.user.is_verified_user:
                 self.user.set_verified()
 
-            # since it was approved, we dont need to keep the
+            # since it was approved, we don't need to keep the
             # request item around
             self.status = "approved"
             self.delete()
@@ -710,7 +710,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase):
     @property
     def urls(self):
         """
-        Returns all the websites for the org based on it's
+        Returns all the websites for the org based on its
         website field and the website fields on all the entities it
         owns
         """
@@ -1115,7 +1115,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="fac_set"
     )
-
+    website = models.URLField(_("Website"), blank=False)
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
     class HandleRef:
@@ -1530,7 +1530,8 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Returns permissioning namespace for an exchange
         """
         return "{}.internetexchange.{}".format(
-            Organization.nsp_namespace_from_id(org_id), ix_id,
+            Organization.nsp_namespace_from_id(org_id),
+            ix_id,
         )
 
     @property
@@ -1676,7 +1677,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Keyword Argument(s):
 
         - create_ixlan (`bool`=True): if True and the ix is missing
-          it's ixlan, create it
+          its ixlan, create it
         """
         r = super().save(**kwargs)
 
@@ -1773,6 +1774,15 @@ class IXLan(pdb_models.IXLanBase):
         null=True,
         blank=True,
     )
+    ixf_ixp_import_protocol_conflict = models.IntegerField(
+        _("IX-F sent IPs for unsupported protocol"),
+        help_text=_(
+            "IX has been sending IP addresses for protocol not supported by network"
+        ),
+        null=True,
+        blank=True,
+        default=0,
+    )
 
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
@@ -1791,7 +1801,7 @@ class IXLan(pdb_models.IXLanBase):
         set for ixlan.
 
         This will strip `ixf_ixp_member_list_url` fields for
-        users that dont have read permissions for them according
+        users that don't have read permissions for them according
         to `ixf_ixp_member_list_url_visible`
 
         Argument(s):
@@ -2174,9 +2184,9 @@ class IXLanIXFMemberImportLog(models.Model):
             if entry.rollback_status() == 0:
                 if entry.version_before:
                     entry.version_before.revert()
-                    related = self.entries.filter(netixlan=entry.netixlan,).exclude(
-                        id=entry.id
-                    )
+                    related = self.entries.filter(
+                        netixlan=entry.netixlan,
+                    ).exclude(id=entry.id)
                     for _entry in related.order_by("-id"):
                         try:
                             _entry.version_before.revert()
@@ -2296,6 +2306,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         ),
     )
 
+    is_rs_peer = models.BooleanField(
+        default=None, null=True, blank=True, help_text=_("RS Peer")
+    )
+
     error = models.TextField(
         null=True,
         blank=True,
@@ -2303,7 +2317,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     )
     reason = models.CharField(max_length=255, default="")
 
-    fetched = models.DateTimeField(_("Last Fetched"),)
+    fetched = models.DateTimeField(
+        _("Last Fetched"),
+    )
 
     ixlan = models.ForeignKey(IXLan, related_name="ixf_set", on_delete=models.CASCADE)
 
@@ -2401,7 +2417,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         try:
             id_filters = cls.id_filters(asn, ipaddr4, ipaddr6)
-
             instances = cls.objects.filter(**id_filters)
 
             if not instances.exists():
@@ -2452,7 +2467,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         instance.speed = kwargs.get("speed", 0)
         instance.operational = kwargs.get("operational", True)
-        instance.is_rs_peer = kwargs.get("is_rs_peer", False)
+        instance.is_rs_peer = kwargs.get("is_rs_peer")
         instance.ixlan = ixlan
         instance.fetched = fetched
         instance.for_deletion = for_deletion
@@ -2496,16 +2511,24 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         qset = cls.get_for_network(net).select_related("ixlan", "ixlan__ix")
         qset = qset.filter(dismissed=True)
+        return qset
 
-        dismissed = {}
+    @classmethod
+    def network_has_dismissed_actionable(cls, net):
+        """
+        Returns whether or not the specified network has
+        any dismissed IXFMemberData suggestions that are
+        actionable
 
-        for ixf_member_data in qset:
+        Argument(s):
 
-            ix = ixf_member_data.ix
-            if ix.id not in dismissed:
-                dismissed[ix.id] = ix
+        - net(Network)
+        """
 
-        return dismissed
+        for ixf_member_data in cls.dismissed_for_network(net):
+            if ixf_member_data.action != "noop":
+                return True
+        return False
 
     @classmethod
     def proposals_for_network(cls, net):
@@ -2565,7 +2588,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             proposals[ix_id][action].append(ixf_member_data)
 
-        return proposals
+        return sorted(proposals.values(), key=lambda x: x["ix"].name.lower())
 
     @property
     def previous_data(self):
@@ -2764,12 +2787,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if self.marked_for_removal or not netixlan:
             return changes
 
-        if netixlan.is_rs_peer != self.is_rs_peer:
+        if (
+            self.modify_is_rs_peer
+            and self.is_rs_peer is not None
+            and netixlan.is_rs_peer != self.is_rs_peer
+        ):
             changes.update(
                 is_rs_peer={"from": netixlan.is_rs_peer, "to": self.is_rs_peer}
             )
 
-        if netixlan.speed != self.speed:
+        if self.modify_speed and self.speed > 0 and netixlan.speed != self.speed:
             changes.update(speed={"from": netixlan.speed, "to": self.speed})
 
         if netixlan.operational != self.operational:
@@ -2781,6 +2808,22 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             changes.update(status={"from": netixlan.status, "to": self.status})
 
         return changes
+
+    @property
+    def modify_speed(self):
+        """
+        Returns whether or not the `speed` property
+        is enabled to receive modify updates or not (#793)
+        """
+        return False
+
+    @property
+    def modify_is_rs_peer(self):
+        """
+        Returns whether or not the `is_rs_peer` property
+        is enabled to receive modify updates or not (#793)
+        """
+        return False
 
     @property
     def changed_fields(self):
@@ -2895,7 +2938,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         #
         # action re-classified to modify (#770)
         if action == "add" and self.has_requirements:
-            action = "modify"
+            if (
+                self.primary_requirement.asn == self.asn
+                and self.primary_requirement.action == "delete"
+            ):
+                action = "modify"
 
         return action
 
@@ -3012,13 +3059,17 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
                 self._netixlan = NetworkIXLan.objects.get(**filters)
             except NetworkIXLan.DoesNotExist:
+                is_rs_peer = self.is_rs_peer
+                if is_rs_peer is None:
+                    is_rs_peer = False
+
                 self._netixlan = NetworkIXLan(
                     ipaddr4=self.ipaddr4,
                     ipaddr6=self.ipaddr6,
                     speed=self.speed,
                     asn=self.asn,
                     operational=self.operational,
-                    is_rs_peer=self.is_rs_peer,
+                    is_rs_peer=is_rs_peer,
                     ixlan=self.ixlan,
                     network=self.net,
                     status="ok",
@@ -3136,8 +3187,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             self.validate_speed()
 
-            netixlan.speed = self.speed
-            netixlan.is_rs_peer = self.is_rs_peer
+            if self.modify_speed and self.speed:
+                netixlan.speed = self.speed
+            if self.modify_is_rs_peer and self.is_rs_peer is not None:
+                netixlan.is_rs_peer = self.is_rs_peer
+
             netixlan.operational = self.operational
             if save:
                 netixlan.full_clean()
@@ -3267,6 +3321,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         if not self.id and save:
             self.grab_validation_errors()
+
             self.save()
             return True
 
@@ -3341,7 +3396,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if not self.netixlan.id:
             return ""
         path = django.urls.reverse(
-            "admin:peeringdb_server_networkixlan_change", args=(self.netixlan.id,),
+            "admin:peeringdb_server_networkixlan_change",
+            args=(self.netixlan.id,),
         )
         return f"{settings.BASE_URL}{path}"
 
@@ -3350,7 +3406,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         if not self.id:
             return ""
         path = django.urls.reverse(
-            "admin:peeringdb_server_ixfmemberdata_change", args=(self.id,),
+            "admin:peeringdb_server_ixfmemberdata_change",
+            args=(self.id,),
         )
         return f"{settings.BASE_URL}{path}"
 
@@ -3369,6 +3426,10 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         IXLan, on_delete=models.CASCADE, default=0, related_name="ixpfx_set"
     )
 
+    # override in_dfz to default it to True on the schema level (#761)
+
+    in_dfz = models.BooleanField(default=True)
+
     @property
     def descriptive_name(self):
         """
@@ -3382,7 +3443,8 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         Returns permissioning namespace for an ixpfx
         """
         return "{}.prefix.{}".format(
-            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id), id,
+            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id),
+            id,
         )
 
     @classmethod
@@ -3470,7 +3532,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         of the following is True:
 
         - parent ixlan has netixlans that fall into
-          it's address space
+          its address space
         """
 
         prefix = self.prefix
@@ -3529,7 +3591,7 @@ class Network(pdb_models.NetworkBase):
         null=False,
         default=False,
         help_text=_(
-            "Sepcifies whether an IXP is allowed to add a netixlan entry for this network via their ixp_member data"
+            "Specifies whether an IXP is allowed to add a netixlan entry for this network via their ixp_member data"
         ),
     )
 
@@ -3998,6 +4060,15 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
 # ip in prefix
 # prefix on lan
 # FIXME - need unique constraint at save time, allow empty string for ipv4/ipv6
+def format_speed(value):
+    if value >= 1000000:
+        return "%dT" % (value / 10 ** 6)
+    elif value >= 1000:
+        return "%dG" % (value / 10 ** 3)
+    else:
+        return "%dM" % value
+
+
 @reversion.register
 class NetworkIXLan(pdb_models.NetworkIXLanBase):
     """
@@ -4149,6 +4220,22 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         if self.ipaddr6 and not self.ixlan.test_ipv6_address(self.ipaddr6):
             raise ValidationError(_("IPv6 address outside of prefix"))
 
+    def validate_speed(self):
+        if self.speed in [None, 0]:
+            pass
+        elif self.speed > settings.DATA_QUALITY_MAX_SPEED:
+            raise ValidationError(
+                _("Maximum speed: {}").format(
+                    format_speed(settings.DATA_QUALITY_MAX_SPEED)
+                )
+            )
+        elif self.speed < settings.DATA_QUALITY_MIN_SPEED:
+            raise ValidationError(
+                _("Minimum speed: {}").format(
+                    format_speed(settings.DATA_QUALITY_MIN_SPEED)
+                )
+            )
+
     def clean(self):
         """
         Custom model validation
@@ -4167,6 +4254,11 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             self.validate_ipaddr6()
         except ValidationError as exc:
             errors["ipaddr6"] = exc.message
+
+        try:
+            self.validate_speed()
+        except ValidationError as exc:
+            errors["speed"] = exc.message
 
         if errors:
             raise ValidationError(errors)
@@ -4452,7 +4544,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             return None
 
         # allauth supports multiple email addresses per user, however
-        # we dont need that, so we check for the primary email address
+        # we don't need that, so we check for the primary email address
         # and if it already exist we make sure to update it to the
         # email address currently specified on the user instance
         try:
@@ -4681,11 +4773,17 @@ class EnvironmentSetting(models.Model):
     value_float = models.FloatField(blank=True, null=True)
 
     updated = models.DateTimeField(
-        _("Last Updated"), auto_now=True, null=True, blank=True,
+        _("Last Updated"),
+        auto_now=True,
+        null=True,
+        blank=True,
     )
 
     created = models.DateTimeField(
-        _("Configured on"), auto_now_add=True, blank=True, null=True,
+        _("Configured on"),
+        auto_now_add=True,
+        blank=True,
+        null=True,
     )
 
     user = models.ForeignKey(

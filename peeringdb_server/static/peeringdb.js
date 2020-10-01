@@ -689,6 +689,12 @@ PeeringDB.IXFProposals = twentyc.cls.define(
         button_resolve_all.prop('disabled',true);
       }
 
+      // make sure all tooltips are closed
+
+      proposals.find('[data-toggle="tooltip"]').each(function() {
+        $(this).tooltip("hide");
+      });
+
       if(button_resolve_all.prop('disabled') && button_add_all.prop('disabled'))
         proposals.detach()
     },

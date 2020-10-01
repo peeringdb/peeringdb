@@ -19,17 +19,20 @@ from peeringdb_server.autocomplete_views import GrappelliHandlerefAutocomplete
 import allauth.account.views
 
 tf_urls[0][0] = url(
-    regex=r'^account/login/$',
+    regex=r"^account/login/$",
     view=LoginView.as_view(),
-    name='login',
+    name="login",
 )
 
 urlpatterns = [
     # override grappelli autocomplete handler
-    url(r'^grappelli/lookup/autocomplete/$', GrappelliHandlerefAutocomplete.as_view(), name="grp_autocomplete_lookup"),
+    url(
+        r"^grappelli/lookup/autocomplete/$",
+        GrappelliHandlerefAutocomplete.as_view(),
+        name="grp_autocomplete_lookup",
+    ),
     # grappelli admin interface improvements
     url(r"^grappelli/", include("grappelli.urls")),
-
     # FIXME: adapt to DAL3 changes
     # url(r'^autocomplete/',  include('dal.urls')),
     # FIXME: can remove this if we upgrade to allauth > 0.24.2, upgrade
@@ -47,7 +50,7 @@ urlpatterns = [
         ),
     ),
     url(r"^cp/", admin.site.urls),
-    url(r'', include(tf_urls)),
+    url(r"", include(tf_urls)),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

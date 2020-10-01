@@ -18,7 +18,7 @@ class Command(BaseCommand):
             .first()
         )
         if command:
-            self.log("Running {}".format(command))
+            self.log(f"Running {command}")
 
             command.set_running()
             command.save()
@@ -32,5 +32,5 @@ class Command(BaseCommand):
                 command.delete()
             except Exception as exc:
                 command.status = "done"
-                command.result = "Command ended with error: {}".format(exc)
+                command.result = f"Command ended with error: {exc}"
                 command.save()

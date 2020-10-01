@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
     def log(self, msg):
         if not self.commit:
-            self.stdout.write("[pretend] {}".format(msg))
+            self.stdout.write(f"[pretend] {msg}")
         else:
             self.stdout.write(msg)
 
@@ -51,7 +51,7 @@ class Command(BaseCommand):
     def sync(self, reftag, _id, limit=0):
         model = models.REFTAG_MAP.get(reftag)
         if not model:
-            raise ValueError("Unknown reftag: {}".format(reftag))
+            raise ValueError(f"Unknown reftag: {reftag}")
         if not hasattr(model, "geocode_status"):
             raise TypeError("Can only geosync models containing GeocodeBaseMixin")
         q = model.handleref.undeleted().filter(geocode_status=False)

@@ -16,7 +16,7 @@ class Command(BaseCommand):
         if self.commit:
             self.stdout.write(msg)
         else:
-            self.stdout.write("[pretend] {}".format(msg))
+            self.stdout.write(f"[pretend] {msg}")
 
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
@@ -32,7 +32,7 @@ class Command(BaseCommand):
             )
             return
 
-        self.log("Setting maintenance mode {}".format(self.state))
+        self.log(f"Setting maintenance mode {self.state}")
         if self.state == "on":
             maintenance.on()
         else:

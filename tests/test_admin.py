@@ -7,6 +7,7 @@ from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group
 from django.urls import reverse, resolve
 from django.core.management import call_command
+from django.contrib.messages import get_messages
 
 import django_namespace_perms as nsp
 
@@ -185,7 +186,7 @@ class AdminTests(TestCase):
         t_org.refresh_from_db()
         self.assertEqual(t_org.status, "ok")
 
-        # TEST 2 - Dont allow merging of target org into target org
+        # TEST 2 - Don't allow merging of target org into target org
         with pytest.raises(ValueError):
             admin.merge_organizations([t_org], t_org, request)
 
@@ -329,7 +330,8 @@ class AdminTests(TestCase):
 
         url = reverse(
             "admin:{}_{}_change".format(
-                ixlan._meta.app_label, ixlan._meta.object_name,
+                ixlan._meta.app_label,
+                ixlan._meta.object_name,
             ).lower(),
             args=(ixlan.id,),
         )
@@ -386,10 +388,48 @@ class AdminTests(TestCase):
         assert netixlan.ipaddr4 is None
         assert "Ip address already exists elsewhere" in response.content.decode("utf-8")
 
+    def test_validate_netixlan_speed(self):
+        ixlan = self.entities["ixlan"][0]
+        netixlan = ixlan.netixlan_set.first()
+
+        url = reverse(
+            "admin:{}_{}_change".format(
+                netixlan._meta.app_label,
+                netixlan._meta.object_name,
+            ).lower(),
+            args=(netixlan.id,),
+        )
+        original_speed = netixlan.speed
+        data = {
+            "status": netixlan.status,
+            "asn": netixlan.asn,
+            "ipaddr4": netixlan.ipaddr4,
+            "ipaddr6": "",
+            "notes": netixlan.notes,
+            "speed": 1200000,
+            "operational": netixlan.operational,
+            "network": netixlan.network_id,
+            "ixlan": netixlan.ixlan_id,
+            "_save": "Save",
+        }
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.post(url, data)
+        netixlan.refresh_from_db()
+        assert "Maximum speed: 1T" in response.content.decode("utf-8")
+        assert netixlan.speed == original_speed
+
+        data["speed"] = 10
+        response = client.post(url, data)
+        netixlan.refresh_from_db()
+        assert "Minimum speed: 100M" in response.content.decode("utf-8")
+        assert netixlan.speed == original_speed
+
     def _run_regex_search(self, model, search_term):
         c = Client()
         c.login(username="admin", password="admin")
-        url = reverse("admin:peeringdb_server_{}_changelist".format(model))
+        url = reverse(f"admin:peeringdb_server_{model}_changelist")
         search = url + "?q=" + urllib.parse.quote_plus(search_term)
         response = c.get(search)
         content = response.content.decode("utf-8")
@@ -400,14 +440,14 @@ class AdminTests(TestCase):
         ixf_importer, _ = models.User.objects.get_or_create(username="ixf_importer")
         for i in range(10):
             models.DeskProTicket.objects.create(
-                subject="test number {}".format(i), body="test", user=ixf_importer
+                subject=f"test number {i}", body="test", user=ixf_importer
             )
 
         search_term = "^.*[0-5]$"
         content = self._run_regex_search("deskproticket", search_term)
         print(content)
-        expected = ["test number {}".format(i) for i in range(5)]
-        expected_not = ["test number {}".format(i) for i in range(6, 10)]
+        expected = [f"test number {i}" for i in range(5)]
+        expected_not = [f"test number {i}" for i in range(6, 10)]
 
         for e in expected:
             assert e in content
@@ -418,15 +458,13 @@ class AdminTests(TestCase):
     def test_search_ixfimportemails(self):
         for i in range(10):
             models.IXFImportEmail.objects.create(
-                subject="test number {}".format(i), message="test", recipients="test"
+                subject=f"test number {i}", message="test", recipients="test"
             )
         search_term = "^.*[2-4]$"
         content = self._run_regex_search("ixfimportemail", search_term)
         print(content)
-        expected = ["test number {}".format(i) for i in range(2, 5)]
-        expected_not = ["test number 1"] + [
-            "test number {}".format(i) for i in range(6, 10)
-        ]
+        expected = [f"test number {i}" for i in range(2, 5)]
+        expected_not = ["test number 1"] + [f"test number {i}" for i in range(6, 10)]
 
         for e in expected:
             assert e in content
@@ -536,7 +574,9 @@ class AdminTests(TestCase):
                 kwargs.get("status_get_orgmerge", 200),
             ),
             (
-                reverse("admin:peeringdb_server_commandlinetool_prepare",),
+                reverse(
+                    "admin:peeringdb_server_commandlinetool_prepare",
+                ),
                 "get",
                 kwargs.get("status_add", 200),
             ),
@@ -682,3 +722,28 @@ class AdminTests(TestCase):
 
             data = json.loads(response.content.decode("utf8"))
             assert len(data)
+
+    def test_protected_entity_errors(self):
+        """
+        Test that attempting to delete a protected
+        entity shows an error message and doesnt raise a 500
+        """
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        org = models.Organization.objects.first()
+
+        url = reverse(
+            "admin:peeringdb_server_organization_changelist",
+        )
+
+        response = client.post(
+            url, {"_selected_action": org.id, "action": "soft_delete"}, follow=True
+        )
+
+        assert response.status_code == 200
+
+        messages = list(get_messages(response.wsgi_request))
+        assert len(messages) == 1
+        assert "Protected object" in str(messages[0])

@@ -85,7 +85,7 @@ class TestRenumberLans(ClientCase):
         assert ixlan.netixlan_set.get(id=1).ipaddr6.compressed == "2001:504:0:1::65"
 
     def test_ignore_diff_address_space(self):
-        """"
+        """ "
         Test that `pdb_renumber_lans` command soft errors on netixlans that
         arent in the specified address space (but exist on the ixlan)
         """

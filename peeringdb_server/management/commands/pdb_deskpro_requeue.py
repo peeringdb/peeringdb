@@ -21,7 +21,7 @@ class Command(BaseCommand):
         if self.commit:
             self.stdout.write(msg)
         else:
-            self.stdout.write("[pretend] {}".format(msg))
+            self.stdout.write(f"[pretend] {msg}")
 
     def handle(self, *args, **options):
         _id = options.get("id")
@@ -41,7 +41,7 @@ class Command(BaseCommand):
         for ticket in qset:
             if self.only_failed and ticket.subject.find("[FAILED]") == -1:
                 continue
-            self.log("Requeuing ticket with id {}".format(ticket.id))
+            self.log(f"Requeuing ticket with id {ticket.id}")
             ticket.subject = ticket.subject.replace("[FAILED]", "")
             ticket.body = re.sub(r"API Delivery Error(.+)$", "", ticket.body)
             ticket.published = None

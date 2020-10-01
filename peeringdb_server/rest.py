@@ -106,7 +106,9 @@ class RestRouter(routers.DefaultRouter):
         # viewset.
         routers.Route(
             url=r"^{prefix}/{lookup}/{methodname}{trailing_slash}$",
-            mapping={"{httpmethod}": "{methodname}",},
+            mapping={
+                "{httpmethod}": "{methodname}",
+            },
             name="{basename}-{methodnamehyphen}",
             detail=False,
             initkwargs={},
@@ -511,7 +513,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
     def require_data(self, request):
         """
-        Test that the request contains data in it's body that
+        Test that the request contains data in its body that
         can be parsed to the required format (json) and is not
         empty
 

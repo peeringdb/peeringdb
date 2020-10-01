@@ -216,7 +216,9 @@ class BaseSchema(AutoSchema):
                     "description": _(
                         "Limit the number of rows returned in the result set (use for pagination in combination with `skip`)"
                     ),
-                    "schema": {"type": "integer",},
+                    "schema": {
+                        "type": "integer",
+                    },
                 },
                 {
                     "name": "skip",
@@ -225,7 +227,9 @@ class BaseSchema(AutoSchema):
                     "description": _(
                         "Skip n results in the result set (use for pagination in combination with `limit`)"
                     ),
-                    "schema": {"type": "integer",},
+                    "schema": {
+                        "type": "integer",
+                    },
                 },
                 {
                     "name": "since",
@@ -283,7 +287,7 @@ class BaseSchema(AutoSchema):
             elif typ == "ForeignKey" and (fld.one_to_many or hasattr(fld, "multiple")):
 
                 # mark prefix of nested object as blocked so we
-                # dont expose it's fields to the documentation
+                # don't expose it's fields to the documentation
 
                 blocked_prefixes.append(f"{field}__")
                 continue
@@ -329,7 +333,9 @@ class BaseSchema(AutoSchema):
                     "in": "query",
                     "description": "\n\n".join(description),
                     "required": False,
-                    "schema": {"type": self.type_map.get(typ, "string"),},
+                    "schema": {
+                        "type": self.type_map.get(typ, "string"),
+                    },
                 }
             )
 

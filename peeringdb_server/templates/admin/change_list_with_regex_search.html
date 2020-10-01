@@ -2,5 +2,8 @@
 {% load i18n %}
 {% block search %}
 {{block.super}}
-<p>{% trans "To use regex search, begin search term with ^ and end with $."%}</p>
+{% blocktrans with doc_url="https://docs.python.org/3/library/re.html" %}
+To use <a href="{{ doc_url }}" target="_blank">regex search</a>, begin search term with ^ and end with $.
+{% endblocktrans %}
+</p>
 {% endblock %}

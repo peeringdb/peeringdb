@@ -71,6 +71,7 @@ from peeringdb_server.models import (
     DeskProTicket,
     IXFImportEmail,
     EnvironmentSetting,
+    ProtectedAction,
 )
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException
@@ -254,6 +255,20 @@ class StatusForm(baseForms.ModelForm):
             elif inst.status == "deleted":
                 self.fields["status"].choices = [("ok", "ok"), ("deleted", "deleted")]
 
+    def clean(self):
+
+        """
+        Catches and raises validation errors where an object
+        is to be soft-deleted but cannot be because it is currently
+        protected.
+        """
+
+        if self.cleaned_data.get("DELETE"):
+            if self.instance and hasattr(self.instance, "deletable"):
+                if not self.instance.deletable:
+                    self.cleaned_data["DELETE"] = False
+                    raise ValidationError(self.instance.not_deletable_reason)
+
 
 class ModelAdminWithUrlActions(admin.ModelAdmin):
     def make_redirect(self, obj, action):
@@ -323,7 +338,11 @@ def soft_delete(modeladmin, request, queryset):
         return
 
     for row in queryset:
-        row.delete()
+        try:
+            row.delete()
+        except ProtectedAction as err:
+            messages.error(request, _("Protected object '{}': {}").format(row, err))
+            continue
 
 
 soft_delete.short_description = _("SOFT DELETE")
@@ -373,7 +392,7 @@ class ModelAdminWithVQCtrl:
         fieldsets = tuple(super().get_fieldsets(request, obj=obj))
 
         # on automatically defined fieldsets it will insert the controls
-        # somewhere towards the bottom, we dont want that - so we look for it and
+        # somewhere towards the bottom, we don't want that - so we look for it and
         # remove it
         for k, s in fieldsets:
             if "verification_queue" in s["fields"]:
@@ -424,6 +443,7 @@ class IXLanPrefixForm(StatusForm):
         return value
 
     def clean(self):
+        super().clean()
         if self.prefix_changed and not self.instance.deletable:
             raise ValidationError(self.instance.not_deletable_reason)
 
@@ -432,6 +452,7 @@ class IXLanPrefixInline(SanitizedAdmin, admin.TabularInline):
     model = IXLanPrefix
     extra = 0
     form = IXLanPrefixForm
+    fields = ["status", "protocol", "prefix"]
 
 
 class IXLanInline(SanitizedAdmin, admin.StackedInline):
@@ -465,7 +486,9 @@ class InternetExchangeFacilityInline(SanitizedAdmin, admin.TabularInline):
     form = StatusForm
 
     autocomplete_lookup_fields = {
-        "fk": ["facility",],
+        "fk": [
+            "facility",
+        ],
     }
 
 
@@ -485,7 +508,9 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
     form = StatusForm
     raw_id_fields = ("facility",)
     autocomplete_lookup_fields = {
-        "fk": ["facility",],
+        "fk": [
+            "facility",
+        ],
     }
 
 
@@ -594,7 +619,9 @@ class IXLanAdmin(SoftDeleteAdmin):
     form = IXLanAdminForm
     raw_id_fields = ("ix",)
     autocomplete_lookup_fields = {
-        "fk": ["ix",],
+        "fk": [
+            "ix",
+        ],
     }
 
 
@@ -969,7 +996,9 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
 
     raw_id_fields = ("org",)
     autocomplete_lookup_fields = {
-        "fk": ["org",],
+        "fk": [
+            "org",
+        ],
     }
 
 
@@ -988,7 +1017,7 @@ class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
 
 class IXLanPrefixAdmin(SoftDeleteAdmin):
     list_display = ("id", "prefix", "ixlan", "ix", "status", "created", "updated")
-    readonly_fields = ("ix", "id")
+    readonly_fields = ("ix", "id", "in_dfz")
     search_fields = ("ixlan__name", "ixlan__ix__name", "prefix")
     list_filter = (StatusFilter,)
     form = IXLanPrefixForm
@@ -1059,7 +1088,9 @@ class NetworkContactAdmin(SoftDeleteAdmin):
 
     raw_id_fields = ("network",)
     autocomplete_lookup_fields = {
-        "fk": ["network",],
+        "fk": [
+            "network",
+        ],
     }
 
     def net(self, obj):
@@ -1356,7 +1387,7 @@ class UserPermissionAdmin(UserAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         # we want to remove the password field from the form
-        # since we dont send it and dont want to run clean for it
+        # since we don't send it and don't want to run clean for it
         form = super().get_form(request, obj, **kwargs)
         del form.base_fields["password"]
         return form
@@ -1543,13 +1574,30 @@ class CommandLineToolAdmin(admin.ModelAdmin):
 
 
 class IXFImportEmailAdmin(admin.ModelAdmin):
-    list_display = ("subject", "recipients", "created", "sent", "net", "ix")
+    list_display = (
+        "subject",
+        "recipients",
+        "created",
+        "sent",
+        "net",
+        "ix",
+        "stale_info",
+    )
     readonly_fields = (
         "net",
         "ix",
     )
     search_fields = ("subject", "ix__name", "net__name")
     change_list_template = "admin/change_list_with_regex_search.html"
+
+    def stale_info(self, obj):
+        not_sent = obj.sent is None
+        if type(obj.sent) == datetime.datetime:
+            re_sent = (obj.sent - obj.created) > datetime.timedelta(minutes=5)
+        else:
+            re_sent = False
+        prod_mail_mode = not settings.MAIL_DEBUG
+        return prod_mail_mode and (not_sent or re_sent)
 
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(
@@ -1710,7 +1758,9 @@ class IXFMemberDataAdmin(admin.ModelAdmin):
     raw_id_fields = ("ixlan",)
 
     autocomplete_lookup_fields = {
-        "fk": ["ixlan",],
+        "fk": [
+            "ixlan",
+        ],
     }
 
     def get_queryset(self, request):
