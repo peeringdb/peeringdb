@@ -1184,8 +1184,8 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
 
 
 class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
-    list_display = ("user", "asn", "org", "created", "status")
-    search_fields = ("user", "asn")
+    list_display = ("user", "asn", "org", "created", "status",)
+    search_fields = ("user__username", "asn",)
     readonly_fields = ("created",)
 
     raw_id_fields = ("user", "org")
