@@ -31,6 +31,49 @@ from peeringdb_server import ixf
 
 
 @pytest.mark.django_db
+def test_add_deleted_netixlan(entities, use_ip, save):
+    """
+    Check that we can add back a netixlan if (asn, ip4, ip6) in the ixf member data 
+    matches a deleted netixlan. Check also that if speed, operational, or is_rs_peer
+    values are different, they take on the new ixf member data values.
+    """
+
+    data = setup_test_data("ixf.member.speed.0")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    netixlan = NetworkIXLan.objects.create(
+                network=network,
+                ixlan=ixlan,
+                asn=network.asn,
+                speed=1,
+                ipaddr4=use_ip(4, "195.69.147.250"),
+                ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
+                status="ok",
+                is_rs_peer=True,
+                operational=False,
+    )
+        
+    netixlan.delete()
+
+    assert NetworkIXLan.objects.filter(status="ok").count() == 0
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert_no_emails(network, ixlan.ix)
+
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    # Assert data values are updated
+    assert netixlan.is_rs_peer == True
+    assert netixlan.operational == True
+    assert netixlan.speed == 0
+
+@pytest.mark.django_db
 def test_resolve_local_ixf(entities, use_ip, save):
     """
     Netixlan exists, remote data matches the netixlan, and there is a local-ixf
