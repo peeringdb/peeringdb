@@ -1630,6 +1630,11 @@ class Importer:
         if ixf_member_data.deskpro_ref:
             subject = f"{subject} [#{ixf_member_data.deskpro_ref}]"
 
+        # If we do not have a deskpro reference, don't send out individual conflict resolution
+        # As per issue #850
+        else:
+            return
+
         # Notify Exchange
 
         if ix:
