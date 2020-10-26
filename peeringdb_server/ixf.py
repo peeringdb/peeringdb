@@ -408,7 +408,7 @@ class Importer:
         self.cleanup_ixf_member_data()
 
         # create tickets for unresolved proposals
-
+        # This function is currently disabled as per issue #860
         self.ticket_aged_proposals()
 
         # archive the import so we can roll it back later if needed
@@ -1537,6 +1537,11 @@ class Importer:
             self._email(subject, message, contacts, ix=data["entity"])
 
     def ticket_aged_proposals(self):
+        """
+        This function is currently disabled as per issue #860
+        """
+        return
+
 
         """
         Cycle through all IXFMemberData objects that
@@ -1546,6 +1551,8 @@ class Importer:
         them yet
         """
 
+
+        """
         if not self.save:
             return
 
@@ -1584,7 +1591,7 @@ class Importer:
             self.ticket_proposal(
                 ixf_member_data, typ, True, True, True, {}, ixf_member_data.action
             )
-
+        """
     def ticket_proposal(self, ixf_member_data, typ, ac, ix, net, context, action):
 
         """

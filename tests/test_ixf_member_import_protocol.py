@@ -2199,6 +2199,7 @@ def test_create_deskpro_tickets_after_x_days(entities):
     # Assert IXFMemberData still the same
     assert IXFMemberData.objects.count() == 4
 
+    """
     # Assert DeskProTickets are created
     assert DeskProTicket.objects.count() == 4
 
@@ -2211,6 +2212,11 @@ def test_create_deskpro_tickets_after_x_days(entities):
         assert IXFImportEmail.objects.filter(
             subject__contains=dpt, net=network.id
         ).exists()
+    """
+
+    # Per issue #860, we no longer create the DeskProTickets
+    # after x days
+    assert DeskProTicket.objects.count() == 0
 
 
 @pytest.mark.django_db
@@ -2291,8 +2297,11 @@ def test_resolve_deskpro_ticket(entities):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    assert DeskProTicket.objects.count() == 1
+    # Per issue #860 we no longer create tickets for conflict resolution
+    assert DeskProTicket.objects.count() == 0
 
+    # Commented out bc of issue #860
+    """
     ticket = DeskProTicket.objects.first()
     assert ticket.deskpro_id
     assert ticket.deskpro_ref
@@ -2311,9 +2320,10 @@ def test_resolve_deskpro_ticket(entities):
     else:
         assert IXFImportEmail.objects.count() == 4
     conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
-    consolid_emails = IXFImportEmail.objects.exclude(subject__icontains="conflict")
     assert conflict_emails.count() == 2
+    """
 
+    consolid_emails = IXFImportEmail.objects.exclude(subject__icontains="conflict")
     for email in consolid_emails:
 
         # if network is only supporting one ip protocol
@@ -2323,8 +2333,8 @@ def test_resolve_deskpro_ticket(entities):
         if not network.ipv6_support:
             assert "IX-F data provides IPv6 addresses" in email.message
 
-    for email in conflict_emails:
-        assert ticket.deskpro_ref in email.subject
+    # for email in conflict_emails:
+    #     assert ticket.deskpro_ref in email.subject
 
     # Resolve issue
     entities["netixlan"].append(
@@ -2349,20 +2359,23 @@ def test_resolve_deskpro_ticket(entities):
     # resolved
     assert IXFMemberData.objects.count() == 0
 
-    # resolution tickets created
-    assert DeskProTicket.objects.count() == 2
+    # Commented out bc of issue #860
+    """
+    # assert DeskProTicket.objects.count() == 2
 
     ticket_r = DeskProTicket.objects.last()
     assert ticket_r.deskpro_id == ticket.deskpro_id
     assert ticket_r.deskpro_ref == ticket.deskpro_ref
     assert "resolved" in ticket_r.body
 
+    
     conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
     assert conflict_emails.count() == 4
 
     for email in conflict_emails.order_by("-id")[:2]:
         assert "resolved" in email.message
         assert ticket.deskpro_ref in email.subject
+    """
 
 
 def test_vlan_sanitize(data_ixf_vlan):
