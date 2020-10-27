@@ -2375,6 +2375,7 @@ def test_no_email_if_deskpro_fails(entities, use_ip, save):
     else:
         assert DeskProTicket.objects.count() == 3
 
+    # This is the single consolidated email
     assert IXFImportEmail.objects.count() == 1
 
 
