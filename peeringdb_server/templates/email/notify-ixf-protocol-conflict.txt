@@ -1,7 +1,7 @@
 {% include "email/notify-ixf-protocol-conflict-inline.txt" with instance=instance recipient=recipient ipaddr4=ipaddr4 ipaddr6=ipaddr6 %}
 
-- Exchange: {{ instance.ix.view_url }}
-- Network: {{ instance.net.view_url}}
-{% if recipient == "ac" %}
-- IX-F Data: {{ ixf_url }} 
+- Exchange: <a href="{{ instance.ix.view_url }}">{{ instance.ix.view_url }}</a>
+- Network: <a href="{{ instance.net.view_url }}">{{ instance.net.view_url }}</a>
+{% if recipient == "ac"  %}
+- IX-F Data: <a href="{{ ixf_url }}">{{ ixf_url }}</a>
 {% endif %}
