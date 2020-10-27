@@ -1,8 +1,8 @@
 {% spaceless %}
 {% if recipient == "net" %}
-This email details {{ count }} new data mismatch[es] discovered by the PeeringDB IX-F Importer.  Please review and correct these mismatches at your PeeringDB network page ({{ entity.view_url_asn }}) or work with the indicated IXPs to correct the data.
+This email details {{ count }} new data mismatch[es] discovered by the PeeringDB IX-F Importer.  Please review and correct these mismatches at your PeeringDB network page (<a href="{{ entity.view_url_asn }}">{{ entity.view_url_asn }}</a>) or work with the indicated IXPs to correct the data.
 {% elif recipient == "ix" %}
-This email details {{ count }} new data mismatch[es] discovered by the PeeringDB IX-F Importer.  Please review and correct these mismatches in your IX-F JSON export ({{ entity.ixlan.ixf_ixp_member_list_url }}) or work with the indicated networks to correct the data.
+This email details {{ count }} new data mismatch[es] discovered by the PeeringDB IX-F Importer.  Please review and correct these mismatches in your IX-F JSON export (<a href="{{ entity.ixlan.ixf_ixp_member_list_url }}">{{ entity.ixlan.ixf_ixp_member_list_url }}</a>) or work with the indicated networks to correct the data.
 {% endif %}
 -----------------------------
 {% for other, messages in proposals.items %}{% for message in messages.add %}
