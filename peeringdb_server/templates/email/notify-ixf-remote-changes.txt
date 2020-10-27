@@ -3,9 +3,9 @@ The ix-f data for this entry has changes
 - {{ name }}: {{ value.from }} to {{ value.to }}
 {% endfor %}
 {% if recipient=="ac" %}
-You may review and manually accept the ix-f data at {{ instance.ac_url %}}
+You may review and manually accept the ix-f data at <a href="{{ instance.ac_url }}">{{ instance.ac_url }}</a>
 {% elif recipient=="net" %}
-Your network currently has automatic ix-f updates disabled. You may review and manually accept this proposed changed at {{ instance.net_url }}
+Your network currently has automatic ix-f updates disabled. You may review and manually accept this proposed change at <a href="{{ instance.net_url }}">{{ instance.net_url }}</a>
 {% endif %}
 
-- IX-F Data: {{ ixf_url }}
+- IX-F Data: <a href="{{ ixf_url }}">{{ ixf_url }}</a>
