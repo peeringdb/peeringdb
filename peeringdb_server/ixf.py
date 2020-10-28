@@ -1254,6 +1254,9 @@ class Importer:
             settings.DEFAULT_FROM_EMAIL,
             recipients,
         )
+        
+        mail.attach_alternative(message.replace("\n", "<br />\n"), "text/html")
+
         mail.send(fail_silently=False)
 
     def _ticket(self, ixf_member_data, subject, message):
