@@ -108,6 +108,8 @@ def forwards_func(apps, schema_editor):
     for poc in NetworkContact.handleref.filter(status__in=["ok", "pending"]):
         _fix_number("poc", poc, "phone", fixed, invalid)
 
+    """ This was used in production as a one time process
+
     print(
         "Invalid numbers: {} - written to invalid_phonenumbers.csv".format(len(invalid))
     )
@@ -125,6 +127,7 @@ def forwards_func(apps, schema_editor):
         csvwriter.writerow(headers_fixed)
         for row in fixed:
             csvwriter.writerow(row)
+    """
 
 
 class Migration(migrations.Migration):
