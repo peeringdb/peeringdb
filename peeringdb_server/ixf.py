@@ -12,7 +12,6 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.template import loader
 from django.utils.translation import ugettext_lazy as _
-from django.utils.html import strip_tags
 
 import reversion
 
@@ -1240,7 +1239,7 @@ class Importer:
 
         prod_mail_mode = not getattr(settings, "MAIL_DEBUG", True)
         if prod_mail_mode:
-            self._send_email(subject, strip_tags(message), recipients)
+            self._send_email(subject, message, recipients)
             if email_log:
                 email_log.sent = datetime.datetime.now(datetime.timezone.utc)
 
@@ -1741,7 +1740,7 @@ class Importer:
         prod_resend_mode = getattr(settings, "IXF_RESEND_FAILED_EMAILS", False)
 
         if prod_mail_mode and prod_resend_mode:
-            self._send_email(subject, strip_tags(message), recipients)
+            self._send_email(subject, message, recipients)
             email.sent = datetime.datetime.now(datetime.timezone.utc)
             email.message = message
             email.save()
