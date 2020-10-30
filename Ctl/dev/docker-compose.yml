@@ -1,0 +1,49 @@
+version: "3.4"
+services:
+  database:
+    image: "mysql:5.7"
+    environment:
+      MYSQL_DATABASE: peeringdb
+      MYSQL_USER: peeringdb
+      MYSQL_PASSWORD: devPASSWORD
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+#      MYSQL_ROOT_PASSWORD: devPASSWORD
+    logging:
+      options:
+        max-size: 100m
+        max-file: "3"
+    restart: always
+    ports:
+     - "13306:3306"
+    volumes:
+      - peeringdb_database:/var/lib/mysql
+
+  peeringdb:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: tester
+    command: runserver 0.0.0.0:8000
+    env_file: .env
+    environment:
+      DATABASE_USER: root
+      DATABASE_PASSWORD: devPASSWORD
+      DATABASE_HOST: database
+      # defaults
+      # DATABASE_USER: account_service
+      # DATABASE_NAME: account_service
+      # DATABASE_PORT: 5432
+    logging:
+      options:
+        max-size: 100m
+        max-file: "3"
+    ports:
+      # this needs to be set in the shell, compose env vars aren't read yet
+      - "${DJANGO_PORT:-8000}:8000"
+    volumes:
+      - ../../peeringdb_server:/srv/www.peeringdb.com/peeringdb_server
+      - ../../mainsite:/srv/www.peeringdb.com/mainsite
+      - ../../tests:/srv/www.peeringdb.com/tests
+
+volumes:
+  peeringdb_database:

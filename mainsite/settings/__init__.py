@@ -183,6 +183,9 @@ set_option(
     "PEERINGDB_VERSION", read_file(os.path.join(BASE_DIR, "etc/VERSION")).strip()
 )
 
+#XXX
+MIGRATION_MODULES={"django_peeringdb": None}
+
 # Contact email, from address, support email
 set_from_env("SERVER_EMAIL")
 
