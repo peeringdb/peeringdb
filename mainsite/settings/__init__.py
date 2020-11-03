@@ -618,7 +618,7 @@ set_option(
         },
         "backends": {
             "django_peeringdb": {
-                "min": (2, 0, 0, 2),
+                "min": (2, 3, 0, 1),
                 "max": (255, 0),
             },
         },
