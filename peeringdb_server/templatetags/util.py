@@ -178,7 +178,7 @@ def ref_tag(value):
 
 @register.filter
 def pretty_speed(value):
-    if value is None:
+    if not value:
         return ""
     try:
         return format_speed(value)
