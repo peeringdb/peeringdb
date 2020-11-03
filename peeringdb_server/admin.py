@@ -853,6 +853,26 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     readonly_fields = ("id", "nsp_namespace")
     form = StatusForm
 
+    fields = [
+        "status",
+        "name",
+        "address1",
+        "address2",
+        "city",
+        "state",
+        "zipcode",
+        "country",
+        "latitude",
+        "longitude",
+        "website",
+        "notes",
+        "logo",
+        "verification_queue",
+        "version",
+        "id",
+        "nsp_namespace",
+    ]
+
     def get_urls(self):
         urls = super().get_urls()
         my_urls = [
@@ -965,6 +985,36 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         InternetExchangeFacilityInline,
         NetworkFacilityInline,
     )
+
+    fields = [
+        "status",
+        "name",
+        "address1",
+        "address2",
+        "city",
+        "state",
+        "zipcode",
+        "country",
+        "latitude",
+        "longitude",
+        "website",
+        "clli",
+        "rencode",
+        "npanxx",
+        "tech_email",
+        "tech_phone",
+        "sales_email",
+        "sales_phone",
+        "notes",
+        "geocode_status",
+        "geocode_date",
+        "geocode_error",
+        "org",
+        "verification_queue",
+        "version",
+        "id",
+        "nsp_namespace",
+    ]
 
 
 class NetworkAdminForm(StatusForm):
