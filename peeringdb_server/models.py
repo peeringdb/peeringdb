@@ -954,7 +954,7 @@ class Sponsorship(models.Model):
         mail.attach_alternative(msg.replace("\n", "<br />\n"), "text/html")
         mail.send(fail_silently=True)
 
-        self.notify_date = datetime.datetime.now()
+        self.notify_date = datetime.datetime.now(tz=datetime.timezone.utc)
         self.save()
 
         return True
