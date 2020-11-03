@@ -30,7 +30,10 @@ class TestAPIClientCompat(ClientCase):
             self.client = APIClient()
         self.client.force_authenticate(self.superuser)
 
-        r = self.client.get("/api/org/1", format="json")
+        org_id = self.org.id
+        print(self.org, self.org.id)
+
+        r = self.client.get(f"/api/org/{org_id}", format="json")
         content = json.loads(r.content)
         if error:
             assert r.status_code == 400
@@ -39,7 +42,7 @@ class TestAPIClientCompat(ClientCase):
             assert r.status_code == 200
 
         r = self.client.post(
-            "/api/net", {"org_id": 1, "name": "Test net", "asn": 9000000}, format="json"
+            "/api/net", {"org_id": org_id, "name": "Test net", "asn": 9000000}, format="json"
         )
         content = json.loads(r.content)
         if error:

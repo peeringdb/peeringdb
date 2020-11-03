@@ -15,7 +15,6 @@ def pytest_generate_tests(metafunc):
             data = pytest_filedata.get_data(fixture)
             metafunc.parametrize(fixture, list(data.values()), ids=list(data.keys()))
 
-
 @pytest.fixture
 def rdap():
     return RdapLookup()

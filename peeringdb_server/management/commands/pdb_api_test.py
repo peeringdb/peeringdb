@@ -1979,7 +1979,7 @@ class TestJSON(unittest.TestCase):
         for row in data:
             self.assertEqual(sorted(row.keys()), sorted(["name", "status"]))
 
-        data = self.db_guest.get("org", 1, fields=",".join(["name", "status"]))
+        data = self.db_guest.get("org", Organization.objects.first().id, fields=",".join(["name", "status"]))
         self.assertGreater(len(data), 0)
         self.assertEqual(sorted(data[0].keys()), sorted(["name", "status"]))
 
@@ -2009,12 +2009,12 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_pagination(self):
-        n = 1
-        for i in range(0, 10):
-            data = self.db_guest.all("org", skip=i * 10, limit=10)
-            for row in data:
-                self.assertEqual(row.get("id"), n)
-                n += 1
+        org_ids = [org.id for org in Organization.objects.filter(status="ok")]
+
+        for n in range(0,1):
+            data_a = self.db_guest.all("org", skip=n * 3, limit=3)
+            for i in range(n, n+3):
+                assert data_a[i]["id"] == org_ids[i]
 
     ##########################################################################
 

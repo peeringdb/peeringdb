@@ -11,8 +11,11 @@ class ClientCase(TestCase):
     def setUpTestData(cls):
         # create user and guest group
 
-        guest_group = Group.objects.create(name="guest")
-        user_group = Group.objects.create(name="user")
+        guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
+        user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
+
+        settings.USER_GROUP_ID = user_group.id
+        settings.GUEST_GROUP_ID = guest_group.id
 
         cls.guest_user = models.User.objects.create_user(
             "guest", "guest@localhost", "guest"
@@ -57,10 +60,26 @@ class SettingsCase(ClientCase):
     def setUp(cls):
         cls._restore = {}
         for k, v in list(cls.settings.items()):
-            cls._restore[k] = getattr(pdb_settings, k)
+            cls._restore[k] = getattr(pdb_settings, k, getattr(settings, k, None))
             setattr(pdb_settings, k, v)
+            setattr(settings, k, v)
 
     @classmethod
     def tearDown(cls):
         for k, v in list(cls._restore.items()):
             setattr(pdb_settings, k, v)
+            setattr(settings, k, v)
+
+
+def reset_group_ids():
+    """
+    Guest and user groups will get recreated for each tests,
+    however mysql sequential ids wont be reset between tests.
+
+    Tests that require USER_GROUP_ID and GUEST_GROUP_ID to
+    point to to correct groups should call this function
+    to make sure the settings are updated
+    """
+
+    settings.USER_GROUP_ID = Group.objects.get(name="user").id
+    settings.GUEST_GROUP_ID = Group.objects.get(name="guest").id
