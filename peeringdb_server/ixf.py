@@ -1063,12 +1063,12 @@ class Importer:
         if ip4_deletion:
             try:
                 self.log["data"].remove(ip4_deletion.ixf_log_entry)
-            except ValueError:
+            except (ValueError, AttributeError):
                 pass
         if ip6_deletion:
             try:
                 self.log["data"].remove(ip6_deletion.ixf_log_entry)
-            except ValueError:
+            except (ValueError, AttributeError):
                 pass
 
         log_entry = ixf_member_data.ixf_log_entry
