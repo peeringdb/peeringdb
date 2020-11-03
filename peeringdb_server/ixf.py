@@ -1218,7 +1218,7 @@ class Importer:
         if net:
             email_log = IXFImportEmail.objects.create(
                 subject=logged_subject,
-                message=message,
+                message=strip_tags(message),
                 recipients=",".join(recipients),
                 net=net,
             )
@@ -1229,7 +1229,7 @@ class Importer:
         if ix:
             email_log = IXFImportEmail.objects.create(
                 subject=logged_subject,
-                message=message,
+                message=strip_tags(message),
                 recipients=",".join(recipients),
                 ix=ix,
             )
@@ -1240,7 +1240,7 @@ class Importer:
 
         prod_mail_mode = not getattr(settings, "MAIL_DEBUG", True)
         if prod_mail_mode:
-            self._send_email(subject, strip_tags(message), recipients)
+            self._send_email(subject, message, recipients)
             if email_log:
                 email_log.sent = datetime.datetime.now(datetime.timezone.utc)
 
@@ -1250,10 +1250,14 @@ class Importer:
     def _send_email(self, subject, message, recipients):
         mail = EmailMultiAlternatives(
             subject,
-            message,
+            strip_tags(message),
             settings.DEFAULT_FROM_EMAIL,
             recipients,
         )
+        
+        # Do not strip_tags for the HTML attachment
+        mail.attach_alternative(message.replace("\n", "<br />\n"), "text/html")
+
         mail.send(fail_silently=False)
 
     def _ticket(self, ixf_member_data, subject, message):
@@ -1755,9 +1759,9 @@ class Importer:
         prod_resend_mode = getattr(settings, "IXF_RESEND_FAILED_EMAILS", False)
 
         if prod_mail_mode and prod_resend_mode:
-            self._send_email(subject, strip_tags(message), recipients)
+            self._send_email(subject, message, recipients)
             email.sent = datetime.datetime.now(datetime.timezone.utc)
-            email.message = message
+            email.message = strip_tags(message)
             email.save()
         else:
             return False
