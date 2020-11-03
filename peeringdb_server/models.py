@@ -3177,8 +3177,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             # Update data values
             netixlan.speed = self.speed
-            netixlan.is_rs_peer = self.is_rs_peer
-            netixlan.operational = self.operational
+            netixlan.is_rs_peer = bool(self.is_rs_peer)
+            netixlan.operational = bool(self.operational)
 
             if not self.net.ipv6_support:
                 netixlan.ipaddr6 = None
