@@ -2119,7 +2119,7 @@ class IXLan(pdb_models.IXLanBase):
 
         # Speed
         if netixlan_info.speed != netixlan.speed and (
-            netixlan_info.speed > 0 or netixlan.speed is None
+            netixlan_info.speed >= 0 or netixlan.speed is None
         ):
             netixlan.speed = netixlan_info.speed
             changed.append("speed")
@@ -3058,6 +3058,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                     raise NetworkIXLan.DoesNotExist()
 
                 self._netixlan = NetworkIXLan.objects.get(**filters)
+
             except NetworkIXLan.DoesNotExist:
                 is_rs_peer = self.is_rs_peer
                 if is_rs_peer is None:
@@ -3172,8 +3173,12 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         changes = self.changes
 
         if action == "add":
-
             self.validate_speed()
+
+            # Update data values
+            netixlan.speed = self.speed
+            netixlan.is_rs_peer = self.is_rs_peer
+            netixlan.operational = self.operational
 
             if not self.net.ipv6_support:
                 netixlan.ipaddr6 = None
