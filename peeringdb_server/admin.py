@@ -1863,7 +1863,8 @@ class EnvironmentSettingAdmin(admin.ModelAdmin):
         return obj.set_value(form.cleaned_data["value"])
 
 
-admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
+# Commented out via issue #860
+# admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)
