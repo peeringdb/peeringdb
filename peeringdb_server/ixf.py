@@ -1297,7 +1297,12 @@ class Importer:
             ticket.save()
         except Exception as exc:
             ticket.subject = f"[FAILED]{ticket.subject}"
-            ticket.body = f"{ticket.body}\n\n{exc.data}"
+            if hasattr(exc, "data"):
+                # api error returned with validation error data
+                ticket.body = f"{ticket.body}\n\n{exc.data}"
+            else:
+                # api error configuration issue
+                ticket.body = f"{ticket.body}\n\n{exc}"
             ticket.save()
         return ticket
 
@@ -1636,6 +1641,11 @@ class Importer:
 
         if ixf_member_data.deskpro_ref:
             subject = f"{subject} [#{ixf_member_data.deskpro_ref}]"
+
+        # If we do not have a deskpro reference, don't send out individual conflict resolution
+        # As per issue #850
+        else:
+            return
 
         # Notify Exchange
 
