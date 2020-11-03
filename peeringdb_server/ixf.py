@@ -1254,7 +1254,7 @@ class Importer:
             settings.DEFAULT_FROM_EMAIL,
             recipients,
         )
-        
+
         # Do not strip_tags for the HTML attachment
         mail.attach_alternative(message.replace("\n", "<br />\n"), "text/html")
 
@@ -1551,7 +1551,6 @@ class Importer:
         """
         return
 
-
         """
         Cycle through all IXFMemberData objects that
         and create tickets for those that are older
@@ -1559,7 +1558,6 @@ class Importer:
         and that don't have any ticket associated with
         them yet
         """
-
 
         """
         if not self.save:
@@ -1601,6 +1599,7 @@ class Importer:
                 ixf_member_data, typ, True, True, True, {}, ixf_member_data.action
             )
         """
+
     def ticket_proposal(self, ixf_member_data, typ, ac, ix, net, context, action):
 
         """
