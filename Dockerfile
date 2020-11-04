@@ -14,7 +14,8 @@ RUN apk --update --no-cache add \
   libjpeg-turbo-dev \
   linux-headers \
   make \
-  mariadb-dev
+  mariadb-dev \
+  libffi-dev
 
 # create venv
 RUN pip install -U pip pipenv
