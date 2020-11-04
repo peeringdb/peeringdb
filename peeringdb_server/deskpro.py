@@ -230,6 +230,32 @@ class MockAPIClient(APIClient):
         return {}
 
 
+class FailingMockAPIClient(MockAPIClient):
+
+    """
+    A mock api client for the deskpro API
+    that returns an error on post
+
+    We use this in our tests, for example
+    with issue 856.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.ticket_count = 0
+
+    def get(self, endpoint, param):
+        return {"error": "API error with get."}
+
+    def create(self, endpoint, param):
+        return {"error": "API error with create."}
+
+    def create_ticket(self, ticket=None):
+        raise APIError(
+            "API error when creating ticket.",
+            {"error": "API error when creating ticket."},
+        )
+
+
 def ticket_queue_deletion_prevented(user, instance):
     """
     queue deskpro ticket to notify about the prevented

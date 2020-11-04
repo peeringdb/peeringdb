@@ -5,10 +5,10 @@
 
 {% spaceless %}
 {% if recipient == "ac" %}
-You may review and manually accept the IX-F data at {{ instance.ac_url }}
+You may review and manually accept the IX-F data at <a href="{{ instance.ac_url }}" target="_blank">{{ instance.ac_url }}</a>
 {% elif recipient == "net" %}
 {% if not instance.net.allow_ixp_update %}
-Your network currently has automatic IX-F updates disabled. You may review and manually accept this proposed change at {{ instance.net.view_url }}. We have also notified the PeeringDB admin committee about this proposed change.
+Your network currently has automatic IX-F updates disabled. You may review and manually accept this proposed change at <a href="{{ instance.net.view_url }}" target="_blank">{{ instance.net.view_url }}</a>. We have also notified the PeeringDB admin committee about this proposed change.
 {% endif %}
 {% elif recipient == "ix" %}
 {% if instance.actionable_for_network %}The network administrators of AS{{ instance.asn }} as well as the{% else %}The{% endif %} PeeringDB administrators have been informed of this proposed change. If this proposed change is incorrect please review your IX-F data for this entry.
@@ -17,8 +17,8 @@ Your network currently has automatic IX-F updates disabled. You may review and m
 
 {% if recipient == "ac" %}{% include "email/ixf-contact-points.txt" with instance=instance %}{% endif %}
 
-- Exchange: {{ instance.ix.view_url }}
-- Network: {{ instance.net.view_url}}
+- Exchange: <a href="{{ instance.ix.view_url }}" target="_blank">{{ instance.ix.view_url }}</a>
+- Network: <a href="{{ instance.net.view_url }}" target="_blank">{{ instance.net.view_url }}</a>
 {% if recipient == "ac"  %}
-- IX-F Data: {{ ixf_url }}
+- IX-F Data: <a href="{{ ixf_url }}" target="_blank">{{ ixf_url }}</a>
 {% endif %}

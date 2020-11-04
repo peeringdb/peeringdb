@@ -45,7 +45,7 @@
     <div class="row item {% if x.operational %}operational{% endif %}">
       <div class="col-xs-5 col-sm-5 col-md-5">
         <div class="peer" data-sort-value="{{ x.network.name|lower }}" data-filter-value="{{ x.network.name }}">
-          <a href="/{{ x.network|ref_tag }}/{{ x.network.id }}">{{ x.network.name }}</a>{% if x.ixlan.name %}<span class="tiny suffix">{{ x.ixlan.name }}</span>{% endif %}
+          <a href="/{{ x.network|ref_tag }}/{{ x.network.id }}">{{ x.network.name }}</a>
 
           <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
         </div>
