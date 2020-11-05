@@ -5,48 +5,22 @@ import uuid
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
+
+from .util import ClientCase
+
 import django_namespace_perms as nsp
 
 import peeringdb_server.views as views
 import peeringdb_server.models as models
 
 
-class ViewTestCase(TestCase):
+class ViewTestCase(ClientCase):
 
     entities = ["ix", "net", "fac"]
 
     @classmethod
     def setUpTestData(cls):
-        # create user and guest group
-
-        guest_group = Group.objects.create(name="guest")
-        user_group = Group.objects.create(name="user")
-
-        cls.guest_user = models.User.objects.create_user(
-            "guest", "guest@localhost", "guest"
-        )
-        cls.guest_user.set_password("guest")
-        guest_group.user_set.add(cls.guest_user)
-
-        nsp.models.GroupPermission.objects.create(
-            group=guest_group, namespace="peeringdb.organization", permissions=0x01
-        )
-
-        nsp.models.GroupPermission.objects.create(
-            group=user_group, namespace="peeringdb.organization", permissions=0x01
-        )
-
-        nsp.models.GroupPermission.objects.create(
-            group=user_group,
-            namespace="peeringdb.organization.*.network.*.poc_set.users",
-            permissions=0x01,
-        )
-
-        nsp.models.GroupPermission.objects.create(
-            group=guest_group,
-            namespace="peeringdb.organization.*.network.*.poc_set.public",
-            permissions=0x01,
-        )
+        super(ViewTestCase, cls).setUpTestData()
 
         # create test users
         for name in [
@@ -64,7 +38,7 @@ class ViewTestCase(TestCase):
                 models.User.objects.create_user(name, "%s@localhost" % name, name),
             )
             getattr(cls, name).set_password(name)
-            user_group.user_set.add(getattr(cls, name))
+            cls.user_group.user_set.add(getattr(cls, name))
 
         # create test org
         cls.org = models.Organization.objects.create(name="Test org", status="ok")

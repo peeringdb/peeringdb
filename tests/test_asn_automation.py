@@ -170,7 +170,7 @@ class AsnAutomationTestCase(TestCase):
 
         # check that support tickets were created
         ticket = models.DeskProTicket.objects.get(
-            subject="[dev] [ASNAUTO] Organization 'ORG AS9000001', Network 'AS9000001' created"
+            subject=f"[{settings.RELEASE_ENV}] [ASNAUTO] Organization 'ORG AS9000001', Network 'AS9000001' created"
         )
         self.assertEqual(
             ticket.body, self.ticket["asnauto-9000001-org-net-created.txt"].format(
@@ -180,7 +180,7 @@ class AsnAutomationTestCase(TestCase):
         )
 
         ticket = models.DeskProTicket.objects.get(
-            subject="[dev] [ASNAUTO] Ownership claim granted to Org 'ORG AS9000001' for user 'user_a'"
+            subject=f"[{settings.RELEASE_ENV}] [ASNAUTO] Ownership claim granted to Org 'ORG AS9000001' for user 'user_a'"
         )
         self.assertEqual(
             ticket.body, self.ticket["asnauto-9000001-user-granted-ownership.txt"].format(
@@ -208,7 +208,7 @@ class AsnAutomationTestCase(TestCase):
 
         # check that support tickets were created
         ticket = models.DeskProTicket.objects.get(
-            subject="[dev] User user_b wishes to request ownership of ORG AS9000002"
+            subject=f"[{settings.RELEASE_ENV}] User user_b wishes to request ownership of ORG AS9000002"
         )
         self.assertEqual(
             ticket.body, self.ticket["asnauto-9000002-user-requested-ownership.txt"].format(
@@ -325,7 +325,7 @@ class AsnAutomationTestCase(TestCase):
         self.assertEqual(resp.get("status"), "ok")
 
         ticket = models.DeskProTicket.objects.get(
-            subject="[dev] User user_b wishes to request ownership of ORG AS9000002"
+            subject=f"[{settings.RELEASE_ENV}] User user_b wishes to request ownership of ORG AS9000002"
         )
 
         self.assertEqual(

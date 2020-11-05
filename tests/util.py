@@ -11,33 +11,33 @@ class ClientCase(TestCase):
     def setUpTestData(cls):
         # create user and guest group
 
-        guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
-        user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
+        cls.guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
+        cls.user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
 
-        settings.USER_GROUP_ID = user_group.id
-        settings.GUEST_GROUP_ID = guest_group.id
+        settings.USER_GROUP_ID = cls.user_group.id
+        settings.GUEST_GROUP_ID = cls.guest_group.id
 
         cls.guest_user = models.User.objects.create_user(
             "guest", "guest@localhost", "guest"
         )
-        guest_group.user_set.add(cls.guest_user)
+        cls.guest_group.user_set.add(cls.guest_user)
 
         nsp.models.GroupPermission.objects.create(
-            group=guest_group, namespace="peeringdb.organization", permissions=0x01
+            group=cls.guest_group, namespace="peeringdb.organization", permissions=0x01
         )
 
         nsp.models.GroupPermission.objects.create(
-            group=user_group, namespace="peeringdb.organization", permissions=0x01
+            group=cls.user_group, namespace="peeringdb.organization", permissions=0x01
         )
 
         nsp.models.GroupPermission.objects.create(
-            group=user_group,
+            group=cls.user_group,
             namespace="peeringdb.organization.*.network.*.poc_set.users",
             permissions=0x01,
         )
 
         nsp.models.GroupPermission.objects.create(
-            group=guest_group,
+            group=cls.guest_group,
             namespace="peeringdb.organization.*.network.*.poc_set.public",
             permissions=0x01,
         )

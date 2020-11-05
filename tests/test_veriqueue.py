@@ -4,6 +4,7 @@ import pytest
 from django.test import TestCase
 from django.contrib.auth.models import Group
 from django.db import IntegrityError
+from django.conf import settings
 
 import peeringdb_server.models as models
 
@@ -69,7 +70,7 @@ class VeriQueueTests(TestCase):
             vqi.user = user
             vqi.save()
             self.assertEqual(
-                qs.filter(subject=f"[dev] {vqi.content_type} - {inst}").exists(),
+                qs.filter(subject=f"[{settings.RELEASE_ENV}] {vqi.content_type} - {inst}").exists(),
                 True,
             )
 

@@ -34,7 +34,10 @@ case "$1" in
     export DJANGO_SETTINGS_MODULE=mainsite.settings
     export DATABASE_USER=root
     export DATABASE_PASSWORD=""
-    pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 --reuse-db tests/
+    export RELEASE_ENV=run_tests
+    #XXX re-enable this cli once all tests pass 
+    #pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 tests/
+    pytest -v -p no:warnings tests/ -x
     ;;
   "whois" )
     line=$(head -1 | tr -cd '[:alnum:]._-')

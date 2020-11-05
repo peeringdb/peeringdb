@@ -244,7 +244,7 @@ set_option("DATA_QUALITY_MIN_SPEED", 100)
 # maximum value to allow for speed on an netixlan (currently 1Tbit)
 set_option("DATA_QUALITY_MAX_SPEED", 1000000)
 
-RATELIMITS = {
+set_option("RATELIMITS", {
     "request_login_POST": "4/m",
     "request_translation": "2/m",
     "resend_confirmation_mail": "2/m",
@@ -255,10 +255,10 @@ RATELIMITS = {
     "view_username_retrieve_initiate": "2/m",
     "view_import_ixlan_ixf_preview": "1/m",
     "view_import_net_ixf_postmortem": "1/m",
-}
+})
 
 # maximum number of affiliation requests a user can have pending
-MAX_USER_AFFILIATION_REQUESTS = 5
+set_option("MAX_USER_AFFILIATION_REQUESTS", 5)
 
 # Determines age of network contact objects that get hard deleted
 # during `pdb_delete_poc` execution. (days)
@@ -593,10 +593,11 @@ set_option("SPONSORSHIPS_EMAIL", SERVER_EMAIL)
 
 
 set_option("API_URL", "https://peeringdb.com/api")
-API_DEPTH_ROW_LIMIT = 250
-API_CACHE_ENABLED = True
-API_CACHE_ROOT = os.path.join(BASE_DIR, "api-cache")
-API_CACHE_LOG = os.path.join(BASE_DIR, "var/log/api-cache.log")
+set_option("API_DEPTH_ROW_LIMIT",250)
+set_option("API_CACHE_ENABLED",  True)
+set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
+set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
+
 
 set_option("BASE_URL", "http://localhost")
 set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
@@ -753,7 +754,7 @@ for _, _, files in os.walk(API_DOC_PATH):
             API_DOC_INCLUDES[base] = os.path.join(API_DOC_PATH, file)
 
 
-MAIL_DEBUG = DEBUG
+set_option("MAIL_DEBUG", DEBUG)
 
 # Setting for automated resending of failed ixf import emails
 set_option("IXF_RESEND_FAILED_EMAILS", False)
@@ -774,47 +775,5 @@ if TUTORIAL_MODE:
     AUTO_VERIFY_USERS = True
 else:
     EMAIL_SUBJECT_PREFIX = f"[{RELEASE_ENV}] "
-
-
-#XXX: overrides for run_tests, should be conditional or moved
-# to release env settings file
-BASE_URL="https://localhost"
-PASSWORD_RESET_URL="localhost"
-DATABASE_ROUTERS=["peeringdb_server.db_router.TestRouter"]
-SUGGEST_ENTITY_ORG = 1234
-API_CACHED_ENABLED = False
-NSP_GUEST_GROUP="guest"
-POC_DELETION_PERIOD=30
-PROTECTED_OBJECT_NOTIFICATION_PERIOD=1
-IXF_POSTMORTEM_LIMIT=250
-IXF_NOTIFY_IX_ON_CONFLICT=True
-IXF_NOTIFY_NET_ON_CONFLICT=True
-IXF_TICKET_ON_CONFLICT=True
-MAX_USER_AFFILIATION_REQUESTS=10
-MAIL_DEBUG=True
-IXF_PARSE_ERROR_NOTIFICATION_PERIOD=36
-IXF_IMPORTER_DAYS_UNTIL_TICKET=6
-IXF_SEND_TICKETS=False
-GOOGLE_GEOLOC_API_KEY="AIzatest"
-TUTORIAL_MODE=False
-CAPTCHA_TEST_MODE=True
-CLIENT_COMPAT = {
-    "client": {"min": (0, 6), "max": (0, 6, 5)},
-    "backends": {"django_peeringdb": {"min": (0, 6), "max": (0, 6, 5)}},
-}
-
-RATELIMITS={
-    "view_affiliate_to_org_POST": "100/m",
-    "resend_confirmation_mail": "2/m",
-    "view_request_ownership_GET": "3/m",
-    "view_username_retrieve_initiate": "2/m",
-    "view_request_ownership_POST": "3/m",
-    "request_login_POST": "10/m",
-    "view_verify_POST": "2/m",
-    "request_translation": "10/m",
-    "view_import_ixlan_ixf_preview": "1/m",
-    "view_import_net_ixf_postmortem": "1/m",
-}
-
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")
