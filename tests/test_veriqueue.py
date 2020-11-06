@@ -11,6 +11,7 @@ import peeringdb_server.models as models
 import reversion
 
 
+
 class VeriQueueTests(TestCase):
     """
     Test VerificationQueue creation and resolve
@@ -23,8 +24,12 @@ class VeriQueueTests(TestCase):
         for which it is enabled
         """
 
-        guest_group = Group.objects.create(name="guest")
-        user_group = Group.objects.create(name="user")
+        cls.guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
+        cls.user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
+
+        settings.USER_GROUP_ID = cls.user_group.id
+        settings.GUEST_GROUP_ID = cls.guest_group.id
+
 
         cls.inst = {}
         org = models.Organization.objects.create(name="Test", status="pending")

@@ -83,3 +83,10 @@ def reset_group_ids():
 
     settings.USER_GROUP_ID = Group.objects.get(name="user").id
     settings.GUEST_GROUP_ID = Group.objects.get(name="guest").id
+
+def override_group_id():
+    from django.test import override_settings
+    return override_settings(
+        USER_GROUP_ID=Group.objects.get(name="user").id,
+        GUEST_GROUP_ID=Group.objects.get(name="guest").id
+    )

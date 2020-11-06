@@ -50,5 +50,7 @@ RATELIMITS={
     "view_import_ixlan_ixf_preview": "1/m",
     "view_import_net_ixf_postmortem": "1/m",
 }
+GUEST_GROUP_ID = 1
+USER_GROUP_ID = 2
 
 

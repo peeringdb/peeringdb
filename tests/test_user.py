@@ -5,6 +5,7 @@ import pytest
 
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group
+from django.conf import settings
 
 from captcha.models import CaptchaStore
 
@@ -19,8 +20,12 @@ class UserTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        guest_group = Group.objects.create(name="guest")
-        user_group = Group.objects.create(name="user")
+        cls.guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
+        cls.user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
+
+        settings.USER_GROUP_ID = cls.user_group.id
+        settings.GUEST_GROUP_ID = cls.guest_group.id
+        
         for name in ["user_a", "user_b", "user_c", "user_d"]:
             setattr(
                 cls,
@@ -37,9 +42,9 @@ class UserTests(TestCase):
         cls.org_a = models.Organization.objects.create(name="org A", status="ok")
         cls.org_b = models.Organization.objects.create(name="org B", status="ok")
 
-        user_group.user_set.add(cls.user_a)
-        user_group.user_set.add(cls.user_d)
-        guest_group.user_set.add(cls.user_b)
+        cls.user_group.user_set.add(cls.user_a)
+        cls.user_group.user_set.add(cls.user_d)
+        cls.guest_group.user_set.add(cls.user_b)
 
         cls.org_a.usergroup.user_set.add(cls.user_a)
         cls.org_b.admin_usergroup.user_set.add(cls.user_b)
