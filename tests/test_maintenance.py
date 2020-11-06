@@ -54,7 +54,7 @@ class TestMaintenanceMode(ClientCase):
         err_str = "in maintenance mode"
 
         # GET requests should work as expected
-        r = self.client.get("/api/org/1", format="json")
+        r = self.client.get("/api/org/{}".format(self.org.id), format="json")
         content = json.loads(r.content)
         assert r.status_code == 200
 

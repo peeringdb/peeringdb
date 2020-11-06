@@ -230,14 +230,14 @@ class UserTests(TestCase):
 
     def test_login_redirect(self):
         data = {
-            "next": "/org/1",
+            "next": "/org/{}".format(self.org_a.id),
             "auth-username": "user_d",
             "auth-password": "user_d",
             "login_view-current_step": "auth",
         }
         C = Client()
         resp = C.post("/account/login/", data, follow=True)
-        self.assertEqual(resp.redirect_chain, [("/org/1", 302)])
+        self.assertEqual(resp.redirect_chain, [("/org/{}".format(self.org_a.id), 302)])
 
         data = {
             "next": "/logout",
