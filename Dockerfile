@@ -55,6 +55,7 @@ COPY mainsite/ mainsite
 COPY $ADD_SETTINGS_FILE mainsite/settings/
 COPY peeringdb_server/ peeringdb_server
 COPY fixtures/ fixtures
+COPY .coveragerc .coveragerc
 
 COPY scripts/manage /usr/bin/
 COPY Ctl/docker/entrypoint.sh /
