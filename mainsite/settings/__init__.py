@@ -630,7 +630,7 @@ set_option("IXF_POSTMORTEM_LIMIT", 250)
 # when encountering problems where an exchange's ix-f feed
 # becomes unavilable / unparsable this setting controls
 # the interval in which we communicate the issue to them (hours)
-set_option("IXF_PARSE_ERROR_NOTIFICATION_PERIOD", 36)
+set_option("IXF_PARSE_ERROR_NOTIFICATION_PERIOD", 360)
 
 # toggle the creation of DeskPRO tickets from ix-f importer
 # conflicts
