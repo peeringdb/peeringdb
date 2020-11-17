@@ -5,7 +5,7 @@ import uuid
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
-import django_namespace_perms as nsp
+from django_grainy.models import UserPermission, GroupPermission
 
 import peeringdb_server.views as views
 import peeringdb_server.models as models
@@ -28,24 +28,24 @@ class ViewTestCase(TestCase):
         cls.guest_user.set_password("guest")
         guest_group.user_set.add(cls.guest_user)
 
-        nsp.models.GroupPermission.objects.create(
-            group=guest_group, namespace="peeringdb.organization", permissions=0x01
+        GroupPermission.objects.create(
+            group=guest_group, namespace="peeringdb.organization", permission=0x01
         )
 
-        nsp.models.GroupPermission.objects.create(
-            group=user_group, namespace="peeringdb.organization", permissions=0x01
+        GroupPermission.objects.create(
+            group=user_group, namespace="peeringdb.organization", permission=0x01
         )
 
-        nsp.models.GroupPermission.objects.create(
+        GroupPermission.objects.create(
             group=user_group,
             namespace="peeringdb.organization.*.network.*.poc_set.users",
-            permissions=0x01,
+            permission=0x01,
         )
 
-        nsp.models.GroupPermission.objects.create(
+        GroupPermission.objects.create(
             group=guest_group,
             namespace="peeringdb.organization.*.network.*.poc_set.public",
-            permissions=0x01,
+            permission=0x01,
         )
 
         # create test users

@@ -6,10 +6,10 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import authenticate
 
-from django_namespace_perms.util import has_perms
 from ratelimit.decorators import ratelimit, is_ratelimited
 
 from peeringdb_server import ixf
+from peeringdb_server.util import check_permissions
 from peeringdb_server.models import (
     IXLan,
     Network,
@@ -71,7 +71,7 @@ def view_import_ixlan_ixf_preview(request, ixlan_id):
     except IXLan.DoesNotExist:
         return error_response(_("Ixlan not found"), status=404)
 
-    if not has_perms(request.user, ixlan, "update"):
+    if not check_permissions(request.user, ixlan, "u"):
         return error_response(_("Permission denied"), status=403)
 
     importer = ixf.Importer()
@@ -102,7 +102,7 @@ def view_import_net_ixf_postmortem(request, net_id):
     except Network.DoesNotExist:
         return error_response(_("Network not found"), status=404)
 
-    if not has_perms(request.user, net, "update"):
+    if not check_permissions(request.user, net, "u"):
         return error_response(_("Permission denied"), status=403)
 
     # make sure limit is within bounds and a valid number
@@ -149,7 +149,7 @@ def view_import_net_ixf_preview(request, net_id):
     except Network.DoesNotExist:
         return error_response(_("Network not found"), status=404)
 
-    if not has_perms(request.user, net, "update"):
+    if not check_permissions(request.user, net, "u"):
         return error_response(_("Permission denied"), status=403)
 
     total_log = {"data": [], "errors": []}

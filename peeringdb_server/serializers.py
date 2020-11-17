@@ -21,9 +21,6 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django_peeringdb.models.abstract import AddressModel
 
-from django_namespace_perms.rest import PermissionedModelSerializer
-from django_namespace_perms.util import has_perms
-
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
@@ -371,7 +368,7 @@ class AddressSerializer(serializers.ModelSerializer):
         fields = ["address1", "address2", "city", "country", "state", "zipcode"]
 
 
-class ModelSerializer(PermissionedModelSerializer):
+class ModelSerializer(serializers.ModelSerializer):
     """
     ModelSerializer that provides pdb API with custom params
 
@@ -794,6 +791,9 @@ class ModelSerializer(PermissionedModelSerializer):
         s.nested_exclude = exclude
         return s.to_representation(data)
 
+    def validate_create(self, validated_data):
+        return
+
     def create(self, validated_data):
         """
         entities created via the api should go into the verification
@@ -806,6 +806,7 @@ class ModelSerializer(PermissionedModelSerializer):
             validated_data["status"] = "ok"
         if "suggest" in validated_data:
             del validated_data["suggest"]
+        self.validate_create(validated_data)
         return super().create(validated_data)
 
     def _unique_filter(self, fld, data):
@@ -1072,15 +1073,12 @@ class FacilitySerializer(ModelSerializer):
 
     validators = [FieldMethodValidator("suggest", ["POST"])]
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(data.get("org").id, "create")
+        return super().validate_create(data)
 
     class Meta:
         model = Facility
@@ -1213,19 +1211,14 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
     ix = serializers.SerializerMethodField()
     fac = serializers.SerializerMethodField()
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create ixfacs if the parent
         # ix or fac status is pending or deleted
         if data.get("ix") and data.get("ix").status != "ok":
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
         if data.get("fac") and data.get("fac").status != "ok":
             raise ParentStatusException(data.get("fac"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["ix"].org_id, data["ix"].id, "create"
-        )
+        return super().validate_create(data)
 
     class Meta:
         model = InternetExchangeFacility
@@ -1273,19 +1266,14 @@ class NetworkContactSerializer(ModelSerializer):
     )
     net = serializers.SerializerMethodField()
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create contacts if the parent
         # network status is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
             raise ParentStatusException(
                 data.get("network"), self.Meta.model.handleref.tag
             )
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["network"].org.id, data["network"].id, "create"
-        )
+        return super().validate_create(data)
 
     class Meta:
         model = NetworkContact
@@ -1362,7 +1350,7 @@ class NetworkIXLanSerializer(ModelSerializer):
     ipaddr4 = IPAddressField(version=4, allow_blank=True)
     ipaddr6 = IPAddressField(version=6, allow_blank=True)
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create netixlans if the parent
         # network or ixlan is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
@@ -1373,12 +1361,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             raise ParentStatusException(
                 data.get("ixlan"), self.Meta.model.handleref.tag
             )
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["network"].org.id, data["network"].id, "create"
-        )
+        return super().validate_create(data)
 
     class Meta:
 
@@ -1597,7 +1580,7 @@ class NetworkFacilitySerializer(ModelSerializer):
 
         return qset.select_related("network", "facility"), filters
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create netfac links if the parent
         # network or facility status is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
@@ -1608,12 +1591,7 @@ class NetworkFacilitySerializer(ModelSerializer):
             raise ParentStatusException(
                 data.get("facility"), self.Meta.model.handleref.tag
             )
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["network"].org.id, data["network"].id, "create"
-        )
+        return super().validate_create(data)
 
     def get_net(self, inst):
         return self.sub_serializer(NetworkSerializer, inst.network)
@@ -1848,15 +1826,12 @@ class NetworkSerializer(ModelSerializer):
 
         return super().to_internal_value(data)
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create networks if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(data.get("org").id, "create")
+        return super().validate_create(data)
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
@@ -1979,19 +1954,14 @@ class IXLanPrefixSerializer(ModelSerializer):
 
         return qset.select_related("ixlan", "ixlan__ix"), filters
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create prefixes if the parent
         # ixlan status is pending or deleted
         if data.get("ixlan") and data.get("ixlan").status != "ok":
             raise ParentStatusException(
                 data.get("ixlan"), self.Meta.model.handleref.tag
             )
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["ixlan"].ix.org.id, data["ixlan"].ix.id, data["ixlan"].id, "create"
-        )
+        return super().validate_create(data)
 
     def get_ixlan(self, inst):
         return self.sub_serializer(IXLanSerializer, inst.ixlan)
@@ -2067,17 +2037,12 @@ class IXLanSerializer(ModelSerializer):
         source="ixpfx_set_active_prefetched",
     )
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create ixlans if the parent
         # ix status is pending or deleted
         if data.get("ix") and data.get("ix").status != "ok":
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["ix"].org_id, data["ix"].id, "create"
-        )
+        return super().validate_create(data)
 
     class Meta:
         model = IXLan
@@ -2280,12 +2245,12 @@ class InternetExchangeSerializer(ModelSerializer):
 
         return qset, filters
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create internet exchanges if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(user, data)
+        return super().validate_create(data)
 
     def to_internal_value(self, data):
         # if `suggest` keyword is provided, hard-set the org to
@@ -2347,9 +2312,6 @@ class InternetExchangeSerializer(ModelSerializer):
 
         return r
 
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(data.get("org").id, "create")
-
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
 
@@ -2394,9 +2356,6 @@ class OrganizationSerializer(ModelSerializer):
         exclude=["org_id", "org"],
         source="ix_set_active_prefetched",
     )
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id("create")
 
     class Meta:  # (AddressSerializer.Meta):
         model = Organization

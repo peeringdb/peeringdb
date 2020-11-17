@@ -18,7 +18,7 @@ from twentyc.rpc import (
     InvalidRequestException,
     NotFoundException,
 )
-from django_namespace_perms.constants import (
+from grainy.const import (
     PERM_READ,
     PERM_UPDATE,
     PERM_CREATE,
@@ -3596,7 +3596,7 @@ class Command(BaseCommand):
             user = User.objects.get(username=USER.get("user"))
             cls.log("USER '%s' already exists, skipping!" % USER.get("user"))
             user.groups.clear()
-            user.userpermission_set.all().delete()
+            user.grainy_permissions.all().delete()
         except User.DoesNotExist:
             user = User.objects.create(username=USER.get("user"))
             user.set_password(USER.get("password"))
@@ -3813,17 +3813,17 @@ class Command(BaseCommand):
                     )
 
         # set up permissions for crud permission tests
-        crud_users["delete"].userpermission_set.create(
-            namespace=SHARED["net_rw3_ok"].nsp_namespace,
-            permissions=PERM_READ | PERM_DELETE,
+        crud_users["delete"].grainy_permissions.create(
+            namespace=SHARED["net_rw3_ok"].grainy_namespace,
+            permission=PERM_READ | PERM_DELETE,
         )
-        crud_users["create"].userpermission_set.create(
-            namespace=SHARED["net_rw3_ok"].nsp_namespace,
-            permissions=PERM_READ | PERM_CREATE,
+        crud_users["create"].grainy_permissions.create(
+            namespace=SHARED["net_rw3_ok"].grainy_namespace,
+            permission=PERM_READ | PERM_CREATE,
         )
-        crud_users["update"].userpermission_set.create(
-            namespace=SHARED["net_rw3_ok"].nsp_namespace,
-            permissions=PERM_READ | PERM_UPDATE,
+        crud_users["update"].grainy_permissions.create(
+            namespace=SHARED["net_rw3_ok"].grainy_namespace,
+            permission=PERM_READ | PERM_UPDATE,
         )
 
         # undelete in case they got flagged as deleted

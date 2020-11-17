@@ -1,5 +1,6 @@
 import pytest
 import json
+from grainy.const import *
 
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group
@@ -7,7 +8,6 @@ from django.contrib.auth.models import Group
 import peeringdb_server.models as models
 import peeringdb_server.org_admin_views as org_admin
 import peeringdb_server.views as views
-from django_namespace_perms.constants import PERM_CREATE, PERM_DELETE
 
 
 class OrgAdminTests(TestCase):
@@ -452,9 +452,9 @@ class OrgAdminTests(TestCase):
 
         # prepare source dict with nsp namespaces
         source = {
-            self.net.nsp_namespace: 0x01,
-            self.ix.nsp_namespace: 0x01,
-            self.fac.nsp_namespace: 0x01,
+            self.net.grainy_namespace: 0x01,
+            self.ix.grainy_namespace: 0x01,
+            self.fac.grainy_namespace: 0x01,
         }
 
         # extract ids
@@ -479,9 +479,9 @@ class OrgAdminTests(TestCase):
 
         # prepare source dict with nsp namespaces
         source = {
-            self.net.nsp_namespace_from_id(self.org.id, "*").strip(".*"): 0x01,
-            self.fac.nsp_namespace_from_id(self.org.id, "*").strip(".*"): 0x03,
-            self.ix.nsp_namespace_from_id(self.org.id, "*").strip(".*"): 0x01,
+            self.net.grainy_namespace_from_id(self.org.id, "*").strip(".*"): 0x01,
+            self.fac.grainy_namespace_from_id(self.org.id, "*").strip(".*"): 0x03,
+            self.ix.grainy_namespace_from_id(self.org.id, "*").strip(".*"): 0x01,
         }
 
         # extract ids

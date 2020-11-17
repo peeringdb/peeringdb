@@ -10,11 +10,12 @@ from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.conf import settings
 
+from django_grainy.models import UserPermission, GroupPermission
+
 import peeringdb_server.models as models
 import peeringdb_server.management.commands.pdb_api_test as api_test
 
 from . import test_api as api_tests
-import django_namespace_perms as nsp
 
 
 def setup_module(module):
@@ -57,42 +58,42 @@ class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
         )
         guest_group.user_set.add(guest_user)
 
-        nsp.models.GroupPermission.objects.create(
-            group=guest_group, namespace="peeringdb.organization", permissions=0x01
+        GroupPermission.objects.create(
+            group=guest_group, namespace="peeringdb.organization", permission=0x01
         )
 
-        nsp.models.GroupPermission.objects.create(
+        GroupPermission.objects.create(
             group=guest_group,
             namespace="peeringdb.organization.*.internetexchange.*.ixf_ixp_member_list_url.public",
-            permissions=0x01,
+            permission=0x01,
         )
 
-        nsp.models.GroupPermission.objects.create(
-            group=user_group, namespace="peeringdb.organization", permissions=0x01
+        GroupPermission.objects.create(
+            group=user_group, namespace="peeringdb.organization", permission=0x01
         )
 
-        nsp.models.GroupPermission.objects.create(
+        GroupPermission.objects.create(
             group=user_group,
             namespace=f"peeringdb.organization.{settings.SUGGEST_ENTITY_ORG}",
-            permissions=0x04,
+            permission=0x04,
         )
 
-        nsp.models.GroupPermission.objects.create(
+        GroupPermission.objects.create(
             group=user_group,
             namespace="peeringdb.organization.*.network.*.poc_set.users",
-            permissions=0x01,
+            permission=0x01,
         )
 
-        nsp.models.GroupPermission.objects.create(
+        GroupPermission.objects.create(
             group=user_group,
             namespace="peeringdb.organization.*.internetexchange.*.ixf_ixp_member_list_url.public",
-            permissions=0x01,
+            permission=0x01,
         )
 
-        nsp.models.GroupPermission.objects.create(
+        GroupPermission.objects.create(
             group=user_group,
             namespace="peeringdb.organization.*.internetexchange.*.ixf_ixp_member_list_url.users",
-            permissions=0x01,
+            permission=0x01,
         )
 
         # prepare api test data

@@ -25,11 +25,7 @@ from django.template import loader
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.crypto import constant_time_compare
-from django_namespace_perms.util import (
-    get_perms,
-    has_perms,
-    load_perms,
-)
+from django_grainy.util import Permissions
 from django_namespace_perms.constants import (
     PERM_CRUD,
     PERM_CREATE,
@@ -45,6 +41,7 @@ from django_otp.plugins.otp_email.models import EmailDevice
 import two_factor.views
 
 from peeringdb_server import settings
+from peeringdb_server.util import check_permissions, PERM_CRUD
 from peeringdb_server.search import search
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.org_admin_views import load_all_user_permissions
@@ -127,9 +124,9 @@ def export_permissions(user, entity):
         return {}
 
     perms = {
-        "can_write": has_perms(user, entity, PERM_WRITE),
-        "can_create": has_perms(user, entity, PERM_CREATE),
-        "can_delete": has_perms(user, entity, PERM_DELETE),
+        "can_write": check_permissions(user, entity, PERM_WRITE),
+        "can_create": check_permissions(user, entity, PERM_CREATE),
+        "can_delete": check_permissions(user, entity, PERM_DELETE),
     }
 
     if entity.status == "pending":
@@ -139,8 +136,8 @@ def export_permissions(user, entity):
     if perms["can_write"] or perms["can_create"] or perms["can_delete"]:
         perms["can_edit"] = True
 
-    if hasattr(entity, "nsp_namespace_manage"):
-        perms["can_manage"] = has_perms(user, entity.nsp_namespace_manage, PERM_CRUD)
+    if hasattr(entity, "grainy_namespace_manage"):
+        perms["can_manage"] = check_permissions(user, entity.grainy_namespace_manage, PERM_CRUD)
     else:
         perms["can_manage"] = False
 
@@ -163,9 +160,7 @@ class DoNotRender:
         the supplied value
         """
 
-        b = has_perms(user, namespace.lower(), 0x01, explicit=explicit)
-        print(namespace, b)
-        print(user)
+        b = check_permissions(user, namespace.lower(), 0x01, explicit=explicit)
         if not b:
             return cls()
         return value
@@ -506,9 +501,9 @@ def view_profile_v1(request):
     # only add ddnetworks if networks scope is present
     if scope_networks:
         networks = []
-        load_perms(user)
+        perms = Permissions(user)
         for net in user.networks:
-            crud = get_perms(user._nsp_perms_struct, net.nsp_namespace.split(".")).value
+            crud = perms.get(net.grainy_namespace)
             networks.append(
                 dict(
                     id=net.id,
@@ -928,12 +923,12 @@ def view_organization(request, id):
     tags = ["fac", "net", "ix"]
     for tag in tags:
         model = REFTAG_MAP.get(tag)
-        perms["can_create_%s" % tag] = has_perms(
-            request.user, model.nsp_namespace_from_id(org.id, "create"), PERM_CREATE
+        perms["can_create_%s" % tag] = check_permissions(
+            request.user, [org, "create"], PERM_CREATE
         )
-        perms["can_delete_%s" % tag] = has_perms(
+        perms["can_delete_%s" % tag] = check_permissions(
             request.user,
-            model.nsp_namespace_from_id(org.id, "_").strip("_"),
+            org,
             PERM_DELETE,
         )
 
@@ -1393,7 +1388,7 @@ def view_exchange(request, id):
                 "value": DoNotRender.permissioned(
                     ixlan.ixf_ixp_member_list_url,
                     request.user,
-                    f"{ixlan.nsp_namespace}.ixf_ixp_member_list_url"
+                    f"{ixlan.grainy_namespace}.ixf_ixp_member_list_url"
                     f".{ixlan.ixf_ixp_member_list_url_visible}",
                     explicit=True,
                 ),
@@ -2134,7 +2129,7 @@ def request_translation(request, data_type):
 def network_reset_ixf_proposals(request, net_id):
     net = Network.objects.get(id=net_id)
 
-    allowed = has_perms(request.user, net, PERM_CRUD)
+    allowed = check_permissions(request.user, net, PERM_CRUD)
 
     if not allowed:
         return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)
@@ -2150,7 +2145,7 @@ def network_dismiss_ixf_proposal(request, net_id, ixf_id):
     ixf_member_data = IXFMemberData.objects.get(id=ixf_id)
     net = ixf_member_data.net
 
-    allowed = has_perms(request.user, net, PERM_CRUD)
+    allowed = check_permissions(request.user, net, PERM_CRUD)
 
     if not allowed:
         return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)

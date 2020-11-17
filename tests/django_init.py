@@ -25,6 +25,7 @@ settings.configure(
         "django_inet",
         "django_peeringdb",
         "django_namespace_perms",
+        "django_grainy",
         "django_countries",
         "oauth2_provider",
         "peeringdb_server",
@@ -132,7 +133,7 @@ settings.configure(
         "DEFAULT_MODEL_SERIALIZER_CLASS": "rest_framework.serializers.HyperlinkedModelSerializer",
         "DEFAULT_PERMISSION_CLASSES": [
             "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly",
-            "django_namespace_perms.rest.BasePermission",
+            "rest_framework.permissions.IsAuthenticated",
         ],
         "DEFAULT_RENDERER_CLASSES": ("peeringdb_server.renderers.MetaJSONRenderer",),
         "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
@@ -144,7 +145,7 @@ settings.configure(
     USE_TZ=True,
     POC_DELETION_PERIOD=30,
     PROTECTED_OBJECT_NOTIFICATION_PERIOD=1,
-    AUTHENTICATION_BACKENDS=("django_namespace_perms.auth.backends.NSPBackend",),
+    AUTHENTICATION_BACKENDS=("django_grainy.backends.GrainyBackend",),
     ROOT_URLCONF="mainsite.urls",
     LOGGING={
         "version": 1,

@@ -20,8 +20,7 @@ from django.db import connection
 from django.utils import timezone
 from django.db.models import DateTimeField
 from django.utils.translation import ugettext_lazy as _
-import django_namespace_perms.rest as nsp_rest
-
+from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
 import reversion
 
 from peeringdb_server.models import Network, UTC, ProtectedAction
@@ -29,9 +28,7 @@ from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
 from peeringdb_server.api_schema import BaseSchema
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
-
-import django_namespace_perms.util as nsp
-from django_namespace_perms.exceptions import *
+from peeringdb_server.util import check_permissions
 
 
 class DataException(ValueError):
@@ -272,15 +269,10 @@ class ModelViewSet(viewsets.ModelViewSet):
     """
     Generic ModelViewSet Base Class
     This should probably be moved to a common lib ?
-    Ueaj
     """
 
     paginate_by_param = ("limit",)
-
-    # use django namespace permissions backend, this is also specified in the
-    # settings but for some reason it only works when explicitly set here,
-    # need to investigate
-    permission_classes = (nsp_rest.BasePermission,)
+    permission_classes = (ModelViewSetPermissions,)
 
     def get_queryset(self):
         """
@@ -537,7 +529,20 @@ class ModelViewSet(viewsets.ModelViewSet):
         Create object
         """
         try:
+
+
             self.require_data(request)
+
+            serializer = self.get_serializer(data=dict(request.data))
+            serializer.is_valid()
+
+            namespace = self.model.Grainy.namespace_instance("*", **serializer.validated_data)
+
+            if not check_permissions(request.user, namespace, "c"):
+                raise PermissionDenied(
+                    f"User does not have write permissions to '{namespace}'"
+                )
+
             with reversion.create_revision():
                 if request.user:
                     reversion.set_user(request.user)
@@ -595,7 +600,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             except self.model.DoesNotExist:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-            if nsp.has_perms(request.user, obj, "delete"):
+            if check_permissions(request.user, obj, "d"):
                 with reversion.create_revision():
                     if request.user:
                         reversion.set_user(request.user)
