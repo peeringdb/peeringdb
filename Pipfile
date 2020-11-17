@@ -61,3 +61,4 @@ tld = ">=0.7.6"
 # deprecated from drf -- used by rest swagger
 coreapi = ">=2.3.1"
 django-two-factor-auth = ">=1.11,<2"
+django-grainy = ">=1.8<2"
