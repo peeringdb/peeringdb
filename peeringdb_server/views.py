@@ -55,6 +55,7 @@ from peeringdb_server.models import (
     UserPasswordReset,
     Organization,
     Network,
+    NetworkContact,
     NetworkFacility,
     NetworkIXLan,
     InternetExchange,
@@ -1178,6 +1179,7 @@ def view_facility(request, id):
                 "name": "tech_phone",
                 "label": _("Technical Phone"),
                 "value": data.get("tech_phone", dismiss),
+                "help_text": field_help(Facility, "tech_phone"),
             },
             {
                 "type": "email",
@@ -1190,6 +1192,7 @@ def view_facility(request, id):
                 "name": "sales_phone",
                 "label": _("Sales Phone"),
                 "value": data.get("sales_phone", dismiss),
+                "help_text": field_help(Facility, "sales_phone"),
             },
         ],
     }
@@ -1333,6 +1336,7 @@ def view_exchange(request, id):
                 "name": "tech_phone",
                 "label": _("Technical Phone"),
                 "value": data.get("tech_phone", dismiss),
+                "help_text": field_help(InternetExchange, "tech_phone"),
             },
             {
                 "type": "email",
@@ -1345,6 +1349,7 @@ def view_exchange(request, id):
                 "name": "policy_phone",
                 "label": _("Policy Phone"),
                 "value": data.get("policy_phone", dismiss),
+                "help_text": field_help(InternetExchange, "policy_phone"),
             },
         ],
     }
@@ -1710,6 +1715,8 @@ def view_network(request, id):
 
     # Add POC data to dataset
     data["poc_set"] = network_d.get("poc_set")
+    # For tooltip
+    data["phone_help_text"] = field_help(NetworkContact, "phone")
 
     if not request.user.is_authenticated or not request.user.is_verified_user:
         cnt = network.poc_set.filter(status="ok", visible="Users").count()
