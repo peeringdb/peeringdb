@@ -924,11 +924,11 @@ def view_organization(request, id):
     for tag in tags:
         model = REFTAG_MAP.get(tag)
         perms["can_create_%s" % tag] = check_permissions(
-            request.user, [org, "create"], PERM_CREATE
+            request.user, model.Grainy.namespace_instance("*", org=org), PERM_CREATE
         )
         perms["can_delete_%s" % tag] = check_permissions(
             request.user,
-            org,
+            model.Grainy.namespace_instance("*", org=org),
             PERM_DELETE,
         )
 

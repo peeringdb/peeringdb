@@ -99,4 +99,20 @@ class APICacheLoader:
         elif self.limit:
             data = data[: self.limit]
 
+        if self.fields:
+            for row in data:
+                self.filter_fields(row)
+
+
         return {"results": data, "__meta": {"generated": os.path.getmtime(self.path)}}
+
+
+    def filter_fields(self, row):
+        """
+        Removes any unwanted fields from the resultset
+        according to the `fields` filter specified in the request
+        """
+        for field in list(row.keys()):
+            if field not in self.fields and field != "_grainy":
+                del row[field]
+

@@ -111,6 +111,7 @@ class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
         # generate cache files
         now = datetime.datetime.now() + datetime.timedelta(days=1)
         call_command("pdb_api_cache", date=now.strftime("%Y%m%d"))
+        settings.GENERATING_API_CACHE = False
 
     def setUp(self):
         settings.API_CACHE_ALL_LIMITS = True

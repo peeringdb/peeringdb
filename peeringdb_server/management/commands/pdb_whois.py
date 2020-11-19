@@ -7,6 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 from peeringdb.whois import WhoisFormat
 from peeringdb_server import models
 from peeringdb_server import serializers
+from peeringdb_server.util import APIPermissionsApplicator
 from django_handleref import util
 
 
@@ -56,5 +57,7 @@ class Command(DBCommand):
             raise ValueError(msg)
 
         data = Serializer(obj, context={"user": AnonymousUser()}).data
+        applicator = APIPermissionsApplicator(AnonymousUser())
+        data = applicator.apply(data)
         fmt = WhoisFormat()
         fmt.print(obj._handleref.tag, data)

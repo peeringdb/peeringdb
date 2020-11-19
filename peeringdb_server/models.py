@@ -1657,7 +1657,7 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
         db_table = "peeringdb_ix_facility"
 
 
-@grainy_model(namespace="ixlan", parent="ix")
+@grainy_model(namespace="ixlan", namespace_instance="{instance.ix.grainy_namespace}")
 @reversion.register
 class IXLan(pdb_models.IXLanBase):
     """
@@ -1779,13 +1779,6 @@ class IXLan(pdb_models.IXLanBase):
         fields to search in
         """
         return ("ix__name__icontains",)
-
-    def ixf_ixp_member_list_url_viewable(self, user):
-        visible = self.ixf_ixp_member_list_url_visible.lower()
-        if not user and visible == "public":
-            return True
-        namespace = f"{self.grainy_namespace}.ixf_ixp_member_list_url.{visible}"
-        return check_permissions(user, namespace, "r", explicit=True)
 
     def related_label(self):
         """
@@ -3313,7 +3306,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 # validate could check
 
 
-@grainy_model(namespace="prefix", parent="ixlan")
+@grainy_model(namespace="prefix", namespace_instance="{instance.ixlan.grainy_namespace}.{namespace}.{instance.pk}")
 @reversion.register
 class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
     """
@@ -3730,7 +3723,7 @@ class Network(pdb_models.NetworkBase):
 
 
 # class NetworkContact(HandleRefModel):
-@grainy_model(namespace="poc_set", parent="network")
+@grainy_model(namespace="poc_set", namespace_instance="{namespace}.{instance.visible}", parent="network")
 @reversion.register
 class NetworkContact(pdb_models.ContactBase):
     """

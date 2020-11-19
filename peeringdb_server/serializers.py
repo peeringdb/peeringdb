@@ -21,6 +21,9 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django_peeringdb.models.abstract import AddressModel
 
+from django_grainy.rest import PermissionDenied
+
+from peeringdb_server.util import check_permissions, Permissions
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
@@ -779,7 +782,12 @@ class ModelSerializer(serializers.ModelSerializer):
 
         # return full object if depth limit allows, otherwise return id
         if return_full:
-            return super().to_representation(data)
+            if isinstance(data, list):
+                return super().to_representation(data)
+            else:
+                result = super().to_representation(data)
+                result["_grainy"] = data.grainy_namespace
+                return result
         else:
             return data.id
 
@@ -794,6 +802,19 @@ class ModelSerializer(serializers.ModelSerializer):
     def validate_create(self, validated_data):
         return
 
+    def update(self, instance, validated_data):
+        grainy_kwargs = {"id":instance.id}
+        grainy_kwargs.update(**validated_data)
+
+        namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
+        request = self.context.get("request")
+        if request and not check_permissions(request.user, namespace, "u"):
+            raise PermissionDenied(
+              f"User does not have write permissions to '{namespace}'"
+            )
+
+        return super().update(instance, validated_data)
+
     def create(self, validated_data):
         """
         entities created via the api should go into the verification
@@ -806,7 +827,24 @@ class ModelSerializer(serializers.ModelSerializer):
             validated_data["status"] = "ok"
         if "suggest" in validated_data:
             del validated_data["suggest"]
+
         self.validate_create(validated_data)
+
+        grainy_kwargs = {"id":"*"}
+        grainy_kwargs.update(**validated_data)
+
+        request = self.context.get("request")
+
+        if hasattr(self, "grainy_namespace_create"):
+            namespace = self.grainy_namespace_create(**grainy_kwargs)
+        else:
+            namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
+
+        if request and not check_permissions(request.user, namespace, "c"):
+            raise PermissionDenied(
+              f"User does not have write permissions to '{namespace}'"
+            )
+
         return super().create(validated_data)
 
     def _unique_filter(self, fld, data):
@@ -1244,7 +1282,7 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-        return qset.select_related("ix"), {}
+        return qset.select_related("ix", "ix__org"), {}
 
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
@@ -1265,15 +1303,6 @@ class NetworkContactSerializer(ModelSerializer):
         queryset=Network.objects.all(), source="network"
     )
     net = serializers.SerializerMethodField()
-
-    def validate_create(self, data):
-        # we don't want users to be able to create contacts if the parent
-        # network status is pending or deleted
-        if data.get("network") and data.get("network").status != "ok":
-            raise ParentStatusException(
-                data.get("network"), self.Meta.model.handleref.tag
-            )
-        return super().validate_create(data)
 
     class Meta:
         model = NetworkContact
@@ -1298,8 +1327,20 @@ class NetworkContactSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-        qset = qset.select_related("network")
+        qset = qset.select_related("network", "network__org")
         return qset, {}
+
+    def validate_create(self, data):
+        # we don't want users to be able to create contacts if the parent
+        # network status is pending or deleted
+        if data.get("network") and data.get("network").status != "ok":
+            raise ParentStatusException(
+                data.get("network"), self.Meta.model.handleref.tag
+            )
+        return super().validate_create(data)
+
+    def grainy_namespace_create(self, **kwargs):
+        return kwargs["network"].grainy_namespace
 
     def get_net(self, inst):
         return self.sub_serializer(NetworkSerializer, inst.network)
@@ -1408,6 +1449,8 @@ class NetworkIXLanSerializer(ModelSerializer):
 
         Currently supports: ix_id
         """
+
+        qset = qset.select_related("network", "network__org")
 
         filters = get_relation_filters(["ix_id", "ix", "name"], cls, **kwargs)
         for field, e in list(filters.items()):
@@ -1569,6 +1612,9 @@ class NetworkFacilitySerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
+
+        qset = qset.select_related("network", "network__org")
+
         filters = get_relation_filters(["name", "country", "city"], cls, **kwargs)
         for field, e in list(filters.items()):
             for valid in ["name", "country", "city"]:
@@ -1758,6 +1804,8 @@ class NetworkSerializer(ModelSerializer):
         Currently supports: ixlan_id, ix_id, netixlan_id, netfac_id, fac_id
         """
 
+        qset = qset.select_related("org")
+
         filters = get_relation_filters(
             [
                 "ixlan_id",
@@ -1861,7 +1909,7 @@ class NetworkSerializer(ModelSerializer):
         if rdap and user.validate_rdap_relationship(rdap):
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
-            net = super(ModelSerializer, self).create(validated_data)
+            net = super().create(validated_data)
             ticket_queue_asnauto_skipvq(user, validated_data["org"], net, rdap)
             return net
 
@@ -1873,7 +1921,7 @@ class NetworkSerializer(ModelSerializer):
             # verification queue is disabled regardless
             validated_data["status"] = "ok"
 
-        return super(ModelSerializer, self).create(validated_data)
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         if validated_data.get("asn") != instance.asn:
@@ -1882,7 +1930,7 @@ class NetworkSerializer(ModelSerializer):
                     "asn": _("ASN cannot be changed."),
                 }
             )
-        return super(ModelSerializer, self).update(instance, validated_data)
+        return super().update(instance, validated_data)
 
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)
@@ -1941,6 +1989,9 @@ class IXLanPrefixSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
+
+        qset = qset.select_related("ixlan", "ixlan__ix", "ixlan__ix__org")
+
         filters = get_relation_filters(["ix_id", "ix", "whereis"], cls, **kwargs)
         for field, e in list(filters.items()):
             for valid in ["ix"]:
@@ -2074,28 +2125,10 @@ class IXLanSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-        return qset.select_related("ix"), {}
+        return qset.select_related("ix", "ix__org"), {}
 
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-
-        if not isinstance(data, dict):
-            return data
-
-        user = self.context.get("user")
-        request = self.context.get("request")
-
-        if not user and request:
-            user = request.user
-
-        if instance and not instance.ixf_ixp_member_list_url_viewable(user):
-            if "ixf_ixp_member_list_url" in data:
-                del data["ixf_ixp_member_list_url"]
-
-        return data
 
 
 class InternetExchangeSerializer(ModelSerializer):
@@ -2200,6 +2233,8 @@ class InternetExchangeSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
+
+        qset = qset.select_related("org")
 
         filters = get_relation_filters(
             [

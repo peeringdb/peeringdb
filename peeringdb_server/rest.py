@@ -28,7 +28,7 @@ from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
 from peeringdb_server.api_schema import BaseSchema
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
-from peeringdb_server.util import check_permissions
+from peeringdb_server.util import check_permissions, APIPermissionsApplicator
 
 
 class DataException(ValueError):
@@ -488,7 +488,15 @@ class ModelViewSet(viewsets.ModelViewSet):
                     status=404, data={"data": [], "detail": "Entity not found"}
                 )
 
+        print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
+
+        applicator = APIPermissionsApplicator(request.user)
+
+        if not applicator.is_generating_api_cache:
+            r.data = applicator.apply(r.data)
+
         return r
+
 
     @client_check()
     def retrieve(self, request, *args, **kwargs):
@@ -501,6 +509,12 @@ class ModelViewSet(viewsets.ModelViewSet):
         d = time.time() - t
         print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
+        applicator = APIPermissionsApplicator(request.user)
+
+        if not applicator.is_generating_api_cache:
+            r.data = applicator.apply(r.data)
+            if r.data == applicator.denied:
+                return Response(status=status.HTTP_403_FORBIDDEN)
         return r
 
     def require_data(self, request):
@@ -529,24 +543,14 @@ class ModelViewSet(viewsets.ModelViewSet):
         Create object
         """
         try:
-
-
             self.require_data(request)
-
-            serializer = self.get_serializer(data=dict(request.data))
-            serializer.is_valid()
-
-            namespace = self.model.Grainy.namespace_instance("*", **serializer.validated_data)
-
-            if not check_permissions(request.user, namespace, "c"):
-                raise PermissionDenied(
-                    f"User does not have write permissions to '{namespace}'"
-                )
-
             with reversion.create_revision():
                 if request.user:
                     reversion.set_user(request.user)
-                return super().create(request, *args, **kwargs)
+                r = super().create(request, *args, **kwargs)
+                if "_grainy" in r.data:
+                    del r.data["_grainy"]
+                return r
         except PermissionDenied as inst:
             return Response(status=status.HTTP_403_FORBIDDEN)
         except (ParentStatusException, DataException) as inst:
@@ -567,7 +571,13 @@ class ModelViewSet(viewsets.ModelViewSet):
                 if request.user:
                     reversion.set_user(request.user)
 
-                return super().update(request, *args, **kwargs)
+                r = super().update(request, *args, **kwargs)
+                if "_grainy" in r.data:
+                    del r.data["_grainy"]
+                return r
+
+        except PermissionDenied as inst:
+            return Response(status=status.HTTP_403_FORBIDDEN)
         except TypeError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}

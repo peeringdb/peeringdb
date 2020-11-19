@@ -479,9 +479,9 @@ class OrgAdminTests(TestCase):
 
         # prepare source dict with nsp namespaces
         source = {
-            self.net.grainy_namespace_from_id(self.org.id, "*").strip(".*"): 0x01,
-            self.fac.grainy_namespace_from_id(self.org.id, "*").strip(".*"): 0x03,
-            self.ix.grainy_namespace_from_id(self.org.id, "*").strip(".*"): 0x01,
+            self.net.Grainy.namespace_instance("*", org=self.net.org).strip(".*"): 0x01,
+            self.fac.Grainy.namespace_instance("*", org=self.net.org).strip(".*"): 0x03,
+            self.ix.Grainy.namespace_instance("*", org=self.net.org).strip(".*"): 0x01,
         }
 
         # extract ids

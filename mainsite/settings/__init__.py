@@ -559,7 +559,7 @@ REST_FRAMEWORK = {
     # or allow read-only access for unauthenticated users.
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly",
-        "rest_framework.permissions.IsAuthenticated",
+        "django_grainy.rest.ModelViewSetPermissions",
     ],
     "DEFAULT_RENDERER_CLASSES": ("peeringdb_server.renderers.MetaJSONRenderer",),
     "DEFAULT_SCHEMA_CLASS": "peeringdb_server.api_schema.BaseSchema",
@@ -681,6 +681,7 @@ set_option("TUTORIAL_MODE", False)
 
 #'guest' user group
 GUEST_GROUP_ID = 1
+set_option("GRAINY_ANONYMOUS_GROUP", "Guest")
 
 #'user' user group
 USER_GROUP_ID = 2
