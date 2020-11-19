@@ -32,6 +32,16 @@ from peeringdb_server.deskpro import FailingMockAPIClient
 
 
 @pytest.mark.django_db
+def test_invalid_member_type(entities):
+    data = setup_test_data("ixf.invalid.member.0")
+    importer = ixf.Importer()
+    ixlan = entities["ixlan"][0]
+    importer.update(ixlan, data=data)
+    for entry in importer.log["data"]:
+        assert "Invalid member type:" in entry["reason"]
+
+
+@pytest.mark.django_db
 def test_add_deleted_netixlan(entities, use_ip, save):
     """
     Check that we can add back a netixlan if (asn, ip4, ip6) in the ixf member data

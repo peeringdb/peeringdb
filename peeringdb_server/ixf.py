@@ -692,6 +692,7 @@ class Importer:
                         asn, "ignore", _("Network does not exist in peeringdb")
                     )
             else:
+                asn = member.get("asnum", None)
                 self.log_peer(
                     asn, "ignore", _("Invalid member type: {}").format(member_type)
                 )
