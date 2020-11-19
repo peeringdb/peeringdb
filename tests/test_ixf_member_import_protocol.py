@@ -30,6 +30,7 @@ from peeringdb_server.models import (
 from peeringdb_server import ixf
 from peeringdb_server.deskpro import FailingMockAPIClient
 
+from .util import setup_test_data
 
 @pytest.mark.django_db
 def test_add_deleted_netixlan(entities, use_ip, save):
@@ -2817,24 +2818,6 @@ def use_ip_alt(request):
     use_ipv4, use_ipv6 = request.param
 
     return UseIPAddrWrapper(use_ipv4, use_ipv6)
-
-
-# TEST FUNCTIONS
-def setup_test_data(filename):
-    json_data = {}
-    entities = {}
-
-    with open(
-        os.path.join(
-            os.path.dirname(__file__),
-            "data",
-            "json_members_list",
-            f"{filename}.json",
-        ),
-    ) as fh:
-        json_data = json.load(fh)
-
-    return json_data
 
 
 # CUSTOM ASSERTIONS
