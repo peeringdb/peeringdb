@@ -1071,34 +1071,35 @@ class Importer:
             except (ValueError, AttributeError):
                 pass
 
-        log_entry = ixf_member_data.ixf_log_entry
+        if hasattr(ixf_member_data, "ixf_log_entry"):
+            log_entry = ixf_member_data.ixf_log_entry
 
-        log_entry["action"] = log_entry["action"].replace("add", "modify")
-        changed_fields = ", ".join(
-            ixf_member_data._changes(
-                getattr(ip4_deletion, "netixlan", None)
-                or getattr(ip6_deletion, "netixlan", None)
-            ).keys()
-        )
+            log_entry["action"] = log_entry["action"].replace("add", "modify")
+            changed_fields = ", ".join(
+                ixf_member_data._changes(
+                    getattr(ip4_deletion, "netixlan", None)
+                    or getattr(ip6_deletion, "netixlan", None)
+                ).keys()
+            )
 
-        ipaddr_info = ""
+            ipaddr_info = ""
 
-        if ip4_deletion and ip6_deletion:
-            ipaddr_info = _("IP addresses moved to same entry")
-        elif ip4_deletion:
-            ipaddr_info = _("IPv6 not set")
-        elif ip6_deletion:
-            ipaddr_info = _("IPv4 not set")
+            if ip4_deletion and ip6_deletion:
+                ipaddr_info = _("IP addresses moved to same entry")
+            elif ip4_deletion:
+                ipaddr_info = _("IPv6 not set")
+            elif ip6_deletion:
+                ipaddr_info = _("IPv4 not set")
 
-        log_entry["reason"] = f"{REASON_VALUES_CHANGED}: {changed_fields} {ipaddr_info}"
+            log_entry["reason"] = f"{REASON_VALUES_CHANGED}: {changed_fields} {ipaddr_info}"
 
-        ixf_member_data.reason = log_entry["reason"]
-        ixf_member_data.error = None
-        if self.save:
-            if ixf_member_data.updated:
-                ixf_member_data.save_without_update()
-            else:
-                ixf_member_data.save()
+            ixf_member_data.reason = log_entry["reason"]
+            ixf_member_data.error = None
+            if self.save:
+                if ixf_member_data.updated:
+                    ixf_member_data.save_without_update()
+                else:
+                    ixf_member_data.save()
 
     def save_log(self):
         """
