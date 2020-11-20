@@ -2527,7 +2527,7 @@ def test_resolve_deskpro_ticket(entities):
     assert ticket_r.deskpro_ref == ticket.deskpro_ref
     assert "resolved" in ticket_r.body
 
-    
+
     conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
     assert conflict_emails.count() == 4
 
@@ -2544,6 +2544,103 @@ def test_vlan_sanitize(data_ixf_vlan):
     importer = ixf.Importer()
     sanitized = importer.sanitize_vlans(json.loads(data_ixf_vlan.input)["vlan_list"])
     assert sanitized == data_ixf_vlan.expected["vlan_list"]
+
+
+@pytest.mark.django_db
+def test_chained_consolidate_add_del(entities):
+
+    """
+    Tests the edge cause of a consolidated-add-del operation
+    being the requirement of a new consolidated-add-del operation
+    which would cause the bug described in #889
+    """
+
+    data = setup_test_data("ixf.member.3")  # asn1001
+    network = entities["net"]["UPDATE_DISABLED"]  # asn1001
+    ixlan = entities["ixlan"][0]
+
+    if not network.ipv4_support or not network.ipv6_support:
+        return
+
+    # create netixlan that will be suggested to be deleted
+    # as part of consolidate-add-del operation
+
+    NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        ipaddr4="195.69.147.251",
+        ipaddr6=None,
+        status="ok",
+        is_rs_peer=True,
+        operational=True,
+    )
+
+    # create consolidated add suggestion for netixlan above
+
+    ixf_member_data_field = {
+        "ixp_id": 42,
+        "state": "connected",
+        "if_list": [{"switch_id": 1, "if_speed": 20000, "if_type": "LR4"}],
+        "vlan_list": [
+            {
+                "vlan_id": 0,
+                "ipv4": {
+                    "address": "195.69.147.251",
+                    "routeserver": True,
+                    "as_macro": "AS-NFLX-V4",
+                },
+                "ipv6": {
+                    "address": "2001:7f8:1::a500:2906:2",
+                    "routeserver": True,
+                    "as_macro": "AS-NFLX-V6",
+                },
+
+            }
+        ],
+    }
+
+
+    ixf_member_add = IXFMemberData.objects.create(
+        asn=network.asn,
+        ipaddr4="195.69.147.251",
+        ipaddr6="2001:7f8:1::a500:2906:2",
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+        data=json.dumps(ixf_member_data_field),
+    )
+
+
+    # create consolidated delete suggestion for netixlan above
+
+    ixf_member_del = IXFMemberData.objects.create(
+        asn=network.asn,
+        ipaddr4="195.69.147.251",
+        ipaddr6=None,
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+    )
+
+    ixf_member_add.set_requirement(ixf_member_del)
+
+    assert ixf_member_add.action == "modify"
+    assert ixf_member_add.primary_requirement == ixf_member_del
+
+    # now run the import that will trigger a third consolidated-add-del
+    # operation with the requirment of ixf_member_add as a deletion
+    # causing a chain of requirements (#889)
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
 
 
 @override_settings(MAIL_DEBUG=False)
