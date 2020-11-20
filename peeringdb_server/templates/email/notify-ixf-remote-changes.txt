@@ -2,10 +2,10 @@ The ix-f data for this entry has changes
 {% for name, value in instance.remote_changes.items %}
 - {{ name }}: {{ value.from }} to {{ value.to }}
 {% endfor %}
-{% if recipient=="ac" %}
-You may review and manually accept the ix-f data at <a href="{{ instance.ac_url }}" target="_blank">{{ instance.ac_url }}</a>
-{% elif recipient=="net" %}
+{% if recipient=="net" %}
 Your network currently has automatic ix-f updates disabled. You may review and manually accept this proposed change at <a href="{{ instance.net_url }}" target="_blank">{{ instance.net_url }}</a>
 {% endif %}
 
 - IX-F Data: <a href="{{ ixf_url }}" target="_blank">{{ ixf_url }}</a>
+
+PeeringDB Admins Only: <a href="{{ instance.ac_url }}" target="_blank">{{ instance.ac_url }}</a>
