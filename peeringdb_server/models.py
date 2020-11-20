@@ -582,6 +582,7 @@ class DeskProTicket(models.Model):
         verbose_name = _("DeskPRO Ticket")
         verbose_name_plural = _("DeskPRO Tickets")
 
+
 class DeskProTicketCC(models.Model):
 
     """
@@ -599,7 +600,6 @@ class DeskProTicketCC(models.Model):
         unique_together = (("ticket", "email"),)
         verbose_name = _("DeskPRO Ticket CC Contact")
         verbose_name_plural = _("Deskpro Ticket CC Contacts")
-
 
 
 @reversion.register

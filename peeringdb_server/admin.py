@@ -1689,6 +1689,7 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
 class DeskProTicketCCInline(admin.TabularInline):
     model = DeskProTicketCC
 
+
 class DeskProTicketAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -1710,13 +1711,10 @@ class DeskProTicketAdmin(admin.ModelAdmin):
         ],
     }
 
-
-
     def get_readonly_fields(self, request, obj=None):
         if not obj:
             return self.readonly_fields
         return self.readonly_fields + ("user",)
-
 
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(
