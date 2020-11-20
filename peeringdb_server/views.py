@@ -18,6 +18,7 @@ from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.decorators import login_required
+
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.urls import resolve, reverse, Resolver404
@@ -25,6 +26,7 @@ from django.template import loader
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.crypto import constant_time_compare
+from django.utils.decorators import method_decorator
 from django_grainy.util import Permissions
 from django_namespace_perms.constants import (
     PERM_CRUD,
@@ -1936,7 +1938,9 @@ class LoginView(two_factor.views.LoginView):
 
         return super().get(*args, **kwargs)
 
-    @ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
+    @method_decorator(ratelimit(
+        key="ip", rate=RATELIMITS["request_login_POST"], method="POST"
+    ))
     def post(self, *args, **kwargs):
 
         """
