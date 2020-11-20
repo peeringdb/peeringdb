@@ -2358,11 +2358,13 @@ def test_email_with_partial_contacts(entities):
 
     # Assert Tickets are created immediately
     if network.ipv6_support:
-        assert IXFImportEmail.objects.count() == 5
         assert DeskProTicket.objects.count() == 4
+        for ticket in DeskProTicket.objects.all():
+            assert ticket.cc_set.count() == 1
     else:
-        assert IXFImportEmail.objects.count() == 4
         assert DeskProTicket.objects.count() == 3
+        for ticket in DeskProTicket.objects.all():
+            assert ticket.cc_set.count() == 1
 
 
 @pytest.mark.django_db
@@ -2457,6 +2459,7 @@ def test_resolve_deskpro_ticket(entities):
     importer.notify_proposals()
 
     # Per issue #860 we no longer create tickets for conflict resolution
+    # just based on age
     assert DeskProTicket.objects.count() == 0
 
     # Commented out bc of issue #860
@@ -2527,7 +2530,7 @@ def test_resolve_deskpro_ticket(entities):
     assert ticket_r.deskpro_ref == ticket.deskpro_ref
     assert "resolved" in ticket_r.body
 
-    
+
     conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
     assert conflict_emails.count() == 4
 

@@ -26,6 +26,7 @@ from peeringdb_server.models import (
     NetworkProtocolsDisabled,
     User,
     DeskProTicket,
+    DeskProTicketCC,
     EnvironmentSetting,
     debug_mail,
     IXFImportEmail,
@@ -1260,7 +1261,7 @@ class Importer:
 
         mail.send(fail_silently=False)
 
-    def _ticket(self, ixf_member_data, subject, message):
+    def _ticket(self, ixf_member_data, subject, message, ix=False, net=False):
 
         """
         Create and send a deskpro ticket
@@ -1272,6 +1273,11 @@ class Importer:
         - ixf_member_data (`IXFMemberData`)
         - subject (`str`)
         - message (`str`)
+
+        Keyword Argument(s):
+
+        - ix ('bool'): cc ix contacts
+        - net ('bool'): cc net contacts
 
         """
 
@@ -1294,6 +1300,28 @@ class Importer:
             deskpro_id=ixf_member_data.deskpro_id,
             deskpro_ref=ixf_member_data.deskpro_ref,
         )
+
+        cc = []
+
+        if ix:
+            # if ix to be notified, cc suitable contacts
+            cc += ixf_member_data.ix_contacts
+
+        if net:
+            # if net is to be notified, cc suitable contacts
+            cc += ixf_member_data.net_contacts
+
+        cc = list(set(cc))
+
+        for email in cc:
+
+            # we need to relate a name to the emails
+            # since deskpro will make a person for the email address
+            # we should attempt to supply the best possibly option
+
+            ticket.cc_set.create(
+                email=email,
+            )
 
         try:
             client.create_ticket(ticket)
@@ -1633,42 +1661,11 @@ class Importer:
                 template_file, recipient="ac", context=context
             )
 
-            ticket = self._ticket(ixf_member_data, subject, message)
+            ticket = self._ticket(ixf_member_data, subject, message, ix=ix, net=net)
             ixf_member_data.deskpro_id = ticket.deskpro_id
             ixf_member_data.deskpro_ref = ticket.deskpro_ref
             if ixf_member_data.id:
                 ixf_member_data.save()
-
-        # we have deskpro reference number, put it in the
-        # subject
-
-        if ixf_member_data.deskpro_ref:
-            subject = f"{subject} [#{ixf_member_data.deskpro_ref}]"
-
-        # If we do not have a deskpro reference, don't send out individual conflict resolution
-        # As per issue #850
-        else:
-            return
-
-        # Notify Exchange
-
-        if ix:
-            message = ixf_member_data.render_notification(
-                template_file, recipient="ix", context=context
-            )
-            self._email(
-                subject, message, ixf_member_data.ix_contacts, ix=ixf_member_data.ix
-            )
-
-        # Notify network
-
-        if net and ixf_member_data.actionable_for_network:
-            message = ixf_member_data.render_notification(
-                template_file, recipient="net", context=context
-            )
-            self._email(
-                subject, message, ixf_member_data.net_contacts, net=ixf_member_data.net
-            )
 
     def notify_error(self, error):
 

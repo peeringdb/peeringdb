@@ -69,6 +69,7 @@ from peeringdb_server.models import (
     CommandLineTool,
     UTC,
     DeskProTicket,
+    DeskProTicketCC,
     IXFImportEmail,
     EnvironmentSetting,
     ProtectedAction,
@@ -1685,6 +1686,9 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
         return queryset, use_distinct
 
 
+class DeskProTicketCCInline(admin.TabularInline):
+    model = DeskProTicketCC
+
 class DeskProTicketAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -1695,9 +1699,24 @@ class DeskProTicketAdmin(admin.ModelAdmin):
         "deskpro_ref",
         "deskpro_id",
     )
-    readonly_fields = ("user",)
     search_fields = ("subject",)
     change_list_template = "admin/change_list_with_regex_search.html"
+    inlines = (DeskProTicketCCInline,)
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
+
+
+
+    def get_readonly_fields(self, request, obj=None):
+        if not obj:
+            return self.readonly_fields
+        return self.readonly_fields + ("user",)
+
 
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(

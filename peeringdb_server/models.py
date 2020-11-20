@@ -582,6 +582,25 @@ class DeskProTicket(models.Model):
         verbose_name = _("DeskPRO Ticket")
         verbose_name_plural = _("DeskPRO Tickets")
 
+class DeskProTicketCC(models.Model):
+
+    """
+    Describes a contact to be cc'd on the deskpro ticket
+    """
+
+    ticket = models.ForeignKey(
+        DeskProTicket,
+        on_delete=models.CASCADE,
+        related_name="cc_set",
+    )
+    email = models.EmailField()
+
+    class Meta:
+        unique_together = (("ticket", "email"),)
+        verbose_name = _("DeskPRO Ticket CC Contact")
+        verbose_name_plural = _("Deskpro Ticket CC Contacts")
+
+
 
 @reversion.register
 class Organization(ProtectedMixin, pdb_models.OrganizationBase):
