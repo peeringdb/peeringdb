@@ -125,6 +125,12 @@ def _set_option(name, value, context):
     then going to the default value if passed.
     """
 
+    # If value is in True or False we
+    # call set_bool to take advantage of
+    # its type checking for environment variables
+    if value in [True, False]:
+        return _set_bool(name, value, context)
+    
     if name in os.environ:
         env_var = os.environ.get(name)
         # Coerce type based on provided value
@@ -543,7 +549,7 @@ CORS_ALLOW_METHODS = ["GET", "OPTIONS"]
 ## OAuth2
 
 # allows PeeringDB to use external OAuth2 sources
-set_option("OAUTH_ENABLED", False)
+set_bool("OAUTH_ENABLED", False)
 
 AUTHENTICATION_BACKENDS += (
     # for OAuth provider

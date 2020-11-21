@@ -10,9 +10,10 @@ from peeringdb_server import signals, models, serializers
 from peeringdb_server import settings as pdb_settings
 from mainsite.settings import (
     _set_option,
-    set_from_env,
-    set_default,
+    _set_bool,
 )
+
+import pytest
 
 
 class TestAutoVerifyUser(SettingsCase):
@@ -102,3 +103,53 @@ def test_set_option_coerce_env_var():
 
     _set_option("TEST_SETTING", 123.1, context)
     assert context["TEST_SETTING"] == 123.0
+
+def test_set_option_booleans():
+
+    context = {}
+    # env variables can only be set as strings
+    os.environ["TEST_SETTING"] = "False"
+
+    # setting the option with a boolean
+    # will use set_bool to handle the 
+    # type coercion of the env variable
+    _set_option("TEST_SETTING", False, context)
+    assert context["TEST_SETTING"] == False
+
+    # the environment variable has precedence
+    _set_option("TEST_SETTING", True, context)
+    assert context["TEST_SETTING"] == False
+
+    # setting an option with None raises an error
+    with pytest.raises(ValueError):
+        _set_option("TEST_SETTING", None, context)
+
+    del os.environ["TEST_SETTING"]
+    del context["TEST_SETTING"]
+    _set_option("TEST_SETTING", True, context)
+    # We can set boolean values without env vars as well
+    assert context["TEST_SETTING"] == True
+
+
+def test_set_bool():
+    """
+    We coerce the environment variable to a boolean
+    """
+    context = {}
+
+    # 0 is interpreted as False
+    os.environ["TEST_SETTING"] = "0"
+    # env variables can never be set as integers
+    _set_bool("TEST_SETTING", False, context)
+    assert context["TEST_SETTING"] == False
+
+    # the environment variable has precedence
+    _set_bool("TEST_SETTING", True, context)
+    assert context["TEST_SETTING"] == False
+
+    # We raise an error if the env variable
+    # cannot be reasonably coerced to a bool
+
+    os.environ["TEST_SETTING"] = "100"
+    with pytest.raises(ValueError):
+        _set_option("TEST_SETTING", True, context)
