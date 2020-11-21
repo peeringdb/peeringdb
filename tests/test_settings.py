@@ -1,3 +1,5 @@
+import os
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -6,6 +8,11 @@ from django.conf import settings
 from .util import SettingsCase
 from peeringdb_server import signals, models, serializers
 from peeringdb_server import settings as pdb_settings
+from mainsite.settings import (
+    _set_option,
+    set_from_env,
+    set_default,
+)
 
 
 class TestAutoVerifyUser(SettingsCase):
@@ -56,3 +63,42 @@ class TestAutoApproveAffiliation(SettingsCase):
         uoar = models.UserOrgAffiliationRequest.objects.create(user=user_b, asn=63312)
         assert user_b.is_org_admin(net.org) == False
         assert user_b.is_org_member(net.org) == False
+
+
+def test_set_option():
+    context = {}
+    _set_option("TEST_SETTING", "hello", context)
+    assert context["TEST_SETTING"] == "hello"
+
+
+def test_set_option_w_env_var():
+    """
+    Environment variables take precedence over provided options
+    """
+    context = {}
+    os.environ["TEST_SETTING"] = "world"
+    _set_option("TEST_SETTING", "hello", context)
+    assert context["TEST_SETTING"] == "world"
+
+
+def test_set_option_coerce_env_var():
+    """
+    We coerce the environment variable to the same type
+    as the provided default.
+    """
+    context = {}
+    # env variables can never be set as integers
+    os.environ["TEST_SETTING"] = "123"
+
+    # setting an option with a default integer will coerce the env
+    # variable as well (fix for issue #888)
+    _set_option("TEST_SETTING", 321, context)
+    assert context["TEST_SETTING"] == 123
+
+    # setting an option with a default string will coerce the env
+    # variable as well
+    _set_option("TEST_SETTING", "321", context)
+    assert context["TEST_SETTING"] == "123"
+
+    _set_option("TEST_SETTING", 123.1, context)
+    assert context["TEST_SETTING"] == 123.0

@@ -97,48 +97,81 @@ def get_locale_name(code):
     return language_map.get(language, code)
 
 
-def set_default(name, value):
-    """ Sets the default value for the option if it's not already set. """
-    if name not in globals():
-        globals()[name] = value
-
-
 def set_from_env(name, default=_DEFAULT_ARG):
+    return _set_from_env(name, globals(), default)
+
+
+def _set_from_env(name, context, default):
     """
     Sets a global variable from a environment variable of the same name.
 
-    This is useful to leave the option unset and use Django's default (which may change).
+    This is useful to leave the option unset and use Django's default
+    (which may change).
     """
     if default is _DEFAULT_ARG and name not in os.environ:
         return
 
-    globals()[name] = os.environ.get(name, default)
+    context[name] = os.environ.get(name, default)
 
 
 def set_option(name, value):
-    """ Sets an option, first checking for env vars, then checking for value already set, then going to the default value if passed. """
-    if name in os.environ:
-        globals()[name] = os.environ.get(name)
+    return _set_option(name, value, globals())
 
-    if name not in globals():
-        globals()[name] = value
+
+def _set_option(name, value, context):
+    """
+    Sets an option, first checking for env vars,
+    then checking for value already set,
+    then going to the default value if passed.
+    """
+
+    if name in os.environ:
+        env_var = os.environ.get(name)
+        # Coerce type based on provided value
+        context[name] = _type(value)(env_var)
+
+    _set_default(name, value, context)
 
 
 def set_bool(name, value):
+    return _set_bool(name, value, globals())
+
+
+def _set_bool(name, value, context):
     """ Sets and option, first checking for env vars, then checking for value already set, then going to the default value if passed. """
     if name in os.environ:
         envval = os.environ.get(name).lower()
         if envval in ["1", "true", "y", "yes"]:
-            globals()[name] = True
+            context[name] = True
         elif envval in ["0", "false", "n", "no"]:
-            globals()[name] = False
+            context[name] = False
         else:
             raise ValueError(
                 "{} is a boolean, cannot match '{}'".format(name, os.environ[name])
             )
 
-    if name not in globals():
-        globals()[name] = value
+    _set_default(name, value, context)
+
+
+def set_default(name, value):
+    return _set_default(name, value, globals())
+
+
+def _set_default(name, value, context):
+    """ Sets the default value for the option if it's not already set. """
+    if name not in context:
+        context[name] = value
+
+
+def _type(value):
+    """
+    Returns the type of the given value, with validation against None
+    """
+    if value is None:
+        raise ValueError(
+            "The provided value must not be None"
+        )
+    return type(value)
 
 
 def try_include(filename):
@@ -180,7 +213,7 @@ print_debug(f"Release env is '{RELEASE_ENV}'")
 
 # set version, default from /srv/www.peeringdb.com/etc/VERSION
 set_option(
-    "PEERINGDB_VERSION", read_file(os.path.join(BASE_DIR, "etc/VERSION")).strip()
+    "PEERINGDB_VERSION", read_file(os.path.join(BASE_DIR, "Ctl/VERSION")).strip()
 )
 
 # Contact email, from address, support email
