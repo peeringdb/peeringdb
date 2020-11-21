@@ -3408,6 +3408,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             "instance": self,
             "recipient": recipient,
             "ixf_url": self.ixlan.ixf_ixp_member_list_url,
+            "ixf_url_public": (self.ixlan.ixf_ixp_member_list_url_visible=="Public")
         }
         if context:
             _context.update(context)

@@ -6,6 +6,6 @@ The ix-f data for this entry has changes
 Your network currently has automatic ix-f updates disabled. You may review and manually accept this proposed change at <a href="{{ instance.net_url }}" target="_blank">{{ instance.net_url }}</a>
 {% endif %}
 
-- IX-F Data: <a href="{{ ixf_url }}" target="_blank">{{ ixf_url }}</a>
+{% if ixf_url_public %}- IX-F Data: <a href="{{ ixf_url }}" target="_blank">{{ ixf_url }}</a>{% endif %}
 
 PeeringDB Admins Only: <a href="{{ instance.ac_url }}" target="_blank">{{ instance.ac_url }}</a>

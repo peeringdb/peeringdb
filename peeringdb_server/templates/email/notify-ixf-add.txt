@@ -18,7 +18,7 @@ Your network currently has automatic IX-F updates disabled. You may review and m
 - Exchange: <a href="{{ instance.ix.view_url }}" target="_blank">{{ instance.ix.view_url }}</a>
 - Network: <a href="{{ instance.net.view_url }}" target="_blank">{{ instance.net.view_url }}</a>
 {% if recipient == "ac"  %}
-- IX-F Data: <a href="{{ ixf_url }}" target="_blank">{{ ixf_url }}</a>
+{% if ixf_url_public %}- IX-F Data: <a href="{{ ixf_url }}" target="_blank">{{ ixf_url }}</a>{% endif %}
 
 PeeringDB Admins Only: <a href="{{ instance.ac_url }}" target="_blank">{{ instance.ac_url }}</a>
 {% endif %}
