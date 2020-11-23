@@ -12,6 +12,7 @@ from django.conf import settings
 from peeringdb_server import models as pdb_models
 from peeringdb_server import signals
 
+from django_handleref.models import HandleRefModel
 from django_peeringdb import models as djpdb_models
 
 from peeringdb.client import Client
@@ -85,7 +86,7 @@ class Command(BaseCommand):
             )
             return
 
-        settings.USE_TZ = False
+        #settings.USE_TZ = True
         db_settings = settings.DATABASES.get("default")
 
         config = {
@@ -118,4 +119,5 @@ class Command(BaseCommand):
         SUPPORTED_BACKENDS["peeringdb_server"] = "peeringdb_server.client_adaptor"
 
         client = Client(config)
+        print(dir(client))
         client.update_all(resource.all_resources(), since=None)

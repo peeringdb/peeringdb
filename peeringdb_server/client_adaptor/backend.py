@@ -2,7 +2,7 @@ import re
 
 from collections import defaultdict
 
-from django.db.models import OneToOneRel
+from django.db.models import OneToOneRel, DateTimeField
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.db import IntegrityError
@@ -109,6 +109,20 @@ class Backend(BaseBackend):
 
 
     def save(self, obj):
+
+        # make sure all datetime values have their timezone set
+
+        for field in obj._meta.get_fields():
+            if field.get_internal_type() == "DateTimeField":
+                value = getattr(obj, field.name)
+                if not value:
+                    continue
+                if isinstance(value, str):
+                    value = field.to_python(value)
+                value = value.replace(tzinfo=models.UTC())
+                setattr(obj, field.name, value)
+
+
         if obj.HandleRef.tag == "ix":
             obj.save(create_ixlan=False)
         else:
