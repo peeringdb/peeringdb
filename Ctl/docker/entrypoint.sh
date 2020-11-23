@@ -35,9 +35,7 @@ case "$1" in
     export DATABASE_USER=root
     export DATABASE_PASSWORD=""
     export RELEASE_ENV=run_tests
-    #XXX re-enable this cli once all tests pass 
-    #pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 tests/
-    pytest -v -p no:warnings tests/ -x
+    pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 tests/
     ;;
   "whois" )
     line=$(head -1 | tr -cd '[:alnum:]._-')
