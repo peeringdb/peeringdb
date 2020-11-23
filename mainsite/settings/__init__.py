@@ -128,7 +128,7 @@ def _set_option(name, value, context):
     # If value is in True or False we
     # call set_bool to take advantage of
     # its type checking for environment variables
-    if value in [True, False]:
+    if isinstance(value, bool):
         return _set_bool(name, value, context)
     
     if name in os.environ:
