@@ -119,5 +119,4 @@ class Command(BaseCommand):
         SUPPORTED_BACKENDS["peeringdb_server"] = "peeringdb_server.client_adaptor"
 
         client = Client(config)
-        print(dir(client))
         client.update_all(resource.all_resources(), since=None)
