@@ -7,7 +7,7 @@ services:
       MYSQL_USER: peeringdb
       MYSQL_PASSWORD: devPASSWORD
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
-#      MYSQL_ROOT_PASSWORD: devPASSWORD
+      #MYSQL_ROOT_PASSWORD: devPASSWORD
     logging:
       options:
         max-size: 100m
@@ -26,13 +26,9 @@ services:
     command: runserver 0.0.0.0:8000
     env_file: .env
     environment:
-      DATABASE_USER: root
+      DATABASE_USER: peeringdb
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: database
-      # defaults
-      # DATABASE_USER: account_service
-      # DATABASE_NAME: account_service
-      # DATABASE_PORT: 5432
     logging:
       options:
         max-size: 100m
