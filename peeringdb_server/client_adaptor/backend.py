@@ -104,21 +104,9 @@ class Backend(BaseBackend):
         - ipaddr6 out of prefix address space on netixlans (skip validation)
         """
 
-        if isinstance(obj, models.Network):
-            obj.info_prefixes4 = min(
-                obj.info_prefixes4, settings.DATA_QUALITY_MAX_PREFIX_V4_LIMIT
-            )
-            obj.info_prefixes6 = min(
-                obj.info_prefixes6, settings.DATA_QUALITY_MAX_PREFIX_V6_LIMIT
-            )
+        obj.updated = obj._meta.get_field("updated").to_python(obj.updated).replace(tzinfo=models.UTC())
+        obj.created = obj._meta.get_field("created").to_python(obj.created).replace(tzinfo=models.UTC())
 
-        obj.clean_fields()
-        obj.validate_unique()
-
-        if not isinstance(
-            obj, (models.IXLanPrefix, models.NetworkIXLan, models.NetworkFacility)
-        ):
-            obj.clean()
 
     def save(self, obj):
         if obj.HandleRef.tag == "ix":
