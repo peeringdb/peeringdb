@@ -31,6 +31,7 @@ touch Ctl/dev/.env
 ./Ctl/dev/run.sh migrate
 ./Ctl/dev/run.sh createsuperuser
 ./Ctl/dev/run.sh createcachetable
+./Ctl/dev/run.sh pdb_load_data --commit #only if you want to sync data from live pdb
 ./Ctl/dev/compose.sh up -d peeringdb
 ```
 
