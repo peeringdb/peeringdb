@@ -1,15 +1,42 @@
 
 # PeeringDB Container
 
+## Start a developer instance
 
-## Building
+
+### 1. Install Docker
+
+PeeringDB runs inside a docker container, make sure docker is installed on your system
+
+### 2. Clone the peeringdb repository
 
 ```sh
-export CONTAINER_TAG=peeringdb:server-`cat Ctl/VERSION`
-docker build -t $CONTAINER_TAG -f Dockerfile .
+git clone git@github.com:/peeringdb/peeringdb
+cd peeringdb
 ```
 
-## Running
+### 2. Create environment variable override file
+
+This file can be used to set environment variables for your peeringdb environment. For
+now it is ok for it to be empty, but it needs to exist.
+
+```sh
+touch Ctl/dev/.env
+```
+
+### 3. Build and run the container
+
+To start the container, run
+
+```sh
+./Ctl/dev/compose.sh up
+```
+
+On the first run this will also build the container. Note that when building this will also 
+run the tests and may take a while to complete.
+
+After it is done you should have a peeringdb instance exposed on port `:8000` - should you want to change
+this port you can do so by setting the environment variable `DJANGO_PORT`.
 
 ### Environment Variables
 
@@ -22,8 +49,6 @@ docker build -t $CONTAINER_TAG -f Dockerfile .
 `DATABASE_USER` default "peeringdb"
 `DATABASE_PASSWORD` default ""
 
-
-
 ### Mount points
 
 `/srv/www.peeringdb.com/api-cache`: api cache
@@ -33,7 +58,6 @@ docker build -t $CONTAINER_TAG -f Dockerfile .
 `/srv/www.peeringdb.com/peeringdb_server`: server code
 `/srv/www.peeringdb.com/static`: static files
 `/srv/www.peeringdb.com/var/log`: log files
-
 
 ### Entry point
 
