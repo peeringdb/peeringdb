@@ -50,12 +50,6 @@ REASON_VALUES_CHANGED = _(
 
 class Importer:
 
-    allowed_member_types = [
-        "peering",
-        "ixp",
-        "routeserver",
-        "probono",
-    ]
     allowed_states = [
         "",
         None,
@@ -659,42 +653,34 @@ class Importer:
             - member_list <list>
         """
         for member in member_list:
-            # we only process members of certain types
-            member_type = member.get("member_type", "peering").lower()
-            if member_type in self.allowed_member_types:
-                # check that the as exists in pdb
-                asn = member["asnum"]
+            # check that the as exists in pdb
+            asn = member["asnum"]
 
-                # if we are only processing a specific asn, ignore all
-                # that don't match
-                if self.asn and asn != self.asn:
+            # if we are only processing a specific asn, ignore all
+            # that don't match
+            if self.asn and asn != self.asn:
+                continue
+
+            # keep track of asns we find in the ix-f data
+            if asn not in self.asns:
+                self.asns.append(asn)
+
+            if Network.objects.filter(asn=asn).exists():
+                network = Network.objects.get(asn=asn)
+                if network.status != "ok":
+                    self.log_peer(
+                        asn,
+                        "ignore",
+                        _("Network status is '{}'").format(network.status),
+                    )
                     continue
 
-                # keep track of asns we find in the ix-f data
-                if asn not in self.asns:
-                    self.asns.append(asn)
-
-                if Network.objects.filter(asn=asn).exists():
-                    network = Network.objects.get(asn=asn)
-                    if network.status != "ok":
-                        self.log_peer(
-                            asn,
-                            "ignore",
-                            _("Network status is '{}'").format(network.status),
-                        )
-                        continue
-
-                    self.parse_connections(
-                        member.get("connection_list", []), network, member
-                    )
-                else:
-                    self.log_peer(
-                        asn, "ignore", _("Network does not exist in peeringdb")
-                    )
+                self.parse_connections(
+                    member.get("connection_list", []), network, member
+                )
             else:
-                asn = member.get("asnum", None)
                 self.log_peer(
-                    asn, "ignore", _("Invalid member type: {}").format(member_type)
+                    asn, "ignore", _("Network does not exist in peeringdb")
                 )
 
     def parse_connections(self, connection_list, network, member):
