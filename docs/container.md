@@ -24,16 +24,15 @@ now it is ok for it to be empty, but it needs to exist.
 touch Ctl/dev/.env
 ```
 
-### 3. Build and run the container
-
-To start the container, run
+### 3. Build the container and set up your dev instance
 
 ```sh
-./Ctl/dev/compose.sh up
+./Ctl/dev/compose.sh up -d database
+./Ctl/dev/run.sh migrate
+./Ctl/dev/run.sh createsuperuser
+./Ctl/dev/run.sh createcachetable
+./Ctl/dev/compose.sh up -d peeringdb
 ```
-
-On the first run this will also build the container. Note that when building this will also 
-run the tests and may take a while to complete.
 
 After it is done you should have a peeringdb instance exposed on port `:8000` - should you want to change
 this port you can do so by setting the environment variable `DJANGO_PORT`.
@@ -42,12 +41,12 @@ this port you can do so by setting the environment variable `DJANGO_PORT`.
 
 `PDB_NO_MIGRATE`: If set to anything, will skip migrations, otherwise, migrations will always be applied first thing while running.
 
-`DATABASE_ENGINE` default "mysql"
-`DATABASE_HOST` default "127.0.0.1"
-`DATABASE_PORT` default ""
-`DATABASE_NAME` default "peeringdb"
-`DATABASE_USER` default "peeringdb"
-`DATABASE_PASSWORD` default ""
+- `DATABASE_ENGINE` default "mysql"
+- `DATABASE_HOST` default "127.0.0.1"
+- `DATABASE_PORT` default ""
+- `DATABASE_NAME` default "peeringdb"
+- `DATABASE_USER` default "peeringdb"
+- `DATABASE_PASSWORD` default ""
 
 ### Mount points
 
