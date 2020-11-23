@@ -1,4 +1,4 @@
-FROM python:3.7-alpine as base
+FROM python:3.9-alpine as base
 
 ARG virtual_env=/srv/www.peeringdb.com/venv
 
