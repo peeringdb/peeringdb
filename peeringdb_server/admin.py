@@ -1685,7 +1685,7 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
 
             # Add (case insensitive) regex search results to standard search results
             try:
-                queryset = self.model.objects.filter(subject__iregex=search_term)
+                queryset = self.model.objects.filter(subject__iregex=search_term).order_by("-created")
             except OperationalError:
                 return queryset, use_distinct
 
@@ -1727,7 +1727,7 @@ class DeskProTicketAdmin(admin.ModelAdmin):
 
             # Add (case insensitive) regex search results to standard search results
             try:
-                queryset = self.model.objects.filter(subject__iregex=search_term)
+                queryset = self.model.objects.filter(subject__iregex=search_term).order_by("-created")
             except OperationalError:
                 return queryset, use_distinct
 
