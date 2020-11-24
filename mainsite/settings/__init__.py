@@ -114,15 +114,19 @@ def _set_from_env(name, context, default):
     context[name] = os.environ.get(name, default)
 
 
-def set_option(name, value):
-    return _set_option(name, value, globals())
+def set_option(name, value, envvar_type=None):
+    return _set_option(name, value, globals(), envvar_type)
 
 
-def _set_option(name, value, context):
+def _set_option(name, value, context, envvar_type=None):
     """
     Sets an option, first checking for env vars,
     then checking for value already set,
     then going to the default value if passed.
+    Environment variables are always strings, but
+    we try to coerce them to the correct type first by checking
+    the type of the default value provided. If the default
+    value is None, then we check the optional envvar_type arg.
     """
 
     # If value is in True or False we
@@ -130,13 +134,23 @@ def _set_option(name, value, context):
     # its type checking for environment variables
     if isinstance(value, bool):
         return _set_bool(name, value, context)
-    
+
+    if value is not None:
+        envvar_type = type(value)
+    else:
+        # If value is None, we'll use the provided envvar_type, if it is not None
+        if envvar_type is None:
+            raise ValueError(
+                f"If no default value is provided for the setting {name} the envvar_type argument must be set."
+            )
+
     if name in os.environ:
         env_var = os.environ.get(name)
         # Coerce type based on provided value
-        context[name] = _type(value)(env_var)
-
-    _set_default(name, value, context)
+        context[name] = envvar_type(env_var)
+    # If the environment variable isn't set
+    else:
+        _set_default(name, value, context)
 
 
 def set_bool(name, value):
@@ -167,17 +181,6 @@ def _set_default(name, value, context):
     """ Sets the default value for the option if it's not already set. """
     if name not in context:
         context[name] = value
-
-
-def _type(value):
-    """
-    Returns the type of the given value, with validation against None
-    """
-    if value is None:
-        raise ValueError(
-            "The provided value must not be None"
-        )
-    return type(value)
 
 
 def try_include(filename):
@@ -219,7 +222,7 @@ print_debug(f"Release env is '{RELEASE_ENV}'")
 
 # set version, default from /srv/www.peeringdb.com/etc/VERSION
 set_option(
-    "PEERINGDB_VERSION", read_file(os.path.join(BASE_DIR, "Ctl/VERSION")).strip()
+    "PEERINGDB_VERSION", read_file(os.path.join(BASE_DIR, "etc/VERSION")).strip()
 )
 
 # Contact email, from address, support email

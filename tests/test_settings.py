@@ -104,6 +104,7 @@ def test_set_option_coerce_env_var():
     _set_option("TEST_SETTING", 123.1, context)
     assert context["TEST_SETTING"] == 123.0
 
+
 def test_set_option_booleans():
 
     context = {}
@@ -111,7 +112,7 @@ def test_set_option_booleans():
     os.environ["TEST_SETTING"] = "False"
 
     # setting the option with a boolean
-    # will use set_bool to handle the 
+    # will use set_bool to handle the
     # type coercion of the env variable
     _set_option("TEST_SETTING", False, context)
     assert context["TEST_SETTING"] == False
@@ -119,10 +120,6 @@ def test_set_option_booleans():
     # the environment variable has precedence
     _set_option("TEST_SETTING", True, context)
     assert context["TEST_SETTING"] == False
-
-    # setting an option with None raises an error
-    with pytest.raises(ValueError):
-        _set_option("TEST_SETTING", None, context)
 
     del os.environ["TEST_SETTING"]
     del context["TEST_SETTING"]
@@ -153,3 +150,26 @@ def test_set_bool():
     os.environ["TEST_SETTING"] = "100"
     with pytest.raises(ValueError):
         _set_option("TEST_SETTING", True, context)
+
+
+def test_set_options_none():
+    """
+    We coerce the environment variable to a boolean
+    """
+    context = {}
+
+    # 0 is interpreted as False
+    os.environ["TEST_SETTING"] = "0"
+
+    # setting an option with None without setting the
+    # envvar_type raises an error
+    with pytest.raises(ValueError):
+        _set_option("TEST_SETTING", None, context)
+
+    # setting an option with None but setting the
+    # envvar_type is fine
+    _set_option("TEST_SETTING", None, context, envvar_type=int)
+    assert context["TEST_SETTING"] == 0
+
+    _set_option("TEST_SETTING", None, context, envvar_type=str)
+    assert context["TEST_SETTING"] == "0"
