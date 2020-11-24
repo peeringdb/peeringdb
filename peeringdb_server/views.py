@@ -1049,6 +1049,8 @@ def view_organization(request, id):
     if perms.get("can_manage") and org.pending_affiliations.count() > 0:
         tab_init = {"users": "active"}
 
+    data["phone_help_text"] = field_help(NetworkContact, "phone")
+
     return view_component(
         request,
         "organization",
@@ -1735,6 +1737,8 @@ def view_suggest(request, reftag):
 
     template = loader.get_template(f"site/view_suggest_{reftag}.html")
     env = make_env()
+
+    env["phone_help_text"] = field_help(NetworkContact, "phone")
     return HttpResponse(template.render(env, request))
 
 
