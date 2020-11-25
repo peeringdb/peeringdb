@@ -584,7 +584,7 @@ class DeskProTicket(models.Model):
 
 
 @reversion.register
-class Organization(ProtectedMixin, pdb_models.OrganizationBase):
+class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin):
     """
     Describes a peeringdb organization
     """
