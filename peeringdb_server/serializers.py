@@ -392,7 +392,7 @@ class ParentStatusException(IOError):
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = (AddressModel,)
-        fields = ["address1", "address2", "city", "country", "state", "zipcode"]
+        fields = ["address1", "address2", "city", "country", "state", "zipcode", "floor", "suite"]
 
 
 class ModelSerializer(PermissionedModelSerializer):
