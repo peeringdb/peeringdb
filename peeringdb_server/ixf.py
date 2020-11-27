@@ -594,7 +594,7 @@ class Importer:
             elif ixf_member.action == "noop":
                 if (
                     ixf_member.set_resolved(save=self.save)
-                    and not ixf_member.requirement_of
+                    and not ixf_member.requirement_of_id
                 ):
                     self.queue_notification(ixf_member, "resolved")
 
@@ -1178,7 +1178,7 @@ class Importer:
             # out of the log as they are already implied by
             # the log entry of the requirement (#824)
 
-            if getattr(netixlan, "requirement_of", None):
+            if getattr(netixlan, "requirement_of_id", None):
                 return
 
             if hasattr(netixlan, "network_id"):
@@ -1390,7 +1390,7 @@ class Importer:
             # we don't care about proposals that are hidden
             # requirements of other proposals
 
-            if ixf_member_data.requirement_of:
+            if ixf_member_data.requirement_of_id:
                 continue
 
             asn = ixf_member_data.net
