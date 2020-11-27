@@ -992,6 +992,16 @@ def view_organization(request, id):
                 "value": data.get("address2", dismiss),
             },
             {
+                "name": "floor",
+                "label": _("Floor"),
+                "value": data.get("floor", dismiss),
+            },
+            {
+                "name": "suite",
+                "label": _("Suite"),
+                "value": data.get("suite", dismiss),
+            },
+            {
                 "name": "location",
                 "label": _("Location"),
                 "type": "location",
@@ -1124,6 +1134,16 @@ def view_facility(request, id):
                 "name": "address2",
                 "label": _("Address 2"),
                 "value": data.get("address2", dismiss),
+            },
+            {
+                "name": "floor",
+                "label": _("Floor"),
+                "value": data.get("floor", dismiss),
+            },
+            {
+                "name": "suite",
+                "label": _("Suite"),
+                "value": data.get("suite", dismiss),
             },
             {
                 "name": "location",
