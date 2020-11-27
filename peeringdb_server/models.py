@@ -326,6 +326,9 @@ class GeocodeBaseMixin(models.Model):
                 self.save()
 
     def get_address1_from_geocode(self, result):
+        street_number = None
+        route = None
+
         for component in result[0]["address_components"]:
             if "street_number" in component["types"]:
                 street_number = component["long_name"]
@@ -368,12 +371,16 @@ class GeocodeBaseMixin(models.Model):
     def normalize_api_response(self):
         # The forward geocode sets the lat,long
         gmaps = googlemaps.Client(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
-        forward_result = self.geocode(gmaps)
+        forward_result = self.geocode(gmaps, save=True)
         # Also set address1 from forward geocode results
         address1 = self.get_address1_from_geocode(forward_result)
         # The reverse result normalizes some administrative info
         # (city, state, zip) and translates them into English
-        reverse_result = self.reverse_geocode(gmaps)
+        try:
+            reverse_result = self.reverse_geocode(gmaps)
+        except ValueError as exc:
+            print(exc)
+            return self
         data = self.parse_reverse_geocode(reverse_result)
         self.address1 = address1
         self.address2 = ""
@@ -386,6 +393,7 @@ class GeocodeBaseMixin(models.Model):
 
         # Floor, suite, and zipcode will all remain the same
         self.save()
+        return self
 
     def normalize_existing_entity(self, gmaps):
 

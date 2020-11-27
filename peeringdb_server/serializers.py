@@ -95,6 +95,30 @@ FILTER_EXCLUDE = [
 # def _(x):
 #    return x
 
+class GeocodeSerializerMixin(object):
+    """
+    Overrides create() and update() method of serializer
+    to normalize the location against the Google Maps Geocode API
+    and resave the model instanc with normalized address fields.
+
+    Can only be used if the model includes the GeocodeBaseMixin.
+    """
+
+    def update(self, instance, validated_data):
+        # When updating a fac and updating one,
+        # we first want to save the model
+        # and then normalize the geofields
+        instance = super().update(instance, validated_data)
+        instance.normalize_api_response()
+        return instance
+
+    def create(self, validated_data):
+        # When creating a fac and updating one,
+        # we first want to save the model
+        # and then normalize the geofields
+        instance = super().create(validated_data)
+        instance.normalize_api_response()
+        return instance
 
 def queryable_field_xl(fld):
     """
@@ -1037,7 +1061,7 @@ def nested(serializer, exclude=[], getter=None, through=None, **kwargs):
 # on the model?
 
 
-class FacilitySerializer(ModelSerializer):
+class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
     """
     Serializer for peeringdb_server.models.Facility
 
@@ -1192,22 +1216,6 @@ class FacilitySerializer(ModelSerializer):
             raise serializers.ValidationError({"zipcode": exc.message})
 
         return data
-
-    def update(self, instance, validated_data):
-        # When updating a fac and updating one,
-        # we first want to save the model
-        # and then normalize the geofields
-        instance = super().update(instance, validated_data)
-        instance.normalize_api_response()
-        return instance
-
-    def create(self, validated_data):
-        # When creating a fac and updating one,
-        # we first want to save the model
-        # and then normalize the geofields
-        instance = super().create(validated_data)
-        instance.normalize_api_response()
-        return instance
 
 
 class InternetExchangeFacilitySerializer(ModelSerializer):
@@ -2390,7 +2398,7 @@ class InternetExchangeSerializer(ModelSerializer):
         return data
 
 
-class OrganizationSerializer(ModelSerializer):
+class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
     """
     Serializer for peeringdb_server.models.Organization
     """
