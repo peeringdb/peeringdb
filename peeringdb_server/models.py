@@ -391,39 +391,9 @@ class GeocodeBaseMixin(models.Model):
         if data.get("postal_code"):
             self.zipcode = data["postal_code"]["long_name"]
 
-        # Floor, suite, and zipcode will all remain the same
+        # Floor, suite, and country will all remain the same
         self.save()
         return self
-
-    def normalize_existing_entity(self, gmaps):
-
-        self.parse_and_save_suite()
-        self.parse_and_save_floor()
-
-        # The forward geocode gets the lat,long
-        # and returns formatted results for address 1
-        forward_result = self.geocode(gmaps)
-        address1 = get_address1_from_geocode(forward_result)
-
-        # The reverse result normalizes the administrative levels
-        # (city, state, zip) and translates them into English
-        reverse_result = self.reverse_geocode(gmaps)
-        data = parse_reverse_geocode(reverse_result)
-
-        self.address1 = address1
-        self.city = data["locality"]["long_name"]
-        self.state = data["administrative_level_1"]["long_name"]
-        self.zipcode = data["postal_code"]["long_name"]
-
-        # Floor, suite, and zipcode will all remain the same
-        self.save()
-
-    def parse_and_save_suite(self):
-        return
-
-    def parse_and_save_floor(self):
-        return
-
 
 
 class UserOrgAffiliationRequest(models.Model):
