@@ -1193,6 +1193,22 @@ class FacilitySerializer(ModelSerializer):
 
         return data
 
+    def update(self, instance, validated_data):
+        # When updating a fac and updating one,
+        # we first want to save the model
+        # and then normalize the geofields
+        instance = super().update(instance, validated_data)
+        instance.normalize_api_response()
+        return instance
+
+    def create(self, validated_data):
+        # When creating a fac and updating one,
+        # we first want to save the model
+        # and then normalize the geofields
+        instance = super().create(validated_data)
+        instance.normalize_api_response()
+        return instance
+
 
 class InternetExchangeFacilitySerializer(ModelSerializer):
     """

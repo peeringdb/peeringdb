@@ -4,7 +4,9 @@ import datetime
 from itertools import chain
 import uuid
 import ipaddress
+import googlemaps
 import googlemaps.exceptions
+from pprint import pprint
 import requests
 import reversion
 
@@ -289,7 +291,9 @@ class GeocodeBaseMixin(models.Model):
         """
         try:
             result = gmaps.geocode(
-                self.geocode_address, components={"country": self.country.code}
+                self.geocode_address,
+                components={"country": self.country.code},
+                language="en"
             )
             if result and (
                 "street_address" in result[0]["types"]
@@ -313,13 +317,105 @@ class GeocodeBaseMixin(models.Model):
         ) as inst:
             self.geocode_error = str(inst)
             self.geocode_status = True
-        except googlemaps.exceptions.Timeout as inst:
+        except googlemaps.exceptions.Timeout:
             self.geocode_error = _("API Timeout")
             self.geocode_status = False
         finally:
             self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
             if save:
                 self.save()
+
+    def get_address1_from_geocode(self, result):
+        for component in result[0]["address_components"]:
+            if "street_number" in component["types"]:
+                street_number = component["long_name"]
+
+            if "route" in component["types"]:
+                # The short name contains abbreviations which
+                # tend to be closer to English.
+                route = component["short_name"]
+
+        return f"{street_number} {route}".strip()
+
+    def reverse_geocode(self, gmaps):
+        if (self.latitude is None) or (self.longitude is None):
+            raise ValueError(
+                "Latitude and longitude must be defined for reverse geocode lookup"
+            )
+
+        latlang = f"{self.latitude},{self.longitude}"
+        response = gmaps.reverse_geocode(latlang)
+
+        return response
+
+    def parse_reverse_geocode(self, response):
+        data = {}
+
+        # Get political entities
+        for address in response:
+            first_component = address["types"]
+            component_type = first_component[0]
+            address_components = address["address_components"]
+
+            # To aid in getting English language results back,
+            # we only use the leading component
+            for component in address_components:
+                if component["types"] == first_component:
+                    data[component_type] = component
+                    continue
+        return data
+
+    def normalize_api_response(self):
+        # The forward geocode sets the lat,long
+        gmaps = googlemaps.Client(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
+        forward_result = self.geocode(gmaps)
+        # Also set address1 from forward geocode results
+        address1 = self.get_address1_from_geocode(forward_result)
+        # The reverse result normalizes some administrative info
+        # (city, state, zip) and translates them into English
+        reverse_result = self.reverse_geocode(gmaps)
+        data = self.parse_reverse_geocode(reverse_result)
+        self.address1 = address1
+        self.address2 = ""
+        if data.get("locality"):
+            self.city = data["locality"]["long_name"]
+        if data.get("administrative_area_level_1"):
+            self.state = data["administrative_area_level_1"]["long_name"]
+        if data.get("postal_code"):
+            self.zipcode = data["postal_code"]["long_name"]
+
+        # Floor, suite, and zipcode will all remain the same
+        self.save()
+
+    def normalize_existing_entity(self, gmaps):
+
+        self.parse_and_save_suite()
+        self.parse_and_save_floor()
+
+        # The forward geocode gets the lat,long
+        # and returns formatted results for address 1
+        forward_result = self.geocode(gmaps)
+        address1 = get_address1_from_geocode(forward_result)
+
+        # The reverse result normalizes the administrative levels
+        # (city, state, zip) and translates them into English
+        reverse_result = self.reverse_geocode(gmaps)
+        data = parse_reverse_geocode(reverse_result)
+
+        self.address1 = address1
+        self.city = data["locality"]["long_name"]
+        self.state = data["administrative_level_1"]["long_name"]
+        self.zipcode = data["postal_code"]["long_name"]
+
+        # Floor, suite, and zipcode will all remain the same
+        self.save()
+
+    def parse_and_save_suite(self):
+        return
+
+    def parse_and_save_floor(self):
+        return
+
 
 
 class UserOrgAffiliationRequest(models.Model):
@@ -1903,7 +1999,7 @@ class IXLan(pdb_models.IXLanBase):
 
     def test_ipv4_address(self, ipv4):
         """
-        test that the ipv4 address exists in one of the prefixes in this ixlan
+        test that the ipv4 a exists in one of the prefixes in this ixlan
         """
         for pfx in self.ixpfx_set_active:
             if pfx.test_ip_address(ipv4):
