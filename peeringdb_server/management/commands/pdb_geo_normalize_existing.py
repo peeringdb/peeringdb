@@ -1,7 +1,7 @@
 import googlemaps
 import reversion
-from pprint import pprint
 import csv
+import json
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -33,6 +33,11 @@ class Command(BaseCommand):
             action="store_true",
             help="commit changes, otherwise run in pretend mode",
         )
+        parser.add_argument(
+            "--ignore-geo-status",
+            action="store_true",
+            help="commit changes, otherwise run in pretend mode",
+        )
 
     def log(self, msg):
         if not self.commit:
@@ -42,7 +47,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
-        self.reverse = options.get("reverse", False)
+        self.ignore_geo_status = options.get("ignore_geo_status", False)
         reftag = options.get("reftag")
         limit = options.get("limit")
         if reftag.find(".") > -1:
@@ -85,23 +90,20 @@ class Command(BaseCommand):
                 "Can only geosync models containing GeocodeBaseMixin"
             )
 
-        # DELETE
-        q = model.handleref.undeleted()
+        if self.ignore_geo_status:
+            q = model.handleref.undeleted()
+        else:
+            q = model.handleref.undeleted().filter(geocode_status=False)
 
         if _id:
             q = q.filter(id=_id)
         count = q.count()
         if limit > 0:
             q = q[:limit]
-        i = 0
 
         output_list = []
-
+        i = 0
         for entity in q:
-            entity.geocode_status = False
-            entity.save()
-            if entity.geocode_status:
-                continue
             i += 1
             output_dict = {"id": entity.id, "name": entity.name}
             self.snapshot_model(entity, "_before", output_dict)
@@ -116,11 +118,10 @@ class Command(BaseCommand):
                 self._normalize(entity, output_dict, self.commit)
                 self.snapshot_model(entity, "_after", output_dict)
             except ValueError as exc:
-                print(exc)
+                self.log(str(exc))
             output_list.append(output_dict)
 
-        pprint(output_list)
-        print("writing csv")
+        self.log("writing csv")
         self.write_csv(output_list)
 
     def _normalize(self, instance, output_dict, save):
@@ -152,4 +153,3 @@ class Command(BaseCommand):
 
         if save:
             instance.save()
-
