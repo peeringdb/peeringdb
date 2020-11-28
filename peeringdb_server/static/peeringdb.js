@@ -287,14 +287,13 @@ PeeringDB.ViewTools = {
 
   after_submit : function(container, data) {
 
-    const addressFields = ["address1", "address2", "location", "geocode"];
-    const addressTargets = ["api:fac:update" "api:org:update"];
+    const addressFields = ["address1", "address2", "city", "state", "zipcode"];
     var target = container.data("edit-target");
     if(target == "api:ix:update") {
       this.apply_data(container, data, "tech_phone");
       this.apply_data(container, data, "policy_phone");
     }
-    if ($.inArray(target, addressTargets) >= 0) {
+    if (target === "api:fac:update" || target === "api:org:update") {
       addressFields.forEach(field => this.apply_data(container, data, field))
     }
   }
