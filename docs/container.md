@@ -20,6 +20,7 @@ cd peeringdb
 This file can be used to set environment variables for your peeringdb environment. For
 now it is ok for it to be empty, but it needs to exist.
 
+# XXX make run do this
 ```sh
 touch Ctl/dev/.env
 ```
