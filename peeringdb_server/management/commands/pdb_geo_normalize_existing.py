@@ -133,8 +133,9 @@ class Command(BaseCommand):
 
         # The forward geocode gets the lat,long
         # and returns formatted results for address 1
-        forward_result = instance.geocode(gmaps, save=save)
-        address1 = instance.get_address1_from_geocode(forward_result)
+        forward_result = instance.geocode(gmaps)
+        if len(forward_result) > 0:
+            address1 = instance.get_address1_from_geocode(forward_result)
 
         # The reverse result normalizes the administrative levels
         # (city, state, zip) and translates them into English
