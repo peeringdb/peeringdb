@@ -95,6 +95,7 @@ FILTER_EXCLUDE = [
 # def _(x):
 #    return x
 
+
 class GeocodeSerializerMixin(object):
     """
     Overrides create() and update() method of serializer
@@ -104,12 +105,38 @@ class GeocodeSerializerMixin(object):
     Can only be used if the model includes the GeocodeBaseMixin.
     """
 
+    def _need_geosync(self, instance, validated_data):
+        """
+        Determine if any geofields have changed that need normalization.
+        Returns False if the only change is that fields have been deleted.
+        """
+        geocode_fields = AddressSerializer.Meta.fields
+
+        for field in geocode_fields:
+            if validated_data.get(field) is None:
+                continue
+
+            if getattr(instance, field) != validated_data.get(field):
+                return True
+
+        return False
+
     def update(self, instance, validated_data):
-        # When updating a fac and updating one,
-        # we first want to save the model
-        # and then normalize the geofields
+        """
+        When updating a fac and updating one,
+        we first want to update the model
+        and then normalize the geofields
+        """
+
+        # Need to check if we need geosync before updating the instance
+        need_geosync = self._need_geosync(instance, validated_data)
+
         instance = super().update(instance, validated_data)
-        instance.normalize_api_response()
+
+        if need_geosync:
+            print("Normalizing geofields")
+            instance.normalize_api_response()
+
         return instance
 
     def create(self, validated_data):
@@ -119,6 +146,7 @@ class GeocodeSerializerMixin(object):
         instance = super().create(validated_data)
         instance.normalize_api_response()
         return instance
+
 
 def queryable_field_xl(fld):
     """
