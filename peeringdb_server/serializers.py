@@ -117,9 +117,9 @@ class GeocodeSerializerMixin(object):
                 continue
 
             if getattr(instance, field) != validated_data.get(field):
-                return True
+                return True, field
 
-        return False
+        return False, None
 
     def update(self, instance, validated_data):
         """
@@ -129,13 +129,20 @@ class GeocodeSerializerMixin(object):
         """
 
         # Need to check if we need geosync before updating the instance
-        need_geosync = self._need_geosync(instance, validated_data)
+        need_geosync, changed_field = self._need_geosync(instance, validated_data)
 
         instance = super().update(instance, validated_data)
 
         if need_geosync:
             print("Normalizing geofields")
-            instance.normalize_api_response()
+            try:
+                instance.normalize_api_response()
+
+            # Reraise the model validation error
+            # as a serializer validation error
+            except ValidationError as exc:
+                print(exc)
+                raise serializers.ValidationError({changed_field: str(exc)})
 
         return instance
 

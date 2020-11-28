@@ -295,35 +295,30 @@ class GeocodeBaseMixin(models.Model):
                 components={"country": self.country.code},
                 language="en"
             )
-            if result and (
-                "street_address" in result[0]["types"]
-                or "establishment" in result[0]["types"]
-                or "premise" in result[0]["types"]
-                or "subpremise" in result[0]["types"]
-            ):
-                loc = result[0].get("geometry").get("location")
-                self.latitude = loc.get("lat")
-                self.longitude = loc.get("lng")
-                self.geocode_error = None
-            else:
-                self.latitude = None
-                self.longitude = None
-                self.geocode_error = _("Address not found")
-            self.geocode_status = True
-            return result
         except (
             googlemaps.exceptions.HTTPError,
             googlemaps.exceptions.ApiError,
-        ) as inst:
-            self.geocode_error = str(inst)
-            self.geocode_status = True
+            googlemaps.exceptions.TransportError,
+        ):
+            raise ValidationError(
+                _("Error in forward geocode: Google Maps API error")
+            )
         except googlemaps.exceptions.Timeout:
-            self.geocode_error = _("API Timeout")
-            self.geocode_status = False
-        finally:
-            self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
-            if save:
-                self.save()
+            raise ValidationError(
+                _("Error in forward geocode: Google Maps API Timeout")
+            )
+
+        if result and (
+            "street_address" in result[0]["types"]
+            or "establishment" in result[0]["types"]
+            or "premise" in result[0]["types"]
+            or "subpremise" in result[0]["types"]
+        ):
+            return result
+        else:
+            raise ValidationError(
+                _("Error in forward geocode: No results found")
+            )
 
     def get_address1_from_geocode(self, result):
         street_number = None
@@ -342,12 +337,21 @@ class GeocodeBaseMixin(models.Model):
 
     def reverse_geocode(self, gmaps):
         if (self.latitude is None) or (self.longitude is None):
-            raise ValueError(
+            raise ValidationError(_(
                 "Latitude and longitude must be defined for reverse geocode lookup"
-            )
+            ))
 
         latlang = f"{self.latitude},{self.longitude}"
-        response = gmaps.reverse_geocode(latlang)
+        try:
+            response = gmaps.reverse_geocode(latlang)
+        except (
+            googlemaps.exceptions.HTTPError,
+            googlemaps.exceptions.ApiError,
+            googlemaps.exceptions.TransportError,
+        ) as exc:
+            raise ValidationError(_("Error in reverse geocode: Google Maps API error"))
+        except googlemaps.exceptions.Timeout:
+            raise ValidationError(_("Error in reverse geocode: Google Maps API Timeout"))
 
         return response
 
@@ -371,19 +375,35 @@ class GeocodeBaseMixin(models.Model):
     def normalize_api_response(self):
         # The forward geocode sets the lat,long
         gmaps = googlemaps.Client(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
-        forward_result = self.geocode(gmaps, save=True)
-        # Also set address1 from forward geocode results
+        self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
+
+        try:
+            forward_result = self.geocode(gmaps, save=True)
+        except ValidationError as exc:
+            self.geocode_error = str(exc)
+            self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
+            self.save()
+            raise exc
+
+        # Set information from forward geocode
+        loc = forward_result[0].get("geometry").get("location")
+        self.latitude = loc.get("lat")
+        self.longitude = loc.get("lng")
         address1 = self.get_address1_from_geocode(forward_result)
+        self.address1 = address1
+        self.address2 = ""
+
         # The reverse result normalizes some administrative info
         # (city, state, zip) and translates them into English
         try:
             reverse_result = self.reverse_geocode(gmaps)
-        except ValueError as exc:
-            print(exc)
-            return self
+        except ValidationError as exc:
+            self.geocode_error = str(exc)
+            self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
+            self.save()
+            raise exc
+
         data = self.parse_reverse_geocode(reverse_result)
-        self.address1 = address1
-        self.address2 = ""
         if data.get("locality"):
             self.city = data["locality"]["long_name"]
         if data.get("administrative_area_level_1"):
@@ -392,6 +412,7 @@ class GeocodeBaseMixin(models.Model):
             self.zipcode = data["postal_code"]["long_name"]
 
         # Floor, suite, and country will all remain the same
+        self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
         self.save()
         return self
 
