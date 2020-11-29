@@ -506,7 +506,6 @@ class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
         "network",
     )
     form = StatusForm
-    raw_id_fields = ("facility",)
     autocomplete_lookup_fields = {
         "fk": [
             "facility",
