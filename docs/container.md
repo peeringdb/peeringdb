@@ -21,6 +21,7 @@ This file can be used to set environment variables for your peeringdb environmen
 now it is ok for it to be empty, but it needs to exist.
 
 # XXX make run do this
+# XXX  echo SECRET_KEY=\"$(uuidgen)\"
 ```sh
 touch Ctl/dev/.env
 ```

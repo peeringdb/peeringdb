@@ -19,7 +19,7 @@ services:
     ports:
      - "13306:3306"
     volumes:
-      - peeringdb_database:/var/lib/mysql
+      - ./peeringdb_database:/var/lib/mysql
 
   peeringdb:
     build:
