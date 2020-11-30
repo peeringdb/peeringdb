@@ -2,8 +2,10 @@ import googlemaps
 import reversion
 import csv
 import json
+import os
 
 from django.core.management.base import BaseCommand
+from django.core.exceptions import ValidationError
 from django.conf import settings
 
 from peeringdb_server import models
@@ -34,9 +36,14 @@ class Command(BaseCommand):
             help="commit changes, otherwise run in pretend mode",
         )
         parser.add_argument(
-            "--ignore-geo-status",
-            action="store_true",
-            help="commit changes, otherwise run in pretend mode",
+            "--csv",
+            nargs="?",
+            help="""accepts a filepath and writes a csv 
+            displaying changes the made by geonormalization. 
+            Choosing this option without providing a path results
+            in a csv being written to the current working directory""",
+            const=os.path.join(os.getcwd(), "geonormalization.csv"),
+            default=False,
         )
 
     def log(self, msg):
@@ -47,15 +54,24 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
-        self.ignore_geo_status = options.get("ignore_geo_status", False)
+        self.csv_file = options.get("csv")
+
         reftag = options.get("reftag")
         limit = options.get("limit")
+
+        if reftag is None:
+            raise ValueError("No reftag provided")
+
         if reftag.find(".") > -1:
             reftag, _id = reftag.split(".")
         else:
             _id = 0
         self.gmaps = googlemaps.Client(API_KEY, timeout=5)
         self.normalize(reftag, _id, limit=limit)
+
+        if self.csv_file:
+            self.log(f"writing csv to {self.csv_file}")
+            self.write_csv(output_list, csv_file)
 
     def parse_and_save_suite(self, instance):
         return
@@ -68,14 +84,14 @@ class Command(BaseCommand):
             data[field + suffix] = getattr(instance, field)
         return data
 
-    def write_csv(self, output_list):
+    def write_csv(self, output_list, csv_file):
         keys = ["id", "name"]
 
         for k in ADDRESS_FIELDS:
             keys.append(k + "_before")
             keys.append(k + "_after")
 
-        with open('normalized_geolocations.csv', 'w') as csv_file:
+        with open(csv_file, 'w') as csv_file:
             dict_writer = csv.DictWriter(csv_file, keys)
             dict_writer.writeheader()
             dict_writer.writerows(output_list)
@@ -117,12 +133,11 @@ class Command(BaseCommand):
             try:
                 self._normalize(entity, output_dict, self.commit)
                 self.snapshot_model(entity, "_after", output_dict)
-            except ValueError as exc:
+            except ValidationError as exc:
                 self.log(str(exc))
             output_list.append(output_dict)
 
-        self.log("writing csv")
-        self.write_csv(output_list)
+        return output_list
 
     def _normalize(self, instance, output_dict, save):
 
@@ -132,9 +147,12 @@ class Command(BaseCommand):
         self.parse_and_save_floor(instance)
 
         # The forward geocode gets the lat,long
-        # and returns formatted results for address 1
-        forward_result = instance.geocode(gmaps)
-        if len(forward_result) > 0:
+        # and returns formatted results for address1
+        if (instance.latitude is None) or (instance.longitude is None):
+            forward_result = instance.geocode(gmaps)
+            loc = forward_result[0].get("geometry").get("location")
+            instance.latitude = loc.get("lat")
+            instance.longitude = loc.get("lng")
             address1 = instance.get_address1_from_geocode(forward_result)
 
         # The reverse result normalizes the administrative levels
