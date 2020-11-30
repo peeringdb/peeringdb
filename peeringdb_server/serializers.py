@@ -113,7 +113,9 @@ class GeocodeSerializerMixin(object):
 
         # We do not need to resync if floor, suite, or address2 are changed
         ignored_fields = ["floor", "suite", "address2"]
-        geocode_fields = [f for f in AddressSerializer.Meta.fields if f not in ignored_fields]
+        geocode_fields = [
+            f for f in AddressSerializer.Meta.fields if f not in ignored_fields
+        ]
 
         for field in geocode_fields:
             if validated_data.get(field) is None:
@@ -430,7 +432,16 @@ class ParentStatusException(IOError):
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = (AddressModel,)
-        fields = ["address1", "address2", "city", "country", "state", "zipcode", "floor", "suite"]
+        fields = [
+            "address1",
+            "address2",
+            "city",
+            "country",
+            "state",
+            "zipcode",
+            "floor",
+            "suite",
+        ]
 
 
 class ModelSerializer(PermissionedModelSerializer):
