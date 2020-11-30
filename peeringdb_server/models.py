@@ -321,8 +321,8 @@ class GeocodeBaseMixin(models.Model):
             )
 
     def get_address1_from_geocode(self, result):
-        street_number = None
-        route = None
+        street_number = ""
+        route = ""
 
         for component in result[0]["address_components"]:
             if "street_number" in component["types"]:
@@ -333,7 +333,8 @@ class GeocodeBaseMixin(models.Model):
                 # tend to be closer to English.
                 route = component["short_name"]
 
-        return f"{street_number} {route}".strip()
+        return f"{street_number} {route}".strip()        
+
 
     def reverse_geocode(self, gmaps):
         if (self.latitude is None) or (self.longitude is None):
@@ -389,7 +390,7 @@ class GeocodeBaseMixin(models.Model):
 
         # The reverse result normalizes some administrative info
         # (city, state, zip) and translates them into English
-        
+
         reverse_result = self.reverse_geocode(gmaps)
 
         data = self.parse_reverse_geocode(reverse_result)
