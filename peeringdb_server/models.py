@@ -290,16 +290,14 @@ class GeocodeBaseMixin(models.Model):
             result = gmaps.geocode(
                 self.geocode_address,
                 components={"country": self.country.code},
-                language="en"
+                language="en",
             )
         except (
             googlemaps.exceptions.HTTPError,
             googlemaps.exceptions.ApiError,
             googlemaps.exceptions.TransportError,
         ):
-            raise ValidationError(
-                _("Error in forward geocode: Google Maps API error")
-            )
+            raise ValidationError(_("Error in forward geocode: Google Maps API error"))
         except googlemaps.exceptions.Timeout:
             raise ValidationError(
                 _("Error in forward geocode: Google Maps API Timeout")
@@ -313,9 +311,7 @@ class GeocodeBaseMixin(models.Model):
         ):
             return result
         else:
-            raise ValidationError(
-                _("Error in forward geocode: No results found")
-            )
+            raise ValidationError(_("Error in forward geocode: No results found"))
 
     def get_address1_from_geocode(self, result):
         street_number = ""
@@ -334,9 +330,9 @@ class GeocodeBaseMixin(models.Model):
 
     def reverse_geocode(self, gmaps):
         if (self.latitude is None) or (self.longitude is None):
-            raise ValidationError(_(
-                "Latitude and longitude must be defined for reverse geocode lookup"
-            ))
+            raise ValidationError(
+                _("Latitude and longitude must be defined for reverse geocode lookup")
+            )
 
         latlang = f"{self.latitude},{self.longitude}"
         try:
@@ -348,7 +344,9 @@ class GeocodeBaseMixin(models.Model):
         ) as exc:
             raise ValidationError(_("Error in reverse geocode: Google Maps API error"))
         except googlemaps.exceptions.Timeout:
-            raise ValidationError(_("Error in reverse geocode: Google Maps API Timeout"))
+            raise ValidationError(
+                _("Error in reverse geocode: Google Maps API Timeout")
+            )
 
         return response
 
