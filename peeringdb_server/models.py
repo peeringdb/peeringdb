@@ -377,13 +377,7 @@ class GeocodeBaseMixin(models.Model):
         gmaps = googlemaps.Client(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
         self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
 
-        try:
-            forward_result = self.geocode(gmaps, save=True)
-        except ValidationError as exc:
-            self.geocode_error = str(exc)
-            self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
-            self.save()
-            raise exc
+        forward_result = self.geocode(gmaps, save=True)
 
         # Set information from forward geocode
         loc = forward_result[0].get("geometry").get("location")
@@ -395,13 +389,8 @@ class GeocodeBaseMixin(models.Model):
 
         # The reverse result normalizes some administrative info
         # (city, state, zip) and translates them into English
-        try:
-            reverse_result = self.reverse_geocode(gmaps)
-        except ValidationError as exc:
-            self.geocode_error = str(exc)
-            self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
-            self.save()
-            raise exc
+        
+        reverse_result = self.reverse_geocode(gmaps)
 
         data = self.parse_reverse_geocode(reverse_result)
         if data.get("locality"):
