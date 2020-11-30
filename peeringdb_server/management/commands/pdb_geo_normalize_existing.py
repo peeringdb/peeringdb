@@ -3,6 +3,8 @@ import reversion
 import csv
 import json
 import os
+from pprint import pprint
+import re
 
 from django.core.management.base import BaseCommand
 from django.core.exceptions import ValidationError
@@ -36,12 +38,22 @@ class Command(BaseCommand):
             help="commit changes, otherwise run in pretend mode",
         )
         parser.add_argument(
+            "--pprint",
+            action="store_true",
+            help="pretty print changes at end of run",
+        )
+        parser.add_argument(
+            "--floor-and-suite-only",
+            action="store_true",
+            help="Only parse the floor and suite",
+        )
+        parser.add_argument(
             "--csv",
             nargs="?",
-            help="""accepts a filepath and writes a csv 
-            displaying changes the made by geonormalization. 
+            help="""writes a csv displaying changes made by geonormalization.
             Choosing this option without providing a path results
-            in a csv being written to the current working directory""",
+            in a csv being written to the current working directory.
+            Users can also choose this option and provide a path.""",
             const=os.path.join(os.getcwd(), "geonormalization.csv"),
             default=False,
         )
@@ -54,6 +66,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
+        self.floor_and_ste_parse_only = options.get(
+            "floor_and_suite_only", False)
+        self.pprint = options.get("pprint", False)
         self.csv_file = options.get("csv")
 
         reftag = options.get("reftag")
@@ -66,33 +81,62 @@ class Command(BaseCommand):
             reftag, _id = reftag.split(".")
         else:
             _id = 0
+
         self.gmaps = googlemaps.Client(API_KEY, timeout=5)
-        self.normalize(reftag, _id, limit=limit)
+        output_list = self.normalize(reftag, _id, limit=limit)
 
         if self.csv_file:
             self.log(f"writing csv to {self.csv_file}")
-            self.write_csv(output_list, csv_file)
+            self.write_csv(output_list)
 
-    def parse_and_save_suite(self, instance):
-        return
+        if self.pprint:
+            for entry in output_list:
+                self.log("{} ({})".format(entry.pop("name"), entry.pop("id")))
+                pprint(entry)
+                self.log("\n")
 
-    def parse_and_save_floor(self, instance):
-        return
+    def parse_suite(self, instance):
+
+        # Case: "Suite 1" or "Suite B"
+        pattern = r"(?<=\b[Ss]uite\s)(\w+)"
+        suite = (re.findall(pattern, instance.address1) +
+                 re.findall(pattern, instance.address2))
+        return suite
+
+    def parse_floor(self, instance):
+        # Case "5th floor"
+        pattern_before = r"(\w+)(?=\sfloor\b)"
+        floor = (re.findall(pattern_before, instance.address1) +
+                 re.findall(pattern_before, instance.address2))
+
+        # Case: "Floor 2"
+        if len(floor) == 0:
+            pattern_after = r"(?<=\bFloor\s)(\w+)"
+            floor = (re.findall(pattern_after, instance.address1) +
+                     re.findall(pattern_after, instance.address2))
+        return floor
+
+    def log_floor_and_ste_changes(self, instance):
+        if (instance.floor != "") or (instance.suite != ""):
+            self.log(f"{instance.address1}, {instance.address2}")
+            self.log(f"Floor: {instance.floor}")
+            self.log(f"Suite: {instance.suite}")
 
     def snapshot_model(self, instance, suffix, data):
         for field in ADDRESS_FIELDS:
             data[field + suffix] = getattr(instance, field)
+
         return data
 
-    def write_csv(self, output_list, csv_file):
+    def write_csv(self, output_list):
         keys = ["id", "name"]
 
         for k in ADDRESS_FIELDS:
             keys.append(k + "_before")
             keys.append(k + "_after")
 
-        with open(csv_file, 'w') as csv_file:
-            dict_writer = csv.DictWriter(csv_file, keys)
+        with open(self.csv_file, 'w') as csvf:
+            dict_writer = csv.DictWriter(csvf, keys)
             dict_writer.writeheader()
             dict_writer.writerows(output_list)
 
@@ -106,10 +150,7 @@ class Command(BaseCommand):
                 "Can only geosync models containing GeocodeBaseMixin"
             )
 
-        if self.ignore_geo_status:
-            q = model.handleref.undeleted()
-        else:
-            q = model.handleref.undeleted().filter(geocode_status=False)
+        q = model.handleref.undeleted()
 
         if _id:
             q = q.filter(id=_id)
@@ -132,7 +173,7 @@ class Command(BaseCommand):
 
             try:
                 self._normalize(entity, output_dict, self.commit)
-                self.snapshot_model(entity, "_after", output_dict)
+
             except ValidationError as exc:
                 self.log(str(exc))
             output_list.append(output_dict)
@@ -143,25 +184,37 @@ class Command(BaseCommand):
 
         gmaps = self.gmaps
 
-        self.parse_and_save_suite(instance)
-        self.parse_and_save_floor(instance)
+        suite = self.parse_suite(instance)
+        floor = self.parse_floor(instance)
+
+        if len(suite) > 0:
+            instance.suite = ", ".join(suite)
+
+        if len(floor) > 0:
+            instance.floor = ", ".join(floor)
+
+        if self.floor_and_ste_parse_only:
+            self.log_floor_and_ste_changes(instance)
+
+            if save:
+                instance.save()
+            return
 
         # The forward geocode gets the lat,long
         # and returns formatted results for address1
-        if (instance.latitude is None) or (instance.longitude is None):
-            forward_result = instance.geocode(gmaps)
-            loc = forward_result[0].get("geometry").get("location")
-            instance.latitude = loc.get("lat")
-            instance.longitude = loc.get("lng")
-            address1 = instance.get_address1_from_geocode(forward_result)
+        # if (instance.latitude is None) or (instance.longitude is None):
+        forward_result = instance.geocode(gmaps)
 
+        loc = forward_result[0].get("geometry").get("location")
+        instance.latitude = loc.get("lat")
+        instance.longitude = loc.get("lng")
+        # only change address1, keep address2 the same
+        address1 = instance.get_address1_from_geocode(forward_result)
+        instance.address1 = address1
         # The reverse result normalizes the administrative levels
         # (city, state, zip) and translates them into English
         reverse_result = instance.reverse_geocode(gmaps)
         data = instance.parse_reverse_geocode(reverse_result)
-
-        # Only change address1, keep address2 the same
-        instance.address1 = address1
 
         if data.get("locality"):
             instance.city = data["locality"]["long_name"]
@@ -172,3 +225,5 @@ class Command(BaseCommand):
 
         if save:
             instance.save()
+
+        self.snapshot_model(instance, "_after", output_dict)
