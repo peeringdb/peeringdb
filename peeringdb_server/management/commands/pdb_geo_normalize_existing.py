@@ -1,10 +1,10 @@
 import googlemaps
 import reversion
 import csv
-import json
 import os
 from pprint import pprint
 import re
+import datetime
 
 from django.core.management.base import BaseCommand
 from django.core.exceptions import ValidationError
@@ -222,6 +222,10 @@ class Command(BaseCommand):
             instance.state = data["administrative_area_level_1"]["long_name"]
         if data.get("postal_code"):
             instance.zipcode = data["postal_code"]["long_name"]
+
+        # Set status to True to indicate we've normalized the data
+        instance.geocode_status = True
+        instance.geocode_date = datetime.datetime.now(datetime.timezone.utc)
 
         if save:
             instance.save()
