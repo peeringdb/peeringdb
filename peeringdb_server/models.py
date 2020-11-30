@@ -248,14 +248,11 @@ class GeocodeBaseMixin(models.Model):
     geocode_status = models.BooleanField(
         default=False,
         help_text=_(
-            "Has this object's latitude and longitude been synchronized to its address fields"
+            "Has this object's address been normalized with a call to the Google Maps API"
         ),
     )
     geocode_date = models.DateTimeField(
         blank=True, null=True, help_text=_("Last time of attempted geocode")
-    )
-    geocode_error = models.TextField(
-        blank=True, null=True, help_text=_("Error message of previous geocode attempt")
     )
 
     class Meta:
@@ -333,8 +330,7 @@ class GeocodeBaseMixin(models.Model):
                 # tend to be closer to English.
                 route = component["short_name"]
 
-        return f"{street_number} {route}".strip()        
-
+        return f"{street_number} {route}".strip()
 
     def reverse_geocode(self, gmaps):
         if (self.latitude is None) or (self.longitude is None):
@@ -376,7 +372,6 @@ class GeocodeBaseMixin(models.Model):
     def normalize_api_response(self):
         # The forward geocode sets the lat,long
         gmaps = googlemaps.Client(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
-        self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
 
         forward_result = self.geocode(gmaps, save=True)
 
@@ -401,8 +396,9 @@ class GeocodeBaseMixin(models.Model):
         if data.get("postal_code"):
             self.zipcode = data["postal_code"]["long_name"]
 
-        # Floor, suite, and country will all remain the same
-        self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
+        # Set status to True to indicate we've normalized the data
+        self.geocode_status = True
+        self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
         self.save()
         return self
 
