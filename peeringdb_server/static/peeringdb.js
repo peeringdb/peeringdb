@@ -252,6 +252,7 @@ function moveCursorToEnd(el) {
  * @namespace PeeringDB
  */
 
+
 PeeringDB.ViewTools = {
 
   /**
@@ -291,6 +292,7 @@ PeeringDB.ViewTools = {
     if(target == "api:ix:update") {
       this.apply_data(container, data, "tech_phone");
       this.apply_data(container, data, "policy_phone");
+    }
   }
 
 }
