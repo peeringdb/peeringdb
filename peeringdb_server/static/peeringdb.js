@@ -154,22 +154,6 @@ PeeringDB = {
     return value
   },
 
-  reverse_pretty_speed : function(value) {
-    // Given a pretty speed (string), output the integer speed
-
-    const conversion_factor = {
-      "M": 1,
-      "G": 1000,
-      "T": 1000000,
-    }
-
-    const num = parseFloat(value.slice(0, -1));
-    const unit = value.slice(-1);
-    const multiplier = conversion_factor[unit]
-
-    // Always return the speed as an integer
-    return Math.round(num * multiplier)
-  },
 
   // searches the page for all editable forms that
   // have data-check-incomplete attribute set and
@@ -307,7 +291,6 @@ PeeringDB.ViewTools = {
     if(target == "api:ix:update") {
       this.apply_data(container, data, "tech_phone");
       this.apply_data(container, data, "policy_phone");
-    }
   }
 
 }
@@ -2114,8 +2097,68 @@ twentyc.editable.input.register(
   "network_speed",
   {
     apply : function(value) {
-      this.source.html(PeeringDB.pretty_speed(this.get()));
-    }
+      let val = this.get()
+      if ( $.isNumeric(val) ) {
+        this.source.html(PeeringDB.pretty_speed(val));
+      } else {
+        this.source.html(val);
+      }
+    },
+
+    export : function() {
+      console.log("exporting")
+      return this.convert(this.get())
+    },
+
+    convert : function(value) {
+      if ( $.isNumeric(value) ){
+        return value
+      } else {
+      return this.reverse_pretty_speed(value)
+      }
+    },
+
+    validate : function() {
+      console.log("validating")
+      // Check if it's an integer
+      let value = this.element.val();
+      let suffix = value.slice(-1);
+
+      if ( $.isNumeric(value) ){
+        return true
+      } else if ( $.isNumeric(value.slice(0,-1) ) && this.validate_suffix(suffix)) {
+        return true
+      }
+      return false
+    },
+    validation_message : function() {
+      return gettext("Needs to be an integer or a speed ending in M, G, or T") ///
+    },
+
+    validate_suffix: function(suffix) {
+      return ( suffix.toLowerCase() === "m" || 
+               suffix.toLowerCase() === "g" || 
+               suffix.toLowerCase() === "t" )
+    },
+
+    reverse_pretty_speed : function(value) {
+      // Given a pretty speed (string), output the integer speed
+
+      const conversion_factor = {
+        "m": 1,
+        "g": 1000,
+        "t": 1000000,
+      }
+
+      const num = parseFloat(value.slice(0, -1));
+      const unit = value.slice(-1).toLowerCase();
+      const multiplier = conversion_factor[unit]
+
+      // Always return the speed as an integer
+      return Math.round(num * multiplier)
+  },
+
+
   },
   "string"
 );
