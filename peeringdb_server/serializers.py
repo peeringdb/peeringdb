@@ -146,8 +146,8 @@ class GeocodeSerializerMixin(object):
             # Reraise the model validation error
             # as a serializer validation error
             except ValidationError as exc:
-                print(exc)
-                raise serializers.ValidationError({changed_field: str(exc)})
+                print(exc.message)
+                raise serializers.ValidationError({changed_field: exc.message})
 
         return instance
 
@@ -156,7 +156,14 @@ class GeocodeSerializerMixin(object):
         # we first want to save the model
         # and then normalize the geofields
         instance = super().create(validated_data)
-        instance.normalize_api_response()
+        try:
+            instance.normalize_api_response()
+
+        # Reraise the model validation error
+        # as a serializer validation error
+        except ValidationError as exc:
+            print(exc.message)
+            raise serializers.ValidationError({"address1": exc.message})
         return instance
 
 
