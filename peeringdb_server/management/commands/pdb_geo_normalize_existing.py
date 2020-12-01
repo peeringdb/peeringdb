@@ -105,13 +105,12 @@ class Command(BaseCommand):
 
     def parse_floor(self, instance):
         # Case "5th floor"
-        pattern_before = r"(\w+)(?=\sfloor\b)"
+        pattern_before = r"(\d+)(?:st|nd|th)(?=\s[Ff]loor\b)"
         floor = (re.findall(pattern_before, instance.address1) +
                  re.findall(pattern_before, instance.address2))
-
         # Case: "Floor 2"
         if len(floor) == 0:
-            pattern_after = r"(?<=\bFloor\s)(\w+)"
+            pattern_after = r"(?<=\b[Ff]loor\s)(\d+)"
             floor = (re.findall(pattern_after, instance.address1) +
                      re.findall(pattern_after, instance.address2))
         return floor
