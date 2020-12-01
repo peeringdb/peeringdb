@@ -2103,12 +2103,7 @@ twentyc.editable.input.register(
   "network_speed",
   {
     apply : function(value) {
-      let val = this.get()
-      if ( $.isNumeric(val) ) {
-        this.source.html(PeeringDB.pretty_speed(val));
-      } else {
-        this.source.html(val);
-      }
+      this.source.html(PeeringDB.pretty_speed(this.get()));
     },
 
     export : function() {
