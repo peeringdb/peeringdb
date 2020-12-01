@@ -1814,6 +1814,10 @@ twentyc.editable.module.register(
     },
 
     finalize_update_netixlan : function(rowId, row, data) {
+      var pretty_speed = PeeringDB.pretty_speed(data.speed)
+      row.find(".speed").data("edit-content-backup", pretty_speed)
+      row.find(".speed").data("edit-value", data.speed)
+      row.find(".speed").text(pretty_speed)
       if(data.operational)
         row.addClass("operational")
       else
@@ -2138,8 +2142,8 @@ twentyc.editable.input.register(
     },
 
     validate_suffix: function(suffix) {
-      return ( suffix.toLowerCase() === "m" || 
-               suffix.toLowerCase() === "g" || 
+      return ( suffix.toLowerCase() === "m" ||
+               suffix.toLowerCase() === "g" ||
                suffix.toLowerCase() === "t" )
     },
 
