@@ -154,6 +154,23 @@ PeeringDB = {
     return value
   },
 
+  reverse_pretty_speed : function(value) {
+    // Given a pretty speed (string), output the integer speed
+
+    const conversion_factor = {
+      "M": 1,
+      "G": 1000,
+      "T": 1000000,
+    }
+
+    const num = parseFloat(value.slice(0, -1));
+    const unit = value.slice(-1);
+    const multiplier = conversion_factor[unit]
+
+    // Always return the speed as an integer
+    return Math.round(num * multiplier)
+  },
+
   // searches the page for all editable forms that
   // have data-check-incomplete attribute set and
   // displays a notification if any of the fields
@@ -2100,7 +2117,7 @@ twentyc.editable.input.register(
       this.source.html(PeeringDB.pretty_speed(this.get()));
     }
   },
-  "number"
+  "string"
 );
 
 /*
