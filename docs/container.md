@@ -44,6 +44,10 @@ echo SECRET_KEY=\"$(uuidgen)\" > Ctl/dev/.env
 ./Ctl/dev/compose.sh up -d peeringdb
 ```
 
+On some docker versions `build` can fail with a `ERROR: Service 'peeringdb' failed to build: failed to export image: failed to create image: failed to get layer` error. Simply
+running it again should fix the issue.
+
+
 If you want a copy of the current production data, run this command
 
 ```sh
