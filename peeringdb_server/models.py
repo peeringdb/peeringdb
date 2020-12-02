@@ -317,6 +317,9 @@ class GeocodeBaseMixin(models.Model):
         street_number = ""
         route = ""
 
+        if len(result) == 0 or result[0].get("address_components", None) is None:
+            return None
+
         for component in result[0]["address_components"]:
             if "street_number" in component["types"]:
                 street_number = component["long_name"]
@@ -325,6 +328,9 @@ class GeocodeBaseMixin(models.Model):
                 # The short name contains abbreviations which
                 # tend to be closer to English.
                 route = component["short_name"]
+
+        if street_number == "" and route == "":
+            return None
 
         return f"{street_number} {route}".strip()
 
@@ -365,6 +371,7 @@ class GeocodeBaseMixin(models.Model):
                 if component["types"] == first_component:
                     data[component_type] = component
                     continue
+        
         return data
 
     def normalize_api_response(self):

@@ -100,7 +100,7 @@ class GeocodeSerializerMixin(object):
     """
     Overrides create() and update() method of serializer
     to normalize the location against the Google Maps Geocode API
-    and resave the model instanc with normalized address fields.
+    and resave the model instance with normalized address fields.
 
     Can only be used if the model includes the GeocodeBaseMixin.
     """
