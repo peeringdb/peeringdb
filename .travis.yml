@@ -1,19 +1,19 @@
 dist: bionic
 language: python
-python:
-  - "3.7"
+services:
+  - docker
 branches:
   except:
     - gh-pages
 matrix:
-#  allow_failures:
-#  - python: 3.6
   fast_finish: true
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install fping
   - sudo apt-get install traceroute
   - sudo apt-get install librrd-dev
+  - bash ./Ctl/dev/compose.sh build peeringdb
+  - bash ./Ctl/dev/compose.sh up -d database
 install:
   - python -m pip install -U pip
   - pip install -U setuptools
@@ -21,6 +21,4 @@ install:
   - pip install tox-travis
   - pip install codecov
 script:
-  - tox
-after_success:
-  - codecov
+  - bash ./Ctl/dev/run.sh run_tests
