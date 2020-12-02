@@ -39,7 +39,7 @@
                     ],
                     "vlan_list": [
                         {
-                            "vlan_id": 0,
+                            "vlan_id": 1,
                             "ipv4": {
                                 "address": "195.69.147.250",
                                 "routeserver": true,
@@ -81,7 +81,7 @@
                             }
                         },
                         {
-                            "vlan_id": 2,
+                            "vlan_id": 1,
                             "ipv4": {
                                 "address": "195.69.146.250",
                                 "routeserver": true,
@@ -102,7 +102,7 @@
                             }
                         },
                         {
-                            "vlan_id": 3,
+                            "vlan_id": 1,
                             "ipv4": {
                                 "address": "195.69.149.250",
                                 "routeserver": true,
