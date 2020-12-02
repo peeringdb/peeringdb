@@ -17,24 +17,37 @@ cd peeringdb
 
 ### 2. Create environment variable override file
 
-This file can be used to set environment variables for your peeringdb environment. For
-now it is ok for it to be empty, but it needs to exist.
+Environment variables for the server config can be added in `Ctl/dev/.env`.
+This file can be empty which will make the django `SECRET_KEY` ephemeral, but
+the file does need to exist.
 
-# XXX make run do this
-# XXX  echo SECRET_KEY=\"$(uuidgen)\"
+Empty file:
+
 ```sh
 touch Ctl/dev/.env
+```
+
+Create a `SECRET_KEY` using `uuidgen` or replace with something similar on your system:
+
+```sh
+echo SECRET_KEY=\"$(uuidgen)\" > Ctl/dev/.env
 ```
 
 ### 3. Build the container and set up your dev instance
 
 ```sh
+./Ctl/dev/compose.sh build peeringdb
 ./Ctl/dev/compose.sh up -d database
 ./Ctl/dev/run.sh migrate
 ./Ctl/dev/run.sh createsuperuser
 ./Ctl/dev/run.sh createcachetable
-./Ctl/dev/run.sh pdb_load_data --commit #only if you want to sync data from live pdb
 ./Ctl/dev/compose.sh up -d peeringdb
+```
+
+If you want a copy of the current production data, run this command
+
+```sh
+./Ctl/dev/run.sh pdb_load_data --commit
 ```
 
 After it is done you should have a peeringdb instance exposed on port `:8000` - should you want to change

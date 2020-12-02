@@ -9,10 +9,10 @@ services:
       MYSQL_PASSWORD: devPASSWORD
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
       #MYSQL_ROOT_PASSWORD: devPASSWORD
-# XXX
+#    # set logging options to output in json
 #    logging:
+#      driver: json-file
 #      options:
-# log-driver json-file
 #        max-size: 100m
 #        max-file: "3"
     restart: always
@@ -32,7 +32,9 @@ services:
       DATABASE_USER: peeringdb
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: database
+#    # set logging options to output in json
 #    logging:
+#      driver: json-file
 #      options:
 #        max-size: 100m
 #        max-file: "3"
