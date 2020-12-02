@@ -74,6 +74,7 @@ WORKDIR /srv/www.peeringdb.com
 # copy from builder in case we're testing new deps
 COPY --from=builder /srv/www.peeringdb.com/Pipfile* ./
 COPY tests/ tests
+RUN chown -R pdb:pdb tests/
 COPY Ctl/docker/entrypoint.sh .
 
 RUN pip install -U pipenv
