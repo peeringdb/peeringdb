@@ -1,0 +1,28 @@
+[
+   {
+      "address_components":[
+         {
+            "long_name":"427",
+            "short_name":"427",
+            "types":[
+               "street_number"
+            ]
+         },
+         {
+            "long_name":"South LaSalle Street",
+            "short_name":"S LaSalle St",
+            "types":[
+               "route"
+            ]
+         },
+         {
+            "long_name":"Chicago Loop",
+            "short_name":"Chicago Loop",
+            "types":[
+               "neighborhood",
+               "political"
+            ]
+         }
+      ]
+   }
+]
