@@ -121,7 +121,7 @@ class RdapLookup(rdap.RdapClient):
         config = dict(
             bootstrap_url=settings.RDAP_URL.rstrip("/"),
             lacnic_apikey=settings.RDAP_LACNIC_APIKEY,
-            timeout=2.5,
+            timeout=10,
         )
         super().__init__(config)
 

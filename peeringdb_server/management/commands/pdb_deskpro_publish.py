@@ -20,9 +20,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         client = APIClient(settings.DESKPRO_URL, settings.DESKPRO_KEY)
         self.log(f"DESKPRO: {settings.DESKPRO_URL}")
-        ticket_qs = models.DeskProTicket.objects.filter(
-            published__isnull=True
-        ).order_by("created")
+
+        # Per issue #858 we want to ignore the IX-F tickets
+        ticket_qs = (
+            models.DeskProTicket.objects.filter(published__isnull=True)
+            .exclude(subject__icontains="[IX-F]")
+            .order_by("created")
+        )
 
         if not ticket_qs.count():
             self.log("No tickets in queue")

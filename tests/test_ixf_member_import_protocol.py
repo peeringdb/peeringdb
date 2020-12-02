@@ -28,6 +28,51 @@ from peeringdb_server.models import (
     IXFImportEmail,
 )
 from peeringdb_server import ixf
+from peeringdb_server.deskpro import FailingMockAPIClient
+
+
+@pytest.mark.django_db
+def test_add_deleted_netixlan(entities, use_ip, save):
+    """
+    Check that we can add back a netixlan if (asn, ip4, ip6) in the ixf member data
+    matches a deleted netixlan. Check also that if speed, operational, or is_rs_peer
+    values are different, they take on the new ixf member data values.
+    """
+
+    data = setup_test_data("ixf.member.speed.0")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    netixlan = NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=1,
+        ipaddr4=use_ip(4, "195.69.147.250"),
+        ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
+        status="ok",
+        is_rs_peer=True,
+        operational=False,
+    )
+
+    netixlan.delete()
+
+    assert NetworkIXLan.objects.filter(status="ok").count() == 0
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert_no_emails(network, ixlan.ix)
+
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    # Assert data values are updated
+    assert netixlan.is_rs_peer == True
+    assert netixlan.operational == True
+    assert netixlan.speed == 0
 
 
 @pytest.mark.django_db
@@ -2199,6 +2244,7 @@ def test_create_deskpro_tickets_after_x_days(entities):
     # Assert IXFMemberData still the same
     assert IXFMemberData.objects.count() == 4
 
+    """
     # Assert DeskProTickets are created
     assert DeskProTicket.objects.count() == 4
 
@@ -2211,6 +2257,11 @@ def test_create_deskpro_tickets_after_x_days(entities):
         assert IXFImportEmail.objects.filter(
             subject__contains=dpt, net=network.id
         ).exists()
+    """
+
+    # Per issue #860, we no longer create the DeskProTickets
+    # after x days
+    assert DeskProTicket.objects.count() == 0
 
 
 @pytest.mark.django_db
@@ -2265,6 +2316,120 @@ def test_create_deskpro_tickets_no_contacts(entities):
 
 
 @pytest.mark.django_db
+def test_email_with_partial_contacts(entities):
+    data = setup_test_data("ixf.member.2")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+
+    # Delete network contact but keep ix contact
+    for netcontact in entities["netcontact"]:
+        netcontact.delete()
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.251",
+            ipaddr6="2001:7f8:1::a500:2906:2",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.240",
+            ipaddr6="2001:7f8:1::a500:2905:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    # Assert Tickets are created immediately
+    if network.ipv6_support:
+        assert IXFImportEmail.objects.count() == 5
+        assert DeskProTicket.objects.count() == 4
+    else:
+        assert IXFImportEmail.objects.count() == 4
+        assert DeskProTicket.objects.count() == 3
+
+
+@pytest.mark.django_db
+def test_no_email_if_deskpro_fails(entities, use_ip, save):
+    """
+    Test setup based on test_create_deskpro_tickets_no_contacts.
+
+    For issue #850, we would like to test that if the DeskPRO ticket creation
+    fails, we aren't sending out individual conflict resolution emails.
+    """
+
+    data = setup_test_data("ixf.member.2")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+
+    # Delete network contacts
+    for netcontact in entities["netcontact"]:
+        netcontact.delete()
+
+    # Keep IX contacts. Ordinarily this would trigger an email to the IX
+    # However since the deskPRO API response will fail,
+    # no emails should get sent.
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.251",
+            ipaddr6="2001:7f8:1::a500:2906:2",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.240",
+            ipaddr6="2001:7f8:1::a500:2905:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+    importer = ixf.Importer()
+    importer._deskpro_client = FailingMockAPIClient
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    # Assert Tickets are created immediately
+    if network.ipv6_support:
+        assert DeskProTicket.objects.count() == 4
+    else:
+        assert DeskProTicket.objects.count() == 3
+
+    # This is the single consolidated email
+    assert IXFImportEmail.objects.count() == 1
+
+
+@pytest.mark.django_db
 def test_resolve_deskpro_ticket(entities):
     data = setup_test_data("ixf.member.1")
     network = entities["net"]["UPDATE_DISABLED"]
@@ -2291,8 +2456,11 @@ def test_resolve_deskpro_ticket(entities):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    assert DeskProTicket.objects.count() == 1
+    # Per issue #860 we no longer create tickets for conflict resolution
+    assert DeskProTicket.objects.count() == 0
 
+    # Commented out bc of issue #860
+    """
     ticket = DeskProTicket.objects.first()
     assert ticket.deskpro_id
     assert ticket.deskpro_ref
@@ -2311,9 +2479,10 @@ def test_resolve_deskpro_ticket(entities):
     else:
         assert IXFImportEmail.objects.count() == 4
     conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
-    consolid_emails = IXFImportEmail.objects.exclude(subject__icontains="conflict")
     assert conflict_emails.count() == 2
+    """
 
+    consolid_emails = IXFImportEmail.objects.exclude(subject__icontains="conflict")
     for email in consolid_emails:
 
         # if network is only supporting one ip protocol
@@ -2323,8 +2492,8 @@ def test_resolve_deskpro_ticket(entities):
         if not network.ipv6_support:
             assert "IX-F data provides IPv6 addresses" in email.message
 
-    for email in conflict_emails:
-        assert ticket.deskpro_ref in email.subject
+    # for email in conflict_emails:
+    #     assert ticket.deskpro_ref in email.subject
 
     # Resolve issue
     entities["netixlan"].append(
@@ -2349,20 +2518,23 @@ def test_resolve_deskpro_ticket(entities):
     # resolved
     assert IXFMemberData.objects.count() == 0
 
-    # resolution tickets created
-    assert DeskProTicket.objects.count() == 2
+    # Commented out bc of issue #860
+    """
+    # assert DeskProTicket.objects.count() == 2
 
     ticket_r = DeskProTicket.objects.last()
     assert ticket_r.deskpro_id == ticket.deskpro_id
     assert ticket_r.deskpro_ref == ticket.deskpro_ref
     assert "resolved" in ticket_r.body
 
+    
     conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
     assert conflict_emails.count() == 4
 
     for email in conflict_emails.order_by("-id")[:2]:
         assert "resolved" in email.message
         assert ticket.deskpro_ref in email.subject
+    """
 
 
 def test_vlan_sanitize(data_ixf_vlan):

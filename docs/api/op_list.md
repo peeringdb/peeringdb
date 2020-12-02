@@ -47,7 +47,7 @@ deleted in that timeframe as well - you can spot them by checking for status "de
 
 ### Nested data
 
-Any field ending in the suffix **_set** is a list of objects in a relationship with the parent
+Any field ending in the suffix **_set** (with the exception of 'irr_as_set') is a list of objects in a relationship with the parent
 object, you can expand those lists with the 'depth' parameter as explained below.
 
 The naming schema of the field will always tell you which type of object the set is holding
@@ -59,7 +59,7 @@ So a set called 'net_set' will hold Network objects (api endpoint /net)
 
 ### Depth
 
-Nested sets will not be loaded (any field ending with the _set suffix) unless the 'depth'
+Nested sets will not be loaded (any field ending with the _set suffix, with the exception of 'irr_as_set') unless the 'depth'
 parameter is passed in the request URL.
 
 Depth can be one of three values:

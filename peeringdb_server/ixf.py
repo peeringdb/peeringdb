@@ -408,7 +408,7 @@ class Importer:
         self.cleanup_ixf_member_data()
 
         # create tickets for unresolved proposals
-
+        # This function is currently disabled as per issue #860
         self.ticket_aged_proposals()
 
         # archive the import so we can roll it back later if needed
@@ -1063,12 +1063,12 @@ class Importer:
         if ip4_deletion:
             try:
                 self.log["data"].remove(ip4_deletion.ixf_log_entry)
-            except ValueError:
+            except (ValueError, AttributeError):
                 pass
         if ip6_deletion:
             try:
                 self.log["data"].remove(ip6_deletion.ixf_log_entry)
-            except ValueError:
+            except (ValueError, AttributeError):
                 pass
 
         log_entry = ixf_member_data.ixf_log_entry
@@ -1218,7 +1218,7 @@ class Importer:
         if net:
             email_log = IXFImportEmail.objects.create(
                 subject=logged_subject,
-                message=message,
+                message=strip_tags(message),
                 recipients=",".join(recipients),
                 net=net,
             )
@@ -1229,7 +1229,7 @@ class Importer:
         if ix:
             email_log = IXFImportEmail.objects.create(
                 subject=logged_subject,
-                message=message,
+                message=strip_tags(message),
                 recipients=",".join(recipients),
                 ix=ix,
             )
@@ -1240,7 +1240,7 @@ class Importer:
 
         prod_mail_mode = not getattr(settings, "MAIL_DEBUG", True)
         if prod_mail_mode:
-            self._send_email(subject, strip_tags(message), recipients)
+            self._send_email(subject, message, recipients)
             if email_log:
                 email_log.sent = datetime.datetime.now(datetime.timezone.utc)
 
@@ -1250,10 +1250,14 @@ class Importer:
     def _send_email(self, subject, message, recipients):
         mail = EmailMultiAlternatives(
             subject,
-            message,
+            strip_tags(message),
             settings.DEFAULT_FROM_EMAIL,
             recipients,
         )
+
+        # Do not strip_tags for the HTML attachment
+        mail.attach_alternative(message.replace("\n", "<br />\n"), "text/html")
+
         mail.send(fail_silently=False)
 
     def _ticket(self, ixf_member_data, subject, message):
@@ -1297,7 +1301,12 @@ class Importer:
             ticket.save()
         except Exception as exc:
             ticket.subject = f"[FAILED]{ticket.subject}"
-            ticket.body = f"{ticket.body}\n\n{exc.data}"
+            if hasattr(exc, "data"):
+                # api error returned with validation error data
+                ticket.body = f"{ticket.body}\n\n{exc.data}"
+            else:
+                # api error configuration issue
+                ticket.body = f"{ticket.body}\n\n{exc}"
             ticket.save()
         return ticket
 
@@ -1537,6 +1546,10 @@ class Importer:
             self._email(subject, message, contacts, ix=data["entity"])
 
     def ticket_aged_proposals(self):
+        """
+        This function is currently disabled as per issue #860
+        """
+        return
 
         """
         Cycle through all IXFMemberData objects that
@@ -1546,6 +1559,7 @@ class Importer:
         them yet
         """
 
+        """
         if not self.save:
             return
 
@@ -1584,6 +1598,7 @@ class Importer:
             self.ticket_proposal(
                 ixf_member_data, typ, True, True, True, {}, ixf_member_data.action
             )
+        """
 
     def ticket_proposal(self, ixf_member_data, typ, ac, ix, net, context, action):
 
@@ -1629,6 +1644,11 @@ class Importer:
 
         if ixf_member_data.deskpro_ref:
             subject = f"{subject} [#{ixf_member_data.deskpro_ref}]"
+
+        # If we do not have a deskpro reference, don't send out individual conflict resolution
+        # As per issue #850
+        else:
+            return
 
         # Notify Exchange
 
@@ -1738,9 +1758,9 @@ class Importer:
         prod_resend_mode = getattr(settings, "IXF_RESEND_FAILED_EMAILS", False)
 
         if prod_mail_mode and prod_resend_mode:
-            self._send_email(subject, strip_tags(message), recipients)
+            self._send_email(subject, message, recipients)
             email.sent = datetime.datetime.now(datetime.timezone.utc)
-            email.message = message
+            email.message = strip_tags(message)
             email.save()
         else:
             return False

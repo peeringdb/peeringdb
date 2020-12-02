@@ -853,6 +853,26 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     readonly_fields = ("id", "nsp_namespace")
     form = StatusForm
 
+    fields = [
+        "status",
+        "name",
+        "address1",
+        "address2",
+        "city",
+        "state",
+        "zipcode",
+        "country",
+        "latitude",
+        "longitude",
+        "website",
+        "notes",
+        "logo",
+        "verification_queue",
+        "version",
+        "id",
+        "nsp_namespace",
+    ]
+
     def get_urls(self):
         urls = super().get_urls()
         my_urls = [
@@ -965,6 +985,36 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         InternetExchangeFacilityInline,
         NetworkFacilityInline,
     )
+
+    fields = [
+        "status",
+        "name",
+        "address1",
+        "address2",
+        "city",
+        "state",
+        "zipcode",
+        "country",
+        "latitude",
+        "longitude",
+        "website",
+        "clli",
+        "rencode",
+        "npanxx",
+        "tech_email",
+        "tech_phone",
+        "sales_email",
+        "sales_phone",
+        "notes",
+        "geocode_status",
+        "geocode_date",
+        "geocode_error",
+        "org",
+        "verification_queue",
+        "version",
+        "id",
+        "nsp_namespace",
+    ]
 
 
 class NetworkAdminForm(StatusForm):
@@ -1184,8 +1234,17 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
 
 
 class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
-    list_display = ("user", "asn", "org", "created", "status")
-    search_fields = ("user", "asn")
+    list_display = (
+        "user",
+        "asn",
+        "org",
+        "created",
+        "status",
+    )
+    search_fields = (
+        "user__username",
+        "asn",
+    )
     readonly_fields = ("created",)
 
     raw_id_fields = ("user", "org")
@@ -1854,7 +1913,8 @@ class EnvironmentSettingAdmin(admin.ModelAdmin):
         return obj.set_value(form.cleaned_data["value"])
 
 
-admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
+# Commented out via issue #860
+# admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)
