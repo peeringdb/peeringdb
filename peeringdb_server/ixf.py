@@ -1502,7 +1502,7 @@ class Importer:
                     self._notify_proposal(recipient, data, ticket_days, template)
                 except Exception as exc:
                     if error_handler:
-                        error_handler(exc)
+                        error_handler(exc, ixlan=self.ixlan)
                     else:
                         raise
 
