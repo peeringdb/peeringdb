@@ -60,7 +60,7 @@
                             }
                         },
                         {
-                            "vlan_id": 1,
+                            "vlan_id": 0,
                             "ipv4": {
                                 "address": "195.69.147.200",
                                 "routeserver": true,

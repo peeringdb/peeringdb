@@ -2137,6 +2137,48 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
+@pytest.mark.django_db
+def test_mark_invalid_multiple_vlans(entities, save):
+    """
+    The IX-F data contains multiple vlans for prefixes specified
+    on our ixlan
+
+    The import should fail and dispatch a notification to the ix
+    """
+
+    data = setup_test_data("ixf.member.invalid.vlan")
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    start = datetime.datetime.now(datetime.timezone.utc)
+
+    importer = ixf.Importer()
+    data = importer.sanitize(data)
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    assert importer.update(ixlan, data=data) == False
+    importer.notify_proposals()
+
+    assert IXFMemberData.objects.count() == 0
+    assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
+    ERROR_MESSAGE = "We found that your IX-F output contained multiple vlans"
+    assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
+    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+    assert (
+        ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
+    )
+
+    # Assert idempotent / lock
+    importer.update(ixlan, data=data)
+
+    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+    assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
+
+    # Test idempotent
+    assert_idempotent(importer, ixlan, data)
+
+
 
 @pytest.mark.django_db
 def test_remote_cannot_be_parsed(entities, save):

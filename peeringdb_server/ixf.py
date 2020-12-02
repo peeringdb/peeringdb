@@ -47,6 +47,29 @@ REASON_VALUES_CHANGED = _(
     "Data differences between PeeringDB and the exchange's IX-F data"
 )
 
+class MultipleVlansInPrefix(ValueError):
+
+    """
+    This is error is raised when we find that an ix-f export contains
+    multiple vlan ids for the prefixes defined in the processed ixlan
+
+    Since peeringdb treats each vlan as it's own exchange this currently
+    is not a compatible setup for import (see #889)
+    """
+
+    def __init__(self, importer, *args, **kwargs):
+        feed_url = importer.ixlan.ixf_ixp_member_list_url
+        ix_name = importer.ixlan.ix.name
+        support_email = settings.DEFAULT_FROM_EMAIL
+        super().__init__(_(
+            f"We found that your IX-F output "
+            f"contained multiple vlans for the prefixes defined on the PeeringDB entry of your exchange."
+            "\n"
+            f"This setup is not compatible as PeeringDB treats each vlan as it's own exchange."
+            "\n"
+            f"Please contact {support_email} if you need assistance with resolving this issue."
+        ))
+
 
 class Importer:
 
@@ -140,6 +163,7 @@ class Importer:
         self.deletions = {}
         self.asns = []
         self.ixlan = ixlan
+        self.vlan = None
         self.save = save
         self.asn = asn
         self.now = datetime.datetime.now(datetime.timezone.utc)
@@ -372,12 +396,6 @@ class Importer:
             self.log_error(data.get("pdb_error"), save=save)
             return False
 
-        # null ix-f error note on ixlan if it had error'd before
-        if self.ixlan.ixf_ixp_import_error:
-            self.ixlan.ixf_ixp_import_error = None
-            self.ixlan.ixf_ixp_import_error_notified = None
-            self.ixlan.save()
-
         # bail if there are no active prefixes on the ixlan
         if ixlan.ixpfx_set_active.count() == 0:
             self.log_error(_("No prefixes defined on ixlan"), save=save)
@@ -389,11 +407,31 @@ class Importer:
         try:
             # parse the ixf data
             self.parse(data)
+        except MultipleVlansInPrefix as exc:
+            # multiple vlans found for prefixes specified on the ixlan
+            # we fail the import and notify the ix
+            #
+            # since the import hard fails here we want to remove all
+            # other queued notifications
+            #
+            # transactions are atomic and will be rolled back
+            self.notify_error(f"{exc}")
+            self.log_error(f"{exc}", save=save)
+            self.notifications = []
+            return False
         except KeyError as exc:
             # any key erros mean that the data is invalid, log the error and
             # bail (transactions are atomic and will be rolled back)
             self.log_error(f"Internal Error 'KeyError': {exc}", save=save)
             return False
+
+
+        # null ix-f error note on ixlan if it had error'd before
+        if self.ixlan.ixf_ixp_import_error:
+            self.ixlan.ixf_ixp_import_error = None
+            self.ixlan.ixf_ixp_import_error_notified = None
+            self.ixlan.save()
+
 
         with transaction.atomic():
             # process any netixlans that need to be deleted
@@ -819,6 +857,17 @@ class Importer:
                 # and ipv4 is not provided, ignore
 
                 continue
+
+            vlan = lan.get("vlan_id")
+
+            if self.vlan is not None and vlan != self.vlan:
+                # prefixes spread over multiple vlans and
+                # cannot be represented properly at one ixlan
+                # fail the import
+                raise MultipleVlansInPrefix(self)
+
+            self.vlan = vlan
+
 
             protocol_conflict = 0
 
