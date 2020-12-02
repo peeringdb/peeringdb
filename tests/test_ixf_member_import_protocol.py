@@ -2162,7 +2162,7 @@ def test_mark_invalid_multiple_vlans(entities, save):
 
     assert IXFMemberData.objects.count() == 0
     assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
-    ERROR_MESSAGE = "We found that your IX-F output contained multiple vlans"
+    ERROR_MESSAGE = "We found that your IX-F output contained multiple VLANs"
     assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
     assert (

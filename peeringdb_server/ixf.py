@@ -63,9 +63,9 @@ class MultipleVlansInPrefix(ValueError):
         support_email = settings.DEFAULT_FROM_EMAIL
         super().__init__(_(
             f"We found that your IX-F output "
-            f"contained multiple vlans for the prefixes defined on the PeeringDB entry of your exchange."
+            f"contained multiple VLANs for the prefixes defined in the PeeringDB entry for your exchange."
             "\n"
-            f"This setup is not compatible as PeeringDB treats each vlan as it's own exchange."
+            f"This setup is not compatible as PeeringDB regards each VLAN as its own exchange."
             "\n"
             f"Please contact {support_email} if you need assistance with resolving this issue."
         ))
