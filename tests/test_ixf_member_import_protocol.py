@@ -32,6 +32,7 @@ from peeringdb_server.deskpro import FailingMockAPIClient
 
 from .util import setup_test_data
 
+
 @pytest.mark.django_db
 def test_invalid_member_type(entities):
     data = setup_test_data("ixf.invalid.member.0")
@@ -2148,6 +2149,7 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
+
 @pytest.mark.django_db
 def test_mark_invalid_multiple_vlans(entities, save):
     """
@@ -2188,7 +2190,6 @@ def test_mark_invalid_multiple_vlans(entities, save):
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
-
 
 
 @pytest.mark.django_db
@@ -2649,11 +2650,9 @@ def test_chained_consolidate_add_del(entities):
                     "routeserver": True,
                     "as_macro": "AS-NFLX-V6",
                 },
-
             }
         ],
     }
-
 
     ixf_member_add = IXFMemberData.objects.create(
         asn=network.asn,
@@ -2667,7 +2666,6 @@ def test_chained_consolidate_add_del(entities):
         status="ok",
         data=json.dumps(ixf_member_data_field),
     )
-
 
     # create consolidated delete suggestion for netixlan above
 

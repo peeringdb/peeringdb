@@ -8,6 +8,7 @@ import peeringdb_server.models as models
 import django_namespace_perms as nsp
 from peeringdb_server import settings as pdb_settings
 
+
 class ClientCase(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -66,6 +67,7 @@ class SettingsCase(ClientCase):
     def tearDown(cls):
         for k, v in list(cls._restore.items()):
             setattr(pdb_settings, k, v)
+
 
 # For IXF member tests
 def setup_test_data(filename):

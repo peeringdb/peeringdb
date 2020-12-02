@@ -47,6 +47,7 @@ REASON_VALUES_CHANGED = _(
     "Data differences between PeeringDB and the exchange's IX-F data"
 )
 
+
 class MultipleVlansInPrefix(ValueError):
 
     """
@@ -61,14 +62,16 @@ class MultipleVlansInPrefix(ValueError):
         feed_url = importer.ixlan.ixf_ixp_member_list_url
         ix_name = importer.ixlan.ix.name
         support_email = settings.DEFAULT_FROM_EMAIL
-        super().__init__(_(
-            f"We found that your IX-F output "
-            f"contained multiple VLANs for the prefixes defined in the PeeringDB entry for your exchange."
-            "\n"
-            f"This setup is not compatible as PeeringDB regards each VLAN as its own exchange."
-            "\n"
-            f"Please contact {support_email} if you need assistance with resolving this issue."
-        ))
+        super().__init__(
+            _(
+                f"We found that your IX-F output "
+                f"contained multiple VLANs for the prefixes defined in the PeeringDB entry for your exchange."
+                "\n"
+                f"This setup is not compatible as PeeringDB regards each VLAN as its own exchange."
+                "\n"
+                f"Please contact {support_email} if you need assistance with resolving this issue."
+            )
+        )
 
 
 class Importer:
@@ -419,13 +422,11 @@ class Importer:
             self.log_error(f"Internal Error 'KeyError': {exc}", save=save)
             return False
 
-
         # null ix-f error note on ixlan if it had error'd before
         if self.ixlan.ixf_ixp_import_error:
             self.ixlan.ixf_ixp_import_error = None
             self.ixlan.ixf_ixp_import_error_notified = None
             self.ixlan.save()
-
 
         with transaction.atomic():
             # process any netixlans that need to be deleted
@@ -717,9 +718,7 @@ class Importer:
                     member.get("connection_list", []), network, member
                 )
             else:
-                self.log_peer(
-                    asn, "ignore", _("Network does not exist in peeringdb")
-                )
+                self.log_peer(asn, "ignore", _("Network does not exist in peeringdb"))
 
     def parse_connections(self, connection_list, network, member):
         """
@@ -854,7 +853,6 @@ class Importer:
                 raise MultipleVlansInPrefix(self)
 
             self.vlan = vlan
-
 
             protocol_conflict = 0
 
@@ -1141,8 +1139,6 @@ class Importer:
         if log_entry:
             log_entry["action"] = log_entry["action"].replace("add", "modify")
             log_entry["reason"] = reason
-
-
 
     def save_log(self):
         """
