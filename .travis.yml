@@ -12,13 +12,8 @@ before_install:
   - sudo apt-get install fping
   - sudo apt-get install traceroute
   - sudo apt-get install librrd-dev
+install:
   - bash ./Ctl/dev/compose.sh build peeringdb
   - bash ./Ctl/dev/compose.sh up -d database
-install:
-  - python -m pip install -U pip
-  - pip install -U setuptools
-  - pip install tox
-  - pip install tox-travis
-  - pip install codecov
 script:
   - bash ./Ctl/dev/run.sh run_tests
