@@ -545,7 +545,7 @@ AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 
 ## Django Rest Framework
 
-INSTALLED_APPS += ("rest_framework", "rest_framework_swagger")
+INSTALLED_APPS += ("rest_framework", "rest_framework_swagger", "rest_framework_api_key")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -579,6 +579,8 @@ if API_THROTTLE_ENABLED:
         }
     )
 
+# For DRF-API Keys
+API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
 
 ## PeeringDB
 

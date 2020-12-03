@@ -34,10 +34,12 @@ from django_inet.models import ASNField
 
 from django_grainy.decorators import grainy_model
 import django_grainy.decorators
+from django_grainy.models import Permission, PermissionManager
 
 from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
 from passlib.hash import sha256_crypt
+from rest_framework_api_key.models import AbstractAPIKey
 
 from peeringdb_server.util import check_permissions
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
@@ -854,6 +856,38 @@ def default_time_e():
     """
     now = datetime.datetime.now()
     return now.replace(hour=23, minute=59, second=59, tzinfo=UTC())
+
+
+class OrganizationAPIKey(AbstractAPIKey):
+    """
+    An API Key managed by an organization.
+    """
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="api_keys",
+    )
+
+    # class Meta(AbstractAPIKey.Meta):
+    #     verbose_name = "Organization API key"
+    #     verbose_name_plural = "Organization API keys"
+    #     db_table = "peeringdb_org_api_key"
+
+
+class OrganizationAPIPermission(Permission):
+    """
+    Describes permission for a OrganizationAPIKey
+    """
+
+    class Meta:
+        verbose_name = _("Organization API key Permission")
+        verbose_name_plural = _("Organization API key Permission")
+        base_manager_name = "objects"
+
+    org_api_key = models.ForeignKey(
+        OrganizationAPIKey, related_name="grainy_permissions", on_delete=models.CASCADE
+    )
+    objects = PermissionManager()
 
 
 class Sponsorship(models.Model):

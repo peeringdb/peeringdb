@@ -33,6 +33,7 @@ settings.configure(
         "allauth.account",
         "reversion",
         "rest_framework",
+        "rest_framework_api_key",
         "dal",
         "dal_select2",
         "corsheaders",
