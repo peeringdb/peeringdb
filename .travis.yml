@@ -13,6 +13,7 @@ before_install:
   - sudo apt-get install traceroute
   - sudo apt-get install librrd-dev
 install:
+  - touch ./Ctl/dev/.env
   - bash ./Ctl/dev/compose.sh build peeringdb
   - bash ./Ctl/dev/compose.sh up -d database
 script:
