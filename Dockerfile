@@ -57,6 +57,7 @@ COPY $ADD_SETTINGS_FILE mainsite/settings/
 COPY peeringdb_server/ peeringdb_server
 COPY fixtures/ fixtures
 COPY .coveragerc .coveragerc
+RUN mkdir coverage 
 
 COPY scripts/manage /usr/bin/
 COPY Ctl/docker/entrypoint.sh /
@@ -65,7 +66,7 @@ COPY Ctl/docker/entrypoint.sh /
 COPY --from=builder /usr/sbin/inetd /usr/sbin/
 COPY Ctl/docker/inetd.conf /etc/
 
-RUN chown -R pdb:pdb api-cache locale media var/log
+RUN chown -R pdb:pdb api-cache locale media var/log coverage
 
 #### test image here
 FROM final as tester

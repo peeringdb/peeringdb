@@ -1,2 +1,2 @@
 [run]
-    data_file = tests/.coverage
+    data_file = coverage/.coverage
