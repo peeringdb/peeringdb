@@ -1017,6 +1017,13 @@ def view_organization(request, id):
                 "value": data.get("country", dismiss),
             },
             {
+                "name": "geocode",
+                "label": _("Geocode"),
+                "type": "geocode",
+                "value": data,
+            },
+
+            {
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),
