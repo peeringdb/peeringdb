@@ -59,8 +59,7 @@ this port you can do so by setting the environment variable `DJANGO_PORT`.
 
 ### Environment Variables
 
-`PDB_NO_MIGRATE`: If set to anything, will skip migrations, otherwise, migrations will always be applied first thing while running.
-
+- `PDB_NO_MIGRATE`: If set to anything, will skip migrations when running the `uwsgi` command, otherwise, migrations will always be applied first thing while running `uwsgi`.
 - `DATABASE_ENGINE` default "mysql"
 - `DATABASE_HOST` default "127.0.0.1"
 - `DATABASE_PORT` default ""
@@ -70,37 +69,29 @@ this port you can do so by setting the environment variable `DJANGO_PORT`.
 
 ### Mount points
 
-`/srv/www.peeringdb.com/api-cache`: api cache
-`/srv/www.peeringdb.com/locale`: translations
-`/srv/www.peeringdb.com/mainsite`: site settings
-`/srv/www.peeringdb.com/media`: media files
-`/srv/www.peeringdb.com/peeringdb_server`: server code
-`/srv/www.peeringdb.com/static`: static files
-`/srv/www.peeringdb.com/var/log`: log files
+-`/srv/www.peeringdb.com/api-cache`: api cache
+-`/srv/www.peeringdb.com/locale`: translations
+-`/srv/www.peeringdb.com/mainsite`: site settings
+-`/srv/www.peeringdb.com/media`: media files
+-`/srv/www.peeringdb.com/peeringdb_server`: server code
+-`/srv/www.peeringdb.com/static`: static files
+-`/srv/www.peeringdb.com/var/log`: log files
 
 ### Entry point
 
-The entry point will run migrations and pass directly to django's manage script.
+With the exception of some specific commands (see below) the entry point will pass directly to django's manage script.
+
+```sh
+./Ctl/dev/run.sh help
+```
 
 Other options:
 
-`/bin/sh` to drop to shell
-`inetd` run the inetd whois server
+-`migrate` apply database migrations
+-`run_tests` run unit tests
+-`uwsgi` start the uwsgi process
+-`/bin/sh` to drop to shell
+-`inetd` run the inetd whois server
 
 
-### Examples
 
-Example: Using a shell for development
-
-This is assuming you have an external synced database running locally
-
-```sh
-export CONTAINER_TAG=peeringdb:server-`cat Ctl/VERSION`
-docker run --net=host -it \
-  -v `pwd`/mainsite/:/srv/www.peeringdb.com/mainsite \
-  -v `pwd`/peeringdb_server:/srv/www.peeringdb.com/peeringdb_server \
-  -e DATABASE_PASSWORD=$DB_PASSWORD \
-  $CONTAINER_TAG /bin/sh
-```
-
-Once you're in the container, you can run `manage runserver 0.0.0.0:$PORT` to start a development server.
