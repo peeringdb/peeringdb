@@ -56,14 +56,17 @@ COPY mainsite/ mainsite
 COPY $ADD_SETTINGS_FILE mainsite/settings/
 COPY peeringdb_server/ peeringdb_server
 COPY fixtures/ fixtures
+COPY .coveragerc .coveragerc
+RUN mkdir coverage 
 
 COPY scripts/manage /usr/bin/
+COPY Ctl/docker/entrypoint.sh /
 
 # inetd for whois
 COPY --from=builder /usr/sbin/inetd /usr/sbin/
 COPY Ctl/docker/inetd.conf /etc/
 
-RUN chown -R pdb:pdb api-cache locale media var/log
+RUN chown -R pdb:pdb api-cache locale media var/log coverage
 
 #### test image here
 FROM final as tester
@@ -72,12 +75,18 @@ WORKDIR /srv/www.peeringdb.com
 # copy from builder in case we're testing new deps
 COPY --from=builder /srv/www.peeringdb.com/Pipfile* ./
 COPY tests/ tests
+RUN chown -R pdb:pdb tests/
+COPY Ctl/docker/entrypoint.sh .
 
 RUN pip install -U pipenv
 RUN pipenv install --dev --ignore-pipfile -v
-RUN echo `which python`
-RUN pip freeze
-RUN pytest -v -rA --cov-report term-missing --cov=peeringdb_server tests/
+#RUN echo `which python`
+#RUN pip freeze
+#RUN pytest -v -rA --cov-report term-missing --cov=peeringdb_server tests/
+
+USER pdb
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["runserver", "$RUNSERVER_BIND"]
 
 #### entry point from final image, not tester
 FROM final

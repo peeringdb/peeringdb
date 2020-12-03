@@ -9,7 +9,7 @@ from django.test import TestCase, Client, RequestFactory
 from django.conf import settings
 
 import peeringdb_server.inet as pdbinet
-from .util import SettingsCase
+from .util import SettingsCase, reset_group_ids
 
 ERR_COULD_NOT_GET_RIR_ENTRY = "RDAP Lookup Error: Test Not Found"
 ERR_BOGON_ASN = (
@@ -149,6 +149,8 @@ class AsnAutomationTestCase(TestCase):
         asn_ok_b = 9000002
         asn_fail = 890000
 
+        reset_group_ids()
+
         # test 1: test affiliation to asn that has no RiR entry
         request = self.factory.post("/affiliate-to-org", data={"asn": asn_fail})
         request.user = self.user_a
@@ -164,19 +166,27 @@ class AsnAutomationTestCase(TestCase):
         resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
         self.assertEqual(resp.get("status"), "ok")
 
+        org = models.Organization.objects.get(name="ORG AS9000001")
+
         # check that support tickets were created
         ticket = models.DeskProTicket.objects.get(
-            subject="[test][ASNAUTO] Organization 'ORG AS9000001', Network 'AS9000001' created"
+            subject=f"[{settings.RELEASE_ENV}] [ASNAUTO] Organization 'ORG AS9000001', Network 'AS9000001' created"
         )
         self.assertEqual(
-            ticket.body, self.ticket["asnauto-9000001-org-net-created.txt"]
+            ticket.body, self.ticket["asnauto-9000001-org-net-created.txt"].format(
+                org_id = org.id,
+                net_id = org.net_set.first().id
+            )
         )
 
         ticket = models.DeskProTicket.objects.get(
-            subject="[test][ASNAUTO] Ownership claim granted to Org 'ORG AS9000001' for user 'user_a'"
+            subject=f"[{settings.RELEASE_ENV}] [ASNAUTO] Ownership claim granted to Org 'ORG AS9000001' for user 'user_a'"
         )
         self.assertEqual(
-            ticket.body, self.ticket["asnauto-9000001-user-granted-ownership.txt"]
+            ticket.body, self.ticket["asnauto-9000001-user-granted-ownership.txt"].format(
+                org_id = org.id,
+                net_id = org.net_set.first().id
+            )
         )
 
         net = models.Network.objects.get(asn=asn_ok)
@@ -198,10 +208,13 @@ class AsnAutomationTestCase(TestCase):
 
         # check that support tickets were created
         ticket = models.DeskProTicket.objects.get(
-            subject="[test]User user_b wishes to request ownership of ORG AS9000002"
+            subject=f"[{settings.RELEASE_ENV}] User user_b wishes to request ownership of ORG AS9000002"
         )
         self.assertEqual(
-            ticket.body, self.ticket["asnauto-9000002-user-requested-ownership.txt"]
+            ticket.body, self.ticket["asnauto-9000002-user-requested-ownership.txt"].format(
+                user_id = self.user_b.id,
+                affil_id = self.user_b.affiliation_requests.last().id
+            )
         )
 
         net = models.Network.objects.get(asn=asn_ok_b)
@@ -312,12 +325,17 @@ class AsnAutomationTestCase(TestCase):
         self.assertEqual(resp.get("status"), "ok")
 
         ticket = models.DeskProTicket.objects.get(
-            subject="[test]User user_b wishes to request ownership of ORG AS9000002"
+            subject=f"[{settings.RELEASE_ENV}] User user_b wishes to request ownership of ORG AS9000002"
         )
 
         self.assertEqual(
             ticket.body,
-            self.ticket["asnauto-9000002-affiliated-user-requested-ownership.txt"],
+            self.ticket["asnauto-9000002-affiliated-user-requested-ownership.txt"].format(
+                admin_org_id=org_1.id,
+                user_org_id=org_2.id,
+                user_id=self.user_b.id,
+                affil_id=self.user_b.affiliation_requests.first().id
+            ),
         )
 
     def test_affiliate_to_bogon_asn(self):

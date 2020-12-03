@@ -1376,8 +1376,8 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
         assert len(importer.log["data"]) == 1
         assert importer.log["data"][0]["action"] == "suggest-modify"
 
-        ixf_member_del = IXFMemberData.objects.get(id=1)
-        ixf_member_add = IXFMemberData.objects.get(id=2)
+        ixf_member_del = IXFMemberData.objects.filter(requirement_of__isnull=False).first()
+        ixf_member_add = IXFMemberData.objects.filter(requirement_of__isnull=True).first()
 
         assert ixf_member_del.requirement_of == ixf_member_add
         assert ixf_member_add.action == "modify"

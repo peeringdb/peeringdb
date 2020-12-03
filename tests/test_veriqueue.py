@@ -4,10 +4,12 @@ import pytest
 from django.test import TestCase
 from django.contrib.auth.models import Group
 from django.db import IntegrityError
+from django.conf import settings
 
 import peeringdb_server.models as models
 
 import reversion
+
 
 
 class VeriQueueTests(TestCase):
@@ -22,8 +24,12 @@ class VeriQueueTests(TestCase):
         for which it is enabled
         """
 
-        guest_group = Group.objects.create(name="guest")
-        user_group = Group.objects.create(name="user")
+        cls.guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
+        cls.user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
+
+        settings.USER_GROUP_ID = cls.user_group.id
+        settings.GUEST_GROUP_ID = cls.guest_group.id
+
 
         cls.inst = {}
         org = models.Organization.objects.create(name="Test", status="pending")
@@ -69,7 +75,7 @@ class VeriQueueTests(TestCase):
             vqi.user = user
             vqi.save()
             self.assertEqual(
-                qs.filter(subject=f"[test]{vqi.content_type} - {inst}").exists(),
+                qs.filter(subject=f"[{settings.RELEASE_ENV}] {vqi.content_type} - {inst}").exists(),
                 True,
             )
 

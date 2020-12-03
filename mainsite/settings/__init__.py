@@ -183,6 +183,8 @@ set_option(
     "PEERINGDB_VERSION", read_file(os.path.join(BASE_DIR, "etc/VERSION")).strip()
 )
 
+MIGRATION_MODULES={"django_peeringdb": None}
+
 # Contact email, from address, support email
 set_from_env("SERVER_EMAIL")
 
@@ -241,7 +243,7 @@ set_option("DATA_QUALITY_MIN_SPEED", 100)
 # maximum value to allow for speed on an netixlan (currently 1Tbit)
 set_option("DATA_QUALITY_MAX_SPEED", 1000000)
 
-RATELIMITS = {
+set_option("RATELIMITS", {
     "request_login_POST": "4/m",
     "request_translation": "2/m",
     "resend_confirmation_mail": "2/m",
@@ -252,10 +254,10 @@ RATELIMITS = {
     "view_username_retrieve_initiate": "2/m",
     "view_import_ixlan_ixf_preview": "1/m",
     "view_import_net_ixf_postmortem": "1/m",
-}
+})
 
 # maximum number of affiliation requests a user can have pending
-MAX_USER_AFFILIATION_REQUESTS = 5
+set_option("MAX_USER_AFFILIATION_REQUESTS", 5)
 
 # Determines age of network contact objects that get hard deleted
 # during `pdb_delete_poc` execution. (days)
@@ -303,6 +305,7 @@ DATABASES = {
         "NAME": DATABASE_NAME,
         "USER": DATABASE_USER,
         "PASSWORD": DATABASE_PASSWORD,
+       # "TEST": { "NAME": f"{DATABASE_NAME}_test" }
     },
 }
 
@@ -431,6 +434,7 @@ TEMPLATES = [
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
 
 MIDDLEWARE = (
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -522,7 +526,6 @@ AUTHENTICATION_BACKENDS += (
 MIDDLEWARE += (
     "peeringdb_server.maintenance.Middleware",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
 )
 
 OAUTH2_PROVIDER = {
@@ -589,10 +592,11 @@ set_option("SPONSORSHIPS_EMAIL", SERVER_EMAIL)
 
 
 set_option("API_URL", "https://peeringdb.com/api")
-API_DEPTH_ROW_LIMIT = 250
-API_CACHE_ENABLED = True
-API_CACHE_ROOT = os.path.join(BASE_DIR, "api-cache")
-API_CACHE_LOG = os.path.join(BASE_DIR, "var/log/api-cache.log")
+set_option("API_DEPTH_ROW_LIMIT",250)
+set_option("API_CACHE_ENABLED",  True)
+set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
+set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
+
 
 set_option("BASE_URL", "http://localhost")
 set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
@@ -749,7 +753,7 @@ for _, _, files in os.walk(API_DOC_PATH):
             API_DOC_INCLUDES[base] = os.path.join(API_DOC_PATH, file)
 
 
-MAIL_DEBUG = DEBUG
+set_option("MAIL_DEBUG", DEBUG)
 
 # Setting for automated resending of failed ixf import emails
 set_option("IXF_RESEND_FAILED_EMAILS", False)

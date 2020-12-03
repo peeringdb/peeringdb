@@ -2,7 +2,7 @@ import re
 
 from collections import defaultdict
 
-from django.db.models import OneToOneRel
+from django.db.models import OneToOneRel, DateTimeField
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.db import IntegrityError
@@ -104,23 +104,25 @@ class Backend(BaseBackend):
         - ipaddr6 out of prefix address space on netixlans (skip validation)
         """
 
-        if isinstance(obj, models.Network):
-            obj.info_prefixes4 = min(
-                obj.info_prefixes4, settings.DATA_QUALITY_MAX_PREFIX_V4_LIMIT
-            )
-            obj.info_prefixes6 = min(
-                obj.info_prefixes6, settings.DATA_QUALITY_MAX_PREFIX_V6_LIMIT
-            )
+        obj.updated = obj._meta.get_field("updated").to_python(obj.updated).replace(tzinfo=models.UTC())
+        obj.created = obj._meta.get_field("created").to_python(obj.created).replace(tzinfo=models.UTC())
 
-        obj.clean_fields()
-        obj.validate_unique()
-
-        if not isinstance(
-            obj, (models.IXLanPrefix, models.NetworkIXLan, models.NetworkFacility)
-        ):
-            obj.clean()
 
     def save(self, obj):
+
+        # make sure all datetime values have their timezone set
+
+        for field in obj._meta.get_fields():
+            if field.get_internal_type() == "DateTimeField":
+                value = getattr(obj, field.name)
+                if not value:
+                    continue
+                if isinstance(value, str):
+                    value = field.to_python(value)
+                value = value.replace(tzinfo=models.UTC())
+                setattr(obj, field.name, value)
+
+
         if obj.HandleRef.tag == "ix":
             obj.save(create_ixlan=False)
         else:

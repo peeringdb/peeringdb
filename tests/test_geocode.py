@@ -82,4 +82,4 @@ class ViewTestCase(TestCase):
         call_command("pdb_geosync", "fac", limit=1, stdout=out)
         out = out.getvalue()
 
-        assert "[fac 1/1 ID:1]" in out
+        assert "[fac 1/1 ID:{}]".format(self.facilities["a"].id) in out

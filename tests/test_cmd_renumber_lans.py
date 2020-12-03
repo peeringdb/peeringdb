@@ -26,25 +26,25 @@ class TestRenumberLans(ClientCase):
 
         call_command(
             "pdb_renumber_lans",
-            ix=1,
+            ix=ix.id,
             old="206.223.116.0/23",
             new="206.223.110.0/23",
             commit=True,
         )
 
-        assert ixlan.ixpfx_set.get(id=1).prefix.compressed == "206.223.110.0/23"
-        assert ixlan.netixlan_set.get(id=1).ipaddr4.compressed == "206.223.110.101"
+        assert ixlan.ixpfx_set.first().prefix.compressed == "206.223.110.0/23"
+        assert ixlan.netixlan_set.first().ipaddr4.compressed == "206.223.110.101"
 
         call_command(
             "pdb_renumber_lans",
-            ix=1,
+            ix=ix.id,
             old="2001:504:0:1::/64",
             new="2001:504:0:2::/64",
             commit=True,
         )
 
-        assert ixlan.ixpfx_set.get(id=2).prefix.compressed == "2001:504:0:2::/64"
-        assert ixlan.netixlan_set.get(id=1).ipaddr6.compressed == "2001:504:0:2::65"
+        assert ixlan.ixpfx_set.last().prefix.compressed == "2001:504:0:2::/64"
+        assert ixlan.netixlan_set.first().ipaddr6.compressed == "2001:504:0:2::65"
 
     def test_skip_deleted(self):
         """
@@ -64,25 +64,25 @@ class TestRenumberLans(ClientCase):
 
         call_command(
             "pdb_renumber_lans",
-            ix=1,
+            ix=ix.id,
             old="206.223.116.0/23",
             new="206.223.110.0/23",
             commit=True,
         )
 
-        assert ixlan.ixpfx_set.get(id=1).prefix.compressed == "206.223.116.0/23"
-        assert ixlan.netixlan_set.get(id=1).ipaddr4.compressed == "206.223.116.101"
+        assert ixlan.ixpfx_set.first().prefix.compressed == "206.223.116.0/23"
+        assert ixlan.netixlan_set.first().ipaddr4.compressed == "206.223.116.101"
 
         call_command(
             "pdb_renumber_lans",
-            ix=1,
+            ix=ix.id,
             old="2001:504:0:1::/64",
             new="2001:504:0:2::/64",
             commit=True,
         )
 
-        assert ixlan.ixpfx_set.get(id=2).prefix.compressed == "2001:504:0:1::/64"
-        assert ixlan.netixlan_set.get(id=1).ipaddr6.compressed == "2001:504:0:1::65"
+        assert ixlan.ixpfx_set.last().prefix.compressed == "2001:504:0:1::/64"
+        assert ixlan.netixlan_set.first().ipaddr6.compressed == "2001:504:0:1::65"
 
     def test_ignore_diff_address_space(self):
         """ "
@@ -98,30 +98,31 @@ class TestRenumberLans(ClientCase):
 
         call_command(
             "pdb_renumber_lans",
-            ix=1,
+            ix=ix.id,
             old="206.223.114.0/23",
             new="206.223.110.0/23",
             commit=True,
             stdout=out,
         )
 
-        assert ixlan.ixpfx_set.get(id=1).prefix.compressed == "206.223.116.0/23"
-        assert ixlan.netixlan_set.get(id=1).ipaddr4.compressed == "206.223.116.101"
+
+        assert ixlan.ixpfx_set.first().prefix.compressed == "206.223.116.0/23"
+        assert ixlan.netixlan_set.first().ipaddr4.compressed == "206.223.116.101"
 
         output = out.getvalue()
         assert "[error] 206.223.116.101: Ip address not within old prefix" in output
 
         call_command(
             "pdb_renumber_lans",
-            ix=1,
+            ix=ix.id,
             old="2001:504:0:3::/64",
             new="2001:504:0:2::/64",
             commit=True,
             stdout=out,
         )
 
-        assert ixlan.ixpfx_set.get(id=2).prefix.compressed == "2001:504:0:1::/64"
-        assert ixlan.netixlan_set.get(id=1).ipaddr6.compressed == "2001:504:0:1::65"
+        assert ixlan.ixpfx_set.last().prefix.compressed == "2001:504:0:1::/64"
+        assert ixlan.netixlan_set.first().ipaddr6.compressed == "2001:504:0:1::65"
 
         output = out.getvalue()
 

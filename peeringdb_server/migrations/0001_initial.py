@@ -315,7 +315,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="IXLan",
             fields=[
-                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("id", models.IntegerField(primary_key=True, serialize=False)),
                 (
                     "status",
                     models.CharField(blank=True, max_length=255, verbose_name="Status"),
