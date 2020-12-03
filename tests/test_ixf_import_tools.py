@@ -35,9 +35,6 @@ from peeringdb_server.import_views import (
 from .util import ClientCase
 
 
-
-
-
 class TestImportPreview(ClientCase):
 
     """
@@ -76,7 +73,7 @@ class TestImportPreview(ClientCase):
             ipaddr4="195.69.144.20",
             status="ok",
             asn=cls.net.asn,
-            speed=1000
+            speed=1000,
         )
 
         cls.admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
@@ -85,12 +82,18 @@ class TestImportPreview(ClientCase):
 
     def test_import_preview_net(self):
 
-        data_ixf_preview_net = pytest_filedata.get_data("data_ixf_preview_net")["test_0"]
+        data_ixf_preview_net = pytest_filedata.get_data("data_ixf_preview_net")[
+            "test_0"
+        ]
 
         self.ixlan.ixf_ixp_member_list_url = "https://localhost"
         self.ixlan.save()
 
-        cache.set(f"IXF-CACHE-{self.ixlan.ixf_ixp_member_list_url}", json.loads(data_ixf_preview_net.json), timeout=None)
+        cache.set(
+            f"IXF-CACHE-{self.ixlan.ixf_ixp_member_list_url}",
+            json.loads(data_ixf_preview_net.json),
+            timeout=None,
+        )
 
         request = RequestFactory().get(f"/import/net/{self.net.id}/ixf/preview/")
         request.user = self.admin_user
@@ -98,9 +101,9 @@ class TestImportPreview(ClientCase):
         response = view_import_net_ixf_preview(request, self.net.id)
 
         assert response.status_code == 200
-        assert json.loads(response.content.decode("utf8")) == data_ixf_preview_net.expected
-
-
+        assert (
+            json.loads(response.content.decode("utf8")) == data_ixf_preview_net.expected
+        )
 
     def test_import_preview_no_url(self):
         request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
