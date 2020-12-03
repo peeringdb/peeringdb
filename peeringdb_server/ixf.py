@@ -659,21 +659,22 @@ class Importer:
             - member_list <list>
         """
         for member in member_list:
+
+            asn = member["asnum"]
+
+            # if we are only processing a specific asn, ignore all
+            # that don't match
+            if self.asn and asn != self.asn:
+                continue
+
             # we only process members of certain types
             member_type = member.get("member_type", "peering").lower()
             if member_type in self.allowed_member_types:
-                # check that the as exists in pdb
-                asn = member["asnum"]
-
-                # if we are only processing a specific asn, ignore all
-                # that don't match
-                if self.asn and asn != self.asn:
-                    continue
-
                 # keep track of asns we find in the ix-f data
                 if asn not in self.asns:
                     self.asns.append(asn)
 
+                # check that the as exists in pdb
                 if Network.objects.filter(asn=asn).exists():
                     network = Network.objects.get(asn=asn)
                     if network.status != "ok":
