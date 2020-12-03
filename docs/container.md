@@ -69,13 +69,13 @@ this port you can do so by setting the environment variable `DJANGO_PORT`.
 
 ### Mount points
 
--`/srv/www.peeringdb.com/api-cache`: api cache
--`/srv/www.peeringdb.com/locale`: translations
--`/srv/www.peeringdb.com/mainsite`: site settings
--`/srv/www.peeringdb.com/media`: media files
--`/srv/www.peeringdb.com/peeringdb_server`: server code
--`/srv/www.peeringdb.com/static`: static files
--`/srv/www.peeringdb.com/var/log`: log files
+- `/srv/www.peeringdb.com/api-cache`: api cache
+- `/srv/www.peeringdb.com/locale`: translations
+- `/srv/www.peeringdb.com/mainsite`: site settings
+- `/srv/www.peeringdb.com/media`: media files
+- `/srv/www.peeringdb.com/peeringdb_server`: server code
+- `/srv/www.peeringdb.com/static`: static files
+- `/srv/www.peeringdb.com/var/log`: log files
 
 ### Entry point
 
@@ -87,11 +87,11 @@ With the exception of some specific commands (see below) the entry point will pa
 
 Other options:
 
--`migrate` apply database migrations
--`run_tests` run unit tests
--`uwsgi` start the uwsgi process
--`/bin/sh` to drop to shell
--`inetd` run the inetd whois server
+- `migrate` apply database migrations
+- `run_tests` run unit tests
+- `uwsgi` start the uwsgi process
+- `/bin/sh` to drop to shell
+- `inetd` run the inetd whois server
 
 
 
