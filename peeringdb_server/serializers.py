@@ -11,6 +11,7 @@ from django.db.models.fields.related import (
     ReverseManyToOneDescriptor,
     ForwardManyToOneDescriptor,
 )
+from django.http import JsonResponse
 from django.core.exceptions import FieldError, ValidationError
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -105,6 +106,13 @@ class GeocodeSerializerMixin(object):
     Can only be used if the model includes the GeocodeBaseMixin.
     """
 
+    GEO_ERROR_MESSAGE = _(
+        "We could not find the address you entered. "
+        "Please review your address data and contact "
+        "{} for further assistance "
+        "if needed.".format(settings.DEFAULT_FROM_EMAIL)
+    )
+
     def _need_geosync(self, instance, validated_data):
         """
         Determine if any geofields have changed that need normalization.
@@ -147,8 +155,9 @@ class GeocodeSerializerMixin(object):
             # as a serializer validation error
             except ValidationError as exc:
                 print(exc.message)
-                raise serializers.ValidationError({changed_field: exc.message})
-
+                raise serializers.ValidationError(
+                    {"non_field_errors": [self.GEO_ERROR_MESSAGE]}
+                )
         return instance
 
     def create(self, validated_data):
@@ -163,7 +172,9 @@ class GeocodeSerializerMixin(object):
         # as a serializer validation error
         except ValidationError as exc:
             print(exc.message)
-            raise serializers.ValidationError({"address1": exc.message})
+            raise serializers.ValidationError(
+                {"non_field_errors": [self.GEO_ERROR_MESSAGE]}
+            )
         return instance
 
 
@@ -2482,7 +2493,17 @@ class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
         model = Organization
         depth = 1
         fields = (
-            ["id", "name", "website", "notes", "net_set", "fac_set", "ix_set", "latitude", "longitude"]
+            [
+                "id",
+                "name",
+                "website",
+                "notes",
+                "net_set",
+                "fac_set",
+                "ix_set",
+                "latitude",
+                "longitude",
+            ]
             + AddressSerializer.Meta.fields
             + HandleRefSerializer.Meta.fields
         )
