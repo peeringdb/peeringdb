@@ -2482,7 +2482,7 @@ class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
         model = Organization
         depth = 1
         fields = (
-            ["id", "name", "website", "notes", "net_set", "fac_set", "ix_set"]
+            ["id", "name", "website", "notes", "net_set", "fac_set", "ix_set", "latitude", "longitude"]
             + AddressSerializer.Meta.fields
             + HandleRefSerializer.Meta.fields
         )
