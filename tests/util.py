@@ -1,3 +1,6 @@
+import json
+import os
+
 from django.test import TestCase
 from django.contrib.auth.models import Group, AnonymousUser
 from django.conf import settings
@@ -90,3 +93,21 @@ def override_group_id():
         USER_GROUP_ID=Group.objects.get(name="user").id,
         GUEST_GROUP_ID=Group.objects.get(name="guest").id
     )
+
+
+# For IXF member tests
+def setup_test_data(filename):
+    json_data = {}
+    entities = {}
+
+    with open(
+        os.path.join(
+            os.path.dirname(__file__),
+            "data",
+            "json_members_list",
+            f"{filename}.json",
+        ),
+    ) as fh:
+        json_data = json.load(fh)
+
+    return json_data

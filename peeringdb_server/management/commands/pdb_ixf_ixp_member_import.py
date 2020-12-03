@@ -76,8 +76,14 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"[Pretend] {msg}")
 
-    def store_runtime_error(self, error):
-        error_str = f"ERROR: {error}" + "\n"
+    def store_runtime_error(self, error, ixlan=None):
+        error_str = ""
+        if ixlan:
+            error_str += f"Ixlan {ixlan.ix.name} (id={ixlan.id})" + "\n"
+            if hasattr(ixlan, "ixf_ixp_member_list_url"):
+                error_str += f"IX-F url: {ixlan.ixf_ixp_member_list_url}" + "\n"
+
+        error_str += f"ERROR: {error}" + "\n"
         error_str += traceback.format_exc()
         self.runtime_errors.append(error_str)
 
@@ -249,7 +255,7 @@ class Command(BaseCommand):
                 total_notifications += importer.notifications
 
             except Exception as inst:
-                self.store_runtime_error(inst)
+                self.store_runtime_error(inst, ixlan=ixlan)
 
         if self.preview:
             self.stdout.write(json.dumps(total_log, indent=2))

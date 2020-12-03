@@ -3249,7 +3249,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         this will delete the IXFMemberData instance
         """
-        if self.id and save and not self.requirement_of:
+        if self.id and save and not self.requirement_of_id:
             self.delete(hard=True)
             return True
 

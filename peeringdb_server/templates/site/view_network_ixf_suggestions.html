@@ -320,11 +320,19 @@
 
         {% if x.ipaddr4_on_requirement  %}
         <div class="ixf-suggested-change">
+          {% if x.ipaddr6 %}
           <span class="field_name">{% trans "Set IPv6 address" %}</span>
+          {% else %}
+          <span class="field_name">{% trans "Clear IPv6 address" %}</span>
+          {% endif %}
         </div>
         {% elif x.ipaddr6_on_requirement %}
         <div class="ixf-suggested-change">
+          {% if x.ipaddr4 %}
           <span class="field_name">{% trans "Set IPv4 address" %}</span>
+          {% else %}
+          <span class="field_name">{% trans "Clear IPv4 address" %}</span>
+          {% endif %}
         </div>
         {% endif %}
 
