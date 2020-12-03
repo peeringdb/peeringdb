@@ -210,6 +210,11 @@ def test_update_data_attributes(entities, use_ip, save):
     # Assert no emails
     assert_no_emails(network, ixlan.ix)
 
+    # test revision user
+    version = reversion.models.Version.objects.get_for_object(netixlan)
+    assert version.first().revision.user == importer.ticket_user
+
+
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
     import_log.rollback()
@@ -2162,6 +2167,11 @@ def test_remote_cannot_be_parsed(entities, save):
         ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
     )
 
+    # test revision user
+    version = reversion.models.Version.objects.get_for_object(ixlan)
+    assert version.first().revision.user == importer.ticket_user
+
+
     # Assert idempotent / lock
     importer.sanitize(data)
     importer.update(ixlan, data=data)
@@ -2527,7 +2537,7 @@ def test_resolve_deskpro_ticket(entities):
     assert ticket_r.deskpro_ref == ticket.deskpro_ref
     assert "resolved" in ticket_r.body
 
-    
+
     conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
     assert conflict_emails.count() == 4
 
