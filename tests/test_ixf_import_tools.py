@@ -87,7 +87,6 @@ class TestImportPreview(ClientCase):
 
         data_ixf_preview_net = pytest_filedata.get_data("data_ixf_preview_net")["test_0"]
 
-        path = os.path.join(os.path.dirname(__file__), "data", "ixf", "preview", "net")
         self.ixlan.ixf_ixp_member_list_url = "https://localhost"
         self.ixlan.save()
 
