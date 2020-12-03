@@ -6,7 +6,7 @@
 
 ### 1. Install Docker
 
-PeeringDB runs inside a docker container using docker-compose, so please make sure both are installed on your system. This [guide](https://docs.docker.com/compose/install/) will help with how to install both.
+PeeringDB runs inside a docker container using docker-compose, so please make sure both are installed on your system. This [guide](https://docs.docker.com/compose/install/) will help with how to install them.
 
 ### 2. Clone the peeringdb repository
 
