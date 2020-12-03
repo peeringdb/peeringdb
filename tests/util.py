@@ -1,3 +1,6 @@
+import json
+import os
+
 from django.test import TestCase
 from django.contrib.auth.models import Group, AnonymousUser
 from django.conf import settings
@@ -64,3 +67,21 @@ class SettingsCase(ClientCase):
     def tearDown(cls):
         for k, v in list(cls._restore.items()):
             setattr(pdb_settings, k, v)
+
+
+# For IXF member tests
+def setup_test_data(filename):
+    json_data = {}
+    entities = {}
+
+    with open(
+        os.path.join(
+            os.path.dirname(__file__),
+            "data",
+            "json_members_list",
+            f"{filename}.json",
+        ),
+    ) as fh:
+        json_data = json.load(fh)
+
+    return json_data

@@ -1,5 +1,4 @@
 import json
-import os
 from pprint import pprint
 import reversion
 import requests
@@ -27,6 +26,8 @@ from peeringdb_server.models import (
 )
 from peeringdb_server import ixf
 import pytest
+
+from .util import setup_test_data
 
 
 @pytest.mark.django_db
@@ -130,11 +131,13 @@ def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
     assert IXFImportEmail.objects.count() == 0
 
 
-# Want to test that runtime errors are captured, output
-# to stderr, and that the commandline tool exits with
-# a status of 1
 @pytest.mark.django_db
 def test_runtime_errors(entities, capsys, mocker):
+    """
+    Test that runtime errors are captured, output
+    to stderr, and that the commandline tool exits with
+    a status of 1
+    """
     ixlan = entities["ixlan"]
     ixlan.ixf_ixp_import_enabled = True
     ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
@@ -162,6 +165,9 @@ def test_runtime_errors(entities, capsys, mocker):
     # Assert we are outputting the exception and traceback to the stderr
     captured = capsys.readouterr()
     assert "Unexpected error" in captured.err
+    assert str(ixlan.id) in captured.err
+    assert str(ixlan.ix.name) in captured.err
+    assert str(ixlan.ixf_ixp_member_list_url) in captured.err
 
     # Assert we are exiting with status code 1
     assert pytest_wrapped_exit.value.code == 1
