@@ -282,4 +282,5 @@ settings.configure(
     },
     VQUEUE_USER_MAX_AGE=90,
     IXF_RESEND_FAILED_EMAILS=False,
+    API_KEY_CUSTOM_HEADER="HTTP_X_API_KEY"
 )

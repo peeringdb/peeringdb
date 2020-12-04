@@ -3,6 +3,7 @@ from peeringdb_server.models import Organization, OrganizationAPIKey, Organizati
 import requests
 from django.core.exceptions import ValidationError
 from django_grainy.util import check_permissions, Permissions
+from django.http.request import HttpRequest
 
 
 @pytest.fixture
@@ -51,20 +52,31 @@ def test_set_perms(org):
     api_key, key = OrganizationAPIKey.objects.create_key(
         name="test key", organization=org
     )
-    permission = OrganizationAPIPermission.objects.create(
+    OrganizationAPIPermission.objects.create(
         org_api_key=api_key,
         namespace="peeringdb.organization.1.network",
         permission=15)
     assert api_key.grainy_permissions.count() == 1
 
-# def test_check_perms():
-#     api_key = None
-#     permission = None
-#     check_permissions(api_key)
+
+@pytest.mark.django_db
+def test_check_perms(org):
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", organization=org
+    )
+    OrganizationAPIPermission.objects.create(
+        org_api_key=api_key,
+        namespace="peeringdb.organization.1.network",
+        permission=5)
+
+    assert check_permissions(api_key, "peeringdb.organization.1.network", "r")
 
 
-# def test_get_key_from_request():
-
-#     api_key = None
-#     request = HTTPRequest()
-#     request.headers["X-api-key"] = key
+@pytest.mark.django_db
+def test_get_key_from_request():
+    api_key = None
+    request = HttpRequest()
+    request.META.update({"X-API-KEY":"abcd"})
+    print(request.headers)
+    print(request.META)
+    assert 0
