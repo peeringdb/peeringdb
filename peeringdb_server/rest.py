@@ -20,7 +20,7 @@ from django.db import connection
 from django.utils import timezone
 from django.db.models import DateTimeField
 from django.utils.translation import ugettext_lazy as _
-from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
+from django_grainy.rest import PermissionDenied
 import reversion
 
 from peeringdb_server.models import Network, UTC, ProtectedAction
@@ -29,6 +29,7 @@ from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
 from peeringdb_server.api_schema import BaseSchema
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.util import check_permissions, APIPermissionsApplicator
+from peeringdb_server.permissions import ModelViewSetPermissions
 
 
 class DataException(ValueError):
