@@ -1,24 +1,56 @@
 import pytest
+import requests
+
 from peeringdb_server.models import (
     Organization,
     OrganizationAPIKey,
     OrganizationAPIPermission,
     Network,
+    User,
 )
-import requests
 from django.core.exceptions import ValidationError
-from django_grainy.util import check_permissions as _check_perms
-from django.http.request import HttpRequest
-from peeringdb_server.permissions import get_key_from_request, check_permissions
+from django.urls import reverse
+from peeringdb_server.permissions import get_key_from_request, get_permission_holder_from_request, check_permissions
 from django.conf import settings
 
-from django.test import RequestFactory
+from django.test import RequestFactory, Client
 from grainy.const import (
     PERM_READ,
     PERM_UPDATE,
     PERM_CREATE,
     PERM_DELETE,
 )
+
+
+@pytest.fixture
+def admin_user():
+    admin_user = User.objects.create_user(
+        "admin", "admin@localhost", first_name="admin", last_name="admin"
+    )
+    admin_user.is_superuser = True
+    admin_user.is_staff = True
+    admin_user.save()
+    admin_user.set_password("admin")
+    admin_user.save()
+    return admin_user
+
+
+@pytest.fixture
+def admin_client(admin_user):
+    c = Client()
+    c.login(username="admin", password="admin")
+    return c
+
+
+@pytest.fixture
+def user():
+    user = User.objects.create_user(
+        "user", "user@localhost", first_name="user", last_name="user"
+    )
+    user.save()
+    user.set_password("user")
+    user.save()
+    return user
 
 
 @pytest.fixture
@@ -90,8 +122,8 @@ def test_check_perms(org):
         org_api_key=api_key, namespace=namespace, permission=PERM_READ
     )
 
-    assert _check_perms(api_key, namespace, "r")
-    assert _check_perms(api_key, namespace, "u") is False
+    assert check_permissions(api_key, namespace, "r")
+    assert check_permissions(api_key, namespace, "u") is False
 
 
 def test_get_key_from_request():
@@ -118,11 +150,13 @@ def test_check_permissions_on_unauth_request(org):
     # Check permissions without any credentials
     assert hasattr(request, "user") is False
     assert request.META.get("HTTP_X_API_KEY") is None
-    assert check_permissions(request, namespace, "r") is False
+    perm_obj = get_permission_holder_from_request(request)
+    print(perm_obj)
+    assert check_permissions(perm_obj, namespace, "r") is False
 
 
 @pytest.mark.django_db
-def test_check_permissions_on_org_key_request(org):
+def test_check_permissions_on_org_key_request_readonly(org):
     namespace = "peeringdb.organization.1.network"
     api_key, key = OrganizationAPIKey.objects.create_key(
         name="test key", organization=org
@@ -139,16 +173,45 @@ def test_check_permissions_on_org_key_request(org):
     # Assert we're making a request with a OrgAPIKey
     assert hasattr(request, "user") is False
     assert request.META["HTTP_X_API_KEY"] == key
-
     # Test permissions
-    assert check_permissions(request, namespace, "c") is False
-    assert check_permissions(request, namespace, "r")
-    assert check_permissions(request, namespace, "u") is False
-    assert check_permissions(request, namespace, "d") is False
+    perm_obj = get_permission_holder_from_request(request)
+    assert check_permissions(perm_obj, namespace, "c") is False
+    assert check_permissions(perm_obj, namespace, "r")
+    assert check_permissions(perm_obj, namespace, "u") is False
+    assert check_permissions(perm_obj, namespace, "d") is False
 
 
 @pytest.mark.django_db
-def test_network_view_with_org_key(org, network):
+def test_check_permissions_on_org_key_request_crud(org):
+    namespace = "peeringdb.organization.1.network"
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", organization=org
+    )
+    for perm in [PERM_READ, PERM_UPDATE, PERM_CREATE, PERM_DELETE]:
+        OrganizationAPIPermission.objects.create(
+            org_api_key=api_key, namespace=namespace, permission=perm
+        )
+
+    factory = RequestFactory()
+    request = factory.get("/api/net/1")
+
+    # Add api key header
+    request.META.update({"HTTP_X_API_KEY": key})
+
+    # Assert we're making a request with a OrgAPIKey
+    assert hasattr(request, "user") is False
+    assert request.META["HTTP_X_API_KEY"] == key
+
+    # Test permissions
+    perm_obj = get_permission_holder_from_request(request)
+    assert check_permissions(perm_obj, namespace, "c")
+    assert check_permissions(perm_obj, namespace, "r")
+    assert check_permissions(perm_obj, namespace, "u")
+    assert check_permissions(perm_obj, namespace, "d")
+
+
+@pytest.mark.django_db
+def test_network_get_org_key(org, network, user, admin_client):
     namespace = "peeringdb.organization.1.network"
     api_key, key = OrganizationAPIKey.objects.create_key(
         name="test key", organization=org
@@ -156,5 +219,54 @@ def test_network_view_with_org_key(org, network):
     OrganizationAPIPermission.objects.create(
         org_api_key=api_key, namespace=namespace, permission=PERM_READ
     )
-    factory = RequestFactory()
-    request = factory.get("/api/net/1")
+    assert Network.objects.count() == 1
+    url = reverse("net-detail", args=(network.id,))
+    # url = reverse("net-list")
+    client = Client()
+    print("unauth")
+    response = client.get(url, HTTP_X_API_KEY="abcd")
+    print(response)
+    print(response.content)
+    print("")
+
+    print("api key")
+    response = client.get(url, HTTP_X_API_KEY=key)
+    print(response)
+    print(response.content)
+    print("")
+
+    print("logged in")
+    client.login(username="user", password="user")
+    response = client.get(url)
+    print(response)
+    print(response.content)
+    print("")
+
+    print("admin")
+    response = admin_client.get(url)
+    print(response)
+    print(response.content)
+    print("")
+
+    assert 0
+
+
+# @pytest.mark.django_db
+# def test_network_put_org_key(org, network):
+#     namespace = "peeringdb.organization.1.network"
+#     api_key, key = OrganizationAPIKey.objects.create_key(
+#         name="test key", organization=org
+#     )
+#     OrganizationAPIPermission.objects.create(
+#         org_api_key=api_key, namespace=namespace, permission=PERM_READ
+#     )
+
+#     url = reverse("net-detail", args=(network.id,))
+#     # Unauthenticated
+#     data = {
+#         "name": "changed name",
+#         "asn": network.asn,
+#         "org": network.org,
+#     }
+#     response = requests.put(url, data=data, headers={"X-API-KEY": "abcd"})
+#     print(response.content)

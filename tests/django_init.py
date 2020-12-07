@@ -135,7 +135,7 @@ settings.configure(
         "DEFAULT_MODEL_SERIALIZER_CLASS": "rest_framework.serializers.HyperlinkedModelSerializer",
         "DEFAULT_PERMISSION_CLASSES": [
             "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly",
-            "django_grainy.rest.ModelViewSetPermissions",
+            "peeringdb_server.permissions.ModelViewSetPermissions",
         ],
         "DEFAULT_RENDERER_CLASSES": ("peeringdb_server.renderers.MetaJSONRenderer",),
         "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
