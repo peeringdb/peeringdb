@@ -18,5 +18,4 @@ taken on by volunteers, and we expect that open sourcing the platform
 makes it easier for third parties to participate in bidding for new
 features specified by the Product Committee.
 
-In the coming months we'll establish processes for accepting
-contributions and deploying them to the production service.
+Developers in the community may now fork the code, [create a container for development and testing](docs/container.md), and submit pull requests.
