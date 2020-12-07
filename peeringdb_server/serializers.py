@@ -110,8 +110,8 @@ class GeocodeSerializerMixin(object):
         "We could not find the address you entered. "
         "Please review your address data and contact "
         "{} for further assistance "
-        "if needed.".format(settings.DEFAULT_FROM_EMAIL)
-    )
+        "if needed."
+    ).format(settings.DEFAULT_FROM_EMAIL)
 
     def _need_geosync(self, instance, validated_data):
         """
