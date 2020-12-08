@@ -37,6 +37,18 @@
         {% trans "Permissions" %}
       </a>
     </li>
+    <li role="presentation">
+      <a href="#manage_keys" aria-controls="manage_keys" role="tab" data-toggle="tab">
+        {% trans "API Keys" %}
+      </a>
+    </li>
+
+<!--     <li role="presentation">
+      <a href="#manage_key_perms" aria-controls="manage_key_perms" role="tab" data-toggle="tab">
+        {% trans "API Key Permissions" %}
+      </a>
+    </li>
+ -->
     <li role="presentation" class="danger">
       <a href="#manage_delete" aria-controls="manage_delete" role="tab" data-toggle="tab">
         {% trans "Delete Organization" %}
@@ -743,6 +755,68 @@
       </div>
 
     </div>
+
+    <div role="tabpanel" class="tab-pane" id="manage_keys">
+
+      <div class="editable note info">
+        {%blocktrans trimmed %}
+        Here you can create new API keys for your organization or revoke existing keys.
+        {%endblocktrans%}
+        <div class="marg-top">
+        </div>
+      </div>
+
+      <div class="list editable always"
+               data-edit-module="key_listing"
+               data-edit-target="/org_admin/manage_key"
+               data-edit-id="{{ instance.id }}"
+            >
+
+
+        <div class="row header">
+          <div class="col-xs-4 col-sm-5 col-md-4">
+            <div>{% trans "Prefix" %}</div>
+          </div>
+          <div class="col-xs-6 col-sm-5 col-md-6">
+            <div>{% trans "Description" %}</div>
+          </div>
+          <div class="col-xs-4 col-sm-2 col-md-2">{% trans "Revoke / Add" %}</div>
+        </div>
+
+        <div>
+        {% for key in keys %}
+        <div class="row marg-top" data-edit-id="{{ key.prefix }}" data-edit-label="{{ key.name }}">
+          <div class="col-xs-4 col-sm-5 col-md-4">
+            <div>{{ key.prefix }}</div>
+          </div>
+          <div class="col-xs-6 col-sm-5 col-md-6">
+            <div>{{ key.name }}</div>
+          </div>
+          <div class="col-xs-4 col-sm-2 col-md-2">
+            <a class="btn btn-default" data-edit-action="remove">{% trans "Revoke" %}</a>
+          </div>
+        </div>
+        {% endfor %}
+        </div>
+
+
+        <div class="row marg-top">
+          <div class="col-xs-4 col-sm-5 col-md-4">
+            <div>{% trans "Add Key" %}</div>
+          </div>
+          <div class="col-xs-6 col-sm-5 col-md-6">
+            <div data-edit-type="string"
+                 data-edit-name="description">      
+            </div>
+          </div>
+          <div class="col-xs-2 col-sm-2 col-md-2">
+            <a class="btn btn-default" data-edit-action="add">{% trans "Add" %}</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
 
     <div role="tabpanel" class="tab-pane" id="manage_delete">
       <div class="alert alert-danger">

@@ -1045,6 +1045,15 @@ def view_organization(request, id):
     if perms.get("can_manage") and org.pending_affiliations.count() > 0:
         tab_init = {"users": "active"}
 
+    keys = [
+            {
+                "prefix": key.prefix,
+                "hashed_key": key.hashed_key,
+                "name": key.name
+            }
+            for key in org.api_keys.filter(revoked=False).all()
+    ]
+
     return view_component(
         request,
         "organization",
@@ -1055,6 +1064,7 @@ def view_organization(request, id):
         user_perms=load_all_user_permissions(org),
         instance=org,
         perms=perms,
+        keys=keys
     )
 
 

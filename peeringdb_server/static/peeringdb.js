@@ -1339,6 +1339,50 @@ twentyc.editable.module.register(
 
 
 twentyc.editable.module.register(
+  "key_listing",
+  {
+    loading_shim : true,
+    org_id : function() {
+      return this.container.data("edit-id");
+    },
+
+    remove : function(id, row, trigger, container) {
+      var b = PeeringDB.confirm(gettext("Remove") + " " +row.data("edit-label"), "remove");  ///
+      var me = this;
+      $(this.target).on("success", function(ev, data) {
+        if(b)
+          me.listing_remove(id, row, trigger, container);
+      });
+      if(b) {
+        this.target.data = { prefix : id, org_id : this.org_id() };
+        this.target.execute("delete");
+      } else {
+        $(this.target).trigger("success", [gettext("Canceled")]);  ///
+      }
+    },
+
+    execute_add: function(id, row, trigger, container){
+      console.log(this.target.data);
+      this.target.execute("add");
+    },
+
+    submit : function(rowId, data, row, trigger, container) {
+      this.target.data = data;
+      this.target.data.org_id = this.org_id();
+      this.target.data.user_id = rowId;
+      this.target.execute("update", row, function() {
+        this.listing_submit(rowId, data, row, trigger, container);
+      }.bind(this));
+    },
+
+
+
+  },
+  "listing"
+);
+
+
+twentyc.editable.module.register(
   "uoar_listing",
   {
     execute_approve : function(trigger, container) {
