@@ -41,7 +41,7 @@ from allauth.socialaccount.models import SocialAccount
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
 
-from peeringdb_server.util import check_permissions
+from django_grainy.util import check_permissions
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.validators import (
     validate_address_space,
@@ -862,16 +862,17 @@ class OrganizationAPIKey(AbstractAPIKey):
     """
     An API Key managed by an organization.
     """
-    organization = models.ForeignKey(
+
+    org = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
         related_name="api_keys",
     )
 
-    # class Meta(AbstractAPIKey.Meta):
-    #     verbose_name = "Organization API key"
-    #     verbose_name_plural = "Organization API keys"
-    #     db_table = "peeringdb_org_api_key"
+    class Meta(AbstractAPIKey.Meta):
+        verbose_name = "Organization API key"
+        verbose_name_plural = "Organization API keys"
+        db_table = "peeringdb_org_api_key"
 
 
 class OrganizationAPIPermission(Permission):
@@ -1310,7 +1311,6 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         else:
             self._not_deletable_reason = None
             return True
-
 
     def validate_phonenumbers(self):
         self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
@@ -3340,7 +3340,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 # validate could check
 
 
-@grainy_model(namespace="prefix", namespace_instance="{instance.ixlan.grainy_namespace}.{namespace}.{instance.pk}")
+@grainy_model(
+    namespace="prefix",
+    namespace_instance="{instance.ixlan.grainy_namespace}.{namespace}.{instance.pk}",
+)
 @reversion.register
 class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
     """
@@ -3523,7 +3526,6 @@ class Network(pdb_models.NetworkBase):
         else:
             net = cls.objects.create(org=org, asn=asn, name=name, status="ok")
         return net, True
-
 
     @classmethod
     def related_to_fac(cls, value=None, filt=None, field="facility_id", qset=None):
@@ -3757,7 +3759,11 @@ class Network(pdb_models.NetworkBase):
 
 
 # class NetworkContact(HandleRefModel):
-@grainy_model(namespace="poc_set", namespace_instance="{namespace}.{instance.visible}", parent="network")
+@grainy_model(
+    namespace="poc_set",
+    namespace_instance="{namespace}.{instance.visible}",
+    parent="network",
+)
 @reversion.register
 class NetworkContact(pdb_models.ContactBase):
     """
@@ -4417,6 +4423,31 @@ class User(AbstractBaseUser, PermissionsMixin):
             if email.lower() == self.email.lower():
                 return True
         return False
+
+
+class UserAPIKey(AbstractAPIKey):
+    """
+    An API Key managed by a user. Can be readonly or can take on the
+    permissions of the User.
+    """
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="api_keys",
+    )
+
+    readonly = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Determines if API Key inherits the User Permissions or is readonly."
+        ),
+    )
+
+    class Meta(AbstractAPIKey.Meta):
+        verbose_name = "User API key"
+        verbose_name_plural = "User API keys"
+        db_table = "peeringdb_user_api_key"
 
 
 def password_reset_token():
