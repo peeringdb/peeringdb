@@ -316,13 +316,37 @@ def test_check_permissions_on_user_key_request_readonly(user):
 
 
 @pytest.mark.django_db
-def test_network_get_w_org_key(org, network, user, admin_client):
+def test_get_network_w_org_key(org, network, user):
     namespace = "peeringdb.organization.1.network"
     api_key, key = OrganizationAPIKey.objects.create_key(
         name="test key", org=org
     )
     OrganizationAPIPermission.objects.create(
         org_api_key=api_key, namespace=namespace, permission=PERM_READ
+    )
+    assert Network.objects.count() == 1
+    url = reverse("net-detail", args=(network.id,))
+    client = APIClient()
+
+    response = client.get(url, HTTP_X_API_KEY=key)
+    assert response.status_code == 200
+
+    net_from_api = response.json()["data"][0]
+    assert net_from_api["name"] == network.name
+    assert net_from_api["asn"] == network.asn
+    assert net_from_api["org_id"] == network.org.id
+
+
+@pytest.mark.django_db
+def test_get_network_w_user_key(network, user, admin_client):
+    namespace = "peeringdb.organization.1.network"
+    api_key, key = UserAPIKey.objects.create_key(
+        name="test key", user=user
+    )
+    UserPermission.objects.create(
+        namespace=namespace,
+        permission=PERM_CRUD,
+        user=user
     )
     assert Network.objects.count() == 1
     url = reverse("net-detail", args=(network.id,))

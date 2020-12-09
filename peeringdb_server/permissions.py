@@ -54,13 +54,16 @@ def check_permissions_from_request(request, target, flag, **kwargs):
 
 def check_permissions(obj, target, permissions, **kwargs):
     if not hasattr(obj, "_permissions_util"):
-        print(type(obj))
-        if isinstance(obj, UserAPIKey):
-            obj._permissions_util = return_user_api_key_perms(obj)
-        else:
-            obj._permissions_util = Permissions(obj)
+        obj._permissions_util = init_permissions_helper(obj)
 
     return obj._permissions_util.check(target, permissions, **kwargs)
+
+
+def init_permissions_helper(obj):
+    if isinstance(obj, UserAPIKey):
+        return return_user_api_key_perms(obj)
+    else:
+        return Permissions(obj)
 
 
 def return_user_api_key_perms(key):
@@ -116,7 +119,7 @@ class APIPermissionsApplicator(NamespaceKeyApplicator):
     def __init__(self, request):
         super().__init__(None)
         perm_obj = get_permission_holder_from_request(request)
-        self.permissions = Permissions(perm_obj)
+        self.permissions = init_permissions_helper(perm_obj)
         self.pset = self.permissions
         self.set_peeringdb_handlers()
 
