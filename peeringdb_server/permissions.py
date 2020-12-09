@@ -4,17 +4,15 @@ from rest_framework.permissions import BasePermission
 
 from django_grainy.helpers import request_method_to_flag
 
-from peeringdb_server.models import OrganizationAPIKey
+from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
 from django.contrib.auth.models import AnonymousUser
 
-from grainy.const import *
+import grainy.const as grainy_constant
 from grainy.core import NamespaceKeyApplicator
 from django.conf import settings
-from django_grainy.const import *
-from django_grainy.util import (
-    check_permissions,
-    Permissions
-)
+
+# from django_grainy.const import *
+from django_grainy.util import Permissions
 
 
 def get_key_from_request(request):
@@ -24,21 +22,58 @@ def get_key_from_request(request):
 def get_permission_holder_from_request(request):
     key = get_key_from_request(request)
     if key is not None:
-        print("Checking if org key")
         try:
+            print("Checking if org key")
             api_key = OrganizationAPIKey.objects.get_from_key(key)
+            print(f"Org key found: {api_key.prefix}")
             return api_key
 
         except OrganizationAPIKey.DoesNotExist as exc:
-            print(exc)
+            print("Not a valid org key")
+
+        try:
+            print("Checking if user key")
+            api_key = UserAPIKey.objects.get_from_key(key)
+            print(f"User key found {api_key.prefix}")
+            return api_key
+
+        except UserAPIKey.DoesNotExist as exc:
+            print("Not a valid user key.")
+
     if hasattr(request, "user"):
+        print(f"Returning user: {request.user}")
         return request.user
+
     return AnonymousUser()
 
 
-def check_permissions_on_request(request, target, flag, **kwargs):
+def check_permissions_from_request(request, target, flag, **kwargs):
     perm_obj = get_permission_holder_from_request(request)
     return check_permissions(perm_obj, target, flag, **kwargs)
+
+
+def check_permissions(obj, target, permissions, **kwargs):
+    if not hasattr(obj, "_permissions_util"):
+        print(type(obj))
+        if isinstance(obj, UserAPIKey):
+            obj._permissions_util = return_user_api_key_perms(obj)
+        else:
+            obj._permissions_util = Permissions(obj)
+
+    return obj._permissions_util.check(target, permissions, **kwargs)
+
+
+def return_user_api_key_perms(key):
+    user = key.user
+    permissions = Permissions(user)
+
+    if key.readonly is True:
+        readonly_perms = {
+            ns: grainy_constant.PERM_READ for ns in permissions.pset.namespaces
+        }
+        permissions.pset.update(readonly_perms)
+
+    return permissions
 
 
 class ModelViewSetPermissions(BasePermission):
@@ -71,7 +106,6 @@ class ModelViewSetPermissions(BasePermission):
 
 
 class APIPermissionsApplicator(NamespaceKeyApplicator):
-
     @property
     def is_generating_api_cache(self):
         try:
@@ -91,16 +125,11 @@ class APIPermissionsApplicator(NamespaceKeyApplicator):
 
     def set_peeringdb_handlers(self):
         self.handler(
-            "peeringdb.organization.*.network.*.poc_set.private",
-            explicit=True
+            "peeringdb.organization.*.network.*.poc_set.private", explicit=True
         )
+        self.handler("peeringdb.organization.*.network.*.poc_set.users", explicit=True)
         self.handler(
-            "peeringdb.organization.*.network.*.poc_set.users",
-            explicit=True
-        )
-        self.handler(
-            "peeringdb.organization.*.internetexchange.*",
-            fn=self.handle_ixlan
+            "peeringdb.organization.*.internetexchange.*", fn=self.handle_ixlan
         )
 
     def handle_ixlan(self, namespace, data):
@@ -108,8 +137,6 @@ class APIPermissionsApplicator(NamespaceKeyApplicator):
             visible = data["ixf_ixp_member_list_url_visible"].lower()
             _namespace = f"{namespace}.ixf_ixp_member_list_url.{visible}"
 
-            perms = self.permissions.check(
-                _namespace, 0x01, explicit=True
-            )
+            perms = self.permissions.check(_namespace, 0x01, explicit=True)
             if not perms:
                 del data["ixf_ixp_member_list_url"]

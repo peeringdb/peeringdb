@@ -28,8 +28,11 @@ from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
 from peeringdb_server.api_schema import BaseSchema
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
-from peeringdb_server.util import check_permissions, APIPermissionsApplicator
-from peeringdb_server.permissions import ModelViewSetPermissions
+from peeringdb_server.permissions import (
+    ModelViewSetPermissions,
+    check_permissions_from_request,
+    APIPermissionsApplicator,
+)
 
 
 class DataException(ValueError):
@@ -38,7 +41,7 @@ class DataException(ValueError):
 
 class DataMissingException(DataException):
 
-    """
+    """""
     Will be raised when the json data sent with a POST, PUT or PATCH
     request is missing
     """
@@ -491,7 +494,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
-        applicator = APIPermissionsApplicator(request.user)
+        applicator = APIPermissionsApplicator(request)
 
         if not applicator.is_generating_api_cache:
             r.data = applicator.apply(r.data)
@@ -510,7 +513,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         d = time.time() - t
         print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
-        applicator = APIPermissionsApplicator(request.user)
+        applicator = APIPermissionsApplicator(request)
 
         if not applicator.is_generating_api_cache:
             r.data = applicator.apply(r.data)
@@ -611,7 +614,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             except self.model.DoesNotExist:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-            if check_permissions(request.user, obj, "d"):
+            if check_permissions_from_request(request, obj, "d"):
                 with reversion.create_revision():
                     if request.user:
                         reversion.set_user(request.user)
