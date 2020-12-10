@@ -47,6 +47,7 @@ from peeringdb_server.util import check_permissions, PERM_CRUD
 from peeringdb_server.search import search
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.org_admin_views import load_all_user_permissions
+from peeringdb_server.api_key_views import load_all_key_permissions
 from peeringdb_server.data_views import BOOL_CHOICE
 from peeringdb_server.models import (
     UserOrgAffiliationRequest,
@@ -1062,6 +1063,7 @@ def view_organization(request, id):
         tab_init=tab_init,
         users=users,
         user_perms=load_all_user_permissions(org),
+        key_perms=load_all_key_permissions(org),
         instance=org,
         perms=perms,
         keys=keys
