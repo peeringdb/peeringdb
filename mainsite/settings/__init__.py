@@ -579,9 +579,6 @@ if API_THROTTLE_ENABLED:
         }
     )
 
-# For DRF-API Keys
-API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
-
 ## PeeringDB
 
 # TODO for tests

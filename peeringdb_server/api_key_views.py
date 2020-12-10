@@ -103,12 +103,12 @@ def load_all_key_permissions(org):
     """
 
     rv = {}
-    for key in org.api_keys.all():
+    for key in org.api_keys.filter(revoked=False):
         kperms, perms = load_entity_permissions(org, key)
         rv[key.prefix] = {
             "prefix": key.prefix,
             "perms": perms,
-            "description": key.name,
+            "name": key.name,
         }
     return rv
 
@@ -147,16 +147,19 @@ def manage_key_add(request, **kwargs):
     Requires a name for the key.
     """
 
-    org = kwargs.get("org")
-    description = request.POST.get("description")
+    name = request.POST.get("name")
+    org = request.POST.get("org_id")
 
     api_key, key = OrganizationAPIKey.objects.create_key(
-        org=org,
-        name=description
+        org_id=org,
+        name=name
     )
 
-    return JsonResponse({
+    return JsonResponse(
+        {
             "status": "ok",
+            "name": api_key.name,
+            "prefix": api_key.prefix,
             "key": key,
         }
     )
@@ -172,10 +175,13 @@ def manage_key_revoke(request, **kwargs):
     org = kwargs.get("org")
     prefix = request.POST.get("prefix")
 
-    api_key = OrganizationAPIKey.objects.filter(
-        org__id=org.id,
-        prefix=prefix
-    ).first()
+    try:
+        api_key = OrganizationAPIKey.objects.get(
+            org=org,
+            prefix=prefix
+        )
+    except OrganizationAPIKey.DoesNotExist:
+        return JsonResponse({"non_field_errors":[_("Key not found")]}, status=404)
 
     api_key.revoked = True
     api_key.save()
@@ -277,24 +283,25 @@ def add_user_key(request, **kwargs):
     """
     Create a new User API key
 
-    Requires a description and a readonly boolean.
+    Requires a name and a readonly boolean.
     """
 
-    user_id = int(request.POST.get("user_id"))
-    user = User.objects.get(id=user_id)
-
-    description = request.POST.get("description")
+    user = request.user
+    name = request.POST.get("name")
     readonly = convert_to_bool(
         request.POST.get("readonly"))
 
     api_key, key = UserAPIKey.objects.create_key(
-        name=description,
+        name=name,
         user=user,
         readonly=readonly,
     )
 
     return JsonResponse({
             "status": "ok",
+            "name": api_key.name,
+            "prefix": api_key.prefix,
+            "readonly": api_key.readonly,
             "key": key,
         }
     )
@@ -303,19 +310,19 @@ def add_user_key(request, **kwargs):
 @login_required
 def remove_user_key(request, **kwargs):
     """
-    Create a new User API key
-
-    Requires a description and a readonly boolean.
+    Revoke user api key
     """
 
-    user = kwargs.get("user")
+    user = request.user
     prefix = request.POST.get("prefix")
 
-    api_key = UserAPIKey.objects.filter(
-        user=user,
-        prefix=prefix
-    ).first()
-
+    try:
+        api_key = UserAPIKey.objects.get(
+            user=user,
+            prefix=prefix
+        )
+    except UserAPIKey.DoesNotExist:
+        return JsonResponse({"non_field_errors":[_("Key not found")]}, status=404)
     api_key.revoked = True
     api_key.save()
 

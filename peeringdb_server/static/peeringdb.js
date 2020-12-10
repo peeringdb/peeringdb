@@ -1457,6 +1457,21 @@ twentyc.editable.module.register(
       return this.container.data("edit-id");
     },
 
+    api_key_popin : function(key) {
+      const message = gettext("Your API key was successfully created. "
+                  + "Write this key down some place safe. "
+                  + "Keys cannot be recovered once  "
+                  + "this message is exited or overwritten.");
+
+      const buttonText = gettext("I have written down my key")
+
+      var panel = $('<div>').addClass("alert alert-success marg-top-15").
+        append($('<div>').text(message)).
+        append($('<div>').addClass("center marg-top-15").text(key))
+
+      this.container.find("#api-key-popin-frame").empty().append(panel)
+    },
+
     remove : function(id, row, trigger, container) {
       var b = PeeringDB.confirm(gettext("Remove") + " " +row.data("edit-label"), "remove");  ///
       var me = this;
@@ -1472,10 +1487,42 @@ twentyc.editable.module.register(
       }
     },
 
-    execute_add: function(id, row, trigger, container){
-      console.log(this.target.data);
+    execute_add : function(trigger, container) {
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      this.target.execute("add", this.components.add, function(response) {
+        if(response.readonly)
+          response.name = response.name + " (read-only)";
+        var row = this.add(data.entity, trigger, container, response);
+        this.api_key_popin(response.key)
+      }.bind(this));
     },
 
+    add : function(rowId, trigger, container, data) {
+      var row = this.listing_add(data.prefix, trigger, container, data);
+      row.attr("data-edit-label", data.prefix + " - " + data.name)
+      row.data("edit-label", data.prefix + " - " + data.name)
+
+      return row
+    },
+
+    execute_revoke : function(trigger, container) {
+
+      var row = this.row(trigger);
+      var b = PeeringDB.confirm(gettext("Revoke key") + " " +row.data("edit-label"), "remove");
+
+      if(!b) {
+        container.editable("loading-shim", "hide")
+        return
+      }
+
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      var id = data.prefix = row.data("edit-id")
+      this.target.execute("revoke", trigger, function(response) {
+        this.listing_remove(id, row, trigger, container);
+      }.bind(this));
+    }
 
   },
   "listing"

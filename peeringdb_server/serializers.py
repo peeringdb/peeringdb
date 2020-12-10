@@ -23,7 +23,7 @@ from django_peeringdb.models.abstract import AddressModel
 
 from django_grainy.rest import PermissionDenied
 
-from peeringdb_server.util import check_permissions, Permissions
+from peeringdb_server.permissions import check_permissions_from_request, Permissions
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
@@ -808,7 +808,7 @@ class ModelSerializer(serializers.ModelSerializer):
 
         namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
         request = self.context.get("request")
-        if request and not check_permissions(request.user, namespace, "u"):
+        if request and not check_permissions_from_request(request, namespace, "u"):
             raise PermissionDenied(
               f"User does not have write permissions to '{namespace}'"
             )
@@ -840,7 +840,7 @@ class ModelSerializer(serializers.ModelSerializer):
         else:
             namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
 
-        if request and not check_permissions(request.user, namespace, "c"):
+        if request and not check_permissions_from_request(request, namespace, "c"):
             raise PermissionDenied(
               f"User does not have write permissions to '{namespace}'"
             )

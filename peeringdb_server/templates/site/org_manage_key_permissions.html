@@ -3,7 +3,7 @@
 
 <div class="editable note info">
   {%blocktrans trimmed %}
-  Here you can grant permissions to your organization API keys.
+  Here you can grant permissions to your organization API keys. In case your recently added api key does not show up in this listing, please reload the page.
   {%endblocktrans%}
 </div>
 
@@ -19,7 +19,7 @@
 
     <div class="row header">
       <div class="col-xs-12 col-sm-5 col-md-5">
-        <div>{{ kperms.description }}- {{ kperms.prefix }} </div>
+        <div>{{ kperms.name}} - {{ kperms.prefix }} </div>
       </div>
       <div class="col-xs-4 col-sm-2 col-md-2">
         <div>{% trans "Create" %}</div>

@@ -95,9 +95,9 @@ def make_relation_filter(field, filt, value, prefix=None):
     return filt
 
 
-def validate_PUT_ownership(user, instance, data, fields):
+def validate_PUT_ownership(permission_holder, instance, data, fields):
     """
-    Helper function that checks if a user has write perms to
+    Helper function that checks if a user or api key has write perms to
     the instance provided as well as write perms to any
     child instances specified by fields as they exist on
     the model and in data
@@ -123,7 +123,7 @@ def validate_PUT_ownership(user, instance, data, fields):
     if any fail the permission check False is returned.
     """
 
-    if not check_permissions(user, instance, "u"):
+    if not check_permissions(permission_holder, instance, "u"):
         return False
 
     for fld in fields:
@@ -142,7 +142,7 @@ def validate_PUT_ownership(user, instance, data, fields):
         if a.id != s_id:
             try:
                 other = a.__class__.objects.get(id=s_id)
-                if not check_permissions(user, other, "u"):
+                if not check_permissions(permission_holder, other, "u"):
                     return False
             except ValueError:  # if id is not intable
                 return False
@@ -1742,14 +1742,14 @@ class IXLan(pdb_models.IXLanBase):
         db_table = "peeringdb_ixlan"
 
     @classmethod
-    def api_cache_permissions_applicator(cls, row, ns, user):
+    def api_cache_permissions_applicator(cls, row, ns, permission_holder):
 
         """
         Applies permissions to a row in an api-cache result
         set for ixlan.
 
         This will strip `ixf_ixp_member_list_url` fields for
-        users that don't have read permissions for them according
+        users / api keys that don't have read permissions for them according
         to `ixf_ixp_member_list_url_visible`
 
         Argument(s):
@@ -1757,15 +1757,15 @@ class IXLan(pdb_models.IXLanBase):
         - row (dict): ixlan row from api-cache result
         - ns (str): ixlan namespace as determined during api-cache
           result rendering
-        - user (User)
+        - permission_holder (User or API Key)
         """
 
         visible = row.get("ixf_ixp_member_list_url_visible").lower()
-        if not user and visible == "public":
+        if not permission_holder and visible == "public":
             return
         namespace = f"{ns}.ixf_ixp_member_list_url.{visible}"
 
-        if not check_permissions(user, namespace, "r", explicit=True):
+        if not check_permissions(permission_holder, namespace, "r", explicit=True):
             try:
                 del row["ixf_ixp_member_list_url"]
             except KeyError:
@@ -3079,7 +3079,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
           if this is True
         """
 
-        if user:
+        if user and user.is_authenticated:
             reversion.set_user(user)
 
         if comment:

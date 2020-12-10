@@ -549,7 +549,8 @@ class ModelViewSet(viewsets.ModelViewSet):
         try:
             self.require_data(request)
             with reversion.create_revision():
-                if request.user:
+                # TODO: allow django reversion to track api keys ?
+                if request.user and request.user.is_authenticated:
                     reversion.set_user(request.user)
                 r = super().create(request, *args, **kwargs)
                 if "_grainy" in r.data:
@@ -572,7 +573,8 @@ class ModelViewSet(viewsets.ModelViewSet):
         try:
             self.require_data(request)
             with reversion.create_revision():
-                if request.user:
+                # TODO: allow django reversion to track api keys ?
+                if request.user and request.user.is_authenticated:
                     reversion.set_user(request.user)
 
                 r = super().update(request, *args, **kwargs)
@@ -616,7 +618,8 @@ class ModelViewSet(viewsets.ModelViewSet):
 
             if check_permissions_from_request(request, obj, "d"):
                 with reversion.create_revision():
-                    if request.user:
+                    # TODO: allow django reversion to track api keys ?
+                    if request.user and request.user.is_authenticated:
                         reversion.set_user(request.user)
                     obj.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)

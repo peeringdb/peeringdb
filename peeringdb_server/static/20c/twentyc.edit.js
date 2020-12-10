@@ -496,6 +496,7 @@ twentyc.editable.module.register(
         this.action.signal_success(container, rowId);
       container.trigger("listing:row-add", [rowId, row, data, this]);
       this.components.list.scrollTop(function() { return this.scrollHeight; });
+      return row;
     },
 
     remove : function(rowId, row, trigger, container) {
