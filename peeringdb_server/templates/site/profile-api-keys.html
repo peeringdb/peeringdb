@@ -1,0 +1,35 @@
+{% load i18n %}
+    <div class="editable always panel"
+         data-edit-target="/user_keys/add"
+         id="form-add-keys">
+
+      <h3>{% trans "API Keys" %}</h3>
+
+      <div class="editable popin help marg-top-15">
+      {% blocktrans trimmed %}
+      API Keys allow you to authenticate a client without providing your username and password.
+      {% endblocktrans %}
+      </div>
+      <div class="payload">
+        <div data-edit-name="user_id">{{ request.user.id }}</div>
+      </div>
+
+      <input type="text"
+             class="editable string form-control marg-bot-15"
+             placeholder="{% trans "Description" %}"
+             data-edit-name="description"
+             data-edit-type="string"
+             data-edit-required="yes" />
+
+      <div>
+        <span> Read only?</span>
+        <input type="checkbox"
+               class="editable bool marg-bot-15"
+               placeholder="{% trans "Readonly" %}"
+               data-edit-name="readonly"
+               data-edit-type="bool"
+               data-edit-required="no" />
+      </div>
+      <a class="btn btn-default" data-edit-action="submit">{% trans "Add API Key" %}</a>
+    </div>
+

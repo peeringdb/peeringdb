@@ -13,6 +13,8 @@
       <!-- AFFILIATE -->
       {% include "site/profile-affiliate.html" %}
 
+      <!-- API Keys --> 
+      {% include "site/profile-api-keys.html" %}
       <!-- OAUTH APPS -->
       <div class="marg-top marg-bot">
       <a href="/oauth2/applications">{% trans "Manage OAuth Applications" %}</a>
@@ -41,6 +43,18 @@
 </div>
 
 <script language="javascript" type="text/javascript">
+
+$('#form-add-keys').each(function(idx) {
+  const message = ("API key successfully created. "
+                  + "Write this key down some place safe. "
+                  + "Keys cannot be recovered once  "
+                  + "this message is exited.\n");
+  $(this).on("action-success:submit", function(ev, data) {
+    let key = data.xhr_response.key;
+    alert(message + "Key:\n" + key);
+  })
+});
+
 $('#form-update-account').each(function(idx) {
   $(this).on("action-success:submit", function(ev, data) {
     window.document.location.href = "/verify";

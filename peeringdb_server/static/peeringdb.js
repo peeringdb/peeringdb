@@ -1474,18 +1474,7 @@ twentyc.editable.module.register(
 
     execute_add: function(id, row, trigger, container){
       console.log(this.target.data);
-      this.target.execute("add");
     },
-
-    submit : function(rowId, data, row, trigger, container) {
-      this.target.data = data;
-      this.target.data.org_id = this.org_id();
-      this.target.data.user_id = rowId;
-      this.target.execute("update", row, function() {
-        this.listing_submit(rowId, data, row, trigger, container);
-      }.bind(this));
-    },
-
 
 
   },
