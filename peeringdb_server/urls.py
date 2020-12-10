@@ -156,13 +156,20 @@ urlpatterns = [
         r"^org_admin/manage_user/delete$",
         peeringdb_server.org_admin_views.manage_user_delete,
     ),
-    url(r"^org_admin/keys$", peeringdb_server.api_key_views.keys),
     url(r"^org_admin/manage_key/add$", peeringdb_server.api_key_views.manage_key_add),
     url(r"^org_admin/manage_key/delete$", peeringdb_server.api_key_views.manage_key_revoke),
     url(
         r"^org_admin/key_permissions$",
         peeringdb_server.api_key_views.key_permissions,
     ),
+    url(
+        r"^org_admin/key_permissions/update$",
+        peeringdb_server.api_key_views.key_permission_update,
+    ),
+    # url(
+    #     r"^org_admin/key_permissions/remove$",
+    #     peeringdb_server.api_key_views.key_permission_remove,
+    # ),
     url(r"^data/countries$", peeringdb_server.data_views.countries),
     url(r"^data/sponsors$", peeringdb_server.data_views.sponsorships),
     url(r"^data/countries_b$", peeringdb_server.data_views.countries_w_blank),
