@@ -132,6 +132,8 @@ urlpatterns = [
     ),
     url(r"^%s$" % Network.handleref.tag, view_network_by_query),
     url(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn, name="net-view-asn"),
+    url(r"^user_keys/add$", peeringdb_server.api_key_views.add_user_key),
+    url(r"^user_keys/remove$", peeringdb_server.api_key_views.remove_user_key),
     url(r"^org_admin/users$", peeringdb_server.org_admin_views.users),
     url(
         r"^org_admin/user_permissions$",
@@ -166,10 +168,10 @@ urlpatterns = [
         r"^org_admin/key_permissions/update$",
         peeringdb_server.api_key_views.key_permission_update,
     ),
-    # url(
-    #     r"^org_admin/key_permissions/remove$",
-    #     peeringdb_server.api_key_views.key_permission_remove,
-    # ),
+    url(
+        r"^org_admin/key_permissions/remove$",
+        peeringdb_server.api_key_views.key_permission_remove,
+    ),
     url(r"^data/countries$", peeringdb_server.data_views.countries),
     url(r"^data/sponsors$", peeringdb_server.data_views.sponsorships),
     url(r"^data/countries_b$", peeringdb_server.data_views.countries_w_blank),

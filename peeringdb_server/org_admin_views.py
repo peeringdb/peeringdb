@@ -115,6 +115,7 @@ def load_all_user_permissions(org):
 def load_user_permissions(org, user):
     return load_entity_permissions(org, user)
 
+
 def load_entity_permissions(org, entity):
     """
     Returns entity's permissions for the specified org

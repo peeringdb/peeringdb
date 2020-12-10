@@ -25,6 +25,8 @@ from peeringdb_server.org_admin_views import (
 from peeringdb_server.models import (
     OrganizationAPIKey,
     OrganizationAPIPermission,
+    UserAPIKey,
+    User
 )
 
 
@@ -140,7 +142,7 @@ def load_all_key_permissions(org):
 @org_admin_required
 def manage_key_add(request, **kwargs):
     """
-    Create a new API key
+    Create a new Organization API key
 
     Requires a name for the key.
     """
@@ -222,7 +224,6 @@ def key_permission_update(request, **kwargs):
     org = kwargs.get("org")
     prefix = request.POST.get("key_prefix")
     key = OrganizationAPIKey.objects.get(prefix=prefix)
-    print(key)
     kperms, perms = load_entity_permissions(org, key)
     form = OrgAdminUserPermissionForm(request.POST)
     if not form.is_valid():
@@ -236,25 +237,89 @@ def key_permission_update(request, **kwargs):
     return JsonResponse({"status": "ok"})
 
 
-# @login_required
-# @csrf_protect
-# @org_admin_required
-# @target_user_validate
-# def user_permission_remove(request, **kwargs):
-#     """
-#     Remove a user's permission
+@login_required
+@csrf_protect
+@org_admin_required
+def key_permission_remove(request, **kwargs):
+    """
+    Remove a keys permission
 
-#     entity = permission id
-#     """
+    entity = permission id
+    """
 
-#     org = kwargs.get("org")
-#     key = kwargs.get("key")
-#     entity = request.POST.get("entity")
-#     uperms, perms = load_user_permissions(org, user)
-#     if entity in perms:
-#         del perms[entity]
-#         save_user_permissions(org, user, perms)
+    org = kwargs.get("org")
+    prefix = request.POST.get("key_prefix")
+    key = OrganizationAPIKey.objects.get(prefix=prefix)
 
-#     return JsonResponse({"status": "ok"})
+    entity = request.POST.get("entity")
+    kperms, perms = load_entity_permissions(org, key)
+    if entity in perms:
+        del perms[entity]
+        save_key_permissions(org, key, perms)
+
+    return JsonResponse({"status": "ok"})
 
 
+"""
+USER API KEY MANAGEMENT
+"""
+
+
+def convert_to_bool(data):
+    if data is None:
+        return False
+
+    return data.lower() == "true"
+
+
+@login_required
+def add_user_key(request, **kwargs):
+    """
+    Create a new User API key
+
+    Requires a description and a readonly boolean.
+    """
+
+    user_id = int(request.POST.get("user_id"))
+    user = User.objects.get(id=user_id)
+
+    description = request.POST.get("description")
+    readonly = convert_to_bool(
+        request.POST.get("readonly"))
+
+    api_key, key = UserAPIKey.objects.create_key(
+        name=description,
+        user=user,
+        readonly=readonly,
+    )
+
+    return JsonResponse({
+            "status": "ok",
+            "key": key,
+        }
+    )
+
+
+@login_required
+def remove_user_key(request, **kwargs):
+    """
+    Create a new User API key
+
+    Requires a description and a readonly boolean.
+    """
+
+    user = kwargs.get("user")
+    prefix = request.POST.get("prefix")
+
+    api_key = UserAPIKey.objects.filter(
+        user=user,
+        prefix=prefix
+    ).first()
+
+    api_key.revoked = True
+    api_key.save()
+
+    return JsonResponse({
+            "status": "ok",
+        }
+    )
