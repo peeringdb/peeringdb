@@ -92,13 +92,13 @@ def return_org_api_key_perms(key):
     and general user group permissions
     """
     permissions = Permissions(key)
-    org = key.org
-
-    org_usergroup = org.usergroup
+    # Add user group perms
+    org_usergroup = key.org.usergroup
     permissions.pset.update(
         org_usergroup.grainy_permissions.permission_set().permissions
     )
 
+    # Add general user group perms
     general_usergroup = Group.objects.get(id=settings.USER_GROUP_ID)
     permissions.pset.update(
         general_usergroup.grainy_permissions.permission_set().permissions
