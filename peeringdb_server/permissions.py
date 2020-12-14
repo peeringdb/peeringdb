@@ -4,7 +4,11 @@ from rest_framework.permissions import BasePermission
 
 from django_grainy.helpers import request_method_to_flag
 
-from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
+from peeringdb_server.models import (
+    OrganizationAPIKey,
+    UserAPIKey,
+    Group
+)
 from django.contrib.auth.models import AnonymousUser
 
 import grainy.const as grainy_constant
@@ -28,7 +32,7 @@ def get_permission_holder_from_request(request):
             print(f"Org key found: {api_key.prefix}")
             return api_key
 
-        except OrganizationAPIKey.DoesNotExist as exc:
+        except OrganizationAPIKey.DoesNotExist:
             print("Not a valid org key")
 
         try:
@@ -37,7 +41,7 @@ def get_permission_holder_from_request(request):
             print(f"User key found {api_key.prefix}")
             return api_key
 
-        except UserAPIKey.DoesNotExist as exc:
+        except UserAPIKey.DoesNotExist:
             print("Not a valid user key.")
 
     if hasattr(request, "user"):
@@ -62,6 +66,8 @@ def check_permissions(obj, target, permissions, **kwargs):
 def init_permissions_helper(obj):
     if isinstance(obj, UserAPIKey):
         return return_user_api_key_perms(obj)
+    if isinstance(obj, OrganizationAPIKey):
+        return return_org_api_key_perms(obj)
     else:
         return Permissions(obj)
 
@@ -75,6 +81,28 @@ def return_user_api_key_perms(key):
             ns: grainy_constant.PERM_READ for ns in permissions.pset.namespaces
         }
         permissions.pset.update(readonly_perms)
+
+    return permissions
+
+
+def return_org_api_key_perms(key):
+    """
+    Load Permissions util with OrgAPIKey perms
+    and then add in that organization's user group perms
+    and general user group permissions
+    """
+    permissions = Permissions(key)
+    org = key.org
+
+    org_usergroup = org.usergroup
+    permissions.pset.update(
+        org_usergroup.grainy_permissions.permission_set().permissions
+    )
+
+    general_usergroup = Group.objects.get(id=settings.USER_GROUP_ID)
+    permissions.pset.update(
+        general_usergroup.grainy_permissions.permission_set().permissions
+    )
 
     return permissions
 
