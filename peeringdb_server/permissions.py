@@ -20,10 +20,15 @@ from django_grainy.util import Permissions
 
 
 def get_key_from_request(request):
+    """ Use the default KeyParser from drf-api-keys to pull the key out of the request
+    """
     return KeyParser().get(request)
 
 
 def get_permission_holder_from_request(request):
+    """ Returns either an API Key instance or User instance
+    depending on how the request is Authenticated.
+    """
     key = get_key_from_request(request)
     if key is not None:
         try:
@@ -52,11 +57,17 @@ def get_permission_holder_from_request(request):
 
 
 def check_permissions_from_request(request, target, flag, **kwargs):
+    """ Call the check_permissions util but takes a request as 
+    input, not a permission-holding object
+    """
     perm_obj = get_permission_holder_from_request(request)
     return check_permissions(perm_obj, target, flag, **kwargs)
 
 
 def check_permissions(obj, target, permissions, **kwargs):
+    """ Users the provided permission holding object to initialize
+    the Permissions Util, which then checks permissions.
+    """
     if not hasattr(obj, "_permissions_util"):
         obj._permissions_util = init_permissions_helper(obj)
 
@@ -64,6 +75,10 @@ def check_permissions(obj, target, permissions, **kwargs):
 
 
 def init_permissions_helper(obj):
+    """ Initializes the Permission Util based on
+    if the provided object is a UserAPIKey, OrgAPIKey,
+    or a different object.
+    """
     if isinstance(obj, UserAPIKey):
         return return_user_api_key_perms(obj)
     if isinstance(obj, OrganizationAPIKey):
@@ -73,6 +88,14 @@ def init_permissions_helper(obj):
 
 
 def return_user_api_key_perms(key):
+    """
+    Initializes the Permissions Util with the
+    permissions of the user linked to the User API
+    key.
+
+    If the UserAPIKey is marked readonly, it downgrades
+    all permissions to readonly.
+    """
     user = key.user
     permissions = Permissions(user)
 
