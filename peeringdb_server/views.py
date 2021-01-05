@@ -1634,6 +1634,24 @@ def view_network(request, id):
                 "value": network_d.get("updated", dismiss),
             },
             {
+                "readonly": True,
+                "name": "netixlan_updated",
+                "label": _("Public Peering Info Updated"),
+                "value": network_d.get("netixlan_updated", dismiss),
+            },
+            {
+                "readonly": True,
+                "name": "netfac_updated",
+                "label": _("Peering Facility Info Updated"),
+                "value": network_d.get("netfac_updated", dismiss),
+            },
+            {
+                "readonly": True,
+                "name": "poc_updated",
+                "label": _("Contact Info Updated"),
+                "value": network_d.get("poc_updated", dismiss),
+            },
+            {
                 "name": "notes",
                 "label": _("Notes"),
                 "help_text": _("Markdown enabled"),

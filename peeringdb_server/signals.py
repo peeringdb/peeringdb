@@ -34,7 +34,7 @@ from peeringdb_server.models import (
     Network,
     NetworkContact,
     NetworkIXLan,
-    NetworkFacility
+    NetworkFacility,
 )
 
 import peeringdb_server.settings as pdb_settings
@@ -62,14 +62,27 @@ def update_network_attribute(instance, attribute):
 
 
 def netixlan_update(sender, instance=None, **kwargs):
+    """
+    Update "netixlan_updated" field of Network whenever a connected
+    NetworkIXLan is updated
+    """
     update_network_attribute(instance, "netixlan_updated")
 
 
 def netfac_update(sender, instance=None, **kwargs):
+    """
+    Update "netfac_updated" field of Network whenever a connected
+    NetworkFacility is updated
+    """
     update_network_attribute(instance, "netfac_updated")
 
 
 def poc_update(sender, instance=None, **kwargs):
+    """
+    Update "poc_updated" field of Network whenever a connected
+    NetworkContact is updated
+    """
+
     update_network_attribute(instance, "poc_updated")
 
 
