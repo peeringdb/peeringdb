@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import django.urls
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.contrib.contenttypes.models import ContentType
@@ -6,6 +7,7 @@ from django_namespace_perms.constants import PERM_CRUD, PERM_READ
 from django.template import loader
 from django.conf import settings
 from django.dispatch import receiver
+import reversion
 from allauth.account.signals import user_signed_up
 
 from corsheaders.signals import check_request_enabled
@@ -31,12 +33,49 @@ from peeringdb_server.models import (
     Facility,
     Network,
     NetworkContact,
+    NetworkIXLan,
+    NetworkFacility
 )
 
 import peeringdb_server.settings as pdb_settings
 
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import override
+
+
+def disable_auto_now_and_save(instance):
+    instance._meta.get_field("updated").auto_now = False
+    try:
+        with reversion.create_revision():
+            instance.save()
+    finally:
+        # always turn auto_now back on afterwards
+        instance._meta.get_field("updated").auto_now = True
+
+
+def update_network_attribute(instance, attribute):
+    """Updates 'attribute' field in Network whenever it's called."""
+    if getattr(instance, "id"):
+        network = instance.network
+        setattr(network, attribute, datetime.now(timezone.utc))
+        disable_auto_now_and_save(network)
+
+
+def netixlan_update(sender, instance=None, **kwargs):
+    update_network_attribute(instance, "netixlan_updated")
+
+
+def netfac_update(sender, instance=None, **kwargs):
+    update_network_attribute(instance, "netfac_updated")
+
+
+def poc_update(sender, instance=None, **kwargs):
+    update_network_attribute(instance, "poc_updated")
+
+
+post_save.connect(netixlan_update, sender=NetworkIXLan)
+post_save.connect(netfac_update, sender=NetworkFacility)
+post_save.connect(poc_update, sender=NetworkContact)
 
 
 def addressmodel_save(sender, instance=None, **kwargs):
