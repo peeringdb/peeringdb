@@ -61,6 +61,8 @@ def check_permissions_from_request(request, target, flag, **kwargs):
     input, not a permission-holding object
     """
     perm_obj = get_permission_holder_from_request(request)
+    print(target)
+    print(flag)
     return check_permissions(perm_obj, target, flag, **kwargs)
 
 
@@ -70,6 +72,7 @@ def check_permissions(obj, target, permissions, **kwargs):
     """
     if not hasattr(obj, "_permissions_util"):
         obj._permissions_util = init_permissions_helper(obj)
+
 
     return obj._permissions_util.check(target, permissions, **kwargs)
 
@@ -115,18 +118,21 @@ def return_org_api_key_perms(key):
     and general user group permissions
     """
     permissions = Permissions(key)
-    # Add user group perms
+    # #Add user group perms
     org_usergroup = key.org.usergroup
     permissions.pset.update(
-        org_usergroup.grainy_permissions.permission_set().permissions
+        org_usergroup.grainy_permissions.permission_set().permissions,
+        override=False
     )
 
-    # Add general user group perms
+    # # Add general user group perms
     general_usergroup = Group.objects.get(id=settings.USER_GROUP_ID)
     permissions.pset.update(
-        general_usergroup.grainy_permissions.permission_set().permissions
+        general_usergroup.grainy_permissions.permission_set().permissions,
+        override=False
     )
-
+    for ns, level in permissions.pset.permissions.items():
+        print("PERM", ns, f"{level.value}")
     return permissions
 
 
@@ -150,7 +156,6 @@ class ModelViewSetPermissions(BasePermission):
             return check_permissions(perm_obj, view, flag)
 
         # view has not been grainy decorated
-
         return True
 
     def has_object_permission(self, request, view, obj):
