@@ -164,7 +164,7 @@ class Importer:
         """
 
         if not url:
-            return {"pdb_error": _("IXF import url not specified")}
+            return {"pdb_error": _("IX-F import url not specified")}
 
         try:
             result = requests.get(url, timeout=timeout)
@@ -210,7 +210,7 @@ class Importer:
         """
 
         if not url:
-            return {"pdb_error": _("IXF import url not specified")}
+            return {"pdb_error": _("IX-F import url not specified")}
 
         data = cache.get(self.cache_key(url))
 
