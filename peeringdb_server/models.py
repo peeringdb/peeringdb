@@ -3604,6 +3604,10 @@ class Network(pdb_models.NetworkBase):
     netfac_updated = models.DateTimeField(blank=True, null=True)
     poc_updated = models.DateTimeField(blank=True, null=True)
 
+    def save(self, *args, **kwargs):
+        print("Saving network . . . ")
+        super().save(*args, **kwargs)
+
     @staticmethod
     def autocomplete_search_fields():
         return (
@@ -4097,6 +4101,16 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             models.UniqueConstraint(fields=["ipaddr4"], name="unique_ipaddr4"),
             models.UniqueConstraint(fields=["ipaddr6"], name="unique_ipaddr6"),
         ]
+
+    def save(self, *args, **kwargs):
+        print("saving the netixlan")
+        super().save(*args, **kwargs)
+        updated = self.network._meta.get_field("updated")
+        updated.auto_now = False
+        self.network.netixlan_updated = datetime.datetime.now(datetime.timezone.utc)
+        print("saving the network from the netixlan")
+        self.network.save()
+        updated.auto_now = True
 
     @property
     def name(self):
