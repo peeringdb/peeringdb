@@ -1447,6 +1447,13 @@ def view_network_by_asn(request, asn):
         return view_http_error_404(request)
 
 
+def format_last_updated_time(last_updated_time):
+    if last_updated_time is None:
+        return ""
+    elif isinstance(last_updated_time, str):
+        return last_updated_time.split(".")[0]
+
+
 @ensure_csrf_cookie
 def view_network(request, id):
     """
@@ -1491,6 +1498,7 @@ def view_network(request, id):
 
     ixf_proposals = IXFMemberData.proposals_for_network(network)
     ixf_proposals_dismissed = IXFMemberData.network_has_dismissed_actionable(network)
+
 
     data = {
         "title": network_d.get("name", dismiss),
@@ -1631,25 +1639,25 @@ def view_network(request, id):
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),
-                "value": network_d.get("updated", dismiss),
+                "value": format_last_updated_time(network_d.get("updated")),
             },
             {
                 "readonly": True,
                 "name": "netixlan_updated",
                 "label": _("Public Peering Info Updated"),
-                "value": network_d.get("netixlan_updated", dismiss),
+                "value": format_last_updated_time(network_d.get("netixlan_updated")),
             },
             {
                 "readonly": True,
                 "name": "netfac_updated",
                 "label": _("Peering Facility Info Updated"),
-                "value": network_d.get("netfac_updated", dismiss),
+                "value": format_last_updated_time(network_d.get("netfac_updated")),
             },
             {
                 "readonly": True,
                 "name": "poc_updated",
                 "label": _("Contact Info Updated"),
-                "value": network_d.get("poc_updated", dismiss),
+                "value": format_last_updated_time(network_d.get("poc_updated")),
             },
             {
                 "name": "notes",
@@ -1959,7 +1967,7 @@ class LoginView(two_factor.views.LoginView):
 
         return super().get(*args, **kwargs)
 
-    @ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
+    # @ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
     def post(self, *args, **kwargs):
 
         """
