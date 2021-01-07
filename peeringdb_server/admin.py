@@ -598,7 +598,7 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
                     "admin:peeringdb_server_ixlanixfmemberimportlog_changelist"
                 ),
                 obj.id,
-                _("IXF Import History"),
+                _("IX-F Import History"),
             )
         )
 
