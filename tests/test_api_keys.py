@@ -7,7 +7,6 @@ from django.contrib.auth.models import Group
 from django.conf import settings
 
 from django_grainy.models import UserPermission, GroupPermission
-
 from rest_framework.test import APIRequestFactory, force_authenticate, APIClient
 from rest_framework.authtoken.models import Token
 
@@ -115,7 +114,8 @@ class DummyRestClientWithKeyAuth(RestClient):
             data = {}
         if params:
             data.update(**params)
-        res = fnc(url, data, format="json")
+
+        res = fnc(url, data, format="json", **self.api_client._credentials)
 
         assert res.charset == "utf-8"
 
@@ -212,14 +212,24 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
 
         # db_org_admin becomes the tester for rw org api key
         rw_org = models.Organization.objects.get(name="API Test Organization RW")
-        api_key, rw_org_key = models.OrganizationAPIKey.objects.create_key(
+        rw_api_key, rw_org_key = models.OrganizationAPIKey.objects.create_key(
             name="test key", org=rw_org
         )
+
+        # Transfer group permissions to org key
+        for perm in rw_org.admin_usergroup.grainy_permissions.all():
+            rw_api_key.grainy_permissions.add_permission(perm.namespace, perm.permission)
+
         self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, key=rw_org_key, **USER_ORG_ADMIN)
 
         # db_org_member becomes the tester for r org api key
         r_org = models.Organization.objects.get(name="API Test Organization R")
-        api_key, r_org_key = models.OrganizationAPIKey.objects.create_key(
+        r_api_key, r_org_key = models.OrganizationAPIKey.objects.create_key(
             name="test key", org=r_org
         )
+
+        # Transfer group permissions to org key
+        for perm in r_org.usergroup.grainy_permissions.all():
+            r_api_key.grainy_permissions.add_permission(perm.namespace, perm.permission)
+
         self.db_org_member = self.rest_client(URL, verbose=VERBOSE, key=r_org_key, **USER_ORG_MEMBER)
