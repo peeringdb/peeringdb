@@ -1921,7 +1921,6 @@ class IXLan(pdb_models.IXLanBase):
 
     def clean(self):
         # id is set and does not match the parent ix id
-
         if self.id and self.id != self.ix.id:
             raise ValidationError({"id": _("IXLan id needs to match parent ix id")})
 
@@ -1938,7 +1937,18 @@ class IXLan(pdb_models.IXLanBase):
 
         self.id = self.ix.id
 
+        if self.ixf_ixp_member_list_url is None and self.ixf_ixp_import_enabled:
+            raise ValidationError(
+                _(
+                    "Cannot enable IX-F import without specifying the IX-F member list url"
+                )
+            )
+
         return super().clean()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     @reversion.create_revision()
     def add_netixlan(self, netixlan_info, save=True, save_others=True):
