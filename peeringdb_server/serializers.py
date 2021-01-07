@@ -4,6 +4,7 @@ import reversion
 
 from django_inet.rest import IPAddressField, IPPrefixField
 from django.core.validators import URLValidator
+from django.contrib.auth import get_user_model
 from django.db.models.query import QuerySet
 from django.db.models import Prefetch, Q, Sum, IntegerField, Case, When
 from django.db import models, transaction, IntegrityError
@@ -23,7 +24,7 @@ from django_peeringdb.models.abstract import AddressModel
 
 from django_grainy.rest import PermissionDenied
 
-from peeringdb_server.permissions import check_permissions_from_request, Permissions
+from peeringdb_server.permissions import check_permissions_from_request, get_key_from_request
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
@@ -42,6 +43,7 @@ from peeringdb_server.models import (
     NetworkFacility,
     NetworkIXLan,
     Organization,
+    OrganizationAPIKey
 )
 from peeringdb_server.validators import (
     validate_address_space,
@@ -993,14 +995,25 @@ class ModelSerializer(serializers.ModelSerializer):
             instance.status = "ok"
             instance.save()
 
-        if instance.status == "pending":
-            if self._context["request"]:
-                vq = VerificationQueueItem.objects.filter(
-                    content_type=ContentType.objects.get_for_model(type(instance)),
-                    object_id=instance.id,
-                ).first()
-                if vq:
+        request = self._context["request"]
+
+        if instance.status == "pending" and request:
+            vq = VerificationQueueItem.objects.filter(
+                content_type=ContentType.objects.get_for_model(type(instance)),
+                object_id=instance.id,
+            ).first()
+            if vq:
+                user = request.user
+                if isinstance(user, get_user_model()):
                     vq.user = self._context["request"].user
+                    vq.save()
+                else:
+                    key = get_key_from_request(request)
+                    try:
+                        api_key = OrganizationAPIKey.objects.get_from_key(key)
+                    except OrganizationAPIKey.DoesNotExist:
+                        return
+                    vq.api_key = api_key
                     vq.save()
 
     def finalize_create(self, request):

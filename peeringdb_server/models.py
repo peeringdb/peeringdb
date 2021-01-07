@@ -489,6 +489,17 @@ class VerificationQueueItem(models.Model):
         blank=True,
         help_text=_("The item that this queue is attached to was created by this user"),
     )
+    api_key = models.ForeignKey(
+        "peeringdb_server.OrganizationAPIKey",
+        on_delete=models.CASCADE,
+        related_name="vqitems",
+        null=True,
+        blank=True,
+        help_text=_(
+            "The item that this queue is attached to was created by this organization api key"
+        ),
+    )
+
     created = CreatedDateTimeField()
     notified = models.BooleanField(default=False)
 
