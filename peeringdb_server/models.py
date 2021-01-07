@@ -2160,7 +2160,7 @@ class IXLanIXFMemberImportAttempt(models.Model):
 
 class IXLanIXFMemberImportLog(models.Model):
     """
-    Import log of a IXF member import that changed or added at least one
+    Import log of a IX-F member import that changed or added at least one
     netixlan under the specified ixlans
     """
 
@@ -2171,8 +2171,8 @@ class IXLanIXFMemberImportLog(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = _("IXF Import Log")
-        verbose_name_plural = _("IXF Import Logs")
+        verbose_name = _("IX-F Import Log")
+        verbose_name_plural = _("IX-F Import Logs")
 
     @reversion.create_revision()
     def rollback(self):
@@ -2201,7 +2201,7 @@ class IXLanIXFMemberImportLog(models.Model):
 
 class IXLanIXFMemberImportLogEntry(models.Model):
     """
-    IXF member import log entry that holds the affected netixlan and
+    IX-F member import log entry that holds the affected netixlan and
     the netixlan's version after the change, which can be used to rollback
     the change
     """
@@ -2229,8 +2229,8 @@ class IXLanIXFMemberImportLogEntry(models.Model):
     reason = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
-        verbose_name = _("IXF Import Log Entry")
-        verbose_name_plural = _("IXF Import Log Entries")
+        verbose_name = _("IX-F Import Log Entry")
+        verbose_name_plural = _("IX-F Import Log Entries")
 
     @property
     def changes(self):
@@ -2357,8 +2357,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     class Meta:
         db_table = "peeringdb_ixf_member_data"
-        verbose_name = _("IXF Member Data")
-        verbose_name_plural = _("IXF Member Data")
+        verbose_name = _("IX-F Member Data")
+        verbose_name_plural = _("IX-F Member Data")
 
     class HandleRef:
         tag = "ixfmember"
@@ -4673,8 +4673,8 @@ class IXFImportEmail(models.Model):
     )
 
     class Meta:
-        verbose_name = _("IXF Import Email")
-        verbose_name_plural = _("IXF Import Emails")
+        verbose_name = _("IX-F Import Email")
+        verbose_name_plural = _("IX-F Import Emails")
 
 
 class UserPasswordReset(models.Model):
