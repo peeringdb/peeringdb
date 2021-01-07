@@ -2132,6 +2132,16 @@ class IXLanSerializer(ModelSerializer):
 
         return data
 
+    def validate(self, data):
+        # Per issue 846
+        if data["ixf_ixp_member_list_url"] == "" and data["ixf_ixp_import_enabled"]:
+            raise ValidationError(
+                _(
+                    "Cannot enable IX-F import without specifying the IX-F member list url"
+                )
+            )
+        return data
+
 
 class InternetExchangeSerializer(ModelSerializer):
     """
