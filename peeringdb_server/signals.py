@@ -43,20 +43,22 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import override
 
 
-def disable_auto_now_and_save(instance):
-    instance._meta.get_field("updated").auto_now = False
+def disable_auto_now_and_save(entity):
+    entity._meta.get_field("updated").auto_now = False
     try:
         with reversion.create_revision():
-            instance.save()
+            entity.save()
     finally:
         # always turn auto_now back on afterwards
-        instance._meta.get_field("updated").auto_now = True
+        entity._meta.get_field("updated").auto_now = True
 
 
 def update_network_attribute(instance, attribute):
     """Updates 'attribute' field in Network whenever it's called."""
     if getattr(instance, "id"):
         network = instance.network
+        net_updated = network._meta.get_field("updated")
+        net_updated.auto_now = False
         setattr(network, attribute, datetime.now(timezone.utc))
         disable_auto_now_and_save(network)
 
