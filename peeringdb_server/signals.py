@@ -57,7 +57,7 @@ def update_network_attribute(instance, attribute):
     if getattr(instance, "id"):
         network = instance.network
         setattr(network, attribute, datetime.now(timezone.utc))
-        # disable_auto_now_and_save(network)
+        disable_auto_now_and_save(network)
 
 
 def netixlan_update(sender, instance=None, **kwargs):
@@ -92,9 +92,16 @@ def poc_update(sender, instance=None, **kwargs):
     update_network_attribute(instance, "poc_updated")
 
 
-# post_save.connect(netixlan_update, sender=NetworkIXLan)
-# post_save.connect(netfac_update, sender=NetworkFacility)
-# post_save.connect(poc_update, sender=NetworkContact)
+#post_save.connect(netixlan_update, sender=NetworkIXLan)
+#post_save.connect(netfac_update, sender=NetworkFacility)
+#post_save.connect(poc_update, sender=NetworkContact)
+
+
+def network_post_revision_commit(**kwargs):
+    for vs in kwargs.get("versions"):
+        if vs.object.HandleRef.tag in ["netixlan", "poc", "netfac"]:
+            update_network_attribute(vs.object, f"{vs.object.HandleRef.tag}_updated")
+reversion.signals.post_revision_commit.connect(network_post_revision_commit)
 
 
 def addressmodel_save(sender, instance=None, **kwargs):
