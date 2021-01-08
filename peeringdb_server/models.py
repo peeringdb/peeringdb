@@ -1946,10 +1946,6 @@ class IXLan(pdb_models.IXLanBase):
 
         return super().clean()
 
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-
     @reversion.create_revision()
     def add_netixlan(self, netixlan_info, save=True, save_others=True):
         """
