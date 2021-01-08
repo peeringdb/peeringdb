@@ -4102,16 +4102,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             models.UniqueConstraint(fields=["ipaddr6"], name="unique_ipaddr6"),
         ]
 
-    def save(self, *args, **kwargs):
-        print("saving the netixlan")
-        super().save(*args, **kwargs)
-        updated = self.network._meta.get_field("updated")
-        updated.auto_now = False
-        self.network.netixlan_updated = datetime.datetime.now(datetime.timezone.utc)
-        print("saving the network from the netixlan")
-        self.network.save()
-        updated.auto_now = True
-
     @property
     def name(self):
         return ""
