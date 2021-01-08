@@ -14,7 +14,7 @@ from corsheaders.signals import check_request_enabled
 
 from django_peeringdb.models.abstract import AddressModel
 
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError, RdapException
+from peeringdb_server.inet import RdapLookup, RdapException
 
 from peeringdb_server.deskpro import (
     ticket_queue,
@@ -45,10 +45,8 @@ from django.utils.translation import override
 
 def disable_auto_now_and_save(entity):
     updated_field = entity._meta.get_field("updated")
-    print("Disabling auto now")
     updated_field.auto_now = False
     entity.save()
-    print("Re enabling auto now")
     updated_field.auto_now = True
 
 
@@ -60,47 +58,12 @@ def update_network_attribute(instance, attribute):
         disable_auto_now_and_save(network)
 
 
-def netixlan_update(sender, instance=None, **kwargs):
-    """
-    Update "netixlan_updated" field of Network whenever a connected
-    NetworkIXLan is updated
-    """
-    print(" - - ")
-    print("Sending Netixlan signal")
-    update_network_attribute(instance, "netixlan_updated")
-
-
-def netfac_update(sender, instance=None, **kwargs):
-    """
-    Update "netfac_updated" field of Network whenever a connected
-    NetworkFacility is updated
-    """
-    print(" - - ")
-    print("Sending netfac signal")
-
-    update_network_attribute(instance, "netfac_updated")
-
-
-def poc_update(sender, instance=None, **kwargs):
-    """
-    Update "poc_updated" field of Network whenever a connected
-    NetworkContact is updated
-    """
-    print(" - - ")
-    print("Sending poc signal")
-
-    update_network_attribute(instance, "poc_updated")
-
-
-#post_save.connect(netixlan_update, sender=NetworkIXLan)
-#post_save.connect(netfac_update, sender=NetworkFacility)
-#post_save.connect(poc_update, sender=NetworkContact)
-
-
 def network_post_revision_commit(**kwargs):
     for vs in kwargs.get("versions"):
         if vs.object.HandleRef.tag in ["netixlan", "poc", "netfac"]:
             update_network_attribute(vs.object, f"{vs.object.HandleRef.tag}_updated")
+
+
 reversion.signals.post_revision_commit.connect(network_post_revision_commit)
 
 

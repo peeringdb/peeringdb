@@ -3604,10 +3604,6 @@ class Network(pdb_models.NetworkBase):
     netfac_updated = models.DateTimeField(blank=True, null=True)
     poc_updated = models.DateTimeField(blank=True, null=True)
 
-    def save(self, *args, **kwargs):
-        print("Saving network . . . ")
-        super().save(*args, **kwargs)
-
     @staticmethod
     def autocomplete_search_fields():
         return (
