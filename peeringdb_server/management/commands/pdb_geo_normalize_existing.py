@@ -151,9 +151,13 @@ class Command(BaseCommand):
 
         q = model.handleref.undeleted()
 
+        # Exclude if city is null / blank
+        q = q.exclude(city__exact='').exclude(city__isnull=True)
+
         if _id:
             q = q.filter(id=_id)
         count = q.count()
+
         if limit > 0:
             q = q[:limit]
 
