@@ -11,7 +11,6 @@
             ],
             "vlan_list": [
                 {
-                    "vlan_id": 1,
                     "ipv4": {
                         "address": "203.159.68.40",
                         "as_macro": "AS-AKAMAI",
@@ -34,7 +33,6 @@
             ],
             "vlan_list": [
                 {
-                    "vlan_id": 2,
                     "ipv6": {
                         "address": "2001:deb:0:68:0:a502:940:1",
                         "as_macro": "AS-AKAMAI",

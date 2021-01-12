@@ -1,34 +1,7 @@
 import json
-import os
 from pprint import pprint
-import pytest
-import reversion
-import requests
-import jsonschema
-import time
-import io
-import datetime
-import ipaddress
 
-from django.test import override_settings
-from django.conf import settings
-
-from peeringdb_server.models import (
-    Organization,
-    Network,
-    NetworkIXLan,
-    NetworkContact,
-    IXLan,
-    IXLanPrefix,
-    InternetExchange,
-    IXFMemberData,
-    IXLanIXFMemberImportLog,
-    User,
-    DeskProTicket,
-    IXFImportEmail,
-)
 from peeringdb_server import ixf
-from peeringdb_server.deskpro import FailingMockAPIClient
 
 
 def test_vlan_sanitize(data_ixf_vlan):
