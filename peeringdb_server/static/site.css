@@ -765,6 +765,11 @@ div.list > div.scrollable {
 /*  border-bottom: 3px #1c3f28 solid; */
 }
 
+/* Necessary to see validation error for phone number*/
+#list-poc.mode-edit {
+  padding-top: 15px;
+  margin-top: -15px;
+}
 
 div.list > div.row.header,
 table.result th {
