@@ -492,14 +492,15 @@ class IXLanInline(SanitizedAdmin, admin.StackedInline):
 class InternetExchangeFacilityInline(SanitizedAdmin, admin.TabularInline):
     model = InternetExchangeFacility
     extra = 0
-    raw_id_fields = ("ix", "facility")
     form = StatusForm
+    raw_id_fields = ("ix", "facility")
 
-    autocomplete_lookup_fields = {
-        "fk": [
-            "facility",
-        ],
-    }
+    def __init__(self, parent_model, admin_site):
+        super().__init__(parent_model, admin_site)
+        if parent_model == Facility:
+            self.autocomplete_lookup_fields = {"fk": ["ix"]}
+        elif parent_model == InternetExchange:
+            self.autocomplete_lookup_fields = {"fk": ["facility"]}
 
 
 class NetworkContactInline(SanitizedAdmin, admin.TabularInline):
@@ -511,17 +512,16 @@ class NetworkContactInline(SanitizedAdmin, admin.TabularInline):
 class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkFacility
     extra = 0
-    raw_id_fields = (
-        "facility",
-        "network",
-    )
     form = StatusForm
-    raw_id_fields = ("facility",)
-    autocomplete_lookup_fields = {
-        "fk": [
-            "facility",
-        ],
-    }
+    raw_id_fields = ("network", "facility")
+    exclude = ("local_asn",)
+
+    def __init__(self, parent_model, admin_site):
+        super().__init__(parent_model, admin_site)
+        if parent_model == Facility:
+            self.autocomplete_lookup_fields = {"fk": ["network"]}
+        elif parent_model == Network:
+            self.autocomplete_lookup_fields = {"fk": ["facility"]}
 
 
 class NetworkIXLanForm(StatusForm):
