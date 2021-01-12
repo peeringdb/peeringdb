@@ -1,4 +1,5 @@
 from grainy.const import *
+from datetime import datetime, timezone
 import django.urls
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.contrib.contenttypes.models import ContentType
@@ -6,13 +7,14 @@ from django_grainy.models import Group, GroupPermission
 from django.template import loader
 from django.conf import settings
 from django.dispatch import receiver
+import reversion
 from allauth.account.signals import user_signed_up
 
 from corsheaders.signals import check_request_enabled
 
 from django_peeringdb.models.abstract import AddressModel
 
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError, RdapException
+from peeringdb_server.inet import RdapLookup, RdapException
 
 from peeringdb_server.deskpro import (
     ticket_queue,
@@ -31,6 +33,8 @@ from peeringdb_server.models import (
     Facility,
     Network,
     NetworkContact,
+    NetworkIXLan,
+    NetworkFacility,
 )
 
 from peeringdb_server.util import PERM_CRUD
@@ -39,6 +43,30 @@ import peeringdb_server.settings as pdb_settings
 
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import override
+
+
+def disable_auto_now_and_save(entity):
+    updated_field = entity._meta.get_field("updated")
+    updated_field.auto_now = False
+    entity.save()
+    updated_field.auto_now = True
+
+
+def update_network_attribute(instance, attribute):
+    """Updates 'attribute' field in Network whenever it's called."""
+    if getattr(instance, "id"):
+        network = instance.network
+        setattr(network, attribute, datetime.now(timezone.utc))
+        disable_auto_now_and_save(network)
+
+
+def network_post_revision_commit(**kwargs):
+    for vs in kwargs.get("versions"):
+        if vs.object.HandleRef.tag in ["netixlan", "poc", "netfac"]:
+            update_network_attribute(vs.object, f"{vs.object.HandleRef.tag}_updated")
+
+
+reversion.signals.post_revision_commit.connect(network_post_revision_commit)
 
 
 def addressmodel_save(sender, instance=None, **kwargs):

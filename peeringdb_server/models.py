@@ -3485,6 +3485,10 @@ class Network(pdb_models.NetworkBase):
         ),
     )
 
+    netixlan_updated = models.DateTimeField(blank=True, null=True)
+    netfac_updated = models.DateTimeField(blank=True, null=True)
+    poc_updated = models.DateTimeField(blank=True, null=True)
+
     @staticmethod
     def autocomplete_search_fields():
         return (

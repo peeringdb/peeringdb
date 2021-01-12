@@ -1774,6 +1774,9 @@ class NetworkSerializer(ModelSerializer):
             "info_ipv6",
             "info_never_via_route_servers",
             "notes",
+            "netixlan_updated",
+            "netfac_updated",
+            "poc_updated",
             "policy_url",
             "policy_general",
             "policy_locations",
@@ -1791,6 +1794,11 @@ class NetworkSerializer(ModelSerializer):
             "netfac_set",
             "netixlan_set",
             "poc_set",
+        ]
+        read_only_fields = [
+            "netixlan_updated",
+            "netfac_updated",
+            "poc_updated",
         ]
         list_exclude = ["org"]
 
