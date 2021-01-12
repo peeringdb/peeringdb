@@ -693,7 +693,6 @@ class Importer:
             - member_list <list>
         """
         for member in member_list:
-            # check that the as exists in pdb
             asn = member["asnum"]
 
             # if we are only processing a specific asn, ignore all
