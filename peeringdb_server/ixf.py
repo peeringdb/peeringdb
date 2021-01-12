@@ -351,10 +351,6 @@ class Importer:
                     break
 
                 ipv6_addresses[ipv6] = ixf_id
-
-        if not vlan_list_found:
-            invalid = _("No entries in any of the vlan_list lists, aborting.")
-
         data["pdb_error"] = invalid
 
         # set member_list to the sanitized copy

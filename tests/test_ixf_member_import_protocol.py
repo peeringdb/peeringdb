@@ -2155,6 +2155,41 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
     assert_idempotent(importer, ixlan, data)
 
 
+# The following test no longer would cause an error because of
+# issue 882.
+
+# @pytest.mark.django_db
+# def test_remote_cannot_be_parsed(entities, save):
+#     """
+#     Remote cannot be parsed. We create a ticket, email the IX, and create a lock.
+#     """
+#     data = setup_test_data("ixf.member.unparsable")
+#     ixlan = entities["ixlan"][0]
+#     start = datetime.datetime.now(datetime.timezone.utc)
+#     importer = ixf.Importer()
+#     importer.sanitize(data)
+
+#     if not save:
+#         return assert_idempotent(importer, ixlan, data, save=False)
+
+#     importer.update(ixlan, data=data)
+#     importer.notify_proposals()
+
+#     ERROR_MESSAGE = "No entries in any of the vlan_list lists, aborting"
+#     assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
+#     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+#     assert (
+#         ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
+#     )
+
+#     # Assert idempotent / lock
+#     importer.sanitize(data)
+#     importer.update(ixlan, data=data)
+
+#     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+#     assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
+
+
 @pytest.mark.django_db
 def test_mark_invalid_multiple_vlans(entities, save):
     """
@@ -2198,13 +2233,13 @@ def test_mark_invalid_multiple_vlans(entities, save):
 
 
 @pytest.mark.django_db
-def test_remote_cannot_be_parsed(entities, save):
+def test_vlan_list_empty(entities, save):
     """
-    Remote cannot be parsed. We create a ticket, email the IX, and create a lock.
+    VLAN list is empty. Per issue 882, this shouldn't raise any errors.
     """
-    data = setup_test_data("ixf.member.unparsable")
+    data = setup_test_data("ixf.member.vlan_list_empty")
     ixlan = entities["ixlan"][0]
-    start = datetime.datetime.now(datetime.timezone.utc)
+
     importer = ixf.Importer()
     importer.sanitize(data)
 
@@ -2214,12 +2249,9 @@ def test_remote_cannot_be_parsed(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    ERROR_MESSAGE = "No entries in any of the vlan_list lists, aborting"
-    assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
-    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
-    assert (
-        ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
-    )
+    assert importer.ixlan.ixf_ixp_import_error_notified is None
+    assert importer.ixlan.ixf_ixp_import_error is None
+    assert_no_emails(ix=ixlan.ix)
 
     # test revision user
     version = reversion.models.Version.objects.get_for_object(ixlan)
@@ -2230,8 +2262,9 @@ def test_remote_cannot_be_parsed(entities, save):
     importer.sanitize(data)
     importer.update(ixlan, data=data)
 
-    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
-    assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
+    assert importer.ixlan.ixf_ixp_import_error_notified is None
+    assert importer.ixlan.ixf_ixp_import_error is None
+    assert_no_emails(ix=ixlan.ix)
 
 
 def test_validate_json_schema():
