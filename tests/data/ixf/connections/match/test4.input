@@ -5,14 +5,16 @@
             "state": "active",
             "if_list": [
                 {
-                    "switch_id": 2
+                    "switch_id": 2,
+                    "if_speed": 20000
                 },
                 {
-                    "switch_id": 3
+                    "switch_id": 3,
+                    "if_speed": 20000
                 },
                 {
                     "switch_id": 4,
-                    "if_speed": 10000
+                    "if_speed": 20000
                 },
                 {
                     "switch_id": 5,
@@ -43,7 +45,15 @@
                 },
                 {
                     "switch_id": 7,
+                    "if_speed": 10000
+                },
+                {
+                    "switch_id": 8,
                     "if_speed": 20000
+                },
+                {
+                    "switch_id": 9,
+                    "if_speed": 30000
                 }
             ],
             "vlan_list": [

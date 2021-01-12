@@ -2,21 +2,10 @@
     "connection_list": [
         {
             "ixp_id": 1,
-            "state": "active",
             "if_list": [
                 {
-                    "switch_id": 2
-                },
-                {
-                    "switch_id": 3
-                },
-                {
-                    "switch_id": 4,
+                    "switch_id": 2,
                     "if_speed": 10000
-                },
-                {
-                    "switch_id": 5,
-                    "if_speed": 20000
                 }
             ],
             "vlan_list": [
@@ -35,15 +24,10 @@
         },
         {
             "ixp_id": 1,
-            "state": "active",
             "if_list": [
                 {
-                    "switch_id": 6,
+                    "switch_id": 2,
                     "if_speed": 10000
-                },
-                {
-                    "switch_id": 7,
-                    "if_speed": 20000
                 }
             ],
             "vlan_list": [

@@ -224,7 +224,7 @@ class Importer:
 
     def find_vlan_needing_pair(self, connection):
         vlans_needing_pair = []
-        vlan_list = connection["vlan_list"]
+        vlan_list = connection.get("vlan_list", [])
 
         for vlan in vlan_list:
             if vlan.get("ipv4") and not vlan.get("ipv6"):
@@ -237,16 +237,24 @@ class Importer:
 
         return vlans_needing_pair
 
+    def get_if_speed_list(self, connection):
+        if_speed_list = []
+        for if_entry in connection.get("if_list", []):
+            if if_entry.get("if_speed"):
+                if_speed_list.append(if_entry.get("if_speed"))
+
+        if_speed_list.sort()
+        return if_speed_list
+
     def connections_match(self, connection1, connection2):
+        # Check that both connections have a 'state' set
+        if (connection1.get("state", None) is None) \
+           or (connection2.get("state", None) is None):
+            return False
+
         state_match = connection1["state"] == connection2["state"]
-        if_list_1 = list([
-            entry["if_speed"] for entry in connection1["if_list"]
-        ])
-        if_list_1.sort()
-        if_list_2 = list([
-            entry["if_speed"] for entry in connection2["if_list"]
-        ])
-        if_list_2.sort()
+        if_list_1 = self.get_if_speed_list(connection1)
+        if_list_2 = self.get_if_speed_list(connection2)
         if_list_match = if_list_1 == if_list_2
         return state_match and if_list_match
 
