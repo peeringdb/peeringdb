@@ -586,6 +586,25 @@ class DeskProTicket(models.Model):
         verbose_name_plural = _("DeskPRO Tickets")
 
 
+class DeskProTicketCC(models.Model):
+
+    """
+    Describes a contact to be cc'd on the deskpro ticket
+    """
+
+    ticket = models.ForeignKey(
+        DeskProTicket,
+        on_delete=models.CASCADE,
+        related_name="cc_set",
+    )
+    email = models.EmailField()
+
+    class Meta:
+        unique_together = (("ticket", "email"),)
+        verbose_name = _("DeskPRO Ticket CC Contact")
+        verbose_name_plural = _("Deskpro Ticket CC Contacts")
+
+
 @grainy_model(namespace="peeringdb.organization")
 @reversion.register
 class Organization(ProtectedMixin, pdb_models.OrganizationBase):
@@ -3274,6 +3293,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             "instance": self,
             "recipient": recipient,
             "ixf_url": self.ixlan.ixf_ixp_member_list_url,
+            "ixf_url_public": (self.ixlan.ixf_ixp_member_list_url_visible=="Public")
         }
         if context:
             _context.update(context)
