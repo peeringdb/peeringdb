@@ -724,8 +724,11 @@ PeeringDB.IXFProposals = twentyc.cls.define(
             .insertBefore(element);
           element.addClass('validation-error')
         }
+      } else if(response.status == 403) {
+        info = [gettext("You do not have permissions to perform this action")]
       }
-     if(response.responseJSON && response.responseJSON.non_field_errors) {
+
+      if(response.responseJSON && response.responseJSON.non_field_errors) {
         info = [];
         var i;
         for(i in response.responseJSON.non_field_errors)
@@ -1578,6 +1581,8 @@ twentyc.editable.target.register(
         } else {
           if(r.responseJSON && r.responseJSON.meta && r.responseJSON.meta.error)
              var info = r.responseJSON.meta.error;
+          else if(r.status == 403)
+             var info = gettext("You do not have permissions to perform this action")
           else
              var info = r.status+" "+r.statusText
 

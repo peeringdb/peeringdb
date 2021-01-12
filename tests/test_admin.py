@@ -9,7 +9,7 @@ from django.urls import reverse, resolve
 from django.core.management import call_command
 from django.contrib.messages import get_messages
 
-import django_namespace_perms as nsp
+from django_grainy.models import UserPermission, GroupPermission
 
 import peeringdb_server.models as models
 import peeringdb_server.admin as admin
@@ -81,8 +81,8 @@ class AdminTests(TestCase):
         )
         readonly_group = Group.objects.create(name="readonly")
         for app_label in admin.PERMISSION_APP_LABELS:
-            nsp.models.GroupPermission.objects.create(
-                group=readonly_group, namespace=app_label, permissions=0x01
+            GroupPermission.objects.create(
+                group=readonly_group, namespace=app_label, permission=0x01
             )
         readonly_group.user_set.add(cls.readonly_admin)
 

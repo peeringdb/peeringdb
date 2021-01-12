@@ -8,7 +8,7 @@ from django.contrib.auth import get_user
 
 from .util import ClientCase
 
-import django_namespace_perms as nsp
+from django_grainy.models import UserPermission, GroupPermission
 
 import peeringdb_server.views as views
 import peeringdb_server.models as models

@@ -1,10 +1,11 @@
 import re
 import requests
 
+from grainy.const import *
+
 from django.contrib.auth import forms as auth_forms
 from django import forms
 from django.utils import timezone
-from django_namespace_perms.constants import *
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings as dj_settings
 
@@ -13,6 +14,7 @@ from captcha.models import CaptchaStore
 
 from peeringdb_server.models import User, Organization
 from peeringdb_server.inet import get_client_ip
+from peeringdb_server.util import PERM_CRUD
 
 
 class OrgAdminUserPermissionForm(forms.Form):

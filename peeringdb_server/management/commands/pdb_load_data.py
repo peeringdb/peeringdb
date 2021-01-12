@@ -43,7 +43,7 @@ def fetch_all_latest(self, R, depth, params={}, since=None):
     result = _fetch_all_latest(self, R, depth, params=params, since=since)
 
     for row in result[0]:
-        for k, v in row.items():
+        for k, v in list(row.items()):
             if k in ["latitude", "longitude"] and v:
                 row[k] = "{:3.6f}".format(float(v))
             elif k == "fac_id":

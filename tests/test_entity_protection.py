@@ -12,7 +12,7 @@ from peeringdb_server.models import (
 )
 
 
-@pytest.mark.djangodb
+@pytest.mark.django_db
 def test_protected_entities(db):
     """
     test that protected entities cannot be deleted

@@ -1,8 +1,8 @@
+from grainy.const import *
 import django.urls
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.contrib.contenttypes.models import ContentType
-from django_namespace_perms.models import Group, GroupPermission
-from django_namespace_perms.constants import PERM_CRUD, PERM_READ
+from django_grainy.models import Group, GroupPermission
 from django.template import loader
 from django.conf import settings
 from django.dispatch import receiver
@@ -32,6 +32,8 @@ from peeringdb_server.models import (
     Network,
     NetworkContact,
 )
+
+from peeringdb_server.util import PERM_CRUD
 
 import peeringdb_server.settings as pdb_settings
 
@@ -69,7 +71,6 @@ def org_save(sender, **kwargs):
     """
 
     inst = kwargs.get("instance")
-    ix_namespace = InternetExchange.nsp_namespace_from_id(inst.id, "*")
 
     # make the general member group for the org
     try:
@@ -79,20 +80,20 @@ def org_save(sender, **kwargs):
         group.save()
 
         perm = GroupPermission(
-            group=group, namespace=inst.nsp_namespace, permissions=PERM_READ
+            group=group, namespace=inst.grainy_namespace, permission=PERM_READ
         )
         perm.save()
 
         GroupPermission(
             group=group,
-            namespace=NetworkContact.nsp_namespace_from_id(inst.id, "*", "private"),
-            permissions=PERM_READ,
+            namespace=f"{inst.grainy_namespace}.network.*.poc_set.private",
+            permission=PERM_READ,
         ).save()
 
         GroupPermission(
             group=group,
-            namespace=f"{ix_namespace}.ixf_ixp_member_list_url.private",
-            permissions=PERM_READ,
+            namespace=f"{inst.grainy_namespace}.internetexchange.*.ixf_ixp_member_list_url.private",
+            permission=PERM_READ,
         ).save()
 
     # make the admin group for the org
@@ -103,24 +104,24 @@ def org_save(sender, **kwargs):
         group.save()
 
         perm = GroupPermission(
-            group=group, namespace=inst.nsp_namespace, permissions=PERM_CRUD
+            group=group, namespace=inst.grainy_namespace, permission=PERM_CRUD
         )
         perm.save()
 
         GroupPermission(
-            group=group, namespace=inst.nsp_namespace_manage, permissions=PERM_CRUD
+            group=group, namespace=inst.grainy_namespace_manage, permission=PERM_CRUD
         ).save()
 
         GroupPermission(
             group=group,
-            namespace=NetworkContact.nsp_namespace_from_id(inst.id, "*", "private"),
-            permissions=PERM_CRUD,
+            namespace=f"{inst.grainy_namespace}.network.*.poc_set.private",
+            permission=PERM_CRUD,
         ).save()
 
         GroupPermission(
             group=group,
-            namespace=f"{ix_namespace}.ixf_ixp_member_list_url.private",
-            permissions=PERM_CRUD,
+            namespace=f"{inst.grainy_namespace}.internetexchange.*.ixf_ixp_member_list_url.private",
+            permission=PERM_CRUD,
         ).save()
 
     if inst.status == "deleted":

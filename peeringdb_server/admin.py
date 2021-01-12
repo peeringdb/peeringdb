@@ -16,6 +16,7 @@ from django.contrib.auth import forms
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.views.main import ChangeList
+from django.contrib.auth.admin import UserAdmin
 from django.db.utils import OperationalError
 from django.http import HttpResponseForbidden
 from django import forms as baseForms
@@ -27,12 +28,17 @@ from django.template.response import TemplateResponse
 from django.db.models import Q
 from django.db.models.functions import Concat
 from django.db.utils import OperationalError
-from django_namespace_perms.admin import (
-    UserPermissionInline,
-    UserPermissionInlineAdd,
-    UserAdmin,
-)
 from django.utils.safestring import mark_safe
+
+import django_grainy.models as django_grainy_models
+from django_grainy.admin import (
+    UserPermissionInlineAdmin,
+    GroupPermissionInlineAdmin,
+    GrainyUserAdmin,
+    GrainyGroupAdmin,
+)
+
+
 
 import reversion
 from reversion.admin import VersionAdmin
@@ -91,7 +97,6 @@ PERMISSION_APP_LABELS = [
     "account",
     "oauth2_provider",
 ]
-
 
 class StatusFilter(admin.SimpleListFilter):
     """
@@ -376,6 +381,10 @@ class SoftDeleteAdmin(
         super().save_formset(request, form, formset, change)
 
 
+    def grainy_namespace(self, obj):
+        return obj.grainy_namespace
+
+
 class ModelAdminWithVQCtrl:
     """
     Extend from this model admin if you want to add verification queue
@@ -578,7 +587,7 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     search_fields = ("name",)
     readonly_fields = (
         "id",
-        "nsp_namespace",
+        "grainy_namespace",
         "ixf_import_history",
         "ixf_last_import",
         "ixf_net_count",
@@ -850,7 +859,7 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     search_fields = ("name",)
     list_filter = (StatusFilter,)
-    readonly_fields = ("id", "nsp_namespace")
+    readonly_fields = ("id", "grainy_namespace")
     form = StatusForm
 
     fields = [
@@ -870,7 +879,7 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "verification_queue",
         "version",
         "id",
-        "nsp_namespace",
+        "grainy_namespace",
     ]
 
     def get_urls(self):
@@ -973,7 +982,7 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name",)
-    readonly_fields = ("id", "nsp_namespace")
+    readonly_fields = ("id", "grainy_namespace")
 
     raw_id_fields = ("org",)
     autocomplete_lookup_fields = {
@@ -1013,7 +1022,7 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "verification_queue",
         "version",
         "id",
-        "nsp_namespace",
+        "grainy_namespace",
     ]
 
 
@@ -1035,7 +1044,7 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name", "asn")
-    readonly_fields = ("id", "nsp_namespace")
+    readonly_fields = ("id", "grainy_namespace")
     form = NetworkAdminForm
 
     inlines = (
@@ -1421,8 +1430,7 @@ class UserPermissionAdmin(UserAdmin):
 
     inlines = (
         UserOrgAffiliationRequestInline,
-        UserPermissionInline,
-        UserPermissionInlineAdd,
+        UserPermissionInlineAdmin,
     )
 
     fieldsets = (
@@ -1435,7 +1443,6 @@ class UserPermissionAdmin(UserAdmin):
                     "is_staff",
                     "is_superuser",
                     "groups",
-                    "user_permissions",
                 ),
                 "classes": ("wide",),
             },
@@ -1678,7 +1685,7 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
 
             # Add (case insensitive) regex search results to standard search results
             try:
-                queryset = self.model.objects.filter(subject__iregex=search_term)
+                queryset = self.model.objects.filter(subject__iregex=search_term).order_by("-created")
             except OperationalError:
                 return queryset, use_distinct
 
@@ -1720,7 +1727,7 @@ class DeskProTicketAdmin(admin.ModelAdmin):
 
             # Add (case insensitive) regex search results to standard search results
             try:
-                queryset = self.model.objects.filter(subject__iregex=search_term)
+                queryset = self.model.objects.filter(subject__iregex=search_term).order_by("-created")
             except OperationalError:
                 return queryset, use_distinct
 
@@ -1925,6 +1932,7 @@ admin.site.register(NetworkIXLan, NetworkIXLanAdmin)
 admin.site.register(NetworkContact, NetworkContactAdmin)
 admin.site.register(NetworkFacility, NetworkFacilityAdmin)
 admin.site.register(Network, NetworkAdmin)
+admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(VerificationQueueItem, VerificationQueueAdmin)
 admin.site.register(Sponsorship, SponsorshipAdmin)

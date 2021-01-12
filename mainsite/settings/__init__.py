@@ -382,6 +382,7 @@ INSTALLED_APPS = [
     "django_countries",
     "django_inet",
     "django_namespace_perms",
+    "django_grainy",
     "django_peeringdb",
     "django_tables2",
     "oauth2_provider",
@@ -542,7 +543,7 @@ OAUTH2_PROVIDER = {
 ## NSP
 
 NSP_MODE = "crud"
-AUTHENTICATION_BACKENDS += ("django_namespace_perms.auth.backends.NSPBackend",)
+AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 
 
 ## Django Rest Framework
@@ -559,10 +560,9 @@ REST_FRAMEWORK = {
     "DEFAULT_MODEL_SERIALIZER_CLASS": "rest_framework.serializers.HyperlinkedModelSerializer",
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
-    # Handle rest of permissioning via django-namespace-perms
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly",
-        "django_namespace_perms.rest.BasePermission",
+        "django_grainy.rest.ModelViewSetPermissions",
     ],
     "DEFAULT_RENDERER_CLASSES": ("peeringdb_server.renderers.MetaJSONRenderer",),
     "DEFAULT_SCHEMA_CLASS": "peeringdb_server.api_schema.BaseSchema",
@@ -685,6 +685,7 @@ set_option("TUTORIAL_MODE", False)
 
 #'guest' user group
 GUEST_GROUP_ID = 1
+set_option("GRAINY_ANONYMOUS_GROUP", "Guest")
 
 #'user' user group
 USER_GROUP_ID = 2

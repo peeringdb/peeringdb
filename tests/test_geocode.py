@@ -9,8 +9,6 @@ from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
 from django.core.management import call_command
 
-import django_namespace_perms as nsp
-
 import peeringdb_server.models as models
 
 

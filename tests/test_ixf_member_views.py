@@ -14,8 +14,6 @@ from django.core.cache import cache
 from django.test import Client, TestCase, RequestFactory
 from django.urls import reverse
 
-import django_namespace_perms as nsp
-
 from peeringdb_server.models import (
     Organization,
     Network,
