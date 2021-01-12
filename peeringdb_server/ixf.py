@@ -394,6 +394,14 @@ class Importer:
             self.log_error(data.get("pdb_error"), save=save)
             return False
 
+        # null ix-f error note on ixlan if it had error'd before
+        if self.ixlan.ixf_ixp_import_error:
+            with reversion.create_revision():
+                reversion.set_user(self.ticket_user)
+                self.ixlan.ixf_ixp_import_error = None
+                self.ixlan.ixf_ixp_import_error_notified = None
+                self.ixlan.save()
+
         # bail if there are no active prefixes on the ixlan
         if ixlan.ixpfx_set_active.count() == 0:
             self.log_error(_("No prefixes defined on ixlan"), save=save)
@@ -502,6 +510,7 @@ class Importer:
         ix._meta.get_field("updated").auto_now = False
         try:
             with reversion.create_revision():
+                reversion.set_user(self.ticket_user)
                 ix.save()
         finally:
 
@@ -535,6 +544,8 @@ class Importer:
 
     @reversion.create_revision()
     def process_saves(self):
+        reversion.set_user(self.ticket_user)
+
         for ixf_member in self.pending_save:
             self.apply_add_or_update(ixf_member)
 
@@ -548,6 +559,8 @@ class Importer:
         In order for a netixlan to be removed both it's ipv4 and ipv6 address
         or it's asn need to be gone from the ixf data after validation
         """
+
+        reversion.set_user(self.ticket_user)
 
         netixlan_qset = self.ixlan.netixlan_set_active
 
@@ -1706,6 +1719,8 @@ class Importer:
             if ixf_member_data.id:
                 ixf_member_data.save()
 
+
+    @reversion.create_revision()
     def notify_error(self, error):
 
         """
@@ -1716,6 +1731,8 @@ class Importer:
 
         if not self.save:
             return
+
+        reversion.set_user(self.ticket_user)
 
         now = datetime.datetime.now(datetime.timezone.utc)
         notified = self.ixlan.ixf_ixp_import_error_notified
