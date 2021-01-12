@@ -990,6 +990,16 @@ def view_organization(request, id):
                 "value": data.get("address2", dismiss),
             },
             {
+                "name": "floor",
+                "label": _("Floor"),
+                "value": data.get("floor", dismiss),
+            },
+            {
+                "name": "suite",
+                "label": _("Suite"),
+                "value": data.get("suite", dismiss),
+            },
+            {
                 "name": "location",
                 "label": _("Location"),
                 "type": "location",
@@ -1004,6 +1014,13 @@ def view_organization(request, id):
                 "notify_incomplete": True,
                 "value": data.get("country", dismiss),
             },
+            {
+                "name": "geocode",
+                "label": _("Geocode"),
+                "type": "geocode",
+                "value": data,
+            },
+
             {
                 "readonly": True,
                 "name": "updated",
@@ -1124,6 +1141,16 @@ def view_facility(request, id):
                 "name": "address2",
                 "label": _("Address 2"),
                 "value": data.get("address2", dismiss),
+            },
+            {
+                "name": "floor",
+                "label": _("Floor"),
+                "value": data.get("floor", dismiss),
+            },
+            {
+                "name": "suite",
+                "label": _("Suite"),
+                "value": data.get("suite", dismiss),
             },
             {
                 "name": "location",

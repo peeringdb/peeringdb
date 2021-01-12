@@ -288,13 +288,28 @@ PeeringDB.ViewTools = {
    */
 
   after_submit : function(container, data) {
-    var target = container.data("edit-target")
+
+    const addressFields = ["address1", "address2", "city", "state", "zipcode", "geocode"];
+    var target = container.data("edit-target");
     if(target == "api:ix:update") {
       this.apply_data(container, data, "tech_phone");
       this.apply_data(container, data, "policy_phone");
     }
-  }
+    if (target === "api:fac:update" || target === "api:org:update") {
+      addressFields.forEach(field => this.apply_data(container, data, field));
+      this.update_geocode(data);
+    }
+  },
 
+  update_geocode: function(data){
+    const geo_field = $("#geocode");
+    if (data.latitude && data.longitude) {
+      let link = `https://maps.google.com/?q=${data.latitude},${data.longitude}`
+      let contents = `<a href="${link}">${data.latitude}, ${data.longitude}</a>`
+      geo_field.empty().append(contents);
+    }
+    
+  }
 }
 
 PeeringDB.ViewActions = {
