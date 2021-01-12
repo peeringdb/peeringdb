@@ -2,6 +2,7 @@
     "connection_list": [
         {
             "ixp_id": 1,
+            "state": "active",
             "if_list": [
                 {
                     "switch_id": 2,

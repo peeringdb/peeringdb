@@ -248,11 +248,9 @@ class Importer:
 
     def connections_match(self, connection1, connection2):
         # Check that both connections have a 'state' set
-        if (connection1.get("state", None) is None) \
-           or (connection2.get("state", None) is None):
-            return False
-
-        state_match = connection1["state"] == connection2["state"]
+        state_match = connection1.get("state", "undefined") == connection2.get(
+            "state", "undefined"
+        )
         if_list_1 = self.get_if_speed_list(connection1)
         if_list_2 = self.get_if_speed_list(connection2)
         if_list_match = if_list_1 == if_list_2
@@ -281,7 +279,7 @@ class Importer:
             if len(connection.get("vlan_list", [])) == 0:
                 continue
 
-            remaining_connections = connection_list[i+1:]
+            remaining_connections = connection_list[i + 1 :]
             vlans_needing_pair = self.find_vlan_needing_pair(connection)
             # If there aren't any vlans that need to be paired,
             # we're done looking at this connection
@@ -410,7 +408,8 @@ class Importer:
         for member in member_list:
             asn = member.get("asnum")
             connection_list = self.match_vlans_across_connections(
-                    member.get("connection_list", []))
+                member.get("connection_list", [])
+            )
             for conn in connection_list:
 
                 conn["vlan_list"] = self.sanitize_vlans(conn.get("vlan_list", []))
