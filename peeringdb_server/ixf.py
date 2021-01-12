@@ -239,8 +239,14 @@ class Importer:
 
     def connections_match(self, connection1, connection2):
         state_match = connection1["state"] == connection2["state"]
-        if_list_1 = [{"if_speed": entry["if_speed"]} for entry in connection1["if_list"]]
-        if_list_2 = [{"if_speed": entry["if_speed"]} for entry in connection2["if_list"]]
+        if_list_1 = list([
+            entry["if_speed"] for entry in connection1["if_list"]
+        ])
+        if_list_1.sort()
+        if_list_2 = list([
+            entry["if_speed"] for entry in connection2["if_list"]
+        ])
+        if_list_2.sort()
         if_list_match = if_list_1 == if_list_2
         return state_match and if_list_match
 
@@ -288,11 +294,7 @@ class Importer:
             # at least one connection we can look for
             # start looking
             for lone_vlan in vlans_needing_pair:
-                print(f"Vlan that needs pairing: {lone_vlan}")
-                print(f"Current connection: {connection}")
-                print(f"Connections that match: {cxns_that_match}")
                 matching_vlan = self.find_matching_vlan(lone_vlan, cxns_that_match)
-                print(f"Matching vlan: {matching_vlan}")
                 # if we found one we need to transfer it
                 if matching_vlan is not None:
                     # matching vlan goes into connection vlan_list
@@ -399,7 +401,9 @@ class Importer:
         # vlans in vlan_list for ipv4 and ipv6 (AMS-IX for example)
         for member in member_list:
             asn = member.get("asnum")
-            for conn in member.get("connection_list", []):
+            connection_list = self.match_vlans_across_connections(
+                    member.get("connection_list", []))
+            for conn in connection_list:
 
                 conn["vlan_list"] = self.sanitize_vlans(conn.get("vlan_list", []))
                 vlans = conn["vlan_list"]
