@@ -582,6 +582,12 @@ if API_THROTTLE_ENABLED:
         }
     )
 
+## RDAP
+
+set_option("RDAP_SELF_BOOTSTRAP", True)
+# put it under the main cache dir
+set_option("RDAP_BOOTSTRAP_DIR", os.path.join(BASE_DIR, "api-cache", "rdap-bootstrap"))
+
 
 ## PeeringDB
 

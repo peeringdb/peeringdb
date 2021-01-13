@@ -120,6 +120,8 @@ class RdapLookup(rdap.RdapClient):
         # create rdap config
         config = dict(
             bootstrap_url=settings.RDAP_URL.rstrip("/"),
+            self_bootstrap=settings.RDAP_SELF_BOOTSTRAP,
+            bootstrap_dir=settings.RDAP_BOOTSTRAP_DIR,
             lacnic_apikey=settings.RDAP_LACNIC_APIKEY,
             timeout=10,
         )
