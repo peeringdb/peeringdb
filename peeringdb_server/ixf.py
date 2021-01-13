@@ -1,6 +1,7 @@
 import json
 import re
 import datetime
+import copy
 
 import requests
 import ipaddress
@@ -243,6 +244,114 @@ class Importer:
 
         return data
 
+    def find_vlan_needing_pair(self, connection):
+        vlans_needing_pair = []
+        vlan_list = connection.get("vlan_list", [])
+
+        for vlan in vlan_list:
+            if vlan.get("ipv4") and not vlan.get("ipv6"):
+                vlans_needing_pair.append(vlan)
+            elif vlan.get("ipv6") and not vlan.get("ipv4"):
+                vlans_needing_pair.append(vlan)
+
+        if len(vlans_needing_pair) == 0:
+            return None
+
+        return vlans_needing_pair
+
+    def get_if_speed_list(self, connection):
+        if_speed_list = []
+        for if_entry in connection.get("if_list", []):
+            if if_entry.get("if_speed"):
+                if_speed_list.append(if_entry.get("if_speed"))
+
+        if_speed_list.sort()
+        return if_speed_list
+
+    def connections_match(self, connection1, connection2):
+        # Check that both connections have a 'state' set
+        state_match = connection1.get("state", "undefined") == connection2.get(
+            "state", "undefined"
+        )
+        if_list_1 = self.get_if_speed_list(connection1)
+        if_list_2 = self.get_if_speed_list(connection2)
+        if_list_match = if_list_1 == if_list_2
+        return state_match and if_list_match
+
+    def find_connections_that_match(self, connection, connection_list):
+        cxns_that_match = []
+        for connection2 in connection_list:
+            if self.connections_match(connection, connection2):
+                cxns_that_match.append(connection2)
+
+        if len(cxns_that_match) == 0:
+            return None
+
+        return cxns_that_match
+
+    def match_vlans_across_connections(self, connection_list):
+        modified_connection_list = []
+
+        for i, connection in enumerate(connection_list):
+            """
+            If there aren't any vlans in the connection at
+            all, skip it. (this might happen in the course
+            of matching vlans)
+            """
+            if len(connection.get("vlan_list", [])) == 0:
+                continue
+
+            remaining_connections = connection_list[i + 1 :]
+            vlans_needing_pair = self.find_vlan_needing_pair(connection)
+            # If there aren't any vlans that need to be paired,
+            # we're done looking at this connection
+            if vlans_needing_pair is None:
+                modified_connection_list.append(connection)
+                continue
+
+            cxns_that_match = self.find_connections_that_match(
+                connection, remaining_connections
+            )
+            # If there aren't any connections we could match up,
+            # we're done looking at this connection
+            if cxns_that_match is None:
+                modified_connection_list.append(connection)
+                continue
+
+            # If we have vlans we want to match, and
+            # at least one connection we can look for
+            # start looking
+            for lone_vlan in vlans_needing_pair:
+                matching_vlan = self.find_matching_vlan(lone_vlan, cxns_that_match)
+                # if we found one we need to transfer it
+                if matching_vlan is not None:
+                    # matching vlan goes into connection vlan_list
+                    connection["vlan_list"].append(matching_vlan)
+
+            modified_connection_list.append(connection)
+        return modified_connection_list
+
+    def find_matching_vlan(self, lone_vlan, connections_that_match):
+        for connection in connections_that_match:
+            for j, potential_vlan in enumerate(connection["vlan_list"]):
+                if self.vlan_matches(lone_vlan, potential_vlan):
+                    # Matching vlan gets deleted from other connection
+                    return connection["vlan_list"].pop(j)
+
+        return None
+
+    def vlan_matches(self, vlan1, vlan2):
+        vlan_ids_match = vlan1.get("vlan_id", 0) == vlan2.get("vlan_id", 0)
+
+        if vlan_ids_match is False:
+            return False
+        if vlan1.get("ipv4") and vlan2.get("ipv4"):
+            return False
+        if vlan1.get("ipv6") and vlan2.get("ipv6"):
+            return False
+
+        return True
+
     def sanitize_vlans(self, vlans):
         """
         Sanitize vlan lists where ip 4 and 6 addresses
@@ -320,7 +429,10 @@ class Importer:
         # vlans in vlan_list for ipv4 and ipv6 (AMS-IX for example)
         for member in member_list:
             asn = member.get("asnum")
-            for conn in member.get("connection_list", []):
+            connection_list = self.match_vlans_across_connections(
+                member.get("connection_list", [])
+            )
+            for conn in connection_list:
 
                 conn["vlan_list"] = self.sanitize_vlans(conn.get("vlan_list", []))
                 vlans = conn["vlan_list"]
