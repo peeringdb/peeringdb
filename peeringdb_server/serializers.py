@@ -143,6 +143,7 @@ class GeocodeSerializerMixin(object):
         if not geosync_info_present:
             return False
 
+
         # We do not need to resync if floor, suite, or address2 are changed
         ignored_fields = ["floor", "suite", "address2"]
         geocode_fields = [
@@ -170,6 +171,10 @@ class GeocodeSerializerMixin(object):
 
         instance = super().update(instance, validated_data)
 
+        # we dont want to geocode on tests
+        if settings.RELEASE_ENV == "run_tests":
+            return instance
+
         if need_geosync:
             print("Normalizing geofields")
             try:
@@ -189,6 +194,11 @@ class GeocodeSerializerMixin(object):
         # we first want to save the model
         # and then normalize the geofields
         instance = super().create(validated_data)
+
+        # we dont want to geocode on tests
+        if settings.RELEASE_ENV == "run_tests":
+            return instance
+
 
         if self._geosync_information_present(instance, validated_data):
             try:
