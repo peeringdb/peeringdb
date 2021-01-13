@@ -122,6 +122,7 @@ class RdapLookup(rdap.RdapClient):
             bootstrap_url=settings.RDAP_URL.rstrip("/"),
             self_bootstrap=settings.RDAP_SELF_BOOTSTRAP,
             bootstrap_dir=settings.RDAP_BOOTSTRAP_DIR,
+            ignore_recurse_errors=settings.RDAP_IGNORE_RECURSE_ERRORS,
             lacnic_apikey=settings.RDAP_LACNIC_APIKEY,
             timeout=10,
         )
