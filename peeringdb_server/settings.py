@@ -7,6 +7,9 @@ RDAP_LACNIC_APIKEY = getattr(settings, "PEERINGDB_RDAP_LACNIC_APIKEY", None)
 RDAP_RECURSE_ROLES = getattr(
     settings, "PEERINGDB_RDAP_RECURSE_ROLES", ["administrative", "technical"]
 )
+RDAP_SELF_BOOTSTRAP = getattr(settings, "RDAP_SELF_BOOTSTRAP")
+RDAP_BOOTSTRAP_DIR = getattr(settings, "RDAP_BOOTSTRAP_DIR")
+
 TUTORIAL_MODE = getattr(settings, "TUTORIAL_MODE", False)
 RELEASE_ENV = getattr(settings, "RELEASE_ENV", "dev")
 SHOW_AUTO_PROD_SYNC_WARNING = getattr(settings, "SHOW_AUTO_PROD_SYNC_WARNING", False)
