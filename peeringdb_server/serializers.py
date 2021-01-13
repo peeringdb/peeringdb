@@ -24,7 +24,7 @@ from django_peeringdb.models.abstract import AddressModel
 from django_namespace_perms.rest import PermissionedModelSerializer
 from django_namespace_perms.util import has_perms
 
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol
+from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol, RdapException, rdap_pretty_error_message
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
     ticket_queue_rdap_error,
@@ -55,7 +55,6 @@ from peeringdb_server.validators import (
 
 from django.utils.translation import ugettext_lazy as _
 
-from peeringdb.inet import RdapException, rdap_pretty_error_message
 
 # exclude certain query filters that would otherwise
 # be exposed to the api for filtering operations

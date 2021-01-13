@@ -148,7 +148,7 @@ def rdap_pretty_error_message(exc):
     error message (str)
     """
 
-    if isinstance(exc, RdapNotFound):
+    if isinstance(exc, RdapNotFoundError):
         return _("This ASN is not assigned by any RIR")
 
     return _("RDAP Lookup Error: {}").format(exc)

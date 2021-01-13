@@ -81,7 +81,7 @@ from peeringdb_server.serializers import (
     InternetExchangeSerializer,
     FacilitySerializer,
 )
-from peeringdb_server.inet import RdapLookup, RdapException, RdapNotFound, rdap_pretty_error_message
+from peeringdb_server.inet import RdapLookup, RdapException, RdapNotFoundError, rdap_pretty_error_message
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.deskpro import ticket_queue_rdap_error
 
