@@ -564,7 +564,8 @@ class OrgAdminTests(TestCase):
 
         with override_group_id():
             request = self.factory.post(
-                "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={"id": uoar_b.id}
+                "/org-admin/uoar/approve?org_id=%d" % self.org.id,
+                data={"id": uoar_b.id},
             )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin

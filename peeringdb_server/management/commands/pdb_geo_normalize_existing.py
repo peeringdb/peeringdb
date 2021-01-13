@@ -66,8 +66,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
-        self.floor_and_ste_parse_only = options.get(
-            "floor_and_suite_only", False)
+        self.floor_and_ste_parse_only = options.get("floor_and_suite_only", False)
         self.pprint = options.get("pprint", False)
         self.csv_file = options.get("csv")
 
@@ -99,20 +98,23 @@ class Command(BaseCommand):
 
         # Case: "Suite 1" or "Suite B"
         pattern = r"(?<=\b[Ss]uite\s)(\w+)"
-        suite = (re.findall(pattern, instance.address1) +
-                 re.findall(pattern, instance.address2))
+        suite = re.findall(pattern, instance.address1) + re.findall(
+            pattern, instance.address2
+        )
         return suite
 
     def parse_floor(self, instance):
         # Case "5th floor"
         pattern_before = r"(\d+)(?:st|nd|th)(?=\s[Ff]loor\b)"
-        floor = (re.findall(pattern_before, instance.address1) +
-                 re.findall(pattern_before, instance.address2))
+        floor = re.findall(pattern_before, instance.address1) + re.findall(
+            pattern_before, instance.address2
+        )
         # Case: "Floor 2"
         if len(floor) == 0:
             pattern_after = r"(?<=\b[Ff]loor\s)(\d+)"
-            floor = (re.findall(pattern_after, instance.address1) +
-                     re.findall(pattern_after, instance.address2))
+            floor = re.findall(pattern_after, instance.address1) + re.findall(
+                pattern_after, instance.address2
+            )
         return floor
 
     def log_floor_and_ste_changes(self, instance):
@@ -134,7 +136,7 @@ class Command(BaseCommand):
             keys.append(k + "_before")
             keys.append(k + "_after")
 
-        with open(self.csv_file, 'w') as csvf:
+        with open(self.csv_file, "w") as csvf:
             dict_writer = csv.DictWriter(csvf, keys)
             dict_writer.writeheader()
             dict_writer.writerows(output_list)
@@ -145,14 +147,12 @@ class Command(BaseCommand):
         if not model:
             raise ValueError(f"Unknown reftag: {reftag}")
         if not hasattr(model, "geocode_status"):
-            raise TypeError(
-                "Can only geosync models containing GeocodeBaseMixin"
-            )
+            raise TypeError("Can only geosync models containing GeocodeBaseMixin")
 
         q = model.handleref.undeleted()
 
         # Exclude if city is null / blank
-        q = q.exclude(city__exact='').exclude(city__isnull=True)
+        q = q.exclude(city__exact="").exclude(city__isnull=True)
 
         if _id:
             q = q.filter(id=_id)

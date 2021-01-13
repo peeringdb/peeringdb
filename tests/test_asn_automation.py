@@ -173,20 +173,20 @@ class AsnAutomationTestCase(TestCase):
             subject=f"[{settings.RELEASE_ENV}] [ASNAUTO] Organization 'ORG AS9000001', Network 'AS9000001' created"
         )
         self.assertEqual(
-            ticket.body, self.ticket["asnauto-9000001-org-net-created.txt"].format(
-                org_id = org.id,
-                net_id = org.net_set.first().id
-            )
+            ticket.body,
+            self.ticket["asnauto-9000001-org-net-created.txt"].format(
+                org_id=org.id, net_id=org.net_set.first().id
+            ),
         )
 
         ticket = models.DeskProTicket.objects.get(
             subject=f"[{settings.RELEASE_ENV}] [ASNAUTO] Ownership claim granted to Org 'ORG AS9000001' for user 'user_a'"
         )
         self.assertEqual(
-            ticket.body, self.ticket["asnauto-9000001-user-granted-ownership.txt"].format(
-                org_id = org.id,
-                net_id = org.net_set.first().id
-            )
+            ticket.body,
+            self.ticket["asnauto-9000001-user-granted-ownership.txt"].format(
+                org_id=org.id, net_id=org.net_set.first().id
+            ),
         )
 
         net = models.Network.objects.get(asn=asn_ok)
@@ -211,10 +211,11 @@ class AsnAutomationTestCase(TestCase):
             subject=f"[{settings.RELEASE_ENV}] User user_b wishes to request ownership of ORG AS9000002"
         )
         self.assertEqual(
-            ticket.body, self.ticket["asnauto-9000002-user-requested-ownership.txt"].format(
-                user_id = self.user_b.id,
-                affil_id = self.user_b.affiliation_requests.last().id
-            )
+            ticket.body,
+            self.ticket["asnauto-9000002-user-requested-ownership.txt"].format(
+                user_id=self.user_b.id,
+                affil_id=self.user_b.affiliation_requests.last().id,
+            ),
         )
 
         net = models.Network.objects.get(asn=asn_ok_b)
@@ -330,11 +331,13 @@ class AsnAutomationTestCase(TestCase):
 
         self.assertEqual(
             ticket.body,
-            self.ticket["asnauto-9000002-affiliated-user-requested-ownership.txt"].format(
+            self.ticket[
+                "asnauto-9000002-affiliated-user-requested-ownership.txt"
+            ].format(
                 admin_org_id=org_1.id,
                 user_org_id=org_2.id,
                 user_id=self.user_b.id,
-                affil_id=self.user_b.affiliation_requests.first().id
+                affil_id=self.user_b.affiliation_requests.first().id,
             ),
         )
 

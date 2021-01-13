@@ -77,7 +77,9 @@ class TestImportPreview(ClientCase):
         )
 
         cls.admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
-        cls.ticket_user = User.objects.create_user("ixf_importer", "ixf_importer@localhost", "ixf_importer")
+        cls.ticket_user = User.objects.create_user(
+            "ixf_importer", "ixf_importer@localhost", "ixf_importer"
+        )
 
         cls.org.admin_usergroup.user_set.add(cls.admin_user)
 
@@ -112,7 +114,6 @@ class TestImportPreview(ClientCase):
             ix_id=self.ixlan.id,
             net_id=self.net.id,
         )
-
 
         assert response.status_code == 200
         assert (

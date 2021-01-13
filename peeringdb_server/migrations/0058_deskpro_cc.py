@@ -7,21 +7,36 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0057_add_suite_and_floor'),
+        ("peeringdb_server", "0057_add_suite_and_floor"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DeskProTicketCC',
+            name="DeskProTicketCC",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('email', models.EmailField(max_length=254)),
-                ('ticket', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='cc_set', to='peeringdb_server.DeskProTicket')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("email", models.EmailField(max_length=254)),
+                (
+                    "ticket",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="cc_set",
+                        to="peeringdb_server.DeskProTicket",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'DeskPRO Ticket CC Contact',
-                'verbose_name_plural': 'Deskpro Ticket CC Contacts',
-                'unique_together': {('ticket', 'email')},
+                "verbose_name": "DeskPRO Ticket CC Contact",
+                "verbose_name_plural": "Deskpro Ticket CC Contacts",
+                "unique_together": {("ticket", "email")},
             },
         ),
     ]

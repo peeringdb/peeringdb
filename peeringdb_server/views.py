@@ -81,7 +81,12 @@ from peeringdb_server.serializers import (
     InternetExchangeSerializer,
     FacilitySerializer,
 )
-from peeringdb_server.inet import RdapLookup, RdapException, RdapNotFoundError, rdap_pretty_error_message
+from peeringdb_server.inet import (
+    RdapLookup,
+    RdapException,
+    RdapNotFoundError,
+    rdap_pretty_error_message,
+)
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.deskpro import ticket_queue_rdap_error
 
@@ -140,7 +145,9 @@ def export_permissions(user, entity):
         perms["can_edit"] = True
 
     if hasattr(entity, "grainy_namespace_manage"):
-        perms["can_manage"] = check_permissions(user, entity.grainy_namespace_manage, PERM_CRUD)
+        perms["can_manage"] = check_permissions(
+            user, entity.grainy_namespace_manage, PERM_CRUD
+        )
     else:
         perms["can_manage"] = False
 
@@ -413,9 +420,7 @@ def view_affiliate_to_org(request):
 
         except RdapException as exc:
             ticket_queue_rdap_error(request.user, asn, exc)
-            return JsonResponse(
-                {"asn": rdap_pretty_error_message(exc)}, status=400
-            )
+            return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
 
         except MultipleObjectsReturned:
             pass
@@ -1020,7 +1025,6 @@ def view_organization(request, id):
                 "type": "geocode",
                 "value": data,
             },
-
             {
                 "readonly": True,
                 "name": "updated",
@@ -1530,7 +1534,6 @@ def view_network(request, id):
     ixf_proposals = IXFMemberData.proposals_for_network(network)
     ixf_proposals_dismissed = IXFMemberData.network_has_dismissed_actionable(network)
 
-
     data = {
         "title": network_d.get("name", dismiss),
         "facilities": facilities,
@@ -2002,9 +2005,9 @@ class LoginView(two_factor.views.LoginView):
 
         return super().get(*args, **kwargs)
 
-    @method_decorator(ratelimit(
-        key="ip", rate=RATELIMITS["request_login_POST"], method="POST"
-    ))
+    @method_decorator(
+        ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
+    )
     def post(self, *args, **kwargs):
 
         """

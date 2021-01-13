@@ -174,4 +174,6 @@ class TestNetworkView(ViewTestCase):
         for q in ["as1", "asn1", "AS1", "ASN1"]:
             resp = c.get(f"/search?q={q}", follow=True)
             self.assertEqual(resp.status_code, 200)
-            self.assertEqual(resp.redirect_chain, [("/net/{}".format(self.net.id), 302)])
+            self.assertEqual(
+                resp.redirect_chain, [("/net/{}".format(self.net.id), 302)]
+            )

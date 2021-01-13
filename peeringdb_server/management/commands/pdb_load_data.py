@@ -86,7 +86,7 @@ class Command(BaseCommand):
             )
             return
 
-        #settings.USE_TZ = True
+        # settings.USE_TZ = True
         db_settings = settings.DATABASES.get("default")
 
         config = {

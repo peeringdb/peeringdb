@@ -38,7 +38,9 @@ def setup_data():
 
     # move users 4, 5, 6 to the past
 
-    User.objects.filter(username__in=["user_4", "user_5", "user_6"]).update(created=date_past)
+    User.objects.filter(username__in=["user_4", "user_5", "user_6"]).update(
+        created=date_past
+    )
 
     # verify all users except 1 and 4
 

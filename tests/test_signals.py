@@ -12,6 +12,7 @@ from datetime import datetime, timezone, timedelta
 import reversion
 import time
 
+
 def now():
     return datetime.now(timezone.utc)
 
@@ -82,10 +83,7 @@ def entities():
         )
 
         poc = NetworkContact.objects.create(
-                    email="network1@localhost",
-                    network=network,
-                    status="ok",
-                    role="Policy"
+            email="network1@localhost", network=network, status="ok", role="Policy"
         )
 
     return {
@@ -95,7 +93,7 @@ def entities():
         "network": network,
         "netfac": netfac,
         "netixlan": netixlan,
-        "poc": poc
+        "poc": poc,
     }
 
 

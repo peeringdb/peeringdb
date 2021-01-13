@@ -1821,7 +1821,6 @@ class Importer:
             if ixf_member_data.id:
                 ixf_member_data.save()
 
-
     @reversion.create_revision()
     def notify_error(self, error):
 

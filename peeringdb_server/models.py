@@ -374,7 +374,7 @@ class GeocodeBaseMixin(models.Model):
                 if component["types"] == first_component:
                     data[component_type] = component
                     continue
-        
+
         return data
 
     def normalize_api_response(self):
@@ -1381,7 +1381,6 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         else:
             self._not_deletable_reason = None
             return True
-
 
     def validate_phonenumbers(self):
         self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
@@ -3385,7 +3384,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             "instance": self,
             "recipient": recipient,
             "ixf_url": self.ixlan.ixf_ixp_member_list_url,
-            "ixf_url_public": (self.ixlan.ixf_ixp_member_list_url_visible=="Public")
+            "ixf_url_public": (self.ixlan.ixf_ixp_member_list_url_visible == "Public"),
         }
         if context:
             _context.update(context)
@@ -3418,7 +3417,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 # validate could check
 
 
-@grainy_model(namespace="prefix", namespace_instance="{instance.ixlan.grainy_namespace}.{namespace}.{instance.pk}")
+@grainy_model(
+    namespace="prefix",
+    namespace_instance="{instance.ixlan.grainy_namespace}.{namespace}.{instance.pk}",
+)
 @reversion.register
 class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
     """
@@ -3605,7 +3607,6 @@ class Network(pdb_models.NetworkBase):
         else:
             net = cls.objects.create(org=org, asn=asn, name=name, status="ok")
         return net, True
-
 
     @classmethod
     def related_to_fac(cls, value=None, filt=None, field="facility_id", qset=None):
@@ -3839,7 +3840,11 @@ class Network(pdb_models.NetworkBase):
 
 
 # class NetworkContact(HandleRefModel):
-@grainy_model(namespace="poc_set", namespace_instance="{namespace}.{instance.visible}", parent="network")
+@grainy_model(
+    namespace="poc_set",
+    namespace_instance="{namespace}.{instance.visible}",
+    parent="network",
+)
 @reversion.register
 class NetworkContact(pdb_models.ContactBase):
     """

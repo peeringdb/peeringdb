@@ -143,6 +143,7 @@ class RdapLookup(rdap.RdapClient):
                 )
         return super().get_asn(asn)
 
+
 def rdap_pretty_error_message(exc):
     """
     Takes an RdapException instance and returns a customer friendly

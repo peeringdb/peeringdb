@@ -25,7 +25,13 @@ from django_peeringdb.models.abstract import AddressModel
 from django_grainy.rest import PermissionDenied
 
 from peeringdb_server.util import check_permissions, Permissions
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol, RdapException, rdap_pretty_error_message
+from peeringdb_server.inet import (
+    RdapLookup,
+    RdapNotFoundError,
+    get_prefix_protocol,
+    RdapException,
+    rdap_pretty_error_message,
+)
 
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
@@ -138,11 +144,11 @@ class GeocodeSerializerMixin(object):
 
         # If there isn't any data besides country, don't sync
         geosync_info_present = self._geosync_information_present(
-            instance, validated_data)
+            instance, validated_data
+        )
 
         if not geosync_info_present:
             return False
-
 
         # We do not need to resync if floor, suite, or address2 are changed
         ignored_fields = ["floor", "suite", "address2"]
@@ -198,7 +204,6 @@ class GeocodeSerializerMixin(object):
         # we dont want to geocode on tests
         if settings.RELEASE_ENV == "run_tests":
             return instance
-
 
         if self._geosync_information_present(instance, validated_data):
             try:
@@ -930,14 +935,14 @@ class ModelSerializer(serializers.ModelSerializer):
         return
 
     def update(self, instance, validated_data):
-        grainy_kwargs = {"id":instance.id}
+        grainy_kwargs = {"id": instance.id}
         grainy_kwargs.update(**validated_data)
 
         namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
         request = self.context.get("request")
         if request and not check_permissions(request.user, namespace, "u"):
             raise PermissionDenied(
-              f"User does not have write permissions to '{namespace}'"
+                f"User does not have write permissions to '{namespace}'"
             )
 
         return super().update(instance, validated_data)
@@ -957,7 +962,7 @@ class ModelSerializer(serializers.ModelSerializer):
 
         self.validate_create(validated_data)
 
-        grainy_kwargs = {"id":"*"}
+        grainy_kwargs = {"id": "*"}
         grainy_kwargs.update(**validated_data)
 
         request = self.context.get("request")
@@ -969,7 +974,7 @@ class ModelSerializer(serializers.ModelSerializer):
 
         if request and not check_permissions(request.user, namespace, "c"):
             raise PermissionDenied(
-              f"User does not have write permissions to '{namespace}'"
+                f"User does not have write permissions to '{namespace}'"
             )
 
         return super().create(validated_data)

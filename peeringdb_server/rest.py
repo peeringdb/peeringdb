@@ -497,7 +497,6 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         return r
 
-
     @client_check()
     def retrieve(self, request, *args, **kwargs):
         # could add fk relationships here, one at a time, but we need to define

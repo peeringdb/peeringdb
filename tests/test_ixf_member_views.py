@@ -28,12 +28,13 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLogEntry,
     User,
     DeskProTicket,
-    Group
+    Group,
 )
 from peeringdb_server import ixf
 
 import pytest
 from .util import override_group_id
+
 
 @pytest.mark.django_db
 def test_reset_ixf_proposals(admin_user, entities, ip_addresses):
@@ -140,7 +141,6 @@ def test_dismissed_note(admin_user, entities, ip_addresses):
     don't show the "you have dimissed suggestions" notification (#809)
     """
 
-
     network = entities["network"]
     ixlan_a = entities["ixlan"][0]
 
@@ -227,7 +227,6 @@ def test_check_ixf_proposals(admin_user, ixf_importer_user, entities, ip_address
     importer = ixf.Importer()
     importer.update(ixlan, data=json_data)
 
-
     client = setup_client(admin_user)
     url = reverse("net-view", args=(network.id,))
 
@@ -268,8 +267,6 @@ def create_IXFMemberData(network, ixlan, ip_addresses, dismissed):
         ixfmember.save()
         ids.append(ixfmember.id)
     return ids
-
-
 
 
 @pytest.fixture

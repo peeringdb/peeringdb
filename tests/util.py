@@ -14,8 +14,12 @@ class ClientCase(TestCase):
     def setUpTestData(cls):
         # create user and guest group
 
-        cls.guest_group = guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
-        cls.user_group = user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
+        cls.guest_group = guest_group = Group.objects.create(
+            name="guest", id=settings.GUEST_GROUP_ID
+        )
+        cls.user_group = user_group = Group.objects.create(
+            name="user", id=settings.USER_GROUP_ID
+        )
 
         settings.USER_GROUP_ID = cls.user_group.id
         settings.GUEST_GROUP_ID = cls.guest_group.id
@@ -87,11 +91,13 @@ def reset_group_ids():
     settings.USER_GROUP_ID = Group.objects.get(name="user").id
     settings.GUEST_GROUP_ID = Group.objects.get(name="guest").id
 
+
 def override_group_id():
     from django.test import override_settings
+
     return override_settings(
         USER_GROUP_ID=Group.objects.get(name="user").id,
-        GUEST_GROUP_ID=Group.objects.get(name="guest").id
+        GUEST_GROUP_ID=Group.objects.get(name="guest").id,
     )
 
 

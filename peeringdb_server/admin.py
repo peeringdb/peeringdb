@@ -39,7 +39,6 @@ from django_grainy.admin import (
 )
 
 
-
 import reversion
 from reversion.admin import VersionAdmin
 
@@ -98,6 +97,7 @@ PERMISSION_APP_LABELS = [
     "account",
     "oauth2_provider",
 ]
+
 
 class StatusFilter(admin.SimpleListFilter):
     """
@@ -380,7 +380,6 @@ class SoftDeleteAdmin(
         if request.user:
             reversion.set_user(request.user)
         super().save_formset(request, form, formset, change)
-
 
     def grainy_namespace(self, obj):
         return obj.grainy_namespace
@@ -1691,7 +1690,9 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
 
             # Add (case insensitive) regex search results to standard search results
             try:
-                queryset = self.model.objects.filter(subject__iregex=search_term).order_by("-created")
+                queryset = self.model.objects.filter(
+                    subject__iregex=search_term
+                ).order_by("-created")
             except OperationalError:
                 return queryset, use_distinct
 
@@ -1749,7 +1750,9 @@ class DeskProTicketAdmin(admin.ModelAdmin):
 
             # Add (case insensitive) regex search results to standard search results
             try:
-                queryset = self.model.objects.filter(subject__iregex=search_term).order_by("-created")
+                queryset = self.model.objects.filter(
+                    subject__iregex=search_term
+                ).order_by("-created")
             except OperationalError:
                 return queryset, use_distinct
 

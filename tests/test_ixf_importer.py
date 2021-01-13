@@ -26,6 +26,7 @@ def test_match_vlans_across_connections(data_ixf_connections):
     """
     importer = ixf.Importer()
     sanitized = importer.match_vlans_across_connections(
-        json.loads(data_ixf_connections.input)["connection_list"])
+        json.loads(data_ixf_connections.input)["connection_list"]
+    )
     pprint(sanitized)
     assert sanitized == data_ixf_connections.expected["connection_list"]

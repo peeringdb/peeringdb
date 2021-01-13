@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 
 import peeringdb_server.models as models
 
+
 @pytest.fixture
 def fac():
     fac = models.Facility(
@@ -88,4 +89,3 @@ def test_geo_model_reverse_geocode_blank(fac):
 
 def test_geo_model_parse_reverse(fac, reverse, reverse_parsed):
     assert fac.parse_reverse_geocode(reverse) == reverse_parsed
-

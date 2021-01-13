@@ -42,7 +42,9 @@ class TestAPIClientCompat(ClientCase):
             assert r.status_code == 200
 
         r = self.client.post(
-            "/api/net", {"org_id": org_id, "name": "Test net", "asn": 9000000}, format="json"
+            "/api/net",
+            {"org_id": org_id, "name": "Test net", "asn": 9000000},
+            format="json",
         )
         content = json.loads(r.content)
         if error:
