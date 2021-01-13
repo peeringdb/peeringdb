@@ -8,6 +8,8 @@ from peeringdb_server.signals import disable_auto_now_and_save
 def populate_last_updated_fields(apps, schema_editor):
     Network = apps.get_model("peeringdb_server", "Network")
 
+    print("This migration may take a few minutes ...")
+
     for network in Network.handleref.all():
         try:
             latest_netfac = network.netfac_set.filter(updated__isnull=False).latest(
@@ -36,7 +38,7 @@ def populate_last_updated_fields(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("peeringdb_server", "0056_add_last_updated_fields_to_network"),
+        ("peeringdb_server", "0062_adjust_geo_fields"),
     ]
 
     operations = [

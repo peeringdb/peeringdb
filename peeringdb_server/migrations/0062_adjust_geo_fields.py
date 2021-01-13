@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0056_add_suite_and_floor'),
+        ('peeringdb_server', '0061_update_phone_help_text'),
     ]
 
     operations = [
