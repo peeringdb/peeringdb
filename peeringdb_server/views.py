@@ -81,7 +81,7 @@ from peeringdb_server.serializers import (
     InternetExchangeSerializer,
     FacilitySerializer,
 )
-from peeringdb_server.inet import RdapLookup, RdapException
+from peeringdb_server.inet import RdapLookup, RdapException, RdapNotFound, rdap_pretty_error_message
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.deskpro import ticket_queue_rdap_error
 
@@ -416,7 +416,7 @@ def view_affiliate_to_org(request):
         except RdapException as exc:
             ticket_queue_rdap_error(request.user, asn, exc)
             return JsonResponse(
-                {"asn": _("RDAP Lookup Error: {}").format(exc)}, status=400
+                {"asn": rdap_pretty_error_message(exc)}, status=400
             )
 
         except MultipleObjectsReturned:

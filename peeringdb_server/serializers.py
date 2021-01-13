@@ -55,7 +55,7 @@ from peeringdb_server.validators import (
 
 from django.utils.translation import ugettext_lazy as _
 
-from rdap.exceptions import RdapException
+from peeringdb.inet import RdapException, rdap_pretty_error_message
 
 # exclude certain query filters that would otherwise
 # be exposed to the api for filtering operations
@@ -287,7 +287,7 @@ class AsnRdapValidator:
             self.request.rdap_result = rdap
         except RdapException as exc:
             self.request.rdap_error = (self.request.user, asn, exc)
-            raise RestValidationError({self.field: f"{self.message}: {exc}"})
+            raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
 
     def set_context(self, serializer):
         self.instance = getattr(serializer, "instance", None)

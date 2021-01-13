@@ -74,7 +74,7 @@ from peeringdb_server.models import (
     ProtectedAction,
 )
 from peeringdb_server.mail import mail_users_entity_merge
-from peeringdb_server.inet import RdapLookup, RdapException
+from peeringdb_server.inet import RdapLookup, RdapException, rdap_pretty_error_message
 
 delete_selected.short_description = "HARD DELETE - Proceed with caution"
 
@@ -543,7 +543,7 @@ class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
             if asn:
                 rdap_valid = RdapLookup().get_asn(asn).emails
         except RdapException as exc:
-            raise ValidationError({"asn": str(exc)})
+            raise ValidationError({"asn": rdap_pretty_error_message(exc)})
 
 
 class UserOrgAffiliationRequestInline(admin.TabularInline):
