@@ -77,6 +77,7 @@ class TestImportPreview(ClientCase):
         )
 
         cls.admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
+        cls.ticket_user = User.objects.create_user("ixf_importer", "ixf_importer@localhost", "ixf_importer")
 
         cls.org.admin_usergroup.user_set.add(cls.admin_user)
 
@@ -100,6 +101,19 @@ class TestImportPreview(ClientCase):
 
         response = view_import_net_ixf_preview(request, self.net.id)
 
+        data_ixf_preview_net.expected["data"][0]["peer"].update(
+            ixlan_id=self.ixlan.id,
+            ix_id=self.ixlan.id,
+            net_id=self.net.id,
+        )
+
+        data_ixf_preview_net.expected["data"][1]["peer"].update(
+            ixlan_id=self.ixlan.id,
+            ix_id=self.ixlan.id,
+            net_id=self.net.id,
+        )
+
+
         assert response.status_code == 200
         assert (
             json.loads(response.content.decode("utf8")) == data_ixf_preview_net.expected
@@ -113,7 +127,7 @@ class TestImportPreview(ClientCase):
 
         assert response.status_code == 200
         assert json.loads(response.content)["errors"] == [
-            "IXF import url not specified"
+            "IX-F import url not specified"
         ]
 
     def test_import_preview_basic_auth(self):
@@ -125,7 +139,7 @@ class TestImportPreview(ClientCase):
 
         assert response.status_code == 200
         assert json.loads(response.content)["errors"] == [
-            "IXF import url not specified"
+            "IX-F import url not specified"
         ]
 
     def test_import_preview_fail_ratelimit(self):

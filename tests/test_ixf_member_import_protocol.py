@@ -2226,6 +2226,10 @@ def test_mark_invalid_multiple_vlans(entities, save):
     importer.update(ixlan, data=data)
 
     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+
+    for email in IXFImportEmail.objects.filter(ix=ixlan.ix.id):
+        print(email.message)
+
     assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
 
     # Test idempotent
@@ -2252,11 +2256,6 @@ def test_vlan_list_empty(entities, save):
     assert importer.ixlan.ixf_ixp_import_error_notified is None
     assert importer.ixlan.ixf_ixp_import_error is None
     assert_no_emails(ix=ixlan.ix)
-
-    # test revision user
-    version = reversion.models.Version.objects.get_for_object(ixlan)
-    assert version.first().revision.user == importer.ticket_user
-
 
     # Assert idempotent / lock
     importer.sanitize(data)

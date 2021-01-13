@@ -502,14 +502,6 @@ class Importer:
             self.log_error(data.get("pdb_error"), save=save)
             return False
 
-        # null ix-f error note on ixlan if it had error'd before
-        if self.ixlan.ixf_ixp_import_error:
-            with reversion.create_revision():
-                reversion.set_user(self.ticket_user)
-                self.ixlan.ixf_ixp_import_error = None
-                self.ixlan.ixf_ixp_import_error_notified = None
-                self.ixlan.save()
-
         # bail if there are no active prefixes on the ixlan
         if ixlan.ixpfx_set_active.count() == 0:
             self.log_error(_("No prefixes defined on ixlan"), save=save)
@@ -541,9 +533,11 @@ class Importer:
 
         # null ix-f error note on ixlan if it had error'd before
         if self.ixlan.ixf_ixp_import_error:
-            self.ixlan.ixf_ixp_import_error = None
-            self.ixlan.ixf_ixp_import_error_notified = None
-            self.ixlan.save()
+            with reversion.create_revision():
+                reversion.set_user(self.ticket_user)
+                self.ixlan.ixf_ixp_import_error = None
+                self.ixlan.ixf_ixp_import_error_notified = None
+                self.ixlan.save()
 
         with transaction.atomic():
             # process any netixlans that need to be deleted

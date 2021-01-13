@@ -10,6 +10,8 @@ import peeringdb_server.models as models
 import peeringdb_server.org_admin_views as org_admin
 import peeringdb_server.views as views
 
+from tests.util import override_group_id
+
 
 class OrgAdminTests(TestCase):
     """

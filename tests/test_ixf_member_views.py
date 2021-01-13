@@ -13,6 +13,7 @@ from django.db import transaction
 from django.core.cache import cache
 from django.test import Client, TestCase, RequestFactory
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 
 from peeringdb_server.models import (
     Organization,
@@ -53,7 +54,7 @@ def test_reset_ixf_proposals(admin_user, entities, ip_addresses):
 
 @pytest.mark.django_db
 def test_dismiss_ixf_proposals(admin_user, entities, ip_addresses):
-    
+
     network = entities["network"]
     ixlan = entities["ixlan"][0]
 
@@ -88,7 +89,7 @@ def test_reset_ixf_proposals_no_perm(regular_user, entities, ip_addresses):
 
 @pytest.mark.django_db
 def test_dismiss_ixf_proposals_no_perm(regular_user, entities, ip_addresses):
-    
+
     network = entities["network"]
     ixlan = entities["ixlan"][0]
 
@@ -171,7 +172,7 @@ def test_dismissed_note(admin_user, entities, ip_addresses):
 
     with override_group_id():
         response = client.get(url)
-        
+
     content = response.content.decode("utf-8")
 
     # dismissed suggestion no longer relevant, confirm note is gibe
@@ -181,7 +182,7 @@ def test_dismissed_note(admin_user, entities, ip_addresses):
 
 
 @pytest.mark.django_db
-def test_check_ixf_proposals(admin_user, entities, ip_addresses):
+def test_check_ixf_proposals(admin_user, ixf_importer_user, entities, ip_addresses):
     network = Network.objects.create(
         name="Network w allow ixp update disabled",
         org=entities["org"][0],
@@ -257,7 +258,7 @@ def create_IXFMemberData(network, ixlan, ip_addresses, dismissed):
     """
     Creates IXFMember data. Returns the ids of the created instances.
     """
-    ids = [] 
+    ids = []
     for ip_address in ip_addresses:
         ixfmember = IXFMemberData.instantiate(
             network.asn, ip_address[0], ip_address[1], ixlan, data={"foo": "bar"}
