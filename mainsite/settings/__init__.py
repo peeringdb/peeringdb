@@ -225,7 +225,7 @@ set_option(
     "PEERINGDB_VERSION", read_file(os.path.join(BASE_DIR, "etc/VERSION")).strip()
 )
 
-MIGRATION_MODULES={"django_peeringdb": None}
+MIGRATION_MODULES = {"django_peeringdb": None}
 
 # Contact email, from address, support email
 set_from_env("SERVER_EMAIL")
@@ -285,18 +285,21 @@ set_option("DATA_QUALITY_MIN_SPEED", 100)
 # maximum value to allow for speed on an netixlan (currently 1Tbit)
 set_option("DATA_QUALITY_MAX_SPEED", 1000000)
 
-set_option("RATELIMITS", {
-    "request_login_POST": "4/m",
-    "request_translation": "2/m",
-    "resend_confirmation_mail": "2/m",
-    "view_request_ownership_POST": "3/m",
-    "view_request_ownership_GET": "3/m",
-    "view_affiliate_to_org_POST": "3/m",
-    "view_verify_POST": "2/m",
-    "view_username_retrieve_initiate": "2/m",
-    "view_import_ixlan_ixf_preview": "1/m",
-    "view_import_net_ixf_postmortem": "1/m",
-})
+set_option(
+    "RATELIMITS",
+    {
+        "request_login_POST": "4/m",
+        "request_translation": "2/m",
+        "resend_confirmation_mail": "2/m",
+        "view_request_ownership_POST": "3/m",
+        "view_request_ownership_GET": "3/m",
+        "view_affiliate_to_org_POST": "3/m",
+        "view_verify_POST": "2/m",
+        "view_username_retrieve_initiate": "2/m",
+        "view_import_ixlan_ixf_preview": "1/m",
+        "view_import_net_ixf_postmortem": "1/m",
+    },
+)
 
 # maximum number of affiliation requests a user can have pending
 set_option("MAX_USER_AFFILIATION_REQUESTS", 5)
@@ -347,7 +350,7 @@ DATABASES = {
         "NAME": DATABASE_NAME,
         "USER": DATABASE_USER,
         "PASSWORD": DATABASE_PASSWORD,
-       # "TEST": { "NAME": f"{DATABASE_NAME}_test" }
+        # "TEST": { "NAME": f"{DATABASE_NAME}_test" }
     },
 }
 
@@ -640,8 +643,8 @@ set_option("SPONSORSHIPS_EMAIL", SERVER_EMAIL)
 
 
 set_option("API_URL", "https://peeringdb.com/api")
-set_option("API_DEPTH_ROW_LIMIT",250)
-set_option("API_CACHE_ENABLED",  True)
+set_option("API_DEPTH_ROW_LIMIT", 250)
+set_option("API_CACHE_ENABLED", True)
 set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
 set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
 
