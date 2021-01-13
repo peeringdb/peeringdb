@@ -1,0 +1,33 @@
+name: tests
+
+on: [push, pull_request]
+
+jobs:
+
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip
+          restore-keys: ${{ runner.os }}-pip
+      - run: python -m pip install black flake8 isort
+      - run: |
+          black . --check
+
+  test:
+    needs: linting
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: setup dev environment
+        run: touch ./Ctl/dev/.env
+      - name: Start the DB
+        run: ./Ctl/dev/compose.sh up -d database
+      - name: build PeeringDB
+        run: ./Ctl/dev/compose.sh build peeringdb
+      - name: run tests
+        run: ./Ctl/dev/run.sh run_tests
