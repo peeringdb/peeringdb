@@ -25,7 +25,8 @@ from django_peeringdb.models.abstract import AddressModel
 from django_grainy.rest import PermissionDenied
 
 from peeringdb_server.util import check_permissions, Permissions
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol
+from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol, RdapException, rdap_pretty_error_message
+
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
     ticket_queue_rdap_error,
@@ -56,7 +57,6 @@ from peeringdb_server.validators import (
 
 from django.utils.translation import ugettext_lazy as _
 
-from rdap.exceptions import RdapException
 
 # exclude certain query filters that would otherwise
 # be exposed to the api for filtering operations
@@ -395,7 +395,7 @@ class AsnRdapValidator:
             self.request.rdap_result = rdap
         except RdapException as exc:
             self.request.rdap_error = (self.request.user, asn, exc)
-            raise RestValidationError({self.field: f"{self.message}: {exc}"})
+            raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
 
     def set_context(self, serializer):
         self.instance = getattr(serializer, "instance", None)

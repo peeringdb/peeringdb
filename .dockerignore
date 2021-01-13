@@ -3,3 +3,6 @@
 *.tar
 __pycache__
 Ctl/dev/peeringdb_database/
+venv
+venv37
+*.sql

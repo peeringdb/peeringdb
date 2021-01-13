@@ -120,6 +120,8 @@ class RdapLookup(rdap.RdapClient):
         # create rdap config
         config = dict(
             bootstrap_url=settings.RDAP_URL.rstrip("/"),
+            self_bootstrap=settings.RDAP_SELF_BOOTSTRAP,
+            bootstrap_dir=settings.RDAP_BOOTSTRAP_DIR,
             lacnic_apikey=settings.RDAP_LACNIC_APIKEY,
             timeout=10,
         )
@@ -139,6 +141,17 @@ class RdapLookup(rdap.RdapClient):
                     _("ASNs in this range " "are not allowed in this environment")
                 )
         return super().get_asn(asn)
+
+def rdap_pretty_error_message(exc):
+    """
+    Takes an RdapException instance and returns a customer friendly
+    error message (str)
+    """
+
+    if isinstance(exc, RdapNotFoundError):
+        return _("This ASN is not assigned by any RIR")
+
+    return _("RDAP Lookup Error: {}").format(exc)
 
 
 def asn_is_bogon(asn):
