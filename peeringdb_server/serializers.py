@@ -2255,24 +2255,6 @@ class IXLanSerializer(ModelSerializer):
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-
-        if not isinstance(data, dict):
-            return data
-
-        user = self.context.get("user")
-        request = self.context.get("request")
-
-        if not user and request:
-            user = request.user
-
-        if instance and not instance.ixf_ixp_member_list_url_viewable(user):
-            if "ixf_ixp_member_list_url" in data:
-                del data["ixf_ixp_member_list_url"]
-
-        return data
-
     def validate(self, data):
         # Per issue 846
         if data["ixf_ixp_member_list_url"] == "" and data["ixf_ixp_import_enabled"]:
