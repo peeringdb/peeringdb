@@ -213,7 +213,8 @@ class Command(BaseCommand):
         instance.longitude = loc.get("lng")
         # only change address1, keep address2 the same
         address1 = instance.get_address1_from_geocode(forward_result)
-        instance.address1 = address1
+        if address1 is not None:
+            instance.address1 = address1
         # The reverse result normalizes the administrative levels
         # (city, state, zip) and translates them into English
         reverse_result = instance.reverse_geocode(gmaps)
