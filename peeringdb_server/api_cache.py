@@ -6,8 +6,6 @@ from django.conf import settings
 
 from peeringdb_server.models import InternetExchange, IXLan, Network
 
-import django_namespace_perms.util as nsp
-
 
 class CacheRedirect(Exception):
     """
@@ -94,11 +92,6 @@ class APICacheLoader:
 
         data = data.get("data")
 
-        # apply permissions to data
-        fnc = getattr(self, "apply_permissions_%s" % self.model.handleref.tag, None)
-        if fnc:
-            data = fnc(data)
-
         # apply pagination
         if self.skip and self.limit:
             data = data[self.skip : self.skip + self.limit]
@@ -107,208 +100,17 @@ class APICacheLoader:
         elif self.limit:
             data = data[: self.limit]
 
+        if self.fields:
+            for row in data:
+                self.filter_fields(row)
+
         return {"results": data, "__meta": {"generated": os.path.getmtime(self.path)}}
 
-    def apply_permissions(self, ns, data, ruleset={}):
+    def filter_fields(self, row):
         """
-        Wrapper function to apply permissions to a data row and
-        return the sanitized result
+        Removes any unwanted fields from the resultset
+        according to the `fields` filter specified in the request
         """
-        if type(ns) != list:
-            ns = ns.split(".")
-
-        # prepare ruleset
-        if ruleset:
-            _ruleset = {}
-            namespace_str = ".".join(ns)
-            for section, rules in list(ruleset.items()):
-                _ruleset[section] = {}
-                for rule, perms in list(rules.items()):
-                    _ruleset[section][f"{namespace_str}.{rule}"] = perms
-                    ruleset = _ruleset
-
-        return nsp.dict_get_path(
-            nsp.permissions_apply(
-                nsp.dict_from_namespace(ns, data), self.request.user, ruleset=ruleset
-            ),
-            ns,
-        )
-
-    def apply_permissions_generic(self, data, explicit=False, join_ids=[], **kwargs):
-        """
-        Apply permissions to all rows according to rules
-        specified in parameters
-
-        explicit <function>
-
-        if explicit is passed as a function it will be called and the result will
-        determine whether or not explicit read perms are required for the row
-
-        join_ids [(target_id<str>, proxy_id<str>, model<handleref>), ..]
-
-        Since we are checking permissioning namespaces, and those namespaces may
-        consist of object ids that are not necessarily in the dataset you can
-        join those ids in via the join_ids parameter
-        """
-        rv = []
-
-        joined_ids = collections.OrderedDict()
-        e = {}
-        inst = self.model()
-
-        # perform id joining
-        if join_ids:
-            for t, p, model in join_ids:
-                joined_ids[t] = {
-                    "p": p,
-                    "ids": self.join_ids(
-                        data,
-                        t,
-                        p,
-                        model,
-                        list(joined_ids.get(p, e).get("ids", e).values()),
-                    ),
-                }
-
-        for row in data:
-
-            # create dict containing ids needed to build the permissioning
-            # namespace
-            init = {k: row.get(v) for k, v in list(kwargs.items())}
-
-            # joined ids
-            for t, j in list(joined_ids.items()):
-                if j["p"] in row:
-                    init[t] = j["ids"].get(row.get(j["p"]))
-                elif t in joined_ids:
-                    init[t] = joined_ids.get(t).get("ids").get(init[j["p"]])
-
-            # build permissioning namespace
-            ns = self.model.nsp_namespace_from_id(**init).lower()
-
-            # apply fields filter
-            if self.fields:
-                for k in list(row.keys()):
-                    if k not in self.fields:
-                        del row[k]
-
-            # determine whether or not read perms for this object need
-            # to be explicitly set
-            if explicit and callable(explicit):
-                expl = explicit(row)
-            else:
-                expl = False
-
-            # initial read perms check
-            if nsp.has_perms(self.request.user, ns, 0x01, explicit=expl):
-                ruleset = getattr(inst, "nsp_ruleset", {})
-
-                # apply permissions to tree
-                row = self.apply_permissions(ns, row, ruleset=ruleset)
-
-                applicator = getattr(
-                    self.model, "api_cache_permissions_applicator", None
-                )
-
-                if applicator:
-                    applicator(row, ns, self.request.user)
-
-                # if row still has data aftewards, append to results
-                if row:
-                    rv.append(row)
-
-        return rv
-
-    def join_ids(self, data, target_id, proxy_id, model, stash=[]):
-        """
-        Returns a dict mapping of (proxy_id, target_id)
-
-        target ids are obtained by fetching instances of specified
-        model that match the supplied proxy ids
-
-        proxy ids will be gotten from data or stash
-
-        data [<dict>, ..] list of data rows from cache load, the field
-        name provided in "proxy_id" will be used to obtain the id from
-        each row
-
-        stash [<int>,..] list of ids
-
-        if stash is set, data and proxy_field will be ignored
-        """
-
-        if stash:
-            ids = stash
-        else:
-            ids = [r[proxy_id] for r in data]
-
-        return {
-            r["id"]: r[target_id]
-            for r in model.objects.filter(id__in=ids).values("id", target_id)
-        }
-
-    # permissioning functions for each handlref type
-
-    def apply_permissions_org(self, data):
-        return self.apply_permissions_generic(data, id="id")
-
-    def apply_permissions_fac(self, data):
-        return self.apply_permissions_generic(data, fac_id="id", org_id="org_id")
-
-    def apply_permissions_ix(self, data):
-        return self.apply_permissions_generic(data, ix_id="id", org_id="org_id")
-
-    def apply_permissions_net(self, data):
-        return self.apply_permissions_generic(data, net_id="id", org_id="org_id")
-
-    def apply_permissions_ixpfx(self, data):
-        return self.apply_permissions_generic(
-            data,
-            join_ids=[
-                ("ix_id", "ixlan_id", IXLan),
-                ("org_id", "ix_id", InternetExchange),
-            ],
-            ixlan_id="ixlan_id",
-            id="id",
-        )
-
-    def apply_permissions_ixlan(self, data):
-        return self.apply_permissions_generic(
-            data,
-            join_ids=[("org_id", "ix_id", InternetExchange)],
-            ix_id="ix_id",
-            id="id",
-        )
-
-    def apply_permissions_ixfac(self, data):
-        return self.apply_permissions_generic(
-            data,
-            join_ids=[("org_id", "ix_id", InternetExchange)],
-            ix_id="ix_id",
-            id="id",
-        )
-
-    def apply_permissions_netfac(self, data):
-        return self.apply_permissions_generic(
-            data,
-            join_ids=[("org_id", "net_id", Network)],
-            net_id="net_id",
-            fac_id="fac_id",
-        )
-
-    def apply_permissions_netixlan(self, data):
-        return self.apply_permissions_generic(
-            data,
-            join_ids=[("org_id", "net_id", Network)],
-            net_id="net_id",
-            ixlan_id="ixlan_id",
-        )
-
-    def apply_permissions_poc(self, data):
-        return self.apply_permissions_generic(
-            data,
-            explicit=lambda x: (x.get("visible") != "Public"),
-            join_ids=[("org_id", "net_id", Network)],
-            vis="visible",
-            net_id="net_id",
-        )
+        for field in list(row.keys()):
+            if field not in self.fields and field != "_grainy":
+                del row[field]

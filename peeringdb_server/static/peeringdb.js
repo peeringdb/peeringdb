@@ -154,6 +154,7 @@ PeeringDB = {
     return value
   },
 
+
   // searches the page for all editable forms that
   // have data-check-incomplete attribute set and
   // displays a notification if any of the fields
@@ -251,6 +252,7 @@ function moveCursorToEnd(el) {
  * @namespace PeeringDB
  */
 
+
 PeeringDB.ViewTools = {
 
   /**
@@ -286,13 +288,28 @@ PeeringDB.ViewTools = {
    */
 
   after_submit : function(container, data) {
-    var target = container.data("edit-target")
+
+    const addressFields = ["address1", "address2", "city", "state", "zipcode", "geocode"];
+    var target = container.data("edit-target");
     if(target == "api:ix:update") {
       this.apply_data(container, data, "tech_phone");
       this.apply_data(container, data, "policy_phone");
     }
-  }
+    if (target === "api:fac:update" || target === "api:org:update") {
+      addressFields.forEach(field => this.apply_data(container, data, field));
+      this.update_geocode(data);
+    }
+  },
 
+  update_geocode: function(data){
+    const geo_field = $("#geocode");
+    if (data.latitude && data.longitude) {
+      let link = `https://maps.google.com/?q=${data.latitude},${data.longitude}`
+      let contents = `<a href="${link}">${data.latitude}, ${data.longitude}</a>`
+      geo_field.empty().append(contents);
+    }
+    
+  }
 }
 
 PeeringDB.ViewActions = {
@@ -724,8 +741,11 @@ PeeringDB.IXFProposals = twentyc.cls.define(
             .insertBefore(element);
           element.addClass('validation-error')
         }
+      } else if(response.status == 403) {
+        info = [gettext("You do not have permissions to perform this action")]
       }
-     if(response.responseJSON && response.responseJSON.non_field_errors) {
+
+      if(response.responseJSON && response.responseJSON.non_field_errors) {
         info = [];
         var i;
         for(i in response.responseJSON.non_field_errors)
@@ -1578,6 +1598,8 @@ twentyc.editable.target.register(
         } else {
           if(r.responseJSON && r.responseJSON.meta && r.responseJSON.meta.error)
              var info = r.responseJSON.meta.error;
+          else if(r.status == 403)
+             var info = gettext("You do not have permissions to perform this action")
           else
              var info = r.status+" "+r.statusText
 
@@ -1812,6 +1834,10 @@ twentyc.editable.module.register(
     },
 
     finalize_update_netixlan : function(rowId, row, data) {
+      var pretty_speed = PeeringDB.pretty_speed(data.speed)
+      row.find(".speed").data("edit-content-backup", pretty_speed)
+      row.find(".speed").data("edit-value", data.speed)
+      row.find(".speed").text(pretty_speed)
       if(data.operational)
         row.addClass("operational")
       else
@@ -2098,9 +2124,64 @@ twentyc.editable.input.register(
   {
     apply : function(value) {
       this.source.html(PeeringDB.pretty_speed(this.get()));
-    }
+    },
+
+    export : function() {
+      console.log("exporting")
+      return this.convert(this.get())
+    },
+
+    convert : function(value) {
+      if ( $.isNumeric(value) ){
+        return value
+      } else {
+      return this.reverse_pretty_speed(value)
+      }
+    },
+
+    validate : function() {
+      console.log("validating")
+      // Check if it's an integer
+      let value = this.element.val();
+      let suffix = value.slice(-1);
+
+      if ( $.isNumeric(value) ){
+        return true
+      } else if ( $.isNumeric(value.slice(0,-1) ) && this.validate_suffix(suffix)) {
+        return true
+      }
+      return false
+    },
+    validation_message : function() {
+      return gettext("Needs to be an integer or a speed ending in M, G, or T") ///
+    },
+
+    validate_suffix: function(suffix) {
+      return ( suffix.toLowerCase() === "m" ||
+               suffix.toLowerCase() === "g" ||
+               suffix.toLowerCase() === "t" )
+    },
+
+    reverse_pretty_speed : function(value) {
+      // Given a pretty speed (string), output the integer speed
+
+      const conversion_factor = {
+        "m": 1,
+        "g": 1000,
+        "t": 1000000,
+      }
+
+      const num = parseFloat(value.slice(0, -1));
+      const unit = value.slice(-1).toLowerCase();
+      const multiplier = conversion_factor[unit]
+
+      // Always return the speed as an integer
+      return Math.round(num * multiplier)
   },
-  "number"
+
+
+  },
+  "string"
 );
 
 /*

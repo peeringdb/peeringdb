@@ -104,9 +104,16 @@ class Backend(BaseBackend):
         - ipaddr6 out of prefix address space on netixlans (skip validation)
         """
 
-        obj.updated = obj._meta.get_field("updated").to_python(obj.updated).replace(tzinfo=models.UTC())
-        obj.created = obj._meta.get_field("created").to_python(obj.created).replace(tzinfo=models.UTC())
-
+        obj.updated = (
+            obj._meta.get_field("updated")
+            .to_python(obj.updated)
+            .replace(tzinfo=models.UTC())
+        )
+        obj.created = (
+            obj._meta.get_field("created")
+            .to_python(obj.created)
+            .replace(tzinfo=models.UTC())
+        )
 
     def save(self, obj):
 
@@ -121,7 +128,6 @@ class Backend(BaseBackend):
                     value = field.to_python(value)
                 value = value.replace(tzinfo=models.UTC())
                 setattr(obj, field.name, value)
-
 
         if obj.HandleRef.tag == "ix":
             obj.save(create_ixlan=False)

@@ -6,7 +6,6 @@ import re
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
-import django_namespace_perms as nsp
 
 import peeringdb_server.views as views
 import peeringdb_server.models as models
@@ -103,9 +102,18 @@ class ViewTestCase(TestCase):
         c = Client()
         resp = c.get("/data/sponsors", follow=True)
         self.assertEqual(resp.status_code, 200)
-        expected_sponsorships = ["silver", "silver", "gold", "silver", "platinum", "platinum"]
+        expected_sponsorships = [
+            "silver",
+            "silver",
+            "gold",
+            "silver",
+            "platinum",
+            "platinum",
+        ]
         print(resp.json())
-        output_sponsorships = [spon["name"] for spon in resp.json()["sponsors"].values()]
+        output_sponsorships = [
+            spon["name"] for spon in resp.json()["sponsors"].values()
+        ]
         self.assertEqual(output_sponsorships, expected_sponsorships)
 
     def test_view(self):

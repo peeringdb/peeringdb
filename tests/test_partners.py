@@ -6,7 +6,6 @@ import re
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
-import django_namespace_perms as nsp
 
 import peeringdb_server.views as views
 import peeringdb_server.models as models

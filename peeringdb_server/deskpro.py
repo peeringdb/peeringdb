@@ -181,12 +181,19 @@ class APIClient:
         person = self.require_person(ticket.user)
 
         if not ticket.deskpro_id:
+
+            cc = []
+
+            for _cc in ticket.cc_set.all():
+                cc.append(_cc.email)
+
             ticket_response = self.create(
                 "tickets",
                 {
                     "subject": ticket.subject,
                     "person": {"id": person["id"]},
                     "status": "awaiting_agent",
+                    "cc": cc,
                 },
             )
 

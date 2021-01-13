@@ -1,0 +1,37 @@
+{
+  "data": [
+    {
+      "peer": {
+        "ixlan_id": 1,
+        "ix_id": 1,
+        "ix_name": "Test IX",
+        "asn": 1000,
+        "net_id": 1,
+        "ipaddr4": "195.69.144.20",
+        "ipaddr6": "",
+        "speed": 1000,
+        "is_rs_peer": false,
+        "operational": true
+      },
+      "action": "delete",
+      "reason": "The entry for (asn and IPv4 and IPv6) does not exist in the exchange's IX-F data as a singular member connection"
+    },
+    {
+      "peer": {
+        "ixlan_id": 1,
+        "ix_id": 1,
+        "ix_name": "Test IX",
+        "asn": 1000,
+        "net_id": 1,
+        "ipaddr4": "195.69.144.250",
+        "ipaddr6": "2001:7f8:1::a500:2906:1",
+        "speed": 10000,
+        "is_rs_peer": true,
+        "operational": true
+      },
+      "action": "add",
+      "reason": "The entry for (asn and IPv4 and IPv6) does not exist in PeeringDB as a singular network -> ix connection"
+    }
+  ],
+  "errors": []
+}

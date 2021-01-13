@@ -1,5 +1,6 @@
 import pytest
 import json
+from grainy.const import *
 
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group
@@ -8,8 +9,8 @@ from django.conf import settings
 import peeringdb_server.models as models
 import peeringdb_server.org_admin_views as org_admin
 import peeringdb_server.views as views
-from django_namespace_perms.constants import PERM_CREATE, PERM_DELETE
-from .util import override_group_id
+
+from tests.util import override_group_id
 
 
 class OrgAdminTests(TestCase):
@@ -457,9 +458,9 @@ class OrgAdminTests(TestCase):
 
         # prepare source dict with nsp namespaces
         source = {
-            self.net.nsp_namespace: 0x01,
-            self.ix.nsp_namespace: 0x01,
-            self.fac.nsp_namespace: 0x01,
+            self.net.grainy_namespace: 0x01,
+            self.ix.grainy_namespace: 0x01,
+            self.fac.grainy_namespace: 0x01,
         }
 
         # extract ids
@@ -484,9 +485,9 @@ class OrgAdminTests(TestCase):
 
         # prepare source dict with nsp namespaces
         source = {
-            self.net.nsp_namespace_from_id(self.org.id, "*").strip(".*"): 0x01,
-            self.fac.nsp_namespace_from_id(self.org.id, "*").strip(".*"): 0x03,
-            self.ix.nsp_namespace_from_id(self.org.id, "*").strip(".*"): 0x01,
+            self.net.Grainy.namespace_instance("*", org=self.net.org).strip(".*"): 0x01,
+            self.fac.Grainy.namespace_instance("*", org=self.net.org).strip(".*"): 0x03,
+            self.ix.Grainy.namespace_instance("*", org=self.net.org).strip(".*"): 0x01,
         }
 
         # extract ids
@@ -563,7 +564,8 @@ class OrgAdminTests(TestCase):
 
         with override_group_id():
             request = self.factory.post(
-                "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={"id": uoar_b.id}
+                "/org-admin/uoar/approve?org_id=%d" % self.org.id,
+                data={"id": uoar_b.id},
             )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin

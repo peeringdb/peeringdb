@@ -105,7 +105,6 @@ class TestRenumberLans(ClientCase):
             stdout=out,
         )
 
-
         assert ixlan.ixpfx_set.first().prefix.compressed == "206.223.116.0/23"
         assert ixlan.netixlan_set.first().ipaddr4.compressed == "206.223.116.101"
 

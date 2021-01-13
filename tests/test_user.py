@@ -25,7 +25,7 @@ class UserTests(TestCase):
 
         settings.USER_GROUP_ID = cls.user_group.id
         settings.GUEST_GROUP_ID = cls.guest_group.id
-        
+
         for name in ["user_a", "user_b", "user_c", "user_d"]:
             setattr(
                 cls,

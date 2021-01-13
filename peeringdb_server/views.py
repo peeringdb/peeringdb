@@ -18,6 +18,7 @@ from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.decorators import login_required
+
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.urls import resolve, reverse, Resolver404
@@ -25,11 +26,8 @@ from django.template import loader
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.crypto import constant_time_compare
-from django_namespace_perms.util import (
-    get_perms,
-    has_perms,
-    load_perms,
-)
+from django.utils.decorators import method_decorator
+from django_grainy.util import Permissions
 from django_namespace_perms.constants import (
     PERM_CRUD,
     PERM_CREATE,
@@ -45,6 +43,7 @@ from django_otp.plugins.otp_email.models import EmailDevice
 import two_factor.views
 
 from peeringdb_server import settings
+from peeringdb_server.util import check_permissions, PERM_CRUD
 from peeringdb_server.search import search
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.org_admin_views import load_all_user_permissions
@@ -55,6 +54,7 @@ from peeringdb_server.models import (
     UserPasswordReset,
     Organization,
     Network,
+    NetworkContact,
     NetworkFacility,
     NetworkIXLan,
     InternetExchange,
@@ -81,7 +81,12 @@ from peeringdb_server.serializers import (
     InternetExchangeSerializer,
     FacilitySerializer,
 )
-from peeringdb_server.inet import RdapLookup, RdapException
+from peeringdb_server.inet import (
+    RdapLookup,
+    RdapException,
+    RdapNotFoundError,
+    rdap_pretty_error_message,
+)
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.deskpro import ticket_queue_rdap_error
 
@@ -127,9 +132,9 @@ def export_permissions(user, entity):
         return {}
 
     perms = {
-        "can_write": has_perms(user, entity, PERM_WRITE),
-        "can_create": has_perms(user, entity, PERM_CREATE),
-        "can_delete": has_perms(user, entity, PERM_DELETE),
+        "can_write": check_permissions(user, entity, PERM_WRITE),
+        "can_create": check_permissions(user, entity, PERM_CREATE),
+        "can_delete": check_permissions(user, entity, PERM_DELETE),
     }
 
     if entity.status == "pending":
@@ -139,8 +144,10 @@ def export_permissions(user, entity):
     if perms["can_write"] or perms["can_create"] or perms["can_delete"]:
         perms["can_edit"] = True
 
-    if hasattr(entity, "nsp_namespace_manage"):
-        perms["can_manage"] = has_perms(user, entity.nsp_namespace_manage, PERM_CRUD)
+    if hasattr(entity, "grainy_namespace_manage"):
+        perms["can_manage"] = check_permissions(
+            user, entity.grainy_namespace_manage, PERM_CRUD
+        )
     else:
         perms["can_manage"] = False
 
@@ -163,9 +170,7 @@ class DoNotRender:
         the supplied value
         """
 
-        b = has_perms(user, namespace.lower(), 0x01, explicit=explicit)
-        print(namespace, b)
-        print(user)
+        b = check_permissions(user, namespace.lower(), 0x01, explicit=explicit)
         if not b:
             return cls()
         return value
@@ -415,9 +420,7 @@ def view_affiliate_to_org(request):
 
         except RdapException as exc:
             ticket_queue_rdap_error(request.user, asn, exc)
-            return JsonResponse(
-                {"asn": _("RDAP Lookup Error: {}").format(exc)}, status=400
-            )
+            return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
 
         except MultipleObjectsReturned:
             pass
@@ -506,9 +509,9 @@ def view_profile_v1(request):
     # only add ddnetworks if networks scope is present
     if scope_networks:
         networks = []
-        load_perms(user)
+        perms = Permissions(user)
         for net in user.networks:
-            crud = get_perms(user._nsp_perms_struct, net.nsp_namespace.split(".")).value
+            crud = perms.get(net.grainy_namespace)
             networks.append(
                 dict(
                     id=net.id,
@@ -928,12 +931,12 @@ def view_organization(request, id):
     tags = ["fac", "net", "ix"]
     for tag in tags:
         model = REFTAG_MAP.get(tag)
-        perms["can_create_%s" % tag] = has_perms(
-            request.user, model.nsp_namespace_from_id(org.id, "create"), PERM_CREATE
+        perms["can_create_%s" % tag] = check_permissions(
+            request.user, model.Grainy.namespace_instance("*", org=org), PERM_CREATE
         )
-        perms["can_delete_%s" % tag] = has_perms(
+        perms["can_delete_%s" % tag] = check_permissions(
             request.user,
-            model.nsp_namespace_from_id(org.id, "_").strip("_"),
+            model.Grainy.namespace_instance("*", org=org),
             PERM_DELETE,
         )
 
@@ -992,6 +995,16 @@ def view_organization(request, id):
                 "value": data.get("address2", dismiss),
             },
             {
+                "name": "floor",
+                "label": _("Floor"),
+                "value": data.get("floor", dismiss),
+            },
+            {
+                "name": "suite",
+                "label": _("Suite"),
+                "value": data.get("suite", dismiss),
+            },
+            {
                 "name": "location",
                 "label": _("Location"),
                 "type": "location",
@@ -1005,6 +1018,12 @@ def view_organization(request, id):
                 "label": _("Country Code"),
                 "notify_incomplete": True,
                 "value": data.get("country", dismiss),
+            },
+            {
+                "name": "geocode",
+                "label": _("Geocode"),
+                "type": "geocode",
+                "value": data,
             },
             {
                 "readonly": True,
@@ -1047,6 +1066,8 @@ def view_organization(request, id):
 
     if perms.get("can_manage") and org.pending_affiliations.count() > 0:
         tab_init = {"users": "active"}
+
+    data["phone_help_text"] = field_help(NetworkContact, "phone")
 
     return view_component(
         request,
@@ -1126,6 +1147,16 @@ def view_facility(request, id):
                 "value": data.get("address2", dismiss),
             },
             {
+                "name": "floor",
+                "label": _("Floor"),
+                "value": data.get("floor", dismiss),
+            },
+            {
+                "name": "suite",
+                "label": _("Suite"),
+                "value": data.get("suite", dismiss),
+            },
+            {
                 "name": "location",
                 "label": _("Location"),
                 "type": "location",
@@ -1178,6 +1209,7 @@ def view_facility(request, id):
                 "name": "tech_phone",
                 "label": _("Technical Phone"),
                 "value": data.get("tech_phone", dismiss),
+                "help_text": field_help(Facility, "tech_phone"),
             },
             {
                 "type": "email",
@@ -1190,6 +1222,7 @@ def view_facility(request, id):
                 "name": "sales_phone",
                 "label": _("Sales Phone"),
                 "value": data.get("sales_phone", dismiss),
+                "help_text": field_help(Facility, "sales_phone"),
             },
         ],
     }
@@ -1333,6 +1366,7 @@ def view_exchange(request, id):
                 "name": "tech_phone",
                 "label": _("Technical Phone"),
                 "value": data.get("tech_phone", dismiss),
+                "help_text": field_help(InternetExchange, "tech_phone"),
             },
             {
                 "type": "email",
@@ -1345,6 +1379,7 @@ def view_exchange(request, id):
                 "name": "policy_phone",
                 "label": _("Policy Phone"),
                 "value": data.get("policy_phone", dismiss),
+                "help_text": field_help(InternetExchange, "policy_phone"),
             },
         ],
     }
@@ -1393,7 +1428,7 @@ def view_exchange(request, id):
                 "value": DoNotRender.permissioned(
                     ixlan.ixf_ixp_member_list_url,
                     request.user,
-                    f"{ixlan.nsp_namespace}.ixf_ixp_member_list_url"
+                    f"{ixlan.grainy_namespace}.ixf_ixp_member_list_url"
                     f".{ixlan.ixf_ixp_member_list_url_visible}",
                     explicit=True,
                 ),
@@ -1445,6 +1480,13 @@ def view_network_by_asn(request, asn):
         return view_network(request, network.id)
     except ObjectDoesNotExist:
         return view_http_error_404(request)
+
+
+def format_last_updated_time(last_updated_time):
+    if last_updated_time is None:
+        return ""
+    elif isinstance(last_updated_time, str):
+        return last_updated_time.split(".")[0]
 
 
 @ensure_csrf_cookie
@@ -1631,7 +1673,25 @@ def view_network(request, id):
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),
-                "value": network_d.get("updated", dismiss),
+                "value": format_last_updated_time(network_d.get("updated")),
+            },
+            {
+                "readonly": True,
+                "name": "netixlan_updated",
+                "label": _("Public Peering Info Updated"),
+                "value": format_last_updated_time(network_d.get("netixlan_updated")),
+            },
+            {
+                "readonly": True,
+                "name": "netfac_updated",
+                "label": _("Peering Facility Info Updated"),
+                "value": format_last_updated_time(network_d.get("netfac_updated")),
+            },
+            {
+                "readonly": True,
+                "name": "poc_updated",
+                "label": _("Contact Info Updated"),
+                "value": format_last_updated_time(network_d.get("poc_updated")),
             },
             {
                 "name": "notes",
@@ -1710,6 +1770,8 @@ def view_network(request, id):
 
     # Add POC data to dataset
     data["poc_set"] = network_d.get("poc_set")
+    # For tooltip
+    data["phone_help_text"] = field_help(NetworkContact, "phone")
 
     if not request.user.is_authenticated or not request.user.is_verified_user:
         cnt = network.poc_set.filter(status="ok", visible="Users").count()
@@ -1728,6 +1790,8 @@ def view_suggest(request, reftag):
 
     template = loader.get_template(f"site/view_suggest_{reftag}.html")
     env = make_env()
+
+    env["phone_help_text"] = field_help(NetworkContact, "phone")
     return HttpResponse(template.render(env, request))
 
 
@@ -1941,7 +2005,9 @@ class LoginView(two_factor.views.LoginView):
 
         return super().get(*args, **kwargs)
 
-    @ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
+    @method_decorator(
+        ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
+    )
     def post(self, *args, **kwargs):
 
         """
@@ -2134,7 +2200,7 @@ def request_translation(request, data_type):
 def network_reset_ixf_proposals(request, net_id):
     net = Network.objects.get(id=net_id)
 
-    allowed = has_perms(request.user, net, PERM_CRUD)
+    allowed = check_permissions(request.user, net, PERM_CRUD)
 
     if not allowed:
         return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)
@@ -2150,7 +2216,7 @@ def network_dismiss_ixf_proposal(request, net_id, ixf_id):
     ixf_member_data = IXFMemberData.objects.get(id=ixf_id)
     net = ixf_member_data.net
 
-    allowed = has_perms(request.user, net, PERM_CRUD)
+    allowed = check_permissions(request.user, net, PERM_CRUD)
 
     if not allowed:
         return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)

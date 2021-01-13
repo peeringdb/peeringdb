@@ -4,7 +4,9 @@ import datetime
 from itertools import chain
 import uuid
 import ipaddress
+import googlemaps
 import googlemaps.exceptions
+from pprint import pprint
 import requests
 import reversion
 
@@ -25,7 +27,6 @@ from django.utils.translation import override
 from django.utils.functional import Promise
 from django.conf import settings
 from django.template import loader
-from django_namespace_perms.util import autodiscover_namespaces, has_perms
 from django_handleref.models import (
     CreatedDateTimeField,
     UpdatedDateTimeField,
@@ -33,10 +34,14 @@ from django_handleref.models import (
 import django_peeringdb.models as pdb_models
 from django_inet.models import ASNField
 
+from django_grainy.decorators import grainy_model
+import django_grainy.decorators
+
 from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
 from passlib.hash import sha256_crypt
 
+from peeringdb_server.util import check_permissions
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.validators import (
     validate_address_space,
@@ -118,7 +123,7 @@ def validate_PUT_ownership(user, instance, data, fields):
     if any fail the permission check False is returned.
     """
 
-    if not has_perms(user, instance, "update"):
+    if not check_permissions(user, instance, "u"):
         return False
 
     for fld in fields:
@@ -137,7 +142,7 @@ def validate_PUT_ownership(user, instance, data, fields):
         if a.id != s_id:
             try:
                 other = a.__class__.objects.get(id=s_id)
-                if not has_perms(user, other, "update"):
+                if not check_permissions(user, other, "u"):
                     return False
             except ValueError:  # if id is not intable
                 return False
@@ -246,14 +251,11 @@ class GeocodeBaseMixin(models.Model):
     geocode_status = models.BooleanField(
         default=False,
         help_text=_(
-            "Has this object's latitude and longitude been synchronized to its address fields"
+            "Has this object's address been normalized with a call to the Google Maps API"
         ),
     )
     geocode_date = models.DateTimeField(
         blank=True, null=True, help_text=_("Last time of attempted geocode")
-    )
-    geocode_error = models.TextField(
-        blank=True, null=True, help_text=_("Error message of previous geocode attempt")
     )
 
     class Meta:
@@ -289,37 +291,124 @@ class GeocodeBaseMixin(models.Model):
         """
         try:
             result = gmaps.geocode(
-                self.geocode_address, components={"country": self.country.code}
+                self.geocode_address,
+                components={"country": self.country.code},
+                language="en",
             )
-            if result and (
-                "street_address" in result[0]["types"]
-                or "establishment" in result[0]["types"]
-                or "premise" in result[0]["types"]
-                or "subpremise" in result[0]["types"]
-            ):
-                loc = result[0].get("geometry").get("location")
-                self.latitude = loc.get("lat")
-                self.longitude = loc.get("lng")
-                self.geocode_error = None
-            else:
-                self.latitude = None
-                self.longitude = None
-                self.geocode_error = _("Address not found")
-            self.geocode_status = True
-            return result
         except (
             googlemaps.exceptions.HTTPError,
             googlemaps.exceptions.ApiError,
-        ) as inst:
-            self.geocode_error = str(inst)
-            self.geocode_status = True
-        except googlemaps.exceptions.Timeout as inst:
-            self.geocode_error = _("API Timeout")
-            self.geocode_status = False
-        finally:
-            self.geocode_date = datetime.datetime.now().replace(tzinfo=UTC())
-            if save:
-                self.save()
+            googlemaps.exceptions.TransportError,
+        ):
+            raise ValidationError(_("Error in forward geocode: Google Maps API error"))
+        except googlemaps.exceptions.Timeout:
+            raise ValidationError(
+                _("Error in forward geocode: Google Maps API Timeout")
+            )
+
+        if result and (
+            "street_address" in result[0]["types"]
+            or "establishment" in result[0]["types"]
+            or "premise" in result[0]["types"]
+            or "subpremise" in result[0]["types"]
+        ):
+            return result
+        else:
+            raise ValidationError(_("Error in forward geocode: No results found"))
+
+    def get_address1_from_geocode(self, result):
+        street_number = ""
+        route = ""
+
+        if len(result) == 0 or result[0].get("address_components", None) is None:
+            return None
+
+        for component in result[0]["address_components"]:
+            if "street_number" in component["types"]:
+                street_number = component["long_name"]
+
+            if "route" in component["types"]:
+                # The short name contains abbreviations which
+                # tend to be closer to English.
+                route = component["short_name"]
+
+        if street_number == "" and route == "":
+            return None
+
+        return f"{street_number} {route}".strip()
+
+    def reverse_geocode(self, gmaps):
+        if (self.latitude is None) or (self.longitude is None):
+            raise ValidationError(
+                _("Latitude and longitude must be defined for reverse geocode lookup")
+            )
+
+        latlang = f"{self.latitude},{self.longitude}"
+        try:
+            response = gmaps.reverse_geocode(latlang)
+        except (
+            googlemaps.exceptions.HTTPError,
+            googlemaps.exceptions.ApiError,
+            googlemaps.exceptions.TransportError,
+        ) as exc:
+            raise ValidationError(_("Error in reverse geocode: Google Maps API error"))
+        except googlemaps.exceptions.Timeout:
+            raise ValidationError(
+                _("Error in reverse geocode: Google Maps API Timeout")
+            )
+
+        return response
+
+    def parse_reverse_geocode(self, response):
+        data = {}
+
+        # Get political entities
+        for address in response:
+            first_component = address["types"]
+            component_type = first_component[0]
+            address_components = address["address_components"]
+
+            # To aid in getting English language results back,
+            # we only use the leading component
+            for component in address_components:
+                if component["types"] == first_component:
+                    data[component_type] = component
+                    continue
+
+        return data
+
+    def normalize_api_response(self):
+        # The forward geocode sets the lat,long
+        gmaps = googlemaps.Client(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
+
+        forward_result = self.geocode(gmaps, save=True)
+
+        # Set information from forward geocode
+        loc = forward_result[0].get("geometry").get("location")
+        self.latitude = loc.get("lat")
+        self.longitude = loc.get("lng")
+        address1 = self.get_address1_from_geocode(forward_result)
+        self.address1 = address1
+        self.address2 = ""
+
+        # The reverse result normalizes some administrative info
+        # (city, state, zip) and translates them into English
+
+        reverse_result = self.reverse_geocode(gmaps)
+
+        data = self.parse_reverse_geocode(reverse_result)
+        if data.get("locality"):
+            self.city = data["locality"]["long_name"]
+        if data.get("administrative_area_level_1"):
+            self.state = data["administrative_area_level_1"]["long_name"]
+        if data.get("postal_code"):
+            self.zipcode = data["postal_code"]["long_name"]
+
+        # Set status to True to indicate we've normalized the data
+        self.geocode_status = True
+        self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+        self.save()
+        return self
 
 
 class UserOrgAffiliationRequest(models.Model):
@@ -583,8 +672,28 @@ class DeskProTicket(models.Model):
         verbose_name_plural = _("DeskPRO Tickets")
 
 
+class DeskProTicketCC(models.Model):
+
+    """
+    Describes a contact to be cc'd on the deskpro ticket
+    """
+
+    ticket = models.ForeignKey(
+        DeskProTicket,
+        on_delete=models.CASCADE,
+        related_name="cc_set",
+    )
+    email = models.EmailField()
+
+    class Meta:
+        unique_together = (("ticket", "email"),)
+        verbose_name = _("DeskPRO Ticket CC Contact")
+        verbose_name_plural = _("Deskpro Ticket CC Contacts")
+
+
+@grainy_model(namespace="peeringdb.organization")
 @reversion.register
-class Organization(ProtectedMixin, pdb_models.OrganizationBase):
+class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin):
     """
     Describes a peeringdb organization
     """
@@ -725,17 +834,13 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase):
         return list(set(rv))
 
     @property
-    def nsp_namespace_manage(self):
+    def grainy_namespace_manage(self):
         """
         Org administrators need CRUD to this namespace in order
         to execute administrative actions (user management, user permission
         management)
         """
-        return "peeringdb.manage_organization.%s" % self.id
-
-    @classmethod
-    def nsp_namespace_from_id(cls, id):
-        return "peeringdb.organization.%s" % id
+        return f"peeringdb.manage_organization.{self.id}"
 
     @property
     def pending_affiliations(self):
@@ -765,13 +870,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase):
         Returns queryset holding active exchanges in this organization
         """
         return self.ix_set(manager="handleref").filter(status="ok")
-
-    @property
-    def nsp_namespace(self):
-        """
-        Returns permissioning namespace for this organization
-        """
-        return self.__class__.nsp_namespace_from_id(self.id)
 
     @property
     def group_name(self):
@@ -813,23 +911,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase):
             users[user.id] = user
 
         return sorted(list(users.values()), key=lambda x: x.full_name)
-
-    @property
-    def nsp_ruleset(self):
-        """
-        Returns a dict containing rules for django namespace perms
-        to be used when applying perms to serialized oranization
-        data
-        """
-        return {
-            # since poc are stored in a list we need to specify a list
-            # handler for it, its a class function on NetworkContact that
-            # returns a relative permission namespace for each poc in the
-            # list
-            "list-handlers": {
-                "poc_set": {"namespace": NetworkContact.nsp_namespace_in_list}
-            }
-        }
 
     @property
     def sponsorship(self):
@@ -1106,6 +1187,7 @@ class OrganizationMergeEntity(models.Model):
         verbose_name_plural = _("Organization Merge: Entities")
 
 
+@grainy_model(namespace="facility", parent="org")
 @reversion.register
 class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     """
@@ -1134,20 +1216,6 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         return (
             "id__iexact",
             "name__icontains",
-        )
-
-    @classmethod
-    def nsp_namespace_in_list(cls):
-        """
-        Returns the permissioning namespace when a facility
-        is contained in list
-        """
-        return str(cls.id)
-
-    @classmethod
-    def nsp_namespace_from_id(cls, org_id, fac_id):
-        return "{}.facility.{}".format(
-            Organization.nsp_namespace_from_id(org_id), fac_id
         )
 
     @classmethod
@@ -1235,13 +1303,6 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         return qset.filter(id__in=shared_facilities)
 
     @property
-    def nsp_namespace(self):
-        """
-        Returns permissioning namespace for this facility
-        """
-        return self.__class__.nsp_namespace_from_id(self.org_id, self.id)
-
-    @property
     def sponsorship(self):
         """
         Returns sponsorship oject for this facility (through the owning org)
@@ -1321,14 +1382,12 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
             self._not_deletable_reason = None
             return True
 
-    def nsp_has_perms_PUT(self, user, request):
-        return validate_PUT_ownership(user, self, request.data, ["org"])
-
     def validate_phonenumbers(self):
         self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
         self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
 
 
+@grainy_model(namespace="internetexchange", parent="org")
 @reversion.register
 class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     """
@@ -1520,20 +1579,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
         return qset.filter(pk__in=exchanges)
 
-    @classmethod
-    def nsp_namespace_in_list(cls):
-        return str(cls.id)
-
-    @classmethod
-    def nsp_namespace_from_id(cls, org_id, ix_id):
-        """
-        Returns permissioning namespace for an exchange
-        """
-        return "{}.internetexchange.{}".format(
-            Organization.nsp_namespace_from_id(org_id),
-            ix_id,
-        )
-
     @property
     def ixlan(self):
         """
@@ -1600,13 +1645,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         )
 
     @property
-    def nsp_namespace(self):
-        """
-        Returns permissioning namespace for this exchange
-        """
-        return self.__class__.nsp_namespace_from_id(self.org_id, self.id)
-
-    @property
     def sponsorship(self):
         """
         Returns sponsorship object for this exchange (through owning org)
@@ -1649,9 +1687,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         else:
             self._not_deletable_reason = None
             return True
-
-    def nsp_has_perms_PUT(self, user, request):
-        return validate_PUT_ownership(user, self, request.data, ["org"])
 
     def vq_approve(self):
         """
@@ -1700,6 +1735,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         self.validate_phonenumbers()
 
 
+@grainy_model(namespace="ixfac", parent="ix")
 @reversion.register
 class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     """
@@ -1720,30 +1756,12 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
         """
         return f"ixfac{self.id} {self.ix.name} <-> {self.facility.name}"
 
-    @classmethod
-    def nsp_namespace_from_id(cls, org_id, ix_id, id):
-        """
-        Returns permissioning namespace for an ixfac
-        """
-        return "{}.fac.{}".format(
-            InternetExchange.nsp_namespace_from_id(org_id, ix_id), id
-        )
-
-    @property
-    def nsp_namespace(self):
-        """
-        Returns permissioning namespace for this ixfac
-        """
-        return self.__class__.nsp_namespace_from_id(self.ix.org_id, self.ix.id, self.id)
-
-    def nsp_has_perms_PUT(self, user, request):
-        return validate_PUT_ownership(user, self, request.data, ["ix"])
-
     class Meta:
         unique_together = ("ix", "facility")
         db_table = "peeringdb_ix_facility"
 
 
+@grainy_model(namespace="ixlan", namespace_instance="{instance.ix.grainy_namespace}")
 @reversion.register
 class IXLan(pdb_models.IXLanBase):
     """
@@ -1817,7 +1835,7 @@ class IXLan(pdb_models.IXLanBase):
             return
         namespace = f"{ns}.ixf_ixp_member_list_url.{visible}"
 
-        if not has_perms(user, namespace, 0x01, explicit=True):
+        if not check_permissions(user, namespace, "r", explicit=True):
             try:
                 del row["ixf_ixp_member_list_url"]
             except KeyError:
@@ -1829,25 +1847,6 @@ class IXLan(pdb_models.IXLanBase):
         Returns a descriptive label of the ixlan for logging purposes
         """
         return f"ixlan{self.id} {self.ix.name}"
-
-    @classmethod
-    def nsp_namespace_from_id(cls, org_id, ix_id, id):
-        """
-        Returns permissioning namespace for an ixlan
-        """
-
-        # ixlan will be removed in v3 and we are already only allowing
-        # one ixlan per ix with matching ids so it makes sense to
-        # simply use the exchange's permissioning namespace here
-
-        return InternetExchange.nsp_namespace_from_id(org_id, ix_id)
-
-    @property
-    def nsp_namespace(self):
-        """
-        Returns permissioning namespace for this ixlan
-        """
-        return self.__class__.nsp_namespace_from_id(self.ix.org_id, self.ix_id, self.id)
 
     @property
     def ixpfx_set_active(self):
@@ -1885,25 +1884,15 @@ class IXLan(pdb_models.IXLanBase):
         """
         return ("ix__name__icontains",)
 
-    def ixf_ixp_member_list_url_viewable(self, user):
-        visible = self.ixf_ixp_member_list_url_visible.lower()
-        if not user and visible == "public":
-            return True
-        namespace = f"{self.nsp_namespace}.ixf_ixp_member_list_url.{visible}"
-        return has_perms(user, namespace, 0x01, explicit=True)
-
     def related_label(self):
         """
         Used by grappelli autocomplete for representation
         """
         return f"{self.ix.name} IXLan ({self.id})"
 
-    def nsp_has_perms_PUT(self, user, request):
-        return validate_PUT_ownership(user, self, request.data, ["ix"])
-
     def test_ipv4_address(self, ipv4):
         """
-        test that the ipv4 address exists in one of the prefixes in this ixlan
+        test that the ipv4 a exists in one of the prefixes in this ixlan
         """
         for pfx in self.ixpfx_set_active:
             if pfx.test_ip_address(ipv4):
@@ -1921,7 +1910,6 @@ class IXLan(pdb_models.IXLanBase):
 
     def clean(self):
         # id is set and does not match the parent ix id
-
         if self.id and self.id != self.ix.id:
             raise ValidationError({"id": _("IXLan id needs to match parent ix id")})
 
@@ -1937,6 +1925,13 @@ class IXLan(pdb_models.IXLanBase):
         # enforce correct id moving forward
 
         self.id = self.ix.id
+
+        if self.ixf_ixp_member_list_url is None and self.ixf_ixp_import_enabled:
+            raise ValidationError(
+                _(
+                    "Cannot enable IX-F import without specifying the IX-F member list url"
+                )
+            )
 
         return super().clean()
 
@@ -2160,7 +2155,7 @@ class IXLanIXFMemberImportAttempt(models.Model):
 
 class IXLanIXFMemberImportLog(models.Model):
     """
-    Import log of a IXF member import that changed or added at least one
+    Import log of a IX-F member import that changed or added at least one
     netixlan under the specified ixlans
     """
 
@@ -2171,8 +2166,8 @@ class IXLanIXFMemberImportLog(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = _("IXF Import Log")
-        verbose_name_plural = _("IXF Import Logs")
+        verbose_name = _("IX-F Import Log")
+        verbose_name_plural = _("IX-F Import Logs")
 
     @reversion.create_revision()
     def rollback(self):
@@ -2201,7 +2196,7 @@ class IXLanIXFMemberImportLog(models.Model):
 
 class IXLanIXFMemberImportLogEntry(models.Model):
     """
-    IXF member import log entry that holds the affected netixlan and
+    IX-F member import log entry that holds the affected netixlan and
     the netixlan's version after the change, which can be used to rollback
     the change
     """
@@ -2229,8 +2224,8 @@ class IXLanIXFMemberImportLogEntry(models.Model):
     reason = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
-        verbose_name = _("IXF Import Log Entry")
-        verbose_name_plural = _("IXF Import Log Entries")
+        verbose_name = _("IX-F Import Log Entry")
+        verbose_name_plural = _("IX-F Import Log Entries")
 
     @property
     def changes(self):
@@ -2357,8 +2352,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     class Meta:
         db_table = "peeringdb_ixf_member_data"
-        verbose_name = _("IXF Member Data")
-        verbose_name_plural = _("IXF Member Data")
+        verbose_name = _("IX-F Member Data")
+        verbose_name_plural = _("IX-F Member Data")
 
     class HandleRef:
         tag = "ixfmember"
@@ -3389,6 +3384,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             "instance": self,
             "recipient": recipient,
             "ixf_url": self.ixlan.ixf_ixp_member_list_url,
+            "ixf_url_public": (self.ixlan.ixf_ixp_member_list_url_visible == "Public"),
         }
         if context:
             _context.update(context)
@@ -3421,6 +3417,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 # validate could check
 
 
+@grainy_model(
+    namespace="prefix",
+    namespace_instance="{instance.ixlan.grainy_namespace}.{namespace}.{instance.pk}",
+)
 @reversion.register
 class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
     """
@@ -3441,16 +3441,6 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         Returns a descriptive label of the ixpfx for logging purposes
         """
         return f"ixpfx{self.id} {self.prefix}"
-
-    @classmethod
-    def nsp_namespace_from_id(cls, org_id, ix_id, ixlan_id, id):
-        """
-        Returns permissioning namespace for an ixpfx
-        """
-        return "{}.prefix.{}".format(
-            IXLan.nsp_namespace_from_id(org_id, ix_id, ixlan_id),
-            id,
-        )
 
     @classmethod
     def related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
@@ -3485,20 +3475,8 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
 
         return qset.filter(id__in=ids)
 
-    @property
-    def nsp_namespace(self):
-        """
-        Returns permissioning namespace for this ixpfx
-        """
-        return self.nsp_namespace_from_id(
-            self.ixlan.ix.org_id, self.ixlan.ix.id, self.ixlan.id, self.id
-        )
-
     def __str__(self):
         return f"{self.prefix}"
-
-    def nsp_has_perms_PUT(self, user, request):
-        return validate_PUT_ownership(user, self, request.data, ["ixlan"])
 
     def test_ip_address(self, addr):
         """
@@ -3583,6 +3561,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         return super().clean()
 
 
+@grainy_model(namespace="network", parent="org")
 @reversion.register
 class Network(pdb_models.NetworkBase):
     """
@@ -3599,6 +3578,10 @@ class Network(pdb_models.NetworkBase):
             "Specifies whether an IXP is allowed to add a netixlan entry for this network via their ixp_member data"
         ),
     )
+
+    netixlan_updated = models.DateTimeField(blank=True, null=True)
+    netfac_updated = models.DateTimeField(blank=True, null=True)
+    poc_updated = models.DateTimeField(blank=True, null=True)
 
     @staticmethod
     def autocomplete_search_fields():
@@ -3624,12 +3607,6 @@ class Network(pdb_models.NetworkBase):
         else:
             net = cls.objects.create(org=org, asn=asn, name=name, status="ok")
         return net, True
-
-    @classmethod
-    def nsp_namespace_from_id(cls, org_id, net_id):
-        return "{}.network.{}".format(
-            Organization.nsp_namespace_from_id(org_id), net_id
-        )
 
     @classmethod
     def related_to_fac(cls, value=None, filt=None, field="facility_id", qset=None):
@@ -3795,34 +3772,6 @@ class Network(pdb_models.NetworkBase):
         return self.poc_set(manager="handleref").filter(status="ok")
 
     @property
-    def nsp_namespace(self):
-        """
-        Returns a custom permission namespace for an instance of this
-        model
-        """
-
-        return self.__class__.nsp_namespace_from_id(self.org_id, self.id)
-
-    @property
-    def nsp_ruleset(self):
-        """
-        Ruleset to apply when applying permissions to the serialized
-        data of this model
-        """
-
-        return {
-            # we require explicit perms to private network contacts
-            "require": {"poc_set.users": 0x01, "poc_set.private": 0x01},
-            # since poc are stored in a list we need to specify a list
-            # handler for it, its a class function on NetworkContact that
-            # returns a relative permission namespace for each poc in the
-            # list
-            "list-handlers": {
-                "poc_set": {"namespace": NetworkContact.nsp_namespace_in_list}
-            },
-        }
-
-    @property
     def ipv4_support(self):
 
         # network has not indicated either ip4 or ip6 support
@@ -3866,9 +3815,6 @@ class Network(pdb_models.NetworkBase):
             settings.BASE_URL, django.urls.reverse("net-view-asn", args=(self.asn,))
         )
 
-    def nsp_has_perms_PUT(self, user, request):
-        return validate_PUT_ownership(user, self, request.data, ["org"])
-
     def clean(self):
         """
         Custom model validation
@@ -3894,6 +3840,11 @@ class Network(pdb_models.NetworkBase):
 
 
 # class NetworkContact(HandleRefModel):
+@grainy_model(
+    namespace="poc_set",
+    namespace_instance="{namespace}.{instance.visible}",
+    parent="network",
+)
 @reversion.register
 class NetworkContact(pdb_models.ContactBase):
     """
@@ -3908,52 +3859,11 @@ class NetworkContact(pdb_models.ContactBase):
     class Meta:
         db_table = "peeringdb_network_contact"
 
-    @classmethod
-    def nsp_namespace_in_list(cls, **kwargs):
-        """
-        This is used to build a relative namespace for this model if it is contained
-        within a list. The preceding namespace part will be provided by the container
-        element.
-
-        So in this case we just want to return the value of the visible attribute
-        """
-        if "obj" in kwargs:
-            return "%s" % kwargs.get("obj")
-        return kwargs.get("visible")
-
-    @classmethod
-    def nsp_namespace_from_id(cls, org_id, net_id, vis):
-        """
-        Returns permissioning namespace for a network contact
-        """
-        return "{}.poc_set.{}".format(
-            Network.nsp_namespace_from_id(org_id, net_id), vis
-        )
-
-    @property
-    def nsp_namespace(self):
-        """
-        Returns a custom namespace for an instance of this model
-        """
-        return self.__class__.nsp_namespace_from_id(
-            self.network.org_id, self.network.id, self.visible
-        )
-
-    @property
-    def nsp_require_explicit_read(self):
-        """
-        Make sure non-public instances of this models are always requiring
-        explicit permissions to view
-        """
-        return self.visible != "Public"
-
-    def nsp_has_perms_PUT(self, user, request):
-        return validate_PUT_ownership(user, self, request.data, ["net"])
-
     def clean(self):
         self.phone = validate_phonenumber(self.phone)
 
 
+@grainy_model(namespace="netfac", parent="network")
 @reversion.register
 class NetworkFacility(pdb_models.NetworkFacilityBase):
     """
@@ -3970,22 +3880,6 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     class Meta:
         db_table = "peeringdb_network_facility"
         unique_together = ("network", "facility", "local_asn")
-
-    @classmethod
-    def nsp_namespace_from_id(cls, org_id, net_id, fac_id):
-        """
-        Returns permissioning namespace for a netfac
-        """
-        return "{}.fac.{}".format(Network.nsp_namespace_from_id(org_id, net_id), fac_id)
-
-    @property
-    def nsp_namespace(self):
-        """
-        Returns permissioning namespace for this netfac
-        """
-        return self.__class__.nsp_namespace_from_id(
-            self.network.org_id, self.network_id, self.facility_id
-        )
 
     @classmethod
     def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
@@ -4034,9 +3928,6 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
             self.id, self.network.asn, self.network.name, self.facility.name
         )
 
-    def nsp_has_perms_PUT(self, user, request):
-        return validate_PUT_ownership(user, self, request.data, ["net"])
-
     def clean(self):
 
         # when validating an existing netfac that has a mismatching
@@ -4074,6 +3965,7 @@ def format_speed(value):
         return "%dM" % value
 
 
+@grainy_model(namespace="ixlan", parent="network")
 @reversion.register
 class NetworkIXLan(pdb_models.NetworkIXLanBase):
     """
@@ -4141,32 +4033,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         ipaddr6 = ipaddr6 or _("IPv6 not set")
 
         return f"AS{asn} - {ipaddr4} - {ipaddr6}"
-
-    # FIXME
-    # permission namespacing
-    # right now it is assumed that the network owns the netixlan
-    # this needs to be discussed further
-
-    @classmethod
-    def nsp_namespace_from_id(cls, org_id, net_id, ixlan_id):
-        """
-        Returns permissioning namespace for a netixlan
-        """
-        return "{}.ixlan.{}".format(
-            Network.nsp_namespace_from_id(org_id, net_id), ixlan_id
-        )
-
-    @property
-    def nsp_namespace(self):
-        """
-        Returns permissioning namespace for this netixlan
-        """
-        return self.__class__.nsp_namespace_from_id(
-            self.network.org_id, self.network.id, self.ixlan_id
-        )
-
-    def nsp_has_perms_PUT(self, user, request):
-        return validate_PUT_ownership(user, self, request.data, ["net"])
 
     @classmethod
     def related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
@@ -4673,8 +4539,8 @@ class IXFImportEmail(models.Model):
     )
 
     class Meta:
-        verbose_name = _("IXF Import Email")
-        verbose_name_plural = _("IXF Import Emails")
+        verbose_name = _("IX-F Import Email")
+        verbose_name_plural = _("IX-F Import Emails")
 
 
 class UserPasswordReset(models.Model):
@@ -4862,5 +4728,3 @@ if not getattr(settings, "DISABLE_VERIFICATION_QUEUE", False):
     if not getattr(settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False):
         # send admin notification emails for these models
         QUEUE_NOTIFY = (InternetExchange, Network, Facility, Organization)
-
-autodiscover_namespaces(Network, Facility, InternetExchange)

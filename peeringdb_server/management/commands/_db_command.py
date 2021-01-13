@@ -19,9 +19,6 @@ MODELS = [
 
 
 class DBCommand(BaseCommand):
-    args = "<reftag> <id, id, ...>"
-    help = "Inspect an object's reversion history"
-
     def log(self, id, msg):
         print(f"{id}: {msg}")
 

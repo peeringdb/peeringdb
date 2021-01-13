@@ -264,23 +264,13 @@
             </span>
           </div>
         {% elif row.type == "geocode" %}
-          <div class="view_value col-xs-8 col-sm-7 col-md-8">
+          <div id="geocode" class="view_value col-xs-8 col-sm-7 col-md-8">
             {% if row.value.latitude and row.value.longitude %}
               <a href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
             {% else %}
-              {% if instance.geocode_status  %}
-              <div class="note error">
-                <div>{% trans "Address failed validation." %}</div>
-                {% if permissions.can_write and instance.geocode_error %}
-                  <div class="details">{% trans "Geocoding error" %}: {{ instance.geocode_error }}</div>
-                {% endif %}
-              </div>
-              <div class="note inactive">
-                {% trans "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."%}
-              </div>
-              {% else %}
-              <div class="note inactive">{% trans "Updated geocode data for this entity will be obtained shortly" %}</div>
-              {% endif %}
+            <div class="note inactive">
+              {% trans "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."%}
+            </div>
             {% endif %}
           </div>
         {% elif row.type == "entity_link"  %}

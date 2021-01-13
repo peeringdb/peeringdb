@@ -65,6 +65,11 @@ class Command(BaseCommand):
         only = options.get("only", None)
         date = options.get("date", None)
 
+        # temporary setting to indicate api-cache is being generated
+        # this forced api responses to be generated without permission
+        # checks
+        settings.GENERATING_API_CACHE = True
+
         if only:
             only = only.split(",")
 

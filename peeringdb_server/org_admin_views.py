@@ -8,6 +8,16 @@ from django.template import loader
 from django.conf import settings
 from .forms import OrgAdminUserPermissionForm
 
+from grainy.const import *
+from django_grainy.models import UserPermission
+from django_namespace_perms.constants import *
+
+from django_handleref.models import HandleRefModel
+
+from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import override
+
+from peeringdb_server.util import check_permissions
 from peeringdb_server.models import (
     User,
     Organization,
@@ -17,15 +27,6 @@ from peeringdb_server.models import (
     Facility,
     UserOrgAffiliationRequest,
 )
-
-import django_namespace_perms.util as nsp
-from django_namespace_perms.constants import *
-from django_namespace_perms.models import UserPermission
-
-from django_handleref.models import HandleRefModel
-
-from django.utils.translation import ugettext_lazy as _
-from django.utils.translation import override
 
 
 def save_user_permissions(org, user, perms):
@@ -37,11 +38,11 @@ def save_user_permissions(org, user, perms):
 
     # wipe all the user's perms for the targeted org
 
-    user.userpermission_set.filter(namespace__startswith=org.nsp_namespace).delete()
+    user.grainy_permissions.filter(namespace__startswith=org.grainy_namespace).delete()
 
     # collect permissioning namespaces from the provided permissioning ids
 
-    nsp_perms = {}
+    grainy_perms = {}
 
     for id, permissions in list(perms.items()):
 
@@ -49,44 +50,38 @@ def save_user_permissions(org, user, perms):
             permissions = permissions | PERM_READ
 
         if id == "org.%d" % org.id:
-            nsp_perms[org.nsp_namespace] = permissions
-            nsp_perms[
-                NetworkContact.nsp_namespace_from_id(org.id, "*", "private")
+            grainy_perms[org.grainy_namespace] = permissions
+            grainy_perms[
+                f"{org.grainy_namespace}.network.*.poc_set.private"
             ] = permissions
         elif id == "net":
-            nsp_perms[
-                Network.nsp_namespace_from_id(org.id, "*").strip(".*")
-            ] = permissions
-            nsp_perms[
-                NetworkContact.nsp_namespace_from_id(org.id, "*", "private")
+            grainy_perms[f"{org.grainy_namespace}.network"] = permissions
+            grainy_perms[
+                f"{org.grainy_namespace}.network.*.poc_set.private"
             ] = permissions
         elif id == "ix":
-            nsp_perms[
-                InternetExchange.nsp_namespace_from_id(org.id, "*").strip(".*")
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.internetexchange"] = permissions
         elif id == "fac":
-            nsp_perms[
-                Facility.nsp_namespace_from_id(org.id, "*").strip(".*")
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.facility"] = permissions
         elif id.find(".") > -1:
             id = id.split(".")
             if id[0] == "net":
-                nsp_perms[Network.nsp_namespace_from_id(org.id, id[1])] = permissions
-                nsp_perms[
-                    NetworkContact.nsp_namespace_from_id(org.id, id[1], "private")
+                grainy_perms[f"{org.grainy_namespace}.network.{id[1]}"] = permissions
+                grainy_perms[
+                    f"{org.grainy_namespace}.network.{id[1]}.poc_set.private"
                 ] = permissions
             elif id[0] == "ix":
-                nsp_perms[
-                    InternetExchange.nsp_namespace_from_id(org.id, id[1])
+                grainy_perms[
+                    f"{org.grainy_namespace}.internetexchange.{id[1]}"
                 ] = permissions
             elif id[0] == "fac":
-                nsp_perms[Facility.nsp_namespace_from_id(org.id, id[1])] = permissions
+                grainy_perms[f"{org.grainy_namespace}.facility.{id[1]}"] = permissions
 
     # save
-    for ns, p in list(nsp_perms.items()):
-        UserPermission.objects.create(namespace=ns, permissions=p, user=user)
+    for ns, p in list(grainy_perms.items()):
+        UserPermission.objects.create(namespace=ns, permission=p, user=user)
 
-    return nsp_perms
+    return grainy_perms
 
 
 def load_all_user_permissions(org):
@@ -113,20 +108,22 @@ def load_user_permissions(org, user):
 
     # load all of the user's permissions related to this org
     uperms = {
-        p.namespace: p.permissions
-        for p in user.userpermission_set.filter(namespace__startswith=org.nsp_namespace)
+        p.namespace: p.permission
+        for p in user.grainy_permissions.filter(
+            namespace__startswith=org.grainy_namespace
+        )
     }
 
     perms = {}
 
     extract_permission_id(uperms, perms, org, org)
 
-    # extract user's permissioning ids from nsp_namespaces targeting
+    # extract user's permissioning ids from grainy_namespaces targeting
     # organization's entities
     for model in [Network, InternetExchange, Facility]:
         extract_permission_id(uperms, perms, model, org)
 
-    # extract user's permissioning ids from nsp_namespaces targeting
+    # extract user's permissioning ids from grainy_namespaces targeting
     # organization's entities by their id (eg user has perms only
     # to THAT specific network)
     for net in org.net_set_active:
@@ -197,12 +194,14 @@ def extract_permission_id(source, dest, entity, org):
 
     if isinstance(entity, HandleRefModel):
         # instance
-        k = entity.nsp_namespace
+        k = entity.grainy_namespace
         j = "%s.%d" % (entity.ref_tag, entity.id)
     else:
         # class
-        k = entity.nsp_namespace_from_id(org.id, "*").strip(".*")
         j = entity.handleref.tag
+        namespace = entity.Grainy.namespace()
+        k = f"{org.grainy_namespace}.{namespace}"
+
     if k in source:
         dest[j] = source[k]
 
@@ -223,7 +222,7 @@ def org_admin_required(fnc):
 
         try:
             org = Organization.objects.get(id=org_id)
-            if not nsp.has_perms(request.user, org.nsp_namespace_manage, "update"):
+            if not check_permissions(request.user, org.grainy_namespace_manage, "u"):
                 return JsonResponse({}, status=403)
             kwargs["org"] = org
             return fnc(request, **kwargs)

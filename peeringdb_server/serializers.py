@@ -11,6 +11,7 @@ from django.db.models.fields.related import (
     ReverseManyToOneDescriptor,
     ForwardManyToOneDescriptor,
 )
+from django.http import JsonResponse
 from django.core.exceptions import FieldError, ValidationError
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -21,10 +22,17 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django_peeringdb.models.abstract import AddressModel
 
-from django_namespace_perms.rest import PermissionedModelSerializer
-from django_namespace_perms.util import has_perms
+from django_grainy.rest import PermissionDenied
 
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol
+from peeringdb_server.util import check_permissions, Permissions
+from peeringdb_server.inet import (
+    RdapLookup,
+    RdapNotFoundError,
+    get_prefix_protocol,
+    RdapException,
+    rdap_pretty_error_message,
+)
+
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
     ticket_queue_rdap_error,
@@ -55,7 +63,6 @@ from peeringdb_server.validators import (
 
 from django.utils.translation import ugettext_lazy as _
 
-from rdap.exceptions import RdapException
 
 # exclude certain query filters that would otherwise
 # be exposed to the api for filtering operations
@@ -94,6 +101,122 @@ FILTER_EXCLUDE = [
 
 # def _(x):
 #    return x
+
+
+class GeocodeSerializerMixin(object):
+    """
+    Overrides create() and update() method of serializer
+    to normalize the location against the Google Maps Geocode API
+    and resave the model instance with normalized address fields.
+
+    Can only be used if the model includes the GeocodeBaseMixin.
+    """
+
+    GEO_ERROR_MESSAGE = _(
+        "We could not find the address you entered. "
+        "Please review your address data and contact "
+        "{} for further assistance "
+        "if needed."
+    ).format(settings.DEFAULT_FROM_EMAIL)
+
+    def _geosync_information_present(self, instance, validated_data):
+        """
+        Determine if there is enough address information
+        to necessitate a geosync attempt
+        """
+
+        for f in AddressSerializer.Meta.fields:
+
+            # We do not need to sync if only the country is defined
+            if f == "country":
+                continue
+
+            if validated_data.get(f) != "":
+                return True
+
+        return False
+
+    def _need_geosync(self, instance, validated_data):
+        """
+        Determine if any geofields have changed that need normalization.
+        Returns False if the only change is that fields have been deleted.
+        """
+
+        # If there isn't any data besides country, don't sync
+        geosync_info_present = self._geosync_information_present(
+            instance, validated_data
+        )
+
+        if not geosync_info_present:
+            return False
+
+        # We do not need to resync if floor, suite, or address2 are changed
+        ignored_fields = ["floor", "suite", "address2"]
+        geocode_fields = [
+            f for f in AddressSerializer.Meta.fields if f not in ignored_fields
+        ]
+
+        for field in geocode_fields:
+            if validated_data.get(field) == "":
+                continue
+
+            if getattr(instance, field) != validated_data.get(field):
+                return True
+
+        return False
+
+    def update(self, instance, validated_data):
+        """
+        When updating a geo-enabled object,
+        we first want to update the model
+        and then normalize the geofields
+        """
+
+        # Need to check if we need geosync before updating the instance
+        need_geosync = self._need_geosync(instance, validated_data)
+
+        instance = super().update(instance, validated_data)
+
+        # we dont want to geocode on tests
+        if settings.RELEASE_ENV == "run_tests":
+            return instance
+
+        if need_geosync:
+            print("Normalizing geofields")
+            try:
+                instance.normalize_api_response()
+
+            # Reraise the model validation error
+            # as a serializer validation error
+            except ValidationError as exc:
+                print(exc.message)
+                raise serializers.ValidationError(
+                    {"non_field_errors": [self.GEO_ERROR_MESSAGE]}
+                )
+        return instance
+
+    def create(self, validated_data):
+        # When creating a geo-enabled object,
+        # we first want to save the model
+        # and then normalize the geofields
+        instance = super().create(validated_data)
+
+        # we dont want to geocode on tests
+        if settings.RELEASE_ENV == "run_tests":
+            return instance
+
+        if self._geosync_information_present(instance, validated_data):
+            try:
+                instance.normalize_api_response()
+
+            # Reraise the model validation error
+            # as a serializer validation error
+            except ValidationError as exc:
+                print(exc.message)
+                raise serializers.ValidationError(
+                    {"non_field_errors": [self.GEO_ERROR_MESSAGE]}
+                )
+        return instance
 
 
 def queryable_field_xl(fld):
@@ -287,7 +410,7 @@ class AsnRdapValidator:
             self.request.rdap_result = rdap
         except RdapException as exc:
             self.request.rdap_error = (self.request.user, asn, exc)
-            raise RestValidationError({self.field: f"{self.message}: {exc}"})
+            raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
 
     def set_context(self, serializer):
         self.instance = getattr(serializer, "instance", None)
@@ -368,10 +491,19 @@ class ParentStatusException(IOError):
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = (AddressModel,)
-        fields = ["address1", "address2", "city", "country", "state", "zipcode"]
+        fields = [
+            "address1",
+            "address2",
+            "city",
+            "country",
+            "state",
+            "zipcode",
+            "floor",
+            "suite",
+        ]
 
 
-class ModelSerializer(PermissionedModelSerializer):
+class ModelSerializer(serializers.ModelSerializer):
     """
     ModelSerializer that provides pdb API with custom params
 
@@ -782,7 +914,12 @@ class ModelSerializer(PermissionedModelSerializer):
 
         # return full object if depth limit allows, otherwise return id
         if return_full:
-            return super().to_representation(data)
+            if isinstance(data, list):
+                return super().to_representation(data)
+            else:
+                result = super().to_representation(data)
+                result["_grainy"] = data.grainy_namespace
+                return result
         else:
             return data.id
 
@@ -793,6 +930,22 @@ class ModelSerializer(PermissionedModelSerializer):
         s.parent = self
         s.nested_exclude = exclude
         return s.to_representation(data)
+
+    def validate_create(self, validated_data):
+        return
+
+    def update(self, instance, validated_data):
+        grainy_kwargs = {"id": instance.id}
+        grainy_kwargs.update(**validated_data)
+
+        namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
+        request = self.context.get("request")
+        if request and not check_permissions(request.user, namespace, "u"):
+            raise PermissionDenied(
+                f"User does not have write permissions to '{namespace}'"
+            )
+
+        return super().update(instance, validated_data)
 
     def create(self, validated_data):
         """
@@ -806,6 +959,24 @@ class ModelSerializer(PermissionedModelSerializer):
             validated_data["status"] = "ok"
         if "suggest" in validated_data:
             del validated_data["suggest"]
+
+        self.validate_create(validated_data)
+
+        grainy_kwargs = {"id": "*"}
+        grainy_kwargs.update(**validated_data)
+
+        request = self.context.get("request")
+
+        if hasattr(self, "grainy_namespace_create"):
+            namespace = self.grainy_namespace_create(**grainy_kwargs)
+        else:
+            namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
+
+        if request and not check_permissions(request.user, namespace, "c"):
+            raise PermissionDenied(
+                f"User does not have write permissions to '{namespace}'"
+            )
+
         return super().create(validated_data)
 
     def _unique_filter(self, fld, data):
@@ -1037,7 +1208,7 @@ def nested(serializer, exclude=[], getter=None, through=None, **kwargs):
 # on the model?
 
 
-class FacilitySerializer(ModelSerializer):
+class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
     """
     Serializer for peeringdb_server.models.Facility
 
@@ -1072,15 +1243,12 @@ class FacilitySerializer(ModelSerializer):
 
     validators = [FieldMethodValidator("suggest", ["POST"])]
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(data.get("org").id, "create")
+        return super().validate_create(data)
 
     class Meta:
         model = Facility
@@ -1213,19 +1381,14 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
     ix = serializers.SerializerMethodField()
     fac = serializers.SerializerMethodField()
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create ixfacs if the parent
         # ix or fac status is pending or deleted
         if data.get("ix") and data.get("ix").status != "ok":
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
         if data.get("fac") and data.get("fac").status != "ok":
             raise ParentStatusException(data.get("fac"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["ix"].org_id, data["ix"].id, "create"
-        )
+        return super().validate_create(data)
 
     class Meta:
         model = InternetExchangeFacility
@@ -1251,7 +1414,7 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-        return qset.select_related("ix"), {}
+        return qset.select_related("ix", "ix__org"), {}
 
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
@@ -1272,20 +1435,6 @@ class NetworkContactSerializer(ModelSerializer):
         queryset=Network.objects.all(), source="network"
     )
     net = serializers.SerializerMethodField()
-
-    def has_create_perms(self, user, data):
-        # we don't want users to be able to create contacts if the parent
-        # network status is pending or deleted
-        if data.get("network") and data.get("network").status != "ok":
-            raise ParentStatusException(
-                data.get("network"), self.Meta.model.handleref.tag
-            )
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["network"].org.id, data["network"].id, "create"
-        )
 
     class Meta:
         model = NetworkContact
@@ -1310,8 +1459,20 @@ class NetworkContactSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-        qset = qset.select_related("network")
+        qset = qset.select_related("network", "network__org")
         return qset, {}
+
+    def validate_create(self, data):
+        # we don't want users to be able to create contacts if the parent
+        # network status is pending or deleted
+        if data.get("network") and data.get("network").status != "ok":
+            raise ParentStatusException(
+                data.get("network"), self.Meta.model.handleref.tag
+            )
+        return super().validate_create(data)
+
+    def grainy_namespace_create(self, **kwargs):
+        return kwargs["network"].grainy_namespace
 
     def get_net(self, inst):
         return self.sub_serializer(NetworkSerializer, inst.network)
@@ -1362,7 +1523,7 @@ class NetworkIXLanSerializer(ModelSerializer):
     ipaddr4 = IPAddressField(version=4, allow_blank=True)
     ipaddr6 = IPAddressField(version=6, allow_blank=True)
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create netixlans if the parent
         # network or ixlan is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
@@ -1373,12 +1534,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             raise ParentStatusException(
                 data.get("ixlan"), self.Meta.model.handleref.tag
             )
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["network"].org.id, data["network"].id, "create"
-        )
+        return super().validate_create(data)
 
     class Meta:
 
@@ -1425,6 +1581,8 @@ class NetworkIXLanSerializer(ModelSerializer):
 
         Currently supports: ix_id
         """
+
+        qset = qset.select_related("network", "network__org")
 
         filters = get_relation_filters(["ix_id", "ix", "name"], cls, **kwargs)
         for field, e in list(filters.items()):
@@ -1586,6 +1744,9 @@ class NetworkFacilitySerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
+
+        qset = qset.select_related("network", "network__org")
+
         filters = get_relation_filters(["name", "country", "city"], cls, **kwargs)
         for field, e in list(filters.items()):
             for valid in ["name", "country", "city"]:
@@ -1597,7 +1758,7 @@ class NetworkFacilitySerializer(ModelSerializer):
 
         return qset.select_related("network", "facility"), filters
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create netfac links if the parent
         # network or facility status is pending or deleted
         if data.get("network") and data.get("network").status != "ok":
@@ -1608,12 +1769,7 @@ class NetworkFacilitySerializer(ModelSerializer):
             raise ParentStatusException(
                 data.get("facility"), self.Meta.model.handleref.tag
             )
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["network"].org.id, data["network"].id, "create"
-        )
+        return super().validate_create(data)
 
     def get_net(self, inst):
         return self.sub_serializer(NetworkSerializer, inst.network)
@@ -1750,6 +1906,9 @@ class NetworkSerializer(ModelSerializer):
             "info_ipv6",
             "info_never_via_route_servers",
             "notes",
+            "netixlan_updated",
+            "netfac_updated",
+            "poc_updated",
             "policy_url",
             "policy_general",
             "policy_locations",
@@ -1768,6 +1927,11 @@ class NetworkSerializer(ModelSerializer):
             "netixlan_set",
             "poc_set",
         ]
+        read_only_fields = [
+            "netixlan_updated",
+            "netfac_updated",
+            "poc_updated",
+        ]
         list_exclude = ["org"]
 
         _ref_tag = model.handleref.tag
@@ -1779,6 +1943,8 @@ class NetworkSerializer(ModelSerializer):
 
         Currently supports: ixlan_id, ix_id, netixlan_id, netfac_id, fac_id
         """
+
+        qset = qset.select_related("org")
 
         filters = get_relation_filters(
             [
@@ -1848,15 +2014,12 @@ class NetworkSerializer(ModelSerializer):
 
         return super().to_internal_value(data)
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create networks if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(data.get("org").id, "create")
+        return super().validate_create(data)
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
@@ -1886,7 +2049,7 @@ class NetworkSerializer(ModelSerializer):
         if rdap and user.validate_rdap_relationship(rdap):
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
-            net = super(ModelSerializer, self).create(validated_data)
+            net = super().create(validated_data)
             ticket_queue_asnauto_skipvq(user, validated_data["org"], net, rdap)
             return net
 
@@ -1898,7 +2061,7 @@ class NetworkSerializer(ModelSerializer):
             # verification queue is disabled regardless
             validated_data["status"] = "ok"
 
-        return super(ModelSerializer, self).create(validated_data)
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         if validated_data.get("asn") != instance.asn:
@@ -1907,7 +2070,7 @@ class NetworkSerializer(ModelSerializer):
                     "asn": _("ASN cannot be changed."),
                 }
             )
-        return super(ModelSerializer, self).update(instance, validated_data)
+        return super().update(instance, validated_data)
 
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)
@@ -1966,6 +2129,9 @@ class IXLanPrefixSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
+
+        qset = qset.select_related("ixlan", "ixlan__ix", "ixlan__ix__org")
+
         filters = get_relation_filters(["ix_id", "ix", "whereis"], cls, **kwargs)
         for field, e in list(filters.items()):
             for valid in ["ix"]:
@@ -1979,19 +2145,14 @@ class IXLanPrefixSerializer(ModelSerializer):
 
         return qset.select_related("ixlan", "ixlan__ix"), filters
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create prefixes if the parent
         # ixlan status is pending or deleted
         if data.get("ixlan") and data.get("ixlan").status != "ok":
             raise ParentStatusException(
                 data.get("ixlan"), self.Meta.model.handleref.tag
             )
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["ixlan"].ix.org.id, data["ixlan"].ix.id, data["ixlan"].id, "create"
-        )
+        return super().validate_create(data)
 
     def get_ixlan(self, inst):
         return self.sub_serializer(IXLanSerializer, inst.ixlan)
@@ -2067,17 +2228,12 @@ class IXLanSerializer(ModelSerializer):
         source="ixpfx_set_active_prefetched",
     )
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create ixlans if the parent
         # ix status is pending or deleted
         if data.get("ix") and data.get("ix").status != "ok":
             raise ParentStatusException(data.get("ix"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(user, data)
-
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(
-            data["ix"].org_id, data["ix"].id, "create"
-        )
+        return super().validate_create(data)
 
     class Meta:
         model = IXLan
@@ -2109,27 +2265,19 @@ class IXLanSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-        return qset.select_related("ix"), {}
+        return qset.select_related("ix", "ix__org"), {}
 
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-
-        if not isinstance(data, dict):
-            return data
-
-        user = self.context.get("user")
-        request = self.context.get("request")
-
-        if not user and request:
-            user = request.user
-
-        if instance and not instance.ixf_ixp_member_list_url_viewable(user):
-            if "ixf_ixp_member_list_url" in data:
-                del data["ixf_ixp_member_list_url"]
-
+    def validate(self, data):
+        # Per issue 846
+        if data["ixf_ixp_member_list_url"] == "" and data["ixf_ixp_import_enabled"]:
+            raise ValidationError(
+                _(
+                    "Cannot enable IX-F import without specifying the IX-F member list url"
+                )
+            )
         return data
 
 
@@ -2236,6 +2384,8 @@ class InternetExchangeSerializer(ModelSerializer):
     @classmethod
     def prepare_query(cls, qset, **kwargs):
 
+        qset = qset.select_related("org")
+
         filters = get_relation_filters(
             [
                 "ixlan_id",
@@ -2280,12 +2430,12 @@ class InternetExchangeSerializer(ModelSerializer):
 
         return qset, filters
 
-    def has_create_perms(self, user, data):
+    def validate_create(self, data):
         # we don't want users to be able to create internet exchanges if the parent
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super().has_create_perms(user, data)
+        return super().validate_create(data)
 
     def to_internal_value(self, data):
         # if `suggest` keyword is provided, hard-set the org to
@@ -2347,9 +2497,6 @@ class InternetExchangeSerializer(ModelSerializer):
 
         return r
 
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id(data.get("org").id, "create")
-
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
 
@@ -2374,7 +2521,7 @@ class InternetExchangeSerializer(ModelSerializer):
         return data
 
 
-class OrganizationSerializer(ModelSerializer):
+class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
     """
     Serializer for peeringdb_server.models.Organization
     """
@@ -2395,14 +2542,21 @@ class OrganizationSerializer(ModelSerializer):
         source="ix_set_active_prefetched",
     )
 
-    def nsp_namespace_create(self, data):
-        return self.Meta.model.nsp_namespace_from_id("create")
-
     class Meta:  # (AddressSerializer.Meta):
         model = Organization
         depth = 1
         fields = (
-            ["id", "name", "website", "notes", "net_set", "fac_set", "ix_set"]
+            [
+                "id",
+                "name",
+                "website",
+                "notes",
+                "net_set",
+                "fac_set",
+                "ix_set",
+                "latitude",
+                "longitude",
+            ]
             + AddressSerializer.Meta.fields
             + HandleRefSerializer.Meta.fields
         )
