@@ -2,6 +2,8 @@ import os
 from django.conf import settings
 
 PEERINGDB_VERSION = getattr(settings, "PEERINGDB_VERSION", "")
+
+# TODO - move these out of peeringdb.settings
 RDAP_URL = getattr(settings, "PEERINGDB_RDAP_URL", "https://rdap.db.ripe.net/")
 RDAP_LACNIC_APIKEY = getattr(settings, "PEERINGDB_RDAP_LACNIC_APIKEY", None)
 RDAP_RECURSE_ROLES = getattr(
@@ -9,6 +11,7 @@ RDAP_RECURSE_ROLES = getattr(
 )
 RDAP_SELF_BOOTSTRAP = getattr(settings, "RDAP_SELF_BOOTSTRAP")
 RDAP_BOOTSTRAP_DIR = getattr(settings, "RDAP_BOOTSTRAP_DIR")
+RDAP_IGNORE_RECURSE_ERRORS = getattr(settings, "RDAP_IGNORE_RECURSE_ERRORS")
 
 TUTORIAL_MODE = getattr(settings, "TUTORIAL_MODE", False)
 RELEASE_ENV = getattr(settings, "RELEASE_ENV", "dev")
