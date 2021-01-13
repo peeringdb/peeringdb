@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "023e4bcf452c249a3059d266853f463b9a38e982b1e08ba1575e553b6a1938ea"
+            "sha256": "95c4cf5b244d3b298aa4352c8c457972f3ebf9c6593ad7f17d28df023eeed042"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -633,11 +633,11 @@
         },
         "rdap": {
             "hashes": [
-                "sha256:404aa0fbea0ea2293aac5f82aa0d4b51db36340ce3e6e16a2bcf6ae4d466772b",
-                "sha256:c9a111f7fbe5928303b1493199e0dfc3fe3864e062fca6a5e71743c09f489de1"
+                "sha256:7485d4cd5b63c100b22565e4d0625a5f46b815bfa6058093dc04ca0dec9b9a05",
+                "sha256:ae798340973e18a0497dbb31911987080748de35eaa8e67b1c1c897f83b5e6fa"
             ],
             "index": "pypi",
-            "version": "==1.1.0"
+            "version": "==1.2.0"
         },
         "requests": {
             "hashes": [
@@ -762,7 +762,7 @@
                 "sha256:19188f96923873c92ccb987120ec4acaa12f0461fa9ce5d3d0772bc965a39e08",
                 "sha256:d8ff90d979214d7b4f8ce956e80f4028fc6860e4431f731ea4a8c08f23f99473"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4' and python_version < '4.0'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4' and python_version < '4'",
             "version": "==1.26.2"
         },
         "uwsgi": {
@@ -1062,7 +1062,7 @@
                 "sha256:19188f96923873c92ccb987120ec4acaa12f0461fa9ce5d3d0772bc965a39e08",
                 "sha256:d8ff90d979214d7b4f8ce956e80f4028fc6860e4431f731ea4a8c08f23f99473"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4' and python_version < '4.0'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4' and python_version < '4'",
             "version": "==1.26.2"
         },
         "virtualenv": {
