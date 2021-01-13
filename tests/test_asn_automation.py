@@ -11,7 +11,7 @@ from django.conf import settings
 import peeringdb_server.inet as pdbinet
 from .util import SettingsCase, reset_group_ids
 
-ERR_COULD_NOT_GET_RIR_ENTRY = "RDAP Lookup Error: Test Not Found"
+ERR_COULD_NOT_GET_RIR_ENTRY = "This ASN is not assigned by any RIR"
 ERR_BOGON_ASN = (
     "RDAP Lookup Error: ASNs in this range are not allowed " "in this environment"
 )

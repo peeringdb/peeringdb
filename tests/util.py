@@ -14,8 +14,8 @@ class ClientCase(TestCase):
     def setUpTestData(cls):
         # create user and guest group
 
-        cls.guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
-        cls.user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
+        cls.guest_group = guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
+        cls.user_group = user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
 
         settings.USER_GROUP_ID = cls.user_group.id
         settings.GUEST_GROUP_ID = cls.guest_group.id
