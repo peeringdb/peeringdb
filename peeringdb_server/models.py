@@ -388,6 +388,8 @@ class GeocodeBaseMixin(models.Model):
         self.latitude = loc.get("lat")
         self.longitude = loc.get("lng")
         address1 = self.get_address1_from_geocode(forward_result)
+        if address1 is None:
+            raise ValidationError(_("Error in forward geocode: No address returned"))
         self.address1 = address1
         self.address2 = ""
 
