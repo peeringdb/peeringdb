@@ -29,7 +29,6 @@ from peeringdb_server.models import (
 )
 
 
-
 def save_user_permissions(org, user, perms):
     """
     Save user permissions for the specified org and user
@@ -56,26 +55,18 @@ def save_user_permissions(org, user, perms):
                 f"{org.grainy_namespace}.network.*.poc_set.private"
             ] = permissions
         elif id == "net":
-            grainy_perms[
-                f"{org.grainy_namespace}.network"
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.network"] = permissions
             grainy_perms[
                 f"{org.grainy_namespace}.network.*.poc_set.private"
             ] = permissions
         elif id == "ix":
-            grainy_perms[
-                f"{org.grainy_namespace}.internetexchange"
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.internetexchange"] = permissions
         elif id == "fac":
-            grainy_perms[
-                f"{org.grainy_namespace}.facility"
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.facility"] = permissions
         elif id.find(".") > -1:
             id = id.split(".")
             if id[0] == "net":
-                grainy_perms[
-                    f"{org.grainy_namespace}.network.{id[1]}"
-                ] = permissions
+                grainy_perms[f"{org.grainy_namespace}.network.{id[1]}"] = permissions
                 grainy_perms[
                     f"{org.grainy_namespace}.network.{id[1]}.poc_set.private"
                 ] = permissions
@@ -84,9 +75,7 @@ def save_user_permissions(org, user, perms):
                     f"{org.grainy_namespace}.internetexchange.{id[1]}"
                 ] = permissions
             elif id[0] == "fac":
-                grainy_perms[
-                    f"{org.grainy_namespace}.facility.{id[1]}"
-                ] = permissions
+                grainy_perms[f"{org.grainy_namespace}.facility.{id[1]}"] = permissions
 
     # save
     for ns, p in list(grainy_perms.items()):

@@ -200,6 +200,7 @@ class TestJSON(unittest.TestCase):
         self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_ADMIN)
 
         self.user_org_admin = User.objects.get(username="api_test_org_admin")
+        self.user_org_member = User.objects.get(username="api_test_org_member")
 
         for p, specs in list(USER_CRUD.items()):
             setattr(
@@ -1005,6 +1006,7 @@ class TestJSON(unittest.TestCase):
         )
 
     #########################################################################
+
     def test_org_member_001_GET_ixlan_ixf_ixp_member_list_url(self):
         for ixlan in self.db_org_member.all(
             "ixlan", ixf_ixp_member_list_url__startswith="http"
@@ -1016,6 +1018,22 @@ class TestJSON(unittest.TestCase):
                     assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
                 else:
                     assert "ixf_ixp_member_list_url" not in ixlan
+
+    #########################################################################
+
+    def test_org_member_001_POST_ix_with_perms(self):
+        data = self.make_data_ix(prefix=self.get_prefix4())
+        org = SHARED["org_rw_ok"]
+
+        org.usergroup.user_set.add(self.user_org_member)
+        self.user_org_member.grainy_permissions.add_permission(org, "cr")
+
+        r_data = self.assert_create(
+            self.db_org_member,
+            "ix",
+            data,
+            ignore=["prefix"],
+        )
 
     ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION ADMINISTRATOR
@@ -1979,7 +1997,9 @@ class TestJSON(unittest.TestCase):
         for row in data:
             self.assertEqual(sorted(row.keys()), sorted(["name", "status"]))
 
-        data = self.db_guest.get("org", 1, fields=",".join(["name", "status"]))
+        data = self.db_guest.get(
+            "org", Organization.objects.first().id, fields=",".join(["name", "status"])
+        )
         self.assertGreater(len(data), 0)
         self.assertEqual(sorted(data[0].keys()), sorted(["name", "status"]))
 
@@ -2009,12 +2029,12 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_pagination(self):
-        n = 1
-        for i in range(0, 10):
-            data = self.db_guest.all("org", skip=i * 10, limit=10)
-            for row in data:
-                self.assertEqual(row.get("id"), n)
-                n += 1
+        org_ids = [org.id for org in Organization.objects.filter(status="ok")]
+
+        for n in range(0, 1):
+            data_a = self.db_guest.all("org", skip=n * 3, limit=3)
+            for i in range(n, n + 3):
+                assert data_a[i]["id"] == org_ids[i]
 
     ##########################################################################
 

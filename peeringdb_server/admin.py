@@ -38,8 +38,6 @@ from django_grainy.admin import (
     GrainyGroupAdmin,
 )
 
-
-
 import reversion
 from reversion.admin import VersionAdmin
 
@@ -75,12 +73,13 @@ from peeringdb_server.models import (
     CommandLineTool,
     UTC,
     DeskProTicket,
+    DeskProTicketCC,
     IXFImportEmail,
     EnvironmentSetting,
     ProtectedAction,
 )
 from peeringdb_server.mail import mail_users_entity_merge
-from peeringdb_server.inet import RdapLookup, RdapException
+from peeringdb_server.inet import RdapLookup, RdapException, rdap_pretty_error_message
 
 delete_selected.short_description = "HARD DELETE - Proceed with caution"
 
@@ -380,6 +379,9 @@ class SoftDeleteAdmin(
             reversion.set_user(request.user)
         super().save_formset(request, form, formset, change)
 
+    def grainy_namespace(self, obj):
+        return obj.grainy_namespace
+
 
     def grainy_namespace(self, obj):
         return obj.grainy_namespace
@@ -491,14 +493,15 @@ class IXLanInline(SanitizedAdmin, admin.StackedInline):
 class InternetExchangeFacilityInline(SanitizedAdmin, admin.TabularInline):
     model = InternetExchangeFacility
     extra = 0
-    raw_id_fields = ("ix", "facility")
     form = StatusForm
+    raw_id_fields = ("ix", "facility")
 
-    autocomplete_lookup_fields = {
-        "fk": [
-            "facility",
-        ],
-    }
+    def __init__(self, parent_model, admin_site):
+        super().__init__(parent_model, admin_site)
+        if parent_model == Facility:
+            self.autocomplete_lookup_fields = {"fk": ["ix"]}
+        elif parent_model == InternetExchange:
+            self.autocomplete_lookup_fields = {"fk": ["facility"]}
 
 
 class NetworkContactInline(SanitizedAdmin, admin.TabularInline):
@@ -510,17 +513,16 @@ class NetworkContactInline(SanitizedAdmin, admin.TabularInline):
 class NetworkFacilityInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkFacility
     extra = 0
-    raw_id_fields = (
-        "facility",
-        "network",
-    )
     form = StatusForm
-    raw_id_fields = ("facility",)
-    autocomplete_lookup_fields = {
-        "fk": [
-            "facility",
-        ],
-    }
+    raw_id_fields = ("network", "facility")
+    exclude = ("local_asn",)
+
+    def __init__(self, parent_model, admin_site):
+        super().__init__(parent_model, admin_site)
+        if parent_model == Facility:
+            self.autocomplete_lookup_fields = {"fk": ["network"]}
+        elif parent_model == Network:
+            self.autocomplete_lookup_fields = {"fk": ["facility"]}
 
 
 class NetworkIXLanForm(StatusForm):
@@ -552,7 +554,7 @@ class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
             if asn:
                 rdap_valid = RdapLookup().get_asn(asn).emails
         except RdapException as exc:
-            raise ValidationError({"asn": str(exc)})
+            raise ValidationError({"asn": rdap_pretty_error_message(exc)})
 
 
 class UserOrgAffiliationRequestInline(admin.TabularInline):
@@ -607,7 +609,7 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
                     "admin:peeringdb_server_ixlanixfmemberimportlog_changelist"
                 ),
                 obj.id,
-                _("IXF Import History"),
+                _("IX-F Import History"),
             )
         )
 
@@ -871,8 +873,12 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "state",
         "zipcode",
         "country",
+        "floor",
+        "suite",
         "latitude",
         "longitude",
+        "geocode_status",
+        "geocode_date",
         "website",
         "notes",
         "logo",
@@ -1004,6 +1010,8 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "state",
         "zipcode",
         "country",
+        "floor",
+        "suite",
         "latitude",
         "longitude",
         "website",
@@ -1017,7 +1025,6 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "notes",
         "geocode_status",
         "geocode_date",
-        "geocode_error",
         "org",
         "verification_queue",
         "version",
@@ -1685,11 +1692,17 @@ class IXFImportEmailAdmin(admin.ModelAdmin):
 
             # Add (case insensitive) regex search results to standard search results
             try:
-                queryset = self.model.objects.filter(subject__iregex=search_term).order_by("-created")
+                queryset = self.model.objects.filter(
+                    subject__iregex=search_term
+                ).order_by("-created")
             except OperationalError:
                 return queryset, use_distinct
 
         return queryset, use_distinct
+
+
+class DeskProTicketCCInline(admin.TabularInline):
+    model = DeskProTicketCC
 
 
 class DeskProTicketAdmin(admin.ModelAdmin):
@@ -1702,9 +1715,21 @@ class DeskProTicketAdmin(admin.ModelAdmin):
         "deskpro_ref",
         "deskpro_id",
     )
-    readonly_fields = ("user",)
     search_fields = ("subject",)
     change_list_template = "admin/change_list_with_regex_search.html"
+    inlines = (DeskProTicketCCInline,)
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
+
+    def get_readonly_fields(self, request, obj=None):
+        if not obj:
+            return self.readonly_fields
+        return self.readonly_fields + ("user",)
 
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(
@@ -1727,7 +1752,9 @@ class DeskProTicketAdmin(admin.ModelAdmin):
 
             # Add (case insensitive) regex search results to standard search results
             try:
-                queryset = self.model.objects.filter(subject__iregex=search_term).order_by("-created")
+                queryset = self.model.objects.filter(
+                    subject__iregex=search_term
+                ).order_by("-created")
             except OperationalError:
                 return queryset, use_distinct
 

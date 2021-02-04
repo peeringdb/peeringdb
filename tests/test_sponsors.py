@@ -102,17 +102,19 @@ class ViewTestCase(TestCase):
         c = Client()
         resp = c.get("/data/sponsors", follow=True)
         self.assertEqual(resp.status_code, 200)
-        expected = {
-            "sponsors": {
-                "1": {"id": 1, "name": "silver"},
-                "3": {"id": 3, "name": "gold"},
-                "2": {"id": 2, "name": "silver"},
-                "5": {"id": 5, "name": "platinum"},
-                "4": {"id": 4, "name": "silver"},
-                "6": {"id": 6, "name": "platinum"},
-            }
-        }
-        self.assertEqual(resp.json(), expected)
+        expected_sponsorships = [
+            "silver",
+            "silver",
+            "gold",
+            "silver",
+            "platinum",
+            "platinum",
+        ]
+        print(resp.json())
+        output_sponsorships = [
+            spon["name"] for spon in resp.json()["sponsors"].values()
+        ]
+        self.assertEqual(output_sponsorships, expected_sponsorships)
 
     def test_view(self):
         c = Client()

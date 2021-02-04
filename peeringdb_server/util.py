@@ -10,7 +10,6 @@ from django_grainy.util import (
 
 
 class APIPermissionsApplicator(NamespaceKeyApplicator):
-
     @property
     def is_generating_api_cache(self):
         try:
@@ -51,6 +50,3 @@ class APIPermissionsApplicator(NamespaceKeyApplicator):
             )
             if not perms:
                 del data["ixf_ixp_member_list_url"]
-
-
-

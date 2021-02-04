@@ -41,27 +41,27 @@ class CorsTest(ClientCase):
     def test_cors_GET(self):
         self.assert_cors_allowed("/api", method="get")
         self.assert_cors_allowed("/api/", method="get")
-        self.assert_cors_allowed("/api/org/1", method="get")
-        self.assert_cors_denied("/org/1", method="get")
+        self.assert_cors_allowed(f"/api/org/{self.org.id}", method="get")
+        self.assert_cors_denied(f"/org/{self.org.id}", method="get")
         self.assert_cors_denied("/", method="get")
 
     def test_cors_POST(self):
         self.assert_cors_denied("/api", method="post")
         self.assert_cors_denied("/api/", method="post")
-        self.assert_cors_denied("/api/org/1", method="post")
-        self.assert_cors_denied("/org/1", method="post")
+        self.assert_cors_denied(f"/api/org/{self.org.id}", method="post")
+        self.assert_cors_denied(f"/org/{self.org.id}", method="post")
         self.assert_cors_denied("/", method="post")
 
     def test_cors_PUT(self):
         self.assert_cors_denied("/api", method="put")
         self.assert_cors_denied("/api/", method="put")
-        self.assert_cors_denied("/api/org/1", method="put")
-        self.assert_cors_denied("/org/1", method="put")
+        self.assert_cors_denied(f"/api/org/{self.org.id}", method="put")
+        self.assert_cors_denied(f"/org/{self.org.id}", method="put")
         self.assert_cors_denied("/", method="put")
 
     def test_cors_DELETE(self):
         self.assert_cors_denied("/api", method="delete")
         self.assert_cors_denied("/api/", method="delete")
-        self.assert_cors_denied("/api/org/1", method="delete")
-        self.assert_cors_denied("/org/1", method="delete")
+        self.assert_cors_denied(f"/api/org/{self.org.id}", method="delete")
+        self.assert_cors_denied(f"/org/{self.org.id}", method="delete")
         self.assert_cors_denied("/", method="delete")

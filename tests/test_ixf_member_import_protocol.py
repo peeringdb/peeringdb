@@ -30,6 +30,18 @@ from peeringdb_server.models import (
 from peeringdb_server import ixf
 from peeringdb_server.deskpro import FailingMockAPIClient
 
+from .util import setup_test_data
+
+
+@pytest.mark.django_db
+def test_invalid_member_type(entities):
+    data = setup_test_data("ixf.invalid.member.0")
+    importer = ixf.Importer()
+    ixlan = entities["ixlan"][0]
+    importer.update(ixlan, data=data)
+    for entry in importer.log["data"]:
+        assert "Invalid member type:" in entry["reason"]
+
 
 @pytest.mark.django_db
 def test_add_deleted_netixlan(entities, use_ip, save):
@@ -209,6 +221,10 @@ def test_update_data_attributes(entities, use_ip, save):
 
     # Assert no emails
     assert_no_emails(network, ixlan.ix)
+
+    # test revision user
+    version = reversion.models.Version.objects.get_for_object(netixlan)
+    assert version.first().revision.user == importer.ticket_user
 
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
@@ -1364,8 +1380,12 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
         assert len(importer.log["data"]) == 1
         assert importer.log["data"][0]["action"] == "suggest-modify"
 
-        ixf_member_del = IXFMemberData.objects.get(id=1)
-        ixf_member_add = IXFMemberData.objects.get(id=2)
+        ixf_member_del = IXFMemberData.objects.filter(
+            requirement_of__isnull=False
+        ).first()
+        ixf_member_add = IXFMemberData.objects.filter(
+            requirement_of__isnull=True
+        ).first()
 
         assert ixf_member_del.requirement_of == ixf_member_add
         assert ixf_member_add.action == "modify"
@@ -2138,14 +2158,95 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
     assert_idempotent(importer, ixlan, data)
 
 
+# The following test no longer would cause an error because of
+# issue 882.
+
+# @pytest.mark.django_db
+# def test_remote_cannot_be_parsed(entities, save):
+#     """
+#     Remote cannot be parsed. We create a ticket, email the IX, and create a lock.
+#     """
+#     data = setup_test_data("ixf.member.unparsable")
+#     ixlan = entities["ixlan"][0]
+#     start = datetime.datetime.now(datetime.timezone.utc)
+#     importer = ixf.Importer()
+#     importer.sanitize(data)
+
+#     if not save:
+#         return assert_idempotent(importer, ixlan, data, save=False)
+
+#     importer.update(ixlan, data=data)
+#     importer.notify_proposals()
+
+#     ERROR_MESSAGE = "No entries in any of the vlan_list lists, aborting"
+#     assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
+#     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+#     assert (
+#         ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
+#     )
+
+#     # Assert idempotent / lock
+#     importer.sanitize(data)
+#     importer.update(ixlan, data=data)
+
+#     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+#     assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
+
+
 @pytest.mark.django_db
-def test_remote_cannot_be_parsed(entities, save):
+def test_mark_invalid_multiple_vlans(entities, save):
     """
-    Remote cannot be parsed. We create a ticket, email the IX, and create a lock.
+    The IX-F data contains multiple vlans for prefixes specified
+    on our ixlan
+
+    The import should fail and dispatch a notification to the ix
     """
-    data = setup_test_data("ixf.member.unparsable")
+
+    data = setup_test_data("ixf.member.invalid.vlan")
+    network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
     start = datetime.datetime.now(datetime.timezone.utc)
+
+    importer = ixf.Importer()
+    data = importer.sanitize(data)
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    assert importer.update(ixlan, data=data) == False
+    importer.notify_proposals()
+
+    assert IXFMemberData.objects.count() == 0
+    assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
+    ERROR_MESSAGE = "We found that your IX-F output contained multiple VLANs"
+    assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
+    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+    assert (
+        ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
+    )
+
+    # Assert idempotent / lock
+    importer.update(ixlan, data=data)
+
+    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+
+    for email in IXFImportEmail.objects.filter(ix=ixlan.ix.id):
+        print(email.message)
+
+    assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
+
+    # Test idempotent
+    assert_idempotent(importer, ixlan, data)
+
+
+@pytest.mark.django_db
+def test_vlan_list_empty(entities, save):
+    """
+    VLAN list is empty. Per issue 882, this shouldn't raise any errors.
+    """
+    data = setup_test_data("ixf.member.vlan_list_empty")
+    ixlan = entities["ixlan"][0]
+
     importer = ixf.Importer()
     importer.sanitize(data)
 
@@ -2155,19 +2256,17 @@ def test_remote_cannot_be_parsed(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    ERROR_MESSAGE = "No entries in any of the vlan_list lists, aborting"
-    assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
-    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
-    assert (
-        ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
-    )
+    assert importer.ixlan.ixf_ixp_import_error_notified is None
+    assert importer.ixlan.ixf_ixp_import_error is None
+    assert_no_emails(ix=ixlan.ix)
 
     # Assert idempotent / lock
     importer.sanitize(data)
     importer.update(ixlan, data=data)
 
-    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
-    assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
+    assert importer.ixlan.ixf_ixp_import_error_notified is None
+    assert importer.ixlan.ixf_ixp_import_error is None
+    assert_no_emails(ix=ixlan.ix)
 
 
 def test_validate_json_schema():
@@ -2358,11 +2457,13 @@ def test_email_with_partial_contacts(entities):
 
     # Assert Tickets are created immediately
     if network.ipv6_support:
-        assert IXFImportEmail.objects.count() == 5
         assert DeskProTicket.objects.count() == 4
+        for ticket in DeskProTicket.objects.all():
+            assert ticket.cc_set.count() == 1
     else:
-        assert IXFImportEmail.objects.count() == 4
         assert DeskProTicket.objects.count() == 3
+        for ticket in DeskProTicket.objects.all():
+            assert ticket.cc_set.count() == 1
 
 
 @pytest.mark.django_db
@@ -2457,6 +2558,7 @@ def test_resolve_deskpro_ticket(entities):
     importer.notify_proposals()
 
     # Per issue #860 we no longer create tickets for conflict resolution
+    # just based on age
     assert DeskProTicket.objects.count() == 0
 
     # Commented out bc of issue #860
@@ -2527,7 +2629,7 @@ def test_resolve_deskpro_ticket(entities):
     assert ticket_r.deskpro_ref == ticket.deskpro_ref
     assert "resolved" in ticket_r.body
 
-    
+
     conflict_emails = IXFImportEmail.objects.filter(subject__icontains="conflict")
     assert conflict_emails.count() == 4
 
@@ -2544,6 +2646,100 @@ def test_vlan_sanitize(data_ixf_vlan):
     importer = ixf.Importer()
     sanitized = importer.sanitize_vlans(json.loads(data_ixf_vlan.input)["vlan_list"])
     assert sanitized == data_ixf_vlan.expected["vlan_list"]
+
+
+@pytest.mark.django_db
+def test_chained_consolidate_add_del(entities):
+
+    """
+    Tests the edge cause of a consolidated-add-del operation
+    being the requirement of a new consolidated-add-del operation
+    which would cause the bug described in #889
+    """
+
+    data = setup_test_data("ixf.member.3")  # asn1001
+    network = entities["net"]["UPDATE_DISABLED"]  # asn1001
+    ixlan = entities["ixlan"][0]
+
+    if not network.ipv4_support or not network.ipv6_support:
+        return
+
+    # create netixlan that will be suggested to be deleted
+    # as part of consolidate-add-del operation
+
+    NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        ipaddr4="195.69.147.251",
+        ipaddr6=None,
+        status="ok",
+        is_rs_peer=True,
+        operational=True,
+    )
+
+    # create consolidated add suggestion for netixlan above
+
+    ixf_member_data_field = {
+        "ixp_id": 42,
+        "state": "connected",
+        "if_list": [{"switch_id": 1, "if_speed": 20000, "if_type": "LR4"}],
+        "vlan_list": [
+            {
+                "vlan_id": 0,
+                "ipv4": {
+                    "address": "195.69.147.251",
+                    "routeserver": True,
+                    "as_macro": "AS-NFLX-V4",
+                },
+                "ipv6": {
+                    "address": "2001:7f8:1::a500:2906:2",
+                    "routeserver": True,
+                    "as_macro": "AS-NFLX-V6",
+                },
+            }
+        ],
+    }
+
+    ixf_member_add = IXFMemberData.objects.create(
+        asn=network.asn,
+        ipaddr4="195.69.147.251",
+        ipaddr6="2001:7f8:1::a500:2906:2",
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+        data=json.dumps(ixf_member_data_field),
+    )
+
+    # create consolidated delete suggestion for netixlan above
+
+    ixf_member_del = IXFMemberData.objects.create(
+        asn=network.asn,
+        ipaddr4="195.69.147.251",
+        ipaddr6=None,
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+    )
+
+    ixf_member_add.set_requirement(ixf_member_del)
+
+    assert ixf_member_add.action == "modify"
+    assert ixf_member_add.primary_requirement == ixf_member_del
+
+    # now run the import that will trigger a third consolidated-add-del
+    # operation with the requirment of ixf_member_add as a deletion
+    # causing a chain of requirements (#889)
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
 
 
 @override_settings(MAIL_DEBUG=False)
@@ -2817,24 +3013,6 @@ def use_ip_alt(request):
     use_ipv4, use_ipv6 = request.param
 
     return UseIPAddrWrapper(use_ipv4, use_ipv6)
-
-
-# TEST FUNCTIONS
-def setup_test_data(filename):
-    json_data = {}
-    entities = {}
-
-    with open(
-        os.path.join(
-            os.path.dirname(__file__),
-            "data",
-            "json_members_list",
-            f"{filename}.json",
-        ),
-    ) as fh:
-        json_data = json.load(fh)
-
-    return json_data
 
 
 # CUSTOM ASSERTIONS

@@ -11,7 +11,7 @@ python manage.py pdb_reversion_inspect <reftag> <id>
 ```
 
 ```
-VERSION: 7 (392112) - 2018-12-24T07:13:49.612Z - User: XXX
+VERSION: 7 (392112) - 2018-12-24T07:13:49.612Z - User: johnsmith 
 status: 'ok' => 'deleted'
 ```
 

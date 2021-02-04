@@ -97,48 +97,90 @@ def get_locale_name(code):
     return language_map.get(language, code)
 
 
-def set_default(name, value):
-    """ Sets the default value for the option if it's not already set. """
-    if name not in globals():
-        globals()[name] = value
-
-
 def set_from_env(name, default=_DEFAULT_ARG):
+    return _set_from_env(name, globals(), default)
+
+
+def _set_from_env(name, context, default):
     """
     Sets a global variable from a environment variable of the same name.
 
-    This is useful to leave the option unset and use Django's default (which may change).
+    This is useful to leave the option unset and use Django's default
+    (which may change).
     """
     if default is _DEFAULT_ARG and name not in os.environ:
         return
 
-    globals()[name] = os.environ.get(name, default)
+    context[name] = os.environ.get(name, default)
 
 
-def set_option(name, value):
-    """ Sets an option, first checking for env vars, then checking for value already set, then going to the default value if passed. """
+def set_option(name, value, envvar_type=None):
+    return _set_option(name, value, globals(), envvar_type)
+
+
+def _set_option(name, value, context, envvar_type=None):
+    """
+    Sets an option, first checking for env vars,
+    then checking for value already set,
+    then going to the default value if passed.
+    Environment variables are always strings, but
+    we try to coerce them to the correct type first by checking
+    the type of the default value provided. If the default
+    value is None, then we check the optional envvar_type arg.
+    """
+
+    # If value is in True or False we
+    # call set_bool to take advantage of
+    # its type checking for environment variables
+    if isinstance(value, bool):
+        return _set_bool(name, value, context)
+
+    if value is not None:
+        envvar_type = type(value)
+    else:
+        # If value is None, we'll use the provided envvar_type, if it is not None
+        if envvar_type is None:
+            raise ValueError(
+                f"If no default value is provided for the setting {name} the envvar_type argument must be set."
+            )
+
     if name in os.environ:
-        globals()[name] = os.environ.get(name)
-
-    if name not in globals():
-        globals()[name] = value
+        env_var = os.environ.get(name)
+        # Coerce type based on provided value
+        context[name] = envvar_type(env_var)
+    # If the environment variable isn't set
+    else:
+        _set_default(name, value, context)
 
 
 def set_bool(name, value):
+    return _set_bool(name, value, globals())
+
+
+def _set_bool(name, value, context):
     """ Sets and option, first checking for env vars, then checking for value already set, then going to the default value if passed. """
     if name in os.environ:
         envval = os.environ.get(name).lower()
         if envval in ["1", "true", "y", "yes"]:
-            globals()[name] = True
+            context[name] = True
         elif envval in ["0", "false", "n", "no"]:
-            globals()[name] = False
+            context[name] = False
         else:
             raise ValueError(
                 "{} is a boolean, cannot match '{}'".format(name, os.environ[name])
             )
 
-    if name not in globals():
-        globals()[name] = value
+    _set_default(name, value, context)
+
+
+def set_default(name, value):
+    return _set_default(name, value, globals())
+
+
+def _set_default(name, value, context):
+    """ Sets the default value for the option if it's not already set. """
+    if name not in context:
+        context[name] = value
 
 
 def try_include(filename):
@@ -182,6 +224,8 @@ print_debug(f"Release env is '{RELEASE_ENV}'")
 set_option(
     "PEERINGDB_VERSION", read_file(os.path.join(BASE_DIR, "etc/VERSION")).strip()
 )
+
+MIGRATION_MODULES = {"django_peeringdb": None}
 
 # Contact email, from address, support email
 set_from_env("SERVER_EMAIL")
@@ -241,21 +285,24 @@ set_option("DATA_QUALITY_MIN_SPEED", 100)
 # maximum value to allow for speed on an netixlan (currently 1Tbit)
 set_option("DATA_QUALITY_MAX_SPEED", 1000000)
 
-RATELIMITS = {
-    "request_login_POST": "4/m",
-    "request_translation": "2/m",
-    "resend_confirmation_mail": "2/m",
-    "view_request_ownership_POST": "3/m",
-    "view_request_ownership_GET": "3/m",
-    "view_affiliate_to_org_POST": "3/m",
-    "view_verify_POST": "2/m",
-    "view_username_retrieve_initiate": "2/m",
-    "view_import_ixlan_ixf_preview": "1/m",
-    "view_import_net_ixf_postmortem": "1/m",
-}
+set_option(
+    "RATELIMITS",
+    {
+        "request_login_POST": "4/m",
+        "request_translation": "2/m",
+        "resend_confirmation_mail": "2/m",
+        "view_request_ownership_POST": "3/m",
+        "view_request_ownership_GET": "3/m",
+        "view_affiliate_to_org_POST": "3/m",
+        "view_verify_POST": "2/m",
+        "view_username_retrieve_initiate": "2/m",
+        "view_import_ixlan_ixf_preview": "1/m",
+        "view_import_net_ixf_postmortem": "1/m",
+    },
+)
 
 # maximum number of affiliation requests a user can have pending
-MAX_USER_AFFILIATION_REQUESTS = 5
+set_option("MAX_USER_AFFILIATION_REQUESTS", 5)
 
 # Determines age of network contact objects that get hard deleted
 # during `pdb_delete_poc` execution. (days)
@@ -303,6 +350,7 @@ DATABASES = {
         "NAME": DATABASE_NAME,
         "USER": DATABASE_USER,
         "PASSWORD": DATABASE_PASSWORD,
+        # "TEST": { "NAME": f"{DATABASE_NAME}_test" }
     },
 }
 
@@ -432,6 +480,7 @@ TEMPLATES = [
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
 
 MIDDLEWARE = (
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -511,7 +560,7 @@ CORS_ALLOW_METHODS = ["GET", "OPTIONS"]
 ## OAuth2
 
 # allows PeeringDB to use external OAuth2 sources
-set_option("OAUTH_ENABLED", False)
+set_bool("OAUTH_ENABLED", False)
 
 AUTHENTICATION_BACKENDS += (
     # for OAuth provider
@@ -523,7 +572,6 @@ AUTHENTICATION_BACKENDS += (
 MIDDLEWARE += (
     "peeringdb_server.maintenance.Middleware",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
 )
 
 OAUTH2_PROVIDER = {
@@ -579,6 +627,13 @@ if API_THROTTLE_ENABLED:
         }
     )
 
+## RDAP
+
+set_bool("RDAP_SELF_BOOTSTRAP", True)
+# put it under the main cache dir
+set_option("RDAP_BOOTSTRAP_DIR", os.path.join(BASE_DIR, "api-cache", "rdap-bootstrap"))
+set_bool("RDAP_IGNORE_RECURSE_ERRORS", True)
+
 ## PeeringDB
 
 # TODO for tests
@@ -588,10 +643,11 @@ set_option("SPONSORSHIPS_EMAIL", SERVER_EMAIL)
 
 
 set_option("API_URL", "https://peeringdb.com/api")
-API_DEPTH_ROW_LIMIT = 250
-API_CACHE_ENABLED = True
-API_CACHE_ROOT = os.path.join(BASE_DIR, "api-cache")
-API_CACHE_LOG = os.path.join(BASE_DIR, "var/log/api-cache.log")
+set_option("API_DEPTH_ROW_LIMIT", 250)
+set_option("API_CACHE_ENABLED", True)
+set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
+set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
+
 
 set_option("BASE_URL", "http://localhost")
 set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
@@ -629,7 +685,7 @@ set_option("IXF_POSTMORTEM_LIMIT", 250)
 # when encountering problems where an exchange's ix-f feed
 # becomes unavilable / unparsable this setting controls
 # the interval in which we communicate the issue to them (hours)
-set_option("IXF_PARSE_ERROR_NOTIFICATION_PERIOD", 36)
+set_option("IXF_PARSE_ERROR_NOTIFICATION_PERIOD", 360)
 
 # toggle the creation of DeskPRO tickets from ix-f importer
 # conflicts
@@ -749,7 +805,7 @@ for _, _, files in os.walk(API_DOC_PATH):
             API_DOC_INCLUDES[base] = os.path.join(API_DOC_PATH, file)
 
 
-MAIL_DEBUG = DEBUG
+set_option("MAIL_DEBUG", DEBUG)
 
 # Setting for automated resending of failed ixf import emails
 set_option("IXF_RESEND_FAILED_EMAILS", False)

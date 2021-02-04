@@ -2,7 +2,7 @@ import os
 import pytest
 import pytest_filedata
 
-from . import django_init
+# from . import django_init
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 
 
@@ -19,3 +19,14 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture
 def rdap():
     return RdapLookup()
+
+
+@pytest.fixture
+def ixf_importer_user():
+    from django.contrib.auth import get_user_model
+
+    user, created = get_user_model().objects.get_or_create(
+        username="ixf_importer",
+        email="ixf_importer@localhost",
+    )
+    return user

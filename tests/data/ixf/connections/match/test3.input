@@ -1,0 +1,64 @@
+{
+    "connection_list": [
+        {
+            "ixp_id": 1,
+            "state": "active",
+            "if_list": [
+                {
+                    "switch_id": 2
+                },
+                {
+                    "switch_id": 3
+                },
+                {
+                    "switch_id": 4,
+                    "if_speed": 10000
+                },
+                {
+                    "switch_id": 5,
+                    "if_speed": 20000
+                }
+            ],
+            "vlan_list": [
+                {
+                    "vlan_id": 1,
+                    "ipv4": {
+                        "address": "203.159.68.40",
+                        "as_macro": "AS-AKAMAI",
+                        "routeserver": true,
+                        "mac_addresses": [
+                            "ec:13:db:f0:37:f1"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "ixp_id": 1,
+            "state": "active",
+            "if_list": [
+                {
+                    "switch_id": 6,
+                    "if_speed": 10000
+                },
+                {
+                    "switch_id": 7,
+                    "if_speed": 20000
+                }
+            ],
+            "vlan_list": [
+                {
+                    "vlan_id": 1,
+                    "ipv6": {
+                        "address": "2001:deb:0:68:0:a502:940:1",
+                        "as_macro": "AS-AKAMAI",
+                        "routeserver": true,
+                        "mac_addresses": [
+                            "ec:13:db:f0:37:0c"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

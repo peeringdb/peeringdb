@@ -29,6 +29,14 @@ case "$1" in
   "in.whois" )
     exec ./in.whoisd
     ;;
+  "run_tests" )
+    source venv/bin/activate
+    export DJANGO_SETTINGS_MODULE=mainsite.settings
+    export DATABASE_USER=root
+    export DATABASE_PASSWORD=""
+    export RELEASE_ENV=run_tests
+    pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 tests/
+    ;;
   "whois" )
     line=$(head -1 | tr -cd '[:alnum:]._-')
     exec manage pdb_whois "$line"

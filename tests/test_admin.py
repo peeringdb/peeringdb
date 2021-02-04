@@ -279,16 +279,11 @@ class AdminTests(TestCase):
         cont = response.content.decode("utf-8")
 
         assert response.status_code == 200
-        assert "[pretend] Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24" in cont
-        assert (
-            "[pretend] Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37" in cont
-        )
-        assert (
-            "[pretend] Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38" in cont
-        )
-        assert (
-            "[pretend] Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39" in cont
-        )
+        assert "[pretend]" in cont
+        assert "207.41.110.0/24 -> 207.41.111.0/24" in cont
+        assert "AS1 207.41.110.37 -> 207.41.111.37" in cont
+        assert "AS1 207.41.110.38 -> 207.41.111.38" in cont
+        assert "AS1 207.41.110.39 -> 207.41.111.39" in cont
 
         # test post to renumber lans command form
         data = {
@@ -302,11 +297,11 @@ class AdminTests(TestCase):
 
         cont = response.content.decode("utf-8")
         assert response.status_code == 200
-
-        assert "Renumbering ixpfx1 207.41.110.0/24 -> 207.41.111.0/24" in cont
-        assert "Renumbering netixlan1 AS1 207.41.110.37 -> 207.41.111.37" in cont
-        assert "Renumbering netixlan2 AS1 207.41.110.38 -> 207.41.111.38" in cont
-        assert "Renumbering netixlan3 AS1 207.41.110.39 -> 207.41.111.39" in cont
+        assert "[pretend]" not in cont
+        assert "207.41.110.0/24 -> 207.41.111.0/24" in cont
+        assert "AS1 207.41.110.37 -> 207.41.111.37" in cont
+        assert "AS1 207.41.110.38 -> 207.41.111.38" in cont
+        assert "AS1 207.41.110.39 -> 207.41.111.39" in cont
 
         for netixlan in self.entities["netixlan"]:
             netixlan.refresh_from_db()

@@ -27,10 +27,12 @@ from peeringdb_server.models import (
     IXLanIXFMemberImportLogEntry,
     User,
     DeskProTicket,
+    Group,
 )
 from peeringdb_server import ixf
 
 import pytest
+from .util import override_group_id
 
 
 @pytest.mark.django_db
@@ -52,20 +54,20 @@ def test_reset_ixf_proposals(admin_user, entities, ip_addresses):
 
 @pytest.mark.django_db
 def test_dismiss_ixf_proposals(admin_user, entities, ip_addresses):
-    IXF_ID = 3
+
     network = entities["network"]
     ixlan = entities["ixlan"][0]
 
-    create_IXFMemberData(network, ixlan, ip_addresses, False)
+    ids = create_IXFMemberData(network, ixlan, ip_addresses, False)
 
     client = setup_client(admin_user)
-    url = reverse("net-dismiss-ixf-proposal", args=(network.id, IXF_ID))
+    url = reverse("net-dismiss-ixf-proposal", args=(network.id, ids[-1]))
 
     response = client.post(url)
     content = response.content.decode("utf-8")
 
     assert response.status_code == 200
-    assert IXFMemberData.objects.filter(pk=IXF_ID).first().dismissed == True
+    assert IXFMemberData.objects.filter(pk=ids[-1]).first().dismissed == True
 
 
 @pytest.mark.django_db
@@ -87,14 +89,14 @@ def test_reset_ixf_proposals_no_perm(regular_user, entities, ip_addresses):
 
 @pytest.mark.django_db
 def test_dismiss_ixf_proposals_no_perm(regular_user, entities, ip_addresses):
-    IXF_ID = 3
+
     network = entities["network"]
     ixlan = entities["ixlan"][0]
 
-    create_IXFMemberData(network, ixlan, ip_addresses, False)
+    ids = create_IXFMemberData(network, ixlan, ip_addresses, False)
 
     client = setup_client(regular_user)
-    url = reverse("net-dismiss-ixf-proposal", args=(network.id, IXF_ID))
+    url = reverse("net-dismiss-ixf-proposal", args=(network.id, ids[-1]))
 
     response = client.post(url)
     content = response.content.decode("utf-8")
@@ -105,7 +107,6 @@ def test_dismiss_ixf_proposals_no_perm(regular_user, entities, ip_addresses):
 
 @pytest.mark.django_db
 def test_ix_order(admin_user, entities, ip_addresses, ip_addresses_other):
-
     """
     Test that multiple exchanges proposing changes appear
     sorted by exchange name
@@ -119,9 +120,11 @@ def test_ix_order(admin_user, entities, ip_addresses, ip_addresses_other):
     create_IXFMemberData(network, ixlan_b, ip_addresses_other, False)
 
     client = setup_client(admin_user)
+
     url = reverse("net-view", args=(network.id,))
 
-    response = client.get(url)
+    with override_group_id():
+        response = client.get(url)
     content = response.content.decode("utf-8")
 
     assert response.status_code == 200
@@ -130,9 +133,8 @@ def test_ix_order(admin_user, entities, ip_addresses, ip_addresses_other):
     assert matches == ["Test Exchange One", "Test Exchange Two"]
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_dismissed_note(admin_user, entities, ip_addresses):
-
     """
     Test that dismissed hints that are no longer relevant (noop)
     don't show the "you have dimissed suggestions" notification (#809)
@@ -146,7 +148,8 @@ def test_dismissed_note(admin_user, entities, ip_addresses):
     client = setup_client(admin_user)
     url = reverse("net-view", args=(network.id,))
 
-    response = client.get(url)
+    with override_group_id():
+        response = client.get(url)
     content = response.content.decode("utf-8")
 
     # dismissed suggestion still relevant, confirm note is shown
@@ -166,7 +169,9 @@ def test_dismissed_note(admin_user, entities, ip_addresses):
         ipaddr6=ip_addresses[0][1],
     )
 
-    response = client.get(url)
+    with override_group_id():
+        response = client.get(url)
+
     content = response.content.decode("utf-8")
 
     # dismissed suggestion no longer relevant, confirm note is gibe
@@ -176,7 +181,7 @@ def test_dismissed_note(admin_user, entities, ip_addresses):
 
 
 @pytest.mark.django_db
-def test_check_ixf_proposals(admin_user, entities, ip_addresses):
+def test_check_ixf_proposals(admin_user, ixf_importer_user, entities, ip_addresses):
     network = Network.objects.create(
         name="Network w allow ixp update disabled",
         org=entities["org"][0],
@@ -223,7 +228,9 @@ def test_check_ixf_proposals(admin_user, entities, ip_addresses):
 
     client = setup_client(admin_user)
     url = reverse("net-view", args=(network.id,))
-    response = client.get(url)
+
+    with override_group_id():
+        response = client.get(url)
     assert response.status_code == 200
     content = response.content.decode("utf-8")
 
@@ -247,8 +254,9 @@ def setup_client(user):
 
 def create_IXFMemberData(network, ixlan, ip_addresses, dismissed):
     """
-    Creates IXFMember data
+    Creates IXFMember data. Returns the ids of the created instances.
     """
+    ids = []
     for ip_address in ip_addresses:
         ixfmember = IXFMemberData.instantiate(
             network.asn, ip_address[0], ip_address[1], ixlan, data={"foo": "bar"}
@@ -256,6 +264,8 @@ def create_IXFMemberData(network, ixlan, ip_addresses, dismissed):
         ixfmember.save()
         ixfmember.dismissed = dismissed
         ixfmember.save()
+        ids.append(ixfmember.id)
+    return ids
 
 
 @pytest.fixture
@@ -289,6 +299,7 @@ def ip_addresses_other():
 @pytest.fixture
 def entities():
     entities = {}
+
     with reversion.create_revision():
         entities["org"] = [Organization.objects.create(name="Netflix", status="ok")]
 
@@ -347,11 +358,20 @@ def entities():
             status="ok",
             irr_as_set="AS-NFLX",
         )
+
     return entities
 
 
 @pytest.fixture
 def admin_user():
+    from django.conf import settings
+
+    guest_group, _ = Group.objects.get_or_create(name="guest")
+    user_group, _ = Group.objects.get_or_create(name="user")
+
+    print("Guest: {} {} ".format(guest_group, guest_group.id))
+    print("User: {} {} ".format(user_group, user_group.id))
+
     admin_user = User.objects.create_user(
         "admin", "admin@localhost", first_name="admin", last_name="admin"
     )

@@ -41,8 +41,14 @@
        </div>
 
        <div class="col-xs-5 col-sm-5 col-md-5">
-         <div>
+         <div 
+            class="help-text" 
+            data-toggle="tooltip"
+            data-placement="top"
+            title="{{ data.phone_help_text }}"
+          >
               {% trans "Phone" %}
+              <span class="glyphicon glyphicon-question-sign"></span>
          </div>
          <div>
               {% trans "E-Mail" %}
@@ -261,7 +267,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">{% trans "IX-F Import Preview" %}</h4>
+        <h4 class="modal-title">{% trans "IX-F Import Postmortem" %}</h4>
       </div>
       <div class="modal-body">
         <p>{% blocktrans %}Below is a log of changes done to you network -&gt; exchange connections as a result of IX-F data imports. Note that this does not contain any adjustments done by staff to rollback such changes, but should be viewed as a raw log of actions taken by the IX-F data import.{% endblocktrans %}</p>

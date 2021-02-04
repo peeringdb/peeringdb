@@ -20,7 +20,8 @@ from django.db import connection
 from django.utils import timezone
 from django.db.models import DateTimeField
 from django.utils.translation import ugettext_lazy as _
-from django_grainy.rest import PermissionDenied
+from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
+
 import reversion
 
 from peeringdb_server.models import Network, UTC, ProtectedAction

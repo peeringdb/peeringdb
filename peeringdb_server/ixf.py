@@ -1,6 +1,7 @@
 import json
 import re
 import datetime
+import copy
 
 import requests
 import ipaddress
@@ -26,6 +27,7 @@ from peeringdb_server.models import (
     NetworkProtocolsDisabled,
     User,
     DeskProTicket,
+    DeskProTicketCC,
     EnvironmentSetting,
     debug_mail,
     IXFImportEmail,
@@ -48,14 +50,34 @@ REASON_VALUES_CHANGED = _(
 )
 
 
+class MultipleVlansInPrefix(ValueError):
+
+    """
+    This is error is raised when we find that an ix-f export contains
+    multiple vlan ids for the prefixes defined in the processed ixlan
+
+    Since peeringdb treats each vlan as it's own exchange this currently
+    is not a compatible setup for import (see #889)
+    """
+
+    def __init__(self, importer, *args, **kwargs):
+        feed_url = importer.ixlan.ixf_ixp_member_list_url
+        ix_name = importer.ixlan.ix.name
+        support_email = settings.DEFAULT_FROM_EMAIL
+        super().__init__(
+            _(
+                f"We found that your IX-F output "
+                f"contained multiple VLANs for the prefixes defined in the PeeringDB entry for your exchange."
+                "\n"
+                f"This setup is not compatible as PeeringDB regards each VLAN as its own exchange."
+                "\n"
+                f"Please contact {support_email} if you need assistance with resolving this issue."
+            )
+        )
+
+
 class Importer:
 
-    allowed_member_types = [
-        "peering",
-        "ixp",
-        "routeserver",
-        "probono",
-    ]
     allowed_states = [
         "",
         None,
@@ -140,6 +162,7 @@ class Importer:
         self.deletions = {}
         self.asns = []
         self.ixlan = ixlan
+        self.vlan = None
         self.save = save
         self.asn = asn
         self.now = datetime.datetime.now(datetime.timezone.utc)
@@ -164,7 +187,7 @@ class Importer:
         """
 
         if not url:
-            return {"pdb_error": _("IXF import url not specified")}
+            return {"pdb_error": _("IX-F import url not specified")}
 
         try:
             result = requests.get(url, timeout=timeout)
@@ -210,7 +233,7 @@ class Importer:
         """
 
         if not url:
-            return {"pdb_error": _("IXF import url not specified")}
+            return {"pdb_error": _("IX-F import url not specified")}
 
         data = cache.get(self.cache_key(url))
 
@@ -220,6 +243,114 @@ class Importer:
             }
 
         return data
+
+    def find_vlan_needing_pair(self, connection):
+        vlans_needing_pair = []
+        vlan_list = connection.get("vlan_list", [])
+
+        for vlan in vlan_list:
+            if vlan.get("ipv4") and not vlan.get("ipv6"):
+                vlans_needing_pair.append(vlan)
+            elif vlan.get("ipv6") and not vlan.get("ipv4"):
+                vlans_needing_pair.append(vlan)
+
+        if len(vlans_needing_pair) == 0:
+            return None
+
+        return vlans_needing_pair
+
+    def get_if_speed_list(self, connection):
+        if_speed_list = []
+        for if_entry in connection.get("if_list", []):
+            if if_entry.get("if_speed"):
+                if_speed_list.append(if_entry.get("if_speed"))
+
+        if_speed_list.sort()
+        return if_speed_list
+
+    def connections_match(self, connection1, connection2):
+        # Check that both connections have a 'state' set
+        state_match = connection1.get("state", "undefined") == connection2.get(
+            "state", "undefined"
+        )
+        if_list_1 = self.get_if_speed_list(connection1)
+        if_list_2 = self.get_if_speed_list(connection2)
+        if_list_match = if_list_1 == if_list_2
+        return state_match and if_list_match
+
+    def find_connections_that_match(self, connection, connection_list):
+        cxns_that_match = []
+        for connection2 in connection_list:
+            if self.connections_match(connection, connection2):
+                cxns_that_match.append(connection2)
+
+        if len(cxns_that_match) == 0:
+            return None
+
+        return cxns_that_match
+
+    def match_vlans_across_connections(self, connection_list):
+        modified_connection_list = []
+
+        for i, connection in enumerate(connection_list):
+            """
+            If there aren't any vlans in the connection at
+            all, skip it. (this might happen in the course
+            of matching vlans)
+            """
+            if len(connection.get("vlan_list", [])) == 0:
+                continue
+
+            remaining_connections = connection_list[i + 1 :]
+            vlans_needing_pair = self.find_vlan_needing_pair(connection)
+            # If there aren't any vlans that need to be paired,
+            # we're done looking at this connection
+            if vlans_needing_pair is None:
+                modified_connection_list.append(connection)
+                continue
+
+            cxns_that_match = self.find_connections_that_match(
+                connection, remaining_connections
+            )
+            # If there aren't any connections we could match up,
+            # we're done looking at this connection
+            if cxns_that_match is None:
+                modified_connection_list.append(connection)
+                continue
+
+            # If we have vlans we want to match, and
+            # at least one connection we can look for
+            # start looking
+            for lone_vlan in vlans_needing_pair:
+                matching_vlan = self.find_matching_vlan(lone_vlan, cxns_that_match)
+                # if we found one we need to transfer it
+                if matching_vlan is not None:
+                    # matching vlan goes into connection vlan_list
+                    connection["vlan_list"].append(matching_vlan)
+
+            modified_connection_list.append(connection)
+        return modified_connection_list
+
+    def find_matching_vlan(self, lone_vlan, connections_that_match):
+        for connection in connections_that_match:
+            for j, potential_vlan in enumerate(connection["vlan_list"]):
+                if self.vlan_matches(lone_vlan, potential_vlan):
+                    # Matching vlan gets deleted from other connection
+                    return connection["vlan_list"].pop(j)
+
+        return None
+
+    def vlan_matches(self, vlan1, vlan2):
+        vlan_ids_match = vlan1.get("vlan_id", 0) == vlan2.get("vlan_id", 0)
+
+        if vlan_ids_match is False:
+            return False
+        if vlan1.get("ipv4") and vlan2.get("ipv4"):
+            return False
+        if vlan1.get("ipv6") and vlan2.get("ipv6"):
+            return False
+
+        return True
 
     def sanitize_vlans(self, vlans):
         """
@@ -298,7 +429,10 @@ class Importer:
         # vlans in vlan_list for ipv4 and ipv6 (AMS-IX for example)
         for member in member_list:
             asn = member.get("asnum")
-            for conn in member.get("connection_list", []):
+            connection_list = self.match_vlans_across_connections(
+                member.get("connection_list", [])
+            )
+            for conn in connection_list:
 
                 conn["vlan_list"] = self.sanitize_vlans(conn.get("vlan_list", []))
                 vlans = conn["vlan_list"]
@@ -329,10 +463,6 @@ class Importer:
                     break
 
                 ipv6_addresses[ipv6] = ixf_id
-
-        if not vlan_list_found:
-            invalid = _("No entries in any of the vlan_list lists, aborting.")
-
         data["pdb_error"] = invalid
 
         # set member_list to the sanitized copy
@@ -372,12 +502,6 @@ class Importer:
             self.log_error(data.get("pdb_error"), save=save)
             return False
 
-        # null ix-f error note on ixlan if it had error'd before
-        if self.ixlan.ixf_ixp_import_error:
-            self.ixlan.ixf_ixp_import_error = None
-            self.ixlan.ixf_ixp_import_error_notified = None
-            self.ixlan.save()
-
         # bail if there are no active prefixes on the ixlan
         if ixlan.ixpfx_set_active.count() == 0:
             self.log_error(_("No prefixes defined on ixlan"), save=save)
@@ -389,11 +513,31 @@ class Importer:
         try:
             # parse the ixf data
             self.parse(data)
+        except MultipleVlansInPrefix as exc:
+            # multiple vlans found for prefixes specified on the ixlan
+            # we fail the import and notify the ix
+            #
+            # since the import hard fails here we want to remove all
+            # other queued notifications
+            #
+            # transactions are atomic and will be rolled back
+            self.notify_error(f"{exc}")
+            self.log_error(f"{exc}", save=save)
+            self.notifications = []
+            return False
         except KeyError as exc:
             # any key erros mean that the data is invalid, log the error and
             # bail (transactions are atomic and will be rolled back)
             self.log_error(f"Internal Error 'KeyError': {exc}", save=save)
             return False
+
+        # null ix-f error note on ixlan if it had error'd before
+        if self.ixlan.ixf_ixp_import_error:
+            with reversion.create_revision():
+                reversion.set_user(self.ticket_user)
+                self.ixlan.ixf_ixp_import_error = None
+                self.ixlan.ixf_ixp_import_error_notified = None
+                self.ixlan.save()
 
         with transaction.atomic():
             # process any netixlans that need to be deleted
@@ -468,6 +612,7 @@ class Importer:
         ix._meta.get_field("updated").auto_now = False
         try:
             with reversion.create_revision():
+                reversion.set_user(self.ticket_user)
                 ix.save()
         finally:
 
@@ -501,6 +646,8 @@ class Importer:
 
     @reversion.create_revision()
     def process_saves(self):
+        reversion.set_user(self.ticket_user)
+
         for ixf_member in self.pending_save:
             self.apply_add_or_update(ixf_member)
 
@@ -514,6 +661,8 @@ class Importer:
         In order for a netixlan to be removed both it's ipv4 and ipv6 address
         or it's asn need to be gone from the ixf data after validation
         """
+
+        reversion.set_user(self.ticket_user)
 
         netixlan_qset = self.ixlan.netixlan_set_active
 
@@ -594,7 +743,7 @@ class Importer:
             elif ixf_member.action == "noop":
                 if (
                     ixf_member.set_resolved(save=self.save)
-                    and not ixf_member.requirement_of
+                    and not ixf_member.requirement_of_id
                 ):
                     self.queue_notification(ixf_member, "resolved")
 
@@ -659,42 +808,32 @@ class Importer:
             - member_list <list>
         """
         for member in member_list:
-            # we only process members of certain types
-            member_type = member.get("member_type", "peering").lower()
-            if member_type in self.allowed_member_types:
-                # check that the as exists in pdb
-                asn = member["asnum"]
+            asn = member["asnum"]
 
-                # if we are only processing a specific asn, ignore all
-                # that don't match
-                if self.asn and asn != self.asn:
+            # if we are only processing a specific asn, ignore all
+            # that don't match
+            if self.asn and asn != self.asn:
+                continue
+
+            # keep track of asns we find in the ix-f data
+            if asn not in self.asns:
+                self.asns.append(asn)
+
+            if Network.objects.filter(asn=asn).exists():
+                network = Network.objects.get(asn=asn)
+                if network.status != "ok":
+                    self.log_peer(
+                        asn,
+                        "ignore",
+                        _("Network status is '{}'").format(network.status),
+                    )
                     continue
 
-                # keep track of asns we find in the ix-f data
-                if asn not in self.asns:
-                    self.asns.append(asn)
-
-                if Network.objects.filter(asn=asn).exists():
-                    network = Network.objects.get(asn=asn)
-                    if network.status != "ok":
-                        self.log_peer(
-                            asn,
-                            "ignore",
-                            _("Network status is '{}'").format(network.status),
-                        )
-                        continue
-
-                    self.parse_connections(
-                        member.get("connection_list", []), network, member
-                    )
-                else:
-                    self.log_peer(
-                        asn, "ignore", _("Network does not exist in peeringdb")
-                    )
-            else:
-                self.log_peer(
-                    asn, "ignore", _("Invalid member type: {}").format(member_type)
+                self.parse_connections(
+                    member.get("connection_list", []), network, member
                 )
+            else:
+                self.log_peer(asn, "ignore", _("Network does not exist in peeringdb"))
 
     def parse_connections(self, connection_list, network, member):
         """
@@ -819,6 +958,16 @@ class Importer:
                 # and ipv4 is not provided, ignore
 
                 continue
+
+            vlan = lan.get("vlan_id")
+
+            if self.vlan is not None and vlan != self.vlan:
+                # prefixes spread over multiple vlans and
+                # cannot be represented properly at one ixlan
+                # fail the import
+                raise MultipleVlansInPrefix(self)
+
+            self.vlan = vlan
 
             protocol_conflict = 0
 
@@ -1071,9 +1220,6 @@ class Importer:
             except (ValueError, AttributeError):
                 pass
 
-        log_entry = ixf_member_data.ixf_log_entry
-
-        log_entry["action"] = log_entry["action"].replace("add", "modify")
         changed_fields = ", ".join(
             ixf_member_data._changes(
                 getattr(ip4_deletion, "netixlan", None)
@@ -1090,15 +1236,24 @@ class Importer:
         elif ip6_deletion:
             ipaddr_info = _("IPv4 not set")
 
-        log_entry["reason"] = f"{REASON_VALUES_CHANGED}: {changed_fields} {ipaddr_info}"
+        reason = f"{REASON_VALUES_CHANGED}: {changed_fields} {ipaddr_info}"
 
-        ixf_member_data.reason = log_entry["reason"]
+        ixf_member_data.reason = reason
         ixf_member_data.error = None
         if self.save:
             if ixf_member_data.updated:
                 ixf_member_data.save_without_update()
             else:
                 ixf_member_data.save()
+
+        # update import log
+        # in the case of chained consolidated-add-del, log entry here will
+        # not be defined as only the last item in the chain needs to appear in
+        # the log (#889)
+        log_entry = getattr(ixf_member_data, "ixf_log_entry", None)
+        if log_entry:
+            log_entry["action"] = log_entry["action"].replace("add", "modify")
+            log_entry["reason"] = reason
 
     def save_log(self):
         """
@@ -1170,7 +1325,7 @@ class Importer:
             # out of the log as they are already implied by
             # the log entry of the requirement (#824)
 
-            if getattr(netixlan, "requirement_of", None):
+            if getattr(netixlan, "requirement_of_id", None):
                 return
 
             if hasattr(netixlan, "network_id"):
@@ -1260,7 +1415,7 @@ class Importer:
 
         mail.send(fail_silently=False)
 
-    def _ticket(self, ixf_member_data, subject, message):
+    def _ticket(self, ixf_member_data, subject, message, ix=False, net=False):
 
         """
         Create and send a deskpro ticket
@@ -1272,6 +1427,11 @@ class Importer:
         - ixf_member_data (`IXFMemberData`)
         - subject (`str`)
         - message (`str`)
+
+        Keyword Argument(s):
+
+        - ix ('bool'): cc ix contacts
+        - net ('bool'): cc net contacts
 
         """
 
@@ -1294,6 +1454,28 @@ class Importer:
             deskpro_id=ixf_member_data.deskpro_id,
             deskpro_ref=ixf_member_data.deskpro_ref,
         )
+
+        cc = []
+
+        if ix:
+            # if ix to be notified, cc suitable contacts
+            cc += ixf_member_data.ix_contacts
+
+        if net:
+            # if net is to be notified, cc suitable contacts
+            cc += ixf_member_data.net_contacts
+
+        cc = list(set(cc))
+
+        for email in cc:
+
+            # we need to relate a name to the emails
+            # since deskpro will make a person for the email address
+            # we should attempt to supply the best possibly option
+
+            ticket.cc_set.create(
+                email=email,
+            )
 
         try:
             client.create_ticket(ticket)
@@ -1382,7 +1564,7 @@ class Importer:
             # we don't care about proposals that are hidden
             # requirements of other proposals
 
-            if ixf_member_data.requirement_of:
+            if ixf_member_data.requirement_of_id:
                 continue
 
             asn = ixf_member_data.net
@@ -1502,7 +1684,7 @@ class Importer:
                     self._notify_proposal(recipient, data, ticket_days, template)
                 except Exception as exc:
                     if error_handler:
-                        error_handler(exc)
+                        error_handler(exc, ixlan=self.ixlan)
                     else:
                         raise
 
@@ -1633,43 +1815,13 @@ class Importer:
                 template_file, recipient="ac", context=context
             )
 
-            ticket = self._ticket(ixf_member_data, subject, message)
+            ticket = self._ticket(ixf_member_data, subject, message, ix=ix, net=net)
             ixf_member_data.deskpro_id = ticket.deskpro_id
             ixf_member_data.deskpro_ref = ticket.deskpro_ref
             if ixf_member_data.id:
                 ixf_member_data.save()
 
-        # we have deskpro reference number, put it in the
-        # subject
-
-        if ixf_member_data.deskpro_ref:
-            subject = f"{subject} [#{ixf_member_data.deskpro_ref}]"
-
-        # If we do not have a deskpro reference, don't send out individual conflict resolution
-        # As per issue #850
-        else:
-            return
-
-        # Notify Exchange
-
-        if ix:
-            message = ixf_member_data.render_notification(
-                template_file, recipient="ix", context=context
-            )
-            self._email(
-                subject, message, ixf_member_data.ix_contacts, ix=ixf_member_data.ix
-            )
-
-        # Notify network
-
-        if net and ixf_member_data.actionable_for_network:
-            message = ixf_member_data.render_notification(
-                template_file, recipient="net", context=context
-            )
-            self._email(
-                subject, message, ixf_member_data.net_contacts, net=ixf_member_data.net
-            )
-
+    @reversion.create_revision()
     def notify_error(self, error):
 
         """
@@ -1680,6 +1832,8 @@ class Importer:
 
         if not self.save:
             return
+
+        reversion.set_user(self.ticket_user)
 
         now = datetime.datetime.now(datetime.timezone.utc)
         notified = self.ixlan.ixf_ixp_import_error_notified

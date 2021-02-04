@@ -174,6 +174,21 @@ class Mock:
     def city(self, data, reftag=None):
         return "Chicago"
 
+    def suite(self, data, reftag=None):
+        return ""
+
+    def floor(self, data, reftag=None):
+        return ""
+
+    def netixlan_updated(self, data, reftag=None):
+        return None
+
+    def poc_updated(self, data, reftag=None):
+        return None
+
+    def netfac_updated(self, data, reftag=None):
+        return None
+
     def latitude(self, data, reftag=None):
         return 0.0
 

@@ -4,10 +4,12 @@ from grainy.const import *
 
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group
+from django.conf import settings
 
 import peeringdb_server.models as models
 import peeringdb_server.org_admin_views as org_admin
 import peeringdb_server.views as views
+from tests.util import override_group_id
 
 
 class OrgAdminTests(TestCase):
@@ -22,8 +24,11 @@ class OrgAdminTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         # create user and guest group
-        guest_group = Group.objects.create(name="guest")
-        user_group = Group.objects.create(name="user")
+        cls.guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
+        cls.user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
+
+        settings.USER_GROUP_ID = cls.user_group.id
+        settings.GUEST_GROUP_ID = cls.guest_group.id
 
         # create test users
         for name in [
@@ -506,9 +511,10 @@ class OrgAdminTests(TestCase):
         self.assertEqual(uoar.org.id, self.org.id)
 
         # test approval
-        request = self.factory.post(
-            "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={"id": uoar.id}
-        )
+        with override_group_id():
+            request = self.factory.post(
+                "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={"id": uoar.id}
+            )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
 
@@ -537,10 +543,11 @@ class OrgAdminTests(TestCase):
         # test: we shouldnt be allowed to approve uoar's for the org we are not
         # admins of
 
-        request = self.factory.post(
-            "/org-admin/uoar/approve?org_id=%d" % self.org_other.id,
-            data={"id": uoar.id},
-        )
+        with override_group_id():
+            request = self.factory.post(
+                "/org-admin/uoar/approve?org_id=%d" % self.org_other.id,
+                data={"id": uoar.id},
+            )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.uoar_approve(request)
@@ -554,9 +561,11 @@ class OrgAdminTests(TestCase):
             user=self.user_d, asn=22, status="pending"
         )
 
-        request = self.factory.post(
-            "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={"id": uoar_b.id}
-        )
+        with override_group_id():
+            request = self.factory.post(
+                "/org-admin/uoar/approve?org_id=%d" % self.org.id,
+                data={"id": uoar_b.id},
+            )
         request._dont_enforce_csrf_checks = True
         request.user = self.org_admin
         resp = org_admin.uoar_approve(request)

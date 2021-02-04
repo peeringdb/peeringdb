@@ -1,0 +1,63 @@
+{
+   "route":{
+      "long_name":"South LaSalle Street",
+      "short_name":"S LaSalle St",
+      "types":[
+         "route"
+      ]
+   },
+   "neighborhood":{
+      "long_name":"Chicago Loop",
+      "short_name":"Chicago Loop",
+      "types":[
+         "neighborhood",
+         "political"
+      ]
+   },
+   "postal_code":{
+      "long_name":"60605",
+      "short_name":"60605",
+      "types":[
+         "postal_code"
+      ]
+   },
+   "locality":{
+      "long_name":"Chicago",
+      "short_name":"Chicago",
+      "types":[
+         "locality",
+         "political"
+      ]
+   },
+   "administrative_area_level_2":{
+      "long_name":"Cook County",
+      "short_name":"Cook County",
+      "types":[
+         "administrative_area_level_2",
+         "political"
+      ]
+   },
+   "administrative_area_level_1":{
+      "long_name":"Illinois",
+      "short_name":"IL",
+      "types":[
+         "administrative_area_level_1",
+         "political"
+      ]
+   },
+   "country":{
+      "long_name":"United States",
+      "short_name":"US",
+      "types":[
+         "country",
+         "political"
+      ]
+   },
+   "plus_code":{
+      "long_name":"V9G9+F9",
+      "short_name":"V9G9+F9",
+      "types":[
+         "plus_code"
+      ]
+   }
+}

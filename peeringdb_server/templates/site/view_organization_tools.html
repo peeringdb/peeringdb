@@ -1,7 +1,6 @@
 {% load util %}
 {% load i18n %}
 <div class="section_title">{% trans "Manage" %}</div>
-
 <div class="marg-top">
   <ul class="nav nav-tabs" role="tablist">
     {% if permissions.can_create_fac %}
@@ -171,7 +170,14 @@
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Technical Phone" %}</div>
+              <div 
+                class="col-xs-4 col-sm-5 col-md-4 help-text"
+                data-toggle="tooltip"
+                data-placement="top"
+                title="{{ data.phone_help_text }}">
+              {% trans "Technical Phone" %}
+              <span class="glyphicon glyphicon-question-sign"></span>
+            </div>
               <div class="col-xs-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="tech_phone"></div>
@@ -185,7 +191,14 @@
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Sales Phone" %}</div>
+              <div 
+                class="col-xs-4 col-sm-5 col-md-4 help-text"
+                data-toggle="tooltip"
+                data-placement="top"
+                title="{{ data.phone_help_text }}">
+              {% trans "Sales Phone" %}
+              <span class="glyphicon glyphicon-question-sign"></span>
+              </div>
               <div class="col-xs-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="sales_phone"></div>
@@ -494,10 +507,18 @@
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Technical Phone" %}</div>
+              <div 
+                class="col-xs-4 col-sm-5 col-md-4 help-text"
+                data-toggle="tooltip"
+                data-placement="top"
+                title="{{ data.phone_help_text }}">
+              {% trans "Technical Phone" %}
+              <span class="glyphicon glyphicon-question-sign"></span>
+            </div>
               <div class="col-xs-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
-                     data-edit-name="tech_phone"></div>
+                     data-edit-name="tech_phone">       
+                </div>
               </div>
             </div>
             <div class="row">
@@ -508,7 +529,14 @@
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Policy Phone" %}</div>
+              <div 
+                class="col-xs-4 col-sm-5 col-md-4 help-text"
+                data-toggle="tooltip"
+                data-placement="top"
+                title="{{ data.phone_help_text }}">
+                {% trans "Policy Phone" %}
+              <span class="glyphicon glyphicon-question-sign"></span>
+              </div>
               <div class="col-xs-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="policy_phone"></div>

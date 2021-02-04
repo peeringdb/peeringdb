@@ -5,13 +5,16 @@ import uuid
 from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
+
+from .util import ClientCase
+
 from django_grainy.models import UserPermission, GroupPermission
 
 import peeringdb_server.views as views
 import peeringdb_server.models as models
 
 
-class ViewTestCase(TestCase):
+class ViewTestCase(ClientCase):
 
     entities = ["ix", "net", "fac"]
 
@@ -47,6 +50,7 @@ class ViewTestCase(TestCase):
             namespace="peeringdb.organization.*.network.*.poc_set.public",
             permission=0x01,
         )
+        super(ViewTestCase, cls).setUpTestData()
 
         # create test users
         for name in [
@@ -64,7 +68,7 @@ class ViewTestCase(TestCase):
                 models.User.objects.create_user(name, "%s@localhost" % name, name),
             )
             getattr(cls, name).set_password(name)
-            user_group.user_set.add(getattr(cls, name))
+            cls.user_group.user_set.add(getattr(cls, name))
 
         # create test org
         cls.org = models.Organization.objects.create(name="Test org", status="ok")
@@ -200,4 +204,6 @@ class TestNetworkView(ViewTestCase):
         for q in ["as1", "asn1", "AS1", "ASN1"]:
             resp = c.get(f"/search?q={q}", follow=True)
             self.assertEqual(resp.status_code, 200)
-            self.assertEqual(resp.redirect_chain, [("/net/1", 302)])
+            self.assertEqual(
+                resp.redirect_chain, [("/net/{}".format(self.net.id), 302)]
+            )

@@ -6,6 +6,7 @@ from django.conf import settings
 
 from peeringdb_server.models import InternetExchange, IXLan, Network
 
+
 class CacheRedirect(Exception):
     """
     Raise this error to redirect to cache response during viewset.get_queryset
@@ -103,9 +104,7 @@ class APICacheLoader:
             for row in data:
                 self.filter_fields(row)
 
-
         return {"results": data, "__meta": {"generated": os.path.getmtime(self.path)}}
-
 
     def filter_fields(self, row):
         """
@@ -115,4 +114,3 @@ class APICacheLoader:
         for field in list(row.keys()):
             if field not in self.fields and field != "_grainy":
                 del row[field]
-

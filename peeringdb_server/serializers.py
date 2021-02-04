@@ -12,6 +12,7 @@ from django.db.models.fields.related import (
     ReverseManyToOneDescriptor,
     ForwardManyToOneDescriptor,
 )
+from django.http import JsonResponse
 from django.core.exceptions import FieldError, ValidationError
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -24,8 +25,18 @@ from django_peeringdb.models.abstract import AddressModel
 
 from django_grainy.rest import PermissionDenied
 
-from peeringdb_server.permissions import check_permissions_from_request, get_key_from_request
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError, get_prefix_protocol
+from peeringdb_server.permissions import (
+    check_permissions_from_request,
+    get_key_from_request
+)
+from peeringdb_server.inet import (
+    RdapLookup,
+    RdapNotFoundError,
+    get_prefix_protocol,
+    RdapException,
+    rdap_pretty_error_message,
+)
+
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
     ticket_queue_rdap_error,
@@ -57,7 +68,6 @@ from peeringdb_server.validators import (
 
 from django.utils.translation import ugettext_lazy as _
 
-from rdap.exceptions import RdapException
 
 # exclude certain query filters that would otherwise
 # be exposed to the api for filtering operations
@@ -96,6 +106,122 @@ FILTER_EXCLUDE = [
 
 # def _(x):
 #    return x
+
+
+class GeocodeSerializerMixin(object):
+    """
+    Overrides create() and update() method of serializer
+    to normalize the location against the Google Maps Geocode API
+    and resave the model instance with normalized address fields.
+
+    Can only be used if the model includes the GeocodeBaseMixin.
+    """
+
+    GEO_ERROR_MESSAGE = _(
+        "We could not find the address you entered. "
+        "Please review your address data and contact "
+        "{} for further assistance "
+        "if needed."
+    ).format(settings.DEFAULT_FROM_EMAIL)
+
+    def _geosync_information_present(self, instance, validated_data):
+        """
+        Determine if there is enough address information
+        to necessitate a geosync attempt
+        """
+
+        for f in AddressSerializer.Meta.fields:
+
+            # We do not need to sync if only the country is defined
+            if f == "country":
+                continue
+
+            if validated_data.get(f) != "":
+                return True
+
+        return False
+
+    def _need_geosync(self, instance, validated_data):
+        """
+        Determine if any geofields have changed that need normalization.
+        Returns False if the only change is that fields have been deleted.
+        """
+
+        # If there isn't any data besides country, don't sync
+        geosync_info_present = self._geosync_information_present(
+            instance, validated_data
+        )
+
+        if not geosync_info_present:
+            return False
+
+        # We do not need to resync if floor, suite, or address2 are changed
+        ignored_fields = ["floor", "suite", "address2"]
+        geocode_fields = [
+            f for f in AddressSerializer.Meta.fields if f not in ignored_fields
+        ]
+
+        for field in geocode_fields:
+            if validated_data.get(field) == "":
+                continue
+
+            if getattr(instance, field) != validated_data.get(field):
+                return True
+
+        return False
+
+    def update(self, instance, validated_data):
+        """
+        When updating a geo-enabled object,
+        we first want to update the model
+        and then normalize the geofields
+        """
+
+        # Need to check if we need geosync before updating the instance
+        need_geosync = self._need_geosync(instance, validated_data)
+
+        instance = super().update(instance, validated_data)
+
+        # we dont want to geocode on tests
+        if settings.RELEASE_ENV == "run_tests":
+            return instance
+
+        if need_geosync:
+            print("Normalizing geofields")
+            try:
+                instance.normalize_api_response()
+
+            # Reraise the model validation error
+            # as a serializer validation error
+            except ValidationError as exc:
+                print(exc.message)
+                raise serializers.ValidationError(
+                    {"non_field_errors": [self.GEO_ERROR_MESSAGE]}
+                )
+        return instance
+
+    def create(self, validated_data):
+        # When creating a geo-enabled object,
+        # we first want to save the model
+        # and then normalize the geofields
+        instance = super().create(validated_data)
+
+        # we dont want to geocode on tests
+        if settings.RELEASE_ENV == "run_tests":
+            return instance
+
+        if self._geosync_information_present(instance, validated_data):
+            try:
+                instance.normalize_api_response()
+
+            # Reraise the model validation error
+            # as a serializer validation error
+            except ValidationError as exc:
+                print(exc.message)
+                raise serializers.ValidationError(
+                    {"non_field_errors": [self.GEO_ERROR_MESSAGE]}
+                )
+        return instance
 
 
 def queryable_field_xl(fld):
@@ -289,7 +415,7 @@ class AsnRdapValidator:
             self.request.rdap_result = rdap
         except RdapException as exc:
             self.request.rdap_error = (self.request.user, asn, exc)
-            raise RestValidationError({self.field: f"{self.message}: {exc}"})
+            raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
 
     def set_context(self, serializer):
         self.instance = getattr(serializer, "instance", None)
@@ -370,7 +496,16 @@ class ParentStatusException(IOError):
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = (AddressModel,)
-        fields = ["address1", "address2", "city", "country", "state", "zipcode"]
+        fields = [
+            "address1",
+            "address2",
+            "city",
+            "country",
+            "state",
+            "zipcode",
+            "floor",
+            "suite",
+        ]
 
 
 class ModelSerializer(serializers.ModelSerializer):
@@ -805,11 +940,12 @@ class ModelSerializer(serializers.ModelSerializer):
         return
 
     def update(self, instance, validated_data):
-        grainy_kwargs = {"id":instance.id}
+        grainy_kwargs = {"id": instance.id}
         grainy_kwargs.update(**validated_data)
 
         namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
         request = self.context.get("request")
+
         if request and not check_permissions_from_request(request, namespace, "u"):
             raise PermissionDenied(
               f"User does not have write permissions to '{namespace}'"
@@ -832,7 +968,8 @@ class ModelSerializer(serializers.ModelSerializer):
 
         self.validate_create(validated_data)
 
-        grainy_kwargs = {"id":"*"}
+        grainy_kwargs = {"id": "*"}
+
         grainy_kwargs.update(**validated_data)
 
         request = self.context.get("request")
@@ -1089,7 +1226,7 @@ def nested(serializer, exclude=[], getter=None, through=None, **kwargs):
 # on the model?
 
 
-class FacilitySerializer(ModelSerializer):
+class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
     """
     Serializer for peeringdb_server.models.Facility
 
@@ -1787,6 +1924,9 @@ class NetworkSerializer(ModelSerializer):
             "info_ipv6",
             "info_never_via_route_servers",
             "notes",
+            "netixlan_updated",
+            "netfac_updated",
+            "poc_updated",
             "policy_url",
             "policy_general",
             "policy_locations",
@@ -1804,6 +1944,11 @@ class NetworkSerializer(ModelSerializer):
             "netfac_set",
             "netixlan_set",
             "poc_set",
+        ]
+        read_only_fields = [
+            "netixlan_updated",
+            "netfac_updated",
+            "poc_updated",
         ]
         list_exclude = ["org"]
 
@@ -2143,6 +2288,16 @@ class IXLanSerializer(ModelSerializer):
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
 
+    def validate(self, data):
+        # Per issue 846
+        if data["ixf_ixp_member_list_url"] == "" and data["ixf_ixp_import_enabled"]:
+            raise ValidationError(
+                _(
+                    "Cannot enable IX-F import without specifying the IX-F member list url"
+                )
+            )
+        return data
+
 
 class InternetExchangeSerializer(ModelSerializer):
     """
@@ -2384,7 +2539,7 @@ class InternetExchangeSerializer(ModelSerializer):
         return data
 
 
-class OrganizationSerializer(ModelSerializer):
+class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
     """
     Serializer for peeringdb_server.models.Organization
     """
@@ -2409,7 +2564,17 @@ class OrganizationSerializer(ModelSerializer):
         model = Organization
         depth = 1
         fields = (
-            ["id", "name", "website", "notes", "net_set", "fac_set", "ix_set"]
+            [
+                "id",
+                "name",
+                "website",
+                "notes",
+                "net_set",
+                "fac_set",
+                "ix_set",
+                "latitude",
+                "longitude",
+            ]
             + AddressSerializer.Meta.fields
             + HandleRefSerializer.Meta.fields
         )

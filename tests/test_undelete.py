@@ -18,8 +18,8 @@ class TestUndelete(ClientCase):
         super().setUpTestData()
         call_command("pdb_generate_test_data", limit=2, commit=True)
 
-        cls.org_a = REFTAG_MAP["org"].objects.get(id=1)
-        cls.org_b = REFTAG_MAP["org"].objects.get(id=2)
+        cls.org_a = REFTAG_MAP["org"].objects.first()
+        cls.org_b = REFTAG_MAP["org"].objects.exclude(id=cls.org_a.id).first()
 
         cls.net_a = cls.org_a.net_set.first()
 
