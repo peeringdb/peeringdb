@@ -492,6 +492,11 @@ class UserOrgAffiliationRequest(models.Model):
         """
 
         if self.org_id:
+
+            if (self.user.is_org_admin(self.org) or self.user.is_org_member(self.org)):
+                self.delete()
+                return
+
             if (
                 self.org.admin_usergroup.user_set.count() > 0
                 or self.org.usergroup.user_set.count() > 0
@@ -518,6 +523,11 @@ class UserOrgAffiliationRequest(models.Model):
         deny request, marks request as denied and keeps
         it around until requesting user deletes it
         """
+
+        if self.user and self.org:
+            if (self.user.is_org_admin(self.org) or self.user.is_org_member(self.org)):
+                self.delete()
+                return
 
         self.status = "denied"
         self.save()
