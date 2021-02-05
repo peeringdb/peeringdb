@@ -14,30 +14,30 @@
     }
   },
   {
-    "model" : "django_namespace_perms.grouppermission",
+    "model" : "django_grainy.grouppermission",
     "pk" : 1,
     "fields" : {
       "group" : 1,
       "namespace" : "peeringdb.organization",
-      "permissions" : 1
+      "permission" : 1
     }
   },
   {
-    "model" : "django_namespace_perms.grouppermission",
+    "model" : "django_grainy.grouppermission",
     "pk" : 5,
     "fields" : {
       "group" : 2,
       "namespace" : "peeringdb.organization",
-      "permissions" : 1
+      "permission" : 1
     }
   },
   {
-    "model" : "django_namespace_perms.grouppermission",
+    "model" : "django_grainy.grouppermission",
     "pk" : 6,
     "fields" : {
       "group" : 2,
       "namespace" : "peeringdb.organization.*.network.*.poc_set.users",
-      "permissions" : 1
+      "permission" : 1
     }
   }
 ]
