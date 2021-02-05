@@ -39,7 +39,7 @@ from django_otp.plugins.otp_email.models import EmailDevice
 import two_factor.views
 
 from peeringdb_server import settings
-from peeringdb_server.util import check_permissions, PERM_CRUD
+from peeringdb_server.util import check_permissions, PERM_CRUD, APIPermissionsApplicator
 from peeringdb_server.search import search
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.org_admin_views import load_all_user_permissions
@@ -1091,6 +1091,12 @@ def view_facility(request, id):
 
     data = FacilitySerializer(facility, context={"user": request.user}).data
 
+    applicator = APIPermissionsApplicator(request.user)
+
+    if not applicator.is_generating_api_cache:
+        data = applicator.apply(data)
+
+
     if not data:
         return view_http_error_403(request)
 
@@ -1240,6 +1246,12 @@ def view_exchange(request, id):
         return view_http_error_404(request)
 
     data = InternetExchangeSerializer(exchange, context={"user": request.user}).data
+
+    applicator = APIPermissionsApplicator(request.user)
+
+    if not applicator.is_generating_api_cache:
+        data = applicator.apply(data)
+
 
     # find out if user can write to object
     perms = export_permissions(request.user, exchange)
@@ -1499,6 +1511,10 @@ def view_network(request, id):
         return view_http_error_404(request)
 
     network_d = NetworkSerializer(network, context={"user": request.user}).data
+    applicator = APIPermissionsApplicator(request.user)
+
+    if not applicator.is_generating_api_cache:
+        network_d = applicator.apply(network_d)
 
     if not network_d:
         return view_http_error_403(request)
