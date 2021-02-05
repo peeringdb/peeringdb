@@ -493,7 +493,7 @@ class UserOrgAffiliationRequest(models.Model):
 
         if self.org_id:
 
-            if (self.user.is_org_admin(self.org) or self.user.is_org_member(self.org)):
+            if self.user.is_org_admin(self.org) or self.user.is_org_member(self.org):
                 self.delete()
                 return
 
@@ -525,7 +525,7 @@ class UserOrgAffiliationRequest(models.Model):
         """
 
         if self.user and self.org:
-            if (self.user.is_org_admin(self.org) or self.user.is_org_member(self.org)):
+            if self.user.is_org_admin(self.org) or self.user.is_org_member(self.org):
                 self.delete()
                 return
 

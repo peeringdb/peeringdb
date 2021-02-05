@@ -659,8 +659,7 @@ class OrgAdminTests(TestCase):
         )
         self.assertTrue(self.user_a not in self.org.admin_usergroup.user_set.all())
         self.assertTrue(self.user_a in self.org.usergroup.user_set.all())
-        self.assertEqual(
-            models.UserOrgAffiliationRequest.objects.count(), 0)
+        self.assertEqual(models.UserOrgAffiliationRequest.objects.count(), 0)
 
     def test_uoar_double_deny_admin(self):
         """
@@ -681,8 +680,7 @@ class OrgAdminTests(TestCase):
         uoar_admin.deny()
         self.assertTrue(self.org_admin in self.org.admin_usergroup.user_set.all())
         self.assertTrue(self.org_admin not in self.org.usergroup.user_set.all())
-        self.assertEqual(
-            models.UserOrgAffiliationRequest.objects.count(), 0)
+        self.assertEqual(models.UserOrgAffiliationRequest.objects.count(), 0)
 
     def test_uoar_double_approve_admin(self):
         """
@@ -703,8 +701,7 @@ class OrgAdminTests(TestCase):
         uoar_admin.approve()
         self.assertTrue(self.org_admin in self.org.admin_usergroup.user_set.all())
         self.assertTrue(self.org_admin not in self.org.usergroup.user_set.all())
-        self.assertEqual(
-            models.UserOrgAffiliationRequest.objects.count(), 0)
+        self.assertEqual(models.UserOrgAffiliationRequest.objects.count(), 0)
 
     def test_uoar_cancel_on_delete(self):
         """
