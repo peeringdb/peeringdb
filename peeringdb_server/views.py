@@ -1096,7 +1096,6 @@ def view_facility(request, id):
     if not applicator.is_generating_api_cache:
         data = applicator.apply(data)
 
-
     if not data:
         return view_http_error_403(request)
 
@@ -1251,7 +1250,6 @@ def view_exchange(request, id):
 
     if not applicator.is_generating_api_cache:
         data = applicator.apply(data)
-
 
     # find out if user can write to object
     perms = export_permissions(request.user, exchange)
