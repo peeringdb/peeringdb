@@ -144,24 +144,38 @@ class TestNetworkView(ViewTestCase):
         # test #1 - not logged in
         c = Client()
         resp = c.get("/net/%d" % self.net.id, follow=True)
+        content = resp.content.decode("utf-8")
         self.assertEqual(resp.status_code, 200)
         assert resp.status_code == 200
-        assert TEXT_NOT_LOGGED_IN in resp.content.decode("utf-8")
+        assert TEXT_NOT_LOGGED_IN in content
+        assert "Contact Public" in content
+        assert "Contact Private" not in content
+        assert "Contact Users" not in content
 
         # test #2 - guest logged in (not affiliated to any org)
         c = Client()
         c.login(username="guest", password="guest")
         resp = c.get("/net/%d" % self.net.id)
+        content = resp.content.decode("utf-8")
         assert resp.status_code == 200
-        assert TEXT_NOT_VERIFIED in resp.content.decode("utf-8")
+        assert TEXT_NOT_VERIFIED in content
+        assert "Contact Public" in content
+        assert "Contact Private" not in content
+        assert "Contact Users" not in content
 
         # test #3 - user logged in
         c = Client()
         c.login(username="user_a", password="user_a")
         resp = c.get("/net/%d" % self.net.id)
+        content = resp.content.decode("utf-8")
         assert resp.status_code == 200
-        assert TEXT_NOT_LOGGED_IN not in resp.content.decode("utf-8")
-        assert TEXT_NOT_VERIFIED not in resp.content.decode("utf-8")
+        assert TEXT_NOT_LOGGED_IN not in content
+        assert TEXT_NOT_VERIFIED not in content
+
+        assert "Contact Public" in content
+        assert "Contact Private" in content
+        assert "Contact Users" in content
+
 
     def test_search_asn_redirect(self):
         """
