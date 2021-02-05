@@ -585,9 +585,8 @@ OAUTH2_PROVIDER = {
 }
 
 
-## NSP
+## grainy
 
-NSP_MODE = "crud"
 AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 
 

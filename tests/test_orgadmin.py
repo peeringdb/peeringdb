@@ -644,6 +644,65 @@ class OrgAdminTests(TestCase):
 
         uoar_b.delete()
 
+    def test_uoar_double_affiliation_request(self):
+        """
+        Test that making a second affiliation request
+        does nothing for normal members bc
+        a signal intercepts the request (issue 930)
+        """
+        self.assertTrue(self.user_a.is_org_member(self.org))
+        self.assertTrue(self.user_a not in self.org.admin_usergroup.user_set.all())
+        self.assertTrue(self.user_a in self.org.usergroup.user_set.all())
+
+        models.UserOrgAffiliationRequest.objects.create(
+            user=self.user_a, org=self.org, status="pending"
+        )
+        self.assertTrue(self.user_a not in self.org.admin_usergroup.user_set.all())
+        self.assertTrue(self.user_a in self.org.usergroup.user_set.all())
+        self.assertEqual(models.UserOrgAffiliationRequest.objects.count(), 0)
+
+    def test_uoar_double_deny_admin(self):
+        """
+        Test that making and denying a second affiliation request
+        does nothing for admin members (issue 930)
+        """
+        self.assertTrue(self.org_admin.is_org_admin(self.org))
+        self.assertTrue(self.org_admin in self.org.admin_usergroup.user_set.all())
+        self.assertTrue(self.org_admin not in self.org.usergroup.user_set.all())
+
+        uoar_admin = models.UserOrgAffiliationRequest.objects.create(
+            user=self.org_admin, asn=1, status="pending"
+        )
+        """
+        Denying an additional request should not change the affiliation
+        and should delete the request
+        """
+        uoar_admin.deny()
+        self.assertTrue(self.org_admin in self.org.admin_usergroup.user_set.all())
+        self.assertTrue(self.org_admin not in self.org.usergroup.user_set.all())
+        self.assertEqual(models.UserOrgAffiliationRequest.objects.count(), 0)
+
+    def test_uoar_double_approve_admin(self):
+        """
+        Test that making and approving a second affiliation request
+        does nothing for admin members (issue 930)
+        """
+        self.assertTrue(self.org_admin.is_org_admin(self.org))
+        self.assertTrue(self.org_admin in self.org.admin_usergroup.user_set.all())
+        self.assertTrue(self.org_admin not in self.org.usergroup.user_set.all())
+
+        uoar_admin = models.UserOrgAffiliationRequest.objects.create(
+            user=self.org_admin, asn=1, status="pending"
+        )
+        """
+        Approving an additional request should not change the affiliation
+        and should delete the request
+        """
+        uoar_admin.approve()
+        self.assertTrue(self.org_admin in self.org.admin_usergroup.user_set.all())
+        self.assertTrue(self.org_admin not in self.org.usergroup.user_set.all())
+        self.assertEqual(models.UserOrgAffiliationRequest.objects.count(), 0)
+
     def test_uoar_cancel_on_delete(self):
         """
         Test that user affiliation requests get canceled if the

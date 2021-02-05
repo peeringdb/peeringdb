@@ -4,6 +4,8 @@ import datetime
 import re
 import uuid
 
+from grainy.const import *
+
 from allauth.account.models import EmailAddress
 from django.http import (
     JsonResponse,
@@ -28,12 +30,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django_grainy.util import Permissions
-from django_namespace_perms.constants import (
-    PERM_CRUD,
-    PERM_CREATE,
-    PERM_DELETE,
-    PERM_WRITE,
-)
 import requests
 
 from oauth2_provider.decorators import protected_resource
@@ -43,7 +39,7 @@ from django_otp.plugins.otp_email.models import EmailDevice
 import two_factor.views
 
 from peeringdb_server import settings
-from peeringdb_server.util import check_permissions, PERM_CRUD
+from peeringdb_server.util import check_permissions, PERM_CRUD, APIPermissionsApplicator
 from peeringdb_server.search import search
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.org_admin_views import load_all_user_permissions
@@ -132,7 +128,7 @@ def export_permissions(user, entity):
         return {}
 
     perms = {
-        "can_write": check_permissions(user, entity, PERM_WRITE),
+        "can_write": check_permissions(user, entity, PERM_UPDATE),
         "can_create": check_permissions(user, entity, PERM_CREATE),
         "can_delete": check_permissions(user, entity, PERM_DELETE),
     }
@@ -1095,6 +1091,11 @@ def view_facility(request, id):
 
     data = FacilitySerializer(facility, context={"user": request.user}).data
 
+    applicator = APIPermissionsApplicator(request.user)
+
+    if not applicator.is_generating_api_cache:
+        data = applicator.apply(data)
+
     if not data:
         return view_http_error_403(request)
 
@@ -1244,6 +1245,11 @@ def view_exchange(request, id):
         return view_http_error_404(request)
 
     data = InternetExchangeSerializer(exchange, context={"user": request.user}).data
+
+    applicator = APIPermissionsApplicator(request.user)
+
+    if not applicator.is_generating_api_cache:
+        data = applicator.apply(data)
 
     # find out if user can write to object
     perms = export_permissions(request.user, exchange)
@@ -1503,6 +1509,10 @@ def view_network(request, id):
         return view_http_error_404(request)
 
     network_d = NetworkSerializer(network, context={"user": request.user}).data
+    applicator = APIPermissionsApplicator(request.user)
+
+    if not applicator.is_generating_api_cache:
+        network_d = applicator.apply(network_d)
 
     if not network_d:
         return view_http_error_403(request)

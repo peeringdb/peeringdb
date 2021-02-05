@@ -10,7 +10,6 @@ from .forms import OrgAdminUserPermissionForm
 
 from grainy.const import *
 from django_grainy.models import UserPermission
-from django_namespace_perms.constants import *
 
 from django_handleref.models import HandleRefModel
 
