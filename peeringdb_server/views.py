@@ -4,6 +4,8 @@ import datetime
 import re
 import uuid
 
+from grainy.const import *
+
 from allauth.account.models import EmailAddress
 from django.http import (
     JsonResponse,
@@ -28,12 +30,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django_grainy.util import Permissions
-from django_namespace_perms.constants import (
-    PERM_CRUD,
-    PERM_CREATE,
-    PERM_DELETE,
-    PERM_WRITE,
-)
 import requests
 
 from oauth2_provider.decorators import protected_resource
@@ -132,7 +128,7 @@ def export_permissions(user, entity):
         return {}
 
     perms = {
-        "can_write": check_permissions(user, entity, PERM_WRITE),
+        "can_write": check_permissions(user, entity, PERM_UPDATE),
         "can_create": check_permissions(user, entity, PERM_CREATE),
         "can_delete": check_permissions(user, entity, PERM_DELETE),
     }
