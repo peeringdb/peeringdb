@@ -426,7 +426,6 @@ INSTALLED_APPS = [
     "crispy_forms",
     "django_countries",
     "django_inet",
-    "django_namespace_perms",
     "django_grainy",
     "django_peeringdb",
     "django_tables2",
@@ -585,9 +584,8 @@ OAUTH2_PROVIDER = {
 }
 
 
-## NSP
+## grainy
 
-NSP_MODE = "crud"
 AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 
 
