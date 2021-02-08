@@ -1,3 +1,6 @@
+# RUN true is used here to separate problematic COPY statements, 
+# per this issue: https://github.com/moby/moby/issues/37965
+
 FROM python:3.9-alpine as base
 
 ARG virtual_env=/srv/www.peeringdb.com/venv
