@@ -3427,40 +3427,37 @@ class TestJSON(unittest.TestCase):
         )
 
     def test_z_misc_001_suggest_ix(self):
-        # test exchange suggestions
-
+        """
+        Issue 827: We are removing the ability for non-admin users to "suggest" an IX
+        Therefore we change this test so that a "suggest" field being set on the API
+        request is disregarded.
+        """
+        org = SHARED["org_rw_ok"]
         data = self.make_data_ix(
-            org_id=settings.SUGGEST_ENTITY_ORG, suggest=True, prefix=self.get_prefix4()
+            org_id=org.id, suggest=True, prefix=self.get_prefix4()
         )
-
-        r_data = self.assert_create(
-            self.db_user, "ix", data, ignore=["prefix", "suggest"]
-        )
-
-        self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
-        self.assertEqual(r_data["status"], "pending")
-
-        ix = InternetExchange.objects.get(id=r_data["id"])
-        self.assertEqual(ix.org_id, settings.SUGGEST_ENTITY_ORG)
-
-        data = self.make_data_ix(
-            org_id=settings.SUGGEST_ENTITY_ORG, suggest=True, prefix=self.get_prefix4()
-        )
-
-        r_data = self.assert_create(
-            self.db_guest,
+        print("Data")
+        from pprint import pprint
+        pprint(data)
+        failure = self.assert_create(
+            self.db_user,
             "ix",
             data,
             ignore=["prefix", "suggest"],
             test_success=False,
             test_failures={"perms": {}},
         )
+        print(failure)
+        # Assert that this doesn't create a "pending" IX in the
+        # suggested entity org
+        suggest_entity_org = Organization.objects.get(id=settings.SUGGEST_ENTITY_ORG)
+        assert suggest_entity_org.ix_set(manager="handleref").count() == 0
 
     def test_z_misc_001_suggest_outside_of_post(self):
         # The `suggest` keyword should only be allowed for
         # `POST` events
 
-        for reftag in ["ix", "fac", "net"]:
+        for reftag in ["fac", "net"]:
             ent = SHARED[f"{reftag}_rw_ok"]
             org_id = ent.org_id
             self.assert_update(
