@@ -16,3 +16,4 @@ mainsite/settings/prod.py
 mainsite/settings/tutor.py
 peeringdb_database/
 venv
+locale
