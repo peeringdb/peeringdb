@@ -2433,6 +2433,16 @@ class InternetExchangeSerializer(ModelSerializer):
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
+
+        # we don't want users to be able to create an internet exchange with an
+        # org that is the "suggested entity org"
+        if data.get("org") and (data.get("org").id == settings.SUGGEST_ENTITY_ORG):
+            raise serializers.ValidationError({
+                "org": _(
+                    "User cannot create an internet exchange with"
+                    "its org set as the SUGGEST_ENTITY organization"
+                )
+            })
         return super().validate_create(data)
 
     def to_representation(self, data):
