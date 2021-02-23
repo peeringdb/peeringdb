@@ -165,6 +165,15 @@ class GeocodeSerializerMixin(object):
 
         return False
 
+    def _add_meta_information(self, metadata):
+        if "request" in self.context:
+            request = self.context["request"]
+            if hasattr(request, "meta_response"):
+                request.meta_response.update(metadata)
+                return True
+
+        return False
+
     def update(self, instance, validated_data):
         """
         When updating a geo-enabled object,
@@ -189,10 +198,10 @@ class GeocodeSerializerMixin(object):
             # Reraise the model validation error
             # as a serializer validation error
             except ValidationError as exc:
+                self._add_meta_information({
+                    "geovalidation": self.GEO_ERROR_MESSAGE
+                })
                 print(exc.message)
-                raise serializers.ValidationError(
-                    {"non_field_errors": [self.GEO_ERROR_MESSAGE]}
-                )
         return instance
 
     def create(self, validated_data):
@@ -212,10 +221,10 @@ class GeocodeSerializerMixin(object):
             # Reraise the model validation error
             # as a serializer validation error
             except ValidationError as exc:
+                self._add_meta_information({
+                    "geovalidation": self.GEO_ERROR_MESSAGE
+                })
                 print(exc.message)
-                raise serializers.ValidationError(
-                    {"non_field_errors": [self.GEO_ERROR_MESSAGE]}
-                )
         return instance
 
 
