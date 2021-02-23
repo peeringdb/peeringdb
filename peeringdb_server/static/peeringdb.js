@@ -1566,7 +1566,11 @@ twentyc.editable.target.register(
           else
             me.trigger("success", {});
         }
-      ).fail(function(r) {
+      ).done(function(r) {
+        if (r.meta){
+          alert(r.meta.geovalidation);
+        }
+      }).fail(function(r) {
         if(r.status == 400) {
           var k,i,info=[gettext("The server rejected your data")]; ///
           for(k in r.responseJSON) {
