@@ -168,9 +168,10 @@ class GeocodeSerializerMixin(object):
     def _add_meta_information(self, metadata):
         if "request" in self.context:
             request = self.context["request"]
-            if hasattr(request, "meta_response"):
-                request.meta_response.update(metadata)
-                return True
+            if not hasattr(request, "meta_response"):
+                request.meta_response = {}
+            request.meta_response.update(metadata)
+            return True
 
         return False
 
@@ -199,7 +200,8 @@ class GeocodeSerializerMixin(object):
             # as a serializer validation error
             except ValidationError as exc:
                 self._add_meta_information({
-                    "geovalidation_warning": self.GEO_ERROR_MESSAGE
+                    "geovalidation_warning": self.GEO_ERROR_MESSAGE,
+                    "ref_tag": instance.ref_tag,
                 })
                 print(exc.message)
         return instance
@@ -222,7 +224,8 @@ class GeocodeSerializerMixin(object):
             # as a serializer validation error
             except ValidationError as exc:
                 self._add_meta_information({
-                    "geovalidation": self.GEO_ERROR_MESSAGE
+                    "geovalidation_warning": self.GEO_ERROR_MESSAGE,
+                    "ref_tag": instance.ref_tag,
                 })
                 print(exc.message)
         return instance
