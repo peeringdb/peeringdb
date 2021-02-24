@@ -201,7 +201,6 @@ class GeocodeSerializerMixin(object):
             except ValidationError as exc:
                 self._add_meta_information({
                     "geovalidation_warning": self.GEO_ERROR_MESSAGE,
-                    "ref_tag": instance.ref_tag,
                 })
                 print(exc.message)
         return instance
@@ -225,7 +224,6 @@ class GeocodeSerializerMixin(object):
             except ValidationError as exc:
                 self._add_meta_information({
                     "geovalidation_warning": self.GEO_ERROR_MESSAGE,
-                    "ref_tag": instance.ref_tag,
                 })
                 print(exc.message)
         return instance
