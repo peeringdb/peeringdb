@@ -271,9 +271,14 @@
         {% elif row.type == "geocode" %}
           <div id="geocode" class="view_value col-xs-8 col-sm-7 col-md-8">
             {% if row.value.latitude and row.value.longitude %}
-              <a href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
+              <span id="geocode_active">
+                <a href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
+              </span>
+              <div id="geocode_inactive" class="note inactive hidden">
+                {% trans "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."%}
+              </div>
             {% else %}
-            <div class="note inactive">
+            <div id="geocode_inactive" class="note inactive">
               {% trans "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."%}
             </div>
             {% endif %}

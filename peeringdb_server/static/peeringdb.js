@@ -316,15 +316,19 @@ PeeringDB.ViewTools = {
   },
 
   update_geocode: function(data){
-    const geo_field = $("#geocode");
-    if (data.latitude && data.longitude) {
+    const geo_field = $("#geocode_active");
+    if (data.latitude && data.longitude){
       let link = `https://maps.google.com/?q=${data.latitude},${data.longitude}`
       let contents = `<a href="${link}">${data.latitude}, ${data.longitude}</a>`
       geo_field.empty().append(contents);
+      $("#geocode_inactive").addClass("hidden").hide();
+    } else if (data.latitude === null && data.longitude === null) {
+      $("#geocode_active").empty();
+      $("#geocode_inactive").removeClass("hidden").show();
     }
-    
   }
 }
+
 
 PeeringDB.ViewActions = {
 
