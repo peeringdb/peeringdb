@@ -157,11 +157,16 @@ PeeringDB = {
   // if an api response includes a "geovalidation warning"
   // field in its metadata, display that warning
 
-   add_geo_warning : function(warning) {
+   add_geo_warning : function(meta) {
     $('.geovalidation_warning').each(function(){
       let popin = $(this);
-      popin.text(warning);
-      popin.removeClass("hidden").show();
+      let warning = meta.geovalidation_warning;
+      let ref = meta.ref_tag;
+      if (ref == popin.data("edit-geotag")){
+        popin.text(warning);
+        popin.removeClass("hidden").show();
+
+      }
     })
    },
 
@@ -1578,8 +1583,7 @@ twentyc.editable.target.register(
         }
       ).done(function(r) {
         if (r.meta && r.meta.geovalidation_warning){
-          console.log("hellooooo")
-          PeeringDB.add_geo_warning(r.meta.geovalidation_warning);
+          PeeringDB.add_geo_warning(r.meta);
         }
       }).fail(function(r) {
         if(r.status == 400) {
