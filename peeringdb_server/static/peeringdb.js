@@ -154,6 +154,16 @@ PeeringDB = {
     return value
   },
 
+  // if an api response includes a "geovalidation warning"
+  // field in its metadata, display that warning
+
+   add_geo_warning : function(warning) {
+    $('.geovalidation_warning').each(function(){
+      let popin = $(this);
+      popin.text(warning);
+      popin.removeClass("hidden").show();
+    })
+   },
 
   // searches the page for all editable forms that
   // have data-check-incomplete attribute set and
@@ -1567,8 +1577,9 @@ twentyc.editable.target.register(
             me.trigger("success", {});
         }
       ).done(function(r) {
-        if (r.meta){
-          alert(r.meta.geovalidation);
+        if (r.meta && r.meta.geovalidation_warning){
+          console.log("hellooooo")
+          PeeringDB.add_geo_warning(r.meta.geovalidation_warning);
         }
       }).fail(function(r) {
         if(r.status == 400) {

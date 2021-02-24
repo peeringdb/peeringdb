@@ -199,7 +199,7 @@ class GeocodeSerializerMixin(object):
             # as a serializer validation error
             except ValidationError as exc:
                 self._add_meta_information({
-                    "geovalidation": self.GEO_ERROR_MESSAGE
+                    "geovalidation_warning": self.GEO_ERROR_MESSAGE
                 })
                 print(exc.message)
         return instance
