@@ -667,7 +667,9 @@ class VerificationQueueItem(models.Model):
 class DeskProTicket(models.Model):
     subject = models.CharField(max_length=255)
     body = models.TextField()
-    user = models.ForeignKey("peeringdb_server.User", on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        "peeringdb_server.User", on_delete=models.CASCADE, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(null=True, blank=True)
 
