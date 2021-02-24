@@ -175,6 +175,15 @@ class GeocodeSerializerMixin(object):
 
         return False
 
+    def handle_geo_error(self, exc, instance):
+        self._add_meta_information({
+            "geovalidation_warning": self.GEO_ERROR_MESSAGE,
+        })
+        print(exc.message)
+        instance.latitude = None
+        instance.longitude = None
+        instance.save()
+
     def update(self, instance, validated_data):
         """
         When updating a geo-enabled object,
@@ -199,10 +208,8 @@ class GeocodeSerializerMixin(object):
             # Reraise the model validation error
             # as a serializer validation error
             except ValidationError as exc:
-                self._add_meta_information({
-                    "geovalidation_warning": self.GEO_ERROR_MESSAGE,
-                })
-                print(exc.message)
+                self.handle_geo_error(exc, instance)
+
         return instance
 
     def create(self, validated_data):
@@ -222,10 +229,7 @@ class GeocodeSerializerMixin(object):
             # Reraise the model validation error
             # as a serializer validation error
             except ValidationError as exc:
-                self._add_meta_information({
-                    "geovalidation_warning": self.GEO_ERROR_MESSAGE,
-                })
-                print(exc.message)
+                self.handle_geo_error(exc, instance)
         return instance
 
 
