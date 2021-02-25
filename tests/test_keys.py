@@ -73,7 +73,7 @@ def network(org):
 @pytest.mark.django_db
 def test_create_org_api_key(org):
     api_key, key = OrganizationAPIKey.objects.create_key(
-        name="test key", org=org
+        name="test key", org=org, email="test@localhost"
     )
     assert api_key.revoked == False
     assert api_key.name == "test key"
@@ -86,7 +86,7 @@ def test_create_org_api_key(org):
 @pytest.mark.django_db
 def test_create_user_api_key(user):
     api_key, key = UserAPIKey.objects.create_key(
-        name="test key", user=user,
+        name="test key", user=user
     )
     assert api_key.revoked == False
     assert api_key.name == "test key"
@@ -100,7 +100,7 @@ def test_create_user_api_key(user):
 @pytest.mark.django_db
 def test_revoke_org_api_key(org):
     api_key, key = OrganizationAPIKey.objects.create_key(
-        name="test key", org=org
+        name="test key", org=org, email="test@localhost"
     )
     api_key.revoked = True
     api_key.save()
@@ -126,7 +126,7 @@ def test_revoke_user_api_key(user):
 @pytest.mark.django_db
 def test_validate_org_api_key(org):
     api_key, key = OrganizationAPIKey.objects.create_key(
-        name="test key", org=org
+        name="test key", org=org, email="test@localhost"
     )
     assert api_key.is_valid(key)
     assert api_key.is_valid("abcd") is False
@@ -145,7 +145,7 @@ def test_validate_user_api_key(user):
 def test_set_perms(org):
     namespace = "peeringdb.organization.1.network"
     api_key, key = OrganizationAPIKey.objects.create_key(
-        name="test key", org=org
+        name="test key", org=org, email="test@localhost"
     )
     OrganizationAPIPermission.objects.create(
         org_api_key=api_key, namespace=namespace, permission=PERM_CRUD
@@ -200,7 +200,7 @@ def test_check_permissions_on_unauth_request(org):
 def test_check_permissions_on_org_key_request_readonly(org):
     namespace = "peeringdb.organization.1.network"
     api_key, key = OrganizationAPIKey.objects.create_key(
-        name="test key", org=org
+        name="test key", org=org, email="test@localhost"
     )
     OrganizationAPIPermission.objects.create(
         org_api_key=api_key, namespace=namespace, permission=PERM_READ
@@ -226,7 +226,7 @@ def test_check_permissions_on_org_key_request_readonly(org):
 def test_check_permissions_on_org_key_request_crud(org):
     namespace = "peeringdb.organization.1.network"
     api_key, key = OrganizationAPIKey.objects.create_key(
-        name="test key", org=org
+        name="test key", org=org, email="test@localhost"
     )
     OrganizationAPIPermission.objects.create(
         org_api_key=api_key, namespace=namespace, permission=PERM_CRUD
@@ -319,7 +319,7 @@ def test_check_permissions_on_user_key_request_readonly(user):
 def test_get_network_w_org_key(org, network, user):
     namespace = "peeringdb.organization.1.network"
     api_key, key = OrganizationAPIKey.objects.create_key(
-        name="test key", org=org
+        name="test key", org=org, email="test@localhost"
     )
     OrganizationAPIPermission.objects.create(
         org_api_key=api_key, namespace=namespace, permission=PERM_READ

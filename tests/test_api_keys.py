@@ -213,7 +213,7 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         # db_org_admin becomes the tester for rw org api key
         rw_org = models.Organization.objects.get(name="API Test Organization RW")
         rw_api_key, rw_org_key = models.OrganizationAPIKey.objects.create_key(
-            name="test key", org=rw_org
+            name="test key", org=rw_org, email="test@localhost"
         )
 
         # Transfer group permissions to org key
@@ -225,7 +225,7 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         # db_org_member becomes the tester for r org api key
         r_org = models.Organization.objects.get(name="API Test Organization R")
         r_api_key, r_org_key = models.OrganizationAPIKey.objects.create_key(
-            name="test key", org=r_org
+            name="test key", org=r_org, email="test@localhost"
         )
 
         # Transfer group permissions to org key
