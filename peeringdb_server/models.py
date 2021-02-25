@@ -669,7 +669,7 @@ class DeskProTicket(models.Model):
     body = models.TextField()
     user = models.ForeignKey(
         "peeringdb_server.User", on_delete=models.CASCADE, null=True, blank=True)
-    email = models.EmailField(null=True, blank=True)
+    email = models.EmailField(_("email address"), null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(null=True, blank=True)
 
@@ -988,6 +988,7 @@ class OrganizationAPIKey(AbstractAPIKey):
         on_delete=models.CASCADE,
         related_name="api_keys",
     )
+    email = models.EmailField(_("email address"), max_length=254, null=False, blank=False)
 
     class Meta(AbstractAPIKey.Meta):
         verbose_name = "Organization API key"
