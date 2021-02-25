@@ -7,7 +7,8 @@ from django_grainy.helpers import request_method_to_flag
 from peeringdb_server.models import (
     OrganizationAPIKey,
     UserAPIKey,
-    Group
+    Group,
+    User
 )
 from django.contrib.auth.models import AnonymousUser
 
@@ -17,6 +18,28 @@ from django.conf import settings
 
 # from django_grainy.const import *
 from django_grainy.util import Permissions
+
+
+def validate_rdap_user_or_key(request, rdap):
+    email_holder = get_permission_holder_from_request(request)
+
+    if type(email_holder) == User:
+        return email_holder.validate_rdap_relationship(rdap)
+
+    elif type(email_holder) == UserAPIKey:
+        return email_holder.user.validate_rdap_relationship(rdap)
+
+    elif type(email_holder) == OrganizationAPIKey:
+        return validate_rdap_org_key(email_holder, rdap)
+
+    return False
+
+
+def validate_rdap_org_key(org_key, rdap):
+    for email in rdap.emails:
+        if email.lower() == org_key.email.lower():
+            return True
+    return False
 
 
 def get_key_from_request(request):

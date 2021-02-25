@@ -27,7 +27,8 @@ from django_grainy.rest import PermissionDenied
 
 from peeringdb_server.permissions import (
     check_permissions_from_request,
-    get_key_from_request
+    get_key_from_request,
+    validate_rdap_user_or_key
 )
 from peeringdb_server.inet import (
     RdapLookup,
@@ -2064,7 +2065,8 @@ class NetworkSerializer(ModelSerializer):
                 rdap = RdapLookup().get_asn(asn)
 
         # add network to existing org
-        if rdap and user.validate_rdap_relationship(rdap):
+        if rdap and validate_rdap_user_or_key(request, rdap):
+
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
             net = super().create(validated_data)
