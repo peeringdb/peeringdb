@@ -169,6 +169,33 @@ PeeringDB = {
     })
    },
 
+   // if an api response includes a "geo"
+   add_suggested_address : function(meta, endpoint) {
+    console.log(meta)
+
+    let popin = $('.suggested_address').filter(function() { 
+      return $(this).data("edit-geotag") == endpoint 
+    });
+    if (popin === null){
+      return 
+    }
+    let suggested_address = meta.suggested_address;
+    popin.children().each(function(){
+      let elem = $(this);
+      let field = elem.data("edit-field");
+      let value = suggested_address[field];
+      if (value){
+        if (field === "city"){
+          value += ",";
+        }
+
+        elem.text(value);
+      }
+
+    })
+    popin.removeClass("hidden").show();
+   },
+
   // searches the page for all editable forms that
   // have data-check-incomplete attribute set and
   // displays a notification if any of the fields
@@ -1587,6 +1614,8 @@ twentyc.editable.target.register(
       ).done(function(r) {
         if (r.meta && r.meta.geovalidation_warning){
           PeeringDB.add_geo_warning(r.meta, endpoint);
+        } else if (r.meta && r.meta.suggested_address){
+          PeeringDB.add_suggested_address(r.meta, endpoint);
         }
       }).fail(function(r) {
         if(r.status == 400) {

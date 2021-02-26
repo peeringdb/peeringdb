@@ -70,6 +70,15 @@
     class="editable popin alert alert-warning geovalidation_warning marg-top-15 marg-bot-15 hidden">
   </div>
 
+  <div data-edit-geotag="{{ref_tag}}"
+    class="editable popin alert alert-warning suggested_address marg-top-15 marg-bot-15 hidden">
+    <p>{% trans "Suggested Address:" %}</p>
+      <p data-edit-field="address1"></p>
+      <span data-edit-field="city"></span>
+      <span data-edit-field="state"></span>
+      <span data-edit-field="zipcode"></span>
+  </div>
+
   {% endif %}
 
 
