@@ -203,7 +203,11 @@ class GeocodeSerializerMixin(object):
         if need_geosync:
             print("Normalizing geofields")
             try:
-                instance.normalize_api_response()
+                suggested_address = instance.normalize_api_response()
+                print(suggested_address)
+                self._add_meta_information({
+                            "suggested_address": suggested_address,
+                })
 
             # Reraise the model validation error
             # as a serializer validation error
@@ -224,7 +228,10 @@ class GeocodeSerializerMixin(object):
 
         if self._geosync_information_present(instance, validated_data):
             try:
-                instance.normalize_api_response()
+                suggested_address = instance.normalize_api_response()
+                self._add_meta_information({
+                            "suggested_address": suggested_address,
+                })
 
             # Reraise the model validation error
             # as a serializer validation error
