@@ -14,21 +14,25 @@
          data-edit-id="{{ instance.id }}"
       >
   <div class="row header">
-    <div class="col-xs-4 col-sm-5 col-md-4">
+    <div class="col-xs-2 col-sm-2 col-md-2">
       <div>{% trans "Prefix" %}</div>
     </div>
-    <div class="col-xs-6 col-sm-5 col-md-6">
+    <div class="col-xs-4 col-sm-4 col-md-4">
       <div>{% trans "Description" %}</div>
     </div>
-    <div class="col-xs-4 col-sm-2 col-md-2"></div>
+    <div class="col-xs-4 col-sm-4 col-md-4">
+      <div>{% trans "Email" %}</div>
+    </div>
+    <div class="col-xs-2 col-sm-2 col-md-2"></div>
   </div>
 
   <div data-edit-component="list" data-edit-template="api-key-item">
   {% for key in instance.api_keys.all %}
   {% if not key.revoked %}
   <div class="row marg-top" data-edit-id="{{ key.prefix }}" data-edit-label="{{ key.prefix }} - {{ key.name }}">
-    <div class="col-xs-4 col-sm-5 col-md-4" data-edit-name="prefix">{{ key.prefix }}</div>
-    <div class="col-xs-6 col-sm-5 col-md-6" data-edit-name="name">{{ key.name }}</div>
+    <div class="col-xs-2 col-sm-2 col-md-2" data-edit-name="prefix">{{ key.prefix }}</div>
+    <div class="col-xs-4 col-sm-4 col-md-4" data-edit-name="name">{{ key.name }}</div>
+    <div class="col-xs-4 col-sm-4 col-md-4" data-edit-name="email">{{ key.email }}</div>
     <div class="col-xs-2 col-sm-2 col-md-2 right">
       <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
     </div>
@@ -44,12 +48,17 @@
     <div class="payload">
       <div data-edit-name="org_id">{{ instance.id }}</div>
     </div>
-    <div class="col-xs-4 col-sm-5 col-md-4">
+    <div class="col-xs-2 col-sm-2 col-md-2">
       <div>{% trans "Add Key" %}</div>
     </div>
-    <div class="col-xs-6 col-sm-5 col-md-6">
+    <div class="col-xs-4 col-sm-4 col-md-4">
       <div data-edit-type="string"
            data-edit-name="name">
+      </div>
+    </div>
+    <div class="col-xs-4 col-sm-4 col-md-4">
+      <div data-edit-type="string"
+           data-edit-name="email">
       </div>
     </div>
     <div class="col-xs-2 col-sm-2 col-md-2 right">

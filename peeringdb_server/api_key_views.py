@@ -149,16 +149,19 @@ def manage_key_add(request, **kwargs):
 
     name = request.POST.get("name")
     org = request.POST.get("org_id")
+    email = request.POST.get("email")
 
     api_key, key = OrganizationAPIKey.objects.create_key(
         org_id=org,
-        name=name
+        name=name,
+        email=email
     )
 
     return JsonResponse(
         {
             "status": "ok",
             "name": api_key.name,
+            "email": api_key.email,
             "prefix": api_key.prefix,
             "key": key,
         }

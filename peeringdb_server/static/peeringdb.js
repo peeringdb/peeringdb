@@ -1511,6 +1511,8 @@ twentyc.editable.module.register(
         if(response.readonly)
           response.name = response.name + " (read-only)";
         var row = this.add(data.entity, trigger, container, response);
+        console.log(data)
+        console.log(row)
         this.api_key_popin(response.key)
       }.bind(this));
     },
