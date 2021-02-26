@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
 from django.template import loader
 from django.conf import settings
-from .forms import OrgAdminUserPermissionForm
+from peeringdb_server.forms import OrgAdminUserPermissionForm, OrganizationAPIKeyForm
 
 from grainy.const import PERM_READ
 from django_grainy.models import UserPermission
@@ -147,25 +147,31 @@ def manage_key_add(request, **kwargs):
     Requires a name for the key.
     """
 
-    name = request.POST.get("name")
-    org = request.POST.get("org_id")
-    email = request.POST.get("email")
+    api_key_form = OrganizationAPIKeyForm(request.POST)
 
-    api_key, key = OrganizationAPIKey.objects.create_key(
-        org_id=org,
-        name=name,
-        email=email
-    )
+    if api_key_form.is_valid():
+        name = api_key_form.cleaned_data.get("name")
+        org_id = api_key_form.cleaned_data.get("org_id")
+        email = api_key_form.cleaned_data.get("email")
 
-    return JsonResponse(
-        {
-            "status": "ok",
-            "name": api_key.name,
-            "email": api_key.email,
-            "prefix": api_key.prefix,
-            "key": key,
-        }
-    )
+        api_key, key = OrganizationAPIKey.objects.create_key(
+            org_id=org_id,
+            name=name,
+            email=email
+        )
+
+        return JsonResponse(
+            {
+                "status": "ok",
+                "name": api_key.name,
+                "email": api_key.email,
+                "prefix": api_key.prefix,
+                "key": key,
+            }
+        )
+
+    else:
+        return JsonResponse({"non_field_errors": api_key_form.errors}, status=404)
 
 
 @login_required

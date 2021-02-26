@@ -12,9 +12,15 @@ from django.conf import settings as dj_settings
 from captcha.fields import CaptchaField
 from captcha.models import CaptchaStore
 
-from peeringdb_server.models import User, Organization
+from peeringdb_server.models import User, Organization, OrganizationAPIKey
 from peeringdb_server.inet import get_client_ip
 from peeringdb_server.util import PERM_CRUD
+
+
+class OrganizationAPIKeyForm(forms.Form):
+    name = forms.CharField()
+    email = forms.EmailField()
+    org_id = forms.IntegerField()
 
 
 class OrgAdminUserPermissionForm(forms.Form):
