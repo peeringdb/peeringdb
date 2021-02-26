@@ -77,13 +77,18 @@ from peeringdb_server.models import (
     IXFImportEmail,
     EnvironmentSetting,
     ProtectedAction,
+    OrganizationAPIKey,
+    UserAPIKey,
 )
+
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException, rdap_pretty_error_message
-
+from rest_framework_api_key.admin import APIKeyModelAdmin
+from rest_framework_api_key.models import APIKey
 delete_selected.short_description = "HARD DELETE - Proceed with caution"
 
 from django.utils.translation import ugettext_lazy as _
+
 
 # these app labels control permissions for the views
 # currently exposed in admin
@@ -1947,6 +1952,12 @@ class EnvironmentSettingAdmin(admin.ModelAdmin):
         return obj.set_value(form.cleaned_data["value"])
 
 
+class OrganizationAPIKeyAdmin(APIKeyModelAdmin):
+    pass
+
+class UserAPIKeyAdmin(APIKeyModelAdmin):
+    pass
+
 # Commented out via issue #860
 # admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
@@ -1971,3 +1982,7 @@ admin.site.register(CommandLineTool, CommandLineToolAdmin)
 admin.site.register(UserOrgAffiliationRequest, UserOrgAffiliationRequestAdmin)
 admin.site.register(DeskProTicket, DeskProTicketAdmin)
 admin.site.register(IXFImportEmail, IXFImportEmailAdmin)
+admin.site.unregister(APIKey)
+admin.site.register(OrganizationAPIKey, OrganizationAPIKeyAdmin)
+admin.site.register(UserAPIKey, UserAPIKeyAdmin)
+
