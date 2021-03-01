@@ -158,7 +158,7 @@ PeeringDB = {
   // field in its metadata, display that warning
 
    add_geo_warning : function(meta, endpoint) {
-    $('.geovalidation_warning').each(function(){
+    $('.geovalidation-warning').each(function(){
       let popin = $(this);
       let warning = meta.geovalidation_warning;
       if (endpoint == popin.data("edit-geotag")){
@@ -172,7 +172,7 @@ PeeringDB = {
    // if an api response includes a "geo"
    add_suggested_address : function(request, endpoint) {
 
-    let popin = $('.suggested_address').filter(function() { 
+    let popin = $('.suggested-address').filter(function() { 
       return $(this).data("edit-geotag") == endpoint 
     });
     if (popin === null){
@@ -212,6 +212,15 @@ PeeringDB = {
     let payload = response.data[0];
     // Overwrite returned instance with the suggested data
     Object.assign(payload, response.meta.suggested_address);
+
+
+    // Can remove this once lat and long issue #865 is done
+    // Right now if we try to include a +6 decimal point
+    // lat or long in PUT request, it will error.
+
+    delete payload.latitude;
+    delete payload.longitude;
+
 
     // Set up PUT request on click
     button.click(function(event){

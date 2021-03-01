@@ -55,18 +55,25 @@
            id="create-fac-form"
            data-edit-target="api:fac:create"
            data-edit-enter-action="submit">
-        <div class="editable popin alert alert-warning geovalidation_warning center marg-top-15 marg-bot-15 hidden"
+        <div class="editable popin alert alert-warning geovalidation-warning center marg-top-15 marg-bot-15 hidden"
              data-edit-geotag="fac">
         </div>
 
-        <div data-edit-geotag="fac"
-        class="editable popin alert alert-warning suggested_address marg-top-15 marg-bot-15 hidden">
-        <p>{% trans "Suggested Address:" %}</p>
-          <p data-edit-field="address1"></p>
-          <span data-edit-field="city"></span>
-          <span data-edit-field="state"></span>
-          <span data-edit-field="zipcode"></span>
+      <div data-edit-geotag="fac"
+        class="editable popin alert alert-warning suggested-address marg-top-15 marg-bot-15 hidden">
+        <div class="row">
+          <div class="col-xs-8">
+            <p>{% trans "Suggested Address:" %}</p>
+            <div data-edit-field="address1" class="address-field"></div>
+            <span data-edit-field="city" class="address-field"></span>
+            <span data-edit-field="state" class="address-field"></span>
+            <span data-edit-field="zipcode" class="address-field"></span>
+          </div>
+          <div class="col-xs-4">
+            <a class="btn btn-default suggestion-accept" >Accept</a>
+          </div>
         </div>
+      </div>
 
 
         <div class="payload">
