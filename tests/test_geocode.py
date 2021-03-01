@@ -89,3 +89,17 @@ def test_geo_model_reverse_geocode_blank(fac):
 
 def test_geo_model_parse_reverse(fac, reverse, reverse_parsed):
     assert fac.parse_reverse_geocode(reverse) == reverse_parsed
+
+
+def test_round_geo_model_lat_long(fac):
+    # Per issue 865, we remove the DB limit
+    # but add rounding to the clean method
+
+    # Lat and long aren't rounded on save
+    fac.latitude = 41.123456789
+    fac.longitude = -87.987654321
+
+    # Lat and long are rounded on clean
+    fac.clean()
+    assert fac.latitude == 41.123457
+    assert fac.longitude == -87.987654
