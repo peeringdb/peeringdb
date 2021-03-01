@@ -94,7 +94,7 @@ def test_geo_model_parse_reverse(fac, reverse, reverse_parsed):
 
 @pytest.mark.django_db
 def test_round_geo_model_lat_long(org, fac):
-    # Per issue 865, we remove the DB limit
+    # Per issue 865, we bump up the DB limit
     # but add rounding to the clean method
 
     # Lat and long aren't rounded on save
@@ -113,3 +113,20 @@ def test_round_geo_model_lat_long(org, fac):
     fac.save()
     assert fac.latitude == 41.123457
     assert fac.longitude == -87.987654
+
+
+@pytest.mark.django_db
+def test_lat_long_max_decimals(org, fac):
+    # Per issue 865, we include a max limit
+    # of 15 decimal places
+
+    fac.latitude = 41.123456789123456789012345678
+    fac.longitude = -87.0000000000000001
+
+    # Need a saved org to save a facility
+    org.save()
+    fac.org_id = org.id
+    fac.save()
+
+    assert fac.latitude == 41.12345678912346
+    assert fac.longitude == -87.0
