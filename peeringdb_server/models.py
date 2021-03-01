@@ -338,6 +338,11 @@ class GeocodeBaseMixin(models.Model):
         return f"{street_number} {route}".strip()
 
     def reverse_geocode(self, gmaps, latlang):
+
+        if latlang is None:
+            raise ValidationError(
+                _("Latitude and longitude must be defined for reverse geocode lookup")
+            ) 
         try:
             response = gmaps.reverse_geocode(latlang)
         except (
