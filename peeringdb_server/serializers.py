@@ -185,12 +185,11 @@ class GeocodeSerializerMixin(object):
         instance.save()
 
     def needs_address_suggestion(self, suggested_address, instance):
-        for key, suggested_val in suggested_address.items():
-
-            if key not in ["geocode_date", "geocode_status"]:
-                instance_val = getattr(instance, key, None)
-                if instance_val != suggested_val:
-                    return True
+        for key in ["address1", "city", "state", "zipcode"]:
+            suggested_val = suggested_address.get(key, None)
+            instance_val = getattr(instance, key, None)
+            if instance_val != suggested_val:
+                return True
 
         return False
 

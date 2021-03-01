@@ -386,15 +386,19 @@ class GeocodeBaseMixin(models.Model):
 
         # Set information from forward geocode
         loc = forward_result[0].get("geometry").get("location")
-        latitude = loc.get("lat")
-        longitude = loc.get("lng")
-        if (latitude is None) or (longitude is None):
+        self.latitude = loc.get("lat")
+        self.longitude = loc.get("lng")
+        if (self.latitude is None) or (self.longitude is None):
             raise ValidationError(
                 _("Latitude and longitude must be defined for reverse geocode lookup")
             )
 
-        suggested_address["latitude"] = latitude
-        suggested_address["longitude"] = longitude
+        self.geocode_status = True
+        self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+        self.save()
+
+        suggested_address["latitude"] = self.latitude
+        suggested_address["longitude"] = self.longitude
         address1 = self.get_address1_from_geocode(forward_result)
         if address1 is None:
             raise ValidationError(_("Error in forward geocode: No address returned"))
@@ -404,7 +408,7 @@ class GeocodeBaseMixin(models.Model):
         # The reverse result normalizes some administrative info
         # (city, state, zip) and translates them into English
 
-        latlang = f"{latitude},{longitude}"
+        latlang = f"{self.latitude},{self.longitude}"
         reverse_result = self.reverse_geocode(gmaps, latlang)
 
         data = self.parse_reverse_geocode(reverse_result)
