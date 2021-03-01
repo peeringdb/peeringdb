@@ -170,8 +170,7 @@ PeeringDB = {
    },
 
    // if an api response includes a "geo"
-   add_suggested_address : function(meta, endpoint) {
-    console.log(meta)
+   add_suggested_address : function(request, endpoint) {
 
     let popin = $('.suggested_address').filter(function() { 
       return $(this).data("edit-geotag") == endpoint 
@@ -179,23 +178,55 @@ PeeringDB = {
     if (popin === null){
       return 
     }
-    let suggested_address = meta.suggested_address;
-    popin.children().each(function(){
+
+    // Fill in text to each field
+    let suggested_address = request.meta.suggested_address;
+    let address_fields = popin.find('div, span').filter(function(){
+      return $(this).data("edit-field")
+    })
+    address_fields.each(function(){
       let elem = $(this);
       let field = elem.data("edit-field");
       let value = suggested_address[field];
       if (value){
-        if (field === "city"){
+        if (field === "city" || field === "state"){
           value += ",";
         }
-
         elem.text(value);
       }
 
     })
+
+    // Initialize the Submit button
+    let button = popin.find("a.btn.suggestion-accept");
+    PeeringDB.init_accept_suggestion(button, request, endpoint);
+
+    // Show the popin
     popin.removeClass("hidden").show();
    },
 
+  // initializes the "Accept suggestion" button
+
+  init_accept_suggestion : function(button, response, endpoint){
+
+    let payload = response.data[0];
+    // Overwrite returned instance with the suggested data
+    Object.assign(payload, response.meta.suggested_address);
+
+    // Set up PUT request on click
+    button.click(function(event){
+      PeeringDB.API.request(
+        "PUT",
+        endpoint,
+        payload.id,
+        payload,
+        function(){
+          PeeringDB.refresh()
+        }
+      )
+    });
+
+  },
   // searches the page for all editable forms that
   // have data-check-incomplete attribute set and
   // displays a notification if any of the fields
@@ -471,7 +502,7 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       $.ajax({
         method: "POST",
         url: path
-      }).done(PeeringDB.refresh);
+      }).done(PeerignDB.refresh);
     },
 
     /**
@@ -1615,7 +1646,7 @@ twentyc.editable.target.register(
         if (r.meta && r.meta.geovalidation_warning){
           PeeringDB.add_geo_warning(r.meta, endpoint);
         } else if (r.meta && r.meta.suggested_address){
-          PeeringDB.add_suggested_address(r.meta, endpoint);
+          PeeringDB.add_suggested_address(r, endpoint);
         }
       }).fail(function(r) {
         if(r.status == 400) {
