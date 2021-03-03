@@ -2,23 +2,23 @@
 DeskPro API Client
 """
 
-import uuid
-import re
-import requests
 import datetime
+import re
+import uuid
 
-from django.template import loader
-from django.conf import settings
 import django.urls
+import requests
+from django.conf import settings
+from django.template import loader
 
-from peeringdb_server.models import DeskProTicket
 from peeringdb_server.inet import RdapNotFoundError
+from peeringdb_server.models import DeskProTicket
 
 
 def ticket_queue(subject, body, user):
     """ queue a deskpro ticket for creation """
 
-    ticket = DeskProTicket.objects.create(
+    DeskProTicket.objects.create(
         subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
         body=body,
         user=user,
