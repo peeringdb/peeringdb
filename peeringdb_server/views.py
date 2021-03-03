@@ -420,7 +420,7 @@ def view_affiliate_to_org(request):
             )
 
         except RdapException as exc:
-            ticket_queue_rdap_error(request.user, asn, exc)
+            ticket_queue_rdap_error(request, asn, exc)
             return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
 
         except MultipleObjectsReturned:

@@ -415,7 +415,7 @@ class AsnRdapValidator:
             emails = rdap.emails
             self.request.rdap_result = rdap
         except RdapException as exc:
-            self.request.rdap_error = (self.request.user, asn, exc)
+            self.request.rdap_error = (asn, exc)
             raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
 
     def set_context(self, serializer):
@@ -2094,8 +2094,9 @@ class NetworkSerializer(ModelSerializer):
 
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)
+
         if rdap_error:
-            ticket_queue_rdap_error(*rdap_error)
+            ticket_queue_rdap_error(request, *rdap_error)
 
     def validate_irr_as_set(self, value):
         if value:

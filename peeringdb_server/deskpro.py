@@ -136,7 +136,7 @@ def ticket_queue_asnauto_create(
     )
 
 
-def ticket_queue_rdap_error(user, asn, error):
+def ticket_queue_rdap_error(request, asn, error):
     if isinstance(error, RdapNotFoundError):
         return
     error_message = f"{error}"
@@ -144,14 +144,29 @@ def ticket_queue_rdap_error(user, asn, error):
     if re.match("(.+) returned 400", error_message):
         return
 
-    subject = f"[RDAP_ERR] {user.username} - AS{asn}"
-    ticket_queue(
-        subject,
-        loader.get_template("email/notify-pdb-admin-rdap-error.txt").render(
-            {"user": user, "asn": asn, "error_details": error_message}
-        ),
-        user,
-    )
+    user = get_user_from_request(request)
+
+    if user:
+        subject = f"[RDAP_ERR] {user.username} - AS{asn}"
+        ticket_queue(
+            subject,
+            loader.get_template("email/notify-pdb-admin-rdap-error.txt").render(
+                {"user": user, "asn": asn, "error_details": error_message}
+            ),
+            user,
+        )
+        return
+
+    org_key = get_org_key_from_request(request)
+    if org_key:
+        subject = f"[RDAP_ERR] {org_key.email} - AS{asn}"
+        ticket_queue_email_only(
+            subject,
+            loader.get_template("email/notify-pdb-admin-rdap-error-org-key.txt").render(
+                {"org_key": org_key, "asn": asn, "error_details": error_message}
+            ),
+            org_key.email,
+        )
 
 
 class APIClient:
