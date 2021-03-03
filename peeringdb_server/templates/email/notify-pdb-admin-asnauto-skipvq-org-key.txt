@@ -1,0 +1,9 @@
+{% load i18n %}
+{% language 'en' %}
+
+{% blocktrans with prefix=org_key.prefix email=org_key.email n_name=net.name n_asn=net.asn n_id=net.id o_name=org.name o_id=org.id n_url=net.view_url o_url=org.view_url trimmed %}
+Organization API Key (prefix:{{ prefix }}) with email '{{ email }}' created Network {{ n_name }} AS{{ n_asn }} (<a href="{{ n_url }}">{{n_id}}</a>) under organization {{ o_name }} (<a href="{{ o_url }}">{{ o_id }}</a>).
+{% endblocktrans %}
+
+{% trans "As the user's email address was successfully matched against RiR entry data this network has skipped the verification queue." %}
+{% endlanguage %}
