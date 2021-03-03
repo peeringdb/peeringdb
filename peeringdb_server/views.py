@@ -1131,6 +1131,12 @@ def view_facility(request, id):
                 "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
             },
             {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss),
+                "notify_incomplete": False,
+            },
+            {
                 "name": "website",
                 "type": "url",
                 "value": data.get("website", dismiss),

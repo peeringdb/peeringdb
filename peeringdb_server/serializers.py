@@ -1260,6 +1260,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                 "org_name",
                 "org",
                 "name",
+                "aka",
                 "website",
                 "clli",
                 "rencode",
