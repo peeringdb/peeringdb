@@ -12,8 +12,13 @@ from django.conf import settings
 from django.template import loader
 
 from peeringdb_server.inet import RdapNotFoundError
-from peeringdb_server.models import DeskProTicket
-
+from peeringdb_server.models import (
+    DeskProTicket,
+)
+from peeringdb_server.permissions import (
+    get_user_from_request,
+    get_org_key_from_request
+)
 
 def ticket_queue(subject, body, user):
     """ queue a deskpro ticket for creation """
@@ -22,6 +27,17 @@ def ticket_queue(subject, body, user):
         subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
         body=body,
         user=user,
+    )
+
+
+def ticket_queue_email_only(subject, body, email):
+    """ queue a deskpro ticket for creation """
+
+    DeskProTicket.objects.create(
+        subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
+        body=body,
+        email=email,
+        user=None
     )
 
 
@@ -263,7 +279,7 @@ class FailingMockAPIClient(MockAPIClient):
         )
 
 
-def ticket_queue_deletion_prevented(user, instance):
+def ticket_queue_deletion_prevented(request, instance):
     """
     queue deskpro ticket to notify about the prevented
     deletion of an object #696
@@ -297,19 +313,40 @@ def ticket_queue_deletion_prevented(user, instance):
 
     model_name = instance.__class__.__name__.lower()
 
-    # create ticket
+    # Create ticket if a request was made by user or UserAPIKey
+    user = get_user_from_request(request)
+    if user:
+        ticket_queue(
+            subject,
+            loader.get_template("email/notify-pdb-admin-deletion-prevented.txt").render(
+                {
+                    "user": user,
+                    "instance": instance,
+                    "admin_url": settings.BASE_URL
+                    + django.urls.reverse(
+                        f"admin:peeringdb_server_{model_name}_change", args=(instance.id,)
+                    ),
+                }
+            ),
+            user,
+        )
+        return
 
-    ticket_queue(
-        subject,
-        loader.get_template("email/notify-pdb-admin-deletion-prevented.txt").render(
-            {
-                "user": user,
-                "instance": instance,
-                "admin_url": settings.BASE_URL
-                + django.urls.reverse(
-                    f"admin:peeringdb_server_{model_name}_change", args=(instance.id,)
-                ),
-            }
-        ),
-        user,
-    )
+    # Create ticket if request was made by OrgAPIKey
+    org_key = get_org_key_from_request(request)
+    if org_key:
+        email = org_key.email
+        ticket_queue_email_only(
+            subject,
+            loader.get_template("email/notify-pdb-admin-deletion-prevented.txt").render(
+                {
+                    "user": email,
+                    "instance": instance,
+                    "admin_url": settings.BASE_URL
+                    + django.urls.reverse(
+                        f"admin:peeringdb_server_{model_name}_change", args=(instance.id,)
+                    ),
+                }
+            ),
+            email,
+        )

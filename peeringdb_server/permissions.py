@@ -21,16 +21,13 @@ from django_grainy.util import Permissions
 
 
 def validate_rdap_user_or_key(request, rdap):
-    email_holder = get_permission_holder_from_request(request)
+    user = get_user_from_request(request)
+    if user:
+        return user.validate_rdap_relationship(rdap)
 
-    if type(email_holder) == User:
-        return email_holder.validate_rdap_relationship(rdap)
-
-    elif type(email_holder) == UserAPIKey:
-        return email_holder.user.validate_rdap_relationship(rdap)
-
-    elif type(email_holder) == OrganizationAPIKey:
-        return validate_rdap_org_key(email_holder, rdap)
+    org_key = get_org_key_from_request(request)
+    if org_key:
+        return validate_rdap_org_key(org_key, rdap)
 
     return False
 
@@ -79,8 +76,41 @@ def get_permission_holder_from_request(request):
     return AnonymousUser()
 
 
+def get_user_from_request(request):
+    """
+    Returns a user from the request if the request
+    was made with either a User or UserAPIKey.
+
+    If request was made with OrgKey, returns None.
+    """
+    perm_holder = get_permission_holder_from_request(request)
+    if type(perm_holder) == User:
+        return perm_holder
+    elif type(perm_holder) == UserAPIKey:
+        return perm_holder.user
+    elif type(perm_holder) == OrganizationAPIKey:
+        return None
+
+    return None
+
+
+def get_org_key_from_request(request):
+    """
+    Returns a org key from the request if the request
+    was made with an OrgKey.
+
+    Otherwise returns None.
+    """
+    perm_holder = get_permission_holder_from_request(request)
+
+    if type(perm_holder) == OrganizationAPIKey:
+        return perm_holder
+
+    return None
+
+
 def check_permissions_from_request(request, target, flag, **kwargs):
-    """ Call the check_permissions util but takes a request as 
+    """ Call the check_permissions util but takes a request as
     input, not a permission-holding object
     """
     perm_obj = get_permission_holder_from_request(request)

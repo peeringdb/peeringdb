@@ -631,7 +631,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 "Please contact {} to help with the deletion of this object"
             ).format(settings.DEFAULT_FROM_EMAIL)
 
-            ticket_queue_deletion_prevented(request.user, exc.protected_object)
+            ticket_queue_deletion_prevented(request, exc.protected_object)
 
             return Response(
                 status=status.HTTP_403_FORBIDDEN, data={"detail": exc_message}
