@@ -47,7 +47,7 @@ class APIError(IOError):
         self.data = data
 
 
-def ticket_queue_asnauto_skipvq(user, org, net, rir_data):
+def ticket_queue_asnauto_skipvq(request, org, net, rir_data):
     """
     queue deskro ticket creation for asn automation action: skip vq
     """
@@ -62,13 +62,26 @@ def ticket_queue_asnauto_skipvq(user, org, net, rir_data):
     else:
         org_name = org.name
 
-    ticket_queue(
-        f"[ASNAUTO] Network '{net_name}' approved for existing Org '{org_name}'",
-        loader.get_template("email/notify-pdb-admin-asnauto-skipvq.txt").render(
-            {"user": user, "org": org, "net": net, "rir_data": rir_data}
-        ),
-        user,
-    )
+    user = get_user_from_request(request)
+    if user:
+        ticket_queue(
+            f"[ASNAUTO] Network '{net_name}' approved for existing Org '{org_name}'",
+            loader.get_template("email/notify-pdb-admin-asnauto-skipvq.txt").render(
+                {"user": user, "org": org, "net": net, "rir_data": rir_data}
+            ),
+            user,
+        )
+        return
+
+    org_key = get_org_key_from_request(request)
+    if org_key:
+        ticket_queue_email_only(
+            f"[ASNAUTO] Network '{net_name}' approved for existing Org '{org_name}'",
+            loader.get_template("email/notify-pdb-admin-asnauto-skipvq-org-key.txt").render(
+                {"org_key": org_key, "org": org, "net": net, "rir_data": rir_data}
+            ),
+            org_key.email,
+        )
 
 
 def ticket_queue_asnauto_affil(user, org, net, rir_data):
@@ -324,7 +337,8 @@ def ticket_queue_deletion_prevented(request, instance):
                     "instance": instance,
                     "admin_url": settings.BASE_URL
                     + django.urls.reverse(
-                        f"admin:peeringdb_server_{model_name}_change", args=(instance.id,)
+                        f"admin:peeringdb_server_{model_name}_change",
+                        args=(instance.id,)
                     ),
                 }
             ),
@@ -335,18 +349,18 @@ def ticket_queue_deletion_prevented(request, instance):
     # Create ticket if request was made by OrgAPIKey
     org_key = get_org_key_from_request(request)
     if org_key:
-        email = org_key.email
         ticket_queue_email_only(
             subject,
-            loader.get_template("email/notify-pdb-admin-deletion-prevented.txt").render(
+            loader.get_template("email/notify-pdb-admin-deletion-prevented-org-key.txt").render(
                 {
-                    "user": email,
+                    "org_key": org_key,
                     "instance": instance,
                     "admin_url": settings.BASE_URL
                     + django.urls.reverse(
-                        f"admin:peeringdb_server_{model_name}_change", args=(instance.id,)
+                        f"admin:peeringdb_server_{model_name}_change",
+                        args=(instance.id,)
                     ),
                 }
             ),
-            email,
+            org_key.email,
         )

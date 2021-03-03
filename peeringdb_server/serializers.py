@@ -2070,7 +2070,7 @@ class NetworkSerializer(ModelSerializer):
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
             net = super().create(validated_data)
-            ticket_queue_asnauto_skipvq(user, validated_data["org"], net, rdap)
+            ticket_queue_asnauto_skipvq(request, validated_data["org"], net, rdap)
             return net
 
         elif self.Meta.model in QUEUE_ENABLED:
