@@ -1,20 +1,19 @@
-import pytest
 import json
 import os
 
-from django.test import TestCase
-from django.contrib.auth.models import Group
+import pytest
 from django.conf import settings
-
-from django_grainy.models import UserPermission, GroupPermission
-from rest_framework.test import APIRequestFactory, force_authenticate, APIClient
+from django.contrib.auth.models import Group
+from django.test import TestCase
+from django_grainy.models import GroupPermission, UserPermission
 from rest_framework.authtoken.models import Token
-
-import peeringdb_server.models as models
-import peeringdb_server.management.commands.pdb_api_test as api_test
+from rest_framework.test import (APIClient, APIRequestFactory,
+                                 force_authenticate)
 from twentyc.rpc.client import RestClient
 
 import peeringdb_server.inet as pdbinet
+import peeringdb_server.management.commands.pdb_api_test as api_test
+import peeringdb_server.models as models
 
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 
@@ -122,6 +121,13 @@ class DummyRestClientWithKeyAuth(RestClient):
         return DummyResponse(res.status_code, res.content)
 
 
+URL = settings.API_URL
+VERBOSE = False
+USER = {"user": "api_test", "password": "89c8ec05-b897"}
+USER_ORG_ADMIN = {"user": "api_test_org_admin", "password": "89c8ec05-b897"}
+USER_ORG_MEMBER = {"user": "api_test_org_member", "password": "89c8ec05-b897"}
+
+
 class APITests(TestCase, api_test.TestJSON, api_test.Command):
     """
     API tests
@@ -197,12 +203,6 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
     def setUp(self):
         super().setUp()
 
-        URL = settings.API_URL
-        VERBOSE = False
-        USER = {"user": "api_test", "password": "89c8ec05-b897"}
-        USER_ORG_ADMIN = {"user": "api_test_org_admin", "password": "89c8ec05-b897"}
-        USER_ORG_MEMBER = {"user": "api_test_org_member", "password": "89c8ec05-b897"}
-
         # db_user becomes the tester for user key
         api_test_user = models.User.objects.get(username=USER["user"])
         api_key, user_key = models.UserAPIKey.objects.create_key(
@@ -218,9 +218,13 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
 
         # Transfer group permissions to org key
         for perm in rw_org.admin_usergroup.grainy_permissions.all():
-            rw_api_key.grainy_permissions.add_permission(perm.namespace, perm.permission)
+            rw_api_key.grainy_permissions.add_permission(
+                perm.namespace, perm.permission
+            )
 
-        self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, key=rw_org_key, **USER_ORG_ADMIN)
+        self.db_org_admin = self.rest_client(
+            URL, verbose=VERBOSE, key=rw_org_key, **USER_ORG_ADMIN
+        )
 
         # db_org_member becomes the tester for r org api key
         r_org = models.Organization.objects.get(name="API Test Organization R")
@@ -232,4 +236,34 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         for perm in r_org.usergroup.grainy_permissions.all():
             r_api_key.grainy_permissions.add_permission(perm.namespace, perm.permission)
 
-        self.db_org_member = self.rest_client(URL, verbose=VERBOSE, key=r_org_key, **USER_ORG_MEMBER)
+        self.db_org_member = self.rest_client(
+            URL, verbose=VERBOSE, key=r_org_key, **USER_ORG_MEMBER
+        )
+
+    # Tests we skip or rewrite
+    def test_org_member_001_POST_ix_with_perms(self):
+        """
+        We skip this test because there isn't an org admin key equivalent
+        of an org-admin user that has access to everything.
+        """
+        pass
+
+    def test_zz_org_admin_004_DELETE_org(self):
+        """
+        We rewrite this test because it involves creating an
+        additional org key and then using it to delete an org.
+        """
+        org = models.Organization.objects.create(name="Deletable org", status="ok")
+        org_key = models.OrganizationAPIKey.objects.create_key(
+            name="new key", org=self.org, email="test@localhost"
+        )
+        new_org_admin = self.rest_client(
+            URL, verbose=VERBOSE, key=org_key, **USER_ORG_ADMIN
+        )
+
+        self.assert_delete(
+            new_org_admin,
+            "org",
+            # can delete the org we just made
+            test_success=org.id,
+        )
