@@ -75,9 +75,9 @@ def test_create_org_api_key(org):
     api_key, key = OrganizationAPIKey.objects.create_key(
         name="test key", org=org, email="test@localhost"
     )
-    assert api_key.revoked == False
+    assert api_key.revoked is False
     assert api_key.name == "test key"
-    assert api_key.is_valid(key) == True
+    assert api_key.is_valid(key) is True
 
     # Test foreign key
     assert org.api_keys.first() == api_key
@@ -88,11 +88,11 @@ def test_create_user_api_key(user):
     api_key, key = UserAPIKey.objects.create_key(
         name="test key", user=user
     )
-    assert api_key.revoked == False
+    assert api_key.revoked is False
     assert api_key.name == "test key"
-    assert api_key.is_valid(key) == True
+    assert api_key.is_valid(key) is True
 
-    assert api_key.readonly == False
+    assert api_key.readonly is False
     # Test foreign key
     assert user.api_keys.first() == api_key
 
@@ -172,7 +172,7 @@ def test_get_key_from_request():
     factory = RequestFactory()
     request = factory.get("/api/net/1")
     # Add api key header
-    request.META.update({"HTTP_X_API_KEY": key})
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
     assert get_key_from_request(request) == key
 
 
@@ -190,7 +190,7 @@ def test_check_permissions_on_unauth_request(org):
 
     # Check permissions without any credentials
     assert hasattr(request, "user") is False
-    assert request.META.get("HTTP_X_API_KEY") is None
+    assert request.META.get("HTTP_AUTHORIZATION") is None
     perm_obj = get_permission_holder_from_request(request)
     print(perm_obj)
     assert check_permissions(perm_obj, namespace, "r") is False
@@ -209,11 +209,11 @@ def test_check_permissions_on_org_key_request_readonly(org):
     request = factory.get("/api/net/1")
 
     # Add api key header
-    request.META.update({"HTTP_X_API_KEY": key})
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
 
     # Assert we're making a request with a OrgAPIKey
     assert hasattr(request, "user") is False
-    assert request.META["HTTP_X_API_KEY"] == key
+    assert request.META["HTTP_AUTHORIZATION"] == "Api-Key " + key
     # Test permissions
     perm_obj = get_permission_holder_from_request(request)
     assert check_permissions(perm_obj, namespace, "c") is False
@@ -236,11 +236,11 @@ def test_check_permissions_on_org_key_request_crud(org):
     request = factory.get("/api/net/1")
 
     # Add api key header
-    request.META.update({"HTTP_X_API_KEY": key})
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
 
     # Assert we're making a request with a OrgAPIKey
     assert hasattr(request, "user") is False
-    assert request.META["HTTP_X_API_KEY"] == key
+    assert request.META["HTTP_AUTHORIZATION"] == "Api-Key " + key
 
     # Test permissions
     perm_obj = get_permission_holder_from_request(request)
@@ -267,11 +267,11 @@ def test_check_permissions_on_user_key_request_crud(user):
     request = factory.get("/api/net/1")
 
     # Add api key header
-    request.META.update({"HTTP_X_API_KEY": key})
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
 
     # Assert we're making a request with a OrgAPIKey
     assert hasattr(request, "user") is False
-    assert request.META["HTTP_X_API_KEY"] == key
+    assert request.META["HTTP_AUTHORIZATION"] == "Api-Key " + key
     # Test permissions
     perm_obj = get_permission_holder_from_request(request)
     assert check_permissions(perm_obj, namespace, "c")
@@ -301,11 +301,11 @@ def test_check_permissions_on_user_key_request_readonly(user):
     request = factory.get("/api/net/1")
 
     # Add api key header
-    request.META.update({"HTTP_X_API_KEY": key})
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
 
     # Assert we're making a request with a OrgAPIKey
     assert hasattr(request, "user") is False
-    assert request.META["HTTP_X_API_KEY"] == key
+    assert request.META["HTTP_AUTHORIZATION"] == "Api-Key " + key
     # Test permissions are readonly
     perm_obj = get_permission_holder_from_request(request)
     assert perm_obj == api_key
@@ -328,7 +328,7 @@ def test_get_network_w_org_key(org, network, user):
     url = reverse("net-detail", args=(network.id,))
     client = APIClient()
 
-    response = client.get(url, HTTP_X_API_KEY=key)
+    response = client.get(url, HTTP_AUTHORIZATION="Api-Key " + key)
     assert response.status_code == 200
 
     net_from_api = response.json()["data"][0]
@@ -352,43 +352,11 @@ def test_get_network_w_user_key(network, user, admin_client):
     url = reverse("net-detail", args=(network.id,))
     client = APIClient()
 
-    response = client.get(url, HTTP_X_API_KEY=key)
+    response = client.get(url, HTTP_AUTHORIZATION="Api-Key " + key)
     assert response.status_code == 200
 
     net_from_api = response.json()["data"][0]
     assert net_from_api["name"] == network.name
     assert net_from_api["asn"] == network.asn
     assert net_from_api["org_id"] == network.org.id
-
-
-# @pytest.mark.django_db
-# def test_network_put_w_org_key(org, network):
-#     namespace = "peeringdb.organization.1.network"
-#     api_key, key = OrganizationAPIKey.objects.create_key(
-#         name="test key", org=org
-#     )
-#     OrganizationAPIPermission.objects.create(
-#         org_api_key=api_key, namespace=namespace, permission=PERM_CRUD
-#     )
-
-#     url = reverse("net-detail", args=(network.id,))
-#     print(network.org.id)
-#     print(network.asn)
-#     data = {
-#         "name": "changed name",
-#         "asn": network.asn,
-#         "org_id": network.org.id
-#     }
-#     # Unauth
-#     client = APIClient()
-#     response = client.put(url, data, HTTP_X_API_KEY="abcd", format='json')
-#     print(response.content)
-#     assert response.status_code == 401
-
-#     response = client.put(url, data, HTTP_X_API_KEY=key, format='json')
-#     print(response.content)
-#     assert 0
-#     # net_from_api = response.json()["data"][0]
-#     assert net_from_api["name"] == "changed name"
-#     assert Network.objects.first().name == "changed name"
 
