@@ -13,12 +13,16 @@ from django.template import loader
 
 from peeringdb_server.inet import RdapNotFoundError
 from peeringdb_server.models import (
-    DeskProTicket,
+    is_suggested,
+    DeskProTicket
 )
 from peeringdb_server.permissions import (
     get_user_from_request,
     get_org_key_from_request
 )
+
+from django.utils.translation import override
+
 
 def ticket_queue(subject, body, user):
     """ queue a deskpro ticket for creation """
@@ -134,6 +138,54 @@ def ticket_queue_asnauto_create(
         ),
         user,
     )
+
+
+def ticket_queue_vqi_notify(instance, rdap):
+    item = instance.item
+    user = instance.user
+    org_key = instance.org_key
+
+    with override("en"):
+        entity_type_name = str(instance.content_type)
+
+    title = f"{entity_type_name} - {item}"
+
+    if is_suggested(item):
+        title = f"[SUGGEST] {title}"
+
+    if user:
+        ticket_queue(
+            title,
+            loader.get_template("email/notify-pdb-admin-vq.txt").render(
+                {
+                    "entity_type_name": entity_type_name,
+                    "suggested": is_suggested(item),
+                    "item": item,
+                    "user": user,
+                    "rdap": rdap,
+                    "edit_url": "%s%s"
+                    % (settings.BASE_URL, instance.item_admin_url),
+                }
+            ),
+            user,
+        )
+
+    elif org_key:
+        ticket_queue_email_only(
+            title,
+            loader.get_template("email/notify-pdb-admin-vq-org-key.txt").render(
+                {
+                    "entity_type_name": entity_type_name,
+                    "suggested": is_suggested(item),
+                    "item": item,
+                    "org_key": org_key,
+                    "rdap": rdap,
+                    "edit_url": "%s%s"
+                    % (settings.BASE_URL, instance.item_admin_url),
+                }
+            ),
+            org_key.email,
+        )
 
 
 def ticket_queue_rdap_error(request, asn, error):
