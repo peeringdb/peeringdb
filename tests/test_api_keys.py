@@ -238,7 +238,7 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
             URL, verbose=VERBOSE, key=r_org_key, **USER_ORG_MEMBER
         )
 
-    # Tests we skip or rewrite
+    # TESTS WE SKIP OR REWRITE IN API KEY CONTEXT
     def test_org_member_001_POST_ix_with_perms(self):
         """
         We skip this test because there isn't an org admin key equivalent
@@ -290,12 +290,12 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
             self.db_org_admin.rm("as_set", net.asn)
         assert "401 Authentication credentials were not provided" in str(excinfo.value)
 
-    # Tests we add that are Organization API Key specific
+    # TESTS WE ADD FOR ORGANIZATION API KEY
     def test_org_key_admin_002_GET_as_set(self):
 
         """
-        The as-set endpoint is readonly, so all of these should
-        fail
+        GET requests on the "as_set" endpoint should work with
+        any org api key
         """
 
         data = self.db_org_admin.all("as_set")
@@ -304,10 +304,9 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
             self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
 
     def test_org_key_member_002_GET_as_set(self):
-
         """
-        The as-set endpoint is readonly, so all of these should
-        fail
+        GET requests on the "as_set" endpoint should work with
+        any org api key
         """
 
         data = self.db_org_member.all("as_set")
@@ -315,12 +314,11 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         for net in networks:
             self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
 
-    # Tests that are User API Key specific
+    # TESTS WE ADD FOR USER API KEY
     def test_user_key_002_GET_as_set(self):
-
         """
-        The as-set endpoint is readonly, so all of these should
-        fail
+        GET requests on the "as_set" endpoint should work with
+        any user api key
         """
 
         data = self.db_user.all("as_set")
