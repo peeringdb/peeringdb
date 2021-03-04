@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="verificationqueueitem",
-            name="api_key",
+            name="org_key",
             field=models.ForeignKey(
                 blank=True,
                 help_text="The item that this queue is attached to was created by this organization api key",

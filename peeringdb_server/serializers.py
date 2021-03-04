@@ -1152,7 +1152,7 @@ class ModelSerializer(serializers.ModelSerializer):
 
                 # This will save the org api key if provided
                 elif org_key:
-                    vq.api_key = org_key
+                    vq.org_key = org_key
                     vq.save()
 
     def finalize_create(self, request):
