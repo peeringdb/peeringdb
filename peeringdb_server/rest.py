@@ -33,6 +33,8 @@ from peeringdb_server.permissions import (
     ModelViewSetPermissions,
     check_permissions_from_request,
     APIPermissionsApplicator,
+    get_org_key_from_request,
+    get_user_key_from_request
 )
 
 
@@ -549,10 +551,18 @@ class ModelViewSet(viewsets.ModelViewSet):
         """
         try:
             self.require_data(request)
+
+            org_key = get_org_key_from_request(request)
+            user_key = get_user_key_from_request(request)
+
             with reversion.create_revision():
-                # TODO: allow django reversion to track api keys ?
                 if request.user and request.user.is_authenticated:
                     reversion.set_user(request.user)
+                if org_key:
+                    reversion.set_comment(f"API-key: {org_key.prefix}")
+                if user_key:
+                    reversion.set_comment(f"API-key: {user_key.prefix}")
+
                 r = super().create(request, *args, **kwargs)
                 if "_grainy" in r.data:
                     del r.data["_grainy"]
@@ -573,10 +583,17 @@ class ModelViewSet(viewsets.ModelViewSet):
         """
         try:
             self.require_data(request)
+
+            org_key = get_org_key_from_request(request)
+            user_key = get_user_key_from_request(request)
+
             with reversion.create_revision():
-                # TODO: allow django reversion to track api keys ?
                 if request.user and request.user.is_authenticated:
                     reversion.set_user(request.user)
+                if org_key:
+                    reversion.set_comment(f"API-key: {org_key.prefix}")
+                if user_key:
+                    reversion.set_comment(f"API-key: {user_key.prefix}")
 
                 r = super().update(request, *args, **kwargs)
                 if "_grainy" in r.data:
@@ -617,11 +634,16 @@ class ModelViewSet(viewsets.ModelViewSet):
             except self.model.DoesNotExist:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
+            user_key = get_user_key_from_request(request)
+            org_key = get_org_key_from_request(request)
             if check_permissions_from_request(request, obj, "d"):
                 with reversion.create_revision():
-                    # TODO: allow django reversion to track api keys ?
                     if request.user and request.user.is_authenticated:
                         reversion.set_user(request.user)
+                    if org_key:
+                        reversion.set_comment(f"API-key: {org_key.prefix}")
+                    if user_key:
+                        reversion.set_comment(f"API-key: {user_key.prefix}")
                     obj.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:

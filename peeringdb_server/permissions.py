@@ -109,6 +109,21 @@ def get_org_key_from_request(request):
     return None
 
 
+def get_user_key_from_request(request):
+    """
+    Returns a user api key from the request if the request
+    was made with an User API Key.
+
+    Otherwise returns None.
+    """
+    perm_holder = get_permission_holder_from_request(request)
+
+    if type(perm_holder) == UserAPIKey:
+        return perm_holder
+
+    return None
+
+
 def check_permissions_from_request(request, target, flag, **kwargs):
     """ Call the check_permissions util but takes a request as
     input, not a permission-holding object
@@ -125,7 +140,6 @@ def check_permissions(obj, target, permissions, **kwargs):
     """
     if not hasattr(obj, "_permissions_util"):
         obj._permissions_util = init_permissions_helper(obj)
-
 
     return obj._permissions_util.check(target, permissions, **kwargs)
 
