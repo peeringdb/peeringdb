@@ -5,11 +5,9 @@ import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import TestCase
-from django_grainy.models import GroupPermission, UserPermission
-from rest_framework.authtoken.models import Token
-from rest_framework.test import (APIClient, APIRequestFactory,
-                                 force_authenticate)
-from twentyc.rpc.client import RestClient
+from django_grainy.models import GroupPermission
+from rest_framework.test import APIClient, APIRequestFactory
+from twentyc.rpc.client import PermissionDeniedException, RestClient
 
 import peeringdb_server.inet as pdbinet
 import peeringdb_server.management.commands.pdb_api_test as api_test
@@ -254,11 +252,13 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         additional org key and then using it to delete an org.
         """
         org = models.Organization.objects.create(name="Deletable org", status="ok")
-        org_key = models.OrganizationAPIKey.objects.create_key(
-            name="new key", org=self.org, email="test@localhost"
+        org_key, key = models.OrganizationAPIKey.objects.create_key(
+            name="new key", org=org, email="test@localhost"
         )
+        for perm in org.admin_usergroup.grainy_permissions.all():
+            org_key.grainy_permissions.add_permission(perm.namespace, perm.permission)
         new_org_admin = self.rest_client(
-            URL, verbose=VERBOSE, key=org_key, **USER_ORG_ADMIN
+            URL, verbose=VERBOSE, key=key, **USER_ORG_ADMIN
         )
 
         self.assert_delete(
@@ -267,3 +267,63 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
             # can delete the org we just made
             test_success=org.id,
         )
+
+    def test_org_admin_002_POST_PUT_DELETE_as_set(self):
+
+        """
+        The as-set endpoint is readonly, so all of these should
+        fail
+        """
+        data = self.make_data_net(asn=9000900)
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.assert_create(self.db_org_admin, "as_set", data)
+        assert "401 Authentication credentials were not provided" in str(excinfo.value)
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_org_admin.update("as_set", {"9000900": "AS-ZZZ"})
+        assert "401 Authentication credentials were not provided" in str(excinfo.value)
+
+        net = models.Network.objects.filter(status="ok").first()
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_org_admin.rm("as_set", net.asn)
+        assert "401 Authentication credentials were not provided" in str(excinfo.value)
+
+    # Tests we add that are Organization API Key specific
+    def test_org_key_admin_002_GET_as_set(self):
+
+        """
+        The as-set endpoint is readonly, so all of these should
+        fail
+        """
+
+        data = self.db_org_admin.all("as_set")
+        networks = models.Network.objects.filter(status="ok")
+        for net in networks:
+            self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
+
+    def test_org_key_member_002_GET_as_set(self):
+
+        """
+        The as-set endpoint is readonly, so all of these should
+        fail
+        """
+
+        data = self.db_org_member.all("as_set")
+        networks = models.Network.objects.filter(status="ok")
+        for net in networks:
+            self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
+
+    # Tests that are User API Key specific
+    def test_user_key_002_GET_as_set(self):
+
+        """
+        The as-set endpoint is readonly, so all of these should
+        fail
+        """
+
+        data = self.db_user.all("as_set")
+        networks = models.Network.objects.filter(status="ok")
+        for net in networks:
+            self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
