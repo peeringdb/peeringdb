@@ -27,8 +27,9 @@ from django_grainy.rest import PermissionDenied
 
 from peeringdb_server.permissions import (
     check_permissions_from_request,
-    get_key_from_request,
-    validate_rdap_user_or_key
+    get_org_key_from_request,
+    validate_rdap_user_or_key,
+    get_user_from_request
 )
 from peeringdb_server.inet import (
     RdapLookup,
@@ -1141,17 +1142,17 @@ class ModelSerializer(serializers.ModelSerializer):
                 object_id=instance.id,
             ).first()
             if vq:
-                user = request.user
-                if isinstance(user, get_user_model()):
-                    vq.user = self._context["request"].user
+                # This will save the user field if user credentials
+                # or if a user api key are used
+                user = get_user_from_request(request)
+                org_key = get_org_key_from_request(request)
+                if user:
+                    vq.user = user
                     vq.save()
-                else:
-                    key = get_key_from_request(request)
-                    try:
-                        api_key = OrganizationAPIKey.objects.get_from_key(key)
-                    except OrganizationAPIKey.DoesNotExist:
-                        return
-                    vq.api_key = api_key
+
+                # This will save the org api key if provided
+                elif org_key:
+                    vq.api_key = org_key
                     vq.save()
 
     def finalize_create(self, request):

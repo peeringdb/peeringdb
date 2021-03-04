@@ -143,7 +143,7 @@ def ticket_queue_asnauto_create(
 def ticket_queue_vqi_notify(instance, rdap):
     item = instance.item
     user = instance.user
-    org_key = instance.org_key
+    org_key = instance.api_key
 
     with override("en"):
         entity_type_name = str(instance.content_type)
