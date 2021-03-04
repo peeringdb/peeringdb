@@ -149,8 +149,10 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
     @classmethod
     def setUpTestData(cls):
         # create user and guest group
-        guest_group = Group.objects.create(name="guest")
-        user_group = Group.objects.create(name="user")
+        guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
+        user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
+        settings.GUEST_GROUP_ID = guest_group.id
+        settings.USER_GROUP_ID = user_group.id
 
         guest_user = models.User.objects.create_user(
             "guest", "guest@localhost", "guest"
