@@ -1,4 +1,5 @@
 import re
+from decimal import Decimal
 import json
 import datetime
 from itertools import chain
@@ -417,10 +418,12 @@ class GeocodeBaseMixin(models.Model):
         Custom rounding for latitude and longitude for issue #865.
         Max decimal places are set in django-peeringdb abstract models.
         """
-        print("Rounding")
-        self.latitude = round(self.latitude, 6)
-        self.longitude = round(self.longitude, 6)
+        if isinstance(self.latitude, Decimal):
+            self.latitude = round(self.latitude, 6)
+        if isinstance(self.longitude, Decimal):
+            self.longitude = round(self.longitude, 6)
         return super().clean()
+
 
 class UserOrgAffiliationRequest(models.Model):
     """
