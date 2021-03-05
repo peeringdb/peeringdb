@@ -489,8 +489,6 @@ class ParentStatusException(IOError):
 
 
 class AddressSerializer(serializers.ModelSerializer):
-    latitude = serializers.DecimalField(max_digits=None, decimal_places=None, coerce_to_string=False, read_only=True)
-    longitude = serializers.DecimalField(max_digits=None, decimal_places=None, coerce_to_string=False, read_only=True)
 
     class Meta:
         model = (AddressModel,)
@@ -1244,6 +1242,19 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
     sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
 
     validators = [FieldMethodValidator("suggest", ["POST"])]
+
+    latitude = serializers.DecimalField(
+        max_digits=None,
+        decimal_places=None,
+        coerce_to_string=False,
+        read_only=True
+    )
+    longitude = serializers.DecimalField(
+        max_digits=None,
+        decimal_places=None,
+        coerce_to_string=False,
+        read_only=True
+    )
 
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
@@ -2540,6 +2551,20 @@ class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
         InternetExchangeSerializer,
         exclude=["org_id", "org"],
         source="ix_set_active_prefetched",
+    )
+
+    latitude = serializers.DecimalField(
+        max_digits=None,
+        decimal_places=None,
+        coerce_to_string=False,
+        read_only=True
+    )
+    
+    longitude = serializers.DecimalField(
+        max_digits=None,
+        decimal_places=None,
+        coerce_to_string=False,
+        read_only=True
     )
 
     class Meta:  # (AddressSerializer.Meta):
