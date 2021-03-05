@@ -489,6 +489,9 @@ class ParentStatusException(IOError):
 
 
 class AddressSerializer(serializers.ModelSerializer):
+    latitude = serializers.DecimalField(max_digits=None, decimal_places=None, coerce_to_string=False, read_only=True)
+    longitude = serializers.DecimalField(max_digits=None, decimal_places=None, coerce_to_string=False, read_only=True)
+
     class Meta:
         model = (AddressModel,)
         fields = [
@@ -500,6 +503,8 @@ class AddressSerializer(serializers.ModelSerializer):
             "zipcode",
             "floor",
             "suite",
+            "latitude",
+            "longitude"
         ]
 
 
@@ -1228,9 +1233,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
     net_count = serializers.SerializerMethodField()
 
-    latitude = serializers.FloatField(read_only=True)
-    longitude = serializers.FloatField(read_only=True)
-
     suggest = serializers.BooleanField(required=False, write_only=True)
 
     website = serializers.URLField()
@@ -1266,8 +1268,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                 "npanxx",
                 "notes",
                 "net_count",
-                "latitude",
-                "longitude",
                 "suggest",
                 "sales_email",
                 "sales_phone",
@@ -2554,8 +2554,6 @@ class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
                 "net_set",
                 "fac_set",
                 "ix_set",
-                "latitude",
-                "longitude",
             ]
             + AddressSerializer.Meta.fields
             + HandleRefSerializer.Meta.fields
