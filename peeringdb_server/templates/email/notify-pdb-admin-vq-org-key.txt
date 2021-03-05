@@ -20,7 +20,8 @@ A new '{{ entity_type_name }}' has been created and requires your approval.
 
 {% trans "Name" %}: <a href="{{ item.view_url }}">{{ item }}</a>
 {% trans "Requested by Organization API Key" %}: 
-- {% trans "Prefix" %}: {{ org_key.prefix }}
+- {% trans "Organization" %}: {{ org_key.org.name }}
+- {% trans "API key prefix" %}: {{ org_key.prefix }}
 - {% trans "Email" %}: {{ org_key.email }}
 
 {% trans "You can go to" %} <a href="{{ edit_url }}">{{ edit_url }}</a> {% trans "to view and approve or deny this entry" %}{% endlanguage %}
