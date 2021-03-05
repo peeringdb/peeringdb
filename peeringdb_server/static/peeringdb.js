@@ -214,7 +214,7 @@ PeeringDB = {
     Object.assign(payload, response.meta.suggested_address);
 
     // No need to have latitude or longitude
-    // in the payload since it will get
+    // in the payload since it will get 
     // geocoded again
 
     delete payload.latitude;
@@ -223,6 +223,7 @@ PeeringDB = {
 
     // Set up PUT request on click
     button.click(function(event){
+      $("#view").editable("loading-shim", "show");
       PeeringDB.API.request(
         "PUT",
         endpoint,
