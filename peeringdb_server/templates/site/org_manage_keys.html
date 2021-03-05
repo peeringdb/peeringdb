@@ -29,12 +29,23 @@
   <div data-edit-component="list" data-edit-template="api-key-item">
   {% for key in instance.api_keys.all %}
   {% if not key.revoked %}
-  <div class="row marg-top" data-edit-id="{{ key.prefix }}" data-edit-label="{{ key.prefix }} - {{ key.name }}">
+  <div class="row marg-top editable" data-edit-id="{{ key.prefix }}" data-edit-method="PUT" data-edit-target="/org_admin/manage_key/update" data-edit-label="{{ key.prefix }} - {{ key.name }}">
     <div class="col-xs-2 col-sm-2 col-md-2" data-edit-name="prefix">{{ key.prefix }}</div>
-    <div class="col-xs-4 col-sm-4 col-md-4" data-edit-name="name">{{ key.name }}</div>
-    <div class="col-xs-4 col-sm-4 col-md-4" data-edit-name="email">{{ key.email }}</div>
+    <div class="col-xs-4 col-sm-4 col-md-4" data-edit-type="string" data-edit-name="name">{{ key.name }}</div>
+    <div class="col-xs-4 col-sm-4 col-md-4" data-edit-type="email" data-edit-name="email">{{ key.email }}</div>
     <div class="col-xs-2 col-sm-2 col-md-2 right">
-      <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
+      <div class="editable payload">
+        <div data-edit-name="org_id">{{ instance.id }}</div>
+        <div data-edit-name="prefix">{{ key.prefix }}</div>
+      </div>
+      <span data-edit-toggled="view">
+        <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
+        <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
+      </span>
+      <span data-edit-toggled="edit">
+        <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+        <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+      </span>
     </div>
   </div>
   {% endif %}

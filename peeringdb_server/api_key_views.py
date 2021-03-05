@@ -1,5 +1,5 @@
 """
-Views for organization administrative actions
+Views for organization api key management
 """
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_protect
@@ -113,31 +113,6 @@ def load_all_key_permissions(org):
     return rv
 
 
-# @login_required
-# @org_admin_required
-# def keys(request, **kwargs):
-#     """
-#     Returns JsonResponse with a list of all keys in the specified org
-#     """
-
-#     org = kwargs.get("org")
-
-#     rv = {
-#         "keys": [
-#             {
-#                 "prefix": key.prefix,
-#                 "hashed_key": key.hashed_key,
-#                 "name": key.name
-#             }
-#             for key in org.api_keys.filter(revoked=False).all()
-#         ]
-#     }
-
-#     rv.update({"status": "ok"})
-
-#     return JsonResponse(rv)
-
-
 @login_required
 @org_admin_required
 def manage_key_add(request, **kwargs):
@@ -171,7 +146,49 @@ def manage_key_add(request, **kwargs):
         )
 
     else:
-        return JsonResponse({"non_field_errors": api_key_form.errors}, status=404)
+        return JsonResponse(api_key_form.errors, status=400)
+
+@login_required
+@org_admin_required
+def manage_key_update(request, **kwargs):
+    """
+    Updated existing Organization API key
+    """
+
+    prefix = request.POST.get("prefix")
+    org = kwargs.get("org")
+
+    api_key_form = OrganizationAPIKeyForm(request.POST)
+
+    if api_key_form.is_valid():
+        name = api_key_form.cleaned_data.get("name")
+        email = api_key_form.cleaned_data.get("email")
+
+        # attempt to retrieve api for key prefix + org combination
+
+        try:
+            api_key = OrganizationAPIKey.objects.get(prefix=prefix, org=org)
+        except OrganizationAPIKey.DoesNotExist:
+            return JsonResponse({"non_field_errors":[_("Key not found")]}, status=404)
+
+        # update name and email fields of key
+
+        api_key.name = name
+        api_key.email = email
+        api_key.save()
+
+        return JsonResponse(
+            {
+                "status": "ok",
+                "name": api_key.name,
+                "email": api_key.email,
+                "prefix": api_key.prefix,
+            }
+        )
+
+    else:
+        return JsonResponse(api_key_form.errors, status=400)
+
 
 
 @login_required

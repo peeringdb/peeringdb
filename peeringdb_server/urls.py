@@ -159,6 +159,7 @@ urlpatterns = [
         peeringdb_server.org_admin_views.manage_user_delete,
     ),
     url(r"^org_admin/manage_key/add$", peeringdb_server.api_key_views.manage_key_add),
+    url(r"^org_admin/manage_key/update$", peeringdb_server.api_key_views.manage_key_update),
     url(r"^org_admin/manage_key/revoke$", peeringdb_server.api_key_views.manage_key_revoke),
     url(
         r"^org_admin/key_permissions$",
