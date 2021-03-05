@@ -1,68 +1,44 @@
 import ipaddress
 import re
-import reversion
 
-from django_inet.rest import IPAddressField, IPPrefixField
-from django.core.validators import URLValidator
-from django.db.models.query import QuerySet
-from django.db.models import Prefetch, Q, Sum, IntegerField, Case, When
-from django.db import models, transaction, IntegrityError
-from django.db.models.fields.related import (
-    ReverseManyToOneDescriptor,
-    ForwardManyToOneDescriptor,
-)
-from django.http import JsonResponse
+import reversion
+from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldError, ValidationError
+from django.core.validators import URLValidator
+from django.db import IntegrityError, models, transaction
+from django.db.models import Case, IntegerField, Prefetch, Q, Sum, When
+from django.db.models.fields.related import (ForwardManyToOneDescriptor,
+                                             ReverseManyToOneDescriptor)
+from django.db.models.query import QuerySet
+from django.http import JsonResponse
+from django.utils.translation import ugettext_lazy as _
+from django_grainy.rest import PermissionDenied
+# from drf_toolbox import serializers
+from django_handleref.rest.serializers import HandleRefSerializer
+from django_inet.rest import IPAddressField, IPPrefixField
+from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 
-# from drf_toolbox import serializers
-from django_handleref.rest.serializers import HandleRefSerializer
-from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
-from django_peeringdb.models.abstract import AddressModel
-
-from django_grainy.rest import PermissionDenied
-
-from peeringdb_server.util import check_permissions, Permissions
-from peeringdb_server.inet import (
-    RdapLookup,
-    RdapNotFoundError,
-    get_prefix_protocol,
-    RdapException,
-    rdap_pretty_error_message,
-)
-
-from peeringdb_server.deskpro import (
-    ticket_queue_asnauto_skipvq,
-    ticket_queue_rdap_error,
-)
-from peeringdb_server.models import (
-    QUEUE_ENABLED,
-    VerificationQueueItem,
-    InternetExchange,
-    InternetExchangeFacility,
-    IXLan,
-    IXLanPrefix,
-    Facility,
-    Network,
-    NetworkContact,
-    NetworkFacility,
-    NetworkIXLan,
-    Organization,
-)
-from peeringdb_server.validators import (
-    validate_address_space,
-    validate_info_prefixes4,
-    validate_info_prefixes6,
-    validate_prefix_overlap,
-    validate_phonenumber,
-    validate_irr_as_set,
-    validate_zipcode,
-)
-
-from django.utils.translation import ugettext_lazy as _
-
+from peeringdb_server.deskpro import (ticket_queue_asnauto_skipvq,
+                                      ticket_queue_rdap_error)
+from peeringdb_server.inet import (RdapException, RdapLookup,
+                                   RdapNotFoundError, get_prefix_protocol,
+                                   rdap_pretty_error_message)
+from peeringdb_server.models import (QUEUE_ENABLED, Facility, InternetExchange,
+                                     InternetExchangeFacility, IXLan,
+                                     IXLanPrefix, Network, NetworkContact,
+                                     NetworkFacility, NetworkIXLan,
+                                     Organization, VerificationQueueItem)
+from peeringdb_server.util import Permissions, check_permissions
+from peeringdb_server.validators import (validate_address_space,
+                                         validate_info_prefixes4,
+                                         validate_info_prefixes6,
+                                         validate_irr_as_set,
+                                         validate_phonenumber,
+                                         validate_prefix_overlap,
+                                         validate_zipcode)
 
 # exclude certain query filters that would otherwise
 # be exposed to the api for filtering operations
@@ -166,6 +142,10 @@ class GeocodeSerializerMixin(object):
         return False
 
     def _add_meta_information(self, metadata):
+        """
+        Adds a dictionary of metadata to the "meta" field of the API
+        request, so that it ends up in the API response.
+        """
         if "request" in self.context:
             request = self.context["request"]
             if not hasattr(request, "meta_response"):
@@ -176,15 +156,29 @@ class GeocodeSerializerMixin(object):
         return False
 
     def handle_geo_error(self, exc, instance):
-        self._add_meta_information({
-            "geovalidation_warning": self.GEO_ERROR_MESSAGE,
-        })
+        """
+        Issue #939 In the event that there is an error in geovalidating
+        the address(including address not found), we return a warning in
+        the "meta" field of the response and null the latitude and
+        longitude on the instance.
+        """
+        self._add_meta_information(
+            {
+                "geovalidation_warning": self.GEO_ERROR_MESSAGE,
+            }
+        )
         print(exc.message)
         instance.latitude = None
         instance.longitude = None
         instance.save()
 
     def needs_address_suggestion(self, suggested_address, instance):
+        """
+        Issue #940: If the geovalidated address meaningfully differs
+        from the address the user provided, we return True to signal
+        a address suggestion should be provided to the user.
+        """
+
         for key in ["address1", "city", "state", "zipcode"]:
             suggested_val = suggested_address.get(key, None)
             instance_val = getattr(instance, key, None)
@@ -216,9 +210,11 @@ class GeocodeSerializerMixin(object):
                 print(suggested_address)
 
                 if self.needs_address_suggestion(suggested_address, instance):
-                    self._add_meta_information({
-                                "suggested_address": suggested_address,
-                    })
+                    self._add_meta_information(
+                        {
+                            "suggested_address": suggested_address,
+                        }
+                    )
 
             # Reraise the model validation error
             # as a serializer validation error
@@ -242,9 +238,11 @@ class GeocodeSerializerMixin(object):
                 suggested_address = instance.normalize_api_response()
 
                 if self.needs_address_suggestion(suggested_address, instance):
-                    self._add_meta_information({
-                                "suggested_address": suggested_address,
-                    })
+                    self._add_meta_information(
+                        {
+                            "suggested_address": suggested_address,
+                        }
+                    )
 
             # Reraise the model validation error
             # as a serializer validation error
