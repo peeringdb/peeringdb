@@ -258,23 +258,64 @@ class APIClient:
         )
         return self.parse_response(response)
 
-    def require_person(self, user):
-        person = self.get("people", {"primary_email": user.email})
+
+    def require_person(self, email, user=None):
+
+        """
+        Gets or creates a deskpro person using the deskpro API
+
+        At the minimum this needs to be passed an email
+        address.
+
+        If a peeringdb user instance is also specified, it will
+        be used to fill in name information.
+
+        Arguments:
+
+        - email(`str`)
+        - user(`User`)
+        """
+
+        person = self.get("people", {"primary_email": email})
+
         if not person:
+
+            payload = {"primary_email":email}
+
+            if user:
+                payload.update(
+                    first_name = user.first_name,
+                    last_name = user.last_name,
+                    name = user.full_name
+                )
+            else:
+                payload.update(
+                    name = email
+                )
+
             person = self.create(
                 "people",
-                {
-                    "primary_email": user.email,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "name": user.full_name,
-                },
+                payload
             )
 
         return person
 
     def create_ticket(self, ticket):
-        person = self.require_person(ticket.user)
+
+        """
+        Creates a deskpro ticket using the deskpro API
+
+        Arguments:
+
+        - ticket (`DeskProTicket`)
+        """
+
+        if ticket.user:
+            person = self.require_person(ticket.user.email, user=ticket.user)
+        elif ticket.email:
+            person = self.require_person(ticket.email)
+        else:
+            raise ValueError("Either user or email need to be specified on the DeskProTicket instance")
 
         if not ticket.deskpro_id:
 
