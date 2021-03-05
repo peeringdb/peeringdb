@@ -430,8 +430,8 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
         if instance.notified:
             return
 
-        # we don't sent notifications unless requesting user has been identified
-        if not instance.user_id:
+        # no contact point exists
+        if not instance.user_id and not instance.org_key:
             return
 
         item = instance.item

@@ -1,4 +1,4 @@
-Organization API Key (prefix: {{org_key.prefix}} has run into an RDAP Lookup Error when trying to affiliate to a network.
+Organization API Key (prefix: {{org_key.prefix}}) has run into an RDAP Lookup Error when trying to create a network under the org {{ org_key.org.name }}.
 
 ASN: {{ asn }}
 Error Details: {{ error_details }}
