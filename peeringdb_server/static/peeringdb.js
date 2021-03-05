@@ -213,10 +213,9 @@ PeeringDB = {
     // Overwrite returned instance with the suggested data
     Object.assign(payload, response.meta.suggested_address);
 
-
-    // Can remove this once lat and long issue #865 is done
-    // Right now if we try to include a +6 decimal point
-    // lat or long in PUT request, it will error.
+    // No need to have latitude or longitude
+    // in the payload since it will get
+    // geocoded again
 
     delete payload.latitude;
     delete payload.longitude;
