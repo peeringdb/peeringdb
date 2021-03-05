@@ -14,6 +14,7 @@ from django_grainy.models import UserPermission, GroupPermission
 
 import peeringdb_server.models as models
 import peeringdb_server.management.commands.pdb_api_test as api_test
+from .util import reset_group_ids
 
 from . import test_api as api_tests
 
@@ -52,7 +53,7 @@ class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
         # create user and guest group
         guest_group = Group.objects.create(name="guest")
         user_group = Group.objects.create(name="user")
-
+        reset_group_ids()
         guest_user = models.User.objects.create_user(
             "guest", "guest@localhost", "guest"
         )

@@ -13,6 +13,8 @@ import peeringdb_server.inet as pdbinet
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
 
+from .util import reset_group_ids
+
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 
 
@@ -149,10 +151,12 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
     @classmethod
     def setUpTestData(cls):
         # create user and guest group
-        guest_group = Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
-        user_group = Group.objects.create(name="user", id=settings.USER_GROUP_ID)
-        settings.GUEST_GROUP_ID = guest_group.id
-        settings.USER_GROUP_ID = user_group.id
+        guest_group, _ = Group.objects.get_or_create(
+            name="guest")
+        user_group, _ = Group.objects.get_or_create(
+            name="user")
+
+        reset_group_ids()
 
         guest_user = models.User.objects.create_user(
             "guest", "guest@localhost", "guest"

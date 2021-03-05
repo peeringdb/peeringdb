@@ -3,6 +3,7 @@ import json
 import uuid
 
 from django.test import Client, TestCase, RequestFactory
+from django.conf import settings
 from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
 
@@ -20,36 +21,6 @@ class ViewTestCase(ClientCase):
 
     @classmethod
     def setUpTestData(cls):
-        # create user and guest group
-
-        guest_group = Group.objects.create(name="guest")
-        user_group = Group.objects.create(name="user")
-
-        cls.guest_user = models.User.objects.create_user(
-            "guest", "guest@localhost", "guest"
-        )
-        cls.guest_user.set_password("guest")
-        guest_group.user_set.add(cls.guest_user)
-
-        GroupPermission.objects.create(
-            group=guest_group, namespace="peeringdb.organization", permission=0x01
-        )
-
-        GroupPermission.objects.create(
-            group=user_group, namespace="peeringdb.organization", permission=0x01
-        )
-
-        GroupPermission.objects.create(
-            group=user_group,
-            namespace="peeringdb.organization.*.network.*.poc_set.users",
-            permission=0x01,
-        )
-
-        GroupPermission.objects.create(
-            group=guest_group,
-            namespace="peeringdb.organization.*.network.*.poc_set.public",
-            permission=0x01,
-        )
         super(ViewTestCase, cls).setUpTestData()
 
         # create test users
