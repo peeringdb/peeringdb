@@ -52,25 +52,20 @@ def get_permission_holder_from_request(request):
     key = get_key_from_request(request)
     if key is not None:
         try:
-            print("Checking if org key")
             api_key = OrganizationAPIKey.objects.get_from_key(key)
-            print(f"Org key found: {api_key.prefix}")
             return api_key
 
         except OrganizationAPIKey.DoesNotExist:
-            print("Not a valid org key")
+            pass
 
         try:
-            print("Checking if user key")
             api_key = UserAPIKey.objects.get_from_key(key)
-            print(f"User key found {api_key.prefix}")
             return api_key
 
         except UserAPIKey.DoesNotExist:
-            print("Not a valid user key.")
+            pass
 
     if hasattr(request, "user"):
-        print(f"Returning user: {request.user}")
         return request.user
 
     return AnonymousUser()
@@ -129,8 +124,6 @@ def check_permissions_from_request(request, target, flag, **kwargs):
     input, not a permission-holding object
     """
     perm_obj = get_permission_holder_from_request(request)
-    print(target)
-    print(flag)
     return check_permissions(perm_obj, target, flag, **kwargs)
 
 
@@ -198,8 +191,6 @@ def return_org_api_key_perms(key):
         general_usergroup.grainy_permissions.permission_set().permissions,
         override=False
     )
-    for ns, level in permissions.pset.permissions.items():
-        print("PERM", ns, f"{level.value}")
     return permissions
 
 
