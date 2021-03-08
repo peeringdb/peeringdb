@@ -1953,10 +1953,12 @@ class EnvironmentSettingAdmin(admin.ModelAdmin):
 
 
 class OrganizationAPIKeyAdmin(APIKeyModelAdmin):
-    pass
+    list_display = ["org", "prefix", "name", "created", "revoked"]
+    search_fields = ("prefix", "org__name")
 
 class UserAPIKeyAdmin(APIKeyModelAdmin):
-    pass
+    list_display = ["user", "prefix", "name", "readonly", "created", "revoked"]
+    search_fields = ("prefix", "user__username", "user__email")
 
 # Commented out via issue #860
 # admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
