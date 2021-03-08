@@ -1243,18 +1243,8 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
     validators = [FieldMethodValidator("suggest", ["POST"])]
 
-    latitude = serializers.DecimalField(
-        max_digits=None,
-        decimal_places=None,
-        coerce_to_string=False,
-        read_only=True
-    )
-    longitude = serializers.DecimalField(
-        max_digits=None,
-        decimal_places=None,
-        coerce_to_string=False,
-        read_only=True
-    )
+    latitude = serializers.FloatField(read_only=True)
+    longitude = serializers.FloatField(read_only=True)
 
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
@@ -2553,19 +2543,8 @@ class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
         source="ix_set_active_prefetched",
     )
 
-    latitude = serializers.DecimalField(
-        max_digits=None,
-        decimal_places=None,
-        coerce_to_string=False,
-        read_only=True
-    )
-    
-    longitude = serializers.DecimalField(
-        max_digits=None,
-        decimal_places=None,
-        coerce_to_string=False,
-        read_only=True
-    )
+    latitude = serializers.FloatField(read_only=True)
+    longitude = serializers.FloatField(read_only=True)
 
     class Meta:  # (AddressSerializer.Meta):
         model = Organization
