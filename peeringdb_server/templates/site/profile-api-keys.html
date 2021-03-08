@@ -61,7 +61,7 @@
     <div class="col-xs-6 col-sm-5 col-md-6">
       <div data-edit-type="string" data-edit-name="name"></div>
       {% if not request.user.is_superuser %}
-      <div data-edit-type="bool" data-edit-name="readonly"></div><span>{% trans "Read only?" %}</span>
+      <div data-edit-type="bool" data-edit-name="readonly" style="display:inline"></div> <span>{% trans "Read only" %}</span>
       {% endif %}
     </div>
     <div class="col-xs-2 col-sm-2 col-md-2 right">
