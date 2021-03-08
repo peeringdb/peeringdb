@@ -1,5 +1,4 @@
 import re
-from decimal import Decimal
 import json
 import datetime
 from itertools import chain
