@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("peeringdb_server", "0064_alter_geo_lat_long_decimals"),
+        ("peeringdb_server", "0063_populate_last_update_fields"),
     ]
 
     operations = [
