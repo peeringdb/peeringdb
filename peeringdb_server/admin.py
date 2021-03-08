@@ -575,6 +575,7 @@ class InternetExchangeAdminForm(StatusForm):
 class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     list_display = (
         "name",
+        "aka",
         "name_long",
         "city",
         "country",
@@ -865,6 +866,8 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     fields = [
         "status",
         "name",
+        "aka",
+        "name_long",
         "address1",
         "address2",
         "city",
@@ -1002,6 +1005,8 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     fields = [
         "status",
         "name",
+        "aka",
+        "name_long",
         "address1",
         "address2",
         "city",
@@ -1045,7 +1050,7 @@ class NetworkAdminForm(StatusForm):
 
 
 class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-    list_display = ("name", "asn", "aka", "status", "created", "updated")
+    list_display = ("name", "asn", "aka", "name_long", "status", "created", "updated")
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name", "asn")
