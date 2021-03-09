@@ -546,6 +546,7 @@ class ParentStatusException(IOError):
 
 
 class AddressSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = (AddressModel,)
         fields = [
@@ -557,6 +558,8 @@ class AddressSerializer(serializers.ModelSerializer):
             "zipcode",
             "floor",
             "suite",
+            "latitude",
+            "longitude"
         ]
 
 
@@ -1297,9 +1300,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
     net_count = serializers.SerializerMethodField()
 
-    latitude = serializers.FloatField(read_only=True)
-    longitude = serializers.FloatField(read_only=True)
-
     suggest = serializers.BooleanField(required=False, write_only=True)
 
     website = serializers.URLField()
@@ -1311,6 +1311,9 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
     sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
 
     validators = [FieldMethodValidator("suggest", ["POST"])]
+
+    latitude = serializers.FloatField(read_only=True)
+    longitude = serializers.FloatField(read_only=True)
 
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
@@ -1335,8 +1338,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                 "npanxx",
                 "notes",
                 "net_count",
-                "latitude",
-                "longitude",
                 "suggest",
                 "sales_email",
                 "sales_phone",
@@ -2613,6 +2614,9 @@ class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
         source="ix_set_active_prefetched",
     )
 
+    latitude = serializers.FloatField(read_only=True)
+    longitude = serializers.FloatField(read_only=True)
+
     class Meta:  # (AddressSerializer.Meta):
         model = Organization
         depth = 1
@@ -2625,8 +2629,6 @@ class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
                 "net_set",
                 "fac_set",
                 "ix_set",
-                "latitude",
-                "longitude",
             ]
             + AddressSerializer.Meta.fields
             + HandleRefSerializer.Meta.fields

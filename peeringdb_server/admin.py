@@ -18,6 +18,7 @@ from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth.admin import UserAdmin
 from django.db.utils import OperationalError
+from django.forms import DecimalField
 from django.http import HttpResponseForbidden
 from django import forms as baseForms
 from django.utils import html
@@ -85,6 +86,8 @@ from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException, rdap_pretty_error_message
 from rest_framework_api_key.admin import APIKeyModelAdmin
 from rest_framework_api_key.models import APIKey
+from peeringdb_server.util import round_decimal
+
 delete_selected.short_description = "HARD DELETE - Proceed with caution"
 
 from django.utils.translation import ugettext_lazy as _
@@ -861,13 +864,24 @@ class PartnershipAdmin(admin.ModelAdmin):
         return _("Active")
 
 
+class RoundingDecimalFormField(DecimalField):
+    def to_python(self, value):
+        value = super(RoundingDecimalFormField, self).to_python(value)
+        return round_decimal(value, self.decimal_places)
+
+
+class OrganizationAdminForm(StatusForm):
+    latitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
+    longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
+
+
 class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     list_display = ("handle", "name", "status", "created", "updated")
     ordering = ("-created",)
     search_fields = ("name",)
     list_filter = (StatusFilter,)
     readonly_fields = ("id", "grainy_namespace")
-    form = StatusForm
+    form = OrganizationAdminForm
 
     fields = [
         "status",
@@ -983,6 +997,9 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
 
 
 class FacilityAdminForm(StatusForm):
+    latitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
+    longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         fk_handleref_filter(self, "org")

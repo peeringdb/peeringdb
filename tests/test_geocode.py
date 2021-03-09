@@ -1,17 +1,18 @@
-import pytest
 import json
-import re
 import os
 
-from django.test import Client, TestCase, RequestFactory
-from django.contrib.auth.models import Group, AnonymousUser
-from django.contrib.auth import get_user
-from django.core.management import call_command
+import pytest
 from django.core.exceptions import ValidationError
 import googlemaps
 
 import peeringdb_server.models as models
 from peeringdb_server.serializers import GeocodeSerializerMixin
+
+
+@pytest.fixture
+def org():
+    org = models.Organization(name="Geocode Org", status="ok")
+    return org
 
 
 @pytest.fixture
@@ -53,12 +54,12 @@ def reverse_parsed():
 
 
 def test_geo_model_defaults(fac):
-    assert fac.geocode_status == False
-    assert fac.geocode_date == None
+    assert fac.geocode_status is False
+    assert fac.geocode_date is None
 
 
 def test_geo_model_geocode_coordinates(fac):
-    assert fac.geocode_coordinates == None
+    assert fac.geocode_coordinates is None
     fac.latitude = 41.876212
     fac.longitude = -87.631453
     assert fac.geocode_coordinates == (41.876212, -87.631453)
@@ -70,7 +71,7 @@ def test_geo_model_geocode_addresss(fac):
 
 def test_geo_model_get_address1(fac):
     data = [{"empty": "empty"}]
-    assert fac.get_address1_from_geocode(data) == None
+    assert fac.get_address1_from_geocode(data) is None
 
     data = load_json("address1_test0")
     assert fac.get_address1_from_geocode(data) == "427 S LaSalle St"
