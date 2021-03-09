@@ -978,6 +978,18 @@ def view_organization(request, id):
         "facilities": facilities,
         "fields": [
             {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss),
+                "notify_incomplete": False,
+            },
+            {
+                "name": "name_long",
+                "label": _("Long Name"),
+                "value": data.get("name_long", dismiss),
+                "notify_incomplete": False,
+            },
+            {
                 "name": "website",
                 "type": "url",
                 "notify_incomplete": True,
@@ -1142,6 +1154,18 @@ def view_facility(request, id):
                 "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
             },
             {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss),
+                "notify_incomplete": False,
+            },
+            {
+                "name": "name_long",
+                "label": _("Long Name"),
+                "value": data.get("name_long", dismiss),
+                "notify_incomplete": False,
+            },
+            {
                 "name": "website",
                 "type": "url",
                 "value": data.get("website", dismiss),
@@ -1291,6 +1315,11 @@ def view_exchange(request, id):
                 "value": org.get("name", dismiss),
                 "type": "entity_link",
                 "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+            },
+            {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss),
             },
             {
                 "name": "name_long",
@@ -1564,6 +1593,12 @@ def view_network(request, id):
                 "label": _("Also Known As"),
                 "notify_incomplete": False,
                 "value": network_d.get("aka", dismiss),
+            },
+            {
+                "name": "name_long",
+                "label": _("Long Name"),
+                "notify_incomplete": False,
+                "value": network_d.get("name_long", dismiss),
             },
             {
                 "name": "website",
