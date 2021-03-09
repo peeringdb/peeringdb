@@ -11,40 +11,59 @@ These API key are tied to a individual user account and can be created from the 
 **One thing to note** is that the full api key string is only ever exposed to the user or organization at its moment of creation. If this string is lost, then the user or organization should revoke that key and create and permission a new one.
 
 ## Commandline example using Python and Requests
-API keys allow developers to interact with their PeeringDB account programmatically, rather than through the website. Here is an example script in Python. It uses the module Requests to GET data about a particular Facility, and then send a PUT request to modify that data. Note that the API key is sent in the "Authorization" header, and is preceded by the text "Api-Key ".
+API keys allow developers to interact with their PeeringDB account programmatically, rather than through the website. Here is an example script in Python. It uses the module Requests to GET data about a particular Facility, and then sends a PUT request to modify that data.
 
+This example assumes we have an environment variable set with our API Key. To do that from the commandline, we can run:
 ```
+export API_KEY="[created api key string]"
+```
+
+
+Then the Python script would look like the following. First we get the API key from the environment:
+```
+import os
+
 import requests
 
-API_KEY = "sample_api_key_xxxx"
-URL = "https://peeringdb.com/api/fac/1"
-
-# We set the headers to include our API key as authorization
-headers = {"HTTP_AUTHORIZATION": "Api-Key " + key}
-
-# We get data about example Facility number 1
-response = response.get(URL, headers=headers)
-data = response.json()
-
-# We can print the data to inspect it, and decide what fields we want to change
-print(data)
-
-# Let's say we decide to change the name of this facility. We overwrite the value for key "name"
-data["name"] = "Newly decided name"
-
-# And then use a PUT request to send that modified data back to PeeringDB. 
-# Note that this time, we must provide data to the API, using the keyword argument "data"
-put_response = response.put(URL, headers=headers, data=data)
-
-# We can print the status code to see if our request was successful.
-print(put_response.status_code)
-
-# Additionally the content of the request should include data for the now modified Facility
-print(put_response.content)
+API_KEY = os.environ.get("API_KEY")
+```
+We set the url for the Facility we want to interact with. Note the `/api` in the URL, which signals we are making calls to the REST API. 
+```
+URL = "http://localhost:8000/api/fac/10003"
 ```
 
+We set the headers to include our API key as authorization. Printing the `headers` variable should allow us to see the API key.
+```
+headers = {"AUTHORIZATION": "Api-Key " + API_KEY}
+print(headers)
+```
 
-Another note: it's best practice *not* to write your API key into your code, but rather keep API keys in separate configuration files that you then load into your script.
+First we make a GET request, to simply get data about example Facility number 10003
+```
+response = requests.get(URL, headers=headers)
+data = response.json()["data"][0]
+print(data)
+```
+Printing this data allows us to see what fields we would like to change. Let's say we decide to change the name of this facility. We overwrite the value for key "name"
+```
+data["name"] = "Newly decided name"
+```
+Then we use a PUT request to send that modified data back to PeeringDB.
+Note that this time, we must provide data to the API, using the keyword argument "data"
+```
+put_response = requests.put(URL, headers=headers, data=data)
+```
+We can print the status code to see if our request was successful.
+```
+print(put_response.status_code)
+```
+This will return a code 200 to signal success.
+
+Additionally the content of the request should include data for the now modified Facility
+```
+print(put_response.json())
+```
+Would return a dictionary of the values of the now modified Facility.
 
 ## Commandline example using Curl
 
