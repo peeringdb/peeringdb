@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("peeringdb_server", "0063_populate_last_update_fields"),
+        ("peeringdb_server", "0067_add_email_to_org_key"),
     ]
 
     operations = [
