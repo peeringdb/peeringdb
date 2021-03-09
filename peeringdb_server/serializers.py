@@ -1949,7 +1949,9 @@ class NetworkSerializer(ModelSerializer):
     )
 
     suggest = serializers.BooleanField(required=False, write_only=True)
-    validators = [AsnRdapValidator(),]
+    validators = [
+        AsnRdapValidator(),
+    ]
 
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
