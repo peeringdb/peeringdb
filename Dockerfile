@@ -1,3 +1,6 @@
+# RUN true is used here to separate problematic COPY statements, 
+# per this issue: https://github.com/moby/moby/issues/37965
+
 FROM python:3.9-alpine as base
 
 ARG virtual_env=/srv/www.peeringdb.com/venv
@@ -53,7 +56,9 @@ COPY in.whoisd .
 COPY Ctl/VERSION etc
 COPY docs/ docs
 COPY mainsite/ mainsite
+RUN true
 COPY $ADD_SETTINGS_FILE mainsite/settings/
+RUN true
 COPY peeringdb_server/ peeringdb_server
 COPY fixtures/ fixtures
 COPY .coveragerc .coveragerc
@@ -64,6 +69,7 @@ COPY Ctl/docker/entrypoint.sh /
 
 # inetd for whois
 COPY --from=builder /usr/sbin/inetd /usr/sbin/
+RUN true
 COPY Ctl/docker/inetd.conf /etc/
 
 RUN chown -R pdb:pdb api-cache locale media var/log coverage
@@ -74,6 +80,7 @@ FROM final as tester
 WORKDIR /srv/www.peeringdb.com
 # copy from builder in case we're testing new deps
 COPY --from=builder /srv/www.peeringdb.com/Pipfile* ./
+RUN true
 COPY tests/ tests
 RUN chown -R pdb:pdb tests/
 COPY Ctl/docker/entrypoint.sh .
@@ -92,6 +99,7 @@ CMD ["runserver", "$RUNSERVER_BIND"]
 FROM final
 
 COPY Ctl/docker/entrypoint.sh .
+RUN true
 COPY Ctl/docker/django-uwsgi.ini etc/
 
 ENV UWSGI_SOCKET="127.0.0.1:7002"
