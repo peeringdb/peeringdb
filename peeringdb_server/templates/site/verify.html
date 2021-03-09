@@ -34,6 +34,9 @@
       {% include "site/profile-change-password.html" %}
       {% endif %}
 
+      <!-- API Keys -->
+      {% include "site/profile-api-keys.html" %}
+
     </div>
   </div>
 
@@ -41,6 +44,7 @@
 </div>
 
 <script language="javascript" type="text/javascript">
+
 $('#form-update-account').each(function(idx) {
   $(this).on("action-success:submit", function(ev, data) {
     window.document.location.href = "/verify";

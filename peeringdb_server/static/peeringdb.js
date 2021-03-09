@@ -154,7 +154,88 @@ PeeringDB = {
     return value
   },
 
+  // if an api response includes a "geovalidation warning"
+  // field in its metadata, display that warning
 
+   add_geo_warning : function(meta, endpoint) {
+    $('.geovalidation-warning').each(function(){
+      let popin = $(this);
+      let warning = meta.geovalidation_warning;
+      if (endpoint == popin.data("edit-geotag")){
+        popin.text(warning);
+        popin.removeClass("hidden").show();
+
+      }
+    })
+   },
+
+   // if an api response includes a "geo"
+   add_suggested_address : function(request, endpoint) {
+
+    let popin = $('.suggested-address').filter(function() {
+      return $(this).data("edit-geotag") == endpoint
+    });
+    if (popin === null){
+      return
+    }
+
+    // Fill in text to each field
+    let suggested_address = request.meta.suggested_address;
+    let address_fields = popin.find('div, span').filter(function(){
+      return $(this).data("edit-field")
+    })
+    address_fields.each(function(){
+      let elem = $(this);
+      let field = elem.data("edit-field");
+      let value = suggested_address[field];
+      if (value){
+        if (field === "city" || field === "state"){
+          value += ",";
+        }
+        elem.text(value);
+      }
+
+    })
+
+    // Initialize the Submit button
+    let button = popin.find("a.btn.suggestion-accept");
+    PeeringDB.init_accept_suggestion(button, request, endpoint);
+
+    // Show the popin
+    popin.removeClass("hidden").show();
+   },
+
+  // initializes the "Accept suggestion" button
+
+  init_accept_suggestion : function(button, response, endpoint){
+
+    let payload = response.data[0];
+    // Overwrite returned instance with the suggested data
+    Object.assign(payload, response.meta.suggested_address);
+
+    // No need to have latitude or longitude
+    // in the payload since it will get
+    // geocoded again
+
+    delete payload.latitude;
+    delete payload.longitude;
+
+
+    // Set up PUT request on click
+    button.click(function(event){
+      $("#view").editable("loading-shim", "show");
+      PeeringDB.API.request(
+        "PUT",
+        endpoint,
+        payload.id,
+        payload,
+        function(){
+          PeeringDB.refresh()
+        }
+      )
+    });
+
+  },
   // searches the page for all editable forms that
   // have data-check-incomplete attribute set and
   // displays a notification if any of the fields
@@ -302,15 +383,19 @@ PeeringDB.ViewTools = {
   },
 
   update_geocode: function(data){
-    const geo_field = $("#geocode");
-    if (data.latitude && data.longitude) {
+    const geo_field = $("#geocode_active");
+    if (data.latitude && data.longitude){
       let link = `https://maps.google.com/?q=${data.latitude},${data.longitude}`
       let contents = `<a href="${link}">${data.latitude}, ${data.longitude}</a>`
       geo_field.empty().append(contents);
+      $("#geocode_inactive").addClass("hidden").hide();
+    } else if (data.latitude === null && data.longitude === null) {
+      $("#geocode_active").empty();
+      $("#geocode_inactive").removeClass("hidden").show();
     }
-    
   }
 }
+
 
 PeeringDB.ViewActions = {
 
@@ -426,7 +511,7 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       $.ajax({
         method: "POST",
         url: path
-      }).done(PeeringDB.refresh);
+      }).done(PeerignDB.refresh);
     },
 
     /**
@@ -1210,6 +1295,125 @@ PeeringDB.API = {
 }
 
 /**
+ * editable key management endpoint
+ */
+
+twentyc.editable.action.register(
+  "revoke-org-key",
+  {
+    execute:  function(trigger, container) {
+
+    }
+  }
+)
+
+twentyc.editable.module.register(
+  "key_perm_listing",
+  {
+    loading_shim : true,
+    PERM_UPDATE : 0x02,
+    PERM_CREATE : 0x04,
+    PERM_DELETE : 0x08,
+
+    init : function() {
+      this.listing_init();
+      this.container.on("listing:row-add", function(e, rowId, row, data, me) {
+        row.editable("payload", {
+          key_prefix : data.key_prefix,
+          org_id : data.org_id
+        })
+      });
+    },
+
+    org_id : function() {
+      return this.container.data("edit-id");
+    },
+    key_prefix : function() {
+      return this.container.data("edit-key-prefix");
+    },
+    prepare_data : function(extra) {
+      var perms = 0;
+      if(this.target.data.perm_u)
+        perms |= this.PERM_UPDATE;
+      if(this.target.data.perm_c)
+        perms |= this.PERM_CREATE;
+      if(this.target.data.perm_d)
+        perms |= this.PERM_DELETE;
+      this.target.data.perms = perms;
+      if(extra)
+        $.extend(this.target.data, extra);
+    },
+
+    add : function(rowId, trigger, container, data) {
+
+      var i, labels = twentyc.data.get("key_permissions");
+
+      for(i=0; i<labels.length; i++) {
+        if(labels[i].id == data.entity) {
+          data.entity = labels[i].name;
+          break;
+        }
+      }
+
+      data.perm_u = ((data.perms & this.PERM_UPDATE) == this.PERM_UPDATE)
+      data.perm_c = ((data.perms & this.PERM_CREATE) == this.PERM_CREATE)
+      data.perm_d = ((data.perms & this.PERM_DELETE) == this.PERM_DELETE)
+
+      var row = this.listing_add(rowId, trigger, container, data);
+    },
+
+    execute_add : function(trigger, container) {
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      console.log(data)
+      this.prepare_data();
+      this.target.execute("update", this.components.add, function(response) {
+        this.add(data.entity, trigger, container, data);
+      }.bind(this));
+    },
+
+    execute_remove : function(trigger, container) {
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      var row = this.row(trigger);
+      this.prepare_data({perms:0, entity:row.data("edit-id")});
+      this.target.execute("remove", trigger, function(response) {
+        this.listing_execute_remove(trigger, container);
+      }.bind(this));
+    },
+
+    submit : function(rowId, data, row, trigger, container) {
+      this.target.data = data;
+      this.prepare_data({entity:rowId});
+      this.target.execute("update", row, function() {
+        this.listing_submit(rowId, data, row, trigger, container);
+      }.bind(this));
+    },
+
+    load : function(keyPrefix) {
+      var me = this; target = this.get_target();
+      if(!keyPrefix) {
+        me.clear();
+        return;
+      }
+      this.container.data("edit-key-prefix", keyPrefix);
+      target.data = {"key_prefix":keyPrefix, "org_id":this.org_id()}
+      target.execute(null, null, function(data) {
+        me.clear();
+        for(k in data.user_permissions) {
+          var perms = {};
+          perms.perms = data.user_permissions[k];
+          perms.entity = k;
+          me.add(k, null, me.container, perms);
+        };
+      });
+    }
+
+  },
+  "listing"
+);
+
+/**
  * editable uoar management endpoint
  */
 
@@ -1305,9 +1509,9 @@ twentyc.editable.module.register(
       target.data= {"user_id":userId, "org_id":this.org_id()}
       target.execute(null, null, function(data) {
         me.clear();
-        for(k in data.user_permissions) {
+        for(k in data.key_perms) {
           var perms = {};
-          perms.perms = data.user_permissions[k];
+          perms.perms = data.key_perms[k];
           perms.entity = k;
           me.add(k, null, me.container, perms);
         };
@@ -1317,6 +1521,7 @@ twentyc.editable.module.register(
   },
   "listing"
 );
+
 
 twentyc.editable.module.register(
   "user_listing",
@@ -1349,6 +1554,100 @@ twentyc.editable.module.register(
       }.bind(this));
     },
 
+
+  },
+  "listing"
+);
+
+
+twentyc.editable.module.register(
+  "key_listing",
+  {
+    loading_shim : true,
+    org_id : function() {
+      return this.container.data("edit-id");
+    },
+
+    api_key_popin : function(key) {
+      const message = gettext("Your API key was successfully created. "
+                  + "Write this key down some place safe. "
+                  + "Keys cannot be recovered once  "
+                  + "this message is exited or overwritten.");
+
+      const buttonText = gettext("I have written down my key")
+
+      var panel = $('<div>').addClass("alert alert-success marg-top-15").
+        append($('<div>').text(message)).
+        append($('<div>').addClass("center marg-top-15").text(key))
+
+      this.container.find("#api-key-popin-frame").empty().append(panel)
+    },
+
+    remove : function(id, row, trigger, container) {
+      var b = PeeringDB.confirm(gettext("Remove") + " " +row.data("edit-label"), "remove");  ///
+      var me = this;
+      $(this.target).on("success", function(ev, data) {
+        if(b)
+          me.listing_remove(id, row, trigger, container);
+      });
+      if(b) {
+        this.target.data = { prefix : id, org_id : this.org_id() };
+        this.target.execute("delete");
+      } else {
+        $(this.target).trigger("success", [gettext("Canceled")]);  ///
+      }
+    },
+
+    execute_add : function(trigger, container) {
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      this.target.execute("add", this.components.add, function(response) {
+        if(response.readonly)
+          response.name = response.name + " (read-only)";
+        var row = this.add(data.entity, trigger, container, response);
+        console.log(data)
+        console.log(row)
+        this.api_key_popin(response.key)
+      }.bind(this));
+    },
+
+    add : function(rowId, trigger, container, data) {
+      var row = this.listing_add(data.prefix, trigger, container, data);
+      row.attr("data-edit-label", data.prefix + " - " + data.name)
+      row.data("edit-label", data.prefix + " - " + data.name)
+      var update_key_form = row.find(".update-key")
+      update_key_form.find(".popin, .loading-shim").detach()
+      update_key_form.editable()
+      return row
+    },
+
+    execute_update : function(trigger, container) {
+      var row = this.row(trigger);
+      row.editable("export", this.target.data);
+      var data = this.target.data;
+      var id = data.prefix = row.data("edit-id")
+      console.log(this.target, row)
+      this.target.execute("update", trigger, function(response) {
+      }.bind(this));
+    },
+
+    execute_revoke : function(trigger, container) {
+
+      var row = this.row(trigger);
+      var b = PeeringDB.confirm(gettext("Revoke key") + " " +row.data("edit-label"), "remove");
+
+      if(!b) {
+        container.editable("loading-shim", "hide")
+        return
+      }
+
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      var id = data.prefix = row.data("edit-id")
+      this.target.execute("revoke", trigger, function(response) {
+        this.listing_remove(id, row, trigger, container);
+      }.bind(this));
+    }
 
   },
   "listing"
@@ -1566,7 +1865,13 @@ twentyc.editable.target.register(
           else
             me.trigger("success", {});
         }
-      ).fail(function(r) {
+      ).done(function(r) {
+        if (r.meta && r.meta.geovalidation_warning){
+          PeeringDB.add_geo_warning(r.meta, endpoint);
+        } else if (r.meta && r.meta.suggested_address){
+          PeeringDB.add_suggested_address(r, endpoint);
+        }
+      }).fail(function(r) {
         if(r.status == 400) {
           var k,i,info=[gettext("The server rejected your data")]; ///
           for(k in r.responseJSON) {

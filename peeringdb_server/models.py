@@ -36,12 +36,14 @@ from django_inet.models import ASNField
 
 from django_grainy.decorators import grainy_model
 import django_grainy.decorators
+from django_grainy.models import Permission, PermissionManager
 
 from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
 from passlib.hash import sha256_crypt
+from rest_framework_api_key.models import AbstractAPIKey
 
-from peeringdb_server.util import check_permissions
+from django_grainy.util import check_permissions
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.validators import (
     validate_address_space,
@@ -95,9 +97,9 @@ def make_relation_filter(field, filt, value, prefix=None):
     return filt
 
 
-def validate_PUT_ownership(user, instance, data, fields):
+def validate_PUT_ownership(permission_holder, instance, data, fields):
     """
-    Helper function that checks if a user has write perms to
+    Helper function that checks if a user or api key has write perms to
     the instance provided as well as write perms to any
     child instances specified by fields as they exist on
     the model and in data
@@ -123,7 +125,7 @@ def validate_PUT_ownership(user, instance, data, fields):
     if any fail the permission check False is returned.
     """
 
-    if not check_permissions(user, instance, "u"):
+    if not check_permissions(permission_holder, instance, "u"):
         return False
 
     for fld in fields:
@@ -142,7 +144,7 @@ def validate_PUT_ownership(user, instance, data, fields):
         if a.id != s_id:
             try:
                 other = a.__class__.objects.get(id=s_id)
-                if not check_permissions(user, other, "u"):
+                if not check_permissions(permission_holder, other, "u"):
                     return False
             except ValueError:  # if id is not intable
                 return False
@@ -337,20 +339,19 @@ class GeocodeBaseMixin(models.Model):
 
         return f"{street_number} {route}".strip()
 
-    def reverse_geocode(self, gmaps):
-        if (self.latitude is None) or (self.longitude is None):
+    def reverse_geocode(self, gmaps, latlang):
+
+        if latlang is None:
             raise ValidationError(
                 _("Latitude and longitude must be defined for reverse geocode lookup")
             )
-
-        latlang = f"{self.latitude},{self.longitude}"
         try:
             response = gmaps.reverse_geocode(latlang)
         except (
             googlemaps.exceptions.HTTPError,
             googlemaps.exceptions.ApiError,
             googlemaps.exceptions.TransportError,
-        ) as exc:
+        ):
             raise ValidationError(_("Error in reverse geocode: Google Maps API error"))
         except googlemaps.exceptions.Timeout:
             raise ValidationError(
@@ -378,39 +379,55 @@ class GeocodeBaseMixin(models.Model):
         return data
 
     def normalize_api_response(self):
-        # The forward geocode sets the lat,long
+        suggested_address = {}
+
         gmaps = googlemaps.Client(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
 
+        # The forward geocode sets the lat,long
         forward_result = self.geocode(gmaps, save=True)
 
         # Set information from forward geocode
         loc = forward_result[0].get("geometry").get("location")
         self.latitude = loc.get("lat")
         self.longitude = loc.get("lng")
+        if (self.latitude is None) or (self.longitude is None):
+            raise ValidationError(
+                _("Latitude and longitude must be defined for reverse geocode lookup")
+            )
+
+        self.geocode_status = True
+        self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+        self.save()
+
+        suggested_address["latitude"] = self.latitude
+        suggested_address["longitude"] = self.longitude
         address1 = self.get_address1_from_geocode(forward_result)
         if address1 is None:
             raise ValidationError(_("Error in forward geocode: No address returned"))
-        self.address1 = address1
-        self.address2 = ""
+        suggested_address["address1"] = address1
+        suggested_address["address2"] = ""
 
         # The reverse result normalizes some administrative info
         # (city, state, zip) and translates them into English
 
-        reverse_result = self.reverse_geocode(gmaps)
+        latlang = f"{self.latitude},{self.longitude}"
+        reverse_result = self.reverse_geocode(gmaps, latlang)
 
         data = self.parse_reverse_geocode(reverse_result)
         if data.get("locality"):
-            self.city = data["locality"]["long_name"]
+            suggested_address["city"] = data["locality"]["long_name"]
         if data.get("administrative_area_level_1"):
-            self.state = data["administrative_area_level_1"]["long_name"]
+            suggested_address["state"] = data["administrative_area_level_1"][
+                "long_name"
+            ]
         if data.get("postal_code"):
-            self.zipcode = data["postal_code"]["long_name"]
+            suggested_address["zipcode"] = data["postal_code"]["long_name"]
 
         # Set status to True to indicate we've normalized the data
-        self.geocode_status = True
-        self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
-        self.save()
-        return self
+        suggested_address["geocode_status"] = True
+        suggested_address["geocode_date"] = datetime.datetime.now(datetime.timezone.utc)
+
+        return suggested_address
 
 
 class UserOrgAffiliationRequest(models.Model):
@@ -585,6 +602,17 @@ class VerificationQueueItem(models.Model):
         blank=True,
         help_text=_("The item that this queue is attached to was created by this user"),
     )
+    org_key = models.ForeignKey(
+        "peeringdb_server.OrganizationAPIKey",
+        on_delete=models.CASCADE,
+        related_name="vqitems",
+        null=True,
+        blank=True,
+        help_text=_(
+            "The item that this queue is attached to was created by this organization api key"
+        ),
+    )
+
     created = CreatedDateTimeField()
     notified = models.BooleanField(default=False)
 
@@ -664,7 +692,10 @@ class VerificationQueueItem(models.Model):
 class DeskProTicket(models.Model):
     subject = models.CharField(max_length=255)
     body = models.TextField()
-    user = models.ForeignKey("peeringdb_server.User", on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        "peeringdb_server.User", on_delete=models.CASCADE, null=True, blank=True
+    )
+    email = models.EmailField(_("email address"), null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(null=True, blank=True)
 
@@ -971,6 +1002,42 @@ def default_time_e():
     """
     now = datetime.datetime.now()
     return now.replace(hour=23, minute=59, second=59, tzinfo=UTC())
+
+
+class OrganizationAPIKey(AbstractAPIKey):
+    """
+    An API Key managed by an organization.
+    """
+
+    org = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="api_keys",
+    )
+    email = models.EmailField(
+        _("email address"), max_length=254, null=False, blank=False
+    )
+
+    class Meta(AbstractAPIKey.Meta):
+        verbose_name = "Organization API key"
+        verbose_name_plural = "Organization API keys"
+        db_table = "peeringdb_org_api_key"
+
+
+class OrganizationAPIPermission(Permission):
+    """
+    Describes permission for a OrganizationAPIKey
+    """
+
+    class Meta:
+        verbose_name = _("Organization API key Permission")
+        verbose_name_plural = _("Organization API key Permission")
+        base_manager_name = "objects"
+
+    org_api_key = models.ForeignKey(
+        OrganizationAPIKey, related_name="grainy_permissions", on_delete=models.CASCADE
+    )
+    objects = PermissionManager()
 
 
 class Sponsorship(models.Model):
@@ -1824,14 +1891,14 @@ class IXLan(pdb_models.IXLanBase):
         db_table = "peeringdb_ixlan"
 
     @classmethod
-    def api_cache_permissions_applicator(cls, row, ns, user):
+    def api_cache_permissions_applicator(cls, row, ns, permission_holder):
 
         """
         Applies permissions to a row in an api-cache result
         set for ixlan.
 
         This will strip `ixf_ixp_member_list_url` fields for
-        users that don't have read permissions for them according
+        users / api keys that don't have read permissions for them according
         to `ixf_ixp_member_list_url_visible`
 
         Argument(s):
@@ -1839,15 +1906,15 @@ class IXLan(pdb_models.IXLanBase):
         - row (dict): ixlan row from api-cache result
         - ns (str): ixlan namespace as determined during api-cache
           result rendering
-        - user (User)
+        - permission_holder (User or API Key)
         """
 
         visible = row.get("ixf_ixp_member_list_url_visible").lower()
-        if not user and visible == "public":
+        if not permission_holder and visible == "public":
             return
         namespace = f"{ns}.ixf_ixp_member_list_url.{visible}"
 
-        if not check_permissions(user, namespace, "r", explicit=True):
+        if not check_permissions(permission_holder, namespace, "r", explicit=True):
             try:
                 del row["ixf_ixp_member_list_url"]
             except KeyError:
@@ -3167,7 +3234,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
           if this is True
         """
 
-        if user:
+        if user and user.is_authenticated:
             reversion.set_user(user)
 
         if comment:
@@ -4516,6 +4583,31 @@ class User(AbstractBaseUser, PermissionsMixin):
             if email.lower() == self.email.lower():
                 return True
         return False
+
+
+class UserAPIKey(AbstractAPIKey):
+    """
+    An API Key managed by a user. Can be readonly or can take on the
+    permissions of the User.
+    """
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="api_keys",
+    )
+
+    readonly = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Determines if API Key inherits the User Permissions or is readonly."
+        ),
+    )
+
+    class Meta(AbstractAPIKey.Meta):
+        verbose_name = "User API key"
+        verbose_name_plural = "User API keys"
+        db_table = "peeringdb_user_api_key"
 
 
 def password_reset_token():

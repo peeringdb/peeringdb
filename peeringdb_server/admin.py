@@ -18,6 +18,7 @@ from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth.admin import UserAdmin
 from django.db.utils import OperationalError
+from django.forms import DecimalField
 from django.http import HttpResponseForbidden
 from django import forms as baseForms
 from django.utils import html
@@ -37,7 +38,6 @@ from django_grainy.admin import (
     GrainyUserAdmin,
     GrainyGroupAdmin,
 )
-
 
 import reversion
 from reversion.admin import VersionAdmin
@@ -78,13 +78,20 @@ from peeringdb_server.models import (
     IXFImportEmail,
     EnvironmentSetting,
     ProtectedAction,
+    OrganizationAPIKey,
+    UserAPIKey,
 )
+
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException, rdap_pretty_error_message
+from rest_framework_api_key.admin import APIKeyModelAdmin
+from rest_framework_api_key.models import APIKey
+from peeringdb_server.util import round_decimal
 
 delete_selected.short_description = "HARD DELETE - Proceed with caution"
 
 from django.utils.translation import ugettext_lazy as _
+
 
 # these app labels control permissions for the views
 # currently exposed in admin
@@ -384,6 +391,9 @@ class SoftDeleteAdmin(
     def grainy_namespace(self, obj):
         return obj.grainy_namespace
 
+    def grainy_namespace(self, obj):
+        return obj.grainy_namespace
+
 
 class ModelAdminWithVQCtrl:
     """
@@ -575,6 +585,7 @@ class InternetExchangeAdminForm(StatusForm):
 class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     list_display = (
         "name",
+        "aka",
         "name_long",
         "city",
         "country",
@@ -854,17 +865,30 @@ class PartnershipAdmin(admin.ModelAdmin):
         return _("Active")
 
 
+class RoundingDecimalFormField(DecimalField):
+    def to_python(self, value):
+        value = super(RoundingDecimalFormField, self).to_python(value)
+        return round_decimal(value, self.decimal_places)
+
+
+class OrganizationAdminForm(StatusForm):
+    latitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
+    longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
+
+
 class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     list_display = ("handle", "name", "status", "created", "updated")
     ordering = ("-created",)
     search_fields = ("name",)
     list_filter = (StatusFilter,)
     readonly_fields = ("id", "grainy_namespace")
-    form = StatusForm
+    form = OrganizationAdminForm
 
     fields = [
         "status",
         "name",
+        "aka",
+        "name_long",
         "address1",
         "address2",
         "city",
@@ -976,6 +1000,9 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
 
 
 class FacilityAdminForm(StatusForm):
+    latitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
+    longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         fk_handleref_filter(self, "org")
@@ -1002,6 +1029,8 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     fields = [
         "status",
         "name",
+        "aka",
+        "name_long",
         "address1",
         "address2",
         "city",
@@ -1045,7 +1074,7 @@ class NetworkAdminForm(StatusForm):
 
 
 class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-    list_display = ("name", "asn", "aka", "status", "created", "updated")
+    list_display = ("name", "asn", "aka", "name_long", "status", "created", "updated")
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name", "asn")
@@ -1945,6 +1974,16 @@ class EnvironmentSettingAdmin(admin.ModelAdmin):
         return obj.set_value(form.cleaned_data["value"])
 
 
+class OrganizationAPIKeyAdmin(APIKeyModelAdmin):
+    list_display = ["org", "prefix", "name", "created", "revoked"]
+    search_fields = ("prefix", "org__name")
+
+
+class UserAPIKeyAdmin(APIKeyModelAdmin):
+    list_display = ["user", "prefix", "name", "readonly", "created", "revoked"]
+    search_fields = ("prefix", "user__username", "user__email")
+
+
 # Commented out via issue #860
 # admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
@@ -1969,3 +2008,6 @@ admin.site.register(CommandLineTool, CommandLineToolAdmin)
 admin.site.register(UserOrgAffiliationRequest, UserOrgAffiliationRequestAdmin)
 admin.site.register(DeskProTicket, DeskProTicketAdmin)
 admin.site.register(IXFImportEmail, IXFImportEmailAdmin)
+admin.site.unregister(APIKey)
+admin.site.register(OrganizationAPIKey, OrganizationAPIKeyAdmin)
+admin.site.register(UserAPIKey, UserAPIKeyAdmin)

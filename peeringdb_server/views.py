@@ -43,6 +43,7 @@ from peeringdb_server.util import check_permissions, PERM_CRUD, APIPermissionsAp
 from peeringdb_server.search import search
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.org_admin_views import load_all_user_permissions
+from peeringdb_server.api_key_views import load_all_key_permissions
 from peeringdb_server.data_views import BOOL_CHOICE
 from peeringdb_server.models import (
     UserOrgAffiliationRequest,
@@ -415,7 +416,7 @@ def view_affiliate_to_org(request):
             )
 
         except RdapException as exc:
-            ticket_queue_rdap_error(request.user, asn, exc)
+            ticket_queue_rdap_error(request, asn, exc)
             return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
 
         except MultipleObjectsReturned:
@@ -973,6 +974,18 @@ def view_organization(request, id):
         "facilities": facilities,
         "fields": [
             {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss),
+                "notify_incomplete": False,
+            },
+            {
+                "name": "name_long",
+                "label": _("Long Name"),
+                "value": data.get("name_long", dismiss),
+                "notify_incomplete": False,
+            },
+            {
                 "name": "website",
                 "type": "url",
                 "notify_incomplete": True,
@@ -1063,6 +1076,10 @@ def view_organization(request, id):
     if perms.get("can_manage") and org.pending_affiliations.count() > 0:
         tab_init = {"users": "active"}
 
+    keys = [
+        {"prefix": key.prefix, "hashed_key": key.hashed_key, "name": key.name}
+        for key in org.api_keys.filter(revoked=False).all()
+    ]
     data["phone_help_text"] = field_help(NetworkContact, "phone")
 
     return view_component(
@@ -1073,8 +1090,10 @@ def view_organization(request, id):
         tab_init=tab_init,
         users=users,
         user_perms=load_all_user_permissions(org),
+        key_perms=load_all_key_permissions(org),
         instance=org,
         perms=perms,
+        keys=keys,
     )
 
 
@@ -1130,6 +1149,18 @@ def view_facility(request, id):
                 "value": org.get("name", dismiss),
                 "type": "entity_link",
                 "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+            },
+            {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss),
+                "notify_incomplete": False,
+            },
+            {
+                "name": "name_long",
+                "label": _("Long Name"),
+                "value": data.get("name_long", dismiss),
+                "notify_incomplete": False,
             },
             {
                 "name": "website",
@@ -1286,6 +1317,11 @@ def view_exchange(request, id):
                 "value": org.get("name", dismiss),
                 "type": "entity_link",
                 "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+            },
+            {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss),
             },
             {
                 "name": "name_long",
@@ -1563,6 +1599,12 @@ def view_network(request, id):
                 "label": _("Also Known As"),
                 "notify_incomplete": False,
                 "value": network_d.get("aka", dismiss),
+            },
+            {
+                "name": "name_long",
+                "label": _("Long Name"),
+                "notify_incomplete": False,
+                "value": network_d.get("name_long", dismiss),
             },
             {
                 "name": "website",

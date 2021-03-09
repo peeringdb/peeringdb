@@ -1,8 +1,16 @@
+from decimal import Decimal
+
 from grainy.const import *
 from grainy.core import NamespaceKeyApplicator
 from django.conf import settings
 from django_grainy.const import *
 from django_grainy.util import get_permissions, check_permissions, Permissions
+
+
+def round_decimal(value, places):
+    if value is not None:
+        return value.quantize(Decimal(10) ** -places)
+    return value
 
 
 class APIPermissionsApplicator(NamespaceKeyApplicator):

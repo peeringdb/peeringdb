@@ -1,30 +1,35 @@
 import ipaddress
 import re
-import reversion
 
-from django_inet.rest import IPAddressField, IPPrefixField
-from django.core.validators import URLValidator
-from django.db.models.query import QuerySet
-from django.db.models import Prefetch, Q, Sum, IntegerField, Case, When
-from django.db import models, transaction, IntegrityError
-from django.db.models.fields.related import (
-    ReverseManyToOneDescriptor,
-    ForwardManyToOneDescriptor,
-)
-from django.http import JsonResponse
+import reversion
+from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldError, ValidationError
-from rest_framework import serializers, validators
-from rest_framework.exceptions import ValidationError as RestValidationError
+from django.core.validators import URLValidator
+from django.db import IntegrityError, models, transaction
+from django.db.models import Case, IntegerField, Prefetch, Q, Sum, When
+from django.db.models.fields.related import (
+    ForwardManyToOneDescriptor,
+    ReverseManyToOneDescriptor,
+)
+from django.db.models.query import QuerySet
+from django.http import JsonResponse
+from django.utils.translation import ugettext_lazy as _
+from django_grainy.rest import PermissionDenied
 
 # from drf_toolbox import serializers
 from django_handleref.rest.serializers import HandleRefSerializer
-from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
+from django_inet.rest import IPAddressField, IPPrefixField
 from django_peeringdb.models.abstract import AddressModel
+from rest_framework import serializers, validators
+from rest_framework.exceptions import ValidationError as RestValidationError
 
-from django_grainy.rest import PermissionDenied
-
-from peeringdb_server.util import check_permissions, Permissions
+from peeringdb_server.permissions import (
+    check_permissions_from_request,
+    get_org_key_from_request,
+    validate_rdap_user_or_key,
+    get_user_from_request,
+)
 from peeringdb_server.inet import (
     RdapLookup,
     RdapNotFoundError,
@@ -50,6 +55,7 @@ from peeringdb_server.models import (
     NetworkFacility,
     NetworkIXLan,
     Organization,
+    OrganizationAPIKey,
 )
 from peeringdb_server.validators import (
     validate_address_space,
@@ -60,8 +66,6 @@ from peeringdb_server.validators import (
     validate_irr_as_set,
     validate_zipcode,
 )
-
-from django.utils.translation import ugettext_lazy as _
 
 
 # exclude certain query filters that would otherwise
@@ -165,6 +169,52 @@ class GeocodeSerializerMixin(object):
 
         return False
 
+    def _add_meta_information(self, metadata):
+        """
+        Adds a dictionary of metadata to the "meta" field of the API
+        request, so that it ends up in the API response.
+        """
+        if "request" in self.context:
+            request = self.context["request"]
+            if not hasattr(request, "meta_response"):
+                request.meta_response = {}
+            request.meta_response.update(metadata)
+            return True
+
+        return False
+
+    def handle_geo_error(self, exc, instance):
+        """
+        Issue #939 In the event that there is an error in geovalidating
+        the address(including address not found), we return a warning in
+        the "meta" field of the response and null the latitude and
+        longitude on the instance.
+        """
+        self._add_meta_information(
+            {
+                "geovalidation_warning": self.GEO_ERROR_MESSAGE,
+            }
+        )
+        print(exc.message)
+        instance.latitude = None
+        instance.longitude = None
+        instance.save()
+
+    def needs_address_suggestion(self, suggested_address, instance):
+        """
+        Issue #940: If the geovalidated address meaningfully differs
+        from the address the user provided, we return True to signal
+        a address suggestion should be provided to the user.
+        """
+
+        for key in ["address1", "city", "state", "zipcode"]:
+            suggested_val = suggested_address.get(key, None)
+            instance_val = getattr(instance, key, None)
+            if instance_val != suggested_val:
+                return True
+
+        return False
+
     def update(self, instance, validated_data):
         """
         When updating a geo-enabled object,
@@ -184,15 +234,21 @@ class GeocodeSerializerMixin(object):
         if need_geosync:
             print("Normalizing geofields")
             try:
-                instance.normalize_api_response()
+                suggested_address = instance.normalize_api_response()
+                print(suggested_address)
+
+                if self.needs_address_suggestion(suggested_address, instance):
+                    self._add_meta_information(
+                        {
+                            "suggested_address": suggested_address,
+                        }
+                    )
 
             # Reraise the model validation error
             # as a serializer validation error
             except ValidationError as exc:
-                print(exc.message)
-                raise serializers.ValidationError(
-                    {"non_field_errors": [self.GEO_ERROR_MESSAGE]}
-                )
+                self.handle_geo_error(exc, instance)
+
         return instance
 
     def create(self, validated_data):
@@ -207,15 +263,19 @@ class GeocodeSerializerMixin(object):
 
         if self._geosync_information_present(instance, validated_data):
             try:
-                instance.normalize_api_response()
+                suggested_address = instance.normalize_api_response()
+
+                if self.needs_address_suggestion(suggested_address, instance):
+                    self._add_meta_information(
+                        {
+                            "suggested_address": suggested_address,
+                        }
+                    )
 
             # Reraise the model validation error
             # as a serializer validation error
             except ValidationError as exc:
-                print(exc.message)
-                raise serializers.ValidationError(
-                    {"non_field_errors": [self.GEO_ERROR_MESSAGE]}
-                )
+                self.handle_geo_error(exc, instance)
         return instance
 
 
@@ -409,7 +469,7 @@ class AsnRdapValidator:
             emails = rdap.emails
             self.request.rdap_result = rdap
         except RdapException as exc:
-            self.request.rdap_error = (self.request.user, asn, exc)
+            self.request.rdap_error = (asn, exc)
             raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
 
     def set_context(self, serializer):
@@ -500,6 +560,8 @@ class AddressSerializer(serializers.ModelSerializer):
             "zipcode",
             "floor",
             "suite",
+            "latitude",
+            "longitude",
         ]
 
 
@@ -940,7 +1002,8 @@ class ModelSerializer(serializers.ModelSerializer):
 
         namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
         request = self.context.get("request")
-        if request and not check_permissions(request.user, namespace, "u"):
+
+        if request and not check_permissions_from_request(request, namespace, "u"):
             raise PermissionDenied(
                 f"User does not have write permissions to '{namespace}'"
             )
@@ -961,8 +1024,8 @@ class ModelSerializer(serializers.ModelSerializer):
             del validated_data["suggest"]
 
         self.validate_create(validated_data)
-
         grainy_kwargs = {"id": "*"}
+
         grainy_kwargs.update(**validated_data)
 
         request = self.context.get("request")
@@ -972,7 +1035,7 @@ class ModelSerializer(serializers.ModelSerializer):
         else:
             namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
 
-        if request and not check_permissions(request.user, namespace, "c"):
+        if request and not check_permissions_from_request(request, namespace, "c"):
             raise PermissionDenied(
                 f"User does not have write permissions to '{namespace}'"
             )
@@ -1125,14 +1188,25 @@ class ModelSerializer(serializers.ModelSerializer):
             instance.status = "ok"
             instance.save()
 
-        if instance.status == "pending":
-            if self._context["request"]:
-                vq = VerificationQueueItem.objects.filter(
-                    content_type=ContentType.objects.get_for_model(type(instance)),
-                    object_id=instance.id,
-                ).first()
-                if vq:
-                    vq.user = self._context["request"].user
+        request = self._context["request"]
+
+        if instance.status == "pending" and request:
+            vq = VerificationQueueItem.objects.filter(
+                content_type=ContentType.objects.get_for_model(type(instance)),
+                object_id=instance.id,
+            ).first()
+            if vq:
+                # This will save the user field if user credentials
+                # or if a user api key are used
+                user = get_user_from_request(request)
+                org_key = get_org_key_from_request(request)
+                if user:
+                    vq.user = user
+                    vq.save()
+
+                # This will save the org api key if provided
+                elif org_key:
+                    vq.org_key = org_key
                     vq.save()
 
     def finalize_create(self, request):
@@ -1228,9 +1302,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
     net_count = serializers.SerializerMethodField()
 
-    latitude = serializers.FloatField(read_only=True)
-    longitude = serializers.FloatField(read_only=True)
-
     suggest = serializers.BooleanField(required=False, write_only=True)
 
     website = serializers.URLField()
@@ -1241,7 +1312,8 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
     sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
 
-    validators = [FieldMethodValidator("suggest", ["POST"])]
+    latitude = serializers.FloatField(read_only=True)
+    longitude = serializers.FloatField(read_only=True)
 
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
@@ -1260,14 +1332,14 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                 "org_name",
                 "org",
                 "name",
+                "aka",
+                "name_long",
                 "website",
                 "clli",
                 "rencode",
                 "npanxx",
                 "notes",
                 "net_count",
-                "latitude",
-                "longitude",
                 "suggest",
                 "sales_email",
                 "sales_phone",
@@ -1329,7 +1401,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
         # whichever org is specified in `SUGGEST_ENTITY_ORG`
         #
         # this happens here so it is done before the validators run
-        if "suggest" in data:
+        if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
         return super().to_internal_value(data)
 
@@ -1877,7 +1949,9 @@ class NetworkSerializer(ModelSerializer):
     )
 
     suggest = serializers.BooleanField(required=False, write_only=True)
-    validators = [AsnRdapValidator(), FieldMethodValidator("suggest", ["POST"])]
+    validators = [
+        AsnRdapValidator(),
+    ]
 
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
@@ -1890,6 +1964,7 @@ class NetworkSerializer(ModelSerializer):
             "org",
             "name",
             "aka",
+            "name_long",
             "website",
             "asn",
             "looking_glass",
@@ -2000,7 +2075,7 @@ class NetworkSerializer(ModelSerializer):
         # whichever org is specified in `SUGGEST_ENTITY_ORG`
         #
         # this happens here so it is done before the validators run
-        if "suggest" in data:
+        if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
 
         # if an asn exists already but is currently deleted, fail
@@ -2046,11 +2121,12 @@ class NetworkSerializer(ModelSerializer):
                 rdap = RdapLookup().get_asn(asn)
 
         # add network to existing org
-        if rdap and user.validate_rdap_relationship(rdap):
+        if rdap and validate_rdap_user_or_key(request, rdap):
+
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
             net = super().create(validated_data)
-            ticket_queue_asnauto_skipvq(user, validated_data["org"], net, rdap)
+            ticket_queue_asnauto_skipvq(request, validated_data["org"], net, rdap)
             return net
 
         elif self.Meta.model in QUEUE_ENABLED:
@@ -2074,8 +2150,9 @@ class NetworkSerializer(ModelSerializer):
 
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)
+
         if rdap_error:
-            ticket_queue_rdap_error(*rdap_error)
+            ticket_queue_rdap_error(request, *rdap_error)
 
     def validate_irr_as_set(self, value):
         if value:
@@ -2311,7 +2388,7 @@ class InternetExchangeSerializer(ModelSerializer):
 
     net_count = serializers.SerializerMethodField()
 
-    suggest = serializers.BooleanField(required=False, write_only=True)
+    # suggest = serializers.BooleanField(required=False, write_only=True)
 
     ixf_net_count = serializers.IntegerField(read_only=True)
     ixf_last_import = serializers.DateTimeField(read_only=True)
@@ -2339,7 +2416,6 @@ class InternetExchangeSerializer(ModelSerializer):
     )
 
     validators = [
-        FieldMethodValidator("suggest", ["POST"]),
         RequiredForMethodValidator("prefix", ["POST"]),
         SoftRequiredValidator(
             ["policy_email", "tech_email"],
@@ -2354,6 +2430,7 @@ class InternetExchangeSerializer(ModelSerializer):
             "org_id",
             "org",
             "name",
+            "aka",
             "name_long",
             "city",
             "country",
@@ -2371,7 +2448,7 @@ class InternetExchangeSerializer(ModelSerializer):
             "policy_phone",
             "fac_set",
             "ixlan_set",
-            "suggest",
+            # "suggest",
             "prefix",
             "net_count",
             "ixf_net_count",
@@ -2435,16 +2512,19 @@ class InternetExchangeSerializer(ModelSerializer):
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super().validate_create(data)
 
-    def to_internal_value(self, data):
-        # if `suggest` keyword is provided, hard-set the org to
-        # whichever org is specified in `SUGGEST_ENTITY_ORG`
-        #
-        # this happens here so it is done before the validators run
-        if "suggest" in data:
-            data["org_id"] = settings.SUGGEST_ENTITY_ORG
-        return super().to_internal_value(data)
+        # we don't want users to be able to create an internet exchange with an
+        # org that is the "suggested entity org"
+        if data.get("org") and (data.get("org").id == settings.SUGGEST_ENTITY_ORG):
+            raise serializers.ValidationError(
+                {
+                    "org": _(
+                        "User cannot create an internet exchange with"
+                        "its org set as the SUGGEST_ENTITY organization"
+                    )
+                }
+            )
+        return super().validate_create(data)
 
     def to_representation(self, data):
         # When an ix is created we want to add the ixlan_id and ixpfx_id
@@ -2542,6 +2622,9 @@ class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
         source="ix_set_active_prefetched",
     )
 
+    latitude = serializers.FloatField(read_only=True)
+    longitude = serializers.FloatField(read_only=True)
+
     class Meta:  # (AddressSerializer.Meta):
         model = Organization
         depth = 1
@@ -2549,13 +2632,13 @@ class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
             [
                 "id",
                 "name",
+                "aka",
+                "name_long",
                 "website",
                 "notes",
                 "net_set",
                 "fac_set",
                 "ix_set",
-                "latitude",
-                "longitude",
             ]
             + AddressSerializer.Meta.fields
             + HandleRefSerializer.Meta.fields

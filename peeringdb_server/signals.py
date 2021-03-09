@@ -20,6 +20,7 @@ from peeringdb_server.deskpro import (
     ticket_queue,
     ticket_queue_asnauto_affil,
     ticket_queue_asnauto_create,
+    ticket_queue_vqi_notify,
 )
 
 from peeringdb_server.models import (
@@ -429,12 +430,11 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
         if instance.notified:
             return
 
-        # we don't sent notifications unless requesting user has been identified
-        if not instance.user_id:
+        # no contact point exists
+        if not instance.user_id and not instance.org_key:
             return
 
         item = instance.item
-        user = instance.user
 
         if type(item) in QUEUE_NOTIFY and not getattr(
             settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False
@@ -445,30 +445,7 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
             else:
                 rdap = None
 
-            with override("en"):
-                entity_type_name = str(instance.content_type)
-
-            title = f"{entity_type_name} - {item}"
-
-            if is_suggested(item):
-                title = f"[SUGGEST] {title}"
-
-            ticket_queue(
-                title,
-                loader.get_template("email/notify-pdb-admin-vq.txt").render(
-                    {
-                        "entity_type_name": entity_type_name,
-                        "suggested": is_suggested(item),
-                        "item": item,
-                        "user": user,
-                        "rdap": rdap,
-                        "edit_url": "%s%s"
-                        % (settings.BASE_URL, instance.item_admin_url),
-                    }
-                ),
-                instance.user,
-            )
-
+            ticket_queue_vqi_notify(instance, rdap)
             instance.notified = True
             instance.save()
 

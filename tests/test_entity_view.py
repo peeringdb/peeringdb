@@ -3,6 +3,7 @@ import json
 import uuid
 
 from django.test import Client, TestCase, RequestFactory
+from django.conf import settings
 from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
 

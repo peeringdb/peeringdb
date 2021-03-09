@@ -91,7 +91,7 @@ def load_all_user_permissions(org):
 
     rv = {}
     for user in org.usergroup.user_set.all():
-        uperms, perms = load_user_permissions(org, user)
+        uperms, perms = load_entity_permissions(org, user)
         rv[user.id] = {
             "id": user.id,
             "perms": perms,
@@ -101,40 +101,44 @@ def load_all_user_permissions(org):
 
 
 def load_user_permissions(org, user):
+    return load_entity_permissions(org, user)
+
+
+def load_entity_permissions(org, entity):
     """
-    Returns user's permissions for the specified org
+    Returns entity's permissions for the specified org
     """
 
-    # load all of the user's permissions related to this org
-    uperms = {
+    # load all of the entity's permissions related to this org
+    entity_perms = {
         p.namespace: p.permission
-        for p in user.grainy_permissions.filter(
+        for p in entity.grainy_permissions.filter(
             namespace__startswith=org.grainy_namespace
         )
     }
 
     perms = {}
 
-    extract_permission_id(uperms, perms, org, org)
+    extract_permission_id(entity_perms, perms, org, org)
 
-    # extract user's permissioning ids from grainy_namespaces targeting
+    # extract entity's permissioning ids from grainy_namespaces targeting
     # organization's entities
     for model in [Network, InternetExchange, Facility]:
-        extract_permission_id(uperms, perms, model, org)
+        extract_permission_id(entity_perms, perms, model, org)
 
-    # extract user's permissioning ids from grainy_namespaces targeting
-    # organization's entities by their id (eg user has perms only
+    # extract entity's permissioning ids from grainy_namespaces targeting
+    # organization's entities by their id (eg entity has perms only
     # to THAT specific network)
     for net in org.net_set_active:
-        extract_permission_id(uperms, perms, net, org)
+        extract_permission_id(entity_perms, perms, net, org)
 
     for net in org.ix_set_active:
-        extract_permission_id(uperms, perms, net, org)
+        extract_permission_id(entity_perms, perms, net, org)
 
     for net in org.fac_set_active:
-        extract_permission_id(uperms, perms, net, org)
+        extract_permission_id(entity_perms, perms, net, org)
 
-    return uperms, perms
+    return entity_perms, perms
 
 
 def permission_ids(org):

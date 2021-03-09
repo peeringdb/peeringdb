@@ -978,7 +978,6 @@ class TestJSON(unittest.TestCase):
     def test_user_001_GET_as_set(self):
         data = self.db_guest.all("as_set")
         networks = Network.objects.filter(status="ok")
-        print(data)
         for net in networks:
             self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
 
@@ -3426,50 +3425,93 @@ class TestJSON(unittest.TestCase):
             self.db_guest, "fac", data, test_success=False, test_failures={"perms": {}}
         )
 
-    def test_z_misc_001_suggest_ix(self):
-        # test exchange suggestions
-
-        data = self.make_data_ix(
-            org_id=settings.SUGGEST_ENTITY_ORG, suggest=True, prefix=self.get_prefix4()
-        )
-
-        r_data = self.assert_create(
-            self.db_user, "ix", data, ignore=["prefix", "suggest"]
-        )
-
-        self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
-        self.assertEqual(r_data["status"], "pending")
-
-        ix = InternetExchange.objects.get(id=r_data["id"])
-        self.assertEqual(ix.org_id, settings.SUGGEST_ENTITY_ORG)
-
-        data = self.make_data_ix(
-            org_id=settings.SUGGEST_ENTITY_ORG, suggest=True, prefix=self.get_prefix4()
-        )
-
-        r_data = self.assert_create(
-            self.db_guest,
+    def test_z_misc_001_disable_suggest_ix(self):
+        """
+        Issue 827: We are removing the ability for non-admin users to "suggest" an IX
+        Therefore we change this test so that a "suggest" field being set on the API
+        request is disregarded, and permission is denied if a user who cannot create an
+        IX tries to POST.
+        """
+        org = SHARED["org_rw_ok"]
+        data = self.make_data_ix(org_id=org.id, suggest=True, prefix=self.get_prefix4())
+        # Assert that this throws a permission error (previously would "suggest"/create)
+        self.assert_create(
+            self.db_user,
             "ix",
             data,
             ignore=["prefix", "suggest"],
             test_success=False,
             test_failures={"perms": {}},
         )
+        # Assert that this doesn't create a "pending" IX in the
+        # suggested entity org
+        suggest_entity_org = Organization.objects.get(id=settings.SUGGEST_ENTITY_ORG)
+        assert suggest_entity_org.ix_set(manager="handleref").count() == 0
+
+    def test_z_misc_001_suggest_kwarg_on_ix_does_nothing(self):
+        """
+        Issue 827: We are removing the ability for non-admin users to "suggest" an IX
+        If a user tries to "suggest" an IX, this keyword should simply be ignored. Admins
+        should be able to still create a "pending" IX even if "suggest" is provided.
+        """
+        org = SHARED["org_rw_ok"]
+        data = self.make_data_ix(org_id=org.id, suggest=True, prefix=self.get_prefix4())
+        # Assert that this creates a "pending" IX
+        ix = self.assert_create(
+            self.db_org_admin,
+            "ix",
+            data,
+            ignore=["prefix", "suggest"],
+            test_success=True,
+        )
+        # Assert that this doesn't create a "pending" IX in the
+        # suggested entity org
+        suggest_entity_org = Organization.objects.get(id=settings.SUGGEST_ENTITY_ORG)
+        assert suggest_entity_org.ix_set(manager="handleref").count() == 0
+
+        # Assert that this does create a "pending" IX in the
+        # provided org
+        org.refresh_from_db()
+        assert ix["status"] == "pending"
+        assert InternetExchange.objects.get(name=data["name"])
+
+    def test_z_misc_001_cannot_post_ix_to_suggest_entity_org(self):
+        """
+        Issue 827: We are removing the ability for non-admin users to "suggest" an IX
+        As part of that, we need to remove the ability to POST an IX with an ORG that is
+        the special "suggested entity org" even if the POST explicitly tries
+        to create an IX with that ORG.
+        """
+        # Explicity designate org is the SUGGESTED ENTITY ORG
+        data = self.make_data_ix(
+            org_id=settings.SUGGEST_ENTITY_ORG, suggest=True, prefix=self.get_prefix4()
+        )
+        self.assert_create(
+            self.db_user,
+            "ix",
+            data,
+            ignore=["prefix", "suggest"],
+            test_success=False,
+            test_failures={"invalid": {"org_id": settings.SUGGEST_ENTITY_ORG}},
+        )
+        # Assert that this doesn't create a "pending" IX in the
+        # suggested entity org
+        suggest_entity_org = Organization.objects.get(id=settings.SUGGEST_ENTITY_ORG)
+        assert suggest_entity_org.ix_set(manager="handleref").count() == 0
 
     def test_z_misc_001_suggest_outside_of_post(self):
-        # The `suggest` keyword should only be allowed for
-        # `POST` events
+        # The `suggest` keyword should only do something for
+        # `POST` events, on `PUT` events it should be silently
+        # ignored
 
-        for reftag in ["ix", "fac", "net"]:
+        for reftag in ["fac", "net"]:
+
             ent = SHARED[f"{reftag}_rw_ok"]
             org_id = ent.org_id
-            self.assert_update(
-                self.db_org_admin,
-                reftag,
-                ent.id,
-                {"notes": "bla"},
-                test_failures={"invalid": {"suggest": True}},
-            )
+            db = self.db_org_admin
+            orig = self.assert_get_handleref(db, reftag, ent.id)
+            orig.update(notes="test", suggest=True)
+            db.update(reftag, **orig)
 
             ent.refresh_from_db()
             self.assertEqual(ent.org_id, org_id)

@@ -1,15 +1,18 @@
-import pytest
 import json
-import re
 import os
 
-from django.test import Client, TestCase, RequestFactory
-from django.contrib.auth.models import Group, AnonymousUser
-from django.contrib.auth import get_user
-from django.core.management import call_command
+import pytest
 from django.core.exceptions import ValidationError
+import googlemaps
 
 import peeringdb_server.models as models
+from peeringdb_server.serializers import GeocodeSerializerMixin
+
+
+@pytest.fixture
+def org():
+    org = models.Organization(name="Geocode Org", status="ok")
+    return org
 
 
 @pytest.fixture
@@ -51,12 +54,12 @@ def reverse_parsed():
 
 
 def test_geo_model_defaults(fac):
-    assert fac.geocode_status == False
-    assert fac.geocode_date == None
+    assert fac.geocode_status is False
+    assert fac.geocode_date is None
 
 
 def test_geo_model_geocode_coordinates(fac):
-    assert fac.geocode_coordinates == None
+    assert fac.geocode_coordinates is None
     fac.latitude = 41.876212
     fac.longitude = -87.631453
     assert fac.geocode_coordinates == (41.876212, -87.631453)
@@ -68,7 +71,7 @@ def test_geo_model_geocode_addresss(fac):
 
 def test_geo_model_get_address1(fac):
     data = [{"empty": "empty"}]
-    assert fac.get_address1_from_geocode(data) == None
+    assert fac.get_address1_from_geocode(data) is None
 
     data = load_json("address1_test0")
     assert fac.get_address1_from_geocode(data) == "427 S LaSalle St"
@@ -81,11 +84,44 @@ def test_geo_model_get_address1(fac):
 
 
 def test_geo_model_reverse_geocode_blank(fac):
+    with pytest.raises(AttributeError):
+        fac.reverse_geocode(None, "-1,1")
+
     with pytest.raises(ValidationError) as exc:
-        fac.reverse_geocode(None)
+        fac.reverse_geocode(None, None)
     message = "Latitude and longitude must be defined for reverse geocode lookup"
     assert message in str(exc.value)
 
 
 def test_geo_model_parse_reverse(fac, reverse, reverse_parsed):
     assert fac.parse_reverse_geocode(reverse) == reverse_parsed
+
+
+def test_need_address_suggestion(fac):
+    suggested_address = {
+        "name": "Geocode Fac",
+        "status": "ok",
+        "address1": "New street",
+        "address2": "",
+        "city": "New York",
+        "country": "US",
+        "state": "NY",
+        "zipcode": "1234",
+    }
+    geocodeserializer = GeocodeSerializerMixin()
+    assert geocodeserializer.needs_address_suggestion(suggested_address, fac)
+
+
+def test_does_not_need_address_suggestion(fac):
+    suggested_address = {
+        "name": "Geocode Fac",
+        "status": "ok",
+        "address1": "Some street",
+        "address2": "",
+        "city": "Chicago",
+        "country": "US",
+        "state": "IL",
+        "zipcode": "1234",
+    }
+    geocodeserializer = GeocodeSerializerMixin()
+    assert geocodeserializer.needs_address_suggestion(suggested_address, fac) is False
