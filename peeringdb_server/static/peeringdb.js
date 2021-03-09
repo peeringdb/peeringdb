@@ -154,7 +154,88 @@ PeeringDB = {
     return value
   },
 
+  // if an api response includes a "geovalidation warning"
+  // field in its metadata, display that warning
 
+   add_geo_warning : function(meta, endpoint) {
+    $('.geovalidation-warning').each(function(){
+      let popin = $(this);
+      let warning = meta.geovalidation_warning;
+      if (endpoint == popin.data("edit-geotag")){
+        popin.text(warning);
+        popin.removeClass("hidden").show();
+
+      }
+    })
+   },
+
+   // if an api response includes a "geo"
+   add_suggested_address : function(request, endpoint) {
+
+    let popin = $('.suggested-address').filter(function() {
+      return $(this).data("edit-geotag") == endpoint
+    });
+    if (popin === null){
+      return
+    }
+
+    // Fill in text to each field
+    let suggested_address = request.meta.suggested_address;
+    let address_fields = popin.find('div, span').filter(function(){
+      return $(this).data("edit-field")
+    })
+    address_fields.each(function(){
+      let elem = $(this);
+      let field = elem.data("edit-field");
+      let value = suggested_address[field];
+      if (value){
+        if (field === "city" || field === "state"){
+          value += ",";
+        }
+        elem.text(value);
+      }
+
+    })
+
+    // Initialize the Submit button
+    let button = popin.find("a.btn.suggestion-accept");
+    PeeringDB.init_accept_suggestion(button, request, endpoint);
+
+    // Show the popin
+    popin.removeClass("hidden").show();
+   },
+
+  // initializes the "Accept suggestion" button
+
+  init_accept_suggestion : function(button, response, endpoint){
+
+    let payload = response.data[0];
+    // Overwrite returned instance with the suggested data
+    Object.assign(payload, response.meta.suggested_address);
+
+    // No need to have latitude or longitude
+    // in the payload since it will get
+    // geocoded again
+
+    delete payload.latitude;
+    delete payload.longitude;
+
+
+    // Set up PUT request on click
+    button.click(function(event){
+      $("#view").editable("loading-shim", "show");
+      PeeringDB.API.request(
+        "PUT",
+        endpoint,
+        payload.id,
+        payload,
+        function(){
+          PeeringDB.refresh()
+        }
+      )
+    });
+
+  },
   // searches the page for all editable forms that
   // have data-check-incomplete attribute set and
   // displays a notification if any of the fields
@@ -302,15 +383,19 @@ PeeringDB.ViewTools = {
   },
 
   update_geocode: function(data){
-    const geo_field = $("#geocode");
-    if (data.latitude && data.longitude) {
+    const geo_field = $("#geocode_active");
+    if (data.latitude && data.longitude){
       let link = `https://maps.google.com/?q=${data.latitude},${data.longitude}`
       let contents = `<a href="${link}">${data.latitude}, ${data.longitude}</a>`
       geo_field.empty().append(contents);
+      $("#geocode_inactive").addClass("hidden").hide();
+    } else if (data.latitude === null && data.longitude === null) {
+      $("#geocode_active").empty();
+      $("#geocode_inactive").removeClass("hidden").show();
     }
-
   }
 }
+
 
 PeeringDB.ViewActions = {
 
@@ -426,7 +511,7 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       $.ajax({
         method: "POST",
         url: path
-      }).done(PeeringDB.refresh);
+      }).done(PeerignDB.refresh);
     },
 
     /**
@@ -1780,7 +1865,13 @@ twentyc.editable.target.register(
           else
             me.trigger("success", {});
         }
-      ).fail(function(r) {
+      ).done(function(r) {
+        if (r.meta && r.meta.geovalidation_warning){
+          PeeringDB.add_geo_warning(r.meta, endpoint);
+        } else if (r.meta && r.meta.suggested_address){
+          PeeringDB.add_suggested_address(r, endpoint);
+        }
+      }).fail(function(r) {
         if(r.status == 400) {
           var k,i,info=[gettext("The server rejected your data")]; ///
           for(k in r.responseJSON) {

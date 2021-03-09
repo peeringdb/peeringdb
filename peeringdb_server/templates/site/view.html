@@ -65,6 +65,27 @@
     <span class="glyphicon glyphicon-exclamation-sign"></span>
   {% trans "to improve data quality" %}.
   </div>
+
+  <div data-edit-geotag="{{ref_tag}}"
+    class="editable popin alert alert-warning geovalidation-warning marg-top-15 marg-bot-15 hidden">
+  </div>
+
+  <div data-edit-geotag="{{ref_tag}}"
+    class="editable popin alert alert-warning suggested-address marg-top-15 marg-bot-15 hidden">
+    <div class="row">
+      <div class="col-xs-8">
+        <p>{% trans "Suggested Address:" %}</p>
+        <div data-edit-field="address1" class="address-field"></div>
+        <span data-edit-field="city" class="address-field"></span>
+        <span data-edit-field="state" class="address-field"></span>
+        <span data-edit-field="zipcode" class="address-field"></span>
+      </div>
+      <div class="col-xs-4 text-right">
+        <a class="btn btn-default suggestion-accept">{% trans "Accept" %}</a>
+      </div>
+    </div>
+  </div>
+
   {% endif %}
 
 
@@ -266,9 +287,15 @@
         {% elif row.type == "geocode" %}
           <div id="geocode" class="view_value col-xs-8 col-sm-7 col-md-8">
             {% if row.value.latitude and row.value.longitude %}
-              <a href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
+              <span id="geocode_active">
+                <a href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
+              </span>
+              <div id="geocode_inactive" class="note inactive hidden">
+                {% trans "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."%}
+              </div>
             {% else %}
-            <div class="note inactive">
+            <span id="geocode_active"></span>
+            <div id="geocode_inactive" class="note inactive">
               {% trans "Geocode data for this entity could not obtained at this point. This is done automatically upon address field changes."%}
             </div>
             {% endif %}

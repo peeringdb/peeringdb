@@ -339,20 +339,19 @@ class GeocodeBaseMixin(models.Model):
 
         return f"{street_number} {route}".strip()
 
-    def reverse_geocode(self, gmaps):
-        if (self.latitude is None) or (self.longitude is None):
+    def reverse_geocode(self, gmaps, latlang):
+
+        if latlang is None:
             raise ValidationError(
                 _("Latitude and longitude must be defined for reverse geocode lookup")
-            )
-
-        latlang = f"{self.latitude},{self.longitude}"
+            ) 
         try:
             response = gmaps.reverse_geocode(latlang)
         except (
             googlemaps.exceptions.HTTPError,
             googlemaps.exceptions.ApiError,
             googlemaps.exceptions.TransportError,
-        ) as exc:
+        ):
             raise ValidationError(_("Error in reverse geocode: Google Maps API error"))
         except googlemaps.exceptions.Timeout:
             raise ValidationError(
@@ -380,39 +379,53 @@ class GeocodeBaseMixin(models.Model):
         return data
 
     def normalize_api_response(self):
-        # The forward geocode sets the lat,long
+        suggested_address = {}
+
         gmaps = googlemaps.Client(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
 
+        # The forward geocode sets the lat,long
         forward_result = self.geocode(gmaps, save=True)
 
         # Set information from forward geocode
         loc = forward_result[0].get("geometry").get("location")
         self.latitude = loc.get("lat")
         self.longitude = loc.get("lng")
+        if (self.latitude is None) or (self.longitude is None):
+            raise ValidationError(
+                _("Latitude and longitude must be defined for reverse geocode lookup")
+            )
+
+        self.geocode_status = True
+        self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+        self.save()
+
+        suggested_address["latitude"] = self.latitude
+        suggested_address["longitude"] = self.longitude
         address1 = self.get_address1_from_geocode(forward_result)
         if address1 is None:
             raise ValidationError(_("Error in forward geocode: No address returned"))
-        self.address1 = address1
-        self.address2 = ""
+        suggested_address["address1"] = address1
+        suggested_address["address2"] = ""
 
         # The reverse result normalizes some administrative info
         # (city, state, zip) and translates them into English
 
-        reverse_result = self.reverse_geocode(gmaps)
+        latlang = f"{self.latitude},{self.longitude}"
+        reverse_result = self.reverse_geocode(gmaps, latlang)
 
         data = self.parse_reverse_geocode(reverse_result)
         if data.get("locality"):
-            self.city = data["locality"]["long_name"]
+            suggested_address["city"] = data["locality"]["long_name"]
         if data.get("administrative_area_level_1"):
-            self.state = data["administrative_area_level_1"]["long_name"]
+            suggested_address["state"] = data["administrative_area_level_1"]["long_name"]
         if data.get("postal_code"):
-            self.zipcode = data["postal_code"]["long_name"]
+            suggested_address["zipcode"] = data["postal_code"]["long_name"]
 
         # Set status to True to indicate we've normalized the data
-        self.geocode_status = True
-        self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
-        self.save()
-        return self
+        suggested_address["geocode_status"] = True
+        suggested_address["geocode_date"] = datetime.datetime.now(datetime.timezone.utc)
+
+        return suggested_address
 
 
 class UserOrgAffiliationRequest(models.Model):

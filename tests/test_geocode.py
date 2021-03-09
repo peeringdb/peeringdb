@@ -8,8 +8,10 @@ from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
 from django.core.management import call_command
 from django.core.exceptions import ValidationError
+import googlemaps
 
 import peeringdb_server.models as models
+from peeringdb_server.serializers import GeocodeSerializerMixin
 
 
 @pytest.fixture
@@ -81,11 +83,44 @@ def test_geo_model_get_address1(fac):
 
 
 def test_geo_model_reverse_geocode_blank(fac):
+    with pytest.raises(AttributeError):
+        fac.reverse_geocode(None, "-1,1")
+
     with pytest.raises(ValidationError) as exc:
-        fac.reverse_geocode(None)
+        fac.reverse_geocode(None, None)
     message = "Latitude and longitude must be defined for reverse geocode lookup"
     assert message in str(exc.value)
 
 
 def test_geo_model_parse_reverse(fac, reverse, reverse_parsed):
     assert fac.parse_reverse_geocode(reverse) == reverse_parsed
+
+
+def test_need_address_suggestion(fac):
+    suggested_address = {
+        "name": "Geocode Fac",
+        "status": "ok",
+        "address1": "New street",
+        "address2": "",
+        "city": "New York",
+        "country": "US",
+        "state": "NY",
+        "zipcode": "1234"
+    }
+    geocodeserializer = GeocodeSerializerMixin()
+    assert geocodeserializer.needs_address_suggestion(suggested_address, fac)
+
+
+def test_does_not_need_address_suggestion(fac):
+    suggested_address = {
+        "name": "Geocode Fac",
+        "status": "ok",
+        "address1": "Some street",
+        "address2": "",
+        "city": "Chicago",
+        "country": "US",
+        "state": "IL",
+        "zipcode": "1234"
+    }
+    geocodeserializer = GeocodeSerializerMixin()
+    assert geocodeserializer.needs_address_suggestion(suggested_address, fac) is False
