@@ -969,7 +969,6 @@ class ModelSerializer(serializers.ModelSerializer):
             del validated_data["suggest"]
 
         self.validate_create(validated_data)
-
         grainy_kwargs = {"id": "*"}
 
         grainy_kwargs.update(**validated_data)
@@ -2333,7 +2332,7 @@ class InternetExchangeSerializer(ModelSerializer):
 
     net_count = serializers.SerializerMethodField()
 
-    suggest = serializers.BooleanField(required=False, write_only=True)
+    # suggest = serializers.BooleanField(required=False, write_only=True)
 
     ixf_net_count = serializers.IntegerField(read_only=True)
     ixf_last_import = serializers.DateTimeField(read_only=True)
@@ -2361,7 +2360,6 @@ class InternetExchangeSerializer(ModelSerializer):
     )
 
     validators = [
-        FieldMethodValidator("suggest", ["POST"]),
         RequiredForMethodValidator("prefix", ["POST"]),
         SoftRequiredValidator(
             ["policy_email", "tech_email"],
@@ -2393,7 +2391,7 @@ class InternetExchangeSerializer(ModelSerializer):
             "policy_phone",
             "fac_set",
             "ixlan_set",
-            "suggest",
+            # "suggest",
             "prefix",
             "net_count",
             "ixf_net_count",
@@ -2457,16 +2455,17 @@ class InternetExchangeSerializer(ModelSerializer):
         # organization status is pending or deleted
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
-        return super().validate_create(data)
 
-    def to_internal_value(self, data):
-        # if `suggest` keyword is provided, hard-set the org to
-        # whichever org is specified in `SUGGEST_ENTITY_ORG`
-        #
-        # this happens here so it is done before the validators run
-        if "suggest" in data:
-            data["org_id"] = settings.SUGGEST_ENTITY_ORG
-        return super().to_internal_value(data)
+        # we don't want users to be able to create an internet exchange with an
+        # org that is the "suggested entity org"
+        if data.get("org") and (data.get("org").id == settings.SUGGEST_ENTITY_ORG):
+            raise serializers.ValidationError({
+                "org": _(
+                    "User cannot create an internet exchange with"
+                    "its org set as the SUGGEST_ENTITY organization"
+                )
+            })
+        return super().validate_create(data)
 
     def to_representation(self, data):
         # When an ix is created we want to add the ixlan_id and ixpfx_id
