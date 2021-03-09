@@ -2073,7 +2073,7 @@ class NetworkSerializer(ModelSerializer):
         # whichever org is specified in `SUGGEST_ENTITY_ORG`
         #
         # this happens here so it is done before the validators run
-        if "suggest" in data:
+        if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
 
         # if an asn exists already but is currently deleted, fail

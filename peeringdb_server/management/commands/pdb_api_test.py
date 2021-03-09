@@ -3500,19 +3500,18 @@ class TestJSON(unittest.TestCase):
         assert suggest_entity_org.ix_set(manager="handleref").count() == 0
 
     def test_z_misc_001_suggest_outside_of_post(self):
-        # The `suggest` keyword should only be allowed for
-        # `POST` events
+        # The `suggest` keyword should only do something for
+        # `POST` events, on `PUT` events it should be silently
+        # ignored
 
         for reftag in ["fac", "net"]:
+
             ent = SHARED[f"{reftag}_rw_ok"]
             org_id = ent.org_id
-            self.assert_update(
-                self.db_org_admin,
-                reftag,
-                ent.id,
-                {"notes": "bla"},
-                test_failures={"invalid": {"suggest": True}},
-            )
+            db = self.db_org_admin
+            orig = self.assert_get_handleref(db, reftag, ent.id)
+            orig.update(notes="test", suggest=True)
+            db.update(reftag, **orig)
 
             ent.refresh_from_db()
             self.assertEqual(ent.org_id, org_id)
