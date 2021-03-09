@@ -18,7 +18,14 @@ RUN apk --update --no-cache add \
   linux-headers \
   make \
   mariadb-dev \
-  libffi-dev
+  libffi-dev \
+  curl
+
+
+# Install Rust to install Poetry
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 
 # create venv
 RUN pip install -U pip pipenv
