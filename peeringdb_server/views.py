@@ -47,6 +47,7 @@ from peeringdb_server.util import check_permissions, PERM_CRUD
 from peeringdb_server.search import search
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.org_admin_views import load_all_user_permissions
+from peeringdb_server.api_key_views import load_all_key_permissions
 from peeringdb_server.data_views import BOOL_CHOICE
 from peeringdb_server.models import (
     UserOrgAffiliationRequest,
@@ -419,7 +420,7 @@ def view_affiliate_to_org(request):
             )
 
         except RdapException as exc:
-            ticket_queue_rdap_error(request.user, asn, exc)
+            ticket_queue_rdap_error(request, asn, exc)
             return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
 
         except MultipleObjectsReturned:
@@ -1067,6 +1068,14 @@ def view_organization(request, id):
     if perms.get("can_manage") and org.pending_affiliations.count() > 0:
         tab_init = {"users": "active"}
 
+    keys = [
+            {
+                "prefix": key.prefix,
+                "hashed_key": key.hashed_key,
+                "name": key.name
+            }
+            for key in org.api_keys.filter(revoked=False).all()
+    ]
     data["phone_help_text"] = field_help(NetworkContact, "phone")
 
     return view_component(
@@ -1077,8 +1086,10 @@ def view_organization(request, id):
         tab_init=tab_init,
         users=users,
         user_perms=load_all_user_permissions(org),
+        key_perms=load_all_key_permissions(org),
         instance=org,
         perms=perms,
+        keys=keys
     )
 
 

@@ -2,7 +2,11 @@ from grainy.const import *
 from grainy.core import NamespaceKeyApplicator
 from django.conf import settings
 from django_grainy.const import *
-from django_grainy.util import get_permissions, check_permissions, Permissions
+from django_grainy.util import (
+    get_permissions,
+    check_permissions,
+    Permissions
+)
 
 
 class APIPermissionsApplicator(NamespaceKeyApplicator):
@@ -24,11 +28,16 @@ class APIPermissionsApplicator(NamespaceKeyApplicator):
 
     def set_peeringdb_handlers(self):
         self.handler(
-            "peeringdb.organization.*.network.*.poc_set.private", explicit=True
+            "peeringdb.organization.*.network.*.poc_set.private",
+            explicit=True
         )
-        self.handler("peeringdb.organization.*.network.*.poc_set.users", explicit=True)
         self.handler(
-            "peeringdb.organization.*.internetexchange.*", fn=self.handle_ixlan
+            "peeringdb.organization.*.network.*.poc_set.users",
+            explicit=True
+        )
+        self.handler(
+            "peeringdb.organization.*.internetexchange.*",
+            fn=self.handle_ixlan
         )
 
     def handle_ixlan(self, namespace, data):
@@ -36,6 +45,8 @@ class APIPermissionsApplicator(NamespaceKeyApplicator):
             visible = data["ixf_ixp_member_list_url_visible"].lower()
             _namespace = f"{namespace}.ixf_ixp_member_list_url.{visible}"
 
-            perms = self.permissions.check(_namespace, 0x01, explicit=True)
+            perms = self.permissions.check(
+                _namespace, 0x01, explicit=True
+            )
             if not perms:
                 del data["ixf_ixp_member_list_url"]

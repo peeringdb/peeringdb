@@ -19,6 +19,7 @@ MODELS = [
 
 
 class DBCommand(BaseCommand):
+
     def log(self, id, msg):
         print(f"{id}: {msg}")
 

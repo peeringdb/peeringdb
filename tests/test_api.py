@@ -16,6 +16,7 @@ import peeringdb_server.management.commands.pdb_api_test as api_test
 from twentyc.rpc.client import RestClient
 
 import peeringdb_server.inet as pdbinet
+from .util import reset_group_ids
 
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 
@@ -138,7 +139,7 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         # create user and guest group
         guest_group = Group.objects.create(name="guest")
         user_group = Group.objects.create(name="user")
-
+        reset_group_ids()
         guest_user = models.User.objects.create_user(
             "guest", "guest@localhost", "guest"
         )

@@ -73,6 +73,7 @@ from peeringdb_server.views import (
     network_reset_ixf_proposals,
 )
 import peeringdb_server.org_admin_views
+import peeringdb_server.api_key_views
 import peeringdb_server.data_views
 
 urlpatterns = [
@@ -131,6 +132,8 @@ urlpatterns = [
     ),
     url(r"^%s$" % Network.handleref.tag, view_network_by_query),
     url(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn, name="net-view-asn"),
+    url(r"^user_keys/add$", peeringdb_server.api_key_views.add_user_key),
+    url(r"^user_keys/revoke$", peeringdb_server.api_key_views.remove_user_key),
     url(r"^org_admin/users$", peeringdb_server.org_admin_views.users),
     url(
         r"^org_admin/user_permissions$",
@@ -154,6 +157,21 @@ urlpatterns = [
     url(
         r"^org_admin/manage_user/delete$",
         peeringdb_server.org_admin_views.manage_user_delete,
+    ),
+    url(r"^org_admin/manage_key/add$", peeringdb_server.api_key_views.manage_key_add),
+    url(r"^org_admin/manage_key/update$", peeringdb_server.api_key_views.manage_key_update),
+    url(r"^org_admin/manage_key/revoke$", peeringdb_server.api_key_views.manage_key_revoke),
+    url(
+        r"^org_admin/key_permissions$",
+        peeringdb_server.api_key_views.key_permissions,
+    ),
+    url(
+        r"^org_admin/key_permissions/update$",
+        peeringdb_server.api_key_views.key_permission_update,
+    ),
+    url(
+        r"^org_admin/key_permissions/remove$",
+        peeringdb_server.api_key_views.key_permission_remove,
     ),
     url(r"^data/countries$", peeringdb_server.data_views.countries),
     url(r"^data/sponsors$", peeringdb_server.data_views.sponsorships),

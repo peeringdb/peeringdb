@@ -21,6 +21,25 @@
     </div>
   </div>
 
+  <!-- Key PERMISSION ROW -->
+  <div id="key-permission-item" class="row item">
+    <div class="col-xs-12 col-sm-5 col-md-5">
+      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+      <div data-edit-name="entity"></div>
+    </div>
+    <div class="col-xs-4 col-sm-2 col-md-2">
+      <div data-edit-name="perm_c" data-edit-type="bool"></div>
+    </div>
+    <div class="col-xs-4 col-sm-2 col-md-2">
+      <div data-edit-name="perm_u" data-edit-type="bool"></div>
+    </div>
+    <div class="col-xs-4 col-sm-2 col-md-2">
+      <div data-edit-name="perm_d" data-edit-type="bool"></div>
+    </div>
+    <div class="col-xs-1 col-sm-1 col-md-1">
+    </div>
+  </div>
+
   <!-- USER ROW -->
 
   <div id="user-item" class="row item">
@@ -35,9 +54,52 @@
     <div class="col-xs-4 col-sm-2 col-md-2 right">
       <a class="btn btn-default" data-edit-action="remove">{% trans "Remove" %}</a>
     </div>
- 
+
   </div>
-  
+
+  <!-- KEY ROW -->
+
+  <div
+    id="api-key-item"
+    class="row marg-top editable">
+
+    <div class="editable update-key"
+      data-edit-target="/org_admin/manage_key/update">
+
+      <div class="col-xs-2 col-sm-2 col-md-2">
+        <div class="editable payload">
+          <div data-edit-name="org_id"></div>
+          <div data-edit-name="prefix"></div>
+        </div>
+
+        <span data-edit-toggled="view">
+          <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
+        </span>
+        <span data-edit-toggled="edit">
+          <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+          <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+        </span>
+      </div>
+
+      <div class="col-xs-2 col-sm-2 col-md-2">
+        <div data-edit-name="prefix"></div>
+      </div>
+
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        <div data-edit-type="string" data-edit-name="name"></div>
+      </div>
+
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        <div data-edit-type="email" data-edit-name="email"></div>
+      </div>
+
+    </div>
+
+    <div class="col-xs-2 col-sm-2 col-md-2 right">
+      <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
+    </div>
+  </div>
+
   <!-- FACILITY ROW -->
 
   <div id="facility-item" class="row item">

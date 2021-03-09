@@ -978,7 +978,6 @@ class TestJSON(unittest.TestCase):
     def test_user_001_GET_as_set(self):
         data = self.db_guest.all("as_set")
         networks = Network.objects.filter(status="ok")
-        print(data)
         for net in networks:
             self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
 

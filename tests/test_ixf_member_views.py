@@ -13,7 +13,6 @@ from django.db import transaction
 from django.core.cache import cache
 from django.test import Client, TestCase, RequestFactory
 from django.urls import reverse
-from django.contrib.auth import get_user_model
 
 from peeringdb_server.models import (
     Organization,

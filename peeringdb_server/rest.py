@@ -21,6 +21,7 @@ from django.utils import timezone
 from django.db.models import DateTimeField
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
+
 import reversion
 
 from peeringdb_server.models import Network, UTC, ProtectedAction
@@ -28,7 +29,13 @@ from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
 from peeringdb_server.api_schema import BaseSchema
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
-from peeringdb_server.util import check_permissions, APIPermissionsApplicator
+from peeringdb_server.permissions import (
+    ModelViewSetPermissions,
+    check_permissions_from_request,
+    APIPermissionsApplicator,
+    get_org_key_from_request,
+    get_user_key_from_request
+)
 
 
 class DataException(ValueError):
@@ -37,7 +44,7 @@ class DataException(ValueError):
 
 class DataMissingException(DataException):
 
-    """
+    """""
     Will be raised when the json data sent with a POST, PUT or PATCH
     request is missing
     """
@@ -490,12 +497,13 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
-        applicator = APIPermissionsApplicator(request.user)
+        applicator = APIPermissionsApplicator(request)
 
         if not applicator.is_generating_api_cache:
             r.data = applicator.apply(r.data)
 
         return r
+
 
     @client_check()
     def retrieve(self, request, *args, **kwargs):
@@ -508,7 +516,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         d = time.time() - t
         print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
-        applicator = APIPermissionsApplicator(request.user)
+        applicator = APIPermissionsApplicator(request)
 
         if not applicator.is_generating_api_cache:
             r.data = applicator.apply(r.data)
@@ -543,9 +551,18 @@ class ModelViewSet(viewsets.ModelViewSet):
         """
         try:
             self.require_data(request)
+
+            org_key = get_org_key_from_request(request)
+            user_key = get_user_key_from_request(request)
+
             with reversion.create_revision():
-                if request.user:
+                if request.user and request.user.is_authenticated:
                     reversion.set_user(request.user)
+                if org_key:
+                    reversion.set_comment(f"API-key: {org_key.prefix}")
+                if user_key:
+                    reversion.set_comment(f"API-key: {user_key.prefix}")
+
                 r = super().create(request, *args, **kwargs)
                 if "_grainy" in r.data:
                     del r.data["_grainy"]
@@ -566,9 +583,17 @@ class ModelViewSet(viewsets.ModelViewSet):
         """
         try:
             self.require_data(request)
+
+            org_key = get_org_key_from_request(request)
+            user_key = get_user_key_from_request(request)
+
             with reversion.create_revision():
-                if request.user:
+                if request.user and request.user.is_authenticated:
                     reversion.set_user(request.user)
+                if org_key:
+                    reversion.set_comment(f"API-key: {org_key.prefix}")
+                if user_key:
+                    reversion.set_comment(f"API-key: {user_key.prefix}")
 
                 r = super().update(request, *args, **kwargs)
                 if "_grainy" in r.data:
@@ -609,10 +634,16 @@ class ModelViewSet(viewsets.ModelViewSet):
             except self.model.DoesNotExist:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-            if check_permissions(request.user, obj, "d"):
+            user_key = get_user_key_from_request(request)
+            org_key = get_org_key_from_request(request)
+            if check_permissions_from_request(request, obj, "d"):
                 with reversion.create_revision():
-                    if request.user:
+                    if request.user and request.user.is_authenticated:
                         reversion.set_user(request.user)
+                    if org_key:
+                        reversion.set_comment(f"API-key: {org_key.prefix}")
+                    if user_key:
+                        reversion.set_comment(f"API-key: {user_key.prefix}")
                     obj.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
@@ -622,7 +653,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 "Please contact {} to help with the deletion of this object"
             ).format(settings.DEFAULT_FROM_EMAIL)
 
-            ticket_queue_deletion_prevented(request.user, exc.protected_object)
+            ticket_queue_deletion_prevented(request, exc.protected_object)
 
             return Response(
                 status=status.HTTP_403_FORBIDDEN, data={"detail": exc_message}

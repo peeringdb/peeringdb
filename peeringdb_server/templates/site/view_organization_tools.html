@@ -36,6 +36,16 @@
         {% trans "Permissions" %}
       </a>
     </li>
+    <li role="presentation">
+      <a href="#manage_keys" aria-controls="manage_keys" role="tab" data-toggle="tab">
+        {% trans "API Keys" %}
+      </a>
+    </li>
+    <li role="presentation">
+      <a href="#manage_key_perms" aria-controls="manage_key_perms" role="tab" data-toggle="tab">
+        {% trans "API Key Permissions" %}
+      </a>
+    </li>
     <li role="presentation" class="danger">
       <a href="#manage_delete" aria-controls="manage_delete" role="tab" data-toggle="tab">
         {% trans "Delete Organization" %}
@@ -772,6 +782,14 @@
 
     </div>
 
+    <div role="tabpanel" class="tab-pane" id="manage_keys">
+      {% include "site/org_manage_keys.html" %}
+    </div>
+
+    <div role="tabpanel" class="tab-pane" id="manage_key_perms">
+      {% include "site/org_manage_key_permissions.html" %}
+    </div>
+
     <div role="tabpanel" class="tab-pane" id="manage_delete">
       <div class="alert alert-danger">
       {% if not instance.deletable %}
@@ -812,7 +830,9 @@
 twentyc.data.loaders.get("org_admin").prototype.orgId = {{ instance.id }};
 twentyc.data.loaders.assign("users", "org_admin");
 twentyc.data.loaders.assign("permissions", "org_admin");
+twentyc.data.loaders.assign("key_permissions", "org_admin");
 twentyc.data.load("permissions");
+twentyc.data.load("key_permissions");
 $(document).ready(function() {
   PeeringDB.list_ext_add($('#create-fac-form'),$('#api-listing-fac'));
   PeeringDB.list_ext_add($('#create-ix-form'),$('#api-listing-ix'));

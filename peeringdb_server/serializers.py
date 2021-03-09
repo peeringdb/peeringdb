@@ -4,6 +4,7 @@ import reversion
 
 from django_inet.rest import IPAddressField, IPPrefixField
 from django.core.validators import URLValidator
+from django.contrib.auth import get_user_model
 from django.db.models.query import QuerySet
 from django.db.models import Prefetch, Q, Sum, IntegerField, Case, When
 from django.db import models, transaction, IntegrityError
@@ -24,7 +25,12 @@ from django_peeringdb.models.abstract import AddressModel
 
 from django_grainy.rest import PermissionDenied
 
-from peeringdb_server.util import check_permissions, Permissions
+from peeringdb_server.permissions import (
+    check_permissions_from_request,
+    get_org_key_from_request,
+    validate_rdap_user_or_key,
+    get_user_from_request
+)
 from peeringdb_server.inet import (
     RdapLookup,
     RdapNotFoundError,
@@ -50,6 +56,7 @@ from peeringdb_server.models import (
     NetworkFacility,
     NetworkIXLan,
     Organization,
+    OrganizationAPIKey
 )
 from peeringdb_server.validators import (
     validate_address_space,
@@ -409,7 +416,7 @@ class AsnRdapValidator:
             emails = rdap.emails
             self.request.rdap_result = rdap
         except RdapException as exc:
-            self.request.rdap_error = (self.request.user, asn, exc)
+            self.request.rdap_error = (asn, exc)
             raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
 
     def set_context(self, serializer):
@@ -940,9 +947,10 @@ class ModelSerializer(serializers.ModelSerializer):
 
         namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
         request = self.context.get("request")
-        if request and not check_permissions(request.user, namespace, "u"):
+
+        if request and not check_permissions_from_request(request, namespace, "u"):
             raise PermissionDenied(
-                f"User does not have write permissions to '{namespace}'"
+              f"User does not have write permissions to '{namespace}'"
             )
 
         return super().update(instance, validated_data)
@@ -963,6 +971,7 @@ class ModelSerializer(serializers.ModelSerializer):
         self.validate_create(validated_data)
 
         grainy_kwargs = {"id": "*"}
+
         grainy_kwargs.update(**validated_data)
 
         request = self.context.get("request")
@@ -972,9 +981,9 @@ class ModelSerializer(serializers.ModelSerializer):
         else:
             namespace = self.Meta.model.Grainy.namespace_instance("*", **grainy_kwargs)
 
-        if request and not check_permissions(request.user, namespace, "c"):
+        if request and not check_permissions_from_request(request, namespace, "c"):
             raise PermissionDenied(
-                f"User does not have write permissions to '{namespace}'"
+              f"User does not have write permissions to '{namespace}'"
             )
 
         return super().create(validated_data)
@@ -1125,14 +1134,25 @@ class ModelSerializer(serializers.ModelSerializer):
             instance.status = "ok"
             instance.save()
 
-        if instance.status == "pending":
-            if self._context["request"]:
-                vq = VerificationQueueItem.objects.filter(
-                    content_type=ContentType.objects.get_for_model(type(instance)),
-                    object_id=instance.id,
-                ).first()
-                if vq:
-                    vq.user = self._context["request"].user
+        request = self._context["request"]
+
+        if instance.status == "pending" and request:
+            vq = VerificationQueueItem.objects.filter(
+                content_type=ContentType.objects.get_for_model(type(instance)),
+                object_id=instance.id,
+            ).first()
+            if vq:
+                # This will save the user field if user credentials
+                # or if a user api key are used
+                user = get_user_from_request(request)
+                org_key = get_org_key_from_request(request)
+                if user:
+                    vq.user = user
+                    vq.save()
+
+                # This will save the org api key if provided
+                elif org_key:
+                    vq.org_key = org_key
                     vq.save()
 
     def finalize_create(self, request):
@@ -2046,11 +2066,12 @@ class NetworkSerializer(ModelSerializer):
                 rdap = RdapLookup().get_asn(asn)
 
         # add network to existing org
-        if rdap and user.validate_rdap_relationship(rdap):
+        if rdap and validate_rdap_user_or_key(request, rdap):
+
             # user email exists in RiR data, skip verification queue
             validated_data["status"] = "ok"
             net = super().create(validated_data)
-            ticket_queue_asnauto_skipvq(user, validated_data["org"], net, rdap)
+            ticket_queue_asnauto_skipvq(request, validated_data["org"], net, rdap)
             return net
 
         elif self.Meta.model in QUEUE_ENABLED:
@@ -2074,8 +2095,9 @@ class NetworkSerializer(ModelSerializer):
 
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)
+
         if rdap_error:
-            ticket_queue_rdap_error(*rdap_error)
+            ticket_queue_rdap_error(request, *rdap_error)
 
     def validate_irr_as_set(self, value):
         if value:
