@@ -6,6 +6,7 @@ PeeringDB offers API keys for authenticating API requests. There are two main fo
 These API keys are created and revoked from the organization admin panel. Each key gets its own custom permissions, which can be modified from the "org api key permissions" panel. Each key must have an email attached to it; this is because keys may be allowed to create and modify data in PeeringDB, and we need a contact to reach out to in case of questions.  
 !["form to add organization api key"](img/org-key-add.png)
 
+!["manage organization api key permissions"](img/org-key-add.png)
 
 **User-level API Keys**
 These API key are tied to a individual user account and can be created from the user profile page. There are only two permission levels: a normal key will mirror the same permissions of the user, while a readonly key will have readonly permissions to all the same namespaces as the user.
