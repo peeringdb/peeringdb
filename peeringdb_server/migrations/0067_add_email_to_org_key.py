@@ -6,19 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0066_add_dpt_email'),
+        ("peeringdb_server", "0066_add_dpt_email"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organizationapikey',
-            name='email',
-            field=models.EmailField(default='test@localhost.com', max_length=254, verbose_name='email address'),
+            model_name="organizationapikey",
+            name="email",
+            field=models.EmailField(
+                default="test@localhost.com",
+                max_length=254,
+                verbose_name="email address",
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='deskproticket',
-            name='email',
-            field=models.EmailField(blank=True, max_length=254, null=True, verbose_name='email address'),
+            model_name="deskproticket",
+            name="email",
+            field=models.EmailField(
+                blank=True, max_length=254, null=True, verbose_name="email address"
+            ),
         ),
     ]

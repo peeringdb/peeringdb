@@ -34,7 +34,7 @@ from peeringdb_server.permissions import (
     check_permissions_from_request,
     APIPermissionsApplicator,
     get_org_key_from_request,
-    get_user_key_from_request
+    get_user_key_from_request,
 )
 
 
@@ -44,7 +44,7 @@ class DataException(ValueError):
 
 class DataMissingException(DataException):
 
-    """""
+    """ ""
     Will be raised when the json data sent with a POST, PUT or PATCH
     request is missing
     """
@@ -503,7 +503,6 @@ class ModelViewSet(viewsets.ModelViewSet):
             r.data = applicator.apply(r.data)
 
         return r
-
 
     @client_check()
     def retrieve(self, request, *args, **kwargs):

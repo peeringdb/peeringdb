@@ -12,14 +12,8 @@ from django.conf import settings
 from django.template import loader
 
 from peeringdb_server.inet import RdapNotFoundError
-from peeringdb_server.models import (
-    is_suggested,
-    DeskProTicket
-)
-from peeringdb_server.permissions import (
-    get_user_from_request,
-    get_org_key_from_request
-)
+from peeringdb_server.models import is_suggested, DeskProTicket
+from peeringdb_server.permissions import get_user_from_request, get_org_key_from_request
 
 from django.utils.translation import override
 
@@ -41,7 +35,7 @@ def ticket_queue_email_only(subject, body, email):
         subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
         body=body,
         email=email,
-        user=None
+        user=None,
     )
 
 
@@ -81,7 +75,9 @@ def ticket_queue_asnauto_skipvq(request, org, net, rir_data):
     if org_key:
         ticket_queue_email_only(
             f"[ASNAUTO] Network '{net_name}' approved for existing Org '{org_name}'",
-            loader.get_template("email/notify-pdb-admin-asnauto-skipvq-org-key.txt").render(
+            loader.get_template(
+                "email/notify-pdb-admin-asnauto-skipvq-org-key.txt"
+            ).render(
                 {"org_key": org_key, "org": org, "net": net, "rir_data": rir_data}
             ),
             org_key.email,
@@ -163,8 +159,7 @@ def ticket_queue_vqi_notify(instance, rdap):
                     "item": item,
                     "user": user,
                     "rdap": rdap,
-                    "edit_url": "%s%s"
-                    % (settings.BASE_URL, instance.item_admin_url),
+                    "edit_url": "%s%s" % (settings.BASE_URL, instance.item_admin_url),
                 }
             ),
             user,
@@ -180,8 +175,7 @@ def ticket_queue_vqi_notify(instance, rdap):
                     "item": item,
                     "org_key": org_key,
                     "rdap": rdap,
-                    "edit_url": "%s%s"
-                    % (settings.BASE_URL, instance.item_admin_url),
+                    "edit_url": "%s%s" % (settings.BASE_URL, instance.item_admin_url),
                 }
             ),
             org_key.email,
@@ -258,7 +252,6 @@ class APIClient:
         )
         return self.parse_response(response)
 
-
     def require_person(self, email, user=None):
 
         """
@@ -280,23 +273,18 @@ class APIClient:
 
         if not person:
 
-            payload = {"primary_email":email}
+            payload = {"primary_email": email}
 
             if user:
                 payload.update(
-                    first_name = user.first_name,
-                    last_name = user.last_name,
-                    name = user.full_name
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                    name=user.full_name,
                 )
             else:
-                payload.update(
-                    name = email
-                )
+                payload.update(name=email)
 
-            person = self.create(
-                "people",
-                payload
-            )
+            person = self.create("people", payload)
 
         return person
 
@@ -315,7 +303,9 @@ class APIClient:
         elif ticket.email:
             person = self.require_person(ticket.email)
         else:
-            raise ValueError("Either user or email need to be specified on the DeskProTicket instance")
+            raise ValueError(
+                "Either user or email need to be specified on the DeskProTicket instance"
+            )
 
         if not ticket.deskpro_id:
 
@@ -446,7 +436,7 @@ def ticket_queue_deletion_prevented(request, instance):
                     "admin_url": settings.BASE_URL
                     + django.urls.reverse(
                         f"admin:peeringdb_server_{model_name}_change",
-                        args=(instance.id,)
+                        args=(instance.id,),
                     ),
                 }
             ),
@@ -459,14 +449,16 @@ def ticket_queue_deletion_prevented(request, instance):
     if org_key:
         ticket_queue_email_only(
             subject,
-            loader.get_template("email/notify-pdb-admin-deletion-prevented-org-key.txt").render(
+            loader.get_template(
+                "email/notify-pdb-admin-deletion-prevented-org-key.txt"
+            ).render(
                 {
                     "org_key": org_key,
                     "instance": instance,
                     "admin_url": settings.BASE_URL
                     + django.urls.reverse(
                         f"admin:peeringdb_server_{model_name}_change",
-                        args=(instance.id,)
+                        args=(instance.id,),
                     ),
                 }
             ),

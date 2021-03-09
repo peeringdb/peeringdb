@@ -4,12 +4,7 @@ from rest_framework.permissions import BasePermission
 
 from django_grainy.helpers import request_method_to_flag
 
-from peeringdb_server.models import (
-    OrganizationAPIKey,
-    UserAPIKey,
-    Group,
-    User
-)
+from peeringdb_server.models import OrganizationAPIKey, UserAPIKey, Group, User
 from django.contrib.auth.models import AnonymousUser
 
 import grainy.const as grainy_constant
@@ -40,13 +35,12 @@ def validate_rdap_org_key(org_key, rdap):
 
 
 def get_key_from_request(request):
-    """ Use the default KeyParser from drf-api-keys to pull the key out of the request
-    """
+    """Use the default KeyParser from drf-api-keys to pull the key out of the request"""
     return KeyParser().get(request)
 
 
 def get_permission_holder_from_request(request):
-    """ Returns either an API Key instance or User instance
+    """Returns either an API Key instance or User instance
     depending on how the request is Authenticated.
     """
     key = get_key_from_request(request)
@@ -120,7 +114,7 @@ def get_user_key_from_request(request):
 
 
 def check_permissions_from_request(request, target, flag, **kwargs):
-    """ Call the check_permissions util but takes a request as
+    """Call the check_permissions util but takes a request as
     input, not a permission-holding object
     """
     perm_obj = get_permission_holder_from_request(request)
@@ -128,7 +122,7 @@ def check_permissions_from_request(request, target, flag, **kwargs):
 
 
 def check_permissions(obj, target, permissions, **kwargs):
-    """ Users the provided permission holding object to initialize
+    """Users the provided permission holding object to initialize
     the Permissions Util, which then checks permissions.
     """
     if not hasattr(obj, "_permissions_util"):
@@ -138,7 +132,7 @@ def check_permissions(obj, target, permissions, **kwargs):
 
 
 def init_permissions_helper(obj):
-    """ Initializes the Permission Util based on
+    """Initializes the Permission Util based on
     if the provided object is a UserAPIKey, OrgAPIKey,
     or a different object.
     """
@@ -181,15 +175,14 @@ def return_org_api_key_perms(key):
     # #Add user group perms
     org_usergroup = key.org.usergroup
     permissions.pset.update(
-        org_usergroup.grainy_permissions.permission_set().permissions,
-        override=False
+        org_usergroup.grainy_permissions.permission_set().permissions, override=False
     )
 
     # # Add general user group perms
     general_usergroup = Group.objects.get(id=settings.USER_GROUP_ID)
     permissions.pset.update(
         general_usergroup.grainy_permissions.permission_set().permissions,
-        override=False
+        override=False,
     )
     return permissions
 

@@ -3433,9 +3433,7 @@ class TestJSON(unittest.TestCase):
         IX tries to POST.
         """
         org = SHARED["org_rw_ok"]
-        data = self.make_data_ix(
-            org_id=org.id, suggest=True, prefix=self.get_prefix4()
-        )
+        data = self.make_data_ix(org_id=org.id, suggest=True, prefix=self.get_prefix4())
         # Assert that this throws a permission error (previously would "suggest"/create)
         self.assert_create(
             self.db_user,
@@ -3457,9 +3455,7 @@ class TestJSON(unittest.TestCase):
         should be able to still create a "pending" IX even if "suggest" is provided.
         """
         org = SHARED["org_rw_ok"]
-        data = self.make_data_ix(
-            org_id=org.id, suggest=True, prefix=self.get_prefix4()
-        )
+        data = self.make_data_ix(org_id=org.id, suggest=True, prefix=self.get_prefix4())
         # Assert that this creates a "pending" IX
         ix = self.assert_create(
             self.db_org_admin,

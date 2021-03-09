@@ -151,10 +151,8 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
     @classmethod
     def setUpTestData(cls):
         # create user and guest group
-        guest_group, _ = Group.objects.get_or_create(
-            name="guest")
-        user_group, _ = Group.objects.get_or_create(
-            name="user")
+        guest_group, _ = Group.objects.get_or_create(name="guest")
+        user_group, _ = Group.objects.get_or_create(name="user")
 
         reset_group_ids()
 

@@ -106,7 +106,7 @@ def test_need_address_suggestion(fac):
         "city": "New York",
         "country": "US",
         "state": "NY",
-        "zipcode": "1234"
+        "zipcode": "1234",
     }
     geocodeserializer = GeocodeSerializerMixin()
     assert geocodeserializer.needs_address_suggestion(suggested_address, fac)
@@ -121,7 +121,7 @@ def test_does_not_need_address_suggestion(fac):
         "city": "Chicago",
         "country": "US",
         "state": "IL",
-        "zipcode": "1234"
+        "zipcode": "1234",
     }
     geocodeserializer = GeocodeSerializerMixin()
     assert geocodeserializer.needs_address_suggestion(suggested_address, fac) is False

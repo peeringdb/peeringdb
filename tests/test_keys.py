@@ -6,13 +6,20 @@ from django_grainy.models import UserPermission
 from grainy.const import PERM_CRUD, PERM_READ
 from rest_framework.test import APIClient
 
-from peeringdb_server.models import (Group, Network, Organization,
-                                     OrganizationAPIKey,
-                                     OrganizationAPIPermission, User,
-                                     UserAPIKey)
-from peeringdb_server.permissions import (check_permissions,
-                                          get_key_from_request,
-                                          get_permission_holder_from_request)
+from peeringdb_server.models import (
+    Group,
+    Network,
+    Organization,
+    OrganizationAPIKey,
+    OrganizationAPIPermission,
+    User,
+    UserAPIKey,
+)
+from peeringdb_server.permissions import (
+    check_permissions,
+    get_key_from_request,
+    get_permission_holder_from_request,
+)
 
 from .util import reset_group_ids
 
@@ -316,7 +323,8 @@ def test_get_network_w_org_key(org, network, user, groups):
 def test_get_network_w_user_key(network, user, org):
     namespace = f"peeringdb.organization.{org.id}.network"
     userperm = UserPermission.objects.create(
-        namespace=namespace, permission=PERM_CRUD, user=user)
+        namespace=namespace, permission=PERM_CRUD, user=user
+    )
     api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
 
     assert userperm == user.grainy_permissions.first()

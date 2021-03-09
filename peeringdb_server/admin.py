@@ -105,6 +105,7 @@ PERMISSION_APP_LABELS = [
     "oauth2_provider",
 ]
 
+
 class StatusFilter(admin.SimpleListFilter):
     """
     A listing filter that by default will only show entities
@@ -389,7 +390,6 @@ class SoftDeleteAdmin(
 
     def grainy_namespace(self, obj):
         return obj.grainy_namespace
-
 
     def grainy_namespace(self, obj):
         return obj.grainy_namespace
@@ -1978,9 +1978,11 @@ class OrganizationAPIKeyAdmin(APIKeyModelAdmin):
     list_display = ["org", "prefix", "name", "created", "revoked"]
     search_fields = ("prefix", "org__name")
 
+
 class UserAPIKeyAdmin(APIKeyModelAdmin):
     list_display = ["user", "prefix", "name", "readonly", "created", "revoked"]
     search_fields = ("prefix", "user__username", "user__email")
+
 
 # Commented out via issue #860
 # admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
@@ -2009,4 +2011,3 @@ admin.site.register(IXFImportEmail, IXFImportEmailAdmin)
 admin.site.unregister(APIKey)
 admin.site.register(OrganizationAPIKey, OrganizationAPIKeyAdmin)
 admin.site.register(UserAPIKey, UserAPIKeyAdmin)
-

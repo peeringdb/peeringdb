@@ -113,7 +113,9 @@ def load_entity_permissions(org, entity):
     # load all of the entity's permissions related to this org
     entity_perms = {
         p.namespace: p.permission
-        for p in entity.grainy_permissions.filter(namespace__startswith=org.grainy_namespace)
+        for p in entity.grainy_permissions.filter(
+            namespace__startswith=org.grainy_namespace
+        )
     }
 
     perms = {}

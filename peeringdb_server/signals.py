@@ -20,7 +20,7 @@ from peeringdb_server.deskpro import (
     ticket_queue,
     ticket_queue_asnauto_affil,
     ticket_queue_asnauto_create,
-    ticket_queue_vqi_notify
+    ticket_queue_vqi_notify,
 )
 
 from peeringdb_server.models import (

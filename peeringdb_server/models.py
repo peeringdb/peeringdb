@@ -344,7 +344,7 @@ class GeocodeBaseMixin(models.Model):
         if latlang is None:
             raise ValidationError(
                 _("Latitude and longitude must be defined for reverse geocode lookup")
-            ) 
+            )
         try:
             response = gmaps.reverse_geocode(latlang)
         except (
@@ -417,7 +417,9 @@ class GeocodeBaseMixin(models.Model):
         if data.get("locality"):
             suggested_address["city"] = data["locality"]["long_name"]
         if data.get("administrative_area_level_1"):
-            suggested_address["state"] = data["administrative_area_level_1"]["long_name"]
+            suggested_address["state"] = data["administrative_area_level_1"][
+                "long_name"
+            ]
         if data.get("postal_code"):
             suggested_address["zipcode"] = data["postal_code"]["long_name"]
 
@@ -681,7 +683,8 @@ class DeskProTicket(models.Model):
     subject = models.CharField(max_length=255)
     body = models.TextField()
     user = models.ForeignKey(
-        "peeringdb_server.User", on_delete=models.CASCADE, null=True, blank=True)
+        "peeringdb_server.User", on_delete=models.CASCADE, null=True, blank=True
+    )
     email = models.EmailField(_("email address"), null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(null=True, blank=True)
@@ -1001,7 +1004,9 @@ class OrganizationAPIKey(AbstractAPIKey):
         on_delete=models.CASCADE,
         related_name="api_keys",
     )
-    email = models.EmailField(_("email address"), max_length=254, null=False, blank=False)
+    email = models.EmailField(
+        _("email address"), max_length=254, null=False, blank=False
+    )
 
     class Meta(AbstractAPIKey.Meta):
         verbose_name = "Organization API key"
@@ -1898,7 +1903,6 @@ class IXLan(pdb_models.IXLanBase):
         if not permission_holder and visible == "public":
             return
         namespace = f"{ns}.ixf_ixp_member_list_url.{visible}"
-
 
         if not check_permissions(permission_holder, namespace, "r", explicit=True):
             try:

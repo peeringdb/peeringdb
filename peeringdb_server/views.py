@@ -1081,12 +1081,8 @@ def view_organization(request, id):
         tab_init = {"users": "active"}
 
     keys = [
-            {
-                "prefix": key.prefix,
-                "hashed_key": key.hashed_key,
-                "name": key.name
-            }
-            for key in org.api_keys.filter(revoked=False).all()
+        {"prefix": key.prefix, "hashed_key": key.hashed_key, "name": key.name}
+        for key in org.api_keys.filter(revoked=False).all()
     ]
     data["phone_help_text"] = field_help(NetworkContact, "phone")
 
@@ -1101,7 +1097,7 @@ def view_organization(request, id):
         key_perms=load_all_key_permissions(org),
         instance=org,
         perms=perms,
-        keys=keys
+        keys=keys,
     )
 
 

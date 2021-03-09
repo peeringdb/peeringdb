@@ -8,12 +8,15 @@ from django.core.exceptions import FieldError, ValidationError
 from django.core.validators import URLValidator
 from django.db import IntegrityError, models, transaction
 from django.db.models import Case, IntegerField, Prefetch, Q, Sum, When
-from django.db.models.fields.related import (ForwardManyToOneDescriptor,
-                                             ReverseManyToOneDescriptor)
+from django.db.models.fields.related import (
+    ForwardManyToOneDescriptor,
+    ReverseManyToOneDescriptor,
+)
 from django.db.models.query import QuerySet
 from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import PermissionDenied
+
 # from drf_toolbox import serializers
 from django_handleref.rest.serializers import HandleRefSerializer
 from django_inet.rest import IPAddressField, IPPrefixField
@@ -25,7 +28,7 @@ from peeringdb_server.permissions import (
     check_permissions_from_request,
     get_org_key_from_request,
     validate_rdap_user_or_key,
-    get_user_from_request
+    get_user_from_request,
 )
 from peeringdb_server.inet import (
     RdapLookup,
@@ -52,7 +55,7 @@ from peeringdb_server.models import (
     NetworkFacility,
     NetworkIXLan,
     Organization,
-    OrganizationAPIKey
+    OrganizationAPIKey,
 )
 from peeringdb_server.validators import (
     validate_address_space,
@@ -546,7 +549,6 @@ class ParentStatusException(IOError):
 
 
 class AddressSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = (AddressModel,)
         fields = [
@@ -559,7 +561,7 @@ class AddressSerializer(serializers.ModelSerializer):
             "floor",
             "suite",
             "latitude",
-            "longitude"
+            "longitude",
         ]
 
 
@@ -1003,7 +1005,7 @@ class ModelSerializer(serializers.ModelSerializer):
 
         if request and not check_permissions_from_request(request, namespace, "u"):
             raise PermissionDenied(
-              f"User does not have write permissions to '{namespace}'"
+                f"User does not have write permissions to '{namespace}'"
             )
 
         return super().update(instance, validated_data)
@@ -1035,7 +1037,7 @@ class ModelSerializer(serializers.ModelSerializer):
 
         if request and not check_permissions_from_request(request, namespace, "c"):
             raise PermissionDenied(
-              f"User does not have write permissions to '{namespace}'"
+                f"User does not have write permissions to '{namespace}'"
             )
 
         return super().create(validated_data)
@@ -2514,12 +2516,14 @@ class InternetExchangeSerializer(ModelSerializer):
         # we don't want users to be able to create an internet exchange with an
         # org that is the "suggested entity org"
         if data.get("org") and (data.get("org").id == settings.SUGGEST_ENTITY_ORG):
-            raise serializers.ValidationError({
-                "org": _(
-                    "User cannot create an internet exchange with"
-                    "its org set as the SUGGEST_ENTITY organization"
-                )
-            })
+            raise serializers.ValidationError(
+                {
+                    "org": _(
+                        "User cannot create an internet exchange with"
+                        "its org set as the SUGGEST_ENTITY organization"
+                    )
+                }
+            )
         return super().validate_create(data)
 
     def to_representation(self, data):

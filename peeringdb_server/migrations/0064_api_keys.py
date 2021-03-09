@@ -9,63 +9,166 @@ import django_grainy.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0063_populate_last_update_fields'),
+        ("peeringdb_server", "0063_populate_last_update_fields"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='OrganizationAPIKey',
+            name="OrganizationAPIKey",
             fields=[
-                ('id', models.CharField(editable=False, max_length=100, primary_key=True, serialize=False, unique=True)),
-                ('prefix', models.CharField(editable=False, max_length=8, unique=True)),
-                ('hashed_key', models.CharField(editable=False, max_length=100)),
-                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('name', models.CharField(default=None, help_text='A free-form name for the API key. Need not be unique. 50 characters max.', max_length=50)),
-                ('revoked', models.BooleanField(blank=True, default=False, help_text='If the API key is revoked, clients cannot use it anymore. (This cannot be undone.)')),
-                ('expiry_date', models.DateTimeField(blank=True, help_text='Once API key expires, clients cannot use it anymore.', null=True, verbose_name='Expires')),
-                ('org', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='api_keys', to='peeringdb_server.Organization')),
+                (
+                    "id",
+                    models.CharField(
+                        editable=False,
+                        max_length=100,
+                        primary_key=True,
+                        serialize=False,
+                        unique=True,
+                    ),
+                ),
+                ("prefix", models.CharField(editable=False, max_length=8, unique=True)),
+                ("hashed_key", models.CharField(editable=False, max_length=100)),
+                ("created", models.DateTimeField(auto_now_add=True, db_index=True)),
+                (
+                    "name",
+                    models.CharField(
+                        default=None,
+                        help_text="A free-form name for the API key. Need not be unique. 50 characters max.",
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "revoked",
+                    models.BooleanField(
+                        blank=True,
+                        default=False,
+                        help_text="If the API key is revoked, clients cannot use it anymore. (This cannot be undone.)",
+                    ),
+                ),
+                (
+                    "expiry_date",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Once API key expires, clients cannot use it anymore.",
+                        null=True,
+                        verbose_name="Expires",
+                    ),
+                ),
+                (
+                    "org",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="api_keys",
+                        to="peeringdb_server.Organization",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Organization API key',
-                'verbose_name_plural': 'Organization API keys',
-                'db_table': 'peeringdb_org_api_key',
-                'ordering': ('-created',),
-                'abstract': False,
+                "verbose_name": "Organization API key",
+                "verbose_name_plural": "Organization API keys",
+                "db_table": "peeringdb_org_api_key",
+                "ordering": ("-created",),
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='UserAPIKey',
+            name="UserAPIKey",
             fields=[
-                ('id', models.CharField(editable=False, max_length=100, primary_key=True, serialize=False, unique=True)),
-                ('prefix', models.CharField(editable=False, max_length=8, unique=True)),
-                ('hashed_key', models.CharField(editable=False, max_length=100)),
-                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('name', models.CharField(default=None, help_text='A free-form name for the API key. Need not be unique. 50 characters max.', max_length=50)),
-                ('revoked', models.BooleanField(blank=True, default=False, help_text='If the API key is revoked, clients cannot use it anymore. (This cannot be undone.)')),
-                ('expiry_date', models.DateTimeField(blank=True, help_text='Once API key expires, clients cannot use it anymore.', null=True, verbose_name='Expires')),
-                ('readonly', models.BooleanField(default=False, help_text='Determines if API Key inherits the User Permissions or is readonly.')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='api_keys', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.CharField(
+                        editable=False,
+                        max_length=100,
+                        primary_key=True,
+                        serialize=False,
+                        unique=True,
+                    ),
+                ),
+                ("prefix", models.CharField(editable=False, max_length=8, unique=True)),
+                ("hashed_key", models.CharField(editable=False, max_length=100)),
+                ("created", models.DateTimeField(auto_now_add=True, db_index=True)),
+                (
+                    "name",
+                    models.CharField(
+                        default=None,
+                        help_text="A free-form name for the API key. Need not be unique. 50 characters max.",
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "revoked",
+                    models.BooleanField(
+                        blank=True,
+                        default=False,
+                        help_text="If the API key is revoked, clients cannot use it anymore. (This cannot be undone.)",
+                    ),
+                ),
+                (
+                    "expiry_date",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Once API key expires, clients cannot use it anymore.",
+                        null=True,
+                        verbose_name="Expires",
+                    ),
+                ),
+                (
+                    "readonly",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Determines if API Key inherits the User Permissions or is readonly.",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="api_keys",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'User API key',
-                'verbose_name_plural': 'User API keys',
-                'db_table': 'peeringdb_user_api_key',
-                'ordering': ('-created',),
-                'abstract': False,
+                "verbose_name": "User API key",
+                "verbose_name_plural": "User API keys",
+                "db_table": "peeringdb_user_api_key",
+                "ordering": ("-created",),
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='OrganizationAPIPermission',
+            name="OrganizationAPIPermission",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('namespace', models.CharField(help_text="Permission namespace (A '.' delimited list of keys", max_length=255)),
-                ('permission', django_grainy.fields.PermissionField(default=1)),
-                ('org_api_key', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='grainy_permissions', to='peeringdb_server.OrganizationAPIKey')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "namespace",
+                    models.CharField(
+                        help_text="Permission namespace (A '.' delimited list of keys",
+                        max_length=255,
+                    ),
+                ),
+                ("permission", django_grainy.fields.PermissionField(default=1)),
+                (
+                    "org_api_key",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="grainy_permissions",
+                        to="peeringdb_server.OrganizationAPIKey",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Organization API key Permission',
-                'verbose_name_plural': 'Organization API key Permission',
-                'base_manager_name': 'objects',
+                "verbose_name": "Organization API key Permission",
+                "verbose_name_plural": "Organization API key Permission",
+                "base_manager_name": "objects",
             },
         ),
     ]

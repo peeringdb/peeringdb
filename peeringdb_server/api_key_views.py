@@ -26,7 +26,7 @@ from peeringdb_server.models import (
     OrganizationAPIKey,
     OrganizationAPIPermission,
     UserAPIKey,
-    User
+    User,
 )
 
 
@@ -56,26 +56,18 @@ def save_key_permissions(org, key, perms):
                 f"{org.grainy_namespace}.network.*.poc_set.private"
             ] = permissions
         elif id == "net":
-            grainy_perms[
-                f"{org.grainy_namespace}.network"
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.network"] = permissions
             grainy_perms[
                 f"{org.grainy_namespace}.network.*.poc_set.private"
             ] = permissions
         elif id == "ix":
-            grainy_perms[
-                f"{org.grainy_namespace}.internetexchange"
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.internetexchange"] = permissions
         elif id == "fac":
-            grainy_perms[
-                f"{org.grainy_namespace}.facility"
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.facility"] = permissions
         elif id.find(".") > -1:
             id = id.split(".")
             if id[0] == "net":
-                grainy_perms[
-                    f"{org.grainy_namespace}.network.{id[1]}"
-                ] = permissions
+                grainy_perms[f"{org.grainy_namespace}.network.{id[1]}"] = permissions
                 grainy_perms[
                     f"{org.grainy_namespace}.network.{id[1]}.poc_set.private"
                 ] = permissions
@@ -84,14 +76,13 @@ def save_key_permissions(org, key, perms):
                     f"{org.grainy_namespace}.internetexchange.{id[1]}"
                 ] = permissions
             elif id[0] == "fac":
-                grainy_perms[
-                    f"{org.grainy_namespace}.facility.{id[1]}"
-                ] = permissions
+                grainy_perms[f"{org.grainy_namespace}.facility.{id[1]}"] = permissions
 
     # save
     for ns, p in list(grainy_perms.items()):
         OrganizationAPIPermission.objects.create(
-            namespace=ns, permission=p, org_api_key=key)
+            namespace=ns, permission=p, org_api_key=key
+        )
 
     return grainy_perms
 
@@ -130,9 +121,7 @@ def manage_key_add(request, **kwargs):
         email = api_key_form.cleaned_data.get("email")
 
         api_key, key = OrganizationAPIKey.objects.create_key(
-            org_id=org_id,
-            name=name,
-            email=email
+            org_id=org_id, name=name, email=email
         )
 
         return JsonResponse(
@@ -148,6 +137,7 @@ def manage_key_add(request, **kwargs):
 
     else:
         return JsonResponse(api_key_form.errors, status=400)
+
 
 @login_required
 @org_admin_required
@@ -170,7 +160,7 @@ def manage_key_update(request, **kwargs):
         try:
             api_key = OrganizationAPIKey.objects.get(prefix=prefix, org=org)
         except OrganizationAPIKey.DoesNotExist:
-            return JsonResponse({"non_field_errors":[_("Key not found")]}, status=404)
+            return JsonResponse({"non_field_errors": [_("Key not found")]}, status=404)
 
         # update name and email fields of key
 
@@ -191,7 +181,6 @@ def manage_key_update(request, **kwargs):
         return JsonResponse(api_key_form.errors, status=400)
 
 
-
 @login_required
 @org_admin_required
 def manage_key_revoke(request, **kwargs):
@@ -203,17 +192,15 @@ def manage_key_revoke(request, **kwargs):
     prefix = request.POST.get("prefix")
 
     try:
-        api_key = OrganizationAPIKey.objects.get(
-            org=org,
-            prefix=prefix
-        )
+        api_key = OrganizationAPIKey.objects.get(org=org, prefix=prefix)
     except OrganizationAPIKey.DoesNotExist:
-        return JsonResponse({"non_field_errors":[_("Key not found")]}, status=404)
+        return JsonResponse({"non_field_errors": [_("Key not found")]}, status=404)
 
     api_key.revoked = True
     api_key.save()
 
-    return JsonResponse({
+    return JsonResponse(
+        {
             "status": "ok",
         }
     )
@@ -315,8 +302,7 @@ def add_user_key(request, **kwargs):
 
     user = request.user
     name = request.POST.get("name")
-    readonly = convert_to_bool(
-        request.POST.get("readonly"))
+    readonly = convert_to_bool(request.POST.get("readonly"))
 
     api_key, key = UserAPIKey.objects.create_key(
         name=name,
@@ -324,7 +310,8 @@ def add_user_key(request, **kwargs):
         readonly=readonly,
     )
 
-    return JsonResponse({
+    return JsonResponse(
+        {
             "status": "ok",
             "name": api_key.name,
             "prefix": api_key.prefix,
@@ -344,16 +331,14 @@ def remove_user_key(request, **kwargs):
     prefix = request.POST.get("prefix")
 
     try:
-        api_key = UserAPIKey.objects.get(
-            user=user,
-            prefix=prefix
-        )
+        api_key = UserAPIKey.objects.get(user=user, prefix=prefix)
     except UserAPIKey.DoesNotExist:
-        return JsonResponse({"non_field_errors":[_("Key not found")]}, status=404)
+        return JsonResponse({"non_field_errors": [_("Key not found")]}, status=404)
     api_key.revoked = True
     api_key.save()
 
-    return JsonResponse({
+    return JsonResponse(
+        {
             "status": "ok",
         }
     )
