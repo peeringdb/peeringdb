@@ -59,10 +59,42 @@
 
   <!-- KEY ROW -->
 
-  <div id="api-key-item" class="row item">
-    <div class="col-xs-2 col-sm-2 col-md-2" data-edit-name="prefix"></div>
-    <div class="col-xs-4 col-sm-4 col-md-4" data-edit-name="name"></div>
-    <div class="col-xs-4 col-sm-4 col-md-4" data-edit-name="email"></div>
+  <div
+    id="api-key-item"
+    class="row marg-top editable">
+
+    <div class="editable update-key"
+      data-edit-target="/org_admin/manage_key/update">
+
+      <div class="col-xs-2 col-sm-2 col-md-2">
+        <div class="editable payload">
+          <div data-edit-name="org_id"></div>
+          <div data-edit-name="prefix"></div>
+        </div>
+
+        <span data-edit-toggled="view">
+          <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
+        </span>
+        <span data-edit-toggled="edit">
+          <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+          <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+        </span>
+      </div>
+
+      <div class="col-xs-2 col-sm-2 col-md-2">
+        <div data-edit-name="prefix"></div>
+      </div>
+
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        <div data-edit-type="string" data-edit-name="name"></div>
+      </div>
+
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        <div data-edit-type="email" data-edit-name="email"></div>
+      </div>
+
+    </div>
+
     <div class="col-xs-2 col-sm-2 col-md-2 right">
       <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
     </div>

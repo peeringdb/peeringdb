@@ -308,7 +308,7 @@ PeeringDB.ViewTools = {
       let contents = `<a href="${link}">${data.latitude}, ${data.longitude}</a>`
       geo_field.empty().append(contents);
     }
-    
+
   }
 }
 
@@ -1213,6 +1213,15 @@ PeeringDB.API = {
  * editable key management endpoint
  */
 
+twentyc.editable.action.register(
+  "revoke-org-key",
+  {
+    execute:  function(trigger, container) {
+
+    }
+  }
+)
+
 twentyc.editable.module.register(
   "key_perm_listing",
   {
@@ -1521,8 +1530,20 @@ twentyc.editable.module.register(
       var row = this.listing_add(data.prefix, trigger, container, data);
       row.attr("data-edit-label", data.prefix + " - " + data.name)
       row.data("edit-label", data.prefix + " - " + data.name)
-
+      var update_key_form = row.find(".update-key")
+      update_key_form.find(".popin, .loading-shim").detach()
+      update_key_form.editable()
       return row
+    },
+
+    execute_update : function(trigger, container) {
+      var row = this.row(trigger);
+      row.editable("export", this.target.data);
+      var data = this.target.data;
+      var id = data.prefix = row.data("edit-id")
+      console.log(this.target, row)
+      this.target.execute("update", trigger, function(response) {
+      }.bind(this));
     },
 
     execute_revoke : function(trigger, container) {

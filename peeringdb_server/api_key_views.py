@@ -141,6 +141,7 @@ def manage_key_add(request, **kwargs):
                 "name": api_key.name,
                 "email": api_key.email,
                 "prefix": api_key.prefix,
+                "org_id": api_key.org_id,
                 "key": key,
             }
         )

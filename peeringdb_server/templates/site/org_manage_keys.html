@@ -14,13 +14,14 @@
          data-edit-id="{{ instance.id }}"
       >
   <div class="row header">
+    <div class="col-xs-2 col-sm-2 col-md-2"></div>
     <div class="col-xs-2 col-sm-2 col-md-2">
       <div>{% trans "Prefix" %}</div>
     </div>
-    <div class="col-xs-4 col-sm-4 col-md-4">
+    <div class="col-xs-3 col-sm-3 col-md-3">
       <div>{% trans "Description" %}</div>
     </div>
-    <div class="col-xs-4 col-sm-4 col-md-4">
+    <div class="col-xs-3 col-sm-3 col-md-3">
       <div>{% trans "Email" %}</div>
     </div>
     <div class="col-xs-2 col-sm-2 col-md-2"></div>
@@ -29,23 +30,53 @@
   <div data-edit-component="list" data-edit-template="api-key-item">
   {% for key in instance.api_keys.all %}
   {% if not key.revoked %}
-  <div class="row marg-top editable" data-edit-id="{{ key.prefix }}" data-edit-method="PUT" data-edit-target="/org_admin/manage_key/update" data-edit-label="{{ key.prefix }} - {{ key.name }}">
-    <div class="col-xs-2 col-sm-2 col-md-2" data-edit-name="prefix">{{ key.prefix }}</div>
-    <div class="col-xs-4 col-sm-4 col-md-4" data-edit-type="string" data-edit-name="name">{{ key.name }}</div>
-    <div class="col-xs-4 col-sm-4 col-md-4" data-edit-type="email" data-edit-name="email">{{ key.email }}</div>
-    <div class="col-xs-2 col-sm-2 col-md-2 right">
-      <div class="editable payload">
-        <div data-edit-name="org_id">{{ instance.id }}</div>
-        <div data-edit-name="prefix">{{ key.prefix }}</div>
+  <div
+    class="row marg-top editable"
+    data-edit-id="{{ key.prefix }}"
+    data-edit-label="{{ key.prefix }} - {{ key.name }}">
+
+    <!-- sub form to allow editing of keys -->
+
+    <div class="editable update-key"
+      data-edit-id="{{ key.prefix }}"
+      data-edit-target="/org_admin/manage_key/update">
+
+      <div class="col-xs-2 col-sm-2 col-md-2">
+        <div class="editable payload">
+          <div data-edit-name="org_id">{{ instance.id }}</div>
+          <div data-edit-name="prefix">{{ key.prefix }}</div>
+        </div>
+        <span data-edit-toggled="view">
+          <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
+        </span>
+        <span data-edit-toggled="edit">
+          <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+          <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+        </span>
       </div>
-      <span data-edit-toggled="view">
-        <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
-        <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
-      </span>
-      <span data-edit-toggled="edit">
-        <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
-        <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
-      </span>
+
+      <div class="col-xs-2 col-sm-2 col-md-2">
+        <div data-edit-name="prefix">
+          {{ key.prefix }}
+        </div>
+      </div>
+
+
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        <div data-edit-type="string" data-edit-name="name">{{ key.name }}</div>
+      </div>
+
+      <div class="col-xs-3 col-sm-3 col-md-3">
+        <div data-edit-type="email" data-edit-name="email">{{ key.email }}</div>
+      </div>
+
+    </div>
+
+    <div class="col-xs-2 col-sm-2 col-md-2 right">
+
+      <!-- revoke key button -->
+
+      <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
     </div>
   </div>
   {% endif %}
@@ -59,15 +90,15 @@
     <div class="payload">
       <div data-edit-name="org_id">{{ instance.id }}</div>
     </div>
-    <div class="col-xs-2 col-sm-2 col-md-2">
+    <div class="col-xs-4 col-sm-4 col-md-4">
       <div>{% trans "Add Key" %}</div>
     </div>
-    <div class="col-xs-4 col-sm-4 col-md-4">
+    <div class="col-xs-3 col-sm-3 col-md-3">
       <div data-edit-type="string"
            data-edit-name="name">
       </div>
     </div>
-    <div class="col-xs-4 col-sm-4 col-md-4">
+    <div class="col-xs-3 col-sm-3 col-md-3">
       <div data-edit-type="string"
            data-edit-name="email">
       </div>
