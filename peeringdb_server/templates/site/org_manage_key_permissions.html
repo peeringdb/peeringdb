@@ -39,9 +39,12 @@
 
         {% for entity, perm in kperms.perms.items %}
 
-        <div class="row marg-top item" data-edit-id="{{ entity }}" data-edit-label="{{ kperms.description }} - {{ instance|org_permission_id_xl:entity}}">
+        <div class="row marg-top item" 
+              data-edit-id="{{ entity }}" 
+              data-edit-key-prefix="{{ kperms.prefix }}"
+              data-edit-label="{{ kperms.description }} - {{ instance|org_permission_id_xl:entity}}">
           <div class="editable payload">
-            <div data-edit-name="key_prefix">{{ kperms.id }}</div>
+            <div data-edit-name="key_prefix">{{ kperms.prefix }}</div>
             <div data-edit-name="org_id">{{ instance.id }}</div>
             <div data-edit-name="entity">{{ entity }}</div>
           </div>
