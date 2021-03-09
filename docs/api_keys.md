@@ -8,8 +8,6 @@ These API keys are created and revoked from the organization admin panel. Each k
 
 Each key must have an email attached to it; this is because keys may be allowed to create and modify data in PeeringDB, and we need a contact to reach out to in case of questions.  
 
-!["form to add organization api key"](img/org-key-add.png)
-
 !["api key creation"](img/org-key-added.png)
 
 !["manage organization api key permissions"](img/org-key-permissions.png)
