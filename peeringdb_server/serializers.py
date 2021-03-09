@@ -1312,8 +1312,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
     sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
 
-    validators = [FieldMethodValidator("suggest", ["POST"])]
-
     latitude = serializers.FloatField(read_only=True)
     longitude = serializers.FloatField(read_only=True)
 
@@ -1403,7 +1401,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
         # whichever org is specified in `SUGGEST_ENTITY_ORG`
         #
         # this happens here so it is done before the validators run
-        if "suggest" in data:
+        if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
         return super().to_internal_value(data)
 
@@ -1951,7 +1949,7 @@ class NetworkSerializer(ModelSerializer):
     )
 
     suggest = serializers.BooleanField(required=False, write_only=True)
-    validators = [AsnRdapValidator(), FieldMethodValidator("suggest", ["POST"])]
+    validators = [AsnRdapValidator(),]
 
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 

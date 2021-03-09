@@ -73,11 +73,11 @@ def get_user_from_request(request):
     If request was made with OrgKey, returns None.
     """
     perm_holder = get_permission_holder_from_request(request)
-    if type(perm_holder) == User:
+    if isinstance(perm_holder, User):
         return perm_holder
-    elif type(perm_holder) == UserAPIKey:
+    elif isinstance(perm_holder, UserAPIKey):
         return perm_holder.user
-    elif type(perm_holder) == OrganizationAPIKey:
+    elif isinstance(perm_holder, OrganizationAPIKey):
         return None
 
     return None
