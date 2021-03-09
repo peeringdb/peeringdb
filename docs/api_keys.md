@@ -104,7 +104,7 @@ curl -H "Authorization: Api-Key $API_KEY" -H "Content-Type: application/json" -X
 
 ### PUT
 
-The following request would update the data about a particular Network, [ChIX Route Servers](https://www.peeringdb.com/net/7889), in particular changing the name to "Edited Name".
+The following request would update the data about a particular Network, [20c](https://www.peeringdb.com/net/20), in particular changing the name to "Edited Name".
 
 ```sh
 curl -H "Authorization: Api-Key $API_KEY" -H "Content-Type: application/json" -X PUT --data "{\""org_id"\":\"10843\", \""name"\":\"Edited Name\", \""asn"\":\"63311\"}" https://peeringdb.com/api/net/20
