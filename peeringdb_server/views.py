@@ -20,7 +20,7 @@ from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.decorators import login_required
-
+from django.db.models import Q
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.urls import resolve, reverse, Resolver404
@@ -402,6 +402,23 @@ def view_affiliate_to_org(request):
             )
 
         asn = form.cleaned_data.get("asn")
+
+        # Issue 931: Limit the number of requests
+        # for affiliation to an ASN/org to 1
+        if request.user.pending_affiliation_requests.filter(
+            Q(asn=form.cleaned_data.get("asn")) | Q(org_id=form.cleaned_data.get("org"))
+        ).exists():
+            return JsonResponse(
+                {
+                    "non_field_errors": [
+                        _(
+                            "You already have an ownership "
+                            "request pending for this organization"
+                        )
+                    ]
+                },
+                status=400,
+            )
 
         request.user.flush_affiliation_requests()
 
