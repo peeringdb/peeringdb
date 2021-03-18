@@ -412,8 +412,7 @@ def view_affiliate_to_org(request):
                 {
                     "non_field_errors": [
                         _(
-                            "You already have an ownership "
-                            "request pending for this organization"
+                            "You already requested affiliation to this ASN/org"
                         )
                     ]
                 },
