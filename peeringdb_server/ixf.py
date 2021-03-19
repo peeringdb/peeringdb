@@ -1492,6 +1492,48 @@ class Importer:
             ticket.save()
         return ticket
 
+    def _ticket_consolidated(self, ixf_member_data_list, subject, message_list):
+        """
+        Create and send a consolidated deskpro ticket
+
+        Return the DeskPROTicket instance
+
+        Argument(s):
+
+        - ixf_member_data_list (`List[IXFMemberData]`)
+        - subject (`str`)
+        - message (`List[str]`)
+        """
+
+        subject = f"{settings.EMAIL_SUBJECT_PREFIX}[IX-F] {subject}"
+
+        client = self.deskpro_client
+
+        message = ("-"*80 + "\n").join(message_list)
+
+        ticket = DeskProTicket.objects.create(
+            subject=subject,
+            body=message,
+            user=self.ticket_user,
+            deskpro_id=None,
+            deskpro_ref=None,
+        )
+
+        try:
+            client.create_ticket(ticket)
+            ticket.published = datetime.datetime.now(datetime.timezone.utc)
+            ticket.save()
+        except Exception as exc:
+            ticket.subject = f"[FAILED]{ticket.subject}"
+            if hasattr(exc, "data"):
+                # api error returned with validation error data
+                ticket.body = f"{ticket.body}\n\n{exc.data}"
+            else:
+                # api error configuration issue
+                ticket.body = f"{ticket.body}\n\n{exc}"
+            ticket.save()
+        return ticket
+
     def consolidate_proposals(self):
 
         """
@@ -1534,6 +1576,7 @@ class Importer:
 
         net_notifications = {}
         ix_notifications = {}
+        deskpro_notifications = {}
 
         for notification in self.notifications:
 
@@ -1573,11 +1616,19 @@ class Importer:
             net_contacts = ixf_member_data.net_contacts
 
             # no suitable contact points found for
-            # one of the sides, immediately make a ticket
-
-            if not ix_contacts or not net_contacts:
+            # ix, immediately make a ticket
+            if not ix_contacts:
                 if typ != "protocol-conflict":
                     self.ticket_proposal(**notification)
+
+            # Issue 883: if no suitable contact point
+            # for network, consolidate tickets
+            if not net_contacts:
+                if typ != "protocol-conflict" and notification["ac"]:
+                    # Issue #883: consolidate tickets
+                    if asn not in deskpro_notifications:
+                        deskpro_notifications[asn] = []
+                    deskpro_notifications[asn].append(notification)
 
             template_file = f"email/notify-ixf-{typ}-inline.txt"
 
@@ -1654,6 +1705,7 @@ class Importer:
         return {
             "net": net_notifications,
             "ix": ix_notifications,
+            "ac": deskpro_notifications
         }
 
     def notify_proposals(self, error_handler=None):
@@ -1676,8 +1728,6 @@ class Importer:
 
         template = loader.get_template("email/notify-ixf-consolidated.txt")
 
-        errors = []
-
         for recipient in ["ix", "net"]:
             for other_entity, data in consolidated[recipient].items():
                 try:
@@ -1687,6 +1737,16 @@ class Importer:
                         error_handler(exc, ixlan=self.ixlan)
                     else:
                         raise
+
+        try:
+            self.ticket_consolidated_proposals(
+                consolidated["ac"]
+            )
+        except Exception as exc:
+            if error_handler:
+                error_handler(exc, ixlan=self.ixlan)
+            else:
+                raise
 
     def _notify_proposal(self, recipient, data, ticket_days, template):
         contacts = data["contacts"]
@@ -1820,6 +1880,75 @@ class Importer:
             ixf_member_data.deskpro_ref = ticket.deskpro_ref
             if ixf_member_data.id:
                 ixf_member_data.save()
+
+    def ticket_consolidated_proposals(self, consolidated_proposals):
+
+        """
+        Creates a single ticket for each network that is missing a
+        network contact.
+
+        Argument
+        - consolidated_proposals (Dict[List]): a dictionary keyed on network name
+        and ASN, containing a list of notifications for that network
+        """
+
+        if not self.tickets_enabled:
+            return False
+
+        for network, notification_list in consolidated_proposals.items():
+
+            asn = network.asn
+            name = network.name
+
+            count = len(consolidated_proposals)
+            index = 1
+            consolidated_messages = []
+            ixf_member_data_list = []
+
+            # Check again empty list
+            if len(notification_list) == 0:
+                continue
+
+            for notification in notification_list:
+
+                ixf_member_data = notification["ixf_member_data"]
+                ixf_member_data_list.append(ixf_member_data)
+                typ = notification["typ"]
+                context = notification["context"]
+
+                if typ == "add" and ixf_member_data.requirements:
+                    typ = ixf_member_data.action
+                    subheading = f"{ixf_member_data.primary_requirement}"
+                else:
+                    subheading = f"{ixf_member_data}"
+
+                # Begin message with the subheading
+                message = f"{subheading} IX-F Conflict Resolution ({index}/{count}) \n"
+                index += 1
+
+                template_file = f"email/notify-ixf-{typ}.txt"
+
+                # Add actual message body
+                message += ixf_member_data.render_notification(
+                    template_file, recipient="ac", context=context
+                )
+                consolidated_messages.append(message)
+
+            consolidated_subject = \
+                f"Several Actions May Be Needed for Network {name} AS{asn}"
+
+            ticket = self._ticket_consolidated(
+                ixf_member_data_list,
+                consolidated_subject,
+                consolidated_messages
+            )
+
+            # Resave all ixf_member_data for deskpro attributes
+            for ixf_m_d in ixf_member_data_list:
+                ixf_m_d.deskpro_id = ticket.deskpro_id
+                ixf_m_d.deskpro_ref = ticket.deskpro_ref
+                if ixf_m_d.id:
+                    ixf_m_d.save()
 
     @reversion.create_revision()
     def notify_error(self, error):

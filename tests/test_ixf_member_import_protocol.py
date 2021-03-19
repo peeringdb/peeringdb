@@ -137,6 +137,8 @@ def test_resolve_local_ixf(entities, use_ip, save):
     # We do not email upon resolve
     assert_no_emails(network, ixlan.ix)
 
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
@@ -2365,17 +2367,18 @@ def test_create_deskpro_tickets_after_x_days(entities):
 
 @pytest.mark.django_db
 def test_create_deskpro_tickets_no_contacts(entities):
-    data = setup_test_data("ixf.member.2")
+    """
+    For issue 883, we want to test that two consolidated emails
+    are sent if we have two networks missing contacts.
+    """
+    data = setup_test_data("ixf.member.6")
     network = entities["net"]["UPDATE_DISABLED"]
+    network2 = entities["net"]["UPDATE_DISABLED_2"]
     ixlan = entities["ixlan"][0]
-    ix = ixlan.ix
 
     # Delete contacts
     for netcontact in entities["netcontact"]:
         netcontact.delete()
-
-    ix.tech_email = ""
-    ix.save()
 
     entities["netixlan"].append(
         NetworkIXLan.objects.create(
@@ -2403,15 +2406,31 @@ def test_create_deskpro_tickets_no_contacts(entities):
             operational=True,
         )
     )
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network2,
+            ixlan=ixlan,
+            asn=network2.asn,
+            speed=10000,
+            ipaddr4="195.69.147.239",
+            ipaddr6="2001:7f8:1::a500:2100:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    # Assert Tickets are created immediately
-    if network.ipv6_support:
-        assert DeskProTicket.objects.count() == 4
-    else:
-        assert DeskProTicket.objects.count() == 3
+    # Issue 883: Assert a single consolidated ticket is created
+    assert DeskProTicket.objects.count() == 2
+    for ticket in DeskProTicket.objects.all():
+        assert ticket.cc_set.count() == 0
+
+    assert DeskProTicket.objects.filter(subject__contains=str(network.asn)).exists()
+    assert DeskProTicket.objects.filter(subject__contains=str(network2.asn)).exists()
 
 
 @pytest.mark.django_db
@@ -2419,7 +2438,6 @@ def test_email_with_partial_contacts(entities):
     data = setup_test_data("ixf.member.2")
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
-    ix = ixlan.ix
 
     # Delete network contact but keep ix contact
     for netcontact in entities["netcontact"]:
@@ -2455,15 +2473,10 @@ def test_email_with_partial_contacts(entities):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    # Assert Tickets are created immediately
-    if network.ipv6_support:
-        assert DeskProTicket.objects.count() == 4
-        for ticket in DeskProTicket.objects.all():
-            assert ticket.cc_set.count() == 1
-    else:
-        assert DeskProTicket.objects.count() == 3
-        for ticket in DeskProTicket.objects.all():
-            assert ticket.cc_set.count() == 1
+    # Issue 883: Assert a single consolidated ticket is created
+    assert DeskProTicket.objects.count() == 1
+    for ticket in DeskProTicket.objects.all():
+        assert ticket.cc_set.count() == 0
 
 
 @pytest.mark.django_db
@@ -2478,7 +2491,6 @@ def test_no_email_if_deskpro_fails(entities, use_ip, save):
     data = setup_test_data("ixf.member.2")
     network = entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
-    ix = ixlan.ix
 
     # Delete network contacts
     for netcontact in entities["netcontact"]:
@@ -2520,11 +2532,10 @@ def test_no_email_if_deskpro_fails(entities, use_ip, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    # Assert Tickets are created immediately
-    if network.ipv6_support:
-        assert DeskProTicket.objects.count() == 4
-    else:
-        assert DeskProTicket.objects.count() == 3
+    # Issue 883: Assert a single consolidated ticket is created
+    assert DeskProTicket.objects.count() == 1
+    for ticket in DeskProTicket.objects.all():
+        assert ticket.cc_set.count() == 0
 
     # This is the single consolidated email
     assert IXFImportEmail.objects.count() == 1
