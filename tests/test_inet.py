@@ -3,17 +3,7 @@ import ipaddress
 import pytest
 import pytest_filedata
 
-from django.urls import reverse
-
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError, renumber_ipaddress
-from peeringdb_server.models import (
-    User,
-    InternetExchange,
-    IXLanPrefix,
-    Network,
-    NetworkIXLan,
-    Organization,
-)
+from peeringdb_server.inet import RdapNotFoundError, renumber_ipaddress
 
 
 def test_rdap_asn_lookup(rdap):
