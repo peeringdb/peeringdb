@@ -1,3 +1,4 @@
+import ipaddress
 from decimal import Decimal
 
 from grainy.const import *
@@ -10,6 +11,21 @@ from django_grainy.util import get_permissions, check_permissions, Permissions
 def round_decimal(value, places):
     if value is not None:
         return value.quantize(Decimal(10) ** -places)
+    return value
+
+
+def coerce_ipaddr(value):
+    """
+    ipaddresses can have multiple formats that are equivalent.
+    This function will standardize a ipaddress string.
+
+    Note: this function is not a validator. If it errors
+    It will return the original string.
+    """
+    try:
+        value = str(ipaddress.ip_address(value))
+    except ValueError:
+        pass
     return value
 
 

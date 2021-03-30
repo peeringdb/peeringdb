@@ -84,6 +84,7 @@ from peeringdb_server.models import (
 
 from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.inet import RdapLookup, RdapException, rdap_pretty_error_message
+from peeringdb_server.util import coerce_ipaddr
 from rest_framework_api_key.admin import APIKeyModelAdmin
 from rest_framework_api_key.models import APIKey
 from peeringdb_server.util import round_decimal
@@ -1160,6 +1161,14 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
 
     def net(self, obj):
         return f"{obj.network.name} (AS{obj.network.asn})"
+
+    def get_search_results(self, request, queryset, search_term):
+        # Issue 913
+        # If the search_term is for an ipaddress6, this will compress it
+        search_term = coerce_ipaddr(search_term)
+        queryset, use_distinct = super().get_search_results(
+            request, queryset, search_term)
+        return queryset, use_distinct
 
 
 class NetworkContactAdmin(SoftDeleteAdmin):

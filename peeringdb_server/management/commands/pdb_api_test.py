@@ -11,6 +11,7 @@ import re
 import time
 import datetime
 import json
+import ipaddress
 
 from twentyc.rpc import (
     RestClient,
@@ -937,6 +938,7 @@ class TestJSON(unittest.TestCase):
 
     def test_user_001_GET_netixlan(self):
         self.assert_get_handleref(self.db_user, "netixlan", SHARED["netixlan_r_ok"].id)
+
 
     ##########################################################################
 
@@ -3142,6 +3144,21 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
     # MISC TESTS
     ##########################################################################
+
+    ##########################################################################
+
+    def test_misc_GET_netixlan_ipaddr6(self):
+        # For issue 913
+        # Test that differently formatted ipaddr6
+        # can be used to search for same Netixlan
+        ipaddr6 = SHARED["netixlan_r_ok"].ipaddr6
+        expanded_string = ipaddress.ip_address(ipaddr6).exploded
+
+        data = self.db_user.all("netixlan", ipaddr6=expanded_string)
+        print(data)
+        print(type(data))
+        assert len(data) == 1
+        assert data[0]["ipaddr6"] == str(ipaddr6)
 
     def _test_GET_ixf_ixp_member_list_url(self, db, tests=[], suffix="r"):
         ixlan = SHARED[f"ixlan_{suffix}_ok"]
