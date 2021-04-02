@@ -3474,8 +3474,11 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_fac(suggest=True)
         del data["org_id"]
         print("here is the data")
-        print(data)
+        from pprint import pprint
+        pprint(data)
 
+        print("\n"*10)
+        print("First request")
         r_data = self.assert_create(self.db_org_admin, "fac", data)
 
         self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
@@ -3492,7 +3495,9 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(fac.status, "deleted")
 
         # Re-add should go back to pending
-        re_add_data = self.assert_create(self.db_org_admin, "fac", r_data)
+        print("\n"*10)
+        print("Second request")
+        re_add_data = self.assert_create(self.db_org_admin, "fac", data)
 
         self.assertEqual(re_add_data["status"], "pending")
         self.assertEqual(re_add_data["org_id"], settings.SUGGEST_ENTITY_ORG)
