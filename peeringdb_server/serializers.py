@@ -255,6 +255,7 @@ class GeocodeSerializerMixin(object):
         # When creating a geo-enabled object,
         # we first want to save the model
         # and then normalize the geofields
+        print("this is when the geocode creation is happening")
         instance = super().create(validated_data)
 
         # we dont want to geocode on tests
@@ -1401,7 +1402,15 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
         # whichever org is specified in `SUGGEST_ENTITY_ORG`
         #
         # this happens here so it is done before the validators run
+        print("to internal value")
+        print(f"is there an instance?: {self.instance}")
+        if self.instance:
+            print("status")
+            print(self.instance.status)
+        suggest = data.get("suggest")
+        print(f"is suggest in data?: {suggest}")
         if "suggest" in data and (not self.instance or not self.instance.id):
+            print("hard setting org id to suggest")
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
         return super().to_internal_value(data)
 
