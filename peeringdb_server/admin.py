@@ -873,8 +873,8 @@ class RoundingDecimalFormField(DecimalField):
 
 
 class OrganizationAdminForm(StatusForm):
-    latitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
-    longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
+    latitude = RoundingDecimalFormField(max_digits=9, decimal_places=6, required=False)
+    longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6, required=False)
 
 
 class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
@@ -1001,8 +1001,8 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
 
 
 class FacilityAdminForm(StatusForm):
-    latitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
-    longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6)
+    latitude = RoundingDecimalFormField(max_digits=9, decimal_places=6, required=False)
+    longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6, required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
