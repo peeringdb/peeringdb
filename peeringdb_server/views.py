@@ -373,10 +373,16 @@ def view_affiliate_to_org(request):
         asn = form.cleaned_data.get("asn")
         org_id = form.cleaned_data.get("org")
         org_name = form.cleaned_data.get("org_name")
+
         # Issue 931: Limit the number of requests
         # for affiliation to an ASN/org to 1
 
-        # If user provided an org_id, filter on that.
+        # Need to match ASN to org id
+        # if network exists
+        if asn != 0 and Network.objects.filter(asn=asn).exists():
+            network = Network.objects.get(asn=asn)
+            org_id = network.org.id
+
         already_requested_affil_response = JsonResponse(
             {
                 "non_field_errors": [

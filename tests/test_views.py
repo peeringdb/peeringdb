@@ -66,14 +66,12 @@ def test_affiliate_to_asn_multiple(client, network):
     assert_failing_affiliation_request({"asn": 123}, client)
 
 
-@pytest.mark.xfail
 @pytest.mark.django_db
 def test_affiliate_to_org_then_asn(client, network, org):
     assert_passing_affiliation_request({"org": org.id}, client)
     assert_failing_affiliation_request({"asn": 123}, client)
 
 
-@pytest.mark.xfail
 @pytest.mark.django_db
 def test_affiliate_to_asn_then_org(client, network, org):
     assert_passing_affiliation_request({"org": org.id}, client)
