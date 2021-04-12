@@ -357,9 +357,6 @@ def view_affiliate_to_org(request):
         if not form.is_valid():
             return JsonResponse(form.errors, status=400)
 
-        print("FORM CLEANED DATA")
-        print(form.cleaned_data)
-        print("\n")
         if (
             not form.cleaned_data.get("org")
             and not form.cleaned_data.get("asn")
@@ -394,7 +391,7 @@ def view_affiliate_to_org(request):
             return already_requested_affil_response
         elif asn and pending_affil_reqs.filter(asn=asn).exists():
             return already_requested_affil_response
-        elif org_name and pending_affil_reqs.filter(org_name=org_name).exists():
+        elif org_name and pending_affil_reqs.filter(org_name__iexact=org_name).exists():
             return already_requested_affil_response
 
         request.user.flush_affiliation_requests()
