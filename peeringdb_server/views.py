@@ -411,9 +411,7 @@ def view_affiliate_to_org(request):
             return JsonResponse(
                 {
                     "non_field_errors": [
-                        _(
-                            "You already requested affiliation to this ASN/org"
-                        )
+                        _("You already requested affiliation to this ASN/org")
                     ]
                 },
                 status=400,

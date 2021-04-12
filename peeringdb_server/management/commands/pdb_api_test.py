@@ -939,7 +939,6 @@ class TestJSON(unittest.TestCase):
     def test_user_001_GET_netixlan(self):
         self.assert_get_handleref(self.db_user, "netixlan", SHARED["netixlan_r_ok"].id)
 
-
     ##########################################################################
 
     def test_user_001_GET_ixfac(self):

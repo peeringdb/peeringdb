@@ -1167,7 +1167,8 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
         # If the search_term is for an ipaddress6, this will compress it
         search_term = coerce_ipaddr(search_term)
         queryset, use_distinct = super().get_search_results(
-            request, queryset, search_term)
+            request, queryset, search_term
+        )
         return queryset, use_distinct
 
 

@@ -1509,7 +1509,7 @@ class Importer:
 
         client = self.deskpro_client
 
-        message = ("-"*80 + "\n").join(message_list)
+        message = ("-" * 80 + "\n").join(message_list)
 
         ticket = DeskProTicket.objects.create(
             subject=subject,
@@ -1705,7 +1705,7 @@ class Importer:
         return {
             "net": net_notifications,
             "ix": ix_notifications,
-            "ac": deskpro_notifications
+            "ac": deskpro_notifications,
         }
 
     def notify_proposals(self, error_handler=None):
@@ -1739,9 +1739,7 @@ class Importer:
                         raise
 
         try:
-            self.ticket_consolidated_proposals(
-                consolidated["ac"]
-            )
+            self.ticket_consolidated_proposals(consolidated["ac"])
         except Exception as exc:
             if error_handler:
                 error_handler(exc, ixlan=self.ixlan)
@@ -1934,13 +1932,12 @@ class Importer:
                 )
                 consolidated_messages.append(message)
 
-            consolidated_subject = \
+            consolidated_subject = (
                 f"Several Actions May Be Needed for Network {name} AS{asn}"
+            )
 
             ticket = self._ticket_consolidated(
-                ixf_member_data_list,
-                consolidated_subject,
-                consolidated_messages
+                ixf_member_data_list, consolidated_subject, consolidated_messages
             )
 
             # Resave all ixf_member_data for deskpro attributes
