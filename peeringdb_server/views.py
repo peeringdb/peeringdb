@@ -1,95 +1,89 @@
-import os
-import json
 import datetime
+import json
+import os
 import re
 import uuid
 
-from grainy.const import *
-
+import requests
+import two_factor.views
 from allauth.account.models import EmailAddress
+from django.conf import settings as dj_settings
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.db.models import Q
 from django.http import (
-    JsonResponse,
     HttpResponse,
-    HttpResponseRedirect,
-    HttpResponseNotFound,
     HttpResponseBadRequest,
     HttpResponseForbidden,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
 )
-from django.conf import settings as dj_settings
-from django.shortcuts import render, redirect
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.contrib.auth import authenticate, logout, login
-from django.contrib.auth.decorators import login_required
-
-from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
-from django.views.decorators.http import require_http_methods
-from django.urls import resolve, reverse, Resolver404
+from django.shortcuts import redirect, render
 from django.template import loader
+from django.urls import Resolver404, resolve, reverse
 from django.utils import translation
-from django.utils.translation import ugettext_lazy as _
 from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
+from django.utils.translation import ugettext_lazy as _
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
-import requests
-
+from django_otp.plugins.otp_email.models import EmailDevice
+from grainy.const import *
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.oauth2_backends import get_oauthlib_core
+from ratelimit.decorators import is_ratelimited, ratelimit
 
-from django_otp.plugins.otp_email.models import EmailDevice
-import two_factor.views
-
-from peeringdb_server import settings
-from peeringdb_server.util import check_permissions, PERM_CRUD, APIPermissionsApplicator
-from peeringdb_server.search import search
-from peeringdb_server.stats import stats as global_stats
-from peeringdb_server.org_admin_views import load_all_user_permissions
+from peeringdb_server import maintenance, settings
 from peeringdb_server.api_key_views import load_all_key_permissions
 from peeringdb_server.data_views import BOOL_CHOICE
-from peeringdb_server.models import (
-    UserOrgAffiliationRequest,
-    User,
-    UserPasswordReset,
-    Organization,
-    Network,
-    NetworkContact,
-    NetworkFacility,
-    NetworkIXLan,
-    InternetExchange,
-    InternetExchangeFacility,
-    IXFMemberData,
-    Facility,
-    Sponsorship,
-    Partnership,
-    PARTNERSHIP_LEVELS,
-    REFTAG_MAP,
-    UTC,
-)
+from peeringdb_server.deskpro import ticket_queue_rdap_error
 from peeringdb_server.forms import (
-    UserCreationForm,
-    PasswordResetForm,
-    PasswordChangeForm,
     AffiliateToOrgForm,
-    UsernameRetrieveForm,
+    PasswordChangeForm,
+    PasswordResetForm,
+    UserCreationForm,
     UserLocaleForm,
-)
-from peeringdb_server.serializers import (
-    OrganizationSerializer,
-    NetworkSerializer,
-    InternetExchangeSerializer,
-    FacilitySerializer,
+    UsernameRetrieveForm,
 )
 from peeringdb_server.inet import (
-    RdapLookup,
     RdapException,
+    RdapLookup,
     RdapNotFoundError,
     rdap_pretty_error_message,
 )
 from peeringdb_server.mail import mail_username_retrieve
-from peeringdb_server.deskpro import ticket_queue_rdap_error
-
-from peeringdb_server import maintenance
-
-from ratelimit.decorators import ratelimit, is_ratelimited
+from peeringdb_server.models import (
+    PARTNERSHIP_LEVELS,
+    REFTAG_MAP,
+    UTC,
+    Facility,
+    InternetExchange,
+    InternetExchangeFacility,
+    IXFMemberData,
+    Network,
+    NetworkContact,
+    NetworkFacility,
+    NetworkIXLan,
+    Organization,
+    Partnership,
+    Sponsorship,
+    User,
+    UserOrgAffiliationRequest,
+    UserPasswordReset,
+)
+from peeringdb_server.org_admin_views import load_all_user_permissions
+from peeringdb_server.search import search
+from peeringdb_server.serializers import (
+    FacilitySerializer,
+    InternetExchangeSerializer,
+    NetworkSerializer,
+    OrganizationSerializer,
+)
+from peeringdb_server.stats import stats as global_stats
+from peeringdb_server.util import PERM_CRUD, APIPermissionsApplicator, check_permissions
 
 RATELIMITS = dj_settings.RATELIMITS
 
@@ -402,6 +396,34 @@ def view_affiliate_to_org(request):
             )
 
         asn = form.cleaned_data.get("asn")
+        org_id = form.cleaned_data.get("org")
+        org_name = form.cleaned_data.get("org_name")
+
+        # Issue 931: Limit the number of requests
+        # for affiliation to an ASN/org to 1
+
+        # Need to match ASN to org id
+        # if network exists
+        if asn != 0 and Network.objects.filter(asn=asn).exists():
+            network = Network.objects.get(asn=asn)
+            org_id = network.org.id
+
+        already_requested_affil_response = JsonResponse(
+            {
+                "non_field_errors": [
+                    _("You already requested affiliation to this ASN/org")
+                ]
+            },
+            status=400,
+        )
+
+        pending_affil_reqs = request.user.pending_affiliation_requests
+        if org_id and pending_affil_reqs.filter(org_id=org_id).exists():
+            return already_requested_affil_response
+        elif asn and pending_affil_reqs.filter(asn=asn).exists():
+            return already_requested_affil_response
+        elif org_name and pending_affil_reqs.filter(org_name__iexact=org_name).exists():
+            return already_requested_affil_response
 
         request.user.flush_affiliation_requests()
 

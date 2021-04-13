@@ -5,7 +5,6 @@ import traceback
 import time
 import datetime
 
-
 import unidecode
 
 from rest_framework import routers, serializers, status, viewsets
@@ -36,6 +35,7 @@ from peeringdb_server.permissions import (
     get_org_key_from_request,
     get_user_key_from_request,
 )
+from peeringdb_server.util import coerce_ipaddr
 
 
 class DataException(ValueError):
@@ -339,6 +339,9 @@ class ModelViewSet(viewsets.ModelViewSet):
         for k, v in list(self.request.query_params.items()):
 
             v = unidecode.unidecode(v)
+
+            if k == "ipaddr6":
+                v = coerce_ipaddr(v)
 
             if k[-3:] == "_id" and k not in field_names:
                 k = k[:-3]

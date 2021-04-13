@@ -1,8 +1,9 @@
-import pytest
-import pytest_filedata
 import ipaddress
 
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError, renumber_ipaddress
+import pytest
+import pytest_filedata
+
+from peeringdb_server.inet import RdapNotFoundError, renumber_ipaddress
 
 
 def test_rdap_asn_lookup(rdap):
@@ -79,3 +80,37 @@ def test_renumber_ipaddress():
             ipaddress.ip_network("206.41.0.0/21"),
             ipaddress.ip_network("206.41.111.0/24"),
         )
+
+
+@pytest.mark.parametrize(
+    "input_str,compressed",
+    [
+        ("2001:0db8::0001", "2001:db8::1"),
+        ("2001:db8:0:0:0:0:2:1", "2001:db8::2:1"),
+        ("2001:db8::0:1", "2001:db8::1"),
+        ("2001:7f8:f2:e1::af21:3376:1", "2001:7f8:f2:e1:0:af21:3376:1"),
+        ("2001:db8::1:1:1:1:1", "2001:db8:0:1:1:1:1:1"),
+        ("2001:db8:0:0:1:0:0:1", "2001:db8::1:0:0:1"),
+        ("2001:7F8:F2:E1:0:AF21:3376:1", "2001:7f8:f2:e1:0:af21:3376:1"),
+    ],
+    ids=[
+        "4.1 handling leading zeros",
+        "4.2.1 shorten as much as possible (1)",
+        "4.2.1 shorten as much as possible (2)",
+        "4.2.2 handling one 16-bit 0 field (1)",
+        "4.2.2 handling one 16-bit 0 field (2)",
+        "4.2.3 choice in placement of ::",
+        "4.3 lowercase",
+    ],
+)
+def test_ipaddress6_compression(input_str, compressed):
+    """
+    Testing if the ipaddress string formatting
+    is compliant with RFC 5952
+    https://tools.ietf.org/html/rfc5952#section-4
+
+    Ids of parameters denote which rule in the spec
+    the test is demonstrating
+    """
+    ipv6 = ipaddress.ip_address(input_str)
+    assert str(ipv6) == compressed
