@@ -237,9 +237,7 @@ class AsnAutomationTestCase(TestCase):
 
             # For this test we need the orgs to actually exist
 
-            models.Organization.objects.create(
-                name=f"AFFILORG{i}", status="ok"
-            )
+            models.Organization.objects.create(name=f"AFFILORG{i}", status="ok")
             request = self.factory.post(
                 "/affiliate-to-org", data={"org": f"AFFILORG{i}"}
             )

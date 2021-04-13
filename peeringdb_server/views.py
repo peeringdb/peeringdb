@@ -12,9 +12,14 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db.models import Q
-from django.http import (HttpResponse, HttpResponseBadRequest,
-                         HttpResponseForbidden, HttpResponseNotFound,
-                         HttpResponseRedirect, JsonResponse)
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.shortcuts import redirect, render
 from django.template import loader
 from django.urls import Resolver404, resolve, reverse
@@ -35,30 +40,50 @@ from peeringdb_server import maintenance, settings
 from peeringdb_server.api_key_views import load_all_key_permissions
 from peeringdb_server.data_views import BOOL_CHOICE
 from peeringdb_server.deskpro import ticket_queue_rdap_error
-from peeringdb_server.forms import (AffiliateToOrgForm, PasswordChangeForm,
-                                    PasswordResetForm, UserCreationForm,
-                                    UserLocaleForm, UsernameRetrieveForm)
-from peeringdb_server.inet import (RdapException, RdapLookup,
-                                   RdapNotFoundError,
-                                   rdap_pretty_error_message)
+from peeringdb_server.forms import (
+    AffiliateToOrgForm,
+    PasswordChangeForm,
+    PasswordResetForm,
+    UserCreationForm,
+    UserLocaleForm,
+    UsernameRetrieveForm,
+)
+from peeringdb_server.inet import (
+    RdapException,
+    RdapLookup,
+    RdapNotFoundError,
+    rdap_pretty_error_message,
+)
 from peeringdb_server.mail import mail_username_retrieve
-from peeringdb_server.models import (PARTNERSHIP_LEVELS, REFTAG_MAP, UTC,
-                                     Facility, InternetExchange,
-                                     InternetExchangeFacility, IXFMemberData,
-                                     Network, NetworkContact, NetworkFacility,
-                                     NetworkIXLan, Organization, Partnership,
-                                     Sponsorship, User,
-                                     UserOrgAffiliationRequest,
-                                     UserPasswordReset)
+from peeringdb_server.models import (
+    PARTNERSHIP_LEVELS,
+    REFTAG_MAP,
+    UTC,
+    Facility,
+    InternetExchange,
+    InternetExchangeFacility,
+    IXFMemberData,
+    Network,
+    NetworkContact,
+    NetworkFacility,
+    NetworkIXLan,
+    Organization,
+    Partnership,
+    Sponsorship,
+    User,
+    UserOrgAffiliationRequest,
+    UserPasswordReset,
+)
 from peeringdb_server.org_admin_views import load_all_user_permissions
 from peeringdb_server.search import search
-from peeringdb_server.serializers import (FacilitySerializer,
-                                          InternetExchangeSerializer,
-                                          NetworkSerializer,
-                                          OrganizationSerializer)
+from peeringdb_server.serializers import (
+    FacilitySerializer,
+    InternetExchangeSerializer,
+    NetworkSerializer,
+    OrganizationSerializer,
+)
 from peeringdb_server.stats import stats as global_stats
-from peeringdb_server.util import (PERM_CRUD, APIPermissionsApplicator,
-                                   check_permissions)
+from peeringdb_server.util import PERM_CRUD, APIPermissionsApplicator, check_permissions
 
 RATELIMITS = dj_settings.RATELIMITS
 
