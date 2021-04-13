@@ -1394,6 +1394,20 @@ def view_exchange(request, id):
                 ],
             },
             {
+                "name": "service_level",
+                "type": "list",
+                "data": "enum/service_level_types",
+                "label": _("Service Level"),
+                "value": data.get("service_level", dismiss),
+            },
+            {
+                "name": "terms",
+                "type": "list",
+                "data": "enum/terms_types",
+                "label": _("Terms"),
+                "value": data.get("terms", dismiss),
+            },
+            {
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),

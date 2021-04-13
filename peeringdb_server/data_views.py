@@ -42,6 +42,7 @@ const.NET_TYPES_ADVS[0] = (
     const.NET_TYPES_ADVS[0][1],
 )
 
+
 const.ORG_GROUPS = (("member", "member"), ("admin", "admin"))
 
 const.POC_ROLES = sorted(const.POC_ROLES, key=lambda x: x[1])
@@ -136,6 +137,8 @@ def enum(request, name):
         "ORG_GROUPS",
         "BOOL_CHOICE_STR",
         "VISIBILITY",
+        "SERVICE_LEVEL_TYPES",
+        "TERMS_TYPES",
     ]:
         raise Exception("Unknown enum")
 
