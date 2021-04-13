@@ -235,13 +235,21 @@ class AsnAutomationTestCase(TestCase):
 
         for i in range(0, settings.MAX_USER_AFFILIATION_REQUESTS + 1):
 
+            # For this test we need the orgs to actually exist
+
+            models.Organization.objects.create(
+                name=f"AFFILORG{i}", status="ok"
+            )
             request = self.factory.post(
                 "/affiliate-to-org", data={"org": f"AFFILORG{i}"}
             )
             request.user = self.user_b
             request._dont_enforce_csrf_checks = True
+            print("\n")
+            print(i)
             response = pdbviews.view_affiliate_to_org(request)
 
+            print(response.content)
             if i < settings.MAX_USER_AFFILIATION_REQUESTS:
                 assert response.status_code == 200
             else:

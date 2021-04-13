@@ -1,12 +1,8 @@
 import pytest
 from rest_framework.test import APIClient
 
-from peeringdb_server.models import (
-    Network,
-    Organization,
-    User,
-    UserOrgAffiliationRequest,
-)
+from peeringdb_server.models import (Network, Organization, User,
+                                     UserOrgAffiliationRequest)
 
 URL = "/affiliate-to-org"
 
@@ -38,44 +34,78 @@ def network(org):
     return net
 
 
-@pytest.mark.django_db
-def test_affiliate_to_org_multiple(client, org):
-    """
-    Issue 931, Limit the number of requests
-    for affiliation to an ASN/org to 1
-    """
-    user = User.objects.get(username="test")
-
-    data = {
-        "org": org.id,
-    }
+def assert_passing_affiliation_request(data, client):
     response = client.post(URL, data)
     assert response.status_code == 200
-    assert UserOrgAffiliationRequest.objects.filter(user=user).count() == 1
+    assert UserOrgAffiliationRequest.objects.count() == 1
 
+
+def assert_failing_affiliation_request(data, client):
     response = client.post(URL, data)
     assert response.status_code == 400
     assert "You already requested affiliation to this ASN/org" in str(response.content)
-    assert UserOrgAffiliationRequest.objects.filter(user=user).count() == 1
+    assert UserOrgAffiliationRequest.objects.count() == 1
+
+
+"""
+The following tests are for issue 931:
+Limit the number of requests
+for affiliation to an ASN/org to 1
+"""
+
+
+@pytest.mark.django_db
+def test_affiliate_to_org_multiple(client, org):
+    assert_passing_affiliation_request({"org": org.id}, client)
+    assert_failing_affiliation_request({"org": org.id}, client)
 
 
 @pytest.mark.django_db
 def test_affiliate_to_asn_multiple(client, network):
-    """
-    Issue 931, Limit the number of requests
-    for affiliation to an ASN/org to 1
-    """
-    user = User.objects.get(username="test")
+    assert_passing_affiliation_request({"asn": 123}, client)
+    assert_failing_affiliation_request({"asn": 123}, client)
 
-    # Create request w asn
-    data = {"asn": network.asn}
-    response = client.post(URL, data)
+
+@pytest.mark.django_db
+def test_affiliate_to_org_then_asn(client, network, org):
+    assert_passing_affiliation_request({"org": org.id}, client)
+    assert_failing_affiliation_request({"asn": 123}, client)
+
+
+@pytest.mark.django_db
+def test_affiliate_to_asn_then_org(client, network, org):
+    assert_passing_affiliation_request({"org": org.id}, client)
+    assert_failing_affiliation_request({"asn": 123}, client)
+
+
+@pytest.mark.django_db
+def test_affiliate_to_org_id_takes_precedence_over_asn(client, org):
+    assert_passing_affiliation_request({"org": org.id, "asn": 2020}, client)
+    assert_failing_affiliation_request({"org": org.id, "asn": 2111}, client)
+
+
+@pytest.mark.django_db
+def test_affiliate_to_asn_takes_precendence_over_org_name(client, network, org):
+    assert_passing_affiliation_request({"org": "test name", "asn": 123}, client)
+    assert_failing_affiliation_request({"org": "different", "asn": 123}, client)
+
+
+@pytest.mark.django_db
+def test_affiliate_to_nonexisting_org_multiple(client):
+    """
+    Multiple affiliations to nonexisting orgs should still get
+    caught if the provided org name is repetitive
+    """
+    data = {
+        "org": "Nonexistent org",
+    }
+    assert_passing_affiliation_request(data, client)
+    assert_failing_affiliation_request(data, client)
+
+    # If we change the org name we can affiliate to that one as well
+    other_data = {
+        "org": "Second nonexistent org",
+    }
+    response = client.post(URL, other_data)
     assert response.status_code == 200
-    assert UserOrgAffiliationRequest.objects.filter(user=user).count() == 1
-    # Second request w asn
-    data = {"asn": network.asn}
-    response = client.post(URL, data)
-
-    assert response.status_code == 400
-    assert "You already requested affiliation to this ASN/org" in str(response.content)
-    assert UserOrgAffiliationRequest.objects.filter(user=user).count() == 1
+    assert UserOrgAffiliationRequest.objects.count() == 2
