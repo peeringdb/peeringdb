@@ -1396,14 +1396,14 @@ def view_exchange(request, id):
             {
                 "name": "service_level",
                 "type": "list",
-                "data": "enum/service_level_types",
+                "data": "enum/service_level_types_trunc",
                 "label": _("Service Level"),
                 "value": data.get("service_level", dismiss),
             },
             {
                 "name": "terms",
                 "type": "list",
-                "data": "enum/terms_types",
+                "data": "enum/terms_types_trunc",
                 "label": _("Terms"),
                 "value": data.get("terms", dismiss),
             },

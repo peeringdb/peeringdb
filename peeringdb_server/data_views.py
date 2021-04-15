@@ -27,6 +27,8 @@ const.TRAFFIC = [(k, i) for k, i in const.TRAFFIC if k != "100+ Gbps"]
 const.RATIOS_TRUNC = const.RATIOS[1:]
 const.SCOPES_TRUNC = const.SCOPES[1:]
 const.NET_TYPES_TRUNC = const.NET_TYPES[1:]
+const.SERVICE_LEVEL_TYPES_TRUNC = const.SERVICE_LEVEL_TYPES[1:]
+const.TERMS_TYPES_TRUNC = const.TERMS_TYPES[1:]
 
 # create enums without duplicate "Not Disclosed" choices
 # but with the one Not Disclosed choice combining both
@@ -137,8 +139,8 @@ def enum(request, name):
         "ORG_GROUPS",
         "BOOL_CHOICE_STR",
         "VISIBILITY",
-        "SERVICE_LEVEL_TYPES",
-        "TERMS_TYPES",
+        "SERVICE_LEVEL_TYPES_TRUNC",
+        "TERMS_TYPES_TRUNC",
     ]:
         raise Exception("Unknown enum")
 

@@ -2588,6 +2588,8 @@ twentyc.data.loaders.assign("enum/policy_locations", "data");
 twentyc.data.loaders.assign("enum/policy_contracts", "data");
 twentyc.data.loaders.assign("enum/visibility", "data");
 twentyc.data.loaders.assign("enum/bool_choice_str", "data");
+twentyc.data.loaders.assign("enum/service_level_types_trunc", "data");
+twentyc.data.loaders.assign("enum/terms_types_trunc", "data");
 
 $(twentyc.data).on("load-enum/traffic", function(e, payload) {
   var r = {}, i = 0, data=payload.data;
