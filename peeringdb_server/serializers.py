@@ -2415,6 +2415,9 @@ class InternetExchangeSerializer(ModelSerializer):
         write_only=True,
     )
 
+    proto_unicast = serializers.SerializerMethodField()
+    proto_ipv6 = serializers.SerializerMethodField()
+
     validators = [
         RequiredForMethodValidator("prefix", ["POST"]),
         SoftRequiredValidator(
@@ -2457,6 +2460,9 @@ class InternetExchangeSerializer(ModelSerializer):
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]
         list_exclude = ["org"]
+
+        read_only_fields = ["proto_multicast"]
+
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
@@ -2582,6 +2588,12 @@ class InternetExchangeSerializer(ModelSerializer):
 
     def get_net_count(self, inst):
         return inst.network_count
+
+    def get_proto_ipv6(self, inst):
+        return inst.derived_proto_ipv6
+
+    def get_proto_unicast(self, inst):
+        return inst.derived_proto_unicast
 
     def validate(self, data):
         try:
