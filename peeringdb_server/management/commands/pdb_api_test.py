@@ -261,9 +261,6 @@ class TestJSON(unittest.TestCase):
             "region_continent": CONTINENT,
             "media": "Ethernet",
             "notes": NOTE,
-            "proto_unicast": True,
-            "proto_multicast": False,
-            "proto_ipv6": True,
             "website": WEBSITE,
             "url_stats": "%s/stats" % WEBSITE,
             "tech_email": EMAIL,
@@ -1100,6 +1097,11 @@ class TestJSON(unittest.TestCase):
                     "name": self.make_name("Test"),
                     "org_id": SHARED["org_rwp"].id,
                 },
+                "readonly": {
+                    "proto_multicast": True,
+                    "proto_unicast": True,
+                    "proto_ipv6": False
+                }
             },
         )
 
