@@ -152,7 +152,7 @@ class TestJSON(unittest.TestCase):
     def get_ip6(cls, ixlan):
         hosts = []
         for host in (
-            ixlan.ixpfx_set.filter(status=ixlan.status, protocol=6)
+            ixlan.ixpfx_set.filter(status=ixlan.status, protocol="IPv6")
             .first()
             .prefix.hosts()
         ):
@@ -169,7 +169,7 @@ class TestJSON(unittest.TestCase):
     def get_ip4(cls, ixlan):
         hosts = []
         for host in (
-            ixlan.ixpfx_set.filter(status=ixlan.status, protocol=4)
+            ixlan.ixpfx_set.filter(status=ixlan.status, protocol="IPv4")
             .first()
             .prefix.hosts()
         ):
@@ -899,6 +899,27 @@ class TestJSON(unittest.TestCase):
     def test_user_001_GET_ix_net_count(self):
         data = self.assert_get_handleref(self.db_user, "ix", SHARED["ix_r_ok"].id)
         self.assertEqual(data.get("net_count"), 1)
+
+    ##########################################################################
+
+    def test_user_001_GET_ix_protocols(self):
+        ix = SHARED["ix_r_ok"]
+        ixlan = ix.ixlan
+
+        data = self.assert_get_handleref(self.db_user, "ix", SHARED["ix_r_ok"].id)
+        self.assertEqual(data.get("proto_unicast"), True)
+        self.assertEqual(data.get("proto_ipv6"), True)
+
+        for ixpfx in ixlan.ixpfx_set.all():
+            ixpfx.delete(force=True)
+
+        data = self.assert_get_handleref(self.db_user, "ix", SHARED["ix_r_ok"].id)
+
+        # If there's no ipv4 prefix, proto_unicast should be False
+        self.assertEqual(data.get("proto_unicast"), False)
+
+        # If there's no ipv6 prefix, proto_unicast should be False
+        self.assertEqual(data.get("proto_ipv6"), False)
 
     ##########################################################################
 
@@ -3636,13 +3657,16 @@ class Command(BaseCommand):
         if tag in ["ix", "net", "fac", "org"]:
             data["name"] = name
 
+        data.update(**kwargs)
+
         if tag == "ixpfx":
             if kwargs.get("protocol", 4) == 4:
+                data["protocol"] = "IPv4"
                 data["prefix"] = PREFIXES_V4[model.objects.all().count()]
             elif kwargs.get("protocol") == 6:
+                data["protocol"] = "IPv6"
                 data["prefix"] = PREFIXES_V6[model.objects.all().count()]
 
-        data.update(**kwargs)
         try:
             obj = model.objects.get(**data)
             cls.log(
