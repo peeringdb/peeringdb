@@ -1740,17 +1740,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         )
 
     @property
-    def derived_proto_ipv6(self):
-        """
-        Returns a value for "proto_ipv6" derived from the exchanges's
-        ixpfx records.
-
-        If the ix has a IPv6 ixpfx, proto_ipv6 should be True
-        """
-
-        return self.ixlan_set.filter(ixpfx_set__protocol="IPv6").exists()
-
-    @property
     def derived_proto_unicast(self):
         """
         Returns a value for "proto_unicast" derived from the exchanges's
@@ -1758,7 +1747,17 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
         If the ix has a IPv4 ixpfx, proto_unicast should be True
         """
-        return self.ixlan_set.filter(ixpfx_set__protocol="IPv4").exists()
+        return self.ixlan.ixpfx_set_active.filter(protocol="IPv4").exists()
+
+    @property
+    def derived_proto_ipv6(self):
+        """
+        Returns a value for "proto_ipv6" derived from the exchanges's
+        ixpfx records.
+
+        If the ix has a IPv6 ixpfx, proto_ipv6 should be True
+        """
+        return self.ixlan.ixpfx_set_active.filter(protocol="IPv6").exists()
 
     @property
     def deletable(self):
