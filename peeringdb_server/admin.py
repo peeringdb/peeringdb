@@ -641,8 +641,8 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     def proto_multicast_readonly(self, obj):
         return obj.proto_multicast
 
-    proto_unicast_readonly.short_description = 'IPv4 / Unicast'
-    proto_ipv6_readonly.short_description = 'IPv6'
+    proto_unicast_readonly.short_description = 'Unicast IPv4'
+    proto_ipv6_readonly.short_description = 'Unicast IPv6'
     proto_multicast_readonly.short_description = 'Multicast'
 
 
