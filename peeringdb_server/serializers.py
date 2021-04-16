@@ -1158,7 +1158,14 @@ class ModelSerializer(serializers.ModelSerializer):
 
                 if request.method == "POST":
                     self.instance = instance
-                    self._undelete = True
+
+                    if type(instance) in QUEUE_ENABLED:
+                        self._reapprove = True
+                        self._undelete = False
+                    else:
+                        self._reapprove = False
+                        self._undelete = True
+
                 elif request.method == "PUT":
                     for field in filters.keys():
                         if field == "status":
@@ -1185,7 +1192,11 @@ class ModelSerializer(serializers.ModelSerializer):
         """
         instance = super().save(**kwargs)
 
-        if instance.status == "deleted" and getattr(self, "_undelete", False):
+        if instance.status == "deleted" and getattr(self, "_reapprove", False):
+            instance.status = "pending"
+            instance.save()
+
+        elif instance.status == "deleted" and getattr(self, "_undelete", False):
             instance.status = "ok"
             instance.save()
 
@@ -1402,15 +1413,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
         # whichever org is specified in `SUGGEST_ENTITY_ORG`
         #
         # this happens here so it is done before the validators run
-        print("to internal value")
-        print(f"is there an instance?: {self.instance}")
-        if self.instance:
-            print("status")
-            print(self.instance.status)
-        suggest = data.get("suggest")
-        print(f"is suggest in data?: {suggest}")
         if "suggest" in data and (not self.instance or not self.instance.id):
-            print("hard setting org id to suggest")
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
         return super().to_internal_value(data)
 
