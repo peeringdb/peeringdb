@@ -641,9 +641,9 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     def proto_multicast_readonly(self, obj):
         return obj.proto_multicast
 
-    proto_unicast_readonly.short_description = 'Unicast IPv4'
-    proto_ipv6_readonly.short_description = 'Unicast IPv6'
-    proto_multicast_readonly.short_description = 'Multicast'
+    proto_unicast_readonly.short_description = _('Unicast IPv4')
+    proto_ipv6_readonly.short_description = _('Unicast IPv6')
+    proto_multicast_readonly.short_description = _('Multicast')
 
 
 class IXLanAdminForm(StatusForm):
