@@ -3464,47 +3464,78 @@ class TestJSON(unittest.TestCase):
             self.db_guest, "fac", data, test_success=False, test_failures={"perms": {}}
         )
 
-    def test_z_misc_001_suggest_fac_bug(self):
+    def test_z_misc_001_add_fac_bug(self):
         """
         Issue 922: regression test for bug where a user could
         approve a facility by adding, deleting, and re-adding
         """
 
-        # Add suggestion
-        data = self.make_data_fac(suggest=True)
-        del data["org_id"]
-        print("here is the data")
-        from pprint import pprint
-        pprint(data)
-
-        print("\n"*10)
-        print("First request")
+        # Add fac
+        data = self.make_data_fac()
         r_data = self.assert_create(self.db_org_admin, "fac", data)
 
-        self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
         self.assertEqual(r_data["status"], "pending")
 
         fac = Facility.objects.get(id=r_data["id"])
+        self.assertEqual(fac.status, "pending")
+
+        # Delete fac
+        # fac = Facility.objects.get(id=r_data["id"])
+        # fac.delete()
+        # fac.refresh_from_db()
+
+        self.assert_delete(
+            self.db_org_admin,
+            "fac",
+            test_success=r_data["id"]
+        )
+        fac.refresh_from_db()
+        self.assertEqual(fac.status, "deleted")
+
+        # Re-add should go back to pending (previously was going to "ok")
+        re_add_data = self.assert_create(self.db_org_admin, "fac", data)
+        self.assertEqual(re_add_data["status"], "pending")
+        fac = Facility.objects.get(id=re_add_data["id"])
+        self.assertEqual(fac.status, "pending")
+
+    def test_z_misc_001_add_fac_bug_suggest(self):
+        """
+        Issue 922: regression test for bug where a user could
+        approve a facility by adding, deleting, and re-adding.
+
+        Confirms that this interacts with suggestions properly.
+        """
+
+        # Add fac (suggestion)
+        data = self.make_data_fac(suggest=True)
+        del data["org_id"]
+        print(data)
+
+        r_data = self.assert_create(self.db_user, "fac", data)
+
+        self.assertEqual(r_data["status"], "pending")
+        self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
+
+        fac = Facility.objects.get(id=r_data["id"])
+        self.assertEqual(fac.status, "pending")
         self.assertEqual(fac.org_id, settings.SUGGEST_ENTITY_ORG)
 
-        # Delete suggestion
-        # self.assert_delete(self.db_org_admin, "fac", test_success=r_data["id"])
+        # Delete fac
         fac = Facility.objects.get(id=r_data["id"])
         fac.delete()
         fac.refresh_from_db()
         self.assertEqual(fac.status, "deleted")
 
         # Re-add should go back to pending
-        print("\n"*10)
-        print("Second request")
-        re_add_data = self.assert_create(self.db_org_admin, "fac", data)
+        re_add_data = self.assert_create(self.db_user, "fac", data)
 
         self.assertEqual(re_add_data["status"], "pending")
         self.assertEqual(re_add_data["org_id"], settings.SUGGEST_ENTITY_ORG)
 
         fac = Facility.objects.get(id=re_add_data["id"])
+        self.assertEqual(fac.status, "pending")
         self.assertEqual(fac.org_id, settings.SUGGEST_ENTITY_ORG)
-        assert 0
+
 
     def test_z_misc_001_disable_suggest_ix(self):
         """
