@@ -255,6 +255,7 @@ class GeocodeSerializerMixin(object):
         # When creating a geo-enabled object,
         # we first want to save the model
         # and then normalize the geofields
+        print("this is when the geocode creation is happening")
         instance = super().create(validated_data)
 
         # we dont want to geocode on tests
@@ -1157,7 +1158,14 @@ class ModelSerializer(serializers.ModelSerializer):
 
                 if request.method == "POST":
                     self.instance = instance
-                    self._undelete = True
+
+                    if type(instance) in QUEUE_ENABLED:
+                        self._reapprove = True
+                        self._undelete = False
+                    else:
+                        self._reapprove = False
+                        self._undelete = True
+
                 elif request.method == "PUT":
                     for field in filters.keys():
                         if field == "status":
@@ -1184,7 +1192,11 @@ class ModelSerializer(serializers.ModelSerializer):
         """
         instance = super().save(**kwargs)
 
-        if instance.status == "deleted" and getattr(self, "_undelete", False):
+        if instance.status == "deleted" and getattr(self, "_reapprove", False):
+            instance.status = "pending"
+            instance.save()
+
+        elif instance.status == "deleted" and getattr(self, "_undelete", False):
             instance.status = "ok"
             instance.save()
 
