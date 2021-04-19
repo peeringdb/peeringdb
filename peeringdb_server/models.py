@@ -3871,6 +3871,20 @@ class Network(pdb_models.NetworkBase):
         return IXLan.objects.filter(id__in=ixlan_ids)
 
     @property
+    def fac_count(self):
+        """
+        Returns number of Facilities at this Network
+        """
+        return self.netfac_set_active.count()
+
+    @property
+    def ix_count(self):
+        """
+        Returns number of Internet Exchanges at this Network
+        """
+        return self.netixlan_set_active.count()
+
+    @property
     def ixlan_set_ixf_enabled(self):
         """
         Returns IXLan queryset for IX-F import enabled ixlans connected

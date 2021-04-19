@@ -891,6 +891,13 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_user_001_GET_net_obj_count(self):
+        data = self.assert_get_handleref(self.db_user, "net", SHARED["net_r_ok"].id)
+        self.assertEqual(data.get("ix_count"), 1)
+        self.assertEqual(data.get("fac_count"), 1)
+
+    ##########################################################################
+
     def test_user_001_GET_ix(self):
         self.assert_get_handleref(self.db_user, "ix", SHARED["ix_r_ok"].id)
 

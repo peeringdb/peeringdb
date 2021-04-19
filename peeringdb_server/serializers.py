@@ -1972,6 +1972,9 @@ class NetworkSerializer(ModelSerializer):
 
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
+    ix_count = serializers.SerializerMethodField()
+    fac_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Network
         depth = 1
@@ -1997,6 +2000,8 @@ class NetworkSerializer(ModelSerializer):
             "info_multicast",
             "info_ipv6",
             "info_never_via_route_servers",
+            "ix_count",
+            "fac_count",
             "notes",
             "netixlan_updated",
             "netfac_updated",
@@ -2115,6 +2120,12 @@ class NetworkSerializer(ModelSerializer):
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
+
+    def get_ix_count(self, inst):
+        return inst.ix_count
+
+    def get_fac_count(self, inst):
+        return inst.fac_count
 
     def create(self, validated_data):
         request = self._context.get("request")
