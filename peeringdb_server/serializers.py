@@ -2404,6 +2404,7 @@ class InternetExchangeSerializer(ModelSerializer):
     )
 
     net_count = serializers.SerializerMethodField()
+    fac_count = serializers.SerializerMethodField()
 
     # suggest = serializers.BooleanField(required=False, write_only=True)
 
@@ -2471,6 +2472,7 @@ class InternetExchangeSerializer(ModelSerializer):
             # "suggest",
             "prefix",
             "net_count",
+            "fac_count",
             "ixf_net_count",
             "ixf_last_import",
         ] + HandleRefSerializer.Meta.fields
@@ -2605,6 +2607,9 @@ class InternetExchangeSerializer(ModelSerializer):
 
     def get_net_count(self, inst):
         return inst.network_count
+
+    def get_fac_count(self, inst):
+        return inst.fac_count
 
     def get_proto_ipv6(self, inst):
         return inst.derived_proto_ipv6

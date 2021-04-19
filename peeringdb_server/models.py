@@ -1705,6 +1705,13 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return len(qset)
 
     @property
+    def fac_count(self):
+        """
+        Returns count of Facilities at this exchange
+        """
+        return self.ixfac_set_active.count()
+
+    @property
     def ixlan_set_active(self):
         """
         Returns queryset of active ixlan objects at this exchange
