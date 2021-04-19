@@ -1399,7 +1399,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     @property
     def netfac_set_active(self):
         """
-        Returns queryset of active NetworkFacility ojects connected to this
+        Returns queryset of active NetworkFacility objects connected to this
         facility
         """
         return self.netfac_set.filter(status="ok")
@@ -1418,6 +1418,13 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         Returns number of Networks at this facility
         """
         return self.netfac_set_active.count()
+
+    @property
+    def ix_count(self):
+        """
+        Returns number of Internet Exchanges at this facility
+        """
+        return self.ixfac_set_active.count()
 
     @property
     def view_url(self):

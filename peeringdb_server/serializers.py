@@ -1313,6 +1313,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
     org = serializers.SerializerMethodField()
 
     net_count = serializers.SerializerMethodField()
+    ix_count = serializers.SerializerMethodField()
 
     suggest = serializers.BooleanField(required=False, write_only=True)
 
@@ -1352,6 +1353,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                 "npanxx",
                 "notes",
                 "net_count",
+                "ix_count",
                 "suggest",
                 "sales_email",
                 "sales_phone",
@@ -1422,6 +1424,9 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
     def get_net_count(self, inst):
         return inst.net_count
+
+    def get_ix_count(self, inst):
+        return inst.ix_count
 
     def validate(self, data):
         try:
