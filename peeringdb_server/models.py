@@ -254,7 +254,7 @@ class FilterObjCountMixin(object):
 
         Keyword Arguments:
             - count_field<str>: Name of the model property count field to filter on
-                Should be one of (network_count, ix_count, fac_count).
+                Should be one of (network_count/net_count, ix_count, fac_count).
             - filt<str>: filter to apply: None, 'lt', 'gt', 'lte', 'gte'
             - value<int>: value to filter by
             - qset
@@ -269,17 +269,18 @@ class FilterObjCountMixin(object):
         value = int(value)
 
         if filt == "lt":
-            valid_instances = [inst.id for inst in qset if getattr(inst, count_field, 0) < value]
+            valid_instances = [inst.id for inst in qset if getattr(inst, count_field) < value]
         elif filt == "gt":
-            valid_instances = [inst.id for inst in qset if getattr(inst, count_field, 0) > value]
+            valid_instances = [inst.id for inst in qset if getattr(inst, count_field) > value]
         elif filt == "gte":
-            valid_instances = [inst.id for inst in qset if getattr(inst, count_field, 0) >= value]
+            valid_instances = [inst.id for inst in qset if getattr(inst, count_field) >= value]
         elif filt == "lte":
-            valid_instances = [inst.id for inst in qset if getattr(inst, count_field, 0) <= value]
+            valid_instances = [inst.id for inst in qset if getattr(inst, count_field) <= value]
         else:
-            valid_instances = [inst.id for inst in qset if getattr(inst, count_field, 0) == value]
+            valid_instances = [inst.id for inst in qset if getattr(inst, count_field) == value]
 
         return qset.filter(pk__in=valid_instances)
+
 
 class GeocodeBaseMixin(models.Model):
     """
@@ -1305,7 +1306,7 @@ class OrganizationMergeEntity(models.Model):
 
 @grainy_model(namespace="facility", parent="org")
 @reversion.register
-class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
+class Facility(FilterObjCountMixin, ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     """
     Describes a peeringdb facility
     """
@@ -1417,6 +1418,10 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
             qset = cls.handleref.undeleted()
 
         return qset.filter(id__in=shared_facilities)
+
+    @classmethod
+    def filter_ix_count(cls, filt=None, value=None, qset=None):
+        return cls.filter_obj_count("ix_count", filt, value, qset)
 
     @property
     def sponsorship(self):
@@ -3688,7 +3693,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
 
 @grainy_model(namespace="network", parent="org")
 @reversion.register
-class Network(pdb_models.NetworkBase):
+class Network(FilterObjCountMixin, pdb_models.NetworkBase):
     """
     Describes a peeringdb network
     """
@@ -3852,6 +3857,14 @@ class Network(pdb_models.NetworkBase):
         if not qset:
             qset = cls.objects.filter(status="ok").order_by("asn")
         return {net.asn: net.irr_as_set for net in qset}
+
+    @classmethod
+    def filter_ix_count(cls, filt=None, value=None, qset=None):
+        return cls.filter_obj_count("ix_count", filt, value, qset)
+
+    @classmethod
+    def filter_fac_count(cls, filt=None, value=None, qset=None):
+        return cls.filter_obj_count("fac_count", filt, value, qset)
 
     @property
     def search_result_name(self):

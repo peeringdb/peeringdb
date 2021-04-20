@@ -2505,6 +2505,11 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_fac_net_count(self):
+        """
+        Issue 834: Users should be able to filter Facilities
+        based on the amount of Networks they are linked to.
+        """
+
         data = self.db_guest.all("fac", net_count=1)
         for row in data:
             self.assert_data_integrity(row, "fac")
@@ -2527,7 +2532,40 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_filter_fac_ix_count(self):
+        """
+        Issue 834: Users should be able to filter Facilities
+        based on the amount of Exchanges they are linked to.
+        """
+
+        data = self.db_guest.all("fac", ix_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertEqual(row["ix_count"], 1)
+
+        data = self.db_guest.all("fac", ix_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertEqual(row["ix_count"], 0)
+
+        data = self.db_guest.all("fac", ix_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertEqual(row["ix_count"], 0)
+
+        data = self.db_guest.all("fac", ix_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertGreater(row["ix_count"], 0)
+
+    ##########################################################################
+
     def test_guest_005_list_filter_ix_net_count(self):
+        """
+        Issue 836: Users should be able to filter
+        Exchanges by the amount of Networks linked to them.
+        """
+
         data = self.db_guest.all("ix", net_count=1)
         for row in data:
             self.assert_data_integrity(row, "ix")
@@ -2557,6 +2595,119 @@ class TestJSON(unittest.TestCase):
         for row in data:
             self.assert_data_integrity(row, "ix")
             self.assertGreaterEqual(row["net_count"], 1)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_ix_fac_count(self):
+        """
+        Issue 836: Users should be able to filter
+        Exchanges by the amount of Facilities linked to them.
+        """
+
+        data = self.db_guest.all("ix", fac_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["fac_count"], 1)
+
+        data = self.db_guest.all("ix", fac_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["fac_count"], 0)
+
+        data = self.db_guest.all("ix", fac_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["fac_count"], 0)
+
+        data = self.db_guest.all("ix", fac_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertGreater(row["fac_count"], 0)
+
+        data = self.db_guest.all("ix", fac_count__lte=2)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertLessEqual(row["fac_count"], 2)
+
+        data = self.db_guest.all("ix", fac_count__gte=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertGreaterEqual(row["fac_count"], 1)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_net_ix_count(self):
+        """
+        Issue 835: We should be able to filter Networks based
+        on the number of Exchanges associated with them.
+        """
+
+        data = self.db_guest.all("net", ix_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["ix_count"], 1)
+
+        data = self.db_guest.all("net", ix_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["ix_count"], 0)
+
+        data = self.db_guest.all("net", ix_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["ix_count"], 0)
+
+        data = self.db_guest.all("net", ix_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertGreater(row["ix_count"], 0)
+
+        data = self.db_guest.all("net", ix_count__lte=2)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertLessEqual(row["ix_count"], 2)
+
+        data = self.db_guest.all("net", ix_count__gte=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertGreaterEqual(row["ix_count"], 1)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_net_fac_count(self):
+        """
+        Issue 835: We should be able to filter Networks based
+        on the number of Facilities associated with them.
+        """
+        data = self.db_guest.all("net", fac_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["fac_count"], 1)
+
+        data = self.db_guest.all("net", fac_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["fac_count"], 0)
+
+        data = self.db_guest.all("net", fac_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["fac_count"], 0)
+
+        data = self.db_guest.all("net", fac_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertGreater(row["fac_count"], 0)
+
+        data = self.db_guest.all("net", fac_count__lte=2)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertLessEqual(row["fac_count"], 2)
+
+        data = self.db_guest.all("net", fac_count__gte=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertGreaterEqual(row["fac_count"], 1)
 
     ##########################################################################
 

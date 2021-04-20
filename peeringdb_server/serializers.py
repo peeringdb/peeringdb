@@ -1375,7 +1375,9 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
         qset = qset.select_related("org")
         filters = get_relation_filters(
-            ["net_id", "net", "ix_id", "ix", "org_name", "net_count"], cls, **kwargs
+            ["net_id", "net", "ix_id", "ix", "org_name", "net_count", "ix_count"],
+            cls,
+            **kwargs
         )
 
         for field, e in list(filters.items()):
@@ -1402,6 +1404,9 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                         )
                     )
                 ).filter(**flt)
+
+            elif field == "ix_count":
+                qset = cls.Meta.model.filter_ix_count(qset=qset, **e)
 
         if "asn_overlap" in kwargs:
             asns = kwargs.get("asn_overlap", [""])[0].split(",")
@@ -2055,6 +2060,8 @@ class NetworkSerializer(ModelSerializer):
                 "netfac",
                 "fac",
                 "fac_id",
+                "fac_count",
+                "ix_count",
             ],
             cls,
             **kwargs,
@@ -2066,6 +2073,12 @@ class NetworkSerializer(ModelSerializer):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
                     qset = fn(qset=qset, field=field, **e)
                     break
+
+            if field == "ix_count":
+                qset = cls.Meta.model.filter_ix_count(qset=qset, **e)
+
+            if field == "facility_count":
+                qset = cls.Meta.model.filter_fac_count(qset=qset, **e)
 
         if "name_search" in kwargs:
             name = kwargs.get("name_search", [""])[0]
@@ -2509,12 +2522,14 @@ class InternetExchangeSerializer(ModelSerializer):
                 "net_id",
                 "net",
                 "net_count",
+                "fac_count",
             ],
             cls,
             **kwargs,
         )
 
         for field, e in list(filters.items()):
+
             for valid in ["ixlan", "ixfac", "fac", "net"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
