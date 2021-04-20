@@ -2493,7 +2493,6 @@ class InternetExchangeSerializer(ModelSerializer):
 
         read_only_fields = ["proto_multicast"]
 
-
     @classmethod
     def prepare_query(cls, qset, **kwargs):
 
@@ -2524,6 +2523,9 @@ class InternetExchangeSerializer(ModelSerializer):
 
             if field == "network_count":
                 qset = cls.Meta.model.filter_net_count(qset=qset, **e)
+
+            if field == "facility_count":
+                qset = cls.Meta.model.filter_fac_count(qset=qset, **e)
 
         if "ipblock" in kwargs:
             qset = cls.Meta.model.related_to_ipblock(

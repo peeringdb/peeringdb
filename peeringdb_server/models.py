@@ -244,6 +244,43 @@ class ProtectedMixin:
         return
 
 
+class FilterObjCountMixin(object):
+    @classmethod
+    def filter_obj_count(cls, count_field, filt, value, qset):
+
+        """
+        Filter a queryset by {ix/network/facility} count value.
+
+
+        Keyword Arguments:
+            - count_field<str>: Name of the model property count field to filter on
+                Should be one of (network_count, ix_count, fac_count).
+            - filt<str>: filter to apply: None, 'lt', 'gt', 'lte', 'gte'
+            - value<int>: value to filter by
+            - qset
+
+        Returns:
+            InternetExchange queryset
+        """
+
+        if not qset:
+            qset = cls.objects.filter(status="ok")
+
+        value = int(value)
+
+        if filt == "lt":
+            valid_instances = [inst.id for inst in qset if getattr(inst, count_field, 0) < value]
+        elif filt == "gt":
+            valid_instances = [inst.id for inst in qset if getattr(inst, count_field, 0) > value]
+        elif filt == "gte":
+            valid_instances = [inst.id for inst in qset if getattr(inst, count_field, 0) >= value]
+        elif filt == "lte":
+            valid_instances = [inst.id for inst in qset if getattr(inst, count_field, 0) <= value]
+        else:
+            valid_instances = [inst.id for inst in qset if getattr(inst, count_field, 0) == value]
+
+        return qset.filter(pk__in=valid_instances)
+
 class GeocodeBaseMixin(models.Model):
     """
     Mixin to use for geocode enabled entities
@@ -1475,7 +1512,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
 
 @grainy_model(namespace="internetexchange", parent="org")
 @reversion.register
-class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
+class InternetExchange(FilterObjCountMixin, ProtectedMixin, pdb_models.InternetExchangeBase):
     """
     Describes a peeringdb exchange
     """
@@ -1634,36 +1671,11 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
     @classmethod
     def filter_net_count(cls, filt=None, value=None, qset=None):
+        return cls.filter_obj_count("network_count", filt, value, qset)
 
-        """
-        Filter ix queryset by network count value
-
-        Keyword Arguments:
-            - filt<str>: filter to apply: None, 'lt', 'gt', 'lte', 'gte'
-            - value<int>: value to filter by
-            - qset
-
-        Returns:
-            InternetExchange queryset
-        """
-
-        if not qset:
-            qset = cls.objects.filter(status="ok")
-
-        value = int(value)
-
-        if filt == "lt":
-            exchanges = [ix.id for ix in qset if ix.network_count < value]
-        elif filt == "gt":
-            exchanges = [ix.id for ix in qset if ix.network_count > value]
-        elif filt == "gte":
-            exchanges = [ix.id for ix in qset if ix.network_count >= value]
-        elif filt == "lte":
-            exchanges = [ix.id for ix in qset if ix.network_count <= value]
-        else:
-            exchanges = [ix.id for ix in qset if ix.network_count == value]
-
-        return qset.filter(pk__in=exchanges)
+    @classmethod
+    def filter_fac_count(cls, filt=None, value=None, qset=None):
+        return cls.filter_obj_count("fac_count", filt, value, qset)
 
     @property
     def ixlan(self):
