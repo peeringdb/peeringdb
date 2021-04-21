@@ -3907,7 +3907,8 @@ class Network(FilterObjCountMixin, pdb_models.NetworkBase):
         """
         Returns number of Internet Exchanges at this Network
         """
-        return self.netixlan_set_active.count()
+        qset = self.netixlan_set_active.values("ixlan__ix_id").annotate(count=models.Count("ixlan__ix_id"))
+        return qset.count()
 
     @property
     def ixlan_set_ixf_enabled(self):
