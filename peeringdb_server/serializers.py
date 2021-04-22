@@ -1312,9 +1312,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
     org = serializers.SerializerMethodField()
 
-    net_count = serializers.SerializerMethodField()
-    ix_count = serializers.SerializerMethodField()
-
     suggest = serializers.BooleanField(required=False, write_only=True)
 
     website = serializers.URLField()
@@ -1389,24 +1386,20 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             if field == "org_name":
                 flt = {"org__name__%s" % (e["filt"] or "icontains"): e["value"]}
                 qset = qset.filter(**flt)
+
             elif field == "network_count":
                 if e["filt"]:
-                    flt = {"net_count_a__%s" % e["filt"]: e["value"]}
+                    flt = {"net_count__%s" % e["filt"]: e["value"]}
                 else:
-                    flt = {"net_count_a": e["value"]}
-
-                qset = qset.annotate(
-                    net_count_a=Sum(
-                        Case(
-                            When(netfac_set__status="ok", then=1),
-                            default=0,
-                            output_field=IntegerField(),
-                        )
-                    )
-                ).filter(**flt)
+                    flt = {"net_count": e["value"]}
+                qset = qset.filter(**flt)
 
             elif field == "ix_count":
-                qset = cls.Meta.model.filter_ix_count(qset=qset, **e)
+                if e["filt"]:
+                    flt = {"ix_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"ix_count": e["value"]}
+                qset = qset.filter(**flt)
 
         if "asn_overlap" in kwargs:
             asns = kwargs.get("asn_overlap", [""])[0].split(",")
@@ -1426,12 +1419,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
-
-    def get_net_count(self, inst):
-        return inst.net_count
-
-    def get_ix_count(self, inst):
-        return inst.ix_count
 
     def validate(self, data):
         try:
@@ -2426,9 +2413,6 @@ class InternetExchangeSerializer(ModelSerializer):
         getter="facility",
     )
 
-    net_count = serializers.SerializerMethodField()
-    fac_count = serializers.SerializerMethodField()
-
     # suggest = serializers.BooleanField(required=False, write_only=True)
 
     ixf_net_count = serializers.IntegerField(read_only=True)
@@ -2536,10 +2520,18 @@ class InternetExchangeSerializer(ModelSerializer):
                     break
 
             if field == "network_count":
-                qset = cls.Meta.model.filter_net_count(qset=qset, **e)
+                if e["filt"]:
+                    flt = {"net_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"net_count": e["value"]}
+                qset = qset.filter(**flt)
 
             if field == "facility_count":
-                qset = cls.Meta.model.filter_fac_count(qset=qset, **e)
+                if e["filt"]:
+                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"fac_count": e["value"]}
+                qset = qset.filter(**flt)
 
         if "ipblock" in kwargs:
             qset = cls.Meta.model.related_to_ipblock(

@@ -244,44 +244,6 @@ class ProtectedMixin:
         return
 
 
-class FilterObjCountMixin(object):
-    @classmethod
-    def filter_obj_count(cls, count_field, filt, value, qset):
-
-        """
-        Filter a queryset by {ix/network/facility} count value.
-
-
-        Keyword Arguments:
-            - count_field<str>: Name of the model property count field to filter on
-                Should be one of (network_count/net_count, ix_count, fac_count).
-            - filt<str>: filter to apply: None, 'lt', 'gt', 'lte', 'gte'
-            - value<int>: value to filter by
-            - qset
-
-        Returns:
-            InternetExchange queryset
-        """
-
-        if not qset:
-            qset = cls.objects.filter(status="ok")
-
-        value = int(value)
-
-        if filt == "lt":
-            valid_instances = [inst.id for inst in qset if getattr(inst, count_field) < value]
-        elif filt == "gt":
-            valid_instances = [inst.id for inst in qset if getattr(inst, count_field) > value]
-        elif filt == "gte":
-            valid_instances = [inst.id for inst in qset if getattr(inst, count_field) >= value]
-        elif filt == "lte":
-            valid_instances = [inst.id for inst in qset if getattr(inst, count_field) <= value]
-        else:
-            valid_instances = [inst.id for inst in qset if getattr(inst, count_field) == value]
-
-        return qset.filter(pk__in=valid_instances)
-
-
 class GeocodeBaseMixin(models.Model):
     """
     Mixin to use for geocode enabled entities
@@ -1306,7 +1268,7 @@ class OrganizationMergeEntity(models.Model):
 
 @grainy_model(namespace="facility", parent="org")
 @reversion.register
-class Facility(FilterObjCountMixin, ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
+class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     """
     Describes a peeringdb facility
     """
@@ -1315,6 +1277,20 @@ class Facility(FilterObjCountMixin, ProtectedMixin, pdb_models.FacilityBase, Geo
         Organization, on_delete=models.CASCADE, related_name="fac_set"
     )
     website = models.URLField(_("Website"), blank=False)
+
+    ix_count = models.PositiveIntegerField(
+        _("number of exchanges at this facility"),
+        help_text=_("number of exchanges at this facility"),
+        null=False,
+        default=0
+    )
+    net_count = models.PositiveIntegerField(
+        _("number of networks at this facility"),
+        help_text=_("number of networks at this facility"),
+        null=False,
+        default=0
+    )
+
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
     class HandleRef:
@@ -1419,10 +1395,6 @@ class Facility(FilterObjCountMixin, ProtectedMixin, pdb_models.FacilityBase, Geo
 
         return qset.filter(id__in=shared_facilities)
 
-    @classmethod
-    def filter_ix_count(cls, filt=None, value=None, qset=None):
-        return cls.filter_obj_count("ix_count", filt, value, qset)
-
     @property
     def sponsorship(self):
         """
@@ -1453,20 +1425,6 @@ class Facility(FilterObjCountMixin, ProtectedMixin, pdb_models.FacilityBase, Geo
         to this facility
         """
         return self.ixfac_set.filter(status="ok")
-
-    @property
-    def net_count(self):
-        """
-        Returns number of Networks at this facility
-        """
-        return self.netfac_set_active.count()
-
-    @property
-    def ix_count(self):
-        """
-        Returns number of Internet Exchanges at this facility
-        """
-        return self.ixfac_set_active.count()
 
     @property
     def view_url(self):
@@ -1517,13 +1475,27 @@ class Facility(FilterObjCountMixin, ProtectedMixin, pdb_models.FacilityBase, Geo
 
 @grainy_model(namespace="internetexchange", parent="org")
 @reversion.register
-class InternetExchange(FilterObjCountMixin, ProtectedMixin, pdb_models.InternetExchangeBase):
+class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     """
     Describes a peeringdb exchange
     """
 
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="ix_set"
+    )
+
+    fac_count = models.PositiveIntegerField(
+        _("number of facilities at this exchange"),
+        help_text=_("number of facilities at this exchange"),
+        null=False,
+        default=0
+    )
+
+    net_count = models.PositiveIntegerField(
+        _("number of networks at this exchange"),
+        help_text=_("number of networks at this exchange"),
+        null=False,
+        default=0
     )
 
     @staticmethod
@@ -1674,14 +1646,6 @@ class InternetExchange(FilterObjCountMixin, ProtectedMixin, pdb_models.InternetE
 
         return qset.filter(id__in=shared_exchanges)
 
-    @classmethod
-    def filter_net_count(cls, filt=None, value=None, qset=None):
-        return cls.filter_obj_count("network_count", filt, value, qset)
-
-    @classmethod
-    def filter_fac_count(cls, filt=None, value=None, qset=None):
-        return cls.filter_obj_count("fac_count", filt, value, qset)
-
     @property
     def ixlan(self):
         """
@@ -1711,22 +1675,6 @@ class InternetExchange(FilterObjCountMixin, ProtectedMixin, pdb_models.InternetE
         of this entity
         """
         return self.name
-
-    @property
-    def network_count(self):
-        """
-        Returns count of networks at this exchange
-        """
-        qset = NetworkIXLan.objects.filter(ixlan__ix_id=self.id, status="ok")
-        qset = qset.values("network_id").annotate(count=models.Count("network_id"))
-        return len(qset)
-
-    @property
-    def fac_count(self):
-        """
-        Returns count of Facilities at this exchange
-        """
-        return self.ixfac_set_active.count()
 
     @property
     def ixlan_set_active(self):
@@ -3719,6 +3667,7 @@ class Network(pdb_models.NetworkBase):
         null=False,
         default=0
     )
+
     fac_count = models.PositiveIntegerField(
         _("number of facilities at this network"),
         help_text=_("number of facilities at this network"),
@@ -3899,21 +3848,6 @@ class Network(pdb_models.NetworkBase):
             if netixlan.ixlan_id not in ixlan_ids:
                 ixlan_ids.append(netixlan.ixlan_id)
         return IXLan.objects.filter(id__in=ixlan_ids)
-
-    # @property
-    # def fac_count(self):
-    #     """
-    #     Returns number of Facilities at this Network
-    #     """
-    #     return self.netfac_set_active.count()
-
-    # @property
-    # def ix_count(self):
-    #     """
-    #     Returns number of Internet Exchanges at this Network
-    #     """
-    #     qset = self.netixlan_set_active.values("ixlan__ix_id").annotate(count=models.Count("ixlan__ix_id"))
-    #     return qset.count()
 
     @property
     def ixlan_set_ixf_enabled(self):
