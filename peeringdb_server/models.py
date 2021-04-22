@@ -3693,7 +3693,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
 
 @grainy_model(namespace="network", parent="org")
 @reversion.register
-class Network(FilterObjCountMixin, pdb_models.NetworkBase):
+class Network(pdb_models.NetworkBase):
     """
     Describes a peeringdb network
     """
@@ -3712,6 +3712,19 @@ class Network(FilterObjCountMixin, pdb_models.NetworkBase):
     netixlan_updated = models.DateTimeField(blank=True, null=True)
     netfac_updated = models.DateTimeField(blank=True, null=True)
     poc_updated = models.DateTimeField(blank=True, null=True)
+
+    ix_count = models.PositiveIntegerField(
+        _("number of exchanges at this network"),
+        help_text=_("number of exchanges at this network"),
+        null=False,
+        default=0
+    )
+    fac_count = models.PositiveIntegerField(
+        _("number of facilities at this network"),
+        help_text=_("number of facilities at this network"),
+        null=False,
+        default=0
+    )
 
     @staticmethod
     def autocomplete_search_fields():
@@ -3858,14 +3871,6 @@ class Network(FilterObjCountMixin, pdb_models.NetworkBase):
             qset = cls.objects.filter(status="ok").order_by("asn")
         return {net.asn: net.irr_as_set for net in qset}
 
-    @classmethod
-    def filter_ix_count(cls, filt=None, value=None, qset=None):
-        return cls.filter_obj_count("ix_count", filt, value, qset)
-
-    @classmethod
-    def filter_fac_count(cls, filt=None, value=None, qset=None):
-        return cls.filter_obj_count("fac_count", filt, value, qset)
-
     @property
     def search_result_name(self):
         """
@@ -3895,20 +3900,20 @@ class Network(FilterObjCountMixin, pdb_models.NetworkBase):
                 ixlan_ids.append(netixlan.ixlan_id)
         return IXLan.objects.filter(id__in=ixlan_ids)
 
-    @property
-    def fac_count(self):
-        """
-        Returns number of Facilities at this Network
-        """
-        return self.netfac_set_active.count()
+    # @property
+    # def fac_count(self):
+    #     """
+    #     Returns number of Facilities at this Network
+    #     """
+    #     return self.netfac_set_active.count()
 
-    @property
-    def ix_count(self):
-        """
-        Returns number of Internet Exchanges at this Network
-        """
-        qset = self.netixlan_set_active.values("ixlan__ix_id").annotate(count=models.Count("ixlan__ix_id"))
-        return qset.count()
+    # @property
+    # def ix_count(self):
+    #     """
+    #     Returns number of Internet Exchanges at this Network
+    #     """
+    #     qset = self.netixlan_set_active.values("ixlan__ix_id").annotate(count=models.Count("ixlan__ix_id"))
+    #     return qset.count()
 
     @property
     def ixlan_set_ixf_enabled(self):

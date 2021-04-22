@@ -1977,9 +1977,6 @@ class NetworkSerializer(ModelSerializer):
 
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
-    ix_count = serializers.SerializerMethodField()
-    fac_count = serializers.SerializerMethodField()
-
     class Meta:
         model = Network
         depth = 1
@@ -2075,10 +2072,18 @@ class NetworkSerializer(ModelSerializer):
                     break
 
             if field == "ix_count":
-                qset = cls.Meta.model.filter_ix_count(qset=qset, **e)
+                if e["filt"]:
+                    flt = {"ix_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"ix_count": e["value"]}
+                qset = qset.filter(**flt)
 
             if field == "facility_count":
-                qset = cls.Meta.model.filter_fac_count(qset=qset, **e)
+                if e["filt"]:
+                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"fac_count": e["value"]}
+                qset = qset.filter(**flt)
 
         if "name_search" in kwargs:
             name = kwargs.get("name_search", [""])[0]
@@ -2133,12 +2138,6 @@ class NetworkSerializer(ModelSerializer):
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
-
-    def get_ix_count(self, inst):
-        return inst.ix_count
-
-    def get_fac_count(self, inst):
-        return inst.fac_count
 
     def create(self, validated_data):
         request = self._context.get("request")
