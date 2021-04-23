@@ -12,6 +12,7 @@ import time
 import datetime
 import json
 import ipaddress
+import reversion
 
 from twentyc.rpc import (
     RestClient,
@@ -892,21 +893,33 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_net_obj_count(self):
-        for netixlan in NetworkIXLan.objects.all():
-            print(netixlan)
-            print(netixlan.ixlan)
-            print(netixlan.network)
-            netixlan.notes = "modified"
+        network = SHARED["net_r_ok"]
+
+        # need to modify objects for signals to propagate
+        with reversion.create_revision():
+            netixlan = network.netixlan_set.first()
+            netixlan.status = "pending"
             netixlan.save()
-            print("")
-        print("----")
-        for network in Network.objects.all():
-            print(network)
-            print(network.name)
-            print(network.ix_count)
-            print(network.fac_count)
-            print("")
-        data = self.assert_get_handleref(self.db_user, "net", SHARED["net_r_ok"].id)
+
+        with reversion.create_revision():
+            netfac = network.netfac_set.first()
+            netfac.status = "pending"
+            netfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "net", network.id)
+        self.assertEqual(data.get("ix_count"), 0)
+        self.assertEqual(data.get("fac_count"), 0)
+
+        # test that values are updated when we add connections
+        with reversion.create_revision():
+            netixlan.status = "ok"
+            netixlan.save()
+
+        with reversion.create_revision():
+            netfac.status = "ok"
+            netfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "net", network.id)
         self.assertEqual(data.get("ix_count"), 1)
         self.assertEqual(data.get("fac_count"), 1)
 
@@ -918,7 +931,32 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_ix_obj_count(self):
-        data = self.assert_get_handleref(self.db_user, "ix", SHARED["ix_r_ok"].id)
+        ix = SHARED["ix_r_ok"]
+        # need to modify objects for signals to propagate
+        with reversion.create_revision():
+            netixlan = ix.ixlan.netixlan_set.first()
+            netixlan.status = "pending"
+            netixlan.save()
+
+        with reversion.create_revision():
+            ixfac = ix.ixfac_set.first()
+            ixfac.status = "pending"
+            ixfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "ix", ix.id)
+        self.assertEqual(data.get("net_count"), 0)
+        self.assertEqual(data.get("fac_count"), 0)
+
+        # test that values are updated when we add connections
+        with reversion.create_revision():
+            netixlan.status = "ok"
+            netixlan.save()
+
+        with reversion.create_revision():
+            ixfac.status = "ok"
+            ixfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "ix", ix.id)
         self.assertEqual(data.get("net_count"), 1)
         self.assertEqual(data.get("fac_count"), 1)
 
@@ -951,6 +989,33 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_fac_obj_count(self):
+
+        facility = SHARED["fac_r_ok"]
+        # Need to create revisions to send signals
+        with reversion.create_revision():
+            ixfac = facility.ixfac_set.first()
+            ixfac.status = "pending"
+            ixfac.save()
+
+        with reversion.create_revision():
+            netfac = facility.netfac_set.first()
+            netfac.status = "pending"
+            netfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
+        self.assertEqual(data.get("net_count"), 0)
+        self.assertEqual(data.get("ix_count"), 0)
+
+        # Check that counts are updated with new connections
+        with reversion.create_revision():
+            # Need to create a revision
+            ixfac.status = "ok"
+            ixfac.save()
+
+        with reversion.create_revision():
+            netfac.status = "ok"
+            netfac.save()
+
         data = self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
         self.assertEqual(data.get("net_count"), 1)
         self.assertEqual(data.get("ix_count"), 1)
