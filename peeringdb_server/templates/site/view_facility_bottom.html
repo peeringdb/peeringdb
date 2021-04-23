@@ -43,7 +43,7 @@
         <div class="name" data-sort-value="{{ x.ix.name_long|lower }}" data-filter-value="{{ x.ix.name_long }}">{{ x.ix.name_long }}</div>
       </div>
       <div class="col-xs-3 col-sm-3 col-md-3">
-        {% with x.ix.network_count as num %}
+        {% with x.ix.net_count as num %}
         <div class="participants" data-sort-value="{{ num }}">{{ num }}</div>
         {% endwith %}
       </div>
