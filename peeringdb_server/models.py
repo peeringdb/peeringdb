@@ -1759,7 +1759,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
                 "Exchange has active facility connection(s): {} ..."
             ).format(facility_names)
             return False
-        elif self.network_count > 0:
+        elif self.net_count > 0:
             self._not_deletable_reason = _("Exchange has active peer(s)")
             return False
         else:
