@@ -892,6 +892,20 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_net_obj_count(self):
+        for netixlan in NetworkIXLan.objects.all():
+            print(netixlan)
+            print(netixlan.ixlan)
+            print(netixlan.network)
+            netixlan.notes = "modified"
+            netixlan.save()
+            print("")
+        print("----")
+        for network in Network.objects.all():
+            print(network)
+            print(network.name)
+            print(network.ix_count)
+            print(network.fac_count)
+            print("")
         data = self.assert_get_handleref(self.db_user, "net", SHARED["net_r_ok"].id)
         self.assertEqual(data.get("ix_count"), 1)
         self.assertEqual(data.get("fac_count"), 1)
