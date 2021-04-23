@@ -152,7 +152,7 @@ class TestJSON(unittest.TestCase):
     def get_ip6(cls, ixlan):
         hosts = []
         for host in (
-            ixlan.ixpfx_set.filter(status=ixlan.status, protocol=6)
+            ixlan.ixpfx_set.filter(status=ixlan.status, protocol="IPv6")
             .first()
             .prefix.hosts()
         ):
@@ -169,7 +169,7 @@ class TestJSON(unittest.TestCase):
     def get_ip4(cls, ixlan):
         hosts = []
         for host in (
-            ixlan.ixpfx_set.filter(status=ixlan.status, protocol=4)
+            ixlan.ixpfx_set.filter(status=ixlan.status, protocol="IPv4")
             .first()
             .prefix.hosts()
         ):
@@ -261,9 +261,6 @@ class TestJSON(unittest.TestCase):
             "region_continent": CONTINENT,
             "media": "Ethernet",
             "notes": NOTE,
-            "proto_unicast": True,
-            "proto_multicast": False,
-            "proto_ipv6": True,
             "website": WEBSITE,
             "url_stats": "%s/stats" % WEBSITE,
             "tech_email": EMAIL,
@@ -905,6 +902,27 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_user_001_GET_ix_protocols(self):
+        ix = SHARED["ix_r_ok"]
+        ixlan = ix.ixlan
+
+        data = self.assert_get_handleref(self.db_user, "ix", SHARED["ix_r_ok"].id)
+        self.assertEqual(data.get("proto_unicast"), True)
+        self.assertEqual(data.get("proto_ipv6"), True)
+
+        for ixpfx in ixlan.ixpfx_set.all():
+            ixpfx.delete(force=True)
+
+        data = self.assert_get_handleref(self.db_user, "ix", SHARED["ix_r_ok"].id)
+
+        # If there's no ipv4 prefix, proto_unicast should be False
+        self.assertEqual(data.get("proto_unicast"), False)
+
+        # If there's no ipv6 prefix, proto_unicast should be False
+        self.assertEqual(data.get("proto_ipv6"), False)
+
+    ##########################################################################
+
     def test_user_001_GET_fac(self):
         self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
 
@@ -1100,6 +1118,11 @@ class TestJSON(unittest.TestCase):
                     "name": self.make_name("Test"),
                     "org_id": SHARED["org_rwp"].id,
                 },
+                "readonly": {
+                    "proto_multicast": True,
+                    "proto_unicast": True,
+                    "proto_ipv6": False
+                }
             },
         )
 
@@ -3441,6 +3464,85 @@ class TestJSON(unittest.TestCase):
             self.db_guest, "fac", data, test_success=False, test_failures={"perms": {}}
         )
 
+    def test_z_misc_001_add_fac_bug(self):
+        """
+        Issue 922: regression test for bug where a user could
+        approve a facility by adding, deleting, and re-adding
+        """
+
+        # Add fac
+        data = self.make_data_fac()
+        r_data = self.assert_create(self.db_org_admin, "fac", data)
+
+        self.assertEqual(r_data["status"], "pending")
+
+        fac = Facility.objects.get(id=r_data["id"])
+        self.assertEqual(fac.status, "pending")
+
+        # Delete fac
+        # fac = Facility.objects.get(id=r_data["id"])
+        # fac.delete()
+        # fac.refresh_from_db()
+
+        self.assert_delete(
+            self.db_org_admin,
+            "fac",
+            test_success=r_data["id"]
+        )
+        fac.refresh_from_db()
+        self.assertEqual(fac.status, "deleted")
+
+        # Re-add should go back to pending (previously was going to "ok")
+        re_add_data = self.assert_create(self.db_org_admin, "fac", data)
+        self.assertEqual(re_add_data["status"], "pending")
+        fac = Facility.objects.get(id=re_add_data["id"])
+        self.assertEqual(fac.status, "pending")
+
+    def test_z_misc_001_add_fac_bug_suggest(self):
+        """
+        Issue 922: regression test for bug where a user could
+        approve a facility by adding, deleting, and re-adding.
+
+        Confirms that this interacts with suggestions properly.
+        """
+
+        # Add fac (suggestion)
+        data = self.make_data_fac(suggest=True)
+        del data["org_id"]
+        print(data)
+
+        r_data = self.assert_create(self.db_user, "fac", data)
+
+        self.assertEqual(r_data["status"], "pending")
+        self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
+
+        fac = Facility.objects.get(id=r_data["id"])
+        self.assertEqual(fac.status, "pending")
+        self.assertEqual(fac.org_id, settings.SUGGEST_ENTITY_ORG)
+
+        # Delete fac
+        fac = Facility.objects.get(id=r_data["id"])
+        fac.delete()
+        fac.refresh_from_db()
+        self.assertEqual(fac.status, "deleted")
+
+        # TODO: suggesting a deleted facility currently results
+        # in a 403 response, is this working as intended?
+        #
+        # should we allow re suggesting of deleted facilities?
+
+        re_add_data = self.assert_create(self.db_user, "fac", data, test_success=False, test_failures={"perms":{}})
+
+        """
+        self.assertEqual(re_add_data["status"], "pending")
+        self.assertEqual(re_add_data["org_id"], settings.SUGGEST_ENTITY_ORG)
+
+        fac = Facility.objects.get(id=re_add_data["id"])
+        self.assertEqual(fac.status, "pending")
+        self.assertEqual(fac.org_id, settings.SUGGEST_ENTITY_ORG)
+        """
+
+
     def test_z_misc_001_disable_suggest_ix(self):
         """
         Issue 827: We are removing the ability for non-admin users to "suggest" an IX
@@ -3634,13 +3736,16 @@ class Command(BaseCommand):
         if tag in ["ix", "net", "fac", "org"]:
             data["name"] = name
 
+        data.update(**kwargs)
+
         if tag == "ixpfx":
             if kwargs.get("protocol", 4) == 4:
+                data["protocol"] = "IPv4"
                 data["prefix"] = PREFIXES_V4[model.objects.all().count()]
             elif kwargs.get("protocol") == 6:
+                data["protocol"] = "IPv6"
                 data["prefix"] = PREFIXES_V6[model.objects.all().count()]
 
-        data.update(**kwargs)
         try:
             obj = model.objects.get(**data)
             cls.log(

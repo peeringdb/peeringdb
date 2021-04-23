@@ -603,9 +603,18 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "ixf_import_history",
         "ixf_last_import",
         "ixf_net_count",
+        "proto_unicast_readonly",
+        "proto_ipv6_readonly",
+        "proto_multicast_readonly",
     )
     inlines = (InternetExchangeFacilityInline, IXLanInline)
     form = InternetExchangeAdminForm
+
+    exclude = (
+        "proto_unicast",
+        "proto_ipv6",
+        "proto_multicast",
+    )
 
     raw_id_fields = ("org",)
     autocomplete_lookup_fields = {
@@ -622,6 +631,19 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
                 _("IX-F Import History"),
             )
         )
+
+    def proto_unicast_readonly(self, obj):
+        return obj.derived_proto_unicast
+
+    def proto_ipv6_readonly(self, obj):
+        return obj.derived_proto_ipv6
+
+    def proto_multicast_readonly(self, obj):
+        return obj.proto_multicast
+
+    proto_unicast_readonly.short_description = _('Unicast IPv4')
+    proto_ipv6_readonly.short_description = _('Unicast IPv6')
+    proto_multicast_readonly.short_description = _('Multicast')
 
 
 class IXLanAdminForm(StatusForm):
