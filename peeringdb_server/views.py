@@ -1373,6 +1373,20 @@ def view_exchange(request, id):
                 "value": data.get("media", dismiss),
             },
             {
+                "name": "service_level",
+                "type": "list",
+                "data": "enum/service_level_types_trunc",
+                "label": _("Service Level"),
+                "value": data.get("service_level", dismiss),
+            },
+            {
+                "name": "terms",
+                "type": "list",
+                "data": "enum/terms_types_trunc",
+                "label": _("Terms"),
+                "value": data.get("terms", dismiss),
+            },
+            {
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),

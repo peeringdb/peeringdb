@@ -2468,6 +2468,8 @@ class InternetExchangeSerializer(ModelSerializer):
             "net_count",
             "ixf_net_count",
             "ixf_last_import",
+            "service_level",
+            "terms"
         ] + HandleRefSerializer.Meta.fields
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]
