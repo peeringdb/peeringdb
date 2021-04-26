@@ -1739,6 +1739,20 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return self.ixlan.ixpfx_set_active.filter(protocol="IPv6").exists()
 
     @property
+    def derived_network_count(self):
+        """
+        Returns an ad hoc count of networks attached to an Exchange.
+        Used in the deletable property to ensure an accurate count
+        even if net_count signals are not being used.
+        """
+        return (
+            NetworkIXLan.objects
+            .select_related("network")
+            .filter(ixlan__ix_id=self.id, status="ok")
+            .aggregate(net_count=models.Count("network_id", distinct=True))["net_count"]
+        )
+
+    @property
     def deletable(self):
         """
         Returns whether or not the exchange is currently
@@ -1759,7 +1773,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
                 "Exchange has active facility connection(s): {} ..."
             ).format(facility_names)
             return False
-        elif self.net_count > 0:
+        elif self.derived_network_count > 0:
             self._not_deletable_reason = _("Exchange has active peer(s)")
             return False
         else:

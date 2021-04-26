@@ -289,4 +289,3 @@ class Mock:
 
     def net_count(self, data, reftag=None):
         return 0
-
