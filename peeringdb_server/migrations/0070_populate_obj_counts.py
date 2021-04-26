@@ -16,9 +16,11 @@ def populate_network_counts(apps, schema_editor):
     print("Populating network ix_count and fac_count values")
 
     for network in Network.handleref.all():
+        if network.id % 10 == 0:
+            print(network)
         try:
             network.ix_count = (
-                NetworkIXLan.handleref.filter(
+                NetworkIXLan.handleref.select_related("ixlan__ix").filter(
                     network_id=network.id, status="ok"
                 ).aggregate(ix_count=Count("ixlan__ix_id", distinct=True))
             )["ix_count"]
@@ -27,7 +29,7 @@ def populate_network_counts(apps, schema_editor):
             pass
         try:
             network.fac_count = (
-                NetworkFacility.handleref.filter(
+                NetworkFacility.handleref.select_related("facility").filter(
                     network_id=network.id, status="ok"
                 ).aggregate(fac_count=Count("facility_id", distinct=True))
             )["fac_count"]
@@ -52,7 +54,7 @@ def populate_ix_counts(apps, schema_editor):
 
         try:
             ix.net_count = (
-                NetworkIXLan.handleref.filter(
+                NetworkIXLan.handleref.select_related("network").filter(
                     ixlan__ix_id=ix.id, status="ok"
                 ).aggregate(net_count=Count("network_id", distinct=True))
             )["net_count"]
@@ -60,7 +62,7 @@ def populate_ix_counts(apps, schema_editor):
             pass
         try:
             ix.fac_count = (
-                InternetExchangeFacility.handleref.filter(
+                InternetExchangeFacility.handleref.select_related("facility").filter(
                     ix_id=ix.id, status="ok"
                 ).aggregate(fac_count=Count("facility_id", distinct=True))
             )["fac_count"]
@@ -83,7 +85,7 @@ def populate_facility_counts(apps, schema_editor):
             print(facility)
         try:
             facility.ix_count = (
-                InternetExchangeFacility.handleref.filter(
+                InternetExchangeFacility.handleref.select_related("ix").filter(
                     facility_id=facility.id, status="ok"
                 ).aggregate(ix_count=Count("ix_id", distinct=True))
             )["ix_count"]
@@ -92,7 +94,7 @@ def populate_facility_counts(apps, schema_editor):
             pass
         try:
             facility.net_count = (
-                NetworkFacility.handleref.filter(
+                NetworkFacility.handleref.select_related("network").filter(
                     facility_id=facility.id, status="ok"
                 ).aggregate(net_count=Count("network_id", distinct=True))
             )["net_count"]
@@ -110,7 +112,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # migrations.RunPython(populate_network_counts, migrations.RunPython.noop),
+        migrations.RunPython(populate_network_counts, migrations.RunPython.noop),
         migrations.RunPython(populate_ix_counts, migrations.RunPython.noop),
-        # migrations.RunPython(populate_facility_counts, migrations.RunPython.noop),
+        migrations.RunPython(populate_facility_counts, migrations.RunPython.noop),
     ]
