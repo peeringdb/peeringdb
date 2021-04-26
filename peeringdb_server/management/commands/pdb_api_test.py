@@ -2588,6 +2588,15 @@ class TestJSON(unittest.TestCase):
         Issue 834: Users should be able to filter Facilities
         based on the amount of Networks they are linked to.
         """
+        for facility in Facility.objects.filter(status="ok").all():
+            netfac = facility.netfac_set.first()
+            if not netfac:
+                continue
+            netfac.status = "pending"
+            netfac.save()
+            with reversion.create_revision():
+                netfac.status = "ok"
+                netfac.save()
 
         data = self.db_guest.all("fac", net_count=1)
         for row in data:
@@ -2616,6 +2625,15 @@ class TestJSON(unittest.TestCase):
         Issue 834: Users should be able to filter Facilities
         based on the amount of Exchanges they are linked to.
         """
+        for facility in Facility.objects.filter(status="ok").all():
+            ixfac = facility.ixfac_set.first()
+            if not ixfac:
+                continue
+            ixfac.status = "pending"
+            ixfac.save()
+            with reversion.create_revision():
+                ixfac.status = "ok"
+                ixfac.save()
 
         data = self.db_guest.all("fac", ix_count=1)
         for row in data:
@@ -2644,6 +2662,16 @@ class TestJSON(unittest.TestCase):
         Issue 836: Users should be able to filter
         Exchanges by the amount of Networks linked to them.
         """
+        # need to modify objects for signals to propagate
+        for ix in InternetExchange.objects.all():
+            netixlan = ix.ixlan.netixlan_set.first()
+            if not netixlan:
+                continue
+            netixlan.status = "pending"
+            netixlan.save()
+            with reversion.create_revision():
+                netixlan.status = "ok"
+                netixlan.save()
 
         data = self.db_guest.all("ix", net_count=1)
         for row in data:
@@ -2683,6 +2711,16 @@ class TestJSON(unittest.TestCase):
         Exchanges by the amount of Facilities linked to them.
         """
 
+        for ix in InternetExchange.objects.filter(status="ok").all():
+            ixfac = ix.ixfac_set.first()
+            if not ixfac:
+                continue
+            ixfac.status = "pending"
+            ixfac.save()
+            with reversion.create_revision():
+                ixfac.status = "ok"
+                ixfac.save()
+
         data = self.db_guest.all("ix", fac_count=1)
         for row in data:
             self.assert_data_integrity(row, "ix")
@@ -2721,6 +2759,16 @@ class TestJSON(unittest.TestCase):
         on the number of Exchanges associated with them.
         """
 
+        for network in Network.objects.filter(status="ok").all():
+            netixlan = network.netixlan_set.first()
+            if not netixlan:
+                continue
+            netixlan.status = "pending"
+            netixlan.save()
+            with reversion.create_revision():
+                netixlan.status = "ok"
+                netixlan.save()
+
         data = self.db_guest.all("net", ix_count=1)
         for row in data:
             self.assert_data_integrity(row, "net")
@@ -2758,6 +2806,17 @@ class TestJSON(unittest.TestCase):
         Issue 835: We should be able to filter Networks based
         on the number of Facilities associated with them.
         """
+
+        for network in Network.objects.filter(status="ok").all():
+            netfac = network.netfac_set.first()
+            if not netfac:
+                continue
+            netfac.status = "pending"
+            netfac.save()
+            with reversion.create_revision():
+                netfac.status = "ok"
+                netfac.save()
+
         data = self.db_guest.all("net", fac_count=1)
         for row in data:
             self.assert_data_integrity(row, "net")

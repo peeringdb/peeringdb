@@ -1372,7 +1372,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
         qset = qset.select_related("org")
         filters = get_relation_filters(
-            ["net_id", "net", "ix_id", "ix", "org_name", "net_count", "ix_count"],
+            ["net_id", "net", "ix_id", "ix", "org_name", "ix_count", "net_count"],
             cls,
             **kwargs
         )
@@ -1385,6 +1385,13 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                     break
             if field == "org_name":
                 flt = {"org__name__%s" % (e["filt"] or "icontains"): e["value"]}
+                qset = qset.filter(**flt)
+
+            if field == "network_count":
+                if e["filt"]:
+                    flt = {"net_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"net_count": e["value"]}
                 qset = qset.filter(**flt)
 
         if "asn_overlap" in kwargs:
@@ -2044,6 +2051,12 @@ class NetworkSerializer(ModelSerializer):
                     qset = fn(qset=qset, field=field, **e)
                     break
 
+            if field == "facility_count":
+                if e["filt"]:
+                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"fac_count": e["value"]}
+                qset = qset.filter(**flt)
 
         if "name_search" in kwargs:
             name = kwargs.get("name_search", [""])[0]
@@ -2491,6 +2504,20 @@ class InternetExchangeSerializer(ModelSerializer):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
                     qset = fn(qset=qset, field=field, **e)
                     break
+
+            if field == "network_count":
+                if e["filt"]:
+                    flt = {"net_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"net_count": e["value"]}
+                qset = qset.filter(**flt)
+
+            if field == "facility_count":
+                if e["filt"]:
+                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"fac_count": e["value"]}
+                qset = qset.filter(**flt)
 
         if "ipblock" in kwargs:
             qset = cls.Meta.model.related_to_ipblock(
