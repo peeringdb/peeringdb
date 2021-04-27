@@ -1,7 +1,9 @@
 from grainy.const import *
 from datetime import datetime, timezone
 import django.urls
+from django.db.models import Count
 from django.db.models.signals import post_save, pre_delete, pre_save
+
 from django.contrib.contenttypes.models import ContentType
 from django_grainy.models import Group, GroupPermission
 from django.template import loader
@@ -66,8 +68,76 @@ def network_post_revision_commit(**kwargs):
         if vs.object.HandleRef.tag in ["netixlan", "poc", "netfac"]:
             update_network_attribute(vs.object, f"{vs.object.HandleRef.tag}_updated")
 
-
 reversion.signals.post_revision_commit.connect(network_post_revision_commit)
+
+def update_counts_for_netixlan(netixlan):
+    """
+    Whenever a netixlan is saved, update the ix_count for the related Network
+    and update net_count for the related InternetExchange.
+    """
+    if getattr(netixlan, "id"):
+        network = netixlan.network
+
+        network.ix_count = (
+            network.netixlan_set_active.aggregate(
+                ix_count=Count("ixlan__ix_id", distinct=True))
+        )["ix_count"]
+
+        disable_auto_now_and_save(network)
+
+        ix = netixlan.ixlan.ix
+        ix.net_count = (
+            NetworkIXLan.objects.filter(ixlan__ix_id=ix.id, status="ok")
+            .aggregate(net_count=Count("network_id", distinct=True))
+        )["net_count"]
+        disable_auto_now_and_save(ix)
+
+
+def update_counts_for_netfac(netfac):
+    """
+    Whenever a netfac is saved, update the fac_count for the related Network
+    and update net_count for the related Facility.
+    """
+    if getattr(netfac, "id"):
+        network = netfac.network
+
+        network.fac_count = network.netfac_set_active.count()
+
+        disable_auto_now_and_save(network)
+
+        facility = netfac.facility
+        facility.net_count = facility.netfac_set_active.count()
+        disable_auto_now_and_save(facility)
+
+
+def update_counts_for_ixfac(ixfac):
+    """
+    Whenever a ixfac is saved, update the fac_count for the related Exchange
+    and update ix_count for the related Facility.
+    """
+    if getattr(ixfac, "id"):
+        ix = ixfac.ix
+
+        ix.fac_count = ix.ixfac_set_active.count()
+
+        disable_auto_now_and_save(ix)
+
+        facility = ixfac.facility
+        facility.ix_count = facility.ixfac_set_active.count()
+        disable_auto_now_and_save(facility)
+
+
+def connector_objects_post_revision_commit(**kwargs):
+    for vs in kwargs.get("versions"):
+        if vs.object.HandleRef.tag == "netixlan":
+            update_counts_for_netixlan(vs.object)
+        if vs.object.HandleRef.tag == "netfac":
+            update_counts_for_netfac(vs.object)
+        if vs.object.HandleRef.tag == "ixfac":
+            update_counts_for_ixfac(vs.object)
+
+
+reversion.signals.post_revision_commit.connect(connector_objects_post_revision_commit)
 
 
 def addressmodel_save(sender, instance=None, **kwargs):

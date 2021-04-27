@@ -1277,6 +1277,20 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         Organization, on_delete=models.CASCADE, related_name="fac_set"
     )
     website = models.URLField(_("Website"), blank=False)
+
+    ix_count = models.PositiveIntegerField(
+        _("number of exchanges at this facility"),
+        help_text=_("number of exchanges at this facility"),
+        null=False,
+        default=0
+    )
+    net_count = models.PositiveIntegerField(
+        _("number of networks at this facility"),
+        help_text=_("number of networks at this facility"),
+        null=False,
+        default=0
+    )
+
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
     class HandleRef:
@@ -1399,7 +1413,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     @property
     def netfac_set_active(self):
         """
-        Returns queryset of active NetworkFacility ojects connected to this
+        Returns queryset of active NetworkFacility objects connected to this
         facility
         """
         return self.netfac_set.filter(status="ok")
@@ -1411,13 +1425,6 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         to this facility
         """
         return self.ixfac_set.filter(status="ok")
-
-    @property
-    def net_count(self):
-        """
-        Returns number of Networks at this facility
-        """
-        return self.netfac_set_active.count()
 
     @property
     def view_url(self):
@@ -1475,6 +1482,20 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="ix_set"
+    )
+
+    fac_count = models.PositiveIntegerField(
+        _("number of facilities at this exchange"),
+        help_text=_("number of facilities at this exchange"),
+        null=False,
+        default=0
+    )
+
+    net_count = models.PositiveIntegerField(
+        _("number of networks at this exchange"),
+        help_text=_("number of networks at this exchange"),
+        null=False,
+        default=0
     )
 
     @staticmethod
@@ -1625,39 +1646,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
         return qset.filter(id__in=shared_exchanges)
 
-    @classmethod
-    def filter_net_count(cls, filt=None, value=None, qset=None):
-
-        """
-        Filter ix queryset by network count value
-
-        Keyword Arguments:
-            - filt<str>: filter to apply: None, 'lt', 'gt', 'lte', 'gte'
-            - value<int>: value to filter by
-            - qset
-
-        Returns:
-            InternetExchange queryset
-        """
-
-        if not qset:
-            qset = cls.objects.filter(status="ok")
-
-        value = int(value)
-
-        if filt == "lt":
-            exchanges = [ix.id for ix in qset if ix.network_count < value]
-        elif filt == "gt":
-            exchanges = [ix.id for ix in qset if ix.network_count > value]
-        elif filt == "gte":
-            exchanges = [ix.id for ix in qset if ix.network_count >= value]
-        elif filt == "lte":
-            exchanges = [ix.id for ix in qset if ix.network_count <= value]
-        else:
-            exchanges = [ix.id for ix in qset if ix.network_count == value]
-
-        return qset.filter(pk__in=exchanges)
-
     @property
     def ixlan(self):
         """
@@ -1687,15 +1675,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         of this entity
         """
         return self.name
-
-    @property
-    def network_count(self):
-        """
-        Returns count of networks at this exchange
-        """
-        qset = NetworkIXLan.objects.filter(ixlan__ix_id=self.id, status="ok")
-        qset = qset.values("network_id").annotate(count=models.Count("network_id"))
-        return len(qset)
 
     @property
     def ixlan_set_active(self):
@@ -1760,6 +1739,20 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return self.ixlan.ixpfx_set_active.filter(protocol="IPv6").exists()
 
     @property
+    def derived_network_count(self):
+        """
+        Returns an ad hoc count of networks attached to an Exchange.
+        Used in the deletable property to ensure an accurate count
+        even if net_count signals are not being used.
+        """
+        return (
+            NetworkIXLan.objects
+            .select_related("network")
+            .filter(ixlan__ix_id=self.id, status="ok")
+            .aggregate(net_count=models.Count("network_id", distinct=True))["net_count"]
+        )
+
+    @property
     def deletable(self):
         """
         Returns whether or not the exchange is currently
@@ -1780,7 +1773,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
                 "Exchange has active facility connection(s): {} ..."
             ).format(facility_names)
             return False
-        elif self.network_count > 0:
+        elif self.derived_network_count > 0:
             self._not_deletable_reason = _("Exchange has active peer(s)")
             return False
         else:
@@ -3681,6 +3674,20 @@ class Network(pdb_models.NetworkBase):
     netixlan_updated = models.DateTimeField(blank=True, null=True)
     netfac_updated = models.DateTimeField(blank=True, null=True)
     poc_updated = models.DateTimeField(blank=True, null=True)
+
+    ix_count = models.PositiveIntegerField(
+        _("number of exchanges at this network"),
+        help_text=_("number of exchanges at this network"),
+        null=False,
+        default=0
+    )
+
+    fac_count = models.PositiveIntegerField(
+        _("number of facilities at this network"),
+        help_text=_("number of facilities at this network"),
+        null=False,
+        default=0
+    )
 
     @staticmethod
     def autocomplete_search_fields():

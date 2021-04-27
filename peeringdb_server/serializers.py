@@ -1312,8 +1312,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
     org = serializers.SerializerMethodField()
 
-    net_count = serializers.SerializerMethodField()
-
     suggest = serializers.BooleanField(required=False, write_only=True)
 
     website = serializers.URLField()
@@ -1352,6 +1350,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                 "npanxx",
                 "notes",
                 "net_count",
+                "ix_count",
                 "suggest",
                 "sales_email",
                 "sales_phone",
@@ -1373,7 +1372,9 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
         qset = qset.select_related("org")
         filters = get_relation_filters(
-            ["net_id", "net", "ix_id", "ix", "org_name", "net_count"], cls, **kwargs
+            ["net_id", "net", "ix_id", "ix", "org_name", "ix_count", "net_count"],
+            cls,
+            **kwargs
         )
 
         for field, e in list(filters.items()):
@@ -1385,21 +1386,13 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             if field == "org_name":
                 flt = {"org__name__%s" % (e["filt"] or "icontains"): e["value"]}
                 qset = qset.filter(**flt)
-            elif field == "network_count":
-                if e["filt"]:
-                    flt = {"net_count_a__%s" % e["filt"]: e["value"]}
-                else:
-                    flt = {"net_count_a": e["value"]}
 
-                qset = qset.annotate(
-                    net_count_a=Sum(
-                        Case(
-                            When(netfac_set__status="ok", then=1),
-                            default=0,
-                            output_field=IntegerField(),
-                        )
-                    )
-                ).filter(**flt)
+            if field == "network_count":
+                if e["filt"]:
+                    flt = {"net_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"net_count": e["value"]}
+                qset = qset.filter(**flt)
 
         if "asn_overlap" in kwargs:
             asns = kwargs.get("asn_overlap", [""])[0].split(",")
@@ -1419,9 +1412,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
-
-    def get_net_count(self, inst):
-        return inst.net_count
 
     def validate(self, data):
         try:
@@ -1992,6 +1982,8 @@ class NetworkSerializer(ModelSerializer):
             "info_multicast",
             "info_ipv6",
             "info_never_via_route_servers",
+            "ix_count",
+            "fac_count",
             "notes",
             "netixlan_updated",
             "netfac_updated",
@@ -2045,6 +2037,8 @@ class NetworkSerializer(ModelSerializer):
                 "netfac",
                 "fac",
                 "fac_id",
+                "fac_count",
+                "ix_count",
             ],
             cls,
             **kwargs,
@@ -2056,6 +2050,13 @@ class NetworkSerializer(ModelSerializer):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
                     qset = fn(qset=qset, field=field, **e)
                     break
+
+            if field == "facility_count":
+                if e["filt"]:
+                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"fac_count": e["value"]}
+                qset = qset.filter(**flt)
 
         if "name_search" in kwargs:
             name = kwargs.get("name_search", [""])[0]
@@ -2398,8 +2399,6 @@ class InternetExchangeSerializer(ModelSerializer):
         getter="facility",
     )
 
-    net_count = serializers.SerializerMethodField()
-
     # suggest = serializers.BooleanField(required=False, write_only=True)
 
     ixf_net_count = serializers.IntegerField(read_only=True)
@@ -2466,6 +2465,7 @@ class InternetExchangeSerializer(ModelSerializer):
             # "suggest",
             "prefix",
             "net_count",
+            "fac_count",
             "ixf_net_count",
             "ixf_last_import",
             "service_level",
@@ -2476,7 +2476,6 @@ class InternetExchangeSerializer(ModelSerializer):
         list_exclude = ["org"]
 
         read_only_fields = ["proto_multicast"]
-
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
@@ -2494,12 +2493,14 @@ class InternetExchangeSerializer(ModelSerializer):
                 "net_id",
                 "net",
                 "net_count",
+                "fac_count",
             ],
             cls,
             **kwargs,
         )
 
         for field, e in list(filters.items()):
+
             for valid in ["ixlan", "ixfac", "fac", "net"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -2507,7 +2508,18 @@ class InternetExchangeSerializer(ModelSerializer):
                     break
 
             if field == "network_count":
-                qset = cls.Meta.model.filter_net_count(qset=qset, **e)
+                if e["filt"]:
+                    flt = {"net_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"net_count": e["value"]}
+                qset = qset.filter(**flt)
+
+            if field == "facility_count":
+                if e["filt"]:
+                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"fac_count": e["value"]}
+                qset = qset.filter(**flt)
 
         if "ipblock" in kwargs:
             qset = cls.Meta.model.related_to_ipblock(
@@ -2599,9 +2611,6 @@ class InternetExchangeSerializer(ModelSerializer):
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
-
-    def get_net_count(self, inst):
-        return inst.network_count
 
     def get_proto_ipv6(self, inst):
         return inst.derived_proto_ipv6

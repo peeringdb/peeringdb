@@ -12,6 +12,7 @@ import time
 import datetime
 import json
 import ipaddress
+import reversion
 
 from twentyc.rpc import (
     RestClient,
@@ -891,14 +892,73 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_user_001_GET_net_obj_count(self):
+        network = SHARED["net_r_ok"]
+
+        # need to modify objects for signals to propagate
+        with reversion.create_revision():
+            netixlan = network.netixlan_set.first()
+            netixlan.status = "pending"
+            netixlan.save()
+
+        with reversion.create_revision():
+            netfac = network.netfac_set.first()
+            netfac.status = "pending"
+            netfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "net", network.id)
+        self.assertEqual(data.get("ix_count"), 0)
+        self.assertEqual(data.get("fac_count"), 0)
+
+        # test that values are updated when we add connections
+        with reversion.create_revision():
+            netixlan.status = "ok"
+            netixlan.save()
+
+        with reversion.create_revision():
+            netfac.status = "ok"
+            netfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "net", network.id)
+        self.assertEqual(data.get("ix_count"), 1)
+        self.assertEqual(data.get("fac_count"), 1)
+
+    ##########################################################################
+
     def test_user_001_GET_ix(self):
         self.assert_get_handleref(self.db_user, "ix", SHARED["ix_r_ok"].id)
 
     ##########################################################################
 
-    def test_user_001_GET_ix_net_count(self):
-        data = self.assert_get_handleref(self.db_user, "ix", SHARED["ix_r_ok"].id)
+    def test_user_001_GET_ix_obj_count(self):
+        ix = SHARED["ix_r_ok"]
+        # need to modify objects for signals to propagate
+        with reversion.create_revision():
+            netixlan = ix.ixlan.netixlan_set.first()
+            netixlan.status = "pending"
+            netixlan.save()
+
+        with reversion.create_revision():
+            ixfac = ix.ixfac_set.first()
+            ixfac.status = "pending"
+            ixfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "ix", ix.id)
+        self.assertEqual(data.get("net_count"), 0)
+        self.assertEqual(data.get("fac_count"), 0)
+
+        # test that values are updated when we add connections
+        with reversion.create_revision():
+            netixlan.status = "ok"
+            netixlan.save()
+
+        with reversion.create_revision():
+            ixfac.status = "ok"
+            ixfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "ix", ix.id)
         self.assertEqual(data.get("net_count"), 1)
+        self.assertEqual(data.get("fac_count"), 1)
 
     ##########################################################################
 
@@ -928,9 +988,37 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def test_user_001_GET_fac_netcount(self):
+    def test_user_001_GET_fac_obj_count(self):
+
+        facility = SHARED["fac_r_ok"]
+        # Need to create revisions to send signals
+        with reversion.create_revision():
+            ixfac = facility.ixfac_set.first()
+            ixfac.status = "pending"
+            ixfac.save()
+
+        with reversion.create_revision():
+            netfac = facility.netfac_set.first()
+            netfac.status = "pending"
+            netfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
+        self.assertEqual(data.get("net_count"), 0)
+        self.assertEqual(data.get("ix_count"), 0)
+
+        # Check that counts are updated with new connections
+        with reversion.create_revision():
+            # Need to create a revision
+            ixfac.status = "ok"
+            ixfac.save()
+
+        with reversion.create_revision():
+            netfac.status = "ok"
+            netfac.save()
+
         data = self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
         self.assertEqual(data.get("net_count"), 1)
+        self.assertEqual(data.get("ix_count"), 1)
 
     ##########################################################################
 
@@ -2496,6 +2584,20 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_fac_net_count(self):
+        """
+        Issue 834: Users should be able to filter Facilities
+        based on the amount of Networks they are linked to.
+        """
+        for facility in Facility.objects.filter(status="ok").all():
+            netfac = facility.netfac_set.first()
+            if not netfac:
+                continue
+            netfac.status = "pending"
+            netfac.save()
+            with reversion.create_revision():
+                netfac.status = "ok"
+                netfac.save()
+
         data = self.db_guest.all("fac", net_count=1)
         for row in data:
             self.assert_data_integrity(row, "fac")
@@ -2518,7 +2620,59 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_filter_fac_ix_count(self):
+        """
+        Issue 834: Users should be able to filter Facilities
+        based on the amount of Exchanges they are linked to.
+        """
+        for facility in Facility.objects.filter(status="ok").all():
+            ixfac = facility.ixfac_set.first()
+            if not ixfac:
+                continue
+            ixfac.status = "pending"
+            ixfac.save()
+            with reversion.create_revision():
+                ixfac.status = "ok"
+                ixfac.save()
+
+        data = self.db_guest.all("fac", ix_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertEqual(row["ix_count"], 1)
+
+        data = self.db_guest.all("fac", ix_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertEqual(row["ix_count"], 0)
+
+        data = self.db_guest.all("fac", ix_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertEqual(row["ix_count"], 0)
+
+        data = self.db_guest.all("fac", ix_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertGreater(row["ix_count"], 0)
+
+    ##########################################################################
+
     def test_guest_005_list_filter_ix_net_count(self):
+        """
+        Issue 836: Users should be able to filter
+        Exchanges by the amount of Networks linked to them.
+        """
+        # need to modify objects for signals to propagate
+        for ix in InternetExchange.objects.all():
+            netixlan = ix.ixlan.netixlan_set.first()
+            if not netixlan:
+                continue
+            netixlan.status = "pending"
+            netixlan.save()
+            with reversion.create_revision():
+                netixlan.status = "ok"
+                netixlan.save()
+
         data = self.db_guest.all("ix", net_count=1)
         for row in data:
             self.assert_data_integrity(row, "ix")
@@ -2548,6 +2702,150 @@ class TestJSON(unittest.TestCase):
         for row in data:
             self.assert_data_integrity(row, "ix")
             self.assertGreaterEqual(row["net_count"], 1)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_ix_fac_count(self):
+        """
+        Issue 836: Users should be able to filter
+        Exchanges by the amount of Facilities linked to them.
+        """
+
+        for ix in InternetExchange.objects.filter(status="ok").all():
+            ixfac = ix.ixfac_set.first()
+            if not ixfac:
+                continue
+            ixfac.status = "pending"
+            ixfac.save()
+            with reversion.create_revision():
+                ixfac.status = "ok"
+                ixfac.save()
+
+        data = self.db_guest.all("ix", fac_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["fac_count"], 1)
+
+        data = self.db_guest.all("ix", fac_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["fac_count"], 0)
+
+        data = self.db_guest.all("ix", fac_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertEqual(row["fac_count"], 0)
+
+        data = self.db_guest.all("ix", fac_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertGreater(row["fac_count"], 0)
+
+        data = self.db_guest.all("ix", fac_count__lte=2)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertLessEqual(row["fac_count"], 2)
+
+        data = self.db_guest.all("ix", fac_count__gte=1)
+        for row in data:
+            self.assert_data_integrity(row, "ix")
+            self.assertGreaterEqual(row["fac_count"], 1)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_net_ix_count(self):
+        """
+        Issue 835: We should be able to filter Networks based
+        on the number of Exchanges associated with them.
+        """
+
+        for network in Network.objects.filter(status="ok").all():
+            netixlan = network.netixlan_set.first()
+            if not netixlan:
+                continue
+            netixlan.status = "pending"
+            netixlan.save()
+            with reversion.create_revision():
+                netixlan.status = "ok"
+                netixlan.save()
+
+        data = self.db_guest.all("net", ix_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["ix_count"], 1)
+
+        data = self.db_guest.all("net", ix_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["ix_count"], 0)
+
+        data = self.db_guest.all("net", ix_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["ix_count"], 0)
+
+        data = self.db_guest.all("net", ix_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertGreater(row["ix_count"], 0)
+
+        data = self.db_guest.all("net", ix_count__lte=2)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertLessEqual(row["ix_count"], 2)
+
+        data = self.db_guest.all("net", ix_count__gte=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertGreaterEqual(row["ix_count"], 1)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_net_fac_count(self):
+        """
+        Issue 835: We should be able to filter Networks based
+        on the number of Facilities associated with them.
+        """
+
+        for network in Network.objects.filter(status="ok").all():
+            netfac = network.netfac_set.first()
+            if not netfac:
+                continue
+            netfac.status = "pending"
+            netfac.save()
+            with reversion.create_revision():
+                netfac.status = "ok"
+                netfac.save()
+
+        data = self.db_guest.all("net", fac_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["fac_count"], 1)
+
+        data = self.db_guest.all("net", fac_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["fac_count"], 0)
+
+        data = self.db_guest.all("net", fac_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertEqual(row["fac_count"], 0)
+
+        data = self.db_guest.all("net", fac_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertGreater(row["fac_count"], 0)
+
+        data = self.db_guest.all("net", fac_count__lte=2)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertLessEqual(row["fac_count"], 2)
+
+        data = self.db_guest.all("net", fac_count__gte=1)
+        for row in data:
+            self.assert_data_integrity(row, "net")
+            self.assertGreaterEqual(row["fac_count"], 1)
 
     ##########################################################################
 

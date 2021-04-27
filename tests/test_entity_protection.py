@@ -85,7 +85,6 @@ def test_protected_entities(db):
 
         # with netixlans gone the exchange can now be
         # deleted
-
         ix.delete()
 
     # org still has active fac and net under it

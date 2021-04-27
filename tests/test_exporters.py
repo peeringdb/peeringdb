@@ -6,6 +6,7 @@ import pytest
 import json
 import difflib
 import re
+import reversion
 
 from django.test import Client
 
@@ -93,27 +94,30 @@ class AdvancedSearchExportTest(ClientCase):
         ]
 
         # create network facility relationships
-        cls.netfac = [
-            NetworkFacility.objects.create(
-                network=cls.net[i - 1], facility=cls.fac[i - 1], status="ok"
-            )
-            for i in entity_count
-        ]
+        with reversion.create_revision():
+            cls.netfac = [
+                NetworkFacility.objects.create(
+                    network=cls.net[i - 1], facility=cls.fac[i - 1], status="ok"
+                )
+                for i in entity_count
+            ]
 
         # create ixlans
-        cls.ixlan = [ix.ixlan for ix in cls.ix]
+        with reversion.create_revision():
+            cls.ixlan = [ix.ixlan for ix in cls.ix]
 
         # create netixlans
-        cls.netixlan = [
-            NetworkIXLan.objects.create(
-                ixlan=cls.ixlan[i - 1],
-                network=cls.net[i - 1],
-                asn=i,
-                speed=0,
-                status="ok",
-            )
-            for i in entity_count
-        ]
+        with reversion.create_revision():
+            cls.netixlan = [
+                NetworkIXLan.objects.create(
+                    ixlan=cls.ixlan[i - 1],
+                    network=cls.net[i - 1],
+                    asn=i,
+                    speed=0,
+                    status="ok",
+                )
+                for i in entity_count
+            ]
 
     def expected_data(self, tag, fmt):
         path = os.path.join(
