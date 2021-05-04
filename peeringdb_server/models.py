@@ -3802,11 +3802,18 @@ class Network(pdb_models.NetworkBase):
         Relationship through netixlan -> ixlan -> ix
         """
 
+        print("value")
+        print(value)
         if not qset:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter("ixlan__%s" % field, filt, value)
+
+        print(filt)
         q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
+
+        print("q")
+        print(q)
         return qset.filter(id__in=[i.network_id for i in q])
 
     @classmethod
