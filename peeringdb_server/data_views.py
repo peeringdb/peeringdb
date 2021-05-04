@@ -29,6 +29,7 @@ const.SCOPES_TRUNC = const.SCOPES[1:]
 const.NET_TYPES_TRUNC = const.NET_TYPES[1:]
 const.SERVICE_LEVEL_TYPES_TRUNC = const.SERVICE_LEVEL_TYPES[1:]
 const.TERMS_TYPES_TRUNC = const.TERMS_TYPES[1:]
+const.OFFERED_RESILIENCE_TRUNC = const.OFFERED_RESILIENCE[1:]
 
 # create enums without duplicate "Not Disclosed" choices
 # but with the one Not Disclosed choice combining both
@@ -141,6 +142,7 @@ def enum(request, name):
         "VISIBILITY",
         "SERVICE_LEVEL_TYPES_TRUNC",
         "TERMS_TYPES_TRUNC",
+        "OFFERED_RESILIENCE_TRUNC",
     ]:
         raise Exception("Unknown enum")
 

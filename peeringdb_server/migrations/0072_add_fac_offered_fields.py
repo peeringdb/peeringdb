@@ -13,11 +13,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="facility",
             name="offered_power",
-            field=models.PositiveIntegerField(
+            field=models.FloatField(
                 blank=True,
                 help_text="The amount of power offered by the facility, in kilowatts",
                 null=True,
                 verbose_name="Offered Power (kilowatts)",
+                default=None,
             ),
         ),
         migrations.AddField(
@@ -45,6 +46,7 @@ class Migration(migrations.Migration):
                 help_text="The amount of space offered by the facility, in square meters",
                 null=True,
                 verbose_name="Offered Space (sq meters)",
+                default=None,
             ),
         ),
     ]

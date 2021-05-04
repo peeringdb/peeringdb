@@ -1278,6 +1278,28 @@ def view_facility(request, id):
                 "value": data.get("sales_phone", dismiss),
                 "help_text": field_help(Facility, "sales_phone"),
             },
+            {
+                "type": "offered_power",
+                "name": "offered_power",
+                "label": _("Offered Power"),
+                "value": data.get("offered_power", dismiss),
+                "help_text": field_help(Facility, "offered_power"),
+            },
+            {
+                "type": "number",
+                "name": "offered_space",
+                "label": _("Offered Space"),
+                "value": data.get("offered_space", dismiss),
+                "help_text": field_help(Facility, "offered_space"),
+            },
+            {
+                "type": "list",
+                "data": "enum/offered_resilience_trunc",
+                "name": "offered_resilience",
+                "label": _("Offered Resilience"),
+                "value": data.get("offered_resilience", dismiss),
+                # "help_text": field_help(Facility, "offered_resilience"),
+            },
         ],
     }
 
