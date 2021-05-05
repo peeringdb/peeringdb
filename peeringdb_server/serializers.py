@@ -1425,6 +1425,17 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
             filters.update({"org__present": kwargs.get("org__present")[0]})
 
+        if "all_net" in kwargs:
+            network_id_list = [int(net_id) for net_id in kwargs.get("all_net")[0].split(",")]
+            qset = cls.Meta.model.related_to_multiple_networks(value_list=network_id_list, qset=qset)
+            filters.update({"all_net": kwargs.get("all_net")})
+
+        if "not_net" in kwargs:
+            networks = kwargs.get("not_net")[0].split(",")
+            qset = cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
+            filters.update({"not_net": kwargs.get("not_net")})
+
+
         return qset, filters
 
     @classmethod
@@ -2615,7 +2626,6 @@ class InternetExchangeSerializer(ModelSerializer):
 
         if "all_net" in kwargs:
             network_id_list = [int(net_id) for net_id in kwargs.get("all_net")[0].split(",")]
-            print(network_id_list)
             qset = cls.Meta.model.related_to_multiple_networks(value_list=network_id_list, qset=qset)
             filters.update({"all_net": kwargs.get("all_net")})
 
