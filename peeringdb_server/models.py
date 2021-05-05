@@ -1579,6 +1579,37 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return qset.filter(id__in=[nx.ixlan.ix_id for nx in q])
 
     @classmethod
+    def related_to_multiple_networks(cls, value_list=None, field="network_id", qset=None):
+        """
+        Returns queryset of InternetExchange objects that
+        are related to ALL networks specified in the value list
+        (a list of integer network ids)
+
+        Used in Advanced Search (ALL search).
+        Relationship through netixlan -> ixlan
+        """
+        if not len(value_list):
+            raise ValueError("List must contain multiple network ids")
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        value = value_list.pop(0)
+        filt = make_relation_filter(field, None, value)
+        netixlan_qset = NetworkIXLan.handleref.filter(**filt).select_related("ixlan")
+        final_queryset = qset.filter(id__in=[nx.ixlan.ix_id for nx in netixlan_qset])
+
+        # Need the intersection of the next networks
+        for value in value_list:
+            filt = make_relation_filter(field, None, value)
+            netixlan_qset = NetworkIXLan.handleref.filter(
+                **filt).select_related("ixlan")
+            ix_qset = qset.filter(id__in=[nx.ixlan.ix_id for nx in netixlan_qset])
+            final_queryset = final_queryset & ix_qset
+
+        return final_queryset
+
+    @classmethod
     def not_related_to_net(cls, filt=None, value=None, field="network_id", qset=None):
         """
         Returns queryset of InternetExchange objects that

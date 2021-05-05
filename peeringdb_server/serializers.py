@@ -2613,9 +2613,11 @@ class InternetExchangeSerializer(ModelSerializer):
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
 
-        # if "all_net" in kwargs:
-        #     network_list = kwargs.get("all_net")[0].split(",")
-        #     pass
+        if "all_net" in kwargs:
+            network_id_list = [int(net_id) for net_id in kwargs.get("all_net")[0].split(",")]
+            print(network_id_list)
+            qset = cls.Meta.model.related_to_multiple_networks(value_list=network_id_list, qset=qset)
+            filters.update({"all_net": kwargs.get("all_net")})
 
         if "not_net" in kwargs:
             networks = kwargs.get("not_net")[0].split(",")
