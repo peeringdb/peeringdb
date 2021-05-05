@@ -1435,7 +1435,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             qset = cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
             filters.update({"not_net": kwargs.get("not_net")})
 
-
         return qset, filters
 
     @classmethod

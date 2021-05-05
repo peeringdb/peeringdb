@@ -2489,73 +2489,64 @@ twentyc.editable.input.register(
   "string"
 );
 
-// twentyc.editable.input.register(
-//   "offered_power",
-//   {
-//     apply : function(value) {
-//       this.source.html(this.format_offered_power(this.get()));
-//     },
+twentyc.editable.input.register(
+  "offered_power",
+  {
+    apply : function(value) {
+      this.source.html(this.format_offered_power(this.get()));
+    },
 
-//     export : function() {
-//       console.log("exporting")
-//       return this.convert(this.get())
-//     },
+    make : function() {
+      return $(
+        '<select name="power_units" id="power_units"><option value="kilowatts">kW</option><option value="megawatts">MW</option></select>'
+        );
+    },
 
-//     convert : function(value) {
-//       if ( $.isNumeric(value) ){
-//         return value
-//       } else {
-//       return this.reverse_pretty_speed(value)
-//       }
-//     },
+    export : function() {
+      console.log("exporting")
+      return this.convert(this.get())
+    },
 
-//     validate : function() {
-//       console.log("validating")
-//       // Check if it's an integer
-//       let value = this.element.val();
-//       let suffix = value.slice(-1);
+    convert : function(value) {
+      if ( $.isNumeric(value) ){
+        return value
+      } else {
+      return this.reverse_power(value)
+      }
+    },
 
-//       if ( $.isNumeric(value) ){
-//         return true
-//       } else if ( $.isNumeric(value.slice(0,-1) ) && this.validate_suffix(suffix)) {
-//         return true
-//       }
-//       return false
-//     },
-//     validation_message : function() {
-//       return gettext("Needs to be an integer or a speed ending in M, G, or T") ///
-//     },
+    validate : function() {
+      // Check if it's an integer
+      let value = this.element.val();
+      if ( $.isNumeric(value) ){
+        return true
+      return false
+      }
+    },
 
-//     validate_suffix: function(suffix) {
-//       return ( suffix.toLowerCase() === "m" ||
-//                suffix.toLowerCase() === "g" ||
-//                suffix.toLowerCase() === "t" )
-//     },
+    reverse_power : function(value) {
+      // Given a pretty speed (string), output the integer speed
 
-//     reverse_pretty_speed : function(value) {
-//       // Given a pretty speed (string), output the integer speed
+      const conversion_factor = {
+        "MW": 1,
+        "kW": 1000,
+      }
 
-//       const conversion_factor = {
-//         "m": 1,
-//         "g": 1000,
-//         "t": 1000000,
-//       }
+      const num = parseFloat(value.slice(0, -2));
+      const unit = value.slice(-1).toLowerCase();
+      const multiplier = conversion_factor[unit]
 
-//       const num = parseFloat(value.slice(0, -1));
-//       const unit = value.slice(-1).toLowerCase();
-//       const multiplier = conversion_factor[unit]
+      // Always return the speed as an integer
+      return Math.round(num * multiplier)
+    },
 
-//       // Always return the speed as an integer
-//       return Math.round(num * multiplier)
-//   },
+    format_offered_power: function(value) {
+      return "power"
+    },
 
-//     format_offered_power: function(value) {
-
-//     },
-
-//   },
-//   "string"
-// );
+  },
+  "string"
+);
 
 /*
  * set up input templates
@@ -2657,7 +2648,9 @@ twentyc.data.loaders.assign("enum/policy_contracts", "data");
 twentyc.data.loaders.assign("enum/visibility", "data");
 twentyc.data.loaders.assign("enum/bool_choice_str", "data");
 twentyc.data.loaders.assign("enum/service_level_types_trunc", "data");
+twentyc.data.loaders.assign("enum/service_level_types_advs", "data");
 twentyc.data.loaders.assign("enum/terms_types_trunc", "data");
+twentyc.data.loaders.assign("enum/terms_types_advs", "data");
 twentyc.data.loaders.assign("enum/offered_resilience_trunc", "data");
 
 $(twentyc.data).on("load-enum/traffic", function(e, payload) {

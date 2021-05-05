@@ -73,6 +73,29 @@
         </div>
       </div>
 
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Service Level" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-data="enum/service_level_types_advs",
+               data-edit-multiple="yes"
+               data-edit-value="{{ request.GET.service_level__in }}"
+               data-edit-name="service_level__in"></div>
+        </div>
+      </div>
+
+
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Terms" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-data="enum/terms_types_advs",
+               data-edit-multiple="yes"
+               data-edit-value="{{ request.GET.terms__in }}"
+               data-edit-name="terms__in"></div>
+        </div>
+      </div>
+
     </div>
   </div>
   <div class="right">

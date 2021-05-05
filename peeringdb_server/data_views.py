@@ -44,6 +44,16 @@ const.NET_TYPES_ADVS[0] = (
     ",%s" % const.NET_TYPES_ADVS[0][0],
     const.NET_TYPES_ADVS[0][1],
 )
+const.SERVICE_LEVEL_TYPES_ADVS = list(const.SERVICE_LEVEL_TYPES[1:])
+const.SERVICE_LEVEL_TYPES_ADVS[0] = (
+    ",{}".format(const.SERVICE_LEVEL_TYPES_ADVS[0][0]),
+    const.SERVICE_LEVEL_TYPES_ADVS[0][1],
+)
+const.TERMS_TYPES_ADVS = list(const.TERMS_TYPES[1:])
+const.TERMS_TYPES_ADVS[0] = (
+    ",{}".format(const.TERMS_TYPES_ADVS[0][0]),
+    const.TERMS_TYPES_ADVS[0][1],
+)
 
 
 const.ORG_GROUPS = (("member", "member"), ("admin", "admin"))
@@ -142,6 +152,8 @@ def enum(request, name):
         "VISIBILITY",
         "SERVICE_LEVEL_TYPES_TRUNC",
         "TERMS_TYPES_TRUNC",
+        "SERVICE_LEVEL_TYPES_ADVS",
+        "TERMS_TYPES_ADVS",
         "OFFERED_RESILIENCE_TRUNC",
     ]:
         raise Exception("Unknown enum")
