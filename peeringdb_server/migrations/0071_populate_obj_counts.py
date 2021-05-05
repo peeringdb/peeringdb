@@ -108,7 +108,7 @@ def populate_facility_counts(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("peeringdb_server", "0069_add_obj_counts"),
+        ("peeringdb_server", "0070_add_obj_counts"),
     ]
 
     operations = [
