@@ -2529,6 +2529,7 @@ class InternetExchangeSerializer(ModelSerializer):
     @classmethod
     def prepare_query(cls, qset, **kwargs):
 
+        print("prepare query")
         qset = qset.select_related("org")
 
         filters = get_relation_filters(
@@ -2585,6 +2586,17 @@ class InternetExchangeSerializer(ModelSerializer):
             asns = kwargs.get("asn_overlap", [""])[0].split(",")
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
+
+        if "all_net" in kwargs:
+            network_list = kwargs.get("all_net")[0].split(",")
+            
+            cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
+            pass
+
+        if "not_net" in kwargs:
+            networks = kwargs.get("not_net")[0].split(",")
+            qset = cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
+            filters.update({"not_net": kwargs.get("not_net")})
 
         return qset, filters
 

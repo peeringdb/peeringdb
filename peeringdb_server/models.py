@@ -1579,6 +1579,22 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return qset.filter(id__in=[nx.ixlan.ix_id for nx in q])
 
     @classmethod
+    def not_related_to_net(cls, filt=None, value=None, field="network_id", qset=None):
+        """
+        Returns queryset of InternetExchange objects that
+        are not related to the network specified by network_id
+
+        Relationship through netixlan -> ixlan
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        filt = make_relation_filter(field, filt, value)
+        q = NetworkIXLan.handleref.filter(**filt).select_related("ixlan")
+        return qset.exclude(id__in=[nx.ixlan.ix_id for nx in q])
+
+    @classmethod
     def related_to_ipblock(cls, ipblock, qset=None):
         """
         Returns queryset of InternetExchange objects that
