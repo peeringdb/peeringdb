@@ -1405,7 +1405,32 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
 
+        if "org__present" in kwargs:
+            ix_ids = []
+            org_list = kwargs.get("org__present")[0].split(",")
+            for org_id in org_list:
+                try:
+                    org = Organization.objects.get(id=int(org_id))
+                except Organization.DoesNotExist:
+                    return qset, filters
+
+                ix_ids += cls.get_ix_ids_from_org(org)
+
+            if len(ix_ids):
+                qset = cls.Meta.model.related_to_ix(
+                    value=ix_ids, qset=qset, filt="in"
+                )
+            else:
+                qset = cls.Meta.model.objects.none()
+
+            filters.update({"org__present": kwargs.get("org__present")[0]})
+
         return qset, filters
+
+    @classmethod
+    def get_ix_ids_from_org(self, org):
+        return [ix.id for ix in org.ix_set_active]
+
 
     def to_internal_value(self, data):
         # if `suggest` keyword is provided, hard-set the org to
@@ -2093,7 +2118,6 @@ class NetworkSerializer(ModelSerializer):
         if "org__present" in kwargs:
             fac_ids = []
             ix_ids = []
-            print(kwargs.get("org__present"))
             org_list = kwargs.get("org__present")[0].split(",")
             for org_id in org_list:
                 try:
@@ -2116,6 +2140,8 @@ class NetworkSerializer(ModelSerializer):
 
             qset = fac_qset | ix_qset
 
+            filters.update({"org__present": kwargs.get("org__present")[0]})
+
         return qset, filters
 
     @classmethod
@@ -2127,7 +2153,7 @@ class NetworkSerializer(ModelSerializer):
     @classmethod
     def get_fac_ids_from_org(self, org):
         return [fac.id for fac in org.fac_set_active]
-    
+
     @classmethod
     def get_ix_ids_from_org(self, org):
         return [ix.id for ix in org.ix_set_active]
@@ -2587,18 +2613,40 @@ class InternetExchangeSerializer(ModelSerializer):
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
 
-        if "all_net" in kwargs:
-            network_list = kwargs.get("all_net")[0].split(",")
-            
-            cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
-            pass
+        # if "all_net" in kwargs:
+        #     network_list = kwargs.get("all_net")[0].split(",")
+        #     pass
 
         if "not_net" in kwargs:
             networks = kwargs.get("not_net")[0].split(",")
             qset = cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
             filters.update({"not_net": kwargs.get("not_net")})
 
+        if "org__present" in kwargs:
+            fac_ids = []
+            org_list = kwargs.get("org__present")[0].split(",")
+            for org_id in org_list:
+                try:
+                    org = Organization.objects.get(id=int(org_id))
+                except Organization.DoesNotExist:
+                    return qset, filters
+
+                fac_ids += cls.get_fac_ids_from_org(org)
+
+            if len(fac_ids):
+                qset = cls.Meta.model.related_to_fac(
+                    value=fac_ids, qset=qset, filt="in"
+                )
+            else:
+                qset = cls.Meta.model.objects.none()
+
+            filters.update({"org__present": kwargs.get("org__present")[0]})
+
         return qset, filters
+
+    @classmethod
+    def get_fac_ids_from_org(self, org):
+        return [fac.id for fac in org.fac_set_active]
 
     def validate_create(self, data):
         # we don't want users to be able to create internet exchanges if the parent
