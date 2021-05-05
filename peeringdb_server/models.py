@@ -42,7 +42,6 @@ from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
 
 from django_grainy.util import check_permissions
-from peeringdb_server.geo import Melissa
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.validators import (
     validate_address_space,
@@ -52,6 +51,7 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_irr_as_set,
 )
+import peeringdb_server.geo as geo
 
 SPONSORSHIP_LEVELS = (
     (1, _("Silver")),
@@ -307,7 +307,7 @@ class GeocodeBaseMixin(models.Model):
         sanitized["geocode_status"] = True
         sanitized["geocode_date"] = datetime.datetime.now(datetime.timezone.utc)
 
-        return suggested_address
+        return sanitized
 
 
 class UserOrgAffiliationRequest(models.Model):

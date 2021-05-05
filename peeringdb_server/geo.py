@@ -53,19 +53,19 @@ class Melissa:
             address1=instance.address1,
             city=instance.city,
             zipcode=instance.zipcode,
-            country=instance.country
+            country=f"{instance.country}"
         )
 
-    def apply_global_address(pdb_data, melissa_data):
+    def apply_global_address(self, pdb_data, melissa_data):
 
         # map peeringdb address fields to melissa result fields
 
-        for key in pdb_data.items():
+        for key in self.field_map.keys():
             pdb_data[key] = melissa_data[self.field_map[key]]
 
         return pdb_data
 
-    def global_address_params(**kwargs):
+    def global_address_params(self, **kwargs):
 
         return {
             "a1" : kwargs.get("address1"),
@@ -75,7 +75,7 @@ class Melissa:
         }
 
 
-    def global_address(**kwargs):
+    def global_address(self, **kwargs):
 
         params = self.global_address_params(**kwargs)
         params.update(id=self.key)
@@ -92,12 +92,12 @@ class Melissa:
         except IOError as exc:
             raise RequestError(exc)
 
-        if response.status != 200:
-            raise RequestError(f"Returned status {response.status}")
+        if response.status_code != 200:
+            raise RequestError(f"Returned status {response.status_code}")
 
         return response.json()
 
-    def global_address_best_result(result):
+    def global_address_best_result(self, result):
         try:
             return result["Records"][0]
         except (KeyError, IndexError):
