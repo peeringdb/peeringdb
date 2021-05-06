@@ -51,6 +51,7 @@ class Melissa:
     def sanitize_address_model(self, instance):
         return self.sanitize(
             address1=instance.address1,
+            address2=instance.address2,
             city=instance.city,
             zipcode=instance.zipcode,
             country=f"{instance.country}"
@@ -69,6 +70,7 @@ class Melissa:
 
         return {
             "a1" : kwargs.get("address1"),
+            "a2" : kwargs.get("address2"),
             "ctry": kwargs.get("country"),
             "loc": kwargs.get("city"),
             "postal": kwargs.get("zipcode"),
