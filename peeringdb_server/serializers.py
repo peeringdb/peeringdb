@@ -234,7 +234,7 @@ class GeocodeSerializerMixin(object):
         if need_geosync:
             print("Normalizing geofields")
             try:
-                suggested_address = instance.normalize_api_response()
+                suggested_address = instance.process_geo_location()
                 print(suggested_address)
 
                 if self.needs_address_suggestion(suggested_address, instance):
@@ -264,7 +264,7 @@ class GeocodeSerializerMixin(object):
 
         if self._geosync_information_present(instance, validated_data):
             try:
-                suggested_address = instance.normalize_api_response()
+                suggested_address = instance.process_geo_location()
 
                 if self.needs_address_suggestion(suggested_address, instance):
                     self._add_meta_information(

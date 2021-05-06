@@ -282,10 +282,16 @@ class GeocodeBaseMixin(models.Model):
         )
 
 
-    def normalize_api_response(self):
+    def process_geo_location(self):
+
+        """
+        Sets longitude and latitude
+
+        Will return a dict containing normalized address
+        data
+        """
 
         melissa = geo.Melissa(settings.MELISSA_KEY, timeout=5)
-
 
         try:
             sanitized = melissa.sanitize_address_model(self)

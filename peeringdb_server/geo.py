@@ -14,6 +14,11 @@ class RequestError(IOError):
 
 class Melissa:
 
+    """
+    Handles requests to the melissa global address
+    service used for geocoding and address normalization
+    """
+
     global_address_url = "https://address.melissadata.net/v3/WEB/GlobalAddress/doGlobalAddress"
 
     # maps peeringdb address model field to melissa
@@ -49,6 +54,19 @@ class Melissa:
 
 
     def sanitize_address_model(self, instance):
+
+        """
+        Takes an instance of AddressModel and
+        runs it's address through the normalization
+        process.
+
+        Note that his will not actually change fields
+        on the instance.
+
+        Returns dict with normalized address data and
+        geo coordinates
+        """
+
         return self.sanitize(
             address1=instance.address1,
             address2=instance.address2,
@@ -78,6 +96,18 @@ class Melissa:
 
 
     def global_address(self, **kwargs):
+
+        """
+        Sends request to the global address service
+
+        Keyword arguments:
+
+        - address1
+        - address2
+        - city
+        - country
+        - zipcode
+        """
 
         params = self.global_address_params(**kwargs)
         params.update(id=self.key)
