@@ -2493,25 +2493,46 @@ twentyc.editable.input.register(
   "offered_power",
   {
     apply : function(value) {
-      this.source.html(this.format_offered_power(this.get()));
+      this.source.html(this.format_offered_power(value));
+    },
+
+    set : function(value) {
+      let value_to_set = value ? value : this.source.text().trim();
+      if ( value_to_set.match(/[a-zA-Z]+$/)){
+        this.element.val(value_to_set.replace(/[a-zA-Z]+$/,''));
+      } else {
+        this.element.val(value_to_set);
+      }
+
+    },
+
+    get_unit : function() {
+      return $(this.element[2]).val()
     },
 
     make : function() {
       return $(
-        '<select name="power_units" id="power_units"><option value="kilowatts">kW</option><option value="megawatts">MW</option></select>'
+        `<input type="text"></input>
+         <select name="power_units" id="power_units">
+            <option selected value="kilowatts">kW</option>
+            <option value="megawatts">MW</option>
+         </select>`
         );
     },
 
     export : function() {
       console.log("exporting")
-      return this.convert(this.get())
+      let unit = this.get_unit();
+      let value = this.get();
+      return this.convert(value, unit)
     },
 
-    convert : function(value) {
-      if ( $.isNumeric(value) ){
+    convert : function(value, unit) {
+      // db stores value as Kilowatts
+      if ( unit == "kilowatts"){
         return value
-      } else {
-      return this.reverse_power(value)
+      } else if (unit == "megawatts"){
+        return value * 1000;
       }
     },
 
@@ -2524,24 +2545,16 @@ twentyc.editable.input.register(
       }
     },
 
-    reverse_power : function(value) {
-      // Given a pretty speed (string), output the integer speed
-
-      const conversion_factor = {
-        "MW": 1,
-        "kW": 1000,
-      }
-
-      const num = parseFloat(value.slice(0, -2));
-      const unit = value.slice(-1).toLowerCase();
-      const multiplier = conversion_factor[unit]
-
-      // Always return the speed as an integer
-      return Math.round(num * multiplier)
-    },
-
     format_offered_power: function(value) {
-      return "power"
+      // Power will always be returned from the API as a 
+      // integer Kilowatt amount. 
+      // Add appropriate units based on magnitude
+
+      if (parseFloat(value) > 1000) {
+        let num = Math.round((value / 1000) * 100) / 100;
+        return num + "MW"
+      }
+      return value + "kW"
     },
 
   },
