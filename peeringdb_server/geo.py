@@ -100,6 +100,8 @@ class Melissa:
         return response.json()
 
     def global_address_best_result(self, result):
+        if not result:
+            return None
         try:
             return result["Records"][0]
         except (KeyError, IndexError):

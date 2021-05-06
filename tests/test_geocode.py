@@ -7,6 +7,26 @@ import googlemaps
 
 import peeringdb_server.models as models
 from peeringdb_server.serializers import GeocodeSerializerMixin
+import peeringdb_server.geo as geo
+
+class MockMelissa(geo.Melissa):
+
+    def __init__(self):
+        super().__init__("")
+
+    def global_address(self, **kwargs):
+
+        return {
+            "Records": [
+                {
+                    "AddressLine1": "address 1",
+                    "Locality": "city",
+                    "PostalCode": "12345",
+                    "Latitude": 1.234567,
+                    "Longitude": 1.234567,
+                }
+            ]
+        }
 
 
 @pytest.fixture
@@ -43,16 +63,6 @@ def load_json(filename):
     return json_data
 
 
-@pytest.fixture
-def reverse():
-    return load_json("reverse")
-
-
-@pytest.fixture
-def reverse_parsed():
-    return load_json("reverse_parsed")
-
-
 def test_geo_model_defaults(fac):
     assert fac.geocode_status is False
     assert fac.geocode_date is None
@@ -67,34 +77,6 @@ def test_geo_model_geocode_coordinates(fac):
 
 def test_geo_model_geocode_addresss(fac):
     assert fac.geocode_address == "Some street , Chicago, IL 1234"
-
-
-def test_geo_model_get_address1(fac):
-    data = [{"empty": "empty"}]
-    assert fac.get_address1_from_geocode(data) is None
-
-    data = load_json("address1_test0")
-    assert fac.get_address1_from_geocode(data) == "427 S LaSalle St"
-
-    data = load_json("address1_test1")
-    assert fac.get_address1_from_geocode(data) == "427"
-
-    data = load_json("address1_test2")
-    assert fac.get_address1_from_geocode(data) == "S LaSalle St"
-
-
-def test_geo_model_reverse_geocode_blank(fac):
-    with pytest.raises(AttributeError):
-        fac.reverse_geocode(None, "-1,1")
-
-    with pytest.raises(ValidationError) as exc:
-        fac.reverse_geocode(None, None)
-    message = "Latitude and longitude must be defined for reverse geocode lookup"
-    assert message in str(exc.value)
-
-
-def test_geo_model_parse_reverse(fac, reverse, reverse_parsed):
-    assert fac.parse_reverse_geocode(reverse) == reverse_parsed
 
 
 def test_need_address_suggestion(fac):
@@ -125,3 +107,80 @@ def test_does_not_need_address_suggestion(fac):
     }
     geocodeserializer = GeocodeSerializerMixin()
     assert geocodeserializer.needs_address_suggestion(suggested_address, fac) is False
+
+
+def test_melissa_global_address_params():
+    client = geo.Melissa("")
+
+    expected = {
+        "a1" : "address 1",
+        "a2" : "address 2",
+        "ctry" : "us",
+        "loc" : "city",
+        "postal" : "12345",
+    }
+
+    assert client.global_address_params(
+        address1="address 1",
+        address2="address 2",
+        country="us",
+        city="city",
+        zipcode="12345"
+    ) == expected
+
+
+def test_melissa_global_address_best_result():
+    client = geo.Melissa("")
+
+    expected = {"Address1":"value1"}
+
+    result = {"Records":[expected, {"Address1":"value2"}]}
+
+    assert client.global_address_best_result(result) == expected
+    assert client.global_address_best_result({}) == None
+    assert client.global_address_best_result(None) == None
+
+
+def test_melissa_apply_global_address():
+
+    client = geo.Melissa("")
+
+    data = client.apply_global_address(
+        {
+            "address1" : "address1 old",
+            "city": "city old",
+            "zipcode": "zipcode old",
+        },
+        {
+            "AddressLine1": "address1 new",
+            "Latitude": 1.234567,
+            "Longitude": 1.234567,
+            "PostalCode": "zipcode new",
+            "Locality": "city new",
+        }
+    )
+
+    expected = {
+        "address1" : "address1 new",
+        "city": "city new",
+        "zipcode": "zipcode new",
+        "longitude": 1.234567,
+        "latitude": 1.234567,
+    }
+
+    assert data == expected
+
+
+def test_melissa_sanitize(fac):
+
+    client = MockMelissa()
+
+    sanitized = client.sanitize_address_model(fac)
+
+    assert sanitized["address1"] == "address 1"
+    assert sanitized["city"] == "city"
+    assert sanitized["latitude"] == 1.234567
+    assert sanitized["longitude"] == 1.234567
+    assert sanitized["zipcode"] == "12345"
+
+
