@@ -2089,8 +2089,6 @@ class NetworkSerializer(ModelSerializer):
         Currently supports: ixlan_id, ix_id, netixlan_id, netfac_id, fac_id
         """
 
-        print("live from elliot")
-        print(kwargs)
         qset = qset.select_related("org")
 
         filters = get_relation_filters(
@@ -2144,56 +2142,69 @@ class NetworkSerializer(ModelSerializer):
             filters.update({"not_fac": not_fac})
 
         if "org_present" in kwargs:
-            fac_ids = []
-            ix_ids = []
-            org_list = kwargs.get("org_present")[0].split(",")
-            for org_id in org_list:
-                try:
-                    org = Organization.objects.get(id=int(org_id))
-                except Organization.DoesNotExist:
-                    return qset, filters
-
-                fac_ids += cls.get_fac_ids_from_org(org)
-                ix_ids += cls.get_ix_ids_from_org(org)
-
-            if len(fac_ids):
-                fac_qset = cls.Meta.model.related_to_fac(value=fac_ids, qset=qset, filt="in")
-            else:
-                fac_qset = cls.Meta.model.objects.none()
-
-            if len(ix_ids):
-                ix_qset = cls.Meta.model.related_to_ix(value=ix_ids, qset=qset, filt="in")
-            else:
-                ix_qset = cls.Meta.model.objects.none()
-
-            qset = fac_qset | ix_qset
-
+            qset, filters = cls.get_org_present_qset(qset, filters, **kwargs)
             filters.update({"org_present": kwargs.get("org_present")[0]})
 
         if "org_not_present" in kwargs:
-            fac_ids = []
-            ix_ids = []
-            org_list = kwargs.get("org_not_present")[0].split(",")
-            for org_id in org_list:
-                try:
-                    org = Organization.objects.get(id=int(org_id))
-                except Organization.DoesNotExist:
-                    return qset, filters
-
-                fac_ids += cls.get_fac_ids_from_org(org)
-                ix_ids += cls.get_ix_ids_from_org(org)
-
-            if len(fac_ids) and len(ix_ids):
-                fac_qset = cls.Meta.model.not_related_to_fac(value=fac_ids, qset=qset, filt="in")
-                ix_qset = cls.Meta.model.not_related_to_fac(value=ix_ids, qset=qset, filt="in")
-                qset = fac_qset & ix_qset
-
-            elif len(fac_ids) and len(ix_ids) == 0:
-                qset = cls.Meta.model.not_related_to_fac(value=fac_ids, qset=qset, filt="in")
-            elif len(ix_ids) and len(fac_ids) == 0:
-                qset = cls.Meta.model.not_related_to_fac(value=ix_ids, qset=qset, filt="in")
-
+            qset, filters = cls.get_org_not_present_qset(qset, filters, **kwargs)
             filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
+
+        return qset, filters
+
+    @classmethod
+    def get_org_present_qset(cls, qset, filters, **kwargs):
+        fac_ids = []
+        ix_ids = []
+        org_list = kwargs.get("org_present")[0].split(",")
+        for org_id in org_list:
+            try:
+                org = Organization.objects.get(id=int(org_id))
+            except Organization.DoesNotExist:
+                return qset, filters
+
+            fac_ids += cls.get_fac_ids_from_org(org)
+            ix_ids += cls.get_ix_ids_from_org(org)
+
+        if len(fac_ids):
+            fac_qset = cls.Meta.model.related_to_fac(value=fac_ids, qset=qset, filt="in")
+        else:
+            fac_qset = cls.Meta.model.objects.none()
+
+        if len(ix_ids):
+            ix_qset = cls.Meta.model.related_to_ix(value=ix_ids, qset=qset, filt="in")
+        else:
+            ix_qset = cls.Meta.model.objects.none()
+
+        qset = fac_qset | ix_qset
+        return qset, filters
+
+    @classmethod
+    def get_org_not_present_qset(cls, qset, filters, **kwargs):
+        fac_ids = []
+        ix_ids = []
+        org_list = kwargs.get("org_not_present")[0].split(",")
+        for org_id in org_list:
+            try:
+                org = Organization.objects.get(id=int(org_id))
+            except Organization.DoesNotExist:
+                return qset, filters
+
+            fac_ids += cls.get_fac_ids_from_org(org)
+            ix_ids += cls.get_ix_ids_from_org(org)
+
+        if len(fac_ids):
+            fac_qset = cls.Meta.model.related_to_fac(value=fac_ids, qset=qset, filt="in")
+        else:
+            fac_qset = cls.Meta.model.objects.none()
+
+        if len(ix_ids):
+            ix_qset = cls.Meta.model.related_to_ix(value=ix_ids, qset=qset, filt="in")
+        else:
+            ix_qset = cls.Meta.model.objects.none()
+
+        # Get Networks to remove from our query set
+        org_present_qset = fac_qset | ix_qset
+        qset = qset.exclude(id__in=[net.id for net in org_present_qset])
 
         return qset, filters
 
