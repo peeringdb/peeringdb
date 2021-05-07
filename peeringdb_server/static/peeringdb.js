@@ -2561,6 +2561,75 @@ twentyc.editable.input.register(
   "string"
 );
 
+
+twentyc.editable.input.register(
+  "offered_space",
+  {
+    apply : function(value) {
+      this.source.html(this.format_offered_space(value));
+    },
+
+    set : function(value) {
+      let value_to_set = value ? value : this.source.text().trim();
+      if ( value_to_set.match(/[a-zA-Z]+$/)){
+        this.element.val(value_to_set.replace(/[a-zA-Z]+$/,''));
+      } else {
+        this.element.val(value_to_set);
+      }
+
+    },
+
+    get_unit : function() {
+      return $(this.element[2]).val()
+    },
+
+    make : function() {
+      return $(
+        `<input type="text"></input>
+         <select name="space_units" id="space_units">
+            <option selected value="sq-meters">sq meters</option>
+            <option value="sq-feet">sq feet</option>
+         </select>`
+        );
+    },
+
+    export : function() {
+      console.log("exporting")
+      let unit = this.get_unit();
+      let value = this.get();
+      console.log(this.convert(value, unit))
+      return this.convert(value, unit)
+    },
+
+    convert : function(value, unit) {
+      // db stores value as square meters
+      if ( unit == "sq-meters"){
+        return parseInt(value)
+      } else if ( unit == "sq-feet"){
+        return Math.round(value * 0.092903);
+      }
+    },
+
+    validate : function() {
+      // Check if it's an integer
+      let value = this.element.val();
+      if ( $.isNumeric(value) ){
+        return true
+      return false
+      }
+    },
+
+    format_offered_space: function(value) {
+      // Space will always be returned from the API as a 
+      // integer square meter amount. 
+      // Add appropriate units.
+        return value + " sq m"
+    },
+
+  },
+  "string"
+);
+
 /*
  * set up input templates
  */

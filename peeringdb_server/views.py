@@ -1286,7 +1286,7 @@ def view_facility(request, id):
                 "help_text": field_help(Facility, "offered_power"),
             },
             {
-                "type": "number",
+                "type": "offered_space",
                 "name": "offered_space",
                 "label": _("Offered Space"),
                 "value": data.get("offered_space", dismiss),
