@@ -1393,6 +1393,23 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         return qset.filter(id__in=[i.facility_id for i in q])
 
     @classmethod
+    def not_related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
+        """
+        Returns queryset of Facility objects that
+        are related to the ixwork specified via ix_id
+
+        Relationship through ixfac -> ix
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        filt = make_relation_filter(field, filt, value)
+
+        q = InternetExchangeFacility.handleref.filter(**filt)
+        return qset.exclude(id__in=[i.facility_id for i in q])
+
+    @classmethod
     def overlapping_asns(cls, asns, qset=None):
         """
         Returns queryset of Facility objects
@@ -3896,18 +3913,12 @@ class Network(pdb_models.NetworkBase):
         Relationship through netixlan -> ixlan -> ix
         """
 
-        print("value")
-        print(value)
         if not qset:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter("ixlan__%s" % field, filt, value)
 
-        print(filt)
         q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
-
-        print("q")
-        print(q)
         return qset.filter(id__in=[i.network_id for i in q])
 
     @classmethod

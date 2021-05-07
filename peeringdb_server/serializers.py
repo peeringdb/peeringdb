@@ -1405,9 +1405,9 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
 
-        if "org__present" in kwargs:
+        if "org_present" in kwargs:
             ix_ids = []
-            org_list = kwargs.get("org__present")[0].split(",")
+            org_list = kwargs.get("org_present")[0].split(",")
             for org_id in org_list:
                 try:
                     org = Organization.objects.get(id=int(org_id))
@@ -1423,7 +1423,25 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             else:
                 qset = cls.Meta.model.objects.none()
 
-            filters.update({"org__present": kwargs.get("org__present")[0]})
+            filters.update({"org_present": kwargs.get("org_present")[0]})
+
+        if "org_not_present" in kwargs:
+            ix_ids = []
+            org_list = kwargs.get("org_not_present")[0].split(",")
+            for org_id in org_list:
+                try:
+                    org = Organization.objects.get(id=int(org_id))
+                except Organization.DoesNotExist:
+                    return qset, filters
+
+                ix_ids += cls.get_ix_ids_from_org(org)
+
+            if len(ix_ids):
+                qset = cls.Meta.model.not_related_to_ix(
+                    value=ix_ids, qset=qset, filt="in"
+                )
+
+            filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
 
         if "all_net" in kwargs:
             network_id_list = [int(net_id) for net_id in kwargs.get("all_net")[0].split(",")]
@@ -2125,10 +2143,10 @@ class NetworkSerializer(ModelSerializer):
             qset = cls.Meta.model.not_related_to_fac(value=not_fac, qset=qset)
             filters.update({"not_fac": not_fac})
 
-        if "org__present" in kwargs:
+        if "org_present" in kwargs:
             fac_ids = []
             ix_ids = []
-            org_list = kwargs.get("org__present")[0].split(",")
+            org_list = kwargs.get("org_present")[0].split(",")
             for org_id in org_list:
                 try:
                     org = Organization.objects.get(id=int(org_id))
@@ -2150,7 +2168,32 @@ class NetworkSerializer(ModelSerializer):
 
             qset = fac_qset | ix_qset
 
-            filters.update({"org__present": kwargs.get("org__present")[0]})
+            filters.update({"org_present": kwargs.get("org_present")[0]})
+
+        if "org_not_present" in kwargs:
+            fac_ids = []
+            ix_ids = []
+            org_list = kwargs.get("org_not_present")[0].split(",")
+            for org_id in org_list:
+                try:
+                    org = Organization.objects.get(id=int(org_id))
+                except Organization.DoesNotExist:
+                    return qset, filters
+
+                fac_ids += cls.get_fac_ids_from_org(org)
+                ix_ids += cls.get_ix_ids_from_org(org)
+
+            if len(fac_ids) and len(ix_ids):
+                fac_qset = cls.Meta.model.not_related_to_fac(value=fac_ids, qset=qset, filt="in")
+                ix_qset = cls.Meta.model.not_related_to_fac(value=ix_ids, qset=qset, filt="in")
+                qset = fac_qset & ix_qset
+
+            elif len(fac_ids) and len(ix_ids) == 0:
+                qset = cls.Meta.model.not_related_to_fac(value=fac_ids, qset=qset, filt="in")
+            elif len(ix_ids) and len(fac_ids) == 0:
+                qset = cls.Meta.model.not_related_to_fac(value=ix_ids, qset=qset, filt="in")
+
+            filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
 
         return qset, filters
 
@@ -2633,9 +2676,9 @@ class InternetExchangeSerializer(ModelSerializer):
             qset = cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
             filters.update({"not_net": kwargs.get("not_net")})
 
-        if "org__present" in kwargs:
+        if "org_present" in kwargs:
             fac_ids = []
-            org_list = kwargs.get("org__present")[0].split(",")
+            org_list = kwargs.get("org_present")[0].split(",")
             for org_id in org_list:
                 try:
                     org = Organization.objects.get(id=int(org_id))
@@ -2651,7 +2694,25 @@ class InternetExchangeSerializer(ModelSerializer):
             else:
                 qset = cls.Meta.model.objects.none()
 
-            filters.update({"org__present": kwargs.get("org__present")[0]})
+            filters.update({"org_present": kwargs.get("org_present")[0]})
+
+        if "org_not_present" in kwargs:
+            fac_ids = []
+            org_list = kwargs.get("org_not_present")[0].split(",")
+            for org_id in org_list:
+                try:
+                    org = Organization.objects.get(id=int(org_id))
+                except Organization.DoesNotExist:
+                    return qset, filters
+
+                fac_ids += cls.get_fac_ids_from_org(org)
+
+            if len(fac_ids):
+                qset = cls.Meta.model.not_related_to_fac(
+                    value=fac_ids, qset=qset, filt="in"
+                )
+
+            filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
 
         return qset, filters
 
