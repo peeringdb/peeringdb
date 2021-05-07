@@ -29,6 +29,7 @@ class Melissa:
         "latitude": "Latitude",
         "longitude": "Longitude",
         "zipcode": "PostalCode",
+        "state": "AdministrativeArea",
         "city": "Locality"
     }
 

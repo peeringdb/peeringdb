@@ -282,7 +282,7 @@ class GeocodeBaseMixin(models.Model):
         )
 
 
-    def process_geo_location(self):
+    def process_geo_location(self, save=True):
 
         """
         Sets longitude and latitude
@@ -306,7 +306,9 @@ class GeocodeBaseMixin(models.Model):
         self.longitude = sanitized["longitude"]
         self.geocode_status = True
         self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
-        self.save()
+
+        if save:
+            self.save()
 
         # Set status to True to indicate we've normalized the data
 
