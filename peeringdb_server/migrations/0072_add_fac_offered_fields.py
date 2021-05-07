@@ -13,9 +13,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="facility",
             name="offered_power",
-            field=models.FloatField(
+            field=models.PositiveIntegerField(
                 blank=True,
-                help_text="The amount of power offered by the facility, in kilowatts",
+                help_text="The amount of power offered by the facility",
                 null=True,
                 verbose_name="Offered Power (kilowatts)",
                 default=None,
