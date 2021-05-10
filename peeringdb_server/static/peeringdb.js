@@ -2432,7 +2432,6 @@ twentyc.editable.input.register(
     },
 
     export : function() {
-      console.log("exporting")
       return this.convert(this.get())
     },
 
@@ -2445,7 +2444,6 @@ twentyc.editable.input.register(
     },
 
     validate : function() {
-      console.log("validating")
       // Check if it's an integer
       let value = this.element.val();
       let suffix = value.slice(-1);
@@ -2524,14 +2522,11 @@ twentyc.editable.input.register(
     changed : function() {
       let unit_changed = (this.element.data('unit_select').val() != this.original_unit);
       let value_changed = (this.get() != this.original_value);
-      console.log("CHANGED", unit_changed, value_changed);
-      console.log(this.element.data("unit_select").val(), this.original_unit);
       return (value_changed || unit_changed);
     },
 
     make : function() {
-      console.log("mAKE")
-      let input = $('<input type="text"></input>')
+      let input = $('<input class="unit" type="text"></input>')
       let select = $(`<select name="${this.unit_name}" id="${this.unit_name}">`);
 
       let selected = this.selected_unit;
