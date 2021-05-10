@@ -2490,144 +2490,178 @@ twentyc.editable.input.register(
 );
 
 twentyc.editable.input.register(
-  "offered_power",
+  "unit_input",
   {
+
+    unit_name : "unit",
+    units : [
+      {"id": "unit","name": "Unit"}
+    ],
+    selected_unit : "unit",
+
     apply : function(value) {
-      this.source.html(this.format_offered_power(value));
+      this.source.text(this.format_units(value));
     },
 
     set : function(value) {
       let value_to_set = value ? value : this.source.text().trim();
-      if ( value_to_set.match(/[a-zA-Z]+$/)){
-        this.element.val(value_to_set.replace(/[a-zA-Z]+$/,''));
+      let m;
+      if ( m = value_to_set.match(/ ?([a-zA-Z ]+)$/)){
+        this.element.val(value_to_set.replace(/[a-zA-Z ]+$/,''));
+        this.element.data('unit_select').val(m[1]);
+        this.original_unit = m[1];
       } else {
         this.element.val(value_to_set);
       }
 
+      this.element.data('unit_select').insertAfter(this.element);
     },
 
     get_unit : function() {
-      return $(this.element[2]).val()
+      return this.element.data('unit_select').val()
+    },
+
+    changed : function() {
+      let unit_changed = (this.element.data('unit_select').val() != this.original_unit);
+      let value_changed = (this.get() != this.original_value);
+      console.log("CHANGED", unit_changed, value_changed);
+      console.log(this.element.data("unit_select").val(), this.original_unit);
+      return (value_changed || unit_changed);
     },
 
     make : function() {
-      return $(
-        `<input type="text"></input>
-         <select name="power_units" id="power_units">
-            <option selected value="kilowatts">kW</option>
-            <option value="megawatts">MW</option>
-         </select>`
-        );
+      console.log("mAKE")
+      let input = $('<input type="text"></input>')
+      let select = $(`<select name="${this.unit_name}" id="${this.unit_name}">`);
+
+      let selected = this.selected_unit;
+
+      $(this.units).each(function(){
+        let opt = $('<option>')
+        opt.val(this.id).text(this.name)
+        if(selected == this.name)
+          opt.prop('selected', true);
+        select.append(opt);
+      });
+
+      input.data('unit_select', select);
+
+      this.original_unit = select.val();
+
+
+      return input;
     },
 
     export : function() {
-      console.log("exporting")
       let unit = this.get_unit();
       let value = this.get();
+      if(!value)
+        return null;
       return this.convert(value, unit)
     },
 
     convert : function(value, unit) {
-      // db stores value as Kilowatts
-      if ( unit == "kilowatts"){
-        return value
-      } else if (unit == "megawatts"){
-        return value * 1000;
-      }
+      return value;
     },
 
     validate : function() {
       // Check if it's an integer
       let value = this.element.val();
+      if(!value)
+        return true;
       if ( $.isNumeric(value) ){
         return true
       return false
       }
     },
 
-    format_offered_power: function(value) {
-      // Power will always be returned from the API as a 
-      // integer Kilowatt amount. 
-      // Add appropriate units based on magnitude
-
-      if (parseFloat(value) > 1000) {
-        let num = Math.round((value / 1000) * 100) / 100;
-        return num + "MW"
-      }
-      return value + "kW"
-    },
+    format_units : function(value) {
+      return value;
+    }
 
   },
   "string"
+);
+
+twentyc.editable.input.register(
+  "offered_power",
+  {
+    unit_name : "power_units",
+    selected_unit : "kW",
+    units : [
+      {
+        "name": "kW",
+        "id": "kW"
+      },
+      {
+        "name": "MW",
+        "id": "MW"
+      }
+    ],
+    convert : function(value, unit) {
+      // db stores value as Kilowatts
+      if ( unit == "kW"){
+        return parseInt(value)
+      } else if (unit == "MW"){
+        return parseInt(value * 1000);
+      }
+    },
+
+    format_units: function(value) {
+      // Power will always be returned from the API as a
+      // integer Kilowatt amount.
+      // Add appropriate units based on magnitude
+      if(!value)
+        return "";
+
+      if (parseFloat(value) >= 1000) {
+        let num = (value / 1000);
+        return num + "MW"
+      }
+      return value + "kW"
+    }
+  },
+  "unit_input"
 );
 
 
 twentyc.editable.input.register(
   "offered_space",
   {
-    apply : function(value) {
-      this.source.html(this.format_offered_space(value));
-    },
 
-    set : function(value) {
-      let value_to_set = value ? value : this.source.text().trim();
-      if ( value_to_set.match(/[a-zA-Z]+$/)){
-        this.element.val(value_to_set.replace(/[a-zA-Z]+$/,''));
-      } else {
-        this.element.val(value_to_set);
+    unit_name : "space_units",
+    selected_unit : "sq m",
+    units : [
+      {
+        "id": "sq m",
+        "name": "sq m"
+      },
+      {
+        "id": "sq f",
+        "name": "sq f"
       }
-
-    },
-
-    get_unit : function() {
-      return $(this.element[2]).val()
-    },
-
-    make : function() {
-      return $(
-        `<input type="text"></input>
-         <select name="space_units" id="space_units">
-            <option selected value="sq-meters">sq meters</option>
-            <option value="sq-feet">sq feet</option>
-         </select>`
-        );
-    },
-
-    export : function() {
-      console.log("exporting")
-      let unit = this.get_unit();
-      let value = this.get();
-      console.log(this.convert(value, unit))
-      return this.convert(value, unit)
-    },
+    ],
 
     convert : function(value, unit) {
       // db stores value as square meters
-      if ( unit == "sq-meters"){
+      if ( unit == "sq m"){
         return parseInt(value)
-      } else if ( unit == "sq-feet"){
+      } else if ( unit == "sq f"){
         return Math.round(value * 0.092903);
       }
     },
 
-    validate : function() {
-      // Check if it's an integer
-      let value = this.element.val();
-      if ( $.isNumeric(value) ){
-        return true
-      return false
-      }
-    },
-
-    format_offered_space: function(value) {
-      // Space will always be returned from the API as a 
-      // integer square meter amount. 
+    format_units: function(value) {
+      // Space will always be returned from the API as a
+      // integer square meter amount.
       // Add appropriate units.
-        return value + " sq m"
+      if(!value)
+        return "";
+      return value + " sq m"
     },
 
   },
-  "string"
+  "unit_input"
 );
 
 /*

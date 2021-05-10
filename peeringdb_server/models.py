@@ -4058,10 +4058,6 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         self.local_asn = self.network.asn
 
 
-# validate:
-# ip in prefix
-# prefix on lan
-# FIXME - need unique constraint at save time, allow empty string for ipv4/ipv6
 def format_speed(value):
     if value >= 1000000:
         return "%dT" % (value / 10 ** 6)
@@ -4069,6 +4065,11 @@ def format_speed(value):
         return "%dG" % (value / 10 ** 3)
     else:
         return "%dM" % value
+
+def format_power(value):
+    if value >= 1000:
+        return f"{(value / 1000)}MW"
+    return f"{value}kW"
 
 
 @grainy_model(namespace="ixlan", parent="network")
