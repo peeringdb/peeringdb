@@ -9,6 +9,7 @@ from peeringdb_server.models import (
     Organization,
     PARTNERSHIP_LEVELS,
     format_speed,
+    format_power,
 )
 
 from peeringdb_server.views import DoNotRender
@@ -185,6 +186,21 @@ def pretty_speed(value):
     except ValueError:
         return value
 
+@register.filter
+def offered_power(value):
+    if not value:
+        return ""
+    try:
+        return format_power(int(value))
+    except ValueError:
+        return value
+
+@register.filter
+def offered_space(value):
+    if not value:
+        return ""
+
+    return f"{value} sq m"
 
 @register.filter
 def partnership_label(level):

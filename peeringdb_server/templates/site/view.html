@@ -183,7 +183,7 @@
                     data-edit-name="{{ flag.name }}"
                     data-edit-value="{{ flag.value }}"
                     data-edit-template="check">
-                    <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not flag.value %}-off{% endif %}.png" 
+                    <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not flag.value %}-off{% endif %}.png"
                     />
               </span>
               <span class="enabled">
@@ -304,6 +304,24 @@
 
           <div class="view_value col-xs-8 col-sm-7 col-md-8">
             <a href="{{ row.link }}">{{ row.value }}</a>
+          </div>
+
+        {% elif row.type == "offered_power"  %}
+
+          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+              data-edit-name="{{ row.name }}"
+              data-edit-type="offered_power"
+            >
+              {{ row.value|offered_power }}
+          </div>
+
+        {% elif row.type == "offered_space"  %}
+
+          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+              data-edit-name="{{ row.name }}"
+              data-edit-type="offered_space"
+            >
+              {{ row.value|offered_space }}
           </div>
 
         {% else %}

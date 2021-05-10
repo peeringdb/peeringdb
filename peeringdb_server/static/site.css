@@ -946,6 +946,17 @@ textarea {
 }
 
 
+div.view div.editable.input-frame > input.unit {
+  width: 75%;
+  display: inline;
+}
+
+div.view div.editable.input-frame > input.unit ~ select {
+  width: 25%;
+  display: inline;
+}
+
+
 .interactive,
 a[data-edit-action]:not(.btn) {
   cursor: pointer;
