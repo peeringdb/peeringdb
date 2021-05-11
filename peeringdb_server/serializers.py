@@ -1406,40 +1406,39 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
 
         if "org_present" in kwargs:
-            ix_ids = []
             org_list = kwargs.get("org_present")[0].split(",")
-            for org_id in org_list:
-                try:
-                    org = Organization.objects.get(id=int(org_id))
-                except Organization.DoesNotExist:
-                    return qset, filters
+            fac_ids = []
 
-                ix_ids += cls.get_ix_ids_from_org(org)
+            # relation through netfac
+            fac_ids.extend([
+                netfac.facility_id for netfac in NetworkFacility.objects.filter(network__org_id__in=org_list)
+            ])
 
-            if len(ix_ids):
-                qset = cls.Meta.model.related_to_ix(
-                    value=ix_ids, qset=qset, filt="in"
-                )
-            else:
-                qset = cls.Meta.model.objects.none()
+            # relation through ixfac
+            fac_ids.extend([
+                ixfac.facility_id for ixfac in InternetExchangeFacility.objects.filter(ix__org_id__in=org_list)
+            ])
+
+            qset = qset.filter(id__in=set(fac_ids))
 
             filters.update({"org_present": kwargs.get("org_present")[0]})
 
         if "org_not_present" in kwargs:
-            ix_ids = []
+
             org_list = kwargs.get("org_not_present")[0].split(",")
-            for org_id in org_list:
-                try:
-                    org = Organization.objects.get(id=int(org_id))
-                except Organization.DoesNotExist:
-                    return qset, filters
+            fac_ids = []
 
-                ix_ids += cls.get_ix_ids_from_org(org)
+            # relation through netfac
+            fac_ids.extend([
+                netfac.facility_id for netfac in NetworkFacility.objects.filter(network__org_id__in=org_list)
+            ])
 
-            if len(ix_ids):
-                qset = cls.Meta.model.not_related_to_ix(
-                    value=ix_ids, qset=qset, filt="in"
-                )
+            # relation through ixfac
+            fac_ids.extend([
+                ixfac.facility_id for ixfac in InternetExchangeFacility.objects.filter(ix__org_id__in=org_list)
+            ])
+
+            qset = qset.exclude(id__in=set(fac_ids))
 
             filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
 
@@ -2141,71 +2140,6 @@ class NetworkSerializer(ModelSerializer):
             qset = cls.Meta.model.not_related_to_fac(value=not_fac, qset=qset)
             filters.update({"not_fac": not_fac})
 
-        if "org_present" in kwargs:
-            qset, filters = cls.get_org_present_qset(qset, filters, **kwargs)
-            filters.update({"org_present": kwargs.get("org_present")[0]})
-
-        if "org_not_present" in kwargs:
-            qset, filters = cls.get_org_not_present_qset(qset, filters, **kwargs)
-            filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
-
-        return qset, filters
-
-    @classmethod
-    def get_org_present_qset(cls, qset, filters, **kwargs):
-        fac_ids = []
-        ix_ids = []
-        org_list = kwargs.get("org_present")[0].split(",")
-        for org_id in org_list:
-            try:
-                org = Organization.objects.get(id=int(org_id))
-            except Organization.DoesNotExist:
-                return qset, filters
-
-            fac_ids += cls.get_fac_ids_from_org(org)
-            ix_ids += cls.get_ix_ids_from_org(org)
-
-        if len(fac_ids):
-            fac_qset = cls.Meta.model.related_to_fac(value=fac_ids, qset=qset, filt="in")
-        else:
-            fac_qset = cls.Meta.model.objects.none()
-
-        if len(ix_ids):
-            ix_qset = cls.Meta.model.related_to_ix(value=ix_ids, qset=qset, filt="in")
-        else:
-            ix_qset = cls.Meta.model.objects.none()
-
-        qset = fac_qset | ix_qset
-        return qset, filters
-
-    @classmethod
-    def get_org_not_present_qset(cls, qset, filters, **kwargs):
-        fac_ids = []
-        ix_ids = []
-        org_list = kwargs.get("org_not_present")[0].split(",")
-        for org_id in org_list:
-            try:
-                org = Organization.objects.get(id=int(org_id))
-            except Organization.DoesNotExist:
-                return qset, filters
-
-            fac_ids += cls.get_fac_ids_from_org(org)
-            ix_ids += cls.get_ix_ids_from_org(org)
-
-        if len(fac_ids):
-            fac_qset = cls.Meta.model.related_to_fac(value=fac_ids, qset=qset, filt="in")
-        else:
-            fac_qset = cls.Meta.model.objects.none()
-
-        if len(ix_ids):
-            ix_qset = cls.Meta.model.related_to_ix(value=ix_ids, qset=qset, filt="in")
-        else:
-            ix_qset = cls.Meta.model.objects.none()
-
-        # Get Networks to remove from our query set
-        org_present_qset = fac_qset | ix_qset
-        qset = qset.exclude(id__in=[net.id for net in org_present_qset])
-
         return qset, filters
 
     @classmethod
@@ -2619,7 +2553,6 @@ class InternetExchangeSerializer(ModelSerializer):
     @classmethod
     def prepare_query(cls, qset, **kwargs):
 
-        print("prepare query")
         qset = qset.select_related("org")
 
         filters = get_relation_filters(
@@ -2688,40 +2621,39 @@ class InternetExchangeSerializer(ModelSerializer):
             filters.update({"not_net": kwargs.get("not_net")})
 
         if "org_present" in kwargs:
-            fac_ids = []
             org_list = kwargs.get("org_present")[0].split(",")
-            for org_id in org_list:
-                try:
-                    org = Organization.objects.get(id=int(org_id))
-                except Organization.DoesNotExist:
-                    return qset, filters
+            ix_ids = []
 
-                fac_ids += cls.get_fac_ids_from_org(org)
+            # relation through netixlan
+            ix_ids.extend([
+                netixlan.ixlan_id for netixlan in NetworkIXLan.objects.filter(network__org_id__in=org_list)
+            ])
 
-            if len(fac_ids):
-                qset = cls.Meta.model.related_to_fac(
-                    value=fac_ids, qset=qset, filt="in"
-                )
-            else:
-                qset = cls.Meta.model.objects.none()
+            # relation through ixfac
+            ix_ids.extend([
+                ixfac.ix_id for ixfac in InternetExchangeFacility.objects.filter(facility__org_id__in=org_list)
+            ])
+
+            qset = qset.filter(id__in=set(ix_ids))
 
             filters.update({"org_present": kwargs.get("org_present")[0]})
 
         if "org_not_present" in kwargs:
-            fac_ids = []
+
             org_list = kwargs.get("org_not_present")[0].split(",")
-            for org_id in org_list:
-                try:
-                    org = Organization.objects.get(id=int(org_id))
-                except Organization.DoesNotExist:
-                    return qset, filters
+            ix_ids = []
 
-                fac_ids += cls.get_fac_ids_from_org(org)
+            # relation through netixlan
+            ix_ids.extend([
+                netixlan.ixlan_id for netixlan in NetworkIXLan.objects.filter(network__org_id__in=org_list)
+            ])
 
-            if len(fac_ids):
-                qset = cls.Meta.model.not_related_to_fac(
-                    value=fac_ids, qset=qset, filt="in"
-                )
+            # relation through ixfac
+            ix_ids.extend([
+                ixfac.ix_id for ixfac in InternetExchangeFacility.objects.filter(facility__org_id__in=org_list)
+            ])
+
+            qset = qset.exclude(id__in=set(ix_ids))
 
             filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
 
