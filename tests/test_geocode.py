@@ -19,7 +19,11 @@ class MockMelissa(geo.Melissa):
         return {
             "Records": [
                 {
+                    "Results": "AV25",
+                    "FormattedAddress": "address 1;address 2;city",
+                    "AdministrativeArea": "state",
                     "AddressLine1": "address 1",
+                    "AddressLine2": "address 2",
                     "Locality": "city",
                     "PostalCode": "12345",
                     "Latitude": 1.234567,
@@ -132,13 +136,19 @@ def test_melissa_global_address_params():
 def test_melissa_global_address_best_result():
     client = geo.Melissa("")
 
-    expected = {"Address1":"value1"}
+    expected = {"Results": "AV25", "Address1":"value1"}
 
-    result = {"Records":[expected, {"Address1":"value2"}]}
+    result = {"Records":[expected, {"Results": "AV25", "Address1":"value2"}]}
 
     assert client.global_address_best_result(result) == expected
     assert client.global_address_best_result({}) == None
     assert client.global_address_best_result(None) == None
+
+    result = {"Records":[{"Results": "AV12", "Address1":"value2"}]}
+
+    assert client.global_address_best_result(result) == None
+
+
 
 
 def test_melissa_apply_global_address():
@@ -152,7 +162,11 @@ def test_melissa_apply_global_address():
             "zipcode": "zipcode old",
         },
         {
+            "Results": "AV25",
+            "FormattedAddress": "address1 new;address2 new",
+            "AdministrativeArea": "state new",
             "AddressLine1": "address1 new",
+            "AddressLine2": "address2 new",
             "Latitude": 1.234567,
             "Longitude": 1.234567,
             "PostalCode": "zipcode new",
@@ -162,10 +176,12 @@ def test_melissa_apply_global_address():
 
     expected = {
         "address1" : "address1 new",
+        "address2" : "address2 new",
         "city": "city new",
         "zipcode": "zipcode new",
         "longitude": 1.234567,
         "latitude": 1.234567,
+        "state" : "state new",
     }
 
     assert data == expected
