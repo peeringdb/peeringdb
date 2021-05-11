@@ -282,7 +282,7 @@ class GeocodeBaseMixin(models.Model):
         )
 
 
-    def process_geo_location(self, save=True):
+    def process_geo_location(self, geocode=True, save=True):
 
         """
         Sets longitude and latitude
@@ -292,28 +292,50 @@ class GeocodeBaseMixin(models.Model):
         """
 
         melissa = geo.Melissa(settings.MELISSA_KEY, timeout=5)
+        gmaps = geo.GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
+
+        # geocode using google
+
+        use_melissa_coords = False
+
+        try:
+            if geocode:
+                gmaps.geocode(self)
+        except geo.Timeout:
+            raise ValidationError(_("Geo coding timed out"))
+        except geo.RequestError as exc:
+            raise ValidationError(_("Geo coding failed: {}").format(exc))
+        except geo.NotFound:
+            use_melissa_coords = True
+
+        # address normalization using melissa
+        #
+        # note: `sanitized` will be an empty dict if melissa
+        # could not normalize a valid address
 
         try:
             sanitized = melissa.sanitize_address_model(self)
         except geo.Timeout:
             raise ValidationError(_("Geo location lookup timed out"))
-        except geo.RequestError:
-            raise ValidationError(_("Geo location lookup failed"))
+        except geo.RequestError as exc:
+            raise ValidationError(_("Geo location lookup failed: {}").format(exc))
 
         # update latitude and longitude
 
-        self.latitude = sanitized["latitude"]
-        self.longitude = sanitized["longitude"]
-        self.geocode_status = True
-        self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+        if use_melissa_coords and sanitized:
+            self.latitude = sanitized["latitude"]
+            self.longitude = sanitized["longitude"]
+
+
+        if geocode and (not use_melissa_coords or sanitized):
+            self.geocode_status = True
+            self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+            if sanitized:
+                sanitized["geocode_status"] = True
+                sanitized["geocode_date"] = self.geocode_date
 
         if save:
             self.save()
-
-        # Set status to True to indicate we've normalized the data
-
-        sanitized["geocode_status"] = True
-        sanitized["geocode_date"] = datetime.datetime.now(datetime.timezone.utc)
 
         return sanitized
 

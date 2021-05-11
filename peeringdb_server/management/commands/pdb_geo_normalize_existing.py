@@ -99,11 +99,22 @@ class Command(BaseCommand):
         suite = re.findall(pattern, instance.address1) + re.findall(
             pattern, instance.address2
         )
+
+        if suite:
+            return suite
+
+        # Case: "Ste 1" or "Ste B"
+
+        pattern = r"(?<=\b[Ss]te\s)(\w+)"
+        suite = re.findall(pattern, instance.address1) + re.findall(
+            pattern, instance.address2
+        )
+
         return suite
 
     def parse_floor(self, instance):
         # Case "5th floor"
-        pattern_before = r"(\d+)(?:st|nd|th)(?=\s[Ff]loor\b)"
+        pattern_before = r"(\d+)(?:st|nd|rd|th)(?=\s[Ff]loor\b)"
         floor = re.findall(pattern_before, instance.address1) + re.findall(
             pattern_before, instance.address2
         )
@@ -114,6 +125,7 @@ class Command(BaseCommand):
                 pattern_after, instance.address2
             )
         return floor
+
 
     def log_floor_and_ste_changes(self, instance):
         if (instance.floor != "") or (instance.suite != ""):
@@ -186,6 +198,9 @@ class Command(BaseCommand):
         suite = self.parse_suite(instance)
         floor = self.parse_floor(instance)
 
+        if suite or floor:
+            instance.address2 = ""
+
         if len(suite) > 0:
             instance.suite = ", ".join(suite)
 
@@ -199,18 +214,14 @@ class Command(BaseCommand):
                 instance.save()
             return
 
-        normalized = instance.process_geo_location(save=False)
+        normalized = instance.process_geo_location(save=False, geocode=False)
 
-        instance.city = normalized["city"]
-        instance.zipcode = normalized["zipcode"]
-        instance.address1 = normalized["address1"]
-        instance.address2 = ""
-        instance.state = normalized["state"]
-
-
-        # Set status to True to indicate we've normalized the data
-        instance.geocode_status = True
-        instance.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+        if normalized:
+            instance.city = normalized["city"]
+            instance.zipcode = normalized["zipcode"]
+            instance.address1 = normalized["address1"]
+            instance.address2 = normalized["address2"]
+            instance.state = normalized["state"]
 
         if save:
             instance.save()

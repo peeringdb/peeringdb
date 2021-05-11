@@ -154,8 +154,8 @@ class GeocodeSerializerMixin(object):
         if not geosync_info_present:
             return False
 
-        # We do not need to resync if floor, suite, or address2 are changed
-        ignored_fields = ["floor", "suite", "address2"]
+        # We do not need to resync if floor, suite and geo coords are changed
+        ignored_fields = ["floor", "suite", "latitude", "longitude"]
         geocode_fields = [
             f for f in AddressSerializer.Meta.fields if f not in ignored_fields
         ]
@@ -207,6 +207,9 @@ class GeocodeSerializerMixin(object):
         a address suggestion should be provided to the user.
         """
 
+        if not suggested_address:
+            return False
+
         for key in ["address1", "city", "state", "zipcode"]:
             suggested_val = suggested_address.get(key, None)
             instance_val = getattr(instance, key, None)
@@ -232,10 +235,8 @@ class GeocodeSerializerMixin(object):
             return instance
 
         if need_geosync:
-            print("Normalizing geofields")
             try:
                 suggested_address = instance.process_geo_location()
-                print(suggested_address)
 
                 if self.needs_address_suggestion(suggested_address, instance):
                     self._add_meta_information(
@@ -255,7 +256,6 @@ class GeocodeSerializerMixin(object):
         # When creating a geo-enabled object,
         # we first want to save the model
         # and then normalize the geofields
-        print("this is when the geocode creation is happening")
         instance = super().create(validated_data)
 
         # we dont want to geocode on tests

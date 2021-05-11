@@ -76,6 +76,7 @@
       <div class="col-xs-8">
         <p>{% trans "Suggested Address:" %}</p>
         <div data-edit-field="address1" class="address-field"></div>
+        <div data-edit-field="address2" class="address-field"></div>
         <span data-edit-field="city" class="address-field"></span>
         <span data-edit-field="state" class="address-field"></span>
         <span data-edit-field="zipcode" class="address-field"></span>
@@ -183,7 +184,7 @@
                     data-edit-name="{{ flag.name }}"
                     data-edit-value="{{ flag.value }}"
                     data-edit-template="check">
-                    <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not flag.value %}-off{% endif %}.png" 
+                    <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not flag.value %}-off{% endif %}.png"
                     />
               </span>
               <span class="enabled">
