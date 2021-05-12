@@ -946,11 +946,13 @@ textarea {
 }
 
 
+div.advanced-search-view div.editable.input-frame > input.unit,
 div.view div.editable.input-frame > input.unit {
   width: 75%;
   display: inline;
 }
 
+div.advanced-search-view div.editable.input-frame > input.unit ~ select,
 div.view div.editable.input-frame > input.unit ~ select {
   width: 25%;
   display: inline;

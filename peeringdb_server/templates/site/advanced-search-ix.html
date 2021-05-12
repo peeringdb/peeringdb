@@ -63,6 +63,19 @@
         </div>
       </div>
       <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Capacity" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="traffic_capacity"
+               data-edit-name="capacity__gte"
+               data-edit-value="{{ request.GET.capacity__gte }}"
+               data-edit-reset-value="">
+               </div>
+        </div>
+
+      </div>
+
+
+      <div class="row">
         <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Media Type" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
         <div class="col-xs-8 col-sm-7 col-md-8">
           <div data-edit-type="select"
@@ -96,8 +109,13 @@
         </div>
       </div>
 
+      {% include "site/advanced-search-org-present.html" %}
+
+
     </div>
   </div>
+
+
   <div class="right">
     <a class="btn btn-default" data-edit-action="reset">{% trans "Reset" %}</a>
     <a class="btn btn-default" data-edit-action="submit">{% trans "Search" %}</a>

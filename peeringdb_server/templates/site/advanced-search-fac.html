@@ -97,6 +97,47 @@
         </div>
       </div>
 
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Offered Power" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="offered_power"
+               data-edit-value="{{ request.GET.offered_power__gte }}"
+               data-edit-reset-value=""
+               data-edit-name="offered_power__gte"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Offered Space" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="offered_space"
+               data-edit-value="{{ request.GET.offered_space__gte }}"
+               data-edit-reset-value=""
+               data-edit-name="offered_space__gte"></div>
+        </div>
+      </div>
+
+      {% include "site/advanced-search-org-present.html" %}
+
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Network Presence" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div class="editable input-frame">
+            <select id="net_present_filter" class="editable select net_present_filter">
+            <option value="all_net">{% trans "All present" %}</option>
+            <option value="net__in" {% if request.GET.net__in %}selected{% endif %}>{% trans "Any present" %}</option>
+            <option value="not_net" {% if request.GET.not_net %}selected{% endif %}>{% trans "None present" %}</option>
+            </select>
+          </div>
+
+          <div class="editable"
+               data-edit-type="autocomplete"
+               data-edit-autocomplete="net"
+               placeholder="Network"></div>
+
+        </div>
+      </div>
+
     </div>
   </div>
   <div class="right">

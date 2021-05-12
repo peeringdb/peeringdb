@@ -1701,10 +1701,29 @@ twentyc.editable.target.register(
     execute : function() {
       var i, data = this.data_clean(true);
       data.reftag = this.args[1]
+
       for(i in data) {
         if(data[i] && data[i].join)
           data[i] = data[i].join(",")
       }
+
+      if(data.reftag == "fac") {
+
+        // for these fields we actually want the unit formatted
+        // values in the url parameters so that unit selection gets
+        // persisted in the url
+
+        let offered_space = $('[data-edit-name="offered_space__gte"]').data("edit-input-instance");
+        let offered_power = $('[data-edit-name="offered_power__gte"]').data("edit-input-instance");
+        if(data["offered_space__gte"])
+          data["offered_space__gte"] = offered_space.formatted()
+        if(data["offered_power__gte"])
+          data["offered_power__gte"] = offered_power.formatted()
+      }
+
+
+      if(data["undefined"])
+        delete data["undefined"]
       window.location.replace(
         '?'+$.param(data)
       );
@@ -2448,6 +2467,9 @@ twentyc.editable.input.register(
       let value = this.element.val();
       let suffix = value.slice(-1);
 
+      if(this.source.data('edit-required') != "yes" && !value)
+        return true;
+
       if ( $.isNumeric(value) ){
         return true
       } else if ( $.isNumeric(value.slice(0,-1) ) && this.validate_suffix(suffix)) {
@@ -2504,16 +2526,22 @@ twentyc.editable.input.register(
     set : function(value) {
       let value_to_set = value ? value : this.source.text().trim();
       let m;
+      value_to_set = ""+value_to_set;
       if ( m = value_to_set.match(/ ?([a-zA-Z ]+)$/)){
         this.element.val(value_to_set.replace(/[a-zA-Z ]+$/,''));
         this.element.data('unit_select').val(m[1]);
         this.original_unit = m[1];
       } else {
-        this.element.val(value_to_set);
+        this.set_value(value_to_set)
       }
 
       this.element.data('unit_select').insertAfter(this.element);
     },
+
+    set_value : function(value) {
+      this.element.val(value);
+    },
+
 
     get_unit : function() {
       return this.element.data('unit_select').val()
@@ -2570,13 +2598,79 @@ twentyc.editable.input.register(
       }
     },
 
+    formatted: function() {
+      return this.get()+this.element.data("unit_select").val()
+    },
+
+
     format_units : function(value) {
       return value;
+    },
+
+    reset : function(value) {
+      this.string_reset(value);
+      this.element.data("unit_select").val(this.selected_unit);
     }
 
   },
   "string"
 );
+
+twentyc.editable.input.register(
+  "traffic_capacity",
+  {
+    unit_name : "traffic_capacity",
+    selected_unit : "Gbps",
+    units : [
+      {
+        "name": "Mbps",
+        "id": "Mbps"
+      },
+      {
+        "name": "Gbps",
+        "id": "Gbps"
+      },
+      {
+        "name": "Tbps",
+        "id": "Tbps"
+      }
+    ],
+    convert : function(value, unit) {
+      if ( unit == "Mbps"){
+        return parseInt(value)
+      } else if (unit == "Gbps"){
+        return parseInt(value * 1000);
+      } else if (unit == "Tbps"){
+        return parseInt(value * 1000000);
+      }
+    },
+
+    set_value : function(value) {
+      if(value >= 1000000) {
+        value = value / 1000000;
+        this.element.data('unit_select').val('Tbps')
+      } else if(value >= 1000) {
+        value = value / 1000;
+        this.element.data('unit_select').val('Gbps')
+      } else if(value) {
+        this.element.data('unit_select').val('Mbps')
+      }
+
+      this.element.val(value);
+
+    },
+
+    format_units: function(value) {
+      if(!value)
+        return "";
+
+      return value;
+
+    }
+  },
+  "unit_input"
+);
+
 
 twentyc.editable.input.register(
   "offered_power",
@@ -2738,6 +2832,7 @@ twentyc.data.loaders.assign("countries", "data");
 twentyc.data.loaders.assign("countries_b", "data");
 twentyc.data.loaders.assign("facilities", "data");
 twentyc.data.loaders.assign("sponsors", "data");
+twentyc.data.loaders.assign("my_organizations", "data");
 twentyc.data.loaders.assign("enum/regions", "data");
 twentyc.data.loaders.assign("enum/org_groups", "data");
 twentyc.data.loaders.assign("enum/media", "data");

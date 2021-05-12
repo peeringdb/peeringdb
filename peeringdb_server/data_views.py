@@ -192,6 +192,21 @@ def asns(request):
     return JsonResponse({"asns": rv})
 
 
+def my_organizations(request):
+    """
+    Returns a JSON response with a list of organization names and ids
+    that the requesting user is a member of
+    """
+    return JsonResponse(
+        {
+            "my_organizations": [
+                {"id": o.id, "name": o.name}
+                for o in request.user.organizations
+            ]
+        }
+    )
+
+
 def organizations(request):
     """
     Returns a JSON response with a list of organization names and ids

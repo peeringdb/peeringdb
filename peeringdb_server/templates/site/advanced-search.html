@@ -37,6 +37,26 @@
   twentyc.editable.target.get("advanced_search").prototype.limit = {{ row_limit }};
   $(window).bind("load", function() {
 
+    /* wire the org presence filter configuration (does not matter, present,
+     * not present) to the org present filter.
+     */
+
+    $('.org_present_input').each(function() {
+      var filter_input = $(this);
+      var filter_select = filter_input.parent().find('.org_present_filter')
+      var editable_input = filter_input.children('div')
+      filter_select.on('change', function() {
+        let val = $(this).val()
+        if(val )
+          editable_input.data('edit-name', val).attr('data-edit-name', val);
+        else {
+          editable_input.removeData('edit-name').removeAttr('data-edit-name')
+        }
+      });
+
+    });
+
+
     var run_search = function() {
 
       var reftag = $.urlParam("reftag")
