@@ -2567,6 +2567,7 @@ class InternetExchangeSerializer(ModelSerializer):
                 "net",
                 "net_count",
                 "fac_count",
+                "capacity",
             ],
             cls,
             **kwargs,
@@ -2580,19 +2581,8 @@ class InternetExchangeSerializer(ModelSerializer):
                     qset = fn(qset=qset, field=field, **e)
                     break
 
-            if field == "network_count":
-                if e["filt"]:
-                    flt = {"net_count__%s" % e["filt"]: e["value"]}
-                else:
-                    flt = {"net_count": e["value"]}
-                qset = qset.filter(**flt)
-
-            if field == "facility_count":
-                if e["filt"]:
-                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
-                else:
-                    flt = {"fac_count": e["value"]}
-                qset = qset.filter(**flt)
+            if field == "capacity":
+                qset = cls.Meta.model.filter_capacity(qset=qset, **e)
 
         if "ipblock" in kwargs:
             qset = cls.Meta.model.related_to_ipblock(
@@ -2601,11 +2591,13 @@ class InternetExchangeSerializer(ModelSerializer):
             filters.update({"ipblock": kwargs.get("ipblock")})
 
         if "name_search" in kwargs:
+
             name = kwargs.get("name_search", [""])[0]
             qset = qset.filter(Q(name__icontains=name) | Q(name_long__icontains=name))
             filters.update({"name_search": kwargs.get("name_search")})
 
         if "asn_overlap" in kwargs:
+
             asns = kwargs.get("asn_overlap", [""])[0].split(",")
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})

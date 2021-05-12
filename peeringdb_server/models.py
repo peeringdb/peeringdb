@@ -1757,6 +1757,51 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
         return qset.filter(id__in=shared_exchanges)
 
+    @classmethod
+    def filter_capacity(cls, filt=None, value=None, qset=None):
+        """
+        Returns queryset of InternetExchange objects filtered by capacity
+        in mbits.
+
+        Arguments:
+
+        - filt (`str`|`None`): match operation, None meaning exact match
+          - 'gte': greater than equal
+          - 'lte': less than equal
+          - 'gt': greater than
+          - 'lt': less than
+        - value(`int`): capacity to filter in mbits
+        - qset(`InternetExchange`): if specified will filter ontop of
+          this existing query set
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        # prepar field filters
+
+        if filt:
+            filters = {f"capacity__{filt}": value}
+        else:
+            filters = {"capacity": value}
+
+        # find exchanges that have the matching capacity
+        # exchange capacity is simply the sum of its port speeds
+
+        netixlans = NetworkIXLan.handleref.undeleted()
+        capacity_set = netixlans.values('ixlan_id').annotate(capacity=models.Sum('speed')).filter(**filters)
+
+        # collect ids
+        # since ixlan id == exchange id we can simply use those
+
+        qualifying = [c["ixlan_id"] for c in capacity_set]
+
+        # finally limit the queryset by the ix (ixlan) ids that matched
+        # the capacity filter
+
+        qset = qset.filter(id__in=qualifying)
+        return qset
+
     @property
     def ixlan(self):
         """
