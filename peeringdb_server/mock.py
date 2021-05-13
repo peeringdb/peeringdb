@@ -297,4 +297,4 @@ class Mock:
         return 0
 
     def offered_resilience(self, data, reftag=None):
-        return 0
+        return ""
