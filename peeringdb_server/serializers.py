@@ -1325,8 +1325,8 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
     latitude = serializers.FloatField(read_only=True)
     longitude = serializers.FloatField(read_only=True)
 
-    offered_space = serializers.CharField(required=False, allow_blank=True, default="", allow_null=True)
-    offered_power = serializers.CharField(required=False, allow_blank=True, default="", allow_null=True)
+    offered_space = serializers.IntegerField(required=False, default=0, allow_null=True)
+    offered_power = serializers.IntegerField(required=False, default=0, allow_null=True)
 
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
@@ -2568,6 +2568,21 @@ class InternetExchangeSerializer(ModelSerializer):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
                     qset = fn(qset=qset, field=field, **e)
                     break
+
+            if field == "network_count":
+                if e["filt"]:
+                    flt = {"net_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"net_count": e["value"]}
+                qset = qset.filter(**flt)
+
+            if field == "facility_count":
+                if e["filt"]:
+                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"fac_count": e["value"]}
+                qset = qset.filter(**flt)
+
 
             if field == "capacity":
                 qset = cls.Meta.model.filter_capacity(qset=qset, **e)
