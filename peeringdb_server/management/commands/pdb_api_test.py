@@ -30,6 +30,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group
 from django.conf import settings
 from django.db.utils import IntegrityError
+from django.db.models import Sum
 
 from rest_framework import serializers
 from rest_framework.test import APIRequestFactory
@@ -294,6 +295,8 @@ class TestJSON(unittest.TestCase):
             "tech_phone": PHONE,
             "sales_email": EMAIL,
             "sales_phone": PHONE,
+            "offered_power": 10,
+            "offered_space": 10,
         }
         data.update(**kwargs)
         return data
@@ -2493,6 +2496,83 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_filter_ix_capacity(self):
+
+        SHARED["netixlan_r_ok"].speed = 1000
+        SHARED["netixlan_r_ok"].save()
+
+        netixlans = NetworkIXLan.handleref.undeleted()
+        capacity_set = netixlans.values('ixlan_id').annotate(capacity=Sum('speed'))
+        capacity_dict = dict([(d["ixlan_id"], d["capacity"]) for d in capacity_set])
+
+        data = self.db_guest.all("ix", capacity=1000)
+        assert len(data) == 1
+        for row in data:
+            self.assertEqual(row["id"], SHARED["netixlan_r_ok"].ixlan.ix.id)
+
+        data = self.db_guest.all("ix", capacity__gt=1000)
+        assert (len(data))
+        for row in data:
+            self.assertNotEqual(row["id"], SHARED["netixlan_r_ok"].ixlan.ix.id)
+
+        data = self.db_guest.all("ix", capacity__lt=30000)
+        assert (len(data))
+        for row in data:
+            self.assertEqual(row["id"], SHARED["netixlan_r_ok"].ixlan.ix.id)
+
+        data = self.db_guest.all("ix", capacity__lt=1000)
+        assert not (len(data))
+
+
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_ix_all_net(self):
+
+        net_ids = ",".join([
+            str(SHARED["net_r_ok"].id),
+        ])
+
+        data = self.db_guest.all("ix", all_net=net_ids)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], SHARED["ix_r_ok"].id)
+
+        net_ids = ",".join([
+            str(SHARED["net_r_ok"].id),
+            str(SHARED["net_rw_ok"].id),
+        ])
+
+        data = self.db_guest.all("ix", all_net=net_ids)
+        self.assertEqual(len(data), 0)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_ix_not_net(self):
+
+        net_ids = ",".join([
+            str(SHARED["net_r_ok"].id),
+        ])
+
+        data = self.db_guest.all("ix", not_net=net_ids)
+        self.assertGreater(len(data), 1)
+        for row in data:
+            self.assertNotEqual(row["id"], SHARED["ix_r_ok"].id)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_ix_org_present(self):
+
+        data = self.db_guest.all("ix", org_present=SHARED["org_r_ok"].id)
+        self.assertEqual(len(data), 1)
+
+        data = self.db_guest.all("ix", org_not_present=SHARED["org_r_ok"].id)
+        self.assertGreater(len(data), 1)
+
+
+
+    ##########################################################################
+
     def test_guest_005_list_filter_ix_name_search(self):
         data = self.db_guest.all("ix", name_search=SHARED["ix_r_ok"].name)
         self.assertEqual(len(data), 1)
@@ -2580,6 +2660,128 @@ class TestJSON(unittest.TestCase):
         for row in data:
             self.assertEqual(data[0]["org_id"], SHARED["org_r_ok"].id)
         self.assert_data_integrity(data[0], "fac")
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_fac_org_present(self):
+
+        data = self.db_guest.all("fac", org_present=SHARED["org_r_ok"].id)
+        self.assertEqual(len(data), 1)
+
+        data = self.db_guest.all("fac", org_not_present=SHARED["org_r_ok"].id)
+        self.assertGreater(len(data), 1)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_fac_offered_power(self):
+
+        fac_a = SHARED["fac_r_ok"]
+        fac_b = SHARED["fac_rw_ok"]
+
+        fac_b.offered_power=100
+        fac_b.save()
+
+        data = self.db_guest.all("fac", offered_power=10)
+        assert len(data)
+        for row in data:
+            self.assertEqual(row["offered_power"], 10)
+
+        data = self.db_guest.all("fac", offered_power__gte=10)
+        assert len(data)
+        for row in data:
+            self.assertGreaterEqual(row["offered_power"], 10)
+
+        data = self.db_guest.all("fac", offered_power__gt=10)
+        assert len(data)
+        for row in data:
+            self.assertGreater(row["offered_power"], 10)
+
+        data = self.db_guest.all("fac", offered_power__lt=100)
+        assert len(data)
+        for row in data:
+            self.assertLess(row["offered_power"], 100)
+
+        data = self.db_guest.all("fac", offered_power__lt=100)
+        assert len(data)
+        for row in data:
+            self.assertLessEqual(row["offered_power"], 100)
+
+        data = self.db_guest.all("fac", offered_power__gt=100)
+        assert not len(data)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_fac_offered_space(self):
+
+        fac_a = SHARED["fac_r_ok"]
+        fac_b = SHARED["fac_rw_ok"]
+
+        fac_b.offered_space=100
+        fac_b.save()
+
+        data = self.db_guest.all("fac", offered_space=10)
+        assert len(data)
+        for row in data:
+            self.assertEqual(row["offered_space"], 10)
+
+        data = self.db_guest.all("fac", offered_space__gte=10)
+        assert len(data)
+        for row in data:
+            self.assertGreaterEqual(row["offered_space"], 10)
+
+        data = self.db_guest.all("fac", offered_space__gt=10)
+        assert len(data)
+        for row in data:
+            self.assertGreater(row["offered_space"], 10)
+
+        data = self.db_guest.all("fac", offered_space__lt=100)
+        assert len(data)
+        for row in data:
+            self.assertLess(row["offered_space"], 100)
+
+        data = self.db_guest.all("fac", offered_space__lt=100)
+        assert len(data)
+        for row in data:
+            self.assertLessEqual(row["offered_space"], 100)
+
+        data = self.db_guest.all("fac", offered_space__gt=100)
+        assert not len(data)
+
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_fac_all_net(self):
+
+        net_ids = ",".join([
+            str(SHARED["net_r_ok"].id),
+        ])
+
+        data = self.db_guest.all("fac", all_net=net_ids)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], SHARED["fac_r_ok"].id)
+
+        net_ids = ",".join([
+            str(SHARED["net_r_ok"].id),
+            str(SHARED["net_rw_ok"].id),
+        ])
+
+        data = self.db_guest.all("fac", all_net=net_ids)
+        self.assertEqual(len(data), 0)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_fac_not_net(self):
+
+        net_ids = ",".join([
+            str(SHARED["net_r_ok"].id),
+        ])
+
+        data = self.db_guest.all("fac", not_net=net_ids)
+        self.assertGreater(len(data), 1)
+        for row in data:
+            self.assertNotEqual(row["id"], SHARED["fac_r_ok"].id)
+
 
     ##########################################################################
 
@@ -4060,10 +4262,10 @@ class Command(BaseCommand):
             obj = model(**data)
             obj.save()
 
-            cls.log(
-                "%s with status '%s' for %s testing created! (%s)"
-                % (tag.upper(), status, prefix.upper(), obj.updated)
-            )
+            #cls.log(
+            #    "%s with status '%s' for %s testing created! (%s)"
+            #    % (tag.upper(), status, prefix.upper(), obj.updated)
+            #)
 
         id = f"{tag}_{prefix}_{status}"
         if key_suffix:

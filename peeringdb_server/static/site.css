@@ -946,12 +946,15 @@ textarea {
 }
 
 
+
+div.create-form div.editable.input-frame > input.unit,
 div.advanced-search-view div.editable.input-frame > input.unit,
 div.view div.editable.input-frame > input.unit {
-  width: 75%;
+  width: 75% !important;
   display: inline;
 }
 
+div.create-form div.editable > input.unit ~ select,
 div.advanced-search-view div.editable.input-frame > input.unit ~ select,
 div.view div.editable.input-frame > input.unit ~ select {
   width: 25%;

@@ -289,3 +289,12 @@ class Mock:
 
     def net_count(self, data, reftag=None):
         return 0
+
+    def offered_space(self, data, reftag=None):
+        return 0
+
+    def offered_power(self, data, reftag=None):
+        return 0
+
+    def offered_resilience(self, data, reftag=None):
+        return 0
