@@ -1454,10 +1454,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
         return qset, filters
 
-    @classmethod
-    def get_ix_ids_from_org(self, org):
-        return [ix.id for ix in org.ix_set_active]
-
 
     def to_internal_value(self, data):
         # if `suggest` keyword is provided, hard-set the org to
@@ -2148,14 +2144,6 @@ class NetworkSerializer(ModelSerializer):
             return True
         return ModelSerializer.is_unique_query(request)
 
-    @classmethod
-    def get_fac_ids_from_org(self, org):
-        return [fac.id for fac in org.fac_set_active]
-
-    @classmethod
-    def get_ix_ids_from_org(self, org):
-        return [ix.id for ix in org.ix_set_active]
-
     def to_internal_value(self, data):
         # if `suggest` keyword is provided, hard-set the org to
         # whichever org is specified in `SUGGEST_ENTITY_ORG`
@@ -2650,10 +2638,6 @@ class InternetExchangeSerializer(ModelSerializer):
             filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
 
         return qset, filters
-
-    @classmethod
-    def get_fac_ids_from_org(self, org):
-        return [fac.id for fac in org.fac_set_active]
 
     def validate_create(self, data):
         # we don't want users to be able to create internet exchanges if the parent
