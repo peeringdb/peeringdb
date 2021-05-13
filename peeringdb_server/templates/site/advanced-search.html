@@ -56,6 +56,25 @@
 
     });
 
+    /* wire the net presence filter configuration (does not matter, present,
+     * not present) to the net present filter.
+     */
+
+    $('.net_present_input').each(function() {
+      var filter_input = $(this);
+      var filter_select = filter_input.parent().find('.net_present_filter')
+      filter_select.on('change', function() {
+        let val = $(this).val()
+        if(val )
+          filter_input.data('edit-name', val).attr('data-edit-name', val);
+        else {
+          filter_input.removeData('edit-name').removeAttr('data-edit-name')
+        }
+      });
+
+    });
+
+
 
     var run_search = function() {
 

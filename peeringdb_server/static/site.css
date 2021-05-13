@@ -1108,6 +1108,13 @@ input.editable.autocomplete.invalid {
   color: #D71E1E;
 }
 
+div.alert.autocomplete-choice {
+  margin-bottom: 2px;
+  margin-top: 2px;
+  padding: 5px;
+  cursor: pointer;
+}
+
 span.yourlabs-autocomplete > span > div.sub {
   font-size: 12px;
   color: #717D7F;

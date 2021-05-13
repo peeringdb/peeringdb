@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n util %}
 
 <div class="editable always auto-toggled filter-form"
      data-edit-target="advanced_search:fac"
@@ -117,26 +117,9 @@
         </div>
       </div>
 
+      {% include "site/advanced-search-net-present.html" %}
+
       {% include "site/advanced-search-org-present.html" %}
-
-      <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Network Presence" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
-          <div class="editable input-frame">
-            <select id="net_present_filter" class="editable select net_present_filter">
-            <option value="all_net">{% trans "All present" %}</option>
-            <option value="net__in" {% if request.GET.net__in %}selected{% endif %}>{% trans "Any present" %}</option>
-            <option value="not_net" {% if request.GET.not_net %}selected{% endif %}>{% trans "None present" %}</option>
-            </select>
-          </div>
-
-          <div class="editable"
-               data-edit-type="autocomplete"
-               data-edit-autocomplete="net"
-               placeholder="Network"></div>
-
-        </div>
-      </div>
 
     </div>
   </div>

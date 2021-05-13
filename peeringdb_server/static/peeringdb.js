@@ -83,12 +83,10 @@ PeeringDB = {
           }
           if('undefined' == typeof(reply.translation) || 'undefined' == typeof(reply.translation.translatedText)){
               note_o.parent().append( '<div class="editable popin error">Unknown error</div>')
-              console.log(reply);
               return;
           }
           var translation = reply.translation.translatedText.split(' xx22xx ').join('</p><p>');
           note_o.parent().append( '<div class="editable popin info"><p>' + translation + '</p></div>')
-          console.log(translation);
        })
        .fail(function(a,b,c){
          console.log(a,b,c);
@@ -1365,7 +1363,6 @@ twentyc.editable.module.register(
     execute_add : function(trigger, container) {
       this.components.add.editable("export", this.target.data);
       var data = this.target.data;
-      console.log(data)
       this.prepare_data();
       this.target.execute("update", this.components.add, function(response) {
         this.add(data.entity, trigger, container, data);
@@ -1605,8 +1602,6 @@ twentyc.editable.module.register(
         if(response.readonly)
           response.name = response.name + " (read-only)";
         var row = this.add(data.entity, trigger, container, response);
-        console.log(data)
-        console.log(row)
         this.api_key_popin(response.key)
       }.bind(this));
     },
@@ -1626,7 +1621,6 @@ twentyc.editable.module.register(
       row.editable("export", this.target.data);
       var data = this.target.data;
       var id = data.prefix = row.data("edit-id")
-      console.log(this.target, row)
       this.target.execute("update", trigger, function(response) {
       }.bind(this));
     },
@@ -2349,9 +2343,30 @@ twentyc.editable.input.register(
   "autocomplete",
   {
     confirm_handlers : {},
+
+
+    make : function() {
+      let input = this.string_make();
+      let multi = this.source.data('edit-multiple')
+
+      if(multi) {
+        let choices = $('<div>').addClass('autocomplete-choices')
+        input.data('choices_element', choices);
+      }
+
+      return input;
+    },
+
     wire : function() {
+      var widget = this;
       var input = this.element;
       var url = "/autocomplete/"+this.source.data("edit-autocomplete")
+
+      var multi = this.source.data('edit-multiple')
+
+      if(multi) {
+        this.element.data('choices_element').insertAfter(this.element);
+      }
 
       input.yourlabsAutocomplete(
         {
@@ -2362,11 +2377,23 @@ twentyc.editable.input.register(
           inputClick : function(e) { return ; }
         }
       ).input.bind("selectChoice", function(a,b) {
-        input.data("value" , b.data("value"));
-        input.val(b.text());
-        input.removeClass("invalid");
-        input.addClass("valid");
-        this.render_confirm(b.data("value"));
+
+        if(multi) {
+
+          // multiple-select support
+
+          widget.multi_add(b.data("value"), b.text());
+
+        } else {
+
+          // single select only
+
+          input.data("value" , b.data("value"));
+          input.val(b.text());
+          input.removeClass("invalid");
+          input.addClass("valid");
+          this.render_confirm(b.data("value"));
+        }
       }.bind(this));
       // turn off auto-complete firefox workaround
       if(/Firefox/i.test(navigator.userAgent)) {
@@ -2382,6 +2409,49 @@ twentyc.editable.input.register(
 
     },
 
+
+    multi_add : function(value, text) {
+      // update input value
+      let selected = this.element.data("value")
+      if(!selected)
+        selected = []
+      else
+        selected = selected.split(",")
+
+      selected.push(value);
+      this.element.data("value", selected.join(","));
+      this.element.val()
+
+      // update choice display
+      let choices_element = this.element.data('choices_element')
+      let row = $('<div class="alert autocomplete-choice alert-info">').attr('data-value', value);
+      row.attr("data-toggle","tooltip").attr("title", gettext("Click to remove") ).attr("data-placement", "left").tooltip()
+      row.on('click',()=> {
+        row.tooltip("hide")
+        this.multi_remove(value);
+      });
+
+      choices_element.append(
+        row.text(text)
+      );
+    },
+
+    multi_remove : function(value) {
+      let selected = this.element.data("value")
+      let choices_element = this.element.data('choices_element')
+      if(!selected)
+        return;
+      else
+        selected = selected.split(",")
+
+      var index = selected.indexOf(""+value);
+      if(index > -1)
+        selected.splice(index, 1)
+      this.element.data("value", selected.join(","));
+
+      choices_element.find(`[data-value="${value}"]`).detach();
+    },
+
     reset_confirm : function() { this.confirm_node().empty(); },
     render_confirm : function(id) {
       var hdl;
@@ -2392,9 +2462,15 @@ twentyc.editable.input.register(
       return this.source.siblings("[data-autocomplete-confirm]")
     },
     reset : function(resetValue) {
-      twentyc.editable.input.get("base").prototype.reset.call(this, resetValue);
-      this.element.data("value","")
-      this.reset_confirm();
+      let multi = this.source.data('edit-multiple')
+      if(resetValue) {
+        twentyc.editable.input.get("base").prototype.reset.call(this, resetValue);
+        this.element.data("value","")
+        this.reset_confirm();
+        if(multi) {
+          this.element.data("choices_element").empty()
+        }
+      }
     },
     get : function() {
       var val = this.element.data("value");
@@ -2406,17 +2482,45 @@ twentyc.editable.input.register(
       return val;
     },
     set : function(value) {
+      let multi = this.source.data('edit-multiple')
+
+      if(multi && value) {
+
+
+        let i, item;
+        value = value.split(",")
+        for(i = 0; i < value.length; i++) {
+          item = value[i].split(";")
+          this.multi_add(item[0], item[1])
+        }
+
+      } else {
+
       if(value && value.split)
         var t = value.split(";");
       else
         var t = []
       this.element.data("value", t[0]);
       this.element.val(t[1]);
+
+      }
     },
     validate : function() {
       if(!this.source.data("edit-autocomplete-allow-nonexistent")) {
-        if(this.get())
+        let multi = this.source.data('edit-multiple')
+        let val = this.get()
+        if(val) {
+          if(multi) {
+            let i;
+            val = val.split(",")
+            for(i = 0; i < val.length; i++) {
+              if(!( parseInt(val[i]) >0))
+                return false
+            }
+            return true;
+          }
           return this.get() > 0;
+        }
       }
       return true;
     }
