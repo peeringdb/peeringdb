@@ -97,19 +97,23 @@ class FacilityAutocomplete(AutocompleteHTMLResponse):
             % (item.pk, html.escape(item.name), html.escape(item.address1))
         )
 
+
 class NetworkAutocomplete(AutocompleteHTMLResponse):
     def get_queryset(self):
         qs = Network.objects.filter(status="ok")
         if self.q:
-            qs = qs.filter(Q(name__icontains=self.q) | Q(aka__icontains=self.q) | Q(asn__iexact=self.q))
+            qs = qs.filter(
+                Q(name__icontains=self.q)
+                | Q(aka__icontains=self.q)
+                | Q(asn__iexact=self.q)
+            )
         qs = qs.order_by("name")
         return qs
 
     def get_result_label(self, item):
-        return (
-            '<span data-value="{}"><div class="main">{}</div> <div class="sub">AS{}</div></span>'.format(item.pk, html.escape(item.name), html.escape(item.asn))
+        return '<span data-value="{}"><div class="main">{}</div> <div class="sub">AS{}</div></span>'.format(
+            item.pk, html.escape(item.name), html.escape(item.asn)
         )
-
 
 
 class FacilityAutocompleteForNetwork(FacilityAutocomplete):

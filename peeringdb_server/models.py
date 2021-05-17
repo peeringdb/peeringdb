@@ -281,7 +281,6 @@ class GeocodeBaseMixin(models.Model):
             e=self
         )
 
-
     def process_geo_location(self, geocode=True, save=True):
 
         """
@@ -325,7 +324,6 @@ class GeocodeBaseMixin(models.Model):
         if use_melissa_coords and sanitized:
             self.latitude = sanitized["latitude"]
             self.longitude = sanitized["longitude"]
-
 
         if geocode and (not use_melissa_coords or sanitized):
             self.geocode_status = True
@@ -1192,13 +1190,13 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         _("number of exchanges at this facility"),
         help_text=_("number of exchanges at this facility"),
         null=False,
-        default=0
+        default=0,
     )
     net_count = models.PositiveIntegerField(
         _("number of networks at this facility"),
         help_text=_("number of networks at this facility"),
         null=False,
-        default=0
+        default=0,
     )
 
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
@@ -1256,7 +1254,9 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         return qset.exclude(id__in=[i.facility_id for i in q])
 
     @classmethod
-    def related_to_multiple_networks(cls, value_list=None, field="network_id", qset=None):
+    def related_to_multiple_networks(
+        cls, value_list=None, field="network_id", qset=None
+    ):
         """
         Returns queryset of Facility objects that
         are related to ALL networks specified in the value list
@@ -1462,14 +1462,14 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         _("number of facilities at this exchange"),
         help_text=_("number of facilities at this exchange"),
         null=False,
-        default=0
+        default=0,
     )
 
     net_count = models.PositiveIntegerField(
         _("number of networks at this exchange"),
         help_text=_("number of networks at this exchange"),
         null=False,
-        default=0
+        default=0,
     )
 
     @staticmethod
@@ -1553,7 +1553,9 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return qset.filter(id__in=[nx.ixlan.ix_id for nx in q])
 
     @classmethod
-    def related_to_multiple_networks(cls, value_list=None, field="network_id", qset=None):
+    def related_to_multiple_networks(
+        cls, value_list=None, field="network_id", qset=None
+    ):
         """
         Returns queryset of InternetExchange objects that
         are related to ALL networks specified in the value list
@@ -1576,8 +1578,9 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         # Need the intersection of the next networks
         for value in value_list:
             filt = make_relation_filter(field, None, value)
-            netixlan_qset = NetworkIXLan.handleref.filter(
-                **filt).select_related("ixlan")
+            netixlan_qset = NetworkIXLan.handleref.filter(**filt).select_related(
+                "ixlan"
+            )
             ix_qset = qset.filter(id__in=[nx.ixlan.ix_id for nx in netixlan_qset])
             final_queryset = final_queryset & ix_qset
 
@@ -1699,7 +1702,11 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         # exchange capacity is simply the sum of its port speeds
 
         netixlans = NetworkIXLan.handleref.undeleted()
-        capacity_set = netixlans.values('ixlan_id').annotate(capacity=models.Sum('speed')).filter(**filters)
+        capacity_set = (
+            netixlans.values("ixlan_id")
+            .annotate(capacity=models.Sum("speed"))
+            .filter(**filters)
+        )
 
         # collect ids
         # since ixlan id == exchange id we can simply use those
@@ -1812,8 +1819,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         even if net_count signals are not being used.
         """
         return (
-            NetworkIXLan.objects
-            .select_related("network")
+            NetworkIXLan.objects.select_related("network")
             .filter(ixlan__ix_id=self.id, status="ok")
             .aggregate(net_count=models.Count("network_id", distinct=True))["net_count"]
         )
@@ -3745,14 +3751,14 @@ class Network(pdb_models.NetworkBase):
         _("number of exchanges at this network"),
         help_text=_("number of exchanges at this network"),
         null=False,
-        default=0
+        default=0,
     )
 
     fac_count = models.PositiveIntegerField(
         _("number of facilities at this network"),
         help_text=_("number of facilities at this network"),
         null=False,
-        default=0
+        default=0,
     )
 
     @staticmethod

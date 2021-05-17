@@ -6,28 +6,28 @@ from django.utils.translation import ugettext_lazy as _
 import requests
 import googlemaps
 
+
 class Timeout(IOError):
     def __init__(self):
         super().__init__("Geo location lookup has timed out")
+
 
 class RequestError(IOError):
     def __init__(self, exc):
         super().__init__(f"{exc}")
 
+
 class NotFound(IOError):
     pass
 
-class GoogleMaps:
 
+class GoogleMaps:
     def __init__(self, key, timeout=5):
         self.key = key
         self.client = googlemaps.Client(key, timeout=timeout)
 
     def geocode(self, instance):
-        geocode = self.geocode_address(
-            instance.geocode_address,
-            instance.country.code
-        )
+        geocode = self.geocode_address(instance.geocode_address, instance.country.code)
         instance.latitude = geocode.get("lat")
         instance.longitude = geocode.get("lng")
 
@@ -70,7 +70,9 @@ class Melissa:
     service used for geocoding and address normalization
     """
 
-    global_address_url = "https://address.melissadata.net/v3/WEB/GlobalAddress/doGlobalAddress"
+    global_address_url = (
+        "https://address.melissadata.net/v3/WEB/GlobalAddress/doGlobalAddress"
+    )
 
     # maps peeringdb address model field to melissa
     # global address result fields
@@ -82,9 +84,8 @@ class Melissa:
         "longitude": "Longitude",
         "zipcode": "PostalCode",
         "state": "AdministrativeArea",
-        "city": "Locality"
+        "city": "Locality",
     }
-
 
     def __init__(self, key, timeout=5):
         self.key = key
@@ -105,7 +106,6 @@ class Melissa:
 
         return self.apply_global_address(kwargs, best)
 
-
     def sanitize_address_model(self, instance):
 
         """
@@ -125,9 +125,8 @@ class Melissa:
             address2=instance.address2,
             city=instance.city,
             zipcode=instance.zipcode,
-            country=f"{instance.country}"
+            country=f"{instance.country}",
         )
-
 
     def apply_global_address(self, pdb_data, melissa_data):
 
@@ -159,13 +158,12 @@ class Melissa:
     def global_address_params(self, **kwargs):
 
         return {
-            "a1" : kwargs.get("address1"),
-            "a2" : kwargs.get("address2"),
+            "a1": kwargs.get("address1"),
+            "a2": kwargs.get("address2"),
             "ctry": kwargs.get("country"),
             "loc": kwargs.get("city"),
             "postal": kwargs.get("zipcode"),
         }
-
 
     def global_address(self, **kwargs):
 
@@ -189,7 +187,12 @@ class Melissa:
         }
 
         try:
-            response = requests.get(self.global_address_url, params=params, headers=headers, timeout=self.timeout)
+            response = requests.get(
+                self.global_address_url,
+                params=params,
+                headers=headers,
+                timeout=self.timeout,
+            )
         except requests.exceptions.Timeout:
             raise Timeout()
         except IOError as exc:
@@ -220,4 +223,3 @@ class Melissa:
 
         except (KeyError, IndexError):
             return None
-

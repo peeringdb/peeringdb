@@ -175,6 +175,7 @@ def ref_tag(value):
         return Organization.handleref.tag
     return "unknown"
 
+
 @register.filter
 def autocomplete_preload_net(value):
     if not value:
@@ -182,10 +183,7 @@ def autocomplete_preload_net(value):
 
     qset = Network.objects.filter(status="ok", id__in=value.split(","))
 
-    return ",".join([
-        f"{net.id};{net.name}" for net in qset
-    ])
-
+    return ",".join([f"{net.id};{net.name}" for net in qset])
 
 
 @register.filter
@@ -196,6 +194,7 @@ def pretty_speed(value):
         return format_speed(value)
     except ValueError:
         return value
+
 
 @register.filter
 def partnership_label(level):

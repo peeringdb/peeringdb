@@ -1210,8 +1210,8 @@ class TestJSON(unittest.TestCase):
                 "readonly": {
                     "proto_multicast": True,
                     "proto_unicast": True,
-                    "proto_ipv6": False
-                }
+                    "proto_ipv6": False,
+                },
             },
         )
 
@@ -2500,7 +2500,7 @@ class TestJSON(unittest.TestCase):
         SHARED["netixlan_r_ok"].save()
 
         netixlans = NetworkIXLan.handleref.undeleted()
-        capacity_set = netixlans.values('ixlan_id').annotate(capacity=Sum('speed'))
+        capacity_set = netixlans.values("ixlan_id").annotate(capacity=Sum("speed"))
         capacity_dict = dict([(d["ixlan_id"], d["capacity"]) for d in capacity_set])
 
         data = self.db_guest.all("ix", capacity=1000)
@@ -2509,37 +2509,39 @@ class TestJSON(unittest.TestCase):
             self.assertEqual(row["id"], SHARED["netixlan_r_ok"].ixlan.ix.id)
 
         data = self.db_guest.all("ix", capacity__gt=1000)
-        assert (len(data))
+        assert len(data)
         for row in data:
             self.assertNotEqual(row["id"], SHARED["netixlan_r_ok"].ixlan.ix.id)
 
         data = self.db_guest.all("ix", capacity__lt=30000)
-        assert (len(data))
+        assert len(data)
         for row in data:
             self.assertEqual(row["id"], SHARED["netixlan_r_ok"].ixlan.ix.id)
 
         data = self.db_guest.all("ix", capacity__lt=1000)
         assert not (len(data))
 
-
-
     ##########################################################################
 
     def test_guest_005_list_filter_ix_all_net(self):
 
-        net_ids = ",".join([
-            str(SHARED["net_r_ok"].id),
-        ])
+        net_ids = ",".join(
+            [
+                str(SHARED["net_r_ok"].id),
+            ]
+        )
 
         data = self.db_guest.all("ix", all_net=net_ids)
         self.assertEqual(len(data), 1)
         for row in data:
             self.assertEqual(row["id"], SHARED["ix_r_ok"].id)
 
-        net_ids = ",".join([
-            str(SHARED["net_r_ok"].id),
-            str(SHARED["net_rw_ok"].id),
-        ])
+        net_ids = ",".join(
+            [
+                str(SHARED["net_r_ok"].id),
+                str(SHARED["net_rw_ok"].id),
+            ]
+        )
 
         data = self.db_guest.all("ix", all_net=net_ids)
         self.assertEqual(len(data), 0)
@@ -2548,9 +2550,11 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_005_list_filter_ix_not_net(self):
 
-        net_ids = ",".join([
-            str(SHARED["net_r_ok"].id),
-        ])
+        net_ids = ",".join(
+            [
+                str(SHARED["net_r_ok"].id),
+            ]
+        )
 
         data = self.db_guest.all("ix", not_net=net_ids)
         self.assertGreater(len(data), 1)
@@ -2566,8 +2570,6 @@ class TestJSON(unittest.TestCase):
 
         data = self.db_guest.all("ix", org_not_present=SHARED["org_r_ok"].id)
         self.assertGreater(len(data), 1)
-
-
 
     ##########################################################################
 
@@ -2673,19 +2675,23 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_005_list_filter_fac_all_net(self):
 
-        net_ids = ",".join([
-            str(SHARED["net_r_ok"].id),
-        ])
+        net_ids = ",".join(
+            [
+                str(SHARED["net_r_ok"].id),
+            ]
+        )
 
         data = self.db_guest.all("fac", all_net=net_ids)
         self.assertEqual(len(data), 1)
         for row in data:
             self.assertEqual(row["id"], SHARED["fac_r_ok"].id)
 
-        net_ids = ",".join([
-            str(SHARED["net_r_ok"].id),
-            str(SHARED["net_rw_ok"].id),
-        ])
+        net_ids = ",".join(
+            [
+                str(SHARED["net_r_ok"].id),
+                str(SHARED["net_rw_ok"].id),
+            ]
+        )
 
         data = self.db_guest.all("fac", all_net=net_ids)
         self.assertEqual(len(data), 0)
@@ -2694,15 +2700,16 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_005_list_filter_fac_not_net(self):
 
-        net_ids = ",".join([
-            str(SHARED["net_r_ok"].id),
-        ])
+        net_ids = ",".join(
+            [
+                str(SHARED["net_r_ok"].id),
+            ]
+        )
 
         data = self.db_guest.all("fac", not_net=net_ids)
         self.assertGreater(len(data), 1)
         for row in data:
             self.assertNotEqual(row["id"], SHARED["fac_r_ok"].id)
-
 
     ##########################################################################
 
@@ -3905,11 +3912,7 @@ class TestJSON(unittest.TestCase):
         # fac.delete()
         # fac.refresh_from_db()
 
-        self.assert_delete(
-            self.db_org_admin,
-            "fac",
-            test_success=r_data["id"]
-        )
+        self.assert_delete(self.db_org_admin, "fac", test_success=r_data["id"])
         fac.refresh_from_db()
         self.assertEqual(fac.status, "deleted")
 
@@ -3952,7 +3955,9 @@ class TestJSON(unittest.TestCase):
         #
         # should we allow re suggesting of deleted facilities?
 
-        re_add_data = self.assert_create(self.db_user, "fac", data, test_success=False, test_failures={"perms":{}})
+        re_add_data = self.assert_create(
+            self.db_user, "fac", data, test_success=False, test_failures={"perms": {}}
+        )
 
         """
         self.assertEqual(re_add_data["status"], "pending")
@@ -3962,7 +3967,6 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(fac.status, "pending")
         self.assertEqual(fac.org_id, settings.SUGGEST_ENTITY_ORG)
         """
-
 
     def test_z_misc_001_disable_suggest_ix(self):
         """
@@ -4183,10 +4187,10 @@ class Command(BaseCommand):
             obj = model(**data)
             obj.save()
 
-            #cls.log(
+            # cls.log(
             #    "%s with status '%s' for %s testing created! (%s)"
             #    % (tag.upper(), status, prefix.upper(), obj.updated)
-            #)
+            # )
 
         id = f"{tag}_{prefix}_{status}"
         if key_suffix:

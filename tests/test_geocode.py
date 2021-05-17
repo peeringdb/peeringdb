@@ -9,8 +9,8 @@ import peeringdb_server.models as models
 from peeringdb_server.serializers import GeocodeSerializerMixin
 import peeringdb_server.geo as geo
 
-class MockMelissa(geo.Melissa):
 
+class MockMelissa(geo.Melissa):
     def __init__(self):
         super().__init__("")
 
@@ -117,38 +117,39 @@ def test_melissa_global_address_params():
     client = geo.Melissa("")
 
     expected = {
-        "a1" : "address 1",
-        "a2" : "address 2",
-        "ctry" : "us",
-        "loc" : "city",
-        "postal" : "12345",
+        "a1": "address 1",
+        "a2": "address 2",
+        "ctry": "us",
+        "loc": "city",
+        "postal": "12345",
     }
 
-    assert client.global_address_params(
-        address1="address 1",
-        address2="address 2",
-        country="us",
-        city="city",
-        zipcode="12345"
-    ) == expected
+    assert (
+        client.global_address_params(
+            address1="address 1",
+            address2="address 2",
+            country="us",
+            city="city",
+            zipcode="12345",
+        )
+        == expected
+    )
 
 
 def test_melissa_global_address_best_result():
     client = geo.Melissa("")
 
-    expected = {"Results": "AV25", "Address1":"value1"}
+    expected = {"Results": "AV25", "Address1": "value1"}
 
-    result = {"Records":[expected, {"Results": "AV25", "Address1":"value2"}]}
+    result = {"Records": [expected, {"Results": "AV25", "Address1": "value2"}]}
 
     assert client.global_address_best_result(result) == expected
     assert client.global_address_best_result({}) == None
     assert client.global_address_best_result(None) == None
 
-    result = {"Records":[{"Results": "AV12", "Address1":"value2"}]}
+    result = {"Records": [{"Results": "AV12", "Address1": "value2"}]}
 
     assert client.global_address_best_result(result) == None
-
-
 
 
 def test_melissa_apply_global_address():
@@ -157,7 +158,7 @@ def test_melissa_apply_global_address():
 
     data = client.apply_global_address(
         {
-            "address1" : "address1 old",
+            "address1": "address1 old",
             "city": "city old",
             "zipcode": "zipcode old",
         },
@@ -171,17 +172,17 @@ def test_melissa_apply_global_address():
             "Longitude": 1.234567,
             "PostalCode": "zipcode new",
             "Locality": "city new",
-        }
+        },
     )
 
     expected = {
-        "address1" : "address1 new",
-        "address2" : "address2 new",
+        "address1": "address1 new",
+        "address2": "address2 new",
         "city": "city new",
         "zipcode": "zipcode new",
         "longitude": 1.234567,
         "latitude": 1.234567,
-        "state" : "state new",
+        "state": "state new",
     }
 
     assert data == expected
@@ -198,5 +199,3 @@ def test_melissa_sanitize(fac):
     assert sanitized["latitude"] == 1.234567
     assert sanitized["longitude"] == 1.234567
     assert sanitized["zipcode"] == "12345"
-
-

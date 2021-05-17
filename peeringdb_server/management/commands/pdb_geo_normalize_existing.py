@@ -126,7 +126,6 @@ class Command(BaseCommand):
             )
         return floor
 
-
     def log_floor_and_ste_changes(self, instance):
         if (instance.floor != "") or (instance.suite != ""):
             self.log(f"{instance.address1}, {instance.address2}")

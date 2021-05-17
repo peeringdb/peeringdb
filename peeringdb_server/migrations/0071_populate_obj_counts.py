@@ -20,18 +20,18 @@ def populate_network_counts(apps, schema_editor):
             print(network)
         try:
             network.ix_count = (
-                NetworkIXLan.handleref.select_related("ixlan__ix").filter(
-                    network_id=network.id, status="ok"
-                ).aggregate(ix_count=Count("ixlan__ix_id", distinct=True))
+                NetworkIXLan.handleref.select_related("ixlan__ix")
+                .filter(network_id=network.id, status="ok")
+                .aggregate(ix_count=Count("ixlan__ix_id", distinct=True))
             )["ix_count"]
 
         except ObjectDoesNotExist:
             pass
         try:
             network.fac_count = (
-                NetworkFacility.handleref.select_related("facility").filter(
-                    network_id=network.id, status="ok"
-                ).aggregate(fac_count=Count("facility_id", distinct=True))
+                NetworkFacility.handleref.select_related("facility")
+                .filter(network_id=network.id, status="ok")
+                .aggregate(fac_count=Count("facility_id", distinct=True))
             )["fac_count"]
         except ObjectDoesNotExist:
             pass
@@ -54,17 +54,17 @@ def populate_ix_counts(apps, schema_editor):
 
         try:
             ix.net_count = (
-                NetworkIXLan.handleref.select_related("network").filter(
-                    ixlan__ix_id=ix.id, status="ok"
-                ).aggregate(net_count=Count("network_id", distinct=True))
+                NetworkIXLan.handleref.select_related("network")
+                .filter(ixlan__ix_id=ix.id, status="ok")
+                .aggregate(net_count=Count("network_id", distinct=True))
             )["net_count"]
         except ObjectDoesNotExist:
             pass
         try:
             ix.fac_count = (
-                InternetExchangeFacility.handleref.select_related("facility").filter(
-                    ix_id=ix.id, status="ok"
-                ).aggregate(fac_count=Count("facility_id", distinct=True))
+                InternetExchangeFacility.handleref.select_related("facility")
+                .filter(ix_id=ix.id, status="ok")
+                .aggregate(fac_count=Count("facility_id", distinct=True))
             )["fac_count"]
 
         except ObjectDoesNotExist:
@@ -85,18 +85,18 @@ def populate_facility_counts(apps, schema_editor):
             print(facility)
         try:
             facility.ix_count = (
-                InternetExchangeFacility.handleref.select_related("ix").filter(
-                    facility_id=facility.id, status="ok"
-                ).aggregate(ix_count=Count("ix_id", distinct=True))
+                InternetExchangeFacility.handleref.select_related("ix")
+                .filter(facility_id=facility.id, status="ok")
+                .aggregate(ix_count=Count("ix_id", distinct=True))
             )["ix_count"]
 
         except ObjectDoesNotExist:
             pass
         try:
             facility.net_count = (
-                NetworkFacility.handleref.select_related("network").filter(
-                    facility_id=facility.id, status="ok"
-                ).aggregate(net_count=Count("network_id", distinct=True))
+                NetworkFacility.handleref.select_related("network")
+                .filter(facility_id=facility.id, status="ok")
+                .aggregate(net_count=Count("network_id", distinct=True))
             )["net_count"]
 
         except ObjectDoesNotExist:

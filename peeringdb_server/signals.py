@@ -68,7 +68,9 @@ def network_post_revision_commit(**kwargs):
         if vs.object.HandleRef.tag in ["netixlan", "poc", "netfac"]:
             update_network_attribute(vs.object, f"{vs.object.HandleRef.tag}_updated")
 
+
 reversion.signals.post_revision_commit.connect(network_post_revision_commit)
+
 
 def update_counts_for_netixlan(netixlan):
     """
@@ -80,15 +82,17 @@ def update_counts_for_netixlan(netixlan):
 
         network.ix_count = (
             network.netixlan_set_active.aggregate(
-                ix_count=Count("ixlan__ix_id", distinct=True))
+                ix_count=Count("ixlan__ix_id", distinct=True)
+            )
         )["ix_count"]
 
         disable_auto_now_and_save(network)
 
         ix = netixlan.ixlan.ix
         ix.net_count = (
-            NetworkIXLan.objects.filter(ixlan__ix_id=ix.id, status="ok")
-            .aggregate(net_count=Count("network_id", distinct=True))
+            NetworkIXLan.objects.filter(ixlan__ix_id=ix.id, status="ok").aggregate(
+                net_count=Count("network_id", distinct=True)
+            )
         )["net_count"]
         disable_auto_now_and_save(ix)
 

@@ -84,7 +84,6 @@ def test_generic(name, user, count, status):
         assert len(response.json()[name]) >= count
 
 
-
 @pytest.mark.django_db
 def test_my_organizations():
     call_command("pdb_generate_test_data", limit=3, commit=True)

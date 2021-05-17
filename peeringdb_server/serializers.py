@@ -1374,7 +1374,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
         filters = get_relation_filters(
             ["net_id", "net", "ix_id", "ix", "org_name", "ix_count", "net_count"],
             cls,
-            **kwargs
+            **kwargs,
         )
 
         for field, e in list(filters.items()):
@@ -1404,14 +1404,24 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             fac_ids = []
 
             # relation through netfac
-            fac_ids.extend([
-                netfac.facility_id for netfac in NetworkFacility.objects.filter(network__org_id__in=org_list)
-            ])
+            fac_ids.extend(
+                [
+                    netfac.facility_id
+                    for netfac in NetworkFacility.objects.filter(
+                        network__org_id__in=org_list
+                    )
+                ]
+            )
 
             # relation through ixfac
-            fac_ids.extend([
-                ixfac.facility_id for ixfac in InternetExchangeFacility.objects.filter(ix__org_id__in=org_list)
-            ])
+            fac_ids.extend(
+                [
+                    ixfac.facility_id
+                    for ixfac in InternetExchangeFacility.objects.filter(
+                        ix__org_id__in=org_list
+                    )
+                ]
+            )
 
             qset = qset.filter(id__in=set(fac_ids))
 
@@ -1423,31 +1433,46 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             fac_ids = []
 
             # relation through netfac
-            fac_ids.extend([
-                netfac.facility_id for netfac in NetworkFacility.objects.filter(network__org_id__in=org_list)
-            ])
+            fac_ids.extend(
+                [
+                    netfac.facility_id
+                    for netfac in NetworkFacility.objects.filter(
+                        network__org_id__in=org_list
+                    )
+                ]
+            )
 
             # relation through ixfac
-            fac_ids.extend([
-                ixfac.facility_id for ixfac in InternetExchangeFacility.objects.filter(ix__org_id__in=org_list)
-            ])
+            fac_ids.extend(
+                [
+                    ixfac.facility_id
+                    for ixfac in InternetExchangeFacility.objects.filter(
+                        ix__org_id__in=org_list
+                    )
+                ]
+            )
 
             qset = qset.exclude(id__in=set(fac_ids))
 
             filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
 
         if "all_net" in kwargs:
-            network_id_list = [int(net_id) for net_id in kwargs.get("all_net")[0].split(",")]
-            qset = cls.Meta.model.related_to_multiple_networks(value_list=network_id_list, qset=qset)
+            network_id_list = [
+                int(net_id) for net_id in kwargs.get("all_net")[0].split(",")
+            ]
+            qset = cls.Meta.model.related_to_multiple_networks(
+                value_list=network_id_list, qset=qset
+            )
             filters.update({"all_net": kwargs.get("all_net")})
 
         if "not_net" in kwargs:
             networks = kwargs.get("not_net")[0].split(",")
-            qset = cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
+            qset = cls.Meta.model.not_related_to_net(
+                filt="in", value=networks, qset=qset
+            )
             filters.update({"not_net": kwargs.get("not_net")})
 
         return qset, filters
-
 
     def to_internal_value(self, data):
         # if `suggest` keyword is provided, hard-set the org to
@@ -2518,7 +2543,7 @@ class InternetExchangeSerializer(ModelSerializer):
             "ixf_net_count",
             "ixf_last_import",
             "service_level",
-            "terms"
+            "terms",
         ] + HandleRefSerializer.Meta.fields
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]
@@ -2571,7 +2596,6 @@ class InternetExchangeSerializer(ModelSerializer):
                     flt = {"fac_count": e["value"]}
                 qset = qset.filter(**flt)
 
-
             if field == "capacity":
                 qset = cls.Meta.model.filter_capacity(qset=qset, **e)
 
@@ -2594,13 +2618,19 @@ class InternetExchangeSerializer(ModelSerializer):
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
 
         if "all_net" in kwargs:
-            network_id_list = [int(net_id) for net_id in kwargs.get("all_net")[0].split(",")]
-            qset = cls.Meta.model.related_to_multiple_networks(value_list=network_id_list, qset=qset)
+            network_id_list = [
+                int(net_id) for net_id in kwargs.get("all_net")[0].split(",")
+            ]
+            qset = cls.Meta.model.related_to_multiple_networks(
+                value_list=network_id_list, qset=qset
+            )
             filters.update({"all_net": kwargs.get("all_net")})
 
         if "not_net" in kwargs:
             networks = kwargs.get("not_net")[0].split(",")
-            qset = cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
+            qset = cls.Meta.model.not_related_to_net(
+                filt="in", value=networks, qset=qset
+            )
             filters.update({"not_net": kwargs.get("not_net")})
 
         if "org_present" in kwargs:
@@ -2608,14 +2638,24 @@ class InternetExchangeSerializer(ModelSerializer):
             ix_ids = []
 
             # relation through netixlan
-            ix_ids.extend([
-                netixlan.ixlan_id for netixlan in NetworkIXLan.objects.filter(network__org_id__in=org_list)
-            ])
+            ix_ids.extend(
+                [
+                    netixlan.ixlan_id
+                    for netixlan in NetworkIXLan.objects.filter(
+                        network__org_id__in=org_list
+                    )
+                ]
+            )
 
             # relation through ixfac
-            ix_ids.extend([
-                ixfac.ix_id for ixfac in InternetExchangeFacility.objects.filter(facility__org_id__in=org_list)
-            ])
+            ix_ids.extend(
+                [
+                    ixfac.ix_id
+                    for ixfac in InternetExchangeFacility.objects.filter(
+                        facility__org_id__in=org_list
+                    )
+                ]
+            )
 
             qset = qset.filter(id__in=set(ix_ids))
 
@@ -2627,14 +2667,24 @@ class InternetExchangeSerializer(ModelSerializer):
             ix_ids = []
 
             # relation through netixlan
-            ix_ids.extend([
-                netixlan.ixlan_id for netixlan in NetworkIXLan.objects.filter(network__org_id__in=org_list)
-            ])
+            ix_ids.extend(
+                [
+                    netixlan.ixlan_id
+                    for netixlan in NetworkIXLan.objects.filter(
+                        network__org_id__in=org_list
+                    )
+                ]
+            )
 
             # relation through ixfac
-            ix_ids.extend([
-                ixfac.ix_id for ixfac in InternetExchangeFacility.objects.filter(facility__org_id__in=org_list)
-            ])
+            ix_ids.extend(
+                [
+                    ixfac.ix_id
+                    for ixfac in InternetExchangeFacility.objects.filter(
+                        facility__org_id__in=org_list
+                    )
+                ]
+            )
 
             qset = qset.exclude(id__in=set(ix_ids))
 

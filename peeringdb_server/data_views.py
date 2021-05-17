@@ -198,8 +198,7 @@ def my_organizations(request):
     return JsonResponse(
         {
             "my_organizations": [
-                {"id": o.id, "name": o.name}
-                for o in request.user.organizations
+                {"id": o.id, "name": o.name} for o in request.user.organizations
             ]
         }
     )
