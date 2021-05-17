@@ -9,7 +9,6 @@ from peeringdb_server.models import (
     Organization,
     PARTNERSHIP_LEVELS,
     format_speed,
-    format_power,
 )
 
 from peeringdb_server.views import DoNotRender

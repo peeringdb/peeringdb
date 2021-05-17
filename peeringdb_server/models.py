@@ -4223,11 +4223,6 @@ def format_speed(value):
     else:
         return "%dM" % value
 
-def format_power(value):
-    if value >= 1000:
-        return f"{(value / 1000)}MW"
-    return f"{value}kW"
-
 
 @grainy_model(namespace="ixlan", parent="network")
 @reversion.register
