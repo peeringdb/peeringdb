@@ -295,8 +295,6 @@ class TestJSON(unittest.TestCase):
             "tech_phone": PHONE,
             "sales_email": EMAIL,
             "sales_phone": PHONE,
-            "offered_power": 10,
-            "offered_space": 10,
         }
         data.update(**kwargs)
         return data
@@ -2670,83 +2668,6 @@ class TestJSON(unittest.TestCase):
 
         data = self.db_guest.all("fac", org_not_present=SHARED["org_r_ok"].id)
         self.assertGreater(len(data), 1)
-
-    ##########################################################################
-
-    def test_guest_005_list_filter_fac_offered_power(self):
-
-        fac_a = SHARED["fac_r_ok"]
-        fac_b = SHARED["fac_rw_ok"]
-
-        fac_b.offered_power=100
-        fac_b.save()
-
-        data = self.db_guest.all("fac", offered_power=10)
-        assert len(data)
-        for row in data:
-            self.assertEqual(row["offered_power"], 10)
-
-        data = self.db_guest.all("fac", offered_power__gte=10)
-        assert len(data)
-        for row in data:
-            self.assertGreaterEqual(row["offered_power"], 10)
-
-        data = self.db_guest.all("fac", offered_power__gt=10)
-        assert len(data)
-        for row in data:
-            self.assertGreater(row["offered_power"], 10)
-
-        data = self.db_guest.all("fac", offered_power__lt=100)
-        assert len(data)
-        for row in data:
-            self.assertLess(row["offered_power"], 100)
-
-        data = self.db_guest.all("fac", offered_power__lt=100)
-        assert len(data)
-        for row in data:
-            self.assertLessEqual(row["offered_power"], 100)
-
-        data = self.db_guest.all("fac", offered_power__gt=100)
-        assert not len(data)
-
-    ##########################################################################
-
-    def test_guest_005_list_filter_fac_offered_space(self):
-
-        fac_a = SHARED["fac_r_ok"]
-        fac_b = SHARED["fac_rw_ok"]
-
-        fac_b.offered_space=100
-        fac_b.save()
-
-        data = self.db_guest.all("fac", offered_space=10)
-        assert len(data)
-        for row in data:
-            self.assertEqual(row["offered_space"], 10)
-
-        data = self.db_guest.all("fac", offered_space__gte=10)
-        assert len(data)
-        for row in data:
-            self.assertGreaterEqual(row["offered_space"], 10)
-
-        data = self.db_guest.all("fac", offered_space__gt=10)
-        assert len(data)
-        for row in data:
-            self.assertGreater(row["offered_space"], 10)
-
-        data = self.db_guest.all("fac", offered_space__lt=100)
-        assert len(data)
-        for row in data:
-            self.assertLess(row["offered_space"], 100)
-
-        data = self.db_guest.all("fac", offered_space__lt=100)
-        assert len(data)
-        for row in data:
-            self.assertLessEqual(row["offered_space"], 100)
-
-        data = self.db_guest.all("fac", offered_space__gt=100)
-        assert not len(data)
-
 
     ##########################################################################
 

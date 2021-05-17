@@ -199,22 +199,6 @@ def pretty_speed(value):
         return value
 
 @register.filter
-def offered_power(value):
-    if not value:
-        return ""
-    try:
-        return format_power(int(value))
-    except ValueError:
-        return value
-
-@register.filter
-def offered_space(value):
-    if not value:
-        return ""
-
-    return f"{value} sq m"
-
-@register.filter
 def partnership_label(level):
     return dict(PARTNERSHIP_LEVELS).get(level, "Unknown")
 

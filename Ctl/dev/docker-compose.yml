@@ -45,7 +45,6 @@ services:
       - ../../peeringdb_server:/srv/www.peeringdb.com/peeringdb_server
       - ../../mainsite:/srv/www.peeringdb.com/mainsite
       - ../../tests:/srv/www.peeringdb.com/tests
-      - ../../../django-peeringdb:/srv/www.peeringdb.com/django-peeringdb
 
 volumes:
   peeringdb_database:

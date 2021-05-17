@@ -1701,21 +1701,6 @@ twentyc.editable.target.register(
           data[i] = data[i].join(",")
       }
 
-      if(data.reftag == "fac") {
-
-        // for these fields we actually want the unit formatted
-        // values in the url parameters so that unit selection gets
-        // persisted in the url
-
-        let offered_space = $('[data-edit-name="offered_space__gte"]').data("edit-input-instance");
-        let offered_power = $('[data-edit-name="offered_power__gte"]').data("edit-input-instance");
-        if(data["offered_space__gte"])
-          data["offered_space__gte"] = offered_space.formatted()
-        if(data["offered_power__gte"])
-          data["offered_power__gte"] = offered_power.formatted()
-      }
-
-
       if(data["undefined"])
         delete data["undefined"]
       window.location.replace(
@@ -2775,88 +2760,6 @@ twentyc.editable.input.register(
   "unit_input"
 );
 
-
-twentyc.editable.input.register(
-  "offered_power",
-  {
-    unit_name : "power_units",
-    selected_unit : "kW",
-    units : [
-      {
-        "name": "kW",
-        "id": "kW"
-      },
-      {
-        "name": "MW",
-        "id": "MW"
-      }
-    ],
-    convert : function(value, unit) {
-      // db stores value as Kilowatts
-      if ( unit == "kW"){
-        return parseInt(value)
-      } else if (unit == "MW"){
-        return parseInt(value * 1000);
-      }
-    },
-
-    format_units: function(value) {
-      // Power will always be returned from the API as a
-      // integer Kilowatt amount.
-      // Add appropriate units based on magnitude
-      if(!value)
-        return "";
-
-      if (parseFloat(value) >= 1000) {
-        let num = (value / 1000);
-        return num + "MW"
-      }
-      return value + "kW"
-    }
-  },
-  "unit_input"
-);
-
-
-twentyc.editable.input.register(
-  "offered_space",
-  {
-
-    unit_name : "space_units",
-    selected_unit : "sq m",
-    units : [
-      {
-        "id": "sq m",
-        "name": "sq m"
-      },
-      {
-        "id": "sq f",
-        "name": "sq f"
-      }
-    ],
-
-    convert : function(value, unit) {
-      // db stores value as square meters
-      if ( unit == "sq m"){
-        return parseInt(value)
-      } else if ( unit == "sq f"){
-        return Math.round(value * 0.092903);
-      }
-    },
-
-    format_units: function(value) {
-      // Space will always be returned from the API as a
-      // integer square meter amount.
-      // Add appropriate units.
-      if(!value)
-        return "";
-      return value + " sq m"
-    },
-
-  },
-  "unit_input"
-);
-
 /*
  * set up input templates
  */
@@ -2961,7 +2864,6 @@ twentyc.data.loaders.assign("enum/service_level_types_trunc", "data");
 twentyc.data.loaders.assign("enum/service_level_types_advs", "data");
 twentyc.data.loaders.assign("enum/terms_types_trunc", "data");
 twentyc.data.loaders.assign("enum/terms_types_advs", "data");
-twentyc.data.loaders.assign("enum/offered_resilience_trunc", "data");
 
 $(twentyc.data).on("load-enum/traffic", function(e, payload) {
   var r = {}, i = 0, data=payload.data;

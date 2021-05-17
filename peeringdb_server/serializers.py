@@ -1325,9 +1325,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
     latitude = serializers.FloatField(read_only=True)
     longitude = serializers.FloatField(read_only=True)
 
-    offered_space = serializers.IntegerField(required=False, default=0, allow_null=True)
-    offered_power = serializers.IntegerField(required=False, default=0, allow_null=True)
-
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
@@ -1359,9 +1356,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                 "sales_phone",
                 "tech_email",
                 "tech_phone",
-                "offered_power",
-                "offered_space",
-                "offered_resilience",
             ]
             + HandleRefSerializer.Meta.fields
             + AddressSerializer.Meta.fields
@@ -1462,12 +1456,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
         # this happens here so it is done before the validators run
         if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
-
-        if "offered_space" in data and data["offered_space"] == "":
-            data["offered_space"] = None
-
-        if "offered_power" in data and data["offered_power"] == "":
-            data["offered_power"] = None
 
         return super().to_internal_value(data)
 
