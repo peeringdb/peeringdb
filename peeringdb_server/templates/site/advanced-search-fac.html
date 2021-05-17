@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n util %}
 
 <div class="editable always auto-toggled filter-form"
      data-edit-target="advanced_search:fac"
@@ -96,6 +96,10 @@
                data-edit-name="npanxx__startswith"></div>
         </div>
       </div>
+
+      {% include "site/advanced-search-net-present.html" %}
+
+      {% include "site/advanced-search-org-present.html" %}
 
     </div>
   </div>

@@ -1055,9 +1055,9 @@ twentyc.editable.input.register(
       var opt = $('<option></option>');
       opt.val(id);
       opt.text(name);
-      var value = this.source.data("edit-value")
+      var value = ""+this.source.data("edit-value")
       if(this.source.data("edit-multiple") == "yes") {
-        if(value && $.inArray(id, value.split(",")) > -1)
+        if(value && $.inArray(""+id, value.split(",")) > -1)
           opt.prop("selected", true);
       } else {
         if(id == value)

@@ -15,6 +15,7 @@ from peeringdb_server.autocomplete_views import (
     IXLanAutocomplete,
     FacilityAutocomplete,
     FacilityAutocompleteJSON,
+    NetworkAutocomplete,
     DeletedVersionAutocomplete,
     clt_history,
 )
@@ -186,6 +187,7 @@ urlpatterns = [
     url(r"^data/enum/(?P<name>[\w_]+)$", peeringdb_server.data_views.enum),
     url(r"^data/asns$", peeringdb_server.data_views.asns),
     url(r"^data/organizations$", peeringdb_server.data_views.organizations),
+    url(r"^data/my_organizations$", peeringdb_server.data_views.my_organizations),
     url(r"^data/locales$", peeringdb_server.data_views.languages),
     url(r"^export/ix/(?P<ix_id>\d+)/ixp-member-list$", view_export_ixf_ix_members),
     url(
@@ -261,6 +263,7 @@ urlpatterns += [
         name="autocomplete-fac-json",
     ),
     url(r"^autocomplete/fac$", FacilityAutocomplete.as_view(), name="autocomplete-fac"),
+    url(r"^autocomplete/net$", NetworkAutocomplete.as_view(), name="autocomplete-net"),
     url(
         r"^autocomplete/ixlan/$", IXLanAutocomplete.as_view(), name="autocomplete-ixlan"
     ),
