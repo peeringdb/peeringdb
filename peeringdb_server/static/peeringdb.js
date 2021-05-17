@@ -1701,6 +1701,14 @@ twentyc.editable.target.register(
           data[i] = data[i].join(",")
       }
 
+      if(data.reftag == "ix") {
+        // we want the unit formatted values in the url paramters
+        // so that the unit selection gets persisted in the url
+        let capacity = $('[data-edit-name="capacity__gte"]').data("edit-input-instance");
+        if(data["capacity__gte"])
+          data["capacity__gte"] = capacity.formatted()
+      }
+
       if(data["undefined"])
         delete data["undefined"]
       window.location.replace(
@@ -2735,6 +2743,7 @@ twentyc.editable.input.register(
     },
 
     set_value : function(value) {
+
       if(value >= 1000000) {
         value = value / 1000000;
         this.element.data('unit_select').val('Tbps')
