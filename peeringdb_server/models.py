@@ -4,8 +4,6 @@ import datetime
 from itertools import chain
 import uuid
 import ipaddress
-import googlemaps
-import googlemaps.exceptions
 from pprint import pprint
 import requests
 import reversion
@@ -53,6 +51,7 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_irr_as_set,
 )
+import peeringdb_server.geo as geo
 
 SPONSORSHIP_LEVELS = (
     (1, _("Silver")),
@@ -275,159 +274,70 @@ class GeocodeBaseMixin(models.Model):
     @property
     def geocode_address(self):
         """
-        Returns an address string suitable for googlemaps query
+        Returns an address string suitable for geo api query
         """
         # pylint: disable=missing-format-attribute
         return "{e.address1} {e.address2}, {e.city}, {e.state} {e.zipcode}".format(
             e=self
         )
 
-    def geocode(self, gmaps, save=True):
+
+    def process_geo_location(self, geocode=True, save=True):
+
         """
-        Sets the latitude, longitude field values of this model by geocoding the
-        address specified in the relevant fields.
+        Sets longitude and latitude
 
-        Argument(s):
-
-            - gmaps: googlemaps instance
+        Will return a dict containing normalized address
+        data
         """
+
+        melissa = geo.Melissa(settings.MELISSA_KEY, timeout=5)
+        gmaps = geo.GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
+
+        # geocode using google
+
+        use_melissa_coords = False
+
         try:
-            result = gmaps.geocode(
-                self.geocode_address,
-                components={"country": self.country.code},
-                language="en",
-            )
-        except (
-            googlemaps.exceptions.HTTPError,
-            googlemaps.exceptions.ApiError,
-            googlemaps.exceptions.TransportError,
-        ):
-            raise ValidationError(_("Error in forward geocode: Google Maps API error"))
-        except googlemaps.exceptions.Timeout:
-            raise ValidationError(
-                _("Error in forward geocode: Google Maps API Timeout")
-            )
+            if geocode:
+                gmaps.geocode(self)
+        except geo.Timeout:
+            raise ValidationError(_("Geo coding timed out"))
+        except geo.RequestError as exc:
+            raise ValidationError(_("Geo coding failed: {}").format(exc))
+        except geo.NotFound:
+            use_melissa_coords = True
 
-        if result and (
-            "street_address" in result[0]["types"]
-            or "establishment" in result[0]["types"]
-            or "premise" in result[0]["types"]
-            or "subpremise" in result[0]["types"]
-        ):
-            return result
-        else:
-            raise ValidationError(_("Error in forward geocode: No results found"))
+        # address normalization using melissa
+        #
+        # note: `sanitized` will be an empty dict if melissa
+        # could not normalize a valid address
 
-    def get_address1_from_geocode(self, result):
-        street_number = ""
-        route = ""
-
-        if len(result) == 0 or result[0].get("address_components", None) is None:
-            return None
-
-        for component in result[0]["address_components"]:
-            if "street_number" in component["types"]:
-                street_number = component["long_name"]
-
-            if "route" in component["types"]:
-                # The short name contains abbreviations which
-                # tend to be closer to English.
-                route = component["short_name"]
-
-        if street_number == "" and route == "":
-            return None
-
-        return f"{street_number} {route}".strip()
-
-    def reverse_geocode(self, gmaps, latlang):
-
-        if latlang is None:
-            raise ValidationError(
-                _("Latitude and longitude must be defined for reverse geocode lookup")
-            )
         try:
-            response = gmaps.reverse_geocode(latlang)
-        except (
-            googlemaps.exceptions.HTTPError,
-            googlemaps.exceptions.ApiError,
-            googlemaps.exceptions.TransportError,
-        ):
-            raise ValidationError(_("Error in reverse geocode: Google Maps API error"))
-        except googlemaps.exceptions.Timeout:
-            raise ValidationError(
-                _("Error in reverse geocode: Google Maps API Timeout")
-            )
+            sanitized = melissa.sanitize_address_model(self)
+        except geo.Timeout:
+            raise ValidationError(_("Geo location lookup timed out"))
+        except geo.RequestError as exc:
+            raise ValidationError(_("Geo location lookup failed: {}").format(exc))
 
-        return response
+        # update latitude and longitude
 
-    def parse_reverse_geocode(self, response):
-        data = {}
+        if use_melissa_coords and sanitized:
+            self.latitude = sanitized["latitude"]
+            self.longitude = sanitized["longitude"]
 
-        # Get political entities
-        for address in response:
-            first_component = address["types"]
-            component_type = first_component[0]
-            address_components = address["address_components"]
 
-            # To aid in getting English language results back,
-            # we only use the leading component
-            for component in address_components:
-                if component["types"] == first_component:
-                    data[component_type] = component
-                    continue
+        if geocode and (not use_melissa_coords or sanitized):
+            self.geocode_status = True
+            self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+            if sanitized:
+                sanitized["geocode_status"] = True
+                sanitized["geocode_date"] = self.geocode_date
 
-        return data
+        if save:
+            self.save()
 
-    def normalize_api_response(self):
-        suggested_address = {}
-
-        gmaps = googlemaps.Client(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
-
-        # The forward geocode sets the lat,long
-        forward_result = self.geocode(gmaps, save=True)
-
-        # Set information from forward geocode
-        loc = forward_result[0].get("geometry").get("location")
-        self.latitude = loc.get("lat")
-        self.longitude = loc.get("lng")
-        if (self.latitude is None) or (self.longitude is None):
-            raise ValidationError(
-                _("Latitude and longitude must be defined for reverse geocode lookup")
-            )
-
-        self.geocode_status = True
-        self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
-        self.save()
-
-        suggested_address["latitude"] = self.latitude
-        suggested_address["longitude"] = self.longitude
-        address1 = self.get_address1_from_geocode(forward_result)
-        if address1 is None:
-            raise ValidationError(_("Error in forward geocode: No address returned"))
-        suggested_address["address1"] = address1
-        suggested_address["address2"] = ""
-
-        # The reverse result normalizes some administrative info
-        # (city, state, zip) and translates them into English
-
-        latlang = f"{self.latitude},{self.longitude}"
-        reverse_result = self.reverse_geocode(gmaps, latlang)
-
-        data = self.parse_reverse_geocode(reverse_result)
-        if data.get("locality"):
-            suggested_address["city"] = data["locality"]["long_name"]
-        if data.get("administrative_area_level_1"):
-            suggested_address["state"] = data["administrative_area_level_1"][
-                "long_name"
-            ]
-        if data.get("postal_code"):
-            suggested_address["zipcode"] = data["postal_code"]["long_name"]
-
-        # Set status to True to indicate we've normalized the data
-        suggested_address["geocode_status"] = True
-        suggested_address["geocode_date"] = datetime.datetime.now(datetime.timezone.utc)
-
-        return suggested_address
+        return sanitized
 
 
 class UserOrgAffiliationRequest(models.Model):

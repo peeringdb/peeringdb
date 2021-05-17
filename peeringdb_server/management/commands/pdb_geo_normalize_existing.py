@@ -1,4 +1,3 @@
-import googlemaps
 import reversion
 import csv
 import os
@@ -13,7 +12,7 @@ from django.conf import settings
 from peeringdb_server import models
 from peeringdb_server.serializers import AddressSerializer
 
-API_KEY = settings.GOOGLE_GEOLOC_API_KEY
+API_KEY = settings.MELISSA_KEY
 ADDRESS_FIELDS = AddressSerializer.Meta.fields
 
 
@@ -81,7 +80,6 @@ class Command(BaseCommand):
         else:
             _id = 0
 
-        self.gmaps = googlemaps.Client(API_KEY, timeout=5)
         output_list = self.normalize(reftag, _id, limit=limit)
 
         if self.csv_file:
@@ -101,11 +99,22 @@ class Command(BaseCommand):
         suite = re.findall(pattern, instance.address1) + re.findall(
             pattern, instance.address2
         )
+
+        if suite:
+            return suite
+
+        # Case: "Ste 1" or "Ste B"
+
+        pattern = r"(?<=\b[Ss]te\s)(\w+)"
+        suite = re.findall(pattern, instance.address1) + re.findall(
+            pattern, instance.address2
+        )
+
         return suite
 
     def parse_floor(self, instance):
         # Case "5th floor"
-        pattern_before = r"(\d+)(?:st|nd|th)(?=\s[Ff]loor\b)"
+        pattern_before = r"(\d+)(?:st|nd|rd|th)(?=\s[Ff]loor\b)"
         floor = re.findall(pattern_before, instance.address1) + re.findall(
             pattern_before, instance.address2
         )
@@ -116,6 +125,7 @@ class Command(BaseCommand):
                 pattern_after, instance.address2
             )
         return floor
+
 
     def log_floor_and_ste_changes(self, instance):
         if (instance.floor != "") or (instance.suite != ""):
@@ -185,10 +195,11 @@ class Command(BaseCommand):
 
     def _normalize(self, instance, output_dict, save):
 
-        gmaps = self.gmaps
-
         suite = self.parse_suite(instance)
         floor = self.parse_floor(instance)
+
+        if suite or floor:
+            instance.address2 = ""
 
         if len(suite) > 0:
             instance.suite = ", ".join(suite)
@@ -203,33 +214,14 @@ class Command(BaseCommand):
                 instance.save()
             return
 
-        # The forward geocode gets the lat,long
-        # and returns formatted results for address1
-        # if (instance.latitude is None) or (instance.longitude is None):
-        forward_result = instance.geocode(gmaps)
+        normalized = instance.process_geo_location(save=False, geocode=False)
 
-        loc = forward_result[0].get("geometry").get("location")
-        instance.latitude = loc.get("lat")
-        instance.longitude = loc.get("lng")
-        # only change address1, keep address2 the same
-        address1 = instance.get_address1_from_geocode(forward_result)
-        if address1 is not None:
-            instance.address1 = address1
-        # The reverse result normalizes the administrative levels
-        # (city, state, zip) and translates them into English
-        reverse_result = instance.reverse_geocode(gmaps)
-        data = instance.parse_reverse_geocode(reverse_result)
-
-        if data.get("locality"):
-            instance.city = data["locality"]["long_name"]
-        if data.get("administrative_area_level_1"):
-            instance.state = data["administrative_area_level_1"]["long_name"]
-        if data.get("postal_code"):
-            instance.zipcode = data["postal_code"]["long_name"]
-
-        # Set status to True to indicate we've normalized the data
-        instance.geocode_status = True
-        instance.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+        if normalized:
+            instance.city = normalized["city"]
+            instance.zipcode = normalized["zipcode"]
+            instance.address1 = normalized["address1"]
+            instance.address2 = normalized["address2"]
+            instance.state = normalized["state"]
 
         if save:
             instance.save()
