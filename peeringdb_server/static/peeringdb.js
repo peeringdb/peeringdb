@@ -83,12 +83,10 @@ PeeringDB = {
           }
           if('undefined' == typeof(reply.translation) || 'undefined' == typeof(reply.translation.translatedText)){
               note_o.parent().append( '<div class="editable popin error">Unknown error</div>')
-              console.log(reply);
               return;
           }
           var translation = reply.translation.translatedText.split(' xx22xx ').join('</p><p>');
           note_o.parent().append( '<div class="editable popin info"><p>' + translation + '</p></div>')
-          console.log(translation);
        })
        .fail(function(a,b,c){
          console.log(a,b,c);
@@ -1365,7 +1363,6 @@ twentyc.editable.module.register(
     execute_add : function(trigger, container) {
       this.components.add.editable("export", this.target.data);
       var data = this.target.data;
-      console.log(data)
       this.prepare_data();
       this.target.execute("update", this.components.add, function(response) {
         this.add(data.entity, trigger, container, data);
@@ -1605,8 +1602,6 @@ twentyc.editable.module.register(
         if(response.readonly)
           response.name = response.name + " (read-only)";
         var row = this.add(data.entity, trigger, container, response);
-        console.log(data)
-        console.log(row)
         this.api_key_popin(response.key)
       }.bind(this));
     },
@@ -1626,7 +1621,6 @@ twentyc.editable.module.register(
       row.editable("export", this.target.data);
       var data = this.target.data;
       var id = data.prefix = row.data("edit-id")
-      console.log(this.target, row)
       this.target.execute("update", trigger, function(response) {
       }.bind(this));
     },
@@ -1701,10 +1695,22 @@ twentyc.editable.target.register(
     execute : function() {
       var i, data = this.data_clean(true);
       data.reftag = this.args[1]
+
       for(i in data) {
         if(data[i] && data[i].join)
           data[i] = data[i].join(",")
       }
+
+      if(data.reftag == "ix") {
+        // we want the unit formatted values in the url paramters
+        // so that the unit selection gets persisted in the url
+        let capacity = $('[data-edit-name="capacity__gte"]').data("edit-input-instance");
+        if(data["capacity__gte"])
+          data["capacity__gte"] = capacity.formatted()
+      }
+
+      if(data["undefined"])
+        delete data["undefined"]
       window.location.replace(
         '?'+$.param(data)
       );
@@ -2330,9 +2336,30 @@ twentyc.editable.input.register(
   "autocomplete",
   {
     confirm_handlers : {},
+
+
+    make : function() {
+      let input = this.string_make();
+      let multi = this.source.data('edit-multiple')
+
+      if(multi) {
+        let choices = $('<div>').addClass('autocomplete-choices')
+        input.data('choices_element', choices);
+      }
+
+      return input;
+    },
+
     wire : function() {
+      var widget = this;
       var input = this.element;
       var url = "/autocomplete/"+this.source.data("edit-autocomplete")
+
+      var multi = this.source.data('edit-multiple')
+
+      if(multi) {
+        this.element.data('choices_element').insertAfter(this.element);
+      }
 
       input.yourlabsAutocomplete(
         {
@@ -2343,11 +2370,23 @@ twentyc.editable.input.register(
           inputClick : function(e) { return ; }
         }
       ).input.bind("selectChoice", function(a,b) {
-        input.data("value" , b.data("value"));
-        input.val(b.text());
-        input.removeClass("invalid");
-        input.addClass("valid");
-        this.render_confirm(b.data("value"));
+
+        if(multi) {
+
+          // multiple-select support
+
+          widget.multi_add(b.data("value"), b.text());
+
+        } else {
+
+          // single select only
+
+          input.data("value" , b.data("value"));
+          input.val(b.text());
+          input.removeClass("invalid");
+          input.addClass("valid");
+          this.render_confirm(b.data("value"));
+        }
       }.bind(this));
       // turn off auto-complete firefox workaround
       if(/Firefox/i.test(navigator.userAgent)) {
@@ -2363,6 +2402,49 @@ twentyc.editable.input.register(
 
     },
 
+
+    multi_add : function(value, text) {
+      // update input value
+      let selected = this.element.data("value")
+      if(!selected)
+        selected = []
+      else
+        selected = selected.split(",")
+
+      selected.push(value);
+      this.element.data("value", selected.join(","));
+      this.element.val()
+
+      // update choice display
+      let choices_element = this.element.data('choices_element')
+      let row = $('<div class="alert autocomplete-choice alert-info">').attr('data-value', value);
+      row.attr("data-toggle","tooltip").attr("title", gettext("Click to remove") ).attr("data-placement", "left").tooltip()
+      row.on('click',()=> {
+        row.tooltip("hide")
+        this.multi_remove(value);
+      });
+
+      choices_element.append(
+        row.text(text)
+      );
+    },
+
+    multi_remove : function(value) {
+      let selected = this.element.data("value")
+      let choices_element = this.element.data('choices_element')
+      if(!selected)
+        return;
+      else
+        selected = selected.split(",")
+
+      var index = selected.indexOf(""+value);
+      if(index > -1)
+        selected.splice(index, 1)
+      this.element.data("value", selected.join(","));
+
+      choices_element.find(`[data-value="${value}"]`).detach();
+    },
+
     reset_confirm : function() { this.confirm_node().empty(); },
     render_confirm : function(id) {
       var hdl;
@@ -2373,9 +2455,15 @@ twentyc.editable.input.register(
       return this.source.siblings("[data-autocomplete-confirm]")
     },
     reset : function(resetValue) {
-      twentyc.editable.input.get("base").prototype.reset.call(this, resetValue);
-      this.element.data("value","")
-      this.reset_confirm();
+      let multi = this.source.data('edit-multiple')
+      if(resetValue) {
+        twentyc.editable.input.get("base").prototype.reset.call(this, resetValue);
+        this.element.data("value","")
+        this.reset_confirm();
+        if(multi) {
+          this.element.data("choices_element").empty()
+        }
+      }
     },
     get : function() {
       var val = this.element.data("value");
@@ -2387,17 +2475,45 @@ twentyc.editable.input.register(
       return val;
     },
     set : function(value) {
+      let multi = this.source.data('edit-multiple')
+
+      if(multi && value) {
+
+
+        let i, item;
+        value = value.split(",")
+        for(i = 0; i < value.length; i++) {
+          item = value[i].split(";")
+          this.multi_add(item[0], item[1])
+        }
+
+      } else {
+
       if(value && value.split)
         var t = value.split(";");
       else
         var t = []
       this.element.data("value", t[0]);
       this.element.val(t[1]);
+
+      }
     },
     validate : function() {
       if(!this.source.data("edit-autocomplete-allow-nonexistent")) {
-        if(this.get())
+        let multi = this.source.data('edit-multiple')
+        let val = this.get()
+        if(val) {
+          if(multi) {
+            let i;
+            val = val.split(",")
+            for(i = 0; i < val.length; i++) {
+              if(!( parseInt(val[i]) >0))
+                return false
+            }
+            return true;
+          }
           return this.get() > 0;
+        }
       }
       return true;
     }
@@ -2432,7 +2548,6 @@ twentyc.editable.input.register(
     },
 
     export : function() {
-      console.log("exporting")
       return this.convert(this.get())
     },
 
@@ -2445,10 +2560,12 @@ twentyc.editable.input.register(
     },
 
     validate : function() {
-      console.log("validating")
       // Check if it's an integer
       let value = this.element.val();
       let suffix = value.slice(-1);
+
+      if(this.source.data('edit-required') != "yes" && !value)
+        return true;
 
       if ( $.isNumeric(value) ){
         return true
@@ -2487,6 +2604,169 @@ twentyc.editable.input.register(
 
   },
   "string"
+);
+
+twentyc.editable.input.register(
+  "unit_input",
+  {
+
+    unit_name : "unit",
+    units : [
+      {"id": "unit","name": "Unit"}
+    ],
+    selected_unit : "unit",
+
+    apply : function(value) {
+      this.source.text(this.format_units(value));
+    },
+
+    set : function(value) {
+      let value_to_set = value ? value : this.source.text().trim();
+      let m;
+      value_to_set = ""+value_to_set;
+      if ( m = value_to_set.match(/ ?([a-zA-Z ]+)$/)){
+        this.element.val(value_to_set.replace(/[a-zA-Z ]+$/,''));
+        this.element.data('unit_select').val(m[1]);
+        this.original_unit = m[1];
+      } else {
+        this.set_value(value_to_set)
+      }
+
+      this.element.data('unit_select').insertAfter(this.element);
+    },
+
+    set_value : function(value) {
+      this.element.val(value);
+    },
+
+
+    get_unit : function() {
+      return this.element.data('unit_select').val()
+    },
+
+    changed : function() {
+      let unit_changed = (this.element.data('unit_select').val() != this.original_unit);
+      let value_changed = (this.get() != this.original_value);
+      return (value_changed || unit_changed);
+    },
+
+    make : function() {
+      let input = $('<input class="unit" type="text"></input>')
+      let select = $(`<select name="${this.unit_name}" id="${this.unit_name}">`);
+
+      let selected = this.selected_unit;
+
+      $(this.units).each(function(){
+        let opt = $('<option>')
+        opt.val(this.id).text(this.name)
+        if(selected == this.name)
+          opt.prop('selected', true);
+        select.append(opt);
+      });
+
+      input.data('unit_select', select);
+
+      this.original_unit = select.val();
+
+
+      return input;
+    },
+
+    export : function() {
+      let unit = this.get_unit();
+      let value = this.get();
+      if(!value)
+        return null;
+      return this.convert(value, unit)
+    },
+
+    convert : function(value, unit) {
+      return value;
+    },
+
+    validate : function() {
+      // Check if it's an integer
+      let value = this.element.val();
+      if(!value)
+        return true;
+      if ( $.isNumeric(value) ){
+        return true
+      return false
+      }
+    },
+
+    formatted: function() {
+      return this.get()+this.element.data("unit_select").val()
+    },
+
+
+    format_units : function(value) {
+      return value;
+    },
+
+    reset : function(value) {
+      this.string_reset(value);
+      this.element.data("unit_select").val(this.selected_unit);
+    }
+
+  },
+  "string"
+);
+
+twentyc.editable.input.register(
+  "traffic_capacity",
+  {
+    unit_name : "traffic_capacity",
+    selected_unit : "Gbps",
+    units : [
+      {
+        "name": "Mbps",
+        "id": "Mbps"
+      },
+      {
+        "name": "Gbps",
+        "id": "Gbps"
+      },
+      {
+        "name": "Tbps",
+        "id": "Tbps"
+      }
+    ],
+    convert : function(value, unit) {
+      if ( unit == "Mbps"){
+        return parseInt(value)
+      } else if (unit == "Gbps"){
+        return parseInt(value * 1000);
+      } else if (unit == "Tbps"){
+        return parseInt(value * 1000000);
+      }
+    },
+
+    set_value : function(value) {
+
+      if(value >= 1000000) {
+        value = value / 1000000;
+        this.element.data('unit_select').val('Tbps')
+      } else if(value >= 1000) {
+        value = value / 1000;
+        this.element.data('unit_select').val('Gbps')
+      } else if(value) {
+        this.element.data('unit_select').val('Mbps')
+      }
+
+      this.element.val(value);
+
+    },
+
+    format_units: function(value) {
+      if(!value)
+        return "";
+
+      return value;
+
+    }
+  },
+  "unit_input"
 );
 
 /*
@@ -2568,6 +2848,7 @@ twentyc.data.loaders.assign("countries", "data");
 twentyc.data.loaders.assign("countries_b", "data");
 twentyc.data.loaders.assign("facilities", "data");
 twentyc.data.loaders.assign("sponsors", "data");
+twentyc.data.loaders.assign("my_organizations", "data");
 twentyc.data.loaders.assign("enum/regions", "data");
 twentyc.data.loaders.assign("enum/org_groups", "data");
 twentyc.data.loaders.assign("enum/media", "data");
@@ -2589,7 +2870,9 @@ twentyc.data.loaders.assign("enum/policy_contracts", "data");
 twentyc.data.loaders.assign("enum/visibility", "data");
 twentyc.data.loaders.assign("enum/bool_choice_str", "data");
 twentyc.data.loaders.assign("enum/service_level_types_trunc", "data");
+twentyc.data.loaders.assign("enum/service_level_types_advs", "data");
 twentyc.data.loaders.assign("enum/terms_types_trunc", "data");
+twentyc.data.loaders.assign("enum/terms_types_advs", "data");
 
 $(twentyc.data).on("load-enum/traffic", function(e, payload) {
   var r = {}, i = 0, data=payload.data;

@@ -1329,6 +1329,53 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         return qset.filter(id__in=[i.facility_id for i in q])
 
     @classmethod
+    def not_related_to_net(cls, value=None, filt=None, field="network_id", qset=None):
+        """
+        Returns queryset of Facility objects that
+        are related to the network specified via net_id
+
+        Relationship through netfac -> net
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        filt = make_relation_filter(field, filt, value)
+
+        q = NetworkFacility.handleref.filter(**filt)
+        return qset.exclude(id__in=[i.facility_id for i in q])
+
+    @classmethod
+    def related_to_multiple_networks(cls, value_list=None, field="network_id", qset=None):
+        """
+        Returns queryset of Facility objects that
+        are related to ALL networks specified in the value list
+        (a list of integer network ids)
+
+        Used in Advanced Search (ALL search).
+        Relationship through netfac -> net
+        """
+        if not len(value_list):
+            raise ValueError("List must contain at least one network id")
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        value = value_list.pop(0)
+        filt = make_relation_filter(field, None, value)
+        netfac_qset = NetworkFacility.handleref.filter(**filt)
+        final_queryset = qset.filter(id__in=[nf.facility_id for nf in netfac_qset])
+
+        # Need the intersection of the next networks
+        for value in value_list:
+            filt = make_relation_filter(field, None, value)
+            netfac_qset = NetworkFacility.handleref.filter(**filt)
+            fac_qset = qset.filter(id__in=[nf.facility_id for nf in netfac_qset])
+            final_queryset = final_queryset & fac_qset
+
+        return final_queryset
+
+    @classmethod
     def related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
         """
         Returns queryset of Facility objects that
@@ -1344,6 +1391,23 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
 
         q = InternetExchangeFacility.handleref.filter(**filt)
         return qset.filter(id__in=[i.facility_id for i in q])
+
+    @classmethod
+    def not_related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
+        """
+        Returns queryset of Facility objects that
+        are related to the ixwork specified via ix_id
+
+        Relationship through ixfac -> ix
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        filt = make_relation_filter(field, filt, value)
+
+        q = InternetExchangeFacility.handleref.filter(**filt)
+        return qset.exclude(id__in=[i.facility_id for i in q])
 
     @classmethod
     def overlapping_asns(cls, asns, qset=None):
@@ -1579,6 +1643,53 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return qset.filter(id__in=[nx.ixlan.ix_id for nx in q])
 
     @classmethod
+    def related_to_multiple_networks(cls, value_list=None, field="network_id", qset=None):
+        """
+        Returns queryset of InternetExchange objects that
+        are related to ALL networks specified in the value list
+        (a list of integer network ids)
+
+        Used in Advanced Search (ALL search).
+        Relationship through netixlan -> ixlan
+        """
+        if not len(value_list):
+            raise ValueError("List must contain at least one network id")
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        value = value_list.pop(0)
+        filt = make_relation_filter(field, None, value)
+        netixlan_qset = NetworkIXLan.handleref.filter(**filt).select_related("ixlan")
+        final_queryset = qset.filter(id__in=[nx.ixlan.ix_id for nx in netixlan_qset])
+
+        # Need the intersection of the next networks
+        for value in value_list:
+            filt = make_relation_filter(field, None, value)
+            netixlan_qset = NetworkIXLan.handleref.filter(
+                **filt).select_related("ixlan")
+            ix_qset = qset.filter(id__in=[nx.ixlan.ix_id for nx in netixlan_qset])
+            final_queryset = final_queryset & ix_qset
+
+        return final_queryset
+
+    @classmethod
+    def not_related_to_net(cls, filt=None, value=None, field="network_id", qset=None):
+        """
+        Returns queryset of InternetExchange objects that
+        are not related to the network specified by network_id
+
+        Relationship through netixlan -> ixlan
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        filt = make_relation_filter(field, filt, value)
+        q = NetworkIXLan.handleref.filter(**filt).select_related("ixlan")
+        return qset.exclude(id__in=[nx.ixlan.ix_id for nx in q])
+
+    @classmethod
     def related_to_ipblock(cls, ipblock, qset=None):
         """
         Returns queryset of InternetExchange objects that
@@ -1645,6 +1756,51 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
             qset = cls.handleref.undeleted()
 
         return qset.filter(id__in=shared_exchanges)
+
+    @classmethod
+    def filter_capacity(cls, filt=None, value=None, qset=None):
+        """
+        Returns queryset of InternetExchange objects filtered by capacity
+        in mbits.
+
+        Arguments:
+
+        - filt (`str`|`None`): match operation, None meaning exact match
+          - 'gte': greater than equal
+          - 'lte': less than equal
+          - 'gt': greater than
+          - 'lt': less than
+        - value(`int`): capacity to filter in mbits
+        - qset(`InternetExchange`): if specified will filter ontop of
+          this existing query set
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        # prepar field filters
+
+        if filt:
+            filters = {f"capacity__{filt}": value}
+        else:
+            filters = {"capacity": value}
+
+        # find exchanges that have the matching capacity
+        # exchange capacity is simply the sum of its port speeds
+
+        netixlans = NetworkIXLan.handleref.undeleted()
+        capacity_set = netixlans.values('ixlan_id').annotate(capacity=models.Sum('speed')).filter(**filters)
+
+        # collect ids
+        # since ixlan id == exchange id we can simply use those
+
+        qualifying = [c["ixlan_id"] for c in capacity_set]
+
+        # finally limit the queryset by the ix (ixlan) ids that matched
+        # the capacity filter
+
+        qset = qset.filter(id__in=qualifying)
+        return qset
 
     @property
     def ixlan(self):
@@ -3806,6 +3962,7 @@ class Network(pdb_models.NetworkBase):
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter("ixlan__%s" % field, filt, value)
+
         q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
         return qset.filter(id__in=[i.network_id for i in q])
 
@@ -4058,10 +4215,6 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         self.local_asn = self.network.asn
 
 
-# validate:
-# ip in prefix
-# prefix on lan
-# FIXME - need unique constraint at save time, allow empty string for ipv4/ipv6
 def format_speed(value):
     if value >= 1000000:
         return "%dT" % (value / 10 ** 6)

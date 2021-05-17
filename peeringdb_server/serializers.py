@@ -1399,7 +1399,55 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
 
+        if "org_present" in kwargs:
+            org_list = kwargs.get("org_present")[0].split(",")
+            fac_ids = []
+
+            # relation through netfac
+            fac_ids.extend([
+                netfac.facility_id for netfac in NetworkFacility.objects.filter(network__org_id__in=org_list)
+            ])
+
+            # relation through ixfac
+            fac_ids.extend([
+                ixfac.facility_id for ixfac in InternetExchangeFacility.objects.filter(ix__org_id__in=org_list)
+            ])
+
+            qset = qset.filter(id__in=set(fac_ids))
+
+            filters.update({"org_present": kwargs.get("org_present")[0]})
+
+        if "org_not_present" in kwargs:
+
+            org_list = kwargs.get("org_not_present")[0].split(",")
+            fac_ids = []
+
+            # relation through netfac
+            fac_ids.extend([
+                netfac.facility_id for netfac in NetworkFacility.objects.filter(network__org_id__in=org_list)
+            ])
+
+            # relation through ixfac
+            fac_ids.extend([
+                ixfac.facility_id for ixfac in InternetExchangeFacility.objects.filter(ix__org_id__in=org_list)
+            ])
+
+            qset = qset.exclude(id__in=set(fac_ids))
+
+            filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
+
+        if "all_net" in kwargs:
+            network_id_list = [int(net_id) for net_id in kwargs.get("all_net")[0].split(",")]
+            qset = cls.Meta.model.related_to_multiple_networks(value_list=network_id_list, qset=qset)
+            filters.update({"all_net": kwargs.get("all_net")})
+
+        if "not_net" in kwargs:
+            networks = kwargs.get("not_net")[0].split(",")
+            qset = cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
+            filters.update({"not_net": kwargs.get("not_net")})
+
         return qset, filters
+
 
     def to_internal_value(self, data):
         # if `suggest` keyword is provided, hard-set the org to
@@ -1408,6 +1456,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
         # this happens here so it is done before the validators run
         if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
+
         return super().to_internal_value(data)
 
     def get_org(self, inst):
@@ -2494,6 +2543,7 @@ class InternetExchangeSerializer(ModelSerializer):
                 "net",
                 "net_count",
                 "fac_count",
+                "capacity",
             ],
             cls,
             **kwargs,
@@ -2521,6 +2571,10 @@ class InternetExchangeSerializer(ModelSerializer):
                     flt = {"fac_count": e["value"]}
                 qset = qset.filter(**flt)
 
+
+            if field == "capacity":
+                qset = cls.Meta.model.filter_capacity(qset=qset, **e)
+
         if "ipblock" in kwargs:
             qset = cls.Meta.model.related_to_ipblock(
                 kwargs.get("ipblock", [""])[0], qset=qset
@@ -2528,14 +2582,63 @@ class InternetExchangeSerializer(ModelSerializer):
             filters.update({"ipblock": kwargs.get("ipblock")})
 
         if "name_search" in kwargs:
+
             name = kwargs.get("name_search", [""])[0]
             qset = qset.filter(Q(name__icontains=name) | Q(name_long__icontains=name))
             filters.update({"name_search": kwargs.get("name_search")})
 
         if "asn_overlap" in kwargs:
+
             asns = kwargs.get("asn_overlap", [""])[0].split(",")
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
+
+        if "all_net" in kwargs:
+            network_id_list = [int(net_id) for net_id in kwargs.get("all_net")[0].split(",")]
+            qset = cls.Meta.model.related_to_multiple_networks(value_list=network_id_list, qset=qset)
+            filters.update({"all_net": kwargs.get("all_net")})
+
+        if "not_net" in kwargs:
+            networks = kwargs.get("not_net")[0].split(",")
+            qset = cls.Meta.model.not_related_to_net(filt="in", value=networks, qset=qset)
+            filters.update({"not_net": kwargs.get("not_net")})
+
+        if "org_present" in kwargs:
+            org_list = kwargs.get("org_present")[0].split(",")
+            ix_ids = []
+
+            # relation through netixlan
+            ix_ids.extend([
+                netixlan.ixlan_id for netixlan in NetworkIXLan.objects.filter(network__org_id__in=org_list)
+            ])
+
+            # relation through ixfac
+            ix_ids.extend([
+                ixfac.ix_id for ixfac in InternetExchangeFacility.objects.filter(facility__org_id__in=org_list)
+            ])
+
+            qset = qset.filter(id__in=set(ix_ids))
+
+            filters.update({"org_present": kwargs.get("org_present")[0]})
+
+        if "org_not_present" in kwargs:
+
+            org_list = kwargs.get("org_not_present")[0].split(",")
+            ix_ids = []
+
+            # relation through netixlan
+            ix_ids.extend([
+                netixlan.ixlan_id for netixlan in NetworkIXLan.objects.filter(network__org_id__in=org_list)
+            ])
+
+            # relation through ixfac
+            ix_ids.extend([
+                ixfac.ix_id for ixfac in InternetExchangeFacility.objects.filter(facility__org_id__in=org_list)
+            ])
+
+            qset = qset.exclude(id__in=set(ix_ids))
+
+            filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
 
         return qset, filters
 

@@ -43,6 +43,16 @@ const.NET_TYPES_ADVS[0] = (
     ",%s" % const.NET_TYPES_ADVS[0][0],
     const.NET_TYPES_ADVS[0][1],
 )
+const.SERVICE_LEVEL_TYPES_ADVS = list(const.SERVICE_LEVEL_TYPES[1:])
+const.SERVICE_LEVEL_TYPES_ADVS[0] = (
+    ",{}".format(const.SERVICE_LEVEL_TYPES_ADVS[0][0]),
+    const.SERVICE_LEVEL_TYPES_ADVS[0][1],
+)
+const.TERMS_TYPES_ADVS = list(const.TERMS_TYPES[1:])
+const.TERMS_TYPES_ADVS[0] = (
+    ",{}".format(const.TERMS_TYPES_ADVS[0][0]),
+    const.TERMS_TYPES_ADVS[0][1],
+)
 
 
 const.ORG_GROUPS = (("member", "member"), ("admin", "admin"))
@@ -141,6 +151,8 @@ def enum(request, name):
         "VISIBILITY",
         "SERVICE_LEVEL_TYPES_TRUNC",
         "TERMS_TYPES_TRUNC",
+        "SERVICE_LEVEL_TYPES_ADVS",
+        "TERMS_TYPES_ADVS",
     ]:
         raise Exception("Unknown enum")
 
@@ -176,6 +188,21 @@ def asns(request):
     for net in org.net_set_active.order_by("asn"):
         rv.append({"id": net.asn, "name": net.asn})
     return JsonResponse({"asns": rv})
+
+
+def my_organizations(request):
+    """
+    Returns a JSON response with a list of organization names and ids
+    that the requesting user is a member of
+    """
+    return JsonResponse(
+        {
+            "my_organizations": [
+                {"id": o.id, "name": o.name}
+                for o in request.user.organizations
+            ]
+        }
+    )
 
 
 def organizations(request):
