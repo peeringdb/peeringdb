@@ -1373,25 +1373,18 @@ def view_exchange(request, id):
                 "value": data.get("media", dismiss),
             },
             {
-                "type": "flags",
-                "label": _("Protocols Supported"),
-                "value": [
-                    {
-                        "name": "proto_unicast",
-                        "label": _("Unicast IPv4"),
-                        "value": int(data.get("proto_unicast", False)),
-                    },
-                    {
-                        "name": "proto_multicast",
-                        "label": _("Multicast"),
-                        "value": int(data.get("proto_multicast", False)),
-                    },
-                    {
-                        "name": "proto_ipv6",
-                        "label": _("IPv6"),
-                        "value": int(data.get("proto_ipv6", False)),
-                    },
-                ],
+                "name": "service_level",
+                "type": "list",
+                "data": "enum/service_level_types_trunc",
+                "label": _("Service Level"),
+                "value": data.get("service_level", dismiss),
+            },
+            {
+                "name": "terms",
+                "type": "list",
+                "data": "enum/terms_types_trunc",
+                "label": _("Terms"),
+                "value": data.get("terms", dismiss),
             },
             {
                 "readonly": True,

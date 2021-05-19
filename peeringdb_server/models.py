@@ -4,8 +4,6 @@ import datetime
 from itertools import chain
 import uuid
 import ipaddress
-import googlemaps
-import googlemaps.exceptions
 from pprint import pprint
 import requests
 import reversion
@@ -53,6 +51,7 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_irr_as_set,
 )
+import peeringdb_server.geo as geo
 
 SPONSORSHIP_LEVELS = (
     (1, _("Silver")),
@@ -275,159 +274,68 @@ class GeocodeBaseMixin(models.Model):
     @property
     def geocode_address(self):
         """
-        Returns an address string suitable for googlemaps query
+        Returns an address string suitable for geo api query
         """
         # pylint: disable=missing-format-attribute
         return "{e.address1} {e.address2}, {e.city}, {e.state} {e.zipcode}".format(
             e=self
         )
 
-    def geocode(self, gmaps, save=True):
+    def process_geo_location(self, geocode=True, save=True):
+
         """
-        Sets the latitude, longitude field values of this model by geocoding the
-        address specified in the relevant fields.
+        Sets longitude and latitude
 
-        Argument(s):
-
-            - gmaps: googlemaps instance
+        Will return a dict containing normalized address
+        data
         """
+
+        melissa = geo.Melissa(settings.MELISSA_KEY, timeout=5)
+        gmaps = geo.GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
+
+        # geocode using google
+
+        use_melissa_coords = False
+
         try:
-            result = gmaps.geocode(
-                self.geocode_address,
-                components={"country": self.country.code},
-                language="en",
-            )
-        except (
-            googlemaps.exceptions.HTTPError,
-            googlemaps.exceptions.ApiError,
-            googlemaps.exceptions.TransportError,
-        ):
-            raise ValidationError(_("Error in forward geocode: Google Maps API error"))
-        except googlemaps.exceptions.Timeout:
-            raise ValidationError(
-                _("Error in forward geocode: Google Maps API Timeout")
-            )
+            if geocode:
+                gmaps.geocode(self)
+        except geo.Timeout:
+            raise ValidationError(_("Geo coding timed out"))
+        except geo.RequestError as exc:
+            raise ValidationError(_("Geo coding failed: {}").format(exc))
+        except geo.NotFound:
+            use_melissa_coords = True
 
-        if result and (
-            "street_address" in result[0]["types"]
-            or "establishment" in result[0]["types"]
-            or "premise" in result[0]["types"]
-            or "subpremise" in result[0]["types"]
-        ):
-            return result
-        else:
-            raise ValidationError(_("Error in forward geocode: No results found"))
+        # address normalization using melissa
+        #
+        # note: `sanitized` will be an empty dict if melissa
+        # could not normalize a valid address
 
-    def get_address1_from_geocode(self, result):
-        street_number = ""
-        route = ""
-
-        if len(result) == 0 or result[0].get("address_components", None) is None:
-            return None
-
-        for component in result[0]["address_components"]:
-            if "street_number" in component["types"]:
-                street_number = component["long_name"]
-
-            if "route" in component["types"]:
-                # The short name contains abbreviations which
-                # tend to be closer to English.
-                route = component["short_name"]
-
-        if street_number == "" and route == "":
-            return None
-
-        return f"{street_number} {route}".strip()
-
-    def reverse_geocode(self, gmaps, latlang):
-
-        if latlang is None:
-            raise ValidationError(
-                _("Latitude and longitude must be defined for reverse geocode lookup")
-            )
         try:
-            response = gmaps.reverse_geocode(latlang)
-        except (
-            googlemaps.exceptions.HTTPError,
-            googlemaps.exceptions.ApiError,
-            googlemaps.exceptions.TransportError,
-        ):
-            raise ValidationError(_("Error in reverse geocode: Google Maps API error"))
-        except googlemaps.exceptions.Timeout:
-            raise ValidationError(
-                _("Error in reverse geocode: Google Maps API Timeout")
-            )
+            sanitized = melissa.sanitize_address_model(self)
+        except geo.Timeout:
+            raise ValidationError(_("Geo location lookup timed out"))
+        except geo.RequestError as exc:
+            raise ValidationError(_("Geo location lookup failed: {}").format(exc))
 
-        return response
+        # update latitude and longitude
 
-    def parse_reverse_geocode(self, response):
-        data = {}
+        if use_melissa_coords and sanitized:
+            self.latitude = sanitized["latitude"]
+            self.longitude = sanitized["longitude"]
 
-        # Get political entities
-        for address in response:
-            first_component = address["types"]
-            component_type = first_component[0]
-            address_components = address["address_components"]
+        if geocode and (not use_melissa_coords or sanitized):
+            self.geocode_status = True
+            self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+            if sanitized:
+                sanitized["geocode_status"] = True
+                sanitized["geocode_date"] = self.geocode_date
 
-            # To aid in getting English language results back,
-            # we only use the leading component
-            for component in address_components:
-                if component["types"] == first_component:
-                    data[component_type] = component
-                    continue
+        if save:
+            self.save()
 
-        return data
-
-    def normalize_api_response(self):
-        suggested_address = {}
-
-        gmaps = googlemaps.Client(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
-
-        # The forward geocode sets the lat,long
-        forward_result = self.geocode(gmaps, save=True)
-
-        # Set information from forward geocode
-        loc = forward_result[0].get("geometry").get("location")
-        self.latitude = loc.get("lat")
-        self.longitude = loc.get("lng")
-        if (self.latitude is None) or (self.longitude is None):
-            raise ValidationError(
-                _("Latitude and longitude must be defined for reverse geocode lookup")
-            )
-
-        self.geocode_status = True
-        self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
-        self.save()
-
-        suggested_address["latitude"] = self.latitude
-        suggested_address["longitude"] = self.longitude
-        address1 = self.get_address1_from_geocode(forward_result)
-        if address1 is None:
-            raise ValidationError(_("Error in forward geocode: No address returned"))
-        suggested_address["address1"] = address1
-        suggested_address["address2"] = ""
-
-        # The reverse result normalizes some administrative info
-        # (city, state, zip) and translates them into English
-
-        latlang = f"{self.latitude},{self.longitude}"
-        reverse_result = self.reverse_geocode(gmaps, latlang)
-
-        data = self.parse_reverse_geocode(reverse_result)
-        if data.get("locality"):
-            suggested_address["city"] = data["locality"]["long_name"]
-        if data.get("administrative_area_level_1"):
-            suggested_address["state"] = data["administrative_area_level_1"][
-                "long_name"
-            ]
-        if data.get("postal_code"):
-            suggested_address["zipcode"] = data["postal_code"]["long_name"]
-
-        # Set status to True to indicate we've normalized the data
-        suggested_address["geocode_status"] = True
-        suggested_address["geocode_date"] = datetime.datetime.now(datetime.timezone.utc)
-
-        return suggested_address
+        return sanitized
 
 
 class UserOrgAffiliationRequest(models.Model):
@@ -1277,6 +1185,20 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         Organization, on_delete=models.CASCADE, related_name="fac_set"
     )
     website = models.URLField(_("Website"), blank=False)
+
+    ix_count = models.PositiveIntegerField(
+        _("number of exchanges at this facility"),
+        help_text=_("number of exchanges at this facility"),
+        null=False,
+        default=0,
+    )
+    net_count = models.PositiveIntegerField(
+        _("number of networks at this facility"),
+        help_text=_("number of networks at this facility"),
+        null=False,
+        default=0,
+    )
+
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
     # this afterwards
     class HandleRef:
@@ -1315,6 +1237,55 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         return qset.filter(id__in=[i.facility_id for i in q])
 
     @classmethod
+    def not_related_to_net(cls, value=None, filt=None, field="network_id", qset=None):
+        """
+        Returns queryset of Facility objects that
+        are related to the network specified via net_id
+
+        Relationship through netfac -> net
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        filt = make_relation_filter(field, filt, value)
+
+        q = NetworkFacility.handleref.filter(**filt)
+        return qset.exclude(id__in=[i.facility_id for i in q])
+
+    @classmethod
+    def related_to_multiple_networks(
+        cls, value_list=None, field="network_id", qset=None
+    ):
+        """
+        Returns queryset of Facility objects that
+        are related to ALL networks specified in the value list
+        (a list of integer network ids)
+
+        Used in Advanced Search (ALL search).
+        Relationship through netfac -> net
+        """
+        if not len(value_list):
+            raise ValueError("List must contain at least one network id")
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        value = value_list.pop(0)
+        filt = make_relation_filter(field, None, value)
+        netfac_qset = NetworkFacility.handleref.filter(**filt)
+        final_queryset = qset.filter(id__in=[nf.facility_id for nf in netfac_qset])
+
+        # Need the intersection of the next networks
+        for value in value_list:
+            filt = make_relation_filter(field, None, value)
+            netfac_qset = NetworkFacility.handleref.filter(**filt)
+            fac_qset = qset.filter(id__in=[nf.facility_id for nf in netfac_qset])
+            final_queryset = final_queryset & fac_qset
+
+        return final_queryset
+
+    @classmethod
     def related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
         """
         Returns queryset of Facility objects that
@@ -1330,6 +1301,23 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
 
         q = InternetExchangeFacility.handleref.filter(**filt)
         return qset.filter(id__in=[i.facility_id for i in q])
+
+    @classmethod
+    def not_related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
+        """
+        Returns queryset of Facility objects that
+        are related to the ixwork specified via ix_id
+
+        Relationship through ixfac -> ix
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        filt = make_relation_filter(field, filt, value)
+
+        q = InternetExchangeFacility.handleref.filter(**filt)
+        return qset.exclude(id__in=[i.facility_id for i in q])
 
     @classmethod
     def overlapping_asns(cls, asns, qset=None):
@@ -1399,7 +1387,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     @property
     def netfac_set_active(self):
         """
-        Returns queryset of active NetworkFacility ojects connected to this
+        Returns queryset of active NetworkFacility objects connected to this
         facility
         """
         return self.netfac_set.filter(status="ok")
@@ -1411,13 +1399,6 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         to this facility
         """
         return self.ixfac_set.filter(status="ok")
-
-    @property
-    def net_count(self):
-        """
-        Returns number of Networks at this facility
-        """
-        return self.netfac_set_active.count()
 
     @property
     def view_url(self):
@@ -1475,6 +1456,20 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="ix_set"
+    )
+
+    fac_count = models.PositiveIntegerField(
+        _("number of facilities at this exchange"),
+        help_text=_("number of facilities at this exchange"),
+        null=False,
+        default=0,
+    )
+
+    net_count = models.PositiveIntegerField(
+        _("number of networks at this exchange"),
+        help_text=_("number of networks at this exchange"),
+        null=False,
+        default=0,
     )
 
     @staticmethod
@@ -1558,6 +1553,56 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return qset.filter(id__in=[nx.ixlan.ix_id for nx in q])
 
     @classmethod
+    def related_to_multiple_networks(
+        cls, value_list=None, field="network_id", qset=None
+    ):
+        """
+        Returns queryset of InternetExchange objects that
+        are related to ALL networks specified in the value list
+        (a list of integer network ids)
+
+        Used in Advanced Search (ALL search).
+        Relationship through netixlan -> ixlan
+        """
+        if not len(value_list):
+            raise ValueError("List must contain at least one network id")
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        value = value_list.pop(0)
+        filt = make_relation_filter(field, None, value)
+        netixlan_qset = NetworkIXLan.handleref.filter(**filt).select_related("ixlan")
+        final_queryset = qset.filter(id__in=[nx.ixlan.ix_id for nx in netixlan_qset])
+
+        # Need the intersection of the next networks
+        for value in value_list:
+            filt = make_relation_filter(field, None, value)
+            netixlan_qset = NetworkIXLan.handleref.filter(**filt).select_related(
+                "ixlan"
+            )
+            ix_qset = qset.filter(id__in=[nx.ixlan.ix_id for nx in netixlan_qset])
+            final_queryset = final_queryset & ix_qset
+
+        return final_queryset
+
+    @classmethod
+    def not_related_to_net(cls, filt=None, value=None, field="network_id", qset=None):
+        """
+        Returns queryset of InternetExchange objects that
+        are not related to the network specified by network_id
+
+        Relationship through netixlan -> ixlan
+        """
+
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        filt = make_relation_filter(field, filt, value)
+        q = NetworkIXLan.handleref.filter(**filt).select_related("ixlan")
+        return qset.exclude(id__in=[nx.ixlan.ix_id for nx in q])
+
+    @classmethod
     def related_to_ipblock(cls, ipblock, qset=None):
         """
         Returns queryset of InternetExchange objects that
@@ -1626,37 +1671,53 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return qset.filter(id__in=shared_exchanges)
 
     @classmethod
-    def filter_net_count(cls, filt=None, value=None, qset=None):
-
+    def filter_capacity(cls, filt=None, value=None, qset=None):
         """
-        Filter ix queryset by network count value
+        Returns queryset of InternetExchange objects filtered by capacity
+        in mbits.
 
-        Keyword Arguments:
-            - filt<str>: filter to apply: None, 'lt', 'gt', 'lte', 'gte'
-            - value<int>: value to filter by
-            - qset
+        Arguments:
 
-        Returns:
-            InternetExchange queryset
+        - filt (`str`|`None`): match operation, None meaning exact match
+          - 'gte': greater than equal
+          - 'lte': less than equal
+          - 'gt': greater than
+          - 'lt': less than
+        - value(`int`): capacity to filter in mbits
+        - qset(`InternetExchange`): if specified will filter ontop of
+          this existing query set
         """
 
         if not qset:
-            qset = cls.objects.filter(status="ok")
+            qset = cls.handleref.undeleted()
 
-        value = int(value)
+        # prepar field filters
 
-        if filt == "lt":
-            exchanges = [ix.id for ix in qset if ix.network_count < value]
-        elif filt == "gt":
-            exchanges = [ix.id for ix in qset if ix.network_count > value]
-        elif filt == "gte":
-            exchanges = [ix.id for ix in qset if ix.network_count >= value]
-        elif filt == "lte":
-            exchanges = [ix.id for ix in qset if ix.network_count <= value]
+        if filt:
+            filters = {f"capacity__{filt}": value}
         else:
-            exchanges = [ix.id for ix in qset if ix.network_count == value]
+            filters = {"capacity": value}
 
-        return qset.filter(pk__in=exchanges)
+        # find exchanges that have the matching capacity
+        # exchange capacity is simply the sum of its port speeds
+
+        netixlans = NetworkIXLan.handleref.undeleted()
+        capacity_set = (
+            netixlans.values("ixlan_id")
+            .annotate(capacity=models.Sum("speed"))
+            .filter(**filters)
+        )
+
+        # collect ids
+        # since ixlan id == exchange id we can simply use those
+
+        qualifying = [c["ixlan_id"] for c in capacity_set]
+
+        # finally limit the queryset by the ix (ixlan) ids that matched
+        # the capacity filter
+
+        qset = qset.filter(id__in=qualifying)
+        return qset
 
     @property
     def ixlan(self):
@@ -1687,15 +1748,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         of this entity
         """
         return self.name
-
-    @property
-    def network_count(self):
-        """
-        Returns count of networks at this exchange
-        """
-        qset = NetworkIXLan.objects.filter(ixlan__ix_id=self.id, status="ok")
-        qset = qset.values("network_id").annotate(count=models.Count("network_id"))
-        return len(qset)
 
     @property
     def ixlan_set_active(self):
@@ -1740,6 +1792,39 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         )
 
     @property
+    def derived_proto_unicast(self):
+        """
+        Returns a value for "proto_unicast" derived from the exchanges's
+        ixpfx records.
+
+        If the ix has a IPv4 ixpfx, proto_unicast should be True
+        """
+        return self.ixlan.ixpfx_set_active.filter(protocol="IPv4").exists()
+
+    @property
+    def derived_proto_ipv6(self):
+        """
+        Returns a value for "proto_ipv6" derived from the exchanges's
+        ixpfx records.
+
+        If the ix has a IPv6 ixpfx, proto_ipv6 should be True
+        """
+        return self.ixlan.ixpfx_set_active.filter(protocol="IPv6").exists()
+
+    @property
+    def derived_network_count(self):
+        """
+        Returns an ad hoc count of networks attached to an Exchange.
+        Used in the deletable property to ensure an accurate count
+        even if net_count signals are not being used.
+        """
+        return (
+            NetworkIXLan.objects.select_related("network")
+            .filter(ixlan__ix_id=self.id, status="ok")
+            .aggregate(net_count=models.Count("network_id", distinct=True))["net_count"]
+        )
+
+    @property
     def deletable(self):
         """
         Returns whether or not the exchange is currently
@@ -1760,7 +1845,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
                 "Exchange has active facility connection(s): {} ..."
             ).format(facility_names)
             return False
-        elif self.network_count > 0:
+        elif self.derived_network_count > 0:
             self._not_deletable_reason = _("Exchange has active peer(s)")
             return False
         else:
@@ -3662,6 +3747,20 @@ class Network(pdb_models.NetworkBase):
     netfac_updated = models.DateTimeField(blank=True, null=True)
     poc_updated = models.DateTimeField(blank=True, null=True)
 
+    ix_count = models.PositiveIntegerField(
+        _("number of exchanges at this network"),
+        help_text=_("number of exchanges at this network"),
+        null=False,
+        default=0,
+    )
+
+    fac_count = models.PositiveIntegerField(
+        _("number of facilities at this network"),
+        help_text=_("number of facilities at this network"),
+        null=False,
+        default=0,
+    )
+
     @staticmethod
     def autocomplete_search_fields():
         return (
@@ -3779,6 +3878,7 @@ class Network(pdb_models.NetworkBase):
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter("ixlan__%s" % field, filt, value)
+
         q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
         return qset.filter(id__in=[i.network_id for i in q])
 
@@ -4031,10 +4131,6 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         self.local_asn = self.network.asn
 
 
-# validate:
-# ip in prefix
-# prefix on lan
-# FIXME - need unique constraint at save time, allow empty string for ipv4/ipv6
 def format_speed(value):
     if value >= 1000000:
         return "%dT" % (value / 10 ** 6)

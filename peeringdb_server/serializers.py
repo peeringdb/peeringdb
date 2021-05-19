@@ -154,8 +154,8 @@ class GeocodeSerializerMixin(object):
         if not geosync_info_present:
             return False
 
-        # We do not need to resync if floor, suite, or address2 are changed
-        ignored_fields = ["floor", "suite", "address2"]
+        # We do not need to resync if floor, suite and geo coords are changed
+        ignored_fields = ["floor", "suite", "latitude", "longitude"]
         geocode_fields = [
             f for f in AddressSerializer.Meta.fields if f not in ignored_fields
         ]
@@ -207,6 +207,9 @@ class GeocodeSerializerMixin(object):
         a address suggestion should be provided to the user.
         """
 
+        if not suggested_address:
+            return False
+
         for key in ["address1", "city", "state", "zipcode"]:
             suggested_val = suggested_address.get(key, None)
             instance_val = getattr(instance, key, None)
@@ -232,10 +235,8 @@ class GeocodeSerializerMixin(object):
             return instance
 
         if need_geosync:
-            print("Normalizing geofields")
             try:
-                suggested_address = instance.normalize_api_response()
-                print(suggested_address)
+                suggested_address = instance.process_geo_location()
 
                 if self.needs_address_suggestion(suggested_address, instance):
                     self._add_meta_information(
@@ -263,7 +264,7 @@ class GeocodeSerializerMixin(object):
 
         if self._geosync_information_present(instance, validated_data):
             try:
-                suggested_address = instance.normalize_api_response()
+                suggested_address = instance.process_geo_location()
 
                 if self.needs_address_suggestion(suggested_address, instance):
                     self._add_meta_information(
@@ -1157,7 +1158,14 @@ class ModelSerializer(serializers.ModelSerializer):
 
                 if request.method == "POST":
                     self.instance = instance
-                    self._undelete = True
+
+                    if type(instance) in QUEUE_ENABLED:
+                        self._reapprove = True
+                        self._undelete = False
+                    else:
+                        self._reapprove = False
+                        self._undelete = True
+
                 elif request.method == "PUT":
                     for field in filters.keys():
                         if field == "status":
@@ -1184,7 +1192,11 @@ class ModelSerializer(serializers.ModelSerializer):
         """
         instance = super().save(**kwargs)
 
-        if instance.status == "deleted" and getattr(self, "_undelete", False):
+        if instance.status == "deleted" and getattr(self, "_reapprove", False):
+            instance.status = "pending"
+            instance.save()
+
+        elif instance.status == "deleted" and getattr(self, "_undelete", False):
             instance.status = "ok"
             instance.save()
 
@@ -1300,8 +1312,6 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
     org = serializers.SerializerMethodField()
 
-    net_count = serializers.SerializerMethodField()
-
     suggest = serializers.BooleanField(required=False, write_only=True)
 
     website = serializers.URLField()
@@ -1340,6 +1350,7 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                 "npanxx",
                 "notes",
                 "net_count",
+                "ix_count",
                 "suggest",
                 "sales_email",
                 "sales_phone",
@@ -1361,7 +1372,9 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
 
         qset = qset.select_related("org")
         filters = get_relation_filters(
-            ["net_id", "net", "ix_id", "ix", "org_name", "net_count"], cls, **kwargs
+            ["net_id", "net", "ix_id", "ix", "org_name", "ix_count", "net_count"],
+            cls,
+            **kwargs,
         )
 
         for field, e in list(filters.items()):
@@ -1373,26 +1386,91 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
             if field == "org_name":
                 flt = {"org__name__%s" % (e["filt"] or "icontains"): e["value"]}
                 qset = qset.filter(**flt)
-            elif field == "network_count":
-                if e["filt"]:
-                    flt = {"net_count_a__%s" % e["filt"]: e["value"]}
-                else:
-                    flt = {"net_count_a": e["value"]}
 
-                qset = qset.annotate(
-                    net_count_a=Sum(
-                        Case(
-                            When(netfac_set__status="ok", then=1),
-                            default=0,
-                            output_field=IntegerField(),
-                        )
-                    )
-                ).filter(**flt)
+            if field == "network_count":
+                if e["filt"]:
+                    flt = {"net_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"net_count": e["value"]}
+                qset = qset.filter(**flt)
 
         if "asn_overlap" in kwargs:
             asns = kwargs.get("asn_overlap", [""])[0].split(",")
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
+
+        if "org_present" in kwargs:
+            org_list = kwargs.get("org_present")[0].split(",")
+            fac_ids = []
+
+            # relation through netfac
+            fac_ids.extend(
+                [
+                    netfac.facility_id
+                    for netfac in NetworkFacility.objects.filter(
+                        network__org_id__in=org_list
+                    )
+                ]
+            )
+
+            # relation through ixfac
+            fac_ids.extend(
+                [
+                    ixfac.facility_id
+                    for ixfac in InternetExchangeFacility.objects.filter(
+                        ix__org_id__in=org_list
+                    )
+                ]
+            )
+
+            qset = qset.filter(id__in=set(fac_ids))
+
+            filters.update({"org_present": kwargs.get("org_present")[0]})
+
+        if "org_not_present" in kwargs:
+
+            org_list = kwargs.get("org_not_present")[0].split(",")
+            fac_ids = []
+
+            # relation through netfac
+            fac_ids.extend(
+                [
+                    netfac.facility_id
+                    for netfac in NetworkFacility.objects.filter(
+                        network__org_id__in=org_list
+                    )
+                ]
+            )
+
+            # relation through ixfac
+            fac_ids.extend(
+                [
+                    ixfac.facility_id
+                    for ixfac in InternetExchangeFacility.objects.filter(
+                        ix__org_id__in=org_list
+                    )
+                ]
+            )
+
+            qset = qset.exclude(id__in=set(fac_ids))
+
+            filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
+
+        if "all_net" in kwargs:
+            network_id_list = [
+                int(net_id) for net_id in kwargs.get("all_net")[0].split(",")
+            ]
+            qset = cls.Meta.model.related_to_multiple_networks(
+                value_list=network_id_list, qset=qset
+            )
+            filters.update({"all_net": kwargs.get("all_net")})
+
+        if "not_net" in kwargs:
+            networks = kwargs.get("not_net")[0].split(",")
+            qset = cls.Meta.model.not_related_to_net(
+                filt="in", value=networks, qset=qset
+            )
+            filters.update({"not_net": kwargs.get("not_net")})
 
         return qset, filters
 
@@ -1403,13 +1481,11 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
         # this happens here so it is done before the validators run
         if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
+
         return super().to_internal_value(data)
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
-
-    def get_net_count(self, inst):
-        return inst.net_count
 
     def validate(self, data):
         try:
@@ -1980,6 +2056,8 @@ class NetworkSerializer(ModelSerializer):
             "info_multicast",
             "info_ipv6",
             "info_never_via_route_servers",
+            "ix_count",
+            "fac_count",
             "notes",
             "netixlan_updated",
             "netfac_updated",
@@ -2033,6 +2111,8 @@ class NetworkSerializer(ModelSerializer):
                 "netfac",
                 "fac",
                 "fac_id",
+                "fac_count",
+                "ix_count",
             ],
             cls,
             **kwargs,
@@ -2044,6 +2124,13 @@ class NetworkSerializer(ModelSerializer):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
                     qset = fn(qset=qset, field=field, **e)
                     break
+
+            if field == "facility_count":
+                if e["filt"]:
+                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"fac_count": e["value"]}
+                qset = qset.filter(**flt)
 
         if "name_search" in kwargs:
             name = kwargs.get("name_search", [""])[0]
@@ -2386,8 +2473,6 @@ class InternetExchangeSerializer(ModelSerializer):
         getter="facility",
     )
 
-    net_count = serializers.SerializerMethodField()
-
     # suggest = serializers.BooleanField(required=False, write_only=True)
 
     ixf_net_count = serializers.IntegerField(read_only=True)
@@ -2414,6 +2499,9 @@ class InternetExchangeSerializer(ModelSerializer):
         required=False,
         write_only=True,
     )
+
+    proto_unicast = serializers.SerializerMethodField()
+    proto_ipv6 = serializers.SerializerMethodField()
 
     validators = [
         RequiredForMethodValidator("prefix", ["POST"]),
@@ -2451,12 +2539,17 @@ class InternetExchangeSerializer(ModelSerializer):
             # "suggest",
             "prefix",
             "net_count",
+            "fac_count",
             "ixf_net_count",
             "ixf_last_import",
+            "service_level",
+            "terms",
         ] + HandleRefSerializer.Meta.fields
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]
         list_exclude = ["org"]
+
+        read_only_fields = ["proto_multicast"]
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
@@ -2474,12 +2567,15 @@ class InternetExchangeSerializer(ModelSerializer):
                 "net_id",
                 "net",
                 "net_count",
+                "fac_count",
+                "capacity",
             ],
             cls,
             **kwargs,
         )
 
         for field, e in list(filters.items()):
+
             for valid in ["ixlan", "ixfac", "fac", "net"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -2487,7 +2583,21 @@ class InternetExchangeSerializer(ModelSerializer):
                     break
 
             if field == "network_count":
-                qset = cls.Meta.model.filter_net_count(qset=qset, **e)
+                if e["filt"]:
+                    flt = {"net_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"net_count": e["value"]}
+                qset = qset.filter(**flt)
+
+            if field == "facility_count":
+                if e["filt"]:
+                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                else:
+                    flt = {"fac_count": e["value"]}
+                qset = qset.filter(**flt)
+
+            if field == "capacity":
+                qset = cls.Meta.model.filter_capacity(qset=qset, **e)
 
         if "ipblock" in kwargs:
             qset = cls.Meta.model.related_to_ipblock(
@@ -2496,14 +2606,89 @@ class InternetExchangeSerializer(ModelSerializer):
             filters.update({"ipblock": kwargs.get("ipblock")})
 
         if "name_search" in kwargs:
+
             name = kwargs.get("name_search", [""])[0]
             qset = qset.filter(Q(name__icontains=name) | Q(name_long__icontains=name))
             filters.update({"name_search": kwargs.get("name_search")})
 
         if "asn_overlap" in kwargs:
+
             asns = kwargs.get("asn_overlap", [""])[0].split(",")
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
+
+        if "all_net" in kwargs:
+            network_id_list = [
+                int(net_id) for net_id in kwargs.get("all_net")[0].split(",")
+            ]
+            qset = cls.Meta.model.related_to_multiple_networks(
+                value_list=network_id_list, qset=qset
+            )
+            filters.update({"all_net": kwargs.get("all_net")})
+
+        if "not_net" in kwargs:
+            networks = kwargs.get("not_net")[0].split(",")
+            qset = cls.Meta.model.not_related_to_net(
+                filt="in", value=networks, qset=qset
+            )
+            filters.update({"not_net": kwargs.get("not_net")})
+
+        if "org_present" in kwargs:
+            org_list = kwargs.get("org_present")[0].split(",")
+            ix_ids = []
+
+            # relation through netixlan
+            ix_ids.extend(
+                [
+                    netixlan.ixlan_id
+                    for netixlan in NetworkIXLan.objects.filter(
+                        network__org_id__in=org_list
+                    )
+                ]
+            )
+
+            # relation through ixfac
+            ix_ids.extend(
+                [
+                    ixfac.ix_id
+                    for ixfac in InternetExchangeFacility.objects.filter(
+                        facility__org_id__in=org_list
+                    )
+                ]
+            )
+
+            qset = qset.filter(id__in=set(ix_ids))
+
+            filters.update({"org_present": kwargs.get("org_present")[0]})
+
+        if "org_not_present" in kwargs:
+
+            org_list = kwargs.get("org_not_present")[0].split(",")
+            ix_ids = []
+
+            # relation through netixlan
+            ix_ids.extend(
+                [
+                    netixlan.ixlan_id
+                    for netixlan in NetworkIXLan.objects.filter(
+                        network__org_id__in=org_list
+                    )
+                ]
+            )
+
+            # relation through ixfac
+            ix_ids.extend(
+                [
+                    ixfac.ix_id
+                    for ixfac in InternetExchangeFacility.objects.filter(
+                        facility__org_id__in=org_list
+                    )
+                ]
+            )
+
+            qset = qset.exclude(id__in=set(ix_ids))
+
+            filters.update({"org_not_present": kwargs.get("org_not_present")[0]})
 
         return qset, filters
 
@@ -2580,8 +2765,11 @@ class InternetExchangeSerializer(ModelSerializer):
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
 
-    def get_net_count(self, inst):
-        return inst.network_count
+    def get_proto_ipv6(self, inst):
+        return inst.derived_proto_ipv6
+
+    def get_proto_unicast(self, inst):
+        return inst.derived_proto_unicast
 
     def validate(self, data):
         try:

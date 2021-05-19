@@ -177,6 +177,16 @@ def ref_tag(value):
 
 
 @register.filter
+def autocomplete_preload_net(value):
+    if not value:
+        return ""
+
+    qset = Network.objects.filter(status="ok", id__in=value.split(","))
+
+    return ",".join([f"{net.id};{net.name}" for net in qset])
+
+
+@register.filter
 def pretty_speed(value):
     if not value:
         return ""

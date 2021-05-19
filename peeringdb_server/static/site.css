@@ -946,6 +946,22 @@ textarea {
 }
 
 
+
+div.create-form div.editable.input-frame > input.unit,
+div.advanced-search-view div.editable.input-frame > input.unit,
+div.view div.editable.input-frame > input.unit {
+  width: 75% !important;
+  display: inline;
+}
+
+div.create-form div.editable > input.unit ~ select,
+div.advanced-search-view div.editable.input-frame > input.unit ~ select,
+div.view div.editable.input-frame > input.unit ~ select {
+  width: 25%;
+  display: inline;
+}
+
+
 .interactive,
 a[data-edit-action]:not(.btn) {
   cursor: pointer;
@@ -1093,6 +1109,17 @@ input.editable.autocomplete.valid {
 }
 input.editable.autocomplete.invalid {
   color: #D71E1E;
+}
+
+div.autocomplete-choices {
+  padding: 5px;
+}
+
+div.alert.autocomplete-choice {
+  margin-bottom: 2px;
+  margin-top: 2px;
+  padding: 5px;
+  cursor: pointer;
 }
 
 span.yourlabs-autocomplete > span > div.sub {

@@ -280,3 +280,12 @@ class Mock:
 
     def ixf_last_import(self, data, reftag=None):
         return None
+
+    def ix_count(self, data, reftag=None):
+        return 0
+
+    def fac_count(self, data, reftag=None):
+        return 0
+
+    def net_count(self, data, reftag=None):
+        return 0

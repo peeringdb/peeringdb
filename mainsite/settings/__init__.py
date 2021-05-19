@@ -242,6 +242,7 @@ set_option("DATABASE_PASSWORD", "")
 
 # Keys
 
+set_from_env("MELISSA_KEY")
 set_from_env("GOOGLE_GEOLOC_API_KEY")
 
 set_from_env("RDAP_LACNIC_APIKEY")

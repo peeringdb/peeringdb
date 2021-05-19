@@ -5,7 +5,7 @@ from django.test import Client, RequestFactory
 
 import reversion
 
-from peeringdb_server.models import User, Organization
+from peeringdb_server.models import User, Organization, Network
 from peeringdb_server import autocomplete_views
 from .util import ClientCase
 
@@ -42,3 +42,38 @@ class TestAutocomplete(ClientCase):
 
         assert reversion.models.Version.objects.all().count() == 4
         assert len(content.get("results")) == 2
+
+    def test_network_autocomplete(self):
+        org = Organization.objects.create(name="Test Org", status="ok")
+        net = Network.objects.create(
+            name="First Network", asn=1000, status="ok", org=org
+        )
+        net = Network.objects.create(
+            name="Second Network", asn=2000, status="ok", org=org
+        )
+
+        url = reverse("autocomplete-net")
+
+        req = self.factory.get(f"{url}?q=First")
+        rsp = autocomplete_views.NetworkAutocomplete.as_view()(req).content.decode(
+            "utf-8"
+        )
+
+        assert "First" in rsp
+        assert "Second" not in rsp
+
+        req = self.factory.get(f"{url}?q=1000")
+        rsp = autocomplete_views.NetworkAutocomplete.as_view()(req).content.decode(
+            "utf-8"
+        )
+
+        assert "First" in rsp
+        assert "Second" not in rsp
+
+        req = self.factory.get(f"{url}?q=Network")
+        rsp = autocomplete_views.NetworkAutocomplete.as_view()(req).content.decode(
+            "utf-8"
+        )
+
+        assert "First" in rsp
+        assert "Second" in rsp
