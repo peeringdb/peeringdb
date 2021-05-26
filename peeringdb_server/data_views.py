@@ -196,7 +196,7 @@ def my_organizations(request):
     that the requesting user is a member of
     """
     if not request.user.is_authenticated:
-        return JsonResponse({"my_organizations":[]})
+        return JsonResponse({"my_organizations": []})
 
     return JsonResponse(
         {
