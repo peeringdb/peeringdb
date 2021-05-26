@@ -195,6 +195,9 @@ def my_organizations(request):
     Returns a JSON response with a list of organization names and ids
     that the requesting user is a member of
     """
+    if not request.user.is_authenticated:
+        return JsonResponse({"my_organizations":[]})
+
     return JsonResponse(
         {
             "my_organizations": [
