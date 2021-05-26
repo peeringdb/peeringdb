@@ -115,10 +115,11 @@ def test_affiliate_to_nonexisting_org_multiple(client):
     assert response.status_code == 200
     assert UserOrgAffiliationRequest.objects.count() == 2
 
+
 @pytest.mark.django_db
 def test_adv_search_init():
     client = Client()
-    response = client.get('/advanced_search')
+    response = client.get("/advanced_search")
     assert response.status_code == 200
 
     user = User.objects.create(
@@ -130,7 +131,5 @@ def test_adv_search_init():
 
     client.login(username="test", password="test1234")
 
-    response = client.get('/advanced_search')
+    response = client.get("/advanced_search")
     assert response.status_code == 200
-
-
