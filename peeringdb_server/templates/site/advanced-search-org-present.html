@@ -13,7 +13,7 @@
           <div data-edit-type="select"
                data-edit-data="my_organizations"
                data-edit-multiple="yes"
-               {% if request.user.id %}
+               {% if request.user.organizations %}
                data-edit-value="{{ request.GET.org_present|default:request.user.organizations.0.id }}"
                {% else %}
                data-edit-value=""
