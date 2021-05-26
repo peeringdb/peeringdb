@@ -1,5 +1,6 @@
 import pytest
 from rest_framework.test import APIClient
+from django.test import Client
 
 from peeringdb_server.models import (
     Network,
@@ -113,3 +114,22 @@ def test_affiliate_to_nonexisting_org_multiple(client):
     response = client.post(URL, other_data)
     assert response.status_code == 200
     assert UserOrgAffiliationRequest.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_adv_search_init():
+    client = Client()
+    response = client.get("/advanced_search")
+    assert response.status_code == 200
+
+    user = User.objects.create(
+        username="test",
+        email="test@localhost",
+    )
+    user.set_password("test1234")
+    user.save()
+
+    client.login(username="test", password="test1234")
+
+    response = client.get("/advanced_search")
+    assert response.status_code == 200
