@@ -100,3 +100,13 @@ def test_my_organizations():
 
     assert response.status_code == 200
     assert len(response.json()["my_organizations"]) == 1
+
+@pytest.mark.django_db
+def test_my_organizations_anon():
+    call_command("pdb_generate_test_data", limit=3, commit=True)
+
+    client = Client()
+    response = client.get("/data/my_organizations")
+
+    assert response.status_code == 200
+    assert len(response.json()["my_organizations"]) == 0
