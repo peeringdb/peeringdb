@@ -1581,7 +1581,7 @@ class Importer:
         for notification in self.notifications:
 
             ixf_member_data = notification["ixf_member_data"]
-            action = notification["action"]
+            action = ixf_member_data.action
             typ = notification["typ"]
             notify_ix = notification["ix"]
             notify_net = notification["net"]
@@ -1596,6 +1596,10 @@ class Importer:
 
             if typ == "protocol-conflict":
                 action = "protocol_conflict"
+
+            # noop proposals are not actionable (#965)
+            if action == "noop":
+                continue
 
             # in some edge cases (ip4 set on netixlan, network indicating
             # only ipv6 support) we can get empty modify notifications
