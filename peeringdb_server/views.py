@@ -586,6 +586,10 @@ def view_verify(request):
         if EmailAddress.objects.filter(user=request.user).exists():
             EmailAddress.objects.filter(user=request.user).delete()
 
+        # email hasn't change, so we just do nothing
+        if request.user.email == request.POST.get("email"):
+            return JsonResponse({"status": "ok"})
+
         request.user.email = request.POST.get("email")
 
         if (

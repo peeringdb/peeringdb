@@ -227,6 +227,42 @@ class AsnAutomationTestCase(TestCase):
         self.assertEqual(net.status, "ok")
         self.assertEqual(net.org.status, "ok")
 
+    def test_reevaluate(self):
+        """
+        tests re-check of affiliation requests
+        """
+        asn_ok = 9000001
+
+        reset_group_ids()
+
+        # test 1: test affiliation to asn that has RiR entry and user relationship
+        # cannot be verified (ASN 9000002)
+        request = self.factory.post("/affiliate-to-org", data={"asn": asn_ok})
+        request.user = self.user_b
+        request._dont_enforce_csrf_checks = True
+        resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
+        self.assertEqual(resp.get("status"), "ok")
+
+        net = models.Network.objects.get(asn=asn_ok)
+
+        assert not net.org.admin_usergroup.user_set.filter(id=self.user_b.id).exists()
+
+        # simulate email change
+        old_email = self.user_b.email
+        self.user_b.email = self.user_a.email
+        self.user_b.save()
+
+        self.user_b.recheck_affiliation_requests()
+
+        ticket = models.DeskProTicket.objects.get(
+            subject=f"[{settings.RELEASE_ENV}] [ASNAUTO] Ownership claim granted to Org 'ORG AS{asn_ok}' for user 'user_b'"
+        )
+
+        assert net.org.admin_usergroup.user_set.filter(id=self.user_b.id).exists()
+
+        self.user_b.email = old_email
+        self.user_b.save()
+
     def test_affiliate_limit(self):
         """
         test affiliation request limit (fail when there is n pending
