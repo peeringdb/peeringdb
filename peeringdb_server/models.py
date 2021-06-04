@@ -4510,6 +4510,31 @@ class User(AbstractBaseUser, PermissionsMixin):
             user=self, status__in=["denied", "canceled"]
         ).delete()
 
+    def recheck_affiliation_requests(self):
+        """
+        Will re-evaluate pending affiliation requests to unclaimed
+        ASN orgs
+
+        This allows a user with such a pending affiliation request to
+        change ther email and re-check against rdap data for automatic
+        ownership approval (#375)
+        """
+
+        for req in self.pending_affiliation_requests.filter(asn__gt=0):
+
+            # we dont want to re-evaluate for affiliation requests
+            # with organizations that already have admin users managing them
+            if req.org_id and req.org.admin_usergroup.user_set.exists():
+                continue
+
+            # cancel current request
+            req.delete()
+
+            # reopen request
+            UserOrgAffiliationRequest.objects.create(
+                user=self, org=req.org, asn=req.asn, status="pending"
+            )
+
     def get_locale(self):
         "Returns user preferred language."
         return self.locale
@@ -4674,6 +4699,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             except IndexError, inst:
                 pass
         """
+
         # Exact email matching
         for email in rdap.emails:
             if email.lower() == self.email.lower():
