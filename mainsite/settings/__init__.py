@@ -572,6 +572,7 @@ AUTHENTICATION_BACKENDS += (
 
 MIDDLEWARE += (
     "peeringdb_server.maintenance.Middleware",
+    "peeringdb_server.middleware.CurrentRequestContext",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
 )
 

@@ -3,9 +3,10 @@ import os
 import pytest
 import requests
 
-from django.test import override_settings
+from django.test import override_settings, RequestFactory
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
+from django.contrib.auth import get_user_model
 
 from peeringdb_server.validators import (
     validate_address_space,
@@ -23,9 +24,12 @@ from peeringdb_server.models import (
     IXLanPrefix,
     Network,
     NetworkContact,
+    NetworkIXLan,
     Facility,
     ProtectedAction,
 )
+
+from peeringdb_server.context import current_request
 
 pytestmark = pytest.mark.django_db
 
@@ -301,3 +305,83 @@ def test_validate_ixpfx_ixlan_status_match():
         exc2.value.args[0]
         == "IXLanPrefix with status 'pending' cannot be linked to a IXLan with status 'deleted'."
     )
+
+
+@pytest.mark.django_db
+@override_settings(
+    DATA_QUALITY_MAX_PREFIX_V4_LIMIT=500000,
+    DATA_QUALITY_MAX_PREFIX_V6_LIMIT=500000,
+    DATA_QUALITY_MIN_PREFIXLEN_V4=24,
+    DATA_QUALITY_MAX_PREFIXLEN_V4=24,
+    DATA_QUALITY_MIN_PREFIXLEN_V6=48,
+    DATA_QUALITY_MAX_PREFIXLEN_V6=48,
+    DATA_QUALITY_MAX_IRR_DEPTH=3,
+    DATA_QUALITY_MIN_SPEED=10,
+    DATA_QUALITY_MAX_SPEED=100,
+)
+def test_bypass_validation():
+
+    User = get_user_model()
+
+    superuser = User.objects.create_user(
+        username="superuser",
+        password="superuser",
+        email="su@localhost",
+        is_superuser=True,
+    )
+    user = User.objects.create_user(
+        username="user", password="user", email="user@localhost"
+    )
+
+    factory = RequestFactory()
+
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(
+        name="Text exchange",
+        status="ok",
+        org=org,
+        country="US",
+        city="Some city",
+        region_continent="North America",
+        media="Ethernet",
+    )
+    net = Network.objects.create(name="Text network", asn=12345, status="ok", org=org)
+
+    # super user should bypass validation
+
+    request = factory.get("/")
+    request.user = superuser
+    with current_request(request):
+        validate_address_space("37.77.32.0/20")
+        validate_address_space("131.72.77.240/28")
+        validate_address_space("2403:c240::/32")
+        validate_address_space("2001:504:0:2::/64")
+        validate_info_prefixes4(500001)
+        validate_info_prefixes6(500001)
+        NetworkIXLan(speed=1, network=net, ixlan=ix.ixlan).clean()
+        NetworkIXLan(speed=1000, network=net, ixlan=ix.ixlan).clean()
+        validate_irr_as_set("ripe::as-foo:as123:as345:as678")
+
+    # user should NOT bypass validation
+
+    request = factory.get("/")
+    request.user = user
+    with current_request(request):
+        with pytest.raises(ValidationError):
+            validate_address_space("37.77.32.0/20")
+        with pytest.raises(ValidationError):
+            validate_address_space("131.72.77.240/28")
+        with pytest.raises(ValidationError):
+            validate_address_space("2403:c240::/32")
+        with pytest.raises(ValidationError):
+            validate_address_space("2001:504:0:2::/64")
+        with pytest.raises(ValidationError):
+            validate_info_prefixes4(500001)
+        with pytest.raises(ValidationError):
+            validate_info_prefixes6(500001)
+        with pytest.raises(ValidationError):
+            NetworkIXLan(speed=1, network=net, ixlan=ix.ixlan).clean()
+        with pytest.raises(ValidationError):
+            NetworkIXLan(speed=1000, network=net, ixlan=ix.ixlan).clean()
+        with pytest.raises(ValidationError):
+            validate_irr_as_set("ripe::as-foo:as123:as345:as678")
