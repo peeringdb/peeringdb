@@ -86,6 +86,7 @@ settings.configure(
         "django.contrib.auth.middleware.AuthenticationMiddleware",
         "django.contrib.messages.middleware.MessageMiddleware",
         "peeringdb_server.maintenance.Middleware",
+        "peeringdb_server.middleware.CurrentRequestContext",
     ),
     SOUTH_TESTS_MIGRATE=False,
     SOUTH_SKIP_TESTS=True,

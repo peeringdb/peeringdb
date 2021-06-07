@@ -51,6 +51,7 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_irr_as_set,
 )
+from peeringdb_server.request import bypass_validation
 import peeringdb_server.geo as geo
 
 SPONSORSHIP_LEVELS = (
@@ -4269,6 +4270,12 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     def validate_speed(self):
         if self.speed in [None, 0]:
             pass
+
+        # bypass validation according to #741
+        elif bypass_validation():
+            return
+
+
         elif self.speed > settings.DATA_QUALITY_MAX_SPEED:
             raise ValidationError(
                 _("Maximum speed: {}").format(
