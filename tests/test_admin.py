@@ -615,6 +615,28 @@ class AdminTests(TestCase):
         if response.status_code == 200:
             assert search_str in cont
 
+    def _test_custom_result_length(self, sz):
+        user = self.admin_user
+        client = Client()
+        client.force_login(user)
+
+        assert user.is_staff
+
+        cls = models.Organization
+        url = reverse(
+            "admin:{}_{}_changelist".format(
+                cls._meta.app_label, cls._meta.object_name
+            ).lower(),
+        )
+        response = client.get(f"{url}?sz={sz}")
+        cont = response.content.decode("utf-8")
+        assert response.status_code == 200
+        assert cont.count('class="action-checkbox"') == sz
+
+    def test_custom_result_length(self):
+        self._test_custom_result_length(1)
+        self._test_custom_result_length(3)
+
     def test_grappelli_autocomplete(self):
         """
         test that grappelli autocomplete works correctly

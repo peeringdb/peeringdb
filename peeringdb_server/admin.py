@@ -362,7 +362,126 @@ def soft_delete(modeladmin, request, queryset):
 soft_delete.short_description = _("SOFT DELETE")
 
 
-class SanitizedAdmin:
+class CustomResultLengthFilter(admin.SimpleListFilter):
+
+    """
+    Filter object that enables custom result length
+    in django-admin change lists
+
+    This should only be used in a model admin that extends
+    CustomResultLengthAdmin
+    """
+
+    title = _("Resul length")
+    parameter_name = "sz"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("10", _("Show {} rows").format(10)),
+            ("25", _("Show {} rows").format(25)),
+            ("50", _("Show {} rows").format(50)),
+            ("100", _("Show {} rows").format(100)),
+            ("250", _("Show {} rows").format(250)),
+            ("all", _("Show {} rows").format("all")),
+        )
+
+    def queryset(self, request, queryset):
+        # we simply give back the queryset, since result
+        # length is controlled by the changelist instance
+        # and not the queryset
+        return queryset
+
+    def choices(self, changelist):
+        value = self.value()
+        if value is None:
+            value = f"{changelist.list_per_page}"
+
+        for lookup, title in self.lookup_choices:
+            yield {
+                "selected": value == str(lookup),
+                "query_string": changelist.get_query_string(
+                    {self.parameter_name: lookup}
+                ),
+                "display": title,
+            }
+
+
+class CustomResultLengthAdmin:
+    def get_list_filter(self, request):
+        list_filter = super().get_list_filter(request)
+        return list_filter + (CustomResultLengthFilter,)
+
+    def get_changelist(self, request, **kwargs):
+
+        # handle the customizable result length filter
+        # in the django-admin change list listings (#587)
+        #
+        # this is accomplished through the `sz` url parameter
+        if "sz" in request.GET:
+
+            try:
+                sz = request.GET.get("sz")
+                # all currently translates to a max of 100k entries
+                # this is a conservative limit that should be fine for
+                # the time being (possible performance concerns going
+                # bigger than that)
+                if sz == "all":
+                    sz = request.list_max_show_all = 100000
+                else:
+                    sz = int(sz)
+            except TypeError:
+                # value could not be converted to integer
+                # fall back to default
+                sz = self.list_per_page
+        else:
+            sz = self.list_per_page
+
+        request.list_per_page = sz
+
+        return super().get_changelist(request, **kwargs)
+
+    def get_changelist_instance(self, request):
+        """
+        Return a `ChangeList` instance based on `request`. May raise
+        `IncorrectLookupParameters`.
+
+        This is copied from the original function in the dango source
+        for 2.2
+
+        We override it here so we can set the list_per_page and list_max_show_all
+        values on the ChangeList accordingly.
+        """
+        list_display = self.get_list_display(request)
+        list_display_links = self.get_list_display_links(request, list_display)
+        # Add the action checkboxes if any actions are available.
+        if self.get_actions(request):
+            list_display = ["action_checkbox", *list_display]
+        sortable_by = self.get_sortable_by(request)
+        ChangeList = self.get_changelist(request)
+
+        list_per_page = getattr(request, "list_per_page", self.list_per_page)
+        list_max_show_all = getattr(
+            request, "list_max_show_all", self.list_max_show_all
+        )
+
+        return ChangeList(
+            request,
+            self.model,
+            list_display,
+            list_display_links,
+            self.get_list_filter(request),
+            self.date_hierarchy,
+            self.get_search_fields(request),
+            self.get_list_select_related(request),
+            list_per_page,
+            list_max_show_all,
+            self.list_editable,
+            self,
+            sortable_by,
+        )
+
+
+class SanitizedAdmin(CustomResultLengthAdmin):
     def get_readonly_fields(self, request, obj=None):
         return ("version",) + tuple(super().get_readonly_fields(request, obj=obj))
 
@@ -777,7 +896,7 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
         return mark_safe(f'<div style="background-color:{color}">{text}</div>')
 
 
-class IXLanIXFMemberImportLogAdmin(admin.ModelAdmin):
+class IXLanIXFMemberImportLogAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     search_fields = ("ixlan__ix__id",)
     list_display = ("id", "ix", "ixlan_name", "source", "created", "changes")
     readonly_fields = ("ix", "ixlan_name", "source", "changes")
@@ -826,7 +945,7 @@ class SponsorshipOrganizationInline(admin.TabularInline):
     }
 
 
-class SponsorshipAdmin(admin.ModelAdmin):
+class SponsorshipAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = ("organizations", "start_date", "end_date", "level", "status")
     readonly_fields = ("organizations", "status", "notify_date")
     inlines = (SponsorshipOrganizationInline,)
@@ -865,7 +984,7 @@ class PartnershipAdminForm(baseForms.ModelForm):
         fk_handleref_filter(self, "org")
 
 
-class PartnershipAdmin(admin.ModelAdmin):
+class PartnershipAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = ("org_name", "level", "status")
     readonly_fields = ("status", "org_name")
     form = PartnershipAdminForm
@@ -1548,7 +1667,7 @@ class CommandLineToolPrepareForm(baseForms.Form):
     tool = baseForms.ChoiceField(choices=COMMANDLINE_TOOLS)
 
 
-class CommandLineToolAdmin(admin.ModelAdmin):
+class CommandLineToolAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     """
     View that lets staff users run peeringdb command line tools
     """
@@ -1705,7 +1824,7 @@ class CommandLineToolAdmin(admin.ModelAdmin):
         )
 
 
-class IXFImportEmailAdmin(admin.ModelAdmin):
+class IXFImportEmailAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = (
         "subject",
         "recipients",
@@ -1764,7 +1883,7 @@ class DeskProTicketCCInline(admin.TabularInline):
     model = DeskProTicketCC
 
 
-class DeskProTicketAdmin(admin.ModelAdmin):
+class DeskProTicketAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = (
         "id",
         "subject",
@@ -1837,7 +1956,7 @@ def apply_ixf_member_data(modeladmin, request, queryset):
 apply_ixf_member_data.short_description = _("Apply")
 
 
-class IXFMemberDataAdmin(admin.ModelAdmin):
+class IXFMemberDataAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     change_form_template = "admin/ixf_member_data_change_form.html"
 
     list_display = (
@@ -1991,7 +2110,7 @@ class EnvironmentSettingForm(baseForms.ModelForm):
         fields = ["setting", "value"]
 
 
-class EnvironmentSettingAdmin(admin.ModelAdmin):
+class EnvironmentSettingAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = ["setting", "value", "created", "updated", "user"]
 
     fields = ["setting", "value"]
