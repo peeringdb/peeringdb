@@ -4,12 +4,23 @@ import pytest
 from django.core.management import call_command
 
 from peeringdb_server.models import (
+    Network,
+    NetworkContact,
     Organization,
     Sponsorship,
     SponsorshipOrganization,
     ProtectedAction,
     UTC,
 )
+
+
+def assert_protected(entity):
+    """
+    helper function to test that an object is currently
+    not deletable
+    """
+    with pytest.raises(ProtectedAction):
+        entity.delete()
 
 
 @pytest.mark.django_db
@@ -28,14 +39,6 @@ def test_protected_entities(db):
     assert org.ix_set_active.exists()
     assert org.fac_set_active.exists()
     assert org.net_set_active.exists()
-
-    def assert_protected(entity):
-        """
-        helper function to test that an object is currently
-        not deletable
-        """
-        with pytest.raises(ProtectedAction):
-            entity.delete()
 
     # org has ix, net and fac under it, and should not be
     # deletable
@@ -137,6 +140,46 @@ def test_protected_entities(db):
 
     org.delete()
     assert org.status == "deleted"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,deletable",
+    [
+        ("Technical", False),
+        ("Policy", False),
+        ("NOC", False),
+        ("Abuse", True),
+        ("Maintenance", True),
+        ("Public Relations", True),
+        ("Sales", True),
+    ],
+)
+def test_tech_poc_protection(role, deletable):
+    """
+    Test that the last technical contact
+    cannot be deleted for a network that has
+    active peers (#923)
+    """
+
+    call_command("pdb_generate_test_data", limit=2, commit=True)
+
+    net = Network.objects.first()
+
+    poc = NetworkContact.objects.create(status="ok", role=role, network=net)
+
+    if not deletable:
+        assert_protected(poc)
+        for netixlan in net.netixlan_set_active.all():
+            netixlan.delete()
+        poc.delete()
+    else:
+        poc.delete()
+        return
+
+    poc2 = NetworkContact.objects.create(status="ok", role=role, network=net)
+
+    poc.delete()
 
 
 @pytest.mark.django_db

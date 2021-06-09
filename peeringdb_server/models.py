@@ -4026,7 +4026,7 @@ class Network(pdb_models.NetworkBase):
     parent="network",
 )
 @reversion.register
-class NetworkContact(pdb_models.ContactBase):
+class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
     """
     Describes a contact point (phone, email etc.) for a network
     """
@@ -4036,8 +4036,49 @@ class NetworkContact(pdb_models.ContactBase):
         Network, on_delete=models.CASCADE, default=0, related_name="poc_set"
     )
 
+    TECH_ROLES = ["Technical", "NOC", "Policy"]
+
     class Meta:
         db_table = "peeringdb_network_contact"
+
+    @property
+    def is_tech_contact(self):
+        return self.role in self.TECH_ROLES
+
+    @property
+    def deletable(self):
+        """
+        Returns whether or not the poc is currently
+        in a state where it can be marked as deleted.
+
+        This will be False for pocs that are the last remaining
+        technical contact point for a network that has
+        active netixlans. (#923)
+        """
+
+        # non-technical pocs can always be deleted
+
+        if not self.is_tech_contact:
+            self._not_deletable_reason = None
+            return True
+
+        netixlan_count = self.network.netixlan_set_active.count()
+        tech_poc_count = self.network.poc_set_active.filter(
+            role__in=self.TECH_ROLES
+        ).count()
+
+        if netixlan_count and tech_poc_count == 1:
+
+            # there are active netixlans and this poc is the
+            # only technical poc left
+
+            self._not_deletable_reason = _(
+                "Last technical contact point for network with active peers"
+            )
+            return False
+        else:
+            self._not_deletable_reason = None
+            return True
 
     def clean(self):
         self.phone = validate_phonenumber(self.phone)
@@ -4274,7 +4315,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         # bypass validation according to #741
         elif bypass_validation():
             return
-
 
         elif self.speed > settings.DATA_QUALITY_MAX_SPEED:
             raise ValidationError(
