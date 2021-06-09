@@ -1606,7 +1606,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_poc(self):
-        data = self.make_data_poc(net_id=SHARED["net_rw_ok"].id)
+        data = self.make_data_poc(net_id=SHARED["net_rw_ok"].id, role="Abuse")
 
         r_data = self.assert_create(
             self.db_org_admin,
@@ -1830,6 +1830,7 @@ class TestJSON(unittest.TestCase):
         network = SHARED["net_rw_ok"]
 
         for poc in network.poc_set_active.all():
+            poc.role = "Abuse"
             poc.delete()
 
         data = self.make_data_netixlan(
