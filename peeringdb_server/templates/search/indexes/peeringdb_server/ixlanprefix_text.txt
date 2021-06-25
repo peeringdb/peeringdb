@@ -1,0 +1,4 @@
+{{ object.prefix }}
+{{ object.ixlan.ix.name }}
+{{ object.ixlan.ix.name_long }}
+{{ object.ixlan.ix.aka }}

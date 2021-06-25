@@ -13,6 +13,7 @@ settings.configure(
     INSTALLED_APPS=[
         "django.contrib.auth",
         "django.contrib.contenttypes",
+        "haystack",
         "django_otp",
         "django_otp.plugins.otp_static",
         "django_otp.plugins.otp_totp",
@@ -283,4 +284,12 @@ settings.configure(
     },
     VQUEUE_USER_MAX_AGE=90,
     IXF_RESEND_FAILED_EMAILS=False,
+    HAYSTACK_CONNECTIONS={
+        "default": {
+            "ENGINE": "haystack.backends.whoosh_backend.WhooshEngine",
+            "STORAGE": "ram",
+            "BATCH_SIZE": 40000,
+        }
+    },
+    HAYSTACK_ITERATOR_LOAD_PER_QUERY=1500,
 )

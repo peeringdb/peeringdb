@@ -1,0 +1,4 @@
+{{ object.name }}
+{{ object.name_long }}
+{{ object.aka }}
+AS{{ object.asn }} AS-{{ object.asn }} ASN{{ object.asn }} {{ object.asn }}

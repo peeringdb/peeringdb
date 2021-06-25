@@ -1147,15 +1147,30 @@ PeeringDB.InlineSearch = {
     if(this.initialized)
       return
 
+    this.keystrokeTimeout = new twentyc.util.SmartTimeout(
+      () => {}, 500
+
+    );
+
     $('#search').keypress(function(e) {
       if(e.which == 13) {
+        PeeringDB.InlineSearch.keystrokeTimeout.cancel();
         window.document.location.href= "/search?q="+$(this).val()
         e.preventDefault();
       }
     });
 
     $('#search').keyup(function(e) {
-      PeeringDB.InlineSearch.search($(this).val());
+      if(e.which == 13)
+        return;
+
+      PeeringDB.InlineSearch.keystrokeTimeout.set(
+        () => {
+          PeeringDB.InlineSearch.search($(this).val());
+        },
+        500
+      );
+
     });
 
     this.searchResult = $('#search-result');

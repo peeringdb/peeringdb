@@ -31,7 +31,7 @@ class GoogleMaps:
         instance.latitude = geocode.get("lat")
         instance.longitude = geocode.get("lng")
 
-    def geocode_address(self, address, country):
+    def geocode_address(self, address, country, typ="premise"):
 
         """
         returns the latitude, longitude field values of the specified
@@ -52,11 +52,27 @@ class GoogleMaps:
         except googlemaps.exceptions.Timeout:
             raise Timeout()
 
-        if result and (
+        is_premise = (
             "street_address" in result[0]["types"]
             or "establishment" in result[0]["types"]
             or "premise" in result[0]["types"]
             or "subpremise" in result[0]["types"]
+        )
+
+        is_city = "locality" in result[0]["types"]
+
+        is_state = "administrative_area_level_1" in result[0]["types"]
+
+        is_country = "country" in result[0]["types"]
+
+        is_postal = "postal_code" in result[0]["types"]
+
+        if result and (
+            (typ == "premise" and is_premise)
+            or (typ == "city" and is_city)
+            or (typ == "country" and is_country)
+            or (typ == "postal" and is_postal)
+            or (typ == "state" and is_state)
         ):
             return result[0].get("geometry").get("location")
         else:

@@ -12,6 +12,7 @@ from django.db.models.fields.related import (
     ForwardManyToOneDescriptor,
     ReverseManyToOneDescriptor,
 )
+from django.db.models.expressions import RawSQL
 from django.db.models.query import QuerySet
 from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy as _
@@ -56,6 +57,7 @@ from peeringdb_server.models import (
     NetworkIXLan,
     Organization,
     OrganizationAPIKey,
+    GeoCoordinateCache,
 )
 from peeringdb_server.validators import (
     validate_address_space,
@@ -1288,13 +1290,54 @@ def nested(serializer, exclude=[], getter=None, through=None, **kwargs):
     return NestedSerializer(many=True, read_only=True, **kwargs)
 
 
+class SpatialSearchMixin:
+
+    """
+    Mixin that enables spatial search for a model
+    with address fields.
+
+    At minimum a model needs a country and city field, but
+    address1, address2, zipcode and state are also considered
+    if they exist
+    """
+
+    @classmethod
+    def prepare_spatial_search(cls, qset, filters, distance=50):
+
+        if "longitude" not in filters or "latitude" not in filters:
+            try:
+                coords = GeoCoordinateCache.request_coordinates(**filters)
+            except IOError:
+                return qset.none()
+            if coords:
+                filters.update(**coords)
+            else:
+                return qset
+
+        tbl = qset.model._meta.db_table
+
+        gcd_formula = f"6371 * acos(least(greatest(cos(radians(%s)) * cos(radians({tbl}.`latitude`)) * cos(radians({tbl}.`longitude`) - radians(%s)) + sin(radians(%s)) * sin(radians({tbl}.`latitude`)), -1), 1))"
+        distance_raw_sql = RawSQL(
+            gcd_formula, (coords["latitude"], coords["longitude"], coords["latitude"])
+        )
+        qset = qset.annotate(distance=distance_raw_sql).order_by("distance")
+        qset = qset.filter(distance__lte=distance)
+
+        # we mark the query as spatial - note that this is not a django property
+        # but an arbitrary property we are setting so we can determine whether
+        # thq query is doing spatial filtering or not at a later point.
+        qset.spatial = True
+
+        return qset
+
+
 # serializers get their own ref_tag in case we want to define different types
 # that aren't one to one with models and serializer turns model into a tuple
 # so always lookup the ref tag from the serializer (in fact, do we even need it
 # on the model?
 
 
-class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
+class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerializer):
     """
     Serializer for peeringdb_server.models.Facility
 
@@ -1471,6 +1514,9 @@ class FacilitySerializer(GeocodeSerializerMixin, ModelSerializer):
                 filt="in", value=networks, qset=qset
             )
             filters.update({"not_net": kwargs.get("not_net")})
+
+        if "distance" in kwargs:
+            qset = cls.prepare_spatial_search(qset, kwargs, kwargs.get("distance", 50))
 
         return qset, filters
 
@@ -2132,11 +2178,6 @@ class NetworkSerializer(ModelSerializer):
                     flt = {"fac_count": e["value"]}
                 qset = qset.filter(**flt)
 
-        if "name_search" in kwargs:
-            name = kwargs.get("name_search", [""])[0]
-            qset = qset.filter(Q(name__icontains=name) | Q(aka__icontains=name))
-            filters.update({"name_search": kwargs.get("name_search")})
-
         # networks that are NOT present at exchange
         if "not_ix" in kwargs:
             not_ix = kwargs.get("not_ix")[0]
@@ -2605,12 +2646,6 @@ class InternetExchangeSerializer(ModelSerializer):
             )
             filters.update({"ipblock": kwargs.get("ipblock")})
 
-        if "name_search" in kwargs:
-
-            name = kwargs.get("name_search", [""])[0]
-            qset = qset.filter(Q(name__icontains=name) | Q(name_long__icontains=name))
-            filters.update({"name_search": kwargs.get("name_search")})
-
         if "asn_overlap" in kwargs:
 
             asns = kwargs.get("asn_overlap", [""])[0].split(",")
@@ -2789,7 +2824,9 @@ class InternetExchangeSerializer(ModelSerializer):
         return data
 
 
-class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
+class OrganizationSerializer(
+    SpatialSearchMixin, GeocodeSerializerMixin, ModelSerializer
+):
     """
     Serializer for peeringdb_server.models.Organization
     """
@@ -2854,6 +2891,9 @@ class OrganizationSerializer(GeocodeSerializerMixin, ModelSerializer):
             asn = kwargs.get("asn", [""])[0]
             qset = qset.filter(net_set__asn=asn, net_set__status="ok")
             filters.update({"asn": kwargs.get("asn")})
+
+        if "distance" in kwargs:
+            qset = cls.prepare_spatial_search(qset, kwargs, kwargs.get("distance", 50))
 
         return qset, filters
 
