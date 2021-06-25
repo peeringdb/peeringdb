@@ -339,6 +339,128 @@ class GeocodeBaseMixin(models.Model):
         return sanitized
 
 
+class GeoCoordinateCache(models.Model):
+
+    """
+    Stores geocoordinates for address lookups
+    """
+
+    country = pdb_models.CountryField()
+    city = models.CharField(max_length=255, null=True, blank=True)
+    address1 = models.CharField(max_length=255, null=True, blank=True)
+    state = models.CharField(max_length=255, null=True, blank=True)
+    zipcode = models.CharField(max_length=255, null=True, blank=True)
+
+    latitude = models.DecimalField(
+        _("Latitude"), max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    longitude = models.DecimalField(
+        _("Longitude"), max_digits=9, decimal_places=6, null=True, blank=True
+    )
+
+    fetched = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "peeringdb_geocoord_cache"
+        verbose_name = _("Geocoordinate Cache")
+        verbose_name_plural = _("Geocoordinate Cache Entries")
+
+    @classmethod
+    def request_coordinates(cls, **kwargs):
+
+        address_fields = [
+            "address1",
+            "state",
+            "zipcode",
+            "city",
+            "country",
+        ]
+
+        # we only request geo-coordinates if country and
+        # city/state are specified
+
+        if not kwargs.get("country"):
+            return None
+
+        if not kwargs.get("city") and not kwargs.get("state"):
+            return None
+
+        # address string passed to google for lookup
+        address = []
+
+        # filters passed to GeoCoordinateCache for cache retrieval
+        filters = {}
+
+        # attributes passed to GeoCoordinateCache for cache creation
+        params = {}
+
+        # prepare geo-coordinate filters, params and lookup
+
+        for field in address_fields:
+
+            value = kwargs.get(field, None)
+            if value and isinstance(value, list):
+                value = value[0]
+            if field != "country" and value:
+                address.append(f"{value}")
+            else:
+                country = value
+
+            params[field] = value
+
+            if value:
+                filters[field] = value
+            else:
+                filters[f"{field}__isnull"] = True
+
+        # attempt to retrieve a valid cache
+
+        cache = cls.objects.filter(**filters).order_by("-fetched").first()
+
+        if cache:
+            tdiff = timezone.now() - cache.fetched
+
+            # check if cache is past expiry date, and expire it if so
+
+            if tdiff.total_seconds() > settings.GEOCOORD_CACHE_EXPIRY:
+                cache.delete()
+                cache = None
+
+        if not cache:
+
+            # valid geo-coord cache does not exist, request coordinates
+            # from google and create a cache entry
+
+            address = " ".join(address)
+            google = geo.GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY)
+            try:
+
+                if params.get("address1"):
+                    typ = "premise"
+                elif params.get("zipcode"):
+                    typ = "postal"
+                elif params.get("city"):
+                    typ = "city"
+                elif params.get("state"):
+                    typ = "state"
+                else:
+                    typ = "country"
+
+                coords = google.geocode_address(address, country, typ=typ)
+                cache = cls.objects.create(
+                    latitude=coords["lat"], longitude=coords["lng"], **params
+                )
+            except geo.NotFound:
+
+                # google could not find address
+                # we still create a cache entry with null coordinates.
+
+                cls.objects.create(**params)
+                raise
+
+        return {"longitude": cache.longitude, "latitude": cache.latitude}
+
+
 class UserOrgAffiliationRequest(models.Model):
     """
     Whenever a user requests to be affiliated to an Organization

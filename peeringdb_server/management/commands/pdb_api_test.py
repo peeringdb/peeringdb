@@ -27,6 +27,7 @@ from grainy.const import (
     PERM_DELETE,
 )
 from django.core.management.base import BaseCommand
+from django.core.management import call_command
 from django.contrib.auth.models import Group
 from django.conf import settings
 from django.db.utils import IntegrityError
@@ -2575,15 +2576,28 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_ix_name_search(self):
-        data = self.db_guest.all("ix", name_search=SHARED["ix_r_ok"].name)
-        self.assertEqual(len(data), 1)
-        for row in data:
-            self.assertEqual(row["id"], SHARED["ix_r_ok"].id)
 
-        data = self.db_guest.all("ix", name_search=SHARED["ix_r_ok"].name_long)
+        ix = InternetExchange.objects.create(
+            status="ok",
+            **self.make_data_ix(
+                name="Specific Exchange", name_long="This is a very specific exchange"
+            ),
+        )
+
+        # rebuild search index (name_search requires it)
+        call_command("rebuild_index", "--noinput")
+
+        data = self.db_guest.all("ix", name_search=ix.name)
         self.assertEqual(len(data), 1)
         for row in data:
-            self.assertEqual(row["id"], SHARED["ix_r_ok"].id)
+            self.assertEqual(row["id"], ix.id)
+
+        data = self.db_guest.all("ix", name_search=ix.name_long)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], ix.id)
+
+        ix.delete(hard=True)
 
     ##########################################################################
 

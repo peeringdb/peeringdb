@@ -80,6 +80,7 @@ from peeringdb_server.models import (
     ProtectedAction,
     OrganizationAPIKey,
     UserAPIKey,
+    GeoCoordinateCache,
 )
 
 from peeringdb_server.mail import mail_users_entity_merge
@@ -464,7 +465,7 @@ class CustomResultLengthAdmin:
             request, "list_max_show_all", self.list_max_show_all
         )
 
-        return ChangeList(
+        cl = ChangeList(
             request,
             self.model,
             list_display,
@@ -479,6 +480,10 @@ class CustomResultLengthAdmin:
             self,
             sortable_by,
         )
+
+        cl.allow_custom_result_length = True
+
+        return cl
 
 
 class SanitizedAdmin(CustomResultLengthAdmin):
@@ -2135,6 +2140,20 @@ class UserAPIKeyAdmin(APIKeyModelAdmin):
     search_fields = ("prefix", "user__username", "user__email")
 
 
+class GeoCoordinateAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "country",
+        "city",
+        "state",
+        "zipcode",
+        "address1",
+        "longitude",
+        "latitude",
+        "fetched",
+    ]
+
+
 # Commented out via issue #860
 # admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
@@ -2162,3 +2181,4 @@ admin.site.register(IXFImportEmail, IXFImportEmailAdmin)
 admin.site.unregister(APIKey)
 admin.site.register(OrganizationAPIKey, OrganizationAPIKeyAdmin)
 admin.site.register(UserAPIKey, UserAPIKeyAdmin)
+admin.site.register(GeoCoordinateCache, GeoCoordinateAdmin)

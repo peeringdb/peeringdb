@@ -259,6 +259,10 @@ API_THROTTLE_ENABLED = True
 API_THROTTLE_RATE_ANON = "100/second"
 API_THROTTLE_RATE_USER = "100/second"
 
+# specifies the expiry period of cached geo-coordinates
+# in seconds (default 30days)
+set_option("GEOCOORD_CACHE_EXPIRY", 86400*30)
+
 # maximum value to allow in network.info_prefixes4
 set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 1000000)
 
@@ -408,6 +412,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "haystack",
     "django_otp",
     "django_otp.plugins.otp_static",
     "django_otp.plugins.otp_totp",
@@ -657,6 +662,19 @@ ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/login"
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/verify"
 ACCOUNT_EMAIL_REQUIRED = True
 
+# haystack
+
+set_option("WHOOSH_INDEX_PATH", os.path.join(BASE_DIR, "search-data", "whoosh-index"))
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
+        'PATH': WHOOSH_INDEX_PATH,
+        'BATCH_SIZE': 40000,
+    },
+}
+
+set_option("HAYSTACK_ITERATOR_LOAD_PER_QUERY", 1500)
+set_option("HAYSTACK_LIMIT_TO_REGISTERED_MODELS", False)
 
 # add user defined iso code for Kosovo
 COUNTRIES_OVERRIDE = {

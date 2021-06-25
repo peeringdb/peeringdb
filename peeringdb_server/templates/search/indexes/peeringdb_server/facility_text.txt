@@ -1,0 +1,3 @@
+{{ object.name }}
+{{ object.name_long }}
+{{ object.aka }}
