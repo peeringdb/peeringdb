@@ -261,7 +261,7 @@ API_THROTTLE_RATE_USER = "100/second"
 
 # specifies the expiry period of cached geo-coordinates
 # in seconds (default 30days)
-set_option("GEOCOORD_CACHE_EXPIRY", 86400*30)
+set_option("GEOCOORD_CACHE_EXPIRY", 86400 * 30)
 
 # maximum value to allow in network.info_prefixes4
 set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 1000000)
@@ -666,10 +666,10 @@ ACCOUNT_EMAIL_REQUIRED = True
 
 set_option("WHOOSH_INDEX_PATH", os.path.join(BASE_DIR, "search-data", "whoosh-index"))
 HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
-        'PATH': WHOOSH_INDEX_PATH,
-        'BATCH_SIZE': 40000,
+    "default": {
+        "ENGINE": "haystack.backends.whoosh_backend.WhooshEngine",
+        "PATH": WHOOSH_INDEX_PATH,
+        "BATCH_SIZE": 40000,
     },
 }
 
