@@ -665,10 +665,12 @@ ACCOUNT_EMAIL_REQUIRED = True
 # haystack
 
 set_option("WHOOSH_INDEX_PATH", os.path.join(BASE_DIR, "search-data", "whoosh-index"))
+set_option("WHOOSH_STORAGE", "file")
 HAYSTACK_CONNECTIONS = {
     "default": {
         "ENGINE": "haystack.backends.whoosh_backend.WhooshEngine",
         "PATH": WHOOSH_INDEX_PATH,
+        "STORAGE": WHOOSH_STORAGE,
         "BATCH_SIZE": 40000,
     },
 }
