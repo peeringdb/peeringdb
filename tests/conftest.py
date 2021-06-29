@@ -2,9 +2,7 @@ import os
 import pytest
 import pytest_filedata
 
-# from . import django_init
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
-
 
 pytest_filedata.setup(os.path.dirname(__file__))
 
