@@ -53,7 +53,7 @@ RATELIMITS = {
 }
 GUEST_GROUP_ID = 1
 USER_GROUP_ID = 2
-HAYSTACK_CONNECTIONS={
+HAYSTACK_CONNECTIONS = {
     "default": {
         "ENGINE": "haystack.backends.whoosh_backend.WhooshEngine",
         "STORAGE": "ram",
