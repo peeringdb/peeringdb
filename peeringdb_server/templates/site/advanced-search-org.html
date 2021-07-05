@@ -16,15 +16,7 @@
                data-edit-value="{{ request.GET.name_search }}"></div>
         </div>
       </div>
-      <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "City" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
-          <div data-edit-type="string"
-               data-edit-name="city"
-               data-edit-reset-value=""
-               data-edit-value="{{ request.GET.city }}"></div>
-        </div>
-      </div>
+      {% include "site/advanced-search-location.html" %}
     </div>
     <div class="col-xs-12 col-sm-6 col-md-6">
       <!-- RIGHT COLUMN -->

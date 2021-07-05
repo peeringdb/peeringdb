@@ -370,8 +370,8 @@ class GeoCoordinateCache(models.Model):
 
         address_fields = [
             "address1",
-            "state",
             "zipcode",
+            "state",
             "city",
             "country",
         ]
