@@ -96,6 +96,21 @@ class SearchTests(TestCase):
             assert rv[k][0]["name"] == inst.search_result_name
             assert rv[k][0]["org_id"] == inst.org_id
 
+        # test that term order does not matter
+
+        for k, inst in list(self.instances.items()):
+            rv = search.search(f"Test {k}")
+            assert k in rv
+            assert len(rv[k]) == 1
+            assert rv[k][0]["name"] == inst.search_result_name
+            assert rv[k][0]["org_id"] == inst.org_id
+
+            rv = search.search(f"{k} Test")
+            assert k in rv
+            assert len(rv[k]) == 1
+            assert rv[k][0]["name"] == inst.search_result_name
+            assert rv[k][0]["org_id"] == inst.org_id
+
         rv = search.search("as1")
         assert len(rv["net"]) == 1
         assert rv["net"][0]["name"] == self.instances["net"].search_result_name

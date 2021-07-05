@@ -305,6 +305,26 @@ def queryable_field_xl(fld):
     return fld
 
 
+def single_url_param(params, key, fn=None):
+    v = params.get(key)
+
+    if not v:
+        return None
+
+    if isinstance(v, list):
+        v = v[0]
+
+    try:
+        if fn:
+            v = fn(v)
+    except ValueError:
+        raise ValidationError({key: _("Invalid value")})
+    except Exception as exc:
+        raise ValidationError({key: exc})
+
+    return v
+
+
 def validate_relation_filter_field(a, b):
     b = queryable_field_xl(b)
     a = queryable_field_xl(a)
@@ -1304,15 +1324,48 @@ class SpatialSearchMixin:
     @classmethod
     def prepare_spatial_search(cls, qset, filters, distance=50):
 
+        # no distance or negative distance provided, bail
+
+        if distance <= 0:
+            return qset
+
         if "longitude" not in filters or "latitude" not in filters:
+
+            # geo-coordinates have not been provided in the filter
+            # so we can attempt to grab them for the provided
+            # address filters
+
+            # we require at least city and country to be defined
+            # in the filters to create meaningful coordinates
+            # and proceed with the distance query
+
+            required_fields = ["country", "city"]
+            errors = {}
+            for field in required_fields:
+                if not filters.get(field):
+                    errors[field] = _("Required for distance filtering")
+
+            # One or more of the required address fields was missing
+            # raise validation errors
+            if errors:
+                raise serializers.ValidationError(errors)
+
             try:
+                # convert address filters into lng and lat
                 coords = GeoCoordinateCache.request_coordinates(**filters)
             except IOError:
+                # google failure to convert address to coordinates
+                # due ot technical error
+                # return empty query set
                 return qset.none()
             if coords:
+                # coords were obtained, updated filters
                 filters.update(**coords)
             else:
-                return qset
+                # no coords found, return empty queryset
+                return qset.none()
+
+        # spatial distance calculation
 
         tbl = qset.model._meta.db_table
 
@@ -1516,7 +1569,9 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             filters.update({"not_net": kwargs.get("not_net")})
 
         if "distance" in kwargs:
-            qset = cls.prepare_spatial_search(qset, kwargs, kwargs.get("distance", 50))
+            qset = cls.prepare_spatial_search(
+                qset, kwargs, single_url_param(kwargs, "distance", float)
+            )
 
         return qset, filters
 
@@ -2893,7 +2948,9 @@ class OrganizationSerializer(
             filters.update({"asn": kwargs.get("asn")})
 
         if "distance" in kwargs:
-            qset = cls.prepare_spatial_search(qset, kwargs, kwargs.get("distance", 50))
+            qset = cls.prepare_spatial_search(
+                qset, kwargs, single_url_param(kwargs, "distance", float)
+            )
 
         return qset, filters
 

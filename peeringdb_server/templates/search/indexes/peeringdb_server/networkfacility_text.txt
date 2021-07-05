@@ -1,7 +1,7 @@
 {{ object.network.name }}
 {{ object.network.name_long }}
 {{ object.network.aka }}
-AS{{ object.network.asn }} AS-{{ object.network.asn }} {{ object.network.asn }}
+AS{{ object.network.asn }} ASN{{ object.network.asn }} {{ object.network.asn }}
 
 {{ object.facility.name }}
 {{ object.facility.name_long }}

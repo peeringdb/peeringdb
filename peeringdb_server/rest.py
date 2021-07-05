@@ -38,6 +38,7 @@ from peeringdb_server.permissions import (
     get_user_key_from_request,
 )
 from peeringdb_server.util import coerce_ipaddr
+from peeringdb_server.search import make_search_query
 
 
 class DataException(ValueError):
@@ -345,10 +346,11 @@ class ModelViewSet(viewsets.ModelViewSet):
         )
         q_ids = []
         if q:
-            search_query = (
-                SearchQuerySet().filter(content=q, status="ok").models(self.model)
-            )
+            search_query = make_search_query(q).models(self.model)
             q_ids = [sq.pk for sq in search_query]
+            # no results found - return empty query
+            if not q_ids:
+                return qset.none()
 
         # db field filters
         filters = {}

@@ -52,6 +52,9 @@ class GoogleMaps:
         except googlemaps.exceptions.Timeout:
             raise Timeout()
 
+        if not result:
+            raise NotFound()
+
         is_premise = (
             "street_address" in result[0]["types"]
             or "establishment" in result[0]["types"]

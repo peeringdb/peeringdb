@@ -675,7 +675,7 @@ HAYSTACK_CONNECTIONS = {
     },
 }
 
-set_option("HAYSTACK_ITERATOR_LOAD_PER_QUERY", 1500)
+set_option("HAYSTACK_ITERATOR_LOAD_PER_QUERY", 20000)
 set_option("HAYSTACK_LIMIT_TO_REGISTERED_MODELS", False)
 
 # add user defined iso code for Kosovo
