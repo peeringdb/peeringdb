@@ -1971,6 +1971,14 @@ def view_advanced_search(request):
         except (ObjectDoesNotExist, ValueError):
             env["not_fac_name"] = ""
 
+    env["can_use_distance_filter"] = (
+        dj_settings.API_DISTANCE_FILTER_REQUIRE_AUTH == False
+        or request.user.is_authenticated
+    ) and (
+        dj_settings.API_DISTANCE_FILTER_REQUIRE_VERIFIED == False
+        or (request.user.is_authenticated and request.user.is_verified_user)
+    )
+
     return HttpResponse(template.render(env, request))
 
 

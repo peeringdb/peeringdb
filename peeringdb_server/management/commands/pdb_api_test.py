@@ -51,6 +51,7 @@ from peeringdb_server.models import (
     IXLanPrefix,
     InternetExchangeFacility,
     DeskProTicket,
+    GeoCoordinateCache,
 )
 
 from peeringdb_server.serializers import REFTAG_MAP as REFTAG_MAP_SLZ
@@ -198,6 +199,7 @@ class TestJSON(unittest.TestCase):
         return r
 
     def setUp(self):
+        self.db_anon = self.rest_client(URL, verbose=VERBOSE, anon=True)
         self.db_guest = self.rest_client(URL, verbose=VERBOSE)
         self.db_user = self.rest_client(URL, verbose=VERBOSE, **USER)
         self.db_org_member = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_MEMBER)
@@ -2661,6 +2663,60 @@ class TestJSON(unittest.TestCase):
             net.delete(hard=True)
         for ix in exchanges:
             ix.delete(hard=True)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_fac_distance(self):
+
+        # facility coordinates
+
+        lat_fac = 41.876212
+        lng_fac = -87.631453
+
+        # city coordinates: chicago
+
+        lat_chi = 41.878114
+        lng_chi = -87.629798
+
+        # create geo-coord cache
+        # we do this so we dont have to query the google maps api
+        # during the test
+
+        GeoCoordinateCache.objects.create(
+            country="US", city="Chicago", latitude=lat_chi, longitude=lng_chi
+        )
+
+        # pick one of the tests facilities and set its coordinates
+
+        fac = SHARED["fac_r_ok"]
+        fac.latitude = lat_fac
+        fac.longitude = lng_fac
+        fac.save()
+
+        data = self.db_org_member.all("fac", country="US", city="Chicago", distance=10)
+
+        assert len(data) == 1
+        assert data[0]["id"] == fac.id
+
+        # unverified users are blocked from doing distance query
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_guest.all("fac", country="US", city="Chicago", distance=10)
+        assert "verify" in f"{excinfo.value}"
+
+        # unauthenticated users are blocked from doing distance query
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_anon.all("fac", country="US", city="Chicago", distance=10)
+        assert "authenticate" in f"{excinfo.value}"
+
+        # adjust settings to allow the above
+
+        settings.API_DISTANCE_FILTER_REQUIRE_VERIFIED = False
+        self.db_guest.all("fac", country="US", city="Chicago", distance=10)
+
+        settings.API_DISTANCE_FILTER_REQUIRE_AUTH = False
+        self.db_anon.all("fac", country="US", city="Chicago", distance=10)
 
     ##########################################################################
 

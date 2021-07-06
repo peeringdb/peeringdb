@@ -260,6 +260,12 @@ set_option("API_THROTTLE_RATE_ANON", "100/second")
 set_option("API_THROTTLE_RATE_USER", "100/second")
 set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
 
+# spatial queries require user auth
+set_option("API_DISTANCE_FILTER_REQUIRE_AUTH", True)
+
+# spatial queries required verified user
+set_option("API_DISTANCE_FILTER_REQUIRE_VERIFIED", True)
+
 # specifies the expiry period of cached geo-coordinates
 # in seconds (default 30days)
 set_option("GEOCOORD_CACHE_EXPIRY", 86400 * 30)

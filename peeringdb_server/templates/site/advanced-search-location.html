@@ -50,6 +50,7 @@
                --data-edit-data-all-entry=":-- All Countries --"></div>
         </div>
       </div>
+      {% if can_use_distance_filter %}
       <div class="row">
         <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Within Distance" %}
         </div>
@@ -65,5 +66,14 @@
           </div>
         </div>
       </div>
+      {% else %}
+      <div class="alert alert-info">
+       {% if not request.user.is_authenticated %}
+       {% trans "Additional filters are available to authenticated users and you are currently not logged in." %}
+       {% elif not request.user.is_verified_user %}
+       {% trans "Additional filters are available to verified users and you are currently not affiliated with any organizations." %}
+       {% endif %}
+      </div>
+      {% endif %}
 
 
