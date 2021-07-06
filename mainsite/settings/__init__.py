@@ -256,8 +256,9 @@ set_from_env("DESKPRO_URL")
 # Limits
 
 API_THROTTLE_ENABLED = True
-API_THROTTLE_RATE_ANON = "100/second"
-API_THROTTLE_RATE_USER = "100/second"
+set_option("API_THROTTLE_RATE_ANON", "100/second")
+set_option("API_THROTTLE_RATE_USER", "100/second")
+set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
 
 # specifies the expiry period of cached geo-coordinates
 # in seconds (default 30days)
@@ -625,10 +626,12 @@ if API_THROTTLE_ENABLED:
             "DEFAULT_THROTTLE_CLASSES": (
                 "rest_framework.throttling.AnonRateThrottle",
                 "rest_framework.throttling.UserRateThrottle",
+                "peeringdb_server.rest_throttles.FilterDistanceThrottle",
             ),
             "DEFAULT_THROTTLE_RATES": {
                 "anon": API_THROTTLE_RATE_ANON,
                 "user": API_THROTTLE_RATE_USER,
+                "filter_distance": API_THROTTLE_RATE_FILTER_DISTANCE,
             },
         }
     )
