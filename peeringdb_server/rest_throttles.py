@@ -2,6 +2,8 @@ from django.conf import settings
 from rest_framework import throttling
 from rest_framework.exceptions import PermissionDenied
 
+from peeringdb_server.permissions import get_user_from_request, get_org_key_from_request
+
 
 class FilterThrottle(throttling.SimpleRateThrottle):
 
@@ -27,24 +29,36 @@ class FilterThrottle(throttling.SimpleRateThrottle):
         else:
             return True
 
+        # user either comes from request.user, or user api key
+        # it will be None if an organization key is set
+        self.user = user = get_user_from_request(request)
+
         # require authenticated user to use this filter ?
 
-        require_auth = getattr(
-            settings, f"API_{self.filter_name.upper()}_FILTER_REQUIRE_AUTH", False
+        require_auth = (
+            getattr(
+                settings, f"API_{self.filter_name.upper()}_FILTER_REQUIRE_AUTH", False
+            )
+            and user
         )
 
         # require verified user to use this filter ?
 
-        require_verified = getattr(
-            settings, f"API_{self.filter_name.upper()}_FILTER_REQUIRE_VERIFIED", False
+        require_verified = (
+            getattr(
+                settings,
+                f"API_{self.filter_name.upper()}_FILTER_REQUIRE_VERIFIED",
+                False,
+            )
+            and user
         )
 
-        if (require_auth or require_verified) and not request.user.is_authenticated:
+        if (require_auth or require_verified) and not user.is_authenticated:
             raise PermissionDenied(
                 f"Please authenticate to use the `{self.filter_name}` filter"
             )
 
-        if require_verified and not request.user.is_verified_user:
+        if require_verified and not user.is_verified_user:
             raise PermissionDenied(
                 f"Please verify your account to use the `{self.filter_name}` filter"
             )
@@ -55,8 +69,13 @@ class FilterThrottle(throttling.SimpleRateThrottle):
         return super().allow_request(request, view)
 
     def get_cache_key(self, request, view):
-        if request.user.is_authenticated:
-            ident = request.user.pk
+
+        org_key = get_org_key_from_request(request)
+
+        if org_key:
+            ident = f"org-key:{org_key.prefix}"
+        elif self.user and self.user.is_authenticated:
+            ident = self.user.pk
         else:
             ident = self.get_ident(request)
 
