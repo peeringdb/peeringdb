@@ -90,6 +90,8 @@ class DummyRestClientWithKeyAuth(RestClient):
         # Set up with users
         if self.user:
             self.user_inst = models.User.objects.get(username=self.user)
+        elif kwargs.get("anon"):
+            self.user_inst = None
         else:
             self.user_inst = models.User.objects.get(username="guest")
 
@@ -98,7 +100,7 @@ class DummyRestClientWithKeyAuth(RestClient):
             self.key = kwargs.get("key")
             self.api_client.credentials(HTTP_AUTHORIZATION="Api-Key " + self.key)
             print(f"authenticating {self.user} w key {self.key}")
-        else:
+        elif self.user_inst:
             self.api_client.force_authenticate(self.user_inst)
 
     def _request(self, typ, id=0, method="GET", params=None, data=None, url=None):

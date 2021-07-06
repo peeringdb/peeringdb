@@ -2698,6 +2698,9 @@ class TestJSON(unittest.TestCase):
         assert len(data) == 1
         assert data[0]["id"] == fac.id
 
+        settings.API_DISTANCE_FILTER_REQUIRE_AUTH = True
+        settings.API_DISTANCE_FILTER_REQUIRE_VERIFIED = True
+
         # unverified users are blocked from doing distance query
 
         with pytest.raises(PermissionDeniedException) as excinfo:

@@ -30,8 +30,18 @@ class FilterThrottle(throttling.SimpleRateThrottle):
             return True
 
         # user either comes from request.user, or user api key
-        # it will be None if an organization key is set
+        #
+        # it will be None if an organization key is set or request
+        # is anonymous
         self.user = user = get_user_from_request(request)
+        self.org_key = org_key = get_org_key_from_request(request)
+
+        # Neither user nor organzation key could be identified
+        # Get user directly from request, which will likely return
+        # an anonymous user instance
+
+        if not org_key and not user:
+            self.user = user = request.user
 
         # require authenticated user to use this filter ?
 
@@ -70,10 +80,8 @@ class FilterThrottle(throttling.SimpleRateThrottle):
 
     def get_cache_key(self, request, view):
 
-        org_key = get_org_key_from_request(request)
-
-        if org_key:
-            ident = f"org-key:{org_key.prefix}"
+        if self.org_key:
+            ident = f"org-key:{self.org_key.prefix}"
         elif self.user and self.user.is_authenticated:
             ident = self.user.pk
         else:
