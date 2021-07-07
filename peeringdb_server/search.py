@@ -98,7 +98,7 @@ def search(term, autocomplete=False):
             {
                 "id": sq.pk,
                 "name": sq.result_name,
-                "org_id": sq.org_id,
+                "org_id": org_id,
                 "score": sq.score,
             }
         )
