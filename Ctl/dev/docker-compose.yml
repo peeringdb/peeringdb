@@ -22,6 +22,7 @@ services:
       - ./peeringdb_database:/var/lib/mysql
 
   peeringdb:
+#    user: "0:0"
     build:
       context: ../..
       dockerfile: Dockerfile
@@ -45,6 +46,7 @@ services:
       - ../../peeringdb_server:/srv/www.peeringdb.com/peeringdb_server
       - ../../mainsite:/srv/www.peeringdb.com/mainsite
       - ../../tests:/srv/www.peeringdb.com/tests
+#      - ../../search-data:/srv/www.peeringdb.com/search-data
 
 volumes:
   peeringdb_database:

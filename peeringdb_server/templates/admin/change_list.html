@@ -1,0 +1,35 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+{% block pagination_top %}
+{{ block.super }}
+{% if cl.allow_custom_result_length %}
+<select id="result-size">
+{% with num=10 %}<option {% if cl.list_per_page == 10 %}selected{% endif %} value="{{ num }}">{% blocktrans %}Show {{ num }} rows{% endblocktrans %}</option>{% endwith %}
+{% with num=25 %}<option {% if cl.list_per_page == 25 %}selected{% endif %} value="{{ num }}">{% blocktrans %}Show {{ num }} rows{% endblocktrans %}</option>{% endwith %}
+{% with num=50 %}<option {% if cl.list_per_page == 50 %}selected{% endif %} value="{{ num }}">{% blocktrans %}Show {{ num }} rows{% endblocktrans %}</option>{% endwith %}
+{% with num=100 %}<option {% if cl.list_per_page == 100 %}selected{% endif %} value="{{ num }}">{% blocktrans %}Show {{ num }} rows{% endblocktrans %}</option>{% endwith %}
+{% with num=250 %}<option {% if cl.list_per_page == 250 %}selected{% endif %} value="{{ num }}">{% blocktrans %}Show {{ num }} rows{% endblocktrans %}</option>{% endwith %}
+{% with num="all" %}<option {% if cl.list_per_page == 100000 %}selected{% endif %} value="{{ num }}">{% blocktrans %}Show {{ num }} rows{% endblocktrans %}{% trans "(Warning: potentially long load)" %}</option>{% endwith %}
+</select>
+{% endif %}
+{% endblock %}
+{% block javascripts %}
+{{ block.super }}
+{% if cl.allow_custom_result_length %}
+<script type="text/javascript">
+            (function($) {
+                $(document).ready(function() {
+                    $('#result-size').on("change", function() {
+                      {% url opts|admin_urlname:'changelist' as changelist_url %}
+                      let url = new URL(window.document.location.href)
+                      let params = url.searchParams;
+                      params.set('sz', $(this).val())
+                      url.search = params.toString();
+                      window.document.location.href = url.toString();
+
+                    });
+                });
+            })(grp.jQuery);
+</script>
+{% endif %}
+{% endblock %}

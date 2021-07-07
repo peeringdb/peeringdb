@@ -78,6 +78,9 @@ def test_add_deleted_netixlan(entities, use_ip, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
+    for email in IXFImportEmail.objects.all():
+        print(email.message)
+
     assert_no_emails(network, ixlan.ix)
 
     netixlan = NetworkIXLan.objects.filter(status="ok").first()

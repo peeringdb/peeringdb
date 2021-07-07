@@ -9,6 +9,7 @@ import re
 import reversion
 
 from django.test import Client
+from django.core.management import call_command
 
 from .util import ClientCase
 
@@ -119,6 +120,8 @@ class AdvancedSearchExportTest(ClientCase):
                 for i in entity_count
             ]
 
+        call_command("rebuild_index", "--noinput")
+
     def expected_data(self, tag, fmt):
         path = os.path.join(
             os.path.dirname(__file__),
@@ -165,9 +168,7 @@ class AdvancedSearchExportTest(ClientCase):
     def test_export_fac_json(self):
         """ test json export of facility search """
         client = Client()
-        response = client.get(
-            "/export/advanced-search/fac/json?name__contains=Facility"
-        )
+        response = client.get("/export/advanced-search/fac/json?name_search=Facility")
         assert json.loads(response.content) == json.loads(
             self.expected_data("fac", "json")
         )
@@ -176,7 +177,7 @@ class AdvancedSearchExportTest(ClientCase):
         """ test pretty json export of facility search """
         client = Client()
         response = client.get(
-            "/export/advanced-search/fac/json-pretty?name__contains=Facility"
+            "/export/advanced-search/fac/json-pretty?name_search=Facility"
         )
 
         assert json.loads(response.content) == json.loads(
@@ -190,7 +191,7 @@ class AdvancedSearchExportTest(ClientCase):
     def test_export_fac_csv(self):
         """ test csv export of facility search """
         client = Client()
-        response = client.get("/export/advanced-search/fac/csv?name__contains=Facility")
+        response = client.get("/export/advanced-search/fac/csv?name_search=Facility")
 
         assert response.content.decode("utf-8").replace(
             "\r\n", "\n"
@@ -199,7 +200,7 @@ class AdvancedSearchExportTest(ClientCase):
     def test_export_ix_json(self):
         """ test json export of exchange search """
         client = Client()
-        response = client.get("/export/advanced-search/ix/json?name__contains=Exchange")
+        response = client.get("/export/advanced-search/ix/json?name_search=Exchange")
         self.assertEqual(
             json.loads(response.content), json.loads(self.expected_data("ix", "json"))
         )
@@ -208,7 +209,7 @@ class AdvancedSearchExportTest(ClientCase):
         """ test pretty json export of exchange search """
         client = Client()
         response = client.get(
-            "/export/advanced-search/ix/json-pretty?name__contains=Exchange"
+            "/export/advanced-search/ix/json-pretty?name_search=Exchange"
         )
 
         assert json.loads(response.content) == json.loads(
@@ -222,7 +223,7 @@ class AdvancedSearchExportTest(ClientCase):
     def test_export_ix_csv(self):
         """ test csv export of exchange search """
         client = Client()
-        response = client.get("/export/advanced-search/ix/csv?name__contains=Exchange")
+        response = client.get("/export/advanced-search/ix/csv?name_search=Exchange")
         assert response.content.decode("utf-8").replace(
             "\r\n", "\n"
         ).rstrip() == self.expected_data("ix", "csv")

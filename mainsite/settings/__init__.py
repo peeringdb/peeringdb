@@ -256,8 +256,19 @@ set_from_env("DESKPRO_URL")
 # Limits
 
 API_THROTTLE_ENABLED = True
-API_THROTTLE_RATE_ANON = "100/second"
-API_THROTTLE_RATE_USER = "100/second"
+set_option("API_THROTTLE_RATE_ANON", "100/second")
+set_option("API_THROTTLE_RATE_USER", "100/second")
+set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
+
+# spatial queries require user auth
+set_option("API_DISTANCE_FILTER_REQUIRE_AUTH", True)
+
+# spatial queries required verified user
+set_option("API_DISTANCE_FILTER_REQUIRE_VERIFIED", True)
+
+# specifies the expiry period of cached geo-coordinates
+# in seconds (default 30days)
+set_option("GEOCOORD_CACHE_EXPIRY", 86400 * 30)
 
 # maximum value to allow in network.info_prefixes4
 set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 1000000)
@@ -408,6 +419,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "haystack",
     "django_otp",
     "django_otp.plugins.otp_static",
     "django_otp.plugins.otp_totp",
@@ -572,6 +584,7 @@ AUTHENTICATION_BACKENDS += (
 
 MIDDLEWARE += (
     "peeringdb_server.maintenance.Middleware",
+    "peeringdb_server.middleware.CurrentRequestContext",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
 )
 
@@ -619,10 +632,12 @@ if API_THROTTLE_ENABLED:
             "DEFAULT_THROTTLE_CLASSES": (
                 "rest_framework.throttling.AnonRateThrottle",
                 "rest_framework.throttling.UserRateThrottle",
+                "peeringdb_server.rest_throttles.FilterDistanceThrottle",
             ),
             "DEFAULT_THROTTLE_RATES": {
                 "anon": API_THROTTLE_RATE_ANON,
                 "user": API_THROTTLE_RATE_USER,
+                "filter_distance": API_THROTTLE_RATE_FILTER_DISTANCE,
             },
         }
     )
@@ -649,6 +664,15 @@ set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
 set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
 
 
+# limit results for the standard search
+# (hitting enter on the main search bar)
+set_option("SEARCH_RESULTS_LIMIT", 1000)
+
+# limit results for the quick search
+# (autocomplete on the main search bar)
+set_option("SEARCH_RESULTS_AUTOCOMPLETE_LIMIT", 40)
+
+
 set_option("BASE_URL", "http://localhost")
 set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
 
@@ -656,6 +680,21 @@ ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/login"
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/verify"
 ACCOUNT_EMAIL_REQUIRED = True
 
+# haystack
+
+set_option("WHOOSH_INDEX_PATH", os.path.join(BASE_DIR, "search-data", "whoosh-index"))
+set_option("WHOOSH_STORAGE", "file")
+HAYSTACK_CONNECTIONS = {
+    "default": {
+        "ENGINE": "haystack.backends.whoosh_backend.WhooshEngine",
+        "PATH": WHOOSH_INDEX_PATH,
+        "STORAGE": WHOOSH_STORAGE,
+        "BATCH_SIZE": 40000,
+    },
+}
+
+set_option("HAYSTACK_ITERATOR_LOAD_PER_QUERY", 20000)
+set_option("HAYSTACK_LIMIT_TO_REGISTERED_MODELS", False)
 
 # add user defined iso code for Kosovo
 COUNTRIES_OVERRIDE = {

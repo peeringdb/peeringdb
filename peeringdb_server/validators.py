@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 
 from peeringdb_server.inet import network_is_pdb_valid, IRR_SOURCE
+from peeringdb_server.request import bypass_validation
 import peeringdb_server.models
 
 
@@ -103,6 +104,10 @@ def validate_address_space(prefix):
     if not network_is_pdb_valid(prefix):
         raise ValidationError(_("Address space invalid: {}").format(prefix))
 
+    # bypass validation according to #741
+    if bypass_validation():
+        return
+
     prefixlen_min = getattr(settings, f"DATA_QUALITY_MIN_PREFIXLEN_V{prefix.version}")
     prefixlen_max = getattr(settings, f"DATA_QUALITY_MAX_PREFIXLEN_V{prefix.version}")
 
@@ -119,20 +124,36 @@ def validate_address_space(prefix):
 def validate_info_prefixes4(value):
     if not value:
         value = 0
+
+    if value < 0:
+        raise ValidationError(_("Negative value not allowed"))
+
+    # bypass validation according to #741
+    if bypass_validation():
+        return value
+
     if value > settings.DATA_QUALITY_MAX_PREFIX_V4_LIMIT:
         raise ValidationError(
             _("Maximum value allowed {}").format(
                 settings.DATA_QUALITY_MAX_PREFIX_V4_LIMIT
             )
         )
-    if value < 0:
-        raise ValidationError(_("Negative value not allowed"))
+
     return value
 
 
 def validate_info_prefixes6(value):
+
     if not value:
         value = 0
+
+    if value < 0:
+        raise ValidationError(_("Negative value not allowed"))
+
+    # bypass validation according to #741
+    if bypass_validation():
+        return value
+
     if value > settings.DATA_QUALITY_MAX_PREFIX_V6_LIMIT:
         raise ValidationError(
             _("Maximum value allowed {}").format(
@@ -140,8 +161,6 @@ def validate_info_prefixes6(value):
             )
         )
 
-    if value < 0:
-        raise ValidationError(_("Negative value not allowed"))
     return value
 
 
@@ -236,7 +255,11 @@ def validate_irr_as_set(value):
         # validate set name and as hierarchy
         as_parts = as_set.split(":")
 
-        if len(as_parts) > settings.DATA_QUALITY_MAX_IRR_DEPTH:
+        # validate max depth (superusers are allowed to bypass this validation, see #741)
+        if (
+            len(as_parts) > settings.DATA_QUALITY_MAX_IRR_DEPTH
+            and not bypass_validation()
+        ):
             raise ValidationError(
                 _("Maximum AS-SET hierarchy depth: {}").format(
                     settings.DATA_QUALITY_MAX_IRR_DEPTH

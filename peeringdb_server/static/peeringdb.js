@@ -1147,15 +1147,30 @@ PeeringDB.InlineSearch = {
     if(this.initialized)
       return
 
+    this.keystrokeTimeout = new twentyc.util.SmartTimeout(
+      () => {}, 500
+
+    );
+
     $('#search').keypress(function(e) {
       if(e.which == 13) {
+        PeeringDB.InlineSearch.keystrokeTimeout.cancel();
         window.document.location.href= "/search?q="+$(this).val()
         e.preventDefault();
       }
     });
 
     $('#search').keyup(function(e) {
-      PeeringDB.InlineSearch.search($(this).val());
+      if(e.which == 13)
+        return;
+
+      PeeringDB.InlineSearch.keystrokeTimeout.set(
+        () => {
+          PeeringDB.InlineSearch.search($(this).val());
+        },
+        500
+      );
+
     });
 
     this.searchResult = $('#search-result');
@@ -1709,6 +1724,18 @@ twentyc.editable.target.register(
           data["capacity__gte"] = capacity.formatted()
       }
 
+
+      if(parseInt(data.distance) > 0) {
+        if(data.country__in && data.country__in.split(",").length > 1) {
+          return $(this).trigger("error", {"type": "ValidationError", "field": "country__in", "info": "Please only select one country when filtering by distance."});
+        }
+        data.country = data.country__in;
+        delete data.country__in;
+        data.distance = this.sender.find('[data-edit-name="distance"]').data("edit-input-instance").formatted();
+      } else if(typeof(data.distance) != undefined){
+        delete data.distance;
+      }
+
       if(data["undefined"])
         delete data["undefined"]
       window.location.replace(
@@ -1725,6 +1752,14 @@ twentyc.editable.target.register(
           data[i] = data[i].join(",")
         }
       }
+
+      if(parseInt(data.distance) > 0) {
+        data.country = data.country__in;
+        delete data.country__in;
+      } else if(typeof(data.distance) != undefined){
+        delete data.distance;
+      }
+
 
       data.limit = this.limit || 250;
       data.depth = 1;
@@ -2768,6 +2803,41 @@ twentyc.editable.input.register(
   },
   "unit_input"
 );
+
+twentyc.editable.input.register(
+  "spatial_distance",
+  {
+    unit_name : "spatial_distance",
+    selected_unit : "km",
+    units : [
+      {
+        "name": "km",
+        "id": "km"
+      },
+      {
+        "name": "miles",
+        "id": "miles"
+      }
+    ],
+    convert : function(value, unit) {
+      if ( unit == "km"){
+        return parseInt(value)
+      } else {
+        return parseInt(value / 0.621371);
+      }
+    },
+
+    format_units: function(value) {
+      if(!value)
+        return "";
+
+      return value;
+
+    }
+  },
+  "unit_input"
+);
+
 
 /*
  * set up input templates

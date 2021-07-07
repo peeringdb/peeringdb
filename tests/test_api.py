@@ -91,9 +91,13 @@ class DummyRestClient(RestClient):
         self.useragent = kwargs.get("useragent")
         if self.user:
             self.user_inst = models.User.objects.get(username=self.user)
+        elif kwargs.get("anon"):
+            self.user_inst = None
         else:
             self.user_inst = models.User.objects.get(username="guest")
-        self.api_client.force_authenticate(self.user_inst)
+
+        if self.user_inst:
+            self.api_client.force_authenticate(self.user_inst)
 
     def _request(self, typ, id=0, method="GET", params=None, data=None, url=None):
         if not url:

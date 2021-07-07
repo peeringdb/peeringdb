@@ -636,7 +636,7 @@ twentyc.editable.target.error_handlers.http_json = function(response, me, sender
   if(response.status == 400) {
     var msg, k, i, info= [gettext("The server rejected your data")]; ///
     for(k in response.responseJSON) {
-      sender.find('[data-edit-name="'+k+'"]').each(function(idx) {
+      sender.find('[data-edit-name="'+k+'"], [data-edit-error-field="'+k+'"]').each(function(idx) {
         var input = $(this).data("edit-input-instance");
         if(input) {
           msg = response.responseJSON[k];

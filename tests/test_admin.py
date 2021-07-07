@@ -383,44 +383,6 @@ class AdminTests(TestCase):
         assert netixlan.ipaddr4 is None
         assert "Ip address already exists elsewhere" in response.content.decode("utf-8")
 
-    def test_validate_netixlan_speed(self):
-        ixlan = self.entities["ixlan"][0]
-        netixlan = ixlan.netixlan_set.first()
-
-        url = reverse(
-            "admin:{}_{}_change".format(
-                netixlan._meta.app_label,
-                netixlan._meta.object_name,
-            ).lower(),
-            args=(netixlan.id,),
-        )
-        original_speed = netixlan.speed
-        data = {
-            "status": netixlan.status,
-            "asn": netixlan.asn,
-            "ipaddr4": netixlan.ipaddr4,
-            "ipaddr6": "",
-            "notes": netixlan.notes,
-            "speed": 1200000,
-            "operational": netixlan.operational,
-            "network": netixlan.network_id,
-            "ixlan": netixlan.ixlan_id,
-            "_save": "Save",
-        }
-        client = Client()
-        client.force_login(self.admin_user)
-
-        response = client.post(url, data)
-        netixlan.refresh_from_db()
-        assert "Maximum speed: 1T" in response.content.decode("utf-8")
-        assert netixlan.speed == original_speed
-
-        data["speed"] = 10
-        response = client.post(url, data)
-        netixlan.refresh_from_db()
-        assert "Minimum speed: 100M" in response.content.decode("utf-8")
-        assert netixlan.speed == original_speed
-
     def _run_regex_search(self, model, search_term):
         c = Client()
         c.login(username="admin", password="admin")
@@ -652,6 +614,28 @@ class AdminTests(TestCase):
         assert response.status_code == kwargs.get("status_add", 200)
         if response.status_code == 200:
             assert search_str in cont
+
+    def _test_custom_result_length(self, sz):
+        user = self.admin_user
+        client = Client()
+        client.force_login(user)
+
+        assert user.is_staff
+
+        cls = models.Organization
+        url = reverse(
+            "admin:{}_{}_changelist".format(
+                cls._meta.app_label, cls._meta.object_name
+            ).lower(),
+        )
+        response = client.get(f"{url}?sz={sz}")
+        cont = response.content.decode("utf-8")
+        assert response.status_code == 200
+        assert cont.count('class="action-checkbox"') == sz
+
+    def test_custom_result_length(self):
+        self._test_custom_result_length(1)
+        self._test_custom_result_length(3)
 
     def test_grappelli_autocomplete(self):
         """

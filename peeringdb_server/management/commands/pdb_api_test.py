@@ -27,6 +27,7 @@ from grainy.const import (
     PERM_DELETE,
 )
 from django.core.management.base import BaseCommand
+from django.core.management import call_command
 from django.contrib.auth.models import Group
 from django.conf import settings
 from django.db.utils import IntegrityError
@@ -50,6 +51,7 @@ from peeringdb_server.models import (
     IXLanPrefix,
     InternetExchangeFacility,
     DeskProTicket,
+    GeoCoordinateCache,
 )
 
 from peeringdb_server.serializers import REFTAG_MAP as REFTAG_MAP_SLZ
@@ -197,6 +199,7 @@ class TestJSON(unittest.TestCase):
         return r
 
     def setUp(self):
+        self.db_anon = self.rest_client(URL, verbose=VERBOSE, anon=True)
         self.db_guest = self.rest_client(URL, verbose=VERBOSE)
         self.db_user = self.rest_client(URL, verbose=VERBOSE, **USER)
         self.db_org_member = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_MEMBER)
@@ -1606,7 +1609,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_poc(self):
-        data = self.make_data_poc(net_id=SHARED["net_rw_ok"].id)
+        data = self.make_data_poc(net_id=SHARED["net_rw_ok"].id, role="Abuse")
 
         r_data = self.assert_create(
             self.db_org_admin,
@@ -1830,6 +1833,7 @@ class TestJSON(unittest.TestCase):
         network = SHARED["net_rw_ok"]
 
         for poc in network.poc_set_active.all():
+            poc.role = "Abuse"
             poc.delete()
 
         data = self.make_data_netixlan(
@@ -2574,15 +2578,28 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_ix_name_search(self):
-        data = self.db_guest.all("ix", name_search=SHARED["ix_r_ok"].name)
-        self.assertEqual(len(data), 1)
-        for row in data:
-            self.assertEqual(row["id"], SHARED["ix_r_ok"].id)
 
-        data = self.db_guest.all("ix", name_search=SHARED["ix_r_ok"].name_long)
+        ix = InternetExchange.objects.create(
+            status="ok",
+            **self.make_data_ix(
+                name="Specific Exchange", name_long="This is a very specific exchange"
+            ),
+        )
+
+        # rebuild search index (name_search requires it)
+        call_command("rebuild_index", "--noinput")
+
+        data = self.db_guest.all("ix", name_search=ix.name)
         self.assertEqual(len(data), 1)
         for row in data:
-            self.assertEqual(row["id"], SHARED["ix_r_ok"].id)
+            self.assertEqual(row["id"], ix.id)
+
+        data = self.db_guest.all("ix", name_search=ix.name_long)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], ix.id)
+
+        ix.delete(hard=True)
 
     ##########################################################################
 
@@ -2646,6 +2663,63 @@ class TestJSON(unittest.TestCase):
             net.delete(hard=True)
         for ix in exchanges:
             ix.delete(hard=True)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_fac_distance(self):
+
+        # facility coordinates
+
+        lat_fac = 41.876212
+        lng_fac = -87.631453
+
+        # city coordinates: chicago
+
+        lat_chi = 41.878114
+        lng_chi = -87.629798
+
+        # create geo-coord cache
+        # we do this so we dont have to query the google maps api
+        # during the test
+
+        GeoCoordinateCache.objects.create(
+            country="US", city="Chicago", latitude=lat_chi, longitude=lng_chi
+        )
+
+        # pick one of the tests facilities and set its coordinates
+
+        fac = SHARED["fac_r_ok"]
+        fac.latitude = lat_fac
+        fac.longitude = lng_fac
+        fac.save()
+
+        data = self.db_org_member.all("fac", country="US", city="Chicago", distance=10)
+
+        assert len(data) == 1
+        assert data[0]["id"] == fac.id
+
+        settings.API_DISTANCE_FILTER_REQUIRE_AUTH = True
+        settings.API_DISTANCE_FILTER_REQUIRE_VERIFIED = True
+
+        # unverified users are blocked from doing distance query
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_guest.all("fac", country="US", city="Chicago", distance=10)
+        assert "verify" in f"{excinfo.value}"
+
+        # unauthenticated users are blocked from doing distance query
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_anon.all("fac", country="US", city="Chicago", distance=10)
+        assert "authenticate" in f"{excinfo.value}"
+
+        # adjust settings to allow the above
+
+        settings.API_DISTANCE_FILTER_REQUIRE_VERIFIED = False
+        self.db_guest.all("fac", country="US", city="Chicago", distance=10)
+
+        settings.API_DISTANCE_FILTER_REQUIRE_AUTH = False
+        self.db_anon.all("fac", country="US", city="Chicago", distance=10)
 
     ##########################################################################
 

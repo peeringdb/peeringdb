@@ -987,6 +987,11 @@ div.editable.mode-edit div.view_field {
 .editable.input-note.validation-error {
   background-color: #9e1e1e;
   z-index: 10;
+  font-size: 14px;
+  right: 3px;
+  top: -24px;
+  left: auto;
+  padding: 5px;
 }
 
 

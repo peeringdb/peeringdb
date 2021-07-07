@@ -586,6 +586,10 @@ def view_verify(request):
         if EmailAddress.objects.filter(user=request.user).exists():
             EmailAddress.objects.filter(user=request.user).delete()
 
+        # email hasn't change, so we just do nothing
+        if request.user.email == request.POST.get("email"):
+            return JsonResponse({"status": "ok"})
+
         request.user.email = request.POST.get("email")
 
         if (
@@ -1967,23 +1971,38 @@ def view_advanced_search(request):
         except (ObjectDoesNotExist, ValueError):
             env["not_fac_name"] = ""
 
+    env["can_use_distance_filter"] = (
+        dj_settings.API_DISTANCE_FILTER_REQUIRE_AUTH == False
+        or request.user.is_authenticated
+    ) and (
+        dj_settings.API_DISTANCE_FILTER_REQUIRE_VERIFIED == False
+        or (request.user.is_authenticated and request.user.is_verified_user)
+    )
+
     return HttpResponse(template.render(env, request))
 
 
 def request_api_search(request):
+
+    """
+    Triggered off of typing something in the main peeringdb searchbar
+    without hitting enter (quasi autocomplete)
+    """
+
     q = request.GET.get("q")
 
     if not q:
         return HttpResponseBadRequest()
 
-    result = search(q)
+    result = search(q, autocomplete=True)
 
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
 def request_search(request):
     """
-    XHR search request goes here
+    Triggered off of hitting enter on the main search bar
+    Renders a search result page.
     """
     q = request.GET.get("q")
 

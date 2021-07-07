@@ -1,0 +1,7 @@
+{{ object.ix.name }}
+{{ object.ix.name_long }}
+{{ object.ix.aka }}
+
+{{ object.facility.name }}
+{{ object.facility.name_long }}
+{{ object.facility.aka }}

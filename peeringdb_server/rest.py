@@ -21,6 +21,8 @@ from django.db.models import DateTimeField
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
 
+from haystack.query import SearchQuerySet
+
 import reversion
 
 from peeringdb_server.models import Network, UTC, ProtectedAction
@@ -36,6 +38,7 @@ from peeringdb_server.permissions import (
     get_user_key_from_request,
 )
 from peeringdb_server.util import coerce_ipaddr
+from peeringdb_server.search import make_search_query
 
 
 class DataException(ValueError):
@@ -288,6 +291,8 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         qset = self.model.handleref.all()
 
+        enforced_limit = getattr(settings, "API_DEPTH_ROW_LIMIT", 250)
+
         self.request.meta_response = {}
 
         if hasattr(self.serializer_class, "prepare_query"):
@@ -334,9 +339,35 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         date_fields = ["DateTimeField", "DateField"]
 
-        # filters
+        # haystack search for the legacy `name_search` parameter
+        q = self.request.query_params.get("name_search")
+        q_ids = []
+        if q:
+            search_query = make_search_query(q).models(self.model)
+            q_ids = [sq.pk for sq in search_query]
+            # no results found - return empty query
+            if not q_ids:
+                return qset.none()
+
+        # db field filters
         filters = {}
         for k, v in list(self.request.query_params.items()):
+
+            if k == "q":
+                continue
+
+            # if we are doing spatial distance matching, we need to ignore
+            # exact filters for location fields
+            if getattr(qset, "spatial", False):
+                if k in [
+                    "latitude",
+                    "longitude",
+                    "address1",
+                    "city",
+                    "state",
+                    "zipcode",
+                ]:
+                    continue
 
             v = unidecode.unidecode(v)
 
@@ -416,6 +447,15 @@ class ModelViewSet(viewsets.ModelViewSet):
                 else:
                     filters["%s__iexact" % k] = v
 
+        # any object ids we got back from processing a `q` (haystack)
+        # search we will now merge into the `id__in` filter
+
+        if q_ids:
+            if filters.get("id__in"):
+                filters["id__in"] += q_ids
+            else:
+                filters["id__in"] = q_ids
+
         if filters:
             try:
                 qset = qset.filter(**filters)
@@ -458,13 +498,12 @@ class ModelViewSet(viewsets.ModelViewSet):
             else:
                 qset = qset[skip:]
 
-            adrl = getattr(settings, "API_DEPTH_ROW_LIMIT", 250)
             row_count = qset.count()
-            if adrl and depth > 0 and row_count > adrl:
-                qset = qset[:adrl]
+            if enforced_limit and depth > 0 and row_count > enforced_limit:
+                qset = qset[:enforced_limit]
                 self.request.meta_response["truncated"] = (
                     "Your search query (with depth %d) returned more than %d rows and has been truncated. Please be more specific in your filters, use the limit and skip parameters to page through the resultset or drop the depth parameter"
-                    % (depth, adrl)
+                    % (depth, enforced_limit)
                 )
 
         if depth > 0 or self.kwargs:

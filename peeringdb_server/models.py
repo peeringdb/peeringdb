@@ -51,6 +51,7 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_irr_as_set,
 )
+from peeringdb_server.request import bypass_validation
 import peeringdb_server.geo as geo
 
 SPONSORSHIP_LEVELS = (
@@ -336,6 +337,128 @@ class GeocodeBaseMixin(models.Model):
             self.save()
 
         return sanitized
+
+
+class GeoCoordinateCache(models.Model):
+
+    """
+    Stores geocoordinates for address lookups
+    """
+
+    country = pdb_models.CountryField()
+    city = models.CharField(max_length=255, null=True, blank=True)
+    address1 = models.CharField(max_length=255, null=True, blank=True)
+    state = models.CharField(max_length=255, null=True, blank=True)
+    zipcode = models.CharField(max_length=255, null=True, blank=True)
+
+    latitude = models.DecimalField(
+        _("Latitude"), max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    longitude = models.DecimalField(
+        _("Longitude"), max_digits=9, decimal_places=6, null=True, blank=True
+    )
+
+    fetched = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "peeringdb_geocoord_cache"
+        verbose_name = _("Geocoordinate Cache")
+        verbose_name_plural = _("Geocoordinate Cache Entries")
+
+    @classmethod
+    def request_coordinates(cls, **kwargs):
+
+        address_fields = [
+            "address1",
+            "zipcode",
+            "state",
+            "city",
+            "country",
+        ]
+
+        # we only request geo-coordinates if country and
+        # city/state are specified
+
+        if not kwargs.get("country"):
+            return None
+
+        if not kwargs.get("city") and not kwargs.get("state"):
+            return None
+
+        # address string passed to google for lookup
+        address = []
+
+        # filters passed to GeoCoordinateCache for cache retrieval
+        filters = {}
+
+        # attributes passed to GeoCoordinateCache for cache creation
+        params = {}
+
+        # prepare geo-coordinate filters, params and lookup
+
+        for field in address_fields:
+
+            value = kwargs.get(field, None)
+            if value and isinstance(value, list):
+                value = value[0]
+            if field != "country" and value:
+                address.append(f"{value}")
+            else:
+                country = value
+
+            params[field] = value
+
+            if value:
+                filters[field] = value
+            else:
+                filters[f"{field}__isnull"] = True
+
+        # attempt to retrieve a valid cache
+
+        cache = cls.objects.filter(**filters).order_by("-fetched").first()
+
+        if cache:
+            tdiff = timezone.now() - cache.fetched
+
+            # check if cache is past expiry date, and expire it if so
+
+            if tdiff.total_seconds() > settings.GEOCOORD_CACHE_EXPIRY:
+                cache.delete()
+                cache = None
+
+        if not cache:
+
+            # valid geo-coord cache does not exist, request coordinates
+            # from google and create a cache entry
+
+            address = " ".join(address)
+            google = geo.GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY)
+            try:
+
+                if params.get("address1"):
+                    typ = "premise"
+                elif params.get("zipcode"):
+                    typ = "postal"
+                elif params.get("city"):
+                    typ = "city"
+                elif params.get("state"):
+                    typ = "state"
+                else:
+                    typ = "country"
+
+                coords = google.geocode_address(address, country, typ=typ)
+                cache = cls.objects.create(
+                    latitude=coords["lat"], longitude=coords["lng"], **params
+                )
+            except geo.NotFound:
+
+                # google could not find address
+                # we still create a cache entry with null coordinates.
+
+                cls.objects.create(**params)
+                raise
+
+        return {"longitude": cache.longitude, "latitude": cache.latitude}
 
 
 class UserOrgAffiliationRequest(models.Model):
@@ -4025,7 +4148,7 @@ class Network(pdb_models.NetworkBase):
     parent="network",
 )
 @reversion.register
-class NetworkContact(pdb_models.ContactBase):
+class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
     """
     Describes a contact point (phone, email etc.) for a network
     """
@@ -4035,8 +4158,49 @@ class NetworkContact(pdb_models.ContactBase):
         Network, on_delete=models.CASCADE, default=0, related_name="poc_set"
     )
 
+    TECH_ROLES = ["Technical", "NOC", "Policy"]
+
     class Meta:
         db_table = "peeringdb_network_contact"
+
+    @property
+    def is_tech_contact(self):
+        return self.role in self.TECH_ROLES
+
+    @property
+    def deletable(self):
+        """
+        Returns whether or not the poc is currently
+        in a state where it can be marked as deleted.
+
+        This will be False for pocs that are the last remaining
+        technical contact point for a network that has
+        active netixlans. (#923)
+        """
+
+        # non-technical pocs can always be deleted
+
+        if not self.is_tech_contact:
+            self._not_deletable_reason = None
+            return True
+
+        netixlan_count = self.network.netixlan_set_active.count()
+        tech_poc_count = self.network.poc_set_active.filter(
+            role__in=self.TECH_ROLES
+        ).count()
+
+        if netixlan_count and tech_poc_count == 1:
+
+            # there are active netixlans and this poc is the
+            # only technical poc left
+
+            self._not_deletable_reason = _(
+                "Last technical contact point for network with active peers"
+            )
+            return False
+        else:
+            self._not_deletable_reason = None
+            return True
 
     def clean(self):
         self.phone = validate_phonenumber(self.phone)
@@ -4269,6 +4433,11 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     def validate_speed(self):
         if self.speed in [None, 0]:
             pass
+
+        # bypass validation according to #741
+        elif bypass_validation():
+            return
+
         elif self.speed > settings.DATA_QUALITY_MAX_SPEED:
             raise ValidationError(
                 _("Maximum speed: {}").format(
@@ -4510,6 +4679,31 @@ class User(AbstractBaseUser, PermissionsMixin):
             user=self, status__in=["denied", "canceled"]
         ).delete()
 
+    def recheck_affiliation_requests(self):
+        """
+        Will re-evaluate pending affiliation requests to unclaimed
+        ASN orgs
+
+        This allows a user with such a pending affiliation request to
+        change ther email and re-check against rdap data for automatic
+        ownership approval (#375)
+        """
+
+        for req in self.pending_affiliation_requests.filter(asn__gt=0):
+
+            # we dont want to re-evaluate for affiliation requests
+            # with organizations that already have admin users managing them
+            if req.org_id and req.org.admin_usergroup.user_set.exists():
+                continue
+
+            # cancel current request
+            req.delete()
+
+            # reopen request
+            UserOrgAffiliationRequest.objects.create(
+                user=self, org=req.org, asn=req.asn, status="pending"
+            )
+
     def get_locale(self):
         "Returns user preferred language."
         return self.locale
@@ -4674,6 +4868,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             except IndexError, inst:
                 pass
         """
+
         # Exact email matching
         for email in rdap.emails:
             if email.lower() == self.email.lower():

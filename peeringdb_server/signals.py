@@ -10,7 +10,7 @@ from django.template import loader
 from django.conf import settings
 from django.dispatch import receiver
 import reversion
-from allauth.account.signals import user_signed_up
+from allauth.account.signals import user_signed_up, email_confirmed
 
 from corsheaders.signals import check_request_enabled
 
@@ -273,6 +273,12 @@ def new_user_to_guests(request, user, sociallogin=None, **kwargs):
         user.set_verified()
     else:
         user.set_unverified()
+
+
+@receiver(email_confirmed, dispatch_uid="allauth.email_confirmed")
+def recheck_ownership_requests(request, email_address, **kwargs):
+    if request.user.is_authenticated:
+        request.user.recheck_affiliation_requests()
 
 
 # USER TO ORGANIZATION AFFILIATION
