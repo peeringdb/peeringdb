@@ -339,11 +339,8 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         date_fields = ["DateTimeField", "DateField"]
 
-        # haystack search
-        # handled either through the `q` or the legacy `name_search` parameter
-        q = self.request.query_params.get(
-            "name_search", self.request.query_params.get("q")
-        )
+        # haystack search for the legacy `name_search` parameter
+        q = self.request.query_params.get("name_search")
         q_ids = []
         if q:
             search_query = make_search_query(q).models(self.model)

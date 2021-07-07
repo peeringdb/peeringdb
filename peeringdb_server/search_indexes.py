@@ -103,12 +103,26 @@ class EntityIndex(indexes.SearchIndex):
         return self.prepared_data
 
 
-class OrganizationIndex(EntityIndex, indexes.Indexable):
+class MainEntity(EntityIndex):
+    name = indexes.CharField()
+    auto = indexes.EdgeNgramField()
+    result_name = indexes.CharField(model_attr="search_result_name", indexed=False)
+
+    def prepare_auto(self, obj):
+        return self.prepare_name(obj)
+
+    def prepare_name(self, obj):
+        return unaccent(f"{obj.name} {obj.aka} {obj.name_long}")
+
+
+class OrganizationIndex(MainEntity, indexes.Indexable):
     def get_model(self):
         return Organization
 
 
-class InternetExchangeIndex(EntityIndex, indexes.Indexable):
+class InternetExchangeIndex(MainEntity, indexes.Indexable):
+    org_id = indexes.IntegerField(indexed=False, model_attr="org_id")
+
     class Meta:
         relations = ["org"]
 
@@ -116,15 +130,23 @@ class InternetExchangeIndex(EntityIndex, indexes.Indexable):
         return InternetExchange
 
 
-class NetworkIndex(EntityIndex, indexes.Indexable):
+class NetworkIndex(MainEntity, indexes.Indexable):
+    org_id = indexes.IntegerField(indexed=False, model_attr="org_id")
+
     class Meta:
         relations = ["org"]
 
     def get_model(self):
         return Network
 
+    def prepare_auto(self, obj):
+        asn = obj.asn
+        return f"{self.prepare_name(obj)} AS{asn} AS-{asn} {asn}"
 
-class FacilityIndex(EntityIndex, indexes.Indexable):
+
+class FacilityIndex(MainEntity, indexes.Indexable):
+    org_id = indexes.IntegerField(indexed=False, model_attr="org_id")
+
     class Meta:
         relations = ["org"]
 

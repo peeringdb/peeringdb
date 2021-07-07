@@ -664,6 +664,15 @@ set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
 set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
 
 
+# limit results for the standard search
+# (hitting enter on the main search bar)
+set_option("SEARCH_RESULTS_LIMIT", 1000)
+
+# limit results for the quick search
+# (autocomplete on the main search bar)
+set_option("SEARCH_RESULTS_AUTOCOMPLETE_LIMIT", 40)
+
+
 set_option("BASE_URL", "http://localhost")
 set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
 

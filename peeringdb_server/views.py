@@ -1983,19 +1983,26 @@ def view_advanced_search(request):
 
 
 def request_api_search(request):
+
+    """
+    Triggered off of typing something in the main peeringdb searchbar
+    without hitting enter (quasi autocomplete)
+    """
+
     q = request.GET.get("q")
 
     if not q:
         return HttpResponseBadRequest()
 
-    result = search(q)
+    result = search(q, autocomplete=True)
 
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
 def request_search(request):
     """
-    XHR search request goes here
+    Triggered off of hitting enter on the main search bar
+    Renders a search result page.
     """
     q = request.GET.get("q")
 
