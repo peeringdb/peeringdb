@@ -1,3 +1,7 @@
-{{ object.name }}
-{{ object.name_long }}
-{{ object.aka }}
+Internet Exchange {{ object.name }}
+{{ object.name_long|default:"" }}
+{{ object.aka|default:"" }}
+
+{{ object.country.name }} {{ object.country.code }}
+{{ object.city }}
+{{ object.region_continent }}
