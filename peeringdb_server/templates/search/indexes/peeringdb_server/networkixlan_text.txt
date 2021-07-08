@@ -1,11 +1,2 @@
-{{ object.ipaddr4 }}
-{{ object.ipaddr6 }}
-
-{{ object.network.name }}
-{{ object.network.name_long }}
-{{ object.network.aka }}
-AS{{ object.network.asn }} ASN{{ object.network.asn }} {{ object.network.asn }}
-
-{{ object.ixlan.ix.name }}
-{{ object.ixlan.ix.name_long }}
-{{ object.ixlan.ix.aka }}
+{% if object.ipaddr4 %}{{ object.ipaddr4 }}{% endif %}
+{% if object.ipaddr6 %}{{ object.ipaddr6 }}{% endif %}

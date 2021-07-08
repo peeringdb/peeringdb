@@ -5,6 +5,7 @@ Defines django-haystack search indexes
 from haystack import indexes
 
 from django.db.models import Q
+from django.conf import settings
 
 
 from peeringdb_server.search import unaccent
@@ -114,6 +115,11 @@ class MainEntity(EntityIndex):
     def prepare_name(self, obj):
         return unaccent(f"{obj.name} {obj.aka} {obj.name_long}")
 
+    def prepare(self, obj):
+        data = super().prepare(obj)
+        data["boost"] = settings.SEARCH_MAIN_ENTITY_BOOST
+        return data
+
 
 class OrganizationIndex(MainEntity, indexes.Indexable):
     def get_model(self):
@@ -154,28 +160,71 @@ class FacilityIndex(MainEntity, indexes.Indexable):
         return Facility
 
 
-class NetworkFacilityIndex(EntityIndex, indexes.Indexable):
-    class Meta:
-        relations = ["network", "facility", "network__org", "facility__org"]
-
-    def get_model(self):
-        return NetworkFacility
-
-
 class NetworkIXLanIndex(EntityIndex, indexes.Indexable):
+
+    ix_id = indexes.IntegerField(indexed=False, model_attr="ixlan__ix__id")
+    ix_org_id = indexes.IntegerField(indexed=False, model_attr="ixlan__ix__org_id")
+    ix_result_name = indexes.CharField(indexed=False)
+
+    net_id = indexes.IntegerField(indexed=False, model_attr="network_id")
+    net_org_id = indexes.IntegerField(indexed=False, model_attr="network__org_id")
+    net_result_name = indexes.CharField(indexed=False)
+
+    net_sub_result_name = indexes.CharField(indexed=False)
+    ix_sub_result_name = indexes.CharField(indexed=False)
+
     class Meta:
         relations = ["network", "ixlan__ix", "network__org", "ixlan__ix__org"]
 
     def get_model(self):
         return NetworkIXLan
 
+    def prepare_ix_result_name(self, obj):
+        return obj.ixlan.ix.search_result_name
 
-class NetworkContactIndex(EntityIndex, indexes.Indexable):
+    def prepare_net_result_name(self, obj):
+        return obj.network.search_result_name
+
+    def prepare_ix_sub_result_name(self, obj):
+        if obj.ipaddr4 and obj.ipaddr6:
+            return f"{obj.ipaddr4} {obj.ipaddr6}"
+        elif obj.ipaddr4:
+            return f"{obj.ipaddr4}"
+        elif obj.ipaddr6:
+            return f"{obj.ipaddr6}"
+
+    def prepare_net_sub_result_name(self, obj):
+        ips = self.prepare_ix_sub_result_name(obj)
+        return f"{obj.ixlan.ix.search_result_name} {ips}"
+
+
+class IXLanPrefixIndex(EntityIndex, indexes.Indexable):
+
+    ix_id = indexes.IntegerField(indexed=False, model_attr="ixlan__ix__id")
+    ix_org_id = indexes.IntegerField(indexed=False, model_attr="ixlan__ix__org_id")
+    ix_result_name = indexes.CharField(indexed=False)
+
     class Meta:
-        relations = ["network", "network__org"]
+        relations = ["ixlan__ix", "ixlan__ix__org"]
 
     def get_model(self):
-        return NetworkContact
+        return IXLanPrefix
+
+    def prepare_ix_result_name(self, obj):
+        return obj.ixlan.ix.search_result_name
+
+    def prepare_ix_sub_result_name(self, obj):
+        return obj.prefix
+
+
+# The following models are currently not indexed
+"""
+class NetworkFacilityIndex(EntityIndex, indexes.Indexable):
+    class Meta:
+        relations = ["network", "facility", "network__org", "facility__org"]
+
+    def get_model(self):
+        return NetworkFacility
 
 
 class InternetExchangeFacilityIndex(EntityIndex, indexes.Indexable):
@@ -186,17 +235,18 @@ class InternetExchangeFacilityIndex(EntityIndex, indexes.Indexable):
         return InternetExchangeFacility
 
 
+
+class NetworkContactIndex(EntityIndex, indexes.Indexable):
+    class Meta:
+        relations = ["network", "network__org"]
+
+    def get_model(self):
+        return NetworkContact
+
+
 class IXLanIndex(EntityIndex, indexes.Indexable):
     class Meta:
         relations = ["ix", "ix__org"]
 
     def get_model(self):
-        return IXLan
-
-
-class IXLanPrefixIndex(EntityIndex, indexes.Indexable):
-    class Meta:
-        relations = ["ixlan__ix", "ixlan__ix__org"]
-
-    def get_model(self):
-        return IXLanPrefix
+"""
