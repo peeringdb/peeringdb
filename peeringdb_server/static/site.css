@@ -670,6 +670,14 @@ div.result_title {
   padding-bottom: 20px;
 }
 
+div.result_row div.highlight {
+  font-size: 11px;
+}
+
+div.result_row div.highlight em {
+  font-weight: bold;
+}
+
 div.result_row, table.result td {
   color: #1c3f28;
   vertical-align: top;

@@ -672,6 +672,9 @@ set_option("SEARCH_RESULTS_LIMIT", 1000)
 # (autocomplete on the main search bar)
 set_option("SEARCH_RESULTS_AUTOCOMPLETE_LIMIT", 40)
 
+# boost org,net,fac,ix matches over secondary entites (1.0 == no boost)
+set_option("SEARCH_MAIN_ENTITY_BOOST", 1.5)
+
 
 set_option("BASE_URL", "http://localhost")
 set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))

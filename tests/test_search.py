@@ -53,7 +53,7 @@ class SearchTests(TestCase):
         # create an instance of each searchable model, so we have something
         # to search for
         cls.org = models.Organization.objects.create(name="Parent org")
-        for model in search.searchable_models:
+        for model in search.autocomplete_models:
             cls.instances[model.handleref.tag] = cls.create_instance(model, cls.org)
             cls.instances_accented[model.handleref.tag] = cls.create_instance(
                 model, cls.org, asn=2, accented=True
@@ -76,7 +76,7 @@ class SearchTests(TestCase):
             org=cls.org_w_sponsorship, sponsorship=cls.sponsorship
         )
 
-        for model in search.searchable_models:
+        for model in search.autocomplete_models:
             cls.instances_sponsored[model.handleref.tag] = cls.create_instance(
                 model, cls.org_w_sponsorship, asn=3, prefix="Sponsor"
             )
