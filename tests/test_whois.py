@@ -1,9 +1,11 @@
-from peeringdb_server.models import REFTAG_MAP
-from django.core.management import call_command
-from .util import ClientCase
-
 import io
 import sys
+
+from django.core.management import call_command
+
+from peeringdb_server.models import REFTAG_MAP
+
+from .util import ClientCase
 
 
 class TestWhois(ClientCase):

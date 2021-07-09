@@ -1,4 +1,4 @@
-## Internet Exchange / Facility presence 
+## Internet Exchange / Facility presence
 
 Identified by the `ixfac` tag.
 

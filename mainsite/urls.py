@@ -1,22 +1,20 @@
+from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
-from django.conf import settings
-from django.views.generic.base import RedirectView
-
-from peeringdb_server.views import LoginView
-
-from two_factor.urls import urlpatterns as tf_urls
 
 # auto admin
 from django.contrib import admin
+from django.views.generic.base import RedirectView
+from two_factor.urls import urlpatterns as tf_urls
+
+from peeringdb_server.views import LoginView
 
 admin.autodiscover()
 
-import peeringdb_server.urls
-
-from peeringdb_server.autocomplete_views import GrappelliHandlerefAutocomplete
-
 import allauth.account.views
+
+import peeringdb_server.urls
+from peeringdb_server.autocomplete_views import GrappelliHandlerefAutocomplete
 
 tf_urls[0][0] = url(
     regex=r"^account/login/$",

@@ -1,10 +1,10 @@
-import pytest
 import json
-from grainy.const import *
 
-from django.test import Client, TestCase, RequestFactory
-from django.contrib.auth.models import Group
+import pytest
 from django.conf import settings
+from django.contrib.auth.models import Group
+from django.test import Client, RequestFactory, TestCase
+from grainy.const import *
 
 import peeringdb_server.models as models
 import peeringdb_server.org_admin_views as org_admin

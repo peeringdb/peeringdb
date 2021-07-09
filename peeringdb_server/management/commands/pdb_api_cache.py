@@ -1,14 +1,16 @@
-from django.core.management.base import BaseCommand
+import datetime
 import os
+import time
 import traceback
+from optparse import make_option
+
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from rest_framework.test import APIRequestFactory
+
 import peeringdb_server.models as pdbm
 import peeringdb_server.rest as pdbr
-import datetime
-import time
 from peeringdb_server.renderers import MetaJSONRenderer
-from django.conf import settings
-from optparse import make_option
-from rest_framework.test import APIRequestFactory
 
 MODELS = [
     pdbm.Organization,

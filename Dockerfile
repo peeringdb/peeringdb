@@ -1,4 +1,4 @@
-# RUN true is used here to separate problematic COPY statements, 
+# RUN true is used here to separate problematic COPY statements,
 # per this issue: https://github.com/moby/moby/issues/37965
 
 FROM python:3.9-alpine as base
@@ -31,8 +31,8 @@ RUN python3 -m venv "$VIRTUAL_ENV" && pip install -U pip
 
 WORKDIR /srv/www.peeringdb.com
 COPY poetry.lock pyproject.toml ./
-# XXX  -- install dev? RUN poetry install --no-dev --no-root 
-RUN poetry install --no-root 
+# XXX  -- install dev? RUN poetry install --no-dev --no-root
+RUN poetry install --no-root
 
 # inetd
 RUN apk add busybox-extras
@@ -68,7 +68,7 @@ RUN true
 COPY peeringdb_server/ peeringdb_server
 COPY fixtures/ fixtures
 COPY .coveragerc .coveragerc
-RUN mkdir coverage 
+RUN mkdir coverage
 
 COPY scripts/manage /usr/bin/
 COPY Ctl/docker/entrypoint.sh /
@@ -96,7 +96,7 @@ COPY Ctl/docker/entrypoint.sh .
 # XXX RUN pip install -U pipenv
 # installed dev
 RUN pip install -U poetry
-RUN poetry install --no-root 
+RUN poetry install --no-root
 # XXX RUN pipenv install --dev --ignore-pipfile -v
 #RUN echo `which python`
 #RUN pip freeze

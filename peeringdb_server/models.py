@@ -1,58 +1,57 @@
-import re
-import json
 import datetime
-from itertools import chain
-import uuid
 import ipaddress
+import json
+import re
+import uuid
+from itertools import chain
 from pprint import pprint
-import requests
-import reversion
 
 import django.urls
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.contrib.auth.models import UserManager, Group
+import django_grainy.decorators
+import django_peeringdb.models as pdb_models
+import requests
+import reversion
+from allauth.account.models import EmailAddress, EmailConfirmation
+from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    Group,
+    PermissionsMixin,
+    UserManager,
+)
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core import validators
-from django.core.mail.message import EmailMultiAlternatives
 from django.core.exceptions import ValidationError
+from django.core.mail.message import EmailMultiAlternatives
 from django.db import models, transaction
+from django.template import loader
 from django.utils import timezone
+from django.utils.functional import Promise
 from django.utils.html import strip_tags
 from django.utils.http import urlquote
-from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import override
-from django.utils.functional import Promise
-from django.conf import settings
-from django.template import loader
-from django_handleref.models import (
-    CreatedDateTimeField,
-    UpdatedDateTimeField,
-)
-import django_peeringdb.models as pdb_models
-from django_inet.models import ASNField
-
+from django.utils.translation import ugettext_lazy as _
 from django_grainy.decorators import grainy_model
-import django_grainy.decorators
 from django_grainy.models import Permission, PermissionManager
-
-from allauth.account.models import EmailAddress, EmailConfirmation
-from allauth.socialaccount.models import SocialAccount
+from django_grainy.util import check_permissions
+from django_handleref.models import CreatedDateTimeField, UpdatedDateTimeField
+from django_inet.models import ASNField
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
 
-from django_grainy.util import check_permissions
+import peeringdb_server.geo as geo
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
+from peeringdb_server.request import bypass_validation
 from peeringdb_server.validators import (
     validate_address_space,
     validate_info_prefixes4,
     validate_info_prefixes6,
-    validate_prefix_overlap,
-    validate_phonenumber,
     validate_irr_as_set,
+    validate_phonenumber,
+    validate_prefix_overlap,
 )
-from peeringdb_server.request import bypass_validation
-import peeringdb_server.geo as geo
 
 SPONSORSHIP_LEVELS = (
     (1, _("Silver")),
@@ -4525,7 +4524,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         Returns a descriptive label of the netixlan for logging purposes
         Will only contain the ipaddress matching the specified version
         """
-        return "netixlan{} AS{} {}".format(self.id, self.asn, self.ipaddr(version))
+        return f"netixlan{self.id} AS{self.asn} {self.ipaddr(version)}"
 
 
 class User(AbstractBaseUser, PermissionsMixin):

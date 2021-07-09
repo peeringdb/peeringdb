@@ -1,15 +1,14 @@
 import datetime
 
-from .util import ClientCase, Group
-
-from django.core.management import call_command
-from django.contrib.auth import get_user_model
-from django.conf import settings
-
 import reversion
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.management import call_command
 
-from peeringdb_server.models import REFTAG_MAP
 from peeringdb_server.management.commands.pdb_undelete import Command
+from peeringdb_server.models import REFTAG_MAP
+
+from .util import ClientCase, Group
 
 
 class TestUndelete(ClientCase):

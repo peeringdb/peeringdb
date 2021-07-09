@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 import datetime
-from django.core.management.base import BaseCommand
+
 from django.conf import settings
+from django.core.management.base import BaseCommand
 
 from peeringdb_server import models
 from peeringdb_server.deskpro import APIClient, APIError

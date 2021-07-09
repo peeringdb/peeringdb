@@ -1,9 +1,10 @@
 import pytest
 import requests
+from django.test import Client, TestCase
+
 import peeringdb_server.models as models
-import peeringdb_server.views as views
 import peeringdb_server.settings as settings
-from django.test import TestCase, Client
+import peeringdb_server.views as views
 
 
 def test_requests_ssl():

@@ -1,10 +1,10 @@
+import json
+import re
+
+import reversion
 from django.core.management.base import BaseCommand
 
 from peeringdb_server.models import REFTAG_MAP
-
-import reversion
-import json
-import re
 
 
 class Command(BaseCommand):
@@ -147,7 +147,7 @@ class Command(BaseCommand):
 
         if obj.status == "deleted":
             obj.status = "ok"
-            self.log("Undeleting {}".format(_label(obj)))
+            self.log(f"Undeleting {_label(obj)}")
 
             handler = getattr(self, f"handle_{reftag}", None)
             if handler:
@@ -159,7 +159,7 @@ class Command(BaseCommand):
                     obj.save()
             except Exception as exc:
                 if not self.suppress_warning:
-                    self.log_warn("Cannot undelete {}: {}".format(_label(obj), exc))
+                    self.log_warn(f"Cannot undelete {_label(obj)}: {exc}")
 
         for field in cls._meta.get_fields():
             if field.is_relation:

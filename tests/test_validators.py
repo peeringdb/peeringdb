@@ -1,35 +1,33 @@
 import ipaddress
 import os
+
 import pytest
 import requests
-
-from django.test import override_settings, RequestFactory
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
-from django.contrib.auth import get_user_model
+from django.test import RequestFactory, override_settings
 
-from peeringdb_server.validators import (
-    validate_address_space,
-    validate_info_prefixes4,
-    validate_info_prefixes6,
-    validate_prefix_overlap,
-    validate_phonenumber,
-    validate_irr_as_set,
-)
-
+from peeringdb_server.context import current_request
 from peeringdb_server.models import (
-    Organization,
+    Facility,
     InternetExchange,
     IXLan,
     IXLanPrefix,
     Network,
     NetworkContact,
     NetworkIXLan,
-    Facility,
+    Organization,
     ProtectedAction,
 )
-
-from peeringdb_server.context import current_request
+from peeringdb_server.validators import (
+    validate_address_space,
+    validate_info_prefixes4,
+    validate_info_prefixes6,
+    validate_irr_as_set,
+    validate_phonenumber,
+    validate_prefix_overlap,
+)
 
 pytestmark = pytest.mark.django_db
 

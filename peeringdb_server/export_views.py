@@ -1,18 +1,20 @@
-import json
-import datetime
-import urllib.request, urllib.parse, urllib.error
-import csv
-import io
 import collections
+import csv
+import datetime
+import io
+import json
+import urllib.error
+import urllib.parse
+import urllib.request
 
-from django.http import JsonResponse, HttpResponse
-from django.views import View
+from django.http import HttpResponse, JsonResponse
 from django.utils.translation import ugettext_lazy as _
-
+from django.views import View
 from rest_framework.test import APIRequestFactory
-from peeringdb_server.models import IXLan, NetworkIXLan, InternetExchange
-from peeringdb_server.rest import REFTAG_MAP as RestViewSets
+
+from peeringdb_server.models import InternetExchange, IXLan, NetworkIXLan
 from peeringdb_server.renderers import JSONEncoder
+from peeringdb_server.rest import REFTAG_MAP as RestViewSets
 
 
 def export_ixf_ix_members(ixlans, pretty=False):
@@ -245,7 +247,7 @@ class AdvancedSearchExportView(ExportView):
         viewset = RestViewSets[self.tag].as_view({"get": "list"})
 
         api_request = request_factory.get(
-            "/api/{}/?{}".format(self.tag, urllib.parse.urlencode(params))
+            f"/api/{self.tag}/?{urllib.parse.urlencode(params)}"
         )
 
         # we want to use the same user as the original request

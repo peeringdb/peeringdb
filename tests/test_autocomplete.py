@@ -1,12 +1,12 @@
 import json
 
-from django.urls import reverse
-from django.test import Client, RequestFactory
-
 import reversion
+from django.test import Client, RequestFactory
+from django.urls import reverse
 
-from peeringdb_server.models import User, Organization, Network
 from peeringdb_server import autocomplete_views
+from peeringdb_server.models import Network, Organization, User
+
 from .util import ClientCase
 
 

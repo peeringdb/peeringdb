@@ -5,4 +5,3 @@
 
 
     Network AS9000001 (<a href="https://localhost/net/{net_id}">{net_id}</a>) was automatically created during user 'user_a's affiliation request to AS9000001
-

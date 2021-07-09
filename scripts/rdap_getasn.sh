@@ -7,4 +7,3 @@ if test -z "$handle"; then
 fi
 
 curl -L4 https://rdap.db.ripe.net/autnum/$handle > tests/data/rdap/autnum/${handle}.input
-

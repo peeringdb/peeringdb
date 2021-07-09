@@ -1,4 +1,4 @@
-## Internet Exchange Prefix 
+## Internet Exchange Prefix
 
 Identified by the `ixpfx` tag.
 

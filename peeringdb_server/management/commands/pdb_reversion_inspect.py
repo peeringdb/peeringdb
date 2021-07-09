@@ -1,8 +1,10 @@
-from django.core.management.base import BaseCommand
 import json
-import peeringdb_server.models as pdbm
+
 from django.contrib.contenttypes.models import ContentType
+from django.core.management.base import BaseCommand
 from reversion.models import Version
+
+import peeringdb_server.models as pdbm
 
 MODELS = [
     pdbm.Organization,
@@ -80,7 +82,7 @@ class Command(BaseCommand):
                     continue
                 for k, v in list(data.items()):
                     if prev.get(k) != v:
-                        print("{}: '{}' => '{}'".format(k, prev.get(k), v))
+                        print(f"{k}: '{prev.get(k)}' => '{v}'")
 
                 prev = data
                 self.print_line()

@@ -1,6 +1,7 @@
-from peeringdb_server.inet import RdapAsn
 import pytest
 import pytest_filedata
+
+from peeringdb_server.inet import RdapAsn
 
 
 def assert_parsed(data, parsed):

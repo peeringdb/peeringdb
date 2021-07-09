@@ -14,5 +14,3 @@ Depth can be one of three values:
 **example**
 
     ?depth=1
-
-

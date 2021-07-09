@@ -1,14 +1,16 @@
-import os
 import json
+import os
+
 import pytest
-import peeringdb_server.models as models
-import peeringdb_server.views as pdbviews
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import TestCase, Client, RequestFactory
-from django.conf import settings
+from django.test import Client, RequestFactory, TestCase
 
 import peeringdb_server.inet as pdbinet
+import peeringdb_server.models as models
+import peeringdb_server.views as pdbviews
+
 from .util import SettingsCase, reset_group_ids
 
 ERR_COULD_NOT_GET_RIR_ENTRY = "This ASN is not assigned by any RIR"

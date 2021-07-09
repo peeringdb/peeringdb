@@ -1,7 +1,6 @@
 import logging
 import secrets
 
-
 # database config
 # set_option("DATABASE_ENGINE", "mysql")
 # set_option("DATABASE_HOST", "127.0.0.1")

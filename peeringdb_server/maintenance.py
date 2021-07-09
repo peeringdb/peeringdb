@@ -1,10 +1,9 @@
 import os
 
 from django.core.cache import cache
-from django.utils.translation import ugettext_lazy as _
 from django.http import JsonResponse
-from django.urls import reverse, resolve
-
+from django.urls import resolve, reverse
+from django.utils.translation import ugettext_lazy as _
 from rest_framework.viewsets import ModelViewSet
 
 from peeringdb_server import settings
@@ -23,18 +22,18 @@ def on(timeout=None):
 
 
 def off():
-    """ turn maintenance mode off """
+    """turn maintenance mode off"""
     if active():
         os.remove(settings.MAINTENANCE_MODE_LOCKFILE)
 
 
 def active():
-    """ return True if maintenance mode is currently active """
+    """return True if maintenance mode is currently active"""
     return os.path.isfile(settings.MAINTENANCE_MODE_LOCKFILE)
 
 
 def raise_if_active():
-    """ raise ActionBlocked exception if maintenance mode is active """
+    """raise ActionBlocked exception if maintenance mode is active"""
     if active():
         raise ActionBlocked()
 

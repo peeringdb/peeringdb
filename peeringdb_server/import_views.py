@@ -1,20 +1,15 @@
-import json
 import base64
+import json
 
-from django.http import JsonResponse, HttpResponse
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import authenticate
-
-from ratelimit.decorators import ratelimit, is_ratelimited
+from django.http import HttpResponse, JsonResponse
+from django.utils.translation import ugettext_lazy as _
+from ratelimit.decorators import is_ratelimited, ratelimit
 
 from peeringdb_server import ixf
+from peeringdb_server.models import IXLan, Network, NetworkIXLan
 from peeringdb_server.util import check_permissions
-from peeringdb_server.models import (
-    IXLan,
-    Network,
-    NetworkIXLan,
-)
 
 RATELIMITS = settings.RATELIMITS
 

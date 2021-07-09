@@ -1,19 +1,17 @@
 import re
+
 import requests
-
-from grainy.const import *
-
-from django.contrib.auth import forms as auth_forms
-from django import forms
-from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
-from django.conf import settings as dj_settings
-
 from captcha.fields import CaptchaField
 from captcha.models import CaptchaStore
+from django import forms
+from django.conf import settings as dj_settings
+from django.contrib.auth import forms as auth_forms
+from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
+from grainy.const import *
 
-from peeringdb_server.models import User, Organization, OrganizationAPIKey
 from peeringdb_server.inet import get_client_ip
+from peeringdb_server.models import Organization, OrganizationAPIKey, User
 from peeringdb_server.util import PERM_CRUD
 
 

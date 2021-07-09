@@ -1,19 +1,20 @@
-import traceback
 import json
 import sys
+import traceback
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.conf import settings
+
+from peeringdb_server import ixf
 from peeringdb_server.models import (
-    IXLan,
-    NetworkIXLan,
-    Network,
-    IXFMemberData,
     DeskProTicket,
     IXFImportEmail,
+    IXFMemberData,
+    IXLan,
+    Network,
+    NetworkIXLan,
 )
-from peeringdb_server import ixf
 
 
 class Command(BaseCommand):
@@ -112,7 +113,7 @@ class Command(BaseCommand):
         if settings.RELEASE_ENV == "prod":
             if len(active_flags) == 1:
                 raise PermissionError(
-                    "Cannot use flag '{}'' in production".format(active_flags[0])
+                    f"Cannot use flag '{active_flags[0]}'' in production"
                 )
             elif len(active_flags) >= 1:
                 raise PermissionError(

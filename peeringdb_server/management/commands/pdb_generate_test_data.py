@@ -1,13 +1,11 @@
 import googlemaps
 import reversion
-
-from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.contrib.auth.models import Group
+from django.core.management.base import BaseCommand
 
 from peeringdb_server import models
 from peeringdb_server.mock import Mock
-
-from django.contrib.auth.models import Group
 
 
 class Command(BaseCommand):
@@ -113,4 +111,4 @@ class Command(BaseCommand):
         self.entities["org"].append(self.mock.create("org"))
 
         for reftag, entities in list(self.entities.items()):
-            self.log("Created {} {}s".format(len(entities), reftag))
+            self.log(f"Created {len(entities)} {reftag}s")

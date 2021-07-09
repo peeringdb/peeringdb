@@ -1,99 +1,92 @@
 import datetime
-import time
-import json
 import ipaddress
+import json
 import re
-from . import forms
-
+import time
 from operator import or_
 
 import django.urls
+import django_grainy.models as django_grainy_models
+import reversion
+from django import forms as baseForms
+from django.conf import settings
 from django.conf.urls import url
-from django.shortcuts import redirect, Http404
-from django.contrib.contenttypes.models import ContentType
 from django.contrib import admin, messages
-from django.contrib.auth import forms
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.views.main import ChangeList
+from django.contrib.auth import forms
 from django.contrib.auth.admin import UserAdmin
-from django.db.utils import OperationalError
-from django.forms import DecimalField
-from django.http import HttpResponseForbidden
-from django import forms as baseForms
-from django.utils import html
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.conf import settings
-from django.template import loader
-from django.template.response import TemplateResponse
 from django.db.models import Q
 from django.db.models.functions import Concat
 from django.db.utils import OperationalError
+from django.forms import DecimalField
+from django.http import HttpResponseForbidden
+from django.shortcuts import Http404, redirect
+from django.template import loader
+from django.template.response import TemplateResponse
+from django.utils import html
 from django.utils.safestring import mark_safe
-
-import django_grainy.models as django_grainy_models
 from django_grainy.admin import (
-    UserPermissionInlineAdmin,
-    GroupPermissionInlineAdmin,
-    GrainyUserAdmin,
     GrainyGroupAdmin,
+    GrainyUserAdmin,
+    GroupPermissionInlineAdmin,
+    UserPermissionInlineAdmin,
 )
-
-import reversion
+from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
+from rest_framework_api_key.admin import APIKeyModelAdmin
+from rest_framework_api_key.models import APIKey
 from reversion.admin import VersionAdmin
 
-from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
-
 import peeringdb_server.admin_commandline_tools as acltools
-from peeringdb_server.views import JsonResponse, HttpResponseForbidden
+from peeringdb_server.inet import RdapException, RdapLookup, rdap_pretty_error_message
+from peeringdb_server.mail import mail_users_entity_merge
 from peeringdb_server.models import (
-    REFTAG_MAP,
-    QUEUE_ENABLED,
     COMMANDLINE_TOOLS,
-    OrganizationMerge,
-    OrganizationMergeEntity,
-    Sponsorship,
-    SponsorshipOrganization,
-    Partnership,
-    UserOrgAffiliationRequest,
-    VerificationQueueItem,
-    Organization,
+    QUEUE_ENABLED,
+    REFTAG_MAP,
+    UTC,
+    CommandLineTool,
+    DeskProTicket,
+    DeskProTicketCC,
+    EnvironmentSetting,
     Facility,
+    GeoCoordinateCache,
     InternetExchange,
-    Network,
     InternetExchangeFacility,
+    IXFImportEmail,
+    IXFMemberData,
     IXLan,
     IXLanIXFMemberImportLog,
     IXLanIXFMemberImportLogEntry,
     IXLanPrefix,
-    IXFMemberData,
+    Network,
     NetworkContact,
     NetworkFacility,
     NetworkIXLan,
-    User,
-    CommandLineTool,
-    UTC,
-    DeskProTicket,
-    DeskProTicketCC,
-    IXFImportEmail,
-    EnvironmentSetting,
-    ProtectedAction,
+    Organization,
     OrganizationAPIKey,
+    OrganizationMerge,
+    OrganizationMergeEntity,
+    Partnership,
+    ProtectedAction,
+    Sponsorship,
+    SponsorshipOrganization,
+    User,
     UserAPIKey,
-    GeoCoordinateCache,
+    UserOrgAffiliationRequest,
+    VerificationQueueItem,
 )
+from peeringdb_server.util import coerce_ipaddr, round_decimal
+from peeringdb_server.views import HttpResponseForbidden, JsonResponse
 
-from peeringdb_server.mail import mail_users_entity_merge
-from peeringdb_server.inet import RdapLookup, RdapException, rdap_pretty_error_message
-from peeringdb_server.util import coerce_ipaddr
-from rest_framework_api_key.admin import APIKeyModelAdmin
-from rest_framework_api_key.models import APIKey
-from peeringdb_server.util import round_decimal
+from . import forms
 
 delete_selected.short_description = "HARD DELETE - Proceed with caution"
 
 from django.utils.translation import ugettext_lazy as _
-
 
 # these app labels control permissions for the views
 # currently exposed in admin
@@ -1014,7 +1007,7 @@ class PartnershipAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
 
 class RoundingDecimalFormField(DecimalField):
     def to_python(self, value):
-        value = super(RoundingDecimalFormField, self).to_python(value)
+        value = super().to_python(value)
         return round_decimal(value, self.decimal_places)
 
 
@@ -1548,17 +1541,15 @@ class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
 
     for name, grp in fieldsets:
         grp["fields"] = tuple(
-            [
-                fld
-                for fld in grp["fields"]
-                if fld
-                not in [
-                    "groups",
-                    "user_permissions",
-                    "is_staff",
-                    "is_active",
-                    "is_superuser",
-                ]
+            fld
+            for fld in grp["fields"]
+            if fld
+            not in [
+                "groups",
+                "user_permissions",
+                "is_staff",
+                "is_active",
+                "is_superuser",
             ]
         )
         if name == "Permissions":

@@ -1,8 +1,9 @@
 import json
 
 from django.core.management.base import BaseCommand
-from peeringdb_server.models import CommandLineTool
+
 from peeringdb_server.admin_commandline_tools import get_tool_from_data
+from peeringdb_server.models import CommandLineTool
 
 
 class Command(BaseCommand):

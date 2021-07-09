@@ -1,35 +1,34 @@
-import os
-import json
-import reversion
-import requests
-import jsonschema
-import time
-import io
 import base64
+import io
+import json
+import os
+import time
+
+import jsonschema
 import pytest_filedata
-
-from django.db import transaction
+import requests
+import reversion
 from django.core.cache import cache
-from django.test import TestCase, Client, RequestFactory
 from django.core.management import call_command
-
-from peeringdb_server.models import (
-    Organization,
-    Network,
-    NetworkIXLan,
-    IXLan,
-    IXLanPrefix,
-    InternetExchange,
-    IXLanIXFMemberImportAttempt,
-    IXLanIXFMemberImportLog,
-    IXLanIXFMemberImportLogEntry,
-    User,
-)
+from django.db import transaction
+from django.test import Client, RequestFactory, TestCase
 
 from peeringdb_server.import_views import (
     view_import_ixlan_ixf_preview,
-    view_import_net_ixf_preview,
     view_import_net_ixf_postmortem,
+    view_import_net_ixf_preview,
+)
+from peeringdb_server.models import (
+    InternetExchange,
+    IXLan,
+    IXLanIXFMemberImportAttempt,
+    IXLanIXFMemberImportLog,
+    IXLanIXFMemberImportLogEntry,
+    IXLanPrefix,
+    Network,
+    NetworkIXLan,
+    Organization,
+    User,
 )
 
 from .util import ClientCase

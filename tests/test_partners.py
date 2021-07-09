@@ -1,14 +1,14 @@
-import pytest
 import json
-import uuid
 import re
+import uuid
 
-from django.test import Client, TestCase, RequestFactory
-from django.contrib.auth.models import Group, AnonymousUser
+import pytest
 from django.contrib.auth import get_user
+from django.contrib.auth.models import AnonymousUser, Group
+from django.test import Client, RequestFactory, TestCase
 
-import peeringdb_server.views as views
 import peeringdb_server.models as models
+import peeringdb_server.views as views
 
 
 class ViewTestCase(TestCase):

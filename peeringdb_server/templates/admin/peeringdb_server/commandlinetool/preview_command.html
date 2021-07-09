@@ -5,12 +5,12 @@
 {{ media }}
 <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
 {% endblock %}
- 
+
 {% block extrastyle %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}"/>
 {% endblock %}
- 
+
 {% block breadcrumbs %}
     <div class="breadcrumbs">
         <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
@@ -20,7 +20,7 @@
         &rsaquo; {% trans 'Preview' %}
     </div>
 {% endblock %}
- 
+
 {% block content %}
 <div class="commandlinetool">
     <form action="{% url opts|admin_urlname:action %}" method="post" id="commandlinetool_prepare_form"

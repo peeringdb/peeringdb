@@ -2,26 +2,25 @@
 
   user  (neteng@other.com) wishes to be affiliated to Organization 'ORG AS9000002'
   They also provided this ASN in their request: 9000002
-  
+
     ATTENTION: This is an ownership request, approving it will grant the user administration rights over the organization and any entities it owns.
-  
-  
+
+
   These are the email addresses we could fetch from the ASNs belonging to this organization:
-  - neteng@20c.com 
-  
+  - neteng@20c.com
+
     The user is affiliated with other organizations:
-    
-      
+
+
         <a href="https://localhost/cp/peeringdb_server/organization/{admin_org_id}/change/">https://localhost/cp/peeringdb_server/organization/{admin_org_id}/change/</a> | <a href="https://localhost/org/{admin_org_id}">Org with admin user</a> | ADMIN
-      
-    
-      
+
+
+
         <a href="https://localhost/cp/peeringdb_server/organization/{user_org_id}/change/">https://localhost/cp/peeringdb_server/organization/{user_org_id}/change/</a> | <a href="https://localhost/org/{user_org_id}">Org with normal user</a> | MEMBER
-      
-    
-  
+
+
+
 
 <a href="https://localhost/cp/peeringdb_server/user/{user_id}/change/">Review Affiliation/Ownership Request</a>
 
   <a href="https://localhost/cp/peeringdb_server/userorgaffiliationrequest/{affil_id}/action/approve_and_notify/">Approve Ownership Request and Notify User</a>
-

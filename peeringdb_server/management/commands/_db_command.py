@@ -1,9 +1,11 @@
-from django.core.management.base import BaseCommand, CommandError
 import json
-import peeringdb_server.models as pdbm
-from django.contrib.contenttypes.models import ContentType
-from reversion.models import Version, Revision
 from optparse import make_option
+
+from django.contrib.contenttypes.models import ContentType
+from django.core.management.base import BaseCommand, CommandError
+from reversion.models import Revision, Version
+
+import peeringdb_server.models as pdbm
 
 MODELS = [
     pdbm.Organization,
@@ -81,7 +83,7 @@ class DBCommand(BaseCommand):
                     continue
                 for k, v in list(data.items()):
                     if prev[k] != v:
-                        print("{}: '{}' => '{}'".format(k, prev[k], v))
+                        print(f"{k}: '{prev[k]}' => '{v}'")
 
                 prev = data
                 self.print_line()

@@ -1,21 +1,19 @@
-import pytest
 import json
 import os
 
-from django.test import TestCase
-from django.contrib.auth.models import Group
+import pytest
 from django.conf import settings
-
-from django_grainy.models import UserPermission, GroupPermission
-
-from rest_framework.test import APIRequestFactory, force_authenticate, APIClient
+from django.contrib.auth.models import Group
+from django.test import TestCase
+from django_grainy.models import GroupPermission, UserPermission
 from rest_framework.authtoken.models import Token
-
-import peeringdb_server.models as models
-import peeringdb_server.management.commands.pdb_api_test as api_test
+from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
 from twentyc.rpc.client import RestClient
 
 import peeringdb_server.inet as pdbinet
+import peeringdb_server.management.commands.pdb_api_test as api_test
+import peeringdb_server.models as models
+
 from .util import reset_group_ids
 
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn

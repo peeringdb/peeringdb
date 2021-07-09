@@ -1,8 +1,9 @@
-from django.core.management.base import BaseCommand, CommandError
+import re
 
 import reversion
+from django.core.management.base import BaseCommand, CommandError
+
 import peeringdb_server.models as pdbm
-import re
 
 
 class Command(BaseCommand):

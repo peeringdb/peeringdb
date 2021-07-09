@@ -1,23 +1,22 @@
-import reversion
 import csv
 import datetime
 
+import reversion
+from django.contrib.admin.models import LogEntry
+from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.db import connection
 from django.db.models import F
-from django.contrib.admin.models import LogEntry
-
-from django.contrib.contenttypes.models import ContentType
 
 from peeringdb_server.models import (
+    UTC,
+    InternetExchange,
+    InternetExchangeFacility,
     IXLan,
-    NetworkIXLan,
-    IXLanPrefix,
     IXLanIXFMemberImportAttempt,
     IXLanIXFMemberImportLog,
-    InternetExchangeFacility,
-    InternetExchange,
-    UTC,
+    IXLanPrefix,
+    NetworkIXLan,
 )
 
 

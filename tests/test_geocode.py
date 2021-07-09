@@ -1,13 +1,13 @@
 import json
 import os
 
+import googlemaps
 import pytest
 from django.core.exceptions import ValidationError
-import googlemaps
 
+import peeringdb_server.geo as geo
 import peeringdb_server.models as models
 from peeringdb_server.serializers import GeocodeSerializerMixin
-import peeringdb_server.geo as geo
 
 
 class MockMelissa(geo.Melissa):

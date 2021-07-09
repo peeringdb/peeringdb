@@ -1,24 +1,22 @@
-from django.db.models import Q
+# import time
+import unidecode
 from django.conf import settings
+from django.db.models import Q
+from haystack.inputs import Exact
+from haystack.query import SearchQuerySet
 
 from peeringdb_server.models import (
-    Organization,
-    Network,
     Facility,
     InternetExchange,
     InternetExchangeFacility,
-    NetworkFacility,
-    NetworkIXLan,
-    NetworkContact,
     IXLan,
     IXLanPrefix,
+    Network,
+    NetworkContact,
+    NetworkFacility,
+    NetworkIXLan,
+    Organization,
 )
-
-# import time
-import unidecode
-
-from haystack.query import SearchQuerySet
-from haystack.inputs import Exact
 
 # models considered during autocomplete (quick-search)
 
@@ -107,8 +105,8 @@ def search(term, autocomplete=False):
         limit = settings.SEARCH_RESULTS_LIMIT
 
     categories = ("fac", "ix", "net", "org")
-    result = dict([(tag, []) for tag in categories])
-    pk_map = dict([(tag, {}) for tag in categories])
+    result = {tag: [] for tag in categories}
+    pk_map = {tag: {} for tag in categories}
 
     for sq in search_query.highlight()[:limit]:
         model = sq.model

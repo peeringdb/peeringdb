@@ -1,18 +1,17 @@
-import pytest
 import json
 import uuid
 
-from django.test import Client, TestCase, RequestFactory
+import pytest
 from django.conf import settings
-from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user
+from django.contrib.auth.models import AnonymousUser, Group
+from django.test import Client, RequestFactory, TestCase
+from django_grainy.models import GroupPermission, UserPermission
+
+import peeringdb_server.models as models
+import peeringdb_server.views as views
 
 from .util import ClientCase
-
-from django_grainy.models import UserPermission, GroupPermission
-
-import peeringdb_server.views as views
-import peeringdb_server.models as models
 
 
 class ViewTestCase(ClientCase):
@@ -21,7 +20,7 @@ class ViewTestCase(ClientCase):
 
     @classmethod
     def setUpTestData(cls):
-        super(ViewTestCase, cls).setUpTestData()
+        super().setUpTestData()
 
         # create test users
         for name in [
@@ -188,6 +187,4 @@ class TestNetworkView(ViewTestCase):
         for q in ["as1", "asn1", "AS1", "ASN1"]:
             resp = c.get(f"/search?q={q}", follow=True)
             self.assertEqual(resp.status_code, 200)
-            self.assertEqual(
-                resp.redirect_chain, [("/net/{}".format(self.net.id), 302)]
-            )
+            self.assertEqual(resp.redirect_chain, [(f"/net/{self.net.id}", 302)])

@@ -1,51 +1,44 @@
-from grainy.const import *
 from datetime import datetime, timezone
+
 import django.urls
+import reversion
+from allauth.account.signals import email_confirmed, user_signed_up
+from corsheaders.signals import check_request_enabled
+from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count
 from django.db.models.signals import post_save, pre_delete, pre_save
-
-from django.contrib.contenttypes.models import ContentType
-from django_grainy.models import Group, GroupPermission
-from django.template import loader
-from django.conf import settings
 from django.dispatch import receiver
-import reversion
-from allauth.account.signals import user_signed_up, email_confirmed
-
-from corsheaders.signals import check_request_enabled
-
+from django.template import loader
+from django.utils.translation import override
+from django.utils.translation import ugettext_lazy as _
+from django_grainy.models import Group, GroupPermission
 from django_peeringdb.models.abstract import AddressModel
+from grainy.const import *
 
-from peeringdb_server.inet import RdapLookup, RdapException
-
+import peeringdb_server.settings as pdb_settings
 from peeringdb_server.deskpro import (
     ticket_queue,
     ticket_queue_asnauto_affil,
     ticket_queue_asnauto_create,
     ticket_queue_vqi_notify,
 )
-
+from peeringdb_server.inet import RdapException, RdapLookup
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     QUEUE_NOTIFY,
-    UserOrgAffiliationRequest,
-    is_suggested,
-    VerificationQueueItem,
-    Organization,
-    InternetExchange,
     Facility,
+    InternetExchange,
     Network,
     NetworkContact,
-    NetworkIXLan,
     NetworkFacility,
+    NetworkIXLan,
+    Organization,
+    UserOrgAffiliationRequest,
+    VerificationQueueItem,
+    is_suggested,
 )
-
 from peeringdb_server.util import PERM_CRUD
-
-import peeringdb_server.settings as pdb_settings
-
-from django.utils.translation import ugettext_lazy as _
-from django.utils.translation import override
 
 
 def disable_auto_now_and_save(entity):

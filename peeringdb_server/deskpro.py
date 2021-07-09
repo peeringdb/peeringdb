@@ -10,16 +10,15 @@ import django.urls
 import requests
 from django.conf import settings
 from django.template import loader
+from django.utils.translation import override
 
 from peeringdb_server.inet import RdapNotFoundError
-from peeringdb_server.models import is_suggested, DeskProTicket
-from peeringdb_server.permissions import get_user_from_request, get_org_key_from_request
-
-from django.utils.translation import override
+from peeringdb_server.models import DeskProTicket, is_suggested
+from peeringdb_server.permissions import get_org_key_from_request, get_user_from_request
 
 
 def ticket_queue(subject, body, user):
-    """ queue a deskpro ticket for creation """
+    """queue a deskpro ticket for creation"""
 
     DeskProTicket.objects.create(
         subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
@@ -29,7 +28,7 @@ def ticket_queue(subject, body, user):
 
 
 def ticket_queue_email_only(subject, body, email):
-    """ queue a deskpro ticket for creation """
+    """queue a deskpro ticket for creation"""
 
     DeskProTicket.objects.create(
         subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
@@ -159,7 +158,7 @@ def ticket_queue_vqi_notify(instance, rdap):
                     "item": item,
                     "user": user,
                     "rdap": rdap,
-                    "edit_url": "%s%s" % (settings.BASE_URL, instance.item_admin_url),
+                    "edit_url": f"{settings.BASE_URL}{instance.item_admin_url}",
                 }
             ),
             user,
@@ -175,7 +174,7 @@ def ticket_queue_vqi_notify(instance, rdap):
                     "item": item,
                     "org_key": org_key,
                     "rdap": rdap,
-                    "edit_url": "%s%s" % (settings.BASE_URL, instance.item_admin_url),
+                    "edit_url": f"{settings.BASE_URL}{instance.item_admin_url}",
                 }
             ),
             org_key.email,

@@ -2,17 +2,16 @@
 Unit-tests for quick search functionality - note that advanced search is not
 tested here as that is using the PDB API entirely.
 """
-import re
 import datetime
+import re
 
 import pytest
 import unidecode
-
-from django.test import TestCase, RequestFactory
 from django.core.management import call_command
+from django.test import RequestFactory, TestCase
 
-import peeringdb_server.search as search
 import peeringdb_server.models as models
+import peeringdb_server.search as search
 import peeringdb_server.views as views
 
 

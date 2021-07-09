@@ -1,81 +1,76 @@
-from django.conf.urls import include, url
-from django.views.generic import TemplateView, RedirectView
 from django.conf import settings
+from django.conf.urls import include, url
+from django.views.generic import RedirectView, TemplateView
+from django.views.i18n import JavaScriptCatalog
 
+import peeringdb_server.api_key_views
+import peeringdb_server.data_views
+import peeringdb_server.org_admin_views
 import peeringdb_server.rest
-
-from peeringdb_server.models import InternetExchange, Network, Facility, Organization
-
 from peeringdb_server.autocomplete_views import (
-    FacilityAutocompleteForNetwork,
-    FacilityAutocompleteForExchange,
-    OrganizationAutocomplete,
+    DeletedVersionAutocomplete,
     ExchangeAutocomplete,
     ExchangeAutocompleteJSON,
-    IXLanAutocomplete,
     FacilityAutocomplete,
+    FacilityAutocompleteForExchange,
+    FacilityAutocompleteForNetwork,
     FacilityAutocompleteJSON,
+    IXLanAutocomplete,
     NetworkAutocomplete,
-    DeletedVersionAutocomplete,
+    OrganizationAutocomplete,
     clt_history,
 )
-
 from peeringdb_server.export_views import (
+    AdvancedSearchExportView,
     view_export_ixf_ix_members,
     view_export_ixf_ixlan_members,
-    AdvancedSearchExportView,
 )
-
 from peeringdb_server.import_views import (
     view_import_ixlan_ixf_preview,
     view_import_net_ixf_postmortem,
     view_import_net_ixf_preview,
 )
-
-from django.views.i18n import JavaScriptCatalog
+from peeringdb_server.models import Facility, InternetExchange, Network, Organization
+from peeringdb_server.views import (
+    cancel_affiliation_request,
+    network_dismiss_ixf_proposal,
+    network_reset_ixf_proposals,
+    request_api_search,
+    request_logout,
+    request_search,
+    request_translation,
+    resend_confirmation_mail,
+    view_about,
+    view_advanced_search,
+    view_affiliate_to_org,
+    view_aup,
+    view_exchange,
+    view_facility,
+    view_index,
+    view_maintenance,
+    view_network,
+    view_network_by_asn,
+    view_network_by_query,
+    view_organization,
+    view_partnerships,
+    view_password_change,
+    view_password_reset,
+    view_profile,
+    view_profile_v1,
+    view_registration,
+    view_request_ownership,
+    view_set_user_locale,
+    view_sponsorships,
+    view_suggest,
+    view_username_retrieve,
+    view_username_retrieve_complete,
+    view_username_retrieve_initiate,
+    view_verify,
+)
 
 # o
 # SITE
 
-from peeringdb_server.views import (
-    view_index,
-    view_registration,
-    view_password_reset,
-    view_password_change,
-    view_set_user_locale,
-    view_network,
-    view_network_by_asn,
-    view_network_by_query,
-    view_suggest,
-    view_exchange,
-    view_facility,
-    view_organization,
-    view_affiliate_to_org,
-    view_request_ownership,
-    view_verify,
-    view_profile,
-    view_profile_v1,
-    view_advanced_search,
-    view_sponsorships,
-    view_partnerships,
-    view_aup,
-    view_about,
-    view_username_retrieve,
-    view_username_retrieve_initiate,
-    view_username_retrieve_complete,
-    view_maintenance,
-    resend_confirmation_mail,
-    request_logout,
-    request_api_search,
-    request_search,
-    request_translation,
-    cancel_affiliation_request,
-    network_dismiss_ixf_proposal,
-    network_reset_ixf_proposals,
-)
-import peeringdb_server.org_admin_views
-import peeringdb_server.api_key_views
-import peeringdb_server.data_views
 
 urlpatterns = [
     url(r"^api_search$", request_api_search),

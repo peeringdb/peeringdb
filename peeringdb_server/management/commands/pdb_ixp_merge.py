@@ -1,8 +1,8 @@
-from django.core.management.base import BaseCommand
-from peeringdb_server.mail import mail_users_entity_merge
-
 import reversion
+from django.core.management.base import BaseCommand
+
 import peeringdb_server.models as pdbm
+from peeringdb_server.mail import mail_users_entity_merge
 
 
 class Command(BaseCommand):

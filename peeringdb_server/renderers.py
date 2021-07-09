@@ -1,9 +1,10 @@
 ###############################################################################
 # RENDERERS
 
+import json
+
 from rest_framework import renderers
 from rest_framework.utils import encoders
-import json
 
 
 class JSONEncoder(encoders.JSONEncoder):
@@ -18,6 +19,7 @@ class JSONEncoder(encoders.JSONEncoder):
     def default(self, obj):
         """Default JSON serializer."""
         import datetime
+
         import django_countries.fields
 
         if isinstance(obj, datetime.datetime):

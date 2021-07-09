@@ -1,37 +1,37 @@
+import datetime
+import io
 import json
 import os
 import re
-from pprint import pprint
-import reversion
-import requests
-import jsonschema
 import time
-import io
-import datetime
+from pprint import pprint
 
-from django.db import transaction
+import jsonschema
+import pytest
+import requests
+import reversion
 from django.core.cache import cache
-from django.test import Client, TestCase, RequestFactory
+from django.db import transaction
+from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 
+from peeringdb_server import ixf
 from peeringdb_server.models import (
-    Organization,
-    Network,
-    NetworkIXLan,
-    IXLan,
-    IXLanPrefix,
+    DeskProTicket,
+    Group,
     InternetExchange,
     IXFMemberData,
+    IXLan,
     IXLanIXFMemberImportAttempt,
     IXLanIXFMemberImportLog,
     IXLanIXFMemberImportLogEntry,
+    IXLanPrefix,
+    Network,
+    NetworkIXLan,
+    Organization,
     User,
-    DeskProTicket,
-    Group,
 )
-from peeringdb_server import ixf
 
-import pytest
 from .util import override_group_id
 
 
@@ -369,8 +369,8 @@ def admin_user():
     guest_group, _ = Group.objects.get_or_create(name="guest")
     user_group, _ = Group.objects.get_or_create(name="user")
 
-    print("Guest: {} {} ".format(guest_group, guest_group.id))
-    print("User: {} {} ".format(user_group, user_group.id))
+    print(f"Guest: {guest_group} {guest_group.id} ")
+    print(f"User: {user_group} {user_group.id} ")
 
     admin_user = User.objects.create_user(
         "admin", "admin@localhost", first_name="admin", last_name="admin"

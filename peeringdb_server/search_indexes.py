@@ -2,26 +2,23 @@
 Defines django-haystack search indexes
 """
 
+from django.conf import settings
+from django.db.models import Q
 from haystack import indexes
 
-from django.db.models import Q
-from django.conf import settings
-
-
-from peeringdb_server.search import unaccent
-
 from peeringdb_server.models import (
-    Organization,
-    Network,
-    NetworkIXLan,
-    NetworkFacility,
-    NetworkContact,
     Facility,
     InternetExchange,
     InternetExchangeFacility,
     IXLan,
     IXLanPrefix,
+    Network,
+    NetworkContact,
+    NetworkFacility,
+    NetworkIXLan,
+    Organization,
 )
+from peeringdb_server.search import unaccent
 
 
 class EntityIndex(indexes.SearchIndex):

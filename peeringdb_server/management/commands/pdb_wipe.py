@@ -1,14 +1,15 @@
+from django.conf import settings
+from django.contrib.auth.models import Group
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
+
 from peeringdb_server.models import (
     REFTAG_MAP,
     NetworkContact,
-    User,
-    Sponsorship,
     Partnership,
+    Sponsorship,
+    User,
 )
-from django.core.management import call_command
-from django.contrib.auth.models import Group
-from django.conf import settings
 
 
 class Command(BaseCommand):

@@ -2,10 +2,10 @@ import ipaddress
 import re
 
 import rdap
-from rdap import RdapAsn
-from rdap.exceptions import RdapException, RdapHTTPError, RdapNotFoundError
 import requests
 from django.utils.translation import ugettext_lazy as _
+from rdap import RdapAsn
+from rdap.exceptions import RdapException, RdapHTTPError, RdapNotFoundError
 
 from peeringdb_server import settings
 
@@ -322,9 +322,7 @@ def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
 
     # return renumbered ipaddress
 
-    return ipaddress.ip_address(
-        "{}".format(delimiter.join([str(o) for o in ip_octets]))
-    )
+    return ipaddress.ip_address(f"{delimiter.join([str(o) for o in ip_octets])}")
 
 
 def get_client_ip(request):

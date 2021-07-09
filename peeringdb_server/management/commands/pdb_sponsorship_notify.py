@@ -1,6 +1,8 @@
-from django.core.management.base import BaseCommand
-from peeringdb_server.models import Sponsorship
 import datetime
+
+from django.core.management.base import BaseCommand
+
+from peeringdb_server.models import Sponsorship
 
 
 class Command(BaseCommand):
