@@ -81,8 +81,30 @@ COPY Ctl/docker/inetd.conf /etc/
 RUN chown -R pdb:pdb api-cache locale media var/log coverage
 
 #### test image here
-#FROM final as tester
-# XXX drop tester unless we can build it on top of the base image at CI time
+FROM final as tester
+
+WORKDIR /srv/www.peeringdb.com
+# copy from builder in case we're testing new deps
+# XXX COPY --from=builder poetry.lock ./
+# XXX COPY --from=builder pyproject.toml ./
+COPY poetry.lock pyproject.toml ./
+RUN true
+COPY tests/ tests
+RUN chown -R pdb:pdb tests/
+COPY Ctl/docker/entrypoint.sh .
+
+# XXX RUN pip install -U pipenv
+# installed dev
+RUN pip install -U poetry
+RUN poetry install --no-root 
+# XXX RUN pipenv install --dev --ignore-pipfile -v
+#RUN echo `which python`
+#RUN pip freeze
+#RUN pytest -v -rA --cov-report term-missing --cov=peeringdb_server tests/
+
+USER pdb
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["runserver", "$RUNSERVER_BIND"]
 
 #### entry point from final image, not tester
 FROM final
