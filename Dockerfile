@@ -12,6 +12,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # build container
 FROM base as builder
 
+# rust and cargo for cryptography package
 RUN apk --update --no-cache add \
   g++ \
   libjpeg-turbo-dev \
@@ -19,21 +20,19 @@ RUN apk --update --no-cache add \
   make \
   mariadb-dev \
   libffi-dev \
-  curl
+  curl \
+  rust \
+  cargo
 
 
-# Install Rust to install Poetry
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-
-# create venv
-RUN pip install -U pip pipenv
-RUN python3 -m venv "$VIRTUAL_ENV"
+RUN pip install -U pip poetry
+# create venv and update venv pip
+RUN python3 -m venv "$VIRTUAL_ENV" && pip install -U pip
 
 WORKDIR /srv/www.peeringdb.com
-ADD Pipfile* ./
-RUN pipenv install --ignore-pipfile
+COPY poetry.lock pyproject.toml ./
+# XXX  -- install dev? RUN poetry install --no-dev --no-root 
+RUN poetry install --no-root 
 
 # inetd
 RUN apk add busybox-extras
@@ -82,25 +81,8 @@ COPY Ctl/docker/inetd.conf /etc/
 RUN chown -R pdb:pdb api-cache locale media var/log coverage
 
 #### test image here
-FROM final as tester
-
-WORKDIR /srv/www.peeringdb.com
-# copy from builder in case we're testing new deps
-COPY --from=builder /srv/www.peeringdb.com/Pipfile* ./
-RUN true
-COPY tests/ tests
-RUN chown -R pdb:pdb tests/
-COPY Ctl/docker/entrypoint.sh .
-
-RUN pip install -U pipenv
-RUN pipenv install --dev --ignore-pipfile -v
-#RUN echo `which python`
-#RUN pip freeze
-#RUN pytest -v -rA --cov-report term-missing --cov=peeringdb_server tests/
-
-USER pdb
-ENTRYPOINT ["./entrypoint.sh"]
-CMD ["runserver", "$RUNSERVER_BIND"]
+#FROM final as tester
+# XXX drop tester unless we can build it on top of the base image at CI time
 
 #### entry point from final image, not tester
 FROM final
