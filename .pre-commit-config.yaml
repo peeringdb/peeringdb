@@ -21,7 +21,7 @@ repos:
     hooks:
     -   id: pyupgrade
         name: pyupgrade
-        entry: poetry run pyupgrade --py36-plus
+        entry: poetry run pyupgrade --py39-plus
         language: python
         types: [python]
         pass_filenames: true
