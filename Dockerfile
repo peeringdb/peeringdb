@@ -31,7 +31,8 @@ RUN python3 -m venv "$VIRTUAL_ENV" && pip install -U pip
 
 WORKDIR /srv/www.peeringdb.com
 COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-dev --no-root
+# install dev now so we don't need a build env for testing (adds 8M)
+RUN poetry install --no-root
 
 # inetd
 RUN apk add busybox-extras
