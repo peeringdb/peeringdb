@@ -1,14 +1,13 @@
 import logging
 
-from ._db_command import CommandError, DBCommand
-
 from django.contrib.auth.models import AnonymousUser
+from django_handleref import util
 
 from peeringdb.whois import WhoisFormat
-from peeringdb_server import models
-from peeringdb_server import serializers
+from peeringdb_server import models, serializers
 from peeringdb_server.util import APIPermissionsApplicator
-from django_handleref import util
+
+from ._db_command import CommandError, DBCommand
 
 
 class Command(DBCommand):

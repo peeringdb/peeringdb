@@ -1,10 +1,11 @@
 import json
 import os
 
-from django.test import TestCase
-from django.contrib.auth.models import Group, AnonymousUser
 from django.conf import settings
-from django_grainy.models import UserPermission, GroupPermission
+from django.contrib.auth.models import AnonymousUser, Group
+from django.test import TestCase
+from django_grainy.models import GroupPermission, UserPermission
+
 import peeringdb_server.models as models
 from peeringdb_server import settings as pdb_settings
 

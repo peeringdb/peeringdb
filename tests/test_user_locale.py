@@ -1,8 +1,8 @@
-import pytest
 import json
 
-from django.test import Client, TestCase, RequestFactory
+import pytest
 from django.contrib.auth.models import Group
+from django.test import Client, RequestFactory, TestCase
 
 import peeringdb_server.models as models
 

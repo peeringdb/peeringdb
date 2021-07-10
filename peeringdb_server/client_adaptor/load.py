@@ -1,7 +1,4 @@
-from django_peeringdb.client_adaptor.load import (
-    DJANGO_DB_FIELDS,
-    database_settings,
-)
+from django_peeringdb.client_adaptor.load import DJANGO_DB_FIELDS, database_settings
 
 __backend = None
 

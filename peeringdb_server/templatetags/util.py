@@ -1,25 +1,26 @@
-from django import template
-from django.utils.translation import ugettext_lazy as _
-from django.utils.safestring import mark_safe
 import datetime
-from peeringdb_server.models import (
-    InternetExchange,
-    Network,
-    Facility,
-    Organization,
-    PARTNERSHIP_LEVELS,
-    format_speed,
-)
+import random
 
-from peeringdb_server.views import DoNotRender
-from peeringdb_server.org_admin_views import permission_ids
-from peeringdb_server.inet import RdapException
+import bleach
+import markdown
+import tld
+from django import template
+from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 from django_countries import countries
 from django_namespace_perms.util import get_permission_flag
-import tld
-import random
-import markdown
-import bleach
+
+from peeringdb_server.inet import RdapException
+from peeringdb_server.models import (
+    PARTNERSHIP_LEVELS,
+    Facility,
+    InternetExchange,
+    Network,
+    Organization,
+    format_speed,
+)
+from peeringdb_server.org_admin_views import permission_ids
+from peeringdb_server.views import DoNotRender
 
 countries_dict = dict(countries)
 

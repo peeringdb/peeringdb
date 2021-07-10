@@ -1,8 +1,8 @@
+import re
+
 from django.core.management.base import BaseCommand
 
 from peeringdb_server.models import DeskProTicket
-
-import re
 
 
 class Command(BaseCommand):
@@ -30,10 +30,10 @@ class Command(BaseCommand):
 
         qset = DeskProTicket.objects
         if _id[0] == "g":
-            self.log("Requeuing tickets with id greater than {}".format(_id[1:]))
+            self.log(f"Requeuing tickets with id greater than {_id[1:]}")
             qset = qset.filter(pk__gt=_id[1:])
         elif _id[0] == "l":
-            self.log("Requeuing tickets with id smaller than {}".format(_id[1:]))
+            self.log(f"Requeuing tickets with id smaller than {_id[1:]}")
             qset = qset.filter(pk__lt=_id[1:])
         else:
             qset = qset.filter(pk=_id)

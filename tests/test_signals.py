@@ -1,16 +1,18 @@
-from peeringdb_server.models import (
-    Organization,
-    Network,
-    NetworkIXLan,
-    InternetExchange,
-    Facility,
-    NetworkFacility,
-    NetworkContact,
-)
-import pytest
-from datetime import datetime, timezone, timedelta
-import reversion
 import time
+from datetime import datetime, timedelta, timezone
+
+import pytest
+import reversion
+
+from peeringdb_server.models import (
+    Facility,
+    InternetExchange,
+    Network,
+    NetworkContact,
+    NetworkFacility,
+    NetworkIXLan,
+    Organization,
+)
 
 
 def now():

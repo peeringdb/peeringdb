@@ -1,4 +1,4 @@
-## Network to Internet Exchange connection 
+## Network to Internet Exchange connection
 
 Identified by the `netixlan` tag.
 

@@ -4,7 +4,6 @@ import os
 
 import django.conf.global_settings
 
-
 _DEFAULT_ARG = object()
 
 
@@ -85,7 +84,7 @@ def print_debug(*args, **kwargs):
 
 
 def get_locale_name(code):
-    """ Gets the readble name for a locale code. """
+    """Gets the readble name for a locale code."""
     language_map = dict(django.conf.global_settings.LANGUAGES)
 
     # check for exact match
@@ -158,7 +157,7 @@ def set_bool(name, value):
 
 
 def _set_bool(name, value, context):
-    """ Sets and option, first checking for env vars, then checking for value already set, then going to the default value if passed. """
+    """Sets and option, first checking for env vars, then checking for value already set, then going to the default value if passed."""
     if name in os.environ:
         envval = os.environ.get(name).lower()
         if envval in ["1", "true", "y", "yes"]:
@@ -166,9 +165,7 @@ def _set_bool(name, value, context):
         elif envval in ["0", "false", "n", "no"]:
             context[name] = False
         else:
-            raise ValueError(
-                "{} is a boolean, cannot match '{}'".format(name, os.environ[name])
-            )
+            raise ValueError(f"{name} is a boolean, cannot match '{os.environ[name]}'")
 
     _set_default(name, value, context)
 
@@ -178,13 +175,13 @@ def set_default(name, value):
 
 
 def _set_default(name, value, context):
-    """ Sets the default value for the option if it's not already set. """
+    """Sets the default value for the option if it's not already set."""
     if name not in context:
         context[name] = value
 
 
 def try_include(filename):
-    """ Tries to include another file from the settings directory. """
+    """Tries to include another file from the settings directory."""
     print_debug(f"including {filename} {RELEASE_ENV}")
     try:
         with open(filename) as f:

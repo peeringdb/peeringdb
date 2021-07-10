@@ -1,13 +1,13 @@
-import py.test
-import pytest
 import json
 
-from rest_framework.test import APIClient
+import py.test
+import pytest
 from django.test import Client, TestCase
+from rest_framework.test import APIClient
 
+import peeringdb_server.views as views
 from peeringdb_server import maintenance, settings
 from peeringdb_server.models import REFTAG_MAP, User
-import peeringdb_server.views as views
 
 from .util import ClientCase
 
@@ -54,7 +54,7 @@ class TestMaintenanceMode(ClientCase):
         err_str = "in maintenance mode"
 
         # GET requests should work as expected
-        r = self.client.get("/api/org/{}".format(self.org.id), format="json")
+        r = self.client.get(f"/api/org/{self.org.id}", format="json")
         content = json.loads(r.content)
         assert r.status_code == 200
 

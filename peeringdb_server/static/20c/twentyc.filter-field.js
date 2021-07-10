@@ -2,7 +2,7 @@
  * Functionality for text input fields to apply filters to
  * content
  *
- * Dependencies: 
+ * Dependencies:
  *   1. jquery >= 1.11.13
  *   2. twentyc.core.js
  */
@@ -23,10 +23,10 @@ twentyc.jq.plugin(
     init : function(opt) {
       this.each(function(idx) {
         var me = $(this);
-    
+
         if(!me.data("filter-initialized")) {
           // init
-    
+
           var target = $(me.data("filter-target"));
           var callback = function() {
             target.trigger('filter-start')
@@ -40,15 +40,15 @@ twentyc.jq.plugin(
           }
 
           me.data("filter-callback", callback);
-    
+
           me.data(
-            "filter-timeout", 
+            "filter-timeout",
             new tc.u.SmartTimeout(
               callback,
               opt.interval
             )
           );
-    
+
           me.keyup(function(e) {
             me.data("filter-timeout").set(callback, opt.interval);
             var target = $(me.data("filter-target"));
@@ -65,7 +65,7 @@ twentyc.jq.plugin(
           me.data("filter-initialized", true);
         }
       });
-    
+
     },
     test : function(value) {
       var n = 0;
@@ -74,7 +74,7 @@ twentyc.jq.plugin(
         var myvalue = new String(me.data("filter-value"))
         var status = (value ? false : true);
         if(myvalue && myvalue.toLowerCase().indexOf(value) > -1) {
-          status = true;  
+          status = true;
         }
         if(!status) {
           me.find('[data-filter-value]').each(function(idx_2) {
@@ -91,7 +91,7 @@ twentyc.jq.plugin(
           n++;
         } else
           me.hide();
-        
+
       });
 
       return n;

@@ -1,14 +1,13 @@
 import json
-import pytest
 
-from django.test import TestCase
+import pytest
+import reversion
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import IntegrityError
-from django.conf import settings
+from django.test import TestCase
 
 import peeringdb_server.models as models
-
-import reversion
 
 
 class VeriQueueTests(TestCase):

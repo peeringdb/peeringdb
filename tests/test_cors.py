@@ -1,6 +1,3 @@
-from django.test import TestCase, Client
-from peeringdb_server.models import Organization, User
-from .util import ClientCase
 from corsheaders.middleware import (
     ACCESS_CONTROL_ALLOW_CREDENTIALS,
     ACCESS_CONTROL_ALLOW_HEADERS,
@@ -9,6 +6,11 @@ from corsheaders.middleware import (
     ACCESS_CONTROL_EXPOSE_HEADERS,
     ACCESS_CONTROL_MAX_AGE,
 )
+from django.test import Client, TestCase
+
+from peeringdb_server.models import Organization, User
+
+from .util import ClientCase
 
 
 class CorsTest(ClientCase):

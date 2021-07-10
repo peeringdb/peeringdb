@@ -1,11 +1,11 @@
 import ipaddress
 
-from django.core.management.base import BaseCommand
-from django.core.exceptions import ValidationError
 import reversion
+from django.core.exceptions import ValidationError
+from django.core.management.base import BaseCommand
 
-from peeringdb_server.models import IXLanPrefix, NetworkIXLan
 from peeringdb_server.inet import renumber_ipaddress
+from peeringdb_server.models import IXLanPrefix, NetworkIXLan
 
 
 class Command(BaseCommand):

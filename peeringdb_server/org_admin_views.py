@@ -1,31 +1,29 @@
 """
 Views for organization administrative actions
 """
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
 from django.template import loader
-from django.conf import settings
-from .forms import OrgAdminUserPermissionForm
-
-from grainy.const import *
-from django_grainy.models import UserPermission
-
-from django_handleref.models import HandleRefModel
-
-from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import override
+from django.utils.translation import ugettext_lazy as _
+from django.views.decorators.csrf import csrf_protect
+from django_grainy.models import UserPermission
+from django_handleref.models import HandleRefModel
+from grainy.const import *
 
-from peeringdb_server.util import check_permissions
 from peeringdb_server.models import (
-    User,
-    Organization,
+    Facility,
+    InternetExchange,
     Network,
     NetworkContact,
-    InternetExchange,
-    Facility,
+    Organization,
+    User,
     UserOrgAffiliationRequest,
 )
+from peeringdb_server.util import check_permissions
+
+from .forms import OrgAdminUserPermissionForm
 
 
 def save_user_permissions(org, user, perms):

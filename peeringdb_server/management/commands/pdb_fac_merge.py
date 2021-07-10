@@ -1,9 +1,10 @@
-from django.core.management.base import BaseCommand, CommandError
-from peeringdb_server.mail import mail_users_entity_merge
+import re
 
 import reversion
+from django.core.management.base import BaseCommand, CommandError
+
 import peeringdb_server.models as pdbm
-import re
+from peeringdb_server.mail import mail_users_entity_merge
 
 
 def soft_delete(fac, cmd):

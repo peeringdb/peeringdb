@@ -1,8 +1,9 @@
-from django.core.mail.message import EmailMultiAlternatives
 from django.conf import settings
+from django.core.mail.message import EmailMultiAlternatives
 from django.template import loader
 from django.utils.html import strip_tags
-from django.utils.translation import ugettext_lazy as _, override
+from django.utils.translation import override
+from django.utils.translation import ugettext_lazy as _
 
 
 def mail_admins_with_from(

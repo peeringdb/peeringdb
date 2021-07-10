@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta, timezone
 
-from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from peeringdb_server.models import VerificationQueueItem, User
 from peeringdb_server.management.commands.pdb_base_command import PeeringDBBaseCommand
+from peeringdb_server.models import User, VerificationQueueItem
 
 
 class Command(PeeringDBBaseCommand):

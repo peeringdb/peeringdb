@@ -1,18 +1,17 @@
-import os
 import json
-import pytest
+import os
 import urllib
 
-from django.test import Client, TestCase, RequestFactory
+import pytest
 from django.contrib.auth.models import Group
-from django.urls import reverse, resolve
-from django.core.management import call_command
 from django.contrib.messages import get_messages
+from django.core.management import call_command
+from django.test import Client, RequestFactory, TestCase
+from django.urls import resolve, reverse
+from django_grainy.models import GroupPermission, UserPermission
 
-from django_grainy.models import UserPermission, GroupPermission
-
-import peeringdb_server.models as models
 import peeringdb_server.admin as admin
+import peeringdb_server.models as models
 
 
 class AdminTests(TestCase):

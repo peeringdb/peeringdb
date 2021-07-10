@@ -8,11 +8,11 @@ from django.core.exceptions import FieldError, ValidationError
 from django.core.validators import URLValidator
 from django.db import IntegrityError, models, transaction
 from django.db.models import Case, IntegerField, Prefetch, Q, Sum, When
+from django.db.models.expressions import RawSQL
 from django.db.models.fields.related import (
     ForwardManyToOneDescriptor,
     ReverseManyToOneDescriptor,
 )
-from django.db.models.expressions import RawSQL
 from django.db.models.query import QuerySet
 from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy as _
@@ -25,50 +25,48 @@ from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 
-from peeringdb_server.permissions import (
-    check_permissions_from_request,
-    get_org_key_from_request,
-    validate_rdap_user_or_key,
-    get_user_from_request,
-)
-from peeringdb_server.inet import (
-    RdapLookup,
-    RdapNotFoundError,
-    get_prefix_protocol,
-    RdapException,
-    rdap_pretty_error_message,
-)
-
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
     ticket_queue_rdap_error,
 )
+from peeringdb_server.inet import (
+    RdapException,
+    RdapLookup,
+    RdapNotFoundError,
+    get_prefix_protocol,
+    rdap_pretty_error_message,
+)
 from peeringdb_server.models import (
     QUEUE_ENABLED,
-    VerificationQueueItem,
+    Facility,
+    GeoCoordinateCache,
     InternetExchange,
     InternetExchangeFacility,
     IXLan,
     IXLanPrefix,
-    Facility,
     Network,
     NetworkContact,
     NetworkFacility,
     NetworkIXLan,
     Organization,
     OrganizationAPIKey,
-    GeoCoordinateCache,
+    VerificationQueueItem,
+)
+from peeringdb_server.permissions import (
+    check_permissions_from_request,
+    get_org_key_from_request,
+    get_user_from_request,
+    validate_rdap_user_or_key,
 )
 from peeringdb_server.validators import (
     validate_address_space,
     validate_info_prefixes4,
     validate_info_prefixes6,
-    validate_prefix_overlap,
-    validate_phonenumber,
     validate_irr_as_set,
+    validate_phonenumber,
+    validate_prefix_overlap,
     validate_zipcode,
 )
-
 
 # exclude certain query filters that would otherwise
 # be exposed to the api for filtering operations
@@ -109,7 +107,7 @@ FILTER_EXCLUDE = [
 #    return x
 
 
-class GeocodeSerializerMixin(object):
+class GeocodeSerializerMixin:
     """
     Overrides create() and update() method of serializer
     to normalize the location against the Google Maps Geocode API
@@ -1244,15 +1242,15 @@ class ModelSerializer(serializers.ModelSerializer):
                     vq.save()
 
     def finalize_create(self, request):
-        """ this will be called on the end of POST request to this serializer """
+        """this will be called on the end of POST request to this serializer"""
         pass
 
     def finalize_update(self, request):
-        """ this will be called on the end of PUT request to this serializer """
+        """this will be called on the end of PUT request to this serializer"""
         pass
 
     def finalize_delete(self, request):
-        """ this will be called on the end of DELETE request to this serializer """
+        """this will be called on the end of DELETE request to this serializer"""
         pass
 
 
@@ -1353,7 +1351,7 @@ class SpatialSearchMixin:
             try:
                 # convert address filters into lng and lat
                 coords = GeoCoordinateCache.request_coordinates(**filters)
-            except IOError:
+            except OSError:
                 # google failure to convert address to coordinates
                 # due ot technical error
                 # return empty query set

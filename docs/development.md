@@ -68,15 +68,9 @@ pytest -v -rxs --cov-report term-missing --cov=peeringdb_server/ --capture=sys t
 
 ## Dependencies
 
-All dependencies are now handled by the Pipfile.
+All dependencies are now handled by poetry.
 
-To update them, do a pipenv lock, and test.
-
-To update the requirements.txt file, from the base dir, run:
-
-```sh
-scripts/update_requirements_file.sh
-```
+To update them, do `poetry lock` and test.
 
 
 ## Troubleshooting

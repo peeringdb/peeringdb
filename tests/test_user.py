@@ -2,12 +2,10 @@ import json
 import re
 
 import pytest
-
-from django.test import Client, TestCase, RequestFactory
-from django.contrib.auth.models import Group
-from django.conf import settings
-
 from captcha.models import CaptchaStore
+from django.conf import settings
+from django.contrib.auth.models import Group
+from django.test import Client, RequestFactory, TestCase
 
 import peeringdb_server.models as models
 import peeringdb_server.views as views
@@ -235,14 +233,14 @@ class UserTests(TestCase):
 
     def test_login_redirect(self):
         data = {
-            "next": "/org/{}".format(self.org_a.id),
+            "next": f"/org/{self.org_a.id}",
             "auth-username": "user_d",
             "auth-password": "user_d",
             "login_view-current_step": "auth",
         }
         C = Client()
         resp = C.post("/account/login/", data, follow=True)
-        self.assertEqual(resp.redirect_chain, [("/org/{}".format(self.org_a.id), 302)])
+        self.assertEqual(resp.redirect_chain, [(f"/org/{self.org_a.id}", 302)])
 
         data = {
             "next": "/logout",

@@ -1,20 +1,15 @@
 import re
-
 from collections import defaultdict
 
-from django.db.models import OneToOneRel, DateTimeField
-from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
-
-from peeringdb import resource
+from django.db.models import DateTimeField, OneToOneRel
+from django_peeringdb.client_adaptor.backend import Backend as BaseBackend
+from django_peeringdb.client_adaptor.backend import reftag_to_cls
 
 import peeringdb_server.models as models
-
-from django_peeringdb.client_adaptor.backend import (
-    Backend as BaseBackend,
-    reftag_to_cls,
-)
+from peeringdb import resource
 
 __version__ = "1.0"
 

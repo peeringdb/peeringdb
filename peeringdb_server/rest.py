@@ -1,44 +1,40 @@
-import importlib
-
-import re
-import traceback
-import time
 import datetime
-
-import unidecode
-
-from rest_framework import routers, serializers, status, viewsets
-from rest_framework.response import Response
-from rest_framework.views import exception_handler
-from rest_framework.exceptions import ValidationError as RestValidationError, ParseError
-
-from django.apps import apps
-from django.conf import settings
-from django.core.exceptions import FieldError, ValidationError, ObjectDoesNotExist
-from django.db import connection
-from django.utils import timezone
-from django.db.models import DateTimeField
-from django.utils.translation import ugettext_lazy as _
-from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
-
-from haystack.query import SearchQuerySet
+import importlib
+import re
+import time
+import traceback
 
 import reversion
+import unidecode
+from django.apps import apps
+from django.conf import settings
+from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
+from django.db import connection
+from django.db.models import DateTimeField
+from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
+from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
+from haystack.query import SearchQuerySet
+from rest_framework import routers, serializers, status, viewsets
+from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ValidationError as RestValidationError
+from rest_framework.response import Response
+from rest_framework.views import exception_handler
 
-from peeringdb_server.models import Network, UTC, ProtectedAction
-from peeringdb_server.serializers import ParentStatusException
-from peeringdb_server.api_cache import CacheRedirect, APICacheLoader
+from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
 from peeringdb_server.api_schema import BaseSchema
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
+from peeringdb_server.models import UTC, Network, ProtectedAction
 from peeringdb_server.permissions import (
+    APIPermissionsApplicator,
     ModelViewSetPermissions,
     check_permissions_from_request,
-    APIPermissionsApplicator,
     get_org_key_from_request,
     get_user_key_from_request,
 )
-from peeringdb_server.util import coerce_ipaddr
 from peeringdb_server.search import make_name_search_query
+from peeringdb_server.serializers import ParentStatusException
+from peeringdb_server.util import coerce_ipaddr
 
 
 class DataException(ValueError):
@@ -169,25 +165,25 @@ class client_check:
         return wrapped
 
     def version_tuple(self, str_version):
-        """ take a semantic version string and turn into a tuple """
-        return tuple([int(i) for i in str_version.split(".")])
+        """take a semantic version string and turn into a tuple"""
+        return tuple(int(i) for i in str_version.split("."))
 
     def version_pad(self, version):
-        """ take a semantic version tuple and zero pad to dev version """
+        """take a semantic version tuple and zero pad to dev version"""
         while len(version) < 4:
             version = version + (0,)
         return version
 
     def version_string(self, version):
-        """ take a semantic version tuple and turn into a "." delimited string """
+        """take a semantic version tuple and turn into a "." delimited string"""
         return ".".join([str(i) for i in version])
 
     def backend_min_version(self, backend):
-        """ return the min supported version for the specified backend """
+        """return the min supported version for the specified backend"""
         return self.backends.get(backend, {}).get("min")
 
     def backend_max_version(self, backend):
-        """ return the max supported version for the specified backend """
+        """return the max supported version for the specified backend"""
         return self.backends.get(backend, {}).get("max")
 
     def client_info(self, request):
@@ -420,7 +416,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                     if timezone.is_naive(v):
                         v = timezone.make_aware(v)
                     if "_ctf" in self.request.query_params:
-                        self.request._ctf = {"{}__{}".format(m.group(1), m.group(2)): v}
+                        self.request._ctf = {f"{m.group(1)}__{m.group(2)}": v}
 
                 # contains should become icontains because we always
                 # want it to do case-insensitive checks

@@ -1,11 +1,12 @@
 import pytest
-from django.test import Client
 from django.core.management import call_command
+from django.test import Client
+
 from peeringdb_server.models import (
-    User,
     Organization,
     Sponsorship,
     SponsorshipOrganization,
+    User,
 )
 
 

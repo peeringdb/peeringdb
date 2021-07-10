@@ -1,5 +1,5 @@
-from contextlib import contextmanager
 import contextvars
+from contextlib import contextmanager
 
 # stores current request in a thread safe context aware
 # manner.

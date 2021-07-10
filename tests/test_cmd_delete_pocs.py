@@ -2,17 +2,15 @@ import io
 from datetime import timedelta
 
 import pytest
-
-from .util import ClientCase, Group
-
-from django.core.management import call_command
-from django.conf import settings
-from django.utils import timezone
-
 import reversion
+from django.conf import settings
+from django.core.management import call_command
+from django.utils import timezone
 from reversion.models import Version
 
 from peeringdb_server.models import Network, NetworkContact
+
+from .util import ClientCase, Group
 
 
 class TestRenumberLans(ClientCase):

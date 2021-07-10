@@ -1,17 +1,17 @@
 """
 peeringdb model / field validators
 """
-import re
 import ipaddress
-import phonenumbers
+import re
 
+import phonenumbers
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from peeringdb_server.inet import network_is_pdb_valid, IRR_SOURCE
-from peeringdb_server.request import bypass_validation
 import peeringdb_server.models
+from peeringdb_server.inet import IRR_SOURCE, network_is_pdb_valid
+from peeringdb_server.request import bypass_validation
 
 
 def validate_phonenumber(phonenumber, country=None):

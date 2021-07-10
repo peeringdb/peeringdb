@@ -1,34 +1,34 @@
+import datetime
+import io
+import ipaddress
 import json
 import os
-from pprint import pprint
-import pytest
-import reversion
-import requests
-import jsonschema
 import time
-import io
-import datetime
-import ipaddress
+from pprint import pprint
 
-from django.test import override_settings
+import jsonschema
+import pytest
+import requests
+import reversion
 from django.conf import settings
+from django.test import override_settings
 
-from peeringdb_server.models import (
-    Organization,
-    Network,
-    NetworkIXLan,
-    NetworkContact,
-    IXLan,
-    IXLanPrefix,
-    InternetExchange,
-    IXFMemberData,
-    IXLanIXFMemberImportLog,
-    User,
-    DeskProTicket,
-    IXFImportEmail,
-)
 from peeringdb_server import ixf
 from peeringdb_server.deskpro import FailingMockAPIClient
+from peeringdb_server.models import (
+    DeskProTicket,
+    InternetExchange,
+    IXFImportEmail,
+    IXFMemberData,
+    IXLan,
+    IXLanIXFMemberImportLog,
+    IXLanPrefix,
+    Network,
+    NetworkContact,
+    NetworkIXLan,
+    Organization,
+    User,
+)
 
 from .util import setup_test_data
 

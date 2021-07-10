@@ -3,11 +3,11 @@ load and maintain global stats
 """
 
 from peeringdb_server.models import (
-    Network,
-    InternetExchange,
     Facility,
-    NetworkIXLan,
+    InternetExchange,
+    Network,
     NetworkFacility,
+    NetworkIXLan,
 )
 
 

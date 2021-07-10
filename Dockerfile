@@ -1,4 +1,4 @@
-# RUN true is used here to separate problematic COPY statements, 
+# RUN true is used here to separate problematic COPY statements,
 # per this issue: https://github.com/moby/moby/issues/37965
 
 FROM python:3.9-alpine as base
@@ -12,6 +12,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # build container
 FROM base as builder
 
+# rust and cargo for cryptography package
 RUN apk --update --no-cache add \
   g++ \
   libjpeg-turbo-dev \
@@ -19,21 +20,19 @@ RUN apk --update --no-cache add \
   make \
   mariadb-dev \
   libffi-dev \
-  curl
+  curl \
+  rust \
+  cargo
 
 
-# Install Rust to install Poetry
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-
-# create venv
-RUN pip install -U pip pipenv
-RUN python3 -m venv "$VIRTUAL_ENV"
+RUN pip install -U pip poetry
+# create venv and update venv pip
+RUN python3 -m venv "$VIRTUAL_ENV" && pip install -U pip
 
 WORKDIR /srv/www.peeringdb.com
-ADD Pipfile* ./
-RUN pipenv install --ignore-pipfile
+COPY poetry.lock pyproject.toml ./
+# install dev now so we don't need a build env for testing (adds 8M)
+RUN poetry install --no-root
 
 # inetd
 RUN apk add busybox-extras
@@ -69,7 +68,7 @@ RUN true
 COPY peeringdb_server/ peeringdb_server
 COPY fixtures/ fixtures
 COPY .coveragerc .coveragerc
-RUN mkdir coverage 
+RUN mkdir coverage
 
 COPY scripts/manage /usr/bin/
 COPY Ctl/docker/entrypoint.sh /
@@ -85,18 +84,15 @@ RUN chown -R pdb:pdb api-cache locale media var/log coverage
 FROM final as tester
 
 WORKDIR /srv/www.peeringdb.com
-# copy from builder in case we're testing new deps
-COPY --from=builder /srv/www.peeringdb.com/Pipfile* ./
+COPY poetry.lock pyproject.toml ./
 RUN true
 COPY tests/ tests
 RUN chown -R pdb:pdb tests/
 COPY Ctl/docker/entrypoint.sh .
 
-RUN pip install -U pipenv
-RUN pipenv install --dev --ignore-pipfile -v
-#RUN echo `which python`
-#RUN pip freeze
-#RUN pytest -v -rA --cov-report term-missing --cov=peeringdb_server tests/
+# install dev deps
+RUN pip install -U poetry
+RUN poetry install --no-root
 
 USER pdb
 ENTRYPOINT ["./entrypoint.sh"]

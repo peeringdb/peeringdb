@@ -6,15 +6,16 @@ mode
 """
 import datetime
 
+import django_countries
+import django_peeringdb.const as const
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-import django_countries
-from . import models
-import django_peeringdb.const as const
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 
-from peeringdb_server.models import Organization, Network, Sponsorship
+from peeringdb_server.models import Network, Organization, Sponsorship
+
+from . import models
 
 # def _(x):
 #    return x
@@ -45,12 +46,12 @@ const.NET_TYPES_ADVS[0] = (
 )
 const.SERVICE_LEVEL_TYPES_ADVS = list(const.SERVICE_LEVEL_TYPES[1:])
 const.SERVICE_LEVEL_TYPES_ADVS[0] = (
-    ",{}".format(const.SERVICE_LEVEL_TYPES_ADVS[0][0]),
+    f",{const.SERVICE_LEVEL_TYPES_ADVS[0][0]}",
     const.SERVICE_LEVEL_TYPES_ADVS[0][1],
 )
 const.TERMS_TYPES_ADVS = list(const.TERMS_TYPES[1:])
 const.TERMS_TYPES_ADVS[0] = (
-    ",{}".format(const.TERMS_TYPES_ADVS[0][0]),
+    f",{const.TERMS_TYPES_ADVS[0][0]}",
     const.TERMS_TYPES_ADVS[0][1],
 )
 

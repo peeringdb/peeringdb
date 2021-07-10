@@ -2,61 +2,55 @@
 """
 series of integration/unit tests for the pdb api
 """
-import pytest
 import copy
-import unittest
-import uuid
+import datetime
+import ipaddress
+import json
 import random
 import re
 import time
-import datetime
-import json
-import ipaddress
+import unittest
+import uuid
+
+import pytest
 import reversion
-
-from twentyc.rpc import (
-    RestClient,
-    PermissionDeniedException,
-    InvalidRequestException,
-    NotFoundException,
-)
-from grainy.const import (
-    PERM_READ,
-    PERM_UPDATE,
-    PERM_CREATE,
-    PERM_DELETE,
-)
-from django.core.management.base import BaseCommand
-from django.core.management import call_command
-from django.contrib.auth.models import Group
 from django.conf import settings
-from django.db.utils import IntegrityError
+from django.contrib.auth.models import Group
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
 from django.db.models import Sum
-
+from django.db.utils import IntegrityError
+from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework import serializers
 from rest_framework.test import APIRequestFactory
-
-from peeringdb_server.models import (
-    REFTAG_MAP,
-    QUEUE_ENABLED,
-    User,
-    Organization,
-    Network,
-    InternetExchange,
-    Facility,
-    NetworkContact,
-    NetworkIXLan,
-    NetworkFacility,
-    IXLan,
-    IXLanPrefix,
-    InternetExchangeFacility,
-    DeskProTicket,
-    GeoCoordinateCache,
+from twentyc.rpc import (
+    InvalidRequestException,
+    NotFoundException,
+    PermissionDeniedException,
+    RestClient,
 )
 
-from peeringdb_server.serializers import REFTAG_MAP as REFTAG_MAP_SLZ
-from peeringdb_server import inet, settings as pdb_settings
+from peeringdb_server import inet
+from peeringdb_server import settings as pdb_settings
+from peeringdb_server.models import (
+    QUEUE_ENABLED,
+    REFTAG_MAP,
+    DeskProTicket,
+    Facility,
+    GeoCoordinateCache,
+    InternetExchange,
+    InternetExchangeFacility,
+    IXLan,
+    IXLanPrefix,
+    Network,
+    NetworkContact,
+    NetworkFacility,
+    NetworkIXLan,
+    Organization,
+    User,
+)
 from peeringdb_server.rest import NetworkViewSet
+from peeringdb_server.serializers import REFTAG_MAP as REFTAG_MAP_SLZ
 
 START_TIMESTAMP = time.time()
 
@@ -165,7 +159,7 @@ class TestJSON(unittest.TestCase):
             else:
                 break
 
-        r = "{}".format(hosts[cls.IP6_COUNT])
+        r = f"{hosts[cls.IP6_COUNT]}"
         cls.IP6_COUNT += 1
         return r
 
@@ -182,7 +176,7 @@ class TestJSON(unittest.TestCase):
             else:
                 break
 
-        r = "{}".format(hosts[cls.IP4_COUNT])
+        r = f"{hosts[cls.IP4_COUNT]}"
         cls.IP4_COUNT += 1
         return r
 
@@ -2290,7 +2284,7 @@ class TestJSON(unittest.TestCase):
                     fnc(
                         dt,
                         DATE[0],
-                        msg="{}__{}: {}, {}".format(fld, flt, row[fld], DATE[1]),
+                        msg=f"{fld}__{flt}: {row[fld]}, {DATE[1]}",
                     )
 
     ##########################################################################
@@ -2470,7 +2464,7 @@ class TestJSON(unittest.TestCase):
     def test_guest_005_list_filter_ixpfx_whereis(self):
         ixpfx = SHARED["ixpfx_r_ok"]
 
-        ipaddr = "{}".format(ixpfx.prefix[0])
+        ipaddr = f"{ixpfx.prefix[0]}"
 
         data = self.db_guest.all("ixpfx", whereis=ipaddr)
 
@@ -2505,7 +2499,7 @@ class TestJSON(unittest.TestCase):
 
         netixlans = NetworkIXLan.handleref.undeleted()
         capacity_set = netixlans.values("ixlan_id").annotate(capacity=Sum("speed"))
-        capacity_dict = dict([(d["ixlan_id"], d["capacity"]) for d in capacity_set])
+        capacity_dict = {d["ixlan_id"]: d["capacity"] for d in capacity_set}
 
         data = self.db_guest.all("ix", capacity=1000)
         assert len(data) == 1

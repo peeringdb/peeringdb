@@ -1,12 +1,13 @@
 import re
+
 import reversion
 from django.core.management.base import BaseCommand
 
 from peeringdb_server.models import (
     CommandLineTool,
     Facility,
-    NetworkFacility,
     InternetExchangeFacility,
+    NetworkFacility,
 )
 
 

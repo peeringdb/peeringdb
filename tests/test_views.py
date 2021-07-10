@@ -1,6 +1,6 @@
 import pytest
-from rest_framework.test import APIClient
 from django.test import Client
+from rest_framework.test import APIClient
 
 from peeringdb_server.models import (
     Network,

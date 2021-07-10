@@ -1,4 +1,4 @@
-## Facility (Datacenter) 
+## Facility (Datacenter)
 
 Identified by the `fac` tag.
 

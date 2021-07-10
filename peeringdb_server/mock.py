@@ -1,7 +1,9 @@
 import datetime
-import uuid
 import ipaddress
+import uuid
+
 from django.db import models
+
 from peeringdb_server.models import REFTAG_MAP
 
 
@@ -199,7 +201,7 @@ class Mock:
         return "US"
 
     def name(self, data, reftag=None):
-        return "{} {}".format(reftag, str(uuid.uuid4())[:8])
+        return f"{reftag} {str(uuid.uuid4())[:8]}"
 
     def name_long(self, data, reftag=None):
         return self.name(data, reftag=reftag)
@@ -214,13 +216,13 @@ class Mock:
         return self.name(data, reftag=reftag)
 
     def irr_as_set(self, data, reftag=None):
-        return "AS-{}@RIPE".format(str(uuid.uuid4())[:8].upper())
+        return f"AS-{str(uuid.uuid4())[:8].upper()}@RIPE"
 
     def looking_glass(self, data, reftag=None):
-        return "{}/looking-glass".format(self.website(data, reftag=reftag))
+        return f"{self.website(data, reftag=reftag)}/looking-glass"
 
     def route_server(self, data, reftag=None):
-        return "{}/route-server".format(self.website(data, reftag=reftag))
+        return f"{self.website(data, reftag=reftag)}/route-server"
 
     def notes_private(self, data, reftag=None):
         return "Private notes"

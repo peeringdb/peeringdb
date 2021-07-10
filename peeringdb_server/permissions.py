@@ -1,18 +1,16 @@
 # from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
-from rest_framework_api_key.permissions import KeyParser
-from rest_framework.permissions import BasePermission
-
-from django_grainy.helpers import request_method_to_flag
-
-from peeringdb_server.models import OrganizationAPIKey, UserAPIKey, Group, User
-from django.contrib.auth.models import AnonymousUser
-
 import grainy.const as grainy_constant
-from grainy.core import NamespaceKeyApplicator
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
+from django_grainy.helpers import request_method_to_flag
 
 # from django_grainy.const import *
 from django_grainy.util import Permissions
+from grainy.core import NamespaceKeyApplicator
+from rest_framework.permissions import BasePermission
+from rest_framework_api_key.permissions import KeyParser
+
+from peeringdb_server.models import Group, OrganizationAPIKey, User, UserAPIKey
 
 
 def validate_rdap_user_or_key(request, rdap):

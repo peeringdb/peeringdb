@@ -7,12 +7,12 @@
 {{ adminform.media }}
 <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
 {% endblock %}
- 
+
 {% block extrastyle %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}"/>
 {% endblock %}
- 
+
 {% block breadcrumbs %}
     <div class="breadcrumbs">
         <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
@@ -22,7 +22,7 @@
         &rsaquo; {% trans 'Prepare' %}
     </div>
 {% endblock %}
- 
+
 {% block content %}
     <form action="{% url opts|admin_urlname:action %}" method="post" id="commandlinetool_prepare_form"
           {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>

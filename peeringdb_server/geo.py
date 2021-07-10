@@ -2,9 +2,9 @@
 Utilties for geocoding and geo normalization
 """
 
-from django.utils.translation import ugettext_lazy as _
-import requests
 import googlemaps
+import requests
+from django.utils.translation import ugettext_lazy as _
 
 
 class Timeout(IOError):
@@ -214,7 +214,7 @@ class Melissa:
             )
         except requests.exceptions.Timeout:
             raise Timeout()
-        except IOError as exc:
+        except OSError as exc:
             raise RequestError(exc)
 
         if response.status_code != 200:

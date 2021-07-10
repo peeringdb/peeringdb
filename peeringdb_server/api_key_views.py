@@ -1,33 +1,25 @@
 """
 Views for organization api key management
 """
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
 from django.template import loader
-from django.conf import settings
-from peeringdb_server.forms import OrgAdminUserPermissionForm, OrganizationAPIKeyForm
-
-from grainy.const import PERM_READ
-from django_grainy.models import UserPermission
-
-from django_handleref.models import HandleRefModel
-
-from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import override
+from django.utils.translation import ugettext_lazy as _
+from django.views.decorators.csrf import csrf_protect
+from django_grainy.models import UserPermission
+from django_handleref.models import HandleRefModel
+from grainy.const import PERM_READ
 
-from peeringdb_server.org_admin_views import (
-    load_entity_permissions,
-    org_admin_required,
-)
-
-
+from peeringdb_server.forms import OrgAdminUserPermissionForm, OrganizationAPIKeyForm
 from peeringdb_server.models import (
     OrganizationAPIKey,
     OrganizationAPIPermission,
-    UserAPIKey,
     User,
+    UserAPIKey,
 )
+from peeringdb_server.org_admin_views import load_entity_permissions, org_admin_required
 
 
 def save_key_permissions(org, key, perms):

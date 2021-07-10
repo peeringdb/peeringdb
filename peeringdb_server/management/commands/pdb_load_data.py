@@ -1,24 +1,21 @@
-import logging
 import datetime
+import logging
 
 from confu.schema import apply_defaults
-
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db.models.signals import post_save, pre_delete, pre_save
-from django.conf import settings
-
-from peeringdb_server import models as pdb_models
-from peeringdb_server import signals
-
 from django_handleref.models import HandleRefModel
 from django_peeringdb import models as djpdb_models
 
+import peeringdb._fetch
+from peeringdb import SUPPORTED_BACKENDS, resource
 from peeringdb.client import Client
 from peeringdb.config import ClientSchema
-from peeringdb import resource, SUPPORTED_BACKENDS
-import peeringdb._fetch
+from peeringdb_server import models as pdb_models
+from peeringdb_server import signals
 
 _fetch_all_latest = peeringdb._fetch.Fetcher.fetch_all_latest
 
@@ -45,7 +42,7 @@ def fetch_all_latest(self, R, depth, params={}, since=None):
     for row in result[0]:
         for k, v in list(row.items()):
             if k in ["latitude", "longitude"] and v:
-                row[k] = "{:3.6f}".format(float(v))
+                row[k] = f"{float(v):3.6f}"
             elif k == "fac_id":
                 row["facility_id"] = v
                 del row["fac_id"]

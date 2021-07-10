@@ -4,4 +4,3 @@ Facility fac {{ object.name }}
 
 {{ object.country.name }} {{ object.country.code }}
 {{ object.city }}
-

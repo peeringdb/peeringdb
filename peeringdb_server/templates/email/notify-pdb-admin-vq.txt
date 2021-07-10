@@ -7,11 +7,11 @@ A new '{{ entity_type_name }}' has been created and requires your approval.
 {% if suggested %}
 {% blocktrans trimmed %}
   This {{ entity_type_name }} has been submitted as a suggestion and will need to be assigned the aproporiate organization after review
-{% endblocktrans %}  
+{% endblocktrans %}
 {% endif %}
 
 {% if rdap %}
-  {% trans "We retrieved the RiR entry for the specified ASN" %} {{ item.asn }} 
+  {% trans "We retrieved the RiR entry for the specified ASN" %} {{ item.asn }}
   {% if not suggested %}
   {% trans "but found no match with the requesting user. Here are the email addresses we gathered" %}:
   {% endif %}

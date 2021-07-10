@@ -1,10 +1,10 @@
-from datetime import datetime, timezone, timedelta
-import pytest
 import random
 import string
+from datetime import datetime, timedelta, timezone
 
-from django.contrib.contenttypes.models import ContentType
+import pytest
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.test import override_settings
 

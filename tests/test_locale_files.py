@@ -1,9 +1,11 @@
 import os
 import re
-from django.test import TestCase, Client
-from django.conf import settings
-from peeringdb_server.models import Organization, User
 from string import Formatter
+
+from django.conf import settings
+from django.test import Client, TestCase
+
+from peeringdb_server.models import Organization, User
 
 
 class LocaleFilesTest(TestCase):
@@ -60,7 +62,7 @@ class LocaleFilesTest(TestCase):
 
             # {name} and {} type variables
             variables_a = sorted(
-                [fn for _, fn, _, _ in Formatter().parse(msgid) if fn is not None]
+                fn for _, fn, _, _ in Formatter().parse(msgid) if fn is not None
             )
             variables_b = [
                 fn

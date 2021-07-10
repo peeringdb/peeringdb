@@ -1,4 +1,4 @@
-## Network Point of Contact 
+## Network Point of Contact
 
 Identified by the `poc` tag.
 
@@ -8,4 +8,4 @@ Identified by the `poc` tag.
 
 ### Relationship(s):
 
-- None 
+- None

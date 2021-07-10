@@ -41,8 +41,8 @@
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff0088cc', endColorstr='#ff0077b3', GradientType=0);
 }
 
-.yourlabs-autocomplete .choice, 
-.yourlabs-autocomplete [data-value], 
+.yourlabs-autocomplete .choice,
+.yourlabs-autocomplete [data-value],
 .yourlabs-autocomplete em
 {
     display: block;
@@ -56,7 +56,7 @@
     cursor: pointer;
 }
 
-/* 
+/*
  * You should use the "block" class because the "div" class is deprecated since
  * 2.0. However, the "div" class is still supported for backward compatibility.
  */
@@ -145,8 +145,8 @@ input.autocomplete.xhr-pending {
     background-position: -15px 0;
 }
 
-.yourlabs-autocomplete .choice-detail, 
-.yourlabs-autocomplete .choice-update 
+.yourlabs-autocomplete .choice-detail,
+.yourlabs-autocomplete .choice-update
 {
     display: none;
 }
@@ -154,7 +154,7 @@ input.autocomplete.xhr-pending {
 /* These lines are important to avoid style change to the underlying divs */
 .autocomplete-light-clearfix:after {
     content: "";
-    display: table; 
+    display: table;
     clear: both;
 }
 

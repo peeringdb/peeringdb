@@ -1,5 +1,5 @@
 {% load i18n %}
-{% trans "You requested a username retrieval on PeeringDB for the email address" %} '{{ email }}' 
+{% trans "You requested a username retrieval on PeeringDB for the email address" %} '{{ email }}'
 - {% trans "Please follow the url below to view any usernames associated with your email." %}
 
 {{ username_retrieve_url }}

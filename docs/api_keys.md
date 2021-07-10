@@ -6,7 +6,7 @@ PeeringDB offers API keys for authenticating API requests. There are two main fo
 
 These API keys are created and revoked from the organization admin panel. Each key gets its own custom permissions, which can be modified from the "org api key permissions" panel.
 
-Each key must have an email attached to it; this is because keys may be allowed to create and modify data in PeeringDB, and we need a contact to reach out to in case of questions.  
+Each key must have an email attached to it; this is because keys may be allowed to create and modify data in PeeringDB, and we need a contact to reach out to in case of questions.
 
 !["api key creation"](img/org-key-added.png)
 
@@ -42,7 +42,7 @@ import requests
 API_KEY = os.environ.get("API_KEY")
 ```
 
-We set the url for the Facility we want to interact with. Note the `/api` in the URL, which signals we are making calls to the REST API. 
+We set the url for the Facility we want to interact with. Note the `/api` in the URL, which signals we are making calls to the REST API.
 
 ```py
 URL = "https://www.peeringdb.com/api/fac/10003"
@@ -104,12 +104,12 @@ then requests can be made with Curl like in the following examples:
 The following request would return JSON data coresponding to the [ChiX](https://www.peeringdb.com/ix/239) Internet Exchange.
 
 ```sh
-curl -H "Authorization: Api-Key $API_KEY" -H "Content-Type: application/json" -X GET https://peeringdb.com/api/ix/239 
+curl -H "Authorization: Api-Key $API_KEY" -H "Content-Type: application/json" -X GET https://peeringdb.com/api/ix/239
 ```
 
 ### POST
 
-The following request would create a new Network under the organization [United IX](https://www.peeringdb.com/org/10843). 
+The following request would create a new Network under the organization [United IX](https://www.peeringdb.com/org/10843).
 
 ```sh
 curl -H "Authorization: Api-Key $API_KEY" -H "Content-Type: application/json" -X POST --data "{\""org_id"\":\"10843\", \""name"\":\"Brand New Network\", \""asn"\":\"63311\"}" https://peeringdb.com/api/net

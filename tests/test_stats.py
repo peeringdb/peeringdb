@@ -1,16 +1,15 @@
-import io
 import datetime
+import io
+
 import pytest
-
-from .util import ClientCase, Group, override_group_id
-
-from django.core.management import call_command
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 
 from peeringdb_server.models import REFTAG_MAP, UTC, Network
 from peeringdb_server.stats import stats
 
+from .util import ClientCase, Group, override_group_id
 
 DATE_PAST = datetime.datetime(year=2019, month=11, day=1)
 

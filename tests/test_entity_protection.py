@@ -1,16 +1,16 @@
 import datetime
-import pytest
 
+import pytest
 from django.core.management import call_command
 
 from peeringdb_server.models import (
+    UTC,
     Network,
     NetworkContact,
     Organization,
+    ProtectedAction,
     Sponsorship,
     SponsorshipOrganization,
-    ProtectedAction,
-    UTC,
 )
 
 

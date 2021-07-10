@@ -1,4 +1,4 @@
-## Network / Facility presence 
+## Network / Facility presence
 
 Identified by the `netfac` tag.
 

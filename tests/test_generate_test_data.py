@@ -1,6 +1,5 @@
-from django.test import TestCase
-
 from django.core.management import call_command
+from django.test import TestCase
 
 from peeringdb_server.models import REFTAG_MAP
 

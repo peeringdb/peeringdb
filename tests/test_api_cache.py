@@ -1,22 +1,21 @@
-import pytest
-import json
-import tempfile
-import os
 import datetime
+import json
+import os
 import re
+import tempfile
 
-from django.test import TestCase
+import pytest
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management import call_command
-from django.conf import settings
+from django.test import TestCase
+from django_grainy.models import GroupPermission, UserPermission
 
-from django_grainy.models import UserPermission, GroupPermission
-
-import peeringdb_server.models as models
 import peeringdb_server.management.commands.pdb_api_test as api_test
-from .util import reset_group_ids
+import peeringdb_server.models as models
 
 from . import test_api as api_tests
+from .util import reset_group_ids
 
 
 def setup_module(module):
