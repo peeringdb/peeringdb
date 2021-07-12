@@ -114,9 +114,6 @@ def search(term, autocomplete=False):
 
         categorize(sq, result, pk_map)
 
-    for _result in result.values():
-        _result.reverse()
-
     # print("done", time.time() - t0)
 
     return result
