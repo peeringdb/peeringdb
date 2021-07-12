@@ -108,7 +108,7 @@ def search(term, autocomplete=False):
     result = {tag: [] for tag in categories}
     pk_map = {tag: {} for tag in categories}
 
-    for sq in search_query.highlight()[:limit]:
+    for sq in search_query[:limit]:
         model = sq.model
         tag = model.HandleRef.tag
 
