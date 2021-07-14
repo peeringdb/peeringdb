@@ -682,7 +682,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 
 # haystack
 
-set_option("WHOOSH_INDEX_PATH", os.path.join(BASE_DIR, "search-data", "whoosh-index"))
+set_option("WHOOSH_INDEX_PATH", os.path.join(BASE_DIR, "api-cache", "whoosh-index"))
 set_option("WHOOSH_STORAGE", "file")
 HAYSTACK_CONNECTIONS = {
     "default": {
