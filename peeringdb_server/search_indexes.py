@@ -54,6 +54,12 @@ class EntityIndex(indexes.SearchIndex):
         if relations:
             qset = qset.select_related(*relations)
 
+        if start_date:
+            qset = qset.filter(updated__gte=start_date)
+
+        if end_date:
+            qset = qset.filter(updated__lte=end_date)
+
         if not relations or (not start_date and not end_date):
             return qset
 
