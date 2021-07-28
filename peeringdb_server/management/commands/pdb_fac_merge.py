@@ -2,6 +2,7 @@ import re
 
 import reversion
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
 import peeringdb_server.models as pdbm
 from peeringdb_server.mail import mail_users_entity_merge
@@ -43,6 +44,7 @@ class Command(BaseCommand):
             self.stdout.write(msg)
 
     @reversion.create_revision()
+    @transaction.atomic()
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
         self.moved = []

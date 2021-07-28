@@ -2,7 +2,6 @@ import datetime
 import os
 import time
 import traceback
-from optparse import make_option
 
 from django.conf import settings
 from django.core.management.base import BaseCommand

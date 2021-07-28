@@ -10,13 +10,12 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django_grainy.models import UserPermission
 from django_handleref.models import HandleRefModel
-from grainy.const import *
+from grainy.const import PERM_READ
 
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
     Network,
-    NetworkContact,
     Organization,
     User,
     UserOrgAffiliationRequest,
@@ -485,8 +484,6 @@ def uoar_approve(request, **kwargs):
     except UserOrgAffiliationRequest.DoesNotExist:
         return JsonResponse({"status": "ok"})
 
-    return JsonResponse({"status": "ok"})
-
 
 @login_required
 @csrf_protect
@@ -502,9 +499,8 @@ def uoar_deny(request, **kwargs):
         uoar = UserOrgAffiliationRequest.objects.get(id=request.POST.get("id"))
         if uoar.org != org:
             return JsonResponse({}, status=403)
-
         try:
-            user = uoar.user
+            uoar.user
             uoar.deny()
 
         except User.DoesNotExist:

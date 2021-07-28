@@ -1,9 +1,7 @@
 import os
 
-from django.core.cache import cache
 from django.http import JsonResponse
 from django.urls import resolve, reverse
-from django.utils.translation import ugettext_lazy as _
 from rest_framework.viewsets import ModelViewSet
 
 from peeringdb_server import settings

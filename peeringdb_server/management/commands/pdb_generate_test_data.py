@@ -1,8 +1,8 @@
-import googlemaps
 import reversion
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from peeringdb_server import models
 from peeringdb_server.mock import Mock
@@ -49,6 +49,7 @@ class Command(BaseCommand):
         Group.objects.filter(name__startswith="org.").delete()
 
     @reversion.create_revision()
+    @transaction.atomic()
     def generate(self):
         self.entities = {k: [] for k in list(models.REFTAG_MAP.keys())}
         queue = [

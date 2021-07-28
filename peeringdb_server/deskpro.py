@@ -346,6 +346,7 @@ class MockAPIClient(APIClient):
     """
 
     def __init__(self, *args, **kwargs):
+        super().__init__("", "")
         self.ticket_count = 0
 
     def get(self, endpoint, param):
@@ -374,6 +375,7 @@ class FailingMockAPIClient(MockAPIClient):
     """
 
     def __init__(self, *args, **kwargs):
+        super().__init__("", "")
         self.ticket_count = 0
 
     def get(self, endpoint, param):

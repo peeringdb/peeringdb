@@ -84,7 +84,7 @@ def ownership_warning(org, user):
                 if user.validate_rdap_relationship(rdap):
                     b = True
                     break
-            except RdapException as exc:
+            except RdapException:
                 # we don't need to do anything with the rdap exception here, as it will
                 # be raised apropriately when the request is sent off
                 pass

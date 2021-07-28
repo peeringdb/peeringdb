@@ -10,11 +10,22 @@ license = "BSD-2-Clause"
 [tool.poetry.dependencies]
 python = "^3.9"
 # core requirements
-django = ">=2.2, <2.3"
-django-inet = ">=0.5.0, <0.6"
-django-handleref = ">=0.6.0, <0.7"
+django = ">=3.2, <4"
+
+# XXX release and lock django-inet
+django-inet = "https://github.com/20c/django-inet/archive/refs/heads/rmpy2.zip"
+# django-inet = ">=0.5.0, <0.6"
+
+# XXX release and lock django-handleref
+django-handleref = "https://github.com/20c/django-handleref/archive/refs/heads/master.zip"
+# django-handleref = ">=0.6.0, <0.7"
+
 django-namespace-perms = ">=0.6.0, <0.7"
-django-peeringdb = "==2.7.0"
+
+# XXX release and lock django-peeringdb
+django-peeringdb = "https://github.com/peeringdb/django-peeringdb/archive/refs/heads/support_202107.zip"
+# django-peeringdb = "==2.7.0"
+
 djangorestframework = ">=3.12,<3.13"
 mysqlclient = ">=1.3.9"
 peeringdb = ">=1.1.0, <2"
@@ -47,7 +58,7 @@ phonenumbers = ">=8.11.1"
 rdap = "==1.2.1"
 unidecode = ">=1.0.23"
 # these should just be pulled in automatically?
-django-reversion = ">=3, <4"
+django-reversion = ">=4, <5"
 certifi = ">=2017.11.5"
 tld = ">=0.7.6"
 # deprecated from drf -- used by rest swagger

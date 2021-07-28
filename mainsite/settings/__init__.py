@@ -191,7 +191,6 @@ def try_include(filename):
 
     except FileNotFoundError:
         print_debug(f"additional settings file '{filename}' was not found, skipping")
-        pass
 
 
 def read_file(name):
@@ -329,7 +328,7 @@ SITE_ID = 1
 TIME_ZONE = "UTC"
 USE_TZ = True
 
-ADMINS = ("Support", SERVER_EMAIL)
+ADMINS = [("Support", SERVER_EMAIL),]
 MANAGERS = ADMINS
 
 MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, "media"))
@@ -517,6 +516,13 @@ PASSWORD_HASHERS = (
 
 ROOT_URLCONF = "mainsite.urls"
 CONN_MAX_AGE = 3600
+
+# starting with reversion 4.0 the reversion revision context
+# no longer opens an atomic transaction context, so we need
+# to ensure this ourselves for all the requests
+ATOMIC_REQUESTS = True
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 
 # email vars should be already set from the release environment file

@@ -2,9 +2,7 @@ import ipaddress
 from decimal import Decimal
 
 from django.conf import settings
-from django_grainy.const import *
-from django_grainy.util import Permissions, check_permissions, get_permissions
-from grainy.const import *
+from django_grainy.util import Permissions, check_permissions, get_permissions  # noqa
 from grainy.core import NamespaceKeyApplicator
 
 

@@ -244,7 +244,6 @@ PeeringDB = {
       var status = { incomplete : false};
       $(this).find('[data-edit-name]').each(function() {
         var value = $(this).html().trim();
-        var name = $(this).data("edit-name");
         var field = $(this).prev('.view_field');
         var group = field.data("notify-incomplete-group")
 
@@ -313,7 +312,7 @@ PeeringDB = {
   }
 }
 
-function moveCursorToEnd(el) {
+function moveCursorToEnd(el) { // lgtm[js/unused-local-variable]
     if (typeof el.selectionStart == "number") {
         el.selectionStart = el.selectionEnd = el.value.length;
     } else if (typeof el.createTextRange != "undefined") {
@@ -584,7 +583,6 @@ PeeringDB.IXFProposals = twentyc.cls.define(
 
     delete : function(row) {
       var data=this.collect(row);
-      var proposals = row.closest("[data-ixf-proposals-ix]")
       row.find('.loading-shim').show();
 
       return PeeringDB.API.request(
@@ -711,7 +709,6 @@ PeeringDB.IXFProposals = twentyc.cls.define(
 
     add : function(row) {
       var data=this.collect(row);
-      var proposals = row.closest("[data-ixf-proposals-ix]")
 
       row.find('.loading-shim').show();
       row.find('.errors').hide()
@@ -1220,8 +1217,7 @@ PeeringDB.InlineSearch = {
   },
 
   apply_result : function(data) {
-    var i, row, rowNode, type, resultNodes = PeeringDB.InlineSearch.resultNodes;
-
+    var i, row, rowNode, type;
     var count = 0;
 
     for(type in data) {
@@ -1372,7 +1368,7 @@ twentyc.editable.module.register(
       data.perm_c = ((data.perms & this.PERM_CREATE) == this.PERM_CREATE)
       data.perm_d = ((data.perms & this.PERM_DELETE) == this.PERM_DELETE)
 
-      var row = this.listing_add(rowId, trigger, container, data);
+      this.listing_add(rowId, trigger, container, data);
     },
 
     execute_add : function(trigger, container) {
@@ -1386,7 +1382,6 @@ twentyc.editable.module.register(
 
     execute_remove : function(trigger, container) {
       this.components.add.editable("export", this.target.data);
-      var data = this.target.data;
       var row = this.row(trigger);
       this.prepare_data({perms:0, entity:row.data("edit-id")});
       this.target.execute("remove", trigger, function(response) {
@@ -1403,7 +1398,7 @@ twentyc.editable.module.register(
     },
 
     load : function(keyPrefix) {
-      var me = this; target = this.get_target();
+      var me = this, target = this.get_target();
       if(!keyPrefix) {
         me.clear();
         return;
@@ -1412,6 +1407,7 @@ twentyc.editable.module.register(
       target.data = {"key_prefix":keyPrefix, "org_id":this.org_id()}
       target.execute(null, null, function(data) {
         me.clear();
+        var k;
         for(k in data.user_permissions) {
           var perms = {};
           perms.perms = data.user_permissions[k];
@@ -1481,12 +1477,11 @@ twentyc.editable.module.register(
       data.perm_c = ((data.perms & this.PERM_CREATE) == this.PERM_CREATE)
       data.perm_d = ((data.perms & this.PERM_DELETE) == this.PERM_DELETE)
 
-      var row = this.listing_add(rowId, trigger, container, data);
+      this.listing_add(rowId, trigger, container, data);
     },
 
     execute_add : function(trigger, container) {
       this.components.add.editable("export", this.target.data);
-      var data = this.target.data;
       this.prepare_data();
       this.target.execute("update", this.components.add, function(response) {
         this.add(data.entity, trigger, container, data);
@@ -1512,7 +1507,7 @@ twentyc.editable.module.register(
     },
 
     load : function(userId) {
-      var me = this; target = this.get_target();
+      var me = this, target = this.get_target();
       if(!userId) {
         me.clear();
         return;
@@ -1521,6 +1516,7 @@ twentyc.editable.module.register(
       target.data= {"user_id":userId, "org_id":this.org_id()}
       target.execute(null, null, function(data) {
         me.clear();
+        var k;
         for(k in data.key_perms) {
           var perms = {};
           perms.perms = data.key_perms[k];
@@ -1586,8 +1582,6 @@ twentyc.editable.module.register(
                   + "Keys cannot be recovered once  "
                   + "this message is exited or overwritten.");
 
-      const buttonText = gettext("I have written down my key")
-
       var panel = $('<div>').addClass("alert alert-success marg-top-15").
         append($('<div>').text(message)).
         append($('<div>').addClass("center marg-top-15").text(key))
@@ -1616,7 +1610,7 @@ twentyc.editable.module.register(
       this.target.execute("add", this.components.add, function(response) {
         if(response.readonly)
           response.name = response.name + " (read-only)";
-        var row = this.add(data.entity, trigger, container, response);
+        this.add(data.entity, trigger, container, response);
         this.api_key_popin(response.key)
       }.bind(this));
     },
@@ -1635,7 +1629,6 @@ twentyc.editable.module.register(
       var row = this.row(trigger);
       row.editable("export", this.target.data);
       var data = this.target.data;
-      var id = data.prefix = row.data("edit-id")
       this.target.execute("update", trigger, function(response) {
       }.bind(this));
     },
@@ -1732,7 +1725,7 @@ twentyc.editable.target.register(
         data.country = data.country__in;
         delete data.country__in;
         data.distance = this.sender.find('[data-edit-name="distance"]').data("edit-input-instance").formatted();
-      } else if(typeof(data.distance) != undefined){
+      } else if(typeof(data.distance) != "undefined"){
         delete data.distance;
       }
 
@@ -1756,7 +1749,7 @@ twentyc.editable.target.register(
       if(parseInt(data.distance) > 0) {
         data.country = data.country__in;
         delete data.country__in;
-      } else if(typeof(data.distance) != undefined){
+      } else if(typeof(data.distance) != "undefined"){
         delete data.distance;
       }
 
@@ -2027,7 +2020,6 @@ twentyc.editable.module.register(
     submit : function(id, data, row, trigger, container) {
       data._id = id;
       var me = this;
-      var sentData = data;
       this.target.data = data;
       this.target.args[2] = "update"
       this.target.context = row;
@@ -2388,7 +2380,6 @@ twentyc.editable.input.register(
     wire : function() {
       var widget = this;
       var input = this.element;
-      var url = "/autocomplete/"+this.source.data("edit-autocomplete")
 
       var multi = this.source.data('edit-multiple')
 
@@ -2726,8 +2717,8 @@ twentyc.editable.input.register(
         return true;
       if ( $.isNumeric(value) ){
         return true
-      return false
       }
+      return false
     },
 
     formatted: function() {
@@ -2907,7 +2898,7 @@ twentyc.data.loaders.register(
 );
 
 $.urlParam = function(name){
-  var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+  var results = new RegExp('[?&]' + name + '=([^&#]*)').exec(window.location.href);
   if(!results)
     return 0;
   return results[1] || 0;

@@ -4,12 +4,9 @@ import json
 import re
 import uuid
 from itertools import chain
-from pprint import pprint
 
 import django.urls
-import django_grainy.decorators
 import django_peeringdb.models as pdb_models
-import requests
 import reversion
 from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
@@ -29,7 +26,6 @@ from django.db import models, transaction
 from django.template import loader
 from django.utils import timezone
 from django.utils.functional import Promise
-from django.utils.html import strip_tags
 from django.utils.http import urlquote
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
@@ -180,8 +176,6 @@ class URLField(pdb_models.URLField):
     """
     local defaults for URLField
     """
-
-    pass
 
 
 class ValidationErrorEncoder(json.JSONEncoder):
@@ -695,6 +689,7 @@ class VerificationQueueItem(models.Model):
         )
 
     @reversion.create_revision()
+    @transaction.atomic()
     def approve(self):
         """
         Approve the verification queue item
@@ -885,7 +880,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
                 rdap = RdapLookup().get_asn(net.asn)
                 if rdap:
                     r[net.asn] = rdap
-            except RdapNotFoundError as inst:
+            except RdapNotFoundError:
                 pass
         return r
 
@@ -1000,6 +995,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
     @classmethod
     @reversion.create_revision()
+    @transaction.atomic()
     def create_from_rdap(cls, rdap, asn, org_name=None):
         """
         Creates organization from rdap result object
@@ -2222,6 +2218,7 @@ class IXLan(pdb_models.IXLanBase):
         return super().clean()
 
     @reversion.create_revision()
+    @transaction.atomic()
     def add_netixlan(self, netixlan_info, save=True, save_others=True):
         """
         This function allows for sane adding of netixlan object under
@@ -2348,7 +2345,6 @@ class IXLan(pdb_models.IXLanBase):
                 ixlan=self, network=netixlan_info.network, status="ok"
             )
             created = True
-            reason = "New ip-address"
 
         # now we sync the data to our determined netixlan instance
 
@@ -2456,6 +2452,7 @@ class IXLanIXFMemberImportLog(models.Model):
         verbose_name_plural = _("IX-F Import Logs")
 
     @reversion.create_revision()
+    @transaction.atomic()
     def rollback(self):
         """
         Attempt to rollback the changes described in this log
@@ -2471,7 +2468,7 @@ class IXLanIXFMemberImportLog(models.Model):
                     for _entry in related.order_by("-id"):
                         try:
                             _entry.version_before.revert()
-                        except:
+                        except Exception:
                             break
 
                 elif entry.netixlan.status == "ok":
@@ -2840,7 +2837,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         for ixf_member_data in qset:
 
             action = ixf_member_data.action
-            error = ixf_member_data.error
+            ixf_member_data.error
 
             # not actionable for anyone
 
@@ -2932,7 +2929,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         try:
             error_data = json.loads(self.error)
-        except:
+        except Exception:
             return None
 
         IPADDR_EXIST = "already exists"
@@ -3025,7 +3022,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     @property
     def actionable_changes(self):
 
-        requirements = self.requirements
+        self.requirements
 
         _changes = self.changes
 
@@ -3196,7 +3193,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Will return either "add", "modify", "delete" or "noop"
         """
 
-        has_data = self.remote_data_missing == False
+        has_data = self.remote_data_missing is False
 
         action = "noop"
 
@@ -3451,7 +3448,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         action = self.action
         netixlan = self.netixlan
-        changes = self.changes
+        self.changes
 
         if action == "add":
             self.validate_speed()
@@ -3788,7 +3785,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         except ipaddress.AddressValueError:
             return False
 
-        except ValueError as inst:
+        except ValueError:
             return False
 
     @property
@@ -3895,6 +3892,7 @@ class Network(pdb_models.NetworkBase):
 
     @classmethod
     @reversion.create_revision()
+    @transaction.atomic()
     def create_from_rdap(cls, rdap, asn, org):
         """
         Creates network from rdap result object
@@ -4361,7 +4359,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         as a unqiue record by asn, ip4 and ip6 address
         """
 
-        net = self.network
+        self.network
         return (self.asn, self.ipaddr4, self.ipaddr6)
 
     @property

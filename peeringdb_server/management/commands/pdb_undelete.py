@@ -1,5 +1,4 @@
 import json
-import re
 
 import reversion
 from django.core.management.base import BaseCommand
@@ -114,7 +113,7 @@ class Command(BaseCommand):
             )
             try:
                 status = json.loads(version.serialized_data)[0].get("fields")["status"]
-            except:
+            except Exception:
                 status = None
             if status == "deleted":
                 self.log_warn(
@@ -132,7 +131,7 @@ class Command(BaseCommand):
                     # relation parent
                     try:
                         relation = getattr(obj, field.name)
-                    except:
+                    except Exception:
                         continue
                     if relation.status == "deleted" and relation != parent:
                         can_undelete_obj = False
@@ -167,7 +166,7 @@ class Command(BaseCommand):
                     # relation child
                     try:
                         relation = getattr(obj, field.name)
-                    except:
+                    except Exception:
                         continue
                     if not hasattr(field.related_model, "ref_tag"):
                         continue

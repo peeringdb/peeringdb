@@ -205,7 +205,7 @@ twentyc.editable.action.register(
 
           container.editable("loading-shim", "hide");
         }
-      }
+      };
 
 
       try {
@@ -391,12 +391,12 @@ twentyc.editable.module.register(
     },
 
     execute : function(trigger, container) {
-      var me = $(this), action = trigger.data("edit-action");
+      var action = trigger.data("edit-action");
 
       this.trigger = trigger;
       this.target = twentyc.editable.target.instantiate(container);
 
-      handler = new (twentyc.editable.action.get("module-action"))
+      var handler = new (twentyc.editable.action.get("module-action"))
       handler.loading_shim = this.loading_shim;
       handler.execute(this, action, trigger, container);
     },
@@ -479,7 +479,7 @@ twentyc.editable.module.register(
     },
 
     add : function(rowId, trigger, container, data) {
-      var row = twentyc.editable.templates.copy(this.components.list.data("edit-template"))
+      var row = twentyc.editable.templates.copy(this.components.list.data("edit-template"));
       var k;
       row.attr("data-edit-id", rowId);
       row.data("edit-id", rowId);
@@ -691,7 +691,7 @@ twentyc.editable.input = new (twentyc.cls.extend(
       if(it.action_on_enter && action) {
         element.on("keydown", function(e) {
           if(e.which == 13) {
-            handler = new (twentyc.editable.action.get(action));
+            var handler = new (twentyc.editable.action.get(action));
             handler.execute(element, container);
           }
         });
@@ -709,7 +709,6 @@ twentyc.editable.input = new (twentyc.cls.extend(
 
 
       var it = new (this.get(element.data("edit-type")));
-      var par = element.parent()
 
       it.container = container;
       it.source = element;
@@ -1067,7 +1066,7 @@ twentyc.editable.input.register(
     },
 
     load : function(data) {
-      var k, v, opt;
+      var k, v;
       this.element.empty();
       if(this.source.data("edit-data-all-entry")) {
         var allEntry = this.source.data("edit-data-all-entry").split(":")
@@ -1164,8 +1163,7 @@ $.fn.editable = function(action, arg, dbg) {
           input,
           node,
           nodes,
-          closest,
-          result
+          closest
 
       // BELONGS (container), shortcut for first_closest:["data-edit-target", target]
       if(arg.belongs) {
@@ -1189,7 +1187,7 @@ $.fn.editable = function(action, arg, dbg) {
           node = $(this[i]);
           if(node.data("edit-group"))
             continue;
-          nodes = $('[data-edit-group]').each(function(idx) {
+          $('[data-edit-group]').each(function(idx) {
             var other = $($(this).data("edit-group"));
             if(other.get(0) == node.get(0))
               matched.push(this);

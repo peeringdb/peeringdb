@@ -5,7 +5,7 @@
  * @module twentyc
  */
 
-twentyc = {};
+twentyc = {}; // lgtm[js/missing-variable-declaration]
 
 /**
  * class helper functions
@@ -497,7 +497,7 @@ twentyc.data.LoaderRegistry = twentyc.cls.extend(
     assign : function(id, loaderName) {
 
       // this will error if loaderName is not registered
-      var loader = this.get(loaderName);
+      this.get(loaderName);
 
       // link loader
       this._loaders[id] = loaderName;
@@ -544,7 +544,7 @@ twentyc.data.loaders.register(
     },
     retrieve : function(data) {
       var set = tc.u.get(data, this.dataId)
-      if(typeof set == undefined)
+      if(typeof set == "undefined")
         return {};
       return set;
     },

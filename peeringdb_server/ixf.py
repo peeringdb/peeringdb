@@ -1,8 +1,6 @@
-import copy
 import datetime
 import ipaddress
 import json
-import re
 from smtplib import SMTPException
 
 import requests
@@ -19,7 +17,6 @@ from django.utils.translation import ugettext_lazy as _
 import peeringdb_server.deskpro as deskpro
 from peeringdb_server.models import (
     DeskProTicket,
-    DeskProTicketCC,
     EnvironmentSetting,
     IXFImportEmail,
     IXFMemberData,
@@ -31,7 +28,6 @@ from peeringdb_server.models import (
     NetworkProtocolsDisabled,
     User,
     ValidationErrorEncoder,
-    debug_mail,
 )
 
 REASON_ENTRY_GONE_FROM_REMOTE = _(
@@ -60,8 +56,8 @@ class MultipleVlansInPrefix(ValueError):
     """
 
     def __init__(self, importer, *args, **kwargs):
-        feed_url = importer.ixlan.ixf_ixp_member_list_url
-        ix_name = importer.ixlan.ix.name
+        importer.ixlan.ixf_ixp_member_list_url
+        importer.ixlan.ix.name
         support_email = settings.DEFAULT_FROM_EMAIL
         super().__init__(
             _(
@@ -198,7 +194,7 @@ class Importer:
 
         try:
             data = result.json()
-        except Exception as inst:
+        except Exception:
             data = {"pdb_error": _("No JSON could be parsed")}
             return data
 
@@ -416,7 +412,6 @@ class Importer:
         """
 
         invalid = None
-        vlan_list_found = False
         ipv4_addresses = {}
         ipv6_addresses = {}
 
@@ -438,7 +433,6 @@ class Importer:
 
                 if not vlans:
                     continue
-                vlan_list_found = True
 
                 # de-dupe reoccurring ipv4 / ipv6 addresses
 
@@ -532,11 +526,12 @@ class Importer:
 
         # null ix-f error note on ixlan if it had error'd before
         if self.ixlan.ixf_ixp_import_error:
-            with reversion.create_revision():
-                reversion.set_user(self.ticket_user)
-                self.ixlan.ixf_ixp_import_error = None
-                self.ixlan.ixf_ixp_import_error_notified = None
-                self.ixlan.save()
+            with transaction.atomic():
+                with reversion.create_revision():
+                    reversion.set_user(self.ticket_user)
+                    self.ixlan.ixf_ixp_import_error = None
+                    self.ixlan.ixf_ixp_import_error_notified = None
+                    self.ixlan.save()
 
         with transaction.atomic():
             # process any netixlans that need to be deleted
@@ -588,15 +583,14 @@ class Importer:
         """
 
         ix = self.ixlan.ix
-        save_ix = False
 
-        ixf_member_data_changed = IXFMemberData.objects.filter(
-            updated__gte=self.now, ixlan=self.ixlan
-        ).exists()
+        # ixf_member_data_changed = IXFMemberData.objects.filter(
+        #    updated__gte=self.now, ixlan=self.ixlan
+        # ).exists()
 
-        netixlan_data_changed = NetworkIXLan.objects.filter(
-            updated__gte=self.now, ixlan=self.ixlan
-        ).exists()
+        # netixlan_data_changed = NetworkIXLan.objects.filter(
+        #    updated__gte=self.now, ixlan=self.ixlan
+        # ).exists()
 
         ix.ixf_last_import = self.now
 
@@ -610,9 +604,10 @@ class Importer:
 
         ix._meta.get_field("updated").auto_now = False
         try:
-            with reversion.create_revision():
-                reversion.set_user(self.ticket_user)
-                ix.save()
+            with transaction.atomic():
+                with reversion.create_revision():
+                    reversion.set_user(self.ticket_user)
+                    ix.save()
         finally:
 
             # always turn auto_now back on afterwards
@@ -644,6 +639,7 @@ class Importer:
                     break
 
     @reversion.create_revision()
+    @transaction.atomic()
     def process_saves(self):
         reversion.set_user(self.ticket_user)
 
@@ -651,6 +647,7 @@ class Importer:
             self.apply_add_or_update(ixf_member)
 
     @reversion.create_revision()
+    @transaction.atomic()
     def process_deletions(self):
         """
         Cycles all netixlans on the ixlan targeted by the importer and
@@ -875,8 +872,7 @@ class Importer:
 
         asn = member["asnum"]
         for lan in vlan_list:
-            ipv4_valid = False
-            ipv6_valid = False
+            pass
 
             ipv4 = lan.get("ipv4", {})
             ipv6 = lan.get("ipv6", {})
@@ -1791,17 +1787,13 @@ class Importer:
     def ticket_aged_proposals(self):
         """
         This function is currently disabled as per issue #860
-        """
-        return
 
-        """
         Cycle through all IXFMemberData objects that
         and create tickets for those that are older
         than the period specified in IXF_IMPORTER_DAYS_UNTIL_TICKET
         and that don't have any ticket associated with
         them yet
         """
-
         """
         if not self.save:
             return
@@ -1842,6 +1834,7 @@ class Importer:
                 ixf_member_data, typ, True, True, True, {}, ixf_member_data.action
             )
         """
+        return
 
     def ticket_proposal(self, ixf_member_data, typ, ac, ix, net, context, action):
 
@@ -1951,6 +1944,7 @@ class Importer:
                     ixf_m_d.save()
 
     @reversion.create_revision()
+    @transaction.atomic()
     def notify_error(self, error):
 
         """
@@ -1966,7 +1960,7 @@ class Importer:
 
         now = datetime.datetime.now(datetime.timezone.utc)
         notified = self.ixlan.ixf_ixp_import_error_notified
-        prev_error = self.ixlan.ixf_ixp_import_error
+        self.ixlan.ixf_ixp_import_error
 
         if notified:
             diff = (now - notified).total_seconds() / 3600
@@ -2012,7 +2006,7 @@ class Importer:
                 resent_email = self._resend_email(email)
                 if resent_email:
                     resent_emails.append(resent_email)
-            except SMTPException as email_exception:
+            except SMTPException:
                 pass
 
         return resent_emails

@@ -8,12 +8,8 @@ from haystack.query import SearchQuerySet
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
-    InternetExchangeFacility,
-    IXLan,
     IXLanPrefix,
     Network,
-    NetworkContact,
-    NetworkFacility,
     NetworkIXLan,
     Organization,
 )
@@ -110,7 +106,7 @@ def search(term, autocomplete=False):
 
     for sq in search_query[:limit]:
         model = sq.model
-        tag = model.HandleRef.tag
+        model.HandleRef.tag
 
         categorize(sq, result, pk_map)
 

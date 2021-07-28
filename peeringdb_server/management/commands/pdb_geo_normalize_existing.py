@@ -1,5 +1,4 @@
 import csv
-import datetime
 import os
 import re
 from pprint import pprint
@@ -8,6 +7,7 @@ import reversion
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from peeringdb_server import models
 from peeringdb_server.serializers import AddressSerializer
@@ -151,6 +151,7 @@ class Command(BaseCommand):
             dict_writer.writerows(output_list)
 
     @reversion.create_revision()
+    @transaction.atomic()
     def normalize(self, reftag, _id, limit=0):
         model = models.REFTAG_MAP.get(reftag)
         if not model:

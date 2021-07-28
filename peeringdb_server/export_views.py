@@ -1,7 +1,6 @@
 import collections
 import csv
 import datetime
-import io
 import json
 import urllib.error
 import urllib.parse
@@ -12,7 +11,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from rest_framework.test import APIRequestFactory
 
-from peeringdb_server.models import InternetExchange, IXLan, NetworkIXLan
+from peeringdb_server.models import IXLan
 from peeringdb_server.renderers import JSONEncoder
 from peeringdb_server.rest import REFTAG_MAP as RestViewSets
 
@@ -139,7 +138,7 @@ class ExportView(View):
             response_handler = getattr(self, f"response_{fmt}")
             response = response_handler(self.generate(request))
 
-            if self.download == True:
+            if self.download is True:
                 # send attachment header, triggering download on the client side
                 filename = self.download_name.format(extension=self.extensions.get(fmt))
                 response["Content-Disposition"] = 'attachment; filename="{}"'.format(
@@ -147,8 +146,10 @@ class ExportView(View):
                 )
             return response
 
-        except Exception as exc:
-            return JsonResponse({"non_field_errors": [str(exc)]}, status=400)
+        except Exception:
+            return JsonResponse(
+                {"non_field_errors": ["Internal Error (500)"]}, status=400
+            )
 
     def generate(self, request):
         """
@@ -258,9 +259,16 @@ class AdvancedSearchExportView(ExportView):
 
         return response.data
 
-    def get(self, request, tag, fmt):
+    def get(self, request, tag, fmt):  # lgtm[py/inheritance/signature-mismatch]
         """
         Handle export
+
+        LGTM Notes: signature-mismatch: order of arguments are defined by the
+        url routing set up for this view. (e.g., /<tag>/<fmt>)
+
+        The `get` method will never be called in a different
+        context where a mismatching signature would matter so
+        the lgtm warning can be ignored in this case
         """
         self.tag = tag
         return super().get(request, fmt)

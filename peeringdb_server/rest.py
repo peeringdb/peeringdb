@@ -13,16 +13,14 @@ from django.db import connection
 from django.db.models import DateTimeField
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
-from haystack.query import SearchQuerySet
-from rest_framework import routers, serializers, status, viewsets
+from django_grainy.rest import PermissionDenied
+from rest_framework import routers, status, viewsets
 from rest_framework.exceptions import ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
-from peeringdb_server.api_schema import BaseSchema
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.models import UTC, Network, ProtectedAction
 from peeringdb_server.permissions import (
@@ -302,7 +300,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 raise RestValidationError({"detail": str(inst)})
             except TypeError as inst:
                 raise RestValidationError({"detail": str(inst)})
-            except FieldError as inst:
+            except FieldError:
                 raise RestValidationError({"detail": "Invalid query"})
 
         else:
@@ -398,7 +396,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 # filter by function provided in suffix
                 try:
                     intyp = field_names.get(flt).get_internal_type()
-                except:
+                except Exception:
                     intyp = "CharField"
 
                 # for greater than date checks we want to force the time to 1
@@ -434,7 +432,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 # filter exact matches
                 try:
                     intyp = field_names.get(k).get_internal_type()
-                except:
+                except Exception:
                     intyp = "CharField"
                 if intyp == "ForeignKey":
                     filters["%s_id" % k] = v
@@ -461,7 +459,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 raise RestValidationError({"detail": str(inst[0])})
             except TypeError as inst:
                 raise RestValidationError({"detail": str(inst[0])})
-            except FieldError as inst:
+            except FieldError:
                 raise RestValidationError({"detail": "Invalid query"})
 
         # check if request qualifies for a cache load
@@ -604,7 +602,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 if "_grainy" in r.data:
                     del r.data["_grainy"]
                 return r
-        except PermissionDenied as inst:
+        except PermissionDenied:
             return Response(status=status.HTTP_403_FORBIDDEN)
         except (ParentStatusException, DataException) as inst:
             return Response(
@@ -637,7 +635,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                     del r.data["_grainy"]
                 return r
 
-        except PermissionDenied as inst:
+        except PermissionDenied:
             return Response(status=status.HTTP_403_FORBIDDEN)
         except TypeError as inst:
             return Response(
