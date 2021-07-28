@@ -1,10 +1,9 @@
 import re
 from collections import defaultdict
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
-from django.db.models import DateTimeField, OneToOneRel
+from django.db.models import OneToOneRel
 from django_peeringdb.client_adaptor.backend import Backend as BaseBackend
 from django_peeringdb.client_adaptor.backend import reftag_to_cls
 

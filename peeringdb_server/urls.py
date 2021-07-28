@@ -52,7 +52,6 @@ from peeringdb_server.views import (
     view_network_by_asn,
     view_network_by_query,
     view_organization,
-    view_partnerships,
     view_password_change,
     view_password_reset,
     view_profile,

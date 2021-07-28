@@ -1,6 +1,5 @@
 import datetime
 import json
-import os
 import re
 import uuid
 
@@ -11,7 +10,6 @@ from django.conf import settings as dj_settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.db.models import Q
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -31,12 +29,12 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
 from django_otp.plugins.otp_email.models import EmailDevice
-from grainy.const import *
+from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.oauth2_backends import get_oauthlib_core
-from ratelimit.decorators import is_ratelimited, ratelimit
+from ratelimit.decorators import ratelimit
 
-from peeringdb_server import maintenance, settings
+from peeringdb_server import settings
 from peeringdb_server.api_key_views import load_all_key_permissions
 from peeringdb_server.data_views import BOOL_CHOICE
 from peeringdb_server.deskpro import ticket_queue_rdap_error
@@ -48,12 +46,7 @@ from peeringdb_server.forms import (
     UserLocaleForm,
     UsernameRetrieveForm,
 )
-from peeringdb_server.inet import (
-    RdapException,
-    RdapLookup,
-    RdapNotFoundError,
-    rdap_pretty_error_message,
-)
+from peeringdb_server.inet import RdapException, rdap_pretty_error_message
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.models import (
     PARTNERSHIP_LEVELS,
@@ -83,7 +76,7 @@ from peeringdb_server.serializers import (
     OrganizationSerializer,
 )
 from peeringdb_server.stats import stats as global_stats
-from peeringdb_server.util import PERM_CRUD, APIPermissionsApplicator, check_permissions
+from peeringdb_server.util import APIPermissionsApplicator, check_permissions
 
 RATELIMITS = dj_settings.RATELIMITS
 
@@ -492,9 +485,10 @@ def view_set_user_locale(request):
         request.user.set_locale(loc)
 
         translation.activate(loc)
-        request.session[translation.LANGUAGE_SESSION_KEY] = loc
+        response = JsonResponse({"status": "ok"})
+        response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, loc)
 
-        return JsonResponse({"status": "ok"})
+        return response
 
 
 @protected_resource(scopes=["profile"])
@@ -1972,10 +1966,10 @@ def view_advanced_search(request):
             env["not_fac_name"] = ""
 
     env["can_use_distance_filter"] = (
-        dj_settings.API_DISTANCE_FILTER_REQUIRE_AUTH == False
+        dj_settings.API_DISTANCE_FILTER_REQUIRE_AUTH is False
         or request.user.is_authenticated
     ) and (
-        dj_settings.API_DISTANCE_FILTER_REQUIRE_VERIFIED == False
+        dj_settings.API_DISTANCE_FILTER_REQUIRE_VERIFIED is False
         or (request.user.is_authenticated and request.user.is_verified_user)
     )
 
@@ -2239,9 +2233,10 @@ class LoginView(two_factor.views.LoginView):
 
         user_language = self.get_user().get_locale()
         translation.activate(user_language)
-        self.request.session[translation.LANGUAGE_SESSION_KEY] = user_language
+        response = redirect(self.get_success_url())
+        response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, user_language)
 
-        return redirect(self.get_success_url())
+        return response
 
 
 @require_http_methods(["POST"])
@@ -2270,7 +2265,7 @@ def request_translation(request, data_type):
         }
         reply = requests.post(translationURL, params=call_params).json()
 
-        if not "data" in reply:
+        if "data" not in reply:
             return JsonResponse({"status": request.POST, "error": reply})
 
         return JsonResponse(

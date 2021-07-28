@@ -1,11 +1,9 @@
 import datetime
 import json
 
-import reversion
 from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
-from reversion.models import Revision, Version
+from reversion.models import Version
 
 from peeringdb_server.models import REFTAG_MAP, UTC
 

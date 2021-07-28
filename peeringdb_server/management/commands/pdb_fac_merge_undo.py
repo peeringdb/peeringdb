@@ -2,6 +2,7 @@ import re
 
 import reversion
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from peeringdb_server.models import (
     CommandLineTool,
@@ -33,6 +34,7 @@ class Command(BaseCommand):
             self.stdout.write(msg)
 
     @reversion.create_revision()
+    @transaction.atomic()
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
         self.log_file = options.get("log")
@@ -66,7 +68,7 @@ class Command(BaseCommand):
                         id__in=match.group(1).split(", ")
                     )
                 }
-                target = Facility.objects.get(id=match.group(2))
+                Facility.objects.get(id=match.group(2))
 
                 for source in list(sources.values()):
                     if source.org.status != "ok":

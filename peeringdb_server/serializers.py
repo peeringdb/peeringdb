@@ -1,20 +1,17 @@
 import ipaddress
 import re
 
-import reversion
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldError, ValidationError
 from django.core.validators import URLValidator
-from django.db import IntegrityError, models, transaction
-from django.db.models import Case, IntegerField, Prefetch, Q, Sum, When
+from django.db.models import Prefetch
 from django.db.models.expressions import RawSQL
 from django.db.models.fields.related import (
     ForwardManyToOneDescriptor,
     ReverseManyToOneDescriptor,
 )
 from django.db.models.query import QuerySet
-from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import PermissionDenied
 
@@ -32,7 +29,6 @@ from peeringdb_server.deskpro import (
 from peeringdb_server.inet import (
     RdapException,
     RdapLookup,
-    RdapNotFoundError,
     get_prefix_protocol,
     rdap_pretty_error_message,
 )
@@ -49,7 +45,6 @@ from peeringdb_server.models import (
     NetworkFacility,
     NetworkIXLan,
     Organization,
-    OrganizationAPIKey,
     VerificationQueueItem,
 )
 from peeringdb_server.permissions import (
@@ -487,7 +482,7 @@ class AsnRdapValidator:
         asn = attrs.get(self.field)
         try:
             rdap = RdapLookup().get_asn(asn)
-            emails = rdap.emails
+            rdap.emails
             self.request.rdap_result = rdap
         except RdapException as exc:
             self.request.rdap_error = (asn, exc)
@@ -554,14 +549,14 @@ class ParentStatusException(IOError):
 
     def __init__(self, parent, typ):
         if parent.status == "pending":
-            super(IOError, self).__init__(
+            super().__init__(
                 _(
                     "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
                 )
                 % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
             )
         elif parent.status == "deleted":
-            super(IOError, self).__init__(
+            super().__init__(
                 _(
                     "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
                 )
@@ -961,8 +956,7 @@ class ModelSerializer(serializers.ModelSerializer):
 
         else:
             # sub element
-            l = self.in_list
-            if l:
+            if self.in_list:
                 # sub element in set
                 if d < j:
                     return_full = False
@@ -1196,7 +1190,7 @@ class ModelSerializer(serializers.ModelSerializer):
                         # if field can't be nulled this will
                         # fail and raise the original error
                         instance.save()
-                    except:
+                    except Exception:
                         raise exc
 
                 rv = super().run_validation(data=data)
@@ -1243,15 +1237,12 @@ class ModelSerializer(serializers.ModelSerializer):
 
     def finalize_create(self, request):
         """this will be called on the end of POST request to this serializer"""
-        pass
 
     def finalize_update(self, request):
         """this will be called on the end of PUT request to this serializer"""
-        pass
 
     def finalize_delete(self, request):
         """this will be called on the end of DELETE request to this serializer"""
-        pass
 
 
 class RequestAwareListSerializer(serializers.ListSerializer):
@@ -1869,7 +1860,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             try:
                 net = Network.objects.get(id=data.get("net_id"))
                 data["asn"] = net.asn
-            except:
+            except Exception:
                 pass
         return super().run_validation(data=data)
 
@@ -2042,7 +2033,7 @@ class NetworkFacilitySerializer(ModelSerializer):
             try:
                 net = Network.objects.get(id=data.get("net_id"))
                 data["local_asn"] = net.asn
-            except:
+            except Exception:
                 pass
         return super().run_validation(data=data)
 
@@ -2282,7 +2273,7 @@ class NetworkSerializer(ModelSerializer):
 
     def create(self, validated_data):
         request = self._context.get("request")
-        user = request.user
+        request.user
 
         asn = validated_data.get("asn")
 
@@ -2442,7 +2433,7 @@ class IXLanPrefixSerializer(ModelSerializer):
         # to actively set it to `False` let them know it is no
         # longer supported
 
-        if self.initial_data.get("in_dfz", True) == False:
+        if self.initial_data.get("in_dfz", True) is False:
             raise serializers.ValidationError(
                 _(
                     "The `in_dfz` property has been deprecated "

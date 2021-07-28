@@ -15,7 +15,6 @@ from peeringdb_server.models import (
     CommandLineTool,
     Facility,
     InternetExchange,
-    IXLan,
 )
 
 
@@ -28,6 +27,7 @@ TOOL_MAP = {}
 
 def register_tool(cls):
     TOOL_MAP[cls.tool] = cls
+    return cls
 
 
 def get_tool(tool_id, form):
@@ -78,7 +78,10 @@ class CommandLineToolWrapper:
         self.args = []
         self.kwargs = {}
         self.form_instance = form
-        self.set_arguments(form.cleaned_data)
+        self.set_arguments(form.cleaned_data)  # lgtm[py/init-calls-subclass]
+        # LGTM Note: as this is the last statement in the __init__
+        # call this is unproblematic, however this should probably
+        # still be separated in the future (TODO)
 
     @property
     def name(self):
@@ -220,7 +223,7 @@ class ToolRenumberLans(CommandLineToolWrapper):
                 self.args[1],
                 self.args[2],
             )
-        except:
+        except Exception:
             # if a version of this command was run before, we still need to able
             # to display a somewhat useful discription, so fall back to this basic
             # display

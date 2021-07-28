@@ -7,7 +7,7 @@ from peeringdb.whois import WhoisFormat
 from peeringdb_server import models, serializers
 from peeringdb_server.util import APIPermissionsApplicator
 
-from ._db_command import CommandError, DBCommand
+from ._db_command import DBCommand
 
 
 class Command(DBCommand):
@@ -29,7 +29,7 @@ class Command(DBCommand):
             log.error("Unknown query type '%s'" % (args))
             return
             # TODO
-            raise CommandError("unk query")
+            # raise CommandError("unk query")
 
         model = None
 

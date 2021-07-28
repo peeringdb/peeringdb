@@ -6,7 +6,6 @@ import copy
 import datetime
 import ipaddress
 import json
-import random
 import re
 import time
 import unittest
@@ -18,7 +17,6 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
-from django.db.models import Sum
 from django.db.utils import IntegrityError
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework import serializers
@@ -567,7 +565,7 @@ class TestJSON(unittest.TestCase):
                         data_invalid[k] = v
 
                     with pytest.raises(InvalidRequestException) as excinfo:
-                        r = db.create(typ, data_invalid, return_response=True)
+                        db.create(typ, data_invalid, return_response=True)
 
                     assert "400 Bad Request" in str(excinfo.value)
 
@@ -578,7 +576,7 @@ class TestJSON(unittest.TestCase):
                     data_status[k] = v
 
                 with pytest.raises(InvalidRequestException) as excinfo:
-                    r = db.create(typ, data_status, return_response=True)
+                    db.create(typ, data_status, return_response=True)
                 assert "not yet been approved" in str(excinfo.value)
 
             # we test fail because of permissions
@@ -1132,7 +1130,7 @@ class TestJSON(unittest.TestCase):
         org.usergroup.user_set.add(self.user_org_member)
         self.user_org_member.grainy_permissions.add_permission(org, "cr")
 
-        r_data = self.assert_create(
+        self.assert_create(
             self.db_org_member,
             "ix",
             data,
@@ -1491,7 +1489,7 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_net(asn=SHARED["net_rw_dupe_deleted"].asn)
 
         with pytest.raises(InvalidRequestException) as excinfo:
-            r_data = self.db_org_admin.create("net", data, return_response=True)
+            self.db_org_admin.create("net", data, return_response=True)
 
         # check exception vs value
         assert "Network has been deleted. Please contact" in excinfo.value.extra["asn"]
@@ -1507,7 +1505,7 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_net(asn=9000900)
 
         with pytest.raises(PermissionDeniedException) as excinfo:
-            r_data = self.assert_create(self.db_org_admin, "as_set", data)
+            self.assert_create(self.db_org_admin, "as_set", data)
         assert "You do not have permission" in str(excinfo.value)
 
         with pytest.raises(PermissionDeniedException) as excinfo:
@@ -1526,7 +1524,7 @@ class TestJSON(unittest.TestCase):
 
         data = self.make_data_net()
         for bogon_asn in inet.BOGON_ASN_RANGES:
-            r_data = self.assert_create(
+            self.assert_create(
                 self.db_org_admin,
                 "net",
                 data,
@@ -1542,7 +1540,7 @@ class TestJSON(unittest.TestCase):
 
         for bogon_asn in inet.TUTORIAL_ASN_RANGES:
             data = self.make_data_net(asn=bogon_asn[0])
-            r_data = self.assert_create(self.db_org_admin, "net", data)
+            self.assert_create(self.db_org_admin, "net", data)
 
         pdb_settings.TUTORIAL_MODE = False
 
@@ -1654,7 +1652,7 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_ixlan(ix_id=SHARED["ix_rw_ok"].id)
 
         with self.assertRaises(Exception) as exc:
-            r_data = self.assert_create(
+            self.assert_create(
                 self.db_org_admin,
                 "ixlan",
                 data,
@@ -1839,7 +1837,7 @@ class TestJSON(unittest.TestCase):
         # When we create this netixlan it should fail with a
         # non-field-error.
 
-        r_data = self.assert_create(
+        self.assert_create(
             self.db_org_admin,
             "netixlan",
             data,
@@ -1857,7 +1855,7 @@ class TestJSON(unittest.TestCase):
 
         # Also fails with network contact that is
         # missing an email
-        r_data = self.assert_create(
+        self.assert_create(
             self.db_org_admin,
             "netixlan",
             data,
@@ -2497,9 +2495,7 @@ class TestJSON(unittest.TestCase):
         SHARED["netixlan_r_ok"].speed = 1000
         SHARED["netixlan_r_ok"].save()
 
-        netixlans = NetworkIXLan.handleref.undeleted()
-        capacity_set = netixlans.values("ixlan_id").annotate(capacity=Sum("speed"))
-        capacity_dict = {d["ixlan_id"]: d["capacity"] for d in capacity_set}
+        NetworkIXLan.handleref.undeleted()
 
         data = self.db_guest.all("ix", capacity=1000)
         assert len(data) == 1
@@ -3234,11 +3230,9 @@ class TestJSON(unittest.TestCase):
         # there regardless.
 
         org = Organization.objects.create(name="org unaccented", status="ok")
-        net = Network.objects.create(
-            asn=12345, name="net unaccented", status="ok", org=org
-        )
-        ix = InternetExchange.objects.create(org=org, name="ix unaccented", status="ok")
-        fac = Facility.objects.create(org=org, name="fac unaccented", status="ok")
+        Network.objects.create(asn=12345, name="net unaccented", status="ok", org=org)
+        InternetExchange.objects.create(org=org, name="ix unaccented", status="ok")
+        Facility.objects.create(org=org, name="fac unaccented", status="ok")
 
         for tag in ["org", "net", "ix", "fac"]:
             data = self.db_guest.all(tag, name=f"{tag} unãccented")
@@ -3735,19 +3729,19 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_fac()
         db = self.db_org_admin
         del data["tech_phone"]
-        r = db.create("fac", data, return_response=True).get("data")
+        db.create("fac", data, return_response=True).get("data")
 
         data = self.make_data_fac()
         del data["sales_phone"]
-        r = db.create("fac", data, return_response=True).get("data")
+        db.create("fac", data, return_response=True).get("data")
 
         data = self.make_data_ix(prefix=self.get_prefix4())
         del data["tech_phone"]
-        r = db.create("ix", data, return_response=True).get("data")
+        db.create("ix", data, return_response=True).get("data")
 
         data = self.make_data_ix(prefix=self.get_prefix4())
         del data["policy_phone"]
-        r = db.create("ix", data, return_response=True).get("data")
+        db.create("ix", data, return_response=True).get("data")
 
     def test_z_misc_002_dupe_netixlan_ip(self):
 
@@ -4023,7 +4017,7 @@ class TestJSON(unittest.TestCase):
         #
         # should we allow re suggesting of deleted facilities?
 
-        re_add_data = self.assert_create(
+        self.assert_create(
             self.db_user, "fac", data, test_success=False, test_failures={"perms": {}}
         )
 

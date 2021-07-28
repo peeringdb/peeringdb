@@ -1,9 +1,8 @@
 import json
-from optparse import make_option
 
 from django.contrib.contenttypes.models import ContentType
-from django.core.management.base import BaseCommand, CommandError
-from reversion.models import Revision, Version
+from django.core.management.base import BaseCommand
+from reversion.models import Version
 
 import peeringdb_server.models as pdbm
 
@@ -28,8 +27,6 @@ class DBCommand(BaseCommand):
         print("".join(["-" for i in range(0, 80)]))
 
     def handle(self, *args, **options):
-
-        versions = Version.objects.all()
 
         args = list(args)
 

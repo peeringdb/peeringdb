@@ -78,6 +78,18 @@ def forwards_func(apps, schema_editor):
     InternetExchange = apps.get_model("peeringdb_server", "InternetExchange")
     NetworkContact = apps.get_model("peeringdb_server", "NetworkContact")
 
+    invalid = []
+    fixed = []
+
+    for ix in InternetExchange.handleref.filter(status__in=["ok", "pending"]):
+        _fix_number("ix", ix, "tech_phone", fixed, invalid)
+        _fix_number("ix", ix, "policy_phone", fixed, invalid)
+
+    for poc in NetworkContact.handleref.filter(status__in=["ok", "pending"]):
+        _fix_number("poc", poc, "phone", fixed, invalid)
+
+    """ This was used in production as a one time process
+
     headers_invalid = [
         "type",
         "id",
@@ -98,17 +110,6 @@ def forwards_func(apps, schema_editor):
         "country",
     ]
 
-    invalid = []
-    fixed = []
-
-    for ix in InternetExchange.handleref.filter(status__in=["ok", "pending"]):
-        _fix_number("ix", ix, "tech_phone", fixed, invalid)
-        _fix_number("ix", ix, "policy_phone", fixed, invalid)
-
-    for poc in NetworkContact.handleref.filter(status__in=["ok", "pending"]):
-        _fix_number("poc", poc, "phone", fixed, invalid)
-
-    """ This was used in production as a one time process
 
     print(
         "Invalid numbers: {} - written to invalid_phonenumbers.csv".format(len(invalid))
