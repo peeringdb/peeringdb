@@ -76,12 +76,16 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"[Pretend] {msg}")
 
-    def store_runtime_error(self, error, ixlan=None):
+    def store_runtime_error(self, error, ixlan=None, ixf_member_data=None):
+        if ixf_member_data:
+            ixlan = ixf_member_data.ixlan
         error_str = ""
         if ixlan:
             error_str += f"Ixlan {ixlan.ix.name} (id={ixlan.id})" + "\n"
             if hasattr(ixlan, "ixf_ixp_member_list_url"):
                 error_str += f"IX-F url: {ixlan.ixf_ixp_member_list_url}" + "\n"
+        if ixf_member_data:
+            error_str += f"Proposal: {ixf_member_data} (id={ixf_member_data.id})\n"
 
         error_str += f"ERROR: {error}" + "\n"
         error_str += traceback.format_exc()
@@ -184,6 +188,10 @@ class Command(BaseCommand):
         self.cache = options.get("cache", False)
         self.skip_import = options.get("skip_import", False)
 
+        # err and out should go to the same buffer (#967)
+        if not self.preview:
+            self.stderr = self.stdout
+
         self.active_reset_flags = self.initiate_reset_flags(**options)
 
         self.runtime_errors = []
@@ -270,7 +278,10 @@ class Command(BaseCommand):
 
         self.stdout.write(f"New Emails: {importer.emails}")
 
-        if len(self.runtime_errors) > 0:
+        num_errors = len(self.runtime_errors)
+
+        if num_errors > 0:
+            self.stdout.write(f"Errors: {num_errors}\n\n")
             self.write_runtime_errors()
             sys.exit(1)
 
