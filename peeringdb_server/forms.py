@@ -108,6 +108,8 @@ class UserCreationForm(auth_forms.UserCreationForm):
     captcha = forms.CharField(required=False)
     captcha_generator = CaptchaField(required=False)
 
+    require_captcha = True
+
     class Meta:
         model = User
         fields = (
@@ -122,7 +124,9 @@ class UserCreationForm(auth_forms.UserCreationForm):
         recaptcha = self.cleaned_data.get("recaptcha", "")
         captcha = self.cleaned_data.get("captcha", "")
 
-        if not recaptcha and not captcha:
+        if not self.require_captcha:
+            return
+        elif not recaptcha and not captcha:
             raise forms.ValidationError(
                 _("Please fill out the anti-spam challenge (captcha) field")
             )

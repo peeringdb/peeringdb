@@ -1474,6 +1474,12 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
 
 
 class UserCreationForm(forms.UserCreationForm):
+
+    # user creation through django-admin doesnt need
+    # captcha checking
+
+    require_captcha = False
+
     def clean_username(self):
         username = self.cleaned_data["username"]
         try:
