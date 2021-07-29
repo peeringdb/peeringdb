@@ -3197,6 +3197,30 @@ class TestJSON(unittest.TestCase):
         self.assert_list_filter_related("ixfac", "fac")
         self.assert_list_filter_related("ixfac", "ix")
 
+   ##########################################################################
+
+    def test_guest_005_list_filter_ixfac_related_name(self):
+        data = self.db_guest.all("ixfac", name=SHARED["fac_rw_ok"].name)
+        self.assertEqual(len(data), 1)
+        self.assert_data_integrity(data[0], "ixfac")
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_ixfac_related_city(self):
+        data = self.db_guest.all("ixfac", city=SHARED["fac_rw_ok"].city)
+        self.assertEqual(len(data), 2)
+        self.assert_data_integrity(data[0], "ixfac")
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_ixfac_related_country(self):
+        data = self.db_guest.all(
+            "ixfac", country="{}".format(SHARED["fac_rw_ok"].country)
+        )
+        self.assertEqual(len(data), 2)
+        self.assert_data_integrity(data[0], "ixfac")
+
+
     ##########################################################################
 
     def test_guest_005_list_filter_poc_related(self):

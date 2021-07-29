@@ -1619,6 +1619,10 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
     ix = serializers.SerializerMethodField()
     fac = serializers.SerializerMethodField()
 
+    name = serializers.SerializerMethodField()
+    country = serializers.SerializerMethodField()
+    city = serializers.SerializerMethodField()
+
     def validate_create(self, data):
         # we don't want users to be able to create ixfacs if the parent
         # ix or fac status is pending or deleted
@@ -1632,6 +1636,9 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
         model = InternetExchangeFacility
         fields = [
             "id",
+            "name",
+            "city",
+            "country",
             "ix_id",
             "ix",
             "fac_id",
@@ -1652,7 +1659,18 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-        return qset.select_related("ix", "ix__org"), {}
+        qset = qset.select_related("ix", "ix__org", "facility")
+
+        filters = get_relation_filters(["name", "country", "city"], cls, **kwargs)
+        for field, e in list(filters.items()):
+            for valid in ["name", "country", "city"]:
+                if validate_relation_filter_field(field, valid):
+                    fn = getattr(cls.Meta.model, "related_to_%s" % valid)
+                    field = f"facility__{valid}"
+                    qset = fn(qset=qset, field=field, **e)
+                    break
+
+        return qset, filters
 
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
@@ -1660,6 +1678,14 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
     def get_fac(self, inst):
         return self.sub_serializer(FacilitySerializer, inst.facility)
 
+    def get_name(self, inst):
+        return inst.facility.name
+
+    def get_country(self, inst):
+        return inst.facility.country
+
+    def get_city(self, inst):
+        return inst.facility.city
 
 class NetworkContactSerializer(ModelSerializer):
     """
