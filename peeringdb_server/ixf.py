@@ -1573,6 +1573,8 @@ class Importer:
         ix_notifications = {}
         deskpro_notifications = {}
 
+        self.current_proposal = None
+
         for notification in self.notifications:
 
             ixf_member_data = notification["ixf_member_data"]
@@ -1581,6 +1583,7 @@ class Importer:
             notify_ix = notification["ix"]
             notify_net = notification["net"]
             context = notification["context"]
+            self.current_proposal = ixf_member_data
 
             # we don't care about resolved proposals
 
@@ -1719,7 +1722,14 @@ class Importer:
         # consolidate proposals into net,ix and ix,net
         # groupings
 
-        consolidated = self.consolidate_proposals()
+        try:
+            consolidated = self.consolidate_proposals()
+        except Exception as exc:
+            if error_handler:
+                error_handler(exc, ixf_member_data=self.current_proposal)
+                return
+            else:
+                raise
 
         ticket_days = EnvironmentSetting.get_setting_value(
             "IXF_IMPORTER_DAYS_UNTIL_TICKET"
@@ -1733,7 +1743,7 @@ class Importer:
                     self._notify_proposal(recipient, data, ticket_days, template)
                 except Exception as exc:
                     if error_handler:
-                        error_handler(exc, ixlan=self.ixlan)
+                        error_handler(exc)
                     else:
                         raise
 
@@ -1741,7 +1751,7 @@ class Importer:
             self.ticket_consolidated_proposals(consolidated["ac"])
         except Exception as exc:
             if error_handler:
-                error_handler(exc, ixlan=self.ixlan)
+                error_handler(exc)
             else:
                 raise
 
