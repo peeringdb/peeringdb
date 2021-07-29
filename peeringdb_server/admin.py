@@ -579,7 +579,7 @@ class IXLanInline(SanitizedAdmin, admin.StackedInline):
     model = IXLan
     extra = 0
     form = StatusForm
-    exclude = ["arp_sponge"]
+    exclude = ["arp_sponge", "dot1q_support"]
     readonly_fields = ["ixf_import_attempt_info", "prefixes"]
 
     def has_add_permission(self, request, obj=None):
@@ -756,6 +756,7 @@ class IXLanAdmin(SoftDeleteAdmin):
     actions = []
     list_display = ("ix", "name", "descr", "status")
     search_fields = ("name", "ix__name")
+    exclude = ("dot1q_support",)
     list_filter = (StatusFilter,)
     readonly_fields = ("id",)
     inlines = (IXLanPrefixInline, NetworkInternetExchangeInline)

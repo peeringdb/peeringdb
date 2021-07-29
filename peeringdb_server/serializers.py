@@ -2459,6 +2459,8 @@ class IXLanSerializer(ModelSerializer):
       - ix_id, handled by serializer
     """
 
+    dot1q_support = serializers.SerializerMethodField()
+
     ix_id = serializers.PrimaryKeyRelatedField(
         queryset=InternetExchange.objects.all(), source="ix"
     )
@@ -2518,6 +2520,11 @@ class IXLanSerializer(ModelSerializer):
 
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
+
+    def get_dot1q_support(self, inst):
+        # as per #903 this should always return false as the field
+        # is now deprecated
+        return False
 
     def validate(self, data):
         # Per issue 846

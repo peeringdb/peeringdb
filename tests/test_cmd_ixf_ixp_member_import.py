@@ -153,6 +153,8 @@ def test_runtime_errors(entities, capsys, mocker):
         side_effect=RuntimeError("Unexpected error"),
     )
 
+    out = io.StringIO()
+
     with pytest.raises(SystemExit) as pytest_wrapped_exit:
         call_command(
             "pdb_ixf_ixp_member_import",
@@ -160,14 +162,15 @@ def test_runtime_errors(entities, capsys, mocker):
             commit=True,
             ixlan=[ixlan.id],
             asn=asn,
+            stdout=out,
         )
 
     # Assert we are outputting the exception and traceback to the stderr
-    captured = capsys.readouterr()
-    assert "Unexpected error" in captured.err
-    assert str(ixlan.id) in captured.err
-    assert str(ixlan.ix.name) in captured.err
-    assert str(ixlan.ixf_ixp_member_list_url) in captured.err
+    captured = out.getvalue()
+    assert "Unexpected error" in captured
+    assert str(ixlan.id) in captured
+    assert str(ixlan.ix.name) in captured
+    assert str(ixlan.ixf_ixp_member_list_url) in captured
 
     # Assert we are exiting with status code 1
     assert pytest_wrapped_exit.value.code == 1
