@@ -1044,7 +1044,10 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_ixfac(self):
-        self.assert_get_handleref(self.db_user, "ixfac", SHARED["ixfac_r_ok"].id)
+        data = self.assert_get_handleref(self.db_user, "ixfac", SHARED["ixfac_r_ok"].id)
+        assert data.get("name")
+        assert data.get("city")
+        assert data.get("country")
 
     ##########################################################################
 
