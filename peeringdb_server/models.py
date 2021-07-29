@@ -2031,6 +2031,45 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
         Facility, on_delete=models.CASCADE, default=0, related_name="ixfac_set"
     )
 
+    @classmethod
+    def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
+        """
+        Filter queryset of ixfac objects related to facilities with name match
+        in facility__name according to filter
+
+        Relationship through facility
+        """
+        if not qset:
+            qset = cls.handleref.undeleted()
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @classmethod
+    def related_to_country(
+        cls, value=None, filt=None, field="facility__country", qset=None
+    ):
+        """
+        Filter queryset of ixfac objects related to country via match
+        in facility__country according to filter
+
+        Relationship through facility
+        """
+        if not qset:
+            qset = cls.handleref.filter(status="ok")
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @classmethod
+    def related_to_city(cls, value=None, filt=None, field="facility__city", qset=None):
+        """
+        Filter queryset of ixfac objects related to city via match
+        in facility__city according to filter
+
+        Relationship through facility
+        """
+        if not qset:
+            qset = cls.handleref.undeleted()
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+
     @property
     def descriptive_name(self):
         """
@@ -2041,6 +2080,7 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     class Meta:
         unique_together = ("ix", "facility")
         db_table = "peeringdb_ix_facility"
+
 
 
 @grainy_model(namespace="ixlan", namespace_instance="{instance.ix.grainy_namespace}")
