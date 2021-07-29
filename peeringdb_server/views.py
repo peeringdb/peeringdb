@@ -1455,11 +1455,6 @@ def view_exchange(request, id):
                 ],
             },
             {
-                "type": "flags",
-                "label": _("DOT1Q"),
-                "value": [{"name": "dot1q_support", "value": ixlan.dot1q_support}],
-            },
-            {
                 "type": "number",
                 "name": "mtu",
                 "label": _("MTU"),

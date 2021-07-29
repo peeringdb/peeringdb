@@ -1686,6 +1686,17 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_org_admin_002_PUT_ixlan_dot1qsupport(self):
+        ixlan = SHARED["ixlan_rw_ok"]
+        data = self.assert_get_handleref(self.db_org_admin, "ixlan", ixlan.id)
+        data.update(dot1q_support=True)
+        self.db_org_admin.update("ixlan", **data)
+
+        data = self.assert_get_handleref(self.db_org_admin, "ixlan", ixlan.id)
+        assert data["dot1q_support"] == False
+
+    ##########################################################################
+
     def test_org_admin_002_POST_PUT_DELETE_ixpfx(self):
         data = self.make_data_ixpfx(
             ixlan_id=SHARED["ixlan_rw_ok"].id, prefix="206.126.236.0/25"
