@@ -1293,6 +1293,34 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_org_admin_002_POST_ix_request_ixf_import(self):
+        ix = SHARED["ix_rw_ok"]
+
+        data = (
+            self.db_org_admin._request(
+                f"ix/{ix.id}/request_ixf_import", method="POST", data="{}"
+            )
+            .json()
+            .get("data")[0]
+        )
+
+        assert data["ixf_import_request"]
+        assert data["ixf_import_request_status"] == "queued"
+
+        resp = self.db_org_admin._request(
+            f"ix/{ix.id}/request_ixf_import", method="POST", data="{}"
+        )
+
+        assert resp.status_code == 429
+
+        resp = self.db_org_member._request(
+            f"ix/{ix.id}/request_ixf_import", method="POST", data="{}"
+        )
+
+        assert resp.status_code in [401, 403]
+
+    ##########################################################################
+
     def test_org_admin_002_POST_PUT_DELETE_fac(self):
         data = self.make_data_fac()
 
@@ -1696,7 +1724,7 @@ class TestJSON(unittest.TestCase):
         self.db_org_admin.update("ixlan", **data)
 
         data = self.assert_get_handleref(self.db_org_admin, "ixlan", ixlan.id)
-        assert data["dot1q_support"] == False
+        assert data["dot1q_support"] is False
 
     ##########################################################################
 
@@ -3200,7 +3228,7 @@ class TestJSON(unittest.TestCase):
         self.assert_list_filter_related("ixfac", "fac")
         self.assert_list_filter_related("ixfac", "ix")
 
-   ##########################################################################
+    ##########################################################################
 
     def test_guest_005_list_filter_ixfac_related_name(self):
         data = self.db_guest.all("ixfac", name=SHARED["fac_rw_ok"].name)
@@ -3222,7 +3250,6 @@ class TestJSON(unittest.TestCase):
         )
         self.assertEqual(len(data), 2)
         self.assert_data_integrity(data[0], "ixfac")
-
 
     ##########################################################################
 

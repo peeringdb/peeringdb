@@ -12,6 +12,7 @@ from peeringdb_server.models import (
     IXFImportEmail,
     IXFMemberData,
     IXLan,
+    InternetExchange,
     Network,
 )
 
@@ -27,6 +28,15 @@ class Command(BaseCommand):
         parser.add_argument("--asn", type=int, default=0, help="Only process this ASN")
         parser.add_argument(
             "--ixlan", type=int, nargs="*", help="Only process these ixlans"
+        )
+        parser.add_argument(
+            "--process-requested",
+            "-P",
+            type=int,
+            nargs="?",
+            help="Process manually requested imports. Specify a number to limit amount of requests to be processed.",
+            default=None,
+            dest="process_requested",
         )
         parser.add_argument("--debug", action="store_true", help="Show debug output")
         parser.add_argument(
@@ -187,10 +197,25 @@ class Command(BaseCommand):
         self.preview = options.get("preview", False)
         self.cache = options.get("cache", False)
         self.skip_import = options.get("skip_import", False)
+        process_requested = options.get("process_requested", None)
+        ixlan_ids = options.get("ixlan")
+        asn = options.get("asn", 0)
 
         # err and out should go to the same buffer (#967)
         if not self.preview:
             self.stderr = self.stdout
+
+        if process_requested is not None:
+            ixlan_ids = []
+            for ix in InternetExchange.ixf_import_request_queue():
+                if ix.id not in ixlan_ids:
+                    ixlan_ids.append(ix.id)
+
+            if not ixlan_ids:
+                self.log("No manual import requests")
+                return
+
+            self.log(f"Processing manual requests for: {ixlan_ids}")
 
         self.active_reset_flags = self.initiate_reset_flags(**options)
 
@@ -210,9 +235,6 @@ class Command(BaseCommand):
 
         if self.preview and self.commit:
             self.commit = False
-
-        ixlan_ids = options.get("ixlan")
-        asn = options.get("asn", 0)
 
         if asn and not ixlan_ids:
             # if asn is specified, retrieve queryset for ixlans from
@@ -264,6 +286,10 @@ class Command(BaseCommand):
 
             except Exception as inst:
                 self.store_runtime_error(inst, ixlan=ixlan)
+            finally:
+                if process_requested is not None:
+                    ixlan.ix.ixf_import_request_status = "finished"
+                    ixlan.ix.save_without_timestamp()
 
         if self.preview:
             self.stdout.write(json.dumps(total_log, indent=2))

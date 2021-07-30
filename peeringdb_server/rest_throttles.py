@@ -5,6 +5,15 @@ from rest_framework.exceptions import PermissionDenied
 from peeringdb_server.permissions import get_org_key_from_request, get_user_from_request
 
 
+class IXFImportThrottle(throttling.UserRateThrottle):
+    scope = "ixf_import_request"
+
+    def get_cache_key(self, request, view):
+        key = super().get_cache_key(request, view)
+        ix = view.get_object()
+        return f"{key}.{ix.id}"
+
+
 class FilterThrottle(throttling.SimpleRateThrottle):
 
     """

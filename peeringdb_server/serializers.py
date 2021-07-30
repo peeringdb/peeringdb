@@ -1687,6 +1687,7 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
     def get_city(self, inst):
         return inst.facility.city
 
+
 class NetworkContactSerializer(ModelSerializer):
     """
     Serializer for peeringdb_server.models.NetworkContact
@@ -2660,6 +2661,8 @@ class InternetExchangeSerializer(ModelSerializer):
             "fac_count",
             "ixf_net_count",
             "ixf_last_import",
+            "ixf_import_request",
+            "ixf_import_request_status",
             "service_level",
             "terms",
         ] + HandleRefSerializer.Meta.fields
