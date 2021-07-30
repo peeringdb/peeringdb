@@ -1501,6 +1501,21 @@ def view_exchange(request, id):
                 ],
                 "admin": True,
             },
+            {
+                "type": "action",
+                "label": _("IX-F Import"),
+                "actions": [
+                    {
+                        "label": _("Request import"),
+                        "action": "ixf_request_import",
+                    },
+                    {
+                        "label": exchange.ixf_import_request_recent_status[1],
+                        "css": f"ixf-import-request-status {exchange.ixf_import_css}",
+                    },
+                ],
+                "admin": True,
+            },
             {"type": "group_end"},
         ]
     )

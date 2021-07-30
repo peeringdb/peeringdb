@@ -236,6 +236,13 @@ class ProtectedMixin:
         """
         return
 
+    def save_without_timestamp(self):
+        self._meta.get_field("updated").auto_now = False
+        try:
+            self.save()
+        finally:
+            self._meta.get_field("updated").auto_now = True
+
 
 class GeocodeBaseMixin(models.Model):
     """
@@ -1572,6 +1579,34 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     Describes a peeringdb exchange
     """
 
+    ixf_import_request = models.DateTimeField(
+        _("Manual IX-F import request"),
+        help_text=_("Date of most recent manual import request"),
+        null=True,
+        blank=True,
+    )
+
+    ixf_import_request_status = models.CharField(
+        _("Manual IX-F import status"),
+        help_text=_("The current status of the manual ix-f import request"),
+        choices=(
+            ("queued", _("Queued")),
+            ("importing", _("Importing")),
+            ("finished", _("Finished")),
+        ),
+        max_length=32,
+        default="queued",
+    )
+
+    ixf_import_request_user = models.ForeignKey(
+        "peeringdb_server.User",
+        null=True,
+        blank=True,
+        help_text=_("The user that triggered the manual ix-f import request"),
+        on_delete=models.SET_NULL,
+        related_name="requested_ixf_imports",
+    )
+
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="ix_set"
     )
@@ -1837,6 +1872,17 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         qset = qset.filter(id__in=qualifying)
         return qset
 
+    @classmethod
+    def ixf_import_request_queue(cls, limit=0):
+        qset = InternetExchange.objects.filter(
+            ixf_import_request__isnull=False, ixf_import_request_status="queued"
+        ).order_by("ixf_import_request")
+
+        if limit:
+            qset = qset[:limit]
+
+        return qset
+
     @property
     def ixlan(self):
         """
@@ -1970,6 +2016,43 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
             self._not_deletable_reason = None
             return True
 
+    @property
+    def ixf_import_request_recent_status(self):
+        """
+        Returns the recent ixf import request status as a tuple
+        of value, display
+        """
+
+        if not self.ixf_import_request:
+            return "", ""
+
+        value = self.ixf_import_request_status
+        display = self.get_ixf_import_request_status_display
+
+        if self.ixf_import_request_status == "queued":
+            return value, display
+
+        now = timezone.now()
+        delta = (now - self.ixf_import_request).total_seconds()
+
+        if delta < 3600:
+            return value, display
+
+        return "", ""
+
+    @property
+    def ixf_import_css(self):
+        """
+        returns the appropriate bootstrap alert class
+        depending on recent import request status
+        """
+        status, _ = self.ixf_import_request_recent_status
+        if status == "queued":
+            return "alert alert-warning"
+        if status == "finished":
+            return "alert alert-success"
+        return ""
+
     def vq_approve(self):
         """
         Called when internet exchange is approved in verification
@@ -2015,6 +2098,17 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
     def clean(self):
         self.validate_phonenumbers()
+
+    def request_ixf_import(self, user=None):
+        self.ixf_import_request = timezone.now()
+
+        if self.ixf_import_request_status == "importing":
+            raise ValidationError({"non_field_errors": ["Import is currently ongoing"]})
+
+        self.ixf_import_request_status = "queued"
+        self.ixf_import_request_user = user
+
+        self.save_without_timestamp()
 
 
 @grainy_model(namespace="ixfac", parent="ix")
@@ -2069,7 +2163,6 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
             qset = cls.handleref.undeleted()
         return qset.filter(**make_relation_filter(field, filt, value))
 
-
     @property
     def descriptive_name(self):
         """
@@ -2080,7 +2173,6 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     class Meta:
         unique_together = ("ix", "facility")
         db_table = "peeringdb_ix_facility"
-
 
 
 @grainy_model(namespace="ixlan", namespace_instance="{instance.ix.grainy_namespace}")

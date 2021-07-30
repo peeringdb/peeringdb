@@ -15,8 +15,8 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import PermissionDenied
 from rest_framework import routers, status, viewsets
-from rest_framework.exceptions import ParseError
-from rest_framework.exceptions import ValidationError as RestValidationError
+from rest_framework.decorators import action
+from rest_framework.exceptions import ParseError, ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
@@ -33,6 +33,7 @@ from peeringdb_server.permissions import (
 from peeringdb_server.search import make_name_search_query
 from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.util import coerce_ipaddr
+from peeringdb_server.rest_throttles import IXFImportThrottle
 
 
 class DataException(ValueError):
@@ -97,8 +98,8 @@ class RestRouter(routers.DefaultRouter):
             initkwargs={"suffix": "Instance"},
         ),
         routers.DynamicRoute(
-            url=r"^{prefix}/{lookup}/{methodnamehyphen}$",
-            name="{basename}-{methodnamehyphen}",
+            url=r"^{prefix}/{lookup}/{url_path}$",
+            name="{basename}-{url_name}",
             detail=True,
             initkwargs={},
         ),
@@ -106,12 +107,10 @@ class RestRouter(routers.DefaultRouter):
         # Generated using @action or @link decorators on methods of the
         # viewset.
         routers.Route(
-            url=r"^{prefix}/{lookup}/{methodname}{trailing_slash}$",
-            mapping={
-                "{httpmethod}": "{methodname}",
-            },
-            name="{basename}-{methodnamehyphen}",
-            detail=False,
+            url=r"^{prefix}/{lookup}/{url_path}{trailing_slash}$",
+            name="{basename}-{url_name}",
+            mapping={},
+            detail=True,
             initkwargs={},
         ),
     ]
@@ -697,6 +696,36 @@ class ModelViewSet(viewsets.ModelViewSet):
             self.get_serializer().finalize_delete(request)
 
 
+class InternetExchangeMixin:
+
+    """
+    Custom api endpoints for the internet exchange
+    object, exposed to api/ix/{id}/{action}
+    """
+
+    @action(detail=True, methods=["POST"], throttle_classes=[IXFImportThrottle])
+    def request_ixf_import(self, request, *args, **kwargs):
+
+        """
+        Allows managers of an ix to request an ix-f import
+        #779
+        """
+
+        ix = self.get_object()
+
+        if not check_permissions_from_request(request, ix, "u"):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        if request.user.is_authenticated:
+            # user or user api key
+            ix.request_ixf_import(request.user)
+        else:
+            # org key
+            ix.request_ixf_import()
+
+        return self.retrieve(request, *args, **kwargs)
+
+
 # TODO: why are we doing the import like this??!
 pdb_serializers = importlib.import_module("peeringdb_server.serializers")
 router = RestRouter(trailing_slash=False)
@@ -708,7 +737,7 @@ def ref_dict():
     return {tag: view.model for tag, view, na in router.registry}
 
 
-def model_view_set(model, methods=None):
+def model_view_set(model, methods=None, mixins=None):
     """
     shortcut for peeringdb models to generate viewset and register in the API urls
     """
@@ -725,7 +754,10 @@ def model_view_set(model, methods=None):
     }
 
     # create the type
-    viewset_t = type(model + "ViewSet", (ModelViewSet,), clsdict)
+    if not mixins:
+        viewset_t = type(model + "ViewSet", (ModelViewSet,), clsdict)
+    else:
+        viewset_t = type(model + "ViewSet", mixins + (ModelViewSet,), clsdict)
 
     if methods:
         viewset_t.http_method_names = methods
@@ -738,7 +770,9 @@ def model_view_set(model, methods=None):
 
 
 FacilityViewSet = model_view_set("Facility")
-InternetExchangeViewSet = model_view_set("InternetExchange")
+InternetExchangeViewSet = model_view_set(
+    "InternetExchange", mixins=(InternetExchangeMixin,)
+)
 InternetExchangeFacilityViewSet = model_view_set("InternetExchangeFacility")
 IXLanViewSet = model_view_set("IXLan", methods=["get", "put"])
 IXLanPrefixViewSet = model_view_set("IXLanPrefix")
@@ -806,6 +840,7 @@ class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
 
 
 router.register("as_set", ASSetViewSet, basename="as_set")
+
 
 # set here in case we want to add more urls later
 urls = router.urls

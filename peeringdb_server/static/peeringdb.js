@@ -416,6 +416,26 @@ PeeringDB.ViewActions.actions.ix_ixf_preview = function(netId) {
 }
 
 
+PeeringDB.ViewActions.actions.ix_ixf_request_import = function(ixId) {
+  var button =  $('[data-view-action="ix_ixf_request_import"]')
+  button.attr("title","").tooltip("hide").attr("data-trigger", "manual");
+  $.post(`/api/ix/${ixId}/request_ixf_import`).done(
+    () => {
+      $('.ixf-import-request-status').addClass("alert alert-warning").text(gettext("Queued"))
+    }
+  ).fail(
+    (response,typ,msg) => {
+      if(response.status == 429) {
+        let seconds = response.responseJSON.meta.error.match(/(\d+)/)[0]
+        button.attr('title', gettext("Please wait before requesting another import.")+" "+gettext("Available in: ")+seconds+" "+gettext("seconds")).tooltip("show");
+      } else {
+        button.attr('title',msg).tooltip("show");
+      }
+    }
+  );
+}
+
+
 PeeringDB.ViewActions.actions.net_ixf_preview = function(netId) {
   $("#ixf-preview-modal").modal("show");
   var preview = new PeeringDB.IXFNetPreview()

@@ -199,7 +199,11 @@
         {% elif row.type == "action" %}
           <div class="view_value col-xs-8 col-sm-7 col-md-8 action">
             {% for action in row.actions %}
-            <button class="btn btn-sm" data-view-action="{{ref_tag}}_{{ action.action }}">{{ action.label }}</button>
+            {% if action.action %}
+            <button class="btn btn-sm" data-placement="right" data-container="body" data-view-action="{{ref_tag}}_{{ action.action }}">{{ action.label }}</button>
+            {% else %}
+            <span class="action-label {{ action.css }} {{ action.label }}">{{ action.label }}</span>
+            {% endif %}
             {% endfor %}
           </div>
         {% elif row.type == "fmt-text" %}

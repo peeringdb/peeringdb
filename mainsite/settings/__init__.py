@@ -255,6 +255,7 @@ API_THROTTLE_ENABLED = True
 set_option("API_THROTTLE_RATE_ANON", "100/second")
 set_option("API_THROTTLE_RATE_USER", "100/second")
 set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
+set_option("API_THROTTLE_IXF_IMPORT", "1/minute")
 
 # spatial queries require user auth
 set_option("API_DISTANCE_FILTER_REQUIRE_AUTH", True)
@@ -641,6 +642,7 @@ if API_THROTTLE_ENABLED:
                 "anon": API_THROTTLE_RATE_ANON,
                 "user": API_THROTTLE_RATE_USER,
                 "filter_distance": API_THROTTLE_RATE_FILTER_DISTANCE,
+                "ixf_import_request": API_THROTTLE_IXF_IMPORT
             },
         }
     )
