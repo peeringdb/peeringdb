@@ -2,11 +2,8 @@ import datetime
 import ipaddress
 import json
 import re
-import time
-from operator import or_
 
 import django.urls
-import django_grainy.models as django_grainy_models
 import reversion
 from django import forms as baseForms
 from django.conf import settings
@@ -14,27 +11,19 @@ from django.conf.urls import url
 from django.contrib import admin, messages
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
-from django.contrib.admin.views.main import ChangeList
-from django.contrib.auth import forms
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.db.models.functions import Concat
 from django.db.utils import OperationalError
 from django.forms import DecimalField
-from django.http import HttpResponseForbidden
-from django.shortcuts import Http404, redirect
+from django.shortcuts import redirect
 from django.template import loader
 from django.template.response import TemplateResponse
 from django.utils import html
 from django.utils.safestring import mark_safe
-from django_grainy.admin import (
-    GrainyGroupAdmin,
-    GrainyUserAdmin,
-    GroupPermissionInlineAdmin,
-    UserPermissionInlineAdmin,
-)
+from django.utils.translation import ugettext_lazy as _
+from django_grainy.admin import UserPermissionInlineAdmin
 from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
 from rest_framework_api_key.admin import APIKeyModelAdmin
 from rest_framework_api_key.models import APIKey
@@ -51,7 +40,6 @@ from peeringdb_server.models import (
     CommandLineTool,
     DeskProTicket,
     DeskProTicketCC,
-    EnvironmentSetting,
     Facility,
     GeoCoordinateCache,
     InternetExchange,
@@ -85,8 +73,6 @@ from peeringdb_server.views import HttpResponseForbidden, JsonResponse
 from . import forms
 
 delete_selected.short_description = "HARD DELETE - Proceed with caution"
-
-from django.utils.translation import ugettext_lazy as _
 
 # these app labels control permissions for the views
 # currently exposed in admin
@@ -509,9 +495,6 @@ class SoftDeleteAdmin(
     def grainy_namespace(self, obj):
         return obj.grainy_namespace
 
-    def grainy_namespace(self, obj):
-        return obj.grainy_namespace
-
 
 class ModelAdminWithVQCtrl:
     """
@@ -596,10 +579,10 @@ class IXLanInline(SanitizedAdmin, admin.StackedInline):
     model = IXLan
     extra = 0
     form = StatusForm
-    exclude = ["arp_sponge"]
+    exclude = ["arp_sponge", "dot1q_support"]
     readonly_fields = ["ixf_import_attempt_info", "prefixes"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return False
 
     def has_delete_permission(self, request, obj):
@@ -678,7 +661,7 @@ class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
         try:
             asn = self.cleaned_data.get("asn")
             if asn:
-                rdap_valid = RdapLookup().get_asn(asn).emails
+                RdapLookup().get_asn(asn).emails
         except RdapException as exc:
             raise ValidationError({"asn": rdap_pretty_error_message(exc)})
 
@@ -773,6 +756,7 @@ class IXLanAdmin(SoftDeleteAdmin):
     actions = []
     list_display = ("ix", "name", "descr", "status")
     search_fields = ("name", "ix__name")
+    exclude = ("dot1q_support",)
     list_filter = (StatusFilter,)
     readonly_fields = ("id",)
     inlines = (IXLanPrefixInline, NetworkInternetExchangeInline)
@@ -1491,6 +1475,12 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
 
 
 class UserCreationForm(forms.UserCreationForm):
+
+    # user creation through django-admin doesnt need
+    # captcha checking
+
+    require_captcha = False
+
     def clean_username(self):
         username = self.cleaned_data["username"]
         try:
@@ -2038,14 +2028,6 @@ class IXFMemberDataAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
 
         return qset.filter(requirement_of__isnull=True)
 
-        ids = [
-            row.id
-            for row in qset.exclude(requirement_of__isnull=False)
-            if row.action != "noop"
-        ]
-
-        return qset.filter(id__in=ids)
-
     def ix(self, obj):
         return obj.ixlan.ix
 
@@ -2081,7 +2063,7 @@ class IXFMemberDataAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
             return self.readonly_fields + ("asn", "ipaddr4", "ipaddr6")
         return self.readonly_fields
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return False
 
     def has_delete_permission(self, request, obj=None):

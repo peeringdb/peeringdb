@@ -1,5 +1,6 @@
 import reversion
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 import peeringdb_server.models as pdbm
 from peeringdb_server.mail import mail_users_entity_merge
@@ -25,6 +26,7 @@ class Command(BaseCommand):
             print(msg)
 
     @reversion.create_revision()
+    @transaction.atomic()
     def handle(self, *args, **options):
 
         args = list(args)

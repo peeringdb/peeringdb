@@ -1,13 +1,7 @@
-import datetime
-import logging
-
 from confu.schema import apply_defaults
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.core.management import call_command
 from django.core.management.base import BaseCommand
-from django.db.models.signals import post_save, pre_delete, pre_save
-from django_handleref.models import HandleRefModel
+from django.db.models.signals import pre_save
 from django_peeringdb import models as djpdb_models
 
 import peeringdb._fetch

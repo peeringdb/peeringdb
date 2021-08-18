@@ -19,7 +19,7 @@ services:
     ports:
      - "13306:3306"
     volumes:
-      - ./peeringdb_database:/var/lib/mysql
+      - ./peeringdb_database:/var/lib/mysql:Z
 
   peeringdb:
 #    user: "0:0"
@@ -43,9 +43,9 @@ services:
       # this needs to be set in the shell, compose env vars aren't read yet
       - "${DJANGO_PORT:-8000}:8000"
     volumes:
-      - ../../peeringdb_server:/srv/www.peeringdb.com/peeringdb_server
-      - ../../mainsite:/srv/www.peeringdb.com/mainsite
-      - ../../tests:/srv/www.peeringdb.com/tests
+      - ../../peeringdb_server:/srv/www.peeringdb.com/peeringdb_server:Z
+      - ../../mainsite:/srv/www.peeringdb.com/mainsite:Z
+      - ../../tests:/srv/www.peeringdb.com/tests:Z
 #      - ../../search-data:/srv/www.peeringdb.com/search-data
 
 volumes:

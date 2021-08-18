@@ -3,6 +3,7 @@ import ipaddress
 import reversion
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from peeringdb_server.inet import renumber_ipaddress
 from peeringdb_server.models import IXLanPrefix, NetworkIXLan
@@ -33,6 +34,7 @@ class Command(BaseCommand):
             self.stdout.write(msg)
 
     @reversion.create_revision()
+    @transaction.atomic()
     def renumber_lans(self, old, new):
         """
         Renumber prefix and netixlan's that fall into that prefix
@@ -55,8 +57,8 @@ class Command(BaseCommand):
 
         if self.ixlan:
             self.log(f"Only replacing in ixlan {self.ixlan.descriptive_name}")
-            prefixes = prefixes.filter(ixlan=ixlan)
-            netixlans = netixlans.filter(ixlan=ixlan)
+            prefixes = prefixes.filter(ixlan=self.ixlan)
+            netixlans = netixlans.filter(ixlan=self.ixlan)
 
         for prefix in prefixes:
             self.log(f"Renumbering {prefix.descriptive_name} -> {new_prefix}")

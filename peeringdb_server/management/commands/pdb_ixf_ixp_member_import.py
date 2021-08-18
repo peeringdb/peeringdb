@@ -3,7 +3,7 @@ import sys
 import traceback
 
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from peeringdb_server import ixf
@@ -12,8 +12,8 @@ from peeringdb_server.models import (
     IXFImportEmail,
     IXFMemberData,
     IXLan,
+    InternetExchange,
     Network,
-    NetworkIXLan,
 )
 
 
@@ -28,6 +28,15 @@ class Command(BaseCommand):
         parser.add_argument("--asn", type=int, default=0, help="Only process this ASN")
         parser.add_argument(
             "--ixlan", type=int, nargs="*", help="Only process these ixlans"
+        )
+        parser.add_argument(
+            "--process-requested",
+            "-P",
+            type=int,
+            nargs="?",
+            help="Process manually requested imports. Specify a number to limit amount of requests to be processed.",
+            default=None,
+            dest="process_requested",
         )
         parser.add_argument("--debug", action="store_true", help="Show debug output")
         parser.add_argument(
@@ -77,12 +86,16 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"[Pretend] {msg}")
 
-    def store_runtime_error(self, error, ixlan=None):
+    def store_runtime_error(self, error, ixlan=None, ixf_member_data=None):
+        if ixf_member_data:
+            ixlan = ixf_member_data.ixlan
         error_str = ""
         if ixlan:
             error_str += f"Ixlan {ixlan.ix.name} (id={ixlan.id})" + "\n"
             if hasattr(ixlan, "ixf_ixp_member_list_url"):
                 error_str += f"IX-F url: {ixlan.ixf_ixp_member_list_url}" + "\n"
+        if ixf_member_data:
+            error_str += f"Proposal: {ixf_member_data} (id={ixf_member_data.id})\n"
 
         error_str += f"ERROR: {error}" + "\n"
         error_str += traceback.format_exc()
@@ -184,6 +197,25 @@ class Command(BaseCommand):
         self.preview = options.get("preview", False)
         self.cache = options.get("cache", False)
         self.skip_import = options.get("skip_import", False)
+        process_requested = options.get("process_requested", None)
+        ixlan_ids = options.get("ixlan")
+        asn = options.get("asn", 0)
+
+        # err and out should go to the same buffer (#967)
+        if not self.preview:
+            self.stderr = self.stdout
+
+        if process_requested is not None:
+            ixlan_ids = []
+            for ix in InternetExchange.ixf_import_request_queue():
+                if ix.id not in ixlan_ids:
+                    ixlan_ids.append(ix.id)
+
+            if not ixlan_ids:
+                self.log("No manual import requests")
+                return
+
+            self.log(f"Processing manual requests for: {ixlan_ids}")
 
         self.active_reset_flags = self.initiate_reset_flags(**options)
 
@@ -203,9 +235,6 @@ class Command(BaseCommand):
 
         if self.preview and self.commit:
             self.commit = False
-
-        ixlan_ids = options.get("ixlan")
-        asn = options.get("asn", 0)
 
         if asn and not ixlan_ids:
             # if asn is specified, retrieve queryset for ixlans from
@@ -257,6 +286,10 @@ class Command(BaseCommand):
 
             except Exception as inst:
                 self.store_runtime_error(inst, ixlan=ixlan)
+            finally:
+                if process_requested is not None:
+                    ixlan.ix.ixf_import_request_status = "finished"
+                    ixlan.ix.save_without_timestamp()
 
         if self.preview:
             self.stdout.write(json.dumps(total_log, indent=2))
@@ -271,7 +304,10 @@ class Command(BaseCommand):
 
         self.stdout.write(f"New Emails: {importer.emails}")
 
-        if len(self.runtime_errors) > 0:
+        num_errors = len(self.runtime_errors)
+
+        if num_errors > 0:
+            self.stdout.write(f"Errors: {num_errors}\n\n")
             self.write_runtime_errors()
             sys.exit(1)
 

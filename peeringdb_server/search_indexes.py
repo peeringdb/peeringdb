@@ -9,12 +9,8 @@ from haystack import indexes
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
-    InternetExchangeFacility,
-    IXLan,
     IXLanPrefix,
     Network,
-    NetworkContact,
-    NetworkFacility,
     NetworkIXLan,
     Organization,
 )

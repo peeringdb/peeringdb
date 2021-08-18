@@ -1,13 +1,12 @@
 import ipaddress
-import re
 
 import rdap
-import requests
 from django.utils.translation import ugettext_lazy as _
-from rdap import RdapAsn
-from rdap.exceptions import RdapException, RdapHTTPError, RdapNotFoundError
+from rdap.exceptions import RdapException, RdapNotFoundError
 
 from peeringdb_server import settings
+
+RdapAsn = rdap.RdapAsn  # noqa
 
 # Valid IRR Source values
 # reference: http://www.irr.net/docs/list.html

@@ -4,12 +4,9 @@ import json
 import re
 import uuid
 from itertools import chain
-from pprint import pprint
 
 import django.urls
-import django_grainy.decorators
 import django_peeringdb.models as pdb_models
-import requests
 import reversion
 from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
@@ -29,7 +26,6 @@ from django.db import models, transaction
 from django.template import loader
 from django.utils import timezone
 from django.utils.functional import Promise
-from django.utils.html import strip_tags
 from django.utils.http import urlquote
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
@@ -181,8 +177,6 @@ class URLField(pdb_models.URLField):
     local defaults for URLField
     """
 
-    pass
-
 
 class ValidationErrorEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -228,8 +222,10 @@ class ProtectedMixin:
         return getattr(self, "_not_deletable_reason", None)
 
     def delete(self, hard=False, force=False):
-        if not self.deletable and not force:
-            raise ProtectedAction(self)
+
+        if self.status in ["ok", "pending"]:
+            if not self.deletable and not force:
+                raise ProtectedAction(self)
 
         self.delete_cleanup()
         return super().delete(hard=hard)
@@ -241,6 +237,13 @@ class ProtectedMixin:
         Override this in the class that uses this mixin (if needed)
         """
         return
+
+    def save_without_timestamp(self):
+        self._meta.get_field("updated").auto_now = False
+        try:
+            self.save()
+        finally:
+            self._meta.get_field("updated").auto_now = True
 
 
 class GeocodeBaseMixin(models.Model):
@@ -695,6 +698,7 @@ class VerificationQueueItem(models.Model):
         )
 
     @reversion.create_revision()
+    @transaction.atomic()
     def approve(self):
         """
         Approve the verification queue item
@@ -885,7 +889,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
                 rdap = RdapLookup().get_asn(net.asn)
                 if rdap:
                     r[net.asn] = rdap
-            except RdapNotFoundError as inst:
+            except RdapNotFoundError:
                 pass
         return r
 
@@ -1000,6 +1004,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
     @classmethod
     @reversion.create_revision()
+    @transaction.atomic()
     def create_from_rdap(cls, rdap, asn, org_name=None):
         """
         Creates organization from rdap result object
@@ -1576,6 +1581,34 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     Describes a peeringdb exchange
     """
 
+    ixf_import_request = models.DateTimeField(
+        _("Manual IX-F import request"),
+        help_text=_("Date of most recent manual import request"),
+        null=True,
+        blank=True,
+    )
+
+    ixf_import_request_status = models.CharField(
+        _("Manual IX-F import status"),
+        help_text=_("The current status of the manual ix-f import request"),
+        choices=(
+            ("queued", _("Queued")),
+            ("importing", _("Importing")),
+            ("finished", _("Finished")),
+        ),
+        max_length=32,
+        default="queued",
+    )
+
+    ixf_import_request_user = models.ForeignKey(
+        "peeringdb_server.User",
+        null=True,
+        blank=True,
+        help_text=_("The user that triggered the manual ix-f import request"),
+        on_delete=models.SET_NULL,
+        related_name="requested_ixf_imports",
+    )
+
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="ix_set"
     )
@@ -1841,6 +1874,17 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         qset = qset.filter(id__in=qualifying)
         return qset
 
+    @classmethod
+    def ixf_import_request_queue(cls, limit=0):
+        qset = InternetExchange.objects.filter(
+            ixf_import_request__isnull=False, ixf_import_request_status="queued"
+        ).order_by("ixf_import_request")
+
+        if limit:
+            qset = qset[:limit]
+
+        return qset
+
     @property
     def ixlan(self):
         """
@@ -1974,6 +2018,43 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
             self._not_deletable_reason = None
             return True
 
+    @property
+    def ixf_import_request_recent_status(self):
+        """
+        Returns the recent ixf import request status as a tuple
+        of value, display
+        """
+
+        if not self.ixf_import_request:
+            return "", ""
+
+        value = self.ixf_import_request_status
+        display = self.get_ixf_import_request_status_display
+
+        if self.ixf_import_request_status == "queued":
+            return value, display
+
+        now = timezone.now()
+        delta = (now - self.ixf_import_request).total_seconds()
+
+        if delta < 3600:
+            return value, display
+
+        return "", ""
+
+    @property
+    def ixf_import_css(self):
+        """
+        returns the appropriate bootstrap alert class
+        depending on recent import request status
+        """
+        status, _ = self.ixf_import_request_recent_status
+        if status == "queued":
+            return "alert alert-warning"
+        if status == "finished":
+            return "alert alert-success"
+        return ""
+
     def vq_approve(self):
         """
         Called when internet exchange is approved in verification
@@ -2020,6 +2101,17 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     def clean(self):
         self.validate_phonenumbers()
 
+    def request_ixf_import(self, user=None):
+        self.ixf_import_request = timezone.now()
+
+        if self.ixf_import_request_status == "importing":
+            raise ValidationError({"non_field_errors": ["Import is currently ongoing"]})
+
+        self.ixf_import_request_status = "queued"
+        self.ixf_import_request_user = user
+
+        self.save_without_timestamp()
+
 
 @grainy_model(namespace="ixfac", parent="ix")
 @reversion.register
@@ -2034,6 +2126,44 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     facility = models.ForeignKey(
         Facility, on_delete=models.CASCADE, default=0, related_name="ixfac_set"
     )
+
+    @classmethod
+    def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
+        """
+        Filter queryset of ixfac objects related to facilities with name match
+        in facility__name according to filter
+
+        Relationship through facility
+        """
+        if not qset:
+            qset = cls.handleref.undeleted()
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @classmethod
+    def related_to_country(
+        cls, value=None, filt=None, field="facility__country", qset=None
+    ):
+        """
+        Filter queryset of ixfac objects related to country via match
+        in facility__country according to filter
+
+        Relationship through facility
+        """
+        if not qset:
+            qset = cls.handleref.filter(status="ok")
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @classmethod
+    def related_to_city(cls, value=None, filt=None, field="facility__city", qset=None):
+        """
+        Filter queryset of ixfac objects related to city via match
+        in facility__city according to filter
+
+        Relationship through facility
+        """
+        if not qset:
+            qset = cls.handleref.undeleted()
+        return qset.filter(**make_relation_filter(field, filt, value))
 
     @property
     def descriptive_name(self):
@@ -2222,6 +2352,7 @@ class IXLan(pdb_models.IXLanBase):
         return super().clean()
 
     @reversion.create_revision()
+    @transaction.atomic()
     def add_netixlan(self, netixlan_info, save=True, save_others=True):
         """
         This function allows for sane adding of netixlan object under
@@ -2348,7 +2479,6 @@ class IXLan(pdb_models.IXLanBase):
                 ixlan=self, network=netixlan_info.network, status="ok"
             )
             created = True
-            reason = "New ip-address"
 
         # now we sync the data to our determined netixlan instance
 
@@ -2456,6 +2586,7 @@ class IXLanIXFMemberImportLog(models.Model):
         verbose_name_plural = _("IX-F Import Logs")
 
     @reversion.create_revision()
+    @transaction.atomic()
     def rollback(self):
         """
         Attempt to rollback the changes described in this log
@@ -2471,7 +2602,7 @@ class IXLanIXFMemberImportLog(models.Model):
                     for _entry in related.order_by("-id"):
                         try:
                             _entry.version_before.revert()
-                        except:
+                        except Exception:
                             break
 
                 elif entry.netixlan.status == "ok":
@@ -2840,7 +2971,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         for ixf_member_data in qset:
 
             action = ixf_member_data.action
-            error = ixf_member_data.error
+            ixf_member_data.error
 
             # not actionable for anyone
 
@@ -2932,7 +3063,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         try:
             error_data = json.loads(self.error)
-        except:
+        except Exception:
             return None
 
         IPADDR_EXIST = "already exists"
@@ -3025,7 +3156,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     @property
     def actionable_changes(self):
 
-        requirements = self.requirements
+        self.requirements
 
         _changes = self.changes
 
@@ -3196,7 +3327,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Will return either "add", "modify", "delete" or "noop"
         """
 
-        has_data = self.remote_data_missing == False
+        has_data = self.remote_data_missing is False
 
         action = "noop"
 
@@ -3451,7 +3582,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         action = self.action
         netixlan = self.netixlan
-        changes = self.changes
+        self.changes
 
         if action == "add":
             self.validate_speed()
@@ -3788,7 +3919,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         except ipaddress.AddressValueError:
             return False
 
-        except ValueError as inst:
+        except ValueError:
             return False
 
     @property
@@ -3895,6 +4026,7 @@ class Network(pdb_models.NetworkBase):
 
     @classmethod
     @reversion.create_revision()
+    @transaction.atomic()
     def create_from_rdap(cls, rdap, asn, org):
         """
         Creates network from rdap result object
@@ -4361,7 +4493,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         as a unqiue record by asn, ip4 and ip6 address
         """
 
-        net = self.network
+        self.network
         return (self.asn, self.ipaddr4, self.ipaddr6)
 
     @property

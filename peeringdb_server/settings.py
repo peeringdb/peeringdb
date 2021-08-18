@@ -1,5 +1,3 @@
-import os
-
 from django.conf import settings
 
 PEERINGDB_VERSION = getattr(settings, "PEERINGDB_VERSION", "")
