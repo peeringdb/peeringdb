@@ -436,7 +436,6 @@ INSTALLED_APPS = [
     "crispy_forms",
     "django_countries",
     "django_inet",
-    "django_namespace_perms",
     "django_grainy",
     "django_peeringdb",
     "django_tables2",
