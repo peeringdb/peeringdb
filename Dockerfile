@@ -57,6 +57,7 @@ COPY --from=builder "$VIRTUAL_ENV" "$VIRTUAL_ENV"
 
 RUN mkdir -p api-cache etc locale media static var/log
 COPY manage.py .
+COPY tox.ini .
 # container exec whois
 COPY in.whoisd .
 COPY Ctl/VERSION etc
