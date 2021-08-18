@@ -15,5 +15,4 @@ class Migration(migrations.Migration):
         ("peeringdb_server", "0059_ixf_typos"),
     ]
 
-    operations = [
-    ]
+    operations = []
