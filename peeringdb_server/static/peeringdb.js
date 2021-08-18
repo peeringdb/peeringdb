@@ -1502,6 +1502,7 @@ twentyc.editable.module.register(
 
     execute_add : function(trigger, container) {
       this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
       this.prepare_data();
       this.target.execute("update", this.components.add, function(response) {
         this.add(data.entity, trigger, container, data);
