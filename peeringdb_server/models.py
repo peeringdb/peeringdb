@@ -222,8 +222,10 @@ class ProtectedMixin:
         return getattr(self, "_not_deletable_reason", None)
 
     def delete(self, hard=False, force=False):
-        if not self.deletable and not force:
-            raise ProtectedAction(self)
+
+        if self.status in ["ok", "pending"]:
+            if not self.deletable and not force:
+                raise ProtectedAction(self)
 
         self.delete_cleanup()
         return super().delete(hard=hard)
