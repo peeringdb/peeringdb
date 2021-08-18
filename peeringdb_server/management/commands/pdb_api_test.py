@@ -1802,6 +1802,9 @@ class TestJSON(unittest.TestCase):
 
         # test protected ixpfx cant be deleted
         prefix = IXLanPrefix.objects.get(id=SHARED["ixpfx_id"])
+        prefix.status = "ok"
+        prefix.save()
+
         NetworkIXLan.objects.create(
             network=SHARED["net_rw_ok"],
             asn=SHARED["net_rw_ok"].asn,
