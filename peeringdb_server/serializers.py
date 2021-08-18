@@ -17,7 +17,7 @@ from django_grainy.rest import PermissionDenied
 
 # from drf_toolbox import serializers
 from django_handleref.rest.serializers import HandleRefSerializer
-from django_inet.rest import IPAddressField, IPPrefixField
+from django_inet.rest import IPAddressField, IPNetworkField
 from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -2375,7 +2375,7 @@ class IXLanPrefixSerializer(ModelSerializer):
 
     ixlan = serializers.SerializerMethodField()
 
-    prefix = IPPrefixField(
+    prefix = IPNetworkField(
         validators=[
             validators.UniqueValidator(queryset=IXLanPrefix.objects.all()),
             validate_address_space,
@@ -2437,7 +2437,7 @@ class IXLanPrefixSerializer(ModelSerializer):
 
         # validate prefix against selected protocol
         #
-        # Note: While the IPPrefixField already has this validator set on it
+        # Note: While the IPNetworkField already has this validator set on it
         # there is no good way to set the field's version from the protocol
         # specified in the rest data at this point, so we instead opt to validate
         # it again here.
@@ -2607,7 +2607,7 @@ class InternetExchangeSerializer(ModelSerializer):
     # creation. It will be a required field during `POST` requests
     # but will be ignored during `PUT` so we cannot just do
     # required=True here
-    prefix = IPPrefixField(
+    prefix = IPNetworkField(
         validators=[
             validators.UniqueValidator(
                 queryset=IXLanPrefix.objects.filter(status__in=["ok", "pending"])

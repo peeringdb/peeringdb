@@ -2,55 +2,6 @@
 
 from django.conf import settings
 from django.db import migrations, models
-from django_namespace_perms.constants import PERM_CRUD, PERM_READ
-
-
-def add_permissions(apps, schema_editor):
-    Group = apps.get_model("auth", "Group")
-    Organization = apps.get_model("peeringdb_server", "Organization")
-    GroupPermission = apps.get_model("django_namespace_perms", "GroupPermission")
-
-    guest_group = Group.objects.filter(id=settings.GUEST_GROUP_ID).first()
-    user_group = Group.objects.filter(id=settings.USER_GROUP_ID).first()
-
-    namespace = (
-        "peeringdb.organization.{org}.internetexchange"
-        ".*.ixf_ixp_member_list_url.{visible}"
-    )
-
-    if guest_group:
-        GroupPermission.objects.create(
-            group=guest_group,
-            namespace=namespace.format(org="*", visible="public"),
-            permissions=PERM_READ,
-        )
-
-    if user_group:
-        GroupPermission.objects.create(
-            group=user_group,
-            namespace=namespace.format(org="*", visible="public"),
-            permissions=PERM_READ,
-        )
-
-        GroupPermission.objects.create(
-            group=user_group,
-            namespace=namespace.format(org="*", visible="users"),
-            permissions=PERM_READ,
-        )
-
-    for org in Organization.handleref.all():
-
-        GroupPermission.objects.create(
-            group=Group.objects.get(name=f"org.{org.id}.admin"),
-            namespace=namespace.format(org=org.id, visible="private"),
-            permissions=PERM_CRUD,
-        )
-        GroupPermission.objects.create(
-            group=Group.objects.get(name=f"org.{org.id}"),
-            namespace=namespace.format(org=org.id, visible="private"),
-            permissions=PERM_READ,
-        )
-
 
 class Migration(migrations.Migration):
 
@@ -59,7 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_permissions),
         migrations.AddField(
             model_name="ixlan",
             name="ixf_ixp_member_list_url_visible",
