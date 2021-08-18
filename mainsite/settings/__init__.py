@@ -329,7 +329,9 @@ SITE_ID = 1
 TIME_ZONE = "UTC"
 USE_TZ = True
 
-ADMINS = [("Support", SERVER_EMAIL),]
+ADMINS = [
+    ("Support", SERVER_EMAIL),
+]
 MANAGERS = ADMINS
 
 MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, "media"))
@@ -641,7 +643,7 @@ if API_THROTTLE_ENABLED:
                 "anon": API_THROTTLE_RATE_ANON,
                 "user": API_THROTTLE_RATE_USER,
                 "filter_distance": API_THROTTLE_RATE_FILTER_DISTANCE,
-                "ixf_import_request": API_THROTTLE_IXF_IMPORT
+                "ixf_import_request": API_THROTTLE_IXF_IMPORT,
             },
         }
     )

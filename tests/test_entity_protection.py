@@ -181,6 +181,7 @@ def test_tech_poc_protection(role, deletable):
 
     poc.delete()
 
+
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "role",

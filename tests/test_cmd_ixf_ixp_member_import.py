@@ -43,6 +43,7 @@ def test_reset_hints(entities, data_cmd_ixf_hints):
     assert IXFMemberData.objects.count() == 0
     assert DeskProTicket.objects.filter(body__contains="reset_hints").count() == 1
 
+
 @pytest.mark.django_db
 def test_reset_process_requested(entities):
     ixlan = entities["ixlan"]
@@ -58,7 +59,6 @@ def test_reset_process_requested(entities):
 
     assert ixlan.ix.ixf_import_request_status == "finished"
     assert ixlan.ix.ixf_import_request
-
 
 
 @pytest.mark.django_db
@@ -146,7 +146,6 @@ def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
     assert DeskProTicket.objects.filter(body__contains="reset").count() == 1
     assert IXFMemberData.objects.count() == 0
     assert IXFImportEmail.objects.count() == 0
-
 
 
 @pytest.mark.django_db

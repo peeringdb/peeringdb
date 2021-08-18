@@ -1,6 +1,7 @@
 import pytest
 import pytest_filedata
 
+
 def assert_parsed(data, parsed):
     # dump in json format for easily adding expected
     print(
