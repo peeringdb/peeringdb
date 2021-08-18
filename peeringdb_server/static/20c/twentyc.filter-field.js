@@ -37,7 +37,7 @@ twentyc.jq.plugin(
               target.children(".empty-result").first().show();
 
             target.trigger('filter-done')
-          }
+          };
 
           me.data("filter-callback", callback);
 
@@ -73,7 +73,7 @@ twentyc.jq.plugin(
         var me = $(this);
         var myvalue = new String(me.data("filter-value"))
         var status = (value ? false : true);
-        if(myvalue && myvalue.toLowerCase().indexOf(value) > -1) {
+        if(myvalue.length && myvalue.toLowerCase().indexOf(value) > -1) {
           status = true;
         }
         if(!status) {

@@ -14,7 +14,7 @@ from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.models import Group, GroupPermission
 from django_peeringdb.models.abstract import AddressModel
-from grainy.const import *
+from grainy.const import PERM_CRUD, PERM_READ
 
 import peeringdb_server.settings as pdb_settings
 from peeringdb_server.deskpro import (
@@ -28,17 +28,12 @@ from peeringdb_server.models import (
     QUEUE_ENABLED,
     QUEUE_NOTIFY,
     Facility,
-    InternetExchange,
     Network,
-    NetworkContact,
-    NetworkFacility,
     NetworkIXLan,
     Organization,
     UserOrgAffiliationRequest,
     VerificationQueueItem,
-    is_suggested,
 )
-from peeringdb_server.util import PERM_CRUD
 
 
 def disable_auto_now_and_save(entity):
@@ -170,7 +165,7 @@ def org_save(sender, **kwargs):
 
     # make the general member group for the org
     try:
-        group = Group.objects.get(name=inst.group_name)
+        Group.objects.get(name=inst.group_name)
     except Group.DoesNotExist:
         group = Group(name=inst.group_name)
         group.save()
@@ -194,7 +189,7 @@ def org_save(sender, **kwargs):
 
     # make the admin group for the org
     try:
-        group = Group.objects.get(name=inst.admin_group_name)
+        Group.objects.get(name=inst.admin_group_name)
     except Group.DoesNotExist:
         group = Group(name=inst.admin_group_name)
         group.save()
@@ -335,8 +330,8 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                 # Lookup RDAP information
                 try:
                     rdap_lookup = rdap = RdapLookup().get_asn(instance.asn)
-                    ok = rdap_lookup.emails
-                except RdapException as inst:
+                    rdap_lookup.emails
+                except RdapException:
                     instance.deny()
                     raise
 

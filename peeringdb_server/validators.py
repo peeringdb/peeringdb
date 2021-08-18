@@ -38,7 +38,7 @@ def validate_phonenumber(phonenumber, country=None):
             parsed_number, phonenumbers.PhoneNumberFormat.E164
         )
         return f"{validated_number}"
-    except phonenumbers.phonenumberutil.NumberParseException as exc:
+    except phonenumbers.phonenumberutil.NumberParseException:
         raise ValidationError(_("Not a valid phone number (E.164)"))
 
 
@@ -83,7 +83,7 @@ def validate_prefix(prefix):
     if isinstance(prefix, str):
         try:
             prefix = ipaddress.ip_network(prefix)
-        except ValueError as exc:
+        except ValueError:
             raise ValidationError(_("Invalid prefix: {}").format(prefix))
     return prefix
 
@@ -267,7 +267,6 @@ def validate_irr_as_set(value):
             )
 
         set_found = False
-        typ = None
         types = []
 
         for part in as_parts:

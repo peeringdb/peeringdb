@@ -8,11 +8,10 @@ from django.conf import settings as dj_settings
 from django.contrib.auth import forms as auth_forms
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from grainy.const import *
+from grainy.const import PERM_CRUD, PERM_DENY, PERM_READ
 
 from peeringdb_server.inet import get_client_ip
-from peeringdb_server.models import Organization, OrganizationAPIKey, User
-from peeringdb_server.util import PERM_CRUD
+from peeringdb_server.models import Organization, User
 
 
 class OrganizationAPIKeyForm(forms.Form):
@@ -109,6 +108,8 @@ class UserCreationForm(auth_forms.UserCreationForm):
     captcha = forms.CharField(required=False)
     captcha_generator = CaptchaField(required=False)
 
+    require_captcha = True
+
     class Meta:
         model = User
         fields = (
@@ -123,7 +124,9 @@ class UserCreationForm(auth_forms.UserCreationForm):
         recaptcha = self.cleaned_data.get("recaptcha", "")
         captcha = self.cleaned_data.get("captcha", "")
 
-        if not recaptcha and not captcha:
+        if not self.require_captcha:
+            return
+        elif not recaptcha and not captcha:
             raise forms.ValidationError(
                 _("Please fill out the anti-spam challenge (captcha) field")
             )

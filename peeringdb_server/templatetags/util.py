@@ -8,7 +8,7 @@ from django import template
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django_countries import countries
-from django_namespace_perms.util import get_permission_flag
+from django_grainy.helpers import int_flags
 
 from peeringdb_server.inet import RdapException
 from peeringdb_server.models import (
@@ -57,7 +57,7 @@ def org_permission_id_xl(org, id):
 
 @register.filter
 def check_perms(v, op):
-    flg = get_permission_flag(op)
+    flg = int_flags(op)
     return v & flg == flg
 
 
@@ -84,7 +84,7 @@ def ownership_warning(org, user):
                 if user.validate_rdap_relationship(rdap):
                     b = True
                     break
-            except RdapException as exc:
+            except RdapException:
                 # we don't need to do anything with the rdap exception here, as it will
                 # be raised apropriately when the request is sent off
                 pass

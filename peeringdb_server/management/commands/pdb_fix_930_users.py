@@ -1,5 +1,3 @@
-from django.core.management.base import BaseCommand
-
 from peeringdb_server.management.commands.pdb_base_command import PeeringDBBaseCommand
 from peeringdb_server.models import User
 

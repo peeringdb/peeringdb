@@ -183,6 +183,39 @@ def test_tech_poc_protection(role, deletable):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role",
+    [
+        "Technical",
+        "Policy",
+        "NOC",
+        "Abuse",
+        "Maintenance",
+        "Public Relations",
+        "Sales",
+    ],
+)
+def test_tech_poc_hard_delete_1013(role):
+    """
+    Test that already soft-deleted pocs dont raise
+    a protected action error when hard-deleting (#1013)
+    """
+
+    call_command("pdb_generate_test_data", limit=2, commit=True)
+
+    net = Network.objects.first()
+
+    net.poc_set.all().delete()
+
+    poc_a = NetworkContact.objects.create(status="ok", role="Technical", network=net)
+    poc_b = NetworkContact.objects.create(status="deleted", role=role, network=net)
+    poc_b.delete(hard=True)
+
+    poc_a.delete(force=True)
+    poc_a.delete(hard=True)
+
+
+@pytest.mark.django_db
 def test_org_protection_sponsor(db):
 
     """

@@ -36,7 +36,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        versions = Version.objects.all()
         ref_tag = options.get("reftag")
 
         ids = [int(i) for i in options.get("id")]

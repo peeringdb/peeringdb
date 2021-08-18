@@ -490,7 +490,7 @@ class BaseSchema(AutoSchema):
         Augment openapi schema for object creation
         """
 
-        parameters = op_dict.get("parameters")
+        op_dict.get("parameters")
         serializer, model = self.get_classes(*op_args)
 
         if not model:
@@ -559,7 +559,7 @@ class BaseSchema(AutoSchema):
         """
         Augment openapi schema for update operation
         """
-        parameters = op_dict.get("parameters")
+        op_dict.get("parameters")
         serializer, model = self.get_classes(*op_args)
 
         if not model:
@@ -573,7 +573,7 @@ class BaseSchema(AutoSchema):
         """
         Augment openapi schema for delete operation
         """
-        parameters = op_dict.get("parameters")
+        op_dict.get("parameters")
         serializer, model = self.get_classes(*op_args)
 
         if not model:

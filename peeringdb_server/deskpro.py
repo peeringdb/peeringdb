@@ -224,7 +224,12 @@ class APIClient:
         return {"Authorization": f"key {self.key}"}
 
     def parse_response(self, response, many=False):
-        r_json = response.json()
+        try:
+            r_json = response.json()
+        except Exception:
+            print(response.content)
+            raise
+
         if "status" in r_json:
             if r_json["status"] >= 400:
                 raise APIError(r_json["message"], r_json)
@@ -249,6 +254,14 @@ class APIClient:
         response = requests.post(
             f"{self.url}/{endpoint}", json=param, headers=self.auth_headers
         )
+        return self.parse_response(response)
+
+    def update(self, endpoint, param):
+        response = requests.put(
+            f"{self.url}/{endpoint}", json=param, headers=self.auth_headers
+        )
+        if response.status_code == 204:
+            return {}
         return self.parse_response(response)
 
     def require_person(self, email, user=None):
@@ -326,6 +339,10 @@ class APIClient:
             ticket.deskpro_ref = ticket_response["ref"]
             ticket.deskpro_id = ticket_response["id"]
 
+        else:
+
+            self.reopen_ticket(ticket)
+
         self.create(
             f"tickets/{ticket.deskpro_id}/messages",
             {
@@ -334,6 +351,28 @@ class APIClient:
                 "format": "html",
             },
         )
+
+    def reopen_ticket(self, ticket):
+
+        """
+        For existing tickets we want to check their current status
+        on deskpro's side.
+
+        If the ticket has already been resolved we need to set it
+        back to awaiting_agent before posting a new message to
+        it (see #920)
+        """
+
+        if not ticket.deskpro_id:
+            return
+
+        endpoint = f"tickets/{ticket.deskpro_id}"
+        ticket_data = self.get(endpoint, param={})
+
+        if ticket_data and ticket_data.get("ticket_status") == "resolved":
+            print("ticket resolved already")
+            self.update(endpoint, {"status": "awaiting_agent"})
+            print("Re-opened ticket (set to awaiting_agent)", ticket.deskpro_id)
 
 
 class MockAPIClient(APIClient):
@@ -346,6 +385,7 @@ class MockAPIClient(APIClient):
     """
 
     def __init__(self, *args, **kwargs):
+        super().__init__("", "")
         self.ticket_count = 0
 
     def get(self, endpoint, param):
@@ -374,6 +414,7 @@ class FailingMockAPIClient(MockAPIClient):
     """
 
     def __init__(self, *args, **kwargs):
+        super().__init__("", "")
         self.ticket_count = 0
 
     def get(self, endpoint, param):

@@ -1,4 +1,3 @@
-import datetime
 import ipaddress
 import uuid
 
@@ -281,6 +280,15 @@ class Mock:
         return 0
 
     def ixf_last_import(self, data, reftag=None):
+        return None
+
+    def ixf_import_request(self, data, reftag=None):
+        return None
+
+    def ixf_import_request_status(self, data, reftag=None):
+        return "queued"
+
+    def ixf_import_request_user(self, data, reftag=None):
         return None
 
     def ix_count(self, data, reftag=None):

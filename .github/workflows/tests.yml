@@ -39,7 +39,7 @@ jobs:
       - name: Run linters
         run: |
           source .venv/bin/activate
-          # flake8 .
+          # flake8 peeringdb_server
           black . --check
           isort .
 

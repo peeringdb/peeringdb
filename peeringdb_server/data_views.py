@@ -4,7 +4,6 @@ This holds JSON views for various data sets,
 Mostly these are needed for filling form-selects for editable
 mode
 """
-import datetime
 
 import django_countries
 import django_peeringdb.const as const
@@ -231,7 +230,7 @@ def organizations(request):
 def languages(request):
     from django.conf import settings
 
-    cur_language = translation.get_language()
+    translation.get_language()
     return JsonResponse(
         {"locales": [{"id": id, "name": _(name)} for (id, name) in settings.LANGUAGES]}
     )

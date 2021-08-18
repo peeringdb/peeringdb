@@ -43,7 +43,7 @@ class AutocompleteHTMLResponse(autocomplete.Select2QuerySetView):
         return False
 
     def render_to_response(self, context):
-        q = self.request.GET.get("q", None)
+        self.request.GET.get("q", None)
         return http.HttpResponse(
             "".join([i.get("text") for i in self.get_results(context)]),
             content_type="text/html",

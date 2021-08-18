@@ -5,10 +5,10 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.http import HttpResponse, JsonResponse
 from django.utils.translation import ugettext_lazy as _
-from ratelimit.decorators import is_ratelimited, ratelimit
+from ratelimit.decorators import ratelimit
 
 from peeringdb_server import ixf
-from peeringdb_server.models import IXLan, Network, NetworkIXLan
+from peeringdb_server.models import IXLan, Network
 from peeringdb_server.util import check_permissions
 
 RATELIMITS = settings.RATELIMITS
@@ -104,7 +104,7 @@ def view_import_net_ixf_postmortem(request, net_id):
 
     try:
         limit = int(request.GET.get("limit", 25))
-    except:
+    except Exception:
         limit = 25
 
     errors = []
@@ -152,10 +152,10 @@ def view_import_net_ixf_preview(request, net_id):
     for ixlan in net.ixlan_set_ixf_enabled:
         importer = ixf.Importer()
         importer.cache_only = True
-        success = importer.update(ixlan, asn=net.asn, save=False)
+        importer.update(ixlan, asn=net.asn, save=False)
 
         # strip suggestions
-        log_data = [i for i in importer.log["data"] if not "suggest-" in i["action"]]
+        log_data = [i for i in importer.log["data"] if "suggest-" not in i["action"]]
 
         total_log["data"].extend(log_data)
         total_log["errors"].extend(

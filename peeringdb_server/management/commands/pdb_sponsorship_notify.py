@@ -19,6 +19,6 @@ class Command(BaseCommand):
                 sponsorship.notify_date is None
                 or sponsorship.notify_date < sponsorship.end_date
             ):
-                b = sponsorship.notify_expiration()
+                sponsorship.notify_expiration()
                 # if b:
                 #    self.log("Sent expiration notices for %s, expired on %s" % (sponsorship.org.name, sponsorship.end_date))

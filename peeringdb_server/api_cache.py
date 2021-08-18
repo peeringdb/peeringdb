@@ -1,10 +1,7 @@
-import collections
 import json
 import os
 
 from django.conf import settings
-
-from peeringdb_server.models import InternetExchange, IXLan, Network
 
 
 class CacheRedirect(Exception):
@@ -16,7 +13,7 @@ class CacheRedirect(Exception):
     """
 
     def __init__(self, loader):
-        super(Exception, self).__init__(self, "Result to be loaded from cache")
+        super().__init__(self, "Result to be loaded from cache")
         self.loader = loader
 
 

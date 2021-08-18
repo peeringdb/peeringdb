@@ -191,7 +191,6 @@ def try_include(filename):
 
     except FileNotFoundError:
         print_debug(f"additional settings file '{filename}' was not found, skipping")
-        pass
 
 
 def read_file(name):
@@ -256,6 +255,7 @@ API_THROTTLE_ENABLED = True
 set_option("API_THROTTLE_RATE_ANON", "100/second")
 set_option("API_THROTTLE_RATE_USER", "100/second")
 set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
+set_option("API_THROTTLE_IXF_IMPORT", "1/minute")
 
 # spatial queries require user auth
 set_option("API_DISTANCE_FILTER_REQUIRE_AUTH", True)
@@ -329,7 +329,9 @@ SITE_ID = 1
 TIME_ZONE = "UTC"
 USE_TZ = True
 
-ADMINS = ("Support", SERVER_EMAIL)
+ADMINS = [
+    ("Support", SERVER_EMAIL),
+]
 MANAGERS = ADMINS
 
 MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, "media"))
@@ -436,7 +438,6 @@ INSTALLED_APPS = [
     "crispy_forms",
     "django_countries",
     "django_inet",
-    "django_namespace_perms",
     "django_grainy",
     "django_peeringdb",
     "django_tables2",
@@ -517,6 +518,13 @@ PASSWORD_HASHERS = (
 
 ROOT_URLCONF = "mainsite.urls"
 CONN_MAX_AGE = 3600
+
+# starting with reversion 4.0 the reversion revision context
+# no longer opens an atomic transaction context, so we need
+# to ensure this ourselves for all the requests
+ATOMIC_REQUESTS = True
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 
 # email vars should be already set from the release environment file
@@ -635,6 +643,7 @@ if API_THROTTLE_ENABLED:
                 "anon": API_THROTTLE_RATE_ANON,
                 "user": API_THROTTLE_RATE_USER,
                 "filter_distance": API_THROTTLE_RATE_FILTER_DISTANCE,
+                "ixf_import_request": API_THROTTLE_IXF_IMPORT,
             },
         }
     )
