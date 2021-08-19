@@ -226,6 +226,9 @@ MIGRATION_MODULES = {"django_peeringdb": None}
 # Contact email, from address, support email
 set_from_env("SERVER_EMAIL")
 
+# Error emails are dispatched to this address
+set_option("OPERATIONS_EMAIL", SERVER_EMAIL)
+
 set_from_env("SECRET_KEY")
 
 # database
@@ -330,7 +333,7 @@ TIME_ZONE = "UTC"
 USE_TZ = True
 
 ADMINS = [
-    ("Support", SERVER_EMAIL),
+    ("Operations", OPERATIONS_EMAIL),
 ]
 MANAGERS = ADMINS
 
@@ -864,7 +867,6 @@ if DEBUG:
     # make all loggers use the console.
     for logger in LOGGING["loggers"]:
         LOGGING["loggers"][logger]["handlers"] = ["console"]
-
 
 if TUTORIAL_MODE:
     EMAIL_SUBJECT_PREFIX = "[PDB TUTORIAL] "
