@@ -2488,14 +2488,17 @@ class IXLan(pdb_models.IXLanBase):
             # we need to check if this ipaddress exists on a
             # soft-deleted netixlan elsewhere, and
             # reset if so.
+            #
+            # we only do this if ipaddr4 is not null
 
-            for other in NetworkIXLan.objects.filter(
-                ipaddr4=ipv4, status="deleted"
-            ).exclude(asn=asn):
-                other.ipaddr4 = None
-                other.notes = f"Ip address {ipv4} was claimed by other netixlan"
-                if save or save_others:
-                    other.save()
+            if ipv4:
+                for other in NetworkIXLan.objects.filter(
+                    ipaddr4=ipv4, status="deleted"
+                ).exclude(asn=asn):
+                    other.ipaddr4 = None
+                    other.notes = f"Ip address {ipv4} was claimed by other netixlan"
+                    if save or save_others:
+                        other.save()
 
             netixlan.ipaddr4 = ipv4
             changed.append("ipaddr4")
@@ -2506,14 +2509,18 @@ class IXLan(pdb_models.IXLanBase):
             # we need to check if this ipaddress exists on a
             # soft-deleted netixlan elsewhere, and
             # reset if so.
+            #
+            # we only do this if ipaddr6 is not None
 
-            for other in NetworkIXLan.objects.filter(
-                ipaddr6=ipv6, status="deleted"
-            ).exclude(asn=asn):
-                other.ipaddr6 = None
-                other.notes = f"Ip address {ipv6} was claimed by other netixlan"
-                if save or save_others:
-                    other.save()
+            if ipv6:
+
+                for other in NetworkIXLan.objects.filter(
+                    ipaddr6=ipv6, status="deleted"
+                ).exclude(asn=asn):
+                    other.ipaddr6 = None
+                    other.notes = f"Ip address {ipv6} was claimed by other netixlan"
+                    if save or save_others:
+                        other.save()
 
             netixlan.ipaddr6 = ipv6
             changed.append("ipaddr6")
