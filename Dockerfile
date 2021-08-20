@@ -15,6 +15,7 @@ FROM base as builder
 # rust and cargo for cryptography package
 RUN apk --update --no-cache add \
   g++ \
+  freetype-dev \
   libjpeg-turbo-dev \
   linux-headers \
   make \
@@ -48,7 +49,7 @@ ARG uid=996
 ARG ADD_SETTINGS_FILE=mainsite/settings/dev.py
 
 # add dependencies
-RUN apk add gettext libjpeg-turbo mariadb-connector-c
+RUN apk add --no-cache freetype gettext libjpeg-turbo mariadb-connector-c
 
 RUN adduser -Du $uid pdb
 
