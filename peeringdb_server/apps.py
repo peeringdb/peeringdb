@@ -7,4 +7,5 @@ class PeeringDBServerAppConfig(AppConfig):
     default_auto_field = "django.db.models.AutoField"
 
     def ready(self):
-        import peeringdb_server.signals
+        # do not remove this
+        import peeringdb_server.signals # noqa
