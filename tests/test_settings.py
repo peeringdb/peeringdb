@@ -8,7 +8,6 @@ from django.test import TestCase
 from mainsite.settings import _set_bool, _set_option
 from peeringdb_server import models, serializers
 from peeringdb_server import settings as pdb_settings
-from peeringdb_server import signals
 
 from .util import SettingsCase
 
