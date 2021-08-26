@@ -6,6 +6,13 @@ from django_grainy.util import Permissions, check_permissions, get_permissions  
 from grainy.core import NamespaceKeyApplicator
 
 
+def disable_auto_now_and_save(entity):
+    updated_field = entity._meta.get_field("updated")
+    updated_field.auto_now = False
+    entity.save()
+    updated_field.auto_now = True
+
+
 def round_decimal(value, places):
     if value is not None:
         return value.quantize(Decimal(10) ** -places)
