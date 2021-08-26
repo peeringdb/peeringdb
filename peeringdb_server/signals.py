@@ -35,12 +35,7 @@ from peeringdb_server.models import (
     VerificationQueueItem,
 )
 
-
-def disable_auto_now_and_save(entity):
-    updated_field = entity._meta.get_field("updated")
-    updated_field.auto_now = False
-    entity.save()
-    updated_field.auto_now = True
+from peeringdb_server.util import disable_auto_now_and_save
 
 
 def update_network_attribute(instance, attribute):

@@ -4,10 +4,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import migrations
 from django.db.models import Count
 
-from peeringdb_server.signals import disable_auto_now_and_save
-
 
 def populate_network_counts(apps, schema_editor):
+    from peeringdb_server.util import disable_auto_now_and_save
+
     Network = apps.get_model("peeringdb_server", "Network")
     NetworkIXLan = apps.get_model("peeringdb_server", "NetworkIXLan")
     NetworkFacility = apps.get_model("peeringdb_server", "NetworkFacility")
@@ -40,6 +40,8 @@ def populate_network_counts(apps, schema_editor):
 
 
 def populate_ix_counts(apps, schema_editor):
+    from peeringdb_server.util import disable_auto_now_and_save
+
     InternetExchange = apps.get_model("peeringdb_server", "InternetExchange")
     NetworkIXLan = apps.get_model("peeringdb_server", "NetworkIXLan")
     InternetExchangeFacility = apps.get_model(
@@ -74,6 +76,8 @@ def populate_ix_counts(apps, schema_editor):
 
 
 def populate_facility_counts(apps, schema_editor):
+    from peeringdb_server.util import disable_auto_now_and_save
+
     Facility = apps.get_model("peeringdb_server", "Facility")
     print("Populating Facility net_count and ix_count values")
     NetworkFacility = apps.get_model("peeringdb_server", "NetworkFacility")

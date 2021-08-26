@@ -8,7 +8,7 @@ from django.test import TestCase
 from mainsite.settings import _set_bool, _set_option
 from peeringdb_server import models, serializers
 from peeringdb_server import settings as pdb_settings
-from peeringdb_server import signals
+from allauth.account.signals import email_confirmed, user_signed_up
 
 from .util import SettingsCase
 
@@ -20,7 +20,7 @@ class TestAutoVerifyUser(SettingsCase):
         user = get_user_model().objects.create_user(
             "user_a", "user_a@localhost", "user_a"
         )
-        signals.new_user_to_guests(None, user)
+        user_signed_up.send(sender=None, request=None, user=user)
         assert user.is_verified_user == True
         assert user.status == "ok"
 
