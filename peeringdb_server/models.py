@@ -46,6 +46,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes6,
     validate_irr_as_set,
     validate_phonenumber,
+    validate_poc_visible,
     validate_prefix_overlap,
 )
 
@@ -4342,6 +4343,7 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
 
     def clean(self):
         self.phone = validate_phonenumber(self.phone)
+        self.visible = validate_poc_visible(self.visible)
 
 
 @grainy_model(namespace="netfac", parent="network")

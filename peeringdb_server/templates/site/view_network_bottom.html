@@ -89,8 +89,12 @@
                       data-edit-name="name">
                     {{ p.name }}
                  </div>
+
+                 <!-- this should be switched to poc_visibility once all private pocs have been removed/changed -->
+
                  <div class="visible"
-                      data-edit-type="select"
+                      data-edit-type="data_quality_select"
+                      data-edit-bad-values="Private"
                       data-edit-toggled={% if permissions.can_write %}"edit"{% else %}"never"{% endif %}
                       data-edit-value="{{ p.visible }}"
                       data-edit-data="enum/visibility"
@@ -173,7 +177,7 @@
             <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Visibility" %}</div>
             <div class="view_value col-xs-8 col-sm-7 col-md-8">
               <div data-edit-type="select"
-                   data-edit-data="enum/visibility"
+                   data-edit-data="enum/poc_visibility"
                    data-edit-value="Users"
                    data-edit-name="visible">
               </div>

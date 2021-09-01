@@ -9,10 +9,10 @@ from django.db import transaction
 from peeringdb_server import ixf
 from peeringdb_server.models import (
     DeskProTicket,
+    InternetExchange,
     IXFImportEmail,
     IXFMemberData,
     IXLan,
-    InternetExchange,
     Network,
 )
 
