@@ -34,7 +34,6 @@ from peeringdb_server.models import (
     UserOrgAffiliationRequest,
     VerificationQueueItem,
 )
-
 from peeringdb_server.util import disable_auto_now_and_save
 
 

@@ -1062,7 +1062,12 @@ twentyc.editable.input.register(
         if(id == value)
           opt.prop("selected", true);
       }
+      this.finalize_opt(opt)
       this.element.append(opt);
+    },
+
+    finalize_opt : function(opt) {
+      return opt;
     },
 
     load : function(data) {

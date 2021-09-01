@@ -986,6 +986,12 @@ div.editable.mode-edit div.view_field {
   border-color: #9e1e1e;
 }
 
+
+.editable select.invalid-choice,
+.editable select option.invalid-choice {
+  color: #9e1e1e !important;
+}
+
 .input-note.validation-error + div[data-field] {
   border: #9e1e1e 1px solid;
   border-radius: 5px;

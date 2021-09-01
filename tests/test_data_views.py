@@ -29,6 +29,7 @@ from peeringdb_server.models import (
         "POLICY_CONTRACTS",
         "REGIONS",
         "POC_ROLES",
+        "POC_VISIBILITY",
         "MEDIA",
         "PROTOCOLS",
         "ORG_GROUPS",

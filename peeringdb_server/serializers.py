@@ -59,6 +59,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes6,
     validate_irr_as_set,
     validate_phonenumber,
+    validate_poc_visible,
     validate_prefix_overlap,
     validate_zipcode,
 )
@@ -1744,6 +1745,9 @@ class NetworkContactSerializer(ModelSerializer):
 
     def validate_phone(self, value):
         return validate_phonenumber(value)
+
+    def validate_visible(self, value):
+        return validate_poc_visible(value)
 
     def to_representation(self, data):
         # When a network contact is marked as deleted we

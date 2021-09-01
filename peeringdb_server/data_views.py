@@ -58,6 +58,7 @@ const.TERMS_TYPES_ADVS[0] = (
 const.ORG_GROUPS = (("member", "member"), ("admin", "admin"))
 
 const.POC_ROLES = sorted(const.POC_ROLES, key=lambda x: x[1])
+const.POC_VISIBILITY = [r for r in const.VISIBILITY if r[0] != "Private"]
 
 BOOL_CHOICE = ((False, _("No")), (True, _("Yes")))
 const.BOOL_CHOICE_STR = (("False", _("No")), ("True", _("Yes")))
@@ -149,6 +150,7 @@ def enum(request, name):
         "ORG_GROUPS",
         "BOOL_CHOICE_STR",
         "VISIBILITY",
+        "POC_VISIBILITY",
         "SERVICE_LEVEL_TYPES_TRUNC",
         "TERMS_TYPES_TRUNC",
         "SERVICE_LEVEL_TYPES_ADVS",
