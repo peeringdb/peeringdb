@@ -7,4 +7,7 @@ class PeeringDBServerAppConfig(AppConfig):
     default_auto_field = "django.db.models.AutoField"
 
     def ready(self):
-        pass
+        # do not remove this, its the only place signals.py
+        # gets imported, and removing it will break things
+        # like verification queue and org usergroup creation
+        import peeringdb_server.signals  # noqa

@@ -3,10 +3,10 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import migrations
 
-from peeringdb_server.signals import disable_auto_now_and_save
-
 
 def populate_last_updated_fields(apps, schema_editor):
+    from peeringdb_server.util import disable_auto_now_and_save
+
     Network = apps.get_model("peeringdb_server", "Network")
 
     print("This migration may take a few minutes ...")

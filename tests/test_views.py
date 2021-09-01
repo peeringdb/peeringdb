@@ -1,3 +1,4 @@
+import re
 import pytest
 from django.test import Client
 from rest_framework.test import APIClient
@@ -132,4 +133,20 @@ def test_adv_search_init():
     client.login(username="test", password="test1234")
 
     response = client.get("/advanced_search")
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_signup_page():
+    client = Client()
+
+    # test page load
+    response = client.get("/register")
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+
+    # test fallback captcha load
+    m = re.search("\/captcha\/image\/([^\/]+)\/", content)
+    assert m
+    response = client.get(m[0])
     assert response.status_code == 200
