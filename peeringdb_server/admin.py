@@ -1173,6 +1173,12 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "tech_phone",
         "sales_email",
         "sales_phone",
+        "property",
+        "diverse_serving_substations",
+        # django-admin doesnt seem to support multichoicefield automatically
+        # admins can edit this through the user-facing UX for now
+        # TODO: revisit enabling this field in django admin if AC communicates the need
+        #"available_voltage_services",
         "notes",
         "geocode_status",
         "geocode_date",

@@ -290,6 +290,9 @@ class TestJSON(unittest.TestCase):
             "tech_phone": PHONE,
             "sales_email": EMAIL,
             "sales_phone": PHONE,
+            "diverse_serving_substations": True,
+            "available_voltage_services": ["48 VDC", "240 VAC"],
+            "property": "Owner",
         }
         data.update(**kwargs)
         return data
@@ -1396,6 +1399,35 @@ class TestJSON(unittest.TestCase):
 
         # But rencode should be null
         assert r_data_new["rencode"] == ""
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_PUT_fac_available_voltage(self):
+
+        data = self.make_data_fac()
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "fac",
+            data,
+            test_failures={
+                "invalid": [
+                    {"available_voltage_services": ["Invalid"]},
+                ],
+            },
+        )
+
+        SHARED["fac_id"] = r_data.get("id")
+
+        self.assert_update(
+            self.db_org_admin,
+            "fac",
+            SHARED["fac_id"],
+            {"available_voltage_services": ["480 VAC"]},
+            test_failures={
+                "invalid": {"available_voltage_services": ["Invalid"]},
+            },
+        )
 
     ##########################################################################
 

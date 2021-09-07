@@ -19,6 +19,7 @@ from django_grainy.rest import PermissionDenied
 from django_handleref.rest.serializers import HandleRefSerializer
 from django_inet.rest import IPAddressField, IPNetworkField
 from django_peeringdb.models.abstract import AddressModel
+from django_peeringdb.const import AVAILABLE_VOLTAGE
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 
@@ -1434,6 +1435,10 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
     latitude = serializers.FloatField(read_only=True)
     longitude = serializers.FloatField(read_only=True)
 
+    available_voltage_services = serializers.MultipleChoiceField(
+        choices=AVAILABLE_VOLTAGE, required=False, allow_null=True
+    )
+
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
@@ -1465,6 +1470,9 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
                 "sales_phone",
                 "tech_email",
                 "tech_phone",
+                "available_voltage_services",
+                "diverse_serving_substations",
+                "property",
             ]
             + HandleRefSerializer.Meta.fields
             + AddressSerializer.Meta.fields
@@ -1597,6 +1605,28 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
 
         return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+
+        representation = super().to_representation(instance)
+
+        if not isinstance(representation, dict):
+            return representation
+
+        # django-rest-framework multiplechoicefield maintains
+        # a set of values and thus looses sorting.
+        #
+        # we always want to return values sorted by choice
+        # definition order
+        if instance.available_voltage_services:
+            avs = []
+            for choice, label in AVAILABLE_VOLTAGE:
+                if choice in instance.available_voltage_services:
+                    avs.append(choice)
+
+            representation["available_voltage_services"] = avs
+
+        return representation
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
