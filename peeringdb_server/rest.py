@@ -368,7 +368,8 @@ class ModelViewSet(viewsets.ModelViewSet):
             if k == "ipaddr6":
                 v = coerce_ipaddr(v)
 
-            if k[-3:] == "_id" and k not in field_names:
+            if re.match("^.+[^_]_id$", k) and k not in field_names:
+                # if k[-3:] == "_id" and k not in field_names:
                 k = k[:-3]
 
             xl = self.serializer_class.queryable_field_xl
@@ -385,7 +386,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             if m:
                 flt = xl(m.group(1))
                 k = k.replace(m.group(1), flt, 1)
-                if flt[-3:] == "_id" and flt not in field_names:
+                if re.match("^.+[^_]_id$", flt) and flt not in field_names:
                     flt = flt[:-3]
             else:
                 k = xl(k)

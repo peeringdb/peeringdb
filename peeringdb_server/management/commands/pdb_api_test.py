@@ -2479,6 +2479,22 @@ class TestJSON(unittest.TestCase):
         for row in data:
             self.assertEqual(row.get("net_id"), SHARED["net_r_ok"].id)
 
+        # also test __id filter (bug issue #1032)
+
+        data = self.db_user.all("poc", net__id=SHARED["net_r_ok"].id)
+        self.assertEqual(len(data), 2)
+
+        for row in data:
+            self.assertEqual(row.get("net_id"), SHARED["net_r_ok"].id)
+
+        # also test __id__in filter (bug issue #1032)
+
+        data = self.db_user.all("poc", net__id__in=SHARED["net_r_ok"].id)
+        self.assertEqual(len(data), 2)
+
+        for row in data:
+            self.assertEqual(row.get("net_id"), SHARED["net_r_ok"].id)
+
     ##########################################################################
 
     def test_guest_005_list_poc(self):
