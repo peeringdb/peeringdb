@@ -282,20 +282,43 @@ def queryable_field_xl(fld):
     care of translating fac and net queries into "facility"
     and "network" queries
 
-    FIXME: should be renamed on models, but this will open
-    a pandora's box im not ready to open yet
+    FIXME: should be renamed on model schema
     """
 
-    if re.match(".+_id", fld):
+    if re.match("^.+[^_]_id$", fld):
+
+        # if field name is {rel}_id strip the `_id` suffix
+
         fld = fld[:-3]
+
     if fld == "fac":
+
+        # if field name is `fac` rename to `facility`
+        # since the model relationship field is called `facility`
+
         return "facility"
+
     elif fld == "net":
+
+        # if field name is `net` rename to `network`
+        # since the model relationship field is called `network`
+
         return "network"
+
     elif re.match("net_(.+)", fld):
+
+        # if field name starts with `net_` rename to `network_`
+        # since the model relationship field is called `network`
+
         return re.sub("^net_", "network_", fld)
-    elif re.match("fac(.+)", fld):
+
+    elif re.match("fac_(.+)", fld):
+
+        # if field name starts with `fac_` rename to `facility_`
+        # since the model relationship field is called `facility`
+
         return re.sub("^fac_", "facility_", fld)
+
     return fld
 
 
