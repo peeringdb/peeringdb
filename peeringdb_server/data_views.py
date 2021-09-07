@@ -63,6 +63,17 @@ const.POC_VISIBILITY = [r for r in const.VISIBILITY if r[0] != "Private"]
 BOOL_CHOICE = ((False, _("No")), (True, _("Yes")))
 const.BOOL_CHOICE_STR = (("False", _("No")), ("True", _("Yes")))
 
+BOOL_CHOICE_WITH_OPT_OUT = (
+    (None, _("Not Disclosed")),
+    (False, _("No")),
+    (True, _("Yes")),
+)
+const.BOOL_CHOICE_WITH_OPT_OUT_STR = (
+    ("", _("Not Disclosed")),
+    ("False", _("No")),
+    ("True", _("Yes")),
+)
+
 
 def countries_w_blank(request):
     """
@@ -149,12 +160,15 @@ def enum(request, name):
         "PROTOCOLS",
         "ORG_GROUPS",
         "BOOL_CHOICE_STR",
+        "BOOL_CHOICE_WITH_OPT_OUT_STR",
         "VISIBILITY",
         "POC_VISIBILITY",
         "SERVICE_LEVEL_TYPES_TRUNC",
         "TERMS_TYPES_TRUNC",
         "SERVICE_LEVEL_TYPES_ADVS",
         "TERMS_TYPES_ADVS",
+        "PROPERTY",
+        "AVAILABLE_VOLTAGE",
     ]:
         raise Exception("Unknown enum")
 

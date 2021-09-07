@@ -162,10 +162,17 @@
           <div class="view_value col-xs-8 col-sm-7 col-md-8"
               {% if not row.readonly and permissions.can_write %}
               data-edit-type="select"
+              {%   if row.multiple %}
+              data-edit-multiple="yes"
+              {%   endif %}
               {% endif %}
               data-edit-name="{{ row.name }}"
               data-edit-data="{{ row.data }}"
+              {% if row.multiple and row.value %}
+              data-edit-value="{{ row.value|editable_list_join }}">{{ row|editable_list_value }}</div>
+              {% else %}
               data-edit-value="{{ row.value }}">{{ row|editable_list_value }}</div>
+              {% endif %}
 
         {% elif row.type == "flags" %}
           <div class="view_value flags col-xs-8 col-sm-7 col-md-8">

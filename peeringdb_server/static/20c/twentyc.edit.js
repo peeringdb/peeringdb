@@ -1042,7 +1042,12 @@ twentyc.editable.input.register(
     },
 
     value_to_label : function() {
-      return this.element.children('option:selected').text();
+      return $.map(
+        this.element.children('option:selected'),
+        function(element) {
+          return $(element).text()
+        }
+      ).join(', ')
     },
 
     apply : function(value) {

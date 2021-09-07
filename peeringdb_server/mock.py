@@ -302,3 +302,12 @@ class Mock:
 
     def role(self, data, reftag=None):
         return "Abuse"
+
+    def diverse_serving_substations(self, data, reftag=None):
+        return False
+
+    def available_voltage_services(self, data, reftag=None):
+        return None
+
+    def property(self, data, reftag=None):
+        return None
