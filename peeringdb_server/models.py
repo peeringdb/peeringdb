@@ -4437,11 +4437,14 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
 
 def format_speed(value):
     if value >= 1000000:
-        return "%dT" % (value / 10 ** 6)
+        value = value / 10 ** 6
+        if not value % 1:
+            return f"{value:.0f}T"
+        return f"{value:.1f}T"
     elif value >= 1000:
-        return "%dG" % (value / 10 ** 3)
+        return f"{value / 10 ** 3:.0f}G"
     else:
-        return "%dM" % value
+        return f"{value:.0f}M"
 
 
 @grainy_model(namespace="ixlan", parent="network")

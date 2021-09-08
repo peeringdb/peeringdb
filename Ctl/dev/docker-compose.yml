@@ -46,6 +46,7 @@ services:
       - ../../peeringdb_server:/srv/www.peeringdb.com/peeringdb_server:Z
       - ../../mainsite:/srv/www.peeringdb.com/mainsite:Z
       - ../../tests:/srv/www.peeringdb.com/tests:Z
+#      - ../../../django-peeringdb/src/django_peeringdb:/srv/www.peeringdb.com/venv/lib/python3.9/site-packages/django_peeringdb:Z
 #      - ../../search-data:/srv/www.peeringdb.com/search-data
 
 volumes:
