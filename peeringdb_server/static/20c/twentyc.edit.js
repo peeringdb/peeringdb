@@ -1081,9 +1081,13 @@ twentyc.editable.input.register(
       if(this.source.data("edit-data-all-entry")) {
         var allEntry = this.source.data("edit-data-all-entry").split(":")
         this.add_opt(allEntry[0], allEntry[1]);
+      } else {
+        var allEntry = null;
       }
       for(k in data) {
         v = data[k];
+        if(allEntry && allEntry[0] == v.id)
+          continue
         this.add_opt(v.id, v.name);
       }
       this.element.trigger("change");

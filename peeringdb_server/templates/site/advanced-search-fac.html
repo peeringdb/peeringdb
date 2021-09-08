@@ -52,6 +52,45 @@
         </div>
       </div>
 
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Property" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-data="enum/property"
+               data-edit-value="{{ request.GET.property|default:"" }}"
+               data-edit-reset-value=""
+               data-edit-data-all-entry=":{% trans "Does not matter" %}"
+               data-edit-name="property"></div>
+        </div>
+      </div>
+
+
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Diverse Serving Substations" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-data="enum/bool_choice_str"
+               data-edit-value="{{ request.GET.diverse_serving_substations }}"
+               data-edit-reset-value=""
+               data-edit-data-all-entry=":{% trans "Does not matter" %}"
+               data-edit-name="diverse_serving_substations"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Available Voltage Services" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-data="enum/available_voltage"
+               data-edit-value="{{ request.GET.available_voltage_services__contains }}"
+               data-edit-reset-value=""
+               data-edit-data-all-entry=":{% trans "Does not matter" %}"
+               data-edit-name="available_voltage_services__contains"></div>
+        </div>
+      </div>
+
+
+
       {% include "site/advanced-search-net-present.html" %}
 
       {% include "site/advanced-search-org-present.html" %}
