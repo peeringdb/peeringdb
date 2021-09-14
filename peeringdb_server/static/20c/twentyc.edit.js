@@ -1042,7 +1042,12 @@ twentyc.editable.input.register(
     },
 
     value_to_label : function() {
-      return this.element.children('option:selected').text();
+      return $.map(
+        this.element.children('option:selected'),
+        function(element) {
+          return $(element).text()
+        }
+      ).join(', ')
     },
 
     apply : function(value) {
@@ -1062,7 +1067,12 @@ twentyc.editable.input.register(
         if(id == value)
           opt.prop("selected", true);
       }
+      this.finalize_opt(opt)
       this.element.append(opt);
+    },
+
+    finalize_opt : function(opt) {
+      return opt;
     },
 
     load : function(data) {
@@ -1071,9 +1081,13 @@ twentyc.editable.input.register(
       if(this.source.data("edit-data-all-entry")) {
         var allEntry = this.source.data("edit-data-all-entry").split(":")
         this.add_opt(allEntry[0], allEntry[1]);
+      } else {
+        var allEntry = null;
       }
       for(k in data) {
         v = data[k];
+        if(allEntry && allEntry[0] == v.id)
+          continue
         this.add_opt(v.id, v.name);
       }
       this.element.trigger("change");

@@ -16,7 +16,8 @@ from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import PermissionDenied
 from rest_framework import routers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError, ValidationError as RestValidationError
+from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
@@ -30,10 +31,10 @@ from peeringdb_server.permissions import (
     get_org_key_from_request,
     get_user_key_from_request,
 )
+from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
 from peeringdb_server.serializers import ParentStatusException
 from peeringdb_server.util import coerce_ipaddr
-from peeringdb_server.rest_throttles import IXFImportThrottle
 
 
 class DataException(ValueError):
@@ -367,7 +368,8 @@ class ModelViewSet(viewsets.ModelViewSet):
             if k == "ipaddr6":
                 v = coerce_ipaddr(v)
 
-            if k[-3:] == "_id" and k not in field_names:
+            if re.match("^.+[^_]_id$", k) and k not in field_names:
+                # if k[-3:] == "_id" and k not in field_names:
                 k = k[:-3]
 
             xl = self.serializer_class.queryable_field_xl
@@ -384,7 +386,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             if m:
                 flt = xl(m.group(1))
                 k = k.replace(m.group(1), flt, 1)
-                if flt[-3:] == "_id" and flt not in field_names:
+                if re.match("^.+[^_]_id$", flt) and flt not in field_names:
                     flt = flt[:-3]
             else:
                 k = xl(k)

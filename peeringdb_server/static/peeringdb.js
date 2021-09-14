@@ -2850,6 +2850,144 @@ twentyc.editable.input.register(
   "unit_input"
 );
 
+/**
+ * a select input that forces to user to change
+ * its value if specific conditions are met.
+ *
+ * @class data_quality_select
+ */
+
+twentyc.editable.input.register(
+  "data_quality_select",
+  {
+
+    /**
+     * returns an array of values that are deemed bad
+     * and should force the user to make a change
+     *
+     * this is specified in the data-edit-bad-values
+     * html attribute
+     *
+     * @method bad_values
+     * @returns {Array|null}
+     */
+
+    bad_values : function() {
+      let bad_values = this.source.data("edit-bad-values");
+      if(bad_values)
+        return bad_values.split(";");
+      return null;
+    },
+
+    /**
+     * Checks if the specified value is a bad value
+     * If no value is specified the current element
+     * input value is used.
+     *
+     * @method has_bad_value
+     * @param {String} value
+     * @returns {Bool}
+     */
+
+    has_bad_value : function(value) {
+
+      let bad_values = this.bad_values();
+
+      if(typeof(value) == "undefined") {
+        value = this.get();
+      }
+
+      if(bad_values) {
+        let i, bad_value;
+        for(i = 0; i < bad_values.length; i++) {
+          bad_value = bad_values[i]
+          if(value == bad_value) {
+            this.element.addClass("invalid-choice");
+            return true;
+          }
+        }
+      }
+
+      this.element.removeClass("invalid-choice");
+      return false;
+    },
+
+    /**
+     * We override the change method to always
+     * return true if the current value is a bad value
+     *
+     * This forces the user to change it before the
+     * save can be made.
+     */
+
+    changed : function() {
+      if(this.has_bad_value())
+        return true;
+      return this.select_changed()
+    },
+
+    /**
+     * When adding options to the select element we
+     * check each option to see if it contains a bad
+     * value and if it does, mark it as such
+     */
+
+    finalize_opt : function(opt) {
+      if(this.has_bad_value(opt.val())) {
+        opt.addClass("invalid-choice");
+      }
+      return opt;
+    },
+
+    /**
+     * For inputs that have a good value, we don't want
+     * the option for a bad value to still exist in the dropdown
+     *
+     * We override load to check this and remove the options
+     * if necessary.
+     *
+     * Inputs that have a bad value still need the bad value option
+     * available in order to communicate to the user the the value
+     * is bad and needs changing
+     */
+
+    load : function(data) {
+      let k, bad_values = this.source.data("edit-bad-values");
+      let value = this.source.data("edit-value")
+      if(!this.has_bad_value(value) && bad_values) {
+        bad_values = bad_values.split(";")
+        let _data = [];
+        for(k in data) {
+          if($.inArray(data[k].id, bad_values) == -1)
+            _data.push(data[k])
+        }
+        data = _data;
+      }
+
+
+      this.select_load(data);
+    },
+
+    /**
+     * We wire a change event so that when a bad value is
+     * changed to a good value by the user, the error
+     * css is removed from the element (done through the
+     * has_bad_value() method)
+     */
+
+    wire : function() {
+      this.has_bad_value();
+      this.element.on("change", () => {
+        this.has_bad_value(this.element.val());
+      })
+    }
+
+
+  },
+
+  "select"
+);
+
 
 /*
  * set up input templates
@@ -2946,15 +3084,19 @@ twentyc.data.loaders.assign("enum/scopes_trunc", "data");
 twentyc.data.loaders.assign("enum/scopes_advs", "data");
 twentyc.data.loaders.assign("enum/protocols", "data");
 twentyc.data.loaders.assign("enum/poc_roles", "data");
+twentyc.data.loaders.assign("enum/poc_visibility", "data");
 twentyc.data.loaders.assign("enum/policy_general", "data");
 twentyc.data.loaders.assign("enum/policy_locations", "data");
 twentyc.data.loaders.assign("enum/policy_contracts", "data");
 twentyc.data.loaders.assign("enum/visibility", "data");
 twentyc.data.loaders.assign("enum/bool_choice_str", "data");
+twentyc.data.loaders.assign("enum/bool_choice_with_opt_out_str", "data");
 twentyc.data.loaders.assign("enum/service_level_types_trunc", "data");
 twentyc.data.loaders.assign("enum/service_level_types_advs", "data");
 twentyc.data.loaders.assign("enum/terms_types_trunc", "data");
 twentyc.data.loaders.assign("enum/terms_types_advs", "data");
+twentyc.data.loaders.assign("enum/property", "data");
+twentyc.data.loaders.assign("enum/available_voltage", "data");
 
 $(twentyc.data).on("load-enum/traffic", function(e, payload) {
   var r = {}, i = 0, data=payload.data;

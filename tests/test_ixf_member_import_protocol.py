@@ -2789,6 +2789,107 @@ def test_send_email(entities, use_ip):
     assert importer.emails == 2
 
 
+@pytest.mark.django_db
+def test_ixlan_add_netixlan_no_redundant_save_on_null_ip(entities):
+
+    """
+    Tests that if ixlan.add_netixlan receives a netixlan which
+    has either ipaddr4 or ipaddr6 nulled will not cause redundant
+    saves to already deleted netixlans that also have that same field
+    nulled (#1019)
+    """
+
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    # create deleted netixlans
+
+    with reversion.create_revision():
+        NetworkIXLan.objects.create(
+            ixlan=ixlan,
+            network=network,
+            asn=network.asn + 1,
+            ipaddr4="195.69.147.253",
+            ipaddr6="2001:7f8:1::a500:2906:10",
+            speed=1000,
+            status="deleted",
+        )
+
+        NetworkIXLan.objects.create(
+            ixlan=ixlan,
+            network=network,
+            asn=network.asn + 1,
+            ipaddr4="195.69.147.252",
+            ipaddr6="2001:7f8:1::a500:2906:11",
+            speed=1000,
+            status="deleted",
+        )
+
+        netixlan6 = NetworkIXLan.objects.create(
+            ixlan=ixlan,
+            network=network,
+            asn=network.asn + 1,
+            ipaddr4=None,
+            ipaddr6="2001:7f8:1::a500:2906:9",
+            speed=1000,
+            status="deleted",
+        )
+
+        netixlan4 = NetworkIXLan.objects.create(
+            ixlan=ixlan,
+            network=network,
+            asn=network.asn + 1,
+            ipaddr4="195.69.147.251",
+            ipaddr6=None,
+            speed=1000,
+            status="deleted",
+        )
+
+    netixlan4.refresh_from_db()
+    netixlan6.refresh_from_db()
+
+    assert netixlan4.version == 1
+    assert netixlan6.version == 1
+
+    # create netixlans
+
+    netixlan6_new = NetworkIXLan(
+        ixlan=ixlan,
+        network=network,
+        asn=network.asn,
+        ipaddr4=None,
+        ipaddr6="2001:7f8:1::a500:2906:10",
+        speed=1000,
+        status="deleted",
+    )
+
+    netixlan4_new = NetworkIXLan(
+        ixlan=ixlan,
+        network=network,
+        asn=network.asn,
+        ipaddr4="195.69.147.252",
+        ipaddr6=None,
+        speed=1000,
+        status="deleted",
+    )
+
+    with reversion.create_revision():
+        netixlan6_new = ixlan.add_netixlan(netixlan6_new)
+        netixlan4_new = ixlan.add_netixlan(netixlan4_new)
+
+    netixlan4.refresh_from_db()
+    netixlan6.refresh_from_db()
+
+    # No further saves should have happened to the already
+    # deleted netixlans
+
+    assert not netixlan4.notes
+    assert not netixlan6.notes
+
+    assert netixlan4.version == 1
+    assert netixlan6.version == 1
+
+
 # FIXTURES
 @pytest.fixture(params=[True, False])
 def save(request):

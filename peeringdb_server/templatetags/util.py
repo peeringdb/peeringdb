@@ -28,7 +28,19 @@ register = template.Library()
 
 
 @register.filter
+def editable_list_join(value):
+    if not value:
+        return ""
+    return ",".join(value)
+
+
+@register.filter
 def editable_list_value(row):
+    if row.get("multiple"):
+        if row.get("value"):
+            return ", ".join(row.get("value"))
+        return ""
+
     if row.get("value") or row.get("value_label"):
         return _(row.get("value_label", row.get("value")))
     elif row.get("blank") and row.get("value") == "":

@@ -18,6 +18,7 @@ from django_grainy.rest import PermissionDenied
 # from drf_toolbox import serializers
 from django_handleref.rest.serializers import HandleRefSerializer
 from django_inet.rest import IPAddressField, IPNetworkField
+from django_peeringdb.const import AVAILABLE_VOLTAGE
 from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -59,6 +60,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes6,
     validate_irr_as_set,
     validate_phonenumber,
+    validate_poc_visible,
     validate_prefix_overlap,
     validate_zipcode,
 )
@@ -281,20 +283,43 @@ def queryable_field_xl(fld):
     care of translating fac and net queries into "facility"
     and "network" queries
 
-    FIXME: should be renamed on models, but this will open
-    a pandora's box im not ready to open yet
+    FIXME: should be renamed on model schema
     """
 
-    if re.match(".+_id", fld):
+    if re.match("^.+[^_]_id$", fld):
+
+        # if field name is {rel}_id strip the `_id` suffix
+
         fld = fld[:-3]
+
     if fld == "fac":
+
+        # if field name is `fac` rename to `facility`
+        # since the model relationship field is called `facility`
+
         return "facility"
+
     elif fld == "net":
+
+        # if field name is `net` rename to `network`
+        # since the model relationship field is called `network`
+
         return "network"
+
     elif re.match("net_(.+)", fld):
+
+        # if field name starts with `net_` rename to `network_`
+        # since the model relationship field is called `network`
+
         return re.sub("^net_", "network_", fld)
-    elif re.match("fac(.+)", fld):
+
+    elif re.match("fac_(.+)", fld):
+
+        # if field name starts with `fac_` rename to `facility_`
+        # since the model relationship field is called `facility`
+
         return re.sub("^fac_", "facility_", fld)
+
     return fld
 
 
@@ -1410,6 +1435,10 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
     latitude = serializers.FloatField(read_only=True)
     longitude = serializers.FloatField(read_only=True)
 
+    available_voltage_services = serializers.MultipleChoiceField(
+        choices=AVAILABLE_VOLTAGE, required=False, allow_null=True
+    )
+
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
@@ -1441,6 +1470,9 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
                 "sales_phone",
                 "tech_email",
                 "tech_phone",
+                "available_voltage_services",
+                "diverse_serving_substations",
+                "property",
             ]
             + HandleRefSerializer.Meta.fields
             + AddressSerializer.Meta.fields
@@ -1573,6 +1605,28 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
 
         return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+
+        representation = super().to_representation(instance)
+
+        if not isinstance(representation, dict):
+            return representation
+
+        # django-rest-framework multiplechoicefield maintains
+        # a set of values and thus looses sorting.
+        #
+        # we always want to return values sorted by choice
+        # definition order
+        if instance.available_voltage_services:
+            avs = []
+            for choice, label in AVAILABLE_VOLTAGE:
+                if choice in instance.available_voltage_services:
+                    avs.append(choice)
+
+            representation["available_voltage_services"] = avs
+
+        return representation
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
@@ -1744,6 +1798,9 @@ class NetworkContactSerializer(ModelSerializer):
 
     def validate_phone(self, value):
         return validate_phonenumber(value)
+
+    def validate_visible(self, value):
+        return validate_poc_visible(value)
 
     def to_representation(self, data):
         # When a network contact is marked as deleted we

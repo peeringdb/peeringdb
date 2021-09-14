@@ -14,6 +14,20 @@ from peeringdb_server.inet import IRR_SOURCE, network_is_pdb_valid
 from peeringdb_server.request import bypass_validation
 
 
+def validate_poc_visible(visible):
+
+    # we no longer allow "Private" network contacts
+    # however until all private network contacts have
+    # been either changed or deleted we cannot remove
+    # the value from the choices set for the field
+    #
+    # for now we handle validation here (see #944)
+
+    if visible == "Private":
+        raise ValidationError(_("Private contacts are no longer supported."))
+    return visible
+
+
 def validate_phonenumber(phonenumber, country=None):
     """
     Validate a phonenumber to E.164

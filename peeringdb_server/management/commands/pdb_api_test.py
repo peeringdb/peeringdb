@@ -290,6 +290,9 @@ class TestJSON(unittest.TestCase):
             "tech_phone": PHONE,
             "sales_email": EMAIL,
             "sales_phone": PHONE,
+            "diverse_serving_substations": True,
+            "available_voltage_services": ["48 VDC", "240 VAC"],
+            "property": "Owner",
         }
         data.update(**kwargs)
         return data
@@ -342,7 +345,7 @@ class TestJSON(unittest.TestCase):
         data = {
             "net_id": 1,
             "role": "Technical",
-            "visible": "Private",
+            "visible": "Users",
             "name": "NOC",
             "phone": PHONE,
             "email": EMAIL,
@@ -1076,6 +1079,10 @@ class TestJSON(unittest.TestCase):
         data = self.db_guest.all("poc", limit=1000)
         for row in data:
             self.assertIn(row.get("visible"), ["Users", "Public"])
+
+        # next assert should remain as long as there are private pocs left
+        # in the database, once all private pocs have been changed/removed
+        # this test can be remove as well (#944)
         data = self.db_guest.all("poc", visible="Private", limit=100)
         self.assertEqual(0, len(data))
 
@@ -1395,6 +1402,35 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_org_admin_002_POST_PUT_fac_available_voltage(self):
+
+        data = self.make_data_fac()
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "fac",
+            data,
+            test_failures={
+                "invalid": [
+                    {"available_voltage_services": ["Invalid"]},
+                ],
+            },
+        )
+
+        SHARED["fac_id"] = r_data.get("id")
+
+        self.assert_update(
+            self.db_org_admin,
+            "fac",
+            SHARED["fac_id"],
+            {"available_voltage_services": ["480 VAC"]},
+            test_failures={
+                "invalid": {"available_voltage_services": ["Invalid"]},
+            },
+        )
+
+    ##########################################################################
+
     def test_org_admin_002_POST_PUT_DELETE_fac_zipcode(self):
         data = self.make_data_fac()
 
@@ -1656,7 +1692,7 @@ class TestJSON(unittest.TestCase):
             SHARED["poc_id"],
             {"role": "Sales"},
             test_failures={
-                "invalid": {"role": "NOPE"},
+                "invalid": {"role": "INVALID"},
                 "perms": {"net_id": SHARED["net_r_ok"].id},
             },
         )
@@ -1676,6 +1712,28 @@ class TestJSON(unittest.TestCase):
         assert poc["phone"] == ""
         assert poc["email"] == ""
         assert poc["url"] == ""
+
+        # pocs can no longer be made private (#944)
+
+        self.assert_update(
+            self.db_org_admin,
+            "poc",
+            SHARED["poc_rw_ok_users"].id,
+            {},
+            test_success=False,
+            test_failures={
+                "invalid": {"visible": "Private"},
+            },
+        )
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "poc",
+            {},
+            test_success=False,
+            test_failures={
+                "invalid": {"visible": "Private"},
+            },
+        )
 
     ##########################################################################
 
@@ -2453,12 +2511,29 @@ class TestJSON(unittest.TestCase):
         for row in data:
             self.assertEqual(row.get("net_id"), SHARED["net_r_ok"].id)
 
+        # also test __id filter (bug issue #1032)
+
+        data = self.db_user.all("poc", net__id=SHARED["net_r_ok"].id)
+        self.assertEqual(len(data), 2)
+
+        for row in data:
+            self.assertEqual(row.get("net_id"), SHARED["net_r_ok"].id)
+
+        # also test __id__in filter (bug issue #1032)
+
+        data = self.db_user.all("poc", net__id__in=SHARED["net_r_ok"].id)
+        self.assertEqual(len(data), 2)
+
+        for row in data:
+            self.assertEqual(row.get("net_id"), SHARED["net_r_ok"].id)
+
     ##########################################################################
 
     def test_guest_005_list_poc(self):
         data = self.db_guest.all("poc", limit=100)
         for row in data:
             self.assertEqual(row.get("visible"), "Public")
+
         data = self.db_guest.all("poc", visible__in="Private,Users", limit=100)
         self.assertEqual(0, len(data))
 
@@ -4482,9 +4557,13 @@ class Command(BaseCommand):
         visibility = {
             "rw": "Public",
             "rw2": "Users",
+            # TODO: "Private" can be removed once all private pocs are
+            # cleared out of production database
             "rw3": "Private",
             "r": "Public",
             "r2": "Users",
+            # TODO: "Private" can be removed once all private pocs are
+            # cleared out of production database
             "r3": "Private",
         }
 
@@ -4539,6 +4618,8 @@ class Command(BaseCommand):
                     network_id=SHARED[f"net_{prefix}_{status}"].id,
                 )
 
+                # TODO: private can be removed once all private pocs have been
+                # cleared out of production database
                 for v in ["Private", "Users", "Public"]:
                     cls.create_entity(
                         NetworkContact,

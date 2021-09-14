@@ -36,7 +36,7 @@ from ratelimit.decorators import ratelimit
 
 from peeringdb_server import settings
 from peeringdb_server.api_key_views import load_all_key_permissions
-from peeringdb_server.data_views import BOOL_CHOICE
+from peeringdb_server.data_views import BOOL_CHOICE, BOOL_CHOICE_WITH_OPT_OUT
 from peeringdb_server.deskpro import ticket_queue_rdap_error
 from peeringdb_server.forms import (
     AffiliateToOrgForm,
@@ -1275,6 +1275,34 @@ def view_facility(request, id):
                 "label": _("Sales Phone"),
                 "value": data.get("sales_phone", dismiss),
                 "help_text": field_help(Facility, "sales_phone"),
+            },
+            {
+                "name": "property",
+                "type": "list",
+                "data": "enum/property",
+                "label": _("Property"),
+                "value": data.get("property", dismiss),
+                "help_text": field_help(Facility, "property"),
+            },
+            {
+                "name": "diverse_serving_substations",
+                "type": "list",
+                "data": "enum/bool_choice_with_opt_out_str",
+                "label": _("Diverse Serving Substations"),
+                "value": data.get("diverse_serving_substations", dismiss),
+                "value_label": dict(BOOL_CHOICE_WITH_OPT_OUT).get(
+                    data.get("diverse_serving_substations")
+                ),
+                "help_text": field_help(Facility, "diverse_serving_substations"),
+            },
+            {
+                "name": "available_voltage_services",
+                "type": "list",
+                "multiple": True,
+                "data": "enum/available_voltage",
+                "label": _("Available Voltage Services"),
+                "value": data.get("available_voltage_services", dismiss),
+                "help_text": field_help(Facility, "available_voltage_services"),
             },
         ],
     }

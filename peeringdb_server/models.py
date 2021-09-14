@@ -46,6 +46,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes6,
     validate_irr_as_set,
     validate_phonenumber,
+    validate_poc_visible,
     validate_prefix_overlap,
 )
 
@@ -2488,14 +2489,17 @@ class IXLan(pdb_models.IXLanBase):
             # we need to check if this ipaddress exists on a
             # soft-deleted netixlan elsewhere, and
             # reset if so.
+            #
+            # we only do this if ipaddr4 is not null
 
-            for other in NetworkIXLan.objects.filter(
-                ipaddr4=ipv4, status="deleted"
-            ).exclude(asn=asn):
-                other.ipaddr4 = None
-                other.notes = f"Ip address {ipv4} was claimed by other netixlan"
-                if save or save_others:
-                    other.save()
+            if ipv4:
+                for other in NetworkIXLan.objects.filter(
+                    ipaddr4=ipv4, status="deleted"
+                ).exclude(asn=asn):
+                    other.ipaddr4 = None
+                    other.notes = f"Ip address {ipv4} was claimed by other netixlan"
+                    if save or save_others:
+                        other.save()
 
             netixlan.ipaddr4 = ipv4
             changed.append("ipaddr4")
@@ -2506,14 +2510,18 @@ class IXLan(pdb_models.IXLanBase):
             # we need to check if this ipaddress exists on a
             # soft-deleted netixlan elsewhere, and
             # reset if so.
+            #
+            # we only do this if ipaddr6 is not None
 
-            for other in NetworkIXLan.objects.filter(
-                ipaddr6=ipv6, status="deleted"
-            ).exclude(asn=asn):
-                other.ipaddr6 = None
-                other.notes = f"Ip address {ipv6} was claimed by other netixlan"
-                if save or save_others:
-                    other.save()
+            if ipv6:
+
+                for other in NetworkIXLan.objects.filter(
+                    ipaddr6=ipv6, status="deleted"
+                ).exclude(asn=asn):
+                    other.ipaddr6 = None
+                    other.notes = f"Ip address {ipv6} was claimed by other netixlan"
+                    if save or save_others:
+                        other.save()
 
             netixlan.ipaddr6 = ipv6
             changed.append("ipaddr6")
@@ -4335,6 +4343,7 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
 
     def clean(self):
         self.phone = validate_phonenumber(self.phone)
+        self.visible = validate_poc_visible(self.visible)
 
 
 @grainy_model(namespace="netfac", parent="network")
@@ -4428,11 +4437,14 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
 
 def format_speed(value):
     if value >= 1000000:
-        return "%dT" % (value / 10 ** 6)
+        value = value / 10 ** 6
+        if not value % 1:
+            return f"{value:.0f}T"
+        return f"{value:.1f}T"
     elif value >= 1000:
-        return "%dG" % (value / 10 ** 3)
+        return f"{value / 10 ** 3:.0f}G"
     else:
-        return "%dM" % value
+        return f"{value:.0f}M"
 
 
 @grainy_model(namespace="ixlan", parent="network")
