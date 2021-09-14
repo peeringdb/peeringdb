@@ -18,8 +18,8 @@ from django_grainy.rest import PermissionDenied
 # from drf_toolbox import serializers
 from django_handleref.rest.serializers import HandleRefSerializer
 from django_inet.rest import IPAddressField, IPNetworkField
-from django_peeringdb.models.abstract import AddressModel
 from django_peeringdb.const import AVAILABLE_VOLTAGE
+from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 

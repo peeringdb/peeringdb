@@ -2808,43 +2808,41 @@ def test_ixlan_add_netixlan_no_redundant_save_on_null_ip(entities):
         NetworkIXLan.objects.create(
             ixlan=ixlan,
             network=network,
-            asn=network.asn+1,
+            asn=network.asn + 1,
             ipaddr4="195.69.147.253",
             ipaddr6="2001:7f8:1::a500:2906:10",
             speed=1000,
-            status="deleted"
+            status="deleted",
         )
 
         NetworkIXLan.objects.create(
             ixlan=ixlan,
             network=network,
-            asn=network.asn+1,
+            asn=network.asn + 1,
             ipaddr4="195.69.147.252",
             ipaddr6="2001:7f8:1::a500:2906:11",
             speed=1000,
-            status="deleted"
+            status="deleted",
         )
-
 
         netixlan6 = NetworkIXLan.objects.create(
             ixlan=ixlan,
             network=network,
-            asn=network.asn+1,
+            asn=network.asn + 1,
             ipaddr4=None,
             ipaddr6="2001:7f8:1::a500:2906:9",
             speed=1000,
-            status="deleted"
+            status="deleted",
         )
-
 
         netixlan4 = NetworkIXLan.objects.create(
             ixlan=ixlan,
             network=network,
-            asn=network.asn+1,
+            asn=network.asn + 1,
             ipaddr4="195.69.147.251",
             ipaddr6=None,
             speed=1000,
-            status="deleted"
+            status="deleted",
         )
 
     netixlan4.refresh_from_db()
@@ -2862,7 +2860,7 @@ def test_ixlan_add_netixlan_no_redundant_save_on_null_ip(entities):
         ipaddr4=None,
         ipaddr6="2001:7f8:1::a500:2906:10",
         speed=1000,
-        status="deleted"
+        status="deleted",
     )
 
     netixlan4_new = NetworkIXLan(
@@ -2872,7 +2870,7 @@ def test_ixlan_add_netixlan_no_redundant_save_on_null_ip(entities):
         ipaddr4="195.69.147.252",
         ipaddr6=None,
         speed=1000,
-        status="deleted"
+        status="deleted",
     )
 
     with reversion.create_revision():
@@ -2890,7 +2888,6 @@ def test_ixlan_add_netixlan_no_redundant_save_on_null_ip(entities):
 
     assert netixlan4.version == 1
     assert netixlan6.version == 1
-
 
 
 # FIXTURES
