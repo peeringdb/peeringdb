@@ -46,7 +46,12 @@ from peeringdb_server.forms import (
     UserLocaleForm,
     UsernameRetrieveForm,
 )
-from peeringdb_server.inet import RdapException, rdap_pretty_error_message
+from peeringdb_server.inet import (
+    RdapException,
+    RdapInvalidRange,
+    rdap_pretty_error_message,
+    asn_is_bogon,
+)
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.models import (
     PARTNERSHIP_LEVELS,
@@ -147,7 +152,6 @@ class DoNotRender:
 
     @classmethod
     def permissioned(cls, value, user, namespace, explicit=False):
-
         """
         Check if the user has permissions to the supplied namespace
         returns a DoNotRender instance if not, otherwise returns
@@ -421,6 +425,11 @@ def view_affiliate_to_org(request):
         request.user.flush_affiliation_requests()
 
         try:
+            # Issue 995: Block registering private ASN ranges
+            # Check if ASN is in private/reserved range
+            # Block submission if an org and private ASN is set
+            if asn_is_bogon(asn) and not settings.TUTORIAL_MODE:
+                raise RdapInvalidRange()
 
             uoar, created = UserOrgAffiliationRequest.objects.get_or_create(
                 user=request.user,
@@ -430,8 +439,14 @@ def view_affiliate_to_org(request):
                 status="pending",
             )
 
+        except RdapInvalidRange as exc:
+
+            return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
+
         except RdapException as exc:
+
             ticket_queue_rdap_error(request, asn, exc)
+
             return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
 
         except MultipleObjectsReturned:
@@ -2015,7 +2030,6 @@ def view_advanced_search(request):
 
 
 def request_api_search(request):
-
     """
     Triggered off of typing something in the main peeringdb searchbar
     without hitting enter (quasi autocomplete)
@@ -2112,7 +2126,6 @@ class LoginView(two_factor.views.LoginView):
     """
 
     def get(self, *args, **kwargs):
-
         """
         If a user is already authenticated, don't show the
         login process, instead redirect to /
@@ -2127,7 +2140,6 @@ class LoginView(two_factor.views.LoginView):
         ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
     )
     def post(self, *args, **kwargs):
-
         """
         Posts to the `auth` step of the authentication
         process need to be rate limited
@@ -2143,7 +2155,6 @@ class LoginView(two_factor.views.LoginView):
         return super().post(*args, **kwargs)
 
     def get_context_data(self, form, **kwargs):
-
         """
         If post request was rate limited the rate limit message
         needs to be communicated via the template context
@@ -2158,7 +2169,6 @@ class LoginView(two_factor.views.LoginView):
         return context
 
     def get_email_device(self):
-
         """
         Returns an EmailDevice instance for the requesting user
         which can be used for one time passwords.
@@ -2208,7 +2218,6 @@ class LoginView(two_factor.views.LoginView):
         return None
 
     def get_device(self, step=None):
-
         """
         We override this so we can enable EmailDevice as a
         challenge device for one time passwords
@@ -2228,7 +2237,6 @@ class LoginView(two_factor.views.LoginView):
         return self.get_redirect_url()
 
     def get_redirect_url(self):
-
         """
         Specifies which redirect urls are valid
         """
@@ -2260,7 +2268,6 @@ class LoginView(two_factor.views.LoginView):
         return redir
 
     def done(self, form_list, **kwargs):
-
         """
         User authenticated successfully, set language options
         """

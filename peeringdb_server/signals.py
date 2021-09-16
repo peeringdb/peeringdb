@@ -23,7 +23,7 @@ from peeringdb_server.deskpro import (
     ticket_queue_asnauto_create,
     ticket_queue_vqi_notify,
 )
-from peeringdb_server.inet import RdapException, RdapLookup
+from peeringdb_server.inet import RdapException, RdapLookup, asn_is_bogon
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     QUEUE_NOTIFY,
@@ -324,7 +324,6 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                 # Lookup RDAP information
                 try:
                     rdap_lookup = rdap = RdapLookup().get_asn(instance.asn)
-                    rdap_lookup.emails
                 except RdapException:
                     instance.deny()
                     raise
@@ -363,6 +362,7 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     return
 
             if instance.org:
+
                 # organization has been set on affiliation request
                 entity_name = instance.org.name
                 if not instance.org.owned:

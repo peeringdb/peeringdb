@@ -29,6 +29,7 @@ from peeringdb_server.deskpro import (
 )
 from peeringdb_server.inet import (
     RdapException,
+    RdapInvalidRange,
     RdapLookup,
     get_prefix_protocol,
     rdap_pretty_error_message,
@@ -509,6 +510,10 @@ class AsnRdapValidator:
             rdap = RdapLookup().get_asn(asn)
             rdap.emails
             self.request.rdap_result = rdap
+        except RdapInvalidRange as exc:
+            # Issue 995: Block registering private ASN ranges
+            # raise an error if ANS is in private or reserved range
+            raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
         except RdapException as exc:
             self.request.rdap_error = (asn, exc)
             raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
@@ -2374,7 +2379,16 @@ class NetworkSerializer(ModelSerializer):
 
             # otherwise setup rdap lookup
             if not rdap:
-                rdap = RdapLookup().get_asn(asn)
+                try:
+                    rdap = RdapLookup().get_asn(asn)
+                except RdapInvalidRange as exc:
+                    raise RestValidationError(
+                        {self.field: rdap_pretty_error_message(exc)}
+                    )
+                except RdapException as exc:
+                    raise RestValidationError(
+                        {self.field: rdap_pretty_error_message(exc)}
+                    )
 
         # add network to existing org
         if rdap and validate_rdap_user_or_key(request, rdap):

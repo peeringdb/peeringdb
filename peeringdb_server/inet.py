@@ -92,6 +92,10 @@ TUTORIAL_ASN_RANGES = [
 ]
 
 
+class RdapInvalidRange(RdapException):
+    pass
+
+
 class BogonAsn(rdap.RdapAsn):
 
     """
@@ -137,9 +141,9 @@ class RdapLookup(rdap.RdapClient):
             if settings.TUTORIAL_MODE and asn_is_in_ranges(asn, TUTORIAL_ASN_RANGES):
                 return BogonAsn(asn)
             else:
-                raise RdapException(
-                    _("ASNs in this range " "are not allowed in this environment")
-                )
+                # Issue 995: Block registering private ASN ranges
+                # raise RdapInvalidRange if ASN is in private or reserved range
+                raise RdapInvalidRange()
         return super().get_asn(asn)
 
 
@@ -151,8 +155,10 @@ def rdap_pretty_error_message(exc):
 
     if isinstance(exc, RdapNotFoundError):
         return _("This ASN is not assigned by any RIR")
+    if isinstance(exc, RdapInvalidRange):
+        return _("ASNs in this range are private or reserved")
 
-    return _("RDAP Lookup Error: {}").format(exc)
+    return _("{}").format(exc)
 
 
 def asn_is_bogon(asn):
