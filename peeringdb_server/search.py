@@ -1,3 +1,12 @@
+"""
+Search implementation used for the peeringdb top search bar as well as name searches through
+the api `name_search` filter as well as advances search name field searches.
+
+Search logic is handled by django-haystack and whoosh
+
+Refer to search_indexes.py for search index definition
+"""
+
 # import time
 import unidecode
 from django.conf import settings

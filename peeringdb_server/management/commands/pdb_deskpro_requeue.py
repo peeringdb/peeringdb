@@ -1,3 +1,6 @@
+"""
+Reset a deskpro ticket and queue again for publish
+"""
 import re
 
 from django.core.management.base import BaseCommand

@@ -1,3 +1,6 @@
+"""
+Django middleware to handle maintenance mode
+"""
 import os
 
 from django.http import JsonResponse

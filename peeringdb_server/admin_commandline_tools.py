@@ -1,3 +1,12 @@
+"""
+Defines CLI wrappers for django commands that should
+be executable through the django-admin interface.
+
+Extend the CommandLineToolWrapper class and call the
+register_tool decorator to add support for a new django
+command to exposed in this manner.
+"""
+
 import io
 import json
 

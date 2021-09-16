@@ -1,3 +1,7 @@
+"""
+Hard deletes old soft-deleted network contract instances
+"""
+
 from datetime import timedelta
 
 from django.conf import settings

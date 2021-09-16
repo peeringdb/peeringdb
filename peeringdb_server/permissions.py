@@ -1,3 +1,18 @@
+"""
+Utilties for permission handling
+
+Permission logic is handled through django-grainy
+
+API key auth is handled through djangorestframework-api-key
+
+Determine permission holder from request (api key or user)
+
+Read only user api key handling
+
+Censor API output data according to permissions using grainy Applicators
+"""
+
+
 # from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
 import grainy.const as grainy_constant
 from django.conf import settings

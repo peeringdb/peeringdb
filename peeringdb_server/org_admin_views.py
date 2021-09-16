@@ -1,5 +1,5 @@
 """
-Views for organization administrative actions
+Views for organization administrative actions (/org endpoint)
 """
 from django.conf import settings
 from django.contrib.auth.decorators import login_required

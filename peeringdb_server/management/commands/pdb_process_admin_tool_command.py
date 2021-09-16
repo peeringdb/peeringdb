@@ -1,3 +1,6 @@
+"""
+Processes one item in the admin tool command queue
+"""
 import json
 
 from django.core.management.base import BaseCommand

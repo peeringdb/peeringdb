@@ -1,5 +1,6 @@
 """
-DeskPro API Client
+DeskPro API Client used to post and retrieve support ticket information
+from the deskpro api.
 """
 
 import datetime

@@ -1,8 +1,8 @@
 """
-This holds JSON views for various data sets,
+This holds JSON views for various data sets
 
 Mostly these are needed for filling form-selects for editable
-mode
+mode in UX
 """
 
 import django_countries

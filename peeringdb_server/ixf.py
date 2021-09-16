@@ -1,3 +1,14 @@
+"""
+IX-F importer implementation
+
+Handles import of ix-f feeds, creation of suggestions for networks and exchanges
+to follow
+
+Handles notifications of networks and exchanges as part of that process.
+
+A substantial part of the import logic is handled through models.py::IXFMemberData
+"""
+
 import datetime
 import ipaddress
 import json

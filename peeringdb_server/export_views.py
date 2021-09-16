@@ -1,3 +1,7 @@
+"""
+Defines export views used for IX-F export and advanced search file download.
+"""
+
 import collections
 import csv
 import datetime

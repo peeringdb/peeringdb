@@ -1,3 +1,18 @@
+"""
+django-admin interface definitions
+
+This is the interface used by peeringdb admin-com that is currently
+exposed at the path `/cp`.
+
+New admin views wrapping HandleRef models need to extend the
+`SoftDeleteAdmin` class.
+
+Admin views wrapping verification-queue enabled models need to also
+add the `ModelAdminWithVQCtrl` Mixin
+
+Version history is implemented through django-handleref
+"""
+
 import datetime
 import ipaddress
 import json

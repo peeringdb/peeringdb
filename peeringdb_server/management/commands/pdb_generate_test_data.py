@@ -1,3 +1,6 @@
+"""
+Will create test data. This will wipe all data locally, so use with caution. This command is NOT to be run on production or beta environments.
+"""
 import reversion
 from django.conf import settings
 from django.contrib.auth.models import Group

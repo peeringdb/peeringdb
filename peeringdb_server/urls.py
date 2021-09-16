@@ -1,3 +1,6 @@
+"""
+django url to view routing
+"""
 from django.conf import settings
 from django.conf.urls import include, url
 from django.views.generic import RedirectView, TemplateView

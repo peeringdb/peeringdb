@@ -1,3 +1,6 @@
+"""
+command line whois
+"""
 import logging
 
 from django.contrib.auth.models import AnonymousUser

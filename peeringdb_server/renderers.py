@@ -1,5 +1,8 @@
-###############################################################################
-# RENDERERS
+"""
+REST API renderer
+
+Ensures valid json output of the REST API
+"""
 
 import json
 

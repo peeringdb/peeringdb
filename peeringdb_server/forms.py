@@ -1,3 +1,12 @@
+"""
+Custom django forms.
+
+Note that this does not includes forms pointed directly
+at the REST api to handle updates (such as /net, /ix, /fac or /org endpoints)
+
+Look in rest.py and serializers.py for those
+"""
+
 import re
 
 import requests

@@ -1,3 +1,16 @@
+"""
+REST API Serializer definitions.
+REST API POST / PUT data validators.
+
+New serializers should extend ModelSerializer class, which is a custom extension
+of django-rest-framework's ModelSerializer.
+
+Custom ModelSerializer implements logic for ?depth expansion and several performance fixes.
+
+Special api filtering implementation should be done through the `prepare_query`
+method.
+"""
+
 import ipaddress
 import re
 

@@ -1,3 +1,7 @@
+"""
+Handles generation of mock data for testing purposes
+"""
+
 import ipaddress
 import uuid
 

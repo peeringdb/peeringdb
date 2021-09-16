@@ -1,3 +1,10 @@
+"""
+custom django database routers
+
+allows us to split read and write database connections if needed
+"""
+
+
 class DatabaseRouter:
     """
     A very basic databases router that routes to a different

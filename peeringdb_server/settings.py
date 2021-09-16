@@ -1,3 +1,9 @@
+"""
+(being DEPRECATED) django settings prepration.
+
+This is mostly DEPRECATED at this point and any new settings should be directly
+defined in mainsite/settings
+"""
 from django.conf import settings
 
 PEERINGDB_VERSION = getattr(settings, "PEERINGDB_VERSION", "")

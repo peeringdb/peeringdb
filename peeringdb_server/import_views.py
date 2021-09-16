@@ -1,3 +1,7 @@
+"""
+Defines ix-f import preview, revie and post-mortem views
+"""
+
 import base64
 import json
 

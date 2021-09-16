@@ -1,3 +1,17 @@
+"""
+Django signal handlers
+
+- org usergroup creation
+- entity count updates (fac_count, net_count etc.)
+- geocode when address model (org, fac) is saved
+- verification queue creation on new objects
+- asn rdap automation to automatically grant org / network to user
+- user to org affiliation handling when targeted org has no users
+  - notify admin-com
+- CORS enabling for GET api requests
+
+"""
+
 from datetime import datetime, timezone
 
 import django.urls
