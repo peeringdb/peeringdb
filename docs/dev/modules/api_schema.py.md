@@ -1,3 +1,5 @@
+Generated from api_schema.py on 2021-09-17 13:22:42.251452
+
 # peeringdb_server.api_schema
 
 Augment REST API schema to use for open-api schema generation

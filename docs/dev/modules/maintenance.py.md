@@ -1,3 +1,5 @@
+Generated from maintenance.py on 2021-09-17 13:22:42.251452
+
 # peeringdb_server.maintenance
 
 Django middleware to handle maintenance mode

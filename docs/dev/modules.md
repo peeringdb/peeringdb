@@ -1,3 +1,5 @@
+Generated on 2021-09-17 13:22:42.019241
+
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
 django-admin interface definitions
@@ -170,10 +172,6 @@ Determine permission holder from request (api key or user)
 Read only user api key handling
 
 Censor API output data according to permissions using grainy Applicators
-
-## [pymdgen_init.py](/docs/dev/modules/pymdgen_init.py.md)
-
-pymdgen helper (doc generation)
 
 ## [renderers.py](/docs/dev/modules/renderers.py.md)
 

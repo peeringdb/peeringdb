@@ -1,3 +1,5 @@
+Generated from permissions.py on 2021-09-17 13:22:42.251452
+
 # peeringdb_server.permissions
 
 Utilties for permission handling
