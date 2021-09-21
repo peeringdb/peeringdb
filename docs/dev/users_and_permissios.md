@@ -1,12 +1,12 @@
 ## django-grainy 
 
-PeeringDB users [grainy](https://github.com/20c/grainy) and [django-grainy](https://github.com/20c/django-grainy) to handle user permissions.
+PeeringDB users [grainy](https://github.com/20c/grainy) and [django-grainy](https://github.com/20c/django-grainy) to manage user permissions.
 
-`django-grainy` is based around granular permission namespacing, please refer to the documentation above for details.
+`django-grainy` is based on granular permission namespacing, please refer to the documentation above for details.
 
 ### Permissioning namespaces
 
-The gist of it is that each object is provided a permissioning namespace
+Each object is provided a permissioning namespace:
 
 - `org`: `peeringdb.organization.{org_pk}`
 - `ix`: `peeringdb.organization.{org_pk}.internetexchange.{ix_pk}`
@@ -22,16 +22,16 @@ The gist of it is that each object is provided a permissioning namespace
 
 ### Examples
 
-A user given permissions to `peeringdb.organization.1` would have those permissions for that oranization
-and all the objects permissioned in it.
+A user given permissions to `peeringdb.organization.1` would have permissions for that oranization
+and all the objects permissioned within it.
 
 A user given permissions to `peeringdb.organization.1.network.1` would only have permissions to the network
 with id `1` assuming that network belongs to the organization with id `1`.
 
 A user given permissions to `peeringdb.organization` has permissions to ALL organizations and ALL objects 
-permissioned in them.
+permissioned within them.
 
-A user given permissions to `peeringdb.organization.*.network.*.poc_set.users` has permissions to view all `user` 
+A user given permissions to `peeringdb.organization.*.network.*.poc_set.users` has permission to view all `user` 
 visible points of contact.
 
 ### Setting permissions
@@ -51,14 +51,14 @@ The `admin` group for an organization is set up with full write permissions to t
 
 The `user` group for an organization is set up with read only permissions to the org and all objects in the org.
 
-Organization admins main move members between groups in their `/org/{org_id}` view using the `Users` tool.
+Organization admins may move members between groups in their `/org/{org_id}` view using the `Users` tool.
 
 ## Permission holders for REST API requests
 
 When handling a django request to the REST API, it needs to be determined who or what is the permission holder for the request.
 
-It is either a guest (unauthenticated user), a user (through session or user api key auth) or an organization (through org api key auth)
+It is either a guest (unauthenticated user), a user (through session or user api key auth) or an organization (through org api key auth).
 
-The logic for this exists in `permissions.py` 
+The logic for this exists in `permissions.py`. 
 
 This is already wired up to all API views, but needs to be kept in mind when adding new views.
