@@ -1,6 +1,6 @@
 ## Methods of search
 
-PeeringDB has 3 (2) areas where searches are processed:
+PeeringDB has 3 areas where searches are processed:
 
 ### 1. The quick search
 
