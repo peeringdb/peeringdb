@@ -4,11 +4,11 @@
 
 ## Django
 
-PeeringDB runs on django 3.2 - for extensive documentation on the django framework please refer to the [official django documentation](https://docs.djangoproject.com/en/3.2/)
+PeeringDB runs on django 3.2 - for extensive documentation on the django framework please refer to the [official django documentation](https://docs.djangoproject.com/en/3.2/).
 
 Django uses model classes to define the database schema.
 
-## PeeringDB Models
+## PeeringDB models
 
 `peeringdb_server` defines its models (and thus db schema) in `peeringdb_server/models.py`
 
@@ -20,11 +20,11 @@ The main schema for peering data is maintained in the public [django-peeringdb](
 
 This is important to keep in mind when adding new fields or new models to the schema.
 
-Generally speaking anything that is going to be exposed to the public on PeeringDB's REST API should be added to the abstract models in `django_peeringdb.models.abstract` so it can be available to the people maintaining local snapshots of the database.
+Generally speaking, anything that is going to be exposed to the public on PeeringDB's REST API should be added to the abstract models in `django_peeringdb.models.abstract` so it can be available to users maintaining local snapshots of the database.
 
 ### Migrations
 
-For concrete models `django-peeringdb` and `peeringdb_server` maintain their own set of migrations. 
+For concrete models, `django-peeringdb` and `peeringdb_server` maintain their own set of migrations. 
 
 Please make sure that when you add fields or models to django-peeringdb that migrations for the changes exist in both places.
 
@@ -42,7 +42,7 @@ Refer to [django migration documentation](https://docs.djangoproject.com/en/3.2/
 - `IXLan` (`ixlan`): represents LAN information for an exchange
   - has a parent `InternetExchange` relationship
 - `IXLanPrefix` (`ixpfx`): represents a network prefix specification for an exchange
-  - has a parent `IXLan` relationshiop
+  - has a parent `IXLan` relationship
 - `NetworkIXLan` (`netixlan`): represents a networks presence at an exchange
   - has parent `Network` and `IXLan` relationships
 - `InternetExchangeFacility` (`ixfac`): represents an exchange's presence at a facility / location
@@ -54,11 +54,11 @@ Refer to [django migration documentation](https://docs.djangoproject.com/en/3.2/
 
 ### References tags (reftags)
 
-PeeringDB uses a shorthand when refering to some models also known as reftags
+PeeringDB uses shorthand when refering to some models, also known as reftags
 
 This becomes more important when relating models to the REST API.
 
-For example the reftag for a `Network` would be `net`. This `reftag` is defined through the model's `HandleRef` meta class.
+For example, the reftag for a `Network` would be `net`. This `reftag` is defined through the model's `HandleRef` meta class.
 
 Please refer to [django-handleref](https://github.com/20c/django-handleref) for further explanation.
 
@@ -70,7 +70,7 @@ Through `django-handleref` each of the above objects maintains a status field th
 - `pending`: object is pending approval through admin-com
 - `deleted`: object is marked as deleted 
 
-### Soft Delete
+### Soft delete
 
 With the exception of stale `poc` objects, public peering data is *never* hard deleted.
 
@@ -87,9 +87,9 @@ print(net.status) # deleted
 
 ### Version history
 
-Through `django-handleref` and `django-reversion` we maintain snapshots of objects.
+Through `django-handleref` and `django-reversion`, snapshots of objects are maintained.
 
-Everytime an object is saved such a snapshot is created.
+Every time an object is saved a snapshot is created.
 
 This is *not* automatic behavior, and you need to manually open the `reversion.create_revision` context for any code blocks that make changes to objects.
 
