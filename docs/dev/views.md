@@ -58,11 +58,11 @@ data = InternetExchangeSerializer(exchange, context={"user": request.user}).data
 
 This allows us to make use of the permissioning of sensitive data according to the user's viewing permissions that already exists within the REST API functionality.
 
-data is passed through to the template in field definitions using a `dict` for each field.
+Data is passed through to the template in field definitions using a `dict` for each field.
 
 These field definitions get turned into UI elements that provide both a normal view rendering of the property as well as an `edit-mode` form field.
 
-On the frontend this UX behaviour is handled by the [20c-edit](https://github.com/20c/js-edit) library.
+On the frontend, this UX behavior is handled by the [20c-edit](https://github.com/20c/js-edit) library.
 
 ### Entity field definitions
 
@@ -76,7 +76,7 @@ Each field definition has the following common properties:
 - `help_text` (`str`): tooltip text
 - `admin` (`bool`): only visible to object administrators
 
-Some types have specific properties, find those listed below
+Some types have specific properties, find those listed below:
 
 ### Field types
 
@@ -101,7 +101,7 @@ Some types have specific properties, find those listed below
 
 ### Data Loaders for list elements
 
-`<select>` elements will be created for `list` type fields. In order to fill these elements with data PeeringDB
+`<select>` elements will be created for `list` type fields. In order to fill these elements with data, PeeringDB
 employs asynchronous data loaders.
 
 Data loaders need to be setup across several files before they become usable.
@@ -128,12 +128,12 @@ def my_organizations(request):
     )
 ```
 
-Note: the JSONResponse needs provide the data keyed to a name thats identical to the loader name,
-the value of `"my_organizations"` in the response is NOT arbitrary.
+Note: The JSONResponse needs to provide the data keyed to a name that is identical to the loader name;
+therefore the value of `"my_organizations"` in the response is NOT arbitrary.
 
 #### `urls.py`
 
-URL routing needs to be set up 
+URL routing needs to be set up: 
 
 ```py
     url(r"^data/my_organizations$", peeringdb_server.data_views.my_organizations),
@@ -141,17 +141,17 @@ URL routing needs to be set up
 
 #### `static/peeringdb.js`
 
-The front-end needs to assign the loader 
+The front-end needs to assign the loader: 
 
 ```js
 twentyc.data.loaders.assign("my_organizations", "data");
 ```
 
-### Field Permissioning
+### Field permissioning
 
-Since we use the REST API serializers to build the field definitions and values sent to the views, some fields may be omitted due to lacking permissions.
+Because the REST API serializers are used to build the field definitions and values sent to the views, some fields may be omitted due to missing permissions.
 
-We do not want to predict for each field if this is going to be an issue or not, the value passed should always provide a reference to `dismiss` as a default:
+To avoid this issue, the value passed should always provide a reference to `dismiss` as a default:
 
 ```py
         "value": data.get("country", dismiss),
@@ -161,7 +161,7 @@ The `dismiss` object will hide the field if it was not provided in the data.
 
 #### Manual permissioning of fields
 
-In instances where you want to check permissions after the data has been serialized you can do so using the `DoNotRender` object:
+In instances where you want to check permissions after the data has been serialized, you can do so using the `DoNotRender` object:
 
 ```py
         "value": DoNotRender.permissioned(
