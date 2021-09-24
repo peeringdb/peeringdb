@@ -185,3 +185,18 @@ def test_poc_update(entities):
     assert network.netixlan_updated is None
     assert network.netfac_updated is None
     assert_same_time(network.updated, two_weeks_ago())
+
+
+@pytest.mark.django_db
+def test_region_continent(entities):
+
+    org = Organization.objects.first()
+    fac = Facility.objects.first()
+
+    fac.org = org
+    fac.country.code = "US"
+
+    with reversion.create_revision():
+        fac.save()
+
+    assert fac.region_continent == "North America"

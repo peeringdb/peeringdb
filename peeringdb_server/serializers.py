@@ -1444,6 +1444,8 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
         choices=AVAILABLE_VOLTAGE, required=False, allow_null=True
     )
 
+    region_continent = serializers.CharField(read_only=True)
+
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
@@ -1478,12 +1480,13 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
                 "available_voltage_services",
                 "diverse_serving_substations",
                 "property",
+                "region_continent",
             ]
             + HandleRefSerializer.Meta.fields
             + AddressSerializer.Meta.fields
         )
 
-        read_only_fields = ["rencode"]
+        read_only_fields = ["rencode", "region_continent"]
 
         related_fields = ["org"]
 

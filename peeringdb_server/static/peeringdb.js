@@ -377,6 +377,16 @@ PeeringDB.ViewTools = {
       addressFields.forEach(field => this.apply_data(container, data, field));
       this.update_geocode(data);
     }
+    if (target == "api:fac:update") {
+
+      // on facility `region_continent` is read-only and determined
+      // from the country during the save so we need to update it manually
+      // when the data comes back from the api
+
+      $('[data-edit-name="region_continent"]').
+        data("edit-value", data.region_continent).
+        text(data.region_continent);
+    }
   },
 
   update_geocode: function(data){

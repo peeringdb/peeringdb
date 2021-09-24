@@ -15,6 +15,7 @@ from django.utils.translation import ugettext_lazy as _
 from django_grainy.models import Group, GroupPermission
 from django_peeringdb.models.abstract import AddressModel
 from grainy.const import PERM_CRUD, PERM_READ
+from django_peeringdb.const import REGION_MAPPING
 
 import peeringdb_server.settings as pdb_settings
 from peeringdb_server.deskpro import (
@@ -23,7 +24,7 @@ from peeringdb_server.deskpro import (
     ticket_queue_asnauto_create,
     ticket_queue_vqi_notify,
 )
-from peeringdb_server.inet import RdapException, RdapLookup, asn_is_bogon
+from peeringdb_server.inet import RdapException, RdapLookup
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     QUEUE_NOTIFY,
@@ -526,3 +527,14 @@ def cors_allow_api_get_to_everyone(sender, request, **kwargs):
 
 
 check_request_enabled.connect(cors_allow_api_get_to_everyone)
+
+
+def auto_fill_region_continent(sender, instance, **kwargs):
+    if instance.country.code:
+
+        for region in REGION_MAPPING:
+            if instance.country.code == region["code"]:
+                instance.region_continent = region["continent"]
+
+
+pre_save.connect(auto_fill_region_continent, sender=Facility)
