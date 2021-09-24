@@ -14,9 +14,7 @@ import peeringdb_server.views as pdbviews
 from .util import SettingsCase, reset_group_ids
 
 ERR_COULD_NOT_GET_RIR_ENTRY = "This ASN is not assigned by any RIR"
-ERR_BOGON_ASN = (
-    "ASNs in this range are private or reserved"
-)
+ERR_BOGON_ASN = "ASNs in this range are private or reserved"
 
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 

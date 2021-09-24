@@ -1237,6 +1237,14 @@ def view_facility(request, id):
                 "value": data.get("country", dismiss),
             },
             {
+                "name": "region_continent",
+                "type": "list",
+                "data": "enum/regions",
+                "label": _("Continental Region"),
+                "value": data.get("region_continent", dismiss),
+                "readonly": True,
+            },
+            {
                 "name": "geocode",
                 "label": _("Geocode"),
                 "type": "geocode",
