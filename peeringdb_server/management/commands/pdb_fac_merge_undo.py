@@ -1,5 +1,5 @@
 """
-Undoes a facility merge.
+Undo a facility merge.
 """
 import re
 
