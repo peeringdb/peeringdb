@@ -1,5 +1,5 @@
 """
-Custom django middleware
+Custom django middleware.
 """
 
 from peeringdb_server.context import current_request
