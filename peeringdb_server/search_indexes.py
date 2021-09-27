@@ -1,5 +1,5 @@
 """
-Defines django-haystack search indexes
+Defines django-haystack search indexes.
 """
 
 from django.conf import settings
