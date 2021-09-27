@@ -1,5 +1,5 @@
 """
-Defines export views used for IX-F export and advanced search file download.
+Define export views used for IX-F export and advanced search file download.
 """
 
 import collections
