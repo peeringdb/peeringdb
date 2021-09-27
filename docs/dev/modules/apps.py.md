@@ -1,8 +1,8 @@
-Generated from apps.py on 2021-09-27 16:36:34.749378
+Generated from apps.py on 2021-09-27 17:07:21.196869
 
 # peeringdb_server.apps
 
-django apps configuration.
+Django apps configuration.
 
 # Classes
 ---

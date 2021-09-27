@@ -1,4 +1,4 @@
-Generated on 2021-09-27 16:36:34.355233
+Generated on 2021-09-27 17:07:20.909099
 
 ## _db_command.py
 
@@ -46,7 +46,7 @@ Undo a facility merge.
 
 ## pdb_fix_930_users.py
 
-Fixe users affected by being both in the org admin
+Fix users affected by being both in the org admin
 and org user group when it should be one or the other.
 
 ## pdb_generate_test_data.py

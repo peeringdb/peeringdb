@@ -1,4 +1,4 @@
-Generated on 2021-09-27 16:36:34.355233
+Generated on 2021-09-27 17:07:20.909099
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -36,14 +36,14 @@ Views for organization api key management.
 
 Augment REST API schema to use for open-api schema generation.
 
-open api schema generation leans heavily on automatic generation
+open-api schema generation leans heavily on automatic generation
 implemented through the django-rest-framework.
 
 Specify here, further augmentation of the generated schema.
 
 ## [apps.py](/docs/dev/modules/apps.py.md)
 
-django apps configuration.
+Django apps configuration.
 
 ## [autocomplete_views.py](/docs/dev/modules/autocomplete_views.py.md)
 
@@ -224,14 +224,14 @@ REST API POST / PUT data validators.
 New serializers should extend ModelSerializer class, which is a custom extension
 of django-rest-framework's ModelSerializer.
 
-Custom ModelSerializer implements logic for ?depth expansion and several performance fixes.
+Custom ModelSerializer implements logic for the expansion driven by the `depth` url parameter.
 
 Special api filtering implementation should be done through the `prepare_query`
 method.
 
 ## [settings.py](/docs/dev/modules/settings.py.md)
 
-(Seing DEPRECATED) django settings preparation.
+(Being DEPRECATED) django settings preparation.
 
 This is mostly DEPRECATED at this point and any new settings should be directly
 defined in mainsite/settings.
@@ -255,7 +255,7 @@ Load and maintain global stats (displayed in peeringdb footer).
 
 ## [urls.py](/docs/dev/modules/urls.py.md)
 
-django url to view routing.
+Django url to view routing.
 
 ## [util.py](/docs/dev/modules/util.py.md)
 

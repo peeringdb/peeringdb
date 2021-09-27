@@ -1,10 +1,10 @@
-Generated from api_schema.py on 2021-09-27 16:36:34.749378
+Generated from api_schema.py on 2021-09-27 17:07:21.196869
 
 # peeringdb_server.api_schema
 
 Augment REST API schema to use for open-api schema generation.
 
-open api schema generation leans heavily on automatic generation
+open-api schema generation leans heavily on automatic generation
 implemented through the django-rest-framework.
 
 Specify here, further augmentation of the generated schema.
