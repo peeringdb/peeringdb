@@ -1,5 +1,5 @@
 """
-Wipe all peering data
+Wipes all peering data.
 """
 from django.conf import settings
 from django.core.management import call_command
