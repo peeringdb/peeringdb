@@ -1,5 +1,5 @@
 """
-Django middleware to handle maintenance mode
+Django middleware to handle maintenance mode.
 """
 import os
 
