@@ -1,5 +1,5 @@
 """
-load and maintain global stats (displayed in peeringdb footer)
+Load and maintain global stats (displayed in peeringdb footer).
 """
 
 from peeringdb_server.models import (
