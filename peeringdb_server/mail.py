@@ -1,5 +1,5 @@
 """
-Utility functions for emailing users and admin staff
+Utility functions for emailing users and admin staff.
 """
 
 from django.conf import settings
