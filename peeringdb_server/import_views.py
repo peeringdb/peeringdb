@@ -1,5 +1,5 @@
 """
-Defines ix-f import preview, revie and post-mortem views
+Define ix-f import preview, review and post-mortem views.
 """
 
 import base64
