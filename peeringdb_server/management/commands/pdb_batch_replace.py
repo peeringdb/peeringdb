@@ -1,5 +1,5 @@
 """
-Replace a value in a field across several entities
+Replaces a value in a field across several entities.
 """
 
 import re
