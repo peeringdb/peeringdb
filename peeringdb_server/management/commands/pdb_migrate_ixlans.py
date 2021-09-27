@@ -1,6 +1,6 @@
 """
 DEPRECATED
-Used during ixlan migrations for #21
+Used during ixlan migrations for #21.
 """
 import csv
 import datetime
