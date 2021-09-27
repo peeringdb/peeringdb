@@ -1,5 +1,5 @@
 """
-(Seing DEPRECATED) django settings preparation.
+(Being DEPRECATED) django settings preparation.
 
 This is mostly DEPRECATED at this point and any new settings should be directly
 defined in mainsite/settings.
