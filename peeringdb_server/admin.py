@@ -8,9 +8,9 @@ New admin views wrapping HandleRef models need to extend the
 `SoftDeleteAdmin` class.
 
 Admin views wrapping verification-queue enabled models need to also
-add the `ModelAdminWithVQCtrl` Mixin
+add the `ModelAdminWithVQCtrl` Mixin.
 
-Version history is implemented through django-handleref
+Version history is implemented through django-handleref.
 """
 
 import datetime
@@ -104,8 +104,8 @@ PERMISSION_APP_LABELS = [
 
 class StatusFilter(admin.SimpleListFilter):
     """
-    A listing filter that by default will only show entities
-    with status="ok"
+    A listing filter that, by default, will only show entities
+    with status="ok".
     """
 
     title = _("Status")
@@ -140,8 +140,8 @@ class StatusFilter(admin.SimpleListFilter):
 def fk_handleref_filter(form, field, tag=None):
     """
     This filters foreign key dropdowns that hold handleref objects
-    to only contain undeleted objects and the object the instance is currently
-    set to
+    so they only contain undeleted objects and the object the instance is currently
+    set to.
     """
 
     if tag is None:
@@ -168,7 +168,7 @@ def fk_handleref_filter(form, field, tag=None):
 def merge_organizations(targets, target, request):
     """
     Merge organizations specified in targets into organization specified
-    in target
+    in target.
 
     Arguments:
 
@@ -286,8 +286,8 @@ class ModelAdminWithUrlActions(admin.ModelAdmin):
 
     def actions_view(self, request, object_id, action, **kwargs):
         """
-        this view allows us to call any actions we define in this model admin
-        to be called via an admin view placed at <model_name>/<id>/<action>/<action_name>
+        Allows one to call any actions defined in this model admin
+        to be called via an admin view placed at <model_name>/<id>/<action>/<action_name>.
         """
         if not request.user.is_superuser:
             return HttpResponseForbidden(request)
@@ -307,7 +307,7 @@ class ModelAdminWithUrlActions(admin.ModelAdmin):
 
     def get_urls(self):
         """
-        add the actions view as a subview of this model's admin views
+        Adds the actions view as a subview of this model's admin views.
         """
         info = self.model._meta.app_label, self.model._meta.model_name
 
@@ -361,10 +361,10 @@ class CustomResultLengthFilter(admin.SimpleListFilter):
 
     """
     Filter object that enables custom result length
-    in django-admin change lists
+    in django-admin change lists.
 
     This should only be used in a model admin that extends
-    CustomResultLengthAdmin
+    CustomResultLengthAdmin.
     """
 
     title = _("Resul length")
@@ -437,13 +437,13 @@ class CustomResultLengthAdmin:
 
     def get_changelist_instance(self, request):
         """
-        Return a `ChangeList` instance based on `request`. May raise
+        Returns a `ChangeList` instance based on `request`. May raise
         `IncorrectLookupParameters`.
 
         This is copied from the original function in the dango source
         for 2.2
 
-        We override it here so we can set the list_per_page and list_max_show_all
+        This is overriden it here so one can set the list_per_page and list_max_show_all
         values on the ChangeList accordingly.
         """
         list_display = self.get_list_display(request)
@@ -489,7 +489,7 @@ class SoftDeleteAdmin(
     SanitizedAdmin, HandleRefVersionAdmin, VersionAdmin, admin.ModelAdmin
 ):
     """
-    Soft delete admin
+    Soft delete admin.
     """
 
     actions = [soft_delete]
@@ -514,14 +514,14 @@ class SoftDeleteAdmin(
 class ModelAdminWithVQCtrl:
     """
     Extend from this model admin if you want to add verification queue
-    approve | deny controls to the top of its form
+    approve | deny controls to the top of its form.
     """
 
     def get_fieldsets(self, request, obj=None):
         """
-        we override get_fieldsets so we can attach the vq controls
-        to the top of the existing fieldset - whethers it's manually or automatically
-        defined
+        Overrides get_fieldsets so one can attach the vq controls
+        to the top of the existing fieldset - whether it's manually or automatically
+        defined.
         """
 
         fieldsets = tuple(super().get_fieldsets(request, obj=obj))
@@ -541,8 +541,8 @@ class ModelAdminWithVQCtrl:
 
     def get_readonly_fields(self, request, obj=None):
         """
-        make the modeladmin aware that "verification_queue" is a valid
-        readonly field
+        Makes the modeladmin aware that "verification_queue" is a valid
+        readonly field.
         """
         return ("verification_queue",) + tuple(
             super().get_readonly_fields(request, obj=obj)
@@ -550,7 +550,7 @@ class ModelAdminWithVQCtrl:
 
     def verification_queue(self, obj):
         """
-        This renders the controls or a status message
+        Renders the controls or a status message.
         """
 
         if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False):
@@ -1569,8 +1569,8 @@ class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
     def version(self, obj):
         """
         Users are not versioned, but ModelAdminWithVQCtrl defines
-        a readonly field called "version", for sake of completion
-        return a 0 version here
+        a readonly field called "version." For the sake of completion,
+        return a 0 version here.
         """
         return 0
 
@@ -1668,7 +1668,7 @@ class UserPermissionAdmin(UserAdmin):
 class CommandLineToolPrepareForm(baseForms.Form):
     """
     Form that allows user to select which commandline tool
-    to run
+    to run.
     """
 
     tool = baseForms.ChoiceField(choices=COMMANDLINE_TOOLS)
@@ -1676,7 +1676,7 @@ class CommandLineToolPrepareForm(baseForms.Form):
 
 class CommandLineToolAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     """
-    View that lets staff users run peeringdb command line tools
+    View that lets staff users run peeringdb command line tools.
     """
 
     list_display = ("tool", "description", "user", "created", "status")
@@ -1758,7 +1758,7 @@ class CommandLineToolAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
 
     def preview_command_view(self, request):
         """
-        This view has the user preview the result of running the command
+        This view has the user preview the result of running the command.
         """
         if not self.has_add_permission(request):
             return HttpResponseForbidden()
