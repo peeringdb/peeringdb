@@ -1,5 +1,5 @@
 """
-Inspect an object's history of changes
+Inspects an object's history of changes.
 """
 import json
 
