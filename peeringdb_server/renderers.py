@@ -1,7 +1,7 @@
 """
-REST API renderer
+REST API renderer.
 
-Ensures valid json output of the REST API
+Ensure valid json output of the REST API.
 """
 
 import json
