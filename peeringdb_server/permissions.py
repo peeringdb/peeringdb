@@ -1,5 +1,5 @@
 """
-Utilties for permission handling.
+Utilities for permission handling.
 
 Permission logic is handled through django-grainy.
 
