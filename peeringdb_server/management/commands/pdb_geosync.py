@@ -1,6 +1,6 @@
 """
 DEPRECATED
-Syncs latitude and longitude on all geocoding enabled entities.
+Sync latitude and longitude on all geocoding enabled entities.
 """
 import googlemaps
 import reversion
