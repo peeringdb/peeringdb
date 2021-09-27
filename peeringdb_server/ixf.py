@@ -1,8 +1,8 @@
 """
-IX-F importer implementation
+IX-F importer implementation.
 
 Handles import of ix-f feeds, creation of suggestions for networks and exchanges
-to follow
+to follow.
 
 Handles notifications of networks and exchanges as part of that process.
 
