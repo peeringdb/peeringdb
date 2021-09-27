@@ -1,5 +1,5 @@
 """
-command line whois
+Command line whois.
 """
 import logging
 
