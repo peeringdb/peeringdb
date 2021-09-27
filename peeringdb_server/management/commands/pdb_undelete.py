@@ -1,5 +1,5 @@
 """
-Restores soft-deleted objects.
+Restore soft-deleted objects.
 """
 import json
 
