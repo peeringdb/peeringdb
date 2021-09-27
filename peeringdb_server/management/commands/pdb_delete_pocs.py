@@ -1,5 +1,5 @@
 """
-Hard deletes old soft-deleted network contract instances
+Hard deletes old soft-deleted network contract instances.
 """
 
 from datetime import timedelta
