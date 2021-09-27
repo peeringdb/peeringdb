@@ -1,5 +1,5 @@
 """
-Utilties for geocoding and geo normalization.
+Utilities for geocoding and geo normalization.
 """
 
 import googlemaps
