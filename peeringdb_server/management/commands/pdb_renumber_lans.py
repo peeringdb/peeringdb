@@ -1,5 +1,5 @@
 """
-Renumber addresses, by providing the first three octects of a current ip4 address and the first three octets to change to.
+Renumbers addresses by providing the first three octets of a current ip4 address and the first three octets to change to.
 """
 import ipaddress
 
