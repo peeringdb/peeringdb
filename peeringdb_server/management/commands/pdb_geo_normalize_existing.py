@@ -1,5 +1,5 @@
 """
-Normalizes existing address fields based on Google Maps API response.
+Normalize existing address fields based on Google Maps API response.
 """
 import csv
 import os
