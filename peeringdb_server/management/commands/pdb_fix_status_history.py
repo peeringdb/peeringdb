@@ -1,5 +1,5 @@
 """
-Fix object status in reversion archived data (#558)
+Fixes object status in reversion archived data (#558).
 """
 import json
 
