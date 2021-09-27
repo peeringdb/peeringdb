@@ -1,5 +1,5 @@
 """
-Looks for expired sponsorships and sends a notification to sponsorship admin for recently expired sponsorships.
+Look for expired sponsorships and sends a notification to sponsorship admin for recently expired sponsorships.
 """
 import datetime
 
