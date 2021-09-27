@@ -1,5 +1,5 @@
 """
-Regen the api cache files
+Regen the api cache files.
 """
 import datetime
 import os
