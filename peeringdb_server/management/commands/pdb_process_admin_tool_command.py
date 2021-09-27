@@ -1,5 +1,5 @@
 """
-Processes one item in the admin tool command queue.
+Process one item in the admin tool command queue.
 """
 import json
 
