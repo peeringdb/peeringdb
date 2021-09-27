@@ -1,10 +1,10 @@
 """
-Augment REST API schema to use for open-api schema generation
+Augment REST API schema to use for open-api schema generation.
 
 open api schema generation leans heavily on automatic generation
 implemented through the django-rest-framework.
 
-In here we specify further augmentation of the generated schema
+Specify here, further augmentation of the generated schema.
 """
 import re
 
