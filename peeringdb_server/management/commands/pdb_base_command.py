@@ -1,5 +1,5 @@
 """
-Base class to use for command creation
+Base class to use for command creation.
 """
 
 from django.core.management.base import BaseCommand
