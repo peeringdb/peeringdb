@@ -1,5 +1,5 @@
 """
-Django HTTPRequest utilities
+Django HTTPRequest utilities.
 """
 
 from peeringdb_server.context import current_request
