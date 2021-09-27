@@ -1,5 +1,5 @@
 """
-Posts stat breakdown for any given date.
+Post stat breakdown for any given date.
 """
 import datetime
 import json
