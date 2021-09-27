@@ -1,5 +1,5 @@
 """
-Runs the IX-F Importer.
+Run the IX-F Importer.
 """
 import json
 import sys
