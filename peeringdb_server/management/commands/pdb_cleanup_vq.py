@@ -1,5 +1,5 @@
 """
-Verification queue cleanup
+Verification queue cleanup.
 """
 from datetime import datetime, timedelta
 
