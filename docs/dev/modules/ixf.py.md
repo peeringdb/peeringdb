@@ -1,11 +1,11 @@
-Generated from ixf.py on 2021-09-17 13:22:42.251452
+Generated from ixf.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.ixf
 
-IX-F importer implementation
+IX-F importer implementation.
 
 Handles import of ix-f feeds, creation of suggestions for networks and exchanges
-to follow
+to follow.
 
 Handles notifications of networks and exchanges as part of that process.
 

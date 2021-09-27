@@ -1,14 +1,14 @@
-Generated from views.py on 2021-09-17 13:22:42.251452
+Generated from views.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.views
 
-View definitions
+View definitions:
 
 - Login
 - Logout
 - Advanced search
 - User Profile
-- oAuth Profile
+- OAuth Profile
 - Landing page
 - Search results
 - Entity views (network, facility, internet exchange and organization)

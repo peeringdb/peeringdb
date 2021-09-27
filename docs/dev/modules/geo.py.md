@@ -1,8 +1,8 @@
-Generated from geo.py on 2021-09-17 13:22:42.251452
+Generated from geo.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.geo
 
-Utilties for geocoding and geo normalization
+Utilities for geocoding and geo normalization.
 
 # Classes
 ---

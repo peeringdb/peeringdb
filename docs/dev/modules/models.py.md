@@ -1,26 +1,26 @@
-Generated from models.py on 2021-09-17 13:22:42.251452
+Generated from models.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.models
 
-Django model definitions (database schema)
+Django model definitions (database schema).
 
 ## django-peeringdb
 
 peeringdb_server uses the abstract models from django-peeringdb.
 
-A lot of the time it makes the most sense for a field to be added to the abstraction
+Often, it makes the most sense for a field to be added to the abstraction
 in django-peeringdb, so it can be available for people using local snapshots of the databases.
 
-Generally speaking if the field is to be added to the REST API output,
+Generally speaking, if the field is to be added to the REST API output,
 it should be added through django-peeringdb.
 
-Fields to facilitate internal operations of peeringdb on the other hand DO NOT need to be added to django-peeringdb.
+Fields to facilitate internal operations of peeringdb on the other hand, DO NOT need to be added to django-peeringdb.
 
 ## migrations
 
-For concrete models django-peeringdb and peeringdb_server maintain separate model migrations.
+For concrete models, django-peeringdb and peeringdb_server maintain separate model migrations.
 
-When adding new fields to django-peeringdb please make sure migration files for the schema changes exist in both places.
+When adding new fields to django-peeringdb make sure migration files for the schema changes exist in both places.
 
 Please open a merge request in peeringdb/django-peeringdb for the field addition as well.
 

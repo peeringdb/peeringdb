@@ -1,8 +1,8 @@
-Generated from import_views.py on 2021-09-17 13:22:42.251452
+Generated from import_views.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.import_views
 
-Defines ix-f import preview, revie and post-mortem views
+Define ix-f import preview, review and post-mortem views.
 
 # Functions
 ---

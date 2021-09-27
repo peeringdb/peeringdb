@@ -1,10 +1,10 @@
-Generated from autocomplete_views.py on 2021-09-17 13:22:42.019241
+Generated from autocomplete_views.py on 2021-09-27 16:36:34.355233
 
 # peeringdb_server.autocomplete_views
 
-Autocomplete views
+Autocomplete views.
 
-Handles most autocomplete functionality found in peeringdb.
+Handle most autocomplete functionality found in peeringdb.
 
 Note: Quick search behavior is specified in search.py
 

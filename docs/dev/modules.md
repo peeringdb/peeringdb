@@ -1,4 +1,4 @@
-Generated on 2021-09-17 13:22:42.019241
+Generated on 2021-09-27 16:36:34.355233
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -11,9 +11,9 @@ New admin views wrapping HandleRef models need to extend the
 `SoftDeleteAdmin` class.
 
 Admin views wrapping verification-queue enabled models need to also
-add the `ModelAdminWithVQCtrl` Mixin
+add the `ModelAdminWithVQCtrl` Mixin.
 
-Version history is implemented through django-handleref
+Version history is implemented through django-handleref.
 
 ## [admin_commandline_tools.py](/docs/dev/modules/admin_commandline_tools.py.md)
 
@@ -26,49 +26,49 @@ command to exposed in this manner.
 
 ## [api_cache.py](/docs/dev/modules/api_cache.py.md)
 
-Handles loading of api-cache data
+Handle loading of api-cache data.
 
 ## [api_key_views.py](/docs/dev/modules/api_key_views.py.md)
 
-Views for organization api key management
+Views for organization api key management.
 
 ## [api_schema.py](/docs/dev/modules/api_schema.py.md)
 
-Augment REST API schema to use for open-api schema generation
+Augment REST API schema to use for open-api schema generation.
 
 open api schema generation leans heavily on automatic generation
 implemented through the django-rest-framework.
 
-In here we specify further augmentation of the generated schema
+Specify here, further augmentation of the generated schema.
 
 ## [apps.py](/docs/dev/modules/apps.py.md)
 
-django apps configuration
+django apps configuration.
 
 ## [autocomplete_views.py](/docs/dev/modules/autocomplete_views.py.md)
 
-Autocomplete views
+Autocomplete views.
 
-Handles most autocomplete functionality found in peeringdb.
+Handle most autocomplete functionality found in peeringdb.
 
 Note: Quick search behavior is specified in search.py
 
 ## [context.py](/docs/dev/modules/context.py.md)
 
-Defines custom context managers
+Define custom context managers.
 
 ## [data_views.py](/docs/dev/modules/data_views.py.md)
 
-This holds JSON views for various data sets
+This holds JSON views for various data sets.
 
-Mostly these are needed for filling form-selects for editable
-mode in UX
+These are needed for filling form-selects for editable
+mode in UX.
 
 ## [db_router.py](/docs/dev/modules/db_router.py.md)
 
-custom django database routers
+Custom django database routers.
 
-allows us to split read and write database connections if needed
+Split read and write database connections if needed.
 
 ## [deskpro.py](/docs/dev/modules/deskpro.py.md)
 
@@ -77,39 +77,39 @@ from the deskpro api.
 
 ## [export_views.py](/docs/dev/modules/export_views.py.md)
 
-Defines export views used for IX-F export and advanced search file download.
+Define export views used for IX-F export and advanced search file download.
 
 ## [forms.py](/docs/dev/modules/forms.py.md)
 
 Custom django forms.
 
-Note that this does not includes forms pointed directly
-at the REST api to handle updates (such as /net, /ix, /fac or /org endpoints)
+Note: This does not includes forms pointed directly
+at the REST api to handle updates (such as /net, /ix, /fac or /org endpoints).
 
-Look in rest.py and serializers.py for those
+Look in rest.py and serializers.py for those.
 
 ## [geo.py](/docs/dev/modules/geo.py.md)
 
-Utilties for geocoding and geo normalization
+Utilities for geocoding and geo normalization.
 
 ## [import_views.py](/docs/dev/modules/import_views.py.md)
 
-Defines ix-f import preview, revie and post-mortem views
+Define ix-f import preview, review and post-mortem views.
 
 ## [inet.py](/docs/dev/modules/inet.py.md)
 
-RDAP lookup and validation
+RDAP lookup and validation.
 
-Network validation
+Network validation.
 
-Prefix renumbering
+Prefix renumbering.
 
 ## [ixf.py](/docs/dev/modules/ixf.py.md)
 
-IX-F importer implementation
+IX-F importer implementation.
 
 Handles import of ix-f feeds, creation of suggestions for networks and exchanges
-to follow
+to follow.
 
 Handles notifications of networks and exchanges as part of that process.
 
@@ -117,104 +117,104 @@ A substantial part of the import logic is handled through models.py::IXFMemberDa
 
 ## [mail.py](/docs/dev/modules/mail.py.md)
 
-Utility functions for emailing users and admin staff
+Utility functions for emailing users and admin staff.
 
 ## [maintenance.py](/docs/dev/modules/maintenance.py.md)
 
-Django middleware to handle maintenance mode
+Django middleware to handle maintenance mode.
 
 ## [middleware.py](/docs/dev/modules/middleware.py.md)
 
-Custom django middleware
+Custom django middleware.
 
 ## [mock.py](/docs/dev/modules/mock.py.md)
 
-Handles generation of mock data for testing purposes
+Handle generation of mock data for testing purposes.
 
 ## [models.py](/docs/dev/modules/models.py.md)
 
-Django model definitions (database schema)
+Django model definitions (database schema).
 
 ## django-peeringdb
 
 peeringdb_server uses the abstract models from django-peeringdb.
 
-A lot of the time it makes the most sense for a field to be added to the abstraction
+Often, it makes the most sense for a field to be added to the abstraction
 in django-peeringdb, so it can be available for people using local snapshots of the databases.
 
-Generally speaking if the field is to be added to the REST API output,
+Generally speaking, if the field is to be added to the REST API output,
 it should be added through django-peeringdb.
 
-Fields to facilitate internal operations of peeringdb on the other hand DO NOT need to be added to django-peeringdb.
+Fields to facilitate internal operations of peeringdb on the other hand, DO NOT need to be added to django-peeringdb.
 
 ## migrations
 
-For concrete models django-peeringdb and peeringdb_server maintain separate model migrations.
+For concrete models, django-peeringdb and peeringdb_server maintain separate model migrations.
 
-When adding new fields to django-peeringdb please make sure migration files for the schema changes exist in both places.
+When adding new fields to django-peeringdb make sure migration files for the schema changes exist in both places.
 
 Please open a merge request in peeringdb/django-peeringdb for the field addition as well.
 
 ## [org_admin_views.py](/docs/dev/modules/org_admin_views.py.md)
 
-Views for organization administrative actions (/org endpoint)
+View for organization administrative actions (/org endpoint).
 
 ## [permissions.py](/docs/dev/modules/permissions.py.md)
 
-Utilties for permission handling
+Utilities for permission handling.
 
-Permission logic is handled through django-grainy
+Permission logic is handled through django-grainy.
 
-API key auth is handled through djangorestframework-api-key
+API key auth is handled through djangorestframework-api-key.
 
-Determine permission holder from request (api key or user)
+Determine permission holder from request (api key or user).
 
-Read only user api key handling
+Read only user api key handling.
 
-Censor API output data according to permissions using grainy Applicators
+Censor API output data according to permissions using grainy Applicators.
 
 ## [renderers.py](/docs/dev/modules/renderers.py.md)
 
-REST API renderer
+REST API renderer.
 
-Ensures valid json output of the REST API
+Ensure valid json output of the REST API.
 
 ## [request.py](/docs/dev/modules/request.py.md)
 
-Django HTTPRequest utilities
+Django HTTPRequest utilities.
 
 ## [rest.py](/docs/dev/modules/rest.py.md)
 
-REST API view definitions
+REST API view definitions.
 
-REST API path routing
+REST API path routing.
 
-REST API permission checking (facilitated through django-grainy)
+REST API permission checking (facilitated through django-grainy).
 
-REST API error handling
+REST API error handling.
 
-REST API list filtering logic
+REST API list filtering logic.
 
-peeringdb-py client compatibility checking
+peeringdb-py client compatibility checking.
 
-The peeringdb REST API is implemented through django-rest-framework
+The peeringdb REST API is implemented through django-rest-framework.
 
 ## [rest_throttles.py](/docs/dev/modules/rest_throttles.py.md)
 
-Custom rate limit handlers for the REST API
+Custom rate limit handlers for the REST API.
 
 ## [search.py](/docs/dev/modules/search.py.md)
 
-Search implementation used for the peeringdb top search bar as well as name searches through
-the api `name_search` filter as well as advances search name field searches.
+Search implementation used for the peeringdb top search bar, as well as, name searches through
+the api `name_search` filter, as well as, advances search name field searches.
 
-Search logic is handled by django-haystack and whoosh
+Search logic is handled by django-haystack and whoosh.
 
-Refer to search_indexes.py for search index definition
+Refer to search_indexes.py for search index definition.
 
 ## [search_indexes.py](/docs/dev/modules/search_indexes.py.md)
 
-Defines django-haystack search indexes
+Defines django-haystack search indexes.
 
 ## [serializers.py](/docs/dev/modules/serializers.py.md)
 
@@ -231,10 +231,10 @@ method.
 
 ## [settings.py](/docs/dev/modules/settings.py.md)
 
-(being DEPRECATED) django settings prepration.
+(Seing DEPRECATED) django settings preparation.
 
 This is mostly DEPRECATED at this point and any new settings should be directly
-defined in mainsite/settings
+defined in mainsite/settings.
 
 ## [signals.py](/docs/dev/modules/signals.py.md)
 
@@ -251,15 +251,15 @@ Django signal handlers
 
 ## [stats.py](/docs/dev/modules/stats.py.md)
 
-load and maintain global stats (displayed in peeringdb footer)
+Load and maintain global stats (displayed in peeringdb footer).
 
 ## [urls.py](/docs/dev/modules/urls.py.md)
 
-django url to view routing
+django url to view routing.
 
 ## [util.py](/docs/dev/modules/util.py.md)
 
-Assorted utility functions for peeringdb site templates
+Assorted utility functions for peeringdb site templates.
 
 ## [validators.py](/docs/dev/modules/validators.py.md)
 
@@ -267,13 +267,13 @@ peeringdb model / field validators
 
 ## [views.py](/docs/dev/modules/views.py.md)
 
-View definitions
+View definitions:
 
 - Login
 - Logout
 - Advanced search
 - User Profile
-- oAuth Profile
+- OAuth Profile
 - Landing page
 - Search results
 - Entity views (network, facility, internet exchange and organization)

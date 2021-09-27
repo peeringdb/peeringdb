@@ -1,13 +1,13 @@
-Generated from forms.py on 2021-09-17 13:22:42.251452
+Generated from forms.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.forms
 
 Custom django forms.
 
-Note that this does not includes forms pointed directly
-at the REST api to handle updates (such as /net, /ix, /fac or /org endpoints)
+Note: This does not includes forms pointed directly
+at the REST api to handle updates (such as /net, /ix, /fac or /org endpoints).
 
-Look in rest.py and serializers.py for those
+Look in rest.py and serializers.py for those.
 
 # Classes
 ---

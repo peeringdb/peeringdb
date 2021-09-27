@@ -1,8 +1,8 @@
-Generated from mock.py on 2021-09-17 13:22:42.251452
+Generated from mock.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.mock
 
-Handles generation of mock data for testing purposes
+Handle generation of mock data for testing purposes.
 
 # Classes
 ---

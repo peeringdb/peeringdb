@@ -1,8 +1,8 @@
-Generated from api_key_views.py on 2021-09-17 13:22:42.251452
+Generated from api_key_views.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.api_key_views
 
-Views for organization api key management
+Views for organization api key management.
 
 # Functions
 ---

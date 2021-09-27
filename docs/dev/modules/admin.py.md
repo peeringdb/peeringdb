@@ -1,4 +1,4 @@
-Generated from admin.py on 2021-09-17 13:22:42.251452
+Generated from admin.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.admin
 
@@ -11,9 +11,9 @@ New admin views wrapping HandleRef models need to extend the
 `SoftDeleteAdmin` class.
 
 Admin views wrapping verification-queue enabled models need to also
-add the `ModelAdminWithVQCtrl` Mixin
+add the `ModelAdminWithVQCtrl` Mixin.
 
-Version history is implemented through django-handleref
+Version history is implemented through django-handleref.
 
 # Functions
 ---
@@ -22,15 +22,15 @@ Version history is implemented through django-handleref
 `def fk_handleref_filter(form, field, tag=None)`
 
 This filters foreign key dropdowns that hold handleref objects
-to only contain undeleted objects and the object the instance is currently
-set to
+so they only contain undeleted objects and the object the instance is currently
+set to.
 
 ---
 ## merge_organizations
 `def merge_organizations(targets, target, request)`
 
 Merge organizations specified in targets into organization specified
-in target
+in target.
 
 Arguments:
 
@@ -48,7 +48,7 @@ target <Organization> merge organizations with this organization
 CommandLineToolAdmin(peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-View that lets staff users run peeringdb command line tools
+View that lets staff users run peeringdb command line tools.
 
 
 ### Instanced Attributes
@@ -82,7 +82,7 @@ with which arguments.
 #### preview_command_view
 `def preview_command_view(self, request)`
 
-This view has the user preview the result of running the command
+This view has the user preview the result of running the command.
 
 ---
 #### run_command_view
@@ -100,7 +100,7 @@ CommandLineToolPrepareForm(django.forms.forms.Form)
 ```
 
 Form that allows user to select which commandline tool
-to run
+to run.
 
 
 ### Instanced Attributes
@@ -116,10 +116,10 @@ CustomResultLengthFilter(django.contrib.admin.filters.SimpleListFilter)
 ```
 
 Filter object that enables custom result length
-in django-admin change lists
+in django-admin change lists.
 
 This should only be used in a model admin that extends
-CustomResultLengthAdmin
+CustomResultLengthAdmin.
 
 
 ### Methods
@@ -250,7 +250,7 @@ FacilityAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admi
 ```
 
 Extend from this model admin if you want to add verification queue
-approve | deny controls to the top of its form
+approve | deny controls to the top of its form.
 
 
 ### Instanced Attributes
@@ -389,7 +389,7 @@ Determine the HttpResponse for the change_view stage.
 IXLanAdmin(peeringdb_server.admin.SoftDeleteAdmin)
 ```
 
-Soft delete admin
+Soft delete admin.
 
 
 ### Instanced Attributes
@@ -546,7 +546,7 @@ request has permission to delete *any* object of the given type.
 IXLanPrefixAdmin(peeringdb_server.admin.SoftDeleteAdmin)
 ```
 
-Soft delete admin
+Soft delete admin.
 
 
 ### Instanced Attributes
@@ -610,7 +610,7 @@ InternetExchangeAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_ser
 ```
 
 Extend from this model admin if you want to add verification queue
-approve | deny controls to the top of its form
+approve | deny controls to the top of its form.
 
 
 ### Instanced Attributes
@@ -652,7 +652,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 InternetExchangeFacilityAdmin(peeringdb_server.admin.SoftDeleteAdmin)
 ```
 
-Soft delete admin
+Soft delete admin.
 
 
 ### Instanced Attributes
@@ -709,14 +709,14 @@ These attributes / properties will be available on instances of the class
 #### actions_view
 `def actions_view(self, request, object_id, action, **kwargs)`
 
-this view allows us to call any actions we define in this model admin
-to be called via an admin view placed at <model_name>/<id>/<action>/<action_name>
+Allows one to call any actions defined in this model admin
+to be called via an admin view placed at <model_name>/<id>/<action>/<action_name>.
 
 ---
 #### get_urls
 `def get_urls(self)`
 
-add the actions view as a subview of this model's admin views
+Adds the actions view as a subview of this model's admin views.
 
 ---
 
@@ -727,7 +727,7 @@ ModelAdminWithVQCtrl(builtins.object)
 ```
 
 Extend from this model admin if you want to add verification queue
-approve | deny controls to the top of its form
+approve | deny controls to the top of its form.
 
 
 ### Methods
@@ -735,22 +735,22 @@ approve | deny controls to the top of its form
 #### get_fieldsets
 `def get_fieldsets(self, request, obj=None)`
 
-we override get_fieldsets so we can attach the vq controls
-to the top of the existing fieldset - whethers it's manually or automatically
-defined
+Overrides get_fieldsets so one can attach the vq controls
+to the top of the existing fieldset - whether it's manually or automatically
+defined.
 
 ---
 #### get_readonly_fields
 `def get_readonly_fields(self, request, obj=None)`
 
-make the modeladmin aware that "verification_queue" is a valid
-readonly field
+Makes the modeladmin aware that "verification_queue" is a valid
+readonly field.
 
 ---
 #### verification_queue
 `def verification_queue(self, obj)`
 
-This renders the controls or a status message
+Renders the controls or a status message.
 
 ---
 
@@ -761,7 +761,7 @@ NetworkAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin
 ```
 
 Extend from this model admin if you want to add verification queue
-approve | deny controls to the top of its form
+approve | deny controls to the top of its form.
 
 
 ### Instanced Attributes
@@ -803,7 +803,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 NetworkContactAdmin(peeringdb_server.admin.SoftDeleteAdmin)
 ```
 
-Soft delete admin
+Soft delete admin.
 
 
 ### Instanced Attributes
@@ -837,7 +837,7 @@ These attributes / properties will be available on instances of the class
 NetworkFacilityAdmin(peeringdb_server.admin.SoftDeleteAdmin)
 ```
 
-Soft delete admin
+Soft delete admin.
 
 
 ### Instanced Attributes
@@ -880,7 +880,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 NetworkIXLanAdmin(peeringdb_server.admin.SoftDeleteAdmin)
 ```
 
-Soft delete admin
+Soft delete admin.
 
 
 ### Instanced Attributes
@@ -958,7 +958,7 @@ OrganizationAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.
 ```
 
 Extend from this model admin if you want to add verification queue
-approve | deny controls to the top of its form
+approve | deny controls to the top of its form.
 
 
 ### Instanced Attributes
@@ -1099,7 +1099,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 SoftDeleteAdmin(peeringdb_server.admin.SanitizedAdmin, django_handleref.admin.VersionAdmin, reversion.admin.VersionAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Soft delete admin
+Soft delete admin.
 
 
 ### Instanced Attributes
@@ -1170,8 +1170,8 @@ These attributes / properties will be available on instances of the class
 StatusFilter(django.contrib.admin.filters.SimpleListFilter)
 ```
 
-A listing filter that by default will only show entities
-with status="ok"
+A listing filter that, by default, will only show entities
+with status="ok".
 
 
 ### Methods
@@ -1254,7 +1254,7 @@ UserAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, django.contrib.auth.admin
 ```
 
 Extend from this model admin if you want to add verification queue
-approve | deny controls to the top of its form
+approve | deny controls to the top of its form.
 
 
 ### Instanced Attributes
@@ -1269,8 +1269,8 @@ These attributes / properties will be available on instances of the class
 `def version(self, obj)`
 
 Users are not versioned, but ModelAdminWithVQCtrl defines
-a readonly field called "version", for sake of completion
-return a 0 version here
+a readonly field called "version." For the sake of completion,
+return a 0 version here.
 
 ---
 
@@ -1386,7 +1386,7 @@ UserPermissionAdmin(peeringdb_server.admin.UserAdmin)
 ```
 
 Extend from this model admin if you want to add verification queue
-approve | deny controls to the top of its form
+approve | deny controls to the top of its form.
 
 
 ### Instanced Attributes

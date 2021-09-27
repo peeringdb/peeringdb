@@ -1,8 +1,8 @@
-Generated from org_admin_views.py on 2021-09-17 13:22:42.251452
+Generated from org_admin_views.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.org_admin_views
 
-Views for organization administrative actions (/org endpoint)
+View for organization administrative actions (/org endpoint).
 
 # Functions
 ---

@@ -1,12 +1,12 @@
-Generated from inet.py on 2021-09-17 13:22:42.251452
+Generated from inet.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.inet
 
-RDAP lookup and validation
+RDAP lookup and validation.
 
-Network validation
+Network validation.
 
-Prefix renumbering
+Prefix renumbering.
 
 # Functions
 ---

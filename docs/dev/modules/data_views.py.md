@@ -1,11 +1,11 @@
-Generated from data_views.py on 2021-09-17 13:22:42.251452
+Generated from data_views.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.data_views
 
-This holds JSON views for various data sets
+This holds JSON views for various data sets.
 
-Mostly these are needed for filling form-selects for editable
-mode in UX
+These are needed for filling form-selects for editable
+mode in UX.
 
 # Functions
 ---

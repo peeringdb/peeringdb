@@ -1,10 +1,10 @@
-Generated from db_router.py on 2021-09-17 13:22:42.019241
+Generated from db_router.py on 2021-09-27 16:36:34.355233
 
 # peeringdb_server.db_router
 
-custom django database routers
+Custom django database routers.
 
-allows us to split read and write database connections if needed
+Split read and write database connections if needed.
 
 # Classes
 ---

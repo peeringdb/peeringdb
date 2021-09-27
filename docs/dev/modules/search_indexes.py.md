@@ -1,8 +1,8 @@
-Generated from search_indexes.py on 2021-09-17 13:22:42.251452
+Generated from search_indexes.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.search_indexes
 
-Defines django-haystack search indexes
+Defines django-haystack search indexes.
 
 # Classes
 ---

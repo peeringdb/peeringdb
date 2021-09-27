@@ -1,18 +1,18 @@
-Generated from permissions.py on 2021-09-17 13:22:42.251452
+Generated from permissions.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.permissions
 
-Utilties for permission handling
+Utilities for permission handling.
 
-Permission logic is handled through django-grainy
+Permission logic is handled through django-grainy.
 
-API key auth is handled through djangorestframework-api-key
+API key auth is handled through djangorestframework-api-key.
 
-Determine permission holder from request (api key or user)
+Determine permission holder from request (api key or user).
 
-Read only user api key handling
+Read only user api key handling.
 
-Censor API output data according to permissions using grainy Applicators
+Censor API output data according to permissions using grainy Applicators.
 
 # Functions
 ---

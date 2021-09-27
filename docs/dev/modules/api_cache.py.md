@@ -1,8 +1,8 @@
-Generated from api_cache.py on 2021-09-17 13:22:42.251452
+Generated from api_cache.py on 2021-09-27 16:36:34.749378
 
 # peeringdb_server.api_cache
 
-Handles loading of api-cache data
+Handle loading of api-cache data.
 
 # Classes
 ---
