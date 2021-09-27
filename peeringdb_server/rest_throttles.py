@@ -1,5 +1,5 @@
 """
-Custom rate limit handlers for the REST API
+Custom rate limit handlers for the REST API.
 """
 
 from django.conf import settings
