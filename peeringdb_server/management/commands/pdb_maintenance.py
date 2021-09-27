@@ -1,5 +1,5 @@
 """
-Puts peeringdb in or out of maintenance mode.
+Put peeringdb in or out of maintenance mode.
 """
 from django.conf import settings
 from django.core.management.base import BaseCommand
