@@ -1,5 +1,5 @@
 """
-Defines custom context managers
+Define custom context managers.
 """
 
 import contextvars
