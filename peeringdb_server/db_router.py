@@ -1,7 +1,7 @@
 """
-custom django database routers
+Custom django database routers.
 
-allows us to split read and write database connections if needed
+Split read and write database connections if needed.
 """
 
 
