@@ -5,7 +5,7 @@ REST API POST / PUT data validators.
 New serializers should extend ModelSerializer class, which is a custom extension
 of django-rest-framework's ModelSerializer.
 
-Custom ModelSerializer implements logic for ?depth expansion and several performance fixes.
+Custom ModelSerializer implements logic for the expansion driven by the depth url parameter.
 
 Special api filtering implementation should be done through the `prepare_query`
 method.
