@@ -1,8 +1,8 @@
 """
-(being DEPRECATED) django settings prepration.
+(Seing DEPRECATED) django settings prepration.
 
 This is mostly DEPRECATED at this point and any new settings should be directly
-defined in mainsite/settings
+defined in mainsite/settings.
 """
 from django.conf import settings
 
