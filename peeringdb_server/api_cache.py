@@ -1,5 +1,5 @@
 """
-Handles loading of api-cache data
+Handle loading of api-cache data.
 """
 
 import json
