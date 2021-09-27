@@ -1,11 +1,11 @@
 """
-View definitions
+View definitions:
 
 - Login
 - Logout
 - Advanced search
 - User Profile
-- oAuth Profile
+- OAuth Profile
 - Landing page
 - Search results
 - Entity views (network, facility, internet exchange and organization)
