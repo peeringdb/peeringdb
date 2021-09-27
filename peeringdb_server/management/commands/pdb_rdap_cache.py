@@ -1,5 +1,5 @@
 """
-Updates the cache of the RDAP cache from IANA
+Updates the cache of the RDAP cache from IANA.
 """
 from django.core.management.base import BaseCommand
 
