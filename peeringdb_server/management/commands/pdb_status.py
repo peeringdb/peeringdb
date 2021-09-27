@@ -1,5 +1,5 @@
 """
-Check entity status integrity (look for orphaned entities)
+Checks entity status integrity (looks for orphaned entities).
 """
 from django.core.management.base import BaseCommand
 
