@@ -1,5 +1,5 @@
 """
-Handles generation of mock data for testing purposes
+Handle generation of mock data for testing purposes.
 """
 
 import ipaddress
