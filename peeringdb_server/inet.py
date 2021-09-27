@@ -1,9 +1,9 @@
 """
-RDAP lookup and validation
+RDAP lookup and validation.
 
-Network validation
+Network validation.
 
-Prefix renumbering
+Prefix renumbering.
 """
 import ipaddress
 
