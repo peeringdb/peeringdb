@@ -1,7 +1,7 @@
 """
-Autocomplete views
+Autocomplete views.
 
-Handles most autocomplete functionality found in peeringdb.
+Handle most autocomplete functionality found in peeringdb.
 
 Note: Quick search behavior is specified in search.py
 """
