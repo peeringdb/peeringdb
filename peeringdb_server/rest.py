@@ -1,17 +1,17 @@
 """
-REST API view definitions
+REST API view definitions.
 
-REST API path routing
+REST API path routing.
 
-REST API permission checking (facilitated through django-grainy)
+REST API permission checking (facilitated through django-grainy).
 
-REST API error handling
+REST API error handling.
 
-REST API list filtering logic
+REST API list filtering logic.
 
-peeringdb-py client compatibility checking
+peeringdb-py client compatibility checking.
 
-The peeringdb REST API is implemented through django-rest-framework
+The peeringdb REST API is implemented through django-rest-framework.
 """
 
 import datetime
