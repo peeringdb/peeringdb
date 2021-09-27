@@ -1,5 +1,5 @@
 """
-Merge facilities
+Merges facilities.
 """
 import re
 
