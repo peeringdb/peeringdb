@@ -120,7 +120,7 @@ def check_permissions_from_request(request, target, flag, **kwargs):
 
 
 def check_permissions(obj, target, permissions, **kwargs):
-    """Users the provided permission holding object to initialize
+    """Uses the provided permission holding object to initialize
     the Permissions Util, which then checks permissions.
     """
     if not hasattr(obj, "_permissions_util"):

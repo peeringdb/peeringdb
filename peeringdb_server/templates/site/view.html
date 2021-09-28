@@ -318,6 +318,24 @@
             <a href="{{ row.link }}">{{ row.value }}</a>
           </div>
 
+        {% elif row.type == "image" %}
+
+          <div class="view_value col-xs-8 col-sm-7 col-md-8 img {{ row.name }}"
+              data-edit-upload-path="{{ row.upload_handler }}"
+              {% if not row.readonly and permissions.can_write %}
+              data-edit-type="image"
+              {% endif %}
+              {% if row.required %}
+              data-edit-required="yes"
+              {% endif %}
+              {% if row.accept %}
+              data-edit-accept="{{ row.accept }}"
+              {% endif %}
+              data-edit-value="{{ row.value }}"
+              data-edit-name="{{ row.name }}">
+                <img class="img-responsive" src="{{ row.value }}" alt="{{ row.label }}" style="{% if row.max_height %}max-height: {{ row.max_height }}px;{% endif %} {% if not row.value %}display:none;{% endif %}">
+              </div>
+
         {% else %}
           <div class="view_value col-xs-8 col-sm-7 col-md-8"
               {% if not row.readonly and permissions.can_write %}

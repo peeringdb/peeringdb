@@ -18,6 +18,15 @@ PeeringDB = {
   recaptcha_loaded : function() {
     return (typeof grecaptcha == "object");
   },
+
+  handle_xhr_json_error : function(response, name) {
+    if(response.responseJSON && response.responseJSON[name]) {
+      return response.responseJSON[name]
+    } else {
+      return twentyc.editable.error.humanize("Http"+response.status);
+    }
+  },
+
   init : function() {
     this.InlineSearch.init_search();
 
@@ -310,6 +319,7 @@ PeeringDB = {
   refresh: function() {
     window.document.location.href = window.document.location.href;
   }
+
 }
 
 function moveCursorToEnd(el) { // lgtm[js/unused-local-variable]
@@ -2997,6 +3007,151 @@ twentyc.editable.input.register(
 
   "select"
 );
+
+/**
+ * input element for image file uploads
+ */
+
+twentyc.editable.input.register(
+  "image",
+  {
+    make : function() {
+
+      // main node holding all elements making up the upload UX
+      var node = $('<div class="file-upload">');
+
+      // element holding current image (if exists)
+      let current = $('<div class="current">')
+
+      // element holding upload image input
+      let upload = $('<div class="upload">')
+
+      // we need to copy the current image from the view-mode
+      // element so we can display it
+      let image = this.source.find('img').clone();
+
+      // file selection input
+      let input = $('<input type="file" style="display:inline">');
+
+      // set file type accept
+      let accept = this.source.data("edit-accept");
+
+      // file upload button
+      var buttonUpload = $('<input type="button" class="btn btn-sm btn-default">').
+        val(gettext("Upload")).hide();
+
+      // button to clear image
+      var buttonClear = $('<input type="button" class="btn btn-sm btn-danger btn-clear">').
+        val(gettext("Remove")).hide();
+
+
+      // when selecting a file we want to show the upload button
+      // and clear any validation errors
+
+      input.on("change", () => {
+        this.close_note();
+        buttonUpload.show();
+      });
+
+      // if current image exists show the "Remove" button
+
+      if(this.source.data("edit-value")) {
+        buttonClear.show();
+      }
+
+      // clicking the upload button needs to close any validation
+      // errors and process the upload
+
+      buttonUpload.click(() => {
+        this.close_note();
+        this.upload();
+      });
+
+      // clicking the remove button needs to close any validation
+      // errors and process the file removal
+
+      buttonClear.click(() => {
+        this.close_note();
+        this.remove_file();
+      });
+
+      // assemble the UX nodes
+
+      current.append(image).append(buttonClear)
+      upload.append(input).append(buttonUpload)
+      node.append(current).append(upload)
+
+      if(accept)
+        input.attr("accept", accept);
+
+      return node;
+    },
+
+    /**
+     * sends a DELETE request to data-edit-upload-path
+     * and will clear the current image from the UX
+     */
+
+    remove_file : function() {
+      let name = this.source.data("edit-name");
+      $.ajax({
+        url: this.source.data("edit-upload-path"),
+        method: 'delete',
+      }).done(() => {
+        // success clear current and preview images
+        this.source.find('img').hide();
+        this.element.find('img').hide();
+        // hide the "Remove" button
+        this.element.find('.btn-clear').hide()
+      }).fail((r) => {
+        // failure - show validation error
+        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name))
+      });
+    },
+
+    /**
+     * sends a POST file upload request to data-edit-upload-path
+     * and will update the current image in the UX
+     */
+
+    upload : function() {
+      var data = new FormData();
+      let name = this.source.data("edit-name");
+
+      // prepare file data
+      var file = this.element.find('input[type="file"]')[0].files[0];
+      data.append(name, file);
+
+      // upload file data to data-edit-upload-path via POST request
+      $.ajax({
+        url: this.source.data("edit-upload-path"),
+        method: 'post',
+        data: data,
+        contentType: false,
+        processData: false,
+      }).done((r) => {
+        // success - update current and preview image sources
+        // to new url and show the "Remove" button
+        this.source.find('img').attr('src', r["url"]).show();
+        this.element.find('img').attr('src', r["url"]).show();
+        this.element.find('.btn-clear').show()
+      }).fail((r) => {
+        // failure - show validation error
+        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name))
+      });
+    },
+
+    /**
+     * When resturing UX to view mode we just want to clone
+     * the preview image to the field
+     */
+
+    apply : function() {
+      this.source.empty().append(this.element.find('img').clone());
+    }
+  },
+  "string"
+)
 
 
 /*
