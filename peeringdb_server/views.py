@@ -2167,7 +2167,7 @@ def request_search(request):
     result = search(q)
 
     sponsors = {
-        org.id: sponsorship.label.lower()
+        org.id: {"label": sponsorship.label.lower(), "css": sponsorship.css}
         for org, sponsorship in Sponsorship.active_by_org()
     }
 

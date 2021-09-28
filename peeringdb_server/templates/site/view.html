@@ -25,7 +25,7 @@
            data-edit-value="{{ data.title }}"
            data-edit-name="name">{{ data.title }}
            {% if instance.sponsorship %}
-           <a data-edit-static="yes" href="/sponsors" class="sponsor {{ instance.sponsorship.label|lower }}">{{ instance.sponsorship.label }} sponsor</a>
+           <a data-edit-static="yes" href="/sponsors" class="sponsor {{ instance.sponsorship.css }}">{{ instance.sponsorship.label }} {% trans "sponsor" %}</a>
            {% endif %}
            </div>
 
