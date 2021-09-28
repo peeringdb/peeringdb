@@ -25,6 +25,7 @@ from django.utils import translation
 from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
+from django.views import View
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
@@ -45,6 +46,7 @@ from peeringdb_server.forms import (
     UserCreationForm,
     UserLocaleForm,
     UsernameRetrieveForm,
+    OrganizationLogoUploadForm,
 )
 from peeringdb_server.inet import (
     RdapException,
@@ -940,6 +942,46 @@ def view_component(
     return HttpResponse(template.render(env, request))
 
 
+class OrganizationLogoUpload(View):
+
+    """
+    Handles public upload and setting of organization logo (#346)
+    """
+
+    def post(self, request, id):
+
+        """upload and set a new logo"""
+
+        org = Organization.objects.get(pk=id)
+
+        # require update permissions to the org
+        if not check_permissions(request.user, org, "u"):
+            return JsonResponse({}, status=403)
+
+        form = OrganizationLogoUploadForm(request.POST, request.FILES, instance=org)
+
+        if form.is_valid():
+            form.save()
+            org.refresh_from_db()
+            return JsonResponse({"status": "ok", "url": org.logo.url})
+        else:
+            return JsonResponse(form.errors, status=400)
+
+    def delete(self, request, id):
+
+        """delete the logo"""
+
+        org = Organization.objects.get(pk=id)
+
+        # require update permissions to the org
+        if not check_permissions(request.user, org, "u"):
+            return JsonResponse({}, status=403)
+
+        org.logo.delete()
+
+        return JsonResponse({"status": "ok"})
+
+
 @ensure_csrf_cookie
 def view_organization(request, id):
     """
@@ -1001,6 +1043,14 @@ def view_organization(request, id):
         networks = data["net_set"]
 
     dismiss = DoNotRender()
+
+    # determine if logo is specified and set the
+    # logo url accordingly
+
+    if org.logo:
+        logo_url = org.logo.url
+    else:
+        logo_url = ""
 
     data = {
         "title": data.get("name", dismiss),
@@ -1081,6 +1131,16 @@ def view_organization(request, id):
                 "help_text": _("Markdown enabled"),
                 "type": "fmt-text",
                 "value": data.get("notes", dismiss),
+            },
+            {
+                "name": "logo",
+                "label": _("Logo"),
+                "help_text": field_help(Organization, "logo"),
+                "type": "image",
+                "accept": dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+                "upload_handler": f"/org/{org.id}/upload-logo",
+                "value": logo_url,
             },
         ],
     }
@@ -1170,6 +1230,9 @@ def view_facility(request, id):
         .select_related("network")
         .order_by("network__name")
     )
+
+    if facility.org.logo:
+        org["logo"] = facility.org.logo.url
 
     dismiss = DoNotRender()
 
@@ -1274,6 +1337,14 @@ def view_facility(request, id):
                 "value": data.get("notes", dismiss),
             },
             {
+                "name": "org_logo",
+                "label": "",
+                "value": org.get("logo", dismiss),
+                "type": "image",
+                "readonly": True,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+            },
+            {
                 "type": "email",
                 "name": "tech_email",
                 "label": _("Technical Email"),
@@ -1375,6 +1446,9 @@ def view_exchange(request, id):
 
     org = data.get("org")
 
+    if exchange.org.logo:
+        org["logo"] = exchange.org.logo.url
+
     data = {
         "id": exchange.id,
         "title": data.get("name", dismiss),
@@ -1447,6 +1521,14 @@ def view_exchange(request, id):
                 "help_text": _("Markdown enabled"),
                 "type": "fmt-text",
                 "value": data.get("notes", dismiss),
+            },
+            {
+                "name": "org_logo",
+                "label": "",
+                "value": org.get("logo", dismiss),
+                "type": "image",
+                "readonly": True,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
             },
             {"type": "sub", "label": _("Contact Information")},
             {
@@ -1654,6 +1736,9 @@ def view_network(request, id):
     ixf_proposals = IXFMemberData.proposals_for_network(network)
     ixf_proposals_dismissed = IXFMemberData.network_has_dismissed_actionable(network)
 
+    if network.org.logo:
+        org["logo"] = network.org.logo.url
+
     data = {
         "title": network_d.get("name", dismiss),
         "facilities": facilities,
@@ -1825,6 +1910,14 @@ def view_network(request, id):
                 "help_text": _("Markdown enabled"),
                 "type": "fmt-text",
                 "value": network_d.get("notes", dismiss),
+            },
+            {
+                "name": "org_logo",
+                "label": "",
+                "value": org.get("logo", dismiss),
+                "type": "image",
+                "readonly": True,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
             },
             {"type": "sub", "admin": True, "label": _("PeeringDB Configuration")},
             {

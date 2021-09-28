@@ -1179,6 +1179,25 @@ span.yourlabs-autocomplete > span.hilight > div.sub {
   margin-left: 20px;
 }
 
+.editable div.file-upload div.upload,
+.editable div.file-upload div.current {
+  position: relative;
+  min-height: 30px;
+}
+
+.editable div.file-upload input[type="file"] {
+  margin-top: 5px;
+}
+
+.editable div.file-upload input[type="button"] {
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  z-index: 10;
+}
+
+
+
 /*
  * api listing module
  */

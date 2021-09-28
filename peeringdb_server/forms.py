@@ -8,6 +8,7 @@ from django.conf import settings as dj_settings
 from django.contrib.auth import forms as auth_forms
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError
 from grainy.const import PERM_CRUD, PERM_DENY, PERM_READ
 
 from peeringdb_server.inet import get_client_ip
@@ -170,3 +171,25 @@ class UserLocaleForm(forms.Form):
     class Meta:
         model = User
         fields = "locale"
+
+
+class OrganizationLogoUploadForm(forms.ModelForm):
+    logo = forms.FileField()
+
+    class Meta:
+        model = Organization
+        fields = ["logo"]
+
+    def clean_logo(self):
+
+        logo = self.cleaned_data["logo"]
+        max_size = dj_settings.ORG_LOGO_MAX_SIZE
+
+        if logo.size > max_size:
+            raise ValidationError(
+                _("File size too big, max. %(value)s"),
+                code="invalid",
+                params={"value": f"{max_size / 1024:.0f} kb"},
+            )
+
+        return logo

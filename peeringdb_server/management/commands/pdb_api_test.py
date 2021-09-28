@@ -3044,7 +3044,6 @@ class TestJSON(unittest.TestCase):
         fac.country = "US"
         fac.save()
 
-
     ##########################################################################
 
     def test_guest_005_list_filter_ix_net_count(self):
