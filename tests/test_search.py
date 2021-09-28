@@ -166,3 +166,61 @@ class SearchTests(TestCase):
             assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(
                 inst.search_result_name
             )
+
+
+    def test_search_asn_match(self):
+        """
+        Test that exact numeric match on an ASN
+        always appears at the top of the results (#232)
+        """
+
+        # network with asn 633 - this should be the first
+        # resut when searching for `633`
+
+        net_1 = models.Network.objects.create(
+            name = "Test ASN Matching",
+            asn = 633,
+            org = self.org,
+            status = "ok"
+        )
+
+        # network with asn 6333, this should match, but not
+        # be the first result
+
+
+        net_2 = models.Network.objects.create(
+            name = "Test ASN Matching 2",
+            asn = 6333,
+            org = self.org,
+            status = "ok"
+        )
+
+        # network with asn 6334 and 633 as part of its name
+        # this should score high, but should not be the first
+        # result
+
+        net_3 = models.Network.objects.create(
+            name = "Test ASN 633 Matching",
+            asn = 6334,
+            org = self.org,
+            status = "ok"
+        )
+
+        # rebuild the index
+
+        call_command("rebuild_index", "--noinput")
+
+        rv = search.search("633")
+
+        assert rv["net"][0]["id"] == net_1.id
+
+        # clean up
+
+        net_1.delete(hard=True)
+        net_2.delete(hard=True)
+        net_3.delete(hard=True)
+        call_command("rebuild_index", "--noinput")
+
+
+
+
