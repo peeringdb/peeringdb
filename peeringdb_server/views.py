@@ -60,6 +60,7 @@ from peeringdb_server.models import (
     REFTAG_MAP,
     UTC,
     Facility,
+    IXLan,
     InternetExchange,
     InternetExchangeFacility,
     IXFMemberData,
@@ -82,7 +83,7 @@ from peeringdb_server.serializers import (
     NetworkSerializer,
     OrganizationSerializer,
 )
-from peeringdb_server.stats import stats as global_stats
+from peeringdb_server.stats import get_fac_stats, stats as global_stats, get_ix_stats
 from peeringdb_server.util import APIPermissionsApplicator, check_permissions
 
 RATELIMITS = dj_settings.RATELIMITS
@@ -1401,6 +1402,8 @@ def view_facility(request, id):
         ],
     }
 
+    data["stats"] = get_fac_stats(peers, exchanges)
+
     return view_component(
         request, "facility", data, "Facility", perms=perms, instance=facility
     )
@@ -1454,6 +1457,11 @@ def view_exchange(request, id):
         "title": data.get("name", dismiss),
         "facilities": facilities,
         "networks": networks,
+        "peer_count": 0,
+        "connections_count": 0,
+        "open_peer_count": 0,
+        "total_speed": 0,
+        "ipv6_percentage": 0,
         "ixlans": exchange.ixlan_set_active_or_pending,
         "fields": [
             {
@@ -1652,6 +1660,8 @@ def view_exchange(request, id):
             {"type": "group_end"},
         ]
     )
+
+    data["stats"] = get_ix_stats(networks, ixlan)
 
     return view_component(
         request, "exchange", data, "Exchange", perms=perms, instance=exchange
