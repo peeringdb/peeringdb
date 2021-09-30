@@ -1,5 +1,5 @@
 """
-Reset a deskpro ticket and queue for publishing.
+Reset a deskpro ticket and requeue for publishing.
 """
 import re
 
