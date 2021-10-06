@@ -51,7 +51,7 @@ django-admin makemessages -d djangojs -l de -s --no-wrap -i venv
 
 ## Updating messages in existing locale
 
-This will add any new messages to all locale files. In other words if there has been new features added, you want to call this to make sure that their messages exist in gettext so they can be translated.
+This will add any new messages to all locale files. In other words, if there have been new features added, one wants to call this to make sure the messages exist in gettext so they can be translated.
 
 ```
 Ctl/dev/run.sh /bin/sh
@@ -62,7 +62,7 @@ django-admin makemessages -d djangojs -a -s --no-wrap -i venv
 
 ## Compile messages
 
-Once translation files are ready, you need to compile them so django can use them.
+Once translation files are ready, one needs to compile them so django can use them.
 
 ```
 Ctl/dev/run.sh /bin/sh
