@@ -13,7 +13,7 @@ git clone git@github.com:peeringdb/translations
 git clone git@github.com:peeringdb/django-peeringdb
 ```
 
-Running `ls` should show somethin like this
+Running `ls` should show something like this
 
 ```sh
 django-peeringdb
