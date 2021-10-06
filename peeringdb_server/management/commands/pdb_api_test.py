@@ -445,10 +445,10 @@ class TestJSON(unittest.TestCase):
 
     def assert_handleref_integrity(self, data):
         """
-        Here one asserts the integrity of a handleref (which is
-        the base of all the models exposed on the api).
+        Assert the integrity of a handleref (which is
+        the base of all the models exposed on the API).
 
-        To do this, make sure all the handleref fields
+        This is done by making sure all the handleref fields
         exist in the data.
         """
 
