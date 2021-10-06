@@ -120,12 +120,12 @@ def make_relation_filter(field, filt, value, prefix=None):
 
 def validate_PUT_ownership(permission_holder, instance, data, fields):
     """
-    Helper function that checks if a user or api key has write perms to
+    Helper function that checks if a user or API key has write perms to
     the instance provided as well as write perms to any
     child instances specified by fields as they exist on
-    the model and in data
+    the model and in data.
 
-    example:
+    Example:
 
     validate_PUT_ownership(
       request.user,
@@ -177,7 +177,7 @@ def is_suggested(entity):
     """
     Check if the network, facility or exchange is a suggested
     entity (is it a memeber of the organization designated to
-    hold suggested entities)
+    hold suggested entities).
     """
 
     # if no org is specified, entity suggestion is turned
@@ -191,7 +191,7 @@ def is_suggested(entity):
 
 class UTC(datetime.tzinfo):
     """
-    UTC+0 tz for tz aware datetime fields
+    UTC+0 tz for tz aware datetime fields.
     """
 
     def utcoffset(self, d):
@@ -200,7 +200,7 @@ class UTC(datetime.tzinfo):
 
 class URLField(pdb_models.URLField):
     """
-    local defaults for URLField
+    Local defaults for URLField.
     """
 
 
@@ -226,20 +226,20 @@ class ProtectedMixin:
     """
     Mixin that implements checks for changing
     / deleting a model instance that will block
-    such actions under certain circumstances
+    such actions under certain circumstances.
     """
 
     @property
     def deletable(self):
         """
         Should return whether the object is currently
-        in a state where it can safely be soft-deleted
+        in a state where it can safely be soft-deleted.
 
-        If not not deletable, should specify reason in
+        If not deletable, should specify reason in
         `_not_deletable_reason` property.
 
-        If deletable should, set `_not_deletable_reason`
-        property to None
+        If deletable, should set `_not_deletable_reason`
+        property to None.
         """
         return True
 
@@ -258,9 +258,9 @@ class ProtectedMixin:
 
     def delete_cleanup(self):
         """
-        Runs cleanup before delete
+        Runs cleanup before delete.
 
-        Override this in the class that uses this mixin (if needed)
+        Override this in the class that uses this mixin (if needed).
         """
         return
 
@@ -274,8 +274,8 @@ class ProtectedMixin:
 
 class GeocodeBaseMixin(models.Model):
     """
-    Mixin to use for geocode enabled entities
-    Allows an entity to be geocoded with the pdb_geo_sync command
+    Mixin to use for geocode enabled entities.
+    Allows an entity to be geocoded with the pdb_geo_sync command.
     """
 
     geocode_status = models.BooleanField(
@@ -294,7 +294,7 @@ class GeocodeBaseMixin(models.Model):
     @property
     def geocode_coordinates(self):
         """
-        Return a tuple holding the latitude and longitude
+        Return a tuple holding the latitude and longitude.
         """
         if self.latitude is not None and self.longitude is not None:
             return (self.latitude, self.longitude)
@@ -303,7 +303,7 @@ class GeocodeBaseMixin(models.Model):
     @property
     def geocode_address(self):
         """
-        Returns an address string suitable for geo api query
+        Returns an address string suitable for geo API query.
         """
         # pylint: disable=missing-format-attribute
         return "{e.address1} {e.address2}, {e.city}, {e.state} {e.zipcode}".format(
@@ -313,10 +313,10 @@ class GeocodeBaseMixin(models.Model):
     def process_geo_location(self, geocode=True, save=True):
 
         """
-        Sets longitude and latitude
+        Sets longitude and latitude.
 
         Will return a dict containing normalized address
-        data
+        data.
         """
 
         melissa = geo.Melissa(settings.MELISSA_KEY, timeout=5)
@@ -370,7 +370,7 @@ class GeocodeBaseMixin(models.Model):
 class GeoCoordinateCache(models.Model):
 
     """
-    Stores geocoordinates for address lookups
+    Stores geocoordinates for address lookups.
     """
 
     country = pdb_models.CountryField()
@@ -494,8 +494,8 @@ class UserOrgAffiliationRequest(models.Model):
     Whenever a user requests to be affiliated to an Organization
     through an ASN the request is stored in this object.
 
-    When an ASN is entered that is not in the database yet it will
-    notify PDB staff
+    When an ASN is entered that is not yet in the database it will
+    notify PDB staff.
 
     When an ASN is entered that is already in the database the organization
     adminstration is notified and they can then approve or deny
@@ -564,7 +564,7 @@ class UserOrgAffiliationRequest(models.Model):
 
     def approve(self):
         """
-        approve request and add user to org's usergroup
+        Approve request and add user to org's usergroup.
         """
 
         if self.org_id:
@@ -596,8 +596,8 @@ class UserOrgAffiliationRequest(models.Model):
 
     def deny(self):
         """
-        deny request, marks request as denied and keeps
-        it around until requesting user deletes it
+        Deny request, marks request as denied and keeps
+        it around until requesting user deletes it.
         """
 
         if self.user and self.org:
@@ -610,15 +610,15 @@ class UserOrgAffiliationRequest(models.Model):
 
     def cancel(self):
         """
-        deny request, marks request as canceled and keeps
-        it around until requesting user deletes it
+        Deny request, marks request as canceled and keeps
+        it around until requesting user deletes it.
         """
         self.status = "canceled"
         self.save()
 
     def notify_ownership_approved(self):
         """
-        Sends a notification email to the requesting user
+        Sends a notification email to the requesting user.
         """
         if not self.org:
             return
@@ -643,10 +643,10 @@ class UserOrgAffiliationRequest(models.Model):
 class VerificationQueueItem(models.Model):
     """
     Keeps track of new items created that need to be reviewed and approved
-    by administrators
+    by administrators.
 
     Queue items are added through the create signals tied to the various
-    objects (peeringdb_server/signals.py)
+    objects (peeringdb_server/signals.py).
     """
 
     # reference to the item that requires review stored in generic fk
@@ -683,8 +683,8 @@ class VerificationQueueItem(models.Model):
     def get_for_entity(cls, entity):
         """
         Returns verification queue item for the provided
-        entity if it exists, else raises a DoesNotExist
-        exception
+        entity if it exists or raises a DoesNotExist
+        exception.
         """
 
         return cls.objects.get(
@@ -695,7 +695,7 @@ class VerificationQueueItem(models.Model):
     @property
     def item_admin_url(self):
         """
-        Return admin url for the object in the verification queue
+        Return admin url for the object in the verification queue.
         """
         return django.urls.reverse(
             "admin:%s_%s_change"
@@ -706,7 +706,7 @@ class VerificationQueueItem(models.Model):
     @property
     def approve_admin_url(self):
         """
-        Return admin url for approval of the verification queue item
+        Return admin url for approval of the verification queue item.
         """
         return django.urls.reverse(
             f"admin:{self._meta.app_label}_{self._meta.model_name}_actions",
@@ -716,7 +716,7 @@ class VerificationQueueItem(models.Model):
     @property
     def deny_admin_url(self):
         """
-        Return admin url for denial of the verification queue item
+        Return admin url for denial of the verification queue item.
         """
         return django.urls.reverse(
             f"admin:{self._meta.app_label}_{self._meta.model_name}_actions",
@@ -727,7 +727,7 @@ class VerificationQueueItem(models.Model):
     @transaction.atomic()
     def approve(self):
         """
-        Approve the verification queue item
+        Approve the verification queue item.
         """
         if hasattr(self.item, "status"):
             self.item.status = "ok"
@@ -738,7 +738,7 @@ class VerificationQueueItem(models.Model):
 
     def deny(self):
         """
-        Deny the verification queue item
+        Deny the verification queue item.
         """
         if hasattr(self.item, "vq_deny"):
             self.item.vq_deny()
@@ -778,7 +778,7 @@ class DeskProTicket(models.Model):
 class DeskProTicketCC(models.Model):
 
     """
-    Describes a contact to be cc'd on the deskpro ticket
+    Describes a contact to be cc'd on the deskpro ticket.
     """
 
     ticket = models.ForeignKey(
@@ -798,7 +798,7 @@ class DeskProTicketCC(models.Model):
 @reversion.register
 class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin):
     """
-    Describes a peeringdb organization
+    Describes a peeringdb organization.
     """
 
     # FIXME: change this to ImageField - keep
@@ -825,11 +825,11 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
     def related_label(self):
         """
-        Used by grappelli autocomplete for representation
+        Used by grappelli autocomplete for representation.
 
-        Since grappelli doesnt easily allow us to filter status
-        during autocomplete lookup, we make sure the objects
-        are marked accordingly in the result
+        Since grappelli doesn't easily allow one to filter status
+        during autocomplete lookup, make sure the objects
+        are marked accordingly in the result.
         """
         if self.status == "deleted":
             return f"[DELETED] {self}"
@@ -839,14 +839,14 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
     def search_result_name(self):
         """
         This will be the name displayed for quick search matches
-        of this entity
+        of this entity.
         """
         return self.name
 
     @property
     def admin_url(self):
         """
-        Return the admin url for this organization (in /cp)
+        Return the admin URL for this organization (in /cp).
         """
         return django.urls.reverse(
             "admin:peeringdb_server_organization_change", args=(self.id,)
@@ -855,7 +855,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
     @property
     def view_url(self):
         """
-        Return the URL to this organizations web view
+        Return the URL to this organizations web view.
         """
         return "{}{}".format(
             settings.BASE_URL, django.urls.reverse("org-view", args=(self.id,))
@@ -867,7 +867,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         Returns whether or not the organization is currently
         in a state where it can be marked as deleted.
 
-        This will be False for organization's of which ANY
+        This will be False for organizations of which ANY
         of the following is True:
 
         - has a network under it with status=ok
@@ -899,7 +899,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
     def owned(self):
         """
         Returns whether or not the organization has been claimed
-        by any users
+        by any users.
         """
         return self.admin_usergroup.user_set.count() > 0
 
@@ -907,7 +907,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
     def rdap_collect(self):
         """
         Fetche rdap results for all networks under this org and returns
-        them by asn
+        them by asn.
         """
         r = {}
         for net in self.net_set_active:
@@ -924,7 +924,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         """
         Returns all the websites for the org based on its
         website field and the website fields on all the entities it
-        owns
+        owns.
         """
         rv = []
         if self.website:
@@ -941,7 +941,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         """
         Org administrators need CRUD to this namespace in order
         to execute administrative actions (user management, user permission
-        management)
+        management).
         """
         return f"peeringdb.manage_organization.{self.id}"
 
@@ -949,63 +949,63 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
     def pending_affiliations(self):
         """
         Returns queryset holding pending affiliations to this
-        organization
+        organization.
         """
         return self.affiliation_requests.filter(status="pending")
 
     @property
     def net_set_active(self):
         """
-        Returns queryset holding active networks in this organization
+        Returns queryset holding active networks in this organization.
         """
         return self.net_set(manager="handleref").filter(status="ok")
 
     @property
     def fac_set_active(self):
         """
-        Returns queryset holding active facilities in this organization
+        Returns queryset holding active facilities in this organization.
         """
         return self.fac_set(manager="handleref").filter(status="ok")
 
     @property
     def ix_set_active(self):
         """
-        Returns queryset holding active exchanges in this organization
+        Returns queryset holding active exchanges in this organization.
         """
         return self.ix_set(manager="handleref").filter(status="ok")
 
     @property
     def group_name(self):
         """
-        Returns usergroup name for this organization
+        Returns usergroup name for this organization.
         """
         return "org.%s" % self.id
 
     @property
     def admin_group_name(self):
         """
-        Returns admin usergroup name for this organization
+        Returns admin usergroup name for this organization.
         """
         return "%s.admin" % self.group_name
 
     @property
     def usergroup(self):
         """
-        Returns the usergroup for this organization
+        Returns the usergroup for this organization.
         """
         return Group.objects.get(name=self.group_name)
 
     @property
     def admin_usergroup(self):
         """
-        Returns the admin usergroup for this organization
+        Returns the admin usergroup for this organization.
         """
         return Group.objects.get(name=self.admin_group_name)
 
     @property
     def all_users(self):
         """
-        returns a set of all users in the org's user and admin groups
+        Returns a set of all users in the org's user and admin groups.
         """
         users = {}
         for user in self.usergroup.user_set.all():
@@ -1019,7 +1019,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
     def sponsorship(self):
         """
         Returns sponsorship object for this organization. If the organization
-        has no sponsorship ongoing return None
+        has no sponsorship ongoing return None.
         """
         now = datetime.datetime.now().replace(tzinfo=UTC())
         return (
@@ -1033,7 +1033,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
     @transaction.atomic()
     def create_from_rdap(cls, rdap, asn, org_name=None):
         """
-        Creates organization from rdap result object
+        Creates organization from rdap result object.
         """
         name = rdap.org_name
         if not name:
@@ -1051,7 +1051,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
 def default_time_s():
     """
-    Returns datetime set to today with a time of 00:00:00
+    Returns datetime set to today with a time of 00:00:00.
     """
     now = datetime.datetime.now()
     return now.replace(hour=0, minute=0, second=0, tzinfo=UTC())
@@ -1059,7 +1059,7 @@ def default_time_s():
 
 def default_time_e():
     """
-    Returns datetime set to today with a time of 23:59:59
+    Returns datetime set to today with a time of 23:59:59.
     """
     now = datetime.datetime.now()
     return now.replace(hour=23, minute=59, second=59, tzinfo=UTC())
@@ -1087,7 +1087,7 @@ class OrganizationAPIKey(AbstractAPIKey):
 
 class OrganizationAPIPermission(Permission):
     """
-    Describes permission for a OrganizationAPIKey
+    Describes permission for a OrganizationAPIKey.
     """
 
     class Meta:
@@ -1104,7 +1104,7 @@ class OrganizationAPIPermission(Permission):
 class Sponsorship(models.Model):
     """
     Allows an organization to be marked for sponsorship
-    for a designated timespan
+    for a designated timespan.
     """
 
     orgs = models.ManyToManyField(
@@ -1130,7 +1130,7 @@ class Sponsorship(models.Model):
     def active_by_org(cls):
         """
         Yields (Organization, Sponsorship) for all currently
-        active sponsorships
+        active sponsorships.
         """
         now = datetime.datetime.now().replace(tzinfo=UTC())
         qset = cls.objects.filter(start_date__lte=now, end_date__gte=now)
@@ -1147,7 +1147,7 @@ class Sponsorship(models.Model):
     @property
     def label(self):
         """
-        Returns the label for this sponsorship's level
+        Returns the label for this sponsorship's level.
         """
         return dict(SPONSORSHIP_LEVELS).get(self.level)
 
@@ -1183,7 +1183,7 @@ class Sponsorship(models.Model):
 
 class SponsorshipOrganization(models.Model):
     """
-    Describes an organization->sponsorship relationship
+    Describes an organization->sponsorship relationship.
     """
 
     org = models.ForeignKey(
@@ -1213,9 +1213,9 @@ class SponsorshipOrganization(models.Model):
 
 class Partnership(models.Model):
     """
-    Allows an organization to be marked as a partner
+    Allows an organization to be marked as a partner.
 
-    It will appear on the "partners" page
+    It will appear on the "partners" page.
     """
 
     org = models.ForeignKey(
@@ -1253,7 +1253,7 @@ class Partnership(models.Model):
 class OrganizationMerge(models.Model):
     """
     When an organization is merged into another via admin.merge_organizations
-    it is logged here, allowing the merge to be undone
+    it is logged here, allowing the merge to be undone.
     """
 
     from_org = models.ForeignKey(
@@ -1271,9 +1271,9 @@ class OrganizationMerge(models.Model):
 
     def log_entity(self, entity, note=""):
         """
-        mark an entity as moved during this particular merge
+        Mark an entity as moved during this particular merge.
 
-        entity can be any handleref instance or a User instance
+        Entity can be any handleref instance or a User instance.
         """
 
         return OrganizationMergeEntity.objects.create(
@@ -1282,7 +1282,7 @@ class OrganizationMerge(models.Model):
 
     def undo(self):
         """
-        Undo this merge
+        Undo this merge.
         """
 
         # undelete original org
@@ -1310,7 +1310,7 @@ class OrganizationMerge(models.Model):
 class OrganizationMergeEntity(models.Model):
     """
     This holds the entities moved during an
-    organization merge stored in OrganizationMerge
+    organization merge stored in OrganizationMerge.
     """
 
     merge = models.ForeignKey(
@@ -1331,7 +1331,7 @@ class OrganizationMergeEntity(models.Model):
 @reversion.register
 class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     """
-    Describes a peeringdb facility
+    Describes a peeringdb facility.
     """
 
     org = models.ForeignKey(
@@ -1365,7 +1365,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     def autocomplete_search_fields():
         """
         Returns a tuple of field query strings to be used during quick search
-        query
+        query.
         """
         return (
             "id__iexact",
@@ -1413,7 +1413,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         """
         Returns queryset of Facility objects that
         are related to ALL networks specified in the value list
-        (a list of integer network ids)
+        (a list of integer network ids).
 
         Used in Advanced Search (ALL search).
         Relationship through netfac -> net
@@ -1478,7 +1478,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         Returns queryset of Facility objects
         that have a relationship to all asns specified in `asns`
 
-        Relationship through netfac
+        Relationship through netfac.
 
         Arguments:
             - asns <list>: list of asns
