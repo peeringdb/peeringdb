@@ -1,21 +1,3 @@
-
-# PeeringDB Server Development
-
-## Models
-
-Note: to add fk's to base models, you must add in both peeringdb.models. and in django_peeringdb.models concrete class
-
-models.py
-  - make model
-  - add ref_tag_
-
-serializers.py
-  - add serializer
-
-peeringdb/rest.py
-  - make ViewSet
-  - register
-
 ## Modules
 
 ### RDAP
