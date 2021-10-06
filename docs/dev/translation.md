@@ -3,10 +3,10 @@
 ## Setup
 
 Clone the [translations](https://github.com/peeringdb/translations) repository in the location that
-contains your `peeringdb` directory
+contains your `peeringdb` directory.
 
 Clone the [django-peeringdb](https://github.com/peeringdb/django-peeringdb) repository in the location that
-contains your `peeringdb` directory
+contains your `peeringdb` directory.
 
 ```sh
 git clone git@github.com:peeringdb/translations
