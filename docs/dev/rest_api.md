@@ -57,7 +57,7 @@ When making changes to the API, one should always check that the client sync of 
 
 The client uses the `updated` value of an object to determine which objects to fetch for its incremental update.
 
-When writing mass data migrations, one should detemine if this is an update that needs to be propagated to local users snapshots.
+When writing mass data migrations, one should determine if this is an update that needs to be propagated to local users snapshots.
 If not, it may be better to do it in a way that does not update the `updated` value of the object. This is especially true if it affects already soft-deleted
 objects, as they will be included in the incremental update if their `updated` value indicates a change.
 
