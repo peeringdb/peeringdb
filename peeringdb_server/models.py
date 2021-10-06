@@ -1525,7 +1525,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     @property
     def sponsorship(self):
         """
-        Returns sponsorship oject for this facility (through the owning org)
+        Returns sponsorship oject for this facility (through the owning org).
         """
         return self.org.sponsorship
 
@@ -1533,7 +1533,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     def search_result_name(self):
         """
         This will be the name displayed for quick search matches
-        of this entity
+        of this entity.
         """
         return self.name
 
@@ -1541,7 +1541,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     def netfac_set_active(self):
         """
         Returns queryset of active NetworkFacility objects connected to this
-        facility
+        facility.
         """
         return self.netfac_set.filter(status="ok")
 
@@ -1549,14 +1549,14 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
     def ixfac_set_active(self):
         """
         Returns queryset of active InternetExchangeFacility objects connected
-        to this facility
+        to this facility.
         """
         return self.ixfac_set.filter(status="ok")
 
     @property
     def view_url(self):
         """
-        Return the URL to this facility's web view
+        Return the URL to this facility's web view.
         """
         return "{}{}".format(
             settings.BASE_URL, django.urls.reverse("fac-view", args=(self.id,))
@@ -1604,7 +1604,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
 @reversion.register
 class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     """
-    Describes a peeringdb exchange
+    Describes a peeringdb exchange.
     """
 
     ixf_import_request = models.DateTimeField(
@@ -1657,7 +1657,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     def autocomplete_search_fields():
         """
         Returns a tuple of field query strings to be used during quick search
-        query
+        query.
         """
         return (
             "id__iexact",
@@ -1673,7 +1673,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Returns queryset of InternetExchange objects that
         are related to IXLan specified by ixlan_id
 
-        Relationship through ixlan
+        Relationship through ixlan.
         """
 
         if not qset:
@@ -1690,7 +1690,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Returns queryset of InternetExchange objects that
         are related to IXfac link specified by ixfac_id
 
-        Relationship through ixfac
+        Relationship through ixfac.
         """
 
         if not qset:
@@ -1740,7 +1740,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         """
         Returns queryset of InternetExchange objects that
         are related to ALL networks specified in the value list
-        (a list of integer network ids)
+        (a list of integer network ids).
 
         Used in Advanced Search (ALL search).
         Relationship through netixlan -> ixlan
@@ -1787,7 +1787,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     def related_to_ipblock(cls, ipblock, qset=None):
         """
         Returns queryset of InternetExchange objects that
-        have ixlan prefixes matching the ipblock specified
+        have ixlan prefixes matching the ipblock specified.
 
         Relationship  through ixlan -> ixpfx
         """
@@ -1914,9 +1914,9 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     @property
     def ixlan(self):
         """
-        Returns the ixlan for this exchange
+        Returns the ixlan for this exchange.
 
-        As per #21 each exchange will get one ixlan with a matching
+        As per #21, each exchange will get one ixlan with a matching
         id, but the schema is to remain unchanged until a major
         version bump.
         """
@@ -1925,7 +1925,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     @property
     def networks(self):
         """
-        Returns all active networks at this exchange
+        Returns all active networks at this exchange.
         """
         networks = []
         for ixlan in self.ixlan_set_active:
@@ -1937,14 +1937,14 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     def search_result_name(self):
         """
         This will be the name displayed for quick search matches
-        of this entity
+        of this entity.
         """
         return self.name
 
     @property
     def ixlan_set_active(self):
         """
-        Returns queryset of active ixlan objects at this exchange
+        Returns queryset of active ixlan objects at this exchange.
         """
         return self.ixlan_set(manager="handleref").filter(status="ok")
 
@@ -1952,14 +1952,14 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     def ixlan_set_active_or_pending(self):
         """
         Returns queryset of active or pending ixlan objects at
-        this exchange
+        this exchange.
         """
         return self.ixlan_set(manager="handleref").filter(status__in=["ok", "pending"])
 
     @property
     def ixfac_set_active(self):
         """
-        Returns queryset of active ixfac objects at this exchange
+        Returns queryset of active ixfac objects at this exchange.
         """
         return (
             self.ixfac_set(manager="handleref")
@@ -1970,14 +1970,14 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     @property
     def sponsorship(self):
         """
-        Returns sponsorship object for this exchange (through owning org)
+        Returns sponsorship object for this exchange (through owning org).
         """
         return self.org.sponsorship
 
     @property
     def view_url(self):
         """
-        Return the URL to this facility's web view
+        Return the URL to this facility's web view.
         """
         return "{}{}".format(
             settings.BASE_URL, django.urls.reverse("ix-view", args=(self.id,))
@@ -1989,7 +1989,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Returns a value for "proto_unicast" derived from the exchanges's
         ixpfx records.
 
-        If the ix has a IPv4 ixpfx, proto_unicast should be True
+        If the ix has a IPv4 ixpfx, proto_unicast should be True.
         """
         return self.ixlan.ixpfx_set_active.filter(protocol="IPv4").exists()
 
@@ -1999,7 +1999,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         Returns a value for "proto_ipv6" derived from the exchanges's
         ixpfx records.
 
-        If the ix has a IPv6 ixpfx, proto_ipv6 should be True
+        If the ix has a IPv6 ixpfx, proto_ipv6 should be True.
         """
         return self.ixlan.ixpfx_set_active.filter(protocol="IPv6").exists()
 
@@ -2048,7 +2048,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     def ixf_import_request_recent_status(self):
         """
         Returns the recent ixf import request status as a tuple
-        of value, display
+        of value, display.
         """
 
         if not self.ixf_import_request:
@@ -2071,8 +2071,8 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     @property
     def ixf_import_css(self):
         """
-        returns the appropriate bootstrap alert class
-        depending on recent import request status
+        Returns the appropriate bootstrap alert class
+        depending on recent import request status.
         """
         status, _ = self.ixf_import_request_recent_status
         if status == "queued":
@@ -2084,7 +2084,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     def vq_approve(self):
         """
         Called when internet exchange is approved in verification
-        queue
+        queue.
         """
 
         # since we are creating a pending ixland and prefix
@@ -2100,7 +2100,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     def save(self, create_ixlan=True, **kwargs):
         """
         When an internet exchange is saved, make sure the ixlan for it
-        exists
+        exists.
 
         Keyword Argument(s):
 
@@ -2143,7 +2143,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 @reversion.register
 class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     """
-    Describes facility to exchange relationship
+    Describes facility to exchange relationship.
     """
 
     ix = models.ForeignKey(
@@ -2157,9 +2157,9 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
         """
         Filter queryset of ixfac objects related to facilities with name match
-        in facility__name according to filter
+        in facility__name according to filter.
 
-        Relationship through facility
+        Relationship through facility.
         """
         if not qset:
             qset = cls.handleref.undeleted()
@@ -2171,9 +2171,9 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     ):
         """
         Filter queryset of ixfac objects related to country via match
-        in facility__country according to filter
+        in facility__country according to filter.
 
-        Relationship through facility
+        Relationship through facility.
         """
         if not qset:
             qset = cls.handleref.filter(status="ok")
@@ -2183,9 +2183,9 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     def related_to_city(cls, value=None, filt=None, field="facility__city", qset=None):
         """
         Filter queryset of ixfac objects related to city via match
-        in facility__city according to filter
+        in facility__city according to filter.
 
-        Relationship through facility
+        Relationship through facility.
         """
         if not qset:
             qset = cls.handleref.undeleted()
@@ -2194,7 +2194,7 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     @property
     def descriptive_name(self):
         """
-        Returns a descriptive label of the ixfac for logging purposes
+        Returns a descriptive label of the ixfac for logging purposes.
         """
         return f"ixfac{self.id} {self.ix.name} <-> {self.facility.name}"
 
@@ -2207,7 +2207,7 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
 @reversion.register
 class IXLan(pdb_models.IXLanBase):
     """
-    Describes a LAN at an exchange
+    Describes a LAN at an exchange.
     """
 
     # as we are preparing to drop IXLans from the schema, as an interim
@@ -2286,28 +2286,28 @@ class IXLan(pdb_models.IXLanBase):
     @property
     def descriptive_name(self):
         """
-        Returns a descriptive label of the ixlan for logging purposes
+        Returns a descriptive label of the ixlan for logging purposes.
         """
         return f"ixlan{self.id} {self.ix.name}"
 
     @property
     def ixpfx_set_active(self):
         """
-        Returns queryset of active prefixes at this ixlan
+        Returns queryset of active prefixes at this ixlan.
         """
         return self.ixpfx_set(manager="handleref").filter(status="ok")
 
     @property
     def ixpfx_set_active_or_pending(self):
         """
-        Returns queryset of active or pending prefixes at this ixlan
+        Returns queryset of active or pending prefixes at this ixlan.
         """
         return self.ixpfx_set(manager="handleref").filter(status__in=["ok", "pending"])
 
     @property
     def netixlan_set_active(self):
         """
-        Returns queryset of active netixlan objects at this ixlan
+        Returns queryset of active netixlan objects at this ixlan.
         """
         return (
             self.netixlan_set(manager="handleref")
@@ -2322,19 +2322,19 @@ class IXLan(pdb_models.IXLanBase):
     def autocomplete_search_fields():
         """
         Used by grappelli autocomplete to determine what
-        fields to search in
+        fields to search in.
         """
         return ("ix__name__icontains",)
 
     def related_label(self):
         """
-        Used by grappelli autocomplete for representation
+        Used by grappelli autocomplete for representation.
         """
         return f"{self.ix.name} IXLan ({self.id})"
 
     def test_ipv4_address(self, ipv4):
         """
-        test that the ipv4 a exists in one of the prefixes in this ixlan
+        Test that the ipv4 a exists in one of the prefixes in this ixlan.
         """
         for pfx in self.ixpfx_set_active:
             if pfx.test_ip_address(ipv4):
@@ -2343,7 +2343,7 @@ class IXLan(pdb_models.IXLanBase):
 
     def test_ipv6_address(self, ipv6):
         """
-        test that the ipv6 address exists in one of the prefixes in this ixlan
+        Test that the ipv6 address exists in one of the prefixes in this ixlan.
         """
         for pfx in self.ixpfx_set_active:
             if pfx.test_ip_address(ipv6):
@@ -2385,7 +2385,7 @@ class IXLan(pdb_models.IXLanBase):
         this ixlan.
 
         It will take into account whether an ipaddress can be claimed from a
-        soft-deleted netixlan or whether or not an object already exists
+        soft-deleted netixlan or whether an object already exists
         that should be updated instead of creating a new netixlan instance.
 
         Arguments:
@@ -2589,7 +2589,7 @@ class IXLan(pdb_models.IXLanBase):
 class IXLanIXFMemberImportAttempt(models.Model):
     """
     Holds information about the most recent ixf member import
-    attempt for an ixlan
+    attempt for an ixlan.
     """
 
     ixlan = models.OneToOneField(
@@ -2605,7 +2605,7 @@ class IXLanIXFMemberImportAttempt(models.Model):
 class IXLanIXFMemberImportLog(models.Model):
     """
     Import log of a IX-F member import that changed or added at least one
-    netixlan under the specified ixlans
+    netixlan under the specified ixlans.
     """
 
     ixlan = models.ForeignKey(
@@ -2622,7 +2622,7 @@ class IXLanIXFMemberImportLog(models.Model):
     @transaction.atomic()
     def rollback(self):
         """
-        Attempt to rollback the changes described in this log
+        Attempt to rollback the changes described in this log.
         """
 
         for entry in self.entries.all().order_by("-id"):
@@ -2648,7 +2648,7 @@ class IXLanIXFMemberImportLogEntry(models.Model):
     """
     IX-F member import log entry that holds the affected netixlan and
     the netixlan's version after the change, which can be used to rollback
-    the change
+    the change.
     """
 
     log = models.ForeignKey(
@@ -2681,9 +2681,9 @@ class IXLanIXFMemberImportLogEntry(models.Model):
     def changes(self):
         """
         Returns a dict of changes between the netixlan version
-        saved by the ix-f import and the version before
+        saved by the ix-f import and the version before.
 
-        Fields `created`, `updated` and `version` will be ignored
+        Fields `created`, `updated` and `version` will be ignored.
         """
         if not self.version_before:
             return {}
@@ -2721,8 +2721,8 @@ class IXLanIXFMemberImportLogEntry(models.Model):
 
 class NetworkProtocolsDisabled(ValueError):
     """
-    raised when a network has both ipv6 and ipv4 support
-    disabled during ix-f import
+    Raised when a network has both ipv6 and ipv4 support
+    disabled during ix-f import.
     """
 
 
@@ -2811,9 +2811,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     @classmethod
     def id_filters(cls, asn, ipaddr4, ipaddr6, check_protocols=True):
         """
-        returns a dict of filters to use with a
+        Returns a dict of filters to use with a
         IXFMemberData or NetworkIXLan query set
-        to retrieve a unique entry
+        to retrieve a unique entry.
         """
 
         net = Network.objects.get(asn=asn)
@@ -2842,11 +2842,11 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Returns an IXFMemberData object.
 
-        It will take into consideration whether or not an instance
+        It will take into consideration whether an instance
         for this object already exists (as identified by asn and ip
-        addresses)
+        addresses).
 
-        It will also update the value of `fetched` to now
+        It will also update the value of `fetched` to now.
 
         Keyword Argument(s):
 
@@ -2948,7 +2948,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def dismissed_for_network(cls, net):
         """
         Returns queryset for IXFMemberData objects that match
-        a network's asn and are currenlty flagged as dismissed
+        a network's asn and are currenlty flagged as dismissed.
 
         Argument(s):
 
