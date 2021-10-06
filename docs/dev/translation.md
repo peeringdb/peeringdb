@@ -40,7 +40,7 @@ Uncomment the mount point for `locale` under `volumes`
 
 ## Generate a new locale
 
-Call makemessages and pass the locale to the `-l` option. In this example we are passing `de` for german.
+Call makemessages and pass the locale to the `-l` option. In this example we are passing `de` for German.
 
 ```
 Ctl/dev/run.sh /bin/sh
