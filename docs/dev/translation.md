@@ -45,8 +45,8 @@ Call makemessages and pass the locale to the `-l` option. In this example we are
 ```
 Ctl/dev/run.sh /bin/sh
 . venv/bin/activate
-django-admin makemessages -l de -s --no-wrap
-django-admin makemessages -d djangojs -l de -s --no-wrap
+django-admin makemessages -l de -s --no-wrap -i venv
+django-admin makemessages -d djangojs -l de -s --no-wrap -i venv
 ```
 
 ## Updating messages in existing locale
@@ -56,8 +56,8 @@ This will add any new messages to all locale files. In other words if there has 
 ```
 Ctl/dev/run.sh /bin/sh
 . venv/bin/activate
-django-admin makemessages -a -s --no-wrap
-django-admin makemessages -d djangojs -a -s --no-wrap
+django-admin makemessages -a -s --no-wrap -i venv
+django-admin makemessages -d djangojs -a -s --no-wrap -i venv
 ```
 
 ## Compile messages
@@ -67,5 +67,5 @@ Once translation files are ready, you need to compile them so django can use the
 ```
 Ctl/dev/run.sh /bin/sh
 . venv/bin/activate
-django-admin compilemessages
+django-admin compilemessages -i venv
 ```
