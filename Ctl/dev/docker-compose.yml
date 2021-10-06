@@ -47,7 +47,6 @@ services:
       - ../../mainsite:/srv/www.peeringdb.com/mainsite:Z
       - ../../tests:/srv/www.peeringdb.com/tests:Z
       - ../../docs:/srv/www.peeringdb.com/docs:Z
-      - ../../../../20c/pymdgen/src/pymdgen:/srv/www.peeringdb.com/venv/lib/python3.9/site-packages/pymdgen:Z
 #      - ../../search-data:/srv/www.peeringdb.com/search-data
 #      - ../../api-cache:/srv/www.peeringdb.com/api-cache
 #      - ../../../django-peeringdb/src/django_peeringdb:/srv/www.peeringdb.com/venv/lib/python3.9/site-packages/django_peeringdb:Z
