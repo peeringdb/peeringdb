@@ -4499,7 +4499,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     @property
     def descriptive_name(self):
         """
-        Returns a descriptive label of the netixlan for logging purposes
+        Returns a descriptive label of the netixlan for logging purposes.
         """
         return "netixlan{} AS{} {} {}".format(
             self.id, self.asn, self.ipaddr4, self.ipaddr6
@@ -4508,14 +4508,14 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     @property
     def ix_name(self):
         """
-        Returns the exchange name for this netixlan
+        Returns the exchange name for this netixlan.
         """
         return self.ixlan.ix.name
 
     @property
     def ix_id(self):
         """
-        Returns the exchange id for this netixlan
+        Returns the exchange id for this netixlan.
         """
         return self.ixlan.ix_id
 
@@ -4524,9 +4524,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
         """
         Returns a tuple that identifies the netixlan
-        in the context of an ix-f member data entry
-
-        as a unqiue record by asn, ip4 and ip6 address
+        in the context of an ix-f member data entry as a unqiue record by asn, ip4 and ip6 address.
         """
 
         self.network
@@ -4561,7 +4559,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     def related_to_name(cls, value=None, filt=None, field="ix__name", qset=None):
         """
         Filter queryset of netixlan objects related to exchange via a name match
-        according to filter
+        according to filter.
 
         Relationship through ixlan -> ix
         """
@@ -4570,7 +4568,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     def ipaddress_conflict(self):
         """
         Checks whether the ip addresses specified on this netixlan
-        exist on another netixlan (with status="ok")
+        exist on another netixlan (with status="ok").
 
         Returns:
             - tuple(bool, bool): tuple of two booleans, first boolean is
@@ -4620,7 +4618,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
     def clean(self):
         """
-        Custom model validation
+        Custom model validation.
         """
         errors = {}
 
@@ -4679,7 +4677,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
     def ipaddr(self, version):
         """
-        Return the netixlan's ipaddr for ip version
+        Return the netixlan's ipaddr for ip version.
         """
         if version == 4:
             return self.ipaddr4
@@ -4689,15 +4687,15 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
     def descriptive_name_ipv(self, version):
         """
-        Returns a descriptive label of the netixlan for logging purposes
-        Will only contain the ipaddress matching the specified version
+        Returns a descriptive label of the netixlan for logging purposes.
+        Will only contain the ipaddress matching the specified version.
         """
         return f"netixlan{self.id} AS{self.asn} {self.ipaddr(version)}"
 
 
 class User(AbstractBaseUser, PermissionsMixin):
     """
-    proper length fields user
+    Proper length fields user.
     """
 
     username = models.CharField(
@@ -4749,7 +4747,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def pending_affiliation_requests(self):
         """
         Returns the currently pending user -> org affiliation
-        requests for this user
+        requests for this user.
         """
         return self.affiliation_requests.filter(status="pending").order_by("-created")
 
@@ -4757,7 +4755,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def affiliation_requests_available(self):
         """
         Returns whether the user currently has any affiliation request
-        slots available, by checking that the number of pending affiliation requests
+        slots available by checking that the number of pending affiliation requests
         the user has is lower than MAX_USER_AFFILIATION_REQUESTS
         """
         return (
@@ -4768,7 +4766,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def organizations(self):
         """
-        Returns all organizations this user is a member of
+        Returns all organizations this user is a member of.
         """
         ids = []
         for group in self.groups.all():
@@ -4781,7 +4779,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def networks(self):
         """
-        Returns all networks this user is a member of
+        Returns all networks this user is a member of.
         """
         return list(
             chain.from_iterable(org.net_set_active.all() for org in self.organizations)
@@ -4799,7 +4797,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def email_confirmed(self):
         """
         Returns True if the email specified by the user has
-        been confirmed, False if not
+        been confirmed, False if not.
         """
 
         try:
@@ -4812,11 +4810,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_verified_user(self):
         """
-        Returns whether the user is verified (eg has been validated
-        by pdb staff)
+        Returns whether the user is verified (e.g., has been validated
+        by PDB staff).
 
-        right now this is accomplished by checking if the user
-        has been added to the 'user' user group
+        Currently this is accomplished by checking if the user
+        has been added to the 'user' user group.
         """
 
         group = Group.objects.get(id=settings.USER_GROUP_ID)
@@ -4826,20 +4824,20 @@ class User(AbstractBaseUser, PermissionsMixin):
     def autocomplete_search_fields():
         """
         Used by grappelli autocomplete to determine what
-        fields to search in
+        fields to search in.
         """
         return ("username__icontains", "email__icontains", "last_name__icontains")
 
     def related_label(self):
         """
-        Used by grappelli autocomplete for representation
+        Used by grappelli autocomplete for representation.
         """
         return f"{self.username} <{self.email}> ({self.id})"
 
     def flush_affiliation_requests(self):
         """
         Removes all user -> org affiliation requests for this user
-        that have been denied or canceled
+        that have been denied or canceled.
         """
 
         UserOrgAffiliationRequest.objects.filter(
@@ -4848,12 +4846,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def recheck_affiliation_requests(self):
         """
-        Will re-evaluate pending affiliation requests to unclaimed
-        ASN orgs
+        Will reevaluate pending affiliation requests to unclaimed
+        ASN orgs.
 
         This allows a user with such a pending affiliation request to
-        change ther email and re-check against rdap data for automatic
-        ownership approval (#375)
+        change ther email and recheck against rdap data for automatic
+        ownership approval. (#375)
         """
 
         for req in self.pending_affiliation_requests.filter(asn__gt=0):
@@ -4912,8 +4910,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def set_unverified(self):
         """
-        Remove user from 'user' group
-        Add user to 'guest' group
+        Remove user from 'user' group.
+        Add user to 'guest' group.
         """
         guest_group = Group.objects.get(id=settings.GUEST_GROUP_ID)
         user_group = Group.objects.get(id=settings.USER_GROUP_ID)
@@ -4927,8 +4925,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def set_verified(self):
         """
-        Add user to 'user' group
-        Remove user from 'guest' group
+        Add user to 'user' group.
+        Remove user from 'guest' group.
         """
         guest_group = Group.objects.get(id=settings.GUEST_GROUP_ID)
         user_group = Group.objects.get(id=settings.USER_GROUP_ID)
@@ -4982,7 +4980,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def password_reset_initiate(self):
         """
-        Initiate the password reset process for the user
+        Initiate the password reset process for the user.
         """
 
         # pylint: disable=access-member-before-definition
@@ -5128,7 +5126,7 @@ class UserPasswordReset(models.Model):
 class CommandLineTool(models.Model):
     """
     Describes command line tool execution by a staff user inside the
-    control panel (admin)
+    control panel (admin).
     """
 
     tool = models.CharField(
@@ -5181,7 +5179,7 @@ class EnvironmentSetting(models.Model):
 
     """
     Environment settings overrides controlled through
-    django admin (/cp)
+    django admin (/cp).
     """
 
     class Meta:
@@ -5236,10 +5234,10 @@ class EnvironmentSetting(models.Model):
 
         """
         Get the current value of the setting specified by
-        it's setting name
+        its setting name.
 
         If no instance has been saved for the specified setting
-        the default value will be returned
+        the default value will be returned.
         """
         try:
             instance = cls.objects.get(setting=setting)
@@ -5250,13 +5248,13 @@ class EnvironmentSetting(models.Model):
     @property
     def value(self):
         """
-        Get the value for this setting
+        Get the value for this setting.
         """
         return getattr(self, self.setting_to_field[self.setting])
 
     def set_value(self, value):
         """
-        Update the value for this setting
+        Update the value for this setting.
         """
         setattr(self, self.setting_to_field[self.setting], value)
         self.full_clean()
