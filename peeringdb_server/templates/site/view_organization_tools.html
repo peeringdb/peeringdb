@@ -562,6 +562,27 @@
               </div>
             </div>
             <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Sales E-mail" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="email"
+                     data-edit-name="sales_email"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div
+                class="col-xs-4 col-sm-5 col-md-4 help-text"
+                data-toggle="tooltip"
+                data-placement="top"
+                title="{{ data.phone_help_text }}">
+              {% trans "Sales Phone" %}
+              <span class="glyphicon glyphicon-question-sign"></span>
+              </div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="sales_phone"></div>
+              </div>
+            </div>
+            <div class="row">
               <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Prefix" %}</div>
               <div class="col-xs-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"

@@ -2112,6 +2112,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     def validate_phonenumbers(self):
         self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
         self.policy_phone = validate_phonenumber(self.policy_phone, self.country.code)
+        self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
 
     def clean(self):
         self.validate_phonenumbers()
