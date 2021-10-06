@@ -13,7 +13,7 @@ git clone git@github.com:peeringdb/translations
 git clone git@github.com:peeringdb/django-peeringdb
 ```
 
-Running `ls` should show something like this
+Running `ls` should show something like this.
 
 ```sh
 django-peeringdb
@@ -21,7 +21,7 @@ peeringdb
 translations
 ```
 
-Edit your peeringdb docker compose config to make the translation files and django-peeringdb source available
+Edit the peeringdb docker compose config to make the translation files and django-peeringdb source available.
 
 ```sh
 cd peeringdb
