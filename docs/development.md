@@ -70,27 +70,4 @@ pytest -v -rxs --cov-report term-missing --cov=peeringdb_server/ --capture=sys t
 
 All dependencies are now handled by poetry.
 
-To update them, do `poetry lock` and test.
-
-
-## Troubleshooting
-
-### 404 on static files with runserver:
-
-Make sure it's in debug mode
-
-### api tests fail
-
-You need to specify the test directory:
-
-```sh
-pytest tests/
-```
-
-### Can't see error because of warnings
-
-Run pytest with `-p no:warnings`
-
-### Run one specific test
-
-Run pytest with `-k $test_name`
+To update them, do `poetry lock`, rebuild docker and test.
