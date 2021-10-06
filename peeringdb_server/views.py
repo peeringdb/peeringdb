@@ -1577,6 +1577,19 @@ def view_exchange(request, id):
                 "value": data.get("policy_phone", dismiss),
                 "help_text": field_help(InternetExchange, "policy_phone"),
             },
+            {
+                "type": "email",
+                "name": "sales_email",
+                "label": _("Sales Email"),
+                "value": data.get("sales_email", dismiss),
+            },
+            {
+                "type": "string",
+                "name": "sales_phone",
+                "label": _("Sales Phone"),
+                "value": data.get("sales_phone", dismiss),
+                "help_text": field_help(InternetExchange, "sales_phone"),
+            },
         ],
     }
 

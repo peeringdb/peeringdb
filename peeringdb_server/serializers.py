@@ -2677,6 +2677,9 @@ class InternetExchangeSerializer(ModelSerializer):
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
     policy_phone = serializers.CharField(required=False, allow_blank=True, default="")
 
+    sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
+    sales_email = serializers.CharField(required=False, allow_blank=True, default="")
+
     # For the creation of the initial prefix during exchange
     # creation. It will be a required field during `POST` requests
     # but will be ignored during `PUT` so we cannot just do
@@ -2727,6 +2730,8 @@ class InternetExchangeSerializer(ModelSerializer):
             "tech_phone",
             "policy_email",
             "policy_phone",
+            "sales_phone",
+            "sales_email",
             "fac_set",
             "ixlan_set",
             # "suggest",
