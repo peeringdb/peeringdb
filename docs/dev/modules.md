@@ -1,4 +1,4 @@
-Generated on 2021-09-27 17:07:20.909099
+Generated on 2021-10-06 18:04:54.446347
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -39,7 +39,7 @@ Augment REST API schema to use for open-api schema generation.
 open-api schema generation leans heavily on automatic generation
 implemented through the django-rest-framework.
 
-Specify here, further augmentation of the generated schema.
+Specify custom fields to be added to the generated open-api schema.
 
 ## [apps.py](/docs/dev/modules/apps.py.md)
 
@@ -205,8 +205,8 @@ Custom rate limit handlers for the REST API.
 
 ## [search.py](/docs/dev/modules/search.py.md)
 
-Search implementation used for the peeringdb top search bar, as well as, name searches through
-the api `name_search` filter, as well as, advances search name field searches.
+Search implementation used for the peeringdb top search bar, as well as name searches through
+the api `name_search` filter, as well as advanced search name field searches.
 
 Search logic is handled by django-haystack and whoosh.
 
@@ -224,7 +224,7 @@ REST API POST / PUT data validators.
 New serializers should extend ModelSerializer class, which is a custom extension
 of django-rest-framework's ModelSerializer.
 
-Custom ModelSerializer implements logic for the expansion driven by the `depth` url parameter.
+Custom ModelSerializer implements logic for the expansion of relationships driven by the `depth` url parameter. The depth parameter indicates how many objects to recurse into.
 
 Special api filtering implementation should be done through the `prepare_query`
 method.

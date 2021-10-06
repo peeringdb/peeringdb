@@ -1,4 +1,4 @@
-Generated on 2021-09-27 17:07:20.909099
+Generated on 2021-10-06 18:04:54.446347
 
 ## _db_command.py
 
@@ -34,7 +34,7 @@ Process deskpro ticket queue.
 
 ## pdb_deskpro_requeue.py
 
-Reset a deskpro ticket and queue for publishing.
+Reset a deskpro ticket and requeue for publishing.
 
 ## pdb_fac_merge.py
 
@@ -52,10 +52,6 @@ and org user group when it should be one or the other.
 ## pdb_generate_test_data.py
 
 Create test data. This will wipe all data locally, so use with caution. This command is NOT to be run on production or beta environments.
-
-## pdb_geo_normalize_existing.py
-
-Normalize existing address fields based on Google Maps API response.
 
 ## pdb_geosync.py
 
@@ -81,7 +77,7 @@ Put peeringdb in or out of maintenance mode.
 ## pdb_migrate_ixlans.py
 
 DEPRECATED
-Use during ixlan migrations for #21.
+Used during ixlan migrations for #21.
 
 ## pdb_process_admin_tool_command.py
 

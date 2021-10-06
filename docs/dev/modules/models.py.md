@@ -1,4 +1,4 @@
-Generated from models.py on 2021-09-27 17:07:21.196869
+Generated from models.py on 2021-10-06 18:04:54.501582
 
 # peeringdb_server.models
 
@@ -1700,7 +1700,7 @@ requests for this user
 ### Methods
 
 #### email_user
-`def email_user(self, subject, message, from_email=stefan@20c.com)`
+`def email_user(self, subject, message, from_email=pdb@localhost)`
 
 Sends an email to this User.
 
