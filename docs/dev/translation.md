@@ -1,4 +1,4 @@
-# Integerating translations
+# Maintaining Translations
 
 ## Setup
 
