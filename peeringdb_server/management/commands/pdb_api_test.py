@@ -1,6 +1,6 @@
 #!/bin/env python
 """
-Series of integration/unit tests for the pdb api.
+Series of integration/unit tests for the PDB API.
 """
 import copy
 import datetime
