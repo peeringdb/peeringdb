@@ -2842,7 +2842,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Returns an IXFMemberData object.
 
-        It will take into consideration whether an instance
+        It will take into consideration whether or not an instance
         for this object already exists (as identified by asn and ip
         addresses).
 
@@ -2935,8 +2935,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     @classmethod
     def get_for_network(cls, net):
         """
-        Returns aueryset for IXFMemberData objects that match
-        a network's asn
+        Returns queryset for IXFMemberData objects that match
+        a network's asn.
 
         Argument(s):
 
@@ -2963,7 +2963,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Returns whether or not the specified network has
         any dismissed IXFMemberData suggestions that are
-        actionable
+        actionable.
 
         Argument(s):
 
@@ -2979,7 +2979,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def proposals_for_network(cls, net):
         """
         Returns a dict containing actionable proposals for
-        a network
+        a network.
 
         ```
         {
@@ -3054,7 +3054,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def net(self):
         """
         Returns the Network instance related to
-        this entry
+        this entry.
         """
 
         if not hasattr(self, "_net"):
@@ -3066,7 +3066,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Returns whether or not the proposed action by
         this IXFMemberData instance is actionable by
-        the network
+        the network.
         """
         error = self.error
 
@@ -3088,7 +3088,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         by exchange or network.
 
         If actionable will return self.error otherwise
-        will return None
+        will return None.
         """
 
         if not self.error:
@@ -3132,7 +3132,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Returns a list of email addresses that
         are suitable contact points for conflict resolution
-        at the network's end
+        at the network's end.
         """
         qset = self.net.poc_set_active.exclude(email="")
         qset = qset.exclude(email__isnull=True)
@@ -3154,7 +3154,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Returns a list of email addresses that
         are suitable contact points for conflict resolution
-        at the exchange end
+        at the exchange end.
         """
         return [self.ix.tech_email or self.ix.policy_email]
 
@@ -3162,7 +3162,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def ix(self):
         """
         Returns the InternetExchange instance related to
-        this entry
+        this entry.
         """
 
         if not hasattr(self, "_ix"):
@@ -3174,7 +3174,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         """
         Returns a tuple that identifies the ix-f member
-        as a unqiue record by asn, ip4 and ip6 address
+        as a unqiue record by asn, ip4 and ip6 address.
         """
 
         return (self.asn, self.ipaddr4, self.ipaddr6)
@@ -3208,9 +3208,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
         """
         Returns a dict of changes (field, value)
-        between this entry and the related netixlan
+        between this entry and the related netixlan.
 
-        If an empty dict is returned that means no changes
+        If an empty dict is returned that means no changes.
 
         ```
         {
@@ -3258,7 +3258,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def modify_speed(self):
         """
         Returns whether or not the `speed` property
-        is enabled to receive modify updates or not (#793)
+        is enabled to receive modify updates or not (#793).
         """
         return False
 
@@ -3266,7 +3266,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def modify_is_rs_peer(self):
         """
         Returns whether or not the `is_rs_peer` property
-        is enabled to receive modify updates or not (#793)
+        is enabled to receive modify updates or not (#793).
         """
         return False
 
@@ -3274,7 +3274,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def changed_fields(self):
         """
         Returns a comma separated string of field names
-        for changes proposed by this IXFMemberData instance
+        for changes proposed by this IXFMemberData instance.
         """
         return ", ".join(list(self.changes.keys()))
 
@@ -3282,9 +3282,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def remote_changes(self):
         """
         Returns a dict of changed fields between previously
-        fetched IX-F data and current IX-F data
+        fetched IX-F data and current IX-F data.
 
-        If an empty dict is returned that means no changes
+        If an empty dict is returned that means no changes.
 
         ```
         {
@@ -3315,7 +3315,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         had data at the IX-F source.
 
         If not it indicates that it does not exist at the
-        ix-f source
+        ix-f source.
         """
 
         return self.data == "{}" or not self.data
@@ -3327,7 +3327,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         the related netixlan should be removed.
 
         We do this by checking if the ix-f data was provided
-        or not
+        or not.
         """
 
         if not self.netixlan.id or self.netixlan.status == "deleted":
@@ -3345,7 +3345,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Returns whether or not the network associated with
         this IXFMemberData instance currently has a presence
         at the exchange associated with this IXFMemberData
-        instance
+        instance.
         """
         return NetworkIXLan.objects.filter(
             ixlan=self.ixlan, network=self.net, status="ok"
@@ -3355,7 +3355,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def action(self):
         """
         Returns the implied action of applying this
-        entry to peeringdb
+        entry to peeringdb.
 
         Will return either "add", "modify", "delete" or "noop"
         """
@@ -3395,7 +3395,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def has_requirements(self):
         """
         Return whether or not this IXFMemberData has
-        other IXFMemberData objects as requirements
+        other IXFMemberData objects as requirements.
         """
 
         return len(self.requirements) > 0
@@ -3405,7 +3405,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Returns list of all IXFMemberData objects
         that are still active requirements for this
-        IXFMemberData object
+        IXFMemberData object.
         """
         return [
             requirement
@@ -3418,7 +3418,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Return the initial requirement IXFMemberData
         for this IXFMemberData instance, None if there
-        isn't any
+        isn't any.
         """
         try:
             return self.requirements[0]
@@ -3432,7 +3432,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         objects for this IXFMemberData object. Currently this
         only happens on add proposals that require two netixlans
         to be deleted because both ipaddresses exist on separate
-        netixlans (#770)
+        netixlans (#770).
         """
         return self.requirements[1:]
 
@@ -3440,7 +3440,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def ipaddr4_on_requirement(self):
         """
         Returns true if the ipv4 address claimed by this IXFMemberData
-        object exists on one of it's requirement IXFMemberData objects
+        object exists on one of its requirement IXFMemberData objects.
         """
 
         ipaddr4 = self.ipaddr4
@@ -3458,7 +3458,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def ipaddr6_on_requirement(self):
         """
         Returns true if the ipv6 address claimed by this IXFMemberData
-        object exists on one of it's requirement IXFMemberData objects
+        object exists on one of its requirement IXFMemberData objects.
         """
 
         ipaddr6 = self.ipaddr6
@@ -3483,7 +3483,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Any new netixlan will NOT be saved at this point.
 
         Note that the netixlan that matched may be currently
-        soft-deleted (status=="deleted")
+        soft-deleted (status=="deleted").
         """
 
         if not hasattr(self, "_netixlan"):
@@ -3552,7 +3552,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def set_requirement(self, ixf_member_data, save=True):
         """
         Sets another IXFMemberData object to be a requirement
-        of the resolution of this IXFMemberData object
+        of the resolution of this IXFMemberData object.
         """
         if not ixf_member_data:
             return
@@ -3572,7 +3572,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     def apply_requirements(self, save=True):
         """
-        Apply all requirements
+        Apply all requirements.
         """
 
         for requirement in self.requirements:
@@ -3583,10 +3583,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Applies the data.
 
         This will either create, update or delete a netixlan
-        object
+        object.
 
         Will return a dict containing action and netixlan
-        affected
+        affected.
 
         ```
         {
@@ -3656,13 +3656,13 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def validate_speed(self):
         """
         Speed errors in ix-f data are raised during parse
-        and speed will be on the attribute
+        and speed will be on the attribute.
 
-        In order to properly handle invalid speed values
-        we check if speed is 0 and if there was a parsing
-        error for it, and if so raise a validation error
+        In order to properly handle invalid speed values,
+        check if speed is 0 and if there was a parsing
+        error for it, and if so raise a validation error.
 
-        TODO: find a better way to do this
+        TODO: find a better way to do this.
         """
         if self.speed == 0 and self.error:
             error_data = json.loads(self.error)
@@ -3689,10 +3689,10 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     def set_resolved(self, save=True):
         """
         Marks this IXFMemberData instance as resolved and
-        send out notifications to ac,ix and net if
-        warranted
+        sends out notifications to ac,ix and net if
+        warranted.
 
-        this will delete the IXFMemberData instance
+        This will delete the IXFMemberData instance.
         """
         if self.id and save and not self.requirement_of_id:
             self.delete(hard=True)
@@ -3702,8 +3702,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Persist this IXFMemberData instance and send out notifications
         for conflict (validation issues) for modifications proposed
-        to the corresponding netixlan to ac, ix and net as warranted
-        as warranted
+        to the corresponding netixlan to ac, ix and net as warranted.        
         """
 
         if not self.id:
@@ -3744,7 +3743,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Persist this IXFMemberData instance and send out notifications
         for proposed modification to the corresponding netixlan
-        instance to ac, ix and net as warranted
+        instance to ac, ix and net as warranted.
         """
         self.reason = reason
         if ((self.changes and not self.id) or self.remote_changes) and save:
@@ -3765,7 +3764,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Persist this IXFMemberData instance and send out notifications
         for proposed creation of netixlan instance to ac, ix and net
-        as warranted
+        as warranted.
         """
         self.reason = reason
 
@@ -3788,7 +3787,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Persist this IXFMemberData instance and send out notifications
         for proposed removal of netixlan instance to ac, net and ix
-        as warranted
+        as warranted.
         """
         self.reason = reason
 
@@ -3814,14 +3813,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     def set_data(self, data):
         """
-        Stores a dict in self.data as a json string
+        Stores a dict in self.data as a json string.
         """
         self.data = json.dumps(data)
 
     def render_notification(self, template_file, recipient, context=None):
         """
         Renders notification text for this ixfmemberdata
-        instance
+        instance.
 
         Argument(s):
 
@@ -3874,7 +3873,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 @reversion.register
 class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
     """
-    Descries a Prefix at an Exchange LAN
+    Descries a Prefix at an Exchange LAN.
     """
 
     ixlan = models.ForeignKey(
@@ -3888,7 +3887,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
     @property
     def descriptive_name(self):
         """
-        Returns a descriptive label of the ixpfx for logging purposes
+        Returns a descriptive label of the ixpfx for logging purposes.
         """
         return f"ixpfx{self.id} {self.prefix}"
 
@@ -3896,7 +3895,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
     def related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
         """
         Filter queryset of ixpfx objects related to exchange via ix_id match
-        according to filter
+        according to filter.
 
         Relationship through ixlan -> ix
         """
@@ -3909,7 +3908,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
     def whereis_ip(cls, ipaddr, qset=None):
         """
         Filter queryset of ixpfx objects where the prefix contains
-        the supplied ipaddress
+        the supplied ipaddress.
         """
 
         if not qset:
@@ -3930,7 +3929,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
 
     def test_ip_address(self, addr):
         """
-        Checks if this prefix can contain the specified ip address
+        Checks if this prefix can contain the specified ip address.
 
         Arguments:
             - addr (ipaddress.IPv4Address or ipaddress.IPv6Address or unicode): ip address
@@ -3993,7 +3992,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
 
     def clean(self):
         """
-        Custom model validation
+        Custom model validation.
         """
 
         status_error = _(
@@ -4015,7 +4014,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
 @reversion.register
 class Network(pdb_models.NetworkBase):
     """
-    Describes a peeringdb network
+    Describes a peeringdb network.
     """
 
     org = models.ForeignKey(
@@ -4062,7 +4061,7 @@ class Network(pdb_models.NetworkBase):
     @transaction.atomic()
     def create_from_rdap(cls, rdap, asn, org):
         """
-        Creates network from rdap result object
+        Creates network from rdap result object.
         """
         name = rdap.name
         if not rdap.name:
@@ -4126,7 +4125,7 @@ class Network(pdb_models.NetworkBase):
         Filter queryset of Network objects related to the netixlan link
         specified by netixlan_id
 
-        Relationship through netixlan
+        Relationship through netixlan.
         """
         if not qset:
             qset = cls.handleref.undeleted()
@@ -4173,7 +4172,7 @@ class Network(pdb_models.NetworkBase):
     def not_related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
         """
         Filter queryset of Network objects not related to the ix
-        specified by ix_id (as in networks not present at the exchange)
+        specified by ix_id (as in networks not present at the exchange).
 
         Relationship through netixlan -> ixlan -> ix
         """
@@ -4188,7 +4187,7 @@ class Network(pdb_models.NetworkBase):
     @classmethod
     def as_set_map(cls, qset=None):
         """
-        Returns a dict mapping asns to their irr_as_set value
+        Returns a dict mapping asns to their irr_as_set value.
         """
         if not qset:
             qset = cls.objects.filter(status="ok").order_by("asn")
@@ -4198,7 +4197,7 @@ class Network(pdb_models.NetworkBase):
     def search_result_name(self):
         """
         This will be the name displayed for quick search matches
-        of this entity
+        of this entity.
         """
 
         return f"{self.name} ({self.asn})"
@@ -4215,7 +4214,7 @@ class Network(pdb_models.NetworkBase):
     def ixlan_set_active(self):
         """
         Returns IXLan queryset for ixlans connected to this network
-        through NetworkIXLan
+        through NetworkIXLan.
         """
         ixlan_ids = []
         for netixlan in self.netixlan_set_active:
@@ -4227,7 +4226,7 @@ class Network(pdb_models.NetworkBase):
     def ixlan_set_ixf_enabled(self):
         """
         Returns IXLan queryset for IX-F import enabled ixlans connected
-        to this network throught NetworkIXLan
+        to this network through NetworkIXLan.
         """
         qset = self.ixlan_set_active.filter(ixf_ixp_import_enabled=True)
         qset = qset.exclude(ixf_ixp_member_list_url__isnull=True)
@@ -4266,7 +4265,7 @@ class Network(pdb_models.NetworkBase):
     @property
     def view_url(self):
         """
-        Return the URL to this networks web view
+        Return the URL to this networks web view.
         """
         return "{}{}".format(
             settings.BASE_URL, django.urls.reverse("net-view", args=(self.id,))
@@ -4275,7 +4274,7 @@ class Network(pdb_models.NetworkBase):
     @property
     def view_url_asn(self):
         """
-        Return the URL to this networks web view
+        Return the URL to this networks web view.
         """
         return "{}{}".format(
             settings.BASE_URL, django.urls.reverse("net-view-asn", args=(self.asn,))
@@ -4283,7 +4282,7 @@ class Network(pdb_models.NetworkBase):
 
     def clean(self):
         """
-        Custom model validation
+        Custom model validation.
         """
 
         try:
@@ -4314,7 +4313,7 @@ class Network(pdb_models.NetworkBase):
 @reversion.register
 class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
     """
-    Describes a contact point (phone, email etc.) for a network
+    Describes a contact point (phone, email etc.) for a network.
     """
 
     # id = models.AutoField(primary_key=True)
@@ -4375,7 +4374,7 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
 @reversion.register
 class NetworkFacility(pdb_models.NetworkFacilityBase):
     """
-    Describes a network <-> facility relationship
+    Describes a network <-> facility relationship.
     """
 
     network = models.ForeignKey(
@@ -4393,9 +4392,9 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
         """
         Filter queryset of netfac objects related to facilities with name match
-        in facility__name according to filter
+        in facility__name according to filter.
 
-        Relationship through facility
+        Relationship through facility.
         """
         if not qset:
             qset = cls.handleref.undeleted()
@@ -4407,9 +4406,9 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     ):
         """
         Filter queryset of netfac objects related to country via match
-        in facility__country according to filter
+        in facility__country according to filter.
 
-        Relationship through facility
+        Relationship through facility.
         """
         if not qset:
             qset = cls.handleref.filter(status="ok")
@@ -4419,9 +4418,9 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     def related_to_city(cls, value=None, filt=None, field="facility__city", qset=None):
         """
         Filter queryset of netfac objects related to city via match
-        in facility__city according to filter
+        in facility__city according to filter.
 
-        Relationship through facility
+        Relationship through facility.
         """
         if not qset:
             qset = cls.handleref.undeleted()
@@ -4430,7 +4429,7 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     @property
     def descriptive_name(self):
         """
-        Returns a descriptive label of the netfac for logging purposes
+        Returns a descriptive label of the netfac for logging purposes.
         """
         return "netfac{} AS{} {} <-> {}".format(
             self.id, self.network.asn, self.network.name, self.facility.name
@@ -4476,7 +4475,7 @@ def format_speed(value):
 @reversion.register
 class NetworkIXLan(pdb_models.NetworkIXLanBase):
     """
-    Describes a network relationship to an IX through an IX Lan
+    Describes a network relationship to an IX through an IX Lan.
     """
 
     network = models.ForeignKey(
