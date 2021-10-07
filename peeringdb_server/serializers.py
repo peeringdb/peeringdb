@@ -119,7 +119,7 @@ FILTER_EXCLUDE = [
 
 class GeocodeSerializerMixin:
     """
-    Overrides create() and update() method of serializer
+    Override create() and update() method of serializer
     to normalize the location against the Google Maps Geocode API
     and resave the model instance with normalized address fields.
 
@@ -136,7 +136,7 @@ class GeocodeSerializerMixin:
     def _geosync_information_present(self, instance, validated_data):
         """
         Determine if there is enough address information
-        to necessitate a geosync attempt
+        to necessitate a geosync attempt.
         """
 
         for f in AddressSerializer.Meta.fields:
@@ -152,7 +152,7 @@ class GeocodeSerializerMixin:
 
     def _need_geosync(self, instance, validated_data):
         """
-        Determine if any geofields have changed that need normalization.
+        Determine if any geofields that have changed need normalization.
         Returns False if the only change is that fields have been deleted.
         """
 
@@ -195,8 +195,8 @@ class GeocodeSerializerMixin:
 
     def handle_geo_error(self, exc, instance):
         """
-        Issue #939 In the event that there is an error in geovalidating
-        the address(including address not found), we return a warning in
+        Issue #939: In the event that there is an error in geovalidating
+        the address (including address not found), a warning is returned in
         the "meta" field of the response and null the latitude and
         longitude on the instance.
         """
@@ -231,8 +231,8 @@ class GeocodeSerializerMixin:
     def update(self, instance, validated_data):
         """
         When updating a geo-enabled object,
-        we first want to update the model
-        and then normalize the geofields
+        update the model first
+        and then normalize the geofields.
         """
 
         # Need to check if we need geosync before updating the instance
@@ -292,11 +292,10 @@ class GeocodeSerializerMixin:
 
 def queryable_field_xl(fld):
     """
-    Translate <fld>_id into <fld> and also take
-    care of translating fac and net queries into "facility"
-    and "network" queries
+    Translate <fld>_id into <fld> and also translate fac and net queries into "facility"
+    and "network" queries.
 
-    FIXME: should be renamed on model schema
+    FIXME: should be renamed on model schema.
     """
 
     if re.match("^.+[^_]_id$", fld):
@@ -411,12 +410,12 @@ def get_relation_filters(flds, serializer, **kwargs):
 
 class UniqueFieldValidator:
     """
-    For issue #70
+    For issue #70:
 
-    Django-side unique field validation
+    Django-side unique field validation.
 
-    This should ideally be done in mysql, however we need to clear out the other
-    duplicates first, so we validate on the django side for now
+    Ideally this is done in mysql, however the other
+    duplicates need to be cleared first, so validate on the django side initially.
     """
 
     message = _("Need to be unique")
@@ -451,7 +450,7 @@ class UniqueFieldValidator:
 class RequiredForMethodValidator:
     """
     A validator that makes a field required for certain
-    methods
+    methods.
     """
 
     message = _("This field is required")
@@ -475,7 +474,7 @@ class RequiredForMethodValidator:
 class SoftRequiredValidator:
     """
     A validator that allows us to require that at least
-    one of the specified fields is set
+    one of the specified fields is set.
     """
 
     message = _("This field is required")
@@ -501,7 +500,7 @@ class SoftRequiredValidator:
 class AsnRdapValidator:
     """
     A validator that queries rdap entries for the provided value (Asn)
-    and will fail if no matching asn is found
+    and will fail if no matching asn is found.
     """
 
     message = _("RDAP Lookup Error")
@@ -534,7 +533,7 @@ class AsnRdapValidator:
 class FieldMethodValidator:
     """
     A validator that will only allow a field to be set for certain
-    methods
+    methods.
     """
 
     message = _("This field is only allowed for these requests: {methods}")
@@ -569,7 +568,7 @@ class ExtendedURLField(serializers.URLField):
 
 class SaneIntegerField(serializers.IntegerField):
     """
-    Integer field that renders null values to 0
+    Integer field that renders null values to 0.
     """
 
     def get_attribute(self, instance):
@@ -582,7 +581,7 @@ class SaneIntegerField(serializers.IntegerField):
 class ParentStatusException(IOError):
     """
     Throw this when an object cannot be created because its parent is
-    either status pending or deleted
+    either status pending or deleted.
     """
 
     def __init__(self, parent, typ):
