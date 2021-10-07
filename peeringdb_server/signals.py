@@ -260,8 +260,7 @@ def new_user_to_guests(request, user, sociallogin=None, **kwargs):
     When a user is created via oauth login put them in the guest
     group temporarily.
 
-    Unless pdb_settings.AUTO_VERIFY_USERS is toggled on in the settings, in which
-    case users get automatically verified (Note: this does
+    If pdb_settings.AUTO_VERIFY_USERS is toggled on in the settings, users get automatically verified (Note: this does
     not include email verification, they will still need to do that).
     """
 
