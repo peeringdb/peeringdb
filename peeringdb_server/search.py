@@ -96,9 +96,9 @@ def make_autocomplete_query(term):
 
 def search(term, autocomplete=False):
     """
-    Search searchable objects (ixp, network, facility ...) by term
+    Search searchable objects (ixp, network, facility ...) by term.
 
-    Returns result dict
+    Returns result dict.
     """
 
     # t0 = time.time()
