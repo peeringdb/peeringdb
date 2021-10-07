@@ -32,9 +32,9 @@ from peeringdb_server.models import (
 
 class GrappelliHandlerefAutocomplete(GrappelliAutocomplete):
     """
-    makes sure that the auto-complete fields managed
+    Make sure that the auto-complete fields managed
     by grappelli in django admin exclude soft-deleted
-    objects
+    objects.
     """
 
     def get_queryset(self):
@@ -185,7 +185,7 @@ class IXLanAutocomplete(AutocompleteHTMLResponse):
 class DeletedVersionAutocomplete(autocomplete.Select2QuerySetView):
     """
     Autocomplete that will show reversion versions where an object
-    was set to deleted
+    was set to deleted.
     """
 
     def get_queryset(self):
@@ -241,7 +241,7 @@ class DeletedVersionAutocomplete(autocomplete.Select2QuerySetView):
 
 class CommandLineToolHistoryAutocomplete(autocomplete.Select2QuerySetView):
     """
-    Autocomplete for command line tools that were ran via the admin ui
+    Autocomplete for command line tools that were run via the admin ui.
     """
 
     tool = ""
