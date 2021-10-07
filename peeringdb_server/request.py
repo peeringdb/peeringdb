@@ -9,13 +9,13 @@ def bypass_validation(request=None):
 
     """
     Returns whether the specified request is to bypass
-    certain data quality validations (#741)
+    certain data quality validations. (#741)
 
-    If not rquest is passed we will attempt to get
+    If no request is passed, we will attempt to GET
     the current request from the current request
     context.
 
-    If no request can be obtained this will return False
+    If no request can be obtained this will return False.
     """
 
     if not request:
