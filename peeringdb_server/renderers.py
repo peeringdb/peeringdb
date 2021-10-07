@@ -12,10 +12,10 @@ from rest_framework.utils import encoders
 
 class JSONEncoder(encoders.JSONEncoder):
     """
-    Im defining our own json encoder here in order to be able to encode
+    Defining our own json encoder here in order to be able to encode
     datatime and django countryfields.
 
-    Im making the munge renderer use this encoder to encode json, this approach
+    Making the munge renderer use this encoder to encode json, this approach
     may need to be tidied up a bit.
     """
 
@@ -62,7 +62,7 @@ class MetaJSONRenderer(MungeRenderer):
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         """
-        Tweak output rendering and pass to parent
+        Tweak output rendering and pass to parent.
         """
 
         if data is None:
