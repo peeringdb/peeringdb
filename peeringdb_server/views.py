@@ -107,8 +107,8 @@ BASE_ENV = {
 
 def field_help(model, field):
     """
-    helper function return help_text of a model
-    field
+    Helper function return help_text of a model
+    field.
     """
     return model._meta.get_field(field).help_text
 
@@ -121,9 +121,8 @@ def is_oauth_authorize(url):
 
 def export_permissions(user, entity):
     """
-    returns dict of permission bools for the specified user and entity
-
-    to be used in template context
+    Return dict of permission bools for the specified user and entity 
+    to be used in template context.
     """
 
     if entity.status == "deleted":
@@ -156,7 +155,7 @@ class DoNotRender:
     """
     Instance of this class is sent when a component attribute does not exist,
     this can then be type checked in the templates to remove non existant attribute
-    rows while still allowing attributes with nonetype values to be rendered
+    rows while still allowing attributes with nonetype values to be rendered.
     """
 
     @classmethod
@@ -165,7 +164,7 @@ class DoNotRender:
         """
         Check if the user has permissions to the supplied namespace
         returns a DoNotRender instance if not, otherwise returns
-        the supplied value
+        the supplied value.
         """
 
         b = check_permissions(user, namespace.lower(), 0x01, explicit=explicit)
@@ -179,10 +178,10 @@ class DoNotRender:
 
 def beta_sync_dt():
     """
-    Returns the next date for a beta sync
+    Return the next date for a beta sync.
 
     This is currently hard coded to return 00:00Z for the
-    next sunday
+    next Sunday.
     """
     dt = datetime.datetime.now() + datetime.timedelta(1)
 
@@ -235,8 +234,8 @@ def view_maintenance(request):
 @ratelimit(key="ip", rate=RATELIMITS["view_request_ownership_POST"], method="POST")
 def view_request_ownership(request):
     """
-    Renders the form that allows users to request ownership
-    to an unclaimed organization
+    Render the form that allows users to request ownership
+    to an unclaimed organization.
     """
 
     was_limited = getattr(request, "limited", False)
@@ -336,7 +335,7 @@ def view_request_ownership(request):
 @require_http_methods(["POST"])
 def cancel_affiliation_request(request, uoar_id):
     """
-    Cancels a user's affiliation request
+    Cancel a user's affiliation request.
     """
 
     # make sure user org affiliation request specified actually
@@ -358,8 +357,8 @@ def cancel_affiliation_request(request, uoar_id):
 @ratelimit(key="ip", method="POST", rate=RATELIMITS["view_affiliate_to_org_POST"])
 def view_affiliate_to_org(request):
     """
-    Allows the user to request affiliation with an organization through
-    an ASN they provide
+    Allow the user to request affiliation with an organization through
+    an ASN they provide.
     """
 
     if request.method == "POST":
@@ -649,7 +648,7 @@ def view_password_change(request):
 @require_http_methods(["GET"])
 def view_username_retrieve(request):
     """
-    username retrieval view
+    Username retrieval view.
     """
     env = BASE_ENV.copy()
     env.update(
@@ -666,7 +665,7 @@ def view_username_retrieve(request):
 @ratelimit(key="ip", rate=RATELIMITS["view_username_retrieve_initiate"])
 def view_username_retrieve_initiate(request):
     """
-    username retrieval initiate view
+    Username retrieval initiate view.
     """
 
     was_limited = getattr(request, "limited", False)
@@ -703,10 +702,10 @@ def view_username_retrieve_initiate(request):
 @require_http_methods(["GET"])
 def view_username_retrieve_complete(request):
     """
-    username retrieval completion view
+    Username retrieval completion view.
 
-    show the list of usernames associated to an email if
-    the correct secret is provided
+    Show the list of usernames associated to an email if
+    the correct secret is provided.
     """
 
     secret = request.GET.get("secret")
@@ -735,7 +734,7 @@ def view_username_retrieve_complete(request):
 @ensure_csrf_cookie
 def view_password_reset(request):
     """
-    password reset initiation view
+    Password reset initiation view.
     """
 
     if request.method in ["GET", "HEAD"]:
@@ -815,7 +814,7 @@ def view_password_reset(request):
 @ensure_csrf_cookie
 def view_registration(request):
     """
-    user registration page view
+    User registration page view.
     """
     if request.user.is_authenticated:
         return view_index(
@@ -884,7 +883,7 @@ def view_registration(request):
 @ensure_csrf_cookie
 def view_index(request, errors=None):
     """
-    landing page view
+    Landing page view.
     """
     if not errors:
         errors = []
@@ -909,7 +908,7 @@ def view_component(
     request, component, data, title, perms=None, instance=None, **kwargs
 ):
     """
-    Generic component view
+    Generic component view.
     """
     if not perms:
         perms = {}
@@ -942,7 +941,7 @@ def view_component(
 @ensure_csrf_cookie
 def view_organization(request, id):
     """
-    View organization data for org specified by id
+    View organization data for org specified by id.
     """
 
     try:
@@ -1134,7 +1133,7 @@ def view_organization(request, id):
 @ensure_csrf_cookie
 def view_facility(request, id):
     """
-    View facility data for facility specified by id
+    View facility data for facility specified by id.
     """
 
     try:
@@ -1329,7 +1328,7 @@ def view_facility(request, id):
 @ensure_csrf_cookie
 def view_exchange(request, id):
     """
-    View exchange data for exchange specified by id
+    View exchange data for exchange specified by id.
     """
 
     try:
@@ -1599,7 +1598,7 @@ def format_last_updated_time(last_updated_time):
 @ensure_csrf_cookie
 def view_network(request, id):
     """
-    View network data for network specified by id
+    View network data for network specified by id.
     """
 
     try:
@@ -1914,8 +1913,8 @@ def view_suggest(request, reftag):
 
 def view_simple_content(request, content_name):
     """
-    Renders the content in templates/{{ content_name }} inside
-    the peeringdb layout
+    Render the content in templates/{{ content_name }} inside
+    the peeringdb layout.
     """
 
     template = loader.get_template("site/simple_content.html")
@@ -1927,7 +1926,7 @@ def view_simple_content(request, content_name):
 
 def view_aup(request):
     """
-    Render page containing acceptable use policy
+    Render page containing acceptable use policy.
     """
 
     return view_simple_content(request, "site/aup.html")
@@ -1935,7 +1934,7 @@ def view_aup(request):
 
 def view_about(request):
     """
-    Render page containing about
+    Render page containing about.
     """
 
     return view_simple_content(request, "site/about.html")
@@ -1943,7 +1942,7 @@ def view_about(request):
 
 def view_sponsorships(request):
     """
-    View current sponsorships
+    View current sponsorships.
     """
 
     template = loader.get_template("site/sponsorships.html")
@@ -1964,7 +1963,7 @@ def view_sponsorships(request):
 
 def view_partnerships(request):
     """
-    View current partners
+    View current partners.
     """
 
     template = loader.get_template("site/partnerships.html")
@@ -1984,7 +1983,7 @@ def view_partnerships(request):
 
 def view_advanced_search(request):
     """
-    View for advanced search
+    View for advanced search.
     """
 
     template = loader.get_template("site/advanced-search.html")
@@ -2031,8 +2030,8 @@ def view_advanced_search(request):
 def request_api_search(request):
 
     """
-    Triggered off of typing something in the main peeringdb searchbar
-    without hitting enter (quasi autocomplete)
+    Triggered by typing something in the main peeringdb search bar
+    without hitting enter (quasi autocomplete).
     """
 
     q = request.GET.get("q")
@@ -2047,7 +2046,7 @@ def request_api_search(request):
 
 def request_search(request):
     """
-    Triggered off of hitting enter on the main search bar
+    Triggered by hitting enter on the main search bar.
     Renders a search result page.
     """
     q = request.GET.get("q")
@@ -2120,9 +2119,9 @@ EmailDevice.verify_token = verify_token
 class LoginView(two_factor.views.LoginView):
 
     """
-    We extend the `LoginView` class provided
-    by `two_factor` because we need to add some
-    pdb specific functionality and checks
+    Extend the `LoginView` class provided
+    by `two_factor` because some
+    PDB specific functionality and checks need to be added.
     """
 
     def get(self, *args, **kwargs):
@@ -2144,7 +2143,7 @@ class LoginView(two_factor.views.LoginView):
 
         """
         Posts to the `auth` step of the authentication
-        process need to be rate limited
+        process need to be rate limited.
         """
 
         was_limited = getattr(self.request, "limited", False)
@@ -2160,7 +2159,7 @@ class LoginView(two_factor.views.LoginView):
 
         """
         If post request was rate limited the rate limit message
-        needs to be communicated via the template context
+        needs to be communicated via the template context.
         """
 
         context = super().get_context_data(form, **kwargs)
@@ -2174,7 +2173,7 @@ class LoginView(two_factor.views.LoginView):
     def get_email_device(self):
 
         """
-        Returns an EmailDevice instance for the requesting user
+        Return an EmailDevice instance for the requesting user
         which can be used for one time passwords.
         """
 
@@ -2224,8 +2223,8 @@ class LoginView(two_factor.views.LoginView):
     def get_device(self, step=None):
 
         """
-        We override this so we can enable EmailDevice as a
-        challenge device for one time passwords
+        Override this to can enable EmailDevice as a
+        challenge device for one time passwords.
         """
 
         if not self.device_cache:
@@ -2244,7 +2243,7 @@ class LoginView(two_factor.views.LoginView):
     def get_redirect_url(self):
 
         """
-        Specifies which redirect urls are valid
+        Specify which redirect urls are valid.
         """
 
         redir = self.request.POST.get("next") or "/"
@@ -2276,7 +2275,7 @@ class LoginView(two_factor.views.LoginView):
     def done(self, form_list, **kwargs):
 
         """
-        User authenticated successfully, set language options
+        User authenticated successfully, set language options.
         """
 
         response = super().done(form_list, **kwargs)
