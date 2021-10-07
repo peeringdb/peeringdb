@@ -77,7 +77,7 @@ const.BOOL_CHOICE_WITH_OPT_OUT_STR = (
 
 def countries_w_blank(request):
     """
-    Returns all valid countries and their country codes with a blank field
+    Return all valid countries and their country codes with a blank field.
     """
 
     return JsonResponse(
@@ -93,7 +93,7 @@ def countries_w_blank(request):
 
 def countries(request):
     """
-    Returns all valid countries and their country codes
+    Return all valid countries and their country codes.
     """
 
     return JsonResponse(
@@ -108,7 +108,7 @@ def countries(request):
 
 def sponsorships(request):
     """
-    Returns all sponsorships
+    Return all sponsorships.
     """
 
     sponsors = {}
@@ -125,7 +125,7 @@ def sponsorships(request):
 @login_required
 def facilities(request):
     """
-    Returns all valid facilities with id and name
+    Return all valid facilities with id and name.
     """
 
     return JsonResponse(
@@ -190,9 +190,9 @@ def enum(request, name):
 
 def asns(request):
     """
-    Returns a JSON response with a list of asns that the user's
-    organizations own, to use for selecting asn in netixlan
-    creation
+    Return a JSON response with a list of asns that the user's
+    organizations own to use for selecting asn in netixlan
+    creation.
     """
     rv = []
     try:
@@ -208,8 +208,8 @@ def asns(request):
 
 def my_organizations(request):
     """
-    Returns a JSON response with a list of organization names and ids
-    that the requesting user is a member of
+    Return a JSON response with a list of organization names and ids
+    that the requesting user is a member of.
     """
     if not request.user.is_authenticated:
         return JsonResponse({"my_organizations": []})
@@ -225,7 +225,7 @@ def my_organizations(request):
 
 def organizations(request):
     """
-    Returns a JSON response with a list of organization names and ids
+    Return a JSON response with a list of organization names and ids.
     This is currently only used by the org-merge-tool which is only
     available to site administrators.
     """
