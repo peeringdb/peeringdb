@@ -12,9 +12,9 @@ from peeringdb_server.models import REFTAG_MAP
 
 class Mock:
     """
-    Class that allows us to create mock data in the database
+    Class that allows creation of mock data in the database.
 
-    NOTE: this actually writes data to the database and should
+    NOTE: This actually writes data to the database and should
     only be used to populate a dev instance.
     """
 
@@ -67,12 +67,12 @@ class Mock:
         """
         Create a new instance of model specified in `reftag`
 
-        Any arguments passed as kwargs will override mock field values
+        Any arguments passed as kwargs will override mock field values.
 
-        Note: Unless if there are no relationships passed in kwargs, required parent
+        Note: Unless there are no relationships passed in kwargs, required parent
         objects will be automatically created as well.
 
-        Returns: The created instance
+        Returns: The created instance.
         """
 
         model = REFTAG_MAP.get(reftag)
