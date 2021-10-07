@@ -620,13 +620,13 @@ class AddressSerializer(serializers.ModelSerializer):
 
 class ModelSerializer(serializers.ModelSerializer):
     """
-    ModelSerializer that provides pdb API with custom params
+    ModelSerializer that provides DB API with custom params.
 
     Main problem with doing field ops here is data is already fetched, so while
-    it's fine for single columns, it doesn't help on speed for fk relationships
-    However data is not yet serialized so there may be some gain
+    it's fine for single columns, it doesn't help on speed for fk relationships.
+    However data is not yet serialized so there may be some gain.
 
-    using custom method fields to introspect doesn't work at all, because
+    Using custom method fields to introspect doesn't work at all, because
     they're not called until they're serialized, and then are called once per row,
 
     for example
@@ -639,14 +639,14 @@ class ModelSerializer(serializers.ModelSerializer):
             'test_depth',
             ...
 
-    Best bet so far looks like overloading the single object get in the model
-    view set, and adding on the relationships, but need to get to get the fields
+    Best bet so far looks like overloading the single object GET in the model
+    view set, and adding on the relationships, but need to GET to GET the fields
     defined yet not included in the query, may have to rewrite the base class,
     which would mean talking to the dev and committing back or we'll have this problem
-    every update
+    every update.
 
     After testing, the time is all in serialization and transfer, so culling
-    related here should be fine
+    related here should be fine.
 
     arg[0] is a queryset, but seems to have already been evaluated
 
