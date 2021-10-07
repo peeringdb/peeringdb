@@ -704,7 +704,7 @@ class ModelSerializer(serializers.ModelSerializer):
     @classmethod
     def is_unique_query(cls, request):
         """
-        Check if the request parameters are expected to return a unique entity
+        Check if the request parameters are expected to return a unique entity.
         """
 
         return "id" in request.GET
@@ -712,7 +712,7 @@ class ModelSerializer(serializers.ModelSerializer):
     @classmethod
     def queryable_relations(self):
         """
-        Returns a list of all second level queryable relation fields
+        Returns a list of all second level queryable relation fields.
         """
         rv = []
 
@@ -748,11 +748,11 @@ class ModelSerializer(serializers.ModelSerializer):
     @classmethod
     def depth_from_request(cls, request, is_list):
         """
-        Derive aproporiate depth parameter from request, depending on whether
-        result set is a list or single object max and default depth will vary
+        Derive aproporiate depth parameter from request. Max and default depth will vary depending on whether
+        result set is a list or single object.
 
         This will return the depth specified in the request or the next best
-        possible depth
+        possible depth.
         """
         try:
             if not request:
@@ -767,7 +767,7 @@ class ModelSerializer(serializers.ModelSerializer):
     @classmethod
     def max_depth(cls, is_list):
         """
-        Return max depth according to whether resultset is list or single get
+        Return max depth according to whether resultset is list or single GET.
         """
         if is_list:
             return 3
@@ -776,7 +776,7 @@ class ModelSerializer(serializers.ModelSerializer):
     @classmethod
     def default_depth(cls, is_list):
         """
-        Return default depth according to whether resultset is list or single get
+        Return default depth according to whether resultset is list or single GET.
         """
         if is_list:
             return 0
@@ -795,11 +795,11 @@ class ModelSerializer(serializers.ModelSerializer):
         single=None,
     ):
         """
-        Prefetch related sets according to depth specified in the request
+        Prefetch related sets according to depth specified in the request.
 
         Prefetched set data will be located off the instances in an attribute
         called "<tag>_set_active_prefetched" where tag is the handleref tag
-        of the objects the set will be holding
+        of the objects the set will be holding.
         """
 
         if depth is None:
@@ -1064,9 +1064,9 @@ class ModelSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """
-        entities created via the api should go into the verification
+        Entities created via the API should go into the verification
         queue with status pending if they are in the QUEUE_ENABLED
-        list
+        list.
         """
         if self.Meta.model in QUEUE_ENABLED:
             validated_data["status"] = "pending"
@@ -1103,12 +1103,12 @@ class ModelSerializer(serializers.ModelSerializer):
     def run_validation(self, data=serializers.empty):
 
         """
-        Custom validation handling
+        Custom validation handling.
 
         Will run the vanilla django-rest-framework validation but
         wrap it with logic to handle unique constraint errors to
         restore soft-deleted objects that are blocking a save on basis
-        of a unique constraint violation
+        of a unique constraint violation.
         """
 
         try:
@@ -1237,9 +1237,9 @@ class ModelSerializer(serializers.ModelSerializer):
 
     def save(self, **kwargs):
         """
-        entities created via api that have status pending should
+        Entities created via API that have status pending should
         attempt to store which user created the item in the
-        verification queue instance
+        verification queue instance.
         """
         instance = super().save(**kwargs)
 
@@ -1273,29 +1273,29 @@ class ModelSerializer(serializers.ModelSerializer):
                     vq.save()
 
     def finalize_create(self, request):
-        """this will be called on the end of POST request to this serializer"""
+        """This will be called on the end of POST request to this serializer."""
 
     def finalize_update(self, request):
-        """this will be called on the end of PUT request to this serializer"""
+        """This will be called on the end of PUT request to this serializer."""
 
     def finalize_delete(self, request):
-        """this will be called on the end of DELETE request to this serializer"""
+        """This will be called on the end of DELETE request to this serializer."""
 
 
 class RequestAwareListSerializer(serializers.ListSerializer):
     """
     A List serializer that has access to the originating
-    request
+    request.
 
-    We use this as the list serializer class for all nested lists
-    so we can apply time filters to the resultset if the _ctf param
-    is set in the request
+    Used as the list serializer class for all nested lists
+    so time filters can be applied to the resultset if the _ctf param
+    is set in the request.
     """
 
     @property
     def request(self):
         """
-        Retrieve the request from the root serializer
+        Retrieve the request from the root serializer.
         """
 
         par = self
@@ -1311,9 +1311,8 @@ class RequestAwareListSerializer(serializers.ListSerializer):
 
 def nested(serializer, exclude=[], getter=None, through=None, **kwargs):
     """
-    Use this function to created nested serializer fields since making
-    depth work otherwise while fetching related lists via handlref remains
-    to be a mystery
+    Use this function to create nested serializer fields. Making
+    depth work otherwise while fetching related lists via handlref remains a mystery.
     """
 
     field_set = [fld for fld in serializer.Meta.fields if fld not in exclude]
@@ -1342,9 +1341,9 @@ class SpatialSearchMixin:
     Mixin that enables spatial search for a model
     with address fields.
 
-    At minimum a model needs a country and city field, but
+    At minimum, a model needs a country and city field, but
     address1, address2, zipcode and state are also considered
-    if they exist
+    if they exist.
     """
 
     @classmethod
@@ -1911,7 +1910,7 @@ class NetworkIXLanSerializer(ModelSerializer):
     @classmethod
     def prepare_query(cls, qset, **kwargs):
         """
-        Allows filtering by indirect relationships
+        Allows filtering by indirect relationships.
 
         Currently supports: ix_id
         """
@@ -1962,9 +1961,8 @@ class NetworkIXLanSerializer(ModelSerializer):
 
     def _validate_network_contact(self, data):
         """
-        Per github ticket #826, we only allow a Netixlan to be added
-        if there is a network contact that the AC can get in touch
-        with to resolve issues.
+        Per github ticket #826, a Netixlan is only allowed to be added
+        if there is a network contact that the AC can contact to resolve issues.
         """
         network = data["network"]
 
@@ -2278,7 +2276,7 @@ class NetworkSerializer(ModelSerializer):
     @classmethod
     def prepare_query(cls, qset, **kwargs):
         """
-        Allows filtering by indirect relationships
+        Allows filtering by indirect relationships.
 
         Currently supports: ixlan_id, ix_id, netixlan_id, netfac_id, fac_id
         """
