@@ -8,9 +8,9 @@ from peeringdb_server.context import current_request
 class CurrentRequestContext:
 
     """
-    Middleware that sets the current request context
+    Middleware that sets the current request context.
 
-    This allows us to access the current request from anywhere we need to
+    This allows access to the current request from anywhere.
     """
 
     def __init__(self, get_response):

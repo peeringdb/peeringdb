@@ -20,7 +20,7 @@ from peeringdb_server.search import unaccent
 class EntityIndex(indexes.SearchIndex):
 
     """
-    Search index for org, net, ix and fac entities
+    Search index for org, net, ix and fac entities.
     """
 
     text = indexes.CharField(document=True, use_template=True)
@@ -91,9 +91,9 @@ class EntityIndex(indexes.SearchIndex):
 
     def get_updated_field(self):
         """
-        What field to use for determining object age, this
+        Use this field to determine object age. This
         is required for the --age parameter to function
-        in the update_index command
+        in the update_index command.
         """
         return "updated"
 

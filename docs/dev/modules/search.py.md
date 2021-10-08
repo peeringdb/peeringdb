@@ -1,9 +1,9 @@
-Generated from search.py on 2021-09-27 17:07:21.196869
+Generated from search.py on 2021-10-06 18:04:54.501582
 
 # peeringdb_server.search
 
-Search implementation used for the peeringdb top search bar, as well as, name searches through
-the api `name_search` filter, as well as, advances search name field searches.
+Search implementation used for the peeringdb top search bar, as well as name searches through
+the api `name_search` filter, as well as advanced search name field searches.
 
 Search logic is handled by django-haystack and whoosh.
 

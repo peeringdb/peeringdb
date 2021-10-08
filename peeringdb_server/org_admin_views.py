@@ -27,9 +27,9 @@ from .forms import OrgAdminUserPermissionForm
 
 def save_user_permissions(org, user, perms):
     """
-    Save user permissions for the specified org and user
+    Save user permissions for the specified org and user.
 
-    perms should be a dict of permissioning ids and permission levels
+    Perms should be a dict of permissioning ids and permission levels.
     """
 
     # wipe all the user's perms for the targeted org
@@ -82,8 +82,8 @@ def save_user_permissions(org, user, perms):
 
 def load_all_user_permissions(org):
     """
-    Returns dict of all users with all their permissions for
-    the given org
+    Return dict of all users with all their permissions for
+    the given org.
     """
 
     rv = {}
@@ -103,7 +103,7 @@ def load_user_permissions(org, user):
 
 def load_entity_permissions(org, entity):
     """
-    Returns entity's permissions for the specified org
+    Return entity's permissions for the specified org.
     """
 
     # load all of the entity's permissions related to this org
@@ -140,8 +140,8 @@ def load_entity_permissions(org, entity):
 
 def permission_ids(org):
     """
-    returns a dict of a valid permissioning ids for
-    the specified organization
+    Return a dict of a valid permissioning ids for
+    the specified organization.
     """
 
     perms = {
@@ -177,19 +177,19 @@ def permission_ids(org):
 
 def extract_permission_id(source, dest, entity, org):
     """
-    extract a user's permissioning id for the specified
-    entity from source <dict> and store it in dest <dict>
+    Extract a user's permissioning id for the specified
+    entity from source <dict> and store it in dest <dict>.
 
-    source should be a dict containing django-namespace-perms
-    (namespace, level) items
+    Source should be a dict containing django-namespace-perms
+    (namespace, level) items.
 
-    dest should be a dict where permission ids are to be
-    exracted to
+    Dest should be a dict where permission ids are to be
+    exracted to.
 
-    entity can either be a HandleRef instance or clas
+    Entity can either be a HandleRef instance or class.
 
-    org needs to be an Organization instance that owns the
-    entity
+    Org must be an Organization instance that owns the
+    entity.
     """
 
     if isinstance(entity, HandleRefModel):
@@ -209,9 +209,9 @@ def extract_permission_id(source, dest, entity, org):
 def org_admin_required(fnc):
     """
     Decorator function that ensures that the requesting user
-    has administrative rights to the targeted organization
+    has administrative rights to the targeted organization.
 
-    Also sets "org" in kwargs
+    Also sets "org" in kwargs.
     """
 
     def callback(request, **kwargs):
@@ -237,11 +237,11 @@ def org_admin_required(fnc):
 def target_user_validate(fnc):
     """
     Decorator function that ensures that the targeted user
-    is a member of the targeted organization
+    is a member of the targeted organization.
 
-    Should be below org_admin_required
+    Should be below org_admin_required.
 
-    Also sets "user" in kwargs
+    Also sets "user" in kwargs.
     """
 
     def callback(request, **kwargs):
@@ -270,7 +270,7 @@ def target_user_validate(fnc):
 @org_admin_required
 def users(request, **kwargs):
     """
-    Returns JsonResponse with a list of all users in the specified org
+    Returns JsonResponse with a list of all users in the specified org.
     """
 
     org = kwargs.get("org")
@@ -295,7 +295,7 @@ def users(request, **kwargs):
 @target_user_validate
 def manage_user_delete(request, **kwargs):
     """
-    remove user from org
+    Remove user from org.
     """
 
     org = kwargs.get("org")
@@ -313,10 +313,10 @@ def manage_user_delete(request, **kwargs):
 @target_user_validate
 def manage_user_update(request, **kwargs):
     """
-    udpate a user in the org
+    Udpate a user in the org.
 
-    right now this only allows for moving the user either
-    to admin or member group
+    Currently, this only allows moving the user to either
+    admin or member group.
     """
 
     org = kwargs.get("org")
@@ -339,14 +339,14 @@ def manage_user_update(request, **kwargs):
 @org_admin_required
 def user_permissions(request, **kwargs):
     """
-    Returns JsonRespone with list of user's permissions for the targeted
-    org an entities under it
+    Return JsonRespone with list of user's permissions for the targeted
+    org an entities under it.
 
     Permisions are returned as a dict of permissioning ids and permission
     levels.
 
     Permissioning ids serve as a wrapper for actual permissioning namespaces
-    so we can expose them to the organization admins for changes without allowing
+    so they can be exposed to the organization admins for changes without allowing
     them to set permissioning namespaces directly.
     """
 
@@ -365,7 +365,7 @@ def user_permissions(request, **kwargs):
 @target_user_validate
 def user_permission_update(request, **kwargs):
     """
-    Update/Add a user's permission
+    Update/Add a user's permission.
 
     perms = permission level
     entity = permission id
@@ -393,7 +393,7 @@ def user_permission_update(request, **kwargs):
 @target_user_validate
 def user_permission_remove(request, **kwargs):
     """
-    Remove a user's permission
+    Remove a user's permission.
 
     entity = permission id
     """
@@ -413,11 +413,11 @@ def user_permission_remove(request, **kwargs):
 @org_admin_required
 def permissions(request, **kwargs):
     """
-    Returns list of permissioning ids with labels that
-    are valid to be permissioned out to regular org users
+    Return list of permissioning ids with labels that
+    are valid to be permissioned out to regular org users.
 
     Permissioning ids serve as a wrapper for actual permissioning namespaces
-    so we can expose them to the organization admins for changes without allowing
+    so they can be exposed to the organization admins for changes without allowing
     them to set permissioning namespaces directly.
     """
 
@@ -433,7 +433,7 @@ def permissions(request, **kwargs):
 @org_admin_required
 def uoar_approve(request, **kwargs):
     """
-    Approve a user request to affiliate with the organization
+    Approve a user request to affiliate with the organization.
     """
 
     org = kwargs.get("org")
@@ -490,7 +490,7 @@ def uoar_approve(request, **kwargs):
 @org_admin_required
 def uoar_deny(request, **kwargs):
     """
-    Approve a user request to affiliate with the organization
+    Approve a user request to affiliate with the organization.
     """
 
     org = kwargs.get("org")

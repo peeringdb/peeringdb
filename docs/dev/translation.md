@@ -3,17 +3,17 @@
 ## Setup
 
 Clone the [translations](https://github.com/peeringdb/translations) repository in the location that
-contains your `peeringdb` directory
+contains your `peeringdb` directory.
 
 Clone the [django-peeringdb](https://github.com/peeringdb/django-peeringdb) repository in the location that
-contains your `peeringdb` directory
+contains your `peeringdb` directory.
 
 ```sh
 git clone git@github.com:peeringdb/translations
 git clone git@github.com:peeringdb/django-peeringdb
 ```
 
-Running `ls` should show something like this
+Running `ls` should show something like this:
 
 ```sh
 django-peeringdb
@@ -21,7 +21,7 @@ peeringdb
 translations
 ```
 
-Edit your peeringdb docker compose config to make the translation files and django-peeringdb source available
+Edit the peeringdb docker compose config to make the translation files and django-peeringdb source available.
 
 ```sh
 cd peeringdb
@@ -40,7 +40,7 @@ Uncomment the mount point for `locale` under `volumes`
 
 ## Generate a new locale
 
-Call makemessages and pass the locale to the `-l` option. In this example we are passing `de` for german.
+Call makemessages and pass the locale to the `-l` option. In this example we are passing `de` for German.
 
 ```
 Ctl/dev/run.sh /bin/sh
@@ -51,7 +51,7 @@ django-admin makemessages -d djangojs -l de -s --no-wrap -i venv
 
 ## Updating messages in existing locale
 
-This will add any new messages to all locale files. In other words if there has been new features added, you want to call this to make sure that their messages exist in gettext so they can be translated.
+This will add any new messages to all locale files. In other words, if there have been new features added, one wants to call this to make sure the messages exist in gettext so they can be translated.
 
 ```
 Ctl/dev/run.sh /bin/sh
@@ -62,7 +62,7 @@ django-admin makemessages -d djangojs -a -s --no-wrap -i venv
 
 ## Compile messages
 
-Once translation files are ready, you need to compile them so django can use them.
+Once translation files are ready, one needs to compile them so django can use them.
 
 ```
 Ctl/dev/run.sh /bin/sh

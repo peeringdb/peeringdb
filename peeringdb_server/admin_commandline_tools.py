@@ -202,7 +202,7 @@ class CommandLineToolWrapper:
 class ToolRenumberLans(CommandLineToolWrapper):
     """
     This tools runs the pdb_renumber_lans command to
-    Renumber IP Spaces in an Exchange
+    Renumber IP Spaces in an Exchange.
     """
 
     tool = "pdb_renumber_lans"
@@ -225,7 +225,7 @@ class ToolRenumberLans(CommandLineToolWrapper):
 
     @property
     def description(self):
-        """Provide a human readable description of the command that was run"""
+        """Provide a human readable description of the command that was run."""
         try:
             return "{}: {} to {}".format(
                 InternetExchange.objects.get(id=self.args[0]),
@@ -250,7 +250,7 @@ class ToolRenumberLans(CommandLineToolWrapper):
 class ToolMergeFacilities(CommandLineToolWrapper):
     """
     This tool runs the pdb_fac_merge command to
-    merge two facilities
+    merge two facilities.
     """
 
     tool = "pdb_fac_merge"
@@ -270,7 +270,7 @@ class ToolMergeFacilities(CommandLineToolWrapper):
 
     @property
     def description(self):
-        """Provide a human readable description of the command that was run"""
+        """Provide a human readable description of the command that was run."""
         return "{} into {}".format(
             Facility.objects.get(id=self.kwargs["ids"]),
             Facility.objects.get(id=self.kwargs["target"]),
@@ -287,7 +287,7 @@ class ToolMergeFacilities(CommandLineToolWrapper):
 class ToolMergeFacilitiesUndo(CommandLineToolWrapper):
     """
     This tool runs the pdb_fac_merge_undo command to
-    undo a facility merge
+    undo a facility merge.
     """
 
     tool = "pdb_fac_merge_undo"
@@ -305,7 +305,7 @@ class ToolMergeFacilitiesUndo(CommandLineToolWrapper):
 
     @property
     def description(self):
-        """Provide a human readable description of the command that was run"""
+        """Provide a human readable description of the command that was run."""
 
         # in order to make a useful description we need to collect the arguments
         # from the merge command that was undone
@@ -352,7 +352,7 @@ class ToolReset(CommandLineToolWrapper):
 @register_tool
 class ToolUndelete(CommandLineToolWrapper):
     """
-    Allows restoration of an object object and it's child objects
+    Allows restoration of an object object and it's child objects.
     """
 
     tool = "pdb_undelete"

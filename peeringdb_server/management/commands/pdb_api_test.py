@@ -1,6 +1,6 @@
 #!/bin/env python
 """
-Series of integration/unit tests for the pdb api.
+Series of integration/unit tests for the PDB API.
 """
 import copy
 import datetime
@@ -427,7 +427,7 @@ class TestJSON(unittest.TestCase):
 
         Returned value will be a tuple in which the first item is a list of
         field names for primary key related fields and the second item is a list
-        of fields names for related sets.
+        of field names for related sets.
         """
 
         pk_rel = []
@@ -445,10 +445,10 @@ class TestJSON(unittest.TestCase):
 
     def assert_handleref_integrity(self, data):
         """
-        Here one asserts the integrity of a handleref (which is
-        the base of all the models exposed on the api).
+        Assert the integrity of a handleref (which is
+        the base of all the models exposed on the API).
 
-        To do this, make sure all the handleref fields
+        This is done by making sure all the handleref fields
         exist in the data.
         """
 
@@ -771,7 +771,7 @@ class TestJSON(unittest.TestCase):
         list_exclude=[],
     ):
         """
-        Asserts the data integrity of structures within a result that have
+        Asserts the data integrity of structures within a result that has
         been expanded via the depth parameter.
         """
 
@@ -2218,7 +2218,7 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_005_ixlan_fields_filter(self):
         """
-        Tests the specific issue of #829 where a get to an ixlan
+        Tests the specific issue of #829 where a GET to an ixlan
         with fields parameter set would raise a 500 error for
         unauthenticated users.
         """
@@ -4175,8 +4175,8 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_001_disable_suggest_ix(self):
         """
-        Issue 827: We are removing the ability for non-admin users to "suggest" an IX.
-        Therefore, we change this test so that a "suggest" field being set on the API
+        Issue 827: Removes the ability for non-admin users to "suggest" an IX.
+        Therefore, change this test so a "suggest" field being set on the API
         request is disregarded, and permission is denied if a user who cannot create an
         IX tries to POST.
         """
@@ -4198,9 +4198,9 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_001_suggest_kwarg_on_ix_does_nothing(self):
         """
-        Issue 827: We are removing the ability for non-admin users to "suggest" an IX.
+        Issue 827: Removes the ability for non-admin users to "suggest" an IX.
         If a user tries to "suggest" an IX, this keyword should simply be ignored. Admins
-        should be able to still create a "pending" IX even if "suggest" is provided.
+        should still be able to create a "pending" IX even if "suggest" is provided.
         """
         org = SHARED["org_rw_ok"]
         data = self.make_data_ix(org_id=org.id, suggest=True, prefix=self.get_prefix4())
@@ -4225,8 +4225,8 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_001_cannot_post_ix_to_suggest_entity_org(self):
         """
-        Issue 827: We are removing the ability for non-admin users to "suggest" an IX.
-        As part of that, we need to remove the ability to POST an IX with an ORG that is
+        Issue 827: Removes the ability for non-admin users to "suggest" an IX.
+        As part of that, remove the ability to POST an IX with an ORG that is
         the special "suggested entity org" even if the POST explicitly tries
         to create an IX with that ORG.
         """
@@ -4296,8 +4296,8 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_001_api_errors(self):
         """
-        Test empty POST, PUT data error response
-        Test parse error POST, PUT data error response
+        Test empty POST, PUT data error response.
+        Test parse error POST, PUT data error response.
         """
         for reftag in list(REFTAG_MAP.keys()):
             self._test_z_misc_001_api_errors(reftag, "post", "create")

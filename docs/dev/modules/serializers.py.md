@@ -1,4 +1,4 @@
-Generated from serializers.py on 2021-09-27 17:07:21.196869
+Generated from serializers.py on 2021-10-06 18:04:54.501582
 
 # peeringdb_server.serializers
 
@@ -8,7 +8,7 @@ REST API POST / PUT data validators.
 New serializers should extend ModelSerializer class, which is a custom extension
 of django-rest-framework's ModelSerializer.
 
-Custom ModelSerializer implements logic for the expansion driven by the `depth` url parameter.
+Custom ModelSerializer implements logic for the expansion of relationships driven by the `depth` url parameter. The depth parameter indicates how many objects to recurse into.
 
 Special api filtering implementation should be done through the `prepare_query`
 method.
