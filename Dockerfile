@@ -25,7 +25,6 @@ RUN apk --update --no-cache add \
   rust \
   cargo
 
-
 RUN pip install -U pip poetry
 # create venv and update venv pip
 RUN python3 -m venv "$VIRTUAL_ENV" && pip install -U pip
@@ -38,7 +37,6 @@ RUN poetry install --no-root
 # inetd
 RUN apk add busybox-extras
 
-
 #### final image here
 
 FROM base as final
@@ -49,7 +47,7 @@ ARG uid=996
 ARG ADD_SETTINGS_FILE=mainsite/settings/dev.py
 
 # add dependencies
-RUN apk add --no-cache freetype gettext libjpeg-turbo mariadb-connector-c
+RUN apk add --no-cache freetype ttf-freefont gettext libjpeg-turbo graphviz mariadb-connector-c
 
 RUN adduser -Du $uid pdb
 

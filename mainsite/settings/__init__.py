@@ -451,6 +451,12 @@ INSTALLED_APPS = [
     "django_handleref",
 ]
 
+# allows us to regenerate the schema graph image for documentation
+# purposes in a dev environment
+if RELEASE_ENV == "dev":
+    INSTALLED_APPS.append("django_extensions")
+
+
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (

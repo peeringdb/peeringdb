@@ -45,7 +45,10 @@ case "$1" in
     mkdir /srv/www.peeringdb.com/venv/lib/python3.9/site-packages/etc/
     mkdir /srv/www.peeringdb.com/venv/lib/python3.9/site-packages/var/log -p
     cp etc/VERSION /srv/www.peeringdb.com/venv/lib/python3.9/site-packages/etc/
+    echo generating module documentation files
     python peeringdb_server/gendocs.py
+    echo generating schema visualization
+    python manage.py graph_models -E -X .*Base --pydot -o docs/img/schema.png peeringdb_server
     ;;
   "whois" )
     line=$(head -1 | tr -cd '[:alnum:]._-')

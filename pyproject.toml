@@ -80,6 +80,7 @@ docker-compose = "^1.29.2"
 pymdgen = "^1.0.0"
 mkdocs = "^1.1.2"
 markdown-include = "^0.6.0"
+pydot = "^1.4.2"
 
 [build-system]
 requires = [ "poetry>=0.12",]
