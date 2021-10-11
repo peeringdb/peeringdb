@@ -207,7 +207,9 @@ class Command(BaseCommand):
 
         if process_requested is not None:
             ixlan_ids = []
-            for ix in InternetExchange.ixf_import_request_queue():
+            for ix in InternetExchange.ixf_import_request_queue(
+                limit=process_requested
+            ):
                 if ix.id not in ixlan_ids:
                     ixlan_ids.append(ix.id)
 
@@ -243,7 +245,12 @@ class Command(BaseCommand):
             qset = net.ixlan_set_ixf_enabled
         else:
             # otherwise build ixlan queryset
-            qset = IXLan.objects.filter(status="ok", ixf_ixp_import_enabled=True)
+
+            if process_requested is None:
+                qset = IXLan.objects.filter(status="ok", ixf_ixp_import_enabled=True)
+            else:
+                qset = IXLan.objects.filter(status="ok")
+
             qset = qset.exclude(ixf_ixp_member_list_url__isnull=True)
 
             # filter by ids if ixlan ids were specified
@@ -252,7 +259,7 @@ class Command(BaseCommand):
 
         total_log = {"data": [], "errors": []}
         total_notifications = []
-
+        import_error = False
         for ixlan in qset:
             self.log(
                 "Fetching data for -ixlan{} from {}".format(
@@ -264,6 +271,7 @@ class Command(BaseCommand):
                 importer.skip_import = self.skip_import
                 importer.cache_only = self.cache
                 self.log(f"Processing {ixlan.ix.name} ({ixlan.id})")
+                success = None
                 with transaction.atomic():
                     success = importer.update(ixlan, save=self.commit, asn=asn)
                 self.log(json.dumps(importer.log), debug=True)
@@ -288,8 +296,12 @@ class Command(BaseCommand):
                 self.store_runtime_error(inst, ixlan=ixlan)
             finally:
                 if process_requested is not None:
-                    ixlan.ix.ixf_import_request_status = "finished"
+                    if success:
+                        ixlan.ix.ixf_import_request_status = "finished"
+                    else:
+                        ixlan.ix.ixf_import_request_status = "error"
                     ixlan.ix.save_without_timestamp()
+                    
 
         if self.preview:
             self.stdout.write(json.dumps(total_log, indent=2))

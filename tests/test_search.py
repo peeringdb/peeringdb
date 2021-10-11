@@ -167,7 +167,6 @@ class SearchTests(TestCase):
                 inst.search_result_name
             )
 
-
     def test_search_asn_match(self):
         """
         Test that exact numeric match on an ASN
@@ -178,21 +177,14 @@ class SearchTests(TestCase):
         # resut when searching for `633`
 
         net_1 = models.Network.objects.create(
-            name = "Test ASN Matching",
-            asn = 633,
-            org = self.org,
-            status = "ok"
+            name="Test ASN Matching", asn=633, org=self.org, status="ok"
         )
 
         # network with asn 6333, this should match, but not
         # be the first result
 
-
         net_2 = models.Network.objects.create(
-            name = "Test ASN Matching 2",
-            asn = 6333,
-            org = self.org,
-            status = "ok"
+            name="Test ASN Matching 2", asn=6333, org=self.org, status="ok"
         )
 
         # network with asn 6334 and 633 as part of its name
@@ -200,10 +192,7 @@ class SearchTests(TestCase):
         # result
 
         net_3 = models.Network.objects.create(
-            name = "Test ASN 633 Matching",
-            asn = 6334,
-            org = self.org,
-            status = "ok"
+            name="Test ASN 633 Matching", asn=6334, org=self.org, status="ok"
         )
 
         # rebuild the index
@@ -220,7 +209,3 @@ class SearchTests(TestCase):
         net_2.delete(hard=True)
         net_3.delete(hard=True)
         call_command("rebuild_index", "--noinput")
-
-
-
-

@@ -1610,6 +1610,8 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
             ("queued", _("Queued")),
             ("importing", _("Importing")),
             ("finished", _("Finished")),
+            ("error", _("Import failed")),
+
         ),
         max_length=32,
         default="queued",
@@ -2068,6 +2070,8 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
             return "alert alert-warning"
         if status == "finished":
             return "alert alert-success"
+        if status == "error":
+            return "alert alert-danger"
         return ""
 
     def vq_approve(self):
