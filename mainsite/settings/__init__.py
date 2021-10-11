@@ -875,6 +875,9 @@ set_option("MAIL_DEBUG", DEBUG)
 # Setting for automated resending of failed ixf import emails
 set_option("IXF_RESEND_FAILED_EMAILS", False)
 
+# Set value for IX-F fetch timeout
+set_option("IXF_FETCH_TIMEOUT", 30) 
+
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 
 if DEBUG:
@@ -892,3 +895,4 @@ else:
     EMAIL_SUBJECT_PREFIX = f"[{RELEASE_ENV}] "
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")
+
