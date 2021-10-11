@@ -265,7 +265,7 @@ class Command(BaseCommand):
                 importer.cache_only = self.cache
                 self.log(f"Processing {ixlan.ix.name} ({ixlan.id})")
                 with transaction.atomic():
-                    success = importer.update(ixlan, save=self.commit, asn=asn)
+                    success = importer.update(ixlan, save=self.commit, asn=asn, timeout=settings.IXF_FETCH_TIMEOUT)
                 self.log(json.dumps(importer.log), debug=True)
                 self.log(
                     "Success: {}, added: {}, updated: {}, deleted: {}".format(
