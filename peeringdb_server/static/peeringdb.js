@@ -517,7 +517,7 @@ PeeringDB.IXFProposals = twentyc.cls.define(
 
         ixf_proposals.sync_proposals_state(proposals);
 
-        // write proposals
+        // wire proposals
         proposals.find('.row.item').each(function() {
           var row = $(this)
           var button_add = row.find('button.add');
@@ -2209,6 +2209,28 @@ twentyc.editable.module.register(
           callback(data);
         });
       });
+
+      // clean up IX-F proposals for ADD suggestions where
+      // ipaddresses matches either of the ipaddresses of the newly
+      // added netixlan - see #807
+
+      if(data.ipaddr4 != "") {
+        let ixf_prop_ip4 = $('.suggestions-add').find('input[value="'+data.ipaddr4+'"]');
+        let par = ixf_prop_ip4.parents(".item")
+        ixf_prop_ip4.val("")
+        if(par.find('input[data-field="ipaddr6"]').val() == "") {
+          PeeringDB.ixf_proposals.detach_row(par);
+        }
+      }
+
+      if(data.ipaddr6 != "") {
+        let ixf_prop_ip6 = $('.suggestions-add').find('input[value="'+data.ipaddr6+'"]');
+        let par = ixf_prop_ip6.parents(".item")
+        ixf_prop_ip6.val("")
+        if(par.find('input[data-field="ipaddr4"]').val() == "") {
+          PeeringDB.ixf_proposals.detach_row(par);
+        }
+      }
 
     },
 

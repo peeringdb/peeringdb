@@ -61,7 +61,6 @@ def get_ix_stats(netixlan, ixlan):
 
     for n in netixlan.filter(status="ok", ixlan=ixlan):
         total_speed += n.speed
-    
 
     return {
         "peer_count": peer_count,

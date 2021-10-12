@@ -1194,7 +1194,18 @@ class ModelSerializer(serializers.ModelSerializer):
 
                 try:
                     filters.update(status="deleted")
-                    instance = self.Meta.model.objects.get(**filters)
+                    if (
+                        self.Meta.model == NetworkIXLan
+                        and "ipaddr4" in filters
+                        and "ipaddr6" in filters
+                    ):
+                        # if unqiue constraint blocked on both ipaddr4 and ipaddr6 on netixlans
+                        # we need to account for the fact that they might be on separate netixlans.
+                        instance = self._handle_netixlan_reclaim(
+                            filters["ipaddr4"], filters["ipaddr6"]
+                        )
+                    else:
+                        instance = self.Meta.model.objects.get(**filters)
                 except self.Meta.model.DoesNotExist:
                     raise exc
                 except FieldError as exc:
@@ -1227,6 +1238,25 @@ class ModelSerializer(serializers.ModelSerializer):
                 return rv
             else:
                 raise
+
+    def _handle_netixlan_reclaim(self, ipaddr4, ipaddr6):
+
+        """
+        Handles logic of reclaiming ipaddresses from soft-deleted
+        netixlans in case where ipv4 and ipv6 are on separate netixlan objects
+
+        Will raise a django DoesNotExist error if either ipaddress does not
+        exist on a deleted netixlan
+        """
+
+        netixlan_a = NetworkIXLan.objects.get(ipaddr4=ipaddr4, status="deleted")
+        netixlan_b = NetworkIXLan.objects.get(ipaddr6=ipaddr6, status="deleted")
+        instance = netixlan_a
+
+        if netixlan_a != netixlan_b:
+            netixlan_b.ipaddr6 = None
+            netixlan_b.save()
+        return instance
 
     def save(self, **kwargs):
         """
