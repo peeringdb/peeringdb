@@ -41,18 +41,18 @@ from peeringdb_server.data_views import BOOL_CHOICE, BOOL_CHOICE_WITH_OPT_OUT
 from peeringdb_server.deskpro import ticket_queue_rdap_error
 from peeringdb_server.forms import (
     AffiliateToOrgForm,
+    OrganizationLogoUploadForm,
     PasswordChangeForm,
     PasswordResetForm,
     UserCreationForm,
     UserLocaleForm,
     UsernameRetrieveForm,
-    OrganizationLogoUploadForm,
 )
 from peeringdb_server.inet import (
     RdapException,
     RdapInvalidRange,
-    rdap_pretty_error_message,
     asn_is_bogon,
+    rdap_pretty_error_message,
 )
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.models import (
@@ -60,7 +60,6 @@ from peeringdb_server.models import (
     REFTAG_MAP,
     UTC,
     Facility,
-    IXLan,
     InternetExchange,
     InternetExchangeFacility,
     IXFMemberData,
@@ -83,7 +82,8 @@ from peeringdb_server.serializers import (
     NetworkSerializer,
     OrganizationSerializer,
 )
-from peeringdb_server.stats import get_fac_stats, stats as global_stats, get_ix_stats
+from peeringdb_server.stats import get_fac_stats, get_ix_stats
+from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.util import APIPermissionsApplicator, check_permissions
 
 RATELIMITS = dj_settings.RATELIMITS

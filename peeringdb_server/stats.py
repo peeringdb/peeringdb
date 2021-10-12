@@ -45,8 +45,6 @@ def get_ix_stats(netixlan, ixlan):
     )
     ipv6_percentage = 0
     total_speed = 0
-    speed_unit = "Unknonw"
-    formatted_size = None
 
     try:
         ipv6_percentage = int(
@@ -61,7 +59,6 @@ def get_ix_stats(netixlan, ixlan):
 
     for n in netixlan.filter(status="ok", ixlan=ixlan):
         total_speed += n.speed
-    
 
     return {
         "peer_count": peer_count,

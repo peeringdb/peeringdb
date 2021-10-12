@@ -1,6 +1,6 @@
 from django.conf import settings
-from django.urls import path
 from django.conf.urls import include, url
+from django.urls import path
 from django.views.generic import RedirectView, TemplateView
 from django.views.i18n import JavaScriptCatalog
 
@@ -33,6 +33,7 @@ from peeringdb_server.import_views import (
 )
 from peeringdb_server.models import Facility, InternetExchange, Network, Organization
 from peeringdb_server.views import (
+    OrganizationLogoUpload,
     cancel_affiliation_request,
     network_dismiss_ixf_proposal,
     network_reset_ixf_proposals,
@@ -66,7 +67,6 @@ from peeringdb_server.views import (
     view_username_retrieve_complete,
     view_username_retrieve_initiate,
     view_verify,
-    OrganizationLogoUpload,
 )
 
 # o
