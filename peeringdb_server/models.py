@@ -1611,7 +1611,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
             ("importing", _("Importing")),
             ("finished", _("Finished")),
             ("error", _("Import failed")),
-
         ),
         max_length=32,
         default="queued",

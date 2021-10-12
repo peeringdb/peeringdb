@@ -273,7 +273,12 @@ class Command(BaseCommand):
                 self.log(f"Processing {ixlan.ix.name} ({ixlan.id})")
                 success = None
                 with transaction.atomic():
-                    success = importer.update(ixlan, save=self.commit, asn=asn, timeout=settings.IXF_FETCH_TIMEOUT)
+                    success = importer.update(
+                        ixlan,
+                        save=self.commit,
+                        asn=asn,
+                        timeout=settings.IXF_FETCH_TIMEOUT,
+                    )
                 self.log(json.dumps(importer.log), debug=True)
                 self.log(
                     "Success: {}, added: {}, updated: {}, deleted: {}".format(
@@ -301,7 +306,6 @@ class Command(BaseCommand):
                     else:
                         ixlan.ix.ixf_import_request_status = "error"
                     ixlan.ix.save_without_timestamp()
-                    
 
         if self.preview:
             self.stdout.write(json.dumps(total_log, indent=2))

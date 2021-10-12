@@ -8,13 +8,24 @@ import django_inet.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0077_ix_add_sales_phone_email_949'),
+        ("peeringdb_server", "0077_ix_add_sales_phone_email_949"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='internetexchange',
-            name='ixf_import_request_status',
-            field=models.CharField(choices=[('queued', 'Queued'), ('importing', 'Importing'), ('finished', 'Finished'), ('error', 'Import failed')], default='queued', help_text='The current status of the manual ix-f import request', max_length=32, verbose_name='Manual IX-F import status'),
+            model_name="internetexchange",
+            name="ixf_import_request_status",
+            field=models.CharField(
+                choices=[
+                    ("queued", "Queued"),
+                    ("importing", "Importing"),
+                    ("finished", "Finished"),
+                    ("error", "Import failed"),
+                ],
+                default="queued",
+                help_text="The current status of the manual ix-f import request",
+                max_length=32,
+                verbose_name="Manual IX-F import status",
+            ),
         ),
     ]
