@@ -16,7 +16,7 @@ from peeringdb_server.models import (
     NetworkFacility,
     NetworkIXLan,
 )
-from peeringdb_server.stats import stats, get_fac_stats, get_ix_stats
+from peeringdb_server.stats import get_fac_stats, get_ix_stats, stats
 
 from .util import ClientCase, Group, override_group_id
 

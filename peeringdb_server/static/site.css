@@ -1619,11 +1619,11 @@ span.stats {
 
 a.stat-property, a.stat-value {
   text-decoration: none;
-  color: #00203e;  
+  color: #00203e;
 }
 
 a.stat-value {
-  
+
   font-weight: bold;
 }
 

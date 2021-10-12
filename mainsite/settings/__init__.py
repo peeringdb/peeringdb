@@ -803,7 +803,7 @@ RECAPTCHA_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
 set_option("ORG_LOGO_ALLOWED_FILE_TYPE", ".jpg,.jpeg,.png")
 
 # max file size for public organization logo uploads (bytes)
-set_option("ORG_LOGO_MAX_SIZE", 50*1024)
+set_option("ORG_LOGO_MAX_SIZE", 50 * 1024)
 
 # max rendering height for the organization logo in net / org / fac / ix views
 # does NOT affect sponsorship logo rendering (pixels)
@@ -856,7 +856,6 @@ if ENABLE_ALL_LANGUAGES:
                 language_dict[code] = name
 
     LANGUAGES = sorted(language_dict.items())
-
 
 
 # dynamic config starts here
