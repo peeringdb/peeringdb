@@ -147,7 +147,7 @@ def test_signup_page():
     assert response.status_code == 200
 
     # test fallback captcha load
-    m = re.search("\/captcha\/image\/([^\/]+)\/", content)
+    m = re.search(r"\/captcha\/image\/([^\/]+)\/", content)
     assert m
     response = client.get(m[0])
     assert response.status_code == 200

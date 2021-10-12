@@ -13,6 +13,7 @@ from django.template import loader
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.models import Group, GroupPermission
+from django_peeringdb.const import REGION_MAPPING
 from django_peeringdb.models.abstract import AddressModel
 from grainy.const import PERM_CRUD, PERM_READ
 
@@ -324,7 +325,6 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                 # Lookup RDAP information
                 try:
                     rdap_lookup = rdap = RdapLookup().get_asn(instance.asn)
-                    rdap_lookup.emails
                 except RdapException:
                     instance.deny()
                     raise
@@ -363,6 +363,7 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     return
 
             if instance.org:
+
                 # organization has been set on affiliation request
                 entity_name = instance.org.name
                 if not instance.org.owned:
@@ -526,3 +527,14 @@ def cors_allow_api_get_to_everyone(sender, request, **kwargs):
 
 
 check_request_enabled.connect(cors_allow_api_get_to_everyone)
+
+
+def auto_fill_region_continent(sender, instance, **kwargs):
+    if instance.country.code:
+
+        for region in REGION_MAPPING:
+            if instance.country.code == region["code"]:
+                instance.region_continent = region["continent"]
+
+
+pre_save.connect(auto_fill_region_continent, sender=Facility)
