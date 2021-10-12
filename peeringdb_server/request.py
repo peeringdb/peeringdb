@@ -8,10 +8,10 @@ from peeringdb_server.context import current_request
 def bypass_validation(request=None):
 
     """
-    Returns whether the specified request is to bypass
+    Return whether the specified request is to bypass
     certain data quality validations. (#741)
 
-    If no request is passed, we will attempt to GET
+    If not request is passed, attempt to get
     the current request from the current request
     context.
 
