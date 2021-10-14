@@ -4,6 +4,8 @@ import pytest
 from django.test import Client
 from rest_framework.test import APIClient
 
+from tests.util import reset_group_ids
+
 from peeringdb_server.models import (
     Network,
     Organization,
@@ -120,6 +122,7 @@ def test_affiliate_to_nonexisting_org_multiple(client):
 
 @pytest.mark.django_db
 def test_adv_search_init():
+    reset_group_ids()
     client = Client()
     response = client.get("/advanced_search")
     assert response.status_code == 200

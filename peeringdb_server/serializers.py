@@ -787,6 +787,7 @@ class ModelSerializer(serializers.ModelSerializer):
         depth=None,
         is_list=False,
         single=None,
+        selective=None,
     ):
         """
         Prefetch related sets according to depth specified in the request
@@ -811,6 +812,11 @@ class ModelSerializer(serializers.ModelSerializer):
                 # cycle through all related fields declared on the serializer
 
                 o_fld = fld
+
+                # selective is specified, check that field is matched
+                # otherwise ignore
+                if selective and fld not in selective:
+                    continue
 
                 # if the field is not to be rendered, skip it
                 if fld not in cls.Meta.fields:
@@ -2464,12 +2470,13 @@ class NetworkSerializer(ModelSerializer):
         else:
             return value
 
+
 # Create an Network serializer with no fields
 class ASSetSerializer(NetworkSerializer):
-
     class Meta:
         model = Network
         fields = []
+
 
 class IXLanPrefixSerializer(ModelSerializer):
     """

@@ -1717,7 +1717,7 @@ def view_network(request, id):
     """
     try:
         network = NetworkSerializer.prefetch_related(
-            Network.objects, request, depth=0
+            Network.objects, request, depth=2, selective=["poc_set"]
         ).get(id=id, status__in=["ok", "pending"])
     except ObjectDoesNotExist:
         return view_http_error_404(request)
@@ -2011,6 +2011,7 @@ def view_network(request, id):
 
     # Add POC data to dataset
     data["poc_set"] = network_d.get("poc_set")
+
     # For tooltip
     data["phone_help_text"] = field_help(NetworkContact, "phone")
 
