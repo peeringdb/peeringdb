@@ -2,6 +2,7 @@ import ipaddress
 import re
 
 from django.conf import settings
+from django.contrib.contenttypes import fields
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldError, ValidationError
 from django.core.validators import URLValidator
@@ -2463,6 +2464,12 @@ class NetworkSerializer(ModelSerializer):
         else:
             return value
 
+# Create an Network serializer with no fields
+class ASSetSerializer(NetworkSerializer):
+
+    class Meta:
+        model = Network
+        fields = []
 
 class IXLanPrefixSerializer(ModelSerializer):
     """
