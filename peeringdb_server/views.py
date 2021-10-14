@@ -39,6 +39,7 @@ from django.utils import translation
 from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
+from django.views import View
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
@@ -54,13 +55,19 @@ from peeringdb_server.data_views import BOOL_CHOICE, BOOL_CHOICE_WITH_OPT_OUT
 from peeringdb_server.deskpro import ticket_queue_rdap_error
 from peeringdb_server.forms import (
     AffiliateToOrgForm,
+    OrganizationLogoUploadForm,
     PasswordChangeForm,
     PasswordResetForm,
     UserCreationForm,
     UserLocaleForm,
     UsernameRetrieveForm,
 )
-from peeringdb_server.inet import RdapException, rdap_pretty_error_message
+from peeringdb_server.inet import (
+    RdapException,
+    RdapInvalidRange,
+    asn_is_bogon,
+    rdap_pretty_error_message,
+)
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.models import (
     PARTNERSHIP_LEVELS,
@@ -89,6 +96,7 @@ from peeringdb_server.serializers import (
     NetworkSerializer,
     OrganizationSerializer,
 )
+from peeringdb_server.stats import get_fac_stats, get_ix_stats
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.util import APIPermissionsApplicator, check_permissions
 
@@ -160,7 +168,6 @@ class DoNotRender:
 
     @classmethod
     def permissioned(cls, value, user, namespace, explicit=False):
-
         """
         Check if the user has permissions to the supplied namespace
         returns a DoNotRender instance if not, otherwise returns
@@ -434,6 +441,11 @@ def view_affiliate_to_org(request):
         request.user.flush_affiliation_requests()
 
         try:
+            # Issue 995: Block registering private ASN ranges
+            # Check if ASN is in private/reserved range
+            # Block submission if an org and private ASN is set
+            if asn_is_bogon(asn) and not settings.TUTORIAL_MODE:
+                raise RdapInvalidRange()
 
             uoar, created = UserOrgAffiliationRequest.objects.get_or_create(
                 user=request.user,
@@ -443,8 +455,14 @@ def view_affiliate_to_org(request):
                 status="pending",
             )
 
+        except RdapInvalidRange as exc:
+
+            return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
+
         except RdapException as exc:
+
             ticket_queue_rdap_error(request, asn, exc)
+
             return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
 
         except MultipleObjectsReturned:
@@ -938,6 +956,46 @@ def view_component(
     return HttpResponse(template.render(env, request))
 
 
+class OrganizationLogoUpload(View):
+
+    """
+    Handles public upload and setting of organization logo (#346)
+    """
+
+    def post(self, request, id):
+
+        """upload and set a new logo"""
+
+        org = Organization.objects.get(pk=id)
+
+        # require update permissions to the org
+        if not check_permissions(request.user, org, "u"):
+            return JsonResponse({}, status=403)
+
+        form = OrganizationLogoUploadForm(request.POST, request.FILES, instance=org)
+
+        if form.is_valid():
+            form.save()
+            org.refresh_from_db()
+            return JsonResponse({"status": "ok", "url": org.logo.url})
+        else:
+            return JsonResponse(form.errors, status=400)
+
+    def delete(self, request, id):
+
+        """delete the logo"""
+
+        org = Organization.objects.get(pk=id)
+
+        # require update permissions to the org
+        if not check_permissions(request.user, org, "u"):
+            return JsonResponse({}, status=403)
+
+        org.logo.delete()
+
+        return JsonResponse({"status": "ok"})
+
+
 @ensure_csrf_cookie
 def view_organization(request, id):
     """
@@ -999,6 +1057,14 @@ def view_organization(request, id):
         networks = data["net_set"]
 
     dismiss = DoNotRender()
+
+    # determine if logo is specified and set the
+    # logo url accordingly
+
+    if org.logo:
+        logo_url = org.logo.url
+    else:
+        logo_url = ""
 
     data = {
         "title": data.get("name", dismiss),
@@ -1079,6 +1145,16 @@ def view_organization(request, id):
                 "help_text": _("Markdown enabled"),
                 "type": "fmt-text",
                 "value": data.get("notes", dismiss),
+            },
+            {
+                "name": "logo",
+                "label": _("Logo"),
+                "help_text": field_help(Organization, "logo"),
+                "type": "image",
+                "accept": dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+                "upload_handler": f"/org/{org.id}/upload-logo",
+                "value": logo_url,
             },
         ],
     }
@@ -1169,6 +1245,9 @@ def view_facility(request, id):
         .order_by("network__name")
     )
 
+    if facility.org.logo:
+        org["logo"] = facility.org.logo.url
+
     dismiss = DoNotRender()
 
     data = {
@@ -1235,6 +1314,14 @@ def view_facility(request, id):
                 "value": data.get("country", dismiss),
             },
             {
+                "name": "region_continent",
+                "type": "list",
+                "data": "enum/regions",
+                "label": _("Continental Region"),
+                "value": data.get("region_continent", dismiss),
+                "readonly": True,
+            },
+            {
                 "name": "geocode",
                 "label": _("Geocode"),
                 "type": "geocode",
@@ -1262,6 +1349,14 @@ def view_facility(request, id):
                 "help_text": _("Markdown enabled"),
                 "type": "fmt-text",
                 "value": data.get("notes", dismiss),
+            },
+            {
+                "name": "org_logo",
+                "label": "",
+                "value": org.get("logo", dismiss),
+                "type": "image",
+                "readonly": True,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
             },
             {
                 "type": "email",
@@ -1320,6 +1415,8 @@ def view_facility(request, id):
         ],
     }
 
+    data["stats"] = get_fac_stats(peers, exchanges)
+
     return view_component(
         request, "facility", data, "Facility", perms=perms, instance=facility
     )
@@ -1365,11 +1462,19 @@ def view_exchange(request, id):
 
     org = data.get("org")
 
+    if exchange.org.logo:
+        org["logo"] = exchange.org.logo.url
+
     data = {
         "id": exchange.id,
         "title": data.get("name", dismiss),
         "facilities": facilities,
         "networks": networks,
+        "peer_count": 0,
+        "connections_count": 0,
+        "open_peer_count": 0,
+        "total_speed": 0,
+        "ipv6_percentage": 0,
         "ixlans": exchange.ixlan_set_active_or_pending,
         "fields": [
             {
@@ -1437,6 +1542,14 @@ def view_exchange(request, id):
                 "help_text": _("Markdown enabled"),
                 "type": "fmt-text",
                 "value": data.get("notes", dismiss),
+            },
+            {
+                "name": "org_logo",
+                "label": "",
+                "value": org.get("logo", dismiss),
+                "type": "image",
+                "readonly": True,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
             },
             {"type": "sub", "label": _("Contact Information")},
             {
@@ -1561,6 +1674,8 @@ def view_exchange(request, id):
         ]
     )
 
+    data["stats"] = get_ix_stats(networks, ixlan)
+
     return view_component(
         request, "exchange", data, "Exchange", perms=perms, instance=exchange
     )
@@ -1643,6 +1758,9 @@ def view_network(request, id):
 
     ixf_proposals = IXFMemberData.proposals_for_network(network)
     ixf_proposals_dismissed = IXFMemberData.network_has_dismissed_actionable(network)
+
+    if network.org.logo:
+        org["logo"] = network.org.logo.url
 
     data = {
         "title": network_d.get("name", dismiss),
@@ -1815,6 +1933,14 @@ def view_network(request, id):
                 "help_text": _("Markdown enabled"),
                 "type": "fmt-text",
                 "value": network_d.get("notes", dismiss),
+            },
+            {
+                "name": "org_logo",
+                "label": "",
+                "value": org.get("logo", dismiss),
+                "type": "image",
+                "readonly": True,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
             },
             {"type": "sub", "admin": True, "label": _("PeeringDB Configuration")},
             {
@@ -2028,7 +2154,6 @@ def view_advanced_search(request):
 
 
 def request_api_search(request):
-
     """
     Triggered by typing something in the main peeringdb search bar
     without hitting enter (quasi autocomplete).
@@ -2065,7 +2190,7 @@ def request_search(request):
     result = search(q)
 
     sponsors = {
-        org.id: sponsorship.label.lower()
+        org.id: {"label": sponsorship.label.lower(), "css": sponsorship.css}
         for org, sponsorship in Sponsorship.active_by_org()
     }
 
@@ -2125,7 +2250,6 @@ class LoginView(two_factor.views.LoginView):
     """
 
     def get(self, *args, **kwargs):
-
         """
         If a user is already authenticated, don't show the
         login process, instead redirect to /
@@ -2140,7 +2264,6 @@ class LoginView(two_factor.views.LoginView):
         ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
     )
     def post(self, *args, **kwargs):
-
         """
         Posts to the `auth` step of the authentication
         process need to be rate limited.
@@ -2156,7 +2279,6 @@ class LoginView(two_factor.views.LoginView):
         return super().post(*args, **kwargs)
 
     def get_context_data(self, form, **kwargs):
-
         """
         If post request was rate limited the rate limit message
         needs to be communicated via the template context.
@@ -2171,7 +2293,6 @@ class LoginView(two_factor.views.LoginView):
         return context
 
     def get_email_device(self):
-
         """
         Return an EmailDevice instance for the requesting user
         which can be used for one time passwords.
@@ -2221,7 +2342,6 @@ class LoginView(two_factor.views.LoginView):
         return None
 
     def get_device(self, step=None):
-
         """
         Override this to can enable EmailDevice as a
         challenge device for one time passwords.
@@ -2241,7 +2361,6 @@ class LoginView(two_factor.views.LoginView):
         return self.get_redirect_url()
 
     def get_redirect_url(self):
-
         """
         Specify which redirect urls are valid.
         """
@@ -2273,7 +2392,6 @@ class LoginView(two_factor.views.LoginView):
         return redir
 
     def done(self, form_list, **kwargs):
-
         """
         User authenticated successfully, set language options.
         """

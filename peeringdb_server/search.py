@@ -114,6 +114,27 @@ def search(term, autocomplete=False):
     result = {tag: [] for tag in categories}
     pk_map = {tag: {} for tag in categories}
 
+    # if term is an exact asn match, ensure that the matching
+    # network is always appended as the first entry
+    # issue #232
+
+    try:
+        asn_match = Network.objects.get(asn=term)
+        append_result(
+            "net",
+            asn_match.pk,
+            asn_match.search_result_name,
+            asn_match.org_id,
+            None,
+            result,
+            pk_map,
+        )
+    except (Network.DoesNotExist, ValueError):
+        pass
+
+    # add entries to the result by order of scoring with the
+    # highest scored on top (beginning of list)
+
     for sq in search_query[:limit]:
         model = sq.model
         model.HandleRef.tag

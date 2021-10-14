@@ -8,6 +8,7 @@ Look in rest.py and serializers.py for those.
 """
 
 import re
+import os.path
 
 import requests
 from captcha.fields import CaptchaField
@@ -15,6 +16,7 @@ from captcha.models import CaptchaStore
 from django import forms
 from django.conf import settings as dj_settings
 from django.contrib.auth import forms as auth_forms
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from grainy.const import PERM_CRUD, PERM_DENY, PERM_READ
@@ -179,3 +181,38 @@ class UserLocaleForm(forms.Form):
     class Meta:
         model = User
         fields = "locale"
+
+
+class OrganizationLogoUploadForm(forms.ModelForm):
+    logo = forms.FileField()
+
+    class Meta:
+        model = Organization
+        fields = ["logo"]
+
+    def clean_logo(self):
+
+        logo = self.cleaned_data["logo"]
+        max_size = dj_settings.ORG_LOGO_MAX_SIZE
+
+        # normalize the file name
+        ext = os.path.splitext(logo.name)[1].lower()
+        logo.name = f"org-{self.instance.id}{ext}"
+
+        # validate file type
+        if ext not in dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE.split(","):
+            raise ValidationError(
+                _("File type %(value)s not allowed"),
+                code="invalid",
+                params={"value": ext},
+            )
+
+        # validate file size
+        if logo.size > max_size:
+            raise ValidationError(
+                _("File size too big, max. %(value)s"),
+                code="invalid",
+                params={"value": f"{max_size / 1024:.0f} kb"},
+            )
+
+        return logo

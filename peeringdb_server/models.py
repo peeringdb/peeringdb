@@ -82,6 +82,13 @@ SPONSORSHIP_LEVELS = (
     (4, _("Diamond")),
 )
 
+SPONSORSHIP_CSS = (
+    (1, "silver"),
+    (2, "gold"),
+    (3, "platinum"),
+    (4, "diamond"),
+)
+
 PARTNERSHIP_LEVELS = ((1, _("Data Validation")), (2, _("RIR")))
 
 COMMANDLINE_TOOLS = (
@@ -805,7 +812,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
     # FileField for now as the server doesn't have all the
     # dependencies installedd (libjpeg / Pillow)
     logo = models.FileField(
-        upload_to="logos/",
+        upload_to="logos_user_supplied/",
         null=True,
         blank=True,
         help_text=_(
@@ -1150,6 +1157,13 @@ class Sponsorship(models.Model):
         Returns the label for this sponsorship's level.
         """
         return dict(SPONSORSHIP_LEVELS).get(self.level)
+
+    @property
+    def css(self):
+        """
+        Returns the css class for this sponsorship's level
+        """
+        return dict(SPONSORSHIP_CSS).get(self.level)
 
     def notify_expiration(self):
         """

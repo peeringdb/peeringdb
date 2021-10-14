@@ -1176,6 +1176,7 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "state",
         "zipcode",
         "country",
+        "region_continent",
         "floor",
         "suite",
         "latitude",

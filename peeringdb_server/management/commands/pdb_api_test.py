@@ -605,7 +605,9 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def assert_update(self, db, typ, id, data, test_failures=False, test_success=True):
+    def assert_update(
+        self, db, typ, id, data, test_failures=False, test_success=True, **kwargs
+    ):
 
         if test_success:
             orig = self.assert_get_handleref(db, typ, id)
@@ -627,7 +629,10 @@ class TestJSON(unittest.TestCase):
                         test(data, u_data)
             else:
                 # self.assertGreater(u_data["version"], orig["version"])
+                ignore = kwargs.pop("ignore", [])
                 for k, v in list(data.items()):
+                    if k in ignore:
+                        continue
                     self.assertEqual(u_data.get(k), v)
 
         # if test_failures is set we want to test fail conditions
@@ -1399,6 +1404,49 @@ class TestJSON(unittest.TestCase):
 
         # But rencode should be null
         assert r_data_new["rencode"] == ""
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_PUT_fac_region_continent(self):
+        data = self.make_data_fac()
+
+        # test: we attempt to create a facility and providing a value
+        # for region_continent, since the field is read only the server
+        # should ignore this value, and come back with North America
+        # in the response
+
+        data["region_continent"] = "Europe"
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "fac",
+            data,
+            # tell `assert_create` to not compare the value we pass
+            # for region_continent with the value returned from the save
+            ignore=["region_continent"],
+            test_failures={},
+        )
+        fac_id = r_data.get("id")
+
+        assert r_data["region_continent"] == "North America"
+        fac = Facility.objects.get(id=fac_id)
+        assert fac.region_continent == "North America"
+
+        # test: we attempt to update the facility, trying to set a
+        # value for region_continent, the server should ignoe this
+
+        self.assert_update(
+            self.db_org_admin,
+            "fac",
+            fac_id,
+            {"region_continent": "Europe"},
+            # tell `assert_update` to not compare the value we pass
+            # for region_continent with the value returned from the save
+            ignore=["region_continent"],
+        )
+
+        fac = Facility.objects.get(id=fac_id)
+        assert fac.region_continent == "North America"
 
     ##########################################################################
 
@@ -2968,6 +3016,33 @@ class TestJSON(unittest.TestCase):
         for row in data:
             self.assert_data_integrity(row, "fac")
             self.assertGreater(row["ix_count"], 0)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_fac_region_continent(self):
+        """
+        Issue 1007: Users should be able to filter Facilities
+        based on region_continent
+        """
+        # set a single facility to europe
+
+        fac = SHARED["fac_rw_ok"]
+        fac.country = "DE"
+        fac.save()
+
+        # confirm this is true in the db
+        assert Facility.objects.filter(region_continent="Europe").count() == 1
+
+        # test that the filter returns only that facility
+        data = self.db_guest.all("fac", region_continent="Europe")
+        assert len(data) == 1
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertEqual(row["region_continent"], "Europe")
+
+        # revert
+        fac.country = "US"
+        fac.save()
 
     ##########################################################################
 

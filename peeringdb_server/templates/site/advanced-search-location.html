@@ -50,6 +50,19 @@
                --data-edit-data-all-entry=":-- All Countries --"></div>
         </div>
       </div>
+
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Continental Region" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-name="region_continent__in"
+               data-edit-data="enum/regions"
+               data-edit-value="{{ request.GET.region_continent__in }}"
+               data-edit-reset-value=""
+               data-edit-multiple="yes"
+               --data-edit-data-all-entry=":-- All Regions --"></div>
+        </div>
+      </div>
       {% if can_use_distance_filter %}
       <div class="row">
         <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Within Distance" %}
