@@ -1,4 +1,5 @@
 import re
+import os.path
 
 import requests
 from captcha.fields import CaptchaField
@@ -184,6 +185,10 @@ class OrganizationLogoUploadForm(forms.ModelForm):
 
         logo = self.cleaned_data["logo"]
         max_size = dj_settings.ORG_LOGO_MAX_SIZE
+
+        # normalize the file name
+        ext = os.path.splitext(logo.name)[1].lower()
+        logo.name = f"org-{self.instance.id}.{ext}"
 
         if logo.size > max_size:
             raise ValidationError(

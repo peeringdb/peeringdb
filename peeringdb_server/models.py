@@ -787,7 +787,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
     # FileField for now as the server doesn't have all the
     # dependencies installedd (libjpeg / Pillow)
     logo = models.FileField(
-        upload_to="logos/",
+        upload_to="logos_user_supplied/",
         null=True,
         blank=True,
         help_text=_(
