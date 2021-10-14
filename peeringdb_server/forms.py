@@ -7,8 +7,8 @@ at the REST api to handle updates (such as /net, /ix, /fac or /org endpoints).
 Look in rest.py and serializers.py for those.
 """
 
-import re
 import os.path
+import re
 
 import requests
 from captcha.fields import CaptchaField

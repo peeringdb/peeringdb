@@ -757,7 +757,7 @@ def ref_dict():
 
 def model_view_set(model, methods=None, mixins=None):
     """
- Shortcut for peeringdb models to generate viewset and register in the API urls.
+    Shortcut for peeringdb models to generate viewset and register in the API urls.
     """
 
     # lookup Serializer class

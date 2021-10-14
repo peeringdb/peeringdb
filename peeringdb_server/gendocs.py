@@ -1,7 +1,9 @@
-import os
-import django
-import importlib
 import datetime
+import importlib
+import os
+
+import django
+
 django.setup()
 
 from pymdgen import doc_module
@@ -17,7 +19,7 @@ for entry in os.scandir("peeringdb_server"):
     if entry.name[0] == ".":
         continue
     if entry.is_file and entry.name.find(".py") > -1:
-        outfile=  f"docs/dev/modules/{entry.name}.md"
+        outfile = f"docs/dev/modules/{entry.name}.md"
         print(f"Generating {outfile}")
         with open(outfile, "w") as fh:
             doc_text = doc_module(f"peeringdb_server/{entry.name}", section_level=1)
@@ -36,7 +38,9 @@ for entry in os.scandir("peeringdb_server/management/commands"):
         continue
     if entry.is_file and entry.name.find(".py") > -1:
         try:
-            doc_text = doc_module(f"peeringdb_server/management/commands/{entry.name}", section_level=1)
+            doc_text = doc_module(
+                f"peeringdb_server/management/commands/{entry.name}", section_level=1
+            )
             command_index[entry.name] = doc_text[2]
         except Exception:
             continue
@@ -56,5 +60,3 @@ with open("docs/dev/commands.md", "w") as fh:
         descr = command_index.get(mod)
         fh.write(f"## {mod}\n\n")
         fh.write(f"{descr}\n\n")
-
-

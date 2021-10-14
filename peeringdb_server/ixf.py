@@ -96,7 +96,7 @@ class Importer:
     @property
     def ticket_user(self):
         """
-        Return the User instance for the user 
+        Return the User instance for the user
         to create DeskPRO tickets.
         """
         if not hasattr(self, "_ticket_user"):
@@ -661,12 +661,12 @@ class Importer:
     @transaction.atomic()
     def process_deletions(self):
         """
-        Cycle all netixlans on the ixlan targeted by the importer and
-     remove any that are no longer found in the ixf data by
-        their ip addresses.
+           Cycle all netixlans on the ixlan targeted by the importer and
+        remove any that are no longer found in the ixf data by
+           their ip addresses.
 
-        In order for a netixlan to be removed, both its ipv4 and ipv6 address
-        or its asn need to be gone from the ixf data after validation.
+           In order for a netixlan to be removed, both its ipv4 and ipv6 address
+           or its asn need to be gone from the ixf data after validation.
         """
 
         reversion.set_user(self.ticket_user)

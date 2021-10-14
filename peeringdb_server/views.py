@@ -129,7 +129,7 @@ def is_oauth_authorize(url):
 
 def export_permissions(user, entity):
     """
-    Return dict of permission bools for the specified user and entity 
+    Return dict of permission bools for the specified user and entity
     to be used in template context.
     """
 

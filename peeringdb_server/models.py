@@ -3716,7 +3716,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         Persist this IXFMemberData instance and send out notifications
         for conflict (validation issues) for modifications proposed
-        to the corresponding netixlan to ac, ix and net as warranted.        
+        to the corresponding netixlan to ac, ix and net as warranted.
         """
 
         if not self.id:
