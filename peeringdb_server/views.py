@@ -1715,10 +1715,9 @@ def view_network(request, id):
     """
     View network data for network specified by id
     """
-
     try:
         network = NetworkSerializer.prefetch_related(
-            Network.objects, request, depth=2
+            Network.objects, request, depth=0
         ).get(id=id, status__in=["ok", "pending"])
     except ObjectDoesNotExist:
         return view_http_error_404(request)
