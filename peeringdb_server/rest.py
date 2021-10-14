@@ -33,7 +33,7 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
-from peeringdb_server.serializers import ParentStatusException
+from peeringdb_server.serializers import ParentStatusException, ASSetSerializer
 from peeringdb_server.util import coerce_ipaddr
 
 
@@ -821,7 +821,7 @@ class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
     lookup_field = "asn"
     http_method_names = ["get"]
     model = Network
-    serializer_class = pdb_serializers.serializers.Serializer
+    serializer_class = ASSetSerializer
 
     def get_queryset(self):
         return Network.objects.filter(status="ok").exclude(irr_as_set="")
