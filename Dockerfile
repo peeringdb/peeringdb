@@ -49,7 +49,7 @@ ARG uid=996
 ARG ADD_SETTINGS_FILE=mainsite/settings/dev.py
 
 # add dependencies
-RUN apk add --no-cache freetype gettext libjpeg-turbo mariadb-connector-c
+RUN apk add --no-cache freetype gettext libjpeg-turbo mariadb-connector-c libgcc
 
 RUN adduser -Du $uid pdb
 

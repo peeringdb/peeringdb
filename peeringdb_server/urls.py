@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.conf.urls import include, url
+from django.urls import path
 from django.views.generic import RedirectView, TemplateView
 from django.views.i18n import JavaScriptCatalog
 
@@ -32,6 +33,7 @@ from peeringdb_server.import_views import (
 )
 from peeringdb_server.models import Facility, InternetExchange, Network, Organization
 from peeringdb_server.views import (
+    OrganizationLogoUpload,
     cancel_affiliation_request,
     network_dismiss_ixf_proposal,
     network_reset_ixf_proposals,
@@ -96,6 +98,11 @@ urlpatterns = [
     url(r"^aup$", view_aup),
     url(r"^about$", view_about),
     url(r"^affiliate-to-org$", view_affiliate_to_org),
+    path(
+        "org/<str:id>/upload-logo",
+        OrganizationLogoUpload.as_view(),
+        name="org-logo-upload",
+    ),
     url(
         r"^cancel-affiliation-request/(?P<uoar_id>\d+)/$",
         cancel_affiliation_request,

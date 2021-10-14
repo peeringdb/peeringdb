@@ -538,7 +538,7 @@ div.view_title {
   font-size: 24px;
 /*  border-bottom: 3px #1c3f28 solid; */
   margin-top: 20px;
-  margin-bottom: 10px;
+  /* margin-bottom: 10px; */
 }
 
 div.view_title a.btn {
@@ -1179,6 +1179,25 @@ span.yourlabs-autocomplete > span.hilight > div.sub {
   margin-left: 20px;
 }
 
+.editable div.file-upload div.upload,
+.editable div.file-upload div.current {
+  position: relative;
+  min-height: 30px;
+}
+
+.editable div.file-upload input[type="file"] {
+  margin-top: 5px;
+}
+
+.editable div.file-upload input[type="button"] {
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  z-index: 10;
+}
+
+
+
 /*
  * api listing module
  */
@@ -1591,4 +1610,23 @@ body[dir="rtl"] h5,
 body[dir="rtl"] li,
 body[dir="rtl"] li > a {
   text-align: right;
+}
+
+span.stats {
+  display: inline-grid;
+  padding: 10px
+}
+
+a.stat-property, a.stat-value {
+  text-decoration: none;
+  color: #00203e;
+}
+
+a.stat-value {
+
+  font-weight: bold;
+}
+
+div.stats_row {
+  margin-top: 0;
 }
