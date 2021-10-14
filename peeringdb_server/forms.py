@@ -188,8 +188,17 @@ class OrganizationLogoUploadForm(forms.ModelForm):
 
         # normalize the file name
         ext = os.path.splitext(logo.name)[1].lower()
-        logo.name = f"org-{self.instance.id}.{ext}"
+        logo.name = f"org-{self.instance.id}{ext}"
 
+        # validate file type
+        if ext not in dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE.split(","):
+            raise ValidationError(
+                _("File type %(value)s not allowed"),
+                code="invalid",
+                params={"value": ext},
+            )
+
+        # validate file size
         if logo.size > max_size:
             raise ValidationError(
                 _("File size too big, max. %(value)s"),
