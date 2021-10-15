@@ -1116,6 +1116,11 @@ div.note.error > div.details {
   left: -15px;
 }
 
+.editable.loading-shim.single-field-shim {
+  left: 0px;
+  right: 0px;
+}
+
 .tab-pane .editable.loading-shim {
   background-color: #f1f1f1;
   opacity: 0.5;

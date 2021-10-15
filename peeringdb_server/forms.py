@@ -9,6 +9,7 @@ Look in rest.py and serializers.py for those.
 
 import os.path
 import re
+import uuid
 
 import requests
 from captcha.fields import CaptchaField
@@ -197,7 +198,8 @@ class OrganizationLogoUploadForm(forms.ModelForm):
 
         # normalize the file name
         ext = os.path.splitext(logo.name)[1].lower()
-        logo.name = f"org-{self.instance.id}{ext}"
+        randomize = str(uuid.uuid4())[:8]
+        logo.name = f"org-{self.instance.id}-{randomize}{ext}"
 
         # validate file type
         if ext not in dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE.split(","):
