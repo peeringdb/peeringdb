@@ -1,4 +1,4 @@
-Generated on 2021-10-06 18:04:54.446347
+Generated on 2021-10-15 07:56:57.136306
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -73,7 +73,7 @@ Split read and write database connections if needed.
 ## [deskpro.py](/docs/dev/modules/deskpro.py.md)
 
 DeskPro API Client used to post and retrieve support ticket information
-from the deskpro api.
+from the deskpro API.
 
 ## [export_views.py](/docs/dev/modules/export_views.py.md)
 
@@ -205,8 +205,9 @@ Custom rate limit handlers for the REST API.
 
 ## [search.py](/docs/dev/modules/search.py.md)
 
-Search implementation used for the peeringdb top search bar, as well as name searches through
-the api `name_search` filter, as well as advanced search name field searches.
+Search implementation used for the peeringdb top search bar, name
+searches through the api `name_search` filter, as well as advanced
+search functionality.
 
 Search logic is handled by django-haystack and whoosh.
 

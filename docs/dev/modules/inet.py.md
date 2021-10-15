@@ -1,4 +1,4 @@
-Generated from inet.py on 2021-10-06 18:04:54.501582
+Generated from inet.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.inet
 
@@ -15,7 +15,7 @@ Prefix renumbering.
 `def asn_is_bogon(asn)`
 
 Test if an asn is bogon by being either in the documentation
-or private asn ranges
+or private asn ranges.
 
 Arguments:
     - asn<int>
@@ -27,7 +27,7 @@ Return:
 ## asn_is_in_ranges
 `def asn_is_in_ranges(asn, ranges)`
 
-Test if an asn falls within any of the ranges provided
+Test if an asn falls within any of the ranges provided.
 
 Arguments:
     - asn<int>
@@ -40,10 +40,10 @@ Return:
 ## get_prefix_protocol
 `def get_prefix_protocol(prefix)`
 
-Takes a network address space prefix string and returns
-a string describing the protocol
+Take a network address space prefix string and return
+a string describing the protocol.
 
-Will raise a ValueError if it cannot determine protocol
+Will raise a ValueError if it cannot determine protocol.
 
 Returns:
     str: IPv4 or IPv6
@@ -52,7 +52,7 @@ Returns:
 ## network_is_bogon
 `def network_is_bogon(network)`
 
-Returns if the passed ipaddress network is a bogon
+Return if the passed ipaddress network is a bogon.
 
 Arguments:
     - network <ipaddress.IPv4Network|ipaddress.IPv6Network>
@@ -65,7 +65,7 @@ Return:
 `def network_is_pdb_valid(network)`
 
 Return if the passed ipaddress network is in pdb valid
-address space
+address space.
 
 Arguments:
     - network <ipaddress.IPv4Network|ipaddress.IPv6Network>
@@ -77,14 +77,14 @@ Return:
 ## rdap_pretty_error_message
 `def rdap_pretty_error_message(exc)`
 
-Takes an RdapException instance and returns a customer friendly
-error message (str)
+Take an RdapException instance and return a customer friendly
+error message (str).
 
 ---
 ## renumber_ipaddress
 `def renumber_ipaddress(ipaddr, old_prefix, new_prefix)`
 
-Renumber an ipaddress from old prefix to new prefix
+Renumber an ipaddress from old prefix to new prefix.
 
 Arguments:
     - ipaddr (ipaddress.ip_address)
@@ -104,9 +104,9 @@ Returns:
 BogonAsn(rdap.objects.RdapAsn)
 ```
 
-On tutorial mode environments we will return an instance
+On tutorial mode environments, return an instance
 of this to provide an rdapasn result for asns in the
-private and documentation ranges
+private and documentation ranges.
 
 
 ### Methods
@@ -117,6 +117,15 @@ private and documentation ranges
 Initialize self.  See help(type(self)) for accurate signature.
 
 ---
+
+## RdapInvalidRange
+
+```
+RdapInvalidRange(rdap.exceptions.RdapException)
+```
+
+Base exception used by this module.
+
 
 ## RdapLookup
 
@@ -141,7 +150,7 @@ config_dir is a string pointing to a config directory
 #### get_asn
 `def get_asn(self, asn)`
 
-We handle asns that fall into the private/documentation ranges
-manually - others are processed normally through rdap lookup
+Handle asns that fall into the private/documentation ranges
+manually - others are processed normally through rdap lookup.
 
 ---

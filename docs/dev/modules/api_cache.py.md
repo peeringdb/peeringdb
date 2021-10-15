@@ -1,4 +1,4 @@
-Generated from api_cache.py on 2021-10-06 18:04:54.501582
+Generated from api_cache.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.api_cache
 
@@ -14,7 +14,7 @@ APICacheLoader(builtins.object)
 ```
 
 Checks if an API GET request qualifies for a cache load
-and if it does allows you to provide the cached result
+and if it does allows you to provide the cached result.
 
 
 ### Methods
@@ -28,20 +28,20 @@ Initialize self.  See help(type(self)) for accurate signature.
 #### filter_fields
 `def filter_fields(self, row)`
 
-Removes any unwanted fields from the resultset
-according to the `fields` filter specified in the request
+Remove any unwanted fields from the resultset
+according to the `fields` filter specified in the request.
 
 ---
 #### load
 `def load(self)`
 
-Load the cached response according to tag and depth
+Load the cached response according to tag and depth.
 
 ---
 #### qualifies
 `def qualifies(self)`
 
-Check if request qualifies for a cache load
+Check if request qualifies for a cache load.
 
 ---
 
@@ -54,7 +54,7 @@ CacheRedirect(builtins.Exception)
 Raise this error to redirect to cache response during viewset.get_queryset
 or viewset.list()
 
-Argument should be an APICacheLoader instance
+Argument should be an APICacheLoader instance.
 
 
 ### Methods

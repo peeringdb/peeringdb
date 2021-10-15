@@ -1,4 +1,4 @@
-Generated from autocomplete_views.py on 2021-10-06 18:04:54.501582
+Generated from autocomplete_views.py on 2021-10-15 07:56:57.136306
 
 # peeringdb_server.autocomplete_views
 
@@ -35,7 +35,7 @@ Return a JSON response in Select2 format.
 CommandLineToolHistoryAutocomplete(dal_select2.views.Select2QuerySetView)
 ```
 
-Autocomplete for command line tools that were ran via the admin ui
+Autocomplete for command line tools that were run via the admin ui.
 
 
 ### Methods
@@ -60,7 +60,7 @@ DeletedVersionAutocomplete(dal_select2.views.Select2QuerySetView)
 ```
 
 Autocomplete that will show reversion versions where an object
-was set to deleted
+was set to deleted.
 
 
 ### Methods
@@ -204,9 +204,9 @@ Filter the queryset with GET['q'].
 GrappelliHandlerefAutocomplete(grappelli.views.related.AutocompleteLookup)
 ```
 
-makes sure that the auto-complete fields managed
+Make sure that the auto-complete fields managed
 by grappelli in django admin exclude soft-deleted
-objects
+objects.
 
 
 ## IXLanAutocomplete
@@ -287,5 +287,5 @@ Return the label of a result.
 ToolHistory(peeringdb_server.autocomplete_views.CommandLineToolHistoryAutocomplete)
 ```
 
-Autocomplete for command line tools that were ran via the admin ui
+Autocomplete for command line tools that were run via the admin ui.
 

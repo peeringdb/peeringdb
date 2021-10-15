@@ -1,4 +1,4 @@
-Generated from validators.py on 2021-10-06 18:04:54.501582
+Generated from validators.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.validators
 
@@ -10,7 +10,7 @@ peeringdb model / field validators
 ## validate_address_space
 `def validate_address_space(prefix)`
 
-validate an ip prefix according to peeringdb specs
+Validate an ip prefix according to peeringdb specs.
 
 Arguments:
     - prefix: ipaddress.IPv4Network or an ipaddress.IPv6Network
@@ -22,7 +22,7 @@ Raises:
 ## validate_irr_as_set
 `def validate_irr_as_set(value)`
 
-Validates irr as-set string
+Validate irr as-set string.
 
 - the as-set/rs-set name has to conform to RFC 2622 (5.1 and 5.2)
 - the source may be specified by AS-SET@SOURCE or SOURCE::AS-SET
@@ -56,7 +56,7 @@ Returns:
 ## validate_prefix
 `def validate_prefix(prefix)`
 
-validate ip prefix
+Validate ip prefix.
 
 Arguments:
     - prefix: ipaddress.IPv4Network or an ipaddress.IPv6Network
@@ -71,8 +71,8 @@ Returns:
 ## validate_prefix_overlap
 `def validate_prefix_overlap(prefix)`
 
-validate that a prefix does not overlap with another prefix
-on an already existing ixlan
+Validate that a prefix does not overlap with another prefix
+on an already existing ixlan.
 
 Arguments:
     - prefix: ipaddress.IPv4Network or an ipaddress.IPv6Network

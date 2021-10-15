@@ -1,4 +1,4 @@
-Generated from forms.py on 2021-10-06 18:04:54.501582
+Generated from forms.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.forms
 
@@ -49,6 +49,24 @@ OrganizationAPIKeyForm(django.forms.forms.Form)
 ```
 
 A collection of Fields, plus their associated data.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## OrganizationLogoUploadForm
+
+```
+OrganizationLogoUploadForm(django.forms.models.ModelForm)
+```
+
+The main implementation of all the Form logic. Note that this class is
+different than Form. See the comments by the Form class for more info. Any
+improvements to the form API should be made to this class, not to the Form
+class.
 
 
 ### Instanced Attributes

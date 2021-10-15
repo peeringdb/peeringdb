@@ -1,4 +1,4 @@
-Generated from geo.py on 2021-10-06 18:04:54.446347
+Generated from geo.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.geo
 
@@ -13,8 +13,8 @@ Utilities for geocoding and geo normalization.
 Melissa(builtins.object)
 ```
 
-Handles requests to the melissa global address
-service used for geocoding and address normalization
+Handle requests to the melissa global address
+service used for geocoding and address normalization.
 
 
 ### Methods
@@ -28,7 +28,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 #### global_address
 `def global_address(self, **kwargs)`
 
-Sends request to the global address service
+Send request to the global address service.
 
 Keyword arguments:
 
@@ -42,22 +42,22 @@ Keyword arguments:
 #### sanitize
 `def sanitize(self, **kwargs)`
 
-Takes an international address and sanitizes it
-using the melissa global address service
+Take an international address and sanitize it
+using the melissa global address service.
 
 ---
 #### sanitize_address_model
 `def sanitize_address_model(self, instance)`
 
-Takes an instance of AddressModel and
-runs it's address through the normalization
+Take an instance of AddressModel and
+run its address through the normalization
 process.
 
-Note that his will not actually change fields
+Note that this will not actually change fields
 on the instance.
 
-Returns dict with normalized address data and
-geo coordinates
+Return dict with normalized address data and
+geo coordinates.
 
 ---
 

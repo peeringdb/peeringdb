@@ -1,4 +1,4 @@
-Generated from permissions.py on 2021-10-06 18:04:54.501582
+Generated from permissions.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.permissions
 
@@ -20,7 +20,7 @@ Censor API output data according to permissions using grainy Applicators.
 ## check_permissions
 `def check_permissions(obj, target, permissions, **kwargs)`
 
-Users the provided permission holding object to initialize
+Use the provided permission holding object to initialize
 the Permissions Util, which then checks permissions.
 
 ---
@@ -28,19 +28,19 @@ the Permissions Util, which then checks permissions.
 `def check_permissions_from_request(request, target, flag, **kwargs)`
 
 Call the check_permissions util but takes a request as
-input, not a permission-holding object
+input, not a permission-holding object.
 
 ---
 ## get_key_from_request
 `def get_key_from_request(request)`
 
-Use the default KeyParser from drf-api-keys to pull the key out of the request
+Use the default KeyParser from drf-api-keys to pull the key out of the request.
 
 ---
 ## get_org_key_from_request
 `def get_org_key_from_request(request)`
 
-Returns a org key from the request if the request
+Return an org key from the request if the request
 was made with an OrgKey.
 
 Otherwise returns None.
@@ -49,14 +49,14 @@ Otherwise returns None.
 ## get_permission_holder_from_request
 `def get_permission_holder_from_request(request)`
 
-Returns either an API Key instance or User instance
+Return either an API Key instance or User instance
 depending on how the request is Authenticated.
 
 ---
 ## get_user_from_request
 `def get_user_from_request(request)`
 
-Returns a user from the request if the request
+Return a user from the request if the request
 was made with either a User or UserAPIKey.
 
 If request was made with OrgKey, returns None.
@@ -65,7 +65,7 @@ If request was made with OrgKey, returns None.
 ## get_user_key_from_request
 `def get_user_key_from_request(request)`
 
-Returns a user api key from the request if the request
+Return a user API key from the request if the request
 was made with an User API Key.
 
 Otherwise returns None.
@@ -74,8 +74,8 @@ Otherwise returns None.
 ## init_permissions_helper
 `def init_permissions_helper(obj)`
 
-Initializes the Permission Util based on
-if the provided object is a UserAPIKey, OrgAPIKey,
+Initialize the Permission Util based on
+whether the provided object is a UserAPIKey, OrgAPIKey,
 or a different object.
 
 ---
@@ -84,13 +84,13 @@ or a different object.
 
 Load Permissions util with OrgAPIKey perms
 and then add in that organization's user group perms
-and general user group permissions
+and general user group permissions.
 
 ---
 ## return_user_api_key_perms
 `def return_user_api_key_perms(key)`
 
-Initializes the Permissions Util with the
+Initialize the Permissions Util with the
 permissions of the user linked to the User API
 key.
 
@@ -134,7 +134,7 @@ ModelViewSetPermissions(rest_framework.permissions.BasePermission)
 
 Use as a permission class on a ModelRestViewSet
 to automatically wire up the following views
-to the correct permissions based on the handled object
+to the correct permissions based on the handled object:
 - retrieve
 - list
 - create

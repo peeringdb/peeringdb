@@ -1,4 +1,4 @@
-Generated from rest_throttles.py on 2021-10-06 18:04:54.446347
+Generated from rest_throttles.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.rest_throttles
 
@@ -13,7 +13,7 @@ Custom rate limit handlers for the REST API.
 FilterDistanceThrottle(peeringdb_server.rest_throttles.FilterThrottle)
 ```
 
-Rate limiting for ?distance= queries
+Rate limiting for ?distance= queries.
 
 
 ## FilterThrottle
@@ -22,7 +22,7 @@ Rate limiting for ?distance= queries
 FilterThrottle(rest_framework.throttling.SimpleRateThrottle)
 ```
 
-Base class for API throttling targeted at specific query filters
+Base class for API throttling targeted at specific query filters.
 
 Scope name will be 'filter_{self.filter_name}'
 

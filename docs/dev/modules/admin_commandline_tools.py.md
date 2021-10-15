@@ -1,4 +1,4 @@
-Generated from admin_commandline_tools.py on 2021-10-06 18:04:54.446347
+Generated from admin_commandline_tools.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.admin_commandline_tools
 
@@ -58,14 +58,14 @@ ToolMergeFacilities(peeringdb_server.admin_commandline_tools.CommandLineToolWrap
 ```
 
 This tool runs the pdb_fac_merge command to
-merge two facilities
+merge two facilities.
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- description (`@property`): Provide a human readable description of the command that was run
+- description (`@property`): Provide a human readable description of the command that was run.
 
 ## ToolMergeFacilitiesUndo
 
@@ -74,14 +74,14 @@ ToolMergeFacilitiesUndo(peeringdb_server.admin_commandline_tools.CommandLineTool
 ```
 
 This tool runs the pdb_fac_merge_undo command to
-undo a facility merge
+undo a facility merge.
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- description (`@property`): Provide a human readable description of the command that was run
+- description (`@property`): Provide a human readable description of the command that was run.
 
 ## ToolRenumberLans
 
@@ -90,14 +90,14 @@ ToolRenumberLans(peeringdb_server.admin_commandline_tools.CommandLineToolWrapper
 ```
 
 This tools runs the pdb_renumber_lans command to
-Renumber IP Spaces in an Exchange
+Renumber IP Spaces in an Exchange.
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- description (`@property`): Provide a human readable description of the command that was run
+- description (`@property`): Provide a human readable description of the command that was run.
 
 ## ToolUndelete
 
@@ -105,7 +105,7 @@ These attributes / properties will be available on instances of the class
 ToolUndelete(peeringdb_server.admin_commandline_tools.CommandLineToolWrapper)
 ```
 
-Allows restoration of an object object and it's child objects
+Allows restoration of an object object and it's child objects.
 
 
 ### Instanced Attributes

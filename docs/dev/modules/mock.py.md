@@ -1,4 +1,4 @@
-Generated from mock.py on 2021-10-06 18:04:54.446347
+Generated from mock.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.mock
 
@@ -13,9 +13,9 @@ Handle generation of mock data for testing purposes.
 Mock(builtins.object)
 ```
 
-Class that allows us to create mock data in the database
+Class that allows creation of mock data in the database.
 
-NOTE: this actually writes data to the database and should
+NOTE: This actually writes data to the database and should
 only be used to populate a dev instance.
 
 
@@ -32,11 +32,11 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 Create a new instance of model specified in `reftag`
 
-Any arguments passed as kwargs will override mock field values
+Any arguments passed as kwargs will override mock field values.
 
-Note: Unless if there are no relationships passed in kwargs, required parent
+Note: Unless there are no relationships passed in kwargs, required parent
 objects will be automatically created as well.
 
-Returns: The created instance
+Returns: The created instance.
 
 ---

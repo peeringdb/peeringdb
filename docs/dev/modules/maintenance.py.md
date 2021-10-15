@@ -1,4 +1,4 @@
-Generated from maintenance.py on 2021-10-06 18:04:54.446347
+Generated from maintenance.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.maintenance
 
@@ -10,19 +10,19 @@ Django middleware to handle maintenance mode.
 ## active
 `def active()`
 
-return True if maintenance mode is currently active
+Return True if maintenance mode is currently active.
 
 ---
 ## off
 `def off()`
 
-turn maintenance mode off
+Turn maintenance mode off.
 
 ---
 ## on
 `def on(timeout=None)`
 
-turns maintenance mode on
+Turn maintenance mode on.
 
 Keyword Arguments:
 
@@ -33,7 +33,7 @@ Keyword Arguments:
 ## raise_if_active
 `def raise_if_active()`
 
-raise ActionBlocked exception if maintenance mode is active
+Raise ActionBlocked exception if maintenance mode is active.
 
 ---
 # Classes
@@ -64,7 +64,7 @@ Middleware(builtins.object)
 ```
 
 Middleware will return 503 json responses for all write
-ops (POST PUT PATCH DELETE)
+ops (POST PUT PATCH DELETE).
 
 
 ### Methods

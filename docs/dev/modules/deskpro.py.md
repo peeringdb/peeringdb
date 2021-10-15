@@ -1,9 +1,9 @@
-Generated from deskpro.py on 2021-10-06 18:04:54.501582
+Generated from deskpro.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.deskpro
 
 DeskPro API Client used to post and retrieve support ticket information
-from the deskpro api.
+from the deskpro API.
 
 # Functions
 ---
@@ -11,38 +11,38 @@ from the deskpro api.
 ## ticket_queue
 `def ticket_queue(subject, body, user)`
 
-queue a deskpro ticket for creation
+Queue a deskpro ticket for creation.
 
 ---
 ## ticket_queue_asnauto_affil
 `def ticket_queue_asnauto_affil(user, org, net, rir_data)`
 
-queue deskro ticket creation for asn automation action: affil
+Queue deskro ticket creation for asn automation action: affil.
 
 ---
 ## ticket_queue_asnauto_create
 `def ticket_queue_asnauto_create(user, org, net, rir_data, asn, org_created=False, net_created=False)`
 
-queue deskro ticket creation for asn automation action: create
+Queue deskro ticket creation for asn automation action: create.
 
 ---
 ## ticket_queue_asnauto_skipvq
 `def ticket_queue_asnauto_skipvq(request, org, net, rir_data)`
 
-queue deskro ticket creation for asn automation action: skip vq
+Queue deskro ticket creation for asn automation action: skip vq.
 
 ---
 ## ticket_queue_deletion_prevented
 `def ticket_queue_deletion_prevented(request, instance)`
 
-queue deskpro ticket to notify about the prevented
-deletion of an object #696
+Queue deskpro ticket to notify the prevented
+deletion of an object #696.
 
 ---
 ## ticket_queue_email_only
 `def ticket_queue_email_only(subject, body, email)`
 
-queue a deskpro ticket for creation
+Queue a deskpro ticket for creation.
 
 ---
 # Classes
@@ -72,10 +72,10 @@ Initialize self.  See help(type(self)) for accurate signature.
 FailingMockAPIClient(peeringdb_server.deskpro.MockAPIClient)
 ```
 
-A mock api client for the deskpro API
-that returns an error on post
+A mock API client for the deskpro API
+that returns an error on post.
 
-We use this in our tests, for example
+Use in tests, for example
 with issue 856.
 
 
@@ -90,7 +90,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 #### create_ticket
 `def create_ticket(self, ticket=None)`
 
-Creates a deskpro ticket using the deskpro API
+Create a deskpro ticket using the deskpro API.
 
 Arguments:
 
@@ -104,7 +104,7 @@ Arguments:
 MockAPIClient(peeringdb_server.deskpro.APIClient)
 ```
 
-A mock api client for the deskpro API
+A mock API client for the deskpro API.
 
 The IX-F importer uses this when
 IXF_SEND_TICKETS=False

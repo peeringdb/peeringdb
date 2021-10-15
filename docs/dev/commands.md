@@ -1,4 +1,4 @@
-Generated on 2021-10-06 18:04:54.446347
+Generated on 2021-10-15 07:56:57.136306
 
 ## _db_command.py
 
@@ -10,7 +10,7 @@ Regen the api cache files.
 
 ## pdb_api_test.py
 
-Series of integration/unit tests for the pdb api.
+Series of integration/unit tests for the PDB API.
 
 ## pdb_base_command.py
 
@@ -52,6 +52,10 @@ and org user group when it should be one or the other.
 ## pdb_generate_test_data.py
 
 Create test data. This will wipe all data locally, so use with caution. This command is NOT to be run on production or beta environments.
+
+## pdb_geo_normalize_existing.py
+
+Normalize existing address fields based on Google Maps API response.
 
 ## pdb_geosync.py
 

@@ -1,4 +1,4 @@
-Generated from rest.py on 2021-10-06 18:04:54.501582
+Generated from rest.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.rest
 
@@ -22,7 +22,7 @@ The peeringdb REST API is implemented through django-rest-framework.
 ## model_view_set
 `def model_view_set(model, methods=None, mixins=None)`
 
-shortcut for peeringdb models to generate viewset and register in the API urls
+Shortcut for peeringdb models to generate viewset and register in the API urls.
 
 ---
 # Classes
@@ -34,9 +34,9 @@ shortcut for peeringdb models to generate viewset and register in the API urls
 ASSetViewSet(peeringdb_server.rest.ReadOnlyMixin, rest_framework.viewsets.ModelViewSet)
 ```
 
-AS-SET endpoint
+AS-SET endpoint.
 
-lists all as sets mapped by asn
+List all as sets mapped by asn.
 
 
 ### Methods
@@ -75,8 +75,8 @@ DataMissingException(peeringdb_server.rest.DataException)
 ```
 
 ""
-Will be raised when the json data sent with a POST, PUT or PATCH
-request is missing
+Raised when the json data sent with a POST, PUT or PATCH
+request is missing.
 
 
 ### Methods
@@ -94,8 +94,8 @@ Initialize self.  See help(type(self)) for accurate signature.
 DataParseException(peeringdb_server.rest.DataException)
 ```
 
-Will be raised when the json data sent with a POST, PUT or PATCH
-request could not be parsed
+Raised when the json data sent with a POST, PUT or PATCH
+request could not be parsed.
 
 
 ### Methods
@@ -113,7 +113,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 FacilityViewSet(peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class
+Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
@@ -123,7 +123,7 @@ This should probably be moved to a common lib ?
 IXLanPrefixViewSet(peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class
+Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
@@ -133,7 +133,7 @@ This should probably be moved to a common lib ?
 IXLanViewSet(peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class
+Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
@@ -143,7 +143,7 @@ This should probably be moved to a common lib ?
 InternetExchangeFacilityViewSet(peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class
+Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
@@ -153,7 +153,7 @@ This should probably be moved to a common lib ?
 InternetExchangeMixin(builtins.object)
 ```
 
-Custom api endpoints for the internet exchange
+Custom API endpoints for the internet exchange
 object, exposed to api/ix/{id}/{action}
 
 
@@ -162,8 +162,8 @@ object, exposed to api/ix/{id}/{action}
 #### request_ixf_import
 `def request_ixf_import(self, request, *args, **kwargs)`
 
-Allows managers of an ix to request an ix-f import
-#779
+Allows managers of an ix to request an ix-f import.
+(#779)
 
 ---
 
@@ -173,7 +173,7 @@ Allows managers of an ix to request an ix-f import
 InternetExchangeViewSet(peeringdb_server.rest.InternetExchangeMixin, peeringdb_server.rest.ModelViewSet)
 ```
 
-Custom api endpoints for the internet exchange
+Custom API endpoints for the internet exchange
 object, exposed to api/ix/{id}/{action}
 
 
@@ -183,7 +183,7 @@ object, exposed to api/ix/{id}/{action}
 ModelViewSet(rest_framework.viewsets.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class
+Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
@@ -192,13 +192,13 @@ This should probably be moved to a common lib ?
 #### get_queryset
 `def get_queryset(self)`
 
-Prepare the queryset
+Prepare the queryset.
 
 ---
 #### partial_update
 `def partial_update(self, request, *args, **kwargs)`
 
-PATCH (partial update) is currently disabled
+PATCH (partial update) is currently disabled.
 
 ---
 #### require_data
@@ -206,13 +206,13 @@ PATCH (partial update) is currently disabled
 
 Test that the request contains data in its body that
 can be parsed to the required format (json) and is not
-empty
+empty.
 
 Will raise DataParseException error if request payload could
-not be parsed
+not be parsed.
 
 Will raise DataMissingException error if request payload is
-missing or was parsed to an empty object
+missing or was parsed to an empty object.
 
 ---
 
@@ -222,7 +222,7 @@ missing or was parsed to an empty object
 NetworkContactViewSet(peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class
+Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
@@ -232,7 +232,7 @@ This should probably be moved to a common lib ?
 NetworkFacilityViewSet(peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class
+Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
@@ -242,7 +242,7 @@ This should probably be moved to a common lib ?
 NetworkIXLanViewSet(peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class
+Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
@@ -252,7 +252,7 @@ This should probably be moved to a common lib ?
 NetworkViewSet(peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class
+Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
@@ -262,7 +262,7 @@ This should probably be moved to a common lib ?
 OrganizationViewSet(peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class
+Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
@@ -291,12 +291,12 @@ Initialize self.  See help(type(self)) for accurate signature.
 client_check(builtins.object)
 ```
 
-decorator that can be attached to rest viewset responses and will
+Decorator that can be attached to rest viewset responses and will
 generate an error response if the requesting peeringdb client
 is running a client or backend version that is incompatible with
-the server
+the server.
 
-compatibilty is controlled via facsimile during deploy and can
+Compatibilty is controlled via facsimile during deploy and can
 be configured in env.misc.api.compat
 
 
@@ -317,52 +317,52 @@ Initialize self.  See help(type(self)) for accurate signature.
 #### backend_max_version
 `def backend_max_version(self, backend)`
 
-return the max supported version for the specified backend
+Return the max supported version for the specified backend.
 
 ---
 #### backend_min_version
 `def backend_min_version(self, backend)`
 
-return the min supported version for the specified backend
+Return the min supported version for the specified backend.
 
 ---
 #### client_info
 `def client_info(self, request)`
 
-parse the useragent in the request and return client version
+Parse the useragent in the request and return client version
 info if possible.
 
-any connecting client that is NOT the peeringdb client will currently
-return an empty dict and not compatibility checking will be done
+Any connecting client that is NOT the peeringdb client will currently
+return an empty dict and not compatibility checking will be done.
 
 ---
 #### compat_check
 `def compat_check(self, request)`
 
-Check if the connecting client is compatible with the api
+Check if the connecting client is compatible with the API.
 
 This is currently only sensible when the request is made through
 the official peeringdb-py client, any other client will be
-passed through without checks
+passed through without checks.
 
-On incompatibility a ValueError is raised
+On incompatibility a ValueError is raised.
 
 ---
 #### version_pad
 `def version_pad(self, version)`
 
-take a semantic version tuple and zero pad to dev version
+Take a semantic version tuple and zero pad to dev version.
 
 ---
 #### version_string
 `def version_string(self, version)`
 
-take a semantic version tuple and turn into a "." delimited string
+Take a semantic version tuple and turn into a "." delimited string.
 
 ---
 #### version_tuple
 `def version_tuple(self, str_version)`
 
-take a semantic version string and turn into a tuple
+Take a semantic version string and turn into a tuple.
 
 ---

@@ -1,4 +1,4 @@
-Generated from serializers.py on 2021-10-06 18:04:54.501582
+Generated from serializers.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.serializers
 
@@ -19,19 +19,17 @@ method.
 ## nested
 `def nested(serializer, exclude=[], getter=None, through=None, **kwargs)`
 
-Use this function to created nested serializer fields since making
-depth work otherwise while fetching related lists via handlref remains
-to be a mystery
+Use this function to create nested serializer fields. Making
+depth work otherwise while fetching related lists via handlref remains a mystery.
 
 ---
 ## queryable_field_xl
 `def queryable_field_xl(fld)`
 
-Translate <fld>_id into <fld> and also take
-care of translating fac and net queries into "facility"
-and "network" queries
+Translate <fld>_id into <fld> and also translate fac and net queries into "facility"
+and "network" queries.
 
-FIXME: should be renamed on model schema
+FIXME: should be renamed on model schema.
 
 ---
 # Classes
@@ -65,7 +63,7 @@ AsnRdapValidator(builtins.object)
 ```
 
 A validator that queries rdap entries for the provided value (Asn)
-and will fail if no matching asn is found
+and will fail if no matching asn is found.
 
 
 ### Methods
@@ -120,7 +118,7 @@ FieldMethodValidator(builtins.object)
 ```
 
 A validator that will only allow a field to be set for certain
-methods
+methods.
 
 
 ### Methods
@@ -144,7 +142,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 GeocodeSerializerMixin(builtins.object)
 ```
 
-Overrides create() and update() method of serializer
+Override create() and update() method of serializer
 to normalize the location against the Google Maps Geocode API
 and resave the model instance with normalized address fields.
 
@@ -164,21 +162,21 @@ request, so that it ends up in the API response.
 `def _geosync_information_present(self, instance, validated_data)`
 
 Determine if there is enough address information
-to necessitate a geosync attempt
+to necessitate a geosync attempt.
 
 ---
 #### _need_geosync
 `def _need_geosync(self, instance, validated_data)`
 
-Determine if any geofields have changed that need normalization.
+Determine if any geofields that have changed need normalization.
 Returns False if the only change is that fields have been deleted.
 
 ---
 #### handle_geo_error
 `def handle_geo_error(self, exc, instance)`
 
-Issue #939 In the event that there is an error in geovalidating
-the address(including address not found), we return a warning in
+Issue #939: In the event that there is an error in geovalidating
+the address (including address not found), a warning is returned in
 the "meta" field of the response and null the latitude and
 longitude on the instance.
 
@@ -195,8 +193,8 @@ a address suggestion should be provided to the user.
 `def update(self, instance, validated_data)`
 
 When updating a geo-enabled object,
-we first want to update the model
-and then normalize the geofields
+update the model first
+and then normalize the geofields.
 
 ---
 
@@ -259,9 +257,9 @@ Possible relationship queries:
 #### create
 `def create(self, validated_data)`
 
-entities created via the api should go into the verification
+Entities created via the API should go into the verification
 queue with status pending if they are in the QUEUE_ENABLED
-list
+list.
 
 ---
 #### to_representation
@@ -277,13 +275,13 @@ Object instance -> Dict of primitive datatypes.
 ModelSerializer(rest_framework.serializers.ModelSerializer)
 ```
 
-ModelSerializer that provides pdb API with custom params
+ModelSerializer that provides DB API with custom params.
 
 Main problem with doing field ops here is data is already fetched, so while
-it's fine for single columns, it doesn't help on speed for fk relationships
-However data is not yet serialized so there may be some gain
+it's fine for single columns, it doesn't help on speed for fk relationships.
+However data is not yet serialized so there may be some gain.
 
-using custom method fields to introspect doesn't work at all, because
+Using custom method fields to introspect doesn't work at all, because
 they're not called until they're serialized, and then are called once per row,
 
 for example
@@ -296,14 +294,14 @@ class Meta:
         'test_depth',
         ...
 
-Best bet so far looks like overloading the single object get in the model
-view set, and adding on the relationships, but need to get to get the fields
+Best bet so far looks like overloading the single object GET in the model
+view set, and adding on the relationships, but need to GET to GET the fields
 defined yet not included in the query, may have to rewrite the base class,
 which would mean talking to the dev and committing back or we'll have this problem
-every update
+every update.
 
 After testing, the time is all in serialization and transfer, so culling
-related here should be fine
+related here should be fine.
 
 arg[0] is a queryset, but seems to have already been evaluated
 
@@ -328,45 +326,45 @@ These attributes / properties will be available on instances of the class
 #### default_depth
 `def default_depth(cls, is_list)`
 
-Return default depth according to whether resultset is list or single get
+Return default depth according to whether resultset is list or single GET.
 
 ---
 #### depth_from_request
 `def depth_from_request(cls, request, is_list)`
 
-Derive aproporiate depth parameter from request, depending on whether
-result set is a list or single object max and default depth will vary
+Derive aproporiate depth parameter from request. Max and default depth will vary depending on whether
+result set is a list or single object.
 
 This will return the depth specified in the request or the next best
-possible depth
+possible depth.
 
 ---
 #### is_unique_query
 `def is_unique_query(cls, request)`
 
-Check if the request parameters are expected to return a unique entity
+Check if the request parameters are expected to return a unique entity.
 
 ---
 #### max_depth
 `def max_depth(cls, is_list)`
 
-Return max depth according to whether resultset is list or single get
+Return max depth according to whether resultset is list or single GET.
 
 ---
 #### prefetch_related
 `def prefetch_related(cls, qset, request, prefetch=None, related=None, nested=, depth=None, is_list=False, single=None)`
 
-Prefetch related sets according to depth specified in the request
+Prefetch related sets according to depth specified in the request.
 
 Prefetched set data will be located off the instances in an attribute
 called "<tag>_set_active_prefetched" where tag is the handleref tag
-of the objects the set will be holding
+of the objects the set will be holding.
 
 ---
 #### queryable_relations
 `def queryable_relations(self)`
 
-Returns a list of all second level queryable relation fields
+Returns a list of all second level queryable relation fields.
 
 ---
 
@@ -381,46 +379,46 @@ Initialize self.  See help(type(self)) for accurate signature.
 #### create
 `def create(self, validated_data)`
 
-entities created via the api should go into the verification
+Entities created via the API should go into the verification
 queue with status pending if they are in the QUEUE_ENABLED
-list
+list.
 
 ---
 #### finalize_create
 `def finalize_create(self, request)`
 
-this will be called on the end of POST request to this serializer
+This will be called on the end of POST request to this serializer.
 
 ---
 #### finalize_delete
 `def finalize_delete(self, request)`
 
-this will be called on the end of DELETE request to this serializer
+This will be called on the end of DELETE request to this serializer.
 
 ---
 #### finalize_update
 `def finalize_update(self, request)`
 
-this will be called on the end of PUT request to this serializer
+This will be called on the end of PUT request to this serializer.
 
 ---
 #### run_validation
 `def run_validation(self, data=<class 'rest_framework.fields.empty'>)`
 
-Custom validation handling
+Custom validation handling.
 
 Will run the vanilla django-rest-framework validation but
 wrap it with logic to handle unique constraint errors to
 restore soft-deleted objects that are blocking a save on basis
-of a unique constraint violation
+of a unique constraint violation.
 
 ---
 #### save
 `def save(self, **kwargs)`
 
-entities created via api that have status pending should
+Entities created via API that have status pending should
 attempt to store which user created the item in the
-verification queue instance
+verification queue instance.
 
 ---
 #### to_representation
@@ -469,12 +467,12 @@ Possible relationship queries:
 #### run_validation
 `def run_validation(self, data=<class 'rest_framework.fields.empty'>)`
 
-Custom validation handling
+Custom validation handling.
 
 Will run the vanilla django-rest-framework validation but
 wrap it with logic to handle unique constraint errors to
 restore soft-deleted objects that are blocking a save on basis
-of a unique constraint violation
+of a unique constraint violation.
 
 ---
 
@@ -497,7 +495,7 @@ Possible relationship queries:
 #### prepare_query
 `def prepare_query(cls, qset, **kwargs)`
 
-Allows filtering by indirect relationships
+Allows filtering by indirect relationships.
 
 Currently supports: ix_id
 
@@ -508,20 +506,19 @@ Currently supports: ix_id
 #### _validate_network_contact
 `def _validate_network_contact(self, data)`
 
-Per github ticket #826, we only allow a Netixlan to be added
-if there is a network contact that the AC can get in touch
-with to resolve issues.
+Per github ticket #826, a Netixlan is only allowed to be added
+if there is a network contact that the AC can contact to resolve issues.
 
 ---
 #### run_validation
 `def run_validation(self, data=<class 'rest_framework.fields.empty'>)`
 
-Custom validation handling
+Custom validation handling.
 
 Will run the vanilla django-rest-framework validation but
 wrap it with logic to handle unique constraint errors to
 restore soft-deleted objects that are blocking a save on basis
-of a unique constraint violation
+of a unique constraint violation.
 
 ---
 
@@ -546,7 +543,7 @@ Possible realtionship queries:
 #### prepare_query
 `def prepare_query(cls, qset, **kwargs)`
 
-Allows filtering by indirect relationships
+Allows filtering by indirect relationships.
 
 Currently supports: ixlan_id, ix_id, netixlan_id, netfac_id, fac_id
 
@@ -557,15 +554,15 @@ Currently supports: ixlan_id, ix_id, netixlan_id, netfac_id, fac_id
 #### create
 `def create(self, validated_data)`
 
-entities created via the api should go into the verification
+Entities created via the API should go into the verification
 queue with status pending if they are in the QUEUE_ENABLED
-list
+list.
 
 ---
 #### finalize_create
 `def finalize_create(self, request)`
 
-this will be called on the end of POST request to this serializer
+This will be called on the end of POST request to this serializer.
 
 ---
 #### to_internal_value
@@ -604,7 +601,7 @@ ParentStatusException(builtins.OSError)
 ```
 
 Throw this when an object cannot be created because its parent is
-either status pending or deleted
+either status pending or deleted.
 
 
 ### Methods
@@ -623,18 +620,18 @@ RequestAwareListSerializer(rest_framework.serializers.ListSerializer)
 ```
 
 A List serializer that has access to the originating
-request
+request.
 
-We use this as the list serializer class for all nested lists
-so we can apply time filters to the resultset if the _ctf param
-is set in the request
+Used as the list serializer class for all nested lists
+so time filters can be applied to the resultset if the _ctf param
+is set in the request.
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- request (`@property`): Retrieve the request from the root serializer
+- request (`@property`): Retrieve the request from the root serializer.
 
 ### Methods
 
@@ -652,7 +649,7 @@ RequiredForMethodValidator(builtins.object)
 ```
 
 A validator that makes a field required for certain
-methods
+methods.
 
 
 ### Methods
@@ -676,7 +673,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 SaneIntegerField(rest_framework.fields.IntegerField)
 ```
 
-Integer field that renders null values to 0
+Integer field that renders null values to 0.
 
 
 ### Methods
@@ -696,7 +693,7 @@ SoftRequiredValidator(builtins.object)
 ```
 
 A validator that allows us to require that at least
-one of the specified fields is set
+one of the specified fields is set.
 
 
 ### Methods
@@ -723,9 +720,9 @@ SpatialSearchMixin(builtins.object)
 Mixin that enables spatial search for a model
 with address fields.
 
-At minimum a model needs a country and city field, but
+At minimum, a model needs a country and city field, but
 address1, address2, zipcode and state are also considered
-if they exist
+if they exist.
 
 
 ## UniqueFieldValidator
@@ -734,12 +731,12 @@ if they exist
 UniqueFieldValidator(builtins.object)
 ```
 
-For issue #70
+For issue #70:
 
-Django-side unique field validation
+Django-side unique field validation.
 
-This should ideally be done in mysql, however we need to clear out the other
-duplicates first, so we validate on the django side for now
+Ideally this is done in mysql, however the other
+duplicates need to be cleared first, so validate on the django side initially.
 
 
 ### Methods

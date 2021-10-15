@@ -1,4 +1,4 @@
-Generated from renderers.py on 2021-10-06 18:04:54.501582
+Generated from renderers.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.renderers
 
@@ -15,10 +15,10 @@ Ensure valid json output of the REST API.
 JSONEncoder(rest_framework.utils.encoders.JSONEncoder)
 ```
 
-Im defining our own json encoder here in order to be able to encode
+Define json encoder to be able to encode
 datatime and django countryfields.
 
-Im making the munge renderer use this encoder to encode json, this approach
+Make the munge renderer use this encoder to encode json. This approach
 may need to be tidied up a bit.
 
 
@@ -46,7 +46,7 @@ Does *not* apply JSON's character escaping for non-ascii characters.
 #### render
 `def render(self, data, accepted_media_type=None, renderer_context=None)`
 
-Tweak output rendering and pass to parent
+Tweak output rendering and pass to parent.
 
 ---
 

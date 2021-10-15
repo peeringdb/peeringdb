@@ -1,4 +1,4 @@
-Generated from ixf.py on 2021-10-06 18:04:54.446347
+Generated from ixf.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.ixf
 
@@ -20,11 +20,11 @@ A substantial part of the import logic is handled through models.py::IXFMemberDa
 MultipleVlansInPrefix(builtins.ValueError)
 ```
 
-This is error is raised when we find that an ix-f export contains
-multiple vlan ids for the prefixes defined in the processed ixlan
+This error is raised when an ix-f export contains
+multiple vlan ids for the prefixes defined in the processed ixlan.
 
 Since peeringdb treats each vlan as it's own exchange this currently
-is not a compatible setup for import (see #889)
+is not a compatible setup for import (see #889).
 
 
 ### Methods
@@ -42,7 +42,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 PostMortem(builtins.object)
 ```
 
-Generate postmortem report for ix-f import
+Generate postmortem report for ix-f import.
 
 
 ### Methods
@@ -50,7 +50,7 @@ Generate postmortem report for ix-f import
 #### _process_log_entry
 `def _process_log_entry(self, log, entry)`
 
-Process a single IX-F import log entry
+Process a single IX-F import log entry.
 
 Argument(s):
 
@@ -61,7 +61,7 @@ Argument(s):
 #### _process_logs
 `def _process_logs(self, limit=100)`
 
-Process IX-F import logs
+Process IX-F import logs.
 
 KeywordArgument(s):
 
@@ -72,7 +72,7 @@ KeywordArgument(s):
 #### generate
 `def generate(self, asn, **kwargs)`
 
-Generate and return a new postmortem report
+Generate and return a new postmortem report.
 
 Argument(s):
 
@@ -92,7 +92,7 @@ Returns:
 #### reset
 `def reset(self, asn, **kwargs)`
 
-Reset for a fresh run
+Reset for a fresh run.
 
 Argument(s):
 

@@ -1,4 +1,4 @@
-Generated from middleware.py on 2021-10-06 18:04:54.446347
+Generated from middleware.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.middleware
 
@@ -13,9 +13,9 @@ Custom django middleware.
 CurrentRequestContext(builtins.object)
 ```
 
-Middleware that sets the current request context
+Middleware that sets the current request context.
 
-This allows us to access the current request from anywhere we need to
+This allows access to the current request from anywhere.
 
 
 ### Methods

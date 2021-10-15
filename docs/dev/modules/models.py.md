@@ -1,4 +1,4 @@
-Generated from models.py on 2021-10-06 18:04:54.501582
+Generated from models.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.models
 
@@ -30,13 +30,13 @@ Please open a merge request in peeringdb/django-peeringdb for the field addition
 ## default_time_e
 `def default_time_e()`
 
-Returns datetime set to today with a time of 23:59:59
+Returns datetime set to today with a time of 23:59:59.
 
 ---
 ## default_time_s
 `def default_time_s()`
 
-Returns datetime set to today with a time of 00:00:00
+Returns datetime set to today with a time of 00:00:00.
 
 ---
 ## is_suggested
@@ -44,18 +44,18 @@ Returns datetime set to today with a time of 00:00:00
 
 Check if the network, facility or exchange is a suggested
 entity (is it a memeber of the organization designated to
-hold suggested entities)
+hold suggested entities).
 
 ---
 ## validate_PUT_ownership
 `def validate_PUT_ownership(permission_holder, instance, data, fields)`
 
-Helper function that checks if a user or api key has write perms to
+Helper function that checks if a user or API key has write perms to
 the instance provided as well as write perms to any
 child instances specified by fields as they exist on
-the model and in data
+the model and in data.
 
-example:
+Example:
 
 validate_PUT_ownership(
   request.user,
@@ -86,7 +86,7 @@ CommandLineTool(django.db.models.base.Model)
 ```
 
 Describes command line tool execution by a staff user inside the
-control panel (admin)
+control panel (admin).
 
 
 ### Methods
@@ -113,7 +113,7 @@ DeskProTicket(id, subject, body, user, email, created, published, deskpro_ref, d
 DeskProTicketCC(django.db.models.base.Model)
 ```
 
-Describes a contact to be cc'd on the deskpro ticket
+Describes a contact to be cc'd on the deskpro ticket.
 
 
 ## EnvironmentSetting
@@ -123,14 +123,14 @@ EnvironmentSetting(django.db.models.base.Model)
 ```
 
 Environment settings overrides controlled through
-django admin (/cp)
+django admin (/cp).
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- value (`@property`): Get the value for this setting
+- value (`@property`): Get the value for this setting.
 
 ### Class Methods
 
@@ -138,10 +138,10 @@ These attributes / properties will be available on instances of the class
 `def get_setting_value(cls, setting)`
 
 Get the current value of the setting specified by
-it's setting name
+its setting name.
 
 If no instance has been saved for the specified setting
-the default value will be returned
+the default value will be returned.
 
 ---
 
@@ -150,7 +150,7 @@ the default value will be returned
 #### set_value
 `def set_value(self, value)`
 
-Update the value for this setting
+Update the value for this setting.
 
 ---
 
@@ -160,7 +160,7 @@ Update the value for this setting
 Facility(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.FacilityBase, peeringdb_server.models.GeocodeBaseMixin)
 ```
 
-Describes a peeringdb facility
+Describes a peeringdb facility.
 
 
 ### Instanced Attributes
@@ -177,13 +177,13 @@ of the following is True:
 - has an exchange facility under it with status=ok
 - grainy_namespace (`@property`): None
 - ixfac_set_active (`@property`): Returns queryset of active InternetExchangeFacility objects connected
-to this facility
+to this facility.
 - netfac_set_active (`@property`): Returns queryset of active NetworkFacility objects connected to this
-facility
+facility.
 - search_result_name (`@property`): This will be the name displayed for quick search matches
-of this entity
-- sponsorship (`@property`): Returns sponsorship oject for this facility (through the owning org)
-- view_url (`@property`): Return the URL to this facility's web view
+of this entity.
+- sponsorship (`@property`): Returns sponsorship oject for this facility (through the owning org).
+- view_url (`@property`): Return the URL to this facility's web view.
 
 ### Class Methods
 
@@ -211,7 +211,7 @@ Relationship through netfac -> net
 Returns queryset of Facility objects
 that have a relationship to all asns specified in `asns`
 
-Relationship through netfac
+Relationship through netfac.
 
 Arguments:
     - asns <list>: list of asns
@@ -237,7 +237,7 @@ Relationship through ixfac -> ix
 
 Returns queryset of Facility objects that
 are related to ALL networks specified in the value list
-(a list of integer network ids)
+(a list of integer network ids).
 
 Used in Advanced Search (ALL search).
 Relationship through netfac -> net
@@ -259,7 +259,7 @@ Relationship through netfac -> net
 GeoCoordinateCache(django.db.models.base.Model)
 ```
 
-Stores geocoordinates for address lookups
+Stores geocoordinates for address lookups.
 
 
 ## GeocodeBaseMixin
@@ -268,26 +268,26 @@ Stores geocoordinates for address lookups
 GeocodeBaseMixin(django.db.models.base.Model)
 ```
 
-Mixin to use for geocode enabled entities
-Allows an entity to be geocoded with the pdb_geo_sync command
+Mixin to use for geocode enabled entities.
+Allows an entity to be geocoded with the pdb_geo_sync command.
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- geocode_address (`@property`): Returns an address string suitable for geo api query
-- geocode_coordinates (`@property`): Return a tuple holding the latitude and longitude
+- geocode_address (`@property`): Returns an address string suitable for geo API query.
+- geocode_coordinates (`@property`): Return a tuple holding the latitude and longitude.
 
 ### Methods
 
 #### process_geo_location
 `def process_geo_location(self, geocode=True, save=True)`
 
-Sets longitude and latitude
+Sets longitude and latitude.
 
 Will return a dict containing normalized address
-data
+data.
 
 ---
 
@@ -319,7 +319,7 @@ These attributes / properties will be available on instances of the class
 - ac_netixlan_url (`@property`): None
 - ac_url (`@property`): None
 - action (`@property`): Returns the implied action of applying this
-entry to peeringdb
+entry to peeringdb.
 
 Will return either "add", "modify", "delete" or "noop"
 - actionable_changes (`@property`): None
@@ -327,16 +327,16 @@ Will return either "add", "modify", "delete" or "noop"
 by exchange or network.
 
 If actionable will return self.error otherwise
-will return None
+will return None.
 - actionable_for_network (`@property`): Returns whether or not the proposed action by
 this IXFMemberData instance is actionable by
-the network
+the network.
 - changed_fields (`@property`): Returns a comma separated string of field names
-for changes proposed by this IXFMemberData instance
+for changes proposed by this IXFMemberData instance.
 - changes (`@property`): Returns a dict of changes (field, value)
-between this entry and the related netixlan
+between this entry and the related netixlan.
 
-If an empty dict is returned that means no changes
+If an empty dict is returned that means no changes.
 
 ```
 {
@@ -347,38 +347,38 @@ If an empty dict is returned that means no changes
 }
 ```
 - has_requirements (`@property`): Return whether or not this IXFMemberData has
-other IXFMemberData objects as requirements
+other IXFMemberData objects as requirements.
 - ipaddr4_on_requirement (`@property`): Returns true if the ipv4 address claimed by this IXFMemberData
-object exists on one of it's requirement IXFMemberData objects
+object exists on one of its requirement IXFMemberData objects.
 - ipaddr6_on_requirement (`@property`): Returns true if the ipv6 address claimed by this IXFMemberData
-object exists on one of it's requirement IXFMemberData objects
+object exists on one of its requirement IXFMemberData objects.
 - ix (`@property`): Returns the InternetExchange instance related to
-this entry
+this entry.
 - ix_contacts (`@property`): Returns a list of email addresses that
 are suitable contact points for conflict resolution
-at the exchange end
+at the exchange end.
 - ixf_id (`@property`): Returns a tuple that identifies the ix-f member
-as a unqiue record by asn, ip4 and ip6 address
+as a unqiue record by asn, ip4 and ip6 address.
 - ixf_id_pretty_str (`@property`): None
 - json (`@property`): Returns dict for self.data
 - marked_for_removal (`@property`): Returns whether or not this entry implies that
 the related netixlan should be removed.
 
 We do this by checking if the ix-f data was provided
-or not
+or not.
 - modify_is_rs_peer (`@property`): Returns whether or not the `is_rs_peer` property
-is enabled to receive modify updates or not (#793)
+is enabled to receive modify updates or not (#793).
 - modify_speed (`@property`): Returns whether or not the `speed` property
-is enabled to receive modify updates or not (#793)
+is enabled to receive modify updates or not (#793).
 - net (`@property`): Returns the Network instance related to
-this entry
+this entry.
 - net_contacts (`@property`): Returns a list of email addresses that
 are suitable contact points for conflict resolution
-at the network's end
+at the network's end.
 - net_present_at_ix (`@property`): Returns whether or not the network associated with
 this IXFMemberData instance currently has a presence
 at the exchange associated with this IXFMemberData
-instance
+instance.
 - netixlan (`@property`): Will either return a matching existing netixlan
 instance (asn,ip4,ip6) or a new netixlan if
 a matching netixlan does not currently exist.
@@ -386,18 +386,18 @@ a matching netixlan does not currently exist.
 Any new netixlan will NOT be saved at this point.
 
 Note that the netixlan that matched may be currently
-soft-deleted (status=="deleted")
+soft-deleted (status=="deleted").
 - netixlan_exists (`@property`): Returns whether or not an active netixlan exists
 for this IXFMemberData instance.
 - previous_data (`@property`): None
 - previous_error (`@property`): None
 - primary_requirement (`@property`): Return the initial requirement IXFMemberData
 for this IXFMemberData instance, None if there
-isn't any
+isn't any.
 - remote_changes (`@property`): Returns a dict of changed fields between previously
-fetched IX-F data and current IX-F data
+fetched IX-F data and current IX-F data.
 
-If an empty dict is returned that means no changes
+If an empty dict is returned that means no changes.
 
 ```
 {
@@ -411,15 +411,15 @@ If an empty dict is returned that means no changes
 had data at the IX-F source.
 
 If not it indicates that it does not exist at the
-ix-f source
+ix-f source.
 - requirements (`@property`): Returns list of all IXFMemberData objects
 that are still active requirements for this
-IXFMemberData object
+IXFMemberData object.
 - secondary_requirements (`@property`): Return a list of secondary requirement IXFMemberData
 objects for this IXFMemberData object. Currently this
 only happens on add proposals that require two netixlans
 to be deleted because both ipaddresses exist on separate
-netixlans (#770)
+netixlans (#770).
 
 ### Class Methods
 
@@ -427,7 +427,7 @@ netixlans (#770)
 `def dismissed_for_network(cls, net)`
 
 Returns queryset for IXFMemberData objects that match
-a network's asn and are currenlty flagged as dismissed
+a network's asn and are currenlty flagged as dismissed.
 
 Argument(s):
 
@@ -437,8 +437,8 @@ Argument(s):
 #### get_for_network
 `def get_for_network(cls, net)`
 
-Returns aueryset for IXFMemberData objects that match
-a network's asn
+Returns queryset for IXFMemberData objects that match
+a network's asn.
 
 Argument(s):
 
@@ -448,9 +448,9 @@ Argument(s):
 #### id_filters
 `def id_filters(cls, asn, ipaddr4, ipaddr6, check_protocols=True)`
 
-returns a dict of filters to use with a
+Returns a dict of filters to use with a
 IXFMemberData or NetworkIXLan query set
-to retrieve a unique entry
+to retrieve a unique entry.
 
 ---
 #### instantiate
@@ -460,9 +460,9 @@ Returns an IXFMemberData object.
 
 It will take into consideration whether or not an instance
 for this object already exists (as identified by asn and ip
-addresses)
+addresses).
 
-It will also update the value of `fetched` to now
+It will also update the value of `fetched` to now.
 
 Keyword Argument(s):
 
@@ -476,7 +476,7 @@ Keyword Argument(s):
 
 Returns whether or not the specified network has
 any dismissed IXFMemberData suggestions that are
-actionable
+actionable.
 
 Argument(s):
 
@@ -487,7 +487,7 @@ Argument(s):
 `def proposals_for_network(cls, net)`
 
 Returns a dict containing actionable proposals for
-a network
+a network.
 
 ```
 {
@@ -520,10 +520,10 @@ Return str(self).
 Applies the data.
 
 This will either create, update or delete a netixlan
-object
+object.
 
 Will return a dict containing action and netixlan
-affected
+affected.
 
 ```
 {
@@ -545,7 +545,7 @@ Keyword Argument(s):
 #### apply_requirements
 `def apply_requirements(self, save=True)`
 
-Apply all requirements
+Apply all requirements.
 
 ---
 #### grab_validation_errors
@@ -561,7 +561,7 @@ Any validation errors will be stored to self.error
 `def render_notification(self, template_file, recipient, context=None)`
 
 Renders notification text for this ixfmemberdata
-instance
+instance.
 
 Argument(s):
 
@@ -576,7 +576,7 @@ Argument(s):
 
 Persist this IXFMemberData instance and send out notifications
 for proposed creation of netixlan instance to ac, ix and net
-as warranted
+as warranted.
 
 ---
 #### set_conflict
@@ -584,14 +584,13 @@ as warranted
 
 Persist this IXFMemberData instance and send out notifications
 for conflict (validation issues) for modifications proposed
-to the corresponding netixlan to ac, ix and net as warranted
-as warranted
+to the corresponding netixlan to ac, ix and net as warranted.
 
 ---
 #### set_data
 `def set_data(self, data)`
 
-Stores a dict in self.data as a json string
+Stores a dict in self.data as a json string.
 
 ---
 #### set_remove
@@ -599,24 +598,24 @@ Stores a dict in self.data as a json string
 
 Persist this IXFMemberData instance and send out notifications
 for proposed removal of netixlan instance to ac, net and ix
-as warranted
+as warranted.
 
 ---
 #### set_requirement
 `def set_requirement(self, ixf_member_data, save=True)`
 
 Sets another IXFMemberData object to be a requirement
-of the resolution of this IXFMemberData object
+of the resolution of this IXFMemberData object.
 
 ---
 #### set_resolved
 `def set_resolved(self, save=True)`
 
 Marks this IXFMemberData instance as resolved and
-send out notifications to ac,ix and net if
-warranted
+sends out notifications to ac,ix and net if
+warranted.
 
-this will delete the IXFMemberData instance
+This will delete the IXFMemberData instance.
 
 ---
 #### set_update
@@ -624,20 +623,20 @@ this will delete the IXFMemberData instance
 
 Persist this IXFMemberData instance and send out notifications
 for proposed modification to the corresponding netixlan
-instance to ac, ix and net as warranted
+instance to ac, ix and net as warranted.
 
 ---
 #### validate_speed
 `def validate_speed(self)`
 
 Speed errors in ix-f data are raised during parse
-and speed will be on the attribute
+and speed will be on the attribute.
 
-In order to properly handle invalid speed values
-we check if speed is 0 and if there was a parsing
-error for it, and if so raise a validation error
+In order to properly handle invalid speed values,
+check if speed is 0 and if there was a parsing
+error for it, and if so raise a validation error.
 
-TODO: find a better way to do this
+TODO: find a better way to do this.
 
 ---
 
@@ -647,18 +646,18 @@ TODO: find a better way to do this
 IXLan(django_peeringdb.models.abstract.IXLanBase)
 ```
 
-Describes a LAN at an exchange
+Describes a LAN at an exchange.
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- descriptive_name (`@property`): Returns a descriptive label of the ixlan for logging purposes
+- descriptive_name (`@property`): Returns a descriptive label of the ixlan for logging purposes.
 - grainy_namespace (`@property`): None
-- ixpfx_set_active (`@property`): Returns queryset of active prefixes at this ixlan
-- ixpfx_set_active_or_pending (`@property`): Returns queryset of active or pending prefixes at this ixlan
-- netixlan_set_active (`@property`): Returns queryset of active netixlan objects at this ixlan
+- ixpfx_set_active (`@property`): Returns queryset of active prefixes at this ixlan.
+- ixpfx_set_active_or_pending (`@property`): Returns queryset of active or pending prefixes at this ixlan.
+- netixlan_set_active (`@property`): Returns queryset of active netixlan objects at this ixlan.
 
 ### Class Methods
 
@@ -690,7 +689,7 @@ This function allows for sane adding of netixlan object under
 this ixlan.
 
 It will take into account whether an ipaddress can be claimed from a
-soft-deleted netixlan or whether or not an object already exists
+soft-deleted netixlan or whether an object already exists
 that should be updated instead of creating a new netixlan instance.
 
 Arguments:
@@ -717,19 +716,19 @@ have a special-case association with the field defined by NON_FIELD_ERRORS.
 #### related_label
 `def related_label(self)`
 
-Used by grappelli autocomplete for representation
+Used by grappelli autocomplete for representation.
 
 ---
 #### test_ipv4_address
 `def test_ipv4_address(self, ipv4)`
 
-test that the ipv4 a exists in one of the prefixes in this ixlan
+Test that the ipv4 a exists in one of the prefixes in this ixlan.
 
 ---
 #### test_ipv6_address
 `def test_ipv6_address(self, ipv6)`
 
-test that the ipv6 address exists in one of the prefixes in this ixlan
+Test that the ipv6 address exists in one of the prefixes in this ixlan.
 
 ---
 
@@ -740,7 +739,7 @@ IXLanIXFMemberImportAttempt(django.db.models.base.Model)
 ```
 
 Holds information about the most recent ixf member import
-attempt for an ixlan
+attempt for an ixlan.
 
 
 ## IXLanIXFMemberImportLog
@@ -750,7 +749,7 @@ IXLanIXFMemberImportLog(django.db.models.base.Model)
 ```
 
 Import log of a IX-F member import that changed or added at least one
-netixlan under the specified ixlans
+netixlan under the specified ixlans.
 
 
 ### Methods
@@ -758,7 +757,7 @@ netixlan under the specified ixlans
 #### rollback
 `def rollback(*args, **kwds)`
 
-Attempt to rollback the changes described in this log
+Attempt to rollback the changes described in this log.
 
 ---
 
@@ -770,7 +769,7 @@ IXLanIXFMemberImportLogEntry(django.db.models.base.Model)
 
 IX-F member import log entry that holds the affected netixlan and
 the netixlan's version after the change, which can be used to rollback
-the change
+the change.
 
 
 ### Instanced Attributes
@@ -778,9 +777,9 @@ the change
 These attributes / properties will be available on instances of the class
 
 - changes (`@property`): Returns a dict of changes between the netixlan version
-saved by the ix-f import and the version before
+saved by the ix-f import and the version before.
 
-Fields `created`, `updated` and `version` will be ignored
+Fields `created`, `updated` and `version` will be ignored.
 
 ## IXLanPrefix
 
@@ -788,7 +787,7 @@ Fields `created`, `updated` and `version` will be ignored
 IXLanPrefix(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.IXLanPrefixBase)
 ```
 
-Descries a Prefix at an Exchange LAN
+Descries a Prefix at an Exchange LAN.
 
 
 ### Instanced Attributes
@@ -803,7 +802,7 @@ of the following is True:
 
 - parent ixlan has netixlans that fall into
   its address space
-- descriptive_name (`@property`): Returns a descriptive label of the ixpfx for logging purposes
+- descriptive_name (`@property`): Returns a descriptive label of the ixpfx for logging purposes.
 - grainy_namespace (`@property`): None
 
 ### Class Methods
@@ -812,7 +811,7 @@ of the following is True:
 `def related_to_ix(cls, value=None, filt=None, field=ix_id, qset=None)`
 
 Filter queryset of ixpfx objects related to exchange via ix_id match
-according to filter
+according to filter.
 
 Relationship through ixlan -> ix
 
@@ -821,7 +820,7 @@ Relationship through ixlan -> ix
 `def whereis_ip(cls, ipaddr, qset=None)`
 
 Filter queryset of ixpfx objects where the prefix contains
-the supplied ipaddress
+the supplied ipaddress.
 
 ---
 
@@ -836,13 +835,13 @@ Return str(self).
 #### clean
 `def clean(self)`
 
-Custom model validation
+Custom model validation.
 
 ---
 #### test_ip_address
 `def test_ip_address(self, addr)`
 
-Checks if this prefix can contain the specified ip address
+Checks if this prefix can contain the specified ip address.
 
 Arguments:
     - addr (ipaddress.IPv4Address or ipaddress.IPv6Address or unicode): ip address
@@ -862,7 +861,7 @@ Returns:
 InternetExchange(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.InternetExchangeBase)
 ```
 
-Describes a peeringdb exchange
+Describes a peeringdb exchange.
 
 
 ### Instanced Attributes
@@ -883,30 +882,30 @@ even if net_count signals are not being used.
 - derived_proto_ipv6 (`@property`): Returns a value for "proto_ipv6" derived from the exchanges's
 ixpfx records.
 
-If the ix has a IPv6 ixpfx, proto_ipv6 should be True
+If the ix has a IPv6 ixpfx, proto_ipv6 should be True.
 - derived_proto_unicast (`@property`): Returns a value for "proto_unicast" derived from the exchanges's
 ixpfx records.
 
-If the ix has a IPv4 ixpfx, proto_unicast should be True
+If the ix has a IPv4 ixpfx, proto_unicast should be True.
 - grainy_namespace (`@property`): None
-- ixf_import_css (`@property`): returns the appropriate bootstrap alert class
-depending on recent import request status
+- ixf_import_css (`@property`): Returns the appropriate bootstrap alert class
+depending on recent import request status.
 - ixf_import_request_recent_status (`@property`): Returns the recent ixf import request status as a tuple
-of value, display
-- ixfac_set_active (`@property`): Returns queryset of active ixfac objects at this exchange
-- ixlan (`@property`): Returns the ixlan for this exchange
+of value, display.
+- ixfac_set_active (`@property`): Returns queryset of active ixfac objects at this exchange.
+- ixlan (`@property`): Returns the ixlan for this exchange.
 
-As per #21 each exchange will get one ixlan with a matching
+As per #21, each exchange will get one ixlan with a matching
 id, but the schema is to remain unchanged until a major
 version bump.
-- ixlan_set_active (`@property`): Returns queryset of active ixlan objects at this exchange
+- ixlan_set_active (`@property`): Returns queryset of active ixlan objects at this exchange.
 - ixlan_set_active_or_pending (`@property`): Returns queryset of active or pending ixlan objects at
-this exchange
-- networks (`@property`): Returns all active networks at this exchange
+this exchange.
+- networks (`@property`): Returns all active networks at this exchange.
 - search_result_name (`@property`): This will be the name displayed for quick search matches
-of this entity
-- sponsorship (`@property`): Returns sponsorship object for this exchange (through owning org)
-- view_url (`@property`): Return the URL to this facility's web view
+of this entity.
+- sponsorship (`@property`): Returns sponsorship object for this exchange (through owning org).
+- view_url (`@property`): Return the URL to this facility's web view.
 
 ### Class Methods
 
@@ -968,7 +967,7 @@ Relationship through ixfac -> fac
 `def related_to_ipblock(cls, ipblock, qset=None)`
 
 Returns queryset of InternetExchange objects that
-have ixlan prefixes matching the ipblock specified
+have ixlan prefixes matching the ipblock specified.
 
 Relationship  through ixlan -> ixpfx
 
@@ -979,7 +978,7 @@ Relationship  through ixlan -> ixpfx
 Returns queryset of InternetExchange objects that
 are related to IXfac link specified by ixfac_id
 
-Relationship through ixfac
+Relationship through ixfac.
 
 ---
 #### related_to_ixlan
@@ -988,7 +987,7 @@ Relationship through ixfac
 Returns queryset of InternetExchange objects that
 are related to IXLan specified by ixlan_id
 
-Relationship through ixlan
+Relationship through ixlan.
 
 ---
 #### related_to_multiple_networks
@@ -996,7 +995,7 @@ Relationship through ixlan
 
 Returns queryset of InternetExchange objects that
 are related to ALL networks specified in the value list
-(a list of integer network ids)
+(a list of integer network ids).
 
 Used in Advanced Search (ALL search).
 Relationship through netixlan -> ixlan
@@ -1027,7 +1026,7 @@ have a special-case association with the field defined by NON_FIELD_ERRORS.
 `def save(self, create_ixlan=True, **kwargs)`
 
 When an internet exchange is saved, make sure the ixlan for it
-exists
+exists.
 
 Keyword Argument(s):
 
@@ -1039,7 +1038,7 @@ Keyword Argument(s):
 `def vq_approve(self)`
 
 Called when internet exchange is approved in verification
-queue
+queue.
 
 ---
 
@@ -1049,14 +1048,14 @@ queue
 InternetExchangeFacility(django_peeringdb.models.abstract.InternetExchangeFacilityBase)
 ```
 
-Describes facility to exchange relationship
+Describes facility to exchange relationship.
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- descriptive_name (`@property`): Returns a descriptive label of the ixfac for logging purposes
+- descriptive_name (`@property`): Returns a descriptive label of the ixfac for logging purposes.
 - grainy_namespace (`@property`): None
 
 ### Class Methods
@@ -1065,27 +1064,27 @@ These attributes / properties will be available on instances of the class
 `def related_to_city(cls, value=None, filt=None, field=facility__city, qset=None)`
 
 Filter queryset of ixfac objects related to city via match
-in facility__city according to filter
+in facility__city according to filter.
 
-Relationship through facility
+Relationship through facility.
 
 ---
 #### related_to_country
 `def related_to_country(cls, value=None, filt=None, field=facility__country, qset=None)`
 
 Filter queryset of ixfac objects related to country via match
-in facility__country according to filter
+in facility__country according to filter.
 
-Relationship through facility
+Relationship through facility.
 
 ---
 #### related_to_name
 `def related_to_name(cls, value=None, filt=None, field=facility__name, qset=None)`
 
 Filter queryset of ixfac objects related to facilities with name match
-in facility__name according to filter
+in facility__name according to filter.
 
-Relationship through facility
+Relationship through facility.
 
 ---
 
@@ -1095,7 +1094,7 @@ Relationship through facility
 Network(django_peeringdb.models.abstract.NetworkBase)
 ```
 
-Describes a peeringdb network
+Describes a peeringdb network.
 
 
 ### Instanced Attributes
@@ -1106,30 +1105,30 @@ These attributes / properties will be available on instances of the class
 - ipv4_support (`@property`): None
 - ipv6_support (`@property`): None
 - ixlan_set_active (`@property`): Returns IXLan queryset for ixlans connected to this network
-through NetworkIXLan
+through NetworkIXLan.
 - ixlan_set_ixf_enabled (`@property`): Returns IXLan queryset for IX-F import enabled ixlans connected
-to this network throught NetworkIXLan
+to this network through NetworkIXLan.
 - netfac_set_active (`@property`): None
 - netixlan_set_active (`@property`): None
 - poc_set_active (`@property`): None
 - search_result_name (`@property`): This will be the name displayed for quick search matches
-of this entity
+of this entity.
 - sponsorship (`@property`): None
-- view_url (`@property`): Return the URL to this networks web view
-- view_url_asn (`@property`): Return the URL to this networks web view
+- view_url (`@property`): Return the URL to this networks web view.
+- view_url_asn (`@property`): Return the URL to this networks web view.
 
 ### Class Methods
 
 #### as_set_map
 `def as_set_map(cls, qset=None)`
 
-Returns a dict mapping asns to their irr_as_set value
+Returns a dict mapping asns to their irr_as_set value.
 
 ---
 #### create_from_rdap
 `def create_from_rdap(*args, **kwds)`
 
-Creates network from rdap result object
+Creates network from rdap result object.
 
 ---
 #### not_related_to_fac
@@ -1145,7 +1144,7 @@ Relationship through netfac -> fac
 `def not_related_to_ix(cls, value=None, filt=None, field=ix_id, qset=None)`
 
 Filter queryset of Network objects not related to the ix
-specified by ix_id (as in networks not present at the exchange)
+specified by ix_id (as in networks not present at the exchange).
 
 Relationship through netixlan -> ixlan -> ix
 
@@ -1192,7 +1191,7 @@ Relationship through netfac
 Filter queryset of Network objects related to the netixlan link
 specified by netixlan_id
 
-Relationship through netixlan
+Relationship through netixlan.
 
 ---
 
@@ -1201,7 +1200,7 @@ Relationship through netixlan
 #### clean
 `def clean(self)`
 
-Custom model validation
+Custom model validation.
 
 ---
 
@@ -1211,7 +1210,7 @@ Custom model validation
 NetworkContact(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.ContactBase)
 ```
 
-Describes a contact point (phone, email etc.) for a network
+Describes a contact point (phone, email etc.) for a network.
 
 
 ### Instanced Attributes
@@ -1245,14 +1244,14 @@ have a special-case association with the field defined by NON_FIELD_ERRORS.
 NetworkFacility(django_peeringdb.models.abstract.NetworkFacilityBase)
 ```
 
-Describes a network <-> facility relationship
+Describes a network <-> facility relationship.
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- descriptive_name (`@property`): Returns a descriptive label of the netfac for logging purposes
+- descriptive_name (`@property`): Returns a descriptive label of the netfac for logging purposes.
 - grainy_namespace (`@property`): None
 
 ### Class Methods
@@ -1261,27 +1260,27 @@ These attributes / properties will be available on instances of the class
 `def related_to_city(cls, value=None, filt=None, field=facility__city, qset=None)`
 
 Filter queryset of netfac objects related to city via match
-in facility__city according to filter
+in facility__city according to filter.
 
-Relationship through facility
+Relationship through facility.
 
 ---
 #### related_to_country
 `def related_to_country(cls, value=None, filt=None, field=facility__country, qset=None)`
 
 Filter queryset of netfac objects related to country via match
-in facility__country according to filter
+in facility__country according to filter.
 
-Relationship through facility
+Relationship through facility.
 
 ---
 #### related_to_name
 `def related_to_name(cls, value=None, filt=None, field=facility__name, qset=None)`
 
 Filter queryset of netfac objects related to facilities with name match
-in facility__name according to filter
+in facility__name according to filter.
 
-Relationship through facility
+Relationship through facility.
 
 ---
 
@@ -1303,21 +1302,19 @@ have a special-case association with the field defined by NON_FIELD_ERRORS.
 NetworkIXLan(django_peeringdb.models.abstract.NetworkIXLanBase)
 ```
 
-Describes a network relationship to an IX through an IX Lan
+Describes a network relationship to an IX through an IX Lan.
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- descriptive_name (`@property`): Returns a descriptive label of the netixlan for logging purposes
+- descriptive_name (`@property`): Returns a descriptive label of the netixlan for logging purposes.
 - grainy_namespace (`@property`): None
-- ix_id (`@property`): Returns the exchange id for this netixlan
-- ix_name (`@property`): Returns the exchange name for this netixlan
+- ix_id (`@property`): Returns the exchange id for this netixlan.
+- ix_name (`@property`): Returns the exchange name for this netixlan.
 - ixf_id (`@property`): Returns a tuple that identifies the netixlan
-in the context of an ix-f member data entry
-
-as a unqiue record by asn, ip4 and ip6 address
+in the context of an ix-f member data entry as a unqiue record by asn, ip4 and ip6 address.
 - ixf_id_pretty_str (`@property`): None
 - name (`@property`): None
 
@@ -1336,7 +1333,7 @@ Relationship through ixlan -> ix
 `def related_to_name(cls, value=None, filt=None, field=ix__name, qset=None)`
 
 Filter queryset of netixlan objects related to exchange via a name match
-according to filter
+according to filter.
 
 Relationship through ixlan -> ix
 
@@ -1347,27 +1344,27 @@ Relationship through ixlan -> ix
 #### clean
 `def clean(self)`
 
-Custom model validation
+Custom model validation.
 
 ---
 #### descriptive_name_ipv
 `def descriptive_name_ipv(self, version)`
 
-Returns a descriptive label of the netixlan for logging purposes
-Will only contain the ipaddress matching the specified version
+Returns a descriptive label of the netixlan for logging purposes.
+Will only contain the ipaddress matching the specified version.
 
 ---
 #### ipaddr
 `def ipaddr(self, version)`
 
-Return the netixlan's ipaddr for ip version
+Return the netixlan's ipaddr for ip version.
 
 ---
 #### ipaddress_conflict
 `def ipaddress_conflict(self)`
 
 Checks whether the ip addresses specified on this netixlan
-exist on another netixlan (with status="ok")
+exist on another netixlan (with status="ok").
 
 Returns:
     - tuple(bool, bool): tuple of two booleans, first boolean is
@@ -1383,8 +1380,8 @@ Returns:
 NetworkProtocolsDisabled(builtins.ValueError)
 ```
 
-raised when a network has both ipv6 and ipv4 support
-disabled during ix-f import
+Raised when a network has both ipv6 and ipv4 support
+disabled during ix-f import.
 
 
 ## Organization
@@ -1393,56 +1390,56 @@ disabled during ix-f import
 Organization(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.OrganizationBase, peeringdb_server.models.GeocodeBaseMixin)
 ```
 
-Describes a peeringdb organization
+Describes a peeringdb organization.
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- admin_group_name (`@property`): Returns admin usergroup name for this organization
-- admin_url (`@property`): Return the admin url for this organization (in /cp)
-- admin_usergroup (`@property`): Returns the admin usergroup for this organization
-- all_users (`@property`): returns a set of all users in the org's user and admin groups
+- admin_group_name (`@property`): Returns admin usergroup name for this organization.
+- admin_url (`@property`): Return the admin URL for this organization (in /cp).
+- admin_usergroup (`@property`): Returns the admin usergroup for this organization.
+- all_users (`@property`): Returns a set of all users in the org's user and admin groups.
 - deletable (`@property`): Returns whether or not the organization is currently
 in a state where it can be marked as deleted.
 
-This will be False for organization's of which ANY
+This will be False for organizations of which ANY
 of the following is True:
 
 - has a network under it with status=ok
 - has a facility under it with status=ok
 - has an exchange under it with status=ok
-- fac_set_active (`@property`): Returns queryset holding active facilities in this organization
+- fac_set_active (`@property`): Returns queryset holding active facilities in this organization.
 - grainy_namespace (`@property`): None
 - grainy_namespace_manage (`@property`): Org administrators need CRUD to this namespace in order
 to execute administrative actions (user management, user permission
-management)
-- group_name (`@property`): Returns usergroup name for this organization
-- ix_set_active (`@property`): Returns queryset holding active exchanges in this organization
-- net_set_active (`@property`): Returns queryset holding active networks in this organization
+management).
+- group_name (`@property`): Returns usergroup name for this organization.
+- ix_set_active (`@property`): Returns queryset holding active exchanges in this organization.
+- net_set_active (`@property`): Returns queryset holding active networks in this organization.
 - owned (`@property`): Returns whether or not the organization has been claimed
-by any users
+by any users.
 - pending_affiliations (`@property`): Returns queryset holding pending affiliations to this
-organization
+organization.
 - rdap_collect (`@property`): Fetche rdap results for all networks under this org and returns
-them by asn
+them by asn.
 - search_result_name (`@property`): This will be the name displayed for quick search matches
-of this entity
+of this entity.
 - sponsorship (`@property`): Returns sponsorship object for this organization. If the organization
-has no sponsorship ongoing return None
+has no sponsorship ongoing return None.
 - urls (`@property`): Returns all the websites for the org based on its
 website field and the website fields on all the entities it
-owns
-- usergroup (`@property`): Returns the usergroup for this organization
-- view_url (`@property`): Return the URL to this organizations web view
+owns.
+- usergroup (`@property`): Returns the usergroup for this organization.
+- view_url (`@property`): Return the URL to this organizations web view.
 
 ### Class Methods
 
 #### create_from_rdap
 `def create_from_rdap(*args, **kwds)`
 
-Creates organization from rdap result object
+Creates organization from rdap result object.
 
 ---
 
@@ -1451,19 +1448,19 @@ Creates organization from rdap result object
 #### delete_cleanup
 `def delete_cleanup(self, hard=False)`
 
-Runs cleanup before delete
+Runs cleanup before delete.
 
-Override this in the class that uses this mixin (if needed)
+Override this in the class that uses this mixin (if needed).
 
 ---
 #### related_label
 `def related_label(self)`
 
-Used by grappelli autocomplete for representation
+Used by grappelli autocomplete for representation.
 
-Since grappelli doesnt easily allow us to filter status
-during autocomplete lookup, we make sure the objects
-are marked accordingly in the result
+Since grappelli doesn't easily allow one to filter status
+during autocomplete lookup, make sure the objects
+are marked accordingly in the result.
 
 ---
 
@@ -1482,7 +1479,7 @@ An API Key managed by an organization.
 OrganizationAPIPermission(django_grainy.models.Permission)
 ```
 
-Describes permission for a OrganizationAPIKey
+Describes permission for a OrganizationAPIKey.
 
 
 ## OrganizationMerge
@@ -1492,7 +1489,7 @@ OrganizationMerge(django.db.models.base.Model)
 ```
 
 When an organization is merged into another via admin.merge_organizations
-it is logged here, allowing the merge to be undone
+it is logged here, allowing the merge to be undone.
 
 
 ### Methods
@@ -1500,15 +1497,15 @@ it is logged here, allowing the merge to be undone
 #### log_entity
 `def log_entity(self, entity, note=)`
 
-mark an entity as moved during this particular merge
+Mark an entity as moved during this particular merge.
 
-entity can be any handleref instance or a User instance
+Entity can be any handleref instance or a User instance.
 
 ---
 #### undo
 `def undo(self)`
 
-Undo this merge
+Undo this merge.
 
 ---
 
@@ -1519,7 +1516,7 @@ OrganizationMergeEntity(django.db.models.base.Model)
 ```
 
 This holds the entities moved during an
-organization merge stored in OrganizationMerge
+organization merge stored in OrganizationMerge.
 
 
 ## Partnership
@@ -1528,9 +1525,9 @@ organization merge stored in OrganizationMerge
 Partnership(django.db.models.base.Model)
 ```
 
-Allows an organization to be marked as a partner
+Allows an organization to be marked as a partner.
 
-It will appear on the "partners" page
+It will appear on the "partners" page.
 
 
 ### Instanced Attributes
@@ -1565,7 +1562,7 @@ ProtectedMixin(builtins.object)
 
 Mixin that implements checks for changing
 / deleting a model instance that will block
-such actions under certain circumstances
+such actions under certain circumstances.
 
 
 ### Instanced Attributes
@@ -1573,13 +1570,13 @@ such actions under certain circumstances
 These attributes / properties will be available on instances of the class
 
 - deletable (`@property`): Should return whether the object is currently
-in a state where it can safely be soft-deleted
+in a state where it can safely be soft-deleted.
 
-If not not deletable, should specify reason in
+If not deletable, should specify reason in
 `_not_deletable_reason` property.
 
-If deletable should, set `_not_deletable_reason`
-property to None
+If deletable, should set `_not_deletable_reason`
+property to None.
 - not_deletable_reason (`@property`): None
 
 ### Methods
@@ -1587,9 +1584,9 @@ property to None
 #### delete_cleanup
 `def delete_cleanup(self)`
 
-Runs cleanup before delete
+Runs cleanup before delete.
 
-Override this in the class that uses this mixin (if needed)
+Override this in the class that uses this mixin (if needed).
 
 ---
 
@@ -1600,7 +1597,7 @@ Sponsorship(django.db.models.base.Model)
 ```
 
 Allows an organization to be marked for sponsorship
-for a designated timespan
+for a designated timespan.
 
 
 ### Instanced Attributes
@@ -1608,7 +1605,8 @@ for a designated timespan
 These attributes / properties will be available on instances of the class
 
 - active (`@property`): None
-- label (`@property`): Returns the label for this sponsorship's level
+- css (`@property`): Returns the css class for this sponsorship's level
+- label (`@property`): Returns the label for this sponsorship's level.
 
 ### Class Methods
 
@@ -1616,7 +1614,7 @@ These attributes / properties will be available on instances of the class
 `def active_by_org(cls)`
 
 Yields (Organization, Sponsorship) for all currently
-active sponsorships
+active sponsorships.
 
 ---
 
@@ -1637,7 +1635,7 @@ Notification is only sent if notify_date < expiration_date
 SponsorshipOrganization(django.db.models.base.Model)
 ```
 
-Describes an organization->sponsorship relationship
+Describes an organization->sponsorship relationship.
 
 
 ## URLField
@@ -1646,7 +1644,7 @@ Describes an organization->sponsorship relationship
 URLField(django_peeringdb.models.abstract.URLField)
 ```
 
-local defaults for URLField
+Local defaults for URLField.
 
 
 ## UTC
@@ -1655,7 +1653,7 @@ local defaults for URLField
 UTC(datetime.tzinfo)
 ```
 
-UTC+0 tz for tz aware datetime fields
+UTC+0 tz for tz aware datetime fields.
 
 
 ### Methods
@@ -1673,7 +1671,7 @@ datetime -> timedelta showing offset from UTC, negative values indicating West o
 User(django.contrib.auth.base_user.AbstractBaseUser, django.contrib.auth.models.PermissionsMixin)
 ```
 
-proper length fields user
+Proper length fields user.
 
 
 ### Instanced Attributes
@@ -1681,26 +1679,26 @@ proper length fields user
 These attributes / properties will be available on instances of the class
 
 - affiliation_requests_available (`@property`): Returns whether the user currently has any affiliation request
-slots available, by checking that the number of pending affiliation requests
+slots available by checking that the number of pending affiliation requests
 the user has is lower than MAX_USER_AFFILIATION_REQUESTS
 - email_confirmed (`@property`): Returns True if the email specified by the user has
-been confirmed, False if not
+been confirmed, False if not.
 - full_name (`@property`): None
 - has_oauth (`@property`): None
-- is_verified_user (`@property`): Returns whether the user is verified (eg has been validated
-by pdb staff)
+- is_verified_user (`@property`): Returns whether the user is verified (e.g., has been validated
+by PDB staff).
 
-right now this is accomplished by checking if the user
-has been added to the 'user' user group
-- networks (`@property`): Returns all networks this user is a member of
-- organizations (`@property`): Returns all organizations this user is a member of
+Currently this is accomplished by checking if the user
+has been added to the 'user' user group.
+- networks (`@property`): Returns all networks this user is a member of.
+- organizations (`@property`): Returns all organizations this user is a member of.
 - pending_affiliation_requests (`@property`): Returns the currently pending user -> org affiliation
-requests for this user
+requests for this user.
 
 ### Methods
 
 #### email_user
-`def email_user(self, subject, message, from_email=pdb@localhost)`
+`def email_user(self, subject, message, from_email=stefan@20c.com)`
 
 Sends an email to this User.
 
@@ -1709,7 +1707,7 @@ Sends an email to this User.
 `def flush_affiliation_requests(self)`
 
 Removes all user -> org affiliation requests for this user
-that have been denied or canceled
+that have been denied or canceled.
 
 ---
 #### get_full_name
@@ -1733,24 +1731,24 @@ Returns the short name for the user.
 #### password_reset_initiate
 `def password_reset_initiate(self)`
 
-Initiate the password reset process for the user
+Initiate the password reset process for the user.
 
 ---
 #### recheck_affiliation_requests
 `def recheck_affiliation_requests(self)`
 
-Will re-evaluate pending affiliation requests to unclaimed
-ASN orgs
+Will reevaluate pending affiliation requests to unclaimed
+ASN orgs.
 
 This allows a user with such a pending affiliation request to
-change ther email and re-check against rdap data for automatic
-ownership approval (#375)
+change ther email and recheck against rdap data for automatic
+ownership approval. (#375)
 
 ---
 #### related_label
 `def related_label(self)`
 
-Used by grappelli autocomplete for representation
+Used by grappelli autocomplete for representation.
 
 ---
 #### send_email_confirmation
@@ -1769,15 +1767,15 @@ Returns user preferred language.
 #### set_unverified
 `def set_unverified(self)`
 
-Remove user from 'user' group
-Add user to 'guest' group
+Remove user from 'user' group.
+Add user to 'guest' group.
 
 ---
 #### set_verified
 `def set_verified(self)`
 
-Add user to 'user' group
-Remove user from 'guest' group
+Add user to 'user' group.
+Remove user from 'guest' group.
 
 ---
 #### validate_rdap_relationship
@@ -1814,8 +1812,8 @@ UserOrgAffiliationRequest(django.db.models.base.Model)
 Whenever a user requests to be affiliated to an Organization
 through an ASN the request is stored in this object.
 
-When an ASN is entered that is not in the database yet it will
-notify PDB staff
+When an ASN is entered that is not yet in the database it will
+notify PDB staff.
 
 When an ASN is entered that is already in the database the organization
 adminstration is notified and they can then approve or deny
@@ -1837,27 +1835,27 @@ value specified in self.org_name
 #### approve
 `def approve(self)`
 
-approve request and add user to org's usergroup
+Approve request and add user to org's usergroup.
 
 ---
 #### cancel
 `def cancel(self)`
 
-deny request, marks request as canceled and keeps
-it around until requesting user deletes it
+Deny request, marks request as canceled and keeps
+it around until requesting user deletes it.
 
 ---
 #### deny
 `def deny(self)`
 
-deny request, marks request as denied and keeps
-it around until requesting user deletes it
+Deny request, marks request as denied and keeps
+it around until requesting user deletes it.
 
 ---
 #### notify_ownership_approved
 `def notify_ownership_approved(self)`
 
-Sends a notification email to the requesting user
+Sends a notification email to the requesting user.
 
 ---
 
@@ -1935,19 +1933,19 @@ VerificationQueueItem(django.db.models.base.Model)
 ```
 
 Keeps track of new items created that need to be reviewed and approved
-by administrators
+by administrators.
 
 Queue items are added through the create signals tied to the various
-objects (peeringdb_server/signals.py)
+objects (peeringdb_server/signals.py).
 
 
 ### Instanced Attributes
 
 These attributes / properties will be available on instances of the class
 
-- approve_admin_url (`@property`): Return admin url for approval of the verification queue item
-- deny_admin_url (`@property`): Return admin url for denial of the verification queue item
-- item_admin_url (`@property`): Return admin url for the object in the verification queue
+- approve_admin_url (`@property`): Return admin url for approval of the verification queue item.
+- deny_admin_url (`@property`): Return admin url for denial of the verification queue item.
+- item_admin_url (`@property`): Return admin url for the object in the verification queue.
 
 ### Class Methods
 
@@ -1955,8 +1953,8 @@ These attributes / properties will be available on instances of the class
 `def get_for_entity(cls, entity)`
 
 Returns verification queue item for the provided
-entity if it exists, else raises a DoesNotExist
-exception
+entity if it exists or raises a DoesNotExist
+exception.
 
 ---
 
@@ -1965,12 +1963,12 @@ exception
 #### approve
 `def approve(*args, **kwds)`
 
-Approve the verification queue item
+Approve the verification queue item.
 
 ---
 #### deny
 `def deny(self)`
 
-Deny the verification queue item
+Deny the verification queue item.
 
 ---

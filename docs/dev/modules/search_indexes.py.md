@@ -1,4 +1,4 @@
-Generated from search_indexes.py on 2021-10-06 18:04:54.446347
+Generated from search_indexes.py on 2021-10-15 07:56:57.376975
 
 # peeringdb_server.search_indexes
 
@@ -13,7 +13,7 @@ Defines django-haystack search indexes.
 EntityIndex(haystack.indexes.SearchIndex)
 ```
 
-Search index for org, net, ix and fac entities
+Search index for org, net, ix and fac entities.
 
 
 ### Methods
@@ -42,9 +42,9 @@ This method is required & you must override it to return the correct class.
 #### get_updated_field
 `def get_updated_field(self)`
 
-What field to use for determining object age, this
+Use this field to determine object age. This
 is required for the --age parameter to function
-in the update_index command
+in the update_index command.
 
 ---
 #### prepare
@@ -60,7 +60,7 @@ Fetches and adds/alters data before indexing.
 FacilityIndex(peeringdb_server.search_indexes.MainEntity, haystack.constants.Indexable)
 ```
 
-Search index for org, net, ix and fac entities
+Search index for org, net, ix and fac entities.
 
 
 ### Methods
@@ -81,7 +81,7 @@ This method is required & you must override it to return the correct class.
 IXLanPrefixIndex(peeringdb_server.search_indexes.EntityIndex, haystack.constants.Indexable)
 ```
 
-Search index for org, net, ix and fac entities
+Search index for org, net, ix and fac entities.
 
 
 ### Methods
@@ -102,7 +102,7 @@ This method is required & you must override it to return the correct class.
 InternetExchangeIndex(peeringdb_server.search_indexes.MainEntity, haystack.constants.Indexable)
 ```
 
-Search index for org, net, ix and fac entities
+Search index for org, net, ix and fac entities.
 
 
 ### Methods
@@ -123,7 +123,7 @@ This method is required & you must override it to return the correct class.
 MainEntity(peeringdb_server.search_indexes.EntityIndex)
 ```
 
-Search index for org, net, ix and fac entities
+Search index for org, net, ix and fac entities.
 
 
 ### Methods
@@ -141,7 +141,7 @@ Fetches and adds/alters data before indexing.
 NetworkIXLanIndex(peeringdb_server.search_indexes.EntityIndex, haystack.constants.Indexable)
 ```
 
-Search index for org, net, ix and fac entities
+Search index for org, net, ix and fac entities.
 
 
 ### Methods
@@ -162,7 +162,7 @@ This method is required & you must override it to return the correct class.
 NetworkIndex(peeringdb_server.search_indexes.MainEntity, haystack.constants.Indexable)
 ```
 
-Search index for org, net, ix and fac entities
+Search index for org, net, ix and fac entities.
 
 
 ### Methods
@@ -183,7 +183,7 @@ This method is required & you must override it to return the correct class.
 OrganizationIndex(peeringdb_server.search_indexes.MainEntity, haystack.constants.Indexable)
 ```
 
-Search index for org, net, ix and fac entities
+Search index for org, net, ix and fac entities.
 
 
 ### Methods

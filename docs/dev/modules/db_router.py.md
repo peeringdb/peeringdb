@@ -1,4 +1,4 @@
-Generated from db_router.py on 2021-10-06 18:04:54.446347
+Generated from db_router.py on 2021-10-15 07:56:57.136306
 
 # peeringdb_server.db_router
 
@@ -15,8 +15,8 @@ Split read and write database connections if needed.
 DatabaseRouter(builtins.object)
 ```
 
-A very basic databases router that routes to a different
-read and write db
+A very basic database router that routes to a different
+read and write db.
 
 
 ## TestRouter
@@ -25,6 +25,6 @@ read and write db
 TestRouter(peeringdb_server.db_router.DatabaseRouter)
 ```
 
-A very basic databases router that routes to a different
-read and write db
+A very basic database router that routes to a different
+read and write db.
 
