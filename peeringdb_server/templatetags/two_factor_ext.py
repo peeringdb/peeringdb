@@ -1,3 +1,6 @@
+"""
+Template filters / tags to help with two-factor auth
+"""
 from django import template
 from django.utils.translation import ugettext_lazy as _
 from django_otp.plugins.otp_email.models import EmailDevice

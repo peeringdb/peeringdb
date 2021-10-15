@@ -1,21 +1,3 @@
-
-# PeeringDB Server Development
-
-## Models
-
-Note: to add fk's to base models, you must add in both peeringdb.models. and in django_peeringdb.models concrete class
-
-models.py
-  - make model
-  - add ref_tag_
-
-serializers.py
-  - add serializer
-
-peeringdb/rest.py
-  - make ViewSet
-  - register
-
 ## Modules
 
 ### RDAP
@@ -70,27 +52,4 @@ pytest -v -rxs --cov-report term-missing --cov=peeringdb_server/ --capture=sys t
 
 All dependencies are now handled by poetry.
 
-To update them, do `poetry lock` and test.
-
-
-## Troubleshooting
-
-### 404 on static files with runserver:
-
-Make sure it's in debug mode
-
-### api tests fail
-
-You need to specify the test directory:
-
-```sh
-pytest tests/
-```
-
-### Can't see error because of warnings
-
-Run pytest with `-p no:warnings`
-
-### Run one specific test
-
-Run pytest with `-k $test_name`
+To update them, do `poetry lock`, rebuild docker and test.

@@ -1,3 +1,6 @@
+"""
+Undo a facility merge.
+"""
 import re
 
 import reversion

@@ -1,3 +1,7 @@
+"""
+Handle loading of api-cache data.
+"""
+
 import json
 import os
 
@@ -9,7 +13,7 @@ class CacheRedirect(Exception):
     Raise this error to redirect to cache response during viewset.get_queryset
     or viewset.list()
 
-    Argument should be an APICacheLoader instance
+    Argument should be an APICacheLoader instance.
     """
 
     def __init__(self, loader):
@@ -24,7 +28,7 @@ class CacheRedirect(Exception):
 class APICacheLoader:
     """
     Checks if an API GET request qualifies for a cache load
-    and if it does allows you to provide the cached result
+    and if it does allows you to provide the cached result.
     """
 
     def __init__(self, viewset, qset, filters):
@@ -48,7 +52,7 @@ class APICacheLoader:
 
     def qualifies(self):
         """
-        Check if request qualifies for a cache load
+        Check if request qualifies for a cache load.
         """
 
         # api cache use is disabled, no
@@ -80,7 +84,7 @@ class APICacheLoader:
 
     def load(self):
         """
-        Load the cached response according to tag and depth
+        Load the cached response according to tag and depth.
         """
 
         # read cache file
@@ -105,8 +109,8 @@ class APICacheLoader:
 
     def filter_fields(self, row):
         """
-        Removes any unwanted fields from the resultset
-        according to the `fields` filter specified in the request
+        Remove any unwanted fields from the resultset
+        according to the `fields` filter specified in the request.
         """
         for field in list(row.keys()):
             if field not in self.fields and field != "_grainy":

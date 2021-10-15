@@ -1,3 +1,19 @@
+"""
+REST API view definitions.
+
+REST API path routing.
+
+REST API permission checking (facilitated through django-grainy).
+
+REST API error handling.
+
+REST API list filtering logic.
+
+peeringdb-py client compatibility checking.
+
+The peeringdb REST API is implemented through django-rest-framework.
+"""
+
 import datetime
 import importlib
 import re
@@ -44,8 +60,8 @@ class DataException(ValueError):
 class DataMissingException(DataException):
 
     """ ""
-    Will be raised when the json data sent with a POST, PUT or PATCH
-    request is missing
+    Raised when the json data sent with a POST, PUT or PATCH
+    request is missing.
     """
 
     def __init__(self, method):
@@ -55,8 +71,8 @@ class DataMissingException(DataException):
 class DataParseException(DataException):
 
     """
-    Will be raised when the json data sent with a POST, PUT or PATCH
-    request could not be parsed
+    Raised when the json data sent with a POST, PUT or PATCH
+    request could not be parsed.
     """
 
     def __init__(self, method, exc):
@@ -133,12 +149,12 @@ def pdb_exception_handler(exc):
 
 class client_check:
     """
-    decorator that can be attached to rest viewset responses and will
+    Decorator that can be attached to rest viewset responses and will
     generate an error response if the requesting peeringdb client
     is running a client or backend version that is incompatible with
-    the server
+    the server.
 
-    compatibilty is controlled via facsimile during deploy and can
+    Compatibilty is controlled via facsimile during deploy and can
     be configured in env.misc.api.compat
     """
 
@@ -163,34 +179,34 @@ class client_check:
         return wrapped
 
     def version_tuple(self, str_version):
-        """take a semantic version string and turn into a tuple"""
+        """Take a semantic version string and turn into a tuple."""
         return tuple(int(i) for i in str_version.split("."))
 
     def version_pad(self, version):
-        """take a semantic version tuple and zero pad to dev version"""
+        """Take a semantic version tuple and zero pad to dev version."""
         while len(version) < 4:
             version = version + (0,)
         return version
 
     def version_string(self, version):
-        """take a semantic version tuple and turn into a "." delimited string"""
+        """Take a semantic version tuple and turn into a "." delimited string."""
         return ".".join([str(i) for i in version])
 
     def backend_min_version(self, backend):
-        """return the min supported version for the specified backend"""
+        """Return the min supported version for the specified backend."""
         return self.backends.get(backend, {}).get("min")
 
     def backend_max_version(self, backend):
-        """return the max supported version for the specified backend"""
+        """Return the max supported version for the specified backend."""
         return self.backends.get(backend, {}).get("max")
 
     def client_info(self, request):
         """
-        parse the useragent in the request and return client version
+        Parse the useragent in the request and return client version
         info if possible.
 
-        any connecting client that is NOT the peeringdb client will currently
-        return an empty dict and not compatibility checking will be done
+        Any connecting client that is NOT the peeringdb client will currently
+        return an empty dict and not compatibility checking will be done.
         """
 
         # if no user agent was specified in headers we bail
@@ -217,13 +233,13 @@ class client_check:
 
     def compat_check(self, request):
         """
-        Check if the connecting client is compatible with the api
+        Check if the connecting client is compatible with the API.
 
         This is currently only sensible when the request is made through
         the official peeringdb-py client, any other client will be
-        passed through without checks
+        passed through without checks.
 
-        On incompatibility a ValueError is raised
+        On incompatibility a ValueError is raised.
         """
 
         info = self.client_info(request)
@@ -271,7 +287,7 @@ class client_check:
 
 class ModelViewSet(viewsets.ModelViewSet):
     """
-    Generic ModelViewSet Base Class
+    Generic ModelViewSet Base Class.
     This should probably be moved to a common lib ?
     """
 
@@ -280,7 +296,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Prepare the queryset
+        Prepare the queryset.
         """
 
         qset = self.model.handleref.all()
@@ -564,13 +580,13 @@ class ModelViewSet(viewsets.ModelViewSet):
         """
         Test that the request contains data in its body that
         can be parsed to the required format (json) and is not
-        empty
+        empty.
 
         Will raise DataParseException error if request payload could
-        not be parsed
+        not be parsed.
 
         Will raise DataMissingException error if request payload is
-        missing or was parsed to an empty object
+        missing or was parsed to an empty object.
         """
         try:
             request.data
@@ -583,7 +599,7 @@ class ModelViewSet(viewsets.ModelViewSet):
     @client_check()
     def create(self, request, *args, **kwargs):
         """
-        Create object
+        Create object.
         """
         try:
             self.require_data(request)
@@ -615,7 +631,7 @@ class ModelViewSet(viewsets.ModelViewSet):
     @client_check()
     def update(self, request, *args, **kwargs):
         """
-        Update object
+        Update object.
         """
         try:
             self.require_data(request)
@@ -651,14 +667,14 @@ class ModelViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         """
-        PATCH (partial update) is currently disabled
+        PATCH (partial update) is currently disabled.
         """
         return Response(status=status.HTTP_403_FORBIDDEN)
 
     @client_check()
     def destroy(self, request, pk, format=None):
         """
-        Delete object
+        Delete object.
         """
         try:
             try:
@@ -701,7 +717,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 class InternetExchangeMixin:
 
     """
-    Custom api endpoints for the internet exchange
+    Custom API endpoints for the internet exchange
     object, exposed to api/ix/{id}/{action}
     """
 
@@ -709,8 +725,8 @@ class InternetExchangeMixin:
     def request_ixf_import(self, request, *args, **kwargs):
 
         """
-        Allows managers of an ix to request an ix-f import
-        #779
+        Allows managers of an ix to request an ix-f import.
+        (#779)
         """
 
         ix = self.get_object()
@@ -741,7 +757,7 @@ def ref_dict():
 
 def model_view_set(model, methods=None, mixins=None):
     """
-    shortcut for peeringdb models to generate viewset and register in the API urls
+    Shortcut for peeringdb models to generate viewset and register in the API urls.
     """
 
     # lookup Serializer class
@@ -788,34 +804,34 @@ OrganizationViewSet = model_view_set("Organization")
 class ReadOnlyMixin:
     def destroy(self, request, pk, format=None):
         """
-        This endpoint is readonly
+        This endpoint is readonly.
         """
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def create(self, request, *args, **kwargs):
         """
-        This endpoint is readonly
+        This endpoint is readonly.
         """
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, *args, **kwargs):
         """
-        This endpoint is readonly
+        This endpoint is readonly.
         """
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def patch(self, request, *args, **kwargs):
         """
-        This endpoint is readonly
+        This endpoint is readonly.
         """
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
     """
-    AS-SET endpoint
+    AS-SET endpoint.
 
-    lists all as sets mapped by asn
+    List all as sets mapped by asn.
     """
 
     lookup_field = "asn"

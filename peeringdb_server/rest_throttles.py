@@ -1,3 +1,7 @@
+"""
+Custom rate limit handlers for the REST API.
+"""
+
 from django.conf import settings
 from rest_framework import throttling
 from rest_framework.exceptions import PermissionDenied
@@ -17,7 +21,7 @@ class IXFImportThrottle(throttling.UserRateThrottle):
 class FilterThrottle(throttling.SimpleRateThrottle):
 
     """
-    Base class for API throttling targeted at specific query filters
+    Base class for API throttling targeted at specific query filters.
 
     Scope name will be 'filter_{self.filter_name}'
     """
@@ -102,7 +106,7 @@ class FilterThrottle(throttling.SimpleRateThrottle):
 class FilterDistanceThrottle(FilterThrottle):
 
     """
-    Rate limiting for ?distance= queries
+    Rate limiting for ?distance= queries.
     """
 
     filter_name = "distance"

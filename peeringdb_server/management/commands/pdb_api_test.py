@@ -1,6 +1,6 @@
 #!/bin/env python
 """
-series of integration/unit tests for the pdb api
+Series of integration/unit tests for the PDB API.
 """
 import copy
 import datetime
@@ -423,11 +423,11 @@ class TestJSON(unittest.TestCase):
     @classmethod
     def serializer_related_fields(cls, serializer_class):
         """
-        Returns declared relation fields on the provided serializer class
+        Returns declared relation fields on the provided serializer class.
 
         Returned value will be a tuple in which the first item is a list of
         field names for primary key related fields and the second item is a list
-        of fields names for related sets
+        of field names for related sets.
         """
 
         pk_rel = []
@@ -445,11 +445,11 @@ class TestJSON(unittest.TestCase):
 
     def assert_handleref_integrity(self, data):
         """
-        here we assert the integrity of a handleref (which is
-        the base of all the models exposed on the api)
+        Assert the integrity of a handleref (which is
+        the base of all the models exposed on the API).
 
-        we do this by making sure all of the handleref fields
-        exist in the data
+        This is done by making sure all the handleref fields
+        exist in the data.
         """
 
         self.assertIn("status", data)
@@ -597,7 +597,7 @@ class TestJSON(unittest.TestCase):
 
     def assert_create_status_failure(self, db, typ, data):
         """
-        Wrapper for assert_create for assertion of permission failure
+        Wrapper for assert_create for assertion of permission failure.
         """
         self.assert_create(
             db, typ, data, test_failures={"status": {}}, test_success=False
@@ -776,8 +776,8 @@ class TestJSON(unittest.TestCase):
         list_exclude=[],
     ):
         """
-        Assert the data indegrity of structures within a result that have
-        been expanded via the depth parameter
+        Asserts the data integrity of structures within a result that has
+        been expanded via the depth parameter.
         """
 
         # get all the realtion ship properties declared in the serializer
@@ -1615,7 +1615,7 @@ class TestJSON(unittest.TestCase):
 
         """
         The as-set endpoint is readonly, so all of these should
-        fail
+        fail.
         """
         data = self.make_data_net(asn=9000900)
 
@@ -2266,9 +2266,9 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_005_ixlan_fields_filter(self):
         """
-        Tests the specific issue of #829 where a get to an ixlan
+        Tests the specific issue of #829 where a GET to an ixlan
         with fields parameter set would raise a 500 error for
-        unauthenticated users
+        unauthenticated users.
         """
         data = self.db_guest.get(
             "ixlan", SHARED["ixlan_rw_ok"].id, fields="ixpfx_set", depth=2
@@ -2309,9 +2309,9 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_005_get_depth_all(self):
         """
-        Test all end points single object GET with all valid depths
+        Tests all end points single object GET with all valid depths.
         This also asserts data structure integrity for objects expanded
-        by the depth parameter
+        by the depth parameter.
         """
 
         for depth in [0, 1, 2, 3, 4]:
@@ -2334,9 +2334,9 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_005_list_depth_all(self):
         """
-        Tests all end points multiple object GET with all valid depths
+        Tests all end points multiple object GET with all valid depths.
         This also asserts data structure integrity for objects expanded
-        by the depth parameter
+        by the depth parameter.
         """
 
         for depth in [0, 1, 2, 3]:
@@ -2948,7 +2948,7 @@ class TestJSON(unittest.TestCase):
     def test_guest_005_list_filter_fac_net_count(self):
         """
         Issue 834: Users should be able to filter Facilities
-        based on the amount of Networks they are linked to.
+        based on the number of Networks they are linked to.
         """
         for facility in Facility.objects.filter(status="ok").all():
             netfac = facility.netfac_set.first()
@@ -2985,7 +2985,7 @@ class TestJSON(unittest.TestCase):
     def test_guest_005_list_filter_fac_ix_count(self):
         """
         Issue 834: Users should be able to filter Facilities
-        based on the amount of Exchanges they are linked to.
+        based on the number of Exchanges they are linked to.
         """
         for facility in Facility.objects.filter(status="ok").all():
             ixfac = facility.ixfac_set.first()
@@ -3049,7 +3049,7 @@ class TestJSON(unittest.TestCase):
     def test_guest_005_list_filter_ix_net_count(self):
         """
         Issue 836: Users should be able to filter
-        Exchanges by the amount of Networks linked to them.
+        Exchanges by the number of Networks linked to them.
         """
         # need to modify objects for signals to propagate
         for ix in InternetExchange.objects.all():
@@ -3097,7 +3097,7 @@ class TestJSON(unittest.TestCase):
     def test_guest_005_list_filter_ix_fac_count(self):
         """
         Issue 836: Users should be able to filter
-        Exchanges by the amount of Facilities linked to them.
+        Exchanges by the number of Facilities linked to them.
         """
 
         for ix in InternetExchange.objects.filter(status="ok").all():
@@ -3144,7 +3144,7 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_005_list_filter_net_ix_count(self):
         """
-        Issue 835: We should be able to filter Networks based
+        Issue 835: One should be able to filter Networks based
         on the number of Exchanges associated with them.
         """
 
@@ -3192,7 +3192,7 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_005_list_filter_net_fac_count(self):
         """
-        Issue 835: We should be able to filter Networks based
+        Issue 835: One should be able to filter Networks based
         on the number of Facilities associated with them.
         """
 
@@ -3436,7 +3436,7 @@ class TestJSON(unittest.TestCase):
     def test_guest_005_list_filter_accented(self):
 
         """
-        test filtering with accented search terms
+        Tests filtering with accented search terms.
         """
 
         # TODO: sqlite3 is being used as the testing backend, and django 1.11
@@ -3913,8 +3913,8 @@ class TestJSON(unittest.TestCase):
     def test_z_misc_GET_ixf_ixp_member_list_url(self):
 
         """
-        Test the visibility of ixlan.ixf_ixp_member_list_url for
-        Guest, User, Org member and org admin
+        Tests the visibility of ixlan.ixf_ixp_member_list_url for
+        Guest, User, Org member and org admin.
         """
 
         self._test_GET_ixf_ixp_member_list_url(
@@ -3937,11 +3937,11 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_POST_ix_fac_missing_phone_fields(self):
         """
-        Test that omitting the *_phone fields during fac
-        and ix object creation doesnt error 500
+        Tests that omitting the *_phone fields during fac
+        and ix object creation doesn't error 500.
 
-        TODO: a test that drops all the non-required fields
-        and tests for every reftag model
+        TODO: A test that drops all the non-required fields
+        and tests for every reftag model.
         """
 
         data = self.make_data_fac()
@@ -4174,8 +4174,8 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_001_add_fac_bug(self):
         """
-        Issue 922: regression test for bug where a user could
-        approve a facility by adding, deleting, and re-adding
+        Issue 922: Regression test for bug where a user could
+        approve a facility by adding, deleting, and re-adding.
         """
 
         # Add fac
@@ -4204,7 +4204,7 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_001_add_fac_bug_suggest(self):
         """
-        Issue 922: regression test for bug where a user could
+        Issue 922: Regression test for bug where a user could
         approve a facility by adding, deleting, and re-adding.
 
         Confirms that this interacts with suggestions properly.
@@ -4250,8 +4250,8 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_001_disable_suggest_ix(self):
         """
-        Issue 827: We are removing the ability for non-admin users to "suggest" an IX
-        Therefore we change this test so that a "suggest" field being set on the API
+        Issue 827: Removes the ability for non-admin users to "suggest" an IX.
+        Therefore, change this test so a "suggest" field being set on the API
         request is disregarded, and permission is denied if a user who cannot create an
         IX tries to POST.
         """
@@ -4273,9 +4273,9 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_001_suggest_kwarg_on_ix_does_nothing(self):
         """
-        Issue 827: We are removing the ability for non-admin users to "suggest" an IX
+        Issue 827: Removes the ability for non-admin users to "suggest" an IX.
         If a user tries to "suggest" an IX, this keyword should simply be ignored. Admins
-        should be able to still create a "pending" IX even if "suggest" is provided.
+        should still be able to create a "pending" IX even if "suggest" is provided.
         """
         org = SHARED["org_rw_ok"]
         data = self.make_data_ix(org_id=org.id, suggest=True, prefix=self.get_prefix4())
@@ -4300,8 +4300,8 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_001_cannot_post_ix_to_suggest_entity_org(self):
         """
-        Issue 827: We are removing the ability for non-admin users to "suggest" an IX
-        As part of that, we need to remove the ability to POST an IX with an ORG that is
+        Issue 827: Removes the ability for non-admin users to "suggest" an IX.
+        As part of that, remove the ability to POST an IX with an ORG that is
         the special "suggested entity org" even if the POST explicitly tries
         to create an IX with that ORG.
         """
@@ -4371,8 +4371,8 @@ class TestJSON(unittest.TestCase):
 
     def test_z_misc_001_api_errors(self):
         """
-        Test empty POST, PUT data error response
-        Test parse error POST, PUT data error response
+        Test empty POST, PUT data error response.
+        Test parse error POST, PUT data error response.
         """
         for reftag in list(REFTAG_MAP.keys()):
             self._test_z_misc_001_api_errors(reftag, "post", "create")

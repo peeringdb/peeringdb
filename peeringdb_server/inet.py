@@ -1,3 +1,10 @@
+"""
+RDAP lookup and validation.
+
+Network validation.
+
+Prefix renumbering.
+"""
 import ipaddress
 
 import rdap
@@ -99,9 +106,9 @@ class RdapInvalidRange(RdapException):
 class BogonAsn(rdap.RdapAsn):
 
     """
-    On tutorial mode environments we will return an instance
+    On tutorial mode environments, return an instance
     of this to provide an rdapasn result for asns in the
-    private and documentation ranges
+    private and documentation ranges.
     """
 
     def __init__(self, asn):
@@ -133,8 +140,8 @@ class RdapLookup(rdap.RdapClient):
 
     def get_asn(self, asn):
         """
-        We handle asns that fall into the private/documentation ranges
-        manually - others are processed normally through rdap lookup
+        Handle asns that fall into the private/documentation ranges
+        manually - others are processed normally through rdap lookup.
         """
 
         if asn_is_bogon(asn):
@@ -149,8 +156,8 @@ class RdapLookup(rdap.RdapClient):
 
 def rdap_pretty_error_message(exc):
     """
-    Takes an RdapException instance and returns a customer friendly
-    error message (str)
+    Take an RdapException instance and return a customer friendly
+    error message (str).
     """
 
     if isinstance(exc, RdapNotFoundError):
@@ -164,7 +171,7 @@ def rdap_pretty_error_message(exc):
 def asn_is_bogon(asn):
     """
     Test if an asn is bogon by being either in the documentation
-    or private asn ranges
+    or private asn ranges.
 
     Arguments:
         - asn<int>
@@ -177,7 +184,7 @@ def asn_is_bogon(asn):
 
 def asn_is_in_ranges(asn, ranges):
     """
-    Test if an asn falls within any of the ranges provided
+    Test if an asn falls within any of the ranges provided.
 
     Arguments:
         - asn<int>
@@ -195,7 +202,7 @@ def asn_is_in_ranges(asn, ranges):
 
 def network_is_bogon(network):
     """
-    Returns if the passed ipaddress network is a bogon
+    Return if the passed ipaddress network is a bogon.
 
     Arguments:
         - network <ipaddress.IPv4Network|ipaddress.IPv6Network>
@@ -210,7 +217,7 @@ def network_is_bogon(network):
 def network_is_pdb_valid(network):
     """
     Return if the passed ipaddress network is in pdb valid
-    address space
+    address space.
 
     Arguments:
         - network <ipaddress.IPv4Network|ipaddress.IPv6Network>
@@ -245,10 +252,10 @@ def network_is_pdb_valid(network):
 
 def get_prefix_protocol(prefix):
     """
-    Takes a network address space prefix string and returns
-    a string describing the protocol
+    Take a network address space prefix string and return
+    a string describing the protocol.
 
-    Will raise a ValueError if it cannot determine protocol
+    Will raise a ValueError if it cannot determine protocol.
 
     Returns:
         str: IPv4 or IPv6
@@ -268,7 +275,7 @@ def get_prefix_protocol(prefix):
 def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
 
     """
-    Renumber an ipaddress from old prefix to new prefix
+    Renumber an ipaddress from old prefix to new prefix.
 
     Arguments:
         - ipaddr (ipaddress.ip_address)

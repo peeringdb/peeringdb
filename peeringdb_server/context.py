@@ -1,3 +1,7 @@
+"""
+Define custom context managers.
+"""
+
 import contextvars
 from contextlib import contextmanager
 

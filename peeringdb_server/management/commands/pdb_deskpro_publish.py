@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Process deskpro ticket queue.
+"""
 
 import datetime
 

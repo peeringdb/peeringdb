@@ -1,5 +1,5 @@
 """
-Views for organization api key management
+Views for organization api key management.
 """
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -18,9 +18,9 @@ from peeringdb_server.org_admin_views import load_entity_permissions, org_admin_
 
 def save_key_permissions(org, key, perms):
     """
-    Save key permissions for the specified org and key
+    Save key permissions for the specified org and key.
 
-    perms should be a dict of permissioning ids and permission levels
+    Perms should be a dict of permissioning ids and permission levels.
     """
 
     # wipe all the key's perms for the targeted org
@@ -76,7 +76,7 @@ def save_key_permissions(org, key, perms):
 def load_all_key_permissions(org):
     """
     Returns dict of all users with all their permissions for
-    the given org
+    the given org.
     """
 
     rv = {}
@@ -94,7 +94,7 @@ def load_all_key_permissions(org):
 @org_admin_required
 def manage_key_add(request, **kwargs):
     """
-    Create a new Organization API key
+    Create a new Organization API key.
 
     Requires a name for the key.
     """
@@ -129,7 +129,7 @@ def manage_key_add(request, **kwargs):
 @org_admin_required
 def manage_key_update(request, **kwargs):
     """
-    Updated existing Organization API key
+    Updated existing Organization API key.
     """
 
     prefix = request.POST.get("prefix")
@@ -197,13 +197,13 @@ def manage_key_revoke(request, **kwargs):
 def key_permissions(request, **kwargs):
     """
     Returns JsonResponse with list of key permissions for the targeted
-    org an entities under it
+    org an entities under it.
 
     Permisions are returned as a dict of permissioning ids and permission
     levels.
 
     Permissioning ids serve as a wrapper for actual permissioning namespaces
-    so we can expose them to the organization admins for changes without allowing
+    so they can be exposed to the organization admins for changes without allowing
     them to set permissioning namespaces directly.
     """
 
@@ -221,7 +221,7 @@ def key_permissions(request, **kwargs):
 @org_admin_required
 def key_permission_update(request, **kwargs):
     """
-    Update/Add a user's permission
+    Update/Add a user's permission.
 
     perms = permission level
     entity = permission id
@@ -248,7 +248,7 @@ def key_permission_update(request, **kwargs):
 @org_admin_required
 def key_permission_remove(request, **kwargs):
     """
-    Remove a keys permission
+    Remove a keys permission.
 
     entity = permission id
     """
@@ -281,7 +281,7 @@ def convert_to_bool(data):
 @login_required
 def add_user_key(request, **kwargs):
     """
-    Create a new User API key
+    Create a new User API key.
 
     Requires a name and a readonly boolean.
     """
@@ -310,7 +310,7 @@ def add_user_key(request, **kwargs):
 @login_required
 def remove_user_key(request, **kwargs):
     """
-    Revoke user api key
+    Revoke user api key.
     """
 
     user = request.user

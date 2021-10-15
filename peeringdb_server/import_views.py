@@ -1,3 +1,7 @@
+"""
+Define ix-f import preview, review and post-mortem views.
+"""
+
 import base64
 import json
 
@@ -16,7 +20,7 @@ RATELIMITS = settings.RATELIMITS
 
 def enable_basic_auth(fn):
     """
-    a simple decorator to enable basic auth for a specific view
+    A simple decorator to enable basic auth for a specific view.
     """
 
     def wrapped(request, *args, **kwargs):
