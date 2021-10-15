@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 import re
 import uuid
 
@@ -955,6 +956,13 @@ class OrganizationLogoUpload(View):
 
         org = Organization.objects.get(pk=id)
 
+        # keep reference to current logo as we will need
+        # to remove it after the new logo has been uploaded
+        if org.logo:
+            old_file = org.logo.path
+        else:
+            old_file = None
+
         # require update permissions to the org
         if not check_permissions(request.user, org, "u"):
             return JsonResponse({}, status=403)
@@ -964,6 +972,11 @@ class OrganizationLogoUpload(View):
         if form.is_valid():
             form.save()
             org.refresh_from_db()
+
+            # remove old file if it exists
+            if old_file and os.path.exists(old_file):
+                os.remove(old_file)
+
             return JsonResponse({"status": "ok", "url": org.logo.url})
         else:
             return JsonResponse(form.errors, status=400)

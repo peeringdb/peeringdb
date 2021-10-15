@@ -3021,10 +3021,10 @@ twentyc.editable.input.register(
       var node = $('<div class="file-upload">');
 
       // element holding current image (if exists)
-      let current = $('<div class="current">')
+      let current = $('<div class="current">');
 
       // element holding upload image input
-      let upload = $('<div class="upload">')
+      let upload = $('<div class="upload">');
 
       // we need to copy the current image from the view-mode
       // element so we can display it
@@ -3032,6 +3032,9 @@ twentyc.editable.input.register(
 
       // file selection input
       let input = $('<input type="file" style="display:inline">');
+
+      // loading shim
+      let loading = $('<div class="editable loading-shim single-field-shim">').hide();
 
       // set file type accept
       let accept = this.source.data("edit-accept");
@@ -3077,9 +3080,9 @@ twentyc.editable.input.register(
 
       // assemble the UX nodes
 
-      current.append(image).append(buttonClear)
-      upload.append(input).append(buttonUpload)
-      node.append(current).append(upload)
+      current.append(image).append(buttonClear);
+      upload.append(input).append(buttonUpload);
+      node.append(current).append(upload).append(loading);
 
       if(accept)
         input.attr("accept", accept);
@@ -3094,6 +3097,7 @@ twentyc.editable.input.register(
 
     remove_file : function() {
       let name = this.source.data("edit-name");
+      this.element.find('.loading-shim').show();
       $.ajax({
         url: this.source.data("edit-upload-path"),
         method: 'delete',
@@ -3102,10 +3106,12 @@ twentyc.editable.input.register(
         this.source.find('img').hide();
         this.element.find('img').hide();
         // hide the "Remove" button
-        this.element.find('.btn-clear').hide()
+        this.element.find('.btn-clear').hide();
+        this.element.find('.loading-shim').hide();
       }).fail((r) => {
         // failure - show validation error
         this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name))
+        this.element.find('.loading-shim').hide();
       });
     },
 
@@ -3117,6 +3123,8 @@ twentyc.editable.input.register(
     upload : function() {
       var data = new FormData();
       let name = this.source.data("edit-name");
+
+      this.element.find('.loading-shim').show();
 
       // prepare file data
       var file = this.element.find('input[type="file"]')[0].files[0];
@@ -3134,10 +3142,12 @@ twentyc.editable.input.register(
         // to new url and show the "Remove" button
         this.source.find('img').attr('src', r["url"]).show();
         this.element.find('img').attr('src', r["url"]).show();
-        this.element.find('.btn-clear').show()
+        this.element.find('.btn-clear').show();
+        this.element.find('.loading-shim').hide();
       }).fail((r) => {
         // failure - show validation error
-        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name))
+        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name));
+        this.element.find('.loading-shim').hide();
       });
     },
 
