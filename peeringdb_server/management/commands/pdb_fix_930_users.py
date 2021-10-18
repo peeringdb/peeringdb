@@ -1,3 +1,7 @@
+"""
+Fix users affected by being both in the org admin
+and org user group when it should be one or the other.
+"""
 from peeringdb_server.management.commands.pdb_base_command import PeeringDBBaseCommand
 from peeringdb_server.models import User
 

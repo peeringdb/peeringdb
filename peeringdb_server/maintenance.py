@@ -1,3 +1,6 @@
+"""
+Django middleware to handle maintenance mode.
+"""
 import os
 
 from django.http import JsonResponse
@@ -9,7 +12,7 @@ from peeringdb_server import settings
 
 def on(timeout=None):
     """
-    turns maintenance mode on
+    Turn maintenance mode on.
 
     Keyword Arguments:
 
@@ -20,18 +23,18 @@ def on(timeout=None):
 
 
 def off():
-    """turn maintenance mode off"""
+    """Turn maintenance mode off."""
     if active():
         os.remove(settings.MAINTENANCE_MODE_LOCKFILE)
 
 
 def active():
-    """return True if maintenance mode is currently active"""
+    """Return True if maintenance mode is currently active."""
     return os.path.isfile(settings.MAINTENANCE_MODE_LOCKFILE)
 
 
 def raise_if_active():
-    """raise ActionBlocked exception if maintenance mode is active"""
+    """Raise ActionBlocked exception if maintenance mode is active."""
     if active():
         raise ActionBlocked()
 
@@ -40,7 +43,7 @@ class Middleware:
 
     """
     Middleware will return 503 json responses for all write
-    ops (POST PUT PATCH DELETE)
+    ops (POST PUT PATCH DELETE).
     """
 
     def __init__(self, get_response=None):

@@ -1,3 +1,7 @@
+"""
+Replace a value in a field across several entities.
+"""
+
 import re
 
 import reversion

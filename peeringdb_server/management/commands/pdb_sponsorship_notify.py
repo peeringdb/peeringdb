@@ -1,3 +1,6 @@
+"""
+Look for expired sponsorships and sends a notification to sponsorship admin for recently expired sponsorships.
+"""
 import datetime
 
 from django.core.management.base import BaseCommand

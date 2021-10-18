@@ -1,5 +1,5 @@
 """
-Utilties for geocoding and geo normalization
+Utilities for geocoding and geo normalization.
 """
 
 import googlemaps
@@ -34,8 +34,8 @@ class GoogleMaps:
     def geocode_address(self, address, country, typ="premise"):
 
         """
-        returns the latitude, longitude field values of the specified
-        address
+        Return the latitude, longitude field values of the specified
+        address.
         """
 
         try:
@@ -85,8 +85,8 @@ class GoogleMaps:
 class Melissa:
 
     """
-    Handles requests to the melissa global address
-    service used for geocoding and address normalization
+    Handle requests to the melissa global address
+    service used for geocoding and address normalization.
     """
 
     global_address_url = (
@@ -113,8 +113,8 @@ class Melissa:
     def sanitize(self, **kwargs):
 
         """
-        Takes an international address and sanitizes it
-        using the melissa global address service
+        Take an international address and sanitize it
+        using the melissa global address service.
         """
 
         results = self.global_address(**kwargs)
@@ -128,15 +128,15 @@ class Melissa:
     def sanitize_address_model(self, instance):
 
         """
-        Takes an instance of AddressModel and
-        runs it's address through the normalization
+        Take an instance of AddressModel and
+        run its address through the normalization
         process.
 
-        Note that his will not actually change fields
+        Note that this will not actually change fields
         on the instance.
 
-        Returns dict with normalized address data and
-        geo coordinates
+        Return dict with normalized address data and
+        geo coordinates.
         """
 
         return self.sanitize(
@@ -187,7 +187,7 @@ class Melissa:
     def global_address(self, **kwargs):
 
         """
-        Sends request to the global address service
+        Send request to the global address service.
 
         Keyword arguments:
 

@@ -1,3 +1,7 @@
+"""
+Utility functions for emailing users and admin staff.
+"""
+
 from django.conf import settings
 from django.core.mail.message import EmailMultiAlternatives
 from django.template import loader
@@ -10,7 +14,7 @@ def mail_admins_with_from(
     subj, msg, from_addr, fail_silently=False, connection=None, html_message=None
 ):
     """
-    mail admins but allow specifying of from address
+    Mail admins but allow specifying of from address.
     """
 
     if not settings.ADMINS:
@@ -34,11 +38,11 @@ def mail_admins_with_from(
 
 def mail_users_entity_merge(users_source, users_target, entity_source, entity_target):
     """
-    notifies the users specified in users_source that their entity (entity_source) has
-    been merged with another entity (entity_target)
+    Notify the users specified in users_source that their entity (entity_source) has
+    been merged with another entity (entity_target).
 
-    notifies the users specified in users_target that an entity has ben merged into their
-    entity (entity_target)
+    Notify the users specified in users_target that an entity has ben merged into their
+    entity (entity_target).
 
     Arguments:
         - users_source <list>: list of User objects
@@ -73,7 +77,7 @@ def mail_users_entity_merge(users_source, users_target, entity_source, entity_ta
 
 def mail_username_retrieve(email, secret):
     """
-    Sends an email to the specified email address containing
+    Send an email to the specified email address containing
     the url for username retrieval.
 
     Arguments:

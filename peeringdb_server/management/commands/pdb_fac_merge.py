@@ -1,3 +1,6 @@
+"""
+Merge facilities.
+"""
 import re
 
 import reversion

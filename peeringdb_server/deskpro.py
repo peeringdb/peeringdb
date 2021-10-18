@@ -1,5 +1,6 @@
 """
-DeskPro API Client
+DeskPro API Client used to post and retrieve support ticket information
+from the deskpro API.
 """
 
 import datetime
@@ -18,7 +19,7 @@ from peeringdb_server.permissions import get_org_key_from_request, get_user_from
 
 
 def ticket_queue(subject, body, user):
-    """queue a deskpro ticket for creation"""
+    """Queue a deskpro ticket for creation."""
 
     DeskProTicket.objects.create(
         subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
@@ -28,7 +29,7 @@ def ticket_queue(subject, body, user):
 
 
 def ticket_queue_email_only(subject, body, email):
-    """queue a deskpro ticket for creation"""
+    """Queue a deskpro ticket for creation."""
 
     DeskProTicket.objects.create(
         subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
@@ -46,7 +47,7 @@ class APIError(IOError):
 
 def ticket_queue_asnauto_skipvq(request, org, net, rir_data):
     """
-    queue deskro ticket creation for asn automation action: skip vq
+    Queue deskro ticket creation for asn automation action: skip vq.
     """
 
     if isinstance(net, dict):
@@ -85,7 +86,7 @@ def ticket_queue_asnauto_skipvq(request, org, net, rir_data):
 
 def ticket_queue_asnauto_affil(user, org, net, rir_data):
     """
-    queue deskro ticket creation for asn automation action: affil
+    Queue deskro ticket creation for asn automation action: affil.
     """
 
     ticket_queue(
@@ -102,7 +103,7 @@ def ticket_queue_asnauto_create(
     user, org, net, rir_data, asn, org_created=False, net_created=False
 ):
     """
-    queue deskro ticket creation for asn automation action: create
+    Queue deskro ticket creation for asn automation action: create.
     """
 
     subject = []
@@ -267,9 +268,9 @@ class APIClient:
     def require_person(self, email, user=None):
 
         """
-        Gets or creates a deskpro person using the deskpro API
+        Get or create a deskpro person using the deskpro API.
 
-        At the minimum this needs to be passed an email
+        At minimum, this needs to be passed to an email
         address.
 
         If a peeringdb user instance is also specified, it will
@@ -303,7 +304,7 @@ class APIClient:
     def create_ticket(self, ticket):
 
         """
-        Creates a deskpro ticket using the deskpro API
+        Create a deskpro ticket using the deskpro API.
 
         Arguments:
 
@@ -355,12 +356,12 @@ class APIClient:
     def reopen_ticket(self, ticket):
 
         """
-        For existing tickets we want to check their current status
+        Check the current status of existing tickets
         on deskpro's side.
 
-        If the ticket has already been resolved we need to set it
+        If the ticket has already been resolved, set it
         back to awaiting_agent before posting a new message to
-        it (see #920)
+        it (see #920).
         """
 
         if not ticket.deskpro_id:
@@ -378,7 +379,7 @@ class APIClient:
 class MockAPIClient(APIClient):
 
     """
-    A mock api client for the deskpro API
+    A mock API client for the deskpro API.
 
     The IX-F importer uses this when
     IXF_SEND_TICKETS=False
@@ -406,10 +407,10 @@ class MockAPIClient(APIClient):
 class FailingMockAPIClient(MockAPIClient):
 
     """
-    A mock api client for the deskpro API
-    that returns an error on post
+    A mock API client for the deskpro API
+    that returns an error on post.
 
-    We use this in our tests, for example
+    Use in tests, for example
     with issue 856.
     """
 
@@ -432,8 +433,8 @@ class FailingMockAPIClient(MockAPIClient):
 
 def ticket_queue_deletion_prevented(request, instance):
     """
-    queue deskpro ticket to notify about the prevented
-    deletion of an object #696
+    Queue deskpro ticket to notify the prevented
+    deletion of an object #696.
     """
 
     subject = (

@@ -1,3 +1,6 @@
+"""
+Load initial data from another peeringdb instance using the REST API.
+"""
 from confu.schema import apply_defaults
 from django.conf import settings
 from django.core.management.base import BaseCommand

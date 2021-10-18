@@ -1,3 +1,7 @@
+"""
+DEPRECATED
+Sync latitude and longitude on all geocoding enabled entities.
+"""
 import googlemaps
 import reversion
 from django.conf import settings

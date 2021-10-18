@@ -1,3 +1,6 @@
+"""
+Checks entity status integrity (looks for orphaned entities).
+"""
 from django.core.management.base import BaseCommand
 
 import peeringdb_server.models as pdbm
