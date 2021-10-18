@@ -1166,6 +1166,7 @@ def view_organization(request, id):
                 "type": "image",
                 "accept": dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE,
                 "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+                "max_size": dj_settings.ORG_LOGO_MAX_SIZE,
                 "upload_handler": f"/org/{org.id}/upload-logo",
                 "value": logo_url,
             },

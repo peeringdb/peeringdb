@@ -3145,8 +3145,20 @@ twentyc.editable.input.register(
         this.element.find('.btn-clear').show();
         this.element.find('.loading-shim').hide();
       }).fail((r) => {
+
         // failure - show validation error
-        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name));
+        if(r.status == 413) {
+          let maxSize = this.source.data("edit-max-size")
+          if(maxSize) {
+            maxSize = ", max. " + parseInt(maxSize / 1024) + "kb";
+          } else {
+            maxSize ="";
+          }
+          this.show_validation_error(gettext("File size too big")+maxSize);
+        } else {
+          this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name));
+        }
+
         this.element.find('.loading-shim').hide();
       });
     },
