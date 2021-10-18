@@ -3148,11 +3148,11 @@ twentyc.editable.input.register(
 
         // failure - show validation error
         if(r.status == 413) {
-          let maxSize = this.source.data("edit-max-size")
+          let maxSize = this.source.data("edit-max-size");
           if(maxSize) {
             maxSize = ", max. " + parseInt(maxSize / 1024) + "kb";
           } else {
-            maxSize ="";
+            maxSize = "";
           }
           this.show_validation_error(gettext("File size too big")+maxSize);
         } else {
