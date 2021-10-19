@@ -1833,7 +1833,7 @@ twentyc.editable.target.register(
 
               row = twentyc.editable.templates.copy("advanced-search-"+reftag+"-item")
 
-              if(d.sponsorship) {
+              if(d.sponsorship && d.sponsorship.name) {
                 $('<a>').
                   attr("href", "/sponsors").
                   addClass("sponsor "+d.sponsorship.css).
