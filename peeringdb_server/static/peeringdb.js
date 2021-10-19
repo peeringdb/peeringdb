@@ -117,6 +117,17 @@ PeeringDB = {
 
   },
 
+  focus: function() {
+    // autofocus fields
+    path = window.location.pathname;
+    if (path == '/') {
+      $("#search").focus();
+    }
+    else if (path == '/advanced_search') {
+      $(".tab-pane.active").find("input.editable")[0].focus()
+    }
+  },
+
   // fix list x offsets depending on whether content is overflowing
   // or not - as it gets pushed over by scrollbars
   fix_list_offsets : function() {
@@ -3295,3 +3306,14 @@ $(twentyc.data).on("load-enum/traffic", function(e, payload) {
 $(window).bind("load", function() {
   PeeringDB.init();
 })
+
+$(window).bind("pageshow", function() {
+  PeeringDB.focus();
+  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    PeeringDB.focus()
+  });
+})
+
+
+
+
