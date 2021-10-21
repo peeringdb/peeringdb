@@ -80,7 +80,7 @@ twentyc.editable.error = {
   humanize : function(errorType) {
     switch(errorType) {
       case "ValidationErrors":
-        return gettext("Some of the fields contain invalid values - please correct and try again."); ///
+        return gettext("Some of the fields contain invalid values - please correct and try again.");
       break;
       case "Http403":
         return gettext("Permission denied");
@@ -88,10 +88,12 @@ twentyc.editable.error = {
         return gettext("Bad request");
       case "Http404":
         return gettext("Not found");
+      case "Http413":
+        return gettext("File too large");
       case "Http500":
         return gettext("Internal error");
       default:
-        return gettext("Something went wrong."); ///
+        return gettext("Something went wrong.");
       break;
     }
   }

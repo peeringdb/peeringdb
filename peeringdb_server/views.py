@@ -1162,10 +1162,13 @@ def view_organization(request, id):
             {
                 "name": "logo",
                 "label": _("Logo"),
-                "help_text": field_help(Organization, "logo"),
+                "help_text": field_help(Organization, "logo")
+                + " - "
+                + _("Max size: {}kb").format(int(dj_settings.ORG_LOGO_MAX_SIZE / 1024)),
                 "type": "image",
                 "accept": dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE,
                 "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+                "max_size": dj_settings.ORG_LOGO_MAX_SIZE,
                 "upload_handler": f"/org/{org.id}/upload-logo",
                 "value": logo_url,
             },
