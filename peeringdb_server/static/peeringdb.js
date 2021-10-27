@@ -1952,9 +1952,9 @@ twentyc.editable.target.register(
             me.trigger("success", {});
         }
       ).done(function(r) {
-        if (r.meta && r.meta.geovalidation_warning){
+        if (r && r.meta && r.meta.geovalidation_warning){
           PeeringDB.add_geo_warning(r.meta, endpoint);
-        } else if (r.meta && r.meta.suggested_address){
+        } else if (r && r.meta && r.meta.suggested_address){
           PeeringDB.add_suggested_address(r, endpoint);
         }
       }).fail(function(r) {
