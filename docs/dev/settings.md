@@ -14,6 +14,6 @@ export GOOGLE_GEOLOC_API_KEY=abcde
 
 When adding a setting use the `set_from_env` and the `set_option` wrappers to do so.
 
-These ensure that the overrides mentioned above are functional. Use `set_from_env` for variables you anticipate are definitely going to be overridden on a per environment basis. 
+These ensure that the overrides mentioned above are functional. Use `set_from_env` for variables you anticipate are definitely going to be overridden on a per environment basis.
 
 Use `set_option` for everything else.

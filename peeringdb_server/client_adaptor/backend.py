@@ -56,7 +56,7 @@ class Backend(BaseBackend):
         return self.CONCRETE_MAP.get(cls)
 
     @reftag_to_cls
-    def get_fields(self, concrete):
+    def get_fields(self, concrete, ignore_fields=None):
         """
         Sync currently doesnt support OneToOne relationships
         and none of the ones that exist in peeringdb_server
@@ -66,11 +66,15 @@ class Backend(BaseBackend):
 
         Here we make sure to not process OneToOneRel relationships
         """
+        if not ignore_fields:
+            ignore_fields = ["ixf_import_request_user"]
 
         _fields = super().get_fields(concrete)
         fields = []
         for field in _fields:
             if isinstance(field, OneToOneRel):
+                continue
+            if field.name in ignore_fields:
                 continue
             fields.append(field)
         return fields
