@@ -24,7 +24,7 @@ Generally speaking, anything that is going to be exposed to the public on Peerin
 
 ### Migrations
 
-For concrete models, `django-peeringdb` and `peeringdb_server` maintain their own set of migrations. 
+For concrete models, `django-peeringdb` and `peeringdb_server` maintain their own set of migrations.
 
 Please make sure that when you add fields or models to django-peeringdb that migrations for the changes exist in both places.
 
@@ -37,7 +37,7 @@ Refer to [django migration documentation](https://docs.djangoproject.com/en/3.2/
   - has a parent `Organization` relationship
 - `Network` (`net`): represents a network (asn)
   - has a parent `Organization` relationship
-- `InternetExchange` (`ix`): represents an internet exchange 
+- `InternetExchange` (`ix`): represents an internet exchange
   - has a parent `Organization` relationship
 - `IXLan` (`ixlan`): represents LAN information for an exchange
   - has a parent `InternetExchange` relationship
@@ -68,7 +68,7 @@ Through `django-handleref` each of the above objects maintains a status field th
 
 - `ok`: object is approved and currently live
 - `pending`: object is pending approval through admin-com
-- `deleted`: object is marked as deleted 
+- `deleted`: object is marked as deleted
 
 ### Soft delete
 
@@ -76,7 +76,7 @@ With the exception of stale `poc` objects, public peering data is *never* hard d
 
 Soft deleting an object means flipping its status from `ok` to `deleted`.
 
-Note that `django-handleref` overrides the model's `delete` method to do this automatically. 
+Note that `django-handleref` overrides the model's `delete` method to do this automatically.
 
 ```py
 net = Network.objects.get(id=20)
