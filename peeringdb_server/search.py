@@ -106,7 +106,6 @@ def make_search_query(term):
     if PARTIAL_IPV6_ADDRESS.match(term):
         return make_ipv6_query(term)
 
-    print("Using haystack query: {term}")
     term_filters = Q(content=term) | Q(content__startswith=term)
 
     return (
