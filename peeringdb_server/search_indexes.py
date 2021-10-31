@@ -137,6 +137,7 @@ class InternetExchangeIndex(MainEntity, indexes.Indexable):
 
 class NetworkIndex(MainEntity, indexes.Indexable):
     org_id = indexes.IntegerField(indexed=False, model_attr="org_id")
+    asn = indexes.IntegerField(indexed=False, model_attr="asn")
 
     class Meta:
         relations = ["org"]
@@ -172,6 +173,9 @@ class NetworkIXLanIndex(EntityIndex, indexes.Indexable):
     net_sub_result_name = indexes.CharField(indexed=False)
     ix_sub_result_name = indexes.CharField(indexed=False)
 
+    ipaddr4 = indexes.CharField(indexed=False)
+    ipaddr6 = indexes.CharField(indexed=False)
+
     class Meta:
         relations = ["network", "ixlan__ix", "network__org", "ixlan__ix__org"]
 
@@ -195,6 +199,18 @@ class NetworkIXLanIndex(EntityIndex, indexes.Indexable):
     def prepare_net_sub_result_name(self, obj):
         ips = self.prepare_ix_sub_result_name(obj)
         return f"{obj.ixlan.ix.search_result_name} {ips}"
+
+    def prepare_ipaddr4(self, obj):
+        if obj.ipaddr4:
+            return str(obj.ipaddr4)
+        else:
+            return ""
+
+    def prepare_ipaddr6(self, obj):
+        if obj.ipaddr6:
+            return str(obj.ipaddr6)
+        else:
+            return ""
 
 
 class IXLanPrefixIndex(EntityIndex, indexes.Indexable):

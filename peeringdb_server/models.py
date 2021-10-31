@@ -4023,6 +4023,22 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         validate_prefix_overlap(self.prefix)
         return super().clean()
 
+    @property
+    def ix_result_name(self):
+        return self.ixlan.ix.search_result_name
+
+    @property
+    def ix_org_id(self):
+        return self.ixlan.ix.org_id
+
+    @property
+    def ix_id(self):
+        return self.ixlan.ix.id
+
+    @property
+    def ix_sub_result_name(self):
+        return self.prefix
+
 
 @grainy_model(namespace="network", parent="org")
 @reversion.register
@@ -4705,6 +4721,44 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         Will only contain the ipaddress matching the specified version.
         """
         return f"netixlan{self.id} AS{self.asn} {self.ipaddr(version)}"
+
+    @property
+    def ix_result_name(self):
+        return self.ixlan.ix.search_result_name
+
+    @property
+    def ix_org_id(self):
+        return self.ixlan.ix.org_id
+
+    @property
+    def ix_id(self):
+        return self.ixlan.ix.id
+
+    @property
+    def net_result_name(self):
+        return self.network.search_result_name
+
+    @property
+    def net_org_id(self):
+        return self.network.org_id
+
+    @property
+    def net_id(self):
+        return self.network.id
+
+    @property
+    def ix_sub_result_name(self):
+        if self.ipaddr4 and self.ipaddr6:
+            return f"{self.ipaddr4} {self.ipaddr6}"
+        elif self.ipaddr4:
+            return f"{self.ipaddr4}"
+        elif self.ipaddr6:
+            return f"{self.ipaddr6}"
+
+    @property
+    def net_sub_result_name(self):
+        ips = self.ix_sub_result_name
+        return f"{self.ixlan.ix.search_result_name} {ips}"
 
 
 class User(AbstractBaseUser, PermissionsMixin):
