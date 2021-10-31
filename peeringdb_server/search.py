@@ -80,8 +80,12 @@ def make_ipv6_query(term):
 
 
 def prepare_term(term):
-    if ONLY_DIGITS.match(term):
-        term = f"AS{term}"
+    try:
+        if len(term) == 1:
+            int(term)
+            term = f"AS{term}"
+    except ValueError:
+        pass
 
     return unaccent(term)
 
