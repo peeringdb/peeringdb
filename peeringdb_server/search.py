@@ -50,10 +50,10 @@ searchable_models = [
 ]
 
 
-ONLY_DIGITS = re.compile(r'^[0-9]+$')
+ONLY_DIGITS = re.compile(r"^[0-9]+$")
 # These are not exact, but should be good enough
-PARTIAL_IPV4_ADDRESS = re.compile(r'^([0-9]{1,3}\.){1,3}([0-9]{1,3})?$')
-PARTIAL_IPV6_ADDRESS = re.compile(r'^([0-9A-Fa-f]{1,4}|:):[0-9A-Fa-f:]*$')
+PARTIAL_IPV4_ADDRESS = re.compile(r"^([0-9]{1,3}\.){1,3}([0-9]{1,3})?$")
+PARTIAL_IPV6_ADDRESS = re.compile(r"^([0-9A-Fa-f]{1,4}|:):[0-9A-Fa-f:]*$")
 
 
 def unaccent(v):
@@ -61,22 +61,22 @@ def unaccent(v):
 
 
 def valid_partial_ipv4_address(ip):
-    return all(int(s) >= 0 and int(s) <= 255 for s in ip.split('.') if len(s) > 0)
+    return all(int(s) >= 0 and int(s) <= 255 for s in ip.split(".") if len(s) > 0)
 
 
 def make_asn_query(term):
     return Network.objects.filter(asn__exact=term)
-    #return SearchQuerySet().filter(Q(asn__exact=term)).models(Network)
+    # return SearchQuerySet().filter(Q(asn__exact=term)).models(Network)
 
 
 def make_ipv4_query(term):
     return NetworkIXLan.objects.filter(ipaddr4__startswith=term)
-    #return SearchQuerySet().filter(Q(ipaddr4__startswith=term)).models(NetworkIXLan)
+    # return SearchQuerySet().filter(Q(ipaddr4__startswith=term)).models(NetworkIXLan)
 
 
 def make_ipv6_query(term):
     return NetworkIXLan.objects.filter(ipaddr6__startswith=term)
-    #return SearchQuerySet().filter(Q(ipaddr6__startswith=term)).models(NetworkIXLan)
+    # return SearchQuerySet().filter(Q(ipaddr6__startswith=term)).models(NetworkIXLan)
 
 
 def prepare_term(term):
@@ -109,7 +109,11 @@ def make_search_query(term):
     print("Using haystack query: {term}")
     term_filters = Q(content=term) | Q(content__startswith=term)
 
-    return SearchQuerySet().filter(term_filters, status=Exact("ok")).models(*searchable_models)
+    return (
+        SearchQuerySet()
+        .filter(term_filters, status=Exact("ok"))
+        .models(*searchable_models)
+    )
 
 
 def make_name_search_query(term):
@@ -155,18 +159,18 @@ def search(term, autocomplete=False):
     # highest scored on top (beginning of list)
 
     for sq in search_query[:limit]:
-        if hasattr(sq, 'model'):
+        if hasattr(sq, "model"):
             model = sq.model
             model.HandleRef.tag
             categorize(sq, result, pk_map)
         else:
-            if sq.HandleRef.tag == 'netixlan':
+            if sq.HandleRef.tag == "netixlan":
                 add_secondary_entries(sq, result, pk_map)
             else:
                 append_result(
                     sq.HandleRef.tag,
                     sq.pk,
-                    getattr(sq, 'search_result_name', None),
+                    getattr(sq, "search_result_name", None),
                     sq.org_id,
                     None,
                     result,
