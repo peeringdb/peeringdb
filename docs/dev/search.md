@@ -16,7 +16,7 @@ REST API filtering happens when filter parameters are passed to REST API list re
 
 This is almost a straight pass through to django query set filters (after some sanitizing of course).
 
-Most querying logic for this is defined in `rest.py` 
+Most querying logic for this is defined in `rest.py`
 
 Note that there is some extra effort involved for more intricate query filters, such as relationship queries or customized queries like the `whereis` filter for `ixpfx`
 

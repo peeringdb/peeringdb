@@ -1280,7 +1280,7 @@ PeeringDB.InlineSearch = {
         rowNode.append($('<a>').attr("href", "/"+type+"/"+row.id).text(row.name));
 
         var sponsor = (twentyc.data.get("sponsors")[row.org_id] || {});
-        if(sponsor) {
+        if(sponsor && sponsor.name) {
           rowNode.append($('<a>').
             attr("href", "/sponsors").
             addClass("sponsor "+sponsor.css).

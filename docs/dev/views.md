@@ -13,7 +13,7 @@ PeeringDB uses the following third party js libraries:
 - [20c-edit](https://github.com/20c/js-edit) wiring of forms to REST API, seamless switching between view and editor
 - [20c-list-util](https://github.com/20c/js-listutil) list filtering and sorting
 - [autocomplete-light](https://django-autocomplete-light.readthedocs.io/en/master/) autocomplete fields
-- [dom-purify](https://github.com/cure53/DOMPurify) santize DOM 
+- [dom-purify](https://github.com/cure53/DOMPurify) santize DOM
 - [showdown](https://github.com/showdownjs/showdown) markdown to html
 - [js-cookie](https://github.com/js-cookie/js-cookie) cookie utils
 
@@ -26,7 +26,7 @@ PeeringDB specific javascript code can be found in these files:
   - advanced search
   - custom 20c-edit input types
   - custom 20c-edit editor handlers
-  - data loaders 
+  - data loaders
   - ix-f post mortem, preview and review tools
   - quick search
   - api key permissions
@@ -85,7 +85,7 @@ Some types have specific properties, find those listed below:
 - `flags`: renders checkboxes for boolean flags
   - `value` (`list<dict>`): one entry for each checkbox (flag), each item should
     be a `dict` containing `name` and `value` keys (*required*)
-- `url` 
+- `url`
 - `list`
   - `data` (`str`): data loader name (*required*) - reference to data loaders below
   - `multiple` (`bool`): allow multi select
@@ -133,7 +133,7 @@ therefore the value of `"my_organizations"` in the response is NOT arbitrary.
 
 #### `urls.py`
 
-URL routing needs to be set up: 
+URL routing needs to be set up:
 
 ```py
     url(r"^data/my_organizations$", peeringdb_server.data_views.my_organizations),
@@ -141,7 +141,7 @@ URL routing needs to be set up:
 
 #### `static/peeringdb.js`
 
-The front-end needs to assign the loader: 
+The front-end needs to assign the loader:
 
 ```js
 twentyc.data.loaders.assign("my_organizations", "data");
@@ -177,5 +177,3 @@ In instances where you want to check permissions after the data has been seriali
 ```
 
 PeeringDB uses [django-grainy](https://github.com/20c/django-grainy) for granular permission checking and handling.
-
-

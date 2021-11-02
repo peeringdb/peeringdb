@@ -1,4 +1,4 @@
-## django-grainy 
+## django-grainy
 
 PeeringDB users [grainy](https://github.com/20c/grainy) and [django-grainy](https://github.com/20c/django-grainy) to manage user permissions.
 
@@ -28,10 +28,10 @@ and all the objects permissioned within it.
 A user given permissions to `peeringdb.organization.1.network.1` would only have permissions to the network
 with id `1` assuming that network belongs to the organization with id `1`.
 
-A user given permissions to `peeringdb.organization` has permissions to ALL organizations and ALL objects 
+A user given permissions to `peeringdb.organization` has permissions to ALL organizations and ALL objects
 permissioned within them.
 
-A user given permissions to `peeringdb.organization.*.network.*.poc_set.users` has permission to view all `user` 
+A user given permissions to `peeringdb.organization.*.network.*.poc_set.users` has permission to view all `user`
 visible points of contact.
 
 ### Setting permissions
@@ -59,6 +59,6 @@ When handling a django request to the REST API, it needs to be determined who or
 
 It is either a guest (unauthenticated user), a user (through session or user api key auth) or an organization (through org api key auth).
 
-The logic for this exists in `permissions.py`. 
+The logic for this exists in `permissions.py`.
 
 This is already wired up to all API views, but needs to be kept in mind when adding new views.
