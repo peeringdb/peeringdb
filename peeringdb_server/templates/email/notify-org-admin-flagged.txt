@@ -1,3 +1,5 @@
+{% load i18n %}
+{% blocktrans with org=org duration=duration %}
 You have been sent this message because you are an administrator for {{ org.name }}.
 
 {{ org.name }} does not currently have any active facilities, exchanges or networks in it.
@@ -5,3 +7,4 @@ You have been sent this message because you are an administrator for {{ org.name
 If it remains empty for {{ duration }} days it will be removed.
 
 You can add objects to your organization here: {{ org.view_url }}
+{% endblocktrans %}
