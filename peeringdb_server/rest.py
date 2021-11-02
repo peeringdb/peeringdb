@@ -49,7 +49,7 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
-from peeringdb_server.serializers import ParentStatusException, ASSetSerializer
+from peeringdb_server.serializers import ASSetSerializer, ParentStatusException
 from peeringdb_server.util import coerce_ipaddr
 
 

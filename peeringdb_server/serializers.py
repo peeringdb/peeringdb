@@ -15,7 +15,6 @@ import ipaddress
 import re
 
 from django.conf import settings
-from django.contrib.contenttypes import fields
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldError, ValidationError
 from django.core.validators import URLValidator

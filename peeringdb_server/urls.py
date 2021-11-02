@@ -2,7 +2,6 @@
 Django url to view routing.
 """
 from django.conf import settings
-from django.urls import path
 from django.conf.urls import include, url
 from django.urls import path
 from django.views.generic import RedirectView, TemplateView
@@ -71,7 +70,6 @@ from peeringdb_server.views import (
     view_username_retrieve_complete,
     view_username_retrieve_initiate,
     view_verify,
-    OrganizationLogoUpload,
 )
 
 # o

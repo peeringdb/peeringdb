@@ -62,7 +62,6 @@ from peeringdb_server.forms import (
     UserCreationForm,
     UserLocaleForm,
     UsernameRetrieveForm,
-    OrganizationLogoUploadForm,
 )
 from peeringdb_server.inet import (
     RdapException,
@@ -76,7 +75,6 @@ from peeringdb_server.models import (
     REFTAG_MAP,
     UTC,
     Facility,
-    IXLan,
     InternetExchange,
     InternetExchangeFacility,
     IXFMemberData,

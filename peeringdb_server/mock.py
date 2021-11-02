@@ -4,9 +4,9 @@ Handle generation of mock data for testing purposes.
 
 import ipaddress
 import uuid
-from django.utils import timezone
 
 from django.db import models
+from django.utils import timezone
 
 from peeringdb_server.models import REFTAG_MAP
 

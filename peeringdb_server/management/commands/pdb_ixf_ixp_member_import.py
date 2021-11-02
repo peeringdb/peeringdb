@@ -262,7 +262,6 @@ class Command(BaseCommand):
 
         total_log = {"data": [], "errors": []}
         total_notifications = []
-        import_error = False
         for ixlan in qset:
             self.log(
                 "Fetching data for -ixlan{} from {}".format(
