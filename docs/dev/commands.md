@@ -1,4 +1,4 @@
-Generated on 2021-10-15 07:56:57.136306
+Generated on 2021-11-02 10:01:21.394759
 
 ## _db_command.py
 
@@ -23,6 +23,10 @@ Replace a value in a field across several entities.
 ## pdb_cleanup_vq.py
 
 Verification queue cleanup.
+
+## pdb_delete_childless_org.py
+
+Delete childless org objects
 
 ## pdb_delete_pocs.py
 
@@ -118,3 +122,4 @@ Command line whois.
 ## pdb_wipe.py
 
 Wipe all peering data.
+
