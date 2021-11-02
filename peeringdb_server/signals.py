@@ -30,6 +30,7 @@ from django_grainy.models import Group, GroupPermission
 from django_peeringdb.const import REGION_MAPPING
 from django_peeringdb.models.abstract import AddressModel
 from grainy.const import PERM_CRUD, PERM_READ
+from django_peeringdb.const import REGION_MAPPING
 
 import peeringdb_server.settings as pdb_settings
 from peeringdb_server.deskpro import (

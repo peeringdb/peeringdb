@@ -4,6 +4,7 @@ Handle generation of mock data for testing purposes.
 
 import ipaddress
 import uuid
+from django.utils import timezone
 
 from django.db import models
 
@@ -315,3 +316,9 @@ class Mock:
 
     def property(self, data, reftag=None):
         return None
+
+    def flagged_date(self, data, reftag=None):
+        return timezone.now()
+
+    def flagged(self, data, reftag=None):
+        return False

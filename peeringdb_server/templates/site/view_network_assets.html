@@ -4,25 +4,29 @@
 
   <!-- NETWORK IX LINK ROW -->
   <div id="netixlan-item" class="row item">
-    <div class="col-xs-4 col-sm-4 col-md-6">
-      {% if permissions.can_delete %}
-      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
-      {% endif %}
-      <div class="exchange"
-           data-sort-name="exchange_name"
-           data-filter-name="exchange_name"
-           data-edit-name="exchange">
+    <div class="row squeeze-15">
+      <div class="col-xs-3 col-sm-4 col-md-4">
+        {% if permissions.can_delete %}
+        <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+        {% endif %}
+        <div class="exchange"
+             data-sort-name="exchange_name"
+             data-filter-name="exchange_name"
+             data-edit-name="exchange">
+        </div>
+
+        <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
+
       </div>
 
-      <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
-
+      <div class="col-xs-3 col-sm-4 col-md-3">
+        <div class="asn"
+          data-edit-type="readonly"
+           data-edit-name="asn"
+           data-filter-name="asn"
+           data-sort-name="asn">
+        </div>
         <div class="editable-inline netixlan-extra">
-          <div class="asn"
-             data-edit-type="readonly"
-             data-edit-name="asn"
-             data-filter-name="asn"
-             data-sort-name="asn">
-          </div>
           <div
             data-edit-type="bool"
             data-edit-name="operational"
@@ -32,33 +36,39 @@
           </div>
           <span data-edit-toggled="edit">{% trans "Operational" %}</span>
         </div>
+      </div>
 
+      <div class="col-xs-3 col-sm-2 col-md-3">
+        <div class="speed"
+             data-sort-name="speed"
+             data-filter-name="speed"
+             data-edit-type="network_speed"
+             data-edit-name="speed"
+             data-edit-required="yes">
+        </div>
+      </div>
 
+      <div class="col-xs-3 col-sm-2 col-md-2">
+        <div class="is_rs_peer"
+             data-sort-name="is_rs_peer"
+             data-filter-name="is_rs_peer"
+             data-edit-type="bool"
+             data-edit-name="is_rs_peer"
+             data-edit-template="check">
+        </div>
+      </div>
     </div>
-    <div class="col-xs-5 col-sm-5 col-md-4">
-      <div data-edit-type="string"
-           data-edit-name="ipaddr4">
+    <div class="row ip-addr squeeze-15">
+      <div class="col-xs-12 col-sm-4">
+        <div data-edit-type="string"
+             data-edit-name="ipaddr4">
+        </div>
       </div>
-      <div data-edit-type="string"
-           data-edit-name="ipaddr6">
-       </div>
-    </div>
-    <div class="col-xs-3 col-sm-3 col-md-2">
-      <div class="speed"
-           data-sort-name="speed"
-           data-filter-name="speed"
-           data-edit-type="network_speed"
-           data-edit-name="speed"
-           data-edit-required="yes">
+      <div class="col-xs-12 col-sm-8">
+        <div data-edit-type="string"
+             data-edit-name="ipaddr6" class="ip6">
+         </div>
       </div>
-      <div class="is_rs_peer"
-           data-sort-name="is_rs_peer"
-           data-filter-name="is_rs_peer"
-           data-edit-type="bool"
-           data-edit-name="is_rs_peer"
-           data-edit-template="check">
-      </div>
-
     </div>
   </div>
 
