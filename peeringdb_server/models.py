@@ -795,6 +795,11 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         ),
     )
 
+    # Delete childless org objects #838
+    # Flag any childless orgs for deletion
+    flagged = models.BooleanField(null=True, blank=True, help_text="Flag the organization for deletion")
+    flagged_date = models.DateTimeField(null=True, blank=True, auto_now=False, auto_now_add=False, help_text="Date when the organization was flagged")
+
     @staticmethod
     def autocomplete_search_fields():
         return (
@@ -876,6 +881,22 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         else:
             self._not_deletable_reason = None
             return True
+
+    @property
+    def is_empty(self):
+        """
+        Returns whether or not the organization is empty
+
+        An empty organization means an organization that does not
+        have any objects with status ok or pending under it
+        """
+
+        return (
+            not self.ix_set.filter(status__in=["ok","pending"]).exists()
+            and not self.fac_set.filter(status__in=["ok","pending"]).exists()
+            and not self.net_set.filter(status__in=["ok","pending"]).exists()
+        )
+
 
     @property
     def owned(self):
