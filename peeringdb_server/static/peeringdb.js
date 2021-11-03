@@ -1291,11 +1291,7 @@ PeeringDB.InlineSearch = {
         rowNode.append($('<a>').attr("href", "/"+type+"/"+row.id).text(row.name));
 
         var sponsor = (twentyc.data.get("sponsors")[row.org_id] || {});
-<<<<<<< HEAD
         if(sponsor && sponsor.name) {
-=======
-        if(sponsor) {
->>>>>>> support_202110
           rowNode.append($('<a>').
             attr("href", "/sponsors").
             addClass("sponsor "+sponsor.css).
@@ -3058,17 +3054,10 @@ twentyc.editable.input.register(
       var node = $('<div class="file-upload">');
 
       // element holding current image (if exists)
-<<<<<<< HEAD
       let current = $('<div class="current">');
 
       // element holding upload image input
       let upload = $('<div class="upload">');
-=======
-      let current = $('<div class="current">')
-
-      // element holding upload image input
-      let upload = $('<div class="upload">')
->>>>>>> support_202110
 
       // we need to copy the current image from the view-mode
       // element so we can display it
@@ -3077,12 +3066,9 @@ twentyc.editable.input.register(
       // file selection input
       let input = $('<input type="file" style="display:inline">');
 
-<<<<<<< HEAD
       // loading shim
       let loading = $('<div class="editable loading-shim single-field-shim">').hide();
 
-=======
->>>>>>> support_202110
       // set file type accept
       let accept = this.source.data("edit-accept");
 
@@ -3127,15 +3113,9 @@ twentyc.editable.input.register(
 
       // assemble the UX nodes
 
-<<<<<<< HEAD
       current.append(image).append(buttonClear);
       upload.append(input).append(buttonUpload);
       node.append(current).append(upload).append(loading);
-=======
-      current.append(image).append(buttonClear)
-      upload.append(input).append(buttonUpload)
-      node.append(current).append(upload)
->>>>>>> support_202110
 
       if(accept)
         input.attr("accept", accept);
@@ -3150,10 +3130,7 @@ twentyc.editable.input.register(
 
     remove_file : function() {
       let name = this.source.data("edit-name");
-<<<<<<< HEAD
       this.element.find('.loading-shim').show();
-=======
->>>>>>> support_202110
       $.ajax({
         url: this.source.data("edit-upload-path"),
         method: 'delete',
@@ -3162,19 +3139,12 @@ twentyc.editable.input.register(
         this.source.find('img').hide();
         this.element.find('img').hide();
         // hide the "Remove" button
-<<<<<<< HEAD
         this.element.find('.btn-clear').hide();
         this.element.find('.loading-shim').hide();
       }).fail((r) => {
         // failure - show validation error
         this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name))
         this.element.find('.loading-shim').hide();
-=======
-        this.element.find('.btn-clear').hide()
-      }).fail((r) => {
-        // failure - show validation error
-        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name))
->>>>>>> support_202110
       });
     },
 
@@ -3187,11 +3157,8 @@ twentyc.editable.input.register(
       var data = new FormData();
       let name = this.source.data("edit-name");
 
-<<<<<<< HEAD
       this.element.find('.loading-shim').show();
 
-=======
->>>>>>> support_202110
       // prepare file data
       var file = this.element.find('input[type="file"]')[0].files[0];
       data.append(name, file);
@@ -3208,7 +3175,6 @@ twentyc.editable.input.register(
         // to new url and show the "Remove" button
         this.source.find('img').attr('src', r["url"]).show();
         this.element.find('img').attr('src', r["url"]).show();
-<<<<<<< HEAD
         this.element.find('.btn-clear').show();
         this.element.find('.loading-shim').hide();
       }).fail((r) => {
@@ -3227,12 +3193,6 @@ twentyc.editable.input.register(
         }
 
         this.element.find('.loading-shim').hide();
-=======
-        this.element.find('.btn-clear').show()
-      }).fail((r) => {
-        // failure - show validation error
-        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name))
->>>>>>> support_202110
       });
     },
 
