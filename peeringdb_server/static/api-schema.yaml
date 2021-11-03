@@ -400,6 +400,27 @@ paths:
         required: false
         schema:
           type: date-time
+      - name: org__flagged
+        in: query
+        description: 'Flag the organization for deletion
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__flagged_date
+        in: query
+        description: 'Date when the organization was flagged
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: org__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -1682,7 +1703,7 @@ paths:
       - api
     patch:
       operationId: patch fac
-      description: 'PATCH (partial update) is currently disabled
+      description: 'PATCH (partial update) is currently disabled.
 
 
         ## Facility (Datacenter)
@@ -2693,6 +2714,27 @@ paths:
       - name: org__created
         in: query
         description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: org__flagged
+        in: query
+        description: 'Flag the organization for deletion
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__flagged_date
+        in: query
+        description: 'Date when the organization was flagged
+
+
+          Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -5818,7 +5860,7 @@ paths:
       - api
     patch:
       operationId: patch ix
-      description: 'PATCH (partial update) is currently disabled
+      description: 'PATCH (partial update) is currently disabled.
 
 
         ## Internet Exchange
@@ -8354,7 +8396,7 @@ paths:
       - api
     patch:
       operationId: patch ixfac
-      description: 'PATCH (partial update) is currently disabled
+      description: 'PATCH (partial update) is currently disabled.
 
 
         ## Internet Exchange / Facility presence
@@ -10286,7 +10328,7 @@ paths:
       - api
     patch:
       operationId: patch ixpfx
-      description: 'PATCH (partial update) is currently disabled
+      description: 'PATCH (partial update) is currently disabled.
 
 
         ## Internet Exchange Prefix
@@ -10883,6 +10925,27 @@ paths:
       - name: org__created
         in: query
         description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: org__flagged
+        in: query
+        description: 'Flag the organization for deletion
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__flagged_date
+        in: query
+        description: 'Date when the organization was flagged
+
+
+          Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -12092,7 +12155,7 @@ paths:
       - api
     patch:
       operationId: patch net
-      description: 'PATCH (partial update) is currently disabled
+      description: 'PATCH (partial update) is currently disabled.
 
 
         ## Network
@@ -13439,7 +13502,7 @@ paths:
       - api
     patch:
       operationId: patch poc
-      description: 'PATCH (partial update) is currently disabled
+      description: 'PATCH (partial update) is currently disabled.
 
 
         ## Network Point of Contact
@@ -14811,7 +14874,7 @@ paths:
       - api
     patch:
       operationId: patch netfac
-      description: 'PATCH (partial update) is currently disabled
+      description: 'PATCH (partial update) is currently disabled.
 
 
         ## Network / Facility presence
@@ -15976,7 +16039,7 @@ paths:
       - api
     patch:
       operationId: patch netixlan
-      description: 'PATCH (partial update) is currently disabled
+      description: 'PATCH (partial update) is currently disabled.
 
 
         ## Network to Internet Exchange connection
@@ -16271,6 +16334,27 @@ paths:
           default: 0
           minimum: 0
           maximum: 2
+      - name: flagged
+        in: query
+        description: 'Flag the organization for deletion
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: flagged_date
+        in: query
+        description: 'Date when the organization was flagged
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -21452,7 +21536,7 @@ paths:
       - api
     patch:
       operationId: patch org
-      description: 'PATCH (partial update) is currently disabled
+      description: 'PATCH (partial update) is currently disabled.
 
 
         ## Organization
@@ -24434,6 +24518,27 @@ paths:
         required: false
         schema:
           type: date-time
+      - name: org__flagged
+        in: query
+        description: 'Flag the organization for deletion
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__flagged_date
+        in: query
+        description: 'Date when the organization was flagged
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: org__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -25177,6 +25282,27 @@ paths:
       - name: org__created
         in: query
         description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: org__flagged
+        in: query
+        description: 'Flag the organization for deletion
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__flagged_date
+        in: query
+        description: 'Date when the organization was flagged
+
+
+          Filter results by matching a value against this field.
 
 
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
@@ -32014,377 +32140,4 @@ components:
       - name
     ASSet:
       type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        org_id:
-          type: integer
-        org:
-          type: string
-          readOnly: true
-        name:
-          type: string
-          maxLength: 255
-        aka:
-          type: string
-          maxLength: 255
-        name_long:
-          type: string
-          maxLength: 255
-        website:
-          type: string
-          format: uri
-          maxLength: 255
-          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
-            d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\d?)){3}|\\\
-            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
-            -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
-            -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
-            s]*)?\\z"
-        asn:
-          type: integer
-          maximum: 4294967295
-          format: int64
-          minimum: 0
-        looking_glass:
-          type: string
-          format: uri
-          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
-            d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\d?)){3}|\\\
-            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
-            -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
-            -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
-            s]*)?\\z"
-        route_server:
-          type: string
-          format: uri
-          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
-            d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\d?)){3}|\\\
-            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
-            -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
-            -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
-            s]*)?\\z"
-        irr_as_set:
-          type: string
-          description: Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
-            (IRR)
-          maxLength: 255
-        info_type:
-          enum:
-          - ''
-          - Not Disclosed
-          - NSP
-          - Content
-          - Cable/DSL/ISP
-          - Enterprise
-          - Educational/Research
-          - Non-Profit
-          - Route Server
-          - Network Services
-          - Route Collector
-          - Government
-          type: string
-        info_prefixes4:
-          type: integer
-        info_prefixes6:
-          type: integer
-        info_traffic:
-          enum:
-          - ''
-          - 0-20Mbps
-          - 20-100Mbps
-          - 100-1000Mbps
-          - 1-5Gbps
-          - 5-10Gbps
-          - 10-20Gbps
-          - 20-50Gbps
-          - 50-100Gbps
-          - 100-200Gbps
-          - 200-300Gbps
-          - 300-500Gbps
-          - 500-1000Gbps
-          - 1-5Tbps
-          - 5-10Tbps
-          - 10-20Tbps
-          - 20-50Tbps
-          - 50-100Tbps
-          - 100+Tbps
-          type: string
-        info_ratio:
-          enum:
-          - ''
-          - Not Disclosed
-          - Heavy Outbound
-          - Mostly Outbound
-          - Balanced
-          - Mostly Inbound
-          - Heavy Inbound
-          type: string
-        info_scope:
-          enum:
-          - ''
-          - Not Disclosed
-          - Regional
-          - North America
-          - Asia Pacific
-          - Europe
-          - South America
-          - Africa
-          - Australia
-          - Middle East
-          - Global
-          type: string
-        info_unicast:
-          type: boolean
-        info_multicast:
-          type: boolean
-        info_ipv6:
-          type: boolean
-        info_never_via_route_servers:
-          type: boolean
-          description: Indicates if this network will announce its routes via route
-            servers or not
-        ix_count:
-          type: integer
-          maximum: 4294967295
-          format: int64
-          description: number of exchanges at this network
-          minimum: 0
-        fac_count:
-          type: integer
-          maximum: 4294967295
-          format: int64
-          description: number of facilities at this network
-          minimum: 0
-        notes:
-          type: string
-        netixlan_updated:
-          type: string
-          format: date-time
-          readOnly: true
-        netfac_updated:
-          type: string
-          format: date-time
-          readOnly: true
-        poc_updated:
-          type: string
-          format: date-time
-          readOnly: true
-        policy_url:
-          type: string
-          format: uri
-          maxLength: 255
-          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
-            d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\d?)){3}|\\\
-            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
-            -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
-            -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
-            s]*)?\\z"
-        policy_general:
-          enum:
-          - Open
-          - Selective
-          - Restrictive
-          - 'No'
-          type: string
-        policy_locations:
-          enum:
-          - Not Required
-          - Preferred
-          - Required - US
-          - Required - EU
-          - Required - International
-          type: string
-        policy_ratio:
-          type: boolean
-        policy_contracts:
-          enum:
-          - Not Required
-          - Private Only
-          - Required
-          type: string
-        netfac_set:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-                readOnly: true
-              name:
-                type: string
-                readOnly: true
-              city:
-                type: string
-                readOnly: true
-              country:
-                type: string
-                readOnly: true
-              fac_id:
-                type: integer
-              fac:
-                type: string
-                readOnly: true
-              local_asn:
-                type: integer
-                maximum: 4294967295
-                format: int64
-                nullable: true
-                minimum: 0
-              created:
-                type: string
-                format: date-time
-                readOnly: true
-              updated:
-                type: string
-                format: date-time
-                readOnly: true
-              status:
-                type: string
-                maxLength: 255
-            required:
-            - fac_id
-          readOnly: true
-        netixlan_set:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-                readOnly: true
-              ix_id:
-                type: string
-                readOnly: true
-              name:
-                type: string
-                readOnly: true
-              ixlan_id:
-                type: string
-              ixlan:
-                type: string
-                readOnly: true
-              notes:
-                type: string
-                maxLength: 255
-              speed:
-                type: integer
-                maximum: 4294967295
-                format: int64
-                minimum: 0
-              asn:
-                type: integer
-                maximum: 4294967295
-                format: int64
-                minimum: 0
-              ipaddr4:
-                type: string
-              ipaddr6:
-                type: string
-              is_rs_peer:
-                type: boolean
-              operational:
-                type: boolean
-              created:
-                type: string
-                format: date-time
-                readOnly: true
-              updated:
-                type: string
-                format: date-time
-                readOnly: true
-              status:
-                type: string
-                maxLength: 255
-            required:
-            - ixlan_id
-            - speed
-            - asn
-            - ipaddr4
-            - ipaddr6
-          readOnly: true
-        poc_set:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-                readOnly: true
-              role:
-                enum:
-                - Abuse
-                - Maintenance
-                - Policy
-                - Technical
-                - NOC
-                - Public Relations
-                - Sales
-                type: string
-              visible:
-                enum:
-                - Private
-                - Users
-                - Public
-                type: string
-              name:
-                type: string
-                maxLength: 254
-              phone:
-                type: string
-                description: An E.164-formatted phone number starts with a +, followed
-                  by the country code, then the national phone number (dropping the
-                  leading 0 in most countries), without spaces or dashes between the
-                  groups of digits
-                maxLength: 100
-              email:
-                type: string
-                format: email
-                maxLength: 254
-              url:
-                type: string
-                format: uri
-                maxLength: 255
-                pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
-                  d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
-                  d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
-                  0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
-                  .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
-                  d{2,5})?(?:[/?#][^\\s]*)?\\z"
-              created:
-                type: string
-                format: date-time
-                readOnly: true
-              updated:
-                type: string
-                format: date-time
-                readOnly: true
-              status:
-                type: string
-                maxLength: 255
-            required:
-            - role
-          readOnly: true
-        allow_ixp_update:
-          type: boolean
-          description: Specifies whether an IXP is allowed to add a netixlan entry
-            for this network via their ixp_member data
-        suggest:
-          type: boolean
-          writeOnly: true
-        created:
-          type: string
-          format: date-time
-          readOnly: true
-        updated:
-          type: string
-          format: date-time
-          readOnly: true
-        status:
-          type: string
-          maxLength: 255
-      required:
-      - org_id
-      - name
-      - asn
+      properties: {}

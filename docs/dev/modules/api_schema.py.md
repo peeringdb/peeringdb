@@ -1,4 +1,4 @@
-Generated from api_schema.py on 2021-10-15 07:56:57.376975
+Generated from api_schema.py on 2021-11-02 10:01:21.611533
 
 # peeringdb_server.api_schema
 
@@ -24,12 +24,6 @@ the peeringdb API docs.
 
 ### Methods
 
-#### _get_operation_id
-`def _get_operation_id(self, path, method)`
-
-Override this so operation ids become "{op} {reftag}"
-
----
 #### augment_create_ix
 `def augment_create_ix(self, serializer, model, op_dict)`
 
@@ -107,6 +101,12 @@ Returns:
 
 Override this so we can augment the operation dict
 for an openapi schema operation.
+
+---
+#### get_operation_id
+`def get_operation_id(self, path, method)`
+
+Override this so operation ids become "{op} {reftag}"
 
 ---
 #### get_operation_type

@@ -1,4 +1,4 @@
-Generated from serializers.py on 2021-10-15 07:56:57.376975
+Generated from serializers.py on 2021-11-02 10:01:21.611533
 
 # peeringdb_server.serializers
 
@@ -34,6 +34,22 @@ FIXME: should be renamed on model schema.
 ---
 # Classes
 ---
+
+## ASSetSerializer
+
+```
+ASSetSerializer(peeringdb_server.serializers.NetworkSerializer)
+```
+
+Serializer for peeringdb_server.models.Network
+
+Possible realtionship queries:
+  - org_id, handled by serializer
+  - ix_id, handled by prepare_query
+  - ixlan_id, handled by prepare_query
+  - netfac_id, handled by prepare_query
+  - fac_id, handled by prepare_query
+
 
 ## AddressSerializer
 
@@ -352,7 +368,7 @@ Return max depth according to whether resultset is list or single GET.
 
 ---
 #### prefetch_related
-`def prefetch_related(cls, qset, request, prefetch=None, related=None, nested=, depth=None, is_list=False, single=None)`
+`def prefetch_related(cls, qset, request, prefetch=None, related=None, nested=, depth=None, is_list=False, single=None, selective=None)`
 
 Prefetch related sets according to depth specified in the request.
 
@@ -374,6 +390,16 @@ Returns a list of all second level queryable relation fields.
 `def __init__(self, *args, **kwargs)`
 
 Initialize self.  See help(type(self)) for accurate signature.
+
+---
+#### _handle_netixlan_reclaim
+`def _handle_netixlan_reclaim(self, ipaddr4, ipaddr6)`
+
+Handles logic of reclaiming ipaddresses from soft-deleted
+netixlans in case where ipv4 and ipv6 are on separate netixlan objects
+
+Will raise a django DoesNotExist error if either ipaddress does not
+exist on a deleted netixlan
 
 ---
 #### create
