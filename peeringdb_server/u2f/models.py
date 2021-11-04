@@ -118,7 +118,7 @@ class SecurityKey(models.Model):
     Describes a Webauthn (U2F) SecurityKey be used for passwordless
     login or 2FA
 
-    2FA is handled through U2FOTPDevice which allows integration
+    2FA is handled through SecurityKeyDevice which allows integration
     of Webauthn security keys as a 2FA option for django_otp
     """
 
