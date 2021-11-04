@@ -45,6 +45,7 @@ passlib = ">=1.7.1"
 phonenumbers = ">=8.11.1"
 rdap = "==1.2.1"
 unidecode = ">=1.0.23"
+webauthn = "^1"
 # these should just be pulled in automatically?
 django-reversion = ">=4, <5"
 certifi = ">=2017.11.5"

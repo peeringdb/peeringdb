@@ -698,6 +698,17 @@ ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/login"
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/verify"
 ACCOUNT_EMAIL_REQUIRED = True
 
+# Webauthn (U2F) settings
+
+# unique id for the relying party
+set_option("WEBAUTHN_RP_ID", "peeringdb")
+
+# name of the relying party (displayed to the user)
+set_option("WEBAUTHN_RP_NAME", "PeeringDB")
+
+# webauthn origin validation
+set_option("WEBAUTHN_ORIGIN", BASE_URL)
+
 # haystack
 
 set_option("WHOOSH_INDEX_PATH", os.path.join(BASE_DIR, "api-cache", "whoosh-index"))

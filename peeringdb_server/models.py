@@ -74,6 +74,7 @@ from peeringdb_server.validators import (
     validate_poc_visible,
     validate_prefix_overlap,
 )
+from peeringdb_server.u2f.models import (SecurityKey, Challenge, UserHandle, SecurityKeyDevice)
 
 SPONSORSHIP_LEVELS = (
     (1, _("Silver")),
@@ -5219,6 +5220,7 @@ class CommandLineTool(models.Model):
 
     def set_running(self):
         self.status = "running"
+
 
 
 class EnvironmentSetting(models.Model):
