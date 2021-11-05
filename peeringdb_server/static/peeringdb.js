@@ -1707,6 +1707,132 @@ twentyc.editable.module.register(
   "listing"
 );
 
+twentyc.editable.module.register(
+  "security_key_listing",
+  {
+    loading_shim : true,
+
+    remove : function(id, row, trigger, container) {
+      var b = PeeringDB.confirm(gettext("Remove") + " " +row.data("edit-label"), "remove");  ///
+      var me = this;
+      $(this.target).on("success", function(ev, data) {
+        if(b)
+          me.listing_remove(id, row, trigger, container);
+      });
+      if(b) {
+        this.target.data = { id : id };
+        this.target.execute("delete");
+      } else {
+        $(this.target).trigger("success", [gettext("Canceled")]);  ///
+      }
+    },
+
+    array_buffer_to_uint8 : function(b){
+      return Uint8Array.from(b, c=>c.charCodeAt(0));
+    },
+
+    array_buffer_to_base64 : function(b) {
+      return base64url.encode(b);
+    },
+
+    base64_to_array_buffer : function(b) {
+      return base64url.decode(b);
+    },
+
+    execute_register : function(trigger, container) {
+      // initial step of security key registration
+      //
+      // request credential registration options from the server
+
+      $.get('/security_keys/request_registration', (response)=> {
+        console.log("CHALLENGE", response.challenge);
+        var challenge_str = this.base64_to_array_buffer(response.challenge);
+        //response.challenge = this.array_buffer_to_uint8(challenge_str);
+        response.challenge = challenge_str;
+        console.log("CHALLENGE (2)", response.challenge);
+        response.user.id = this.array_buffer_to_uint8(response.user.id);
+        const credential = navigator.credentials.create(
+          {publicKey: response}
+        ).then((credential) => {
+          console.log("credentials", credential);
+
+          this.components.add.editable("export", this.target.data);
+
+          this.target.data.challenge = this.array_buffer_to_base64(challenge_str);
+
+          this.target.data.credential = JSON.stringify({
+                id: credential.id,
+                rawId: this.array_buffer_to_base64(credential.rawId),
+                response: {
+                  clientDataJSON: this.array_buffer_to_base64(
+                    credential.response.clientDataJSON
+                  ),
+                  attestationObject: this.array_buffer_to_base64(
+                    credential.response.attestationObject
+                  )
+                },
+                type: credential.type
+          });
+
+          this.target.execute("add", this.components.add, (response) => {
+
+          });
+        });
+
+      });
+    },
+
+    register : function(rowId, trigger, container, data) {
+      console.log("Register call");
+    },
+
+    execute_add : function(trigger, container) {
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      this.target.execute("add", this.components.add, function(response) {
+        this.add(data.entity, trigger, container, response);
+      }.bind(this));
+    },
+
+    add : function(rowId, trigger, container, data) {
+      var row = this.listing_add(data.prefix, trigger, container, data);
+      row.attr("data-edit-label", data.name)
+      row.data("edit-label", data.name)
+      var update_key_form = row.find(".update-key")
+      update_key_form.find(".popin, .loading-shim").detach()
+      update_key_form.editable()
+      return row
+    },
+
+    execute_update : function(trigger, container) {
+      var row = this.row(trigger);
+      row.editable("export", this.target.data);
+      var data = this.target.data;
+      this.target.execute("update", trigger, function(response) {
+      }.bind(this));
+    },
+
+    execute_remove : function(trigger, container) {
+      var row = this.row(trigger);
+      var b = PeeringDB.confirm(gettext("Revoke key") + " " +row.data("edit-label"), "remove");
+
+      if(!b) {
+        container.editable("loading-shim", "hide")
+        return
+      }
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      var id = data.prefix = row.data("edit-id")
+      this.target.execute("remove", trigger, function(response) {
+        this.listing_remove(id, row, trigger, container);
+      }.bind(this));
+    }
+
+  },
+  "listing"
+);
+
+
 
 twentyc.editable.module.register(
   "uoar_listing",

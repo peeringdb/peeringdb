@@ -21,6 +21,8 @@ from django_otp.models import SideChannelDevice, ThrottlingMixin
 import secrets
 import webauthn
 
+from webauthn.helpers import parse_client_data_json, bytes_to_base64url
+
 from webauthn.helpers.structs import (
     RegistrationCredential,
     AuthenticationCredential,
@@ -45,7 +47,7 @@ class UserHandle(models.Model):
     )
 
     handle = models.CharField(
-        max_length=64,
+        max_length=255,
         null=True,
         blank=True,
         help_text=_(
@@ -67,16 +69,18 @@ class UserHandle(models.Model):
         Requires a user handle for the user, will create it if it does not exist
         """
 
-        if user.webauthn_user_handle:
+        try:
             return user.webauthn_user_handle
+        except UserHandle.DoesNotExist:
+            pass
 
-        handle = secrets.token_urlsafe(64)
+        handle = secrets.token_urlsafe(32)
         max_tries = 1000
         tries = 0
 
         while cls.objects.filter(handle=handle).exists():
-            handle = secrets.token_urlsafe(64)
-            if tries >= 1000:
+            handle = secrets.token_urlsafe(32)
+            if tries >= max_tries:
                 raise ValueError(
                     _("Unable to generate unique user handle for webauthn")
                 )
@@ -96,7 +100,7 @@ class Challenge(models.Model):
         on_delete=models.CASCADE,
     )
 
-    challenge = models.BinaryField(max_length=64, db_index=True)
+    challenge = models.BinaryField(max_length=64)
     created = models.DateTimeField(auto_now_add=True)
     type = models.CharField(
         max_length=4,
@@ -109,7 +113,7 @@ class Challenge(models.Model):
     class Meta:
         db_table = "peeringdb_webauthn_challenge"
         verbose_name = _("Webauthn Challenge")
-        verbose_name_plural = _("Webauthn_Challenges")
+        verbose_name_plural = _("Webauthn Challenges")
 
 
 class SecurityKey(models.Model):
@@ -124,12 +128,18 @@ class SecurityKey(models.Model):
 
     class Meta:
         db_table = "peeringdb_webauthn_security_key"
-        verbose_name = _("U2F Device")
-        verbose_name_plural = _("U2F Devices")
+        verbose_name = _("Webauthn Security Key")
+        verbose_name_plural = _("Webauthn Security Keys")
+
+    user = models.ForeignKey(
+        "peeringdb_server.User",
+        related_name="webauthn_security_keys",
+        on_delete=models.CASCADE,
+    )
 
     name = models.CharField(max_length=255, null=True, help_text=_("Security key name"))
     credential_id = models.CharField(max_length=255, unique=True, db_index=True)
-    credetnial_public_key = models.CharField(max_length=255, unique=True)
+    credential_public_key = models.CharField(max_length=255, unique=True)
     sign_count = models.PositiveIntegerField(default=0)
 
     type = models.CharField(max_length=64)
@@ -141,11 +151,11 @@ class SecurityKey(models.Model):
     def generate_registration(cls, user):
 
         opts = webauthn.generate_registration_options(
-            settings.WEBAUTHN_RP_ID,
-            settings.WEBAUTHN_RP_NAME,
-            UserHandle.require_for_user(user).handle,
-            user.username,
-            attestation=None,
+            rp_id=settings.WEBAUTHN_RP_ID,
+            rp_name=settings.WEBAUTHN_RP_NAME,
+            user_id=UserHandle.require_for_user(user).handle,
+            user_name=user.username,
+            attestation="none",
         )
 
         challenge = Challenge.objects.create(
@@ -155,7 +165,7 @@ class SecurityKey(models.Model):
         return webauthn.options_to_json(opts)
 
     @classmethod
-    def verify_registration(cls, user, challenge_str, raw_credential, name="main"):
+    def verify_registration(cls, user, challenge_str, raw_credential, **kwargs):
 
         try:
             challenge = user.webauthn_challenges.get(
@@ -164,28 +174,36 @@ class SecurityKey(models.Model):
         except Challenge.DoesNotExist:
             raise ValueError(_("Invalid webauthn challenge"))
 
-        credential = RegistrationCredential.parse_raw(raw_redential)
+        credential = RegistrationCredential.parse_raw(raw_credential)
+
+        client_data = parse_client_data_json(credential.response.client_data_json)
+
+        print(client_data)
+        print(challenge_str)
+
         verified_registration = webauthn.verify_registration_response(
-            credential,
-            challenge.challenge,
-            settings.WEBAUTHN_RP_ID,
-            settings.WEBAUTHN_ORIGIN,
+            credential=credential,
+            expected_challenge=challenge.challenge,
+            expected_rp_id=settings.WEBAUTHN_RP_ID,
+            expected_origin=settings.WEBAUTHN_ORIGIN,
         )
 
         challenge.delete()
 
         return cls.objects.create(
-            name=name,
-            credential_id=verified_registration.credential_id,
-            credential_public_key=verified_registration.credential_public_key,
+            user=user,
+            credential_id=bytes_to_base64url(verified_registration.credential_id),
+            credential_public_key=bytes_to_base64url(verified_registration.credential_public_key),
             sign_count=verified_registration.sign_count,
+            name=kwargs.get("name", "main"),
+            passwordless_login=kwargs.get("passwordless_login", False)
         )
 
     @classmethod
     def generate_authentication(cls):
 
         opts = webauthn.generate_authentication_options(
-            settings.WEBAUTHN_RP_ID,
+            settings.WEBAUTHN_ORIGIN,
         )
 
         challenge = Challenge.objects.create(
@@ -212,7 +230,7 @@ class SecurityKey(models.Model):
         verified_authentication = webauthn.verify_authentication_response(
             credential,
             challenge.challenge,
-            settings.WEBAUTHN_RP_ID,
+            settings.WEBAUTHN_ORIGIN,
             settings.WEBAUTHN_ORIGIN,
             key.credential_public_key,
             key.sign_count,

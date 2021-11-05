@@ -85,6 +85,8 @@ from peeringdb_server.models import (
 from peeringdb_server.util import coerce_ipaddr, round_decimal
 from peeringdb_server.views import HttpResponseForbidden, JsonResponse
 
+import peeringdb_server.u2f.models as u2f
+
 from . import forms
 
 delete_selected.short_description = "HARD DELETE - Proceed with caution"
@@ -2149,6 +2151,46 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
         "latitude",
         "fetched",
     ]
+
+
+class U2FSecurityKeyAdmin(admin.ModelAdmin):
+    list_display = ["user", "name"]
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
+
+
+admin.site.register(u2f.SecurityKey, U2FSecurityKeyAdmin)
+
+class U2FChallenge(admin.ModelAdmin):
+    list_display = ["user", "challenge"]
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
+
+
+admin.site.register(u2f.Challenge, U2FChallenge)
+
+class U2FUserHandle(admin.ModelAdmin):
+    list_display = ["user", "handle"]
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
+
+
+admin.site.register(u2f.UserHandle, U2FUserHandle)
 
 
 # Commented out via issue #860
