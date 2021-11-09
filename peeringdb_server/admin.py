@@ -2154,7 +2154,7 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
 
 
 class U2FSecurityKeyAdmin(admin.ModelAdmin):
-    list_display = ["user", "name"]
+    list_display = ["id", "user", "name"]
     raw_id_fields = ("user",)
 
     autocomplete_lookup_fields = {
@@ -2165,19 +2165,6 @@ class U2FSecurityKeyAdmin(admin.ModelAdmin):
 
 
 admin.site.register(u2f.SecurityKey, U2FSecurityKeyAdmin)
-
-class U2FChallenge(admin.ModelAdmin):
-    list_display = ["user", "challenge"]
-    raw_id_fields = ("user",)
-
-    autocomplete_lookup_fields = {
-        "fk": [
-            "user",
-        ],
-    }
-
-
-admin.site.register(u2f.Challenge, U2FChallenge)
 
 class U2FUserHandle(admin.ModelAdmin):
     list_display = ["user", "handle"]

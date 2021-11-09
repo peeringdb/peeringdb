@@ -41,7 +41,7 @@
         <div>{% trans "Register security key" %}</div>
       </div>
       <div class="col-xs-6 col-sm-4 col-md-5">
-        <div data-edit-type="string" data-edit-name="name" data-edit-placeholder="{% trans "Name" %}"></div>
+        <div data-edit-type="string" data-edit-name="name" data-edit-required="yes" data-edit-placeholder="{% trans "Name" %}"></div>
 
         <div data-edit-type="bool" data-edit-name="passwordless_login" style="display:inline"></div> <span>{% trans "Password-less login" %}</span>
       </div>
@@ -55,7 +55,7 @@
     <div id="security-key-item" class="row item">
       <div class="col-xs-8 col-sm-10 col-md-10" data-edit-name="name" data-edit-placeholder="{% trans "Name" %}"></div>
       <div class="col-xs-2 col-sm-2 col-md-2 right">
-        <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
+        <a class="btn btn-default" data-edit-action="revoke">{% trans "Remove" %}</a>
       </div>
     </div>
 

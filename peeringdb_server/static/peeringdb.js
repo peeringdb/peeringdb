@@ -1707,6 +1707,59 @@ twentyc.editable.module.register(
   "listing"
 );
 
+
+PeeringDB.SecurityKeys = {
+  authenticate: function(username) {
+    var i, payload = {username: username}
+    $.post("/security_keys/request_authentication", payload, (response) => {
+      console.log("REQUEST AUTH", response);
+
+      response.challenge = base64url.decode(response.challenge);
+
+      $(response.allowCredentials).each(function() {
+        this.id = base64url.decode(this.id);
+      });
+
+//      for(i = 0; i < response.allow_credentials.length; i++) {
+ //       response.allow_credentials
+   //   }
+
+      console.log("REQUEST_AUTH (2)", response)
+
+      assertion = navigator.credentials.get({publicKey: response});
+      assertion.then((PublicKeyCredential) => {
+
+        console.log("ASSERT", PublicKeyCredential);
+
+        var credentials = {
+          id: PublicKeyCredential.id,
+          rawId: base64url.encode(PublicKeyCredential.rawId),
+          response: {
+            authenticatorData: base64url.encode(PublicKeyCredential.response.authenticatorData),
+            clientDataJSON: base64url.encode(PublicKeyCredential.response.clientDataJSON),
+            signature: base64url.encode(PublicKeyCredential.response.signature),
+            userHandle: base64url.encode(PublicKeyCredential.response.userHandle)
+          },
+          type: PublicKeyCredential.type
+        }
+
+        console.log("VERIFY_AUTH PRE", credentials);
+
+        payload.credential = JSON.stringify(credentials);
+
+        $.post("/security_keys/verify_authentication", payload).done(
+          (response) => {
+            console.log("VERIFY_AUTH", response);
+          }
+        );
+
+      });
+
+    });
+  }
+}
+
+
 twentyc.editable.module.register(
   "security_key_listing",
   {
@@ -1747,7 +1800,6 @@ twentyc.editable.module.register(
       $.get('/security_keys/request_registration', (response)=> {
         console.log("CHALLENGE", response.challenge);
         var challenge_str = this.base64_to_array_buffer(response.challenge);
-        //response.challenge = this.array_buffer_to_uint8(challenge_str);
         response.challenge = challenge_str;
         console.log("CHALLENGE (2)", response.challenge);
         response.user.id = this.array_buffer_to_uint8(response.user.id);
@@ -1757,8 +1809,6 @@ twentyc.editable.module.register(
           console.log("credentials", credential);
 
           this.components.add.editable("export", this.target.data);
-
-          this.target.data.challenge = this.array_buffer_to_base64(challenge_str);
 
           this.target.data.credential = JSON.stringify({
                 id: credential.id,
@@ -1774,8 +1824,9 @@ twentyc.editable.module.register(
                 type: credential.type
           });
 
+          var data = this.target.data;
           this.target.execute("add", this.components.add, (response) => {
-
+            this.add(data.entity, trigger, container, response);
           });
         });
 
@@ -1786,15 +1837,8 @@ twentyc.editable.module.register(
       console.log("Register call");
     },
 
-    execute_add : function(trigger, container) {
-      this.components.add.editable("export", this.target.data);
-      var data = this.target.data;
-      this.target.execute("add", this.components.add, function(response) {
-        this.add(data.entity, trigger, container, response);
-      }.bind(this));
-    },
-
     add : function(rowId, trigger, container, data) {
+      console.log("ADDING", rowId, trigger, container, data)
       var row = this.listing_add(data.prefix, trigger, container, data);
       row.attr("data-edit-label", data.name)
       row.data("edit-label", data.name)
@@ -1822,7 +1866,7 @@ twentyc.editable.module.register(
       }
       this.components.add.editable("export", this.target.data);
       var data = this.target.data;
-      var id = data.prefix = row.data("edit-id")
+      var id = data.id = row.data("edit-id")
       this.target.execute("remove", trigger, function(response) {
         this.listing_remove(id, row, trigger, container);
       }.bind(this));

@@ -141,6 +141,8 @@ urlpatterns = [
     url(r"^user_keys/add$", peeringdb_server.api_key_views.add_user_key),
     url(r"^user_keys/revoke$", peeringdb_server.api_key_views.remove_user_key),
     url(r"^security_keys/request_registration$", u2f.request_registration),
+    url(r"^security_keys/request_authentication$", u2f.request_authentication),
+    url(r"^security_keys/verify_authentication$", u2f.verify_authentication),
     url(r"^security_keys/add$", u2f.register_security_key),
     url(r"^security_keys/remove$", u2f.remove_security_key),
     url(r"^org_admin/users$", peeringdb_server.org_admin_views.users),

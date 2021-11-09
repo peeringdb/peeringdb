@@ -21,11 +21,12 @@ from django_otp.models import SideChannelDevice, ThrottlingMixin
 import secrets
 import webauthn
 
-from webauthn.helpers import parse_client_data_json, bytes_to_base64url
+from webauthn.helpers import parse_client_data_json, bytes_to_base64url, base64url_to_bytes
 
 from webauthn.helpers.structs import (
     RegistrationCredential,
     AuthenticationCredential,
+    PublicKeyCredentialDescriptor,
 )
 
 
@@ -89,33 +90,6 @@ class UserHandle(models.Model):
         return cls.objects.create(user=user, handle=handle)
 
 
-class Challenge(models.Model):
-    """
-    Describes a webauthn registration or authentication challenge
-    """
-
-    user = models.ForeignKey(
-        "peeringdb_server.User",
-        related_name="webauthn_challenges",
-        on_delete=models.CASCADE,
-    )
-
-    challenge = models.BinaryField(max_length=64)
-    created = models.DateTimeField(auto_now_add=True)
-    type = models.CharField(
-        max_length=4,
-        choices=(
-            ("auth", "Authentication"),
-            ("reg", "Registration"),
-        ),
-    )
-
-    class Meta:
-        db_table = "peeringdb_webauthn_challenge"
-        verbose_name = _("Webauthn Challenge")
-        verbose_name_plural = _("Webauthn Challenges")
-
-
 class SecurityKey(models.Model):
 
     """
@@ -148,7 +122,22 @@ class SecurityKey(models.Model):
     )
 
     @classmethod
-    def generate_registration(cls, user):
+    def set_challenge(cls, session, challenge):
+        session["webauthn_challenge"] = bytes_to_base64url(challenge)
+
+    @classmethod
+    def get_challenge(cls, session):
+        return base64url_to_bytes(session["webauthn_challenge"])
+
+    @classmethod
+    def clear_challenge(cls, session):
+        try:
+            del session["webauthn_challenge"]
+        except KeyError:
+            pass
+
+    @classmethod
+    def generate_registration(cls, user, session):
 
         opts = webauthn.generate_registration_options(
             rp_id=settings.WEBAUTHN_RP_ID,
@@ -158,37 +147,30 @@ class SecurityKey(models.Model):
             attestation="none",
         )
 
-        challenge = Challenge.objects.create(
-            user=user, challenge=opts.challenge, type="reg"
-        )
+        cls.set_challenge(session, opts.challenge)
 
         return webauthn.options_to_json(opts)
 
     @classmethod
-    def verify_registration(cls, user, challenge_str, raw_credential, **kwargs):
+    def verify_registration(cls, user, session, raw_credential, **kwargs):
 
         try:
-            challenge = user.webauthn_challenges.get(
-                challenge=challenge_str, type="reg"
-            )
-        except Challenge.DoesNotExist:
+            challenge = cls.get_challenge(session)
+        except KeyError:
             raise ValueError(_("Invalid webauthn challenge"))
 
         credential = RegistrationCredential.parse_raw(raw_credential)
 
         client_data = parse_client_data_json(credential.response.client_data_json)
 
-        print(client_data)
-        print(challenge_str)
-
         verified_registration = webauthn.verify_registration_response(
             credential=credential,
-            expected_challenge=challenge.challenge,
+            expected_challenge=challenge,
             expected_rp_id=settings.WEBAUTHN_RP_ID,
             expected_origin=settings.WEBAUTHN_ORIGIN,
         )
 
-        challenge.delete()
+        cls.clear_challenge(session)
 
         return cls.objects.create(
             user=user,
@@ -200,23 +182,31 @@ class SecurityKey(models.Model):
         )
 
     @classmethod
-    def generate_authentication(cls):
+    def credentials(cls, username):
+        return [
+            PublicKeyCredentialDescriptor(
+                type="public-key",
+                id=base64url_to_bytes(key.credential_id),
+            ) for key in cls.objects.filter(user__username=username)
+        ]
+
+    @classmethod
+    def generate_authentication(cls, username, session):
 
         opts = webauthn.generate_authentication_options(
-            settings.WEBAUTHN_ORIGIN,
+            rp_id=settings.WEBAUTHN_RP_ID,
+            allow_credentials=cls.credentials(username),
         )
 
-        challenge = Challenge.objects.create(
-            user=user, challenge=opts.challenge, type="auth"
-        )
+        cls.set_challenge(session, opts.challenge)
 
         return webauthn.options_to_json(opts)
 
     @classmethod
-    def verify_authentication(cls, challenge_str, raw_credential):
+    def verify_authentication(cls, username, session, raw_credential):
 
         try:
-            challenge = Challenge.objects.get(challenge=challenge_str, type="auth")
+            challenge = cls.get_challenge(session)
         except Challenge.DoesNotExist:
             raise ValueError(_("Invalid webauthn challenge"))
 
@@ -228,15 +218,15 @@ class SecurityKey(models.Model):
             raise ValueError(_("Invalid key"))
 
         verified_authentication = webauthn.verify_authentication_response(
-            credential,
-            challenge.challenge,
-            settings.WEBAUTHN_ORIGIN,
-            settings.WEBAUTHN_ORIGIN,
-            key.credential_public_key,
-            key.sign_count,
+            credential=credential,
+            expected_challenge=challenge,
+            expected_rp_id=settings.WEBAUTHN_RP_ID,
+            expected_origin=settings.WEBAUTHN_ORIGIN,
+            credential_public_key=base64url_to_bytes(key.credential_public_key),
+            credential_current_sign_count=key.sign_count,
         )
 
-        challenge.delete()
+        cls.clear_challenge(session)
 
         key.sign_count = verified_authentication.new_sign_count
         key.save()

@@ -18,7 +18,21 @@ def request_registration(request, **kwargs):
     as a JSON response
     """
 
-    return JsonResponse(json.loads(SecurityKey.generate_registration(request.user)))
+    return JsonResponse(json.loads(SecurityKey.generate_registration(request.user, request.session)))
+
+@login_required
+def request_authentication(request, **kwargs):
+    """
+    Requests webauthn registration options from the server
+    as a JSON response
+    """
+
+    username = request.POST.get("username")
+
+    if not username:
+        return JsonResponse({"non_field_errors": _("No username supplied")}, status=403)
+
+    return JsonResponse(json.loads(SecurityKey.generate_authentication(username, request.session)))
 
 
 @login_required
@@ -34,15 +48,13 @@ def register_security_key(request, **kwargs):
     - passwordless_login (`bool`): allow passwordless login
     """
 
-    user = request.user
-    name = request.POST.get("name")
-    challenge = request.POST.get("challenge")
+    name = request.POST.get("name", "security-key")
     credential = request.POST.get("credential")
     passwordless_login = convert_to_bool(request.POST.get("passwordless_login",False))
 
     security_key = SecurityKey.verify_registration(
-        user,
-        base64url_to_bytes(challenge),
+        request.user,
+        request.session,
         credential,
         name=name,
         passwordless_login=passwordless_login,
@@ -58,20 +70,48 @@ def register_security_key(request, **kwargs):
 
 
 @login_required
+def verify_authentication(request):
+
+
+    credential = request.POST.get("credential")
+    username = request.POST.get("username")
+
+
+    try:
+        security_key = SecurityKey.verify_authentication(
+            username,
+            request.session,
+            credential,
+        )
+    except Exception as exc:
+        raise
+        return JsonResponse({"non_field_errors": exc}, status=403)
+
+    return JsonResponse(
+        {
+            "status": "ok",
+        }
+    )
+
+
+
+
+
+@login_required
 def remove_security_key(request, **kwargs):
     """
     Revoke user api key.
     """
 
     user = request.user
-    prefix = request.POST.get("prefix")
+    id = request.POST.get("id")
 
     try:
-        api_key = UserAPIKey.objects.get(user=user, prefix=prefix)
-    except UserAPIKey.DoesNotExist:
+        print("checking key", id, "on", user)
+        sec_key = request.user.webauthn_security_keys.get(pk=id)
+    except SecurityKey.DoesNotExist:
         return JsonResponse({"non_field_errors": [_("Key not found")]}, status=404)
-    api_key.revoked = True
-    api_key.save()
+    sec_key.delete()
 
     return JsonResponse(
         {
