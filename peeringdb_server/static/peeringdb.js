@@ -119,7 +119,7 @@ PeeringDB = {
 
   focus: function() {
     // autofocus fields
-    path = window.location.pathname;
+    var path = window.location.pathname;
     if (path == '/') {
       $("#search").focus();
     }
