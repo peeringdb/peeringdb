@@ -21,7 +21,11 @@ from django_otp.models import SideChannelDevice, ThrottlingMixin
 import secrets
 import webauthn
 
-from webauthn.helpers import parse_client_data_json, bytes_to_base64url, base64url_to_bytes
+from webauthn.helpers import (
+    parse_client_data_json,
+    bytes_to_base64url,
+    base64url_to_bytes,
+)
 
 from webauthn.helpers.structs import (
     RegistrationCredential,
@@ -175,10 +179,12 @@ class SecurityKey(models.Model):
         return cls.objects.create(
             user=user,
             credential_id=bytes_to_base64url(verified_registration.credential_id),
-            credential_public_key=bytes_to_base64url(verified_registration.credential_public_key),
+            credential_public_key=bytes_to_base64url(
+                verified_registration.credential_public_key
+            ),
             sign_count=verified_registration.sign_count,
             name=kwargs.get("name", "main"),
-            passwordless_login=kwargs.get("passwordless_login", False)
+            passwordless_login=kwargs.get("passwordless_login", False),
         )
 
     @classmethod
@@ -187,7 +193,8 @@ class SecurityKey(models.Model):
             PublicKeyCredentialDescriptor(
                 type="public-key",
                 id=base64url_to_bytes(key.credential_id),
-            ) for key in cls.objects.filter(user__username=username)
+            )
+            for key in cls.objects.filter(user__username=username)
         ]
 
     @classmethod

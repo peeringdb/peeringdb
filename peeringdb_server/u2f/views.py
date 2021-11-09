@@ -18,7 +18,10 @@ def request_registration(request, **kwargs):
     as a JSON response
     """
 
-    return JsonResponse(json.loads(SecurityKey.generate_registration(request.user, request.session)))
+    return JsonResponse(
+        json.loads(SecurityKey.generate_registration(request.user, request.session))
+    )
+
 
 @login_required
 def request_authentication(request, **kwargs):
@@ -32,7 +35,9 @@ def request_authentication(request, **kwargs):
     if not username:
         return JsonResponse({"non_field_errors": _("No username supplied")}, status=403)
 
-    return JsonResponse(json.loads(SecurityKey.generate_authentication(username, request.session)))
+    return JsonResponse(
+        json.loads(SecurityKey.generate_authentication(username, request.session))
+    )
 
 
 @login_required
@@ -50,7 +55,7 @@ def register_security_key(request, **kwargs):
 
     name = request.POST.get("name", "security-key")
     credential = request.POST.get("credential")
-    passwordless_login = convert_to_bool(request.POST.get("passwordless_login",False))
+    passwordless_login = convert_to_bool(request.POST.get("passwordless_login", False))
 
     security_key = SecurityKey.verify_registration(
         request.user,
@@ -61,21 +66,15 @@ def register_security_key(request, **kwargs):
     )
 
     return JsonResponse(
-        {
-            "status": "ok",
-            "name": security_key.name,
-            "id": security_key.id
-        }
+        {"status": "ok", "name": security_key.name, "id": security_key.id}
     )
 
 
 @login_required
 def verify_authentication(request):
 
-
     credential = request.POST.get("credential")
     username = request.POST.get("username")
-
 
     try:
         security_key = SecurityKey.verify_authentication(
@@ -92,9 +91,6 @@ def verify_authentication(request):
             "status": "ok",
         }
     )
-
-
-
 
 
 @login_required
