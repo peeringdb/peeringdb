@@ -264,6 +264,8 @@ class TestJSON(unittest.TestCase):
             "tech_phone": PHONE,
             "policy_email": EMAIL,
             "policy_phone": PHONE,
+            "sales_email": EMAIL,
+            "sales_phone": PHONE,
         }
         data.update(**kwargs)
         return data
@@ -2013,6 +2015,94 @@ class TestJSON(unittest.TestCase):
             test_failures={"invalid": {"n/a": "n/a"}},
             test_success=False,
         )
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_netixlan_reclaim(self):
+
+        # create 1 deleted netixlan
+
+        data_a = self.make_data_netixlan(
+            network_id=SHARED["net_rw_ok"].id,
+            ixlan_id=SHARED["ixlan_rw_ok"].id,
+            asn=SHARED["net_rw_ok"].asn,
+            status="deleted",
+        )
+        data_a.pop("net_id")
+        netixlan_a = NetworkIXLan.objects.create(**data_a)
+
+        # create new netixlan re-claiming ipv4 and ipv6
+        # addresses from the 2 netixlans we created earlier
+        # ipv4 from netixlan a
+        # ipv6 from netixlan b
+
+        data_c = self.make_data_netixlan(
+            net_id=SHARED["net_rw_ok"].id,
+            ixlan_id=SHARED["ixlan_rw_ok"].id,
+            asn=SHARED["net_rw_ok"].asn,
+        )
+        data_c.update(ipaddr4=f"{netixlan_a.ipaddr4}", ipaddr6=f"{netixlan_a.ipaddr6}")
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "netixlan",
+            data_c,
+        )
+
+        assert r_data["ipaddr4"] == f"{netixlan_a.ipaddr4}"
+        assert r_data["ipaddr6"] == f"{netixlan_a.ipaddr6}"
+        assert r_data["id"] == netixlan_a.id
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_netixlan_reclaim_separated(self):
+
+        # create 2 deleted netixlans
+
+        data_a = self.make_data_netixlan(
+            network_id=SHARED["net_rw_ok"].id,
+            ixlan_id=SHARED["ixlan_rw_ok"].id,
+            asn=SHARED["net_rw_ok"].asn,
+            status="deleted",
+        )
+        data_a.pop("net_id")
+        netixlan_a = NetworkIXLan.objects.create(**data_a)
+
+        data_b = self.make_data_netixlan(
+            network_id=SHARED["net_rw_ok"].id,
+            ixlan_id=SHARED["ixlan_rw_ok"].id,
+            asn=SHARED["net_rw_ok"].asn,
+            status="deleted",
+        )
+        data_b.pop("net_id")
+        netixlan_b = NetworkIXLan.objects.create(**data_b)
+
+        # create new netixlan re-claiming ipv4 and ipv6
+        # addresses from the 2 netixlans we created earlier
+        # ipv4 from netixlan a
+        # ipv6 from netixlan b
+
+        data_c = self.make_data_netixlan(
+            net_id=SHARED["net_rw_ok"].id,
+            ixlan_id=SHARED["ixlan_rw_ok"].id,
+            asn=SHARED["net_rw_ok"].asn,
+        )
+        data_c.update(ipaddr4=f"{netixlan_a.ipaddr4}", ipaddr6=f"{netixlan_b.ipaddr6}")
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "netixlan",
+            data_c,
+        )
+
+        assert r_data["ipaddr4"] == f"{netixlan_a.ipaddr4}"
+        assert r_data["ipaddr6"] == f"{netixlan_b.ipaddr6}"
+        assert r_data["id"] == netixlan_a.id
+
+        netixlan_a.refresh_from_db()
+        netixlan_b.refresh_from_db()
+
+        assert netixlan_b.ipaddr6 is None
 
     ##########################################################################
 

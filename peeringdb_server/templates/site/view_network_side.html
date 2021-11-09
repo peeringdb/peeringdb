@@ -6,7 +6,7 @@
 
 <div class="list"
      data-sort-container=".scrollable"
-     data-sort-row=".row"
+     data-sort-row=".item"
 
      data-edit-module="api_listing"
      data-edit-group="#view"
@@ -20,17 +20,19 @@
     </div>
   </div>
   <div class="row header">
-    <div class="col-xs-4 col-sm-4 col-md-6">
+    <div class="col-xs-3 col-sm-4 col-md-4">
       <div data-sort-target=".exchange" data-sort-initial="asc">{% trans "Exchange" %}</div>
-      <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
-    </div>
-    <div class="col-xs-5 col-sm-5 col-md-4">
       <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
+    </div>
+    <div class="col-xs-3 col-sm-4 col-md-3">
+      <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
       <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
-    <div class="col-xs-3 col-sm-3 col-md-2">
+    <div class="col-xs-3 col-sm-2 col-md-3">
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
-      <div data-sort-target=".rs_peer" class="ambiguous">{% trans "RS Peer" %}</div>
+    </div>
+    <div class="col-xs-3 col-sm-2 col-md-2">
+      <div data-sort-target=".speed" class="numeric">{% trans "RS Peer" %}</div>
     </div>
   </div>
 
@@ -51,18 +53,22 @@
         <div data-edit-name="net_id">{{ instance.id }}</div>
         <div data-edit-name="ixlan_id">{{ x.ixlan_id }}</div>
       </div>
-      <div class="col-xs-4 col-sm-4 col-md-6">
-        {% if permissions.can_delete %}
-        <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
-        {% endif %}
-        <div class="exchange" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
-          <a href="/{{x.ixlan.ix|ref_tag}}/{{ x.ixlan.ix.id }}">{{ x.ixlan.ix.name }}</a>
-        </div>
+      <div class="row squeeze-15">
 
-        <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
+          <div class="exchange col-xs-3 col-sm-4 col-md-4" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
 
-        <div class="editable-inline netixlan-extra">
-          <div class="asn{% if permissions.can_write and x.asn != x.network.asn %} mark-value-error{% endif %}"
+            {% if permissions.can_delete %}
+            <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+            {% endif %}
+
+
+            <a href="/{{x.ixlan.ix|ref_tag}}/{{ x.ixlan.ix.id }}">{{ x.ixlan.ix.name }}</a>
+
+            <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
+
+          </div>
+          <div class="col-xs-3 col-sm-4 col-md-3">
+            <div class="asn{% if permissions.can_write and x.asn != x.network.asn %} mark-value-error{% endif %}"
                {% if permissions.can_write and x.asn != x.network.asn %}
                data-toggle="tooltip"
                data-placement="left"
@@ -73,59 +79,65 @@
                data-edit-value="{{ x.asn }}"
                data-sort-value="{{ x.asn }}"
                data-filter-value="{{ x.asn }}">
-               {{ x.asn }}
+                {{ x.asn }}
+            </div>
+            <div data-edit-toggled="edit" class="editable-inline netixlan-extra">
+              <div
+                data-edit-type="bool"
+                data-edit-name="operational"
+                data-edit-toggled="edit"
+                data-sort-value="{{ x.operational }}"
+                data-edit-value="{{ x.operational }}">
+              </div>
+              <span data-edit-toggled="edit">{% trans "Operational" %}</span>
+            </div>
           </div>
-          <div
-            data-edit-type="bool"
-            data-edit-name="operational"
-            data-edit-toggled="edit"
-            data-sort-value="{{ x.operational }}"
-            data-edit-value="{{ x.operational }}">
+
+
+          <div class="speed col-xs-3 col-sm-2 col-md-3"
+               data-sort-value="{{ x.speed }}"
+               data-filter-value="{{ x.speed|pretty_speed}}"
+               {% if permissions.can_write %}
+               data-edit-type="network_speed"
+               {% endif %}
+               data-edit-name="speed"
+               data-edit-value="{{ x.speed }}"
+               data-edit-required="yes">
+               {{ x.speed|pretty_speed }}
           </div>
-          <span data-edit-toggled="edit">{% trans "Operational" %}</span>
-        </div>
+          <div class= "col-xs-3 col-sm-2 col-md-2" data-edit-type="bool"
+               data-edit-name="is_rs_peer"
+               data-edit-template="check"
+               data-sort-value="{{ x.is_rs_peer }}"
+               data-edit-value="{{ x.is_rs_peer }}">
+            <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.is_rs_peer|as_bool %}-off{% endif %}.png" alt="RS PEER" />
+          </div>
 
       </div>
-      <div class="col-xs-5 col-sm-5 col-md-4">
-        <div class="ip4"
-             {% if permissions.can_write %}
-             data-edit-type="string"
-             {% endif %}
-             data-filter-value="{{ x.ipaddr4|none_blank }}"
-             data-sort-value="{{ x.ipaddr4|none_blank }} {{ x.ipaddr6|none_blank }}"
-             data-edit-name="ipaddr4">
-             {{ x.ipaddr4|none_blank }}
-        </div>
-        <div class="ip6"
-             {% if permissions.can_write %}
-             data-edit-type="string"
-             {% endif %}
-             data-filter-value="{{ x.ipaddr6|none_blank }}"
-             data-sort-value="{{ x.ipaddr6|none_blank }} {{ x.ipaddr4|none_blank }}"
-             data-edit-name="ipaddr6">
-             {{ x.ipaddr6|none_blank }}
-         </div>
-      </div>
-      <div class="col-xs-3 col-sm-3 col-md-2">
-        <div class="speed"
-             data-sort-value="{{ x.speed }}"
-             data-filter-value="{{ x.speed|pretty_speed}}"
-             {% if permissions.can_write %}
-             data-edit-type="network_speed"
-             {% endif %}
-             data-edit-name="speed"
-             data-edit-value="{{ x.speed }}"
-             data-edit-required="yes">
-             {{ x.speed|pretty_speed }}
-        </div>
-        <div data-edit-type="bool"
-             data-edit-name="is_rs_peer"
-             data-edit-template="check"
-             data-sort-value="{{ x.is_rs_peer }}"
-             data-edit-value="{{ x.is_rs_peer }}">
-          <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.is_rs_peer|as_bool %}-off{% endif %}.png" alt="RS PEER" />
-        </div>
+      <div class="ip-addr row squeeze-15">
 
+        <div class="col-xs-12 col-sm-4">
+          <div class="ip4"
+               {% if permissions.can_write %}
+               data-edit-type="string"
+               {% endif %}
+               data-filter-value="{{ x.ipaddr4|none_blank }}"
+               data-sort-value="{{ x.ipaddr4|none_blank }} {{ x.ipaddr6|none_blank }}"
+               data-edit-name="ipaddr4">
+               {{ x.ipaddr4|none_blank }}
+          </div>
+        </div>
+        <div class="col-xs-12 col-sm-8">
+          <div class="ip6"
+               {% if permissions.can_write %}
+               data-edit-type="string"
+               {% endif %}
+               data-filter-value="{{ x.ipaddr6|none_blank }}"
+               data-sort-value="{{ x.ipaddr6|none_blank }} {{ x.ipaddr4|none_blank }}"
+               data-edit-name="ipaddr6">
+               {{ x.ipaddr6|none_blank }}
+           </div>
+        </div>
       </div>
     </div>
 
@@ -200,9 +212,6 @@
            </div>
          </div>
        </div>
-
-
-
 
        <div class="row marg-top">
          <div class="col-xs-12 right">

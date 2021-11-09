@@ -8,6 +8,7 @@ import jsonschema
 import pytest
 import requests
 import reversion
+from django.core.cache import cache
 from django.core.management import call_command
 from django.test import override_settings
 
@@ -31,6 +32,73 @@ from .util import setup_test_data
 
 
 @pytest.mark.django_db
+def test_import_error_status(entities):
+    ixlan = entities["ixlan"]
+    ixlan.ixf_ixp_member_list_url = "localhost"
+    ixlan.ixf_ixp_import_enabled = True
+    ixlan.save()
+
+    ixlan.ix.request_ixf_import()
+
+    call_command("pdb_ixf_ixp_member_import", process_requested=0, commit=True)
+
+    ixlan.ix.refresh_from_db()
+    # Import will fail. Check if import status is == error
+    assert ixlan.ix.ixf_import_request_status == "error"
+    assert ixlan.ix.ixf_import_request
+
+
+@pytest.mark.django_db
+def test_import_processed_count(entities_base):
+    ixf_import_data = setup_test_data("ixf.member.0")
+
+    importer = ixf.Importer()
+    cache.set(
+        importer.cache_key("http://www.localhost.com"), ixf_import_data, timeout=None
+    )
+    ixlans = entities_base["ixlan"]
+    for ixlan in ixlans:
+        ixlan.ixf_ixp_import_enabled = False
+        ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
+        importer.update(ixlan, data=None)
+        ixlan.ix.request_ixf_import()
+
+    call_command(
+        "pdb_ixf_ixp_member_import", process_requested=1, commit=True, cache=True
+    )
+
+    assert (
+        InternetExchange.objects.filter(ixf_import_request_status="finished").count()
+        == 1
+    )
+
+
+@pytest.mark.django_db
+def test_ignore_import_enabled(entities_base):
+    ixf_import_data = setup_test_data("ixf.member.0")
+
+    importer = ixf.Importer()
+    cache.set(
+        importer.cache_key("http://www.localhost.com"), ixf_import_data, timeout=None
+    )
+    ixlans = entities_base["ixlan"]
+    for ixlan in ixlans:
+        ixlan.ixf_ixp_import_enabled = True
+        ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
+        importer.update(ixlan, data=None)
+        ixlan.ix.request_ixf_import()
+
+    call_command(
+        "pdb_ixf_ixp_member_import", process_requested=0, commit=None, cache=True
+    )
+
+    assert (
+        InternetExchange.objects.filter(ixf_import_request_status="finished").count()
+        == 2
+    )
+
+
+@pytest.mark.django_db
 def test_reset_hints(entities, data_cmd_ixf_hints):
     ixf_import_data = json.loads(data_cmd_ixf_hints.json)
     importer = ixf.Importer()
@@ -42,23 +110,6 @@ def test_reset_hints(entities, data_cmd_ixf_hints):
 
     assert IXFMemberData.objects.count() == 0
     assert DeskProTicket.objects.filter(body__contains="reset_hints").count() == 1
-
-
-@pytest.mark.django_db
-def test_reset_process_requested(entities):
-    ixlan = entities["ixlan"]
-    ixlan.ixf_ixp_member_list_url = "localhost"
-    ixlan.ixf_ixp_import_enabled = True
-    ixlan.save()
-
-    ixlan.ix.request_ixf_import()
-
-    call_command("pdb_ixf_ixp_member_import", process_requested=0, commit=True)
-
-    ixlan.ix.refresh_from_db()
-
-    assert ixlan.ix.ixf_import_request_status == "finished"
-    assert ixlan.ix.ixf_import_request
 
 
 @pytest.mark.django_db
@@ -420,6 +471,129 @@ def entities():
             "ixf_importer", "ixf_importer@localhost", "ixf_importer"
         )
         entities["org"].admin_usergroup.user_set.add(admin_user)
+    return entities
+
+
+@pytest.fixture
+def entities_base():
+    entities = {}
+    with reversion.create_revision():
+        entities["org"] = [Organization.objects.create(name="Netflix", status="ok")]
+
+        # create exchange(s)
+        entities["ix"] = [
+            InternetExchange.objects.create(
+                name="Test Exchange One",
+                org=entities["org"][0],
+                status="ok",
+                tech_email="ix1@localhost",
+            ),
+            InternetExchange.objects.create(
+                name="Test Exchange Two",
+                org=entities["org"][0],
+                status="ok",
+                tech_email="ix2@localhost",
+            ),
+        ]
+
+        # create ixlan(s)
+        entities["ixlan"] = [ix.ixlan for ix in entities["ix"]]
+
+        # create ixlan prefix(s)
+        entities["ixpfx"] = [
+            IXLanPrefix.objects.create(
+                ixlan=entities["ixlan"][0],
+                status="ok",
+                prefix="195.69.144.0/22",
+                protocol="IPv4",
+            ),
+            IXLanPrefix.objects.create(
+                ixlan=entities["ixlan"][0],
+                status="ok",
+                prefix="2001:7f8:1::/64",
+                protocol="IPv6",
+            ),
+            IXLanPrefix.objects.create(
+                ixlan=entities["ixlan"][1],
+                status="ok",
+                prefix="195.66.224.0/22",
+                protocol="IPv4",
+            ),
+            IXLanPrefix.objects.create(
+                ixlan=entities["ixlan"][1],
+                status="ok",
+                prefix="2001:7f8:4::/64",
+                protocol="IPv6",
+            ),
+        ]
+
+        # create network(s)
+        entities["net"] = {
+            "UPDATE_ENABLED": Network.objects.create(
+                name="Network w allow ixp update enabled",
+                org=entities["org"][0],
+                asn=2906,
+                info_prefixes4=42,
+                info_prefixes6=42,
+                website="http://netflix.com/",
+                policy_general="Open",
+                policy_url="https://www.netflix.com/openconnect/",
+                allow_ixp_update=True,
+                status="ok",
+                irr_as_set="AS-NFLX",
+                info_unicast=True,
+                info_ipv6=True,
+            ),
+            "UPDATE_DISABLED": Network.objects.create(
+                name="Network w allow ixp update disabled",
+                org=entities["org"][0],
+                asn=1001,
+                allow_ixp_update=False,
+                status="ok",
+                info_prefixes4=42,
+                info_prefixes6=42,
+                website="http://netflix.com/",
+                policy_general="Open",
+                policy_url="https://www.netflix.com/openconnect/",
+                info_unicast=True,
+                info_ipv6=True,
+            ),
+            "UPDATE_DISABLED_2": Network.objects.create(
+                name="Network w allow ixp update disabled (2)",
+                org=entities["org"][0],
+                asn=1101,
+                allow_ixp_update=False,
+                status="ok",
+                info_prefixes4=42,
+                info_prefixes6=42,
+                website="http://netflix.com/",
+                policy_general="Open",
+                policy_url="https://www.netflix.com/openconnect/",
+                info_unicast=True,
+                info_ipv6=True,
+            ),
+        }
+
+        entities["netcontact"] = [
+            NetworkContact.objects.create(
+                email="network1@localhost",
+                network=entities["net"]["UPDATE_ENABLED"],
+                status="ok",
+                role="Policy",
+            ),
+            NetworkContact.objects.create(
+                email="network2@localhost",
+                network=entities["net"]["UPDATE_DISABLED"],
+                status="ok",
+                role="Policy",
+            ),
+        ]
+        entities["netixlan"] = []
+        admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
+        ixf_importer_user = User.objects.create_user(
+            "ixf_importer", "ixf_importer@localhost", "ixf_importer"
+        )
+        entities["org"][0].admin_usergroup.user_set.add(admin_user)
     return entities
 
 

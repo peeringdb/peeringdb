@@ -880,7 +880,18 @@ set_option("MAIL_DEBUG", DEBUG)
 # Setting for automated resending of failed ixf import emails
 set_option("IXF_RESEND_FAILED_EMAILS", False)
 
+# Set value for IX-F fetch timeout
+set_option("IXF_FETCH_TIMEOUT", 30)
+
+# Setting for number of days before deleting childless Organizations
+set_option("ORG_CHILDLESS_DELETE_DURATION", 30)
+
+# Grace period before an organization is processed for childless cleanup
+# n days after creation
+set_option("ORG_CHILDLESS_GRACE_DURATION", 1)
+
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
+
 
 if DEBUG:
     # make all loggers use the console.

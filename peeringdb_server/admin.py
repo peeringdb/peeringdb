@@ -1019,7 +1019,7 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     list_display = ("handle", "name", "status", "created", "updated")
     ordering = ("-created",)
     search_fields = ("name",)
-    list_filter = (StatusFilter,)
+    list_filter = (StatusFilter, "flagged")
     readonly_fields = ("id", "grainy_namespace")
     form = OrganizationAdminForm
 
@@ -1046,6 +1046,8 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "verification_queue",
         "version",
         "id",
+        "flagged",
+        "flagged_date",
         "grainy_namespace",
     ]
 

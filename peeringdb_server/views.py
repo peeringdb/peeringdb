@@ -1606,6 +1606,19 @@ def view_exchange(request, id):
                 "value": data.get("policy_phone", dismiss),
                 "help_text": field_help(InternetExchange, "policy_phone"),
             },
+            {
+                "type": "email",
+                "name": "sales_email",
+                "label": _("Sales Email"),
+                "value": data.get("sales_email", dismiss),
+            },
+            {
+                "type": "string",
+                "name": "sales_phone",
+                "label": _("Sales Phone"),
+                "value": data.get("sales_phone", dismiss),
+                "help_text": field_help(InternetExchange, "sales_phone"),
+            },
         ],
     }
 
@@ -1731,10 +1744,9 @@ def view_network(request, id):
     """
     View network data for network specified by id.
     """
-
     try:
         network = NetworkSerializer.prefetch_related(
-            Network.objects, request, depth=2
+            Network.objects, request, depth=2, selective=["poc_set"]
         ).get(id=id, status__in=["ok", "pending"])
     except ObjectDoesNotExist:
         return view_http_error_404(request)
@@ -2028,6 +2040,7 @@ def view_network(request, id):
 
     # Add POC data to dataset
     data["poc_set"] = network_d.get("poc_set")
+
     # For tooltip
     data["phone_help_text"] = field_help(NetworkContact, "phone")
 

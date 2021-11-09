@@ -10,6 +10,7 @@ from peeringdb_server.models import (
     User,
     UserOrgAffiliationRequest,
 )
+from tests.util import reset_group_ids
 
 URL = "/affiliate-to-org"
 
@@ -120,6 +121,7 @@ def test_affiliate_to_nonexisting_org_multiple(client):
 
 @pytest.mark.django_db
 def test_adv_search_init():
+    reset_group_ids()
     client = Client()
     response = client.get("/advanced_search")
     assert response.status_code == 200

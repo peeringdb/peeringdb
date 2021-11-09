@@ -89,8 +89,15 @@ def reset_group_ids():
     to make sure the settings are updated
     """
 
-    settings.USER_GROUP_ID = Group.objects.get(name="user").id
-    settings.GUEST_GROUP_ID = Group.objects.get(name="guest").id
+    try:
+        settings.USER_GROUP_ID = Group.objects.get(name="user").id
+    except Group.DoesNotExist:
+        Group.objects.create(name="user", id=settings.USER_GROUP_ID)
+
+    try:
+        settings.GUEST_GROUP_ID = Group.objects.get(name="guest").id
+    except Group.DoesNotExist:
+        Group.objects.create(name="guest", id=settings.GUEST_GROUP_ID)
 
 
 def override_group_id():
