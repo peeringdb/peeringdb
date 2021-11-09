@@ -1,16 +1,15 @@
 import io
 from datetime import timedelta
 
-from django.db.transaction import commit
-
 import pytest
 import reversion
 from django.conf import settings
 from django.core.management import call_command
+from django.db.transaction import commit
 from django.utils import timezone
 from reversion.models import Version
 
-from peeringdb_server.models import Organization, Network, InternetExchange, Facility
+from peeringdb_server.models import Facility, InternetExchange, Network, Organization
 
 from .util import ClientCase, Group
 

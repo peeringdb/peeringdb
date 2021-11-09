@@ -908,6 +908,3 @@ else:
     EMAIL_SUBJECT_PREFIX = f"[{RELEASE_ENV}] "
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")
-
-
-

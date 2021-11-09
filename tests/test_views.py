@@ -4,14 +4,13 @@ import pytest
 from django.test import Client
 from rest_framework.test import APIClient
 
-from tests.util import reset_group_ids
-
 from peeringdb_server.models import (
     Network,
     Organization,
     User,
     UserOrgAffiliationRequest,
 )
+from tests.util import reset_group_ids
 
 URL = "/affiliate-to-org"
 
