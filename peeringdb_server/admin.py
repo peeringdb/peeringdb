@@ -334,24 +334,38 @@ rollback.short_description = _("ROLLBACK")
 
 @reversion.create_revision()
 def soft_delete(modeladmin, request, queryset):
-    if request.user:
-        reversion.set_user(request.user)
 
-    if queryset.model.handleref.tag == "ixlan":
-        messages.error(
-            request,
-            _(
-                "Ixlans can no longer be directly deleted as they are now synced to the parent exchange"
-            ),
+    if request.POST.get("delete"):
+
+        if request.user:
+            reversion.set_user(request.user)
+
+        if queryset.model.handleref.tag == "ixlan":
+            messages.error(
+                request,
+                _(
+                    "Ixlans can no longer be directly deleted as they are now synced to the parent exchange"
+                ),
+            )
+            return
+
+        for row in queryset:
+            try:
+                row.delete()
+            except ProtectedAction as err:
+                messages.error(request, _("Protected object '{}': {}").format(row, err))
+                continue
+    else:
+
+        context = dict(
+            admin.site.each_context(request),
+            deletable_objects=queryset,
+            action_checkbox_name=helpers.ACTION_CHECKBOX_NAME,
+            title=_("Delete selected objects"),
         )
-        return
 
-    for row in queryset:
-        try:
-            row.delete()
-        except ProtectedAction as err:
-            messages.error(request, _("Protected object '{}': {}").format(row, err))
-            continue
+        messages.warning(request, _("Please confirm deletion of selected objects."))
+        return TemplateResponse(request, "admin/soft_delete.html", context)
 
 
 soft_delete.short_description = _("SOFT DELETE")
@@ -493,13 +507,11 @@ class SoftDeleteAdmin(
     """
 
     actions = [soft_delete]
+
     object_history_template = "handleref/grappelli/object_history.html"
     version_details_template = "handleref/grappelli/version_details.html"
     version_revert_template = "handleref/grappelli/version_revert.html"
     version_rollback_template = "handleref/grappelli/version_rollback.html"
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
     @reversion.create_revision()
     def save_formset(self, request, form, formset, change):
@@ -509,6 +521,21 @@ class SoftDeleteAdmin(
 
     def grainy_namespace(self, obj):
         return obj.grainy_namespace
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if "delete_selected" in actions:
+            del actions["delete_selected"]
+        return actions
+
+
+class ProtectedDeleteAdmin(admin.ModelAdmin):
+    """
+    Allow deletion of objects if the user is superuser
+    """
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
 
 
 class ModelAdminWithVQCtrl:
@@ -1433,7 +1460,7 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
         return ""
 
 
-class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
+class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions, ProtectedDeleteAdmin):
     list_display = (
         "user",
         "asn",
@@ -1488,9 +1515,6 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
             each.deny()
 
     deny.short_description = _("Deny")
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
     actions = [approve_and_notify, approve, deny]
 

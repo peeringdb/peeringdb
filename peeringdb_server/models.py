@@ -29,9 +29,10 @@ import json
 import re
 import uuid
 from itertools import chain
-
 import django.urls
+from requests.api import delete
 import django_peeringdb.models as pdb_models
+from peeringdb_server import request
 import reversion
 from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
@@ -255,9 +256,12 @@ class ProtectedMixin:
         return getattr(self, "_not_deletable_reason", None)
 
     def delete(self, hard=False, force=False):
-
         if self.status in ["ok", "pending"]:
-            if not self.deletable and not force:
+            if (
+                not self.deletable
+                and not force
+                and not bypass_validation(check_admin=True)
+            ):
                 raise ProtectedAction(self)
 
         self.delete_cleanup()
