@@ -23,11 +23,12 @@ def request_registration(request, **kwargs):
     )
 
 
-@login_required
 def request_authentication(request, **kwargs):
     """
-    Requests webauthn registration options from the server
+    Requests webauthn authentications options from the server
     as a JSON response
+
+    Expects a `username` POST parameter
     """
 
     username = request.POST.get("username")
@@ -47,7 +48,6 @@ def register_security_key(request, **kwargs):
 
     This requires the following POST data:
 
-    - challenge(`base64`): the challenge as it was returne from the server in request_registration
     - credential(`base64`): registration credential
     - name(`str`): key nick name
     - passwordless_login (`bool`): allow passwordless login
@@ -73,16 +73,40 @@ def register_security_key(request, **kwargs):
 @login_required
 def verify_authentication(request):
 
+    """
+    Verify the authentication attempt.
+
+    This requires the following POST data:
+
+    - credential(`base64`): registration credential
+    - username(`str`): username
+    - auth_type(`str`): "login" or "mfa"
+
+    ### Authentication typers
+
+    #### login
+
+    the attempt is for a passwordless login process and will only
+    success if the chosen key has that option enabled.
+
+    #### 2fa
+
+    the attempt is for 2fa process
+
+    """
+
     credential = request.POST.get("credential")
     username = request.POST.get("username")
 
     try:
-        security_key = SecurityKey.verify_authentication(
+        SecurityKey.verify_authentication(
             username,
             request.session,
             credential,
+            for_login=(request.POST.get("auth_type") == "login"),
         )
     except Exception as exc:
+        # XXX
         raise
         return JsonResponse({"non_field_errors": exc}, status=403)
 
@@ -96,10 +120,11 @@ def verify_authentication(request):
 @login_required
 def remove_security_key(request, **kwargs):
     """
-    Revoke user api key.
+    Decommission a security key.
     """
 
     user = request.user
+    # XXX should be credential id instead ?
     id = request.POST.get("id")
 
     try:

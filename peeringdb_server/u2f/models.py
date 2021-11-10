@@ -117,7 +117,7 @@ class SecurityKey(models.Model):
 
     name = models.CharField(max_length=255, null=True, help_text=_("Security key name"))
     credential_id = models.CharField(max_length=255, unique=True, db_index=True)
-    credential_public_key = models.CharField(max_length=255, unique=True)
+    credential_public_key = models.TextField()
     sign_count = models.PositiveIntegerField(default=0)
 
     type = models.CharField(max_length=64)
@@ -210,7 +210,7 @@ class SecurityKey(models.Model):
         return webauthn.options_to_json(opts)
 
     @classmethod
-    def verify_authentication(cls, username, session, raw_credential):
+    def verify_authentication(cls, username, session, raw_credential, for_login=False):
 
         try:
             challenge = cls.get_challenge(session)
@@ -222,7 +222,12 @@ class SecurityKey(models.Model):
         try:
             key = cls.objects.get(credential_id=credential.id)
         except SecurityKey.DoesNotExist:
-            raise ValueError(_("Invalid key"))
+            # XXX
+            # return fake response ??
+            raise ValueError(_("Security key authentication failed"))
+
+        if for_login and not key.passwordless_login:
+            raise ValueError(_("Security key not enabled for password-less login"))
 
         verified_authentication = webauthn.verify_authentication_response(
             credential=credential,
@@ -237,6 +242,8 @@ class SecurityKey(models.Model):
 
         key.sign_count = verified_authentication.new_sign_count
         key.save()
+
+        return key
 
 
 class SecurityKeyDevice(ThrottlingMixin, SideChannelDevice):

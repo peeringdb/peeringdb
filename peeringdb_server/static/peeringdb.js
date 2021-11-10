@@ -1709,7 +1709,58 @@ twentyc.editable.module.register(
 
 
 PeeringDB.SecurityKeys = {
-  authenticate: function(username) {
+
+  init_passwordless_login : function() {
+    var login_form = $(".v2-login form")
+    var login_step = login_form.find('[name="login_view-current_step"]');
+    if(login_step.val() == "auth") {
+      var button_next = login_form.find('button[type="submit"]');
+      var fn_submit = function(ev) {
+        var password = login_form.find("#id_auth-password").val();
+        var username= login_form.find("#id_auth-username").val();
+
+        if(password == "" && username != "") {
+
+          // prevent default form submit since we need to wait
+          // for credentials.
+          ev.preventDefault();
+
+          PeeringDB.SecurityKeys.request_authenticate(
+            username,
+
+            (payload) => {
+
+              // auth assertion successful, attach credentials
+
+              login_form.append($('<input type="hidden" name="credential">').val(payload.credential))
+              login_form.submit();
+
+            },
+
+            () => {
+
+              console.log("No credentials for user");
+
+              // no registered credentials
+
+              login_form.submit();
+
+            }
+          );
+        }
+      };
+
+      button_next.click(fn_submit);
+      login_form.find('input').on('keydown', (ev) => {
+        if(ev.which==13) {
+          fn_submit(ev);
+        }
+      });
+    }
+  },
+
+
+  request_authenticate: function(username, callback, no_credentials) {
     var i, payload = {username: username}
     $.post("/security_keys/request_authentication", payload, (response) => {
       console.log("REQUEST AUTH", response);
@@ -1725,6 +1776,12 @@ PeeringDB.SecurityKeys = {
    //   }
 
       console.log("REQUEST_AUTH (2)", response)
+
+      if(!response.allowCredentials.length) {
+        if(no_credentials)
+          return no_credentials();
+        return;
+      }
 
       assertion = navigator.credentials.get({publicKey: response});
       assertion.then((PublicKeyCredential) => {
@@ -1746,12 +1803,15 @@ PeeringDB.SecurityKeys = {
         console.log("VERIFY_AUTH PRE", credentials);
 
         payload.credential = JSON.stringify(credentials);
+        callback(payload)
 
+        /*
         $.post("/security_keys/verify_authentication", payload).done(
           (response) => {
             console.log("VERIFY_AUTH", response);
           }
         );
+        */
 
       });
 
@@ -3497,6 +3557,7 @@ $(twentyc.data).on("load-enum/traffic", function(e, payload) {
 
 $(window).bind("load", function() {
   PeeringDB.init();
+  PeeringDB.SecurityKeys.init_passwordless_login()
 })
 
 $(window).bind("pageshow", function() {

@@ -8,8 +8,33 @@
       <div class="col-xs-12 col-sm-4"></div>
       <div class="col-xs-12 col-sm-4  panel left">
 
-{% block content %}
-{% endblock %}
+      {% block content %}
+      {% endblock %}
+
+      {% if wizard.steps.current == "auth" %}
+
+        {% if passwordless_error %}
+
+        <p>
+        <div class="alert alert-danger">
+        {{ passwordless_error }}
+        </div>
+        </p>
+
+        {% endif %}
+
+        <p>
+          <div class="alert alert-info">
+            {% blocktrans trimmed %}
+            For <strong>password-less</strong> authentication leave the password field
+            empty and make sure your
+            registered U2F FIDO security key is available / connected.
+            {% endblocktrans %}
+          </div>
+        </p>
+
+      {% endif %}
+
       </div>
       <div class="col-xs-12 col-sm-4"></div>
     </div>

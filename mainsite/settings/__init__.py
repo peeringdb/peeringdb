@@ -617,6 +617,14 @@ OAUTH2_PROVIDER = {
 
 AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 
+## webauthn
+
+AUTHENTICATION_BACKENDS += (
+    "peeringdb_server.u2f.backends.PasswordlessAuthenticationBackend",
+)
+
+print(AUTHENTICATION_BACKENDS)
+
 
 ## Django Rest Framework
 

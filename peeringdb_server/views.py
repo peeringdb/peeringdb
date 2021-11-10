@@ -16,6 +16,7 @@ import datetime
 import json
 import os
 import re
+import time
 import uuid
 
 import requests
@@ -84,6 +85,7 @@ from peeringdb_server.models import (
     NetworkIXLan,
     Organization,
     Partnership,
+    SecurityKey,
     Sponsorship,
     User,
     UserOrgAffiliationRequest,
@@ -2297,6 +2299,7 @@ class LoginView(two_factor.views.LoginView):
         Posts to the `auth` step of the authentication
         process need to be rate limited.
         """
+        request = self.request
 
         was_limited = getattr(self.request, "limited", False)
         if self.get_step_index() == 0 and was_limited:
@@ -2305,7 +2308,53 @@ class LoginView(two_factor.views.LoginView):
             )
             return self.render_goto_step("auth")
 
+
+        passwordless = self.attempt_passwordless_auth(request, **kwargs)
+        if passwordless:
+            return passwordless
+
+
         return super().post(*args, **kwargs)
+
+
+    def attempt_passwordless_auth(self, request, **kwargs):
+
+        """
+        Prepares and attempts a passwordless authentication
+        using a security key credential.
+
+        This requires that the auth-username and credential
+        fields are set in the POST data.
+
+        This requires that the PasswordlessAuthenticationBackend is
+        loaded.
+        """
+
+        if self.steps.current == "auth":
+
+            credential = request.POST.get("credential")
+            username = request.POST.get("auth-username")
+
+            # support password-less login using webauthn
+            if username and credential:
+
+                try:
+                    user = authenticate(request, username=username, u2f_credential=credential)
+                    self.storage.reset()
+                    self.storage.authenticated_user = user
+                    self.storage.data["authentication_time"] = int(time.time())
+
+                    form = self.get_form(data=self.request.POST, files=self.request.FILES)
+
+                    if self.steps.current == self.steps.last:
+                        return self.render_done(form, **kwargs)
+                    return self.render_next_step(form)
+
+                except Exception as exc:
+
+                    self.passwordless_error = f"{exc}"
+                    return self.render_goto_step("auth")
+
 
     def get_context_data(self, form, **kwargs):
         """
@@ -2318,6 +2367,8 @@ class LoginView(two_factor.views.LoginView):
 
         if "other_devices" in context:
             context["other_devices"] += [self.get_email_device()]
+
+        context["passwordless_error"] = getattr(self, "passwordless_error", None)
 
         return context
 
@@ -2435,6 +2486,9 @@ class LoginView(two_factor.views.LoginView):
         response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, user_language)
 
         return response
+
+
+
 
 
 @require_http_methods(["POST"])
