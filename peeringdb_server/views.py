@@ -2276,27 +2276,31 @@ EmailDevice.verify_token = verify_token
 
 from django.views.generic import FormView
 
-class TwoFactorDisableView(two_factor.views.DisableView):
 
+class TwoFactorDisableView(two_factor.views.DisableView):
     def dispatch(self, *args, **kwargs):
         self.success_url = "/"
         return FormView.dispatch(self, *args, **kwargs)
 
+
 class LoginView(two_factor.views.LoginView):
 
     form_list = two_factor.views.LoginView.form_list + (
-        ('security-key', u2f_two_factor_forms.SecurityKeyDeviceValidation),
+        ("security-key", u2f_two_factor_forms.SecurityKeyDeviceValidation),
     )
 
     def has_security_key_step(self):
         if not self.get_user():
             return False
-        return (len(SecurityKey.credentials(self.get_user().username, self.request.session)) > 0)
+        return (
+            len(SecurityKey.credentials(self.get_user().username, self.request.session))
+            > 0
+        )
 
     condition_dict = {
         "backup": two_factor.views.LoginView.has_backup_step,
         "token": two_factor.views.LoginView.has_token_step,
-        "security-key": has_security_key_step
+        "security-key": has_security_key_step,
     }
 
     """
@@ -2316,19 +2320,15 @@ class LoginView(two_factor.views.LoginView):
 
         return super().get(*args, **kwargs)
 
-
     def get_form_kwargs(self, step=None):
         kwargs = super().get_form_kwargs(step=step)
 
         if step == "security-key":
-            kwargs.update({
-                "device": self.get_security_key_device(),
-                "request": self.request
-            })
-
+            kwargs.update(
+                {"device": self.get_security_key_device(), "request": self.request}
+            )
 
         return kwargs
-
 
     @method_decorator(
         ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
@@ -2347,14 +2347,11 @@ class LoginView(two_factor.views.LoginView):
             )
             return self.render_goto_step("auth")
 
-
         passwordless = self.attempt_passwordless_auth(request, **kwargs)
         if passwordless:
             return passwordless
 
-
         return super().post(*args, **kwargs)
-
 
     def attempt_passwordless_auth(self, request, **kwargs):
 
@@ -2378,13 +2375,17 @@ class LoginView(two_factor.views.LoginView):
             if username and credential:
 
                 try:
-                    user = authenticate(request, username=username, u2f_credential=credential)
+                    user = authenticate(
+                        request, username=username, u2f_credential=credential
+                    )
                     self.storage.reset()
                     self.storage.authenticated_user = user
                     self.storage.data["authentication_time"] = int(time.time())
                     print("USER SET", user)
 
-                    form = self.get_form(data=self.request.POST, files=self.request.FILES)
+                    form = self.get_form(
+                        data=self.request.POST, files=self.request.FILES
+                    )
 
                     if self.steps.current == self.steps.last:
                         return self.render_done(form, **kwargs)
@@ -2394,7 +2395,6 @@ class LoginView(two_factor.views.LoginView):
 
                     self.passwordless_error = f"{exc}"
                     return self.render_goto_step("auth")
-
 
     def get_context_data(self, form, **kwargs):
         """
@@ -2414,7 +2414,6 @@ class LoginView(two_factor.views.LoginView):
 
         if self.steps.current == "security-key":
             context["device"] = self.get_security_key_device()
-
 
         return context
 
@@ -2439,7 +2438,6 @@ class LoginView(two_factor.views.LoginView):
         self._security_key_device = device
 
         return device
-
 
     def get_email_device(self):
         """
@@ -2506,7 +2504,6 @@ class LoginView(two_factor.views.LoginView):
                     self.device_cache = device
                     return self.device_cache
 
-
                 # email device
                 device = self.get_email_device()
                 if device.persistent_id == challenge_device_id:
@@ -2514,9 +2511,6 @@ class LoginView(two_factor.views.LoginView):
                     return self.device_cache
 
         return super().get_device(step=step)
-
-
-
 
     def get_success_url(self):
         return self.get_redirect_url()
@@ -2567,9 +2561,6 @@ class LoginView(two_factor.views.LoginView):
         response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, user_language)
 
         return response
-
-
-
 
 
 @require_http_methods(["POST"])

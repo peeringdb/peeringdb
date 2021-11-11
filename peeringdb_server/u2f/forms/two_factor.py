@@ -8,7 +8,7 @@ from peeringdb_server.u2f.models import SecurityKey
 class SecurityKeyDeviceValidation(forms.Form):
 
     credential = forms.CharField(widget=forms.HiddenInput())
-    credential.widget.attrs.update({"type":"hidden"})
+    credential.widget.attrs.update({"type": "hidden"})
 
     def __init__(self, request=None, device=None, *args, **kwargs):
         self.request = request
@@ -26,9 +26,7 @@ class SecurityKeyDeviceValidation(forms.Form):
 
         try:
             SecurityKey.verify_authentication(
-                self.device.user.username,
-                self.request.session,
-                credential
+                self.device.user.username, self.request.session, credential
             )
             self.device.authenticated = True
         except Exception:
@@ -36,5 +34,3 @@ class SecurityKeyDeviceValidation(forms.Form):
             raise ValidationError(_("Security key authentication failed"))
 
         return self.cleaned_data
-
-

@@ -39,7 +39,11 @@ def request_authentication(request, **kwargs):
         return JsonResponse({"non_field_errors": _("No username supplied")}, status=403)
 
     return JsonResponse(
-        json.loads(SecurityKey.generate_authentication(username, request.session, for_login=for_login))
+        json.loads(
+            SecurityKey.generate_authentication(
+                username, request.session, for_login=for_login
+            )
+        )
     )
 
 

@@ -186,7 +186,7 @@ class SecurityKey(models.Model):
             sign_count=verified_registration.sign_count,
             name=kwargs.get("name", "main"),
             passwordless_login=kwargs.get("passwordless_login", False),
-            type="security-key"
+            type="security-key",
         )
 
         # create django-two-factor device for the key
@@ -265,7 +265,6 @@ class SecurityKey(models.Model):
         )
 
         cls.clear_challenge(session)
-
 
         key.sign_count = verified_authentication.new_sign_count
         key.save()

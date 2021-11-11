@@ -2166,6 +2166,7 @@ class U2FSecurityKeyAdmin(admin.ModelAdmin):
 
 admin.site.register(u2f.SecurityKey, U2FSecurityKeyAdmin)
 
+
 class U2FUserHandle(admin.ModelAdmin):
     list_display = ["user", "handle"]
     raw_id_fields = ("user",)
@@ -2178,6 +2179,7 @@ class U2FUserHandle(admin.ModelAdmin):
 
 
 admin.site.register(u2f.UserHandle, U2FUserHandle)
+
 
 class U2FSecurityKeyDeviceAdmin(admin.ModelAdmin):
     list_display = ["id", "user"]
