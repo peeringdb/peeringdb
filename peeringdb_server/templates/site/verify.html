@@ -27,9 +27,6 @@
       <!-- 2FA -->
       {% include "site/profile-2fa.html" %}
 
-      <!-- SECURITY KEYS -->
-      {% include "site/profile-security-keys.html" %}
-
       {% if not request.user.has_oauth %}
       <!-- CHANGE EMAIL -->
       {% include "site/profile-change-email.html" %}

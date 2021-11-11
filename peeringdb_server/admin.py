@@ -2179,6 +2179,20 @@ class U2FUserHandle(admin.ModelAdmin):
 
 admin.site.register(u2f.UserHandle, U2FUserHandle)
 
+class U2FSecurityKeyDeviceAdmin(admin.ModelAdmin):
+    list_display = ["id", "user"]
+
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
+
+
+admin.site.register(u2f.SecurityKeyDevice, U2FSecurityKeyDeviceAdmin)
+
 
 # Commented out via issue #860
 # admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)

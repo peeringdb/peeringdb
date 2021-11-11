@@ -16,7 +16,7 @@ Ref: https://github.com/duo-labs/py_webauthn
 from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
-from django_otp.models import SideChannelDevice, ThrottlingMixin
+from django_otp.models import Device, ThrottlingMixin
 
 import secrets
 import webauthn
@@ -176,7 +176,8 @@ class SecurityKey(models.Model):
 
         cls.clear_challenge(session)
 
-        return cls.objects.create(
+        # create security key
+        key = cls.objects.create(
             user=user,
             credential_id=bytes_to_base64url(verified_registration.credential_id),
             credential_public_key=bytes_to_base64url(
@@ -185,24 +186,49 @@ class SecurityKey(models.Model):
             sign_count=verified_registration.sign_count,
             name=kwargs.get("name", "main"),
             passwordless_login=kwargs.get("passwordless_login", False),
+            type="security-key"
         )
 
+        # create django-two-factor device for the key
+        SecurityKeyDevice.require_for_user(user)
+        return key
+
     @classmethod
-    def credentials(cls, username):
+    def clear_session(cls, session):
+        try:
+            del session["webauthn_passwordless"]
+        except KeyError:
+            pass
+
+    @classmethod
+    def credentials(cls, username, session, for_login=False):
+
+        qset = cls.objects.filter(user__username=username)
+
+        # if a security key was used for passwordless auth
+        # it should not be available for two factor auth
+
+        pl_key_id = session.get("webauthn_passwordless")
+        if pl_key_id and not for_login:
+            qset = qset.exclude(id=pl_key_id)
+
+        if for_login:
+            qset = qset.filter(passwordless_login=True)
+
         return [
             PublicKeyCredentialDescriptor(
                 type="public-key",
                 id=base64url_to_bytes(key.credential_id),
             )
-            for key in cls.objects.filter(user__username=username)
+            for key in qset
         ]
 
     @classmethod
-    def generate_authentication(cls, username, session):
+    def generate_authentication(cls, username, session, for_login=False):
 
         opts = webauthn.generate_authentication_options(
             rp_id=settings.WEBAUTHN_RP_ID,
-            allow_credentials=cls.credentials(username),
+            allow_credentials=cls.credentials(username, session, for_login=for_login),
         )
 
         cls.set_challenge(session, opts.challenge)
@@ -214,7 +240,7 @@ class SecurityKey(models.Model):
 
         try:
             challenge = cls.get_challenge(session)
-        except Challenge.DoesNotExist:
+        except KeyError:
             raise ValueError(_("Invalid webauthn challenge"))
 
         credential = AuthenticationCredential.parse_raw(raw_credential)
@@ -240,22 +266,38 @@ class SecurityKey(models.Model):
 
         cls.clear_challenge(session)
 
+
         key.sign_count = verified_authentication.new_sign_count
         key.save()
 
         return key
 
 
-class SecurityKeyDevice(ThrottlingMixin, SideChannelDevice):
+class SecurityKeyDevice(ThrottlingMixin, Device):
     """
     Integration of SecurityKey (FIDO U2F) with django_otp
     """
-
-    key = models.OneToOneField(
-        SecurityKey, related_name="twofactor_device", on_delete=models.CASCADE
-    )
 
     class Meta:
         db_table = "peeringdb_webauthn_2fa_device"
         verbose_name = _("Webauthn Security Key 2FA Device")
         verbose_name_plural = _("Webauthn Security Key 2FA Devices")
+
+    @classmethod
+    def require_for_user(cls, user):
+        try:
+            return cls.objects.get(user=user)
+        except cls.DoesNotExist:
+            return cls.objects.create(user=user, name="security-keys")
+
+    @property
+    def method(self):
+        return "security-key"
+
+    @property
+    def authenticated(self):
+        return getattr(self, "_authenticated", False)
+
+    @authenticated.setter
+    def authenticated(self, value):
+        self._authenticated = value

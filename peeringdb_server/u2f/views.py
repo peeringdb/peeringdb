@@ -3,6 +3,7 @@ import base64
 
 from webauthn import base64url_to_bytes
 
+from django.db import transaction
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.utils.translation import ugettext_lazy as _
@@ -32,16 +33,18 @@ def request_authentication(request, **kwargs):
     """
 
     username = request.POST.get("username")
+    for_login = request.POST.get("for_login")
 
     if not username:
         return JsonResponse({"non_field_errors": _("No username supplied")}, status=403)
 
     return JsonResponse(
-        json.loads(SecurityKey.generate_authentication(username, request.session))
+        json.loads(SecurityKey.generate_authentication(username, request.session, for_login=for_login))
     )
 
 
 @login_required
+@transaction.atomic
 def register_security_key(request, **kwargs):
     """
     Register a webauthn security key.
@@ -71,6 +74,7 @@ def register_security_key(request, **kwargs):
 
 
 @login_required
+@transaction.atomic
 def verify_authentication(request):
 
     """

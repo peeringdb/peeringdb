@@ -590,6 +590,9 @@ CORS_ALLOW_METHODS = ["GET", "OPTIONS"]
 set_bool("OAUTH_ENABLED", False)
 
 AUTHENTICATION_BACKENDS += (
+    # for passwordless auth using security-key
+    # this needs to be first so it can do some clean up
+    "peeringdb_server.u2f.backends.PasswordlessAuthenticationBackend",
     # for OAuth provider
     "oauth2_provider.backends.OAuth2Backend",
     # for OAuth against external sources
@@ -616,12 +619,6 @@ OAUTH2_PROVIDER = {
 ## grainy
 
 AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
-
-## webauthn
-
-AUTHENTICATION_BACKENDS += (
-    "peeringdb_server.u2f.backends.PasswordlessAuthenticationBackend",
-)
 
 print(AUTHENTICATION_BACKENDS)
 

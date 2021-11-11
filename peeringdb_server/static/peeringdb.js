@@ -1710,11 +1710,16 @@ twentyc.editable.module.register(
 
 PeeringDB.SecurityKeys = {
 
+  init : function() {
+    this.init_passwordless_login();
+    this.init_two_factor();
+  },
+
   init_passwordless_login : function() {
-    var login_form = $(".v2-login form")
+    var login_form = $(".login-form form")
     var login_step = login_form.find('[name="login_view-current_step"]');
     if(login_step.val() == "auth") {
-      var button_next = login_form.find('button[type="submit"]');
+      var button_next = login_form.find('button[type="submit"].btn-primary');
       var fn_submit = function(ev) {
         var password = login_form.find("#id_auth-password").val();
         var username= login_form.find("#id_auth-username").val();
@@ -1727,12 +1732,13 @@ PeeringDB.SecurityKeys = {
 
           PeeringDB.SecurityKeys.request_authenticate(
             username,
+            true,
 
             (payload) => {
 
               // auth assertion successful, attach credentials
 
-              login_form.append($('<input type="hidden" name="credential">').val(payload.credential))
+              login_form.append($('<input type="hidden" name="credential">').val(payload.credential));
               login_form.submit();
 
             },
@@ -1759,9 +1765,54 @@ PeeringDB.SecurityKeys = {
     }
   },
 
+  init_two_factor : function() {
 
-  request_authenticate: function(username, callback, no_credentials) {
-    var i, payload = {username: username}
+    var form = $(".login-form form")
+    var initiator = $('div[data-2fa-method="security-key"]')
+    var button_select_u2f = form.find('button[data-device-step="security-key"]')
+
+    button_select_u2f.click(function(ev) {
+      ev.preventDefault();
+      form.append($('<input type="hidden" name="wizard_goto_step">').val("security-key"));
+      form.submit();
+    });
+
+
+    if(!initiator.length) {
+      return;
+    }
+
+    var username = initiator.data("username")
+    var button_next = form.find('button[type="submit"].btn-primary');
+    var button_back = form.find('button[type="submit"].btn-secondary');
+    button_next.prop("disabled", true);
+
+    PeeringDB.SecurityKeys.request_authenticate(
+      username,
+      false,
+      (payload) => {
+
+        form.find("#id_security-key-credential").val(payload.credential)
+        form.submit()
+
+      },
+      () => {
+        alert(gettext("No credentials provided"));
+        button_back.trigger("click");
+      },
+      (exc) => {
+        alert(gettext("Security key authentication aborted, returning to login."));
+        button_back.trigger("click");
+      }
+
+    );
+  },
+
+
+  request_authenticate: function(username, for_login, callback, no_credentials, error) {
+    var i, payload = {username: username};
+    if(for_login)
+      payload.for_login = 1;
     $.post("/security_keys/request_authentication", payload, (response) => {
       console.log("REQUEST AUTH", response);
 
@@ -1784,6 +1835,10 @@ PeeringDB.SecurityKeys = {
       }
 
       assertion = navigator.credentials.get({publicKey: response});
+      assertion.catch((exc) => {
+        if(error)
+          error(exc);
+      });
       assertion.then((PublicKeyCredential) => {
 
         console.log("ASSERT", PublicKeyCredential);
@@ -3557,7 +3612,7 @@ $(twentyc.data).on("load-enum/traffic", function(e, payload) {
 
 $(window).bind("load", function() {
   PeeringDB.init();
-  PeeringDB.SecurityKeys.init_passwordless_login()
+  PeeringDB.SecurityKeys.init()
 })
 
 $(window).bind("pageshow", function() {
