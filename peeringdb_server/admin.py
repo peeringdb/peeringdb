@@ -29,6 +29,7 @@ from django.contrib.admin.actions import delete_selected
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Q
 from django.db.utils import OperationalError
 from django.forms import DecimalField
@@ -164,6 +165,7 @@ def fk_handleref_filter(form, field, tag=None):
 ###############################################################################
 
 
+@transaction.atomic
 @reversion.create_revision()
 def merge_organizations(targets, target, request):
     """
@@ -321,6 +323,7 @@ class ModelAdminWithUrlActions(admin.ModelAdmin):
         return urls
 
 
+@transaction.atomic
 @reversion.create_revision()
 def rollback(modeladmin, request, queryset):
     if request.user:
@@ -332,6 +335,7 @@ def rollback(modeladmin, request, queryset):
 rollback.short_description = _("ROLLBACK")
 
 
+@transaction.atomic
 @reversion.create_revision()
 def soft_delete(modeladmin, request, queryset):
     if request.user:
@@ -501,6 +505,7 @@ class SoftDeleteAdmin(
     def has_delete_permission(self, request, obj=None):
         return False
 
+    @transaction.atomic
     @reversion.create_revision()
     def save_formset(self, request, form, formset, change):
         if request.user:
@@ -1124,6 +1129,7 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
             )
         )
 
+    @transaction.atomic
     @reversion.create_revision()
     def undo(modeladmin, request, queryset):
         if request.user:
@@ -1406,6 +1412,7 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
         opts = obj.model._meta
         return redirect(f"admin:{opts.app_label}_{opts.model_name}_changelist")
 
+    @transaction.atomic
     def vq_approve(self, request, queryset):
         with reversion.create_revision():
             reversion.set_user(request.user)
@@ -1415,6 +1422,7 @@ class VerificationQueueAdmin(ModelAdminWithUrlActions):
     vq_approve.short_description = _("APPROVE selected items")
     vq_approve.allowed_permissions = ("change",)
 
+    @transaction.atomic
     def vq_deny(modeladmin, request, queryset):
         for each in queryset:
             each.deny()
@@ -1452,6 +1460,7 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
         "fk": ["user", "org"],
     }
 
+    @transaction.atomic
     def approve_and_notify(self, request, queryset):
         for each in queryset:
             if each.status == "canceled":
@@ -1469,6 +1478,7 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
 
     approve_and_notify.short_description = _("Approve and notify User")
 
+    @transaction.atomic
     def approve(self, request, queryset):
         for each in queryset:
             if each.status == "canceled":
@@ -1480,6 +1490,7 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions):
 
     approve.short_description = _("Approve")
 
+    @transaction.atomic
     def deny(self, request, queryset):
         for each in queryset:
             if each.status == "canceled":
@@ -1798,6 +1809,7 @@ class CommandLineToolAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
             context,
         )
 
+    @transaction.atomic
     def run_command_view(self, request):
         """
         This view has the user running the command and commiting changes
@@ -2096,6 +2108,7 @@ class IXFMemberDataAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     def remote_data(self, obj):
         return obj.json
 
+    @transaction.atomic
     @reversion.create_revision()
     def response_change(self, request, obj):
         if "_save-and-apply" in request.POST:
@@ -2122,6 +2135,7 @@ class EnvironmentSettingAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
 
     form = EnvironmentSettingForm
 
+    @transaction.atomic
     def save_model(self, request, obj, form, save):
         obj.user = request.user
         return obj.set_value(form.cleaned_data["value"])

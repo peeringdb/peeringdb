@@ -1155,6 +1155,73 @@ class TestJSON(unittest.TestCase):
         )
 
     ##########################################################################
+
+    def test_atomicity(self):
+
+        """
+        Test that POST, PUT and DELETE requests to the api use
+        atomic database transactions
+        """
+
+        # cause POST, PUT and DELETE to fail before returning
+        # a response
+        NetworkViewSet._test_mode_force_failure = True
+
+        # test POST atomicity
+
+        data = self.make_data_net(asn=9000900)
+
+        with pytest.raises(Exception) as exc:
+            self.assert_create(self.db_org_admin, "net", data)
+
+        assert "simulated" in str(exc.value)
+
+        assert not Network.objects.filter(asn=9009000).exists()
+
+        # test PUT atomicty
+
+        net = SHARED["net_rw_ok"]
+        orig_name = net.name
+
+        with pytest.raises(Exception) as exc:
+            self.assert_update(
+                self.db_org_admin,
+                "net",
+                net.id,
+                {"name": self.make_name("Test Atomicity")},
+            )
+
+        assert "simulated" in str(exc.value)
+
+        net.refresh_from_db()
+        assert net.name == orig_name
+
+        # test DELETE atomicity
+
+        unprotected_net = Network.objects.create(
+            name="Unprotected Network", asn=90009000, org=net.org, status="ok"
+        )
+
+        assert unprotected_net.status == "ok"
+
+        with pytest.raises(Exception) as exc:
+            self.assert_delete(
+                self.db_org_admin,
+                "net",
+                test_success=unprotected_net.id,
+            )
+
+        assert "simulated" in str(exc.value)
+
+        unprotected_net.refresh_from_db()
+        assert unprotected_net.status == "ok"
+
+        unprotected_net.delete(hard=True)
+
+        # reset test mode
+        NetworkViewSet._test_mode_force_failure = False
+
+    ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION ADMINISTRATOR
     ##########################################################################
 

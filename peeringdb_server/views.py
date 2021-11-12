@@ -25,6 +25,7 @@ from django.conf import settings as dj_settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.db import transaction
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -238,6 +239,7 @@ def view_maintenance(request):
 
 
 @login_required
+@transaction.atomic
 @ratelimit(key="ip", rate=RATELIMITS["view_request_ownership_GET"], method="GET")
 @ratelimit(key="ip", rate=RATELIMITS["view_request_ownership_POST"], method="POST")
 def view_request_ownership(request):
@@ -340,6 +342,7 @@ def view_request_ownership(request):
 
 
 @csrf_protect
+@transaction.atomic
 @require_http_methods(["POST"])
 def cancel_affiliation_request(request, uoar_id):
     """
@@ -362,6 +365,7 @@ def cancel_affiliation_request(request, uoar_id):
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
+@transaction.atomic
 @ratelimit(key="ip", method="POST", rate=RATELIMITS["view_affiliate_to_org_POST"])
 def view_affiliate_to_org(request):
     """
@@ -477,6 +481,7 @@ def view_affiliate_to_org(request):
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
+@transaction.atomic
 @ratelimit(key="ip", rate=RATELIMITS["resend_confirmation_mail"])
 def resend_confirmation_mail(request):
     was_limited = getattr(request, "limited", False)
@@ -503,6 +508,7 @@ def view_profile(request):
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
+@transaction.atomic
 def view_set_user_locale(request):
 
     if request.method in ["GET", "HEAD"]:
@@ -574,6 +580,7 @@ def view_profile_v1(request):
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
+@transaction.atomic
 @ratelimit(key="ip", rate=RATELIMITS["view_verify_POST"], method="POST")
 def view_verify(request):
 
@@ -637,6 +644,7 @@ def view_verify(request):
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
+@transaction.atomic
 def view_password_change(request):
 
     if request.method in ["GET", "HEAD"]:
@@ -681,6 +689,7 @@ def view_username_retrieve(request):
 @csrf_protect
 @ensure_csrf_cookie
 @require_http_methods(["POST"])
+@transaction.atomic
 @ratelimit(key="ip", rate=RATELIMITS["view_username_retrieve_initiate"])
 def view_username_retrieve_initiate(request):
     """
@@ -751,6 +760,7 @@ def view_username_retrieve_complete(request):
 
 @csrf_protect
 @ensure_csrf_cookie
+@transaction.atomic
 def view_password_reset(request):
     """
     Password reset initiation view.
@@ -831,6 +841,7 @@ def view_password_reset(request):
 
 @csrf_protect
 @ensure_csrf_cookie
+@transaction.atomic
 def view_registration(request):
     """
     User registration page view.
@@ -963,6 +974,7 @@ class OrganizationLogoUpload(View):
     Handles public upload and setting of organization logo (#346)
     """
 
+    @transaction.atomic
     def post(self, request, id):
 
         """upload and set a new logo"""
@@ -994,6 +1006,7 @@ class OrganizationLogoUpload(View):
         else:
             return JsonResponse(form.errors, status=400)
 
+    @transaction.atomic
     def delete(self, request, id):
 
         """delete the logo"""
@@ -2243,6 +2256,7 @@ def request_search(request):
     return HttpResponse(template.render(env, request))
 
 
+@transaction.atomic
 def request_logout(request):
     logout(request)
     return redirect("/")
@@ -2289,6 +2303,7 @@ class LoginView(two_factor.views.LoginView):
 
         return super().get(*args, **kwargs)
 
+    @transaction.atomic
     @method_decorator(
         ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
     )
@@ -2475,6 +2490,7 @@ def request_translation(request, data_type):
     )
 
 
+@transaction.atomic
 @require_http_methods(["POST"])
 def network_reset_ixf_proposals(request, net_id):
     net = Network.objects.get(id=net_id)
@@ -2490,6 +2506,7 @@ def network_reset_ixf_proposals(request, net_id):
     return JsonResponse({"status": "ok"})
 
 
+@transaction.atomic
 @require_http_methods(["POST"])
 def network_dismiss_ixf_proposal(request, net_id, ixf_id):
     ixf_member_data = IXFMemberData.objects.get(id=ixf_id)

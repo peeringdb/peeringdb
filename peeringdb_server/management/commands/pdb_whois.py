@@ -5,8 +5,8 @@ import logging
 
 from django.contrib.auth.models import AnonymousUser
 from django_handleref import util
-from peeringdb.whois import WhoisFormat
 
+from peeringdb.whois import WhoisFormat
 from peeringdb_server import models, serializers
 from peeringdb_server.util import APIPermissionsApplicator
 

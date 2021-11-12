@@ -528,11 +528,6 @@ PASSWORD_HASHERS = (
 ROOT_URLCONF = "mainsite.urls"
 CONN_MAX_AGE = 3600
 
-# starting with reversion 4.0 the reversion revision context
-# no longer opens an atomic transaction context, so we need
-# to ensure this ourselves for all the requests
-ATOMIC_REQUESTS = True
-
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 

@@ -15,6 +15,7 @@ from dal import autocomplete
 from django import forms
 from django.conf import settings
 from django.core.management import call_command
+from django.db import transaction
 from reversion.models import Version
 
 from peeringdb_server import maintenance
@@ -157,6 +158,7 @@ class CommandLineToolWrapper:
             )
         return self.result
 
+    @transaction.atomic
     def run(self, user, commit=False):
         if self.queue and commit:
 
