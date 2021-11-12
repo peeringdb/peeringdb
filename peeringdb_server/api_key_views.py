@@ -2,6 +2,7 @@
 Views for organization api key management.
 """
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
@@ -91,6 +92,7 @@ def load_all_key_permissions(org):
 
 
 @login_required
+@transaction.atomic
 @org_admin_required
 def manage_key_add(request, **kwargs):
     """
@@ -126,6 +128,7 @@ def manage_key_add(request, **kwargs):
 
 
 @login_required
+@transaction.atomic
 @org_admin_required
 def manage_key_update(request, **kwargs):
     """
@@ -168,6 +171,7 @@ def manage_key_update(request, **kwargs):
 
 
 @login_required
+@transaction.atomic
 @org_admin_required
 def manage_key_revoke(request, **kwargs):
     """
@@ -218,6 +222,7 @@ def key_permissions(request, **kwargs):
 
 @login_required
 @csrf_protect
+@transaction.atomic
 @org_admin_required
 def key_permission_update(request, **kwargs):
     """
@@ -245,6 +250,7 @@ def key_permission_update(request, **kwargs):
 
 @login_required
 @csrf_protect
+@transaction.atomic
 @org_admin_required
 def key_permission_remove(request, **kwargs):
     """
@@ -279,6 +285,7 @@ def convert_to_bool(data):
 
 
 @login_required
+@transaction.atomic
 def add_user_key(request, **kwargs):
     """
     Create a new User API key.
@@ -308,6 +315,7 @@ def add_user_key(request, **kwargs):
 
 
 @login_required
+@transaction.atomic
 def remove_user_key(request, **kwargs):
     """
     Revoke user api key.

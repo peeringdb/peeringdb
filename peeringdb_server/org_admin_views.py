@@ -3,6 +3,7 @@ View for organization administrative actions (/org endpoint).
 """
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import JsonResponse
 from django.template import loader
 from django.utils.translation import override
@@ -291,6 +292,7 @@ def users(request, **kwargs):
 
 
 @login_required
+@transaction.atomic
 @org_admin_required
 @target_user_validate
 def manage_user_delete(request, **kwargs):
@@ -309,6 +311,7 @@ def manage_user_delete(request, **kwargs):
 
 
 @login_required
+@transaction.atomic
 @org_admin_required
 @target_user_validate
 def manage_user_update(request, **kwargs):
@@ -361,6 +364,7 @@ def user_permissions(request, **kwargs):
 
 @login_required
 @csrf_protect
+@transaction.atomic
 @org_admin_required
 @target_user_validate
 def user_permission_update(request, **kwargs):
@@ -389,6 +393,7 @@ def user_permission_update(request, **kwargs):
 
 @login_required
 @csrf_protect
+@transaction.atomic
 @org_admin_required
 @target_user_validate
 def user_permission_remove(request, **kwargs):
@@ -430,6 +435,7 @@ def permissions(request, **kwargs):
 
 @login_required
 @csrf_protect
+@transaction.atomic
 @org_admin_required
 def uoar_approve(request, **kwargs):
     """
@@ -487,10 +493,11 @@ def uoar_approve(request, **kwargs):
 
 @login_required
 @csrf_protect
+@transaction.atomic
 @org_admin_required
 def uoar_deny(request, **kwargs):
     """
-    Approve a user request to affiliate with the organization.
+    Deny a user request to affiliate with the organization.
     """
 
     org = kwargs.get("org")
@@ -508,7 +515,7 @@ def uoar_deny(request, **kwargs):
             return JsonResponse({"status": "ok"})
 
         # notify rest of org admins that the affiliation request has been
-        # approved
+        # denied
 
         for user in org.admin_usergroup.user_set.all():
             if user != request.user:
