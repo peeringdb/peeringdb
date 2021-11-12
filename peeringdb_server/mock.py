@@ -6,6 +6,7 @@ import ipaddress
 import uuid
 
 from django.db import models
+from django.utils import timezone
 
 from peeringdb_server.models import REFTAG_MAP
 
@@ -315,3 +316,9 @@ class Mock:
 
     def property(self, data, reftag=None):
         return None
+
+    def flagged_date(self, data, reftag=None):
+        return timezone.now()
+
+    def flagged(self, data, reftag=None):
+        return False

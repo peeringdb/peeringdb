@@ -1,12 +1,10 @@
 import datetime
-import importlib
 import os
 
 import django
+from pymdgen import doc_module
 
 django.setup()
-
-from pymdgen import doc_module
 
 module_index = {}
 command_index = {}

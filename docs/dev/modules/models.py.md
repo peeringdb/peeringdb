@@ -1,4 +1,4 @@
-Generated from models.py on 2021-10-15 07:56:57.376975
+Generated from models.py on 2021-11-02 10:01:21.611533
 
 # peeringdb_server.models
 
@@ -1416,6 +1416,10 @@ of the following is True:
 to execute administrative actions (user management, user permission
 management).
 - group_name (`@property`): Returns usergroup name for this organization.
+- is_empty (`@property`): Returns whether or not the organization is empty
+
+An empty organization means an organization that does not
+have any objects with status ok or pending under it
 - ix_set_active (`@property`): Returns queryset holding active exchanges in this organization.
 - net_set_active (`@property`): Returns queryset holding active networks in this organization.
 - owned (`@property`): Returns whether or not the organization has been claimed

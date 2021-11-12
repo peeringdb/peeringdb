@@ -86,7 +86,7 @@ class BaseSchema(AutoSchema):
 
         return method.lower()
 
-    def _get_operation_id(self, path, method):
+    def get_operation_id(self, path, method):
         """
         Override this so operation ids become "{op} {reftag}"
         """
@@ -95,9 +95,19 @@ class BaseSchema(AutoSchema):
         op_type = self.get_operation_type(path, method)
 
         if model:
+
+            # Overrides for duplicate operations ids
+
+            if "request_ixf_import" in path:
+                return f"{op_type} IX-F import request"
+            elif "as_set/{asn}" in path:
+                return f"{op_type} as-set by asn"
+            elif "as_set" in path:
+                return f"{op_type} as-set"
+
             return f"{op_type} {model.HandleRef.tag}"
 
-        return super()._get_operation_id(path, method)
+        return super().get_operation_id(path, method)
 
     def get_operation(self, *args, **kwargs):
 
@@ -122,6 +132,17 @@ class BaseSchema(AutoSchema):
 
         serializer, model = self.get_classes(*args)
 
+        # Override the the requestBody with components instead of using reference
+        components = super().get_components(*args).get(model.__name__)
+
+        content_types = [
+            "application/json",
+        ]
+        # Override schema for create, update and patch operations
+        if components and op_type in ["create", "update", "patch"]:
+            for content_type in content_types:
+                op_dict["requestBody"]["content"][content_type]["schema"] = components
+
         # if we were able to get a model we want to include the markdown documentation
         # for the model type in the openapi description field (docs/api/obj_*.md)
 
@@ -135,7 +156,6 @@ class BaseSchema(AutoSchema):
 
             # check if we have an augmentation method set for the operation_type and object type
             # combination, if so run it
-
             augment = getattr(self, f"augment_{op_type}_{model.HandleRef.tag}", None)
             if augment:
                 augment(serializer, model, op_dict)
@@ -539,9 +559,6 @@ class BaseSchema(AutoSchema):
 
         # prefix on `update` will be ignored
         del properties["prefix"]
-
-        # suggest on `update` will be ignored
-        del properties["suggest"]
 
     def augment_update_fac(self, serializer, model, op_dict):
         """

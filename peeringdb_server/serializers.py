@@ -798,6 +798,7 @@ class ModelSerializer(serializers.ModelSerializer):
         depth=None,
         is_list=False,
         single=None,
+        selective=None,
     ):
         """
         Prefetch related sets according to depth specified in the request.
@@ -822,6 +823,11 @@ class ModelSerializer(serializers.ModelSerializer):
                 # cycle through all related fields declared on the serializer
 
                 o_fld = fld
+
+                # selective is specified, check that field is matched
+                # otherwise ignore
+                if selective and fld not in selective:
+                    continue
 
                 # if the field is not to be rendered, skip it
                 if fld not in cls.Meta.fields:
@@ -1206,7 +1212,18 @@ class ModelSerializer(serializers.ModelSerializer):
 
                 try:
                     filters.update(status="deleted")
-                    instance = self.Meta.model.objects.get(**filters)
+                    if (
+                        self.Meta.model == NetworkIXLan
+                        and "ipaddr4" in filters
+                        and "ipaddr6" in filters
+                    ):
+                        # if unqiue constraint blocked on both ipaddr4 and ipaddr6 on netixlans
+                        # we need to account for the fact that they might be on separate netixlans.
+                        instance = self._handle_netixlan_reclaim(
+                            filters["ipaddr4"], filters["ipaddr6"]
+                        )
+                    else:
+                        instance = self.Meta.model.objects.get(**filters)
                 except self.Meta.model.DoesNotExist:
                     raise exc
                 except FieldError as exc:
@@ -1239,6 +1256,25 @@ class ModelSerializer(serializers.ModelSerializer):
                 return rv
             else:
                 raise
+
+    def _handle_netixlan_reclaim(self, ipaddr4, ipaddr6):
+
+        """
+        Handles logic of reclaiming ipaddresses from soft-deleted
+        netixlans in case where ipv4 and ipv6 are on separate netixlan objects
+
+        Will raise a django DoesNotExist error if either ipaddress does not
+        exist on a deleted netixlan
+        """
+
+        netixlan_a = NetworkIXLan.objects.get(ipaddr4=ipaddr4, status="deleted")
+        netixlan_b = NetworkIXLan.objects.get(ipaddr6=ipaddr6, status="deleted")
+        instance = netixlan_a
+
+        if netixlan_a != netixlan_b:
+            netixlan_b.ipaddr6 = None
+            netixlan_b.save()
+        return instance
 
     def save(self, **kwargs):
         """
@@ -2444,6 +2480,13 @@ class NetworkSerializer(ModelSerializer):
             return value
 
 
+# Create an Network serializer with no fields
+class ASSetSerializer(NetworkSerializer):
+    class Meta:
+        model = Network
+        fields = []
+
+
 class IXLanPrefixSerializer(ModelSerializer):
     """
     Serializer for peeringdb_server.models.IXLanPrefix
@@ -2687,6 +2730,9 @@ class InternetExchangeSerializer(ModelSerializer):
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
     policy_phone = serializers.CharField(required=False, allow_blank=True, default="")
 
+    sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
+    sales_email = serializers.CharField(required=False, allow_blank=True, default="")
+
     # For the creation of the initial prefix during exchange
     # creation. It will be a required field during `POST` requests
     # but will be ignored during `PUT` so we cannot just do
@@ -2737,6 +2783,8 @@ class InternetExchangeSerializer(ModelSerializer):
             "tech_phone",
             "policy_email",
             "policy_phone",
+            "sales_phone",
+            "sales_email",
             "fac_set",
             "ixlan_set",
             # "suggest",

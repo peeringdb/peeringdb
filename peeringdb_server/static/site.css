@@ -414,8 +414,14 @@ div.panel > .btn {
   display: inline-block;
 }
 
+.editable-inline {
+  display: inline-block;
+}
+
 .mode-edit .netixlan-extra {
-  margin-top: 10px;
+  color: #000 !important;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .glyphicon-warning-sign {
@@ -838,6 +844,11 @@ div.list div.row.item {
 
 div.list div.row.item img {
   width: 15px;
+}
+
+div.list div.squeeze-15 {
+  padding-left: 15px;
+  padding-right: 15px;
 }
 
 *[data-sort-target] {
