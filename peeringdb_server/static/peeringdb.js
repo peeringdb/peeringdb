@@ -1822,12 +1822,6 @@ PeeringDB.SecurityKeys = {
         this.id = base64url.decode(this.id);
       });
 
-//      for(i = 0; i < response.allow_credentials.length; i++) {
- //       response.allow_credentials
-   //   }
-
-      console.log("REQUEST_AUTH (2)", response)
-
       if(!response.allowCredentials.length) {
         if(no_credentials)
           return no_credentials();
@@ -1841,8 +1835,6 @@ PeeringDB.SecurityKeys = {
       });
       assertion.then((PublicKeyCredential) => {
 
-        console.log("ASSERT", PublicKeyCredential);
-
         var credentials = {
           id: PublicKeyCredential.id,
           rawId: base64url.encode(PublicKeyCredential.rawId),
@@ -1854,8 +1846,6 @@ PeeringDB.SecurityKeys = {
           },
           type: PublicKeyCredential.type
         }
-
-        console.log("VERIFY_AUTH PRE", credentials);
 
         payload.credential = JSON.stringify(credentials);
         callback(payload)
@@ -1913,10 +1903,8 @@ twentyc.editable.module.register(
       // request credential registration options from the server
 
       $.get('/security_keys/request_registration', (response)=> {
-        console.log("CHALLENGE", response.challenge);
         var challenge_str = this.base64_to_array_buffer(response.challenge);
         response.challenge = challenge_str;
-        console.log("CHALLENGE (2)", response.challenge);
         response.user.id = this.array_buffer_to_uint8(response.user.id);
         const credential = navigator.credentials.create(
           {publicKey: response}
@@ -1942,7 +1930,15 @@ twentyc.editable.module.register(
           var data = this.target.data;
           this.target.execute("add", this.components.add, (response) => {
             this.add(data.entity, trigger, container, response);
+
+            // refresh to pick up django-two-factor page changes
+            // from new registration
+            document.location.href = document.location.href;
+
           });
+        }).catch( (exc) => {
+          container.editable("loading-shim", "hide");
+          console.error(exc);
         });
 
       });
@@ -1984,6 +1980,12 @@ twentyc.editable.module.register(
       var id = data.id = row.data("edit-id")
       this.target.execute("remove", trigger, function(response) {
         this.listing_remove(id, row, trigger, container);
+
+        // refresh to pick up django-two-factor page changes
+        // from removal
+        document.location.href = document.location.href;
+
+
       }.bind(this));
     }
 
