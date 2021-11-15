@@ -1,9 +1,22 @@
+"""
+This backend allows password-less authentication using
+a security key device.
+
+It is important that it comes before any other authentication
+backends in the AUTHENTICATION_BACKENDS setting.
+"""
+
 from django.contrib.auth.backends import ModelBackend
 
 from peeringdb_server.models import SecurityKey
 
 
 class PasswordlessAuthenticationBackend(ModelBackend):
+
+    """
+    Password-less authentication through webauthn
+    """
+
     def authenticate(self, request, username=None, password=None, **kwargs):
 
         # clean up last used passwordless key

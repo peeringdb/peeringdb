@@ -72,6 +72,14 @@ class UserHandle(models.Model):
 
         """
         Requires a user handle for the user, will create it if it does not exist
+
+        Arguments:
+
+        - user (`str`): django User instance
+
+        Returns:
+
+        - `UserHandle` instance
         """
 
         try:
@@ -101,7 +109,7 @@ class SecurityKey(models.Model):
     login or 2FA
 
     2FA is handled through SecurityKeyDevice which allows integration
-    of Webauthn security keys as a 2FA option for django_otp
+    of Webauthn security keys as a 2FA option for django_two_factor
     """
 
     class Meta:
@@ -127,14 +135,47 @@ class SecurityKey(models.Model):
 
     @classmethod
     def set_challenge(cls, session, challenge):
+        """
+        Sets a webauthn challenge used for key registration or authentication
+        on the session.
+
+        This does NOT generate a challenge.
+
+        Arguments:
+
+        - session: django request session
+        - challenge (`bytes`): byte string
+        """
         session["webauthn_challenge"] = bytes_to_base64url(challenge)
 
     @classmethod
     def get_challenge(cls, session):
+
+        """
+        Retrives the webauthn challenge for the specified session
+
+        Arguments:
+
+        - session: dango request session
+
+        Returns:
+
+        - `bytes` challenge string
+        """
+
         return base64url_to_bytes(session["webauthn_challenge"])
 
     @classmethod
     def clear_challenge(cls, session):
+
+        """
+        Removes the webauthn challenge from the specified session
+
+        Arguments:
+
+        - session: django request session
+        """
+
         try:
             del session["webauthn_challenge"]
         except KeyError:
@@ -142,6 +183,20 @@ class SecurityKey(models.Model):
 
     @classmethod
     def generate_registration(cls, user, session):
+
+        """
+        Generate key registration options to be passed to
+        navigator.credentials.create.
+
+        Arguments:
+
+        - user (`User`): django user instance
+        - session: django request session
+
+        Returns:
+
+        - `str` JSON string
+        """
 
         opts = webauthn.generate_registration_options(
             rp_id=settings.WEBAUTHN_RP_ID,
@@ -158,14 +213,42 @@ class SecurityKey(models.Model):
     @classmethod
     def verify_registration(cls, user, session, raw_credential, **kwargs):
 
+        """
+        Verifies key registration and creates the SecurityKey instance
+        on successful validation.
+
+        Will also create a SecurityKeyDevice instance for the user if
+        they do not have one yet.
+
+        Arguments:
+
+        - user (`User`): django user instance
+        - session: django request session
+        - raw_credential (`str`): JSON formatted credential as returned
+          by navigator.credentials.create
+        - name (`str`="main"): nick name for the key
+        - passwordless_login (`bool`=False): enable the key for password-less
+          login
+
+        Returns:
+
+        - `SecurityKey`: security key instance
+        """
+
+        # retrieve webauthn challenge from request session
+
         try:
             challenge = cls.get_challenge(session)
         except KeyError:
             raise ValueError(_("Invalid webauthn challenge"))
 
+        # parse credential
+
         credential = RegistrationCredential.parse_raw(raw_credential)
 
-        client_data = parse_client_data_json(credential.response.client_data_json)
+        # client_data = parse_client_data_json(credential.response.client_data_json)
+
+        # verify the credentials
 
         verified_registration = webauthn.verify_registration_response(
             credential=credential,
@@ -174,6 +257,7 @@ class SecurityKey(models.Model):
             expected_origin=settings.WEBAUTHN_ORIGIN,
         )
 
+        # challenge clean up
         cls.clear_challenge(session)
 
         # create security key
@@ -189,12 +273,22 @@ class SecurityKey(models.Model):
             type="security-key",
         )
 
-        # create django-two-factor device for the key
+        # create django-two-factor device for security keys so
+        # they become in option in the 2FA process.
+
         SecurityKeyDevice.require_for_user(user)
         return key
 
     @classmethod
     def clear_session(cls, session):
+        """
+        Cleans up webauthn data for session
+
+        Arguments:
+
+        - session: request session
+        """
+
         try:
             del session["webauthn_passwordless"]
         except KeyError:
@@ -202,6 +296,24 @@ class SecurityKey(models.Model):
 
     @classmethod
     def credentials(cls, username, session, for_login=False):
+
+        """
+        Returns a list of credentials for the specified username
+
+        Arguments:
+
+        - username (`str`)
+        - session: django request session
+        - for_login (`bool`=False): if True indicates that the
+          credentials are to be used for password-less login.
+
+          if False indicates that the credentials are to be used
+          as a two-factor step
+
+        Returns:
+
+        - `list<PublicKeyCredentialDescriptor>`
+        """
 
         qset = cls.objects.filter(user__username=username)
 
@@ -212,6 +324,8 @@ class SecurityKey(models.Model):
         if pl_key_id and not for_login:
             qset = qset.exclude(id=pl_key_id)
 
+        # if to be used for password-less login, exclude
+        # credentials that are not enabled for that.
         if for_login:
             qset = qset.filter(passwordless_login=True)
 
@@ -226,6 +340,22 @@ class SecurityKey(models.Model):
     @classmethod
     def generate_authentication(cls, username, session, for_login=False):
 
+        """
+        Generates webauthn authentication options to be passed to
+        `navagitor.credentials.get`
+
+        Arguments:
+
+        - username (`str`)
+        - session: django request session
+        - for_login: (`bool`=False): authentication options for password-less
+          login
+
+        Returns:
+
+        - `str` JSON
+        """
+
         opts = webauthn.generate_authentication_options(
             rp_id=settings.WEBAUTHN_RP_ID,
             allow_credentials=cls.credentials(username, session, for_login=for_login),
@@ -238,22 +368,42 @@ class SecurityKey(models.Model):
     @classmethod
     def verify_authentication(cls, username, session, raw_credential, for_login=False):
 
+        """
+        Verify the webauthn authentication
+
+        Arguments:
+
+        - username (`str`)
+        - session: django request session
+        - raw_credentials (`str`): JSON formatted PublicKeyCredential as returned
+          from `navigator.credentials.get`
+        - for_login: (`bool`=False): verify a password-less login attempt
+
+        Returns:
+
+        - `SecurityKey`: security key instance
+        """
+
+        # get webauthn challenge from session
+
         try:
             challenge = cls.get_challenge(session)
         except KeyError:
             raise ValueError(_("Invalid webauthn challenge"))
+
+        # parse credential
 
         credential = AuthenticationCredential.parse_raw(raw_credential)
 
         try:
             key = cls.objects.get(credential_id=credential.id)
         except SecurityKey.DoesNotExist:
-            # XXX
-            # return fake response ??
             raise ValueError(_("Security key authentication failed"))
 
         if for_login and not key.passwordless_login:
             raise ValueError(_("Security key not enabled for password-less login"))
+
+        # verify authentication
 
         verified_authentication = webauthn.verify_authentication_response(
             credential=credential,
@@ -264,7 +414,11 @@ class SecurityKey(models.Model):
             credential_current_sign_count=key.sign_count,
         )
 
+        # clear challenge
+
         cls.clear_challenge(session)
+
+        # update sign count
 
         key.sign_count = verified_authentication.new_sign_count
         key.save()
@@ -274,7 +428,10 @@ class SecurityKey(models.Model):
 
 class SecurityKeyDevice(ThrottlingMixin, Device):
     """
-    Integration of SecurityKey (FIDO U2F) with django_otp
+    django-two-factor security key device
+
+    This is NOT per key, a user needs to have one instance of this
+    for their security keys to be available as an option for 2FA
     """
 
     class Meta:
