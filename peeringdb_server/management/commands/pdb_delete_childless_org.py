@@ -59,7 +59,7 @@ class Command(BaseCommand):
             # we need to ignore sponsorship orgs, since they may only exist
             # for the purpose of being a sponsor
 
-            if org.sponsorship:
+            if org.sponsorship_set.exists():
                 continue
 
             if org.is_empty:
@@ -109,7 +109,7 @@ class Command(BaseCommand):
             #
             # Otherwise, do not delete, remove flags
 
-            if org.is_empty and not org.sponsorship:
+            if org.is_empty and not org.sponsorship_set.exists():
                 if self.commit:
                     org.delete()
                 org_delete_count += 1
