@@ -884,7 +884,7 @@ set_option("IXF_RESEND_FAILED_EMAILS", False)
 set_option("IXF_FETCH_TIMEOUT", 30)
 
 # Setting for number of days before deleting childless Organizations
-set_option("ORG_CHILDLESS_DELETE_DURATION", 30)
+set_option("ORG_CHILDLESS_DELETE_DURATION", 90)
 
 # Grace period before an organization is processed for childless cleanup
 # n days after creation
