@@ -3,9 +3,8 @@ import json
 import reversion
 from django.test import Client, RequestFactory
 from django.urls import reverse
-
 from peeringdb_server import autocomplete_views
-from peeringdb_server.models import Network, Organization, User
+from peeringdb_server.models import InternetExchange, Network, Organization, User
 
 from .util import ClientCase
 
@@ -77,3 +76,67 @@ class TestAutocomplete(ClientCase):
 
         assert "First" in rsp
         assert "Second" in rsp
+
+
+    def test_autocomplete_sort(self):
+        org = Organization.objects.create(name="Test Org", status="ok")
+
+        Network.objects.all().delete()
+
+        # Data for exact matches
+        net1 = Network.objects.create(
+            name=f"NET", asn=1, status="ok", org=org
+        )
+        # Data for startswith matches
+        net2 = Network.objects.create(
+            name=f"NET DUMMY", asn=2, status="ok", org=org
+        )
+        # Data for contains matches
+        net3 = Network.objects.create(
+            name=f"TEST NET", asn=3, status="ok", org=org
+        )
+
+        url = reverse("autocomplete-net")
+
+        req = self.factory.get(f"{url}?q=NET")
+        rsp = autocomplete_views.NetworkAutocomplete.as_view()(req).content.decode(
+            "utf-8"
+        )
+        
+        res = rsp.split("</span>")
+
+        # First result should be exact match
+        assert "data-value=\"1\"" in res[0]
+        
+        # Second result should be startswith match
+        assert "data-value=\"2\"" in res[1]
+
+        # Third result should be contains match
+        assert "data-value=\"3\"" in res[2]
+
+    def test_autocomplete_results(self):
+        org = Organization.objects.create(name="Test Org", status="ok")
+
+        for i in range(1, 130):
+            InternetExchange.objects.create(
+                name=f"IX {i}", status="ok", org=org
+            )
+        
+        url = reverse("autocomplete-ix")
+
+
+        req = self.factory.get(f"{url}?q=IX")
+        rsp = autocomplete_views.ExchangeAutocomplete.as_view()(req).content.decode(
+            "utf-8"
+        )
+
+        assert 129 == rsp.count("data-value")
+
+        
+
+        
+
+
+        
+
+
