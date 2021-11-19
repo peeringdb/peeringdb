@@ -85,7 +85,7 @@ from peeringdb_server.models import (
 from peeringdb_server.util import coerce_ipaddr, round_decimal
 from peeringdb_server.views import HttpResponseForbidden, JsonResponse
 
-import peeringdb_server.u2f.models as u2f
+import django_security_keys.models as security_keys_models
 
 from . import forms
 
@@ -2164,7 +2164,7 @@ class U2FSecurityKeyAdmin(admin.ModelAdmin):
     }
 
 
-admin.site.register(u2f.SecurityKey, U2FSecurityKeyAdmin)
+admin.site.register(security_keys_models.SecurityKey, U2FSecurityKeyAdmin)
 
 
 class U2FUserHandle(admin.ModelAdmin):
@@ -2178,7 +2178,7 @@ class U2FUserHandle(admin.ModelAdmin):
     }
 
 
-admin.site.register(u2f.UserHandle, U2FUserHandle)
+admin.site.register(security_keys_models.UserHandle, U2FUserHandle)
 
 
 class U2FSecurityKeyDeviceAdmin(admin.ModelAdmin):
@@ -2193,7 +2193,7 @@ class U2FSecurityKeyDeviceAdmin(admin.ModelAdmin):
     }
 
 
-admin.site.register(u2f.SecurityKeyDevice, U2FSecurityKeyDeviceAdmin)
+admin.site.register(security_keys_models.SecurityKeyDevice, U2FSecurityKeyDeviceAdmin)
 
 
 # Commented out via issue #860

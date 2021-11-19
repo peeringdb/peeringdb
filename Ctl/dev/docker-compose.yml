@@ -66,6 +66,8 @@ services:
       # expects a https://github.com/peeringdb/django-peeringdb source checkout in the parent
       # directory
       - ../../../django-peeringdb/src/django_peeringdb:/srv/www.peeringdb.com/venv/lib/python3.9/site-packages/django_peeringdb:Z
+      - ../../../../20c/django-security-keys/src/django_security_keys:/srv/www.peeringdb.com/venv/lib/python3.9/site-packages/django_security_keys:Z
+
 
 volumes:
   peeringdb_database:

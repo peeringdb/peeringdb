@@ -446,6 +446,7 @@ INSTALLED_APPS = [
     "django_tables2",
     "oauth2_provider",
     "peeringdb_server",
+    "django_security_keys",
     "reversion",
     "captcha",
     "django_handleref",
@@ -592,7 +593,7 @@ set_bool("OAUTH_ENABLED", False)
 AUTHENTICATION_BACKENDS += (
     # for passwordless auth using security-key
     # this needs to be first so it can do some clean up
-    "peeringdb_server.u2f.backends.PasswordlessAuthenticationBackend",
+    "django_security_keys.backends.PasswordlessAuthenticationBackend",
     # for OAuth provider
     "oauth2_provider.backends.OAuth2Backend",
     # for OAuth against external sources
