@@ -11,6 +11,8 @@ import time
 import unittest
 import uuid
 
+from django.core.exceptions import ValidationError
+
 import pytest
 import reversion
 from django.conf import settings
@@ -1660,6 +1662,38 @@ class TestJSON(unittest.TestCase):
             self.assert_create(self.db_org_admin, "net", data)
 
         pdb_settings.TUTORIAL_MODE = False
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_net_website_required(self):
+
+        # Test bogon asn failure
+
+        data = self.make_data_net(website="")
+
+        self.assert_create(
+            self.db_org_admin,
+            "net",
+            data,
+            test_failures={"invalid": {"website": ""}},
+            test_success=False,
+        )
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_ix_website_required(self):
+
+        # Test bogon asn failure
+
+        data = self.make_data_ix(website="")
+
+        self.assert_create(
+            self.db_org_admin,
+            "ix",
+            data,
+            test_failures={"invalid": {"website": ""}},
+            test_success=False,
+        )
 
     ##########################################################################
 
