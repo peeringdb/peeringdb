@@ -2414,6 +2414,11 @@ class NetworkSerializer(ModelSerializer):
         request.user
 
         asn = validated_data.get("asn")
+        website = validated_data.get("website")
+
+        # Check if website field is not empty
+        if not website:
+            raise RestValidationError({"website": _("This field may not be blank.")})
 
         if "suggest" in validated_data:
             del validated_data["suggest"]
@@ -2724,7 +2729,7 @@ class InternetExchangeSerializer(ModelSerializer):
     ixf_net_count = serializers.IntegerField(read_only=True)
     ixf_last_import = serializers.DateTimeField(read_only=True)
 
-    website = serializers.URLField(required=True)
+    website = serializers.URLField()
     tech_email = serializers.EmailField(required=True)
 
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
@@ -2978,6 +2983,13 @@ class InternetExchangeSerializer(ModelSerializer):
         # the prefix that was provided, we pop it off the validated
         # data because we don't need it during the ix creation
         prefix = validated_data.pop("prefix")
+
+
+        website = validated_data.get("website")
+
+        # Check if website field is not empty
+        if not website:
+            raise RestValidationError({"website": _("This field may not be blank.")})
 
         # create ix
         r = super().create(validated_data)
