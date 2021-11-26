@@ -356,6 +356,15 @@ CACHES = {
     }
 }
 
+
+# keep database connection open for n seconds
+# this is defined at the module level so we can expose
+# it as an environment variable
+#
+# it will be set again in the DATABASES configuration
+# from this global
+set_option("CONN_MAX_AGE", 3600)
+
 DATABASES = {
     "default": {
         "ENGINE": f"django.db.backends.{DATABASE_ENGINE}",
@@ -364,6 +373,7 @@ DATABASES = {
         "NAME": DATABASE_NAME,
         "USER": DATABASE_USER,
         "PASSWORD": DATABASE_PASSWORD,
+        "CONN_MAX_AGE": CONN_MAX_AGE,
         # "TEST": { "NAME": f"{DATABASE_NAME}_test" }
     },
 }
@@ -526,7 +536,6 @@ PASSWORD_HASHERS = (
 )
 
 ROOT_URLCONF = "mainsite.urls"
-CONN_MAX_AGE = 3600
 
 # starting with reversion 4.0 the reversion revision context
 # no longer opens an atomic transaction context, so we need
