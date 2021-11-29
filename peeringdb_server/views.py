@@ -607,7 +607,13 @@ def view_verify(request):
 
         if not request.user.has_oauth:
             if not authenticate(username=request.user.username, password=password):
-                return JsonResponse({"status": "auth"}, status=401)
+                return JsonResponse(
+                    {
+                        "status": "auth",
+                        "non_field_errors": [_("Invalid password. Please try again.")],
+                    },
+                    status=401,
+                )
 
         if EmailAddress.objects.filter(user=request.user).exists():
             EmailAddress.objects.filter(user=request.user).delete()
