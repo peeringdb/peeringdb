@@ -2567,7 +2567,7 @@ twentyc.editable.input.register(
     },
     get : function() {
       var val = this.element.data("value");
-      if(val === 0 || val === "") {
+      if(val === 0 || val === "" || typeof(val) == "undefined") {
         if(this.source.data("edit-autocomplete-allow-nonexistent")) {
           val = this.element.val();
         }
