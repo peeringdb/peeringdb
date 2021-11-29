@@ -1230,6 +1230,23 @@ class ModelSerializer(serializers.ModelSerializer):
                     raise exc
 
                 if request.method == "POST":
+
+                    if (
+                        instance._meta.model == Network
+                        and "name" in filters
+                        and "asn" not in filters
+                    ):
+                        # issue 901 - if a network is submitted where the name is currently
+                        # held by a soft-deleted network with a different asn, rename the soft-deleted
+                        # network to free up the name and proceed with creation validation normally
+
+                        instance.name = f"{instance.name} #{instance.id}"
+                        instance.notes_private = (
+                            "Name of deleted network claimed by new network"
+                        )
+                        instance.save()
+                        return super().run_validation(data=data)
+
                     self.instance = instance
 
                     if type(instance) in QUEUE_ENABLED:
@@ -2983,7 +3000,6 @@ class InternetExchangeSerializer(ModelSerializer):
         # the prefix that was provided, we pop it off the validated
         # data because we don't need it during the ix creation
         prefix = validated_data.pop("prefix")
-
 
         website = validated_data.get("website")
 
