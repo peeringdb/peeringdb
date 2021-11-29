@@ -758,9 +758,9 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "proto_multicast",
     )
 
-    raw_id_fields = ("org",)
+    raw_id_fields = ("org", "ixf_import_request_user")
     autocomplete_lookup_fields = {
-        "fk": ["org"],
+        "fk": ["org", "ixf_import_request_user"],
     }
 
     def ixf_import_history(self, obj):
