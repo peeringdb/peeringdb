@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n static %}
 
 <!DOCTYPE HTML>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -47,7 +47,8 @@ window.STATIC_URL = "{{ STATIC_URL }}";
 <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}showdown/showdown.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}dom-purify/purify.min.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}base64url-arraybuffer.js"></script>
+<script type="text/javascript" src="{% static "base64/base64url-arraybuffer.js" %}"></script>
+<script type="text/javascript" src="{% static "django-security-keys/django-security-keys.js" %}"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.core.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.edit.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.filter-field.js"></script>

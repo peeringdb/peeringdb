@@ -1708,162 +1708,6 @@ twentyc.editable.module.register(
 );
 
 
-PeeringDB.SecurityKeys = {
-
-  init : function() {
-    this.init_passwordless_login();
-    this.init_two_factor();
-  },
-
-  init_passwordless_login : function() {
-    var login_form = $(".login-form form")
-    var login_step = login_form.find('[name="login_view-current_step"]');
-    if(login_step.val() == "auth") {
-      var button_next = login_form.find('button[type="submit"].btn-primary');
-      var fn_submit = function(ev) {
-        var password = login_form.find("#id_auth-password").val();
-        var username= login_form.find("#id_auth-username").val();
-
-        if(password == "" && username != "") {
-
-          // prevent default form submit since we need to wait
-          // for credentials.
-          ev.preventDefault();
-
-          PeeringDB.SecurityKeys.request_authenticate(
-            username,
-            true,
-
-            (payload) => {
-
-              // auth assertion successful, attach credentials
-
-              login_form.append($('<input type="hidden" name="credential">').val(payload.credential));
-              login_form.submit();
-
-            },
-
-            () => {
-
-              console.log("No credentials for user");
-
-              // no registered credentials
-
-              login_form.submit();
-
-            }
-          );
-        }
-      };
-
-      button_next.click(fn_submit);
-      login_form.find('input').on('keydown', (ev) => {
-        if(ev.which==13) {
-          fn_submit(ev);
-        }
-      });
-    }
-  },
-
-  init_two_factor : function() {
-
-    var form = $(".login-form form")
-    var initiator = $('div[data-2fa-method="security-key"]')
-    var button_select_u2f = form.find('button[data-device-step="security-key"]')
-
-    button_select_u2f.click(function(ev) {
-      ev.preventDefault();
-      form.append($('<input type="hidden" name="wizard_goto_step">').val("security-key"));
-      form.submit();
-    });
-
-
-    if(!initiator.length) {
-      return;
-    }
-
-    var username = initiator.data("username")
-    var button_next = form.find('button[type="submit"].btn-primary');
-    var button_back = form.find('button[type="submit"].btn-secondary');
-    button_next.prop("disabled", true);
-
-    PeeringDB.SecurityKeys.request_authenticate(
-      username,
-      false,
-      (payload) => {
-
-        form.find("#id_security-key-credential").val(payload.credential)
-        form.submit()
-
-      },
-      () => {
-        alert(gettext("No credentials provided"));
-        button_back.trigger("click");
-      },
-      (exc) => {
-        alert(gettext("Security key authentication aborted, returning to login."));
-        button_back.trigger("click");
-      }
-
-    );
-  },
-
-
-  request_authenticate: function(username, for_login, callback, no_credentials, error) {
-    var i, payload = {username: username};
-    if(for_login)
-      payload.for_login = 1;
-    $.post("/security_keys/request_authentication", payload, (response) => {
-      console.log("REQUEST AUTH", response);
-
-      response.challenge = base64url.decode(response.challenge);
-
-      $(response.allowCredentials).each(function() {
-        this.id = base64url.decode(this.id);
-      });
-
-      if(!response.allowCredentials.length) {
-        if(no_credentials)
-          return no_credentials();
-        return;
-      }
-
-      assertion = navigator.credentials.get({publicKey: response});
-      assertion.catch((exc) => {
-        if(error)
-          error(exc);
-      });
-      assertion.then((PublicKeyCredential) => {
-
-        var credentials = {
-          id: PublicKeyCredential.id,
-          rawId: base64url.encode(PublicKeyCredential.rawId),
-          response: {
-            authenticatorData: base64url.encode(PublicKeyCredential.response.authenticatorData),
-            clientDataJSON: base64url.encode(PublicKeyCredential.response.clientDataJSON),
-            signature: base64url.encode(PublicKeyCredential.response.signature),
-            userHandle: base64url.encode(PublicKeyCredential.response.userHandle)
-          },
-          type: PublicKeyCredential.type
-        }
-
-        payload.credential = JSON.stringify(credentials);
-        callback(payload)
-
-        /*
-        $.post("/security_keys/verify_authentication", payload).done(
-          (response) => {
-            console.log("VERIFY_AUTH", response);
-          }
-        );
-        */
-
-      });
-
-    });
-  }
-}
-
 
 twentyc.editable.module.register(
   "security_key_listing",
@@ -1885,48 +1729,11 @@ twentyc.editable.module.register(
       }
     },
 
-    array_buffer_to_uint8 : function(b){
-      return Uint8Array.from(b, c=>c.charCodeAt(0));
-    },
-
-    array_buffer_to_base64 : function(b) {
-      return base64url.encode(b);
-    },
-
-    base64_to_array_buffer : function(b) {
-      return base64url.decode(b);
-    },
-
     execute_register : function(trigger, container) {
-      // initial step of security key registration
-      //
-      // request credential registration options from the server
-
-      $.get('/security_keys/request_registration', (response)=> {
-        var challenge_str = this.base64_to_array_buffer(response.challenge);
-        response.challenge = challenge_str;
-        response.user.id = this.array_buffer_to_uint8(response.user.id);
-        const credential = navigator.credentials.create(
-          {publicKey: response}
-        ).then((credential) => {
-          console.log("credentials", credential);
-
+      SecurityKeys.request_registration(
+        (credential_json) => {
           this.components.add.editable("export", this.target.data);
-
-          this.target.data.credential = JSON.stringify({
-                id: credential.id,
-                rawId: this.array_buffer_to_base64(credential.rawId),
-                response: {
-                  clientDataJSON: this.array_buffer_to_base64(
-                    credential.response.clientDataJSON
-                  ),
-                  attestationObject: this.array_buffer_to_base64(
-                    credential.response.attestationObject
-                  )
-                },
-                type: credential.type
-          });
-
+          this.target.data.credential = credential_json;
           var data = this.target.data;
           this.target.execute("add", this.components.add, (response) => {
             this.add(data.entity, trigger, container, response);
@@ -1936,20 +1743,19 @@ twentyc.editable.module.register(
             document.location.href = document.location.href;
 
           });
-        }).catch( (exc) => {
+        },
+        (exc) => {
           container.editable("loading-shim", "hide");
           console.error(exc);
-        });
+        }
 
-      });
+      );
     },
 
     register : function(rowId, trigger, container, data) {
-      console.log("Register call");
     },
 
     add : function(rowId, trigger, container, data) {
-      console.log("ADDING", rowId, trigger, container, data)
       var row = this.listing_add(data.prefix, trigger, container, data);
       row.attr("data-edit-label", data.name)
       row.data("edit-label", data.name)
@@ -3614,7 +3420,7 @@ $(twentyc.data).on("load-enum/traffic", function(e, payload) {
 
 $(window).bind("load", function() {
   PeeringDB.init();
-  PeeringDB.SecurityKeys.init()
+  SecurityKeys.init()
 })
 
 $(window).bind("pageshow", function() {
