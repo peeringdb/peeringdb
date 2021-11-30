@@ -242,14 +242,14 @@ def validate_irr_as_set(value):
         as_set = None
 
         # <name>@<source>
-        parts_match = re.match(r"^([\w\d\-:]+)@(\w+)$", item)
+        parts_match = re.match(r"^([\w\d\-:]+)@([\w\d\-:]+)$", item)
         if parts_match:
             source = parts_match.group(2)
             as_set = parts_match.group(1)
 
         # <source>::<name>
         else:
-            parts_match = re.match(r"^(\w+)::([\w\d\-:]+)$", item)
+            parts_match = re.match(r"^([\w\d\-:]+)::([\w\d\-:]+)$", item)
             if parts_match:
                 source = parts_match.group(1)
                 as_set = parts_match.group(2)
