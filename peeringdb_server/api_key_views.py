@@ -290,6 +290,9 @@ def add_user_key(request, **kwargs):
     name = request.POST.get("name")
     readonly = convert_to_bool(request.POST.get("readonly"))
 
+    if not name:
+        return JsonResponse({"name": [_("This field is required.")]}, status=400)
+
     api_key, key = UserAPIKey.objects.create_key(
         name=name,
         user=user,
