@@ -85,8 +85,6 @@ from peeringdb_server.models import (
 from peeringdb_server.util import coerce_ipaddr, round_decimal
 from peeringdb_server.views import HttpResponseForbidden, JsonResponse
 
-import django_security_keys.models as security_keys_models
-
 from . import forms
 
 delete_selected.short_description = "HARD DELETE - Proceed with caution"
@@ -2151,49 +2149,6 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
         "latitude",
         "fetched",
     ]
-
-
-class U2FSecurityKeyAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "name"]
-    raw_id_fields = ("user",)
-
-    autocomplete_lookup_fields = {
-        "fk": [
-            "user",
-        ],
-    }
-
-
-admin.site.register(security_keys_models.SecurityKey, U2FSecurityKeyAdmin)
-
-
-class U2FUserHandle(admin.ModelAdmin):
-    list_display = ["user", "handle"]
-    raw_id_fields = ("user",)
-
-    autocomplete_lookup_fields = {
-        "fk": [
-            "user",
-        ],
-    }
-
-
-admin.site.register(security_keys_models.UserHandle, U2FUserHandle)
-
-
-class U2FSecurityKeyDeviceAdmin(admin.ModelAdmin):
-    list_display = ["id", "user"]
-
-    raw_id_fields = ("user",)
-
-    autocomplete_lookup_fields = {
-        "fk": [
-            "user",
-        ],
-    }
-
-
-admin.site.register(security_keys_models.SecurityKeyDevice, U2FSecurityKeyDeviceAdmin)
 
 
 # Commented out via issue #860
