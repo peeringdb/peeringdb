@@ -3420,7 +3420,6 @@ $(twentyc.data).on("load-enum/traffic", function(e, payload) {
 
 $(window).bind("load", function() {
   PeeringDB.init();
-  SecurityKeys.init()
 })
 
 $(window).bind("pageshow", function() {

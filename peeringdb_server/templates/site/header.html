@@ -66,6 +66,11 @@ $(window).bind("load", function() {
   PeeringDB.confirmation_prompts.approve = false;
   {% endif %}
 
+  SecurityKeys.init({
+    url_request_registration: "{% url "security-keys-request-registration" %}",
+    url_request_authentication: "{% url "security-keys-request-authentication" %}"
+  });
+
 });
 </script>
 </head>
