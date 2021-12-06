@@ -2322,6 +2322,9 @@ class LoginView(two_factor.views.LoginView):
         context = super().get_context_data(form, **kwargs)
         context.update(rate_limit_message=getattr(self, "rate_limit_message", None))
 
+        # make_env results to context
+        context.update(**make_env())
+
         if "other_devices" in context:
             context["other_devices"] += [self.get_email_device()]
 
