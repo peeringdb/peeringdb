@@ -102,17 +102,17 @@ class TestAutocomplete(ClientCase):
         rsp = autocomplete_views.NetworkAutocomplete.as_view()(req).content.decode(
             "utf-8"
         )
-        
+
         res = rsp.split("</span>")
 
         # First result should be exact match
-        assert "data-value=\"1\"" in res[0]
-        
+        assert f"data-value=\"{net1.id}\"" in res[0]
+
         # Second result should be startswith match
-        assert "data-value=\"2\"" in res[1]
+        assert f"data-value=\"{net2.id}\"" in res[1]
 
         # Third result should be contains match
-        assert "data-value=\"3\"" in res[2]
+        assert f"data-value=\"{net3.id}\"" in res[2]
 
     def test_autocomplete_results(self):
         org = Organization.objects.create(name="Test Org", status="ok")
@@ -121,7 +121,7 @@ class TestAutocomplete(ClientCase):
             InternetExchange.objects.create(
                 name=f"IX {i}", status="ok", org=org
             )
-        
+
         url = reverse("autocomplete-ix")
 
 
@@ -132,11 +132,11 @@ class TestAutocomplete(ClientCase):
 
         assert 129 == rsp.count("data-value")
 
-        
-
-        
 
 
-        
+
+
+
+
 
 

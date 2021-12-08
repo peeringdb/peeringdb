@@ -1232,17 +1232,24 @@ class ModelSerializer(serializers.ModelSerializer):
                 if request.method == "POST":
 
                     if (
-                        instance._meta.model == Network
-                        and "name" in filters
-                        and "asn" not in filters
+                        (
+                            instance._meta.model == Network
+                            and "name" in filters
+                            and "asn" not in filters
+                        )
+                        or (instance._meta.model == Facility and "name" in filters)
+                        or (
+                            instance._meta.model == InternetExchange
+                            and "name" in filters
+                        )
                     ):
-                        # issue 901 - if a network is submitted where the name is currently
-                        # held by a soft-deleted network with a different asn, rename the soft-deleted
+                        # issue #901 - if an entity is submitted where the name is currently
+                        # held by a soft-deleted entity rename the soft-deleted
                         # network to free up the name and proceed with creation validation normally
 
                         instance.name = f"{instance.name} #{instance.id}"
                         instance.notes_private = (
-                            "Name of deleted network claimed by new network"
+                            "Name of deleted entity claimed by new entity"
                         )
                         instance.save()
                         return super().run_validation(data=data)
