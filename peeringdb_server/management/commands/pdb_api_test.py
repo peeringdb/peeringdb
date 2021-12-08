@@ -2279,7 +2279,8 @@ class TestJSON(unittest.TestCase):
 
         assert r_data["status"] == "pending"
         fac.refresh_from_db()
-        assert fac.status == "pending"
+        assert fac.status == "deleted"
+        assert fac.id != r_data["id"]
 
     ##########################################################################
 
@@ -2315,7 +2316,8 @@ class TestJSON(unittest.TestCase):
 
         assert r_data["status"] == "pending"
         ix.refresh_from_db()
-        assert ix.status == "pending"
+        assert ix.status == "deleted"
+        assert ix.id != r_data["id"]
 
     ##########################################################################
 
@@ -2353,8 +2355,57 @@ class TestJSON(unittest.TestCase):
         assert r_data["status"] == "pending"
         net.refresh_from_db()
         assert net.status == "deleted"
-        assert "Name of deleted network claimed by new network" in net.notes_private
+        assert "Name of deleted entity claimed by new entity" in net.notes_private
         assert net.id != r_data["id"]
+
+    ##########################################################################
+
+    def test_org_admin_002_ix_ixlan_status_mismatch_1077(self):
+
+        """
+        Tests that issue #1077 is fixed
+
+        Re-claiming the name of a soft-deleted exchange should not leave
+        the exchange object as pending and the ixlan object as deleted.
+
+        Instead both the exchange object and ixlan object should be pending
+        """
+
+        org = SHARED["org_rw_ok"]
+
+        ix = InternetExchange(org=org, status="ok", name="Exchange Issue 1077")
+        ix.save()
+
+        prefix = self.get_prefix4()
+
+        IXLanPrefix.objects.create(ixlan=ix.ixlan, status="ok", prefix=prefix)
+
+        assert ix.status == "ok"
+
+        ixpfx = IXLanPrefix.objects.get(prefix=prefix)
+        assert ixpfx.status == "ok"
+
+        # soft-delete ix
+        ix.delete()
+
+        assert ix.status == "deleted"
+        assert ix.ixlan.status == "deleted"
+
+        ixpfx.refresh_from_db()
+        assert ixpfx.status == "deleted"
+
+        data = self.make_data_ix(name=ix.name, prefix=self.get_prefix4())
+
+        r_data = self.assert_create(self.db_org_admin, "ix", data, ignore=["prefix"])
+
+        ix_new = InternetExchange.objects.get(id=r_data.get("id"))
+
+        assert ix_new.status == "pending"
+        assert ix_new.ixlan.status == "pending"
+        assert ix_new.ixlan.ixpfx_set.first().status == "pending"
+
+        assert ix.status == "deleted"
+        assert ix.id != r_data["id"]
 
     ##########################################################################
     # GUEST TESTS
@@ -4463,15 +4514,6 @@ class TestJSON(unittest.TestCase):
         fac.delete()
         fac.refresh_from_db()
         self.assertEqual(fac.status, "deleted")
-
-        # TODO: suggesting a deleted facility currently results
-        # in a 403 response, is this working as intended?
-        #
-        # should we allow re suggesting of deleted facilities?
-
-        self.assert_create(
-            self.db_user, "fac", data, test_success=False, test_failures={"perms": {}}
-        )
 
         """
         self.assertEqual(re_add_data["status"], "pending")
