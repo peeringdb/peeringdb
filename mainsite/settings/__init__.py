@@ -611,6 +611,10 @@ MIDDLEWARE += (
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
 )
 
+# path to RSA key file for OIDC support (#1070)
+
+set_option("OIDC_RSA_PRIVATE_KEY", "")
+
 OAUTH2_PROVIDER = {
     "SCOPES": {
         "profile": "user profile",
@@ -620,6 +624,12 @@ OAUTH2_PROVIDER = {
     "ALLOWED_REDIRECT_URI_SCHEMES": ["https"],
     "REQUEST_APPROVAL_PROMPT": "auto",
 }
+
+# If a OIDC RSA path is provided enable OIDC support
+
+if OIDC_RSA_PRIVATE_KEY:
+    OAUTH2_PROVIDER["SCOPES"]["openid"] = "OpenID Connect scope"
+    OAUTH2_PROVIDER["OIDC_ENABLED"] = True
 
 
 ## grainy
