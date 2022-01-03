@@ -715,6 +715,9 @@ set_option("WEBAUTHN_RP_NAME", "PeeringDB")
 # webauthn origin validation
 set_option("WEBAUTHN_ORIGIN", BASE_URL)
 
+# collect webauthn device attestation
+set_option("WEBAUTHN_ATTESTATION", "none")
+
 # haystack
 
 set_option("WHOOSH_INDEX_PATH", os.path.join(BASE_DIR, "api-cache", "whoosh-index"))
