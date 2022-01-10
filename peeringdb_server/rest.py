@@ -47,7 +47,11 @@ from peeringdb_server.permissions import (
     get_org_key_from_request,
     get_user_key_from_request,
 )
-from peeringdb_server.rest_throttles import IXFImportThrottle
+from peeringdb_server.rest_throttles import (
+    APIAnonUserThrottle,
+    APIUserThrottle,
+    IXFImportThrottle,
+)
 from peeringdb_server.search import make_name_search_query
 from peeringdb_server.serializers import ASSetSerializer, ParentStatusException
 from peeringdb_server.util import coerce_ipaddr
@@ -784,10 +788,13 @@ def model_view_set(model, methods=None, mixins=None):
 
     model_t = apps.get_model("peeringdb_server", model)
 
+    throttle_classes = [APIAnonUserThrottle, APIUserThrottle]
+
     # setup class attributes
     clsdict = {
         "model": model_t,
         "serializer_class": scls,
+        "throttle_classes": throttle_classes,
     }
 
     # create the type

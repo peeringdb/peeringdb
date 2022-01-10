@@ -5,6 +5,7 @@ Custom rate limit handlers for the REST API.
 from django.conf import settings
 from rest_framework import throttling
 from rest_framework.exceptions import PermissionDenied
+from peeringdb_server.models import EnvironmentSetting
 
 from peeringdb_server.permissions import get_org_key_from_request, get_user_from_request
 
@@ -110,3 +111,33 @@ class FilterDistanceThrottle(FilterThrottle):
     """
 
     filter_name = "distance"
+
+
+class APIAnonUserThrottle(throttling.AnonRateThrottle):
+    """
+    Rate limiting for anonymous users.
+    """
+
+    filter_name = "anon"
+
+    def allow_request(self, request, view):
+
+        self.rate = EnvironmentSetting.get_setting_value("API_THROTTLE_RATE_ANON")
+        self.num_requests, self.duration = self.parse_rate(self.rate)
+
+        return super().allow_request(request, view)
+
+
+class APIUserThrottle(throttling.UserRateThrottle):
+    """
+    Rate limiting for authenticated users.
+    """
+
+    filter_name = "user"
+
+    def allow_request(self, request, view):
+
+        self.rate = EnvironmentSetting.get_setting_value("API_THROTTLE_RATE_USER")
+        self.num_requests, self.duration = self.parse_rate(self.rate)
+
+        return super().allow_request(request, view)

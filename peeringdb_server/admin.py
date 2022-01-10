@@ -56,6 +56,7 @@ from peeringdb_server.models import (
     CommandLineTool,
     DeskProTicket,
     DeskProTicketCC,
+    EnvironmentSetting,
     Facility,
     GeoCoordinateCache,
     InternetExchange,
@@ -85,6 +86,7 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.util import coerce_ipaddr, round_decimal
 from peeringdb_server.views import HttpResponseForbidden, JsonResponse
+import re
 
 from . import forms
 
@@ -2148,6 +2150,25 @@ class EnvironmentSettingForm(baseForms.ModelForm):
     class Meta:
         fields = ["setting", "value"]
 
+    def clean(self):
+        cleaned_data = super().clean()
+        setting = cleaned_data.get("setting")
+        value = cleaned_data.get("value")
+
+        if setting in ["API_THROTTLE_RATE_ANON", "API_THROTTLE_RATE_USER"]:
+            if re.match(
+                "([/\d]+)\s*(?:minute|hour|seconds|day|week|month|year)", value
+            ):
+                return cleaned_data
+            else:
+                raise ValidationError(
+                    _(
+                        "Invalid setting! Acceptable value is a number followed by one of the following: minute, hour, seconds, day, week, month, year. eg (10/minute, 1/hour, 5/day, 1/week, 1/month, 1/year)"
+                    )
+                )
+
+        return cleaned_data
+
 
 class EnvironmentSettingAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = ["setting", "value", "created", "updated", "user"]
@@ -2189,8 +2210,7 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
     ]
 
 
-# Commented out via issue #860
-# admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
+admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)

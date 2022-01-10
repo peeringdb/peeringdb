@@ -5300,9 +5300,17 @@ class EnvironmentSetting(models.Model):
     setting = models.CharField(
         max_length=255,
         choices=(
+            # (
+            #     "IXF_IMPORTER_DAYS_UNTIL_TICKET",
+            #     _("IX-F Importer: Days until DeskPRO ticket is created"),
+            # ),
             (
-                "IXF_IMPORTER_DAYS_UNTIL_TICKET",
-                _("IX-F Importer: Days until DeskPRO ticket is created"),
+                "API_THROTTLE_RATE_ANON",
+                _("API: Anonymous user API throttle rate"),
+            ),
+            (
+                "API_THROTTLE_RATE_USER",
+                _("API: Authenticated user API throttle rate"),
             ),
         ),
         unique=True,
@@ -5336,7 +5344,9 @@ class EnvironmentSetting(models.Model):
     )
 
     setting_to_field = {
-        "IXF_IMPORTER_DAYS_UNTIL_TICKET": "value_int",
+        # "IXF_IMPORTER_DAYS_UNTIL_TICKET": "value_int",
+        "API_THROTTLE_RATE_ANON": "value_str",
+        "API_THROTTLE_RATE_USER": "value_str",
     }
 
     @classmethod
