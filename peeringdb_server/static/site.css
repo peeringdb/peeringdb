@@ -177,6 +177,7 @@ h5 {
 
 
 .btn-primary,
+.btn-secondary,
 .btn-default {
   background-color: #33744a;
   color: #ffffff;
@@ -196,6 +197,7 @@ div.view_value.action .btn-sm {
 
 .btn:hover,
 .btn-pimary:hover,
+.btn-secondary:hover,
 .btn-default:hover {
   background-color: #4b6063 !important;
   color: #ffffff !important;
@@ -203,6 +205,7 @@ div.view_value.action .btn-sm {
 
 .btn:active,
 .btn-pimary:active,
+.btn-secondary:active,
 .btn-default:active {
   background-color: #4b6063 !important;
   color: #ffffff !important;
@@ -210,6 +213,7 @@ div.view_value.action .btn-sm {
 
 .btn:focus,
 .btn-pimary:focus,
+.btn-secondary:focus,
 .btn-default:focus {
   background-color: #4b6063 !important;
   color: #ffffff !important;

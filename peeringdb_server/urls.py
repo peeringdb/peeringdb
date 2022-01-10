@@ -8,6 +8,7 @@ from django.views.generic import RedirectView, TemplateView
 from django.views.i18n import JavaScriptCatalog
 
 import peeringdb_server.api_key_views
+import django_security_keys.views as security_keys_views
 import peeringdb_server.data_views
 import peeringdb_server.org_admin_views
 import peeringdb_server.rest
@@ -139,6 +140,11 @@ urlpatterns = [
     url(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn, name="net-view-asn"),
     url(r"^user_keys/add$", peeringdb_server.api_key_views.add_user_key),
     url(r"^user_keys/revoke$", peeringdb_server.api_key_views.remove_user_key),
+    url(r"^security_keys/request_registration$", security_keys_views.request_registration, name="security-keys-request-registration"),
+    url(r"^security_keys/request_authentication$", security_keys_views.request_authentication, name="security-keys-request-authentication"),
+    url(r"^security_keys/verify_authentication$", security_keys_views.verify_authentication),
+    url(r"^security_keys/add$", security_keys_views.register_security_key),
+    url(r"^security_keys/remove$", security_keys_views.remove_security_key),
     url(r"^org_admin/users$", peeringdb_server.org_admin_views.users),
     url(
         r"^org_admin/user_permissions$",

@@ -16,6 +16,7 @@ import datetime
 import json
 import os
 import re
+import time
 import uuid
 
 import requests
@@ -101,6 +102,11 @@ from peeringdb_server.serializers import (
 from peeringdb_server.stats import get_fac_stats, get_ix_stats
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.util import APIPermissionsApplicator, check_permissions
+
+from django_security_keys.ext.two_factor.views import (
+    DisableView as TwoFactorDisableView,
+    LoginView as TwoFactorLoginView
+)
 
 RATELIMITS = dj_settings.RATELIMITS
 
@@ -2289,8 +2295,7 @@ def verify_token(self, token):
 
 EmailDevice.verify_token = verify_token
 
-
-class LoginView(two_factor.views.LoginView):
+class LoginView(TwoFactorLoginView):
 
     """
     Extend the `LoginView` class provided
@@ -2309,6 +2314,16 @@ class LoginView(two_factor.views.LoginView):
 
         return super().get(*args, **kwargs)
 
+    def get_form_kwargs(self, step=None):
+        kwargs = super().get_form_kwargs(step=step)
+
+        if step == "security-key":
+            kwargs.update(
+                {"device": self.get_security_key_device(), "request": self.request}
+            )
+
+        return kwargs
+
     @transaction.atomic
     @method_decorator(
         ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
@@ -2318,6 +2333,7 @@ class LoginView(two_factor.views.LoginView):
         Posts to the `auth` step of the authentication
         process need to be rate limited.
         """
+        request = self.request
 
         was_limited = getattr(self.request, "limited", False)
         if self.get_step_index() == 0 and was_limited:
@@ -2326,7 +2342,12 @@ class LoginView(two_factor.views.LoginView):
             )
             return self.render_goto_step("auth")
 
+        passwordless = self.attempt_passwordless_auth(request, **kwargs)
+        if passwordless:
+            return passwordless
+
         return super().post(*args, **kwargs)
+
 
     def get_context_data(self, form, **kwargs):
         """
@@ -2403,6 +2424,8 @@ class LoginView(two_factor.views.LoginView):
         if not self.device_cache:
             challenge_device_id = self.request.POST.get("challenge_device", None)
             if challenge_device_id:
+
+                # email device
                 device = self.get_email_device()
                 if device.persistent_id == challenge_device_id:
                     self.device_cache = device

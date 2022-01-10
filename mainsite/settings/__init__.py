@@ -469,6 +469,7 @@ INSTALLED_APPS = [
     "django_tables2",
     "oauth2_provider",
     "peeringdb_server",
+    "django_security_keys",
     "reversion",
     "captcha",
     "django_handleref",
@@ -614,6 +615,9 @@ set_from_file("OIDC_RSA_PRIVATE_KEY", OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH, "", str)
 
 
 AUTHENTICATION_BACKENDS += (
+    # for passwordless auth using security-key
+    # this needs to be first so it can do some clean up
+    "django_security_keys.backends.PasswordlessAuthenticationBackend",
     # for OAuth provider
     "oauth2_provider.backends.OAuth2Backend",
     # for OAuth against external sources
@@ -644,6 +648,8 @@ OAUTH2_PROVIDER = {
 ## grainy
 
 AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
+
+print(AUTHENTICATION_BACKENDS)
 
 
 ## Django Rest Framework
@@ -725,6 +731,20 @@ set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/login"
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/verify"
 ACCOUNT_EMAIL_REQUIRED = True
+
+# Webauthn (U2F) settings
+
+# unique id for the relying party
+set_option("WEBAUTHN_RP_ID", "peeringdb")
+
+# name of the relying party (displayed to the user)
+set_option("WEBAUTHN_RP_NAME", "PeeringDB")
+
+# webauthn origin validation
+set_option("WEBAUTHN_ORIGIN", BASE_URL)
+
+# collect webauthn device attestation
+set_option("WEBAUTHN_ATTESTATION", "none")
 
 # haystack
 
