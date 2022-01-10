@@ -21,6 +21,9 @@ A clear and concise description of what the problem is. Ex. I'm always frustrate
 **Describe the solution you'd like**
 A clear and concise description of what you want to happen.
 
+**Do you think this feature will require a formal design?**
+yes/no (add why if no)
+
 **Describe alternatives you've considered**
 A clear and concise description of any alternative solutions or features you've considered.
 

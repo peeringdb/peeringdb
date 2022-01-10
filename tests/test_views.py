@@ -14,6 +14,7 @@ from peeringdb_server.models import (
     User,
     UserOrgAffiliationRequest,
 )
+from tests.util import reset_group_ids
 
 URL = "/affiliate-to-org"
 

@@ -25,7 +25,7 @@ import unidecode
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import DateTimeField
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -596,6 +596,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         if not request.data:
             raise DataMissingException(request.method)
 
+    @transaction.atomic
     @client_check()
     def create(self, request, *args, **kwargs):
         """
@@ -618,6 +619,11 @@ class ModelViewSet(viewsets.ModelViewSet):
                 r = super().create(request, *args, **kwargs)
                 if "_grainy" in r.data:
                     del r.data["_grainy"]
+
+                # used by api tests to test atomicity
+                if self._test_mode_force_failure:
+                    raise IOError("simulated failure")
+
                 return r
         except PermissionDenied:
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -628,6 +634,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         finally:
             self.get_serializer().finalize_create(request)
 
+    @transaction.atomic
     @client_check()
     def update(self, request, *args, **kwargs):
         """
@@ -650,6 +657,11 @@ class ModelViewSet(viewsets.ModelViewSet):
                 r = super().update(request, *args, **kwargs)
                 if "_grainy" in r.data:
                     del r.data["_grainy"]
+
+                # used by api tests to test atomicity
+                if self._test_mode_force_failure:
+                    raise IOError("simulated failure")
+
                 return r
 
         except PermissionDenied:
@@ -671,6 +683,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         """
         return Response(status=status.HTTP_403_FORBIDDEN)
 
+    @transaction.atomic
     @client_check()
     def destroy(self, request, pk, format=None):
         """
@@ -697,6 +710,11 @@ class ModelViewSet(viewsets.ModelViewSet):
                     if user_key:
                         reversion.set_comment(f"API-key: {user_key.prefix}")
                     obj.delete()
+
+                # used by api tests to test atomicity
+                if self._test_mode_force_failure:
+                    raise IOError("simulated failure")
+
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
                 return Response(status=status.HTTP_403_FORBIDDEN)
@@ -721,6 +739,7 @@ class InternetExchangeMixin:
     object, exposed to api/ix/{id}/{action}
     """
 
+    @transaction.atomic
     @action(detail=True, methods=["POST"], throttle_classes=[IXFImportThrottle])
     def request_ixf_import(self, request, *args, **kwargs):
 
@@ -783,6 +802,9 @@ def model_view_set(model, methods=None, mixins=None):
     # register with the rest router for incoming requests
     ref_tag = model_t.handleref.tag
     router.register(ref_tag, viewset_t, basename=ref_tag)
+
+    # property required for testing api view atomicity
+    viewset_t._test_mode_force_failure = False
 
     return viewset_t
 
