@@ -209,3 +209,109 @@ class SearchTests(TestCase):
         net_2.delete(hard=True)
         net_3.delete(hard=True)
         call_command("rebuild_index", "--noinput")
+
+    def test_search_ipv4(self):
+        """
+        This will test a search for a partial ipv4 address
+        """
+        org_1 = models.Organization.objects.create(name="Test org 1")
+        org_2 = models.Organization.objects.create(name="Test org 2")
+        net_1 = models.Network.objects.create(org_id=org_1.id, asn=34532, name="Net 1")
+        net_2 = models.Network.objects.create(org_id=org_2.id, asn=2432, name="Net 2")
+        ix_1 = models.InternetExchange.objects.create(org_id=org_1.id, name="IX 1")
+        ix_2 = models.InternetExchange.objects.create(org_id=org_2.id, name="IX 2")
+        next_id = models.IXLan.objects.all().order_by("-id").first().id + 1
+        ixlan_1 = models.IXLan(id=next_id, ix=ix_1)
+        ixlan_2 = models.IXLan(id=next_id + 1, ix=ix_2)
+        ixlan_1.save()
+        ixlan_2.save()
+        netixlan_1 = models.NetworkIXLan.objects.create(
+            ipaddr4="8.8.4.4",
+            asn=34532,
+            ixlan=ixlan_1,
+            network=net_1,
+            speed=1000,
+            status="ok",
+        )
+
+        netixlan_2 = models.NetworkIXLan.objects.create(
+            ipaddr4="8.8.8.8",
+            asn=2432,
+            ixlan=ixlan_2,
+            network=net_2,
+            speed=1000,
+            status="ok",
+        )
+
+        call_command("rebuild_index", "--noinput")
+
+        rv = search.search("8.8.4")
+
+        assert rv["net"][0]["id"] == net_1.id
+
+        # clean up
+        netixlan_1.delete(hard=True)
+        netixlan_2.delete(hard=True)
+        ix_1.delete(hard=True)
+        ix_2.delete(hard=True)
+        ixlan_1.delete(hard=True)
+        ixlan_2.delete(hard=True)
+        net_1.delete(hard=True)
+        net_2.delete(hard=True)
+        org_1.delete(hard=True)
+        org_2.delete(hard=True)
+
+        call_command("rebuild_index", "--noinput")
+
+    def test_search_ipv6(self):
+        """
+        This will test a search for a partial ipv6 address.
+        """
+        org_1 = models.Organization.objects.create(name="Test org 1")
+        org_2 = models.Organization.objects.create(name="Test org 2")
+        net_1 = models.Network.objects.create(org_id=org_1.id, asn=34532, name="Net 1")
+        net_2 = models.Network.objects.create(org_id=org_2.id, asn=2432, name="Net 2")
+        ix_1 = models.InternetExchange.objects.create(org_id=org_1.id, name="IX 1")
+        ix_2 = models.InternetExchange.objects.create(org_id=org_2.id, name="IX 2")
+        next_id = models.IXLan.objects.all().order_by("-id").first().id + 1
+        ixlan_1 = models.IXLan(id=next_id, ix=ix_1)
+        ixlan_2 = models.IXLan(id=next_id + 1, ix=ix_2)
+        ixlan_1.save()
+        ixlan_2.save()
+        netixlan_1 = models.NetworkIXLan.objects.create(
+            ipaddr6="2001:4888:456:2::",
+            asn=34532,
+            ixlan=ixlan_1,
+            network=net_1,
+            speed=1000,
+            status="ok",
+        )
+
+        netixlan_2 = models.NetworkIXLan.objects.create(
+            ipaddr6="2001:4888:432:2::",
+            asn=2432,
+            ixlan=ixlan_2,
+            network=net_2,
+            speed=1000,
+            status="ok",
+        )
+
+        call_command("rebuild_index", "--noinput")
+
+        rv = search.search("2001:4888:456")
+
+        assert rv["net"][0]["id"] == net_1.id
+
+        # clean up
+        netixlan_1.delete(hard=True)
+        netixlan_2.delete(hard=True)
+        ix_1.delete(hard=True)
+        ix_2.delete(hard=True)
+        ixlan_1.delete(hard=True)
+        ixlan_2.delete(hard=True)
+        net_1.delete(hard=True)
+        net_2.delete(hard=True)
+        org_1.delete(hard=True)
+        org_2.delete(hard=True)
+
+        call_command("rebuild_index", "--noinput")

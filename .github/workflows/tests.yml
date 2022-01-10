@@ -23,16 +23,18 @@ jobs:
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        shell: bash
+        run: timeout 10s poetry run pip --version || rm -rf .venv
       # install dependencies if cache does not exist
       - name: Check cache and install dependencies
         run: poetry install --no-interaction --no-root
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       - name: Run linters
         run: |
-          source .venv/bin/activate
-          # flake8 peeringdb_server
-          black . --check
-          isort .
+          poetry run isort .
+          poetry run black . --check
+          # poetry run flake8 peeringdb_server
 
   test:
     needs: linting

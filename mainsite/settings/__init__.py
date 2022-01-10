@@ -4,6 +4,8 @@ import os
 
 import django.conf.global_settings
 
+from mainsite.oauth2.scopes import SupportedScopes
+
 _DEFAULT_ARG = object()
 
 
@@ -198,6 +200,15 @@ def read_file(name):
         return fh.read()
 
 
+def set_from_file(name, path, default=_DEFAULT_ARG, envvar_type=None):
+    try:
+        value = read_file(path).strip()
+    except IOError:
+        value = default
+
+    set_option(name, value, envvar_type)
+
+
 _ = lambda s: s
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -251,6 +262,8 @@ set_from_env("RECAPTCHA_SECRET_KEY")
 
 set_from_env("DESKPRO_KEY")
 set_from_env("DESKPRO_URL")
+
+set_from_env("OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH")
 
 # Limits
 
@@ -528,11 +541,6 @@ PASSWORD_HASHERS = (
 ROOT_URLCONF = "mainsite.urls"
 CONN_MAX_AGE = 3600
 
-# starting with reversion 4.0 the reversion revision context
-# no longer opens an atomic transaction context, so we need
-# to ensure this ourselves for all the requests
-ATOMIC_REQUESTS = True
-
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 
@@ -589,6 +597,13 @@ CORS_ALLOW_METHODS = ["GET", "OPTIONS"]
 # allows PeeringDB to use external OAuth2 sources
 set_bool("OAUTH_ENABLED", False)
 
+# enables OpenID Connect support
+set_bool("OIDC_ENABLED", True)
+
+# enables JWT signing algorithm RS256
+set_from_file("OIDC_RSA_PRIVATE_KEY", OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH, "", str)
+
+
 AUTHENTICATION_BACKENDS += (
     # for OAuth provider
     "oauth2_provider.backends.OAuth2Backend",
@@ -603,10 +618,14 @@ MIDDLEWARE += (
 )
 
 OAUTH2_PROVIDER = {
+    "OIDC_ENABLED": OIDC_ENABLED,
+    "OIDC_RSA_PRIVATE_KEY": OIDC_RSA_PRIVATE_KEY,
+    "OAUTH2_VALIDATOR_CLASS": "mainsite.oauth2.validators.OIDCValidator",
     "SCOPES": {
-        "profile": "user profile",
-        "email": "email address",
-        "networks": "list of user networks and permissions",
+        SupportedScopes.OPENID: "OpenID Connect scope",
+        SupportedScopes.PROFILE: "user profile",
+        SupportedScopes.EMAIL: "email address",
+        SupportedScopes.NETWORKS: "list of user networks and permissions",
     },
     "ALLOWED_REDIRECT_URI_SCHEMES": ["https"],
     "REQUEST_APPROVAL_PROMPT": "auto",
