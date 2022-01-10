@@ -102,6 +102,11 @@ from peeringdb_server.stats import get_fac_stats, get_ix_stats
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.util import APIPermissionsApplicator, check_permissions
 
+from django_security_keys.ext.two_factor.views import (
+    DisableView as TwoFactorDisableView, # noqa
+    LoginView as TwoFactorLoginView
+)
+
 RATELIMITS = dj_settings.RATELIMITS
 
 
