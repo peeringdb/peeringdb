@@ -2158,7 +2158,9 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         """
         r = super().save(**kwargs)
 
-        if not self.ixlan and create_ixlan:
+        ixlan = self.ixlan
+
+        if not ixlan and create_ixlan:
             ixlan = IXLan(ix=self, status=self.status, mtu=0)
 
             # ixlan id will be set to match ix id in ixlan's clean()
@@ -2166,6 +2168,15 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
             ixlan.clean()
 
             ixlan.save()
+
+        elif ixlan.status != self.status:
+
+            # ixlan status should always be identical to ix status (#1077)
+            if self.status == "deleted":
+                ixlan.delete()
+            else:
+                ixlan.status = self.status
+                ixlan.save()
 
         return r
 

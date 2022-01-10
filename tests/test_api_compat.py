@@ -45,10 +45,11 @@ class TestAPIClientCompat(ClientCase):
 
         r = self.client.post(
             "/api/net",
-            {"org_id": org_id, "name": "Test net", "asn": 9000000},
+            {"org_id": org_id, "name": "Test net", "asn": 9000000, "website":"https://www.example.com"},
             format="json",
         )
         content = json.loads(r.content)
+        print(content)
         if error:
             assert r.status_code == 400
             assert content["meta"]["error"] == self.expected_compat_err_str
