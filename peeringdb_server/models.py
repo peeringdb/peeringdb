@@ -29,10 +29,9 @@ import json
 import re
 import uuid
 from itertools import chain
+
 import django.urls
-from requests.api import delete
 import django_peeringdb.models as pdb_models
-from peeringdb_server import request
 import reversion
 from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
@@ -4776,10 +4775,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     @property
     def ix_org_id(self):
         return self.ixlan.ix.org_id
-
-    @property
-    def ix_id(self):
-        return self.ixlan.ix.id
 
     @property
     def net_result_name(self):

@@ -26,9 +26,9 @@ from peeringdb_server.models import (
     InternetExchange,
     InternetExchangeFacility,
     IXLan,
+    Network,
     NetworkFacility,
     Organization,
-    Network,
 )
 
 

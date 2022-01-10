@@ -11,8 +11,6 @@ import time
 import unittest
 import uuid
 
-from django.core.exceptions import ValidationError
-
 import pytest
 import reversion
 from django.conf import settings

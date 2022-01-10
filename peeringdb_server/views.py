@@ -16,11 +16,9 @@ import datetime
 import json
 import os
 import re
-import time
 import uuid
 
 import requests
-import two_factor.views
 from allauth.account.models import EmailAddress
 from django.conf import settings as dj_settings
 from django.contrib.auth import authenticate, login, logout
@@ -47,6 +45,7 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
 from django_otp.plugins.otp_email.models import EmailDevice
+from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.oauth2_backends import get_oauthlib_core
@@ -102,11 +101,6 @@ from peeringdb_server.serializers import (
 from peeringdb_server.stats import get_fac_stats, get_ix_stats
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.util import APIPermissionsApplicator, check_permissions
-
-from django_security_keys.ext.two_factor.views import (
-    DisableView as TwoFactorDisableView,
-    LoginView as TwoFactorLoginView
-)
 
 RATELIMITS = dj_settings.RATELIMITS
 
@@ -2295,6 +2289,7 @@ def verify_token(self, token):
 
 EmailDevice.verify_token = verify_token
 
+
 class LoginView(TwoFactorLoginView):
 
     """
@@ -2347,7 +2342,6 @@ class LoginView(TwoFactorLoginView):
             return passwordless
 
         return super().post(*args, **kwargs)
-
 
     def get_context_data(self, form, **kwargs):
         """

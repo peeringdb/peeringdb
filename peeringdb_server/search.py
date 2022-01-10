@@ -10,6 +10,7 @@ Refer to search_indexes.py for search index definition.
 
 # import time
 import re
+
 import unidecode
 from django.conf import settings
 from django.db.models import Q
