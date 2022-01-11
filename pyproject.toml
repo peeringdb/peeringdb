@@ -32,14 +32,18 @@ django-debug-toolbar = ">=1.9.1"
 django-extensions = ">=1.3.3"
 django-grappelli = ">=2.10.1"
 django-hashers-passlib = ">=0.3"
-django-oauth-toolkit = ">=1.0.0"
+# django-oauth-toolkit needs to be locked to 1.6.1 because it introduced
+# api breaking changes that were then reverted in 1.6.2 - in order to upgrade
+# we need to wait for them to re-introduce the changes or adapt our code to
+# the reversion
+django-oauth-toolkit = "==1.6.1"
 django-phonenumber-field = ">=0.6"
 django-ratelimit = ">=3"
 django-rest-swagger = ">=2.1.2"
 djangorestframework-api-key = ">=2.0.0"
 django-tables2 = ">=1.0.4"
 django-vanilla-views = ">=1.0.2"
-django-security-keys = "^1.0.0"
+django-security-keys = "^1.0.1"
 googlemaps = ">=2.5.1"
 markdown = ">=2.6.7"
 passlib = ">=1.7.1"
