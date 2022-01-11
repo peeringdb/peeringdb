@@ -649,8 +649,6 @@ OAUTH2_PROVIDER = {
 
 AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 
-print(AUTHENTICATION_BACKENDS)
-
 
 ## Django Rest Framework
 
@@ -956,6 +954,3 @@ else:
     EMAIL_SUBJECT_PREFIX = f"[{RELEASE_ENV}] "
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")
-
-
-
