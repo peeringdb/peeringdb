@@ -1,6 +1,7 @@
 import re
 
 import pytest
+from django.http import response
 from django.test import Client
 from rest_framework.test import APIClient
 
@@ -152,4 +153,27 @@ def test_signup_page():
     m = re.search(r"\/captcha\/image\/([^\/]+)\/", content)
     assert m
     response = client.get(m[0])
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_user_api_key_generation():
+
+    user = User.objects.create(
+        username="test",
+        email="test@localhost",
+    )
+    user.set_password("test1234")
+    user.save()
+
+    client = Client()
+    client.login(username="test", password="test1234")
+
+    response = client.post("/user_keys/add")
+
+    assert response.status_code == 400
+    assert "This field is required." in str(response.content.decode("utf-8"))
+
+    response = client.post("/user_keys/add", {"name": "test key"})
+
     assert response.status_code == 200

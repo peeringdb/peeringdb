@@ -1,0 +1,40 @@
+{% extends "admin/base_site.html" %}
+{% load i18n l10n %}
+
+
+
+{% block content %}
+<h1>{% trans "The following objects will be deleted:" %}</h1>
+
+<form action="" method="post">{% csrf_token %}
+    
+    {% for object in deletable_objects %}
+        
+        {% if object.status != "deleted" %}
+            <p style="margin-top: 10px">
+            <strong style="font-size: 15px">{{ object }}</strong>
+            <i style="font-style:italic">
+            {% if not object.deletable %}
+                {% trans "This object currently has DoTF protection:" %}
+
+                {{object.not_deletable_reason}}
+
+                {% trans "As a superuser you may still proceed with the deletion." %}
+
+            {% endif %}
+            </i>
+            </p>
+        {% endif %}
+
+    {% endfor %}
+
+    <div style="margin-top:10px">
+    {% for obj in deletable_objects %}
+    <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}" />
+    {% endfor %}
+    <input type="hidden" name="action" value="soft_delete" />
+    <input type="submit" name="delete" value="Delete"/>
+    <a href="javascript:history.back()" class="grp-button grp-delete-link">Cancel</a>
+    </div>
+</form>
+{% endblock %}

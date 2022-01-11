@@ -1708,6 +1708,99 @@ twentyc.editable.module.register(
 );
 
 
+
+twentyc.editable.module.register(
+  "security_key_listing",
+  {
+    loading_shim : true,
+
+    remove : function(id, row, trigger, container) {
+      var b = PeeringDB.confirm(gettext("Remove") + " " +row.data("edit-label"), "remove");  ///
+      var me = this;
+      $(this.target).on("success", function(ev, data) {
+        if(b)
+          me.listing_remove(id, row, trigger, container);
+      });
+      if(b) {
+        this.target.data = { id : id };
+        this.target.execute("delete");
+      } else {
+        $(this.target).trigger("success", [gettext("Canceled")]);  ///
+      }
+    },
+
+    execute_register : function(trigger, container) {
+      SecurityKeys.request_registration(
+        (credential_json) => {
+          this.components.add.editable("export", this.target.data);
+          this.target.data.credential = credential_json;
+          var data = this.target.data;
+          this.target.execute("add", this.components.add, (response) => {
+            this.add(data.entity, trigger, container, response);
+
+            // refresh to pick up django-two-factor page changes
+            // from new registration
+            document.location.href = document.location.href;
+
+          });
+        },
+        (exc) => {
+          container.editable("loading-shim", "hide");
+          console.error(exc);
+        }
+
+      );
+    },
+
+    register : function(rowId, trigger, container, data) {
+    },
+
+    add : function(rowId, trigger, container, data) {
+      var row = this.listing_add(data.prefix, trigger, container, data);
+      row.attr("data-edit-label", data.name)
+      row.data("edit-label", data.name)
+      var update_key_form = row.find(".update-key")
+      update_key_form.find(".popin, .loading-shim").detach()
+      update_key_form.editable()
+      return row
+    },
+
+    execute_update : function(trigger, container) {
+      var row = this.row(trigger);
+      row.editable("export", this.target.data);
+      var data = this.target.data;
+      this.target.execute("update", trigger, function(response) {
+      }.bind(this));
+    },
+
+    execute_remove : function(trigger, container) {
+      var row = this.row(trigger);
+      var b = PeeringDB.confirm(gettext("Revoke key") + " " +row.data("edit-label"), "remove");
+
+      if(!b) {
+        container.editable("loading-shim", "hide")
+        return
+      }
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      var id = data.id = row.data("edit-id")
+      this.target.execute("remove", trigger, function(response) {
+        this.listing_remove(id, row, trigger, container);
+
+        // refresh to pick up django-two-factor page changes
+        // from removal
+        document.location.href = document.location.href;
+
+
+      }.bind(this));
+    }
+
+  },
+  "listing"
+);
+
+
+
 twentyc.editable.module.register(
   "uoar_listing",
   {
@@ -2567,7 +2660,7 @@ twentyc.editable.input.register(
     },
     get : function() {
       var val = this.element.data("value");
-      if(val === 0 || val === "") {
+      if(val === 0 || val === "" || typeof(val) == "undefined") {
         if(this.source.data("edit-autocomplete-allow-nonexistent")) {
           val = this.element.val();
         }

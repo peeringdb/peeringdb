@@ -1230,6 +1230,30 @@ class ModelSerializer(serializers.ModelSerializer):
                     raise exc
 
                 if request.method == "POST":
+
+                    if (
+                        (
+                            instance._meta.model == Network
+                            and "name" in filters
+                            and "asn" not in filters
+                        )
+                        or (instance._meta.model == Facility and "name" in filters)
+                        or (
+                            instance._meta.model == InternetExchange
+                            and "name" in filters
+                        )
+                    ):
+                        # issue #901 - if an entity is submitted where the name is currently
+                        # held by a soft-deleted entity rename the soft-deleted
+                        # network to free up the name and proceed with creation validation normally
+
+                        instance.name = f"{instance.name} #{instance.id}"
+                        instance.notes_private = (
+                            "Name of deleted entity claimed by new entity"
+                        )
+                        instance.save()
+                        return super().run_validation(data=data)
+
                     self.instance = instance
 
                     if type(instance) in QUEUE_ENABLED:
@@ -2414,6 +2438,11 @@ class NetworkSerializer(ModelSerializer):
         request.user
 
         asn = validated_data.get("asn")
+        website = validated_data.get("website")
+
+        # Check if website field is not empty
+        if not website:
+            raise RestValidationError({"website": _("This field may not be blank.")})
 
         if "suggest" in validated_data:
             del validated_data["suggest"]
@@ -2724,7 +2753,7 @@ class InternetExchangeSerializer(ModelSerializer):
     ixf_net_count = serializers.IntegerField(read_only=True)
     ixf_last_import = serializers.DateTimeField(read_only=True)
 
-    website = serializers.URLField(required=True)
+    website = serializers.URLField()
     tech_email = serializers.EmailField(required=True)
 
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
@@ -2978,6 +3007,12 @@ class InternetExchangeSerializer(ModelSerializer):
         # the prefix that was provided, we pop it off the validated
         # data because we don't need it during the ix creation
         prefix = validated_data.pop("prefix")
+
+        website = validated_data.get("website")
+
+        # Check if website field is not empty
+        if not website:
+            raise RestValidationError({"website": _("This field may not be blank.")})
 
         # create ix
         r = super().create(validated_data)

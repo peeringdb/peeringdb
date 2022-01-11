@@ -1,0 +1,21 @@
+{% extends "admin/delete_confirmation.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ media }}
+    <script src="{% static 'admin/js/cancel.js' %}" async></script>
+{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px"> {% trans "WARNING! This object currently has DoTF protection:" %}
+
+{% if not object.deletable %}
+{{object.not_deletable_reason}}
+{% trans "As a superuser you may still proceed with the deletion." %}
+{% endif %}
+</h2>
+
+{{block.super}}
+
+{% endblock %}

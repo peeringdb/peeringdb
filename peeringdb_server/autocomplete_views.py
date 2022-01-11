@@ -7,11 +7,13 @@ Note: Quick search behavior is specified in search.py
 """
 
 import json
+from itertools import chain
+from operator import attrgetter
 
 from dal import autocomplete
 from django import http
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import IntegerField, Q, Value
 from django.utils import html
 from grappelli.views.related import AutocompleteLookup as GrappelliAutocomplete
 from reversion.models import Version
@@ -47,6 +49,11 @@ class GrappelliHandlerefAutocomplete(GrappelliAutocomplete):
 
 
 class AutocompleteHTMLResponse(autocomplete.Select2QuerySetView):
+
+    # Issue #469
+    # Add IXP to AS record / dropdown limited
+    paginate_by = 0
+
     def has_add_permissions(self, request):
         return False
 
@@ -165,17 +172,68 @@ class OrganizationAutocomplete(AutocompleteHTMLResponse):
 
 class IXLanAutocomplete(AutocompleteHTMLResponse):
     def get_queryset(self):
+
         qs = IXLan.objects.filter(status="ok").select_related("ix")
+
         if self.q:
-            qs = qs.filter(
-                Q(ix__name__icontains=self.q) | Q(ix__name_long__icontains=self.q)
+
+            exact_qs = (
+                qs.filter(Q(ix__name__iexact=self.q))
+                .only(
+                    "pk",
+                    "ix__name",
+                    "ix__country",
+                    "ix__name_long",
+                )
+                .annotate(filter_style=Value(1, IntegerField()))
             )
-        qs = qs.order_by("ix__name")
+
+            startswith_qs = (
+                qs.filter(Q(ix__name__istartswith=self.q))
+                .only(
+                    "pk",
+                    "ix__name",
+                    "ix__country",
+                    "ix__name_long",
+                )
+                .annotate(filter_style=Value(2, IntegerField()))
+                .exclude(id__in=exact_qs)
+                .order_by("ix__name")
+            )
+
+            contains_qs = (
+                qs.filter(Q(ix__name__icontains=self.q))
+                .only(
+                    "pk",
+                    "ix__name",
+                    "ix__country",
+                    "ix__name_long",
+                )
+                .annotate(filter_style=Value(3, IntegerField()))
+                .exclude(id__in=startswith_qs)
+                .exclude(id__in=exact_qs)
+                .order_by("ix__name")
+            )
+
+            # Django UNION unfortunately doesn't work here
+            # but we can manually combine and sort
+            result_list = sorted(
+                chain(exact_qs, startswith_qs, contains_qs),
+                key=attrgetter("filter_style"),
+                reverse=False,
+            )
+            return result_list
+
         return qs
 
     def get_result_label(self, item):
-        return '<span data-value="%d"><div class="main">%s <div class="tiny suffix">%s</div></div> <div class="sub">%s</div></span>' % (
-            item.pk,
+        return '<span data-value="%d">\
+                    <div class="main">%s \
+                        <div class="tiny suffix">%s</div>\
+                    </div> \
+                    <div class="sub">%s</div>\
+                </span>' % (
+            item.id,
             html.escape(item.ix.name),
             html.escape(item.ix.country.code),
             html.escape(item.ix.name_long),

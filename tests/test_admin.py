@@ -724,4 +724,35 @@ class AdminTests(TestCase):
 
         messages = list(get_messages(response.wsgi_request))
         assert len(messages) == 1
-        assert "Protected object" in str(messages[0])
+        assert "Please confirm deletion of selected objects." in str(messages[0])
+
+    def test_delete_user(self):
+        """
+        Test that deleting with pending UOAR works
+        """
+
+        client = Client()
+
+        client.force_login(self.admin_user)
+
+        user = models.User.objects.first()
+        uoar = models.UserOrgAffiliationRequest.objects.create(
+            user=user, asn=1, status="pending"
+        )
+
+        # Initiate a delete and check if the object has DoTF protection
+
+        url = f"/cp/peeringdb_server/user/{user.id}/delete/"
+        response = client.post(url)
+
+        assert response.status_code == 200
+        assert (
+            "WARNING! This object currently has DoTF protection:"
+            in response.content.decode("utf-8")
+        )
+        # Delete and check if the object is deleted
+        response = client.post(url, {"post": "yes"})
+
+        messages = list(get_messages(response.wsgi_request))
+
+        assert "The user “user Org 0” was deleted successfully." in str(messages[0])

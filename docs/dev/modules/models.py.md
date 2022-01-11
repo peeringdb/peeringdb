@@ -1,4 +1,4 @@
-Generated from models.py on 2021-11-02 10:01:21.611533
+Generated from models.py on 2022-01-11 07:58:24.072700
 
 # peeringdb_server.models
 
@@ -804,6 +804,10 @@ of the following is True:
   its address space
 - descriptive_name (`@property`): Returns a descriptive label of the ixpfx for logging purposes.
 - grainy_namespace (`@property`): None
+- ix_id (`@property`): None
+- ix_org_id (`@property`): None
+- ix_result_name (`@property`): None
+- ix_sub_result_name (`@property`): None
 
 ### Class Methods
 
@@ -1313,10 +1317,17 @@ These attributes / properties will be available on instances of the class
 - grainy_namespace (`@property`): None
 - ix_id (`@property`): Returns the exchange id for this netixlan.
 - ix_name (`@property`): Returns the exchange name for this netixlan.
+- ix_org_id (`@property`): None
+- ix_result_name (`@property`): None
+- ix_sub_result_name (`@property`): None
 - ixf_id (`@property`): Returns a tuple that identifies the netixlan
 in the context of an ix-f member data entry as a unqiue record by asn, ip4 and ip6 address.
 - ixf_id_pretty_str (`@property`): None
 - name (`@property`): None
+- net_id (`@property`): None
+- net_org_id (`@property`): None
+- net_result_name (`@property`): None
+- net_sub_result_name (`@property`): None
 
 ### Class Methods
 

@@ -255,9 +255,12 @@ class ProtectedMixin:
         return getattr(self, "_not_deletable_reason", None)
 
     def delete(self, hard=False, force=False):
-
         if self.status in ["ok", "pending"]:
-            if not self.deletable and not force:
+            if (
+                not self.deletable
+                and not force
+                and not bypass_validation(check_admin=True)
+            ):
                 raise ProtectedAction(self)
 
         self.delete_cleanup()
@@ -2154,7 +2157,9 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         """
         r = super().save(**kwargs)
 
-        if not self.ixlan and create_ixlan:
+        ixlan = self.ixlan
+
+        if not ixlan and create_ixlan:
             ixlan = IXLan(ix=self, status=self.status, mtu=0)
 
             # ixlan id will be set to match ix id in ixlan's clean()
@@ -2162,6 +2167,15 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
             ixlan.clean()
 
             ixlan.save()
+
+        elif ixlan.status != self.status:
+
+            # ixlan status should always be identical to ix status (#1077)
+            if self.status == "deleted":
+                ixlan.delete()
+            else:
+                ixlan.status = self.status
+                ixlan.save()
 
         return r
 
@@ -4761,10 +4775,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     @property
     def ix_org_id(self):
         return self.ixlan.ix.org_id
-
-    @property
-    def ix_id(self):
-        return self.ixlan.ix.id
 
     @property
     def net_result_name(self):

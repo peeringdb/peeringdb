@@ -1,4 +1,4 @@
-Generated from admin.py on 2021-11-02 10:01:21.611533
+Generated from admin.py on 2022-01-11 07:58:24.072700
 
 # peeringdb_server.admin
 
@@ -27,7 +27,7 @@ set to.
 
 ---
 ## merge_organizations
-`def merge_organizations(targets, target, request)`
+`def merge_organizations(*args, **kwargs)`
 
 Merge organizations specified in targets into organization specified
 in target.
@@ -377,7 +377,7 @@ request has permission to delete *any* object of the given type.
 
 ---
 #### response_change
-`def response_change(self, request, obj)`
+`def response_change(*args, **kwargs)`
 
 Determine the HttpResponse for the change_view stage.
 
@@ -1093,13 +1093,13 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 ---
 
-## SoftDeleteAdmin
+## ProtectedDeleteAdmin
 
 ```
-SoftDeleteAdmin(peeringdb_server.admin.SanitizedAdmin, django_handleref.admin.VersionAdmin, reversion.admin.VersionAdmin, django.contrib.admin.options.ModelAdmin)
+ProtectedDeleteAdmin(django.contrib.admin.options.ModelAdmin)
 ```
 
-Soft delete admin.
+Allow deletion of objects if the user is superuser
 
 
 ### Instanced Attributes
@@ -1123,8 +1123,33 @@ model instance. If `obj` is None, this should return True if the given
 request has permission to delete *any* object of the given type.
 
 ---
+
+## SoftDeleteAdmin
+
+```
+SoftDeleteAdmin(peeringdb_server.admin.SanitizedAdmin, django_handleref.admin.VersionAdmin, reversion.admin.VersionAdmin, django.contrib.admin.options.ModelAdmin)
+```
+
+Soft delete admin.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+### Methods
+
+#### get_actions
+`def get_actions(self, request)`
+
+Return a dictionary mapping the names of all actions for this
+ModelAdmin to a tuple of (callable, name, description) for each action.
+
+---
 #### save_formset
-`def save_formset(self, request, form, formset, change)`
+`def save_formset(*args, **kwargs)`
 
 Given an inline formset save it to the database.
 
@@ -1293,10 +1318,10 @@ These attributes / properties will be available on instances of the class
 ## UserOrgAffiliationRequestAdmin
 
 ```
-UserOrgAffiliationRequestAdmin(peeringdb_server.admin.ModelAdminWithUrlActions)
+UserOrgAffiliationRequestAdmin(peeringdb_server.admin.ModelAdminWithUrlActions, peeringdb_server.admin.ProtectedDeleteAdmin)
 ```
 
-Encapsulate all admin options and functionality for a given model.
+Allow deletion of objects if the user is superuser
 
 
 ### Instanced Attributes
@@ -1304,22 +1329,6 @@ Encapsulate all admin options and functionality for a given model.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
-
-### Methods
-
-#### has_delete_permission
-`def has_delete_permission(self, request, obj=None)`
-
-Return True if the given request has permission to change the given
-Django model instance, the default implementation doesn't examine the
-`obj` parameter.
-
-Can be overridden by the user in subclasses. In such case it should
-return True if the given request has permission to delete the `obj`
-model instance. If `obj` is None, this should return True if the given
-request has permission to delete *any* object of the given type.
-
----
 
 ## UserOrgAffiliationRequestInline
 

@@ -19,7 +19,6 @@ import re
 import uuid
 
 import requests
-import two_factor.views
 from allauth.account.models import EmailAddress
 from django.conf import settings as dj_settings
 from django.contrib.auth import authenticate, login, logout
@@ -46,6 +45,10 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
 from django_otp.plugins.otp_email.models import EmailDevice
+from django_security_keys.ext.two_factor.views import (  # noqa
+    DisableView as TwoFactorDisableView,
+)
+from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.oauth2_backends import get_oauthlib_core
@@ -614,7 +617,13 @@ def view_verify(request):
 
         if not request.user.has_oauth:
             if not authenticate(username=request.user.username, password=password):
-                return JsonResponse({"status": "auth"}, status=401)
+                return JsonResponse(
+                    {
+                        "status": "auth",
+                        "non_field_errors": [_("Invalid password. Please try again.")],
+                    },
+                    status=401,
+                )
 
         if EmailAddress.objects.filter(user=request.user).exists():
             EmailAddress.objects.filter(user=request.user).delete()
@@ -2284,7 +2293,7 @@ def verify_token(self, token):
 EmailDevice.verify_token = verify_token
 
 
-class LoginView(two_factor.views.LoginView):
+class LoginView(TwoFactorLoginView):
 
     """
     Extend the `LoginView` class provided
@@ -2303,6 +2312,16 @@ class LoginView(two_factor.views.LoginView):
 
         return super().get(*args, **kwargs)
 
+    def get_form_kwargs(self, step=None):
+        kwargs = super().get_form_kwargs(step=step)
+
+        if step == "security-key":
+            kwargs.update(
+                {"device": self.get_security_key_device(), "request": self.request}
+            )
+
+        return kwargs
+
     @transaction.atomic
     @method_decorator(
         ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
@@ -2312,6 +2331,7 @@ class LoginView(two_factor.views.LoginView):
         Posts to the `auth` step of the authentication
         process need to be rate limited.
         """
+        request = self.request
 
         was_limited = getattr(self.request, "limited", False)
         if self.get_step_index() == 0 and was_limited:
@@ -2319,6 +2339,10 @@ class LoginView(two_factor.views.LoginView):
                 "Please wait a bit before trying to login again."
             )
             return self.render_goto_step("auth")
+
+        passwordless = self.attempt_passwordless_auth(request, **kwargs)
+        if passwordless:
+            return passwordless
 
         return super().post(*args, **kwargs)
 
@@ -2330,6 +2354,9 @@ class LoginView(two_factor.views.LoginView):
 
         context = super().get_context_data(form, **kwargs)
         context.update(rate_limit_message=getattr(self, "rate_limit_message", None))
+
+        # make_env results to context
+        context.update(**make_env())
 
         if "other_devices" in context:
             context["other_devices"] += [self.get_email_device()]
@@ -2394,6 +2421,8 @@ class LoginView(two_factor.views.LoginView):
         if not self.device_cache:
             challenge_device_id = self.request.POST.get("challenge_device", None)
             if challenge_device_id:
+
+                # email device
                 device = self.get_email_device()
                 if device.persistent_id == challenge_device_id:
                     self.device_cache = device
