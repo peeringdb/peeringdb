@@ -1,4 +1,4 @@
-Generated from views.py on 2021-11-02 10:01:21.611533
+Generated from views.py on 2022-01-11 07:58:24.072700
 
 # peeringdb_server.views
 
@@ -28,7 +28,7 @@ next Sunday.
 
 ---
 ## cancel_affiliation_request
-`def cancel_affiliation_request(request, *args, **kwargs)`
+`def cancel_affiliation_request(*args, **kwds)`
 
 Cancel a user's affiliation request.
 
@@ -141,7 +141,7 @@ User registration page view.
 
 ---
 ## view_request_ownership
-`def view_request_ownership(request, *args, **kw)`
+`def view_request_ownership(*args, **kwds)`
 
 Render the form that allows users to request ownership
 to an unclaimed organization.
@@ -209,7 +209,7 @@ the supplied value.
 ## LoginView
 
 ```
-LoginView(two_factor.views.core.LoginView)
+LoginView(django_security_keys.ext.two_factor.views.LoginView)
 ```
 
 Extend the `LoginView` class provided
@@ -251,6 +251,12 @@ challenge device for one time passwords.
 
 Return an EmailDevice instance for the requesting user
 which can be used for one time passwords.
+
+---
+#### get_form_kwargs
+`def get_form_kwargs(self, step=None)`
+
+AuthenticationTokenForm requires the user kwarg.
 
 ---
 #### get_redirect_url
