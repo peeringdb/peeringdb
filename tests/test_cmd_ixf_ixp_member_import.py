@@ -11,7 +11,6 @@ import reversion
 from django.core.cache import cache
 from django.core.management import call_command
 from django.test import override_settings
-from django.core.cache import cache
 
 from peeringdb_server import ixf
 from peeringdb_server.models import (

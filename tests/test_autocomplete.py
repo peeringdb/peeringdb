@@ -3,6 +3,7 @@ import json
 import reversion
 from django.test import Client, RequestFactory
 from django.urls import reverse
+
 from peeringdb_server import autocomplete_views
 from peeringdb_server.models import InternetExchange, Network, Organization, User
 
@@ -77,24 +78,17 @@ class TestAutocomplete(ClientCase):
         assert "First" in rsp
         assert "Second" in rsp
 
-
     def test_autocomplete_sort(self):
         org = Organization.objects.create(name="Test Org", status="ok")
 
         Network.objects.all().delete()
 
         # Data for exact matches
-        net1 = Network.objects.create(
-            name=f"NET", asn=1, status="ok", org=org
-        )
+        net1 = Network.objects.create(name=f"NET", asn=1, status="ok", org=org)
         # Data for startswith matches
-        net2 = Network.objects.create(
-            name=f"NET DUMMY", asn=2, status="ok", org=org
-        )
+        net2 = Network.objects.create(name=f"NET DUMMY", asn=2, status="ok", org=org)
         # Data for contains matches
-        net3 = Network.objects.create(
-            name=f"TEST NET", asn=3, status="ok", org=org
-        )
+        net3 = Network.objects.create(name=f"TEST NET", asn=3, status="ok", org=org)
 
         url = reverse("autocomplete-net")
 
@@ -106,24 +100,21 @@ class TestAutocomplete(ClientCase):
         res = rsp.split("</span>")
 
         # First result should be exact match
-        assert f"data-value=\"{net1.id}\"" in res[0]
+        assert f'data-value="{net1.id}"' in res[0]
 
         # Second result should be startswith match
-        assert f"data-value=\"{net2.id}\"" in res[1]
+        assert f'data-value="{net2.id}"' in res[1]
 
         # Third result should be contains match
-        assert f"data-value=\"{net3.id}\"" in res[2]
+        assert f'data-value="{net3.id}"' in res[2]
 
     def test_autocomplete_results(self):
         org = Organization.objects.create(name="Test Org", status="ok")
 
         for i in range(1, 130):
-            InternetExchange.objects.create(
-                name=f"IX {i}", status="ok", org=org
-            )
+            InternetExchange.objects.create(name=f"IX {i}", status="ok", org=org)
 
         url = reverse("autocomplete-ix")
-
 
         req = self.factory.get(f"{url}?q=IX")
         rsp = autocomplete_views.ExchangeAutocomplete.as_view()(req).content.decode(
@@ -131,12 +122,3 @@ class TestAutocomplete(ClientCase):
         )
 
         assert 129 == rsp.count("data-value")
-
-
-
-
-
-
-
-
-
