@@ -7,7 +7,7 @@ from django.contrib import admin
 from django.views.generic.base import RedirectView
 from two_factor.urls import urlpatterns as tf_urls
 
-from peeringdb_server.views import LoginView
+from peeringdb_server.views import LoginView, TwoFactorDisableView
 
 admin.autodiscover()
 
@@ -20,6 +20,12 @@ tf_urls[0][0] = url(
     regex=r"^account/login/$",
     view=LoginView.as_view(),
     name="login",
+)
+
+tf_urls[0][-1] = url(
+    regex=r"^account/disable-2fa/$",
+    view=TwoFactorDisableView.as_view(),
+    name="disable",
 )
 
 urlpatterns = [

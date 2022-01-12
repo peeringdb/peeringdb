@@ -1,4 +1,4 @@
-Generated from request.py on 2021-11-02 10:01:21.611533
+Generated from request.py on 2022-01-11 07:58:24.072700
 
 # peeringdb_server.request
 
@@ -8,7 +8,7 @@ Django HTTPRequest utilities.
 ---
 
 ## bypass_validation
-`def bypass_validation(request=None)`
+`def bypass_validation(request=None, check_admin=False)`
 
 Return whether the specified request is to bypass
 certain data quality validations. (#741)

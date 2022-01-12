@@ -369,6 +369,15 @@ CACHES = {
     }
 }
 
+
+# keep database connection open for n seconds
+# this is defined at the module level so we can expose
+# it as an environment variable
+#
+# it will be set again in the DATABASES configuration
+# from this global
+set_option("CONN_MAX_AGE", 3600)
+
 DATABASES = {
     "default": {
         "ENGINE": f"django.db.backends.{DATABASE_ENGINE}",
@@ -377,6 +386,7 @@ DATABASES = {
         "NAME": DATABASE_NAME,
         "USER": DATABASE_USER,
         "PASSWORD": DATABASE_PASSWORD,
+        "CONN_MAX_AGE": CONN_MAX_AGE,
         # "TEST": { "NAME": f"{DATABASE_NAME}_test" }
     },
 }
@@ -459,6 +469,7 @@ INSTALLED_APPS = [
     "django_tables2",
     "oauth2_provider",
     "peeringdb_server",
+    "django_security_keys",
     "reversion",
     "captcha",
     "django_handleref",
@@ -539,7 +550,6 @@ PASSWORD_HASHERS = (
 )
 
 ROOT_URLCONF = "mainsite.urls"
-CONN_MAX_AGE = 3600
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
@@ -605,6 +615,9 @@ set_from_file("OIDC_RSA_PRIVATE_KEY", OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH, "", str)
 
 
 AUTHENTICATION_BACKENDS += (
+    # for passwordless auth using security-key
+    # this needs to be first so it can do some clean up
+    "django_security_keys.backends.PasswordlessAuthenticationBackend",
     # for OAuth provider
     "oauth2_provider.backends.OAuth2Backend",
     # for OAuth against external sources
@@ -716,6 +729,20 @@ set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/login"
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/verify"
 ACCOUNT_EMAIL_REQUIRED = True
+
+# Webauthn (U2F) settings
+
+# unique id for the relying party
+set_option("WEBAUTHN_RP_ID", "peeringdb")
+
+# name of the relying party (displayed to the user)
+set_option("WEBAUTHN_RP_NAME", "PeeringDB")
+
+# webauthn origin validation
+set_option("WEBAUTHN_ORIGIN", BASE_URL)
+
+# collect webauthn device attestation
+set_option("WEBAUTHN_ATTESTATION", "none")
 
 # haystack
 
@@ -903,7 +930,7 @@ set_option("IXF_RESEND_FAILED_EMAILS", False)
 set_option("IXF_FETCH_TIMEOUT", 30)
 
 # Setting for number of days before deleting childless Organizations
-set_option("ORG_CHILDLESS_DELETE_DURATION", 30)
+set_option("ORG_CHILDLESS_DELETE_DURATION", 90)
 
 # Grace period before an organization is processed for childless cleanup
 # n days after creation

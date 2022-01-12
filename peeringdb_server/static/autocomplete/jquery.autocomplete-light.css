@@ -24,6 +24,8 @@
     -webkit-background-clip: padding-box;
     -moz-background-clip: padding;
     background-clip: padding-box;
+    overflow: scroll;
+    max-height: 360px;
 }
 
 .yourlabs-autocomplete .hilight

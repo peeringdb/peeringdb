@@ -190,6 +190,9 @@ def test_validate_prefix_overlap():
         ("AS15562", "AS15562"),
         ("AS-15562", "AS-15562"),
         ("AS15562 AS33333", "AS15562 AS33333"),
+        # hyphenated source validation
+        ("AS-20C@ARIN-NONAUTH", "AS-20C@ARIN-NONAUTH"),
+        ("ARIN-NONAUTH::AS-20C", "ARIN-NONAUTH::AS-20C"),
         # fail validation
         ("UNKNOWN::AS-FOO", False),
         ("AS-FOO@UNKNOWN", False),
