@@ -250,6 +250,12 @@ set_option("DATABASE_NAME", "peeringdb")
 set_option("DATABASE_USER", "peeringdb")
 set_option("DATABASE_PASSWORD", "")
 
+# API Cache
+
+set_option("API_CACHE_ENABLED", True)
+set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
+set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
+
 # Keys
 
 set_from_env("MELISSA_KEY")
@@ -263,7 +269,9 @@ set_from_env("RECAPTCHA_SECRET_KEY")
 set_from_env("DESKPRO_KEY")
 set_from_env("DESKPRO_URL")
 
-set_from_env("OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH")
+set_from_env(
+    "OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH", os.path.join(API_CACHE_ROOT, "keys", "oidc.key")
+)
 
 # Limits
 
@@ -562,7 +570,7 @@ set_from_env("EMAIL_HOST_USER")
 set_from_env("EMAIL_HOST_PASSWORD")
 set_from_env("EMAIL_USE_TLS")
 
-set_from_env("SESSION_COOKIE_DOMAIN")
+set_from_env("SESSION_COOKIE_DOMAIN", "localhost")
 set_from_env("SESSION_COOKIE_SECURE")
 set_option("SECURE_PROXY_SSL_HEADER", ("HTTP_X_FWD_PROTO", "https"))
 
@@ -706,10 +714,6 @@ set_option("SPONSORSHIPS_EMAIL", SERVER_EMAIL)
 
 set_option("API_URL", "https://peeringdb.com/api")
 set_option("API_DEPTH_ROW_LIMIT", 250)
-set_option("API_CACHE_ENABLED", True)
-set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
-set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
-
 
 # limit results for the standard search
 # (hitting enter on the main search bar)
@@ -733,20 +737,20 @@ ACCOUNT_EMAIL_REQUIRED = True
 # Webauthn (U2F) settings
 
 # unique id for the relying party
-set_option("WEBAUTHN_RP_ID", "peeringdb")
+set_option("WEBAUTHN_RP_ID", SESSION_COOKIE_DOMAIN)
 
 # name of the relying party (displayed to the user)
 set_option("WEBAUTHN_RP_NAME", "PeeringDB")
 
 # webauthn origin validation
-set_option("WEBAUTHN_ORIGIN", BASE_URL)
+set_option("WEBAUTHN_ORIGIN", BASE_URL.rstrip("/"))
 
 # collect webauthn device attestation
 set_option("WEBAUTHN_ATTESTATION", "none")
 
 # haystack
 
-set_option("WHOOSH_INDEX_PATH", os.path.join(BASE_DIR, "api-cache", "whoosh-index"))
+set_option("WHOOSH_INDEX_PATH", os.path.join(API_CACHE_ROOT, "whoosh-index"))
 set_option("WHOOSH_STORAGE", "file")
 HAYSTACK_CONNECTIONS = {
     "default": {
