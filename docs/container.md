@@ -63,6 +63,12 @@ Alternatively, create a `SECRET_KEY` using `uuidgen` or replace with something s
 echo SECRET_KEY=\"$(uuidgen)\" > Ctl/dev/.env
 ```
 
+If you are serving from anywhere but localhost you will also need to specify the `SESSION_COOKIE_DOMAIN`
+
+```sh
+echo "SESSION_COOKIE_DOMAIN=example.com" >> Ctl/dev/.env
+```
+
 If you want to enable OIDC's JWT RS256 token signing, you need to specify the file with the RSA secret key found inside the container with the `OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH` variable. You can create the key with open ssl and place it in `Ctl/dev/jwks/filename.key` or let the build system auto generated from the path specified with the variable.
 
 ```sh
