@@ -684,8 +684,8 @@ if API_THROTTLE_ENABLED:
     REST_FRAMEWORK.update(
         {
             "DEFAULT_THROTTLE_CLASSES": (
-                "rest_framework.throttling.AnonRateThrottle",
-                "rest_framework.throttling.UserRateThrottle",
+                "peeringdb_server.rest_throttles.APIAnonUserThrottle",
+                "peeringdb_server.rest_throttles.APIUserThrottle",
                 "peeringdb_server.rest_throttles.FilterDistanceThrottle",
             ),
             "DEFAULT_THROTTLE_RATES": {
