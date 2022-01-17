@@ -96,6 +96,7 @@ COMMANDLINE_TOOLS = (
     ("pdb_fac_merge", _("Merge Facilities")),
     ("pdb_fac_merge_undo", _("Merge Facilities: UNDO")),
     ("pdb_undelete", _("Restore Object(s)")),
+    ("pdb_validate_data", _("Validate Data")),
 )
 
 
@@ -1641,8 +1642,15 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
             return True
 
     def validate_phonenumbers(self):
-        self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
-        self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
+        try:
+            self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
+        except ValidationError as exc:
+            raise ValidationError({"tech_phone": exc})
+
+        try:
+            self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
+        except ValidationError as exc:
+            raise ValidationError({"sales_phone": exc})
 
 
 @grainy_model(namespace="internetexchange", parent="org")
@@ -2180,9 +2188,23 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return r
 
     def validate_phonenumbers(self):
-        self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
-        self.policy_phone = validate_phonenumber(self.policy_phone, self.country.code)
-        self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
+
+        try:
+            self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
+        except ValidationError as exc:
+            raise ValidationError({"tech_phone": exc})
+
+        try:
+            self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
+        except ValidationError as exc:
+            raise ValidationError({"sales_phone": exc})
+
+        try:
+            self.policy_phone = validate_phonenumber(
+                self.policy_phone, self.country.code
+            )
+        except ValidationError as exc:
+            raise ValidationError({"policy_phone": exc})
 
     def clean(self):
         self.validate_phonenumbers()
@@ -4442,7 +4464,11 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
             return True
 
     def clean(self):
-        self.phone = validate_phonenumber(self.phone)
+        try:
+            self.phone = validate_phonenumber(self.phone)
+        except ValidationError as exc:
+            raise ValidationError({"phone": exc})
+
         self.visible = validate_poc_visible(self.visible)
 
 

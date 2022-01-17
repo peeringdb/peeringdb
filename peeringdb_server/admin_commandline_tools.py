@@ -9,7 +9,6 @@ command to exposed in this manner.
 
 import io
 import json
-
 import reversion
 from dal import autocomplete
 from django import forms
@@ -26,6 +25,7 @@ from peeringdb_server.models import (
     Facility,
     InternetExchange,
 )
+import traceback
 
 
 def _(m):
@@ -125,7 +125,7 @@ class CommandLineToolWrapper:
     def validate(self):
         pass
 
-    def _run(self, user, commit=False):
+    def _run(self, command, commit=False):
         r = io.StringIO()
 
         if self.maintenance and commit:
@@ -141,6 +141,7 @@ class CommandLineToolWrapper:
                 call_command(self.tool, *self.args, stdout=r, **self.kwargs)
             self.result = r.getvalue()
         except Exception as inst:
+            traceback.print_exc()
             self.result = f"[error] {inst}"
             self.status = 1
         finally:
@@ -148,14 +149,10 @@ class CommandLineToolWrapper:
                 maintenance.off()
 
         if commit:
-            CommandLineTool.objects.create(
-                user=user,
-                tool=self.tool,
-                description=self.description,
-                status="done",
-                arguments=json.dumps({"args": self.args, "kwargs": self.kwargs}),
-                result=self.result,
-            )
+            command.description = self.description
+            command.status = "done"
+            command.result = self.result
+            command.save()
         return self.result
 
     @transaction.atomic
@@ -175,7 +172,7 @@ class CommandLineToolWrapper:
                 )
                 return self.result
 
-            CommandLineTool.objects.create(
+            self.cmd_instance = CommandLineTool.objects.create(
                 user=user,
                 tool=self.tool,
                 description=self.description,
@@ -191,10 +188,14 @@ class CommandLineToolWrapper:
                     "review once the command has finished."
                 )
             )
+
             return self.result
         else:
             with reversion.create_revision():
                 return self._run(user, commit=commit)
+
+    def download_link(self):
+        return None
 
 
 # TOOL: RENUMBER LAN
@@ -457,3 +458,66 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
 
         if form_data.get("ix"):
             self.kwargs["ixlan"] = [form_data.get("ix").id]
+
+
+@register_tool
+class ToolValidateData(CommandLineToolWrapper):
+    """
+    Validate data in the database.
+    """
+
+    tool = "pdb_validate_data"
+    queue = 10
+
+    class Form(forms.Form):
+        models = []
+
+        for tag, model in REFTAG_MAP.items():
+            models.append((tag, model._meta.verbose_name.title()))
+
+        handleref_tag = forms.ChoiceField(
+            choices=models,
+            help_text=_("Select a handleref tag to validate"),
+            label=_("Object type"),
+        )
+        field_name = forms.CharField(
+            required=True,
+            help_text=_("Enter a field name to validate"),
+        )
+
+        exclude = forms.ChoiceField(
+            choices=(
+                (None, "--"),
+                ("valid", _("Valid")),
+                ("invalid", _("Invalid")),
+            ),
+            required=False,
+            help_text=_("Exclude data based on validation result"),
+        )
+
+        verbose = forms.BooleanField(
+            required=False, initial=False, help_text=_("Verbose output")
+        )
+
+    @property
+    def description(self):
+        return "Validate data: {}.{}".format(self.args[0], self.args[1])
+
+    def set_arguments(self, form_data):
+        self.args = [
+            form_data.get("handleref_tag"),
+            form_data.get("field_name"),
+        ]
+        self.kwargs = {
+            "exclude": form_data.get("exclude", None),
+            "verbose": form_data.get("verbose", False),
+        }
+        self.form_data = form_data
+
+    def download_link(self):
+        handleref_tag = self.args[0]
+        field_name = self.args[1]
+        return (
+            f"/pdb_validate_data/export/pdb_validate_data_{handleref_tag}_{field_name}.csv",
+            "Download validation results (CSV) (This file has an expiry date!)",
+        )

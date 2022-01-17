@@ -1724,6 +1724,7 @@ class CommandLineToolAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
         "tool",
         "description",
         "arguments",
+        "download",
         "result",
         "user",
         "created",
@@ -1732,6 +1733,24 @@ class CommandLineToolAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def download(self, obj):
+
+        tool = acltools.get_tool_from_data({"tool": obj.tool})
+
+        if obj.status != "done" or not tool.download_link():
+            return "-"
+
+        args = json.loads(obj.arguments)
+        tool.args = args["args"]
+        tool.kwargs = args["kwargs"]
+
+        url, label = tool.download_link()
+
+        url = html.escape(url)
+        label = html.escape(label)
+
+        return mark_safe(f'<a href="{url}">{label}</a>')
 
     def get_urls(self):
         urls = super().get_urls()

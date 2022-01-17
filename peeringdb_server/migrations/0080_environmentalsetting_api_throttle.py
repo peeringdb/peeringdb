@@ -8,14 +8,23 @@ import django_inet.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0079_org_add_flag'),
+        ("peeringdb_server", "0079_org_add_flag"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='environmentsetting',
-            name='setting',
-            field=models.CharField(choices=[('API_THROTTLE_RATE_ANON', 'API: Anonymous user API throttle rate'), ('API_THROTTLE_RATE_USER', 'API: Authenticated user API throttle rate')], max_length=255, unique=True),
+            model_name="environmentsetting",
+            name="setting",
+            field=models.CharField(
+                choices=[
+                    ("API_THROTTLE_RATE_ANON", "API: Anonymous user API throttle rate"),
+                    (
+                        "API_THROTTLE_RATE_USER",
+                        "API: Authenticated user API throttle rate",
+                    ),
+                ],
+                max_length=255,
+                unique=True,
+            ),
         ),
-
     ]

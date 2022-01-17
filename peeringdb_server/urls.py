@@ -46,6 +46,7 @@ from peeringdb_server.views import (
     request_search,
     request_translation,
     resend_confirmation_mail,
+    validator_result_cache,
     view_about,
     view_advanced_search,
     view_affiliate_to_org,
@@ -294,7 +295,13 @@ urlpatterns += [
         name="autocomplete-admin-deleted-versions",
     ),
 ]
-
+# Admin CSV export for pdb_validate_data command
+urlpatterns += [
+    path(
+        "pdb_validate_data/export/<cache_id>",
+        validator_result_cache,
+    )
+]
 # Admin autocomplete for commandlinetool history
 
 urlpatterns += [
@@ -305,6 +312,7 @@ urlpatterns += [
     )
     for tool_id, ToolHistory in list(clt_history.items())
 ]
+
 
 # Oauth2
 

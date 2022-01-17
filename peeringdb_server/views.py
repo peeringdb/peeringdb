@@ -33,6 +33,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
+from django.core.cache import cache
 from django.shortcuts import redirect, render
 from django.template import loader
 from django.urls import Resolver404, resolve, reverse
@@ -2550,3 +2551,22 @@ def network_dismiss_ixf_proposal(request, net_id, ixf_id):
     ixf_member_data.save()
 
     return JsonResponse({"status": "ok"})
+
+
+def validator_result_cache(request, cache_id):
+    """
+    Return CSV data from cache.
+    """
+    data = cache.get(cache_id)
+
+    # If cache key doesn't exist, return 404
+    # Prevent downloads from non-admin in users
+
+    if not data or not request.user.is_superuser:
+        return view_http_error_404(request)
+    response = HttpResponse(
+        content_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{cache_id}"'},
+    )
+    response.write(data)
+    return response
