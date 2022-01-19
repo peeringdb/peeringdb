@@ -8,6 +8,8 @@ from peeringdb_server.models import (
     Network,
     NetworkFacility,
     NetworkIXLan,
+    User,
+    Organization
 )
 
 
@@ -23,6 +25,8 @@ def stats():
             status="ok"
         ).count(),
         "automated_nets": Network.handleref.filter(allow_ixp_update=True).count(),
+        "registered_users": User.objects.count(),
+        "organizations": Organization.objects.filter(status="ok").count() 
     }
 
 
