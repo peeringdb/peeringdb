@@ -1451,6 +1451,12 @@ def view_facility(request, id):
                 "value": data.get("available_voltage_services", dismiss),
                 "help_text": field_help(Facility, "available_voltage_services"),
             },
+            {
+                "name": "status_dashboard",
+                "type": "url",
+                "value": data.get("status_dashboard", dismiss),
+                "label": _("Health Check"),
+            },
         ],
     }
 
@@ -1641,6 +1647,12 @@ def view_exchange(request, id):
                 "label": _("Sales Phone"),
                 "value": data.get("sales_phone", dismiss),
                 "help_text": field_help(InternetExchange, "sales_phone"),
+            },
+            {
+                "type": "url",
+                "name": "status_dashboard",
+                "label": _("Health Check"),
+                "value": data.get("status_dashboard", dismiss),
             },
         ],
     }
@@ -2057,6 +2069,12 @@ def view_network(request, id):
                 "data": "enum/policy_contracts",
                 "label": _("Contract Requirement"),
                 "value": network_d.get("policy_contracts", dismiss),
+            },
+            {
+                "name": "status_dashboard",
+                "label": _("Health Check"),
+                "value": network_d.get("status_dashboard", dismiss),
+                "type": "url",
             },
         ],
     }
