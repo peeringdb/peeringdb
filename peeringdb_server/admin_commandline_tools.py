@@ -9,6 +9,8 @@ command to exposed in this manner.
 
 import io
 import json
+import traceback
+
 import reversion
 from dal import autocomplete
 from django import forms
@@ -25,7 +27,6 @@ from peeringdb_server.models import (
     Facility,
     InternetExchange,
 )
-import traceback
 
 
 def _(m):

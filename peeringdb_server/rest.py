@@ -47,9 +47,7 @@ from peeringdb_server.permissions import (
     get_org_key_from_request,
     get_user_key_from_request,
 )
-from peeringdb_server.rest_throttles import (
-    IXFImportThrottle,
-)
+from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
 from peeringdb_server.serializers import ASSetSerializer, ParentStatusException
 from peeringdb_server.util import coerce_ipaddr

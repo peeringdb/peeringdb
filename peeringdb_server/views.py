@@ -23,6 +23,7 @@ from allauth.account.models import EmailAddress
 from django.conf import settings as dj_settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
 from django.http import (
@@ -33,7 +34,6 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.core.cache import cache
 from django.shortcuts import redirect, render
 from django.template import loader
 from django.urls import Resolver404, resolve, reverse

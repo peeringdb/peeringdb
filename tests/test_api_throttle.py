@@ -1,13 +1,12 @@
 import pytest
-from peeringdb_server.rest_throttles import APIAnonUserThrottle, APIUserThrottle
-from django.test import TestCase
-from rest_framework.test import (
-    APIRequestFactory,
-)
-from peeringdb_server import models
-from rest_framework.response import Response
 from django.core.cache import cache
+from django.test import TestCase
+from rest_framework.response import Response
+from rest_framework.test import APIRequestFactory
+
+from peeringdb_server import models
 from peeringdb_server.rest import ModelViewSet
+from peeringdb_server.rest_throttles import APIAnonUserThrottle, APIUserThrottle
 
 
 class MockView(ModelViewSet):

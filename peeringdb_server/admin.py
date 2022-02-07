@@ -86,7 +86,6 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.util import coerce_ipaddr, round_decimal
 from peeringdb_server.views import HttpResponseForbidden, JsonResponse
-import re
 
 from . import forms
 
@@ -2176,7 +2175,7 @@ class EnvironmentSettingForm(baseForms.ModelForm):
 
         if setting in ["API_THROTTLE_RATE_ANON", "API_THROTTLE_RATE_USER"]:
             if re.match(
-                "([/\d]+)\s*(?:minute|hour|seconds|day|week|month|year)", value
+                r"([/\d]+)\s*(?:minute|hour|seconds|day|week|month|year)", value
             ):
                 return cleaned_data
             else:

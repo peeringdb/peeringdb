@@ -1,13 +1,11 @@
 from io import StringIO
-from django.core.management.base import BaseCommand
-from django.core.exceptions import ValidationError
-from peeringdb_server import validators as pdb_validator
-from peeringdb_server import models as pdb_model
-from django.core.cache import cache
-from peeringdb_server.management.commands.pdb_base_command import (
-    PeeringDBBaseCommand,
-)
+
 from django.conf import settings
+from django.core.cache import cache
+from django.core.exceptions import ValidationError
+
+from peeringdb_server import models as pdb_model
+from peeringdb_server.management.commands.pdb_base_command import PeeringDBBaseCommand
 
 
 class Command(PeeringDBBaseCommand):
@@ -75,7 +73,7 @@ class Command(PeeringDBBaseCommand):
 
         try:
             model._meta.get_field(field_name)
-        except:
+        except Exception:
             self.log(f"[error] Unsupported field for validation: {field_name}")
             return
 

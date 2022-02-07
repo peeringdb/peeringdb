@@ -306,7 +306,7 @@ urlpatterns += [
 
 urlpatterns += [
     url(
-        fr"^autocomplete/admin/clt-history/{tool_id}/$",
+        rf"^autocomplete/admin/clt-history/{tool_id}/$",
         ToolHistory.as_view(),
         name=f"autocomplete-admin-clt-history-{tool_id}",
     )

@@ -4563,7 +4563,7 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
 
 def format_speed(value):
     if value >= 1000000:
-        value = value / 10 ** 6
+        value = value / 10**6
         if not value % 1:
             return f"{value:.0f}T"
         return f"{value:.1f}T"
