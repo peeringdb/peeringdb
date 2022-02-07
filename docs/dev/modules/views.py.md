@@ -1,4 +1,4 @@
-Generated from views.py on 2022-01-11 07:58:24.072700
+Generated from views.py on 2022-02-07 09:42:46.681191
 
 # peeringdb_server.views
 
@@ -59,6 +59,12 @@ without hitting enter (quasi autocomplete).
 
 Triggered by hitting enter on the main search bar.
 Renders a search result page.
+
+---
+## validator_result_cache
+`def validator_result_cache(request, cache_id)`
+
+Return CSV data from cache.
 
 ---
 ## view_about
