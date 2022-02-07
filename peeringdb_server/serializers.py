@@ -1517,6 +1517,8 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
     region_continent = serializers.CharField(read_only=True)
 
+    status_dashboard = serializers.URLField(required=False, allow_blank=True, default="")
+
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
@@ -2281,6 +2283,8 @@ class NetworkSerializer(ModelSerializer):
         AsnRdapValidator(),
     ]
 
+    status_dashboard = serializers.URLField(required=False, allow_blank=True, default="")
+
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
     class Meta:
@@ -2788,6 +2792,8 @@ class InternetExchangeSerializer(ModelSerializer):
             message=_("Specify at least one email address"),
         ),
     ]
+
+    status_dashboard = serializers.URLField(required=False, allow_blank=True, default="")
 
     class Meta:
         model = InternetExchange

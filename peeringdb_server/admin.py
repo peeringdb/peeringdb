@@ -1239,6 +1239,7 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "version",
         "id",
         "grainy_namespace",
+        "status_dashboard",
     ]
 
 
