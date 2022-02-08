@@ -1,4 +1,4 @@
-Generated from admin.py on 2022-01-11 07:58:24.072700
+Generated from admin.py on 2022-02-07 09:42:46.681191
 
 # peeringdb_server.admin
 
@@ -242,6 +242,18 @@ class.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
+
+### Methods
+
+#### clean
+`def clean(self)`
+
+Hook for doing any extra form-wide cleaning after Field.clean() has been
+called on every field. Any ValidationError raised by this method will
+not be associated with a particular field; it will have a special-case
+association with the field named '__all__'.
+
+---
 
 ## FacilityAdmin
 
