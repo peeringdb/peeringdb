@@ -2176,7 +2176,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
             ixlan.save()
 
-        elif ixlan.status != self.status:
+        elif ixlan and ixlan.status != self.status:
 
             # ixlan status should always be identical to ix status (#1077)
             if self.status == "deleted":
