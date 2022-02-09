@@ -56,6 +56,7 @@ from peeringdb_server.models import (
     CommandLineTool,
     DeskProTicket,
     DeskProTicketCC,
+    EnvironmentSetting,
     Facility,
     GeoCoordinateCache,
     InternetExchange,
@@ -1722,6 +1723,7 @@ class CommandLineToolAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
         "tool",
         "description",
         "arguments",
+        "download",
         "result",
         "user",
         "created",
@@ -1730,6 +1732,24 @@ class CommandLineToolAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def download(self, obj):
+
+        tool = acltools.get_tool_from_data({"tool": obj.tool})
+
+        if obj.status != "done" or not tool.download_link():
+            return "-"
+
+        args = json.loads(obj.arguments)
+        tool.args = args["args"]
+        tool.kwargs = args["kwargs"]
+
+        url, label = tool.download_link()
+
+        url = html.escape(url)
+        label = html.escape(label)
+
+        return mark_safe(f'<a href="{url}">{label}</a>')
 
     def get_urls(self):
         urls = super().get_urls()
@@ -2148,6 +2168,25 @@ class EnvironmentSettingForm(baseForms.ModelForm):
     class Meta:
         fields = ["setting", "value"]
 
+    def clean(self):
+        cleaned_data = super().clean()
+        setting = cleaned_data.get("setting")
+        value = cleaned_data.get("value")
+
+        if setting in ["API_THROTTLE_RATE_ANON", "API_THROTTLE_RATE_USER"]:
+            if re.match(
+                r"([/\d]+)\s*(?:minute|hour|seconds|day|week|month|year)", value
+            ):
+                return cleaned_data
+            else:
+                raise ValidationError(
+                    _(
+                        "Invalid setting! Acceptable value is a number followed by one of the following: minute, hour, seconds, day, week, month, year. eg (10/minute, 1/hour, 5/day, 1/week, 1/month, 1/year)"
+                    )
+                )
+
+        return cleaned_data
+
 
 class EnvironmentSettingAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = ["setting", "value", "created", "updated", "user"]
@@ -2189,8 +2228,7 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
     ]
 
 
-# Commented out via issue #860
-# admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
+admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)

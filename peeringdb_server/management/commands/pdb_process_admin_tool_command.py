@@ -32,8 +32,7 @@ class Command(BaseCommand):
                 arguments = json.loads(command.arguments)
                 tool.kwargs = arguments.get("kwargs")
                 tool.args = arguments.get("args")
-                tool._run(command.user, commit=True)
-                command.delete()
+                tool._run(command, commit=True)
             except Exception as exc:
                 command.status = "done"
                 command.result = f"Command ended with error: {exc}"

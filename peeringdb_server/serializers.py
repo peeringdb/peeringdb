@@ -1162,7 +1162,7 @@ class ModelSerializer(serializers.ModelSerializer):
                     # unique set that caused the collision
 
                     columns = "|".join(self.Meta.fields)
-                    m = re.findall(fr"\b({columns})\b", v)
+                    m = re.findall(rf"\b({columns})\b", v)
 
                     # build django queryset filters we can use
                     # to retrieve the blocking object

@@ -96,6 +96,7 @@ COMMANDLINE_TOOLS = (
     ("pdb_fac_merge", _("Merge Facilities")),
     ("pdb_fac_merge_undo", _("Merge Facilities: UNDO")),
     ("pdb_undelete", _("Restore Object(s)")),
+    ("pdb_validate_data", _("Validate Data")),
 )
 
 
@@ -1641,8 +1642,15 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
             return True
 
     def validate_phonenumbers(self):
-        self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
-        self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
+        try:
+            self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
+        except ValidationError as exc:
+            raise ValidationError({"tech_phone": exc})
+
+        try:
+            self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
+        except ValidationError as exc:
+            raise ValidationError({"sales_phone": exc})
 
 
 @grainy_model(namespace="internetexchange", parent="org")
@@ -2180,9 +2188,23 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return r
 
     def validate_phonenumbers(self):
-        self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
-        self.policy_phone = validate_phonenumber(self.policy_phone, self.country.code)
-        self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
+
+        try:
+            self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
+        except ValidationError as exc:
+            raise ValidationError({"tech_phone": exc})
+
+        try:
+            self.sales_phone = validate_phonenumber(self.sales_phone, self.country.code)
+        except ValidationError as exc:
+            raise ValidationError({"sales_phone": exc})
+
+        try:
+            self.policy_phone = validate_phonenumber(
+                self.policy_phone, self.country.code
+            )
+        except ValidationError as exc:
+            raise ValidationError({"policy_phone": exc})
 
     def clean(self):
         self.validate_phonenumbers()
@@ -4442,7 +4464,11 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
             return True
 
     def clean(self):
-        self.phone = validate_phonenumber(self.phone)
+        try:
+            self.phone = validate_phonenumber(self.phone)
+        except ValidationError as exc:
+            raise ValidationError({"phone": exc})
+
         self.visible = validate_poc_visible(self.visible)
 
 
@@ -4537,7 +4563,7 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
 
 def format_speed(value):
     if value >= 1000000:
-        value = value / 10 ** 6
+        value = value / 10**6
         if not value % 1:
             return f"{value:.0f}T"
         return f"{value:.1f}T"
@@ -5300,9 +5326,17 @@ class EnvironmentSetting(models.Model):
     setting = models.CharField(
         max_length=255,
         choices=(
+            # (
+            #     "IXF_IMPORTER_DAYS_UNTIL_TICKET",
+            #     _("IX-F Importer: Days until DeskPRO ticket is created"),
+            # ),
             (
-                "IXF_IMPORTER_DAYS_UNTIL_TICKET",
-                _("IX-F Importer: Days until DeskPRO ticket is created"),
+                "API_THROTTLE_RATE_ANON",
+                _("API: Anonymous user API throttle rate"),
+            ),
+            (
+                "API_THROTTLE_RATE_USER",
+                _("API: Authenticated user API throttle rate"),
             ),
         ),
         unique=True,
@@ -5336,7 +5370,9 @@ class EnvironmentSetting(models.Model):
     )
 
     setting_to_field = {
-        "IXF_IMPORTER_DAYS_UNTIL_TICKET": "value_int",
+        # "IXF_IMPORTER_DAYS_UNTIL_TICKET": "value_int",
+        "API_THROTTLE_RATE_ANON": "value_str",
+        "API_THROTTLE_RATE_USER": "value_str",
     }
 
     @classmethod

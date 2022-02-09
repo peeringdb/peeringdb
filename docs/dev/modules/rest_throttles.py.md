@@ -1,10 +1,52 @@
-Generated from rest_throttles.py on 2022-01-11 07:58:24.072700
+Generated from rest_throttles.py on 2022-02-07 09:42:46.681191
 
 # peeringdb_server.rest_throttles
 
 Custom rate limit handlers for the REST API.
 
 # Classes
+---
+
+## APIAnonUserThrottle
+
+```
+APIAnonUserThrottle(rest_framework.throttling.AnonRateThrottle)
+```
+
+Rate limiting for anonymous users.
+
+
+### Methods
+
+#### allow_request
+`def allow_request(self, request, view)`
+
+Implement the check to see if the request should be throttled.
+
+On success calls `throttle_success`.
+On failure calls `throttle_failure`.
+
+---
+
+## APIUserThrottle
+
+```
+APIUserThrottle(rest_framework.throttling.UserRateThrottle)
+```
+
+Rate limiting for authenticated users.
+
+
+### Methods
+
+#### allow_request
+`def allow_request(self, request, view)`
+
+Implement the check to see if the request should be throttled.
+
+On success calls `throttle_success`.
+On failure calls `throttle_failure`.
+
 ---
 
 ## FilterDistanceThrottle

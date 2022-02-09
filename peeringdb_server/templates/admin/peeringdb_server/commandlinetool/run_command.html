@@ -37,6 +37,9 @@
             {% endfor %}
         </div>
         <div class="result">
+        {% if tool.queue and tool.cmd_instance %}
+        {% trans "You can monitor progress and review the results here" %}: <a href="{% url "admin:peeringdb_server_commandlinetool_change" object_id=tool.cmd_instance.id %}">{% trans "Command status" %}</a>
+        {% endif %}
         {{ tool.pretty_result|safe }}
         </div>
     </form>

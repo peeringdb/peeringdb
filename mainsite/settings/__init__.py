@@ -684,8 +684,8 @@ if API_THROTTLE_ENABLED:
     REST_FRAMEWORK.update(
         {
             "DEFAULT_THROTTLE_CLASSES": (
-                "rest_framework.throttling.AnonRateThrottle",
-                "rest_framework.throttling.UserRateThrottle",
+                "peeringdb_server.rest_throttles.APIAnonUserThrottle",
+                "peeringdb_server.rest_throttles.APIUserThrottle",
                 "peeringdb_server.rest_throttles.FilterDistanceThrottle",
             ),
             "DEFAULT_THROTTLE_RATES": {
@@ -939,6 +939,9 @@ set_option("ORG_CHILDLESS_DELETE_DURATION", 90)
 # Grace period before an organization is processed for childless cleanup
 # n days after creation
 set_option("ORG_CHILDLESS_GRACE_DURATION", 1)
+
+# pdb_validate_data cache timeout default
+set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)
 
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 
