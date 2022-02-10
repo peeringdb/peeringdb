@@ -28,7 +28,6 @@ from django.utils.translation import ugettext_lazy as _
 import peeringdb_server.deskpro as deskpro
 from peeringdb_server.models import (
     DeskProTicket,
-    EnvironmentSetting,
     IXFImportEmail,
     IXFMemberData,
     IXLanIXFMemberImportAttempt,
@@ -1742,9 +1741,7 @@ class Importer:
             else:
                 raise
 
-        ticket_days = EnvironmentSetting.get_setting_value(
-            "IXF_IMPORTER_DAYS_UNTIL_TICKET"
-        )
+        ticket_days = settings.IXF_IMPORTER_DAYS_UNTIL_TICKET
 
         template = loader.get_template("email/notify-ixf-consolidated.txt")
 
