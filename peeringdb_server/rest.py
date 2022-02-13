@@ -51,6 +51,7 @@ from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
 from peeringdb_server.serializers import ASSetSerializer, ParentStatusException
 from peeringdb_server.util import coerce_ipaddr
+from peeringdb_server.rest_endpoints.intersection import IXIntersectionViewSet, FacIntersectionViewSet
 
 
 class DataException(ValueError):
@@ -880,6 +881,8 @@ class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
 
 
 router.register("as_set", ASSetViewSet, basename="as_set")
+router.register("aslist_ix", IXIntersectionViewSet, basename="aslist_ix")
+router.register("aslist_fac", FacIntersectionViewSet, basename="aslist_fac")
 
 
 # set here in case we want to add more urls later
