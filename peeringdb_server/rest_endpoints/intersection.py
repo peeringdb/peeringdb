@@ -1,7 +1,3 @@
-import logging
-logger = logging.getLogger(__name__)
-
-from django.core import serializers
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
@@ -92,7 +88,7 @@ class IXIntersectionViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
                     if hasattr(ix_object, attr):
                         ix_data[attr] = getattr(ix_object, attr)
                 output.append(ix_data)
-                
+
             except self.model.DoesNotExist:
                 pass       
                 
