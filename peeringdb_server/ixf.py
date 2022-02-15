@@ -28,7 +28,6 @@ from django.utils.translation import ugettext_lazy as _
 import peeringdb_server.deskpro as deskpro
 from peeringdb_server.models import (
     DeskProTicket,
-    EnvironmentSetting,
     IXFImportEmail,
     IXFMemberData,
     IXLanIXFMemberImportAttempt,
