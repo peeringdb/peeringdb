@@ -136,6 +136,10 @@ def _set_option(name, value, context, envvar_type=None):
     if isinstance(value, bool):
         return _set_bool(name, value, context)
 
+    # If value is a list call set_list
+    if isinstance(value, list):
+        return _set_list(name, value, context)
+
     if value is not None:
         envvar_type = type(value)
     else:
@@ -168,6 +172,18 @@ def _set_bool(name, value, context):
             context[name] = False
         else:
             raise ValueError(f"{name} is a boolean, cannot match '{os.environ[name]}'")
+
+    _set_default(name, value, context)
+
+
+def _set_list(name, value, context):
+
+    """
+    For list types we split the env variable value using a comma as a delimiter
+    """
+
+    if name in os.environ:
+        context[name] = os.environ.get(name).lower().split(",")
 
     _set_default(name, value, context)
 
@@ -743,7 +759,18 @@ set_option("WEBAUTHN_RP_ID", SESSION_COOKIE_DOMAIN)
 set_option("WEBAUTHN_RP_NAME", "PeeringDB")
 
 # webauthn origin validation
-set_option("WEBAUTHN_ORIGIN", BASE_URL.rstrip("/"))
+if RELEASE_ENV == "prod":
+    set_option(
+        "WEBAUTHN_ORIGIN",
+        [
+            "https://peeringdb.com",
+            "https://www.peeringdb.com",
+            "https://auth.peeringdb.com",
+        ],
+    )
+else:
+    set_option("WEBAUTHN_ORIGIN", [BASE_URL.rstrip("/")])
+
 
 # collect webauthn device attestation
 set_option("WEBAUTHN_ATTESTATION", "none")
