@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n util %}
 <div class="editable always auto-toggled filter-form"
      data-edit-target="advanced_search:net"
      data-edit-enter-action="submit"
@@ -54,6 +54,29 @@
     </div>
     <div class="col-xs-12 col-sm-6 col-md-6">
       <!-- RIGHT COLUMN -->
+
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Organization" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="autocomplete"
+               data-edit-autocomplete="org"
+
+               {% if request.GET.org__name__contains %}
+               data-edit-name="org__name__contains"
+               data-edit-value="{{ request.GET.org__name__contains }}"
+               data-edit-autocomplete-text="{{ request.GET.org__name__contains }}"
+               {% else %}
+               data-edit-name="org"
+               data-edit-value="{{ request.GET.org }}"
+               data-edit-autocomplete-text="{{ request.GET.org|autocomplete_preload_org_single }}"
+               {% endif %}
+
+               data-edit-autocomplete-allow-nonexistent="yes"
+               data-edit-reset-value="">
+          </div>
+        </div>
+      </div>
+      
       <div class="row">
         <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Primary ASN" %}</div>
         <div class="col-xs-8 col-sm-7 col-md-8">

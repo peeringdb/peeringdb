@@ -23,12 +23,24 @@
     <div class="col-xs-12 col-sm-6 col-md-6">
       <!-- RIGHT COLUMN -->
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Management" %}</div>
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Organization" %}</div>
         <div class="col-xs-8 col-sm-7 col-md-8">
-          <div data-edit-type="string"
-               data-edit-value="{{ request.GET.org_name }}"
-               data-edit-reset-value=""
-               data-edit-name="org_name"></div>
+          <div data-edit-type="autocomplete"
+               data-edit-autocomplete="org"
+
+               {% if request.GET.org__name__contains %}
+               data-edit-name="org__name__contains"
+               data-edit-value="{{ request.GET.org__name__contains }}"
+               data-edit-autocomplete-text="{{ request.GET.org__name__contains }}"
+               {% else %}
+               data-edit-name="org"
+               data-edit-value="{{ request.GET.org }}"
+               data-edit-autocomplete-text="{{ request.GET.org|autocomplete_preload_org_single }}"
+               {% endif %}
+
+               data-edit-autocomplete-allow-nonexistent="yes"
+               data-edit-reset-value="">
+          </div>
         </div>
       </div>
 
