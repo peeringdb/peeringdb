@@ -9,19 +9,19 @@ from peeringdb_server.models import (
     Network,
     Organization,
     User,
+    UserAPIKey,
     UserOrgAffiliationRequest,
 )
 from tests.util import reset_group_ids
+from allauth.account.models import EmailAddress
+from django_grainy.models import Group
 
 URL = "/affiliate-to-org"
 
 
 @pytest.fixture
 def client():
-    user = User.objects.create(
-        username="test",
-        email="test@localhost",
-    )
+    user = User.objects.create(username="test", email="test@localhost")
     user.set_password("test1234")
     user.save()
     client = APIClient()
@@ -31,9 +31,7 @@ def client():
 
 @pytest.fixture
 def org():
-    org = Organization.objects.create(
-        name="Test Org",
-    )
+    org = Organization.objects.create(name="Test Org")
     return org
 
 
@@ -105,16 +103,12 @@ def test_affiliate_to_nonexisting_org_multiple(client):
     Multiple affiliations to nonexisting orgs should still get
     caught if the provided org name is repetitive
     """
-    data = {
-        "org": "Nonexistent org",
-    }
+    data = {"org": "Nonexistent org"}
     assert_passing_affiliation_request(data, client)
     assert_failing_affiliation_request(data, client)
 
     # If we change the org name we can affiliate to that one as well
-    other_data = {
-        "org": "Second nonexistent org",
-    }
+    other_data = {"org": "Second nonexistent org"}
     response = client.post(URL, other_data)
     assert response.status_code == 200
     assert UserOrgAffiliationRequest.objects.count() == 2
@@ -127,10 +121,7 @@ def test_adv_search_init():
     response = client.get("/advanced_search")
     assert response.status_code == 200
 
-    user = User.objects.create(
-        username="test",
-        email="test@localhost",
-    )
+    user = User.objects.create(username="test", email="test@localhost")
     user.set_password("test1234")
     user.save()
 
@@ -159,10 +150,7 @@ def test_signup_page():
 @pytest.mark.django_db
 def test_user_api_key_generation():
 
-    user = User.objects.create(
-        username="test",
-        email="test@localhost",
-    )
+    user = User.objects.create(username="test", email="test@localhost")
     user.set_password("test1234")
     user.save()
 
@@ -177,3 +165,33 @@ def test_user_api_key_generation():
     response = client.post("/user_keys/add", {"name": "test key"})
 
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_close_account():
+    user = User.objects.create(username="test", email="test@localhost", first_name="Test", last_name="User")
+    user.set_password("test1234")
+    user.save()
+
+    group = Group(name="test group")
+    group.save()
+
+    # add user to group
+    group.user_set.add(user)
+
+
+    client = Client()
+    client.login(username="test", password="test1234")
+
+    response = client.post("/user_keys/add", {"name": "test key"})
+    response = client.post("/profile/close", {"password": "test1234"})
+
+    user = User.objects.get(username="test")
+    assert user.is_active is False
+    assert client.login(username="test", password="test1234") is False
+    assert UserAPIKey.objects.filter(user=user).count() == 0
+    assert EmailAddress.objects.filter(user=user).count() == 0
+    assert user.groups.count() == 0
+    assert user.email == ""
+    assert user.first_name == ""
+    assert user.last_name == ""

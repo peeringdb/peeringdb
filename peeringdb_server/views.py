@@ -91,6 +91,7 @@ from peeringdb_server.models import (
     Partnership,
     Sponsorship,
     User,
+    UserAPIKey,
     UserOrgAffiliationRequest,
     UserPasswordReset,
 )
@@ -554,12 +555,7 @@ def view_profile_v1(request):
 
     # only add email fields if email scope is present
     if scope_email:
-        data.update(
-            dict(
-                email=request.user.email,
-                verified_email=user.email_confirmed,
-            )
-        )
+        data.update(dict(email=request.user.email, verified_email=user.email_confirmed))
 
     # only add ddnetworks if networks scope is present
     if scope_networks:
@@ -567,14 +563,7 @@ def view_profile_v1(request):
         perms = Permissions(user)
         for net in user.networks:
             crud = perms.get(net.grainy_namespace)
-            networks.append(
-                dict(
-                    id=net.id,
-                    name=net.name,
-                    asn=net.asn,
-                    perms=crud,
-                )
-            )
+            networks.append(dict(id=net.id, name=net.name, asn=net.asn, perms=crud))
 
         data["networks"] = networks
 
@@ -592,10 +581,7 @@ def view_verify(request):
         template = loader.get_template("site/verify.html")
         env = BASE_ENV.copy()
         env.update(
-            {
-                "affiliations": request.user.organizations,
-                "global_stats": global_stats(),
-            }
+            {"affiliations": request.user.organizations, "global_stats": global_stats()}
         )
         return HttpResponse(template.render(env, request))
     elif request.method == "POST":
@@ -688,11 +674,7 @@ def view_username_retrieve(request):
     Username retrieval view.
     """
     env = BASE_ENV.copy()
-    env.update(
-        {
-            "global_stats": global_stats(),
-        }
-    )
+    env.update({"global_stats": global_stats()})
     return render(request, "site/username-retrieve.html", env)
 
 
@@ -778,11 +760,7 @@ def view_password_reset(request):
 
     if request.method in ["GET", "HEAD"]:
         env = BASE_ENV.copy()
-        env.update(
-            {
-                "global_stats": global_stats(),
-            }
-        )
+        env.update({"global_stats": global_stats()})
 
         env["token"] = token = request.GET.get("token")
         env["target"] = target = request.GET.get("target")
@@ -870,10 +848,7 @@ def view_registration(request):
         template = loader.get_template("site/register.html")
         env = BASE_ENV.copy()
         env.update(
-            {
-                "global_stats": global_stats(),
-                "register_form": UserCreationForm(),
-            }
+            {"global_stats": global_stats(), "register_form": UserCreationForm()}
         )
         update_env_beta_sync_dt(env)
         return HttpResponse(template.render(env, request))
@@ -918,6 +893,46 @@ def view_registration(request):
         form.delete_captcha()
 
         return JsonResponse({"status": "ok"})
+
+
+@csrf_protect
+@ensure_csrf_cookie
+@login_required
+def view_close_account(request):
+    """
+    Set user's account inactive, delete email addresses and API keys and logout the session.
+    """
+
+    password = request.POST.get("password")
+
+    # If user is authenticated, check password
+    if request.user.is_authenticated:
+        if request.user.check_password(password):
+            # Set user as inactive
+            request.user.is_active = False
+            
+            # Blank out email address , first and last name
+            request.user.email = ""
+            request.user.first_name = ""
+            request.user.last_name = ""
+            request.user.save()
+
+            # Delete all email addresses
+            EmailAddress.objects.filter(user=request.user).delete()
+
+            # Delete all user's API keys
+            UserAPIKey.objects.filter(user=request.user).delete()
+
+            # Remove user from all groups
+            request.user.groups.clear()
+
+            # Logout the user
+            logout(request)
+
+            return JsonResponse({"status": "ok"})
+        else:
+            # Password didn't match
+            return JsonResponse({"password": _("Incorrect password")}, status=400)
 
 
 @ensure_csrf_cookie
@@ -1059,9 +1074,7 @@ def view_organization(request, id):
             request.user, model.Grainy.namespace_instance("*", org=org), PERM_CREATE
         )
         perms["can_delete_%s" % tag] = check_permissions(
-            request.user,
-            model.Grainy.namespace_instance("*", org=org),
-            PERM_DELETE,
+            request.user, model.Grainy.namespace_instance("*", org=org), PERM_DELETE
         )
 
     # if the organization being viewed is the one used
@@ -1138,16 +1151,8 @@ def view_organization(request, id):
                 "label": _("Address 2"),
                 "value": data.get("address2", dismiss),
             },
-            {
-                "name": "floor",
-                "label": _("Floor"),
-                "value": data.get("floor", dismiss),
-            },
-            {
-                "name": "suite",
-                "label": _("Suite"),
-                "value": data.get("suite", dismiss),
-            },
+            {"name": "floor", "label": _("Floor"), "value": data.get("floor", dismiss)},
+            {"name": "suite", "label": _("Suite"), "value": data.get("suite", dismiss)},
             {
                 "name": "location",
                 "label": _("Location"),
@@ -1329,16 +1334,8 @@ def view_facility(request, id):
                 "label": _("Address 2"),
                 "value": data.get("address2", dismiss),
             },
-            {
-                "name": "floor",
-                "label": _("Floor"),
-                "value": data.get("floor", dismiss),
-            },
-            {
-                "name": "suite",
-                "label": _("Suite"),
-                "value": data.get("suite", dismiss),
-            },
+            {"name": "floor", "label": _("Floor"), "value": data.get("floor", dismiss)},
+            {"name": "suite", "label": _("Suite"), "value": data.get("suite", dismiss)},
             {
                 "name": "location",
                 "label": _("Location"),
@@ -1668,9 +1665,7 @@ def view_exchange(request, id):
                 "target": "api:ixlan:update",
                 "id": ixlan.id,
                 "label": _("LAN"),
-                "payload": [
-                    {"name": "ix_id", "value": exchange.id},
-                ],
+                "payload": [{"name": "ix_id", "value": exchange.id}],
             },
             {
                 "type": "number",
@@ -1711,22 +1706,14 @@ def view_exchange(request, id):
             {
                 "type": "action",
                 "label": _("IX-F Import Preview"),
-                "actions": [
-                    {
-                        "label": _("Preview"),
-                        "action": "ixf_preview",
-                    },
-                ],
+                "actions": [{"label": _("Preview"), "action": "ixf_preview"}],
                 "admin": True,
             },
             {
                 "type": "action",
                 "label": _("IX-F Import"),
                 "actions": [
-                    {
-                        "label": _("Request import"),
-                        "action": "ixf_request_import",
-                    },
+                    {"label": _("Request import"), "action": "ixf_request_import"},
                     {
                         "label": exchange.ixf_import_request_recent_status[1],
                         "css": f"ixf-import-request-status {exchange.ixf_import_css}",
@@ -2026,10 +2013,7 @@ def view_network(request, id):
                 "admin": True,
                 "label": _("IXP Update Tools"),
                 "actions": [
-                    {
-                        "label": _("Preview"),
-                        "action": "ixf_preview",
-                    },
+                    {"label": _("Preview"), "action": "ixf_preview"},
                     {"label": _("Postmortem"), "action": "ixf_postmortem"},
                 ],
             },
