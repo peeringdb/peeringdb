@@ -46,12 +46,8 @@
     {% for x in data.networks %}
 
     <div class="row item {% if x.operational %}operational{% endif %}">
-<<<<<<< HEAD
-      <div class="col-xs-6 col-sm-4 col-md-4">
-=======
       <div class="col-xs-4 col-sm-4 col-md-4">
 
->>>>>>> support_202202
         <div class="peer" data-sort-value="{{ x.network.name|lower }}" data-filter-value="{{ x.network.name }}">
           {% if x.is_rs_peer %}
             <span alt="RS Peer" title="RS Peer" class="rs-peer-badge">
