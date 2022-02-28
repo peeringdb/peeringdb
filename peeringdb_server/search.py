@@ -66,18 +66,15 @@ def valid_partial_ipv4_address(ip):
 
 
 def make_asn_query(term):
-    return Network.objects.filter(asn__exact=term)
-    # return SearchQuerySet().filter(Q(asn__exact=term)).models(Network)
+    return Network.objects.filter(asn__exact=term, status="ok")
 
 
 def make_ipv4_query(term):
-    return NetworkIXLan.objects.filter(ipaddr4__startswith=term)
-    # return SearchQuerySet().filter(Q(ipaddr4__startswith=term)).models(NetworkIXLan)
+    return NetworkIXLan.objects.filter(ipaddr4__startswith=term, status="ok")
 
 
 def make_ipv6_query(term):
-    return NetworkIXLan.objects.filter(ipaddr6__startswith=term)
-    # return SearchQuerySet().filter(Q(ipaddr6__startswith=term)).models(NetworkIXLan)
+    return NetworkIXLan.objects.filter(ipaddr6__startswith=term, status="ok")
 
 
 def prepare_term(term):
