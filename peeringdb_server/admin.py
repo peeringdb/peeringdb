@@ -87,6 +87,8 @@ from peeringdb_server.models import (
 from peeringdb_server.util import coerce_ipaddr, round_decimal
 from peeringdb_server.views import HttpResponseForbidden, JsonResponse
 
+from django.contrib.auth.models import Group
+
 from . import forms
 
 delete_selected.short_description = "HARD DELETE - Proceed with caution"
@@ -1555,6 +1557,14 @@ class UserCreationForm(forms.UserCreationForm):
         fields = ("username", "password", "email")
 
 
+class UserGroupForm(forms.UserCreationForm):
+    def __init__(self, *args, **kwargs):
+
+        super(forms.UserCreationForm, self).__init__(*args, **kwargs)
+
+        self.fields["groups"].queryset = Group.objects.all().order_by("id")
+
+
 class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
     inlines = (UserOrgAffiliationRequestInline,)
     readonly_fields = (
@@ -1683,12 +1693,14 @@ class UserPermissionAdmin(UserAdmin):
 
     readonly_fields = ("user",)
 
-    def get_form(self, request, obj=None, **kwargs):
-        # we want to remove the password field from the form
-        # since we don't send it and don't want to run clean for it
-        form = super().get_form(request, obj, **kwargs)
-        del form.base_fields["password"]
-        return form
+    form = UserGroupForm
+
+    # def get_form(self, request, obj=None, **kwargs):
+    #     # we want to remove the password field from the form
+    #     # since we don't send it and don't want to run clean for it
+    #     form = super().get_form(request, obj, **kwargs)
+    #     del form.base_fields["password"]
+    #     return form
 
     def user(self, obj):
         url = django.urls.reverse(
