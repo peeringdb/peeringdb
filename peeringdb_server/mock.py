@@ -322,3 +322,6 @@ class Mock:
 
     def flagged(self, data, reftag=None):
         return False
+
+    def status_dashboard(self, data, reftag=None):
+        return None
