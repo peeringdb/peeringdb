@@ -217,7 +217,9 @@ class SearchTests(TestCase):
         """
 
         org_1 = models.Organization.objects.create(name="Test org 1")
-        net_1 = models.Network.objects.create(org_id=org_1.id, asn=34532, name="Net 1", status="ok")
+        net_1 = models.Network.objects.create(
+            org_id=org_1.id, asn=34532, name="Net 1", status="ok"
+        )
 
         rv = search.search("34532")
 
@@ -236,10 +238,18 @@ class SearchTests(TestCase):
         """
         org_1 = models.Organization.objects.create(name="Test org 1", status="ok")
         org_2 = models.Organization.objects.create(name="Test org 2", status="ok")
-        net_1 = models.Network.objects.create(org_id=org_1.id, asn=34532, name="Net 1", status="ok")
-        net_2 = models.Network.objects.create(org_id=org_2.id, asn=2432, name="Net 2", status="ok")
-        ix_1 = models.InternetExchange.objects.create(org_id=org_1.id, name="IX 1", status="ok")
-        ix_2 = models.InternetExchange.objects.create(org_id=org_2.id, name="IX 2", status="ok")
+        net_1 = models.Network.objects.create(
+            org_id=org_1.id, asn=34532, name="Net 1", status="ok"
+        )
+        net_2 = models.Network.objects.create(
+            org_id=org_2.id, asn=2432, name="Net 2", status="ok"
+        )
+        ix_1 = models.InternetExchange.objects.create(
+            org_id=org_1.id, name="IX 1", status="ok"
+        )
+        ix_2 = models.InternetExchange.objects.create(
+            org_id=org_2.id, name="IX 2", status="ok"
+        )
         next_id = models.IXLan.objects.all().order_by("-id").first().id + 1
         ixlan_1 = models.IXLan(id=next_id, ix=ix_1)
         ixlan_2 = models.IXLan(id=next_id + 1, ix=ix_2)
@@ -294,10 +304,18 @@ class SearchTests(TestCase):
         """
         org_1 = models.Organization.objects.create(name="Test org 1", status="ok")
         org_2 = models.Organization.objects.create(name="Test org 2", status="ok")
-        net_1 = models.Network.objects.create(org_id=org_1.id, asn=34532, name="Net 1", status="ok")
-        net_2 = models.Network.objects.create(org_id=org_2.id, asn=2432, name="Net 2", status="ok")
-        ix_1 = models.InternetExchange.objects.create(org_id=org_1.id, name="IX 1", status="ok")
-        ix_2 = models.InternetExchange.objects.create(org_id=org_2.id, name="IX 2", status="ok")
+        net_1 = models.Network.objects.create(
+            org_id=org_1.id, asn=34532, name="Net 1", status="ok"
+        )
+        net_2 = models.Network.objects.create(
+            org_id=org_2.id, asn=2432, name="Net 2", status="ok"
+        )
+        ix_1 = models.InternetExchange.objects.create(
+            org_id=org_1.id, name="IX 1", status="ok"
+        )
+        ix_2 = models.InternetExchange.objects.create(
+            org_id=org_2.id, name="IX 2", status="ok"
+        )
         next_id = models.IXLan.objects.all().order_by("-id").first().id + 1
         ixlan_1 = models.IXLan(id=next_id, ix=ix_1)
         ixlan_2 = models.IXLan(id=next_id + 1, ix=ix_2)
@@ -333,7 +351,6 @@ class SearchTests(TestCase):
         rv = search.search("2001:4888:456")
 
         assert not rv["net"]
-
 
         # clean up
         netixlan_1.delete(hard=True)

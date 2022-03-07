@@ -910,7 +910,7 @@ def view_close_account(request):
         if request.user.check_password(password):
             # Set user as inactive
             request.user.is_active = False
-            
+
             # Blank out email address , first and last name
             request.user.email = ""
             request.user.first_name = ""

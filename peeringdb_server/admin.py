@@ -27,6 +27,7 @@ from django.contrib import admin, messages
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -86,8 +87,6 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.util import coerce_ipaddr, round_decimal
 from peeringdb_server.views import HttpResponseForbidden, JsonResponse
-
-from django.contrib.auth.models import Group
 
 from . import forms
 

@@ -1,8 +1,10 @@
 import re
 
 import pytest
+from allauth.account.models import EmailAddress
 from django.http import response
 from django.test import Client
+from django_grainy.models import Group
 from rest_framework.test import APIClient
 
 from peeringdb_server.models import (
@@ -13,8 +15,6 @@ from peeringdb_server.models import (
     UserOrgAffiliationRequest,
 )
 from tests.util import reset_group_ids
-from allauth.account.models import EmailAddress
-from django_grainy.models import Group
 
 URL = "/affiliate-to-org"
 
@@ -169,7 +169,9 @@ def test_user_api_key_generation():
 
 @pytest.mark.django_db
 def test_close_account():
-    user = User.objects.create(username="test", email="test@localhost", first_name="Test", last_name="User")
+    user = User.objects.create(
+        username="test", email="test@localhost", first_name="Test", last_name="User"
+    )
     user.set_password("test1234")
     user.save()
 
@@ -178,7 +180,6 @@ def test_close_account():
 
     # add user to group
     group.user_set.add(user)
-
 
     client = Client()
     client.login(username="test", password="test1234")

@@ -2,9 +2,10 @@
 Custom django middleware.
 """
 
-from peeringdb_server.context import current_request
-from django.middleware.common import CommonMiddleware
 from django.conf import settings
+from django.middleware.common import CommonMiddleware
+
+from peeringdb_server.context import current_request
 
 
 class CurrentRequestContext:

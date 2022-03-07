@@ -1,10 +1,12 @@
-from peeringdb_server.middleware import PDBCommonMiddleware
-from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.http import HttpResponse
+from django.test import RequestFactory, SimpleTestCase, override_settings
+
+from peeringdb_server.middleware import PDBCommonMiddleware
 
 
 def get_response_empty(request):
     return HttpResponse()
+
 
 @override_settings(ROOT_URLCONF="middleware.urls")
 class PDBCommonMiddlewareTest(SimpleTestCase):

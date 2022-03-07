@@ -204,6 +204,7 @@ def autocomplete_preload_net(value):
 
     return ",".join([f"{net.id};{net.name}" for net in qset])
 
+
 @register.filter
 def autocomplete_preload_org_single(value):
 
