@@ -1,4 +1,4 @@
-Generated from views.py on 2022-02-07 09:42:46.681191
+Generated from views.py on 2022-03-07 17:01:26.860132
 
 # peeringdb_server.views
 
@@ -90,6 +90,12 @@ an ASN they provide.
 `def view_aup(request)`
 
 Render page containing acceptable use policy.
+
+---
+## view_close_account
+`def view_close_account(request, *args, **kwargs)`
+
+Set user's account inactive, delete email addresses and API keys and logout the session.
 
 ---
 ## view_component
