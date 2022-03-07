@@ -28,6 +28,7 @@ from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
+from django.contrib.auth.forms import UserChangeForm
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -1556,12 +1557,16 @@ class UserCreationForm(forms.UserCreationForm):
         fields = ("username", "password", "email")
 
 
-class UserGroupForm(forms.UserCreationForm):
+class UserGroupForm(UserChangeForm):
     def __init__(self, *args, **kwargs):
 
-        super(forms.UserCreationForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-        self.fields["groups"].queryset = Group.objects.all().order_by("id")
+        # "groups" is oddly missing from the test-environment
+        # probably missing some installed dep
+
+        if "groups" in self.fields:
+            self.fields["groups"].queryset = Group.objects.all().order_by("id")
 
 
 class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
