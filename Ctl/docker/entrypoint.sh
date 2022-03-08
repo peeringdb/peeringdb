@@ -52,7 +52,7 @@ case "$1" in
     echo generating schema visualization
     python manage.py graph_models -E -X .*Base --pydot -o docs/img/schema.png peeringdb_server
     echo generating api docs
-    python manage.py generate_schema --file peeringdb_server/static/api-schema.yaml
+    python manage.py generateschema --file peeringdb_server/static/api-schema.yaml
     ;;
   "whois" )
     line=$(head -1 | tr -cd '[:alnum:]._-')
