@@ -210,16 +210,46 @@ class SearchTests(TestCase):
         net_3.delete(hard=True)
         call_command("rebuild_index", "--noinput")
 
+    def test_search_asn_direct(self):
+        """
+        Test that the new fast matching methods of asn and ip address
+        comparisons do not return deleted objects
+        """
+
+        org_1 = models.Organization.objects.create(name="Test org 1")
+        net_1 = models.Network.objects.create(
+            org_id=org_1.id, asn=34532, name="Net 1", status="ok"
+        )
+
+        rv = search.search("34532")
+
+        assert rv["net"][0]["id"] == net_1.id
+
+        # soft-delete network, should disappear from results
+
+        net_1.delete()
+        rv = search.search("34532")
+
+        assert not rv["net"]
+
     def test_search_ipv4(self):
         """
         This will test a search for a partial ipv4 address
         """
-        org_1 = models.Organization.objects.create(name="Test org 1")
-        org_2 = models.Organization.objects.create(name="Test org 2")
-        net_1 = models.Network.objects.create(org_id=org_1.id, asn=34532, name="Net 1")
-        net_2 = models.Network.objects.create(org_id=org_2.id, asn=2432, name="Net 2")
-        ix_1 = models.InternetExchange.objects.create(org_id=org_1.id, name="IX 1")
-        ix_2 = models.InternetExchange.objects.create(org_id=org_2.id, name="IX 2")
+        org_1 = models.Organization.objects.create(name="Test org 1", status="ok")
+        org_2 = models.Organization.objects.create(name="Test org 2", status="ok")
+        net_1 = models.Network.objects.create(
+            org_id=org_1.id, asn=34532, name="Net 1", status="ok"
+        )
+        net_2 = models.Network.objects.create(
+            org_id=org_2.id, asn=2432, name="Net 2", status="ok"
+        )
+        ix_1 = models.InternetExchange.objects.create(
+            org_id=org_1.id, name="IX 1", status="ok"
+        )
+        ix_2 = models.InternetExchange.objects.create(
+            org_id=org_2.id, name="IX 2", status="ok"
+        )
         next_id = models.IXLan.objects.all().order_by("-id").first().id + 1
         ixlan_1 = models.IXLan(id=next_id, ix=ix_1)
         ixlan_2 = models.IXLan(id=next_id + 1, ix=ix_2)
@@ -249,6 +279,11 @@ class SearchTests(TestCase):
 
         assert rv["net"][0]["id"] == net_1.id
 
+        # soft-delete network, should disappear from results
+        net_1.delete()
+        rv = search.search("8.8.4")
+        assert not rv["net"]
+
         # clean up
         netixlan_1.delete(hard=True)
         netixlan_2.delete(hard=True)
@@ -267,12 +302,20 @@ class SearchTests(TestCase):
         """
         This will test a search for a partial ipv6 address.
         """
-        org_1 = models.Organization.objects.create(name="Test org 1")
-        org_2 = models.Organization.objects.create(name="Test org 2")
-        net_1 = models.Network.objects.create(org_id=org_1.id, asn=34532, name="Net 1")
-        net_2 = models.Network.objects.create(org_id=org_2.id, asn=2432, name="Net 2")
-        ix_1 = models.InternetExchange.objects.create(org_id=org_1.id, name="IX 1")
-        ix_2 = models.InternetExchange.objects.create(org_id=org_2.id, name="IX 2")
+        org_1 = models.Organization.objects.create(name="Test org 1", status="ok")
+        org_2 = models.Organization.objects.create(name="Test org 2", status="ok")
+        net_1 = models.Network.objects.create(
+            org_id=org_1.id, asn=34532, name="Net 1", status="ok"
+        )
+        net_2 = models.Network.objects.create(
+            org_id=org_2.id, asn=2432, name="Net 2", status="ok"
+        )
+        ix_1 = models.InternetExchange.objects.create(
+            org_id=org_1.id, name="IX 1", status="ok"
+        )
+        ix_2 = models.InternetExchange.objects.create(
+            org_id=org_2.id, name="IX 2", status="ok"
+        )
         next_id = models.IXLan.objects.all().order_by("-id").first().id + 1
         ixlan_1 = models.IXLan(id=next_id, ix=ix_1)
         ixlan_2 = models.IXLan(id=next_id + 1, ix=ix_2)
@@ -301,6 +344,13 @@ class SearchTests(TestCase):
         rv = search.search("2001:4888:456")
 
         assert rv["net"][0]["id"] == net_1.id
+
+        # soft-delete network, should disappear from results
+
+        net_1.delete()
+        rv = search.search("2001:4888:456")
+
+        assert not rv["net"]
 
         # clean up
         netixlan_1.delete(hard=True)

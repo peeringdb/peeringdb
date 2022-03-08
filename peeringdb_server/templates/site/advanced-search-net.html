@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n util %}
 <div class="editable always auto-toggled filter-form"
      data-edit-target="advanced_search:net"
      data-edit-enter-action="submit"
@@ -54,6 +54,29 @@
     </div>
     <div class="col-xs-12 col-sm-6 col-md-6">
       <!-- RIGHT COLUMN -->
+
+      <div class="row">
+        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Organization" %}</div>
+        <div class="col-xs-8 col-sm-7 col-md-8">
+          <div data-edit-type="autocomplete"
+               data-edit-autocomplete="org"
+
+               {% if request.GET.org__name__contains %}
+               data-edit-name="org__name__contains"
+               data-edit-value="{{ request.GET.org__name__contains }}"
+               data-edit-autocomplete-text="{{ request.GET.org__name__contains }}"
+               {% else %}
+               data-edit-name="org"
+               data-edit-value="{{ request.GET.org }}"
+               data-edit-autocomplete-text="{{ request.GET.org|autocomplete_preload_org_single }}"
+               {% endif %}
+
+               data-edit-autocomplete-allow-nonexistent="yes"
+               data-edit-reset-value="">
+          </div>
+        </div>
+      </div>
+      
       <div class="row">
         <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Primary ASN" %}</div>
         <div class="col-xs-8 col-sm-7 col-md-8">
@@ -155,23 +178,23 @@
 
   <div class="editable-templates">
     <div id="advanced-search-net-item" class="row">
-      <div class="col-xs-4 col-sm-4 col-md-4">
+      <div class="col-xs-6 col-sm-4 col-md-4">
         <a href="/net/$id" data-edit-name="name" class="name"></a>
         <div class="aka" data-edit-name="aka"></div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-xs-6 col-sm-2 col-md-2">
         <div class="asn" data-edit-name="asn"></div>
         <div class="policy_general" data-edit-name="policy_general"></div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-xs-1 col-sm-2 col-md-2 hidden-xs">
         <div class="info_type" data-edit-name="info_type"></div>
         <div class="info_scope" data-edit-name="info_scope"></div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-xs-1 col-sm-2 col-md-2 hidden-xs">
         <div class="info_traffic" data-edit-name="info_traffic" data-sort-target="info_traffic_raw"></div>
         <div class="info_ratio" data-edit-name="info_ratio"></div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-xs-1 col-sm-2 col-md-2 hidden-xs">
         <div class="ix_count" data-edit-name="ix_count"></div>
         <div class="fac_count" data-edit-name="fac_count"></div>
       </div>
@@ -180,23 +203,23 @@
 
   <div class="headers marg-top-15">
     <div class="row">
-      <div class="col-xs-4 col-sm-4 col-md-4">
+      <div class="col-xs-6 col-sm-4 col-md-4">
         <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
         <div data-sort-target=".aka">{% trans "Also known as" %}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-xs-6 col-sm-2 col-md-2">
         <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
         <div data-sort-target=".policy_general">{% trans "General Policy" %}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-xs-1 col-sm-2 col-md-2 hidden-xs">
         <div data-sort-target=".info_type">{% trans "Network Type" %}</div>
         <div data-sort-target=".info_scope">{% trans "Network Scope" %}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-xs-1 col-sm-2 col-md-2 hidden-xs">
         <div data-sort-target=".info_traffic" class="numeric">{% trans "Traffic Levels" %}</div>
         <div data-sort-target=".info_ratio">{% trans "Traffic Ratio" %}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-xs-1 col-sm-2 col-md-2 hidden-xs">
         <div data-sort-target=".ix_count" class="numeric">{% trans "Exchanges" %}</div>
         <div data-sort-target=".fac_count" class="numeric">{% trans "Facilities" %}</div>
       </div>

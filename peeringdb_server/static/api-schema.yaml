@@ -645,6 +645,15 @@ paths:
         required: false
         schema:
           type: string
+      - name: status_dashboard
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: suite
         in: query
         description: 'Filter results by matching a value against this field.
@@ -899,6 +908,17 @@ paths:
                 region_continent:
                   type: string
                   readOnly: true
+                status_dashboard:
+                  type: string
+                  format: uri
+                  nullable: true
+                  default: ''
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
                 created:
                   type: string
                   format: date-time
@@ -1391,6 +1411,17 @@ paths:
                 region_continent:
                   type: string
                   readOnly: true
+                status_dashboard:
+                  type: string
+                  format: uri
+                  nullable: true
+                  default: ''
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
                 created:
                   type: string
                   format: date-time
@@ -1838,6 +1869,17 @@ paths:
                 region_continent:
                   type: string
                   readOnly: true
+                status_dashboard:
+                  type: string
+                  format: uri
+                  nullable: true
+                  default: ''
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
                 created:
                   type: string
                   format: date-time
@@ -2984,6 +3026,15 @@ paths:
         required: false
         schema:
           type: string
+      - name: status_dashboard
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: tech_email
         in: query
         description: 'Filter results by matching a value against this field.
@@ -3586,6 +3637,17 @@ paths:
                       region_continent:
                         type: string
                         readOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -4290,6 +4352,19 @@ paths:
                             suggest:
                               type: boolean
                               writeOnly: true
+                            status_dashboard:
+                              type: string
+                              format: uri
+                              nullable: true
+                              default: ''
+                              pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\\
+                                s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                                -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                                -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
+                                -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                                d{2,5})?(?:[/?#][^\\s]*)?\\z"
                             created:
                               type: string
                               format: date-time
@@ -4423,6 +4498,17 @@ paths:
                   - Non-recurring Fees Only
                   - Recurring Fees
                   type: string
+                status_dashboard:
+                  type: string
+                  format: uri
+                  nullable: true
+                  default: ''
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
                 created:
                   type: string
                   format: date-time
@@ -4989,6 +5075,17 @@ paths:
                       region_continent:
                         type: string
                         readOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -5693,6 +5790,19 @@ paths:
                             suggest:
                               type: boolean
                               writeOnly: true
+                            status_dashboard:
+                              type: string
+                              format: uri
+                              nullable: true
+                              default: ''
+                              pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\\
+                                s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                                -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                                -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
+                                -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                                d{2,5})?(?:[/?#][^\\s]*)?\\z"
                             created:
                               type: string
                               format: date-time
@@ -5823,6 +5933,17 @@ paths:
                   - Non-recurring Fees Only
                   - Recurring Fees
                   type: string
+                status_dashboard:
+                  type: string
+                  format: uri
+                  nullable: true
+                  default: ''
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
                 created:
                   type: string
                   format: date-time
@@ -6339,6 +6460,17 @@ paths:
                       region_continent:
                         type: string
                         readOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -7043,6 +7175,19 @@ paths:
                             suggest:
                               type: boolean
                               writeOnly: true
+                            status_dashboard:
+                              type: string
+                              format: uri
+                              nullable: true
+                              default: ''
+                              pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\\
+                                s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                                -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                                -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
+                                -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                                d{2,5})?(?:[/?#][^\\s]*)?\\z"
                             created:
                               type: string
                               format: date-time
@@ -7176,6 +7321,17 @@ paths:
                   - Non-recurring Fees Only
                   - Recurring Fees
                   type: string
+                status_dashboard:
+                  type: string
+                  format: uri
+                  nullable: true
+                  default: ''
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
                 created:
                   type: string
                   format: date-time
@@ -7633,6 +7789,15 @@ paths:
         required: false
         schema:
           type: string
+      - name: fac__status_dashboard
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: fac__suite
         in: query
         description: 'Filter results by matching a value against this field.
@@ -7995,6 +8160,15 @@ paths:
         schema:
           type: string
       - name: ix__status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: ix__status_dashboard
         in: query
         description: 'Filter results by matching a value against this field.
 
@@ -8908,6 +9082,15 @@ paths:
         required: false
         schema:
           type: string
+      - name: ix__status_dashboard
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: ix__tech_email
         in: query
         description: 'Filter results by matching a value against this field.
@@ -9623,6 +9806,17 @@ paths:
                       suggest:
                         type: boolean
                         writeOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -11175,6 +11369,15 @@ paths:
         required: false
         schema:
           type: string
+      - name: status_dashboard
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -11649,6 +11852,17 @@ paths:
                 suggest:
                   type: boolean
                   writeOnly: true
+                status_dashboard:
+                  type: string
+                  format: uri
+                  nullable: true
+                  default: ''
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
                 created:
                   type: string
                   format: date-time
@@ -12123,6 +12337,17 @@ paths:
                   type: boolean
                   description: Specifies whether an IXP is allowed to add a netixlan
                     entry for this network via their ixp_member data
+                status_dashboard:
+                  type: string
+                  format: uri
+                  nullable: true
+                  default: ''
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
                 created:
                   type: string
                   format: date-time
@@ -12551,6 +12776,17 @@ paths:
                 suggest:
                   type: boolean
                   writeOnly: true
+                status_dashboard:
+                  type: string
+                  format: uri
+                  nullable: true
+                  default: ''
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
                 created:
                   type: string
                   format: date-time
@@ -13044,6 +13280,15 @@ paths:
         schema:
           type: string
       - name: net__status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__status_dashboard
         in: query
         description: 'Filter results by matching a value against this field.
 
@@ -14074,6 +14319,15 @@ paths:
         required: false
         schema:
           type: string
+      - name: fac__status_dashboard
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: fac__suite
         in: query
         description: 'Filter results by matching a value against this field.
@@ -14504,6 +14758,15 @@ paths:
         schema:
           type: string
       - name: net__status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__status_dashboard
         in: query
         description: 'Filter results by matching a value against this field.
 
@@ -15612,6 +15875,15 @@ paths:
         schema:
           type: string
       - name: net__status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__status_dashboard
         in: query
         description: 'Filter results by matching a value against this field.
 
@@ -17000,6 +17272,17 @@ paths:
                       suggest:
                         type: boolean
                         writeOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -17115,6 +17398,17 @@ paths:
                       region_continent:
                         type: string
                         readOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -17855,6 +18149,19 @@ paths:
                             region_continent:
                               type: string
                               readOnly: true
+                            status_dashboard:
+                              type: string
+                              format: uri
+                              nullable: true
+                              default: ''
+                              pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\\
+                                s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                                -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                                -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
+                                -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                                d{2,5})?(?:[/?#][^\\s]*)?\\z"
                             created:
                               type: string
                               format: date-time
@@ -18565,6 +18872,20 @@ paths:
                                   suggest:
                                     type: boolean
                                     writeOnly: true
+                                  status_dashboard:
+                                    type: string
+                                    format: uri
+                                    nullable: true
+                                    default: ''
+                                    pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\\
+                                      s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                                      d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\\
+                                      d?\\d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1\
+                                      -\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+                                      -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                                      .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                                      .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\\
+                                      z"
                                   created:
                                     type: string
                                     format: date-time
@@ -18701,6 +19022,17 @@ paths:
                         - Non-recurring Fees Only
                         - Recurring Fees
                         type: string
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -19505,6 +19837,17 @@ paths:
                       suggest:
                         type: boolean
                         writeOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -19620,6 +19963,17 @@ paths:
                       region_continent:
                         type: string
                         readOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -20360,6 +20714,19 @@ paths:
                             region_continent:
                               type: string
                               readOnly: true
+                            status_dashboard:
+                              type: string
+                              format: uri
+                              nullable: true
+                              default: ''
+                              pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\\
+                                s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                                -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                                -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
+                                -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                                d{2,5})?(?:[/?#][^\\s]*)?\\z"
                             created:
                               type: string
                               format: date-time
@@ -21070,6 +21437,20 @@ paths:
                                   suggest:
                                     type: boolean
                                     writeOnly: true
+                                  status_dashboard:
+                                    type: string
+                                    format: uri
+                                    nullable: true
+                                    default: ''
+                                    pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\\
+                                      s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                                      d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\\
+                                      d?\\d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1\
+                                      -\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+                                      -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                                      .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                                      .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\\
+                                      z"
                                   created:
                                     type: string
                                     format: date-time
@@ -21206,6 +21587,17 @@ paths:
                         - Non-recurring Fees Only
                         - Recurring Fees
                         type: string
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -21961,6 +22353,17 @@ paths:
                       suggest:
                         type: boolean
                         writeOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -22076,6 +22479,17 @@ paths:
                       region_continent:
                         type: string
                         readOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -22816,6 +23230,19 @@ paths:
                             region_continent:
                               type: string
                               readOnly: true
+                            status_dashboard:
+                              type: string
+                              format: uri
+                              nullable: true
+                              default: ''
+                              pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\\
+                                s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                                -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                                -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
+                                -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                                d{2,5})?(?:[/?#][^\\s]*)?\\z"
                             created:
                               type: string
                               format: date-time
@@ -23526,6 +23953,20 @@ paths:
                                   suggest:
                                     type: boolean
                                     writeOnly: true
+                                  status_dashboard:
+                                    type: string
+                                    format: uri
+                                    nullable: true
+                                    default: ''
+                                    pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\\
+                                      s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                                      d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\\
+                                      d?\\d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1\
+                                      -\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+                                      -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                                      .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                                      .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\\
+                                      z"
                                   created:
                                     type: string
                                     format: date-time
@@ -23662,6 +24103,17 @@ paths:
                         - Non-recurring Fees Only
                         - Recurring Fees
                         type: string
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -24762,6 +25214,15 @@ paths:
         required: false
         schema:
           type: string
+      - name: status_dashboard
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -25532,6 +25993,15 @@ paths:
         required: false
         schema:
           type: string
+      - name: status_dashboard
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -26094,6 +26564,17 @@ paths:
                       region_continent:
                         type: string
                         readOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                       created:
                         type: string
                         format: date-time
@@ -26798,6 +27279,19 @@ paths:
                             suggest:
                               type: boolean
                               writeOnly: true
+                            status_dashboard:
+                              type: string
+                              format: uri
+                              nullable: true
+                              default: ''
+                              pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\\
+                                s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                                d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                                -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                                -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
+                                -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                                d{2,5})?(?:[/?#][^\\s]*)?\\z"
                             created:
                               type: string
                               format: date-time
@@ -26931,6 +27425,17 @@ paths:
                   - Non-recurring Fees Only
                   - Recurring Fees
                   type: string
+                status_dashboard:
+                  type: string
+                  format: uri
+                  nullable: true
+                  default: ''
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
                 created:
                   type: string
                   format: date-time
@@ -27071,6 +27576,17 @@ components:
         region_continent:
           type: string
           readOnly: true
+        status_dashboard:
+          type: string
+          format: uri
+          nullable: true
+          default: ''
+          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+            d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\d?)){3}|\\\
+            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+            -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+            -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
+            s]*)?\\z"
         created:
           type: string
           format: date-time
@@ -27811,6 +28327,17 @@ components:
               region_continent:
                 type: string
                 readOnly: true
+              status_dashboard:
+                type: string
+                format: uri
+                nullable: true
+                default: ''
+                pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                  d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                  d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                  0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                  .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                  d{2,5})?(?:[/?#][^\\s]*)?\\z"
               created:
                 type: string
                 format: date-time
@@ -28503,6 +29030,17 @@ components:
                     suggest:
                       type: boolean
                       writeOnly: true
+                    status_dashboard:
+                      type: string
+                      format: uri
+                      nullable: true
+                      default: ''
+                      pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                        d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                        d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                        -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                        -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                        .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                     created:
                       type: string
                       format: date-time
@@ -28636,6 +29174,17 @@ components:
           - Non-recurring Fees Only
           - Recurring Fees
           type: string
+        status_dashboard:
+          type: string
+          format: uri
+          nullable: true
+          default: ''
+          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+            d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\d?)){3}|\\\
+            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+            -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+            -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
+            s]*)?\\z"
         created:
           type: string
           format: date-time
@@ -29093,6 +29642,17 @@ components:
               suggest:
                 type: boolean
                 writeOnly: true
+              status_dashboard:
+                type: string
+                format: uri
+                nullable: true
+                default: ''
+                pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                  d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                  d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                  0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                  .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                  d{2,5})?(?:[/?#][^\\s]*)?\\z"
               created:
                 type: string
                 format: date-time
@@ -29572,6 +30132,17 @@ components:
         suggest:
           type: boolean
           writeOnly: true
+        status_dashboard:
+          type: string
+          format: uri
+          nullable: true
+          default: ''
+          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+            d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\d?)){3}|\\\
+            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+            -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+            -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
+            s]*)?\\z"
         created:
           type: string
           format: date-time
@@ -30142,6 +30713,17 @@ components:
               suggest:
                 type: boolean
                 writeOnly: true
+              status_dashboard:
+                type: string
+                format: uri
+                nullable: true
+                default: ''
+                pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                  d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                  d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                  0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                  .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                  d{2,5})?(?:[/?#][^\\s]*)?\\z"
               created:
                 type: string
                 format: date-time
@@ -30256,6 +30838,17 @@ components:
               region_continent:
                 type: string
                 readOnly: true
+              status_dashboard:
+                type: string
+                format: uri
+                nullable: true
+                default: ''
+                pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                  d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                  d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                  0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                  .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                  d{2,5})?(?:[/?#][^\\s]*)?\\z"
               created:
                 type: string
                 format: date-time
@@ -30993,6 +31586,17 @@ components:
                     region_continent:
                       type: string
                       readOnly: true
+                    status_dashboard:
+                      type: string
+                      format: uri
+                      nullable: true
+                      default: ''
+                      pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                        d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                        d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                        -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                        -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                        .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
                     created:
                       type: string
                       format: date-time
@@ -31692,6 +32296,18 @@ components:
                           suggest:
                             type: boolean
                             writeOnly: true
+                          status_dashboard:
+                            type: string
+                            format: uri
+                            nullable: true
+                            default: ''
+                            pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                              d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\\
+                              d?\\d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF\
+                              0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\\
+                              .(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+                              -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                              d{2,5})?(?:[/?#][^\\s]*)?\\z"
                           created:
                             type: string
                             format: date-time
@@ -31825,6 +32441,17 @@ components:
                 - Non-recurring Fees Only
                 - Recurring Fees
                 type: string
+              status_dashboard:
+                type: string
+                format: uri
+                nullable: true
+                default: ''
+                pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                  d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                  d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                  0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                  .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                  d{2,5})?(?:[/?#][^\\s]*)?\\z"
               created:
                 type: string
                 format: date-time

@@ -1517,6 +1517,10 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
     region_continent = serializers.CharField(read_only=True)
 
+    status_dashboard = serializers.URLField(
+        required=False, allow_null=True, allow_blank=True, default=""
+    )
+
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
@@ -1552,6 +1556,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
                 "diverse_serving_substations",
                 "property",
                 "region_continent",
+                "status_dashboard",
             ]
             + HandleRefSerializer.Meta.fields
             + AddressSerializer.Meta.fields
@@ -2281,6 +2286,10 @@ class NetworkSerializer(ModelSerializer):
         AsnRdapValidator(),
     ]
 
+    status_dashboard = serializers.URLField(
+        required=False, allow_null=True, allow_blank=True, default=""
+    )
+
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
     class Meta:
@@ -2324,6 +2333,7 @@ class NetworkSerializer(ModelSerializer):
             "poc_set",
             "allow_ixp_update",
             "suggest",
+            "status_dashboard",
         ] + HandleRefSerializer.Meta.fields
         default_fields = ["id", "name", "asn"]
         related_fields = [
@@ -2789,6 +2799,10 @@ class InternetExchangeSerializer(ModelSerializer):
         ),
     ]
 
+    status_dashboard = serializers.URLField(
+        required=False, allow_null=True, allow_blank=True, default=""
+    )
+
     class Meta:
         model = InternetExchange
         fields = [
@@ -2826,6 +2840,7 @@ class InternetExchangeSerializer(ModelSerializer):
             "ixf_import_request_status",
             "service_level",
             "terms",
+            "status_dashboard",
         ] + HandleRefSerializer.Meta.fields
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]

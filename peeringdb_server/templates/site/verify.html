@@ -37,6 +37,9 @@
       <!-- API Keys -->
       {% include "site/profile-api-keys.html" %}
 
+      <!-- CLOSE ACCOUNT -->
+      {% include "site/profile-close-account.html" %}
+
     </div>
   </div>
 
@@ -70,6 +73,11 @@ $('#form-language-preference').each(function(idx) {
         // Reload the current page, without using the cache
         document.location.reload(true);
     }, 500 );
+  })
+});
+$('#form-delete-account').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    window.document.location.href = "/account/login";
   })
 });
 

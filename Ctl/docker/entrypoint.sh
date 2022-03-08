@@ -35,6 +35,8 @@ case "$1" in
     export DATABASE_USER=root
     export DATABASE_PASSWORD=""
     export RELEASE_ENV=run_tests
+    unset BASE_URL
+    unset SESSION_COOKIE_DOMAIN
     pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 tests/
     ;;
   "gen_docs" )
@@ -49,6 +51,8 @@ case "$1" in
     python peeringdb_server/gendocs.py
     echo generating schema visualization
     python manage.py graph_models -E -X .*Base --pydot -o docs/img/schema.png peeringdb_server
+    echo generating api docs
+    python manage.py generateschema --file peeringdb_server/static/api-schema.yaml
     ;;
   "whois" )
     line=$(head -1 | tr -cd '[:alnum:]._-')

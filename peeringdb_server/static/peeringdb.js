@@ -1845,7 +1845,14 @@ twentyc.editable.module.register(
 twentyc.editable.target.register(
   "advanced_search",
   {
+
+    /*
+     * called when the `Search` button is clicked
+     * needs to prepare url parameters from form data
+     */
+
     execute : function() {
+
       var i, data = this.data_clean(true);
       data.reftag = this.args[1]
 
@@ -1853,6 +1860,26 @@ twentyc.editable.target.register(
         if(data[i] && data[i].join)
           data[i] = data[i].join(",")
       }
+
+
+      // handle org autocomplete fields that have `allow-nonexistent` enabled
+      // as they could either procude an integer value (id) or a string value
+      // (partial name)
+
+      if(data.org) {
+        var id = parseInt(data.org);
+        if(isNaN(id)) {
+          data.org__name__contains = data.org;
+          delete data.org;
+        }
+      } else if(data.org__name__contains) {
+        var id = parseInt(data.org__name__contains);
+        if(!isNaN(id)) {
+          data.org = data.org__name__contains;
+          delete data.org__name__contains;
+        }
+      }
+
 
       if(data.reftag == "ix") {
         // we want the unit formatted values in the url paramters
@@ -1880,6 +1907,11 @@ twentyc.editable.target.register(
         '?'+$.param(data)
       );
     },
+
+    /*
+     * Handles the search request to the API
+     */
+
     search : function() {
       var reftag = this.args[1];
       var data = this.data_clean(true);
@@ -2590,6 +2622,11 @@ twentyc.editable.input.register(
         input.val(this.source.data("edit-autocomplete-text"));
         input.data("edit-value", this.source.data("edit-value"));
         input.data("value", this.source.data("edit-value"));
+      }
+
+
+      if(this.source.data("edit-autocomplete-allow-nonexistent")) {
+        $(input).on("keyup", function() { input.data("value", $(this).val()); });
       }
 
 

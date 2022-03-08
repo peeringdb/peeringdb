@@ -1650,3 +1650,12 @@ a.stat-value {
 div.stats_row {
   margin-top: 0;
 }
+
+.asn {
+  white-space: nowrap;
+}
+
+.ip4, .ip6 {
+  white-space: nowrap;
+  clear: both;
+}
