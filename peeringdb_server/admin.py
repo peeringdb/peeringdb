@@ -27,8 +27,8 @@ from django.contrib import admin, messages
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import Group
 from django.contrib.auth.forms import UserChangeForm
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
