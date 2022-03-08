@@ -1056,7 +1056,7 @@ def view_organization(request, id):
     try:
         org = OrganizationSerializer.prefetch_related(
             Organization.objects, request, depth=2
-        ).get(id=id, status__in=["ok", "pending"])
+        ).get(id=id, status="ok")
     except ObjectDoesNotExist:
         return view_http_error_404(request)
 
@@ -1257,7 +1257,7 @@ def view_facility(request, id):
     """
 
     try:
-        facility = Facility.objects.get(id=id, status__in=["ok", "pending"])
+        facility = Facility.objects.get(id=id, status="ok")
     except ObjectDoesNotExist:
         return view_http_error_404(request)
 
@@ -1471,7 +1471,7 @@ def view_exchange(request, id):
     """
 
     try:
-        exchange = InternetExchange.objects.get(id=id, status__in=["ok", "pending"])
+        exchange = InternetExchange.objects.get(id=id, status="ok")
     except ObjectDoesNotExist:
         return view_http_error_404(request)
 
@@ -1769,7 +1769,7 @@ def view_network(request, id):
     try:
         network = NetworkSerializer.prefetch_related(
             Network.objects, request, depth=2, selective=["poc_set"]
-        ).get(id=id, status__in=["ok", "pending"])
+        ).get(id=id, status="ok")
     except ObjectDoesNotExist:
         return view_http_error_404(request)
 

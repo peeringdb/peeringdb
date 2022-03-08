@@ -2235,7 +2235,12 @@ twentyc.editable.module.register(
       // is rendered as a link
 
       var ixlnk = $('<a></a>');
-      ixlnk.attr("href", "/ix/"+data.id);
+      if (data.status == "ok") {
+        faclnk.attr("href", "/ix/"+data.id);
+      }
+      else {
+        faclnk.attr("style", "text-decoration: none;");
+      }
       ixlnk.text(data.name);
       row.find(".name").html(ixlnk);
 
@@ -2251,7 +2256,12 @@ twentyc.editable.module.register(
       // is rendered as a link
 
       var netlnk = $('<a></a>');
-      netlnk.attr("href", "/net/"+data.id);
+      if (data.status == "ok") {
+        faclnk.attr("href", "/net/"+data.id);
+      }
+      else {
+        faclnk.attr("style", "text-decoration: none;");
+      }
       netlnk.text(data.name);
       row.find(".name").html(netlnk);
 
@@ -2267,7 +2277,14 @@ twentyc.editable.module.register(
       // is rendered as a link
 
       var faclnk = $('<a></a>');
-      faclnk.attr("href", "/fac/"+data.id);
+      
+      if (data.status == "ok") {
+        faclnk.attr("href", "/fac/"+data.id);
+      }
+      else {
+        faclnk.attr("style", "text-decoration: none;");
+      }
+      
       faclnk.text(data.name);
       row.find(".name").html(faclnk);
 

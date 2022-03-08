@@ -9,6 +9,8 @@ from django_grainy.models import Group
 from rest_framework.test import APIClient
 
 from peeringdb_server.models import (
+    Facility,
+    InternetExchange,
     Network,
     Organization,
     User,
@@ -198,7 +200,6 @@ def test_close_account():
     assert user.first_name == ""
     assert user.last_name == ""
 
-
 @pytest.mark.django_db
 def test_bogus_basic_auth():
     auth_string = "Basic YmFkOmJhZA=="
@@ -206,3 +207,38 @@ def test_bogus_basic_auth():
     client = Client()
     response = client.get("/", **auth_headers)
     assert response.status_code == 401
+
+@pytest.mark.django_db
+def test_pending_view():
+    client = Client()
+
+    org = Organization.objects.create(name="test org")
+    org.save()
+
+    ix = InternetExchange.objects.create(name="test ix", org_id=org.id)
+    ix.save()
+
+    fac = Facility.objects.create(name="test fac", org_id=org.id)
+    fac.save()
+
+    # set object status to pending
+
+    org.status = "pending"
+    org.save()
+
+    ix.status = "pending"
+    ix.save()
+
+    fac.status = "pending"
+    fac.save()
+
+    # assert that pending objects returns 404
+
+    response = client.get(f"/org/{org.id}")
+    assert response.status_code == 404
+
+    response = client.get(f"/ix/{ix.id}")
+    assert response.status_code == 404
+
+    response = client.get(f"/fac/{fac.id}")
+    assert response.status_code == 404
