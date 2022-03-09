@@ -27,6 +27,8 @@ from django.contrib import admin, messages
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import UserChangeForm
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -1239,6 +1241,7 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "version",
         "id",
         "grainy_namespace",
+        "status_dashboard",
     ]
 
 
@@ -1554,6 +1557,18 @@ class UserCreationForm(forms.UserCreationForm):
         fields = ("username", "password", "email")
 
 
+class UserGroupForm(UserChangeForm):
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        # "groups" is oddly missing from the test-environment
+        # probably missing some installed dep
+
+        if "groups" in self.fields:
+            self.fields["groups"].queryset = Group.objects.all().order_by("id")
+
+
 class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
     inlines = (UserOrgAffiliationRequestInline,)
     readonly_fields = (
@@ -1682,12 +1697,14 @@ class UserPermissionAdmin(UserAdmin):
 
     readonly_fields = ("user",)
 
-    def get_form(self, request, obj=None, **kwargs):
-        # we want to remove the password field from the form
-        # since we don't send it and don't want to run clean for it
-        form = super().get_form(request, obj, **kwargs)
-        del form.base_fields["password"]
-        return form
+    form = UserGroupForm
+
+    # def get_form(self, request, obj=None, **kwargs):
+    #     # we want to remove the password field from the form
+    #     # since we don't send it and don't want to run clean for it
+    #     form = super().get_form(request, obj, **kwargs)
+    #     del form.base_fields["password"]
+    #     return form
 
     def user(self, obj):
         url = django.urls.reverse(

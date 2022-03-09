@@ -12,10 +12,10 @@
     </div>
   </div>
   <div class="row header">
-    <div class="col-xs-10 col-sm-10 col-md-10">
+    <div class="col-xs-8 col-sm-8 col-md-8">
       <div data-sort-target=".peer" data-sort-initial="asc">{% trans "Peer Name" %}</div>
     </div>
-    <div class="col-xs-2 col-sm-2 col-md-2">
+    <div class="col-xs-4 col-sm-4 col-md-4">
       <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
     </div>
   </div>
@@ -30,12 +30,12 @@
     {% for n in data.peers %}
 
     <div class="row item">
-      <div class="col-xs-10 col-sm-10 col-md-10">
+      <div class="col-xs-8 col-sm-8 col-md-8">
         <div class="peer" data-sort-value="{{ n.network.name|lower }}" data-filter-value="{{ n.network.name }}">
           <a href="/{{n.network|ref_tag}}/{{ n.network.id }}">{{ n.network.name }}</a>
         </div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-xs-4 col-sm-4 col-md-4">
         <div class="asn" data-sort-value="{{ n.network.asn }}" data-filter-value="{{ n.network.asn }}">{{ n.network.asn }}</div>
       </div>
 

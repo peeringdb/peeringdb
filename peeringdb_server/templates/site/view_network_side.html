@@ -20,18 +20,18 @@
     </div>
   </div>
   <div class="row header">
-    <div class="col-xs-3 col-sm-4 col-md-4">
+    <div class="col-xs-6 col-sm-4 col-md-4">
       <div data-sort-target=".exchange" data-sort-initial="asc">{% trans "Exchange" %}</div>
       <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
     </div>
-    <div class="col-xs-3 col-sm-4 col-md-3">
+    <div class="col-xs-6 col-sm-4 col-md-3">
       <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
       <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
-    <div class="col-xs-3 col-sm-2 col-md-3">
+    <div class="col-xs-3 col-sm-2 col-md-3 hidden-xs">
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
     </div>
-    <div class="col-xs-3 col-sm-2 col-md-2">
+    <div class="col-xs-3 col-sm-2 col-md-2 hidden-xs">
       <div data-sort-target=".speed" class="numeric">{% trans "RS Peer" %}</div>
     </div>
   </div>
@@ -55,7 +55,7 @@
       </div>
       <div class="row squeeze-15">
 
-          <div class="exchange col-xs-3 col-sm-4 col-md-4" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
+          <div class="exchange col-xs-6 col-sm-4 col-md-4" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
 
             {% if permissions.can_delete %}
             <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
@@ -67,7 +67,7 @@
             <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
 
           </div>
-          <div class="col-xs-3 col-sm-4 col-md-3">
+          <div class="col-xs-6 col-sm-4 col-md-3">
             <div class="asn{% if permissions.can_write and x.asn != x.network.asn %} mark-value-error{% endif %}"
                {% if permissions.can_write and x.asn != x.network.asn %}
                data-toggle="tooltip"
@@ -94,7 +94,7 @@
           </div>
 
 
-          <div class="speed col-xs-3 col-sm-2 col-md-3"
+          <div class="speed col-xs-3 col-sm-2 col-md-3 hidden-xs"
                data-sort-value="{{ x.speed }}"
                data-filter-value="{{ x.speed|pretty_speed}}"
                {% if permissions.can_write %}
@@ -105,7 +105,7 @@
                data-edit-required="yes">
                {{ x.speed|pretty_speed }}
           </div>
-          <div class= "col-xs-3 col-sm-2 col-md-2" data-edit-type="bool"
+          <div class= "col-xs-3 col-sm-2 col-md-2 hidden-xs" data-edit-type="bool"
                data-edit-name="is_rs_peer"
                data-edit-template="check"
                data-sort-value="{{ x.is_rs_peer }}"

@@ -191,12 +191,38 @@ def ref_tag(value):
 
 @register.filter
 def autocomplete_preload_net(value):
+
+    """
+    Prefill autocomplete-network field value for
+    multi-select field
+    """
+
     if not value:
         return ""
 
     qset = Network.objects.filter(status="ok", id__in=value.split(","))
 
     return ",".join([f"{net.id};{net.name}" for net in qset])
+
+
+@register.filter
+def autocomplete_preload_org_single(value):
+
+    """
+    Prefill autocomplete-organization field value for
+    single-select field
+    """
+
+    if not value:
+        return ""
+
+    try:
+        org = Organization.objects.get(status="ok", id=value)
+        return org.name
+    except ValueError:
+        return value
+    except Organization.DoesNotExist:
+        return ""
 
 
 @register.filter

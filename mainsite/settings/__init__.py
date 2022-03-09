@@ -651,6 +651,7 @@ AUTHENTICATION_BACKENDS += (
 MIDDLEWARE += (
     "peeringdb_server.maintenance.Middleware",
     "peeringdb_server.middleware.CurrentRequestContext",
+    "peeringdb_server.middleware.PDBCommonMiddleware",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
 )
 
@@ -969,6 +970,11 @@ set_option("ORG_CHILDLESS_GRACE_DURATION", 1)
 
 # pdb_validate_data cache timeout default
 set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)
+
+if RELEASE_ENV == "prod":
+    set_option("PDB_PREPEND_WWW", True)
+else:
+    set_option("PDB_PREPEND_WWW", False)
 
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 

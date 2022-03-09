@@ -1,4 +1,4 @@
-Generated from admin.py on 2022-02-07 09:42:46.681191
+Generated from admin.py on 2022-03-07 17:01:26.860132
 
 # peeringdb_server.admin
 
@@ -1327,6 +1327,33 @@ These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
 
+## UserGroupForm
+
+```
+UserGroupForm(django.contrib.auth.forms.UserChangeForm)
+```
+
+The main implementation of all the Form logic. Note that this class is
+different than Form. See the comments by the Form class for more info. Any
+improvements to the form API should be made to this class, not to the Form
+class.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+### Methods
+
+#### \__init__
+`def __init__(self, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
+
 ## UserOrgAffiliationRequestAdmin
 
 ```
@@ -1415,15 +1442,6 @@ approve | deny controls to the top of its form.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
-
-### Methods
-
-#### get_form
-`def get_form(self, request, obj=None, **kwargs)`
-
-Use special form during user creation
-
----
 
 ## VerificationQueueAdmin
 
