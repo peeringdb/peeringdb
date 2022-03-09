@@ -2236,10 +2236,10 @@ twentyc.editable.module.register(
 
       var ixlnk = $('<a></a>');
       if (data.status == "ok") {
-        faclnk.attr("href", "/ix/"+data.id);
+        ixlnk.attr("href", "/ix/"+data.id);
       }
       else {
-        faclnk.attr("style", "text-decoration: none;");
+        ixlnk.attr("style", "text-decoration: none;");
       }
       ixlnk.text(data.name);
       row.find(".name").html(ixlnk);
@@ -2257,10 +2257,10 @@ twentyc.editable.module.register(
 
       var netlnk = $('<a></a>');
       if (data.status == "ok") {
-        faclnk.attr("href", "/net/"+data.id);
+        netlnk.attr("href", "/net/"+data.id);
       }
       else {
-        faclnk.attr("style", "text-decoration: none;");
+        netlnk.attr("style", "text-decoration: none;");
       }
       netlnk.text(data.name);
       row.find(".name").html(netlnk);
