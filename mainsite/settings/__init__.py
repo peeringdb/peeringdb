@@ -652,6 +652,7 @@ MIDDLEWARE += (
     "peeringdb_server.maintenance.Middleware",
     "peeringdb_server.middleware.CurrentRequestContext",
     "peeringdb_server.middleware.PDBCommonMiddleware",
+    "peeringdb_server.middleware.PDBPermissionMiddleware",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
 )
 
