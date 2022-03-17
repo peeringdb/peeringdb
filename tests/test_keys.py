@@ -1,6 +1,8 @@
+from lib2to3.pgen2 import token
+
 import pytest
 from django.conf import settings
-from django.test import RequestFactory
+from django.test import Client, RequestFactory
 from django.urls import reverse
 from django_grainy.models import UserPermission
 from grainy.const import PERM_CRUD, PERM_READ
@@ -339,3 +341,33 @@ def test_get_network_w_user_key(network, user, org):
     assert net_from_api["name"] == network.name
     assert net_from_api["asn"] == network.asn
     assert net_from_api["org_id"] == network.org.id
+
+
+@pytest.mark.django_db
+def test_bogus_api_key(network):
+    url = reverse("net-detail", args=(network.id,))
+    key = "abcd"
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    client.force_authenticate(token=key)
+    response = client.get(url)
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_key_active_user_session(network, user, org):
+    namespace = f"peeringdb.organization.{org.id}.network"
+    userperm = UserPermission.objects.create(
+        namespace=namespace, permission=PERM_CRUD, user=user
+    )
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
+
+    url = reverse("net-detail", args=(network.id,))
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    client.login(username="user", password="user")
+    # Save session for user
+    client.session["_auth_user_id"] = user.id
+    client.session.save()
+    response = client.get(url)
+    assert response.status_code == 400
