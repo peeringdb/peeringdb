@@ -54,11 +54,11 @@ class Command(BaseCommand):
             return
 
         regex_facilities = r"Merging facilities (.+) -> (\d+)"
-        regex_netfac = r"  - netfac NetworkFacility-netfac(\d+)$"
-        regex_ixfac = r"  - ixfac InternetExchangeFacility-ixfac(\d+)$"
+        regex_netfac = r"  - netfac NetworkFacility object \((\d+)\)$"
+        regex_ixfac = r"  - ixfac InternetExchangeFacility object \((\d+)\)$"
         regex_source = r"Merging (.+) \((\d+)\) .."
-        regex_delete_netfac = r"soft deleting NetworkFacility-netfac(\d+)"
-        regex_delete_ixfac = r"soft deleting InternetExchangeFacility-ixfac(\d+)"
+        regex_delete_netfac = r"soft deleting NetworkFacility object \((\d+)\)"
+        regex_delete_ixfac = r"soft deleting InternetExchangeFacility object \((\d+)\)"
 
         sources = {}
         source = None
