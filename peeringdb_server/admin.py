@@ -1257,6 +1257,26 @@ class NetworkAdminForm(StatusForm):
         super().__init__(*args, **kwargs)
         fk_handleref_filter(self, "org")
 
+    def clean_asn(self):
+        asn = self.cleaned_data["asn"]
+        if Network.objects.filter(asn=asn).exclude(id=self.instance.id).exists():
+            # Clear ASN field from form
+            self.cleaned_data["asn"] = None
+            raise ValidationError(
+                _("ASN is already in use by another network")
+            )
+        return asn
+    
+    def clean_name(self):
+        name = self.cleaned_data["name"]
+        if Network.objects.filter(name=name).exclude(id=self.instance.id).exists():
+            # Clear name field from form
+            self.cleaned_data["name"] = None
+            raise ValidationError(
+                _("Name is already in use by another network")
+            )
+        return name
+
 
 class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     list_display = ("name", "asn", "aka", "name_long", "status", "created", "updated")
