@@ -17,7 +17,7 @@ def device_action(device):
     elif device:
         if device.method == "security-key":
             return _("U2F security key")
-            
+
     return two_factor.device_action(device)
 
 
