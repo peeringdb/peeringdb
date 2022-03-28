@@ -1262,19 +1262,15 @@ class NetworkAdminForm(StatusForm):
         if Network.objects.filter(asn=asn).exclude(id=self.instance.id).exists():
             # Clear ASN field from form
             self.cleaned_data["asn"] = None
-            raise ValidationError(
-                _("ASN is already in use by another network")
-            )
+            raise ValidationError(_("ASN is already in use by another network"))
         return asn
-    
+
     def clean_name(self):
         name = self.cleaned_data["name"]
         if Network.objects.filter(name=name).exclude(id=self.instance.id).exists():
             # Clear name field from form
             self.cleaned_data["name"] = None
-            raise ValidationError(
-                _("Name is already in use by another network")
-            )
+            raise ValidationError(_("Name is already in use by another network"))
         return name
 
 
@@ -2205,22 +2201,18 @@ class EnvironmentSettingForm(baseForms.ModelForm):
     class Meta:
         fields = ["setting", "value"]
 
+    def __init__(self, *args, **kwargs):
+        envsetting = kwargs.get("instance")
+        if envsetting:
+            kwargs["initial"] = {"value": envsetting.value}
+        return super().__init__(*args, **kwargs)
+
     def clean(self):
         cleaned_data = super().clean()
         setting = cleaned_data.get("setting")
         value = cleaned_data.get("value")
 
-        if setting in ["API_THROTTLE_RATE_ANON", "API_THROTTLE_RATE_USER"]:
-            if re.match(
-                r"([/\d]+)\s*(?:minute|hour|seconds|day|week|month|year)", value
-            ):
-                return cleaned_data
-            else:
-                raise ValidationError(
-                    _(
-                        "Invalid setting! Acceptable value is a number followed by one of the following: minute, hour, seconds, day, week, month, year. eg (10/minute, 1/hour, 5/day, 1/week, 1/month, 1/year)"
-                    )
-                )
+        cleaned_data["value"] = EnvironmentSetting.validate_value(setting, value)
 
         return cleaned_data
 

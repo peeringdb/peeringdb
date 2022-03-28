@@ -9,6 +9,8 @@ import json
 from rest_framework import renderers
 from rest_framework.utils import encoders
 
+from peeringdb_server.rest_throttles import ResponseSizeThrottle
+
 
 class JSONEncoder(encoders.JSONEncoder):
     """
@@ -78,6 +80,8 @@ class MetaJSONRenderer(MungeRenderer):
         if "request" in renderer_context:
             request = renderer_context.get("request")
             meta.update(getattr(request, "meta_response", {}))
+        else:
+            request = None
 
         res = renderer_context["response"]
         if res.status_code < 400:
@@ -98,6 +102,12 @@ class MetaJSONRenderer(MungeRenderer):
 
         result["meta"] = meta
 
-        return super(self.__class__, self).render(
+        rendered_content = super(self.__class__, self).render(
             result, accepted_media_type, renderer_context
         )
+
+        # handle caching of response size (#1129)
+        if request:
+            ResponseSizeThrottle.cache_response_size(request, len(rendered_content))
+
+        return rendered_content
