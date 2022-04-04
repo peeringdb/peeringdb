@@ -874,7 +874,11 @@ def view_registration(request):
             return JsonResponse(
                 {"password1": _("Needs to be at least 10 characters long")}, status=400
             )
-
+        # filter out invalid username characters
+        if form.cleaned_data["username"].startswith("apikey"):
+            return JsonResponse(
+                {"username": _("Username cannot start with 'apikey'")}, status=400
+            )
         # create the user
         user = form.save()
 

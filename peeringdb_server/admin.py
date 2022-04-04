@@ -1562,6 +1562,9 @@ class UserCreationForm(forms.UserCreationForm):
 
     def clean_username(self):
         username = self.cleaned_data["username"]
+        if username.startswith("apikey"):
+            raise forms.ValidationError(_('Usernames cannot start with "apikey"'))
+
         try:
             User._default_manager.get(username=username)
         except User.DoesNotExist:
