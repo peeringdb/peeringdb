@@ -36,6 +36,10 @@ from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 
+from peeringdb_server.geo import (
+    Melissa,
+)
+
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
     ticket_queue_rdap_error,
@@ -133,6 +137,34 @@ class GeocodeSerializerMixin:
         "{} for further assistance "
         "if needed."
     ).format(settings.DEFAULT_FROM_EMAIL)
+
+    @classmethod
+    def normalize_state_lookup(cls, filters):
+        """
+        for non-distance search the specifies state and country
+        attempt to normalize the state field using melissa global address
+        lookup. (#1079)
+
+        this does NOT need to be done on distance search since distance search
+        already normalizes the search to geo-coordinates using melissa.
+        """
+
+        if "state" in filters and ("country" in filters or "country__in" in filters):
+
+            # in the case where country__in is provided as a country filter
+            # there is no sensible way for us determine which country to use for the
+            # state normalization, for now simply use the first country in the list
+            # as this provides compatibility with how the advanced search form
+            # is wired to the api.
+
+            if "country__in" in filters:
+                country = filters.get("country__in").split(",")[0]
+            else:
+                country = filters.get("country")
+
+            melissa = Melissa(settings.MELISSA_KEY)
+            return melissa.normalize_state(country, filters["state"])
+        return filters.get("state")
 
     def _geosync_information_present(self, instance, validated_data):
         """
@@ -289,6 +321,7 @@ class GeocodeSerializerMixin:
             except ValidationError as exc:
                 self.handle_geo_error(exc, instance)
         return instance
+
 
 
 def queryable_field_xl(fld):

@@ -361,6 +361,8 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         # db field filters
         filters = {}
+        query_params = self.request.query_params
+
         for k, v in list(self.request.query_params.items()):
 
             if k == "q":
@@ -380,6 +382,10 @@ class ModelViewSet(viewsets.ModelViewSet):
                     continue
 
             v = unidecode.unidecode(v)
+
+            # if country and state are specified, try to normalize state #1079
+            if k == "state" and hasattr(self.serializer_class, "normalize_state_lookup"):
+                v = self.serializer_class.normalize_state_lookup(query_params)
 
             if k == "ipaddr6":
                 v = coerce_ipaddr(v)
