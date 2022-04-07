@@ -477,13 +477,10 @@ class MelissaThrottle(TargetedRateThrottle):
         if not enabled:
             return False
 
-        print("checking", src, request.path, request.method, enabled)
-
         # case 1 - `state` filter to api end points
 
         if re.match("^/api/(fac|org)$", request.path) and request.GET.get("state"):
             self._rate = EnvironmentSetting.get_setting_value(rate_setting)
-            print("RATE", self._rate)
             request._melissa_throttle_reason = (
                 "geo address normalization query on api filter for `state` field"
             )
