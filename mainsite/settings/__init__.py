@@ -298,6 +298,17 @@ set_option("API_THROTTLE_RATE_USER", "100/second")
 set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
 set_option("API_THROTTLE_IXF_IMPORT", "1/minute")
 
+# Configuration for melissa request rate limiting in the api (#1124)
+
+set_option("API_THROTTLE_MELISSA_ENABLED_USER", False)
+set_option("API_THROTTLE_MELISSA_RATE_USER", "10/minute")
+
+set_option("API_THROTTLE_MELISSA_ENABLED_ORG", False)
+set_option("API_THROTTLE_MELISSA_RATE_ORG", "10/minute")
+
+set_option("API_THROTTLE_MELISSA_ENABLED_IP", False)
+set_option("API_THROTTLE_MELISSA_RATE_IP", "1/minute")
+
 # Configuration for response-size rate limiting in the api (#1126)
 
 
@@ -333,7 +344,7 @@ set_option("API_THROTTLE_RESPONSE_SIZE_RATE_ORG", "10/minute")
 set_option("API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG", False)
 
 # Expected response sizes are cached for n seconds (default = 31 days)
-set_option("API_THROTTLE_RESPONSE_SIZE_CACHE_EXPIRY", 86400*31)
+set_option("API_THROTTLE_RESPONSE_SIZE_CACHE_EXPIRY", 86400 * 31)
 
 
 # spatial queries require user auth
@@ -735,8 +746,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_RENDERER_CLASSES": ("peeringdb_server.renderers.MetaJSONRenderer",),
     "DEFAULT_SCHEMA_CLASS": "peeringdb_server.api_schema.BaseSchema",
-    'EXCEPTION_HANDLER': 'peeringdb_server.exceptions.rest_exception_handler',
-
+    "EXCEPTION_HANDLER": "peeringdb_server.exceptions.rest_exception_handler",
 }
 
 if API_THROTTLE_ENABLED:
@@ -747,6 +757,7 @@ if API_THROTTLE_ENABLED:
                 "peeringdb_server.rest_throttles.APIUserThrottle",
                 "peeringdb_server.rest_throttles.ResponseSizeThrottle",
                 "peeringdb_server.rest_throttles.FilterDistanceThrottle",
+                "peeringdb_server.rest_throttles.MelissaThrottle",
             ),
             "DEFAULT_THROTTLE_RATES": {
                 "anon": API_THROTTLE_RATE_ANON,
@@ -757,6 +768,9 @@ if API_THROTTLE_ENABLED:
                 "response_size_cidr": API_THROTTLE_RESPONSE_SIZE_RATE_CIDR,
                 "response_size_user": API_THROTTLE_RESPONSE_SIZE_RATE_USER,
                 "response_size_org": API_THROTTLE_RESPONSE_SIZE_RATE_ORG,
+                "melissa_user": API_THROTTLE_MELISSA_RATE_USER,
+                "melissa_org": API_THROTTLE_MELISSA_RATE_ORG,
+                "melissa_ip": API_THROTTLE_MELISSA_RATE_IP,
             },
         }
     )
@@ -1026,8 +1040,12 @@ else:
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 
 # set custom throttling message
-set_option("API_THROTTLE_RATE_ANON_MSG", "Request was throttled. Expected available in {time}.")
-set_option("API_THROTTLE_RATE_USER_MSG", "Request was throttled. Expected available in {time}.")
+set_option(
+    "API_THROTTLE_RATE_ANON_MSG", "Request was throttled. Expected available in {time}."
+)
+set_option(
+    "API_THROTTLE_RATE_USER_MSG", "Request was throttled. Expected available in {time}."
+)
 
 
 if DEBUG:

@@ -1,17 +1,21 @@
 """
 Custom rate limit handlers for the REST API.
 """
-
 import ipaddress
+import re
 
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from rest_framework import throttling
 from rest_framework.exceptions import PermissionDenied
-from django.contrib.auth.models import AnonymousUser
 
 from peeringdb_server.models import EnvironmentSetting
-from peeringdb_server.permissions import get_org_key_from_request, get_user_from_request, get_permission_holder_from_request
+from peeringdb_server.permissions import (
+    get_org_key_from_request,
+    get_permission_holder_from_request,
+    get_user_from_request,
+)
 
 
 class IXFImportThrottle(throttling.UserRateThrottle):
@@ -21,6 +25,7 @@ class IXFImportThrottle(throttling.UserRateThrottle):
         key = super().get_cache_key(request, view)
         ix = view.get_object()
         return f"{key}.{ix.id}"
+
 
 class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
@@ -126,14 +131,12 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         # both the supernet as well as the single ip address
         # need to pass to allow the request
 
-        allowed = (allow_ip and allow_cidr)
+        allowed = allow_ip and allow_cidr
 
         if not allowed:
             self.set_throttle_response(request, "API_THROTTLE_RATE_ANON_MSG")
 
         return allowed
-
-
 
     def allow_request(self, request, view):
 
@@ -162,7 +165,6 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
         return self._allow_request_anon(request, view, ident_prefix)
 
-
     def check_user(self, request):
         return True
 
@@ -184,7 +186,6 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
         cache_key = self.cache_format % {"scope": self.scope, "ident": self.ident}
         return cache_key
-
 
 
 class FilterThrottle(throttling.SimpleRateThrottle):
@@ -302,7 +303,6 @@ class APIAnonUserThrottle(TargetedRateThrottle):
         return False
 
 
-
 class APIUserThrottle(TargetedRateThrottle):
     """
     General rate limiting for authenticated requests (users or orgs)
@@ -316,7 +316,7 @@ class APIUserThrottle(TargetedRateThrottle):
     def check_org(self, request):
         self.scope = "user"
         self._rate = EnvironmentSetting.get_setting_value("API_THROTTLE_RATE_USER")
-        return False
+        return True
 
     def check_ip(self, request):
         return False
@@ -435,3 +435,70 @@ class ResponseSizeThrottle(TargetedRateThrottle):
         )
 
         return size >= limit
+
+
+class MelissaThrottle(TargetedRateThrottle):
+    """
+    Rate limits requests that do a melissa lookup (#1124)
+    """
+
+    scope_user = "melissa_user"
+    scope_org = "melissa_org"
+    scope_ip = "melissa_ip"
+
+    def ident_prefix(self, request):
+        return "melissa:"
+
+    def check_user(self, request):
+        return self._check_source(request, "user")
+
+    def check_org(self, request):
+        return self._check_source(request, "org")
+
+    def check_ip(self, request):
+        return self._check_source(request, "ip")
+
+    def check_cidr(self, request):
+        return False
+
+    def set_throttle_response(self, request, msg_setting):
+        reason = getattr(request, "_melissa_throttle_reason", "melissa")
+        super().set_throttle_response(request, msg_setting)
+        request.throttle_response_message += f" - {reason}"
+
+    def _check_source(self, request, src):
+        suffix = src.upper()
+        enabled = EnvironmentSetting.get_setting_value(
+            f"API_THROTTLE_MELISSA_ENABLED_{suffix}"
+        )
+
+        rate_setting = f"API_THROTTLE_MELISSA_RATE_{suffix}"
+
+        if not enabled:
+            return False
+
+        print("checking", src, request.path, request.method, enabled)
+
+        # case 1 - `state` filter to api end points
+
+        if re.match("^/api/(fac|org)$", request.path) and request.GET.get("state"):
+            self._rate = EnvironmentSetting.get_setting_value(rate_setting)
+            print("RATE", self._rate)
+            request._melissa_throttle_reason = (
+                "geo address normalization query on api filter for `state` field"
+            )
+            return True
+
+        # case 2 -post/put to objects that trigger address normalization
+
+        if re.match("^/api/(fac|org)/\d+$", request.path) and request.method in [
+            "POST",
+            "PUT",
+        ]:
+            request._melissa_throttle_reason = (
+                "saving object that requires geo address normalization"
+            )
+            self._rate = EnvironmentSetting.get_setting_value(rate_setting)
+            return True
+
+        return False

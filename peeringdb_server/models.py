@@ -5340,7 +5340,31 @@ class EnvironmentSetting(models.Model):
                 "API_THROTTLE_RATE_USER",
                 _("API: Authenticated API throttle rate"),
             ),
-
+            # melissa rate throttle
+            (
+                "API_THROTTLE_MELISSA_RATE_USER",
+                _("API: Melissa request throttle rate for users"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_ENABLED_USER",
+                _("API: Melissa request throttle enabled for users"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_RATE_ORG",
+                _("API: Melissa request throttle rate for organizations"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_ENABLED_ORG",
+                _("API: Melissa request throttle enabled for organizations"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_RATE_ANON",
+                _("API: Melissa request throttle rate for anonymous requests (ips)"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_ENABLED_ANON",
+                _("API: Melissa request throttle enabled for anonymous requests (ips)"),
+            ),
             # api response size throttle: ip-block config
             (
                 "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR",
@@ -5399,7 +5423,6 @@ class EnvironmentSetting(models.Model):
                 "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG",
                 _("API: Response size throttle enabled for organization api-keys"),
             ),
-
             # api throttling response messages
             (
                 "API_THROTTLE_RATE_ANON_MSG",
@@ -5408,7 +5431,7 @@ class EnvironmentSetting(models.Model):
             (
                 "API_THROTTLE_RATE_USER_MSG",
                 _("API: Authenticated API throttle rate message"),
-            )
+            ),
         ),
         unique=True,
     )
@@ -5456,8 +5479,14 @@ class EnvironmentSetting(models.Model):
         "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG": "value_int",
         "API_THROTTLE_RESPONSE_SIZE_RATE_ORG": "value_str",
         "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG": "value_bool",
+        "API_THROTTLE_MELISSA_RATE_USER": "value_str",
+        "API_THROTTLE_MELISSA_ENABLED_USER": "value_bool",
+        "API_THROTTLE_MELISSA_RATE_ORG": "value_str",
+        "API_THROTTLE_MELISSA_ENABLED_ORG": "value_bool",
+        "API_THROTTLE_MELISSA_RATE_IP": "value_str",
+        "API_THROTTLE_MELISSA_ENABLED_IP": "value_bool",
         "API_THROTTLE_RATE_ANON_MSG": "value_str",
-        "API_THROTTLE_RATE_USER_MSG": "value_str"
+        "API_THROTTLE_RATE_USER_MSG": "value_str",
     }
 
     setting_validators = {
@@ -5471,6 +5500,12 @@ class EnvironmentSetting(models.Model):
         "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER": [validate_bool],
         "API_THROTTLE_RESPONSE_SIZE_RATE_ORG": [validate_api_rate],
         "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG": [validate_bool],
+        "API_THROTTLE_MELISSA_RATE_USER": [validate_api_rate],
+        "API_THROTTLE_MELISSA_RATE_ORG": [validate_api_rate],
+        "API_THROTTLE_MELISSA_RATE_IP": [validate_api_rate],
+        "API_THROTTLE_MELISSA_ENABLED_USER": [validate_bool],
+        "API_THROTTLE_MELISSA_ENABLED_ORG": [validate_bool],
+        "API_THROTTLE_MELISSA_ENABLED_IP": [validate_bool],
     }
 
     @classmethod

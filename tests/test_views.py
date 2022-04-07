@@ -200,6 +200,7 @@ def test_close_account():
     assert user.first_name == ""
     assert user.last_name == ""
 
+
 @pytest.mark.django_db
 def test_bogus_basic_auth():
     auth_string = "Basic YmFkOmJhZA=="
@@ -207,6 +208,7 @@ def test_bogus_basic_auth():
     client = Client()
     response = client.get("/", **auth_headers)
     assert response.status_code == 401
+
 
 @pytest.mark.django_db
 def test_pending_view():
