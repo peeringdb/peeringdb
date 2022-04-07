@@ -2,14 +2,13 @@ from django.http import HttpResponse
 from django.test import (
     RequestFactory,
     SimpleTestCase,
-    override_settings,
     modify_settings,
+    override_settings,
 )
+from rest_framework.test import APIClient, APITestCase
 
 from peeringdb_server.middleware import PDBCommonMiddleware
 from peeringdb_server.models import User, UserAPIKey
-from rest_framework.test import APITestCase
-from rest_framework.test import APIClient
 
 
 def get_response_empty(request):

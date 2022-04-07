@@ -1,6 +1,7 @@
-from peeringdb_server.models import EnvironmentSetting
-from rest_framework.views import exception_handler
 from rest_framework.exceptions import Throttled
+from rest_framework.views import exception_handler
+
+from peeringdb_server.models import EnvironmentSetting
 
 
 def format_wait_time(wait_time):
@@ -14,6 +15,7 @@ def format_wait_time(wait_time):
     else:
         return f"{wait_time // 3600} hours"
 
+
 def rest_exception_handler(exc, context):
 
     response = exception_handler(exc, context)
@@ -21,7 +23,11 @@ def rest_exception_handler(exc, context):
     view = context.get("view")
 
     if isinstance(exc, Throttled):
-        message = getattr(request, "throttle_response_message", "Request was throttled. Expected available in {time}.")
+        message = getattr(
+            request,
+            "throttle_response_message",
+            "Request was throttled. Expected available in {time}.",
+        )
         custom_response_data = {
             "message": f"{message}".replace("{time}", format_wait_time(exc.wait)),
         }
