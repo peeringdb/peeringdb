@@ -1,12 +1,17 @@
 """
 Utilities for geocoding and geo normalization.
 """
-
+import logging
 import googlemaps
 import requests
 import json
 from django.utils.translation import gettext_lazy as _
 from django.core.cache import cache
+
+from peeringdb_server.context import current_request
+
+
+logger = logging.getLogger(__name__)
 
 
 class Timeout(IOError):
@@ -108,11 +113,17 @@ class Melissa:
         "city": "Locality",
     }
 
-
-
     def __init__(self, key, timeout=5):
         self.key = key
         self.timeout = timeout
+
+    def log_request(self, url, **kwargs):
+        with current_request() as request:
+            if request:
+                source_url = request.build_absolute_uri()[:255]
+                logger.info(f"MELISSA {url} SOURCE {source_url}")
+            else:
+                logger.info(f"MELISSA {url}")
 
     def sanitize(self, **kwargs):
 
@@ -210,6 +221,9 @@ class Melissa:
         }
 
         try:
+
+            self.log_request(self.global_address_url, **params)
+
             response = requests.get(
                 self.global_address_url,
                 params=params,
@@ -267,6 +281,3 @@ class Melissa:
                 value = state
             cache.set(key, value)
         return value
-
-
-
