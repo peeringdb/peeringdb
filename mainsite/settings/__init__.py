@@ -504,10 +504,16 @@ LOGGING = {
             "propagate": False,
         },
         # Your own app - this assumes all your logger names start with "myapp."
-        "": {
+        #"": {
+        #    "handlers": ["logfile"],
+        #    "level": "WARNING",  # Or maybe INFO or DEBUG
+        #    "propagate": False,
+        #},
+        # log geo normalization requests
+        "peeringdb_server.geo": {
             "handlers": ["logfile"],
-            "level": "WARNING",  # Or maybe INFO or DEBUG
-            "propagate": False,
+            "level": "INFO",
+            "propagate":False,
         },
     },
 }
