@@ -61,6 +61,7 @@ grainy = ">=1.7,<2"
 django-grainy = ">=1.9.1,<2"
 django-haystack = "<4"
 whoosh = "<3"
+django-structlog = ">=2.2.0"
 
 
 [tool.poetry.dev-dependencies]

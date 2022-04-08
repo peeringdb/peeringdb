@@ -1,7 +1,7 @@
 """
 Utilities for geocoding and geo normalization.
 """
-import logging
+import structlog
 import googlemaps
 import requests
 import json
@@ -11,7 +11,7 @@ from django.core.cache import cache
 from peeringdb_server.context import current_request
 
 
-logger = logging.getLogger(__name__)
+logger = structlog.getLogger(__name__)
 
 
 class Timeout(IOError):
@@ -121,9 +121,9 @@ class Melissa:
         with current_request() as request:
             if request:
                 source_url = request.build_absolute_uri()[:255]
-                logger.info(f"MELISSA {url} SOURCE {source_url}")
+                logger.info("MELISSA", url=url, source=source_url)
             else:
-                logger.info(f"MELISSA {url}")
+                logger.info("MELISSA", url=url)
 
     def sanitize(self, **kwargs):
 
