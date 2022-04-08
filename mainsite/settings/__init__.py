@@ -5,6 +5,8 @@ import os
 import django.conf.global_settings
 
 from mainsite.oauth2.scopes import SupportedScopes
+import structlog
+import sys
 
 _DEFAULT_ARG = object()
 
@@ -465,15 +467,57 @@ DATABASES = {
     },
 }
 
+# Set file logging path
+set_option("LOGFILE_PATH", os.path.join(BASE_DIR, "var/log/django.log"))
+
+if DEBUG:
+    set_option("DJANGO_LOG_LEVEL", "INFO")
+else:
+    set_option("DJANGO_LOG_LEVEL", "ERROR")
+
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    context_class=structlog.threadlocal.wrap_dict(dict),
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.processors.JSONRenderer(),
+        },
+        "color_console": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.dev.ConsoleRenderer(),
+        },
+        "key_value": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.processors.KeyValueRenderer(
+                key_order=["timestamp", "level", "event", "logger"]
+            ),
+        },
+    },
     "handlers": {
         # Include the default Django email handler for errors
         # This is what you'd get without configuring logging at all.
         "mail_admins": {
             "class": "django.utils.log.AdminEmailHandler",
+            # only send emails for error logs
             "level": "ERROR",
             # But the emails are plain text by default - HTML is nicer
             "include_html": True,
@@ -481,42 +525,47 @@ LOGGING = {
         # Log to a text file that can be rotated by logrotate
         "logfile": {
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": os.path.join(BASE_DIR, "var/log/django.log"),
+            "filename": LOGFILE_PATH,
+            "formatter": "key_value",
         },
         "console": {
-            "level": "DEBUG",
             "class": "logging.StreamHandler",
+            "formatter": "color_console",
+            "stream": sys.stdout,
         },
+        "console_json": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "stream": sys.stdout,
+        },
+        "console_debug": {
+            "class": "logging.StreamHandler",
+            "formatter": "color_console",
+            "stream": sys.stdout,
+            "level": "DEBUG",
+        }
     },
     "loggers": {
-        # Again, default Django configuration to email unhandled exceptions
-        "django.request": {
-            "handlers": ["mail_admins"],
-            "level": "ERROR",
+        # Django log
+        "django": {
+            "handlers": ["mail_admins", "logfile", "console_debug"],
+            "level": DJANGO_LOG_LEVEL,
             "propagate": True,
         },
-        # Might as well log any errors anywhere else in Django
-        "django": {
-            #            'handlers': ['console', 'logfile'],
-            #            'level': 'DEBUG',
-            "handlers": ["logfile"],
-            "level": "ERROR",
-            "propagate": False,
-        },
-        # Your own app - this assumes all your logger names start with "myapp."
-        #"": {
-        #    "handlers": ["logfile"],
-        #    "level": "WARNING",  # Or maybe INFO or DEBUG
-        #    "propagate": False,
-        #},
-        # log geo normalization requests
+        # geo normalization / geo-coding
         "peeringdb_server.geo": {
             "handlers": ["logfile"],
             "level": "INFO",
             "propagate":False,
         },
+        # django-structlog specific
+        "django_structlog": {
+            "handlers": ["logfile"],
+            "level": "DEBUG",
+        },
     },
 }
+
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -710,6 +759,7 @@ MIDDLEWARE += (
     "peeringdb_server.middleware.PDBCommonMiddleware",
     "peeringdb_server.middleware.PDBPermissionMiddleware",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
+    "django_structlog.middlewares.RequestMiddleware",
 )
 
 OAUTH2_PROVIDER = {
@@ -1053,11 +1103,6 @@ set_option(
     "API_THROTTLE_RATE_USER_MSG", "Request was throttled. Expected available in {time}."
 )
 
-
-if DEBUG:
-    # make all loggers use the console.
-    for logger in LOGGING["loggers"]:
-        LOGGING["loggers"][logger]["handlers"] = ["console"]
 
 if TUTORIAL_MODE:
     EMAIL_SUBJECT_PREFIX = "[PDB TUTORIAL] "
