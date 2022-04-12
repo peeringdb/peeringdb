@@ -1,4 +1,4 @@
-Generated on 2022-03-07 17:01:26.659077
+Generated on 2022-04-12 16:41:02.409639
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -74,6 +74,10 @@ Split read and write database connections if needed.
 
 DeskPro API Client used to post and retrieve support ticket information
 from the deskpro API.
+
+## [exceptions.py](/docs/dev/modules/exceptions.py.md)
+
+# Functions
 
 ## [export_views.py](/docs/dev/modules/export_views.py.md)
 

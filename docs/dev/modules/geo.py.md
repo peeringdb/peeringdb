@@ -1,4 +1,4 @@
-Generated from geo.py on 2022-03-07 17:01:26.860132
+Generated from geo.py on 2022-04-12 16:41:02.631987
 
 # peeringdb_server.geo
 
@@ -37,6 +37,15 @@ Keyword arguments:
 - city
 - country
 - zipcode
+
+---
+#### normalize_state
+`def normalize_state(self, country_code, state)`
+
+Takes a 2-digit country code and a state name (e.g., "Wisconsin")
+and returns a normalized state name (e.g., "WI")
+
+This will use django-cache if it exists
 
 ---
 #### sanitize

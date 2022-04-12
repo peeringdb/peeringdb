@@ -1,4 +1,4 @@
-Generated from serializers.py on 2022-03-07 17:01:26.860132
+Generated from serializers.py on 2022-04-12 16:41:02.631987
 
 # peeringdb_server.serializers
 
@@ -164,6 +164,20 @@ and resave the model instance with normalized address fields.
 
 Can only be used if the model includes the GeocodeBaseMixin.
 
+
+### Class Methods
+
+#### normalize_state_lookup
+`def normalize_state_lookup(cls, filters)`
+
+for non-distance search the specifies state and country
+attempt to normalize the state field using melissa global address
+lookup. (#1079)
+
+this does NOT need to be done on distance search since distance search
+already normalizes the search to geo-coordinates using melissa.
+
+---
 
 ### Methods
 

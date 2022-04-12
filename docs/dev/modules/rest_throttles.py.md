@@ -1,4 +1,4 @@
-Generated from rest_throttles.py on 2022-03-07 17:01:26.860132
+Generated from rest_throttles.py on 2022-04-12 16:41:02.631987
 
 # peeringdb_server.rest_throttles
 
@@ -10,44 +10,20 @@ Custom rate limit handlers for the REST API.
 ## APIAnonUserThrottle
 
 ```
-APIAnonUserThrottle(rest_framework.throttling.AnonRateThrottle)
+APIAnonUserThrottle(peeringdb_server.rest_throttles.TargetedRateThrottle)
 ```
 
-Rate limiting for anonymous users.
+General rate limiting for anonymous users via the request ip-address
 
-
-### Methods
-
-#### allow_request
-`def allow_request(self, request, view)`
-
-Implement the check to see if the request should be throttled.
-
-On success calls `throttle_success`.
-On failure calls `throttle_failure`.
-
----
 
 ## APIUserThrottle
 
 ```
-APIUserThrottle(rest_framework.throttling.UserRateThrottle)
+APIUserThrottle(peeringdb_server.rest_throttles.TargetedRateThrottle)
 ```
 
-Rate limiting for authenticated users.
+General rate limiting for authenticated requests (users or orgs)
 
-
-### Methods
-
-#### allow_request
-`def allow_request(self, request, view)`
-
-Implement the check to see if the request should be throttled.
-
-On success calls `throttle_success`.
-On failure calls `throttle_failure`.
-
----
 
 ## FilterDistanceThrottle
 
@@ -118,5 +94,99 @@ Should return a unique cache-key which can be used for throttling.
 Must be overridden.
 
 May return `None` if the request should not be throttled.
+
+---
+
+## MelissaThrottle
+
+```
+MelissaThrottle(peeringdb_server.rest_throttles.TargetedRateThrottle)
+```
+
+Rate limits requests that do a melissa lookup (#1124)
+
+
+## ResponseSizeThrottle
+
+```
+ResponseSizeThrottle(peeringdb_server.rest_throttles.TargetedRateThrottle)
+```
+
+Rate limit repeated requests based request content-size
+
+See #1126 for rationale
+
+
+### Class Methods
+
+#### cache_response_size
+`def cache_response_size(cls, request, size)`
+
+Caches the response size for the request
+
+The api renderer (renderers.py) calls this automatically
+when it renders the response
+
+---
+#### expected_response_size
+`def expected_response_size(cls, request)`
+
+Returns the expected response size (number of bytes) for the request as `int`
+
+It will return None if there is no cached response size for the request.
+
+---
+#### size_cache_key
+`def size_cache_key(cls, request)`
+
+Returns the cache key to use for storing response size cache
+
+---
+
+## TargetedRateThrottle
+
+```
+TargetedRateThrottle(rest_framework.throttling.SimpleRateThrottle)
+```
+
+Base class for targeted rate throttling depending
+on authentication status
+
+Rate throttle by
+    - user (sess-auth, basic-auth, key),
+    - org (key),
+    - anonymous (inet, cdir)
+
+
+### Methods
+
+#### \__init__
+`def __init__(self)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
+#### allow_request
+`def allow_request(self, request, view)`
+
+Implement the check to see if the request should be throttled.
+
+On success calls `throttle_success`.
+On failure calls `throttle_failure`.
+
+---
+#### get_cache_key
+`def get_cache_key(self, request, view)`
+
+Should return a unique cache-key which can be used for throttling.
+Must be overridden.
+
+May return `None` if the request should not be throttled.
+
+---
+#### get_rate
+`def get_rate(self)`
+
+Determine the string representation of the allowed request rate.
 
 ---
