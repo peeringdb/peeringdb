@@ -874,7 +874,11 @@ def view_registration(request):
             return JsonResponse(
                 {"password1": _("Needs to be at least 10 characters long")}, status=400
             )
-
+        # filter out invalid username characters
+        if form.cleaned_data["username"].startswith("apikey"):
+            return JsonResponse(
+                {"username": _("Username cannot start with 'apikey'")}, status=400
+            )
         # create the user
         user = form.save()
 
@@ -1056,7 +1060,7 @@ def view_organization(request, id):
     try:
         org = OrganizationSerializer.prefetch_related(
             Organization.objects, request, depth=2
-        ).get(id=id, status__in=["ok", "pending"])
+        ).get(id=id, status="ok")
     except ObjectDoesNotExist:
         return view_http_error_404(request)
 
@@ -1257,7 +1261,7 @@ def view_facility(request, id):
     """
 
     try:
-        facility = Facility.objects.get(id=id, status__in=["ok", "pending"])
+        facility = Facility.objects.get(id=id, status="ok")
     except ObjectDoesNotExist:
         return view_http_error_404(request)
 
@@ -1471,7 +1475,7 @@ def view_exchange(request, id):
     """
 
     try:
-        exchange = InternetExchange.objects.get(id=id, status__in=["ok", "pending"])
+        exchange = InternetExchange.objects.get(id=id, status="ok")
     except ObjectDoesNotExist:
         return view_http_error_404(request)
 
@@ -1769,7 +1773,7 @@ def view_network(request, id):
     try:
         network = NetworkSerializer.prefetch_related(
             Network.objects, request, depth=2, selective=["poc_set"]
-        ).get(id=id, status__in=["ok", "pending"])
+        ).get(id=id, status="ok")
     except ObjectDoesNotExist:
         return view_http_error_404(request)
 
@@ -2362,7 +2366,12 @@ class LoginView(TwoFactorLoginView):
         context.update(**make_env())
 
         if "other_devices" in context:
-            context["other_devices"] += [self.get_email_device()]
+            email_device = self.get_email_device()
+
+            # If the user has an email device, we need to
+            # add the email device to the context
+            if email_device:
+                context["other_devices"] += [email_device]
 
         return context
 

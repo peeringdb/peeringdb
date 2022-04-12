@@ -126,7 +126,7 @@ class CommandLineToolWrapper:
     def validate(self):
         pass
 
-    def _run(self, command, commit=False):
+    def _run(self, command, commit=False, user=None):
         r = io.StringIO()
 
         if self.maintenance and commit:
@@ -150,10 +150,25 @@ class CommandLineToolWrapper:
                 maintenance.off()
 
         if commit:
-            command.description = self.description
-            command.status = "done"
-            command.result = self.result
-            command.save()
+            if self.queue:
+                # if command was processed through the queue, update the existing
+                # command instance
+                command.description = self.description
+                command.status = "done"
+                command.result = self.result
+                command.save()
+            else:
+                # if command was processed in line with the http request it still
+                # needs to be persisted to the database
+                CommandLineTool.objects.create(
+                    user=user,
+                    tool=self.tool,
+                    description=self.description,
+                    status="done",
+                    arguments=json.dumps({"args": self.args, "kwargs": self.kwargs}),
+                    result=self.result,
+                )
+
         return self.result
 
     @transaction.atomic
@@ -193,7 +208,7 @@ class CommandLineToolWrapper:
             return self.result
         else:
             with reversion.create_revision():
-                return self._run(user, commit=commit)
+                return self._run(None, commit=commit, user=user)
 
     def download_link(self):
         return None

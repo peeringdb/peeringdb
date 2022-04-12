@@ -1,4 +1,4 @@
-Generated from admin.py on 2022-03-07 17:01:26.860132
+Generated from admin.py on 2022-04-12 16:41:02.631987
 
 # peeringdb_server.admin
 
@@ -245,6 +245,12 @@ These attributes / properties will be available on instances of the class
 
 ### Methods
 
+#### \__init__
+`def __init__(self, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
 #### clean
 `def clean(self)`
 

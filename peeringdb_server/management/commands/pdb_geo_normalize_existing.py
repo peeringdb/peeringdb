@@ -13,6 +13,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from peeringdb_server import models
+from peeringdb_server.geo import Melissa
 from peeringdb_server.serializers import AddressSerializer
 
 API_KEY = settings.MELISSA_KEY
@@ -50,6 +51,11 @@ class Command(BaseCommand):
             help="Only parse the floor and suite",
         )
         parser.add_argument(
+            "--state-only",
+            action="store_true",
+            help="Only normalize state/province information",
+        )
+        parser.add_argument(
             "--csv",
             nargs="?",
             help="""writes a csv displaying changes made by geonormalization.
@@ -61,6 +67,10 @@ class Command(BaseCommand):
         )
 
     def log(self, msg):
+
+        if self.state_only:
+            msg = f"[state-only] {msg}"
+
         if not self.commit:
             self.stdout.write(f"[pretend] {msg}")
         else:
@@ -69,8 +79,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.commit = options.get("commit", False)
         self.floor_and_ste_parse_only = options.get("floor_and_suite_only", False)
+        self.state_only = options.get("state_only", False)
         self.pprint = options.get("pprint", False)
         self.csv_file = options.get("csv")
+
+        self.melissa = Melissa(API_KEY)
 
         reftag = options.get("reftag")
         limit = options.get("limit")
@@ -188,7 +201,10 @@ class Command(BaseCommand):
             )
 
             try:
-                self._normalize(entity, output_dict, self.commit)
+                if self.state_only:
+                    self._normalize_state(entity, output_dict, self.commit)
+                else:
+                    self._normalize(entity, output_dict, self.commit)
 
             except ValidationError as exc:
                 self.log(str(exc))
@@ -228,5 +244,23 @@ class Command(BaseCommand):
 
         if save:
             instance.save()
+
+        self.snapshot_model(instance, "_after", output_dict)
+
+    def _normalize_state(self, instance, output_dict, save):
+
+        if not instance.state:
+            self.snapshot_model(instance, "_after", output_dict)
+            return
+
+        normalized_state = self.melissa.normalize_state(
+            f"{instance.country}", instance.state
+        )
+
+        if normalized_state != instance.state and normalized_state:
+            instance.state = normalized_state
+
+            if save:
+                instance.save()
 
         self.snapshot_model(instance, "_after", output_dict)

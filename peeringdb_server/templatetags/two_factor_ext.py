@@ -14,8 +14,9 @@ register = template.Library()
 def device_action(device):
     if isinstance(device, EmailDevice):
         return _("Email one time password")
-    elif device.method == "security-key":
-        return _("U2F security key")
+    elif device:
+        if device.method == "security-key":
+            return _("U2F security key")
 
     return two_factor.device_action(device)
 

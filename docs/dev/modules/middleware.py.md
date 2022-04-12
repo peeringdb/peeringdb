@@ -1,4 +1,4 @@
-Generated from middleware.py on 2022-03-07 17:01:26.860132
+Generated from middleware.py on 2022-04-12 16:41:02.631987
 
 # peeringdb_server.middleware
 
@@ -33,6 +33,17 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 ---
 
+## HttpResponseUnauthorized
+
+```
+HttpResponseUnauthorized(django.http.response.HttpResponse)
+```
+
+An HTTP response class with a string as content.
+
+This content can be read, appended to, or replaced.
+
+
 ## PDBCommonMiddleware
 
 ```
@@ -63,5 +74,30 @@ PDBCommonMiddleware(django.middleware.common.CommonMiddleware)
 
 Check for denied User-Agents and rewrite the URL based on
 settings.APPEND_SLASH and settings.PREPEND_WWW
+
+---
+
+## PDBPermissionMiddleware
+
+```
+PDBPermissionMiddleware(django.utils.deprecation.MiddlewareMixin)
+```
+
+Middleware that checks if the current user has the correct permissions
+to access the requested resource.
+
+
+### Methods
+
+#### get_username_and_password
+`def get_username_and_password(self, http_auth)`
+
+Get the username and password from the HTTP auth header.
+
+---
+#### response_unauthorized
+`def response_unauthorized(self, request, status=None, message=None)`
+
+Return a Unauthorized response.
 
 ---
