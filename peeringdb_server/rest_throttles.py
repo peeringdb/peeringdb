@@ -10,10 +10,7 @@ from rest_framework import throttling
 from rest_framework.exceptions import PermissionDenied
 
 from peeringdb_server.models import EnvironmentSetting
-from peeringdb_server.permissions import (
-    get_org_key_from_request,
-    get_user_from_request,
-)
+from peeringdb_server.permissions import get_org_key_from_request, get_user_from_request
 
 
 class IXFImportThrottle(throttling.UserRateThrottle):
