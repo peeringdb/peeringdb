@@ -40,7 +40,10 @@ django-oauth-toolkit = "==1.6.1"
 django-phonenumber-field = ">=0.6"
 django-ratelimit = ">=3"
 django-rest-swagger = ">=2.1.2"
-djangorestframework-api-key = ">=2.0.0"
+
+# FIXME: djangorestframework-api-key 2.2.0 breaks migrations
+djangorestframework-api-key = "==2.1.0"
+
 django-tables2 = ">=1.0.4"
 django-vanilla-views = ">=1.0.2"
 django-security-keys = "^1.0.1"
