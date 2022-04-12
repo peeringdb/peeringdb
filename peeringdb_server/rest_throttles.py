@@ -5,7 +5,6 @@ import ipaddress
 import re
 
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from rest_framework import throttling
 from rest_framework.exceptions import PermissionDenied
@@ -13,7 +12,6 @@ from rest_framework.exceptions import PermissionDenied
 from peeringdb_server.models import EnvironmentSetting
 from peeringdb_server.permissions import (
     get_org_key_from_request,
-    get_permission_holder_from_request,
     get_user_from_request,
 )
 
@@ -479,7 +477,7 @@ class MelissaThrottle(TargetedRateThrottle):
 
         # case 1 - `state` filter to api end points
 
-        if re.match("^/api/(fac|org)$", request.path) and request.GET.get("state"):
+        if re.match(r"^/api/(fac|org)$", request.path) and request.GET.get("state"):
             self._rate = EnvironmentSetting.get_setting_value(rate_setting)
             request._melissa_throttle_reason = (
                 "geo address normalization query on api filter for `state` field"
@@ -488,7 +486,7 @@ class MelissaThrottle(TargetedRateThrottle):
 
         # case 2 -post/put to objects that trigger address normalization
 
-        if re.match("^/api/(fac|org)/\d+$", request.path) and request.method in [
+        if re.match(r"^/api/(fac|org)/\d+$", request.path) and request.method in [
             "POST",
             "PUT",
         ]:

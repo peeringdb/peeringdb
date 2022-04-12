@@ -13,8 +13,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from peeringdb_server import models
-from peeringdb_server.serializers import AddressSerializer
 from peeringdb_server.geo import Melissa
+from peeringdb_server.serializers import AddressSerializer
 
 API_KEY = settings.MELISSA_KEY
 ADDRESS_FIELDS = AddressSerializer.Meta.fields
@@ -53,7 +53,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--state-only",
             action="store_true",
-            help="Only normalize state/province information"
+            help="Only normalize state/province information",
         )
         parser.add_argument(
             "--csv",
@@ -247,14 +247,15 @@ class Command(BaseCommand):
 
         self.snapshot_model(instance, "_after", output_dict)
 
-
     def _normalize_state(self, instance, output_dict, save):
 
         if not instance.state:
             self.snapshot_model(instance, "_after", output_dict)
             return
 
-        normalized_state = self.melissa.normalize_state(f"{instance.country}", instance.state)
+        normalized_state = self.melissa.normalize_state(
+            f"{instance.country}", instance.state
+        )
 
         if normalized_state != instance.state and normalized_state:
             instance.state = normalized_state
@@ -263,4 +264,3 @@ class Command(BaseCommand):
                 instance.save()
 
         self.snapshot_model(instance, "_after", output_dict)
-

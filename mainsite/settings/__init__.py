@@ -1,12 +1,12 @@
 # Django settings
 
 import os
+import sys
 
 import django.conf.global_settings
+import structlog
 
 from mainsite.oauth2.scopes import SupportedScopes
-import structlog
-import sys
 
 _DEFAULT_ARG = object()
 
@@ -543,7 +543,7 @@ LOGGING = {
             "formatter": "color_console",
             "stream": sys.stdout,
             "level": "DEBUG",
-        }
+        },
     },
     "loggers": {
         # Django log
@@ -556,7 +556,7 @@ LOGGING = {
         "peeringdb_server.geo": {
             "handlers": ["logfile"],
             "level": "INFO",
-            "propagate":False,
+            "propagate": False,
         },
         # django-structlog specific
         "django_structlog": {

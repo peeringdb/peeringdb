@@ -1,15 +1,14 @@
 """
 Utilities for geocoding and geo normalization.
 """
-import structlog
+
 import googlemaps
 import requests
-import json
-from django.utils.translation import gettext_lazy as _
+import structlog
 from django.core.cache import cache
+from django.utils.translation import gettext_lazy as _
 
 from peeringdb_server.context import current_request
-
 
 logger = structlog.getLogger(__name__)
 

@@ -384,7 +384,9 @@ class ModelViewSet(viewsets.ModelViewSet):
             v = unidecode.unidecode(v)
 
             # if country and state are specified, try to normalize state #1079
-            if k == "state" and hasattr(self.serializer_class, "normalize_state_lookup"):
+            if k == "state" and hasattr(
+                self.serializer_class, "normalize_state_lookup"
+            ):
                 v = self.serializer_class.normalize_state_lookup(query_params)
 
             if k == "ipaddr6":

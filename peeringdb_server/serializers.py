@@ -36,14 +36,11 @@ from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 
-from peeringdb_server.geo import (
-    Melissa,
-)
-
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
     ticket_queue_rdap_error,
 )
+from peeringdb_server.geo import Melissa
 from peeringdb_server.inet import (
     RdapException,
     RdapInvalidRange,
@@ -321,7 +318,6 @@ class GeocodeSerializerMixin:
             except ValidationError as exc:
                 self.handle_geo_error(exc, instance)
         return instance
-
 
 
 def queryable_field_xl(fld):

@@ -5495,7 +5495,7 @@ class EnvironmentSetting(models.Model):
         "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR": [validate_api_rate],
         "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR": [validate_bool],
         "API_THROTTLE_RESPONSE_SIZE_RATE_IP": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR": [validate_bool],
+        "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP": [validate_bool],
         "API_THROTTLE_RESPONSE_SIZE_RATE_USER": [validate_api_rate],
         "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER": [validate_bool],
         "API_THROTTLE_RESPONSE_SIZE_RATE_ORG": [validate_api_rate],
