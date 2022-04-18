@@ -56,10 +56,15 @@ def get_permission_holder_from_request(request):
     """Return either an API Key instance or User instance
     depending on how the request is Authenticated.
     """
+
+    if hasattr(request, "_permission_holder"):
+        return request._permission_holder
+
     key = get_key_from_request(request)
     if key is not None:
         try:
             api_key = OrganizationAPIKey.objects.get_from_key(key)
+            request._permission_holder = api_key
             return api_key
 
         except OrganizationAPIKey.DoesNotExist:
@@ -67,15 +72,19 @@ def get_permission_holder_from_request(request):
 
         try:
             api_key = UserAPIKey.objects.get_from_key(key)
+            request._permission_holder = api_key
             return api_key
 
         except UserAPIKey.DoesNotExist:
             pass
 
     if hasattr(request, "user"):
+        request._permission_holder = request.user
         return request.user
 
-    return AnonymousUser()
+    anon = AnonymousUser()
+    request._permission_holder = anon
+    return anon
 
 
 def get_user_from_request(request):
