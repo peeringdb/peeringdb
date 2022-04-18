@@ -14,6 +14,8 @@ from peeringdb_server.context import current_request
 from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import get_key_from_request
 
+ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged in. Please log out and try again."
+
 
 class CurrentRequestContext:
 
@@ -70,8 +72,6 @@ class PDBPermissionMiddleware(MiddlewareMixin):
     to access the requested resource.
     """
 
-    auth_id = None
-
     def get_username_and_password(self, http_auth):
         """
         Get the username and password from the HTTP auth header.
@@ -103,15 +103,43 @@ class PDBPermissionMiddleware(MiddlewareMixin):
         req_key = get_key_from_request(request)
         api_key = None
 
+        # session auth already exists, set x-auth-id value and return
+
+        if request.user.is_authenticated:
+            request.auth_id = request.user.username
+
+            # request attempting to provide separate authentication while
+            # already authenticated through session cookie, fail with
+            # bad request
+
+            if req_key or http_auth:
+                return self.response_unauthorized(
+                    request,
+                    message=ERR_MULTI_AUTH,
+                    status=400,
+                )
+
+            return
+
         # Check if HTTP auth is valid and if the request is made with basic auth.
+
         if http_auth and http_auth.startswith("Basic "):
+
             # Get the username and password from the HTTP auth header.
             username, password = self.get_username_and_password(http_auth)
             # Check if the username and password are valid.
             user = authenticate(username=username, password=password)
+
+            # return username input in x-auth-id header
+            request.auth_id = username
+
             # if user is not authenticated return 401 Unauthorized
             if not user:
-                self.auth_id = username
+
+                # truncate the username if needed.
+                if len(username) > 255:
+                    request.auth_id = username[:255]
+
                 return self.response_unauthorized(
                     request, message="Invalid username or password", status=401
                 )
@@ -132,16 +160,16 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
             # If api key is not valid return 401 Unauthorized
             if not api_key:
-                self.auth_id = "apikey_%s" % (req_key)
                 if len(req_key) > 16:
-                    self.auth_id = self.auth_id[:16]
+                    req_key = req_key[:16]
+                request.auth_id = f"apikey_{req_key}"
                 return self.response_unauthorized(
                     request, message="Invalid API key", status=401
                 )
 
             # If API key is provided, check if the user has an active session
             if api_key:
-                self.auth_id = "apikey_%s" % req_key
+                request.auth_id = f"apikey_{api_key.prefix}"
                 if request.session.get("_auth_user_id") and request.user.id:
                     if int(request.user.id) == int(
                         request.session.get("_auth_user_id")
@@ -149,19 +177,19 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
                         return self.response_unauthorized(
                             request,
-                            message="Cannot authenticate through Authorization header while logged in. Please log out and try again.",
+                            message=ERR_MULTI_AUTH,
                             status=400,
                         )
 
     def process_response(self, request, response):
 
-        if self.auth_id:
+        if hasattr(request, "auth_id"):
             # Sanitizes the auth_id
-            self.auth_id = self.auth_id.replace(" ", "_")
+            request.auth_id = request.auth_id.replace(" ", "_")
             # If auth_id ends with a 401 make sure is it limited to 16 bytes
-            if response.status_code == 401 and len(self.auth_id) > 16:
-                if not self.auth_id.startswith("apikey_"):
-                    self.auth_id = self.auth_id[:16]
+            if response.status_code == 401 and len(request.auth_id) > 16:
+                if not request.auth_id.startswith("apikey_"):
+                    request.auth_id = request.auth_id[:16]
 
-            response["X-Auth-ID"] = self.auth_id
+            response["X-Auth-ID"] = request.auth_id
         return response
