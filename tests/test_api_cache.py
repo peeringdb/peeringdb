@@ -161,6 +161,8 @@ def test_no_api_throttle():
 
     for (dirpath, dirnames, filenames) in os.walk(settings.API_CACHE_ROOT):
         for f in filenames:
+            if f in ["log.log"]:
+                continue
             path = os.path.join(settings.API_CACHE_ROOT, f)
             with open(path, "r") as fh:
                 data_raw = fh.read()
