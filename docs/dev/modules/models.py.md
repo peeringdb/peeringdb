@@ -1,4 +1,4 @@
-Generated from models.py on 2022-03-07 17:01:26.860132
+Generated from models.py on 2022-04-12 16:41:02.631987
 
 # peeringdb_server.models
 
@@ -147,6 +147,21 @@ the default value will be returned.
 
 ### Methods
 
+#### \__str__
+`def __str__(self)`
+
+Return str(self).
+
+---
+#### clean
+`def clean(self)`
+
+Hook for doing any extra model-wide validation after clean() has been
+called on every field by self.clean_fields. Any ValidationError raised
+by this method will not be associated with a particular field; it will
+have a special-case association with the field defined by NON_FIELD_ERRORS.
+
+---
 #### set_value
 `def set_value(self, value)`
 

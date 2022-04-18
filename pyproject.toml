@@ -12,8 +12,8 @@ python = "^3.9"
 # core requirements
 django = ">=3.2, <4"
 django-inet = "^1.0"
-django-handleref = "^1.0.1"
-django-peeringdb = "==2.12.0"
+django-handleref = "^1.0.2"
+django-peeringdb = "==2.13.0"
 djangorestframework = ">=3.12,<3.13"
 mysqlclient = ">=1.3.9"
 peeringdb = ">=1.1.0, <2"
@@ -40,7 +40,10 @@ django-oauth-toolkit = "==1.6.1"
 django-phonenumber-field = ">=0.6"
 django-ratelimit = ">=3"
 django-rest-swagger = ">=2.1.2"
-djangorestframework-api-key = ">=2.0.0"
+
+# FIXME: djangorestframework-api-key 2.2.0 breaks migrations
+djangorestframework-api-key = "==2.1.0"
+
 django-tables2 = ">=1.0.4"
 django-vanilla-views = ">=1.0.2"
 django-security-keys = "^1.0.1"
@@ -61,6 +64,7 @@ grainy = ">=1.7,<2"
 django-grainy = ">=1.9.1,<2"
 django-haystack = "<4"
 whoosh = "<3"
+django-structlog = ">=2.2.0"
 
 
 [tool.poetry.dev-dependencies]

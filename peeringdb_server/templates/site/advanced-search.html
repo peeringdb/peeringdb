@@ -99,7 +99,7 @@
             if(d && d.info == "404 Not Found") {
               searchForm.find(".results-empty").show();
             } else {
-              searchForm.trigger("action-error", {});
+              searchForm.trigger("action-error", d);
             }
           });
           target.search();

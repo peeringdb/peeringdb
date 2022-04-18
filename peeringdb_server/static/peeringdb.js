@@ -2112,9 +2112,11 @@ twentyc.editable.target.register(
             info : info.join("<br />")
           });
         } else {
-          if(r.responseJSON && r.responseJSON.meta && r.responseJSON.meta.error)
+          if(r.responseJSON && r.responseJSON.meta && r.responseJSON.meta.error) {
              var info = r.responseJSON.meta.error;
-          else if(r.status == 403)
+             info += "<br />" + r.responseJSON.message;
+
+          } else if(r.status == 403)
              var info = gettext("You do not have permissions to perform this action")
           else
              var info = r.status+" "+r.statusText
@@ -2235,7 +2237,12 @@ twentyc.editable.module.register(
       // is rendered as a link
 
       var ixlnk = $('<a></a>');
-      ixlnk.attr("href", "/ix/"+data.id);
+      if (data.status == "ok") {
+        ixlnk.attr("href", "/ix/"+data.id);
+      }
+      else {
+        ixlnk.attr("style", "text-decoration: none;");
+      }
       ixlnk.text(data.name);
       row.find(".name").html(ixlnk);
 
@@ -2251,7 +2258,12 @@ twentyc.editable.module.register(
       // is rendered as a link
 
       var netlnk = $('<a></a>');
-      netlnk.attr("href", "/net/"+data.id);
+      if (data.status == "ok") {
+        netlnk.attr("href", "/net/"+data.id);
+      }
+      else {
+        netlnk.attr("style", "text-decoration: none;");
+      }
       netlnk.text(data.name);
       row.find(".name").html(netlnk);
 
@@ -2267,7 +2279,14 @@ twentyc.editable.module.register(
       // is rendered as a link
 
       var faclnk = $('<a></a>');
-      faclnk.attr("href", "/fac/"+data.id);
+
+      if (data.status == "ok") {
+        faclnk.attr("href", "/fac/"+data.id);
+      }
+      else {
+        faclnk.attr("style", "text-decoration: none;");
+      }
+
       faclnk.text(data.name);
       row.find(".name").html(faclnk);
 

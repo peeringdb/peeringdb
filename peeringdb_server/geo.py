@@ -4,7 +4,13 @@ Utilities for geocoding and geo normalization.
 
 import googlemaps
 import requests
-from django.utils.translation import ugettext_lazy as _
+import structlog
+from django.core.cache import cache
+from django.utils.translation import gettext_lazy as _
+
+from peeringdb_server.context import current_request
+
+logger = structlog.getLogger(__name__)
 
 
 class Timeout(IOError):
@@ -110,6 +116,14 @@ class Melissa:
         self.key = key
         self.timeout = timeout
 
+    def log_request(self, url, **kwargs):
+        with current_request() as request:
+            if request:
+                source_url = request.build_absolute_uri()[:255]
+                logger.info("MELISSA", url=url, source=source_url)
+            else:
+                logger.info("MELISSA", url=url)
+
     def sanitize(self, **kwargs):
 
         """
@@ -206,6 +220,9 @@ class Melissa:
         }
 
         try:
+
+            self.log_request(self.global_address_url, **params)
+
             response = requests.get(
                 self.global_address_url,
                 params=params,
@@ -242,3 +259,24 @@ class Melissa:
 
         except (KeyError, IndexError):
             return None
+
+    def normalize_state(self, country_code, state):
+        """
+        Takes a 2-digit country code and a state name (e.g., "Wisconsin")
+        and returns a normalized state name (e.g., "WI")
+
+        This will use django-cache if it exists
+        """
+
+        key = f"geo.normalize.state.{country_code}.{state}"
+
+        value = cache.get(key)
+        if value is None:
+            result = self.global_address(country=country_code, address1=state)
+            try:
+                record = result["Records"][0]
+                value = record.get("AdministrativeArea") or state
+            except (KeyError, IndexError):
+                value = state
+            cache.set(key, value)
+        return value

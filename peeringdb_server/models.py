@@ -67,6 +67,8 @@ from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.request import bypass_validation
 from peeringdb_server.validators import (
     validate_address_space,
+    validate_api_rate,
+    validate_bool,
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_irr_as_set,
@@ -5332,11 +5334,103 @@ class EnvironmentSetting(models.Model):
             # ),
             (
                 "API_THROTTLE_RATE_ANON",
-                _("API: Anonymous user API throttle rate"),
+                _("API: Anonymous API throttle rate"),
             ),
             (
                 "API_THROTTLE_RATE_USER",
-                _("API: Authenticated user API throttle rate"),
+                _("API: Authenticated API throttle rate"),
+            ),
+            # melissa rate throttle
+            (
+                "API_THROTTLE_MELISSA_RATE_USER",
+                _("API: Melissa request throttle rate for users"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_ENABLED_USER",
+                _("API: Melissa request throttle enabled for users"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_RATE_ORG",
+                _("API: Melissa request throttle rate for organizations"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_ENABLED_ORG",
+                _("API: Melissa request throttle enabled for organizations"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_RATE_ANON",
+                _("API: Melissa request throttle rate for anonymous requests (ips)"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_ENABLED_ANON",
+                _("API: Melissa request throttle enabled for anonymous requests (ips)"),
+            ),
+            # api response size throttle: ip-block config
+            (
+                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR",
+                _("API: Response size throttle size threshold for ip blocks (bytes)"),
+            ),
+            (
+                "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR",
+                _("API: Response size throttle rate for ip blocks"),
+            ),
+            (
+                "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR",
+                _("API: Response size throttle enabled for ip blocks"),
+            ),
+            # api response size throttle: ip address config
+            (
+                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP",
+                _(
+                    "API: Response size throttle size threshold for ip addresses (bytes)"
+                ),
+            ),
+            (
+                "API_THROTTLE_RESPONSE_SIZE_RATE_IP",
+                _("API: Response size throttle rate for ip addresses"),
+            ),
+            (
+                "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP",
+                _("API: Response size throttle enabled for ip addresses"),
+            ),
+            # api response size throttle: user config
+            (
+                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER",
+                _(
+                    "API: Response size throttle size threshold for authenticated users (bytes)"
+                ),
+            ),
+            (
+                "API_THROTTLE_RESPONSE_SIZE_RATE_USER",
+                _("API: Response size throttle rate for authenticated users"),
+            ),
+            (
+                "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER",
+                _("API: Response size throttle enabled for authenticated users"),
+            ),
+            # api response size throttle: org config
+            (
+                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG",
+                _(
+                    "API: Response size throttle size threshold for organization api-keys (bytes)"
+                ),
+            ),
+            (
+                "API_THROTTLE_RESPONSE_SIZE_RATE_ORG",
+                _("API: Response size throttle rate for organization api-keys"),
+            ),
+            (
+                "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG",
+                _("API: Response size throttle enabled for organization api-keys"),
+            ),
+            # api throttling response messages
+            (
+                "API_THROTTLE_RATE_ANON_MSG",
+                _("API: Anonymous API throttle rate message"),
+            ),
+            (
+                "API_THROTTLE_RATE_USER_MSG",
+                _("API: Authenticated API throttle rate message"),
             ),
         ),
         unique=True,
@@ -5373,6 +5467,45 @@ class EnvironmentSetting(models.Model):
         # "IXF_IMPORTER_DAYS_UNTIL_TICKET": "value_int",
         "API_THROTTLE_RATE_ANON": "value_str",
         "API_THROTTLE_RATE_USER": "value_str",
+        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR": "value_int",
+        "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR": "value_str",
+        "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR": "value_bool",
+        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP": "value_int",
+        "API_THROTTLE_RESPONSE_SIZE_RATE_IP": "value_str",
+        "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP": "value_bool",
+        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER": "value_int",
+        "API_THROTTLE_RESPONSE_SIZE_RATE_USER": "value_str",
+        "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER": "value_bool",
+        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG": "value_int",
+        "API_THROTTLE_RESPONSE_SIZE_RATE_ORG": "value_str",
+        "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG": "value_bool",
+        "API_THROTTLE_MELISSA_RATE_USER": "value_str",
+        "API_THROTTLE_MELISSA_ENABLED_USER": "value_bool",
+        "API_THROTTLE_MELISSA_RATE_ORG": "value_str",
+        "API_THROTTLE_MELISSA_ENABLED_ORG": "value_bool",
+        "API_THROTTLE_MELISSA_RATE_IP": "value_str",
+        "API_THROTTLE_MELISSA_ENABLED_IP": "value_bool",
+        "API_THROTTLE_RATE_ANON_MSG": "value_str",
+        "API_THROTTLE_RATE_USER_MSG": "value_str",
+    }
+
+    setting_validators = {
+        "API_THROTTLE_RATE_ANON": [validate_api_rate],
+        "API_THROTTLE_RATE_USER": [validate_api_rate],
+        "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR": [validate_api_rate],
+        "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR": [validate_bool],
+        "API_THROTTLE_RESPONSE_SIZE_RATE_IP": [validate_api_rate],
+        "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP": [validate_bool],
+        "API_THROTTLE_RESPONSE_SIZE_RATE_USER": [validate_api_rate],
+        "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER": [validate_bool],
+        "API_THROTTLE_RESPONSE_SIZE_RATE_ORG": [validate_api_rate],
+        "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG": [validate_bool],
+        "API_THROTTLE_MELISSA_RATE_USER": [validate_api_rate],
+        "API_THROTTLE_MELISSA_RATE_ORG": [validate_api_rate],
+        "API_THROTTLE_MELISSA_RATE_IP": [validate_api_rate],
+        "API_THROTTLE_MELISSA_ENABLED_USER": [validate_bool],
+        "API_THROTTLE_MELISSA_ENABLED_ORG": [validate_bool],
+        "API_THROTTLE_MELISSA_ENABLED_IP": [validate_bool],
     }
 
     @classmethod
@@ -5391,6 +5524,15 @@ class EnvironmentSetting(models.Model):
         except cls.DoesNotExist:
             return getattr(settings, setting)
 
+    @classmethod
+    def validate_value(cls, setting, value):
+        if value is None:
+            return value
+
+        for validator in cls.setting_validators.get(setting, []):
+            value = validator(value)
+        return value
+
     @property
     def value(self):
         """
@@ -5398,11 +5540,23 @@ class EnvironmentSetting(models.Model):
         """
         return getattr(self, self.setting_to_field[self.setting])
 
+    def __str__(self):
+        return f"EnvironmentSetting `{self.setting}` ({self.id})"
+
+    def clean(self):
+        self.validate_value(self.setting, self.value)
+
     def set_value(self, value):
         """
         Update the value for this setting.
         """
-        setattr(self, self.setting_to_field[self.setting], value)
+
+        setattr(
+            self,
+            self.setting_to_field[self.setting],
+            self.validate_value(self.setting, value),
+        )
+
         self.full_clean()
         self.save()
 

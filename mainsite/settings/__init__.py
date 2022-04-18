@@ -1,8 +1,10 @@
 # Django settings
 
 import os
+import sys
 
 import django.conf.global_settings
+import structlog
 
 from mainsite.oauth2.scopes import SupportedScopes
 
@@ -289,6 +291,7 @@ set_from_env(
     "OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH", os.path.join(API_CACHE_ROOT, "keys", "oidc.key")
 )
 
+
 # Limits
 
 API_THROTTLE_ENABLED = True
@@ -296,6 +299,55 @@ set_option("API_THROTTLE_RATE_ANON", "100/second")
 set_option("API_THROTTLE_RATE_USER", "100/second")
 set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
 set_option("API_THROTTLE_IXF_IMPORT", "1/minute")
+
+# Configuration for melissa request rate limiting in the api (#1124)
+
+set_option("API_THROTTLE_MELISSA_ENABLED_USER", False)
+set_option("API_THROTTLE_MELISSA_RATE_USER", "10/minute")
+
+set_option("API_THROTTLE_MELISSA_ENABLED_ORG", False)
+set_option("API_THROTTLE_MELISSA_RATE_ORG", "10/minute")
+
+set_option("API_THROTTLE_MELISSA_ENABLED_IP", False)
+set_option("API_THROTTLE_MELISSA_RATE_IP", "1/minute")
+
+# Configuration for response-size rate limiting in the api (#1126)
+
+
+# Anonymous (ip-address) - Size threshold (bytes, default = 1MB)
+set_option("API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP", 1000000)
+# Anonymous (ip-address) - Rate limit
+set_option("API_THROTTLE_RESPONSE_SIZE_RATE_IP", "10/minute")
+# Anonymous (ip-address) - On/Off toggle
+set_option("API_THROTTLE_RESPONSE_SIZE_ENABLED_IP", False)
+
+
+# Anonymous (cidr ipv4/24, ipv6/64) - Size threshold (bytes, default = 1MB)
+set_option("API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR", 1000000)
+# Anonymous (cidr ipv4/24, ipv6/64) - Rate limit
+set_option("API_THROTTLE_RESPONSE_SIZE_RATE_CIDR", "10/minute")
+# Anonymous (cidr ipv4/24, ipv6/64) - On/Off toggle
+set_option("API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR", False)
+
+
+# User - Size threshold (bytes, default = 1MB)
+set_option("API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER", 1000000)
+# User - Rate limit
+set_option("API_THROTTLE_RESPONSE_SIZE_RATE_USER", "10/minute")
+# User - On/Off toggle
+set_option("API_THROTTLE_RESPONSE_SIZE_ENABLED_USER", False)
+
+
+# Organization- Size threshold (bytes, default = 1MB)
+set_option("API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG", 1000000)
+# Organization - Rate limit
+set_option("API_THROTTLE_RESPONSE_SIZE_RATE_ORG", "10/minute")
+# Organization - On/Off toggle
+set_option("API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG", False)
+
+# Expected response sizes are cached for n seconds (default = 31 days)
+set_option("API_THROTTLE_RESPONSE_SIZE_CACHE_EXPIRY", 86400 * 31)
+
 
 # spatial queries require user auth
 set_option("API_DISTANCE_FILTER_REQUIRE_AUTH", True)
@@ -415,15 +467,57 @@ DATABASES = {
     },
 }
 
+# Set file logging path
+set_option("LOGFILE_PATH", os.path.join(BASE_DIR, "var/log/django.log"))
+
+if DEBUG:
+    set_option("DJANGO_LOG_LEVEL", "INFO")
+else:
+    set_option("DJANGO_LOG_LEVEL", "ERROR")
+
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    context_class=structlog.threadlocal.wrap_dict(dict),
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.processors.JSONRenderer(),
+        },
+        "color_console": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.dev.ConsoleRenderer(),
+        },
+        "key_value": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.processors.KeyValueRenderer(
+                key_order=["timestamp", "level", "event", "logger"]
+            ),
+        },
+    },
     "handlers": {
         # Include the default Django email handler for errors
         # This is what you'd get without configuring logging at all.
         "mail_admins": {
             "class": "django.utils.log.AdminEmailHandler",
+            # only send emails for error logs
             "level": "ERROR",
             # But the emails are plain text by default - HTML is nicer
             "include_html": True,
@@ -431,36 +525,47 @@ LOGGING = {
         # Log to a text file that can be rotated by logrotate
         "logfile": {
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": os.path.join(BASE_DIR, "var/log/django.log"),
+            "filename": LOGFILE_PATH,
+            "formatter": "key_value",
         },
         "console": {
-            "level": "DEBUG",
             "class": "logging.StreamHandler",
+            "formatter": "color_console",
+            "stream": sys.stdout,
+        },
+        "console_json": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "stream": sys.stdout,
+        },
+        "console_debug": {
+            "class": "logging.StreamHandler",
+            "formatter": "color_console",
+            "stream": sys.stdout,
+            "level": "DEBUG",
         },
     },
     "loggers": {
-        # Again, default Django configuration to email unhandled exceptions
-        "django.request": {
-            "handlers": ["mail_admins"],
-            "level": "ERROR",
+        # Django log
+        "django": {
+            "handlers": ["mail_admins", "logfile", "console_debug"],
+            "level": DJANGO_LOG_LEVEL,
             "propagate": True,
         },
-        # Might as well log any errors anywhere else in Django
-        "django": {
-            #            'handlers': ['console', 'logfile'],
-            #            'level': 'DEBUG',
+        # geo normalization / geo-coding
+        "peeringdb_server.geo": {
             "handlers": ["logfile"],
-            "level": "ERROR",
+            "level": "INFO",
             "propagate": False,
         },
-        # Your own app - this assumes all your logger names start with "myapp."
-        "": {
+        # django-structlog specific
+        "django_structlog": {
             "handlers": ["logfile"],
-            "level": "WARNING",  # Or maybe INFO or DEBUG
-            "propagate": False,
+            "level": "DEBUG",
         },
     },
 }
+
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -654,6 +759,7 @@ MIDDLEWARE += (
     "peeringdb_server.middleware.PDBCommonMiddleware",
     "peeringdb_server.middleware.PDBPermissionMiddleware",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
+    "django_structlog.middlewares.RequestMiddleware",
 )
 
 OAUTH2_PROVIDER = {
@@ -696,6 +802,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_RENDERER_CLASSES": ("peeringdb_server.renderers.MetaJSONRenderer",),
     "DEFAULT_SCHEMA_CLASS": "peeringdb_server.api_schema.BaseSchema",
+    "EXCEPTION_HANDLER": "peeringdb_server.exceptions.rest_exception_handler",
 }
 
 if API_THROTTLE_ENABLED:
@@ -704,13 +811,22 @@ if API_THROTTLE_ENABLED:
             "DEFAULT_THROTTLE_CLASSES": (
                 "peeringdb_server.rest_throttles.APIAnonUserThrottle",
                 "peeringdb_server.rest_throttles.APIUserThrottle",
+                "peeringdb_server.rest_throttles.ResponseSizeThrottle",
                 "peeringdb_server.rest_throttles.FilterDistanceThrottle",
+                "peeringdb_server.rest_throttles.MelissaThrottle",
             ),
             "DEFAULT_THROTTLE_RATES": {
                 "anon": API_THROTTLE_RATE_ANON,
                 "user": API_THROTTLE_RATE_USER,
                 "filter_distance": API_THROTTLE_RATE_FILTER_DISTANCE,
                 "ixf_import_request": API_THROTTLE_IXF_IMPORT,
+                "response_size_ip": API_THROTTLE_RESPONSE_SIZE_RATE_IP,
+                "response_size_cidr": API_THROTTLE_RESPONSE_SIZE_RATE_CIDR,
+                "response_size_user": API_THROTTLE_RESPONSE_SIZE_RATE_USER,
+                "response_size_org": API_THROTTLE_RESPONSE_SIZE_RATE_ORG,
+                "melissa_user": API_THROTTLE_MELISSA_RATE_USER,
+                "melissa_org": API_THROTTLE_MELISSA_RATE_ORG,
+                "melissa_ip": API_THROTTLE_MELISSA_RATE_IP,
             },
         }
     )
@@ -979,11 +1095,14 @@ else:
 
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 
+# set custom throttling message
+set_option(
+    "API_THROTTLE_RATE_ANON_MSG", "Request was throttled. Expected available in {time}."
+)
+set_option(
+    "API_THROTTLE_RATE_USER_MSG", "Request was throttled. Expected available in {time}."
+)
 
-if DEBUG:
-    # make all loggers use the console.
-    for logger in LOGGING["loggers"]:
-        LOGGING["loggers"][logger]["handlers"] = ["console"]
 
 if TUTORIAL_MODE:
     EMAIL_SUBJECT_PREFIX = "[PDB TUTORIAL] "

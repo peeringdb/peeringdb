@@ -70,6 +70,8 @@ class PDBPermissionMiddleware(MiddlewareMixin):
     to access the requested resource.
     """
 
+    auth_id = None
+
     def get_username_and_password(self, http_auth):
         """
         Get the username and password from the HTTP auth header.
@@ -109,7 +111,7 @@ class PDBPermissionMiddleware(MiddlewareMixin):
             user = authenticate(username=username, password=password)
             # if user is not authenticated return 401 Unauthorized
             if not user:
-
+                self.auth_id = username
                 return self.response_unauthorized(
                     request, message="Invalid username or password", status=401
                 )
@@ -130,14 +132,16 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
             # If api key is not valid return 401 Unauthorized
             if not api_key:
-
+                self.auth_id = "apikey_%s" % (req_key)
+                if len(req_key) > 16:
+                    self.auth_id = self.auth_id[:16]
                 return self.response_unauthorized(
                     request, message="Invalid API key", status=401
                 )
 
             # If API key is provided, check if the user has an active session
             if api_key:
-
+                self.auth_id = "apikey_%s" % req_key
                 if request.session.get("_auth_user_id") and request.user.id:
                     if int(request.user.id) == int(
                         request.session.get("_auth_user_id")
@@ -148,3 +152,16 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                             message="Cannot authenticate through Authorization header while logged in. Please log out and try again.",
                             status=400,
                         )
+
+    def process_response(self, request, response):
+
+        if self.auth_id:
+            # Sanitizes the auth_id
+            self.auth_id = self.auth_id.replace(" ", "_")
+            # If auth_id ends with a 401 make sure is it limited to 16 bytes
+            if response.status_code == 401 and len(self.auth_id) > 16:
+                if not self.auth_id.startswith("apikey_"):
+                    self.auth_id = self.auth_id[:16]
+
+            response["X-Auth-ID"] = self.auth_id
+        return response

@@ -1,4 +1,4 @@
-Generated from validators.py on 2022-03-07 17:01:26.860132
+Generated from validators.py on 2022-04-12 16:41:02.631987
 
 # peeringdb_server.validators
 
@@ -17,6 +17,43 @@ Arguments:
 
 Raises:
     - ValidationError on failed validation
+
+---
+## validate_api_rate
+`def validate_api_rate(value)`
+
+Validates a number/time-unit format used to determine rate limits
+
+e.g., 10/second or 100/minute
+
+Will raise a ValidationError on failure
+
+Arguments:
+
+- value(`str`)
+
+Returns:
+
+- validated value (`str`)
+
+---
+## validate_bool
+`def validate_bool(value)`
+
+Validates a boolean value
+
+This can be passed a string for `True` or `False` or an integer as 1, 0 as well
+to convert and return a boolean value
+
+Will raise ValidationError on failure.
+
+Arguments:
+
+- value (`str`|`int`|`bool`)
+
+Returns:
+
+- validated value (`bool`)
 
 ---
 ## validate_irr_as_set

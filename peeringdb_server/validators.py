@@ -312,3 +312,62 @@ def validate_irr_as_set(value):
         validated.append(item)
 
     return " ".join(validated)
+
+
+def validate_bool(value):
+    """
+    Validates a boolean value
+
+    This can be passed a string for `True` or `False` or an integer as 1, 0 as well
+    to convert and return a boolean value
+
+    Will raise ValidationError on failure.
+
+    Arguments:
+
+    - value (`str`|`int`|`bool`)
+
+    Returns:
+
+    - validated value (`bool`)
+    """
+    try:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            if value.lower() == "true":
+                return True
+            if value.lower() == "false":
+                return False
+        return bool(int(value))
+    except TypeError:
+        raise ValidationError(_("Needs to be 'True', 'False', 1 or 0"))
+
+
+def validate_api_rate(value):
+    """
+    Validates a number/time-unit format used to determine rate limits
+
+    e.g., 10/second or 100/minute
+
+    Will raise a ValidationError on failure
+
+    Arguments:
+
+    - value(`str`)
+
+    Returns:
+
+    - validated value (`str`)
+    """
+
+    value = str(value)
+    if re.match(r"([/\d]+)\s*(?:minute|hour|seconds|day|week|month|year)", value):
+        return value
+    else:
+        print(value)
+        raise ValidationError(
+            _(
+                "Invalid setting! Acceptable value is a number followed by one of the following: minute, hour, seconds, day, week, month, year. eg (10/minute, 1/hour, 5/day, 1/week, 1/month, 1/year)"
+            )
+        )

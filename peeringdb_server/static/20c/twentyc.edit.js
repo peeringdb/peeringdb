@@ -661,7 +661,12 @@ twentyc.editable.target.error_handlers.http_json = function(response, me, sender
       }
 
     }
+  } else if(response.status == 429) {
+
+    info = ["Too Many Requests", response.responseJSON.message];
+
   } else {
+
     if(response.responseJSON && response.responseJSON.non_field_errors) {
       info = [];
       var i;
