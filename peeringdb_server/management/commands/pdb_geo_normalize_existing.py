@@ -9,7 +9,7 @@ from pprint import pprint
 import reversion
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from peeringdb_server import models
@@ -96,6 +96,9 @@ class Command(BaseCommand):
         else:
             _id = 0
 
+        if not limit and not self.commit:
+            raise CommandError("Cannot run in pretend mode without a --limit supplied")
+
         output_list = self.normalize(reftag, _id, limit=limit)
 
         if self.csv_file:
@@ -166,8 +169,6 @@ class Command(BaseCommand):
             dict_writer.writeheader()
             dict_writer.writerows(output_list)
 
-    @reversion.create_revision()
-    @transaction.atomic()
     def normalize(self, reftag, _id, limit=0):
         model = models.REFTAG_MAP.get(reftag)
         if not model:
@@ -212,6 +213,8 @@ class Command(BaseCommand):
 
         return output_list
 
+    @reversion.create_revision()
+    @transaction.atomic()
     def _normalize(self, instance, output_dict, save):
 
         suite = self.parse_suite(instance)
