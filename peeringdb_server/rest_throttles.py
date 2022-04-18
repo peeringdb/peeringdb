@@ -135,6 +135,11 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
     def allow_request(self, request, view):
 
+        # skip rate throttling for the api-cache generate process
+
+        if getattr(settings, "GENERATING_API_CACHE", False):
+            return True
+
         self.is_authenticated(request)
 
         ident_prefix = self.ident_prefix(request)
