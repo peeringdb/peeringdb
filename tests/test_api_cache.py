@@ -122,3 +122,49 @@ class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
         settings.API_CACHE_ALL_LIMITS = False
         settings.API_CACHE_ENABLED = False
         super().tearDown()
+
+
+@pytest.mark.django_db
+def test_no_api_throttle():
+    guest_group = Group.objects.create(name="guest")
+    user_group = Group.objects.create(name="user")
+    reset_group_ids()
+
+    models.EnvironmentSetting.objects.create(
+        setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_IP", value_bool=True
+    )
+    models.EnvironmentSetting.objects.create(
+        setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP", value_int=1
+    )
+    models.EnvironmentSetting.objects.create(
+        setting="API_THROTTLE_RESPONSE_SIZE_RATE_IP", value_str="1/minute"
+    )
+
+    models.EnvironmentSetting.objects.create(
+        setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR", value_bool=True
+    )
+    models.EnvironmentSetting.objects.create(
+        setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR", value_int=1
+    )
+    models.EnvironmentSetting.objects.create(
+        setting="API_THROTTLE_RESPONSE_SIZE_RATE_CIDR", value_str="1/minute"
+    )
+
+    models.EnvironmentSetting.objects.create(
+        setting="API_THROTTLE_RATE_ANON", value_str="1/minute"
+    )
+
+    call_command("pdb_generate_test_data", limit=2, commit=True)
+    now = datetime.datetime.now() + datetime.timedelta(days=1)
+    call_command("pdb_api_cache", date=now.strftime("%Y%m%d"))
+    settings.GENERATING_API_CACHE = False
+
+    for (dirpath, dirnames, filenames) in os.walk(settings.API_CACHE_ROOT):
+        for f in filenames:
+            if f in ["log.log"]:
+                continue
+            path = os.path.join(settings.API_CACHE_ROOT, f)
+            with open(path, "r") as fh:
+                data_raw = fh.read()
+                data = json.loads(data_raw)
+                assert not data.get("message")

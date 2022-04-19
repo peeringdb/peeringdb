@@ -4,16 +4,18 @@ Normalize existing address fields based on Google Maps API response.
 import csv
 import os
 import re
+import sys
+import time
 from pprint import pprint
 
 import reversion
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from peeringdb_server import models
-from peeringdb_server.geo import Melissa
+from peeringdb_server.geo import Melissa, Timeout
 from peeringdb_server.serializers import AddressSerializer
 
 API_KEY = settings.MELISSA_KEY
@@ -82,6 +84,7 @@ class Command(BaseCommand):
         self.state_only = options.get("state_only", False)
         self.pprint = options.get("pprint", False)
         self.csv_file = options.get("csv")
+        self.validation_errors = {}
 
         self.melissa = Melissa(API_KEY)
 
@@ -96,6 +99,9 @@ class Command(BaseCommand):
         else:
             _id = 0
 
+        if not limit and _id == 0 and not self.commit:
+            raise CommandError("Cannot run in pretend mode without a --limit supplied")
+
         output_list = self.normalize(reftag, _id, limit=limit)
 
         if self.csv_file:
@@ -107,6 +113,12 @@ class Command(BaseCommand):
                 self.log("{} ({})".format(entry.pop("name"), entry.pop("id")))
                 pprint(entry)
                 self.log("\n")
+
+        if self.validation_errors:
+            self.log("Some objects had validation errors:")
+            for entity_id, err in self.validation_errors.items():
+                self.log(f"Object #{entity_id}: {err}")
+            sys.exit(1)
 
     def parse_suite(self, instance):
 
@@ -166,10 +178,9 @@ class Command(BaseCommand):
             dict_writer.writeheader()
             dict_writer.writerows(output_list)
 
-    @reversion.create_revision()
-    @transaction.atomic()
     def normalize(self, reftag, _id, limit=0):
         model = models.REFTAG_MAP.get(reftag)
+
         if not model:
             raise ValueError(f"Unknown reftag: {reftag}")
         if not hasattr(model, "geocode_status"):
@@ -200,18 +211,32 @@ class Command(BaseCommand):
                 )
             )
 
-            try:
-                if self.state_only:
-                    self._normalize_state(entity, output_dict, self.commit)
-                else:
-                    self._normalize(entity, output_dict, self.commit)
+            proceed_to_next = False
 
-            except ValidationError as exc:
-                self.log(str(exc))
+            while not proceed_to_next:
+
+                try:
+                    if self.state_only:
+                        self._normalize_state(entity, output_dict, self.commit)
+                    else:
+                        self._normalize(entity, output_dict, self.commit)
+
+                    proceed_to_next = True
+
+                except ValidationError as exc:
+                    self.log(f"Validation error: {exc}")
+                    self.validation_errors[entity.id] = exc
+                    proceed_to_next = True
+                except Timeout:
+                    self.log("Request has timed out, retrying ...")
+                    time.sleep(1.0)
+
             output_list.append(output_dict)
 
         return output_list
 
+    @reversion.create_revision()
+    @transaction.atomic()
     def _normalize(self, instance, output_dict, save):
 
         suite = self.parse_suite(instance)

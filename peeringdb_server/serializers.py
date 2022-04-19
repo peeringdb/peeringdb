@@ -250,7 +250,7 @@ class GeocodeSerializerMixin:
         if not suggested_address:
             return False
 
-        for key in ["address1", "city", "state", "zipcode"]:
+        for key in ["address1", "city", "zipcode"]:
             suggested_val = suggested_address.get(key, None)
             instance_val = getattr(instance, key, None)
             if instance_val != suggested_val:
@@ -278,6 +278,12 @@ class GeocodeSerializerMixin:
             try:
                 suggested_address = instance.process_geo_location()
 
+                # normalize state if needed
+                if suggested_address.get("state") != instance.state:
+                    instance.state = suggested_address.get("state")
+                    instance.save()
+
+                # provide other normalization options as suggestion to the user
                 if self.needs_address_suggestion(suggested_address, instance):
                     self._add_meta_information(
                         {

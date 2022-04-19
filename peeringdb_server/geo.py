@@ -2,9 +2,12 @@
 Utilities for geocoding and geo normalization.
 """
 
+import re
+
 import googlemaps
 import requests
 import structlog
+import unidecode
 from django.core.cache import cache
 from django.utils.translation import gettext_lazy as _
 
@@ -268,15 +271,25 @@ class Melissa:
         This will use django-cache if it exists
         """
 
-        key = f"geo.normalize.state.{country_code}.{state}"
+        if not state:
+            return state
+
+        # clean up state value for cache key
+
+        state_clean = unidecode.unidecode(state.lower()).strip()
+        state_clean = re.sub(r"[^a-zA-Z]+", "", state_clean)
+
+        key = f"geo.normalize.state.{country_code}.{state_clean}"
 
         value = cache.get(key)
         if value is None:
+
             result = self.global_address(country=country_code, address1=state)
+
             try:
                 record = result["Records"][0]
                 value = record.get("AdministrativeArea") or state
             except (KeyError, IndexError):
                 value = state
-            cache.set(key, value)
+            cache.set(key, value, timeout=None)
         return value

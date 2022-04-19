@@ -89,6 +89,10 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
         ip_address = self.get_ident(request)
 
+        # handle XFF
+
+        ip_address = ip_address.split(",")[0].strip()
+
         if self.check_ip(request):
             self.ident = ip_address
             self.ident = f"{ident_prefix}{self.ident}"
@@ -134,6 +138,11 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         return allowed
 
     def allow_request(self, request, view):
+
+        # skip rate throttling for the api-cache generate process
+
+        if getattr(settings, "GENERATING_API_CACHE", False):
+            return True
 
         self.is_authenticated(request)
 
