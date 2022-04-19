@@ -89,6 +89,10 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
         ip_address = self.get_ident(request)
 
+        # handle XFF
+
+        ip_address = ip_address.split(",")[0].strip()
+
         if self.check_ip(request):
             self.ident = ip_address
             self.ident = f"{ident_prefix}{self.ident}"

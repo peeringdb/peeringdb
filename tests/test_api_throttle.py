@@ -211,6 +211,64 @@ class APIThrottleTests(TestCase):
             response = ResponseSizeMockView.as_view({"get": "get"})(request)
             assert response.status_code == 200
 
+    def test_response_size_ip_block_x_forwarded(self):
+        """
+        Ensure request rate is limited based on response size
+        for ip-block with HTTP_X_FORWARDED_FOR set
+        """
+
+        request = self.factory.get("/")
+        request.META.update({"HTTP_X_FORWARDED_FOR": "10.10.10.10,77.77.77.77"})
+
+        # by default ip-block response size rate limiting is disabled
+        # ip 10.10.10.10 requesting 10 times (all should be ok)
+
+        for dummy in range(10):
+            response = ResponseSizeMockView.as_view({"get": "get"})(request)
+            assert response.status_code == 200
+
+        # turn on response size throttling for responses bigger than 500 bytes
+        # for ip blocks
+
+        thold = models.EnvironmentSetting.objects.create(
+            setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR", value_int=500
+        )
+        models.EnvironmentSetting.objects.create(
+            setting="API_THROTTLE_RESPONSE_SIZE_RATE_CIDR", value_str="3/minute"
+        )
+        models.EnvironmentSetting.objects.create(
+            setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR", value_bool=True
+        )
+
+        # ip 10.10.10.10 requesting 3 times (all should be ok)
+        for dummy in range(3):
+            response = ResponseSizeMockView.as_view({"get": "get"})(request)
+            assert response.status_code == 200
+
+        # ip 10.10.10.10 requesting 4th time (rate limited)
+        response = ResponseSizeMockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
+
+        # ip 10.10.10.11 requesting 1st time (rate limited)
+        request.META.update(HTTP_X_FORWARDED_FOR="10.10.10.11,77.77.77.77")
+        response = ResponseSizeMockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
+
+        # ip 20.10.10.10 requesting 1st time (ok)
+        request.META.update(HTTP_X_FORWARDED_FOR="20.10.10.10,77.77.77.77")
+        response = ResponseSizeMockView.as_view({"get": "get"})(request)
+        assert response.status_code == 200
+
+        # increase threshold, no longer rate limited
+        thold.value_int = 5000
+        thold.save()
+
+        # 10.10.10.10 requesting 3 times (all should be ok)
+        request.META.update(HTTP_X_FORWARDED_FOR="10.10.10.10,77.77.77.77")
+        for dummy in range(3):
+            response = ResponseSizeMockView.as_view({"get": "get"})(request)
+            assert response.status_code == 200
+
     def test_response_size_ip(self):
         """
         Ensure request rate is limited based on response size
