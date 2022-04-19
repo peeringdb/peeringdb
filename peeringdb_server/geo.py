@@ -283,11 +283,13 @@ class Melissa:
 
         value = cache.get(key)
         if value is None:
+
             result = self.global_address(country=country_code, address1=state)
+
             try:
                 record = result["Records"][0]
                 value = record.get("AdministrativeArea") or state
             except (KeyError, IndexError):
                 value = state
-            cache.set(key, value)
+            cache.set(key, value, timeout=None)
         return value
