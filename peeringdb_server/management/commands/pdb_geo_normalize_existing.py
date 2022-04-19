@@ -99,7 +99,7 @@ class Command(BaseCommand):
         else:
             _id = 0
 
-        if not limit and not self.commit:
+        if not limit and _id == 0 and not self.commit:
             raise CommandError("Cannot run in pretend mode without a --limit supplied")
 
         output_list = self.normalize(reftag, _id, limit=limit)
