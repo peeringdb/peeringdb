@@ -84,6 +84,12 @@ class PDBPermissionMiddlewareTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         assert response.headers.get("X-Auth-ID") == user.username
 
+        # test that header gets cleared between requests
+        other_client = APIClient()
+        response = other_client.get("/api/fac")
+        self.assertEqual(response.status_code, 200)
+        assert response.headers.get("X-Auth-ID") is None
+
     def test_auth_id_basic_auth(self):
         user = User.objects.create(username="test_user")
         user.set_password("test_user")
@@ -95,3 +101,9 @@ class PDBPermissionMiddlewareTest(APITestCase):
         response = self.client.get("/api/fac")
         self.assertEqual(response.status_code, 200)
         assert response.headers.get("X-Auth-ID") == user.username
+
+        # test that header gets cleared between requests
+        other_client = APIClient()
+        response = other_client.get("/api/fac")
+        self.assertEqual(response.status_code, 200)
+        assert response.headers.get("X-Auth-ID") is None
