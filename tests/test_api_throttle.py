@@ -190,7 +190,6 @@ class APIThrottleTests(TestCase):
 
         for idx in range(19):
             response = MockView.as_view({"get": "get"})(request)
-            print(idx)
             assert response.status_code == 200
 
         # rate limited again, no error
@@ -265,7 +264,6 @@ class APIThrottleTests(TestCase):
 
         for idx in range(19):
             response = MockView.as_view({"get": "get"})(request)
-            print(idx)
             assert response.status_code == 200
 
         # rate limited again, no error
@@ -583,7 +581,7 @@ class APIThrottleTests(TestCase):
 
         # turn on response size throttling for responses bigger than 500 bytes
 
-        rate = models.EnvironmentSetting.objects.create(
+        models.EnvironmentSetting.objects.create(
             setting="API_THROTTLE_MELISSA_RATE_IP", value_str="3/minute"
         )
         models.EnvironmentSetting.objects.create(
