@@ -432,13 +432,21 @@ MEDIA_URL = f"/m/{PEERINGDB_VERSION}/"
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
 STATIC_URL = f"/s/{PEERINGDB_VERSION}/"
 
+# maximum number of entries in the cache
+set_option("CACHE_MAX_ENTRIES", 5000)
+
+# dont allow going below 5000 (#1151)
+if CACHE_MAX_ENTRIES < 5000:
+    raise ValueError("CACHE_MAX_ENTRIES needs to be >= 5000 (#1151)")
+
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "django_cache",
         "OPTIONS": {
             # maximum number of entries in the cache
-            "MAX_ENTRIES": 5000,
+            "MAX_ENTRIES": CACHE_MAX_ENTRIES,
             # once max entries are reach delete 500 of the oldest entries
             "CULL_FREQUENCY": 10,
         },
