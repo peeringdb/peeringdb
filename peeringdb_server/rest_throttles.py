@@ -55,6 +55,42 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
             msg_setting
         )
 
+    def wait(self):
+        """
+        Returns the recommended next request time in seconds.
+
+        This is a custom implmentation of the original wait() logic that can
+        also handle dynamic downward adjustments of rate limits (through
+        changing EnvironmentSetting variables for example)
+        """
+        if self.history:
+            remaining_duration = self.duration - (self.now - self.history[-1])
+        else:
+            remaining_duration = self.duration
+
+        available_requests = self.num_requests - len(self.history) + 1
+        if available_requests < 1:
+
+            # a negative/zero value only occurs when rate limit has been adjusted
+            # while already being tracked for the requesting client
+
+            remaining_duration = self.duration
+            new_history = []
+            for entry in self.history[: self.num_requests]:
+                diff = self.now - entry
+                if diff < self.duration:
+                    new_history.append(entry)
+                    remaining_duration = self.duration - diff
+
+            self.history = new_history
+            self.cache.set(self.key, self.history, self.duration)
+            available_requests = self.num_requests - len(self.history) + 1
+
+        if available_requests < 1:
+            return None
+
+        return remaining_duration / float(available_requests)
+
     def _allow_request_user_auth(self, request, view, ident_prefix=""):
         self.ident = f"{ident_prefix}user:{self.user.pk}"
         self.scope = self.scope_user
