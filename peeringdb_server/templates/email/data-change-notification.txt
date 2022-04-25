@@ -1,0 +1,20 @@
+Overview of automated changes to your watched object(s)
+
+{% for watched, entries in notifications.items %}
+{{ watched.watched_object.name }} - changes since {{ watched.changes_since|date:"Y-m-d H:i:s" }}
+{{ watched.watched_object.view_url }}
+{{ separator }}
+{% for entry_groups in entries.values %}
+{% for entry in entry_groups %}
+{% if forloop.first %}{{ entry.title }}
+{% endif %}
+{{ entry.created|date:"Y-m-d H:i:s" }} - {{ entry.get_action_display.upper }} 
+{{ entry.details }}
+{% endfor %}
+{% endfor %}
+{{ separator }}
+{% endfor %}
+
+This is an automated email please do not respond to it directly.
+
+You can reach out to {{ support_email }} for any support inquiries.

@@ -85,6 +85,9 @@ from peeringdb_server.models import (
     UserAPIKey,
     UserOrgAffiliationRequest,
     VerificationQueueItem,
+    DataChangeWatchedObject,
+    DataChangeNotificationQueue,
+    DataChangeEmail,
 )
 from peeringdb_server.util import coerce_ipaddr, round_decimal
 from peeringdb_server.views import HttpResponseForbidden, JsonResponse
@@ -2050,7 +2053,7 @@ class DeskProTicketAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
 def apply_ixf_member_data(modeladmin, request, queryset):
     for ixf_member_data in queryset:
         try:
-            ixf_member_data.apply(user=request.user, comment="Applied IX-F suggestion")
+            ixf_member_data.apply(user=request.user, comment="Applied IX-F suggestion", manual=True)
         except ValidationError as exc:
             messages.error(request, f"{ixf_member_data.ixf_id_pretty_str}: {exc}")
 
@@ -2258,6 +2261,48 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
         "latitude",
         "fetched",
     ]
+
+
+@admin.register(DataChangeWatchedObject)
+class DataChangeWatchedObjectAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "ref_tag", "object_id",  "last_notified", "created")
+
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
+
+
+@admin.register(DataChangeNotificationQueue)
+class DataChangeNotificationQueueAdmin(admin.ModelAdmin):
+    list_display = ("id", "watched_ref_tag", "watched_object_id", "watched_object", "ref_tag", "object_id", "target_object", "title", "source", "action", "details", "created")
+
+    readonly_fields = ("watched_object", "target_object", "title", "details")
+
+    def has_change_permission(self, request, obj=None):
+        return
+
+    def has_add_permission(self, request, obj=None):
+        return
+
+
+
+
+@admin.register(DataChangeEmail)
+class DataChangeEmail(admin.ModelAdmin):
+    list_display = ("id", "user", "email", "subject", "watched_object", "created", "sent")
+
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
+
 
 
 admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)

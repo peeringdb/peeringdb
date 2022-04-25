@@ -971,6 +971,13 @@ set_option("IXF_NOTIFY_NET_ON_CONFLICT", False)
 # deskpro ticket is created
 set_option("IXF_IMPORTER_DAYS_UNTIL_TICKET", 6)
 
+# clean up data change notification queue by discarding
+# entries older than this (7 days)
+set_option("DATA_CHANGE_NOTIFY_MAX_AGE", 86400*7)
+
+# data change emails will only be sent if this True
+set_option("DATA_CHANGE_SEND_EMAILS", False)
+
 
 # when a user tries to delete a protected object, a deskpro
 # ticket is dispatched. This setting throttles repeat

@@ -27,6 +27,7 @@ from django.utils.translation import ugettext_lazy as _
 
 import peeringdb_server.deskpro as deskpro
 from peeringdb_server.models import (
+    DataChangeNotificationQueue,
     DeskProTicket,
     IXFImportEmail,
     IXFMemberData,
@@ -787,6 +788,9 @@ class Importer:
 
                 if not version_after:
                     continue
+
+                # push for data change notification (#403)
+                DataChangeNotificationQueue.push("ixf", action, netixlan, version_before, version_after, **info)
 
                 persist_log.entries.create(
                     netixlan=netixlan,

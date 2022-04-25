@@ -84,6 +84,7 @@ from peeringdb_server.models import (
     PARTNERSHIP_LEVELS,
     REFTAG_MAP,
     UTC,
+    DataChangeWatchedObject,
     Facility,
     InternetExchange,
     InternetExchangeFacility,
@@ -1854,6 +1855,53 @@ def view_exchange(request, id):
     )
 
 
+@login_required
+def watch_network(request, id):
+
+    """
+    Adds data-change notifications for the specified network (id)
+    for the rquesting user.
+
+    User needs write permissions to the network to be eligible for data change
+    notifications.
+    """
+
+    # make sure network exists
+    net = Network.objects.get(id=id)
+
+    if not check_permissions(request.user, net, PERM_CREATE):
+        return HttpResponse(status=403)
+
+    # add watched status
+    DataChangeWatchedObject.objects.get_or_create(
+        user=request.user,
+        ref_tag="net",
+        object_id=id
+    )
+
+    return redirect(f"/net/{id}/")
+
+@login_required
+def unwatch_network(request, id):
+
+    # make sure network exists
+    net = Network.objects.get(id=id)
+
+    if not check_permissions(request.user, net, PERM_CREATE):
+        return HttpResponse(status=403)
+
+    # remove watched status
+    DataChangeWatchedObject.objects.filter(
+        user=request.user,
+        ref_tag="net",
+        object_id=id
+    ).delete()
+
+    return redirect(f"/net/{id}/")
+
+
+
+
 @ensure_csrf_cookie
 def view_network_by_query(request):
     if "asn" in request.GET:
@@ -1933,6 +1981,12 @@ def view_network(request, id):
 
     if network.org.logo:
         org["logo"] = network.org.logo.url
+
+    if DataChangeWatchedObject.watching(request.user, network):
+        watch_actions = [{"label":_("Disable notifications"), "href": reverse("net-unwatch", args=(network.id,))}]
+    else:
+        watch_actions = [{"label":_("Enable notifications"), "href": reverse("net-watch", args=(network.id,))}]
+
 
     data = {
         "title": network_d.get("name", dismiss),
@@ -2130,6 +2184,18 @@ def view_network(request, id):
                     }
                 ],
             },
+
+
+            {
+                "type": "action",
+                "admin": True,
+                "label": _("Notify On IXP Update"),
+                "help_text": _(
+                    "Notify me when an IXP modifies the peering exchange points for this network"
+                ),
+                "actions": watch_actions,
+            },
+
             {
                 "type": "action",
                 "admin": True,
@@ -2654,7 +2720,7 @@ def request_translation(request, data_type):
 def network_reset_ixf_proposals(request, net_id):
     net = Network.objects.get(id=net_id)
 
-    allowed = check_permissions(request.user, net, PERM_CRUD)
+    allowed = check_permissions(request.user, net, PERM_UPDATE)
 
     if not allowed:
         return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)
@@ -2671,7 +2737,7 @@ def network_dismiss_ixf_proposal(request, net_id, ixf_id):
     ixf_member_data = IXFMemberData.objects.get(id=ixf_id)
     net = ixf_member_data.net
 
-    allowed = check_permissions(request.user, net, PERM_CRUD)
+    allowed = check_permissions(request.user, net, PERM_UPDATE)
 
     if not allowed:
         return JsonResponse({"non_field_errors": [_("Permission denied")]}, status=401)
