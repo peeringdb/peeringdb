@@ -106,7 +106,7 @@ class PDBPermissionMiddleware(MiddlewareMixin):
         # session auth already exists, set x-auth-id value and return
 
         if request.user.is_authenticated:
-            request.auth_id = request.user.username
+            request.auth_id = f"u{request.user.id}"
 
             # request attempting to provide separate authentication while
             # already authenticated through session cookie, fail with
@@ -131,14 +131,17 @@ class PDBPermissionMiddleware(MiddlewareMixin):
             user = authenticate(username=username, password=password)
 
             # return username input in x-auth-id header
-            request.auth_id = username
+            if user:
+                request.auth_id = f"u{user.id}"
 
             # if user is not authenticated return 401 Unauthorized
-            if not user:
+            else:
 
                 # truncate the username if needed.
                 if len(username) > 255:
                     request.auth_id = username[:255]
+                else:
+                    request.auth_id = username
 
                 return self.response_unauthorized(
                     request, message="Invalid username or password", status=401
@@ -168,8 +171,14 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                 )
 
             # If API key is provided, check if the user has an active session
-            if api_key:
-                request.auth_id = f"apikey_{api_key.prefix}"
+            else:
+
+                if isinstance(api_key, OrganizationAPIKey):
+                    prefix = f"o{api_key.org_id}"
+                else:
+                    prefix = f"u{api_key.user_id}"
+
+                request.auth_id = f"{prefix}_apikey_{api_key.prefix}"
                 if request.session.get("_auth_user_id") and request.user.id:
                     if int(request.user.id) == int(
                         request.session.get("_auth_user_id")

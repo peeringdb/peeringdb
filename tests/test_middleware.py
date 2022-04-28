@@ -10,7 +10,8 @@ from django.test import (
 from rest_framework.test import APIClient, APITestCase
 
 from peeringdb_server.middleware import PDBCommonMiddleware
-from peeringdb_server.models import User, UserAPIKey
+from peeringdb_server.models import Organization, OrganizationAPIKey, User, UserAPIKey
+from .util import reset_group_ids
 
 
 def get_response_empty(request):
@@ -67,7 +68,31 @@ class PDBPermissionMiddlewareTest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Api-Key {key}")
         response = self.client.get("/api/fac")
         self.assertEqual(response.status_code, 200)
-        assert response.headers.get("X-Auth-ID").startswith("apikey_")
+        assert (
+            response.headers.get("X-Auth-ID") == f"u{user.id}_apikey_{api_key.prefix}"
+        )
+
+        # test that header gets cleared between requests
+        other_client = APIClient()
+        response = other_client.get("/api/fac")
+        self.assertEqual(response.status_code, 200)
+        assert response.headers.get("X-Auth-ID") is None
+
+    def test_auth_id_org_api_key(self):
+        reset_group_ids()
+
+        org = Organization.objects.create(name="Test org", status="ok")
+
+        # Create an API key for the user
+        api_key, key = OrganizationAPIKey.objects.create_key(
+            name="test",
+            org=org,
+        )
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Api-Key {key}")
+        response = self.client.get("/api/fac")
+        self.assertEqual(response.status_code, 200)
+        assert response.headers.get("X-Auth-ID") == f"o{org.id}_apikey_{api_key.prefix}"
 
         # test that header gets cleared between requests
         other_client = APIClient()
@@ -83,7 +108,7 @@ class PDBPermissionMiddlewareTest(APITestCase):
         self.client.force_login(user)
         response = self.client.get("/api/fac")
         self.assertEqual(response.status_code, 200)
-        assert response.headers.get("X-Auth-ID") == user.username
+        assert response.headers.get("X-Auth-ID") == f"u{user.id}"
 
         # test that header gets cleared between requests
         other_client = APIClient()
@@ -101,7 +126,7 @@ class PDBPermissionMiddlewareTest(APITestCase):
 
         response = self.client.get("/api/fac")
         self.assertEqual(response.status_code, 200)
-        assert response.headers.get("X-Auth-ID") == user.username
+        assert response.headers.get("X-Auth-ID") == f"u{user.id}"
 
         # test that header gets cleared between requests
         other_client = APIClient()

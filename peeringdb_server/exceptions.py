@@ -6,6 +6,7 @@ def format_wait_time(wait_time):
     """
     Format wait time in seconds to human readable format
     """
+
     if wait_time < 60:
         return f"{wait_time} seconds"
     elif wait_time < 3600 and wait_time > 60:

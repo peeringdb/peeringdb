@@ -66,11 +66,11 @@ class APIThrottleTests(TestCase):
         cache.clear()
 
         self.factory = APIRequestFactory()
-        env = models.EnvironmentSetting(
+        self.rate_anon = env = models.EnvironmentSetting(
             setting="API_THROTTLE_RATE_ANON", value_str="10/minute"
         )
         env.save()
-        env = models.EnvironmentSetting(
+        self.rate_user = env = models.EnvironmentSetting(
             setting="API_THROTTLE_RATE_USER", value_str="10/minute"
         )
         env.save()
@@ -139,6 +139,64 @@ class APIThrottleTests(TestCase):
         assert response.status_code == 429
         assert "Rate limit exceeded (anon)" in response.data["message"]
 
+    def test_anon_requests_above_throttle_rate_dynamic_changes(self):
+        """
+        Ensure request rate is limited for anonymous users while
+        changing the rate between requests
+        """
+
+        request = self.factory.get("/")
+        for dummy in range(11):
+            response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
+        assert "Rate limit exceeded (anon)" in response.data["message"]
+
+        # adjust rate limit downwards
+
+        self.rate_anon.value_str = "1/minute"
+        self.rate_anon.save()
+
+        # still rate limited, no error
+
+        response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
+
+        # adjust rate limit upwards
+
+        self.rate_anon.value_str = "100/minute"
+        self.rate_anon.save()
+
+        # no longer rate limited, no error
+
+        response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 200
+
+        # adjust rate limit downwards (change duration)
+
+        self.rate_anon.value_str = "1/hour"
+        self.rate_anon.save()
+
+        # rate limited again, no error
+
+        response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
+
+        # adjust rate limit upwards (change duration)
+
+        self.rate_anon.value_str = "20/hour"
+        self.rate_anon.save()
+
+        # no longer rate limited (19 attempts), no error
+
+        for idx in range(19):
+            response = MockView.as_view({"get": "get"})(request)
+            assert response.status_code == 200
+
+        # rate limited again, no error
+
+        response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
+
     def test_authenticated_requests_above_throttle_rate(self):
         """
         Ensure request rate is not limited for authenticated users
@@ -152,6 +210,66 @@ class APIThrottleTests(TestCase):
             response = MockView.as_view({"get": "get"})(request)
         assert response.status_code == 429
         assert "Rate limit exceeded (user)" in response.data["message"]
+
+    def test_authenticated_requests_above_throttle_rate_dynamic_changes(self):
+        """
+        Ensure request rate is not limited for authenticated users
+        """
+
+        user = models.User(username="test")
+        user.save()
+        request = self.factory.get("/")
+        request.user = user
+        for dummy in range(11):
+            response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
+        assert "Rate limit exceeded (user)" in response.data["message"]
+
+        # adjust rate limit downwards
+
+        self.rate_user.value_str = "1/minute"
+        self.rate_user.save()
+
+        # still rate limited, no error
+
+        response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
+
+        # adjust rate limit upwards
+
+        self.rate_user.value_str = "100/minute"
+        self.rate_user.save()
+
+        # no longer rate limited, no error
+
+        response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 200
+
+        # adjust rate limit downwards (change duration)
+
+        self.rate_user.value_str = "1/hour"
+        self.rate_user.save()
+
+        # rate limited again, no error
+
+        response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
+
+        # adjust rate limit upwards (change duration)
+
+        self.rate_user.value_str = "20/hour"
+        self.rate_user.save()
+
+        # no longer rate limited (19 attempts), no error
+
+        for idx in range(19):
+            response = MockView.as_view({"get": "get"})(request)
+            assert response.status_code == 200
+
+        # rate limited again, no error
+
+        response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
 
     def test_response_size_ip_block(self):
         """
