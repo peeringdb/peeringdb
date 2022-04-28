@@ -11,6 +11,7 @@ from rest_framework.test import APIClient, APITestCase
 
 from peeringdb_server.middleware import PDBCommonMiddleware
 from peeringdb_server.models import Organization, OrganizationAPIKey, User, UserAPIKey
+from .util import reset_group_ids
 
 
 def get_response_empty(request):
@@ -78,6 +79,8 @@ class PDBPermissionMiddlewareTest(APITestCase):
         assert response.headers.get("X-Auth-ID") is None
 
     def test_auth_id_org_api_key(self):
+        reset_group_ids()
+
         org = Organization.objects.create(name="Test org", status="ok")
 
         # Create an API key for the user
