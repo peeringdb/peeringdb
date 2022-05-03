@@ -101,6 +101,19 @@ After it is done you should have a PeeringDB instance exposed on port `:8000`: [
 
 (should you want to change this port you can do so by setting the environment variable `DJANGO_PORT`)
 
+### Migration Notes
+
+#### Organization management of oauth applications
+
+Once migrations `0085` has been applied you can overrider the `OAUTH2_PROVIDER_APPLICATION_MODEL` environment variable to
+`"peeringdb_server.OAuthApplication"` in order to enabled organization management of oauth applications.
+
+Trying to switch this beforehand will result in the following migration error
+
+```
+Related model 'peeringdb_server.oauthapplication` cannot be resolved
+```
+
 ### Stop and start the containers
 
 ```sh

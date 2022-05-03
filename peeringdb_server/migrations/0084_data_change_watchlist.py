@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("reversion", "0002_add_index_on_version_for_content_type_and_db"),
-        ("peeringdb_server", "0082_api_throttle_msg"),
+        ("peeringdb_server", "0083_auto_20220412_1554"),
     ]
 
     operations = [

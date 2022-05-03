@@ -786,7 +786,7 @@ OAUTH2_PROVIDER = {
 
 
 # override this to `peeringdb_server.OAuthApplication` once peeringdb_server
-# migration 0083 has completed.
+# migration 0085 has been applied.
 
 set_option("OAUTH2_PROVIDER_APPLICATION_MODEL", "oauth2_provider.Application")
 
