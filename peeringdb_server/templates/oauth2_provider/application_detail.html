@@ -1,0 +1,11 @@
+{% extends "oauth2_provider/application_detail.html" %}
+{% load i18n %}
+
+{% block content %}
+{% if application.org %}
+<div class="block-center">
+  <div class="alert alert-info">{% blocktrans with org_name=application.org.name %}This application is under {{ org_name }}'s management. All administrators of the organization may make changes to it.{% endblocktrans %}</div>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock content %}

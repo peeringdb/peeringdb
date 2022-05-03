@@ -46,6 +46,11 @@
         {% trans "API Key Permissions" %}
       </a>
     </li>
+    <li role="presentation">
+      <a href="#manage_oauth" aria-controls="manage_oauth" role="tab" data-toggle="tab">
+        {% trans "OAuth" %}
+      </a>
+    </li>
     <li role="presentation" class="danger">
       <a href="#manage_delete" aria-controls="manage_delete" role="tab" data-toggle="tab">
         {% trans "Delete Organization" %}
@@ -859,6 +864,10 @@
 
     <div role="tabpanel" class="tab-pane" id="manage_key_perms">
       {% include "site/org_manage_key_permissions.html" %}
+    </div>
+
+    <div role="tabpanel" class="tab-pane" id="manage_oauth">
+      {% include "site/org_manage_oauth.html" %}
     </div>
 
     <div role="tabpanel" class="tab-pane" id="manage_delete">

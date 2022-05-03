@@ -785,6 +785,11 @@ OAUTH2_PROVIDER = {
 }
 
 
+# override this to `peeringdb_server.OAuthApplication` once peeringdb_server
+# migration 0083 has completed.
+
+set_option("OAUTH2_PROVIDER_APPLICATION_MODEL", "oauth2_provider.Application")
+
 ## grainy
 
 AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)

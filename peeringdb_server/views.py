@@ -26,6 +26,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import Q
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -36,6 +37,7 @@ from django.http import (
 )
 from django.shortcuts import redirect, render
 from django.template import loader
+from django.forms.models import modelform_factory
 from django.urls import Resolver404, resolve, reverse
 from django.utils import translation
 from django.utils.crypto import constant_time_compare
@@ -52,7 +54,10 @@ from django_security_keys.ext.two_factor.views import (  # noqa
 from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
+from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
+import oauth2_provider.views.application as oauth2_application_views
+import oauth2_provider.views as oauth2_views
 from ratelimit.decorators import ratelimit
 
 from peeringdb_server import settings
@@ -533,6 +538,119 @@ def view_set_user_locale(request):
 
         return response
 
+
+# OAuth application management overrides
+
+class ApplicationOwnerMixin:
+
+    """
+    OAuth mixin it that filters application queryset for ownership
+    considering either the owning user or the owning organization.
+
+    For organizations any user in the administrator group for the organization
+    may manage the oauth application
+    """
+
+    def get_queryset(self):
+
+        org_ids = [org.id for org in self.request.user.admin_organizations]
+
+        return get_application_model().objects.filter(Q(user=self.request.user) | Q(org_id__in=org_ids))
+
+class ApplicationFormMixin:
+
+    """
+    Used for oauth application update and registration process
+
+    Will add an `org` field to the form and make sure it is filtered to only contain
+    organizations the requesting user has management permissions to
+    """
+
+    def get_form_class(self):
+        """
+        Returns the form class for the application model
+        """
+        return modelform_factory(
+            get_application_model(),
+            fields=(
+				"org",
+                "name",
+                "client_id",
+                "client_secret",
+                "client_type",
+                "authorization_grant_type",
+                "redirect_uris",
+                "algorithm",
+            ),
+            labels={
+                "org": _("Organization")
+            },
+            help_texts={
+                "org": _("Register on behalf of one of your organizations")
+            }
+        )
+
+    def get_form(self):
+
+        form = super().get_form()
+
+        # filter organization choices to only contain organizations manageable
+        # by the requesting user
+
+        org_ids = [org.id for org in self.request.user.admin_organizations]
+        form.fields["org"].queryset = Organization.objects.filter(id__in=org_ids)
+
+        return form
+
+
+class ApplicationRegistration(ApplicationFormMixin, oauth2_application_views.ApplicationRegistration):
+
+    def form_valid(self, form):
+        r = super().form_valid(form)
+        if form.instance.org:
+            form.instance.user = None
+            form.instance.save()
+        return r
+
+    def get_form(self):
+        form = super().get_form()
+
+        # if url parameter `org` is provided attempt to use
+        # it to preselect the choice in the `org` field dropdown
+
+        org_id = self.request.GET.get("org")
+        if org_id:
+            form.fields["org"].initial = org_id
+        return form
+
+oauth2_views.ApplicationRegistration = ApplicationRegistration
+
+class ApplicationDetail(ApplicationOwnerMixin, oauth2_views.ApplicationDetail):
+    pass
+
+oauth2_views.ApplicationDetail = ApplicationDetail
+
+class ApplicationList(ApplicationOwnerMixin, oauth2_views.ApplicationList):
+    pass
+
+oauth2_views.ApplicationList = ApplicationList
+
+class ApplicationDelete(ApplicationOwnerMixin, oauth2_views.ApplicationDelete):
+    pass
+
+oauth2_views.ApplicationDelete = ApplicationDelete
+
+
+class ApplicationUpdate(ApplicationOwnerMixin, ApplicationFormMixin, oauth2_views.ApplicationUpdate):
+    def form_valid(self, form):
+        if not form.instance.org and not form.instance.user:
+            form.instance.user = self.request.user
+        return super().form_valid(form)
+
+oauth2_views.ApplicationUpdate = ApplicationUpdate
+
+
+# OAuth profile
 
 @protected_resource(scopes=["profile"])
 def view_profile_v1(request):

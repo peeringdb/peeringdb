@@ -36,6 +36,7 @@ case "$1" in
     export DATABASE_PASSWORD=""
     export RELEASE_ENV=run_tests
     unset BASE_URL
+    unset OAUTH2_PROVIDER_APPLICATION_MODEL
     unset SESSION_COOKIE_DOMAIN
     pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 tests/
     ;;

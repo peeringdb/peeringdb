@@ -61,6 +61,7 @@ from django_handleref.models import CreatedDateTimeField, UpdatedDateTimeField
 from django_inet.models import ASNField
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
+import oauth2_provider.models as oauth2
 
 import peeringdb_server.geo as geo
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
@@ -4904,7 +4905,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def organizations(self):
         """
-        Returns all organizations this user is a member of.
+        Returns all organizations this user is a member or admin of.
         """
         ids = []
         for group in self.groups.all():
@@ -4913,6 +4914,20 @@ class User(AbstractBaseUser, PermissionsMixin):
                 ids.append(int(m.group(1)))
 
         return [org for org in Organization.objects.filter(id__in=ids, status="ok")]
+
+    @property
+    def admin_organizations(self):
+        """
+        Returns all organizations this user is an admin of.
+        """
+        ids = []
+        for group in self.groups.all():
+            m = re.match(r"^org\.(\d+).admin$", group.name)
+            if m and int(m.group(1)) not in ids:
+                ids.append(int(m.group(1)))
+
+        return [org for org in Organization.objects.filter(id__in=ids, status="ok")]
+
 
     @property
     def networks(self):
@@ -5559,6 +5574,37 @@ class EnvironmentSetting(models.Model):
 
         self.full_clean()
         self.save()
+
+class OAuthApplication(oauth2.AbstractApplication):
+
+    """
+    OAuth application - extends the default oauth_provider2 application
+    and adds optional org ownership to it through an `org` relationship
+    """
+
+    org = models.ForeignKey(
+        Organization,
+        null=True,
+        blank=True,
+        help_text=_("application is owned by this organization"),
+        related_name="oauth_applications",
+        on_delete=models.CASCADE,
+    )
+
+    objects = oauth2.ApplicationManager()
+
+    class Meta(oauth2.AbstractApplication.Meta):
+        db_table = "peeringdb_oauth_application"
+        verbose_name = _("OAuth Application")
+        verbose_name_plural = _("OAuth Applications")
+
+    def natural_key(self):
+        return (self.client_id, )
+
+    def clean(self):
+        # user should not be set on org owned apps
+        if self.org_id and self.user_id:
+            self.user = None
 
 
 REFTAG_MAP = {
