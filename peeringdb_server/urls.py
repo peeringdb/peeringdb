@@ -46,6 +46,7 @@ from peeringdb_server.views import (
     request_search,
     request_translation,
     resend_confirmation_mail,
+    unwatch_network,
     validator_result_cache,
     view_about,
     view_advanced_search,
@@ -74,7 +75,6 @@ from peeringdb_server.views import (
     view_username_retrieve_initiate,
     view_verify,
     watch_network,
-    unwatch_network,
 )
 
 # o
@@ -130,8 +130,16 @@ urlpatterns = [
         name="net-reset-ixf-proposals",
     ),
     url(r"^%s/(?P<id>\d+)/?$" % Network.handleref.tag, view_network, name="net-view"),
-    url(r"^%s/(?P<id>\d+)/watch/?$" % Network.handleref.tag, watch_network, name="net-watch"),
-    url(r"^%s/(?P<id>\d+)/unwatch/?$" % Network.handleref.tag, unwatch_network, name="net-unwatch"),
+    url(
+        r"^%s/(?P<id>\d+)/watch/?$" % Network.handleref.tag,
+        watch_network,
+        name="net-watch",
+    ),
+    url(
+        r"^%s/(?P<id>\d+)/unwatch/?$" % Network.handleref.tag,
+        unwatch_network,
+        name="net-unwatch",
+    ),
     url(
         r"^%s/(?P<id>\d+)/?$" % InternetExchange.handleref.tag,
         view_exchange,

@@ -49,13 +49,20 @@ from reversion.admin import VersionAdmin
 
 import peeringdb_server.admin_commandline_tools as acltools
 from peeringdb_server.inet import RdapException, RdapLookup, rdap_pretty_error_message
-from peeringdb_server.mail import mail_users_entity_merge, mail_sponsorship_admin_merge, mail_sponsorship_admin_merge_conflict
+from peeringdb_server.mail import (
+    mail_sponsorship_admin_merge,
+    mail_sponsorship_admin_merge_conflict,
+    mail_users_entity_merge,
+)
 from peeringdb_server.models import (
     COMMANDLINE_TOOLS,
     QUEUE_ENABLED,
     REFTAG_MAP,
     UTC,
     CommandLineTool,
+    DataChangeEmail,
+    DataChangeNotificationQueue,
+    DataChangeWatchedObject,
     DeskProTicket,
     DeskProTicketCC,
     EnvironmentSetting,
@@ -85,9 +92,6 @@ from peeringdb_server.models import (
     UserAPIKey,
     UserOrgAffiliationRequest,
     VerificationQueueItem,
-    DataChangeWatchedObject,
-    DataChangeNotificationQueue,
-    DataChangeEmail,
 )
 from peeringdb_server.util import coerce_ipaddr, round_decimal
 from peeringdb_server.views import HttpResponseForbidden, JsonResponse
@@ -170,15 +174,15 @@ def fk_handleref_filter(form, field, tag=None):
 
 ###############################################################################
 
-class SponsorshipConflict(ValueError):
 
+class SponsorshipConflict(ValueError):
     def __init__(self, orgs):
         self.orgs = orgs
         self.org_names = ",".join([org.name for org in orgs])
         return super().__init__(self.org_names)
 
-def merge_organizations_handle_sponsors(source_orgs, target_org):
 
+def merge_organizations_handle_sponsors(source_orgs, target_org):
 
     target_sponsor = target_org.active_or_pending_sponsorship
 
@@ -219,6 +223,7 @@ def merge_organizations_handle_sponsors(source_orgs, target_org):
             continue
 
         return merge_organizations_transfer_sponsor(source_sponsor, _orgs, target_org)
+
 
 def merge_organizations_transfer_sponsor(sponsor, source_orgs, target_org):
 
@@ -269,7 +274,9 @@ def merge_organizations(targets, target, request):
 
         mail_sponsorship_admin_merge_conflict(exc.orgs, target)
         return {
-            "error": _("There exist some sponsor ship conflicts that will need to be manually resolved before this merge can happen. {} has been notified of this conflict. Conflicting organizations: {}").format(settings.SPONSORSHIPS_EMAIL, exc.org_names)
+            "error": _(
+                "There exist some sponsor ship conflicts that will need to be manually resolved before this merge can happen. {} has been notified of this conflict. Conflicting organizations: {}"
+            ).format(settings.SPONSORSHIPS_EMAIL, exc.org_names)
         }
 
     for org in targets:
@@ -320,7 +327,6 @@ def merge_organizations(targets, target, request):
 
     if sponsorship_moved:
         mail_sponsorship_admin_merge(sponsorship_moved[0], target)
-
 
     return {
         "ix": ix_moved,
@@ -2132,7 +2138,9 @@ class DeskProTicketAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
 def apply_ixf_member_data(modeladmin, request, queryset):
     for ixf_member_data in queryset:
         try:
-            ixf_member_data.apply(user=request.user, comment="Applied IX-F suggestion", manual=True)
+            ixf_member_data.apply(
+                user=request.user, comment="Applied IX-F suggestion", manual=True
+            )
         except ValidationError as exc:
             messages.error(request, f"{ixf_member_data.ixf_id_pretty_str}: {exc}")
 
@@ -2344,7 +2352,7 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
 
 @admin.register(DataChangeWatchedObject)
 class DataChangeWatchedObjectAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "ref_tag", "object_id",  "last_notified", "created")
+    list_display = ("id", "user", "ref_tag", "object_id", "last_notified", "created")
 
     raw_id_fields = ("user",)
 
@@ -2357,7 +2365,20 @@ class DataChangeWatchedObjectAdmin(admin.ModelAdmin):
 
 @admin.register(DataChangeNotificationQueue)
 class DataChangeNotificationQueueAdmin(admin.ModelAdmin):
-    list_display = ("id", "watched_ref_tag", "watched_object_id", "watched_object", "ref_tag", "object_id", "target_object", "title", "source", "action", "details", "created")
+    list_display = (
+        "id",
+        "watched_ref_tag",
+        "watched_object_id",
+        "watched_object",
+        "ref_tag",
+        "object_id",
+        "target_object",
+        "title",
+        "source",
+        "action",
+        "details",
+        "created",
+    )
 
     readonly_fields = ("watched_object", "target_object", "title", "details")
 
@@ -2368,11 +2389,17 @@ class DataChangeNotificationQueueAdmin(admin.ModelAdmin):
         return
 
 
-
-
 @admin.register(DataChangeEmail)
 class DataChangeEmail(admin.ModelAdmin):
-    list_display = ("id", "user", "email", "subject", "watched_object", "created", "sent")
+    list_display = (
+        "id",
+        "user",
+        "email",
+        "subject",
+        "watched_object",
+        "created",
+        "sent",
+    )
 
     raw_id_fields = ("user",)
 
@@ -2381,7 +2408,6 @@ class DataChangeEmail(admin.ModelAdmin):
             "user",
         ],
     }
-
 
 
 admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)

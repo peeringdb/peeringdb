@@ -1,24 +1,20 @@
 """
 Run the IX-F Importer.
 """
-import json
-import sys
-import traceback
 import datetime
+import sys
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.template import loader
 from django.utils import timezone
 
-from peeringdb_server import ixf
 from peeringdb_server.models import (
-    DataChangeNotificationQueue,
     DataChangeEmail,
+    DataChangeNotificationQueue,
     DataChangeWatchedObject,
 )
-
-from django.template import loader
 
 
 class PretendMode(IOError):

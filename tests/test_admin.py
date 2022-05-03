@@ -1,7 +1,7 @@
+import datetime
 import json
 import os
 import urllib
-import datetime
 
 import pytest
 from django.contrib.auth.models import Group
@@ -336,7 +336,6 @@ class AdminTests(TestCase):
 
         assert not sponsor_a.orgs.filter(pk=t_org.pk).exists()
         assert not sponsor_b.orgs.filter(pk=t_org.pk).exists()
-
 
     def test_commandline_tool(self):
         c = Client()

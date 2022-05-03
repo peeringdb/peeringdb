@@ -1,13 +1,15 @@
 import time
+
 import pytest
 import reversion
-from django.test import Client
 from django.conf import settings
-from django.utils import timezone
 from django.core.management import call_command
+from django.test import Client
+from django.utils import timezone
+
 from peeringdb_server.models import (
-    DataChangeNotificationQueue,
     DataChangeEmail,
+    DataChangeNotificationQueue,
     DataChangeWatchedObject,
     Network,
     NetworkIXLan,
@@ -29,6 +31,7 @@ def save_netixlan(netixlan):
 @pytest.fixture
 def datachange_objects():
     return _datachange_objects()
+
 
 def _datachange_objects():
     call_command("pdb_generate_test_data", limit=1, commit=True)
@@ -297,9 +300,8 @@ def test_command(datachange_objects, emails):
     call_command("pdb_data_change_notify", commit=True)
     assert DataChangeEmail.objects.count() == 1
 
+
 class ViewTests(ClientCase):
-
-
     def test_view_watch_net(self):
         datachange_objects = _datachange_objects()
         DataChangeWatchedObject.objects.all().delete()
@@ -309,7 +311,9 @@ class ViewTests(ClientCase):
 
         self.user_group.user_set.add(user)
 
-        assert not DataChangeWatchedObject.objects.filter(user=user, ref_tag="net", object_id=net.id).exists()
+        assert not DataChangeWatchedObject.objects.filter(
+            user=user, ref_tag="net", object_id=net.id
+        ).exists()
 
         client = Client()
         client.force_login(user)
@@ -317,7 +321,9 @@ class ViewTests(ClientCase):
         resp = client.get(f"/net/{net.id}/watch")
         assert resp.status_code == 302
 
-        assert DataChangeWatchedObject.objects.filter(user=user, ref_tag="net", object_id=net.id).exists()
+        assert DataChangeWatchedObject.objects.filter(
+            user=user, ref_tag="net", object_id=net.id
+        ).exists()
 
         resp = client.get(f"/net/{net.id}")
         assert "Disable notifications" in resp.content.decode("utf-8")
@@ -325,7 +331,9 @@ class ViewTests(ClientCase):
         resp = client.get(f"/net/{net.id}/unwatch")
         assert resp.status_code == 302
 
-        assert not DataChangeWatchedObject.objects.filter(user=user, ref_tag="net", object_id=net.id).exists()
+        assert not DataChangeWatchedObject.objects.filter(
+            user=user, ref_tag="net", object_id=net.id
+        ).exists()
 
         resp = client.get(f"/net/{net.id}")
         assert "Enable notifications" in resp.content.decode("utf-8")
@@ -340,5 +348,3 @@ class ViewTests(ClientCase):
         resp = client.get(f"/net/{net.id}")
         assert "Enable notifications" not in resp.content.decode("utf-8")
         assert "Disable notifications" not in resp.content.decode("utf-8")
-
-

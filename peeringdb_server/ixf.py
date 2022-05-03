@@ -790,7 +790,9 @@ class Importer:
                     continue
 
                 # push for data change notification (#403)
-                DataChangeNotificationQueue.push("ixf", action, netixlan, version_before, version_after, **info)
+                DataChangeNotificationQueue.push(
+                    "ixf", action, netixlan, version_before, version_after, **info
+                )
 
                 persist_log.entries.create(
                     netixlan=netixlan,

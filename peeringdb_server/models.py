@@ -32,6 +32,7 @@ from itertools import chain
 
 import django.urls
 import django_peeringdb.models as pdb_models
+import oauth2_provider.models as oauth2
 import reversion
 from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
@@ -61,7 +62,6 @@ from django_handleref.models import CreatedDateTimeField, UpdatedDateTimeField
 from django_inet.models import ASNField
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
-import oauth2_provider.models as oauth2
 
 import peeringdb_server.geo as geo
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
@@ -1083,7 +1083,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
             .first()
         )
 
-
     @classmethod
     @reversion.create_revision()
     @transaction.atomic()
@@ -1216,7 +1215,6 @@ class Sponsorship(models.Model):
 
     def __str__(self):
         return f"Sponsorship ID#{self.id} {self.start_date} - {self.end_date}"
-
 
     def notify_expiration(self):
         """
@@ -4965,7 +4963,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         return [org for org in Organization.objects.filter(id__in=ids, status="ok")]
 
-
     @property
     def networks(self):
         """
@@ -5637,12 +5634,13 @@ class OAuthApplication(oauth2.AbstractApplication):
         verbose_name_plural = _("OAuth Applications")
 
     def natural_key(self):
-        return (self.client_id, )
+        return (self.client_id,)
 
     def clean(self):
         # user should not be set on org owned apps
         if self.org_id and self.user_id:
             self.user = None
+
 
 WATCHABLE_OBJECTS = [
     ("net", _("Network")),
@@ -5658,6 +5656,7 @@ DATACHANGE_ACTIONS = [
     ("delete", _("Deleted")),
 ]
 
+
 class DataChangeWatchedObject(models.Model):
 
     """
@@ -5667,19 +5666,26 @@ class DataChangeWatchedObject(models.Model):
     Currently only `net` objects are watchable
     """
 
-    user = models.ForeignKey(User, related_name="watched_objects", on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User, related_name="watched_objects", on_delete=models.CASCADE
+    )
 
     # object being watched
 
     ref_tag = models.CharField(choices=WATCHABLE_OBJECTS, max_length=255)
     object_id = models.PositiveIntegerField()
 
-    created = models.DateTimeField(auto_now_add=True, help_text=_("User started watching this object at this time"))
+    created = models.DateTimeField(
+        auto_now_add=True, help_text=_("User started watching this object at this time")
+    )
 
     # last time user had a notification sent for changes to this object
 
-    last_notified = models.DateTimeField(null=True, blank=True, help_text=_("Last time user was notified about changes to this object"))
-
+    last_notified = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Last time user was notified about changes to this object"),
+    )
 
     class Meta:
         db_table = "peeringdb_data_change_watch"
@@ -5694,7 +5700,9 @@ class DataChangeWatchedObject(models.Model):
 
     @classmethod
     def watching(cls, user, obj):
-        return cls.objects.filter(user=user, ref_tag=obj.HandleRef.tag, object_id=obj.id).exists()
+        return cls.objects.filter(
+            user=user, ref_tag=obj.HandleRef.tag, object_id=obj.id
+        ).exists()
 
     @classmethod
     def cleanup(cls):
@@ -5726,8 +5734,6 @@ class DataChangeWatchedObject(models.Model):
                 deleted += 1
 
         return deleted
-
-
 
     @classmethod
     def collect(cls):
@@ -5772,11 +5778,15 @@ class DataChangeWatchedObject(models.Model):
             else:
                 date_limit = watched.created
 
-
-            entries = DataChangeNotificationQueue.consolidate(watched.ref_tag, watched.object_id, date_limit)
+            entries = DataChangeNotificationQueue.consolidate(
+                watched.ref_tag, watched.object_id, date_limit
+            )
 
             if entries:
-                collected[watched.user_id][key] = {"watched": watched, "entries": entries}
+                collected[watched.user_id][key] = {
+                    "watched": watched,
+                    "entries": entries,
+                }
 
         for user_id, notifications in list(collected.items()):
             if not notifications:
@@ -5785,14 +5795,15 @@ class DataChangeWatchedObject(models.Model):
 
         return users, collected
 
-
     @property
     def watched_object(self):
         """
         Returns instance of the watched object
         """
         if not hasattr(self, "_watched_object"):
-            self._watched_object = REFTAG_MAP[self.ref_tag].objects.get(id=self.object_id)
+            self._watched_object = REFTAG_MAP[self.ref_tag].objects.get(
+                id=self.object_id
+            )
 
         return self._watched_object
 
@@ -5821,13 +5832,27 @@ class DataChangeNotificationQueue(models.Model):
     ref_tag = models.CharField(max_length=255)
     object_id = models.PositiveIntegerField()
 
-    reason = models.CharField(max_length=255, help_text=_("Reason for notification"), null=True, blank=True)
+    reason = models.CharField(
+        max_length=255, help_text=_("Reason for notification"), null=True, blank=True
+    )
 
     # keeping track of object versions
 
-    version_before = models.ForeignKey(reversion.models.Version, related_name="data_change_notification_before", on_delete=models.PROTECT, null=True, blank=True)
+    version_before = models.ForeignKey(
+        reversion.models.Version,
+        related_name="data_change_notification_before",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
 
-    version_after = models.ForeignKey(reversion.models.Version, related_name="data_change_notification_after", on_delete=models.PROTECT, null=True, blank=True)
+    version_after = models.ForeignKey(
+        reversion.models.Version,
+        related_name="data_change_notification_after",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
 
     # descriptor of action done to the object (e.g.,
 
@@ -5837,16 +5862,19 @@ class DataChangeNotificationQueue(models.Model):
 
     created = models.DateTimeField(auto_now_add=True)
 
-
     class Meta:
         db_table = "peeringdb_data_change_notify"
         verbose_name = _("Data Change Notification Queue")
         verbose_name_plural = _("Data Change Notification Queue")
 
-
         indexes = [
-            models.Index(fields=["watched_ref_tag", "watched_object_id"], name="data_change_notify_watch"),
-            models.Index(fields=["ref_tag", "object_id"], name="data_change_notify_target")
+            models.Index(
+                fields=["watched_ref_tag", "watched_object_id"],
+                name="data_change_notify_watch",
+            ),
+            models.Index(
+                fields=["ref_tag", "object_id"], name="data_change_notify_target"
+            ),
         ]
 
     @classmethod
@@ -5861,7 +5889,9 @@ class DataChangeNotificationQueue(models.Model):
         # for the data change parent. If no user has set it up
         # dont push a notification as no one is watching anyway.
 
-        parent_is_watched = DataChangeWatchedObject.objects.filter(ref_tag=watched_ref_tag, object_id=watched_object_id).exists()
+        parent_is_watched = DataChangeWatchedObject.objects.filter(
+            ref_tag=watched_ref_tag, object_id=watched_object_id
+        ).exists()
 
         if not parent_is_watched:
             return
@@ -5869,15 +5899,15 @@ class DataChangeNotificationQueue(models.Model):
         # create notification entry
 
         entry = cls(
-            action = action,
-            watched_ref_tag = watched_ref_tag,
-            watched_object_id = watched_object_id,
-            ref_tag = obj.HandleRef.tag,
-            object_id = obj.id,
-            version_before = version_before,
-            version_after = version_after,
-            reason = kwargs.get("reason"),
-            source = source,
+            action=action,
+            watched_ref_tag=watched_ref_tag,
+            watched_object_id=watched_object_id,
+            ref_tag=obj.HandleRef.tag,
+            object_id=obj.id,
+            version_before=version_before,
+            version_after=version_after,
+            reason=kwargs.get("reason"),
+            source=source,
         )
 
         entry.full_clean()
@@ -5896,7 +5926,11 @@ class DataChangeNotificationQueue(models.Model):
         older than this date will be ignored)
         """
 
-        qset = cls.objects.filter(watched_ref_tag=watched_ref_tag, watched_object_id=watched_object_id, created__gte=date_limit).order_by("created")
+        qset = cls.objects.filter(
+            watched_ref_tag=watched_ref_tag,
+            watched_object_id=watched_object_id,
+            created__gte=date_limit,
+        ).order_by("created")
 
         actions = {}
 
@@ -5918,7 +5952,7 @@ class DataChangeNotificationQueue(models.Model):
         """
 
         if not hasattr(self, "_data"):
-            self._data= self.version_after.field_dict
+            self._data = self.version_after.field_dict
         return self._data
 
     @property
@@ -5953,7 +5987,7 @@ class DataChangeNotificationQueue(models.Model):
 
         if self.source == "ixf":
             ix = InternetExchange.objects.get(id=self.data["ixlan_id"])
-            details =[
+            details = [
                 f"This change was the result of an IX-F import for { ix.name }",
                 self.reason or "",
             ]
@@ -5971,9 +6005,7 @@ class DataChangeNotificationQueue(models.Model):
 
             return "\n".join(details)
 
-
         return self.reason
-
 
     @property
     def watched_object(self):
@@ -5982,7 +6014,9 @@ class DataChangeNotificationQueue(models.Model):
         """
 
         if not hasattr(self, "_watched_object"):
-            self._watched_object = REFTAG_MAP[self.watched_ref_tag].objects.get(id=self.watched_object_id)
+            self._watched_object = REFTAG_MAP[self.watched_ref_tag].objects.get(
+                id=self.watched_object_id
+            )
 
         return self._watched_object
 
@@ -5993,7 +6027,9 @@ class DataChangeNotificationQueue(models.Model):
         """
 
         if not hasattr(self, "_target_object"):
-            self._target_object = REFTAG_MAP[self.ref_tag].objects.get(id=self.object_id)
+            self._target_object = REFTAG_MAP[self.ref_tag].objects.get(
+                id=self.object_id
+            )
 
         return self._target_object
 
@@ -6002,12 +6038,18 @@ class DataChangeNotificationQueue(models.Model):
         return (self.ref_tag, self.object_id)
 
 
-
-
 class DataChangeEmail(models.Model):
 
-    user = models.ForeignKey(User, related_name="data_change_emails", on_delete=models.CASCADE)
-    watched_object = models.ForeignKey(DataChangeWatchedObject, related_name="data_change_emails", on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(
+        User, related_name="data_change_emails", on_delete=models.CASCADE
+    )
+    watched_object = models.ForeignKey(
+        DataChangeWatchedObject,
+        related_name="data_change_emails",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     email = models.EmailField()
     content = models.TextField()

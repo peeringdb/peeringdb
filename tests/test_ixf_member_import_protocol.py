@@ -567,13 +567,15 @@ def assert_data_change_notification(objects):
 
     qset.all().delete()
 
+
 def assert_no_data_change_notification():
     """
     asserts that no data change notifications have been
     generated (#403)
     """
 
-    assert not  DataChangeNotificationQueue.objects.count()
+    assert not DataChangeNotificationQueue.objects.count()
+
 
 @pytest.mark.django_db
 def test_add_netixlan(entities, use_ip, save):
@@ -1368,7 +1370,9 @@ def test_single_ipaddr_matches(entities, save):
         assert importer.log["data"][1]["action"] == "delete"
         assert importer.log["data"][2]["action"] == "add"
 
-        assert_data_change_notification([("netixlan", "delete"), ("netixlan", "delete"), ("netixlan", "add")])
+        assert_data_change_notification(
+            [("netixlan", "delete"), ("netixlan", "delete"), ("netixlan", "add")]
+        )
 
     assert_no_emails(network, ixlan.ix)
 
@@ -3114,7 +3118,9 @@ def entities_base():
         # watch a network for automated changes so data change notifications (#403)
         # can be tested
         DataChangeWatchedObject.objects.create(
-            ref_tag="net", user=admin_user, object_id=entities["net"]["UPDATE_ENABLED"].id
+            ref_tag="net",
+            user=admin_user,
+            object_id=entities["net"]["UPDATE_ENABLED"].id,
         )
 
     return entities

@@ -18,6 +18,8 @@ import os
 import re
 import uuid
 
+import oauth2_provider.views as oauth2_views
+import oauth2_provider.views.application as oauth2_application_views
 import requests
 from allauth.account.models import EmailAddress
 from django.conf import settings as dj_settings
@@ -27,6 +29,7 @@ from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q
+from django.forms.models import modelform_factory
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -37,7 +40,6 @@ from django.http import (
 )
 from django.shortcuts import redirect, render
 from django.template import loader
-from django.forms.models import modelform_factory
 from django.urls import Resolver404, resolve, reverse
 from django.utils import translation
 from django.utils.crypto import constant_time_compare
@@ -56,8 +58,6 @@ from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
-import oauth2_provider.views.application as oauth2_application_views
-import oauth2_provider.views as oauth2_views
 from ratelimit.decorators import ratelimit
 
 from peeringdb_server import settings
@@ -542,6 +542,7 @@ def view_set_user_locale(request):
 
 # OAuth application management overrides
 
+
 class ApplicationOwnerMixin:
 
     """
@@ -556,7 +557,10 @@ class ApplicationOwnerMixin:
 
         org_ids = [org.id for org in self.request.user.admin_organizations]
 
-        return get_application_model().objects.filter(Q(user=self.request.user) | Q(org_id__in=org_ids))
+        return get_application_model().objects.filter(
+            Q(user=self.request.user) | Q(org_id__in=org_ids)
+        )
+
 
 class ApplicationFormMixin:
 
@@ -574,7 +578,7 @@ class ApplicationFormMixin:
         return modelform_factory(
             get_application_model(),
             fields=(
-				"org",
+                "org",
                 "name",
                 "client_id",
                 "client_secret",
@@ -583,12 +587,8 @@ class ApplicationFormMixin:
                 "redirect_uris",
                 "algorithm",
             ),
-            labels={
-                "org": _("Organization")
-            },
-            help_texts={
-                "org": _("Register on behalf of one of your organizations")
-            }
+            labels={"org": _("Organization")},
+            help_texts={"org": _("Register on behalf of one of your organizations")},
         )
 
     def get_form(self):
@@ -604,8 +604,9 @@ class ApplicationFormMixin:
         return form
 
 
-class ApplicationRegistration(ApplicationFormMixin, oauth2_application_views.ApplicationRegistration):
-
+class ApplicationRegistration(
+    ApplicationFormMixin, oauth2_application_views.ApplicationRegistration
+):
     def form_valid(self, form):
         r = super().form_valid(form)
         if form.instance.org:
@@ -624,34 +625,45 @@ class ApplicationRegistration(ApplicationFormMixin, oauth2_application_views.App
             form.fields["org"].initial = org_id
         return form
 
+
 oauth2_views.ApplicationRegistration = ApplicationRegistration
+
 
 class ApplicationDetail(ApplicationOwnerMixin, oauth2_views.ApplicationDetail):
     pass
 
+
 oauth2_views.ApplicationDetail = ApplicationDetail
+
 
 class ApplicationList(ApplicationOwnerMixin, oauth2_views.ApplicationList):
     pass
 
+
 oauth2_views.ApplicationList = ApplicationList
+
 
 class ApplicationDelete(ApplicationOwnerMixin, oauth2_views.ApplicationDelete):
     pass
 
+
 oauth2_views.ApplicationDelete = ApplicationDelete
 
 
-class ApplicationUpdate(ApplicationOwnerMixin, ApplicationFormMixin, oauth2_views.ApplicationUpdate):
+class ApplicationUpdate(
+    ApplicationOwnerMixin, ApplicationFormMixin, oauth2_views.ApplicationUpdate
+):
     def form_valid(self, form):
         if not form.instance.org and not form.instance.user:
             form.instance.user = self.request.user
         return super().form_valid(form)
 
+
 oauth2_views.ApplicationUpdate = ApplicationUpdate
 
 
 # OAuth profile
+
 
 @protected_resource(scopes=["profile"])
 def view_profile_v1(request):
@@ -1874,12 +1886,11 @@ def watch_network(request, id):
 
     # add watched status
     DataChangeWatchedObject.objects.get_or_create(
-        user=request.user,
-        ref_tag="net",
-        object_id=id
+        user=request.user, ref_tag="net", object_id=id
     )
 
     return redirect(f"/net/{id}/")
+
 
 @login_required
 def unwatch_network(request, id):
@@ -1892,14 +1903,10 @@ def unwatch_network(request, id):
 
     # remove watched status
     DataChangeWatchedObject.objects.filter(
-        user=request.user,
-        ref_tag="net",
-        object_id=id
+        user=request.user, ref_tag="net", object_id=id
     ).delete()
 
     return redirect(f"/net/{id}/")
-
-
 
 
 @ensure_csrf_cookie
@@ -1983,10 +1990,19 @@ def view_network(request, id):
         org["logo"] = network.org.logo.url
 
     if DataChangeWatchedObject.watching(request.user, network):
-        watch_actions = [{"label":_("Disable notifications"), "href": reverse("net-unwatch", args=(network.id,))}]
+        watch_actions = [
+            {
+                "label": _("Disable notifications"),
+                "href": reverse("net-unwatch", args=(network.id,)),
+            }
+        ]
     else:
-        watch_actions = [{"label":_("Enable notifications"), "href": reverse("net-watch", args=(network.id,))}]
-
+        watch_actions = [
+            {
+                "label": _("Enable notifications"),
+                "href": reverse("net-watch", args=(network.id,)),
+            }
+        ]
 
     data = {
         "title": network_d.get("name", dismiss),
@@ -2184,8 +2200,6 @@ def view_network(request, id):
                     }
                 ],
             },
-
-
             {
                 "type": "action",
                 "admin": True,
@@ -2195,7 +2209,6 @@ def view_network(request, id):
                 ),
                 "actions": watch_actions,
             },
-
             {
                 "type": "action",
                 "admin": True,
