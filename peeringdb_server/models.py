@@ -38,6 +38,7 @@ from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib.auth.models import (
+    AnonymousUser,
     AbstractBaseUser,
     Group,
     PermissionsMixin,
@@ -5700,6 +5701,10 @@ class DataChangeWatchedObject(models.Model):
 
     @classmethod
     def watching(cls, user, obj):
+
+        if isinstance(user, AnonymousUser):
+            return False
+
         return cls.objects.filter(
             user=user, ref_tag=obj.HandleRef.tag, object_id=obj.id
         ).exists()
