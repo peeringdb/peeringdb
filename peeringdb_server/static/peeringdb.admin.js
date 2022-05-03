@@ -58,6 +58,7 @@ PeeringDBAdmin = {
     // submit merge request
     submit : function() {
       var orgs = [];
+      this.tool().find('.error-message').hide()
       this.tool().children(".loading-shim").show();
       this.tool().find('#listing-selected').find('.row').each(function(){
         orgs.push(parseInt($(this).data("id")));
@@ -70,9 +71,15 @@ PeeringDBAdmin = {
           "id" : this.targetOrgId
         },
         success : function(data) {
+          this.tool().children(".loading-shim").hide();
+
+          if(data.error) {
+            this.tool().find('.error-message').empty().show().text(data.error)
+            return
+          }
+
           PeeringDBAdmin.OrgMergeTool.stats(data);
           PeeringDBAdmin.OrgMergeTool.reset();
-          this.tool().children(".loading-shim").hide();
         }.bind(this)
       }).fail(function(response) {
         PeeringDBAdmin.OrgMergeTool.error(response);

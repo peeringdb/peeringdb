@@ -1,0 +1,7 @@
+A member of admin-com has transfered an active or pending sponsorship from one organization to another through the organization-merge tool
+
+Transfer details:
+{% for org in source_orgs %}
+- {{ org.name }}
+{% endfor %}
+Sponsorship transfered to {{ target_org.name }}

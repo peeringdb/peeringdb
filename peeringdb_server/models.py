@@ -1070,6 +1070,20 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
             .first()
         )
 
+    @property
+    def active_or_pending_sponsorship(self):
+        """
+        Returns sponsorship object for this organization. If the organization
+        has no sponsorship ongoing or pending return None.
+        """
+        now = datetime.datetime.now().replace(tzinfo=UTC())
+        return (
+            self.sponsorship_set.filter(end_date__gte=now)
+            .order_by("-start_date")
+            .first()
+        )
+
+
     @classmethod
     @reversion.create_revision()
     @transaction.atomic()
@@ -1199,6 +1213,10 @@ class Sponsorship(models.Model):
         Returns the css class for this sponsorship's level
         """
         return dict(SPONSORSHIP_CSS).get(self.level)
+
+    def __str__(self):
+        return f"Sponsorship ID#{self.id} {self.start_date} - {self.end_date}"
+
 
     def notify_expiration(self):
         """
@@ -1345,13 +1363,17 @@ class OrganizationMerge(models.Model):
                 # move handleref entity
                 entity.org = self.from_org
                 entity.save()
-            else:
+            elif isinstance(entity, User):
                 # move user entity
                 group = getattr(self.from_org, row.note)
                 group.user_set.add(entity)
 
                 self.to_org.usergroup.user_set.remove(entity)
                 self.to_org.admin_usergroup.user_set.remove(entity)
+            elif isinstance(entity, Sponsorship):
+                # reapply sponsorhip
+                entity.orgs.remove(self.to_org)
+                entity.orgs.add(self.from_org)
 
         self.delete()
 

@@ -44,6 +44,12 @@ span.yourlabs-autocomplete > span.hilight > div.sub {
   color: #fff;
 }
 
+#org-merge-tool .error-message {
+  padding: 5px;
+  font-weight: bold;
+  color: red;
+}
+
 #org-merge-tool #target-org {
   font-size: 16px;
   margin-top: 15px;

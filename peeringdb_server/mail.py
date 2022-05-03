@@ -9,6 +9,46 @@ from django.utils.html import strip_tags
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
 
+def mail_sponsorship_admin(subj, msg):
+
+    mail = EmailMultiAlternatives(
+        f"{settings.EMAIL_SUBJECT_PREFIX}{subj}",
+        strip_tags(msg),
+        settings.SERVER_EMAIL,
+        [settings.SPONSORSHIPS_EMAIL],
+    )
+
+    mail.send(fail_silently=False)
+
+def mail_sponsorship_admin_merge(source_orgs, target_org):
+
+    msg = loader.get_template("email/notify-sponsorship-merge.txt").render(
+        {
+            "source_orgs": source_orgs,
+            "target_org": target_org
+        }
+    )
+
+    return mail_sponsorship_admin("Organization merge - sponsorship transfered", msg)
+
+
+
+def mail_sponsorship_admin_merge_conflict(conflicting_orgs, target_org):
+
+    if target_org in conflicting_orgs:
+        conflicting_orgs.remove(target_org)
+
+    msg = loader.get_template("email/notify-sponsorship-merge-conflict.txt").render(
+        {
+            "orgs": conflicting_orgs,
+            "target_org": target_org
+        }
+    )
+
+    return mail_sponsorship_admin("Organization merge - sponsorship conflict", msg)
+
+
+
 
 def mail_admins_with_from(
     subj, msg, from_addr, fail_silently=False, connection=None, html_message=None

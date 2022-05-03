@@ -1,6 +1,7 @@
 import json
 import os
 import urllib
+import datetime
 
 import pytest
 from django.contrib.auth.models import Group
@@ -8,6 +9,7 @@ from django.contrib.messages import get_messages
 from django.core.management import call_command
 from django.test import Client, RequestFactory, TestCase
 from django.urls import resolve, reverse
+from django.utils import timezone
 from django_grainy.models import GroupPermission, UserPermission
 
 import peeringdb_server.admin as admin
@@ -240,6 +242,101 @@ class AdminTests(TestCase):
         # check that target org is still in tact
         t_org.refresh_from_db()
         self.assertEqual(t_org.status, "ok")
+
+    def test_org_merge_sponsorships_ok(self):
+        """
+        Test the org merge functionality when one or more sponsorships
+        are involved
+        """
+
+        request = self.factory.post("/cp")
+        request.user = None
+        now = timezone.now()
+        end = now + datetime.timedelta(days=10)
+
+        t_org = self.entities["org"][0]
+        s_org = self.entities["org"][1]
+
+        sponsor = models.Sponsorship.objects.create(start_date=now, end_date=end)
+        sponsor.orgs.add(s_org)
+
+        # merge orgs 1 into org 0
+        admin.merge_organizations([s_org], t_org, request)
+
+        # check that sponsorship has been transfered
+
+        assert sponsor.orgs.filter(pk=t_org.pk).exists()
+        assert not sponsor.orgs.filter(pk=s_org.pk).exists()
+
+        # test undo
+        merges = models.OrganizationMerge.objects.filter(to_org=t_org)
+        for merge in merges:
+            merge.undo()
+
+        # check that sponsorship has been reverted
+
+        assert not sponsor.orgs.filter(pk=t_org.pk).exists()
+        assert sponsor.orgs.filter(pk=s_org.pk).exists()
+
+    def test_org_merge_sponsorships_block(self):
+        """
+        Test the org merge functionality when one or more sponsorships
+        are involved - block if both source and target org have different
+        active sponsorships going
+        """
+
+        request = self.factory.post("/cp")
+        request.user = None
+
+        now = timezone.now()
+        end = now + datetime.timedelta(days=10)
+        t_org = self.entities["org"][0]
+        s_org = self.entities["org"][1]
+
+        sponsor_s = models.Sponsorship.objects.create(start_date=now, end_date=end)
+        sponsor_s.orgs.add(s_org)
+
+        sponsor_t = models.Sponsorship.objects.create(start_date=now, end_date=end)
+        sponsor_t.orgs.add(t_org)
+
+        # merge orgs 1 into org 0
+        admin.merge_organizations([s_org], t_org, request)
+
+        assert sponsor_s.orgs.filter(pk=s_org.pk).exists()
+        assert not sponsor_s.orgs.filter(pk=t_org.pk).exists()
+        assert sponsor_t.orgs.filter(pk=t_org.pk).exists()
+
+    def test_org_merge_sponsorships_block_2(self):
+        """
+        Test the org merge functionality when one or more sponsorships
+        are involved - block if source orgs have different active sponsorships
+        going
+        """
+
+        request = self.factory.post("/cp")
+        request.user = None
+
+        now = timezone.now()
+        end = now + datetime.timedelta(days=10)
+        t_org = self.entities["org"][0]
+        s_org_a = self.entities["org"][1]
+        s_org_b = self.entities["org"][2]
+
+        sponsor_a = models.Sponsorship.objects.create(start_date=now, end_date=end)
+        sponsor_a.orgs.add(s_org_a)
+
+        sponsor_b = models.Sponsorship.objects.create(start_date=now, end_date=end)
+        sponsor_b.orgs.add(s_org_b)
+
+        # merge orgs 1 into org 0
+        admin.merge_organizations([s_org_a, s_org_b], t_org, request)
+
+        assert sponsor_a.orgs.filter(pk=s_org_a.pk).exists()
+        assert sponsor_b.orgs.filter(pk=s_org_b.pk).exists()
+
+        assert not sponsor_a.orgs.filter(pk=t_org.pk).exists()
+        assert not sponsor_b.orgs.filter(pk=t_org.pk).exists()
+
 
     def test_commandline_tool(self):
         c = Client()
