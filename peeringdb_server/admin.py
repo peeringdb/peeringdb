@@ -1691,6 +1691,7 @@ class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
         "last_name",
         "email_status",
         "status",
+        "last_login",
     )
     add_form = UserCreationForm
     add_fieldsets = (
