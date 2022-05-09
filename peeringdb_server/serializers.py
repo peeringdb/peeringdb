@@ -3085,7 +3085,7 @@ class InternetExchangeSerializer(ModelSerializer):
             ixpfx.save()
         else:
             # if it does not exist we will create a new ixpfx object
-            ixpfx = IXLanPrefix.objects.create(
+            IXLanPrefix.objects.create(
                 ixlan=ixlan,
                 prefix=prefix,
                 status="pending",

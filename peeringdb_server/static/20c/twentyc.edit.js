@@ -1191,7 +1191,6 @@ $.fn.editable = function(action, arg, dbg) {
           l = this.length,
           input,
           node,
-          nodes,
           closest
 
       // BELONGS (container), shortcut for first_closest:["data-edit-target", target]

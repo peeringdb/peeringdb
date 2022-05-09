@@ -1184,7 +1184,7 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
 
     def org_merge_tool_merge_action(self, request):
         if not request.user.is_superuser:
-            return HttpResponseForbidden(request)
+            return HttpResponseForbidden()
 
         try:
             orgs = Organization.objects.filter(id__in=request.GET.get("ids").split(","))

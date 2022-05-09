@@ -463,7 +463,7 @@ def view_affiliate_to_org(request):
             if asn_is_bogon(asn) and not settings.TUTORIAL_MODE:
                 raise RdapInvalidRange()
 
-            uoar, created = UserOrgAffiliationRequest.objects.get_or_create(
+            UserOrgAffiliationRequest.objects.get_or_create(
                 user=request.user,
                 asn=form.cleaned_data.get("asn"),
                 org_id=form.cleaned_data.get("org") or None,
@@ -2678,7 +2678,7 @@ class LoginView(TwoFactorLoginView):
         User authenticated successfully, set language options.
         """
 
-        response = super().done(form_list, **kwargs)
+        super().done(form_list, **kwargs)
 
         # TODO: do this via signal instead?
 

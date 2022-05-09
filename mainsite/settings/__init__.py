@@ -136,11 +136,13 @@ def _set_option(name, value, context, envvar_type=None):
     # call set_bool to take advantage of
     # its type checking for environment variables
     if isinstance(value, bool):
-        return _set_bool(name, value, context)
+        _set_bool(name, value, context)
+        return
 
     # If value is a list call set_list
     if isinstance(value, list):
-        return _set_list(name, value, context)
+        _set_list(name, value, context)
+        return
 
     if value is not None:
         envvar_type = type(value)

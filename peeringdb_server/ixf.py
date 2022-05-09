@@ -888,7 +888,6 @@ class Importer:
 
         asn = member["asnum"]
         for lan in vlan_list:
-            pass
 
             ipv4 = lan.get("ipv4", {})
             ipv6 = lan.get("ipv6", {})
