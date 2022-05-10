@@ -38,8 +38,8 @@ from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib.auth.models import (
-    AnonymousUser,
     AbstractBaseUser,
+    AnonymousUser,
     Group,
     PermissionsMixin,
     UserManager,

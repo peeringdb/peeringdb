@@ -1,5 +1,6 @@
 from django.db import migrations
 
+
 def create_email_instances(apps, schema_editor):
 
     users = apps.get_model("peeringdb_server", "User")
