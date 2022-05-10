@@ -470,7 +470,7 @@ elasticsearch = ["elasticsearch (>=5,<8)"]
 
 [[package]]
 name = "django-inet"
-version = "1.1.0"
+version = "1.1.1"
 description = "django internet utilities"
 category = "main"
 optional = false
@@ -2109,8 +2109,8 @@ django-haystack = [
     {file = "django-haystack-3.2.1.tar.gz", hash = "sha256:97e3197aefc225fe405b6f17600a2534bf827cb4d6743130c20bc1a06f7293a4"},
 ]
 django-inet = [
-    {file = "django-inet-1.1.0.tar.gz", hash = "sha256:076dc94b4b37b4c91d64895b9f659587b0d763003f8e2cef0ba8bef0e478528a"},
-    {file = "django_inet-1.1.0-py3-none-any.whl", hash = "sha256:20e33b3e0cd3d8fa2c385ecff6b2b5c8f88bab7b5052d7d87619f69ca6adf970"},
+    {file = "django-inet-1.1.1.tar.gz", hash = "sha256:3df96eb1f9ce936122391123434d69520d773661bfcad7835a2ba276fd4bec3f"},
+    {file = "django_inet-1.1.1-py3-none-any.whl", hash = "sha256:3ae9683a4a9ea9be635d2926904b54328230eac58a79a8f266d79f06dd4bed28"},
 ]
 django-ipware = [
     {file = "django-ipware-4.0.2.tar.gz", hash = "sha256:602a58325a4808bd19197fef2676a0b2da2df40d0ecf21be414b2ff48c72ad05"},
