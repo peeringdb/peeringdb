@@ -1,4 +1,4 @@
-Generated from rest_throttles.py on 2022-04-12 16:41:02.631987
+Generated from rest_throttles.py on 2022-05-10 13:14:00.817872
 
 # peeringdb_server.rest_throttles
 
@@ -188,5 +188,15 @@ May return `None` if the request should not be throttled.
 `def get_rate(self)`
 
 Determine the string representation of the allowed request rate.
+
+---
+#### wait
+`def wait(self)`
+
+Returns the recommended next request time in seconds.
+
+This is a custom implmentation of the original wait() logic that can
+also handle dynamic downward adjustments of rate limits (through
+changing EnvironmentSetting variables for example)
 
 ---
