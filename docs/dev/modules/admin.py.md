@@ -1,4 +1,4 @@
-Generated from admin.py on 2022-04-12 16:41:02.631987
+Generated from admin.py on 2022-05-10 13:14:00.817872
 
 # peeringdb_server.admin
 
@@ -144,6 +144,74 @@ Must be overridden to return a list of tuples (value, verbose value)
 Return the filtered queryset.
 
 ---
+
+## DataChangeEmail
+
+```
+DataChangeEmail(django.contrib.admin.options.ModelAdmin)
+```
+
+Encapsulate all admin options and functionality for a given model.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## DataChangeNotificationQueueAdmin
+
+```
+DataChangeNotificationQueueAdmin(django.contrib.admin.options.ModelAdmin)
+```
+
+Encapsulate all admin options and functionality for a given model.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+### Methods
+
+#### has_add_permission
+`def has_add_permission(self, request, obj=None)`
+
+Return True if the given request has permission to add an object.
+Can be overridden by the user in subclasses.
+
+---
+#### has_change_permission
+`def has_change_permission(self, request, obj=None)`
+
+Return True if the given request has permission to change the given
+Django model instance, the default implementation doesn't examine the
+`obj` parameter.
+
+Can be overridden by the user in subclasses. In such case it should
+return True if the given request has permission to change the `obj`
+model instance. If `obj` is None, this should return True if the given
+request has permission to change *any* object of the given type.
+
+---
+
+## DataChangeWatchedObjectAdmin
+
+```
+DataChangeWatchedObjectAdmin(django.contrib.admin.options.ModelAdmin)
+```
+
+Encapsulate all admin options and functionality for a given model.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
 
 ## DeskProTicketAdmin
 
@@ -1187,6 +1255,24 @@ Encapsulate all admin options and functionality for a given model.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
+
+## SponsorshipConflict
+
+```
+SponsorshipConflict(builtins.ValueError)
+```
+
+Inappropriate argument value (of correct type).
+
+
+### Methods
+
+#### \__init__
+`def __init__(self, orgs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
 
 ## SponsorshipOrganizationInline
 

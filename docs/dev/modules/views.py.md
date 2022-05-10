@@ -1,4 +1,4 @@
-Generated from views.py on 2022-04-12 16:41:02.631987
+Generated from views.py on 2022-05-10 13:14:00.817872
 
 # peeringdb_server.views
 
@@ -193,7 +193,139 @@ the correct secret is provided.
 Username retrieval initiate view.
 
 ---
+## watch_network
+`def watch_network(request, id)`
+
+Adds data-change notifications for the specified network (id)
+for the rquesting user.
+
+User needs write permissions to the network to be eligible for data change
+notifications.
+
+---
 # Classes
+---
+
+## ApplicationDelete
+
+```
+ApplicationDelete(peeringdb_server.views.ApplicationOwnerMixin, oauth2_provider.views.application.ApplicationDelete)
+```
+
+OAuth mixin it that filters application queryset for ownership
+considering either the owning user or the owning organization.
+
+For organizations any user in the administrator group for the organization
+may manage the oauth application
+
+
+## ApplicationDetail
+
+```
+ApplicationDetail(peeringdb_server.views.ApplicationOwnerMixin, oauth2_provider.views.application.ApplicationDetail)
+```
+
+OAuth mixin it that filters application queryset for ownership
+considering either the owning user or the owning organization.
+
+For organizations any user in the administrator group for the organization
+may manage the oauth application
+
+
+## ApplicationFormMixin
+
+```
+ApplicationFormMixin(builtins.object)
+```
+
+Used for oauth application update and registration process
+
+Will add an `org` field to the form and make sure it is filtered to only contain
+organizations the requesting user has management permissions to
+
+
+### Methods
+
+#### get_form_class
+`def get_form_class(self)`
+
+Returns the form class for the application model
+
+---
+
+## ApplicationList
+
+```
+ApplicationList(peeringdb_server.views.ApplicationOwnerMixin, oauth2_provider.views.application.ApplicationList)
+```
+
+OAuth mixin it that filters application queryset for ownership
+considering either the owning user or the owning organization.
+
+For organizations any user in the administrator group for the organization
+may manage the oauth application
+
+
+## ApplicationOwnerMixin
+
+```
+ApplicationOwnerMixin(builtins.object)
+```
+
+OAuth mixin it that filters application queryset for ownership
+considering either the owning user or the owning organization.
+
+For organizations any user in the administrator group for the organization
+may manage the oauth application
+
+
+## ApplicationRegistration
+
+```
+ApplicationRegistration(peeringdb_server.views.ApplicationFormMixin, oauth2_provider.views.application.ApplicationRegistration)
+```
+
+Used for oauth application update and registration process
+
+Will add an `org` field to the form and make sure it is filtered to only contain
+organizations the requesting user has management permissions to
+
+
+### Methods
+
+#### form_valid
+`def form_valid(self, form)`
+
+If the form is valid, save the associated model.
+
+---
+#### get_form
+`def get_form(self)`
+
+Return an instance of the form to be used in this view.
+
+---
+
+## ApplicationUpdate
+
+```
+ApplicationUpdate(peeringdb_server.views.ApplicationOwnerMixin, peeringdb_server.views.ApplicationFormMixin, oauth2_provider.views.application.ApplicationUpdate)
+```
+
+OAuth mixin it that filters application queryset for ownership
+considering either the owning user or the owning organization.
+
+For organizations any user in the administrator group for the organization
+may manage the oauth application
+
+
+### Methods
+
+#### form_valid
+`def form_valid(self, form)`
+
+If the form is valid, save the associated model.
+
 ---
 
 ## DoNotRender

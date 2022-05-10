@@ -16,6 +16,8 @@ from django.test import override_settings
 from peeringdb_server import ixf
 from peeringdb_server.deskpro import FailingMockAPIClient
 from peeringdb_server.models import (
+    DataChangeNotificationQueue,
+    DataChangeWatchedObject,
     DeskProTicket,
     InternetExchange,
     IXFImportEmail,
@@ -535,6 +537,46 @@ def test_suggest_modify_no_routeserver(entities, save):
     assert_idempotent(importer, ixlan, data, save=save)
 
 
+def assert_data_change_notification(objects):
+
+    """
+    asserts that a set of data change notifications has
+    been created after automated updates to netixlans (#403)
+    """
+
+    qset = DataChangeNotificationQueue.objects
+
+    assert qset.count() == len(objects)
+
+    idx = 0
+
+    dcns = [o for o in qset.all()]
+
+    for ref_tag, action in objects:
+        dcn = dcns[idx]
+
+        assert action == dcn.action
+        assert ref_tag == dcn.ref_tag
+
+        idx += 1
+
+        assert dcn.version_after
+        assert dcn.watched_object.HandleRef.tag == "net"
+        assert dcn.source == "ixf"
+        assert dcn.object_id
+
+    qset.all().delete()
+
+
+def assert_no_data_change_notification():
+    """
+    asserts that no data change notifications have been
+    generated (#403)
+    """
+
+    assert not DataChangeNotificationQueue.objects.count()
+
+
 @pytest.mark.django_db
 def test_add_netixlan(entities, use_ip, save):
     """
@@ -565,6 +607,8 @@ def test_add_netixlan(entities, use_ip, save):
     assert log["action"] == "add"
     assert NetworkIXLan.objects.count() == 1
 
+    assert_data_change_notification([("netixlan", "add")])
+
     # Test idempotent
     importer.update(ixlan, data=data)
     importer.notify_proposals()
@@ -573,6 +617,7 @@ def test_add_netixlan(entities, use_ip, save):
     assert NetworkIXLan.objects.count() == 1
 
     assert_no_emails(network, ixlan.ix)
+    assert_no_data_change_notification()
 
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
@@ -606,6 +651,8 @@ def test_add_netixlan_no_routeserver(entities, use_ip, save):
     assert IXFMemberData.objects.count() == 0
     assert NetworkIXLan.objects.count() == 1
     assert NetworkIXLan.objects.first().is_rs_peer == False
+
+    assert_data_change_notification([("netixlan", "add")])
 
 
 @pytest.mark.django_db
@@ -1312,6 +1359,8 @@ def test_single_ipaddr_matches(entities, save):
 
         assert len(importer.log["data"]) == 1
         assert importer.log["data"][0]["action"] == "delete"
+
+        assert_data_change_notification([("netixlan", "delete")])
     else:
         assert len(importer.log["data"]) == 3
 
@@ -1320,6 +1369,10 @@ def test_single_ipaddr_matches(entities, save):
         assert importer.log["data"][0]["action"] == "delete"
         assert importer.log["data"][1]["action"] == "delete"
         assert importer.log["data"][2]["action"] == "add"
+
+        assert_data_change_notification(
+            [("netixlan", "delete"), ("netixlan", "delete"), ("netixlan", "add")]
+        )
 
     assert_no_emails(network, ixlan.ix)
 
@@ -1628,6 +1681,7 @@ def test_delete(entities, save):
 
     assert log["action"] == "delete"
     assert NetworkIXLan.objects.filter(status="ok").count() == 1
+    assert_data_change_notification([("netixlan", "delete")])
     assert_no_emails(network, ixlan.ix)
 
     # Test idempotent
@@ -3060,6 +3114,15 @@ def entities_base():
             "ixf_importer", "ixf_importer@localhost", "ixf_importer"
         )
         entities["org"][0].admin_usergroup.user_set.add(admin_user)
+
+        # watch a network for automated changes so data change notifications (#403)
+        # can be tested
+        DataChangeWatchedObject.objects.create(
+            ref_tag="net",
+            user=admin_user,
+            object_id=entities["net"]["UPDATE_ENABLED"].id,
+        )
+
     return entities
 
 

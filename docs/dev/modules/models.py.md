@@ -1,4 +1,4 @@
-Generated from models.py on 2022-04-12 16:41:02.631987
+Generated from models.py on 2022-05-10 13:14:00.817872
 
 # peeringdb_server.models
 
@@ -88,6 +88,119 @@ CommandLineTool(django.db.models.base.Model)
 Describes command line tool execution by a staff user inside the
 control panel (admin).
 
+
+### Methods
+
+#### \__str__
+`def __str__(self)`
+
+Return str(self).
+
+---
+
+## DataChangeEmail
+
+```
+DataChangeEmail(django.db.models.base.Model)
+```
+
+DataChangeEmail(id, user, watched_object, email, content, subject, created, sent)
+
+
+## DataChangeNotificationQueue
+
+```
+DataChangeNotificationQueue(django.db.models.base.Model)
+```
+
+DataChangeNotificationQueue(id, watched_ref_tag, watched_object_id, ref_tag, object_id, reason, version_before, version_after, action, source, created)
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- data (`@property`): Retrieve relevant data from the version snap shot of the notification
+object
+- details (`@property`): Generates a string describing change details according to
+notification object type, action type and notification
+source
+
+Will return self.reason if nothing else can be gathered.
+- target_id (`@property`): None
+- target_object (`@property`): Returns instance of the target object
+- title (`@property`): Used to label a change to an object in the notification message
+- title_netixlan (`@property`): Used to label a change to a netixlan in the notification message
+- watched_object (`@property`): Returns instance of the watched object
+
+### Class Methods
+
+#### consolidate
+`def consolidate(cls, watched_ref_tag, watched_object_id, date_limit)`
+
+Returns a dict of all DataChangeQueueNotification entries for the specified
+ref tag and object id.
+
+`date_limit` is the cut off point for considering eligible notifications (notifications
+older than this date will be ignored)
+
+---
+
+## DataChangeWatchedObject
+
+```
+DataChangeWatchedObject(django.db.models.base.Model)
+```
+
+Describes a user's intention to be notified about
+changes to a specific objects.
+
+Currently only `net` objects are watchable
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- changes_since (`@property`): None
+- watched_object (`@property`): Returns instance of the watched object
+
+### Class Methods
+
+#### cleanup
+`def cleanup(cls)`
+
+1) checks for deleted objects and removes all watched object instances for them
+
+2) only users that write permissions to the watched object are eligible for notifications
+
+---
+#### collect
+`def collect(cls)`
+
+Collects all instances that require notifications to be sent.
+
+This will take into account created/last_notified data of the DataChangeWatchedObject
+instance to determine new notifications.
+
+Returns
+
+- dict, dict where the first dictionary is a mapping of user id to `User` and the
+  second dictionary is a mapping of user id to a dicitionary structure holding collected
+  notifications for the user as decribed below.
+
+  ```
+  {
+        (watched_ref_tag, watched_object_id): {
+            "watched": DataChangeWatchedObject,
+            "entries": {
+                (ref_tag, id): list<DataChangeNotificationQueue>
+            }
+        }
+  }
+  ```
+
+---
 
 ### Methods
 
@@ -1328,6 +1441,11 @@ Describes a network relationship to an IX through an IX Lan.
 
 These attributes / properties will be available on instances of the class
 
+- data_change_parent (`@property`): Returns tuple of (str, int) describing the parent network
+
+This makes it a supported object for data change notification implemented through
+DataChangeNotificationQueue
+- data_change_pretty_str (`@property`): None
 - descriptive_name (`@property`): Returns a descriptive label of the netixlan for logging purposes.
 - grainy_namespace (`@property`): None
 - ix_id (`@property`): Returns the exchange id for this netixlan.
@@ -1410,6 +1528,28 @@ Raised when a network has both ipv6 and ipv4 support
 disabled during ix-f import.
 
 
+## OAuthApplication
+
+```
+OAuthApplication(oauth2_provider.models.AbstractApplication)
+```
+
+OAuth application - extends the default oauth_provider2 application
+and adds optional org ownership to it through an `org` relationship
+
+
+### Methods
+
+#### clean
+`def clean(self)`
+
+Hook for doing any extra model-wide validation after clean() has been
+called on every field by self.clean_fields. Any ValidationError raised
+by this method will not be associated with a particular field; it will
+have a special-case association with the field defined by NON_FIELD_ERRORS.
+
+---
+
 ## Organization
 
 ```
@@ -1423,6 +1563,8 @@ Describes a peeringdb organization.
 
 These attributes / properties will be available on instances of the class
 
+- active_or_pending_sponsorship (`@property`): Returns sponsorship object for this organization. If the organization
+has no sponsorship ongoing or pending return None.
 - admin_group_name (`@property`): Returns admin usergroup name for this organization.
 - admin_url (`@property`): Return the admin URL for this organization (in /cp).
 - admin_usergroup (`@property`): Returns the admin usergroup for this organization.
@@ -1650,6 +1792,12 @@ active sponsorships.
 
 ### Methods
 
+#### \__str__
+`def __str__(self)`
+
+Return str(self).
+
+---
 #### notify_expiration
 `def notify_expiration(self)`
 
@@ -1708,6 +1856,7 @@ Proper length fields user.
 
 These attributes / properties will be available on instances of the class
 
+- admin_organizations (`@property`): Returns all organizations this user is an admin of.
 - affiliation_requests_available (`@property`): Returns whether the user currently has any affiliation request
 slots available by checking that the number of pending affiliation requests
 the user has is lower than MAX_USER_AFFILIATION_REQUESTS
@@ -1721,7 +1870,7 @@ by PDB staff).
 Currently this is accomplished by checking if the user
 has been added to the 'user' user group.
 - networks (`@property`): Returns all networks this user is a member of.
-- organizations (`@property`): Returns all organizations this user is a member of.
+- organizations (`@property`): Returns all organizations this user is a member or admin of.
 - pending_affiliation_requests (`@property`): Returns the currently pending user -> org affiliation
 requests for this user.
 

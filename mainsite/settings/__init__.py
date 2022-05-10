@@ -136,11 +136,13 @@ def _set_option(name, value, context, envvar_type=None):
     # call set_bool to take advantage of
     # its type checking for environment variables
     if isinstance(value, bool):
-        return _set_bool(name, value, context)
+        _set_bool(name, value, context)
+        return
 
     # If value is a list call set_list
     if isinstance(value, list):
-        return _set_list(name, value, context)
+        _set_list(name, value, context)
+        return
 
     if value is not None:
         envvar_type = type(value)
@@ -785,6 +787,11 @@ OAUTH2_PROVIDER = {
 }
 
 
+# override this to `peeringdb_server.OAuthApplication` once peeringdb_server
+# migration 0085 has been applied.
+
+set_option("OAUTH2_PROVIDER_APPLICATION_MODEL", "oauth2_provider.Application")
+
 ## grainy
 
 AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
@@ -965,6 +972,13 @@ set_option("IXF_NOTIFY_NET_ON_CONFLICT", False)
 # number of days of a conflict being unresolved before
 # deskpro ticket is created
 set_option("IXF_IMPORTER_DAYS_UNTIL_TICKET", 6)
+
+# clean up data change notification queue by discarding
+# entries older than this (7 days)
+set_option("DATA_CHANGE_NOTIFY_MAX_AGE", 86400 * 7)
+
+# data change emails will only be sent if this True
+set_option("DATA_CHANGE_SEND_EMAILS", False)
 
 
 # when a user tries to delete a protected object, a deskpro

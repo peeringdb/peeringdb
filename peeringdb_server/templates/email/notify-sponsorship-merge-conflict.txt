@@ -1,0 +1,11 @@
+A member if admin-com attempted to merge the following organizations
+
+Attempt to merge
+{% for org in orgs %}
+- {{ org.name }} ({{ org.active_or_pending_sponsorship }})
+{% endfor %}
+into
+
+- {{ target_org.name }} ({{ target_org.active_or_pending_sponsorship|default:"No sponsorship" }})
+
+This merge was prevented as there was at least one sponsorship conflict detected.

@@ -212,6 +212,8 @@
             {% for action in row.actions %}
             {% if action.action %}
             <button class="btn btn-sm" data-placement="right" data-container="body" data-view-action="{{ref_tag}}_{{ action.action }}">{{ action.label }}</button>
+            {% elif action.href %}
+            <a href="{{ action.href }}" class="btn btn-sm" data-placement="right" data-container="body" data-view-action="{{ref_tag}}_{{ action.action }}">{{ action.label }}</a>
             {% else %}
             <span class="action-label {{ action.css }} {{ action.label }}">{{ action.label }}</span>
             {% endif %}

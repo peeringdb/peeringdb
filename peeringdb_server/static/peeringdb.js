@@ -1542,7 +1542,6 @@ twentyc.editable.module.register(
 
     execute_remove : function(trigger, container) {
       this.components.add.editable("export", this.target.data);
-      var data = this.target.data;
       var row = this.row(trigger);
       this.prepare_data({perms:0, entity:row.data("edit-id")});
       this.target.execute("remove", trigger, function(response) {
@@ -1680,7 +1679,6 @@ twentyc.editable.module.register(
     execute_update : function(trigger, container) {
       var row = this.row(trigger);
       row.editable("export", this.target.data);
-      var data = this.target.data;
       this.target.execute("update", trigger, function(response) {
       }.bind(this));
     },
@@ -1768,7 +1766,6 @@ twentyc.editable.module.register(
     execute_update : function(trigger, container) {
       var row = this.row(trigger);
       row.editable("export", this.target.data);
-      var data = this.target.data;
       this.target.execute("update", trigger, function(response) {
       }.bind(this));
     },

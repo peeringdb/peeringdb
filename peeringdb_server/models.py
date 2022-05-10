@@ -32,12 +32,14 @@ from itertools import chain
 
 import django.urls
 import django_peeringdb.models as pdb_models
+import oauth2_provider.models as oauth2
 import reversion
 from allauth.account.models import EmailAddress, EmailConfirmation
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser,
+    AnonymousUser,
     Group,
     PermissionsMixin,
     UserManager,
@@ -1069,6 +1071,19 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
             .first()
         )
 
+    @property
+    def active_or_pending_sponsorship(self):
+        """
+        Returns sponsorship object for this organization. If the organization
+        has no sponsorship ongoing or pending return None.
+        """
+        now = datetime.datetime.now().replace(tzinfo=UTC())
+        return (
+            self.sponsorship_set.filter(end_date__gte=now)
+            .order_by("-start_date")
+            .first()
+        )
+
     @classmethod
     @reversion.create_revision()
     @transaction.atomic()
@@ -1198,6 +1213,9 @@ class Sponsorship(models.Model):
         Returns the css class for this sponsorship's level
         """
         return dict(SPONSORSHIP_CSS).get(self.level)
+
+    def __str__(self):
+        return f"Sponsorship ID#{self.id} {self.start_date} - {self.end_date}"
 
     def notify_expiration(self):
         """
@@ -1344,13 +1362,17 @@ class OrganizationMerge(models.Model):
                 # move handleref entity
                 entity.org = self.from_org
                 entity.save()
-            else:
+            elif isinstance(entity, User):
                 # move user entity
                 group = getattr(self.from_org, row.note)
                 group.user_set.add(entity)
 
                 self.to_org.usergroup.user_set.remove(entity)
                 self.to_org.admin_usergroup.user_set.remove(entity)
+            elif isinstance(entity, Sponsorship):
+                # reapply sponsorhip
+                entity.orgs.remove(self.to_org)
+                entity.orgs.add(self.from_org)
 
         self.delete()
 
@@ -4642,6 +4664,21 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
         return f"AS{asn} - {ipaddr4} - {ipaddr6}"
 
+    @property
+    def data_change_parent(self):
+        """
+        Returns tuple of (str, int) describing the parent network
+
+        This makes it a supported object for data change notification implemented through
+        DataChangeNotificationQueue
+        """
+
+        return ("net", self.network_id)
+
+    @property
+    def data_change_pretty_str(self):
+        return self.ixf_id_pretty_str
+
     @classmethod
     def related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
         """
@@ -4904,11 +4941,24 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def organizations(self):
         """
-        Returns all organizations this user is a member of.
+        Returns all organizations this user is a member or admin of.
         """
         ids = []
         for group in self.groups.all():
             m = re.match(r"^org\.(\d+).*$", group.name)
+            if m and int(m.group(1)) not in ids:
+                ids.append(int(m.group(1)))
+
+        return [org for org in Organization.objects.filter(id__in=ids, status="ok")]
+
+    @property
+    def admin_organizations(self):
+        """
+        Returns all organizations this user is an admin of.
+        """
+        ids = []
+        for group in self.groups.all():
+            m = re.match(r"^org\.(\d+).admin$", group.name)
             if m and int(m.group(1)) not in ids:
                 ids.append(int(m.group(1)))
 
@@ -5559,6 +5609,474 @@ class EnvironmentSetting(models.Model):
 
         self.full_clean()
         self.save()
+
+
+class OAuthApplication(oauth2.AbstractApplication):
+
+    """
+    OAuth application - extends the default oauth_provider2 application
+    and adds optional org ownership to it through an `org` relationship
+    """
+
+    org = models.ForeignKey(
+        Organization,
+        null=True,
+        blank=True,
+        help_text=_("application is owned by this organization"),
+        related_name="oauth_applications",
+        on_delete=models.CASCADE,
+    )
+
+    objects = oauth2.ApplicationManager()
+
+    class Meta(oauth2.AbstractApplication.Meta):
+        db_table = "peeringdb_oauth_application"
+        verbose_name = _("OAuth Application")
+        verbose_name_plural = _("OAuth Applications")
+
+    def natural_key(self):
+        return (self.client_id,)
+
+    def clean(self):
+        # user should not be set on org owned apps
+        if self.org_id and self.user_id:
+            self.user = None
+
+
+WATCHABLE_OBJECTS = [
+    ("net", _("Network")),
+]
+
+DATACHANGE_OBJECTS = [
+    ("netixlan", "netixlan"),
+]
+
+DATACHANGE_ACTIONS = [
+    ("add", _("Added")),
+    ("modify", _("Updated")),
+    ("delete", _("Deleted")),
+]
+
+
+class DataChangeWatchedObject(models.Model):
+
+    """
+    Describes a user's intention to be notified about
+    changes to a specific objects.
+
+    Currently only `net` objects are watchable
+    """
+
+    user = models.ForeignKey(
+        User, related_name="watched_objects", on_delete=models.CASCADE
+    )
+
+    # object being watched
+
+    ref_tag = models.CharField(choices=WATCHABLE_OBJECTS, max_length=255)
+    object_id = models.PositiveIntegerField()
+
+    created = models.DateTimeField(
+        auto_now_add=True, help_text=_("User started watching this object at this time")
+    )
+
+    # last time user had a notification sent for changes to this object
+
+    last_notified = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Last time user was notified about changes to this object"),
+    )
+
+    class Meta:
+        db_table = "peeringdb_data_change_watch"
+        verbose_name = _("Data Change Watched Object")
+        verbose_name_plural = _("Data Change Watched Object")
+
+        indexes = [
+            models.Index(fields=["ref_tag", "object_id"], name="data_change_watch_obj")
+        ]
+
+        unique_together = (("user", "ref_tag", "object_id"),)
+
+    @classmethod
+    def watching(cls, user, obj):
+
+        if isinstance(user, AnonymousUser):
+            return False
+
+        return cls.objects.filter(
+            user=user, ref_tag=obj.HandleRef.tag, object_id=obj.id
+        ).exists()
+
+    @classmethod
+    def cleanup(cls):
+
+        """
+        1) checks for deleted objects and removes all watched object instances for them
+
+        2) only users that write permissions to the watched object are eligible for notifications
+        """
+
+        qset = cls.objects.all().select_related("user")
+        deleted = 0
+
+        for obj in qset:
+            user = obj.user
+            stale = False
+            try:
+                watched = obj.watched_object
+
+                if watched.status == "deleted":
+                    stale = True
+                elif not check_permissions(user, watched, "crud"):
+                    stale = True
+            except REFTAG_MAP[obj.ref_tag].DoesNotExist:
+                stale = True
+
+            if stale:
+                obj.delete()
+                deleted += 1
+
+        return deleted
+
+    @classmethod
+    def collect(cls):
+        """
+        Collects all instances that require notifications to be sent.
+
+        This will take into account created/last_notified data of the DataChangeWatchedObject
+        instance to determine new notifications.
+
+        Returns
+
+        - dict, dict where the first dictionary is a mapping of user id to `User` and the
+          second dictionary is a mapping of user id to a dicitionary structure holding collected
+          notifications for the user as decribed below.
+
+          ```
+          {
+                (watched_ref_tag, watched_object_id): {
+                    "watched": DataChangeWatchedObject,
+                    "entries": {
+                        (ref_tag, id): list<DataChangeNotificationQueue>
+                    }
+                }
+          }
+          ```
+        """
+
+        qset = cls.objects.all().select_related("user")
+
+        collected = {}
+        users = {}
+
+        for watched in qset:
+
+            collected.setdefault(watched.user_id, {})
+            key = (watched.ref_tag, watched.object_id)
+
+            users[watched.user_id] = watched.user
+
+            if watched.last_notified:
+                date_limit = watched.last_notified
+            else:
+                date_limit = watched.created
+
+            entries = DataChangeNotificationQueue.consolidate(
+                watched.ref_tag, watched.object_id, date_limit
+            )
+
+            if entries:
+                collected[watched.user_id][key] = {
+                    "watched": watched,
+                    "entries": entries,
+                }
+
+        for user_id, notifications in list(collected.items()):
+            if not notifications:
+                del users[user_id]
+                del collected[user_id]
+
+        return users, collected
+
+    @property
+    def watched_object(self):
+        """
+        Returns instance of the watched object
+        """
+        if not hasattr(self, "_watched_object"):
+            self._watched_object = REFTAG_MAP[self.ref_tag].objects.get(
+                id=self.object_id
+            )
+
+        return self._watched_object
+
+    @property
+    def changes_since(self):
+        return self.last_notified or self.created
+
+    def __str__(self):
+        return f"{self.ref_tag}.{self.object_id} ({self.pk})"
+
+
+class DataChangeNotificationQueue(models.Model):
+
+    # object being watched
+    # this serves as a point of consolidation, notifications will be sent
+    # out as a summary for this object
+    # e.g., a network
+
+    watched_ref_tag = models.CharField(choices=WATCHABLE_OBJECTS, max_length=255)
+    watched_object_id = models.PositiveIntegerField()
+
+    # notification target
+    # the object that has had changes that warrant notification
+    # e.g., a netixlan
+
+    ref_tag = models.CharField(max_length=255)
+    object_id = models.PositiveIntegerField()
+
+    reason = models.CharField(
+        max_length=255, help_text=_("Reason for notification"), null=True, blank=True
+    )
+
+    # keeping track of object versions
+
+    version_before = models.ForeignKey(
+        reversion.models.Version,
+        related_name="data_change_notification_before",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+
+    version_after = models.ForeignKey(
+        reversion.models.Version,
+        related_name="data_change_notification_after",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+
+    # descriptor of action done to the object (e.g.,
+
+    action = models.CharField(max_length=255, choices=DATACHANGE_ACTIONS)
+
+    source = models.CharField(max_length=32, help_text=_("Source of automated update"))
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "peeringdb_data_change_notify"
+        verbose_name = _("Data Change Notification Queue")
+        verbose_name_plural = _("Data Change Notification Queue")
+
+        indexes = [
+            models.Index(
+                fields=["watched_ref_tag", "watched_object_id"],
+                name="data_change_notify_watch",
+            ),
+            models.Index(
+                fields=["ref_tag", "object_id"], name="data_change_notify_target"
+            ),
+        ]
+
+    @classmethod
+    def push(cls, source, action, obj, version_before, version_after, **kwargs):
+
+        if not hasattr(obj, "data_change_parent"):
+            raise AttributeError(f"{obj} does not have a `data_change_parent` property")
+
+        watched_ref_tag, watched_object_id = obj.data_change_parent
+
+        # check if any user has set up a watched object
+        # for the data change parent. If no user has set it up
+        # dont push a notification as no one is watching anyway.
+
+        parent_is_watched = DataChangeWatchedObject.objects.filter(
+            ref_tag=watched_ref_tag, object_id=watched_object_id
+        ).exists()
+
+        if not parent_is_watched:
+            return
+
+        # create notification entry
+
+        entry = cls(
+            action=action,
+            watched_ref_tag=watched_ref_tag,
+            watched_object_id=watched_object_id,
+            ref_tag=obj.HandleRef.tag,
+            object_id=obj.id,
+            version_before=version_before,
+            version_after=version_after,
+            reason=kwargs.get("reason"),
+            source=source,
+        )
+
+        entry.full_clean()
+        entry.save()
+
+        return entry
+
+    @classmethod
+    def consolidate(cls, watched_ref_tag, watched_object_id, date_limit):
+
+        """
+        Returns a dict of all DataChangeQueueNotification entries for the specified
+        ref tag and object id.
+
+        `date_limit` is the cut off point for considering eligible notifications (notifications
+        older than this date will be ignored)
+        """
+
+        qset = cls.objects.filter(
+            watched_ref_tag=watched_ref_tag,
+            watched_object_id=watched_object_id,
+            created__gte=date_limit,
+        ).order_by("created")
+
+        actions = {}
+
+        if not qset.exists():
+            return actions
+
+        for entry in qset:
+            key = (entry.ref_tag, entry.object_id)
+            actions.setdefault(key, [])
+            actions[key].append(entry)
+
+        return actions
+
+    @property
+    def data(self):
+        """
+        Retrieve relevant data from the version snap shot of the notification
+        object
+        """
+
+        if not hasattr(self, "_data"):
+            self._data = self.version_after.field_dict
+        return self._data
+
+    @property
+    def title(self):
+        """
+        Used to label a change to an object in the notification message
+        """
+
+        title_fn = getattr(self, f"title_{self.ref_tag}")
+        return title_fn
+
+    @property
+    def title_netixlan(self):
+        """
+        Used to label a change to a netixlan in the notification message
+        """
+
+        asn = self.data["asn"]
+        ip4 = self.data["ipaddr4"] or ""
+        ip6 = self.data["ipaddr6"] or ""
+        return f"AS{asn} {ip4} {ip6}"
+
+    @property
+    def details(self):
+        """
+        Generates a string describing change details according to
+        notification object type, action type and notification
+        source
+
+        Will return self.reason if nothing else can be gathered.
+        """
+
+        if self.source == "ixf":
+            ix = InternetExchange.objects.get(id=self.data["ixlan_id"])
+            details = [
+                f"This change was the result of an IX-F import for { ix.name }",
+                self.reason or "",
+            ]
+
+            if self.action == "add":
+                details = [
+                    f"Speed: {format_speed(self.data['speed'])}",
+                    f"RS Peer: {self.data['is_rs_peer']}",
+                    f"Operational: {self.data['operational']}",
+                ] + details
+
+            details += [
+                f"Exchange: {ix.view_url}",
+            ]
+
+            return "\n".join(details)
+
+        return self.reason
+
+    @property
+    def watched_object(self):
+        """
+        Returns instance of the watched object
+        """
+
+        if not hasattr(self, "_watched_object"):
+            self._watched_object = REFTAG_MAP[self.watched_ref_tag].objects.get(
+                id=self.watched_object_id
+            )
+
+        return self._watched_object
+
+    @property
+    def target_object(self):
+        """
+        Returns instance of the target object
+        """
+
+        if not hasattr(self, "_target_object"):
+            self._target_object = REFTAG_MAP[self.ref_tag].objects.get(
+                id=self.object_id
+            )
+
+        return self._target_object
+
+    @property
+    def target_id(self):
+        return (self.ref_tag, self.object_id)
+
+
+class DataChangeEmail(models.Model):
+
+    user = models.ForeignKey(
+        User, related_name="data_change_emails", on_delete=models.CASCADE
+    )
+    watched_object = models.ForeignKey(
+        DataChangeWatchedObject,
+        related_name="data_change_emails",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    email = models.EmailField()
+    content = models.TextField()
+    subject = models.CharField(max_length=255)
+
+    created = models.DateTimeField(auto_now_add=True)
+    sent = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "peeringdb_data_change_email"
+        verbose_name = _("Data Change Email")
+        verbose_name_plural = _("Data Change Emails")
+
+    def send(self):
+
+        if self.sent is not None:
+            raise ValueError("Cannot send email again")
+
+        if settings.DATA_CHANGE_SEND_EMAILS:
+            self.user.email_user(self.subject, self.content)
+            self.sent = timezone.now()
+            self.save()
 
 
 REFTAG_MAP = {

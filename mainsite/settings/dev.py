@@ -1,4 +1,3 @@
-import logging
 import secrets
 
 # database config

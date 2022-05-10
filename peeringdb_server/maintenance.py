@@ -73,7 +73,7 @@ class Middleware:
                 )
             else:
                 # other
-                fn, args, kwargs = resolve(reverse("maintenance"))
+                resolve(reverse("maintenance"))
                 return JsonResponse(
                     {"non_field_errors": [str(ActionBlocked())]}, status=503
                 )

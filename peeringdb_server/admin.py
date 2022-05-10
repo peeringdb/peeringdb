@@ -49,13 +49,20 @@ from reversion.admin import VersionAdmin
 
 import peeringdb_server.admin_commandline_tools as acltools
 from peeringdb_server.inet import RdapException, RdapLookup, rdap_pretty_error_message
-from peeringdb_server.mail import mail_users_entity_merge
+from peeringdb_server.mail import (
+    mail_sponsorship_admin_merge,
+    mail_sponsorship_admin_merge_conflict,
+    mail_users_entity_merge,
+)
 from peeringdb_server.models import (
     COMMANDLINE_TOOLS,
     QUEUE_ENABLED,
     REFTAG_MAP,
     UTC,
     CommandLineTool,
+    DataChangeEmail,
+    DataChangeNotificationQueue,
+    DataChangeWatchedObject,
     DeskProTicket,
     DeskProTicketCC,
     EnvironmentSetting,
@@ -168,6 +175,69 @@ def fk_handleref_filter(form, field, tag=None):
 ###############################################################################
 
 
+class SponsorshipConflict(ValueError):
+    def __init__(self, orgs):
+        self.orgs = orgs
+        self.org_names = ",".join([org.name for org in orgs])
+        return super().__init__(self.org_names)
+
+
+def merge_organizations_handle_sponsors(source_orgs, target_org):
+
+    target_sponsor = target_org.active_or_pending_sponsorship
+
+    source_sponsors = {}
+
+    for source_org in source_orgs:
+        source_sponsor = source_org.active_or_pending_sponsorship
+        if source_sponsor:
+            source_sponsors.setdefault(source_sponsor, [])
+            source_sponsors[source_sponsor].append(source_org)
+
+    conflicting_orgs = []
+
+    # find if any of the source orgs have a sponsorship that conflicts
+
+    for source_sponsor, _orgs in source_sponsors.items():
+
+        # source sponsorship is same as target sponsorship do nothing
+
+        if target_sponsor and source_sponsor != target_sponsor:
+            conflicting_orgs.extend(_orgs)
+            conflicting_orgs.append(target_org)
+
+    # more than one sponsorship found in the source orgs
+
+    if len(source_sponsors) > 1:
+        for source_sponsor, _orgs in source_sponsors.items():
+            conflicting_orgs.extend(_orgs)
+
+    # there was at least one conflict
+
+    if conflicting_orgs:
+        raise SponsorshipConflict(list(set([target_org] + conflicting_orgs)))
+
+    for source_sponsor, _orgs in source_sponsors.items():
+
+        if target_sponsor == source_sponsor:
+            continue
+
+        return merge_organizations_transfer_sponsor(source_sponsor, _orgs, target_org)
+
+
+def merge_organizations_transfer_sponsor(sponsor, source_orgs, target_org):
+
+    if not sponsor:
+        return
+
+    for org in source_orgs:
+        sponsor.orgs.remove(org)
+
+    sponsor.orgs.add(target_org)
+
+    return (source_orgs, sponsor)
+
+
 @transaction.atomic
 @reversion.create_revision()
 def merge_organizations(targets, target, request):
@@ -197,6 +267,17 @@ def merge_organizations(targets, target, request):
     for org in targets:
         if org == target:
             raise ValueError(_("Target org cannot be in selected organizations list"))
+
+    try:
+        sponsorship_moved = merge_organizations_handle_sponsors(targets, target)
+    except SponsorshipConflict as exc:
+
+        mail_sponsorship_admin_merge_conflict(exc.orgs, target)
+        return {
+            "error": _(
+                "There exist some sponsor ship conflicts that will need to be manually resolved before this merge can happen. {} has been notified of this conflict. Conflicting organizations: {}"
+            ).format(settings.SPONSORSHIPS_EMAIL, exc.org_names)
+        }
 
     for org in targets:
 
@@ -237,9 +318,15 @@ def merge_organizations(targets, target, request):
         org.delete()
         org_merged += 1
 
+        if sponsorship_moved and org in sponsorship_moved[0]:
+            merge.log_entity(sponsorship_moved[1])
+
         mail_users_entity_merge(
             source_admins, target.admin_usergroup.user_set.all(), org, target
         )
+
+    if sponsorship_moved:
+        mail_sponsorship_admin_merge(sponsorship_moved[0], target)
 
     return {
         "ix": ix_moved,
@@ -247,6 +334,7 @@ def merge_organizations(targets, target, request):
         "net": net_moved,
         "user": user_moved,
         "org": org_merged,
+        "sponsorship_moved": f"{sponsorship_moved}",
     }
 
 
@@ -1096,7 +1184,7 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
 
     def org_merge_tool_merge_action(self, request):
         if not request.user.is_superuser:
-            return HttpResponseForbidden(request)
+            return HttpResponseForbidden()
 
         try:
             orgs = Organization.objects.filter(id__in=request.GET.get("ids").split(","))
@@ -2050,7 +2138,9 @@ class DeskProTicketAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
 def apply_ixf_member_data(modeladmin, request, queryset):
     for ixf_member_data in queryset:
         try:
-            ixf_member_data.apply(user=request.user, comment="Applied IX-F suggestion")
+            ixf_member_data.apply(
+                user=request.user, comment="Applied IX-F suggestion", manual=True
+            )
         except ValidationError as exc:
             messages.error(request, f"{ixf_member_data.ixf_id_pretty_str}: {exc}")
 
@@ -2258,6 +2348,66 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
         "latitude",
         "fetched",
     ]
+
+
+@admin.register(DataChangeWatchedObject)
+class DataChangeWatchedObjectAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "ref_tag", "object_id", "last_notified", "created")
+
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
+
+
+@admin.register(DataChangeNotificationQueue)
+class DataChangeNotificationQueueAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "watched_ref_tag",
+        "watched_object_id",
+        "watched_object",
+        "ref_tag",
+        "object_id",
+        "target_object",
+        "title",
+        "source",
+        "action",
+        "details",
+        "created",
+    )
+
+    readonly_fields = ("watched_object", "target_object", "title", "details")
+
+    def has_change_permission(self, request, obj=None):
+        return
+
+    def has_add_permission(self, request, obj=None):
+        return
+
+
+@admin.register(DataChangeEmail)
+class DataChangeEmail(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "email",
+        "subject",
+        "watched_object",
+        "created",
+        "sent",
+    )
+
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
 
 
 admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
