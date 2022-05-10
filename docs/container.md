@@ -105,10 +105,10 @@ After it is done you should have a PeeringDB instance exposed on port `:8000`: [
 
 #### Organization management of oauth applications
 
-Once migrations `0085` has been applied you can overrider the `OAUTH2_PROVIDER_APPLICATION_MODEL` environment variable to
-`"peeringdb_server.OAuthApplication"` in order to enabled organization management of oauth applications.
+Once migration `0085` has been applied you should override the `OAUTH2_PROVIDER_APPLICATION_MODEL` environment variable to
+`"peeringdb_server.OAuthApplication"` in order to enable organization management of oauth applications.
 
-Trying to switch this beforehand will result in the following migration error
+Warning: Overriding before migration 0085 has been applied will result in the following migration error and a broken migration state.
 
 ```
 Related model 'peeringdb_server.oauthapplication` cannot be resolved
