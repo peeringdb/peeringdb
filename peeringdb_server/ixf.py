@@ -1996,7 +1996,7 @@ class Importer:
 
         ixf_member_data = IXFMemberData(ixlan=self.ixlan, asn=0)
 
-        subject = "Could not process IX-F Data"
+        subject = f"Could not process IX-F Data - {self.ixlan.ix.name} ({self.ixlan.ix.id})"
         template = loader.get_template("email/notify-ixf-source-error.txt")
         message = template.render(
             {"error": error, "dt": now, "instance": ixf_member_data}
