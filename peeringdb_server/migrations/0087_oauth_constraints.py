@@ -22,7 +22,7 @@ def _fix_constraints(table):
 
         print(sql_drop)
 
-        sql_add = f"alter table oauth2_provider_grant add constraint {fk_name} foreign key (`application_id`) REFERENCES `peeringdb_oauth_application` (`id`) ON DELETE CASCADE;"
+        sql_add = f"alter table {table} add constraint {fk_name} foreign key (`application_id`) REFERENCES `peeringdb_oauth_application` (`id`) ON DELETE CASCADE;"
 
         print(sql_add)
 
