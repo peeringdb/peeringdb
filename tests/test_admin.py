@@ -858,11 +858,13 @@ class AdminTests(TestCase):
         Test that EnvironmentSetting configuration is sane
         """
 
-        field_choices = dict(models.EnvironmentSetting._meta.get_field("setting").choices)
+        field_choices = dict(
+            models.EnvironmentSetting._meta.get_field("setting").choices
+        )
 
-        for k,v in models.EnvironmentSetting.setting_to_field.items():
+        for k, v in models.EnvironmentSetting.setting_to_field.items():
             assert v in ["value_str", "value_bool", "value_int"]
             assert k in field_choices
 
-        for k,v in models.EnvironmentSetting.setting_validators.items():
+        for k, v in models.EnvironmentSetting.setting_validators.items():
             assert k in field_choices
