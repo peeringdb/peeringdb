@@ -852,3 +852,19 @@ class AdminTests(TestCase):
         messages = list(get_messages(response.wsgi_request))
 
         assert "The user “user Org 0” was deleted successfully." in str(messages[0])
+
+    def test_envvar_choices(self):
+        """
+        Test that EnvironmentSetting configuration is sane
+        """
+
+        field_choices = dict(
+            models.EnvironmentSetting._meta.get_field("setting").choices
+        )
+
+        for k, v in models.EnvironmentSetting.setting_to_field.items():
+            assert v in ["value_str", "value_bool", "value_int"]
+            assert k in field_choices
+
+        for k, v in models.EnvironmentSetting.setting_validators.items():
+            assert k in field_choices

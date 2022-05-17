@@ -5408,11 +5408,11 @@ class EnvironmentSetting(models.Model):
                 _("API: Melissa request throttle enabled for organizations"),
             ),
             (
-                "API_THROTTLE_MELISSA_RATE_ANON",
+                "API_THROTTLE_MELISSA_RATE_IP",
                 _("API: Melissa request throttle rate for anonymous requests (ips)"),
             ),
             (
-                "API_THROTTLE_MELISSA_ENABLED_ANON",
+                "API_THROTTLE_MELISSA_ENABLED_IP",
                 _("API: Melissa request throttle enabled for anonymous requests (ips)"),
             ),
             # api response size throttle: ip-block config
