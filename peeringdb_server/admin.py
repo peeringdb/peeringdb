@@ -303,11 +303,17 @@ def merge_organizations(targets, target, request):
 
         # move users
         for user in org.usergroup.user_set.all():
+
+            # Skip user migration if user is already in the admin group
+            if user in target.admin_usergroup.user_set.all():
+                continue
             target.usergroup.user_set.add(user)
             org.usergroup.user_set.remove(user)
             merge.log_entity(user, note="usergroup")
             user_moved += 1
         for user in org.admin_usergroup.user_set.all():
+            if user in target.admin_usergroup.user_set.all():
+                continue
             target.usergroup.user_set.add(user)
             org.admin_usergroup.user_set.remove(user)
             merge.log_entity(user, note="admin_usergroup")
