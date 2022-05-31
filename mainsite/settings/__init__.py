@@ -304,6 +304,9 @@ set_option("API_THROTTLE_IXF_IMPORT", "1/minute")
 
 # Configuration for melissa request rate limiting in the api (#1124)
 
+set_option("API_THROTTLE_MELISSA_ENABLED_ADMIN", False)
+set_option("API_THROTTLE_MELISSA_RATE_ADMIN", "10/minute")
+
 set_option("API_THROTTLE_MELISSA_ENABLED_USER", False)
 set_option("API_THROTTLE_MELISSA_RATE_USER", "10/minute")
 
@@ -842,6 +845,7 @@ if API_THROTTLE_ENABLED:
                 "melissa_user": API_THROTTLE_MELISSA_RATE_USER,
                 "melissa_org": API_THROTTLE_MELISSA_RATE_ORG,
                 "melissa_ip": API_THROTTLE_MELISSA_RATE_IP,
+                "melissa_admin": API_THROTTLE_MELISSA_RATE_ADMIN,
             },
         }
     )

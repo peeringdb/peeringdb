@@ -38,6 +38,7 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
     scope_cidr = "anon"
     scope_user = "user"
     scope_org = "user"
+    scope_admin = "user"
 
     def __init__(self):
         pass
@@ -90,6 +91,19 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
             return None
 
         return remaining_duration / float(available_requests)
+
+    def _allow_request_admin_auth(self, request, view, ident_prefix=""):
+
+        self.ident = f"{ident_prefix}admin:{self.user.pk}"
+        self.scope = self.scope_admin
+        self.rate = self.get_rate()
+        self.num_requests, self.duration = self.parse_rate(self.rate)
+        allowed = super().allow_request(request, view)
+
+        if not allowed:
+            self.set_throttle_response(request, "API_THROTTLE_RATE_USER_MSG")
+
+        return allowed
 
     def _allow_request_user_auth(self, request, view, ident_prefix=""):
         self.ident = f"{ident_prefix}user:{self.user.pk}"
@@ -184,6 +198,19 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
         ident_prefix = self.ident_prefix(request)
 
+        if self.user and self.user.is_superuser:
+
+            # admin user
+
+            if self.check_admin(request):
+
+                return self._allow_request_admin_auth(request, view, ident_prefix)
+
+            # user is admin and throttling for admins is not enabled past
+            # this point
+
+            return True
+
         if self.user and self.check_user(request):
 
             # authenticated user
@@ -215,6 +242,9 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         return True
 
     def check_cidr(self, request):
+        return True
+
+    def check_admin(self, request):
         return True
 
     def get_rate(self):
@@ -485,6 +515,7 @@ class MelissaThrottle(TargetedRateThrottle):
     scope_user = "melissa_user"
     scope_org = "melissa_org"
     scope_ip = "melissa_ip"
+    scope_admin = "melissa_admin"
 
     def ident_prefix(self, request):
         return "melissa:"
@@ -497,6 +528,9 @@ class MelissaThrottle(TargetedRateThrottle):
 
     def check_ip(self, request):
         return self._check_source(request, "ip")
+
+    def check_admin(self, request):
+        return self._check_source(request, "admin")
 
     def check_cidr(self, request):
         return False
