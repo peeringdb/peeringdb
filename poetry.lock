@@ -326,9 +326,9 @@ nested = ["django-nested-admin (>=3.0.21)"]
 tags = ["django-taggit"]
 
 [[package]]
-name = "django-bootstrap3"
-version = "21.2"
-description = "Bootstrap 3 support for Django projects"
+name = "django-bootstrap5"
+version = "21.3"
+description = "Bootstrap 5 support for Django projects"
 category = "main"
 optional = false
 python-versions = ">=3.7"
@@ -2058,9 +2058,9 @@ django-allauth = [
 django-autocomplete-light = [
     {file = "django-autocomplete-light-3.9.4.tar.gz", hash = "sha256:0f6da75c1c7186698b867a467a8cdb359f0513fdd8e09288a0c2fb018ae3d94e"},
 ]
-django-bootstrap3 = [
-    {file = "django-bootstrap3-21.2.tar.gz", hash = "sha256:9a7e95a053455c15cdcbc5dc7f9261f9aecf01d0558435b59e7b364765f2c3e2"},
-    {file = "django_bootstrap3-21.2-py3-none-any.whl", hash = "sha256:845a53e0f68fd520e3df6d53686a641e5008329e492687e225a0c394941dd430"},
+django-bootstrap5 = [
+    {file = "django-bootstrap5-21.3.tar.gz", hash = "sha256:35086341881780a44b2e27255894f6029fc5ef75e5a0ec8ebd82f47a5184fa73"},
+    {file = "django_bootstrap5-21.3-py3-none-any.whl", hash = "sha256:c7a686420aa98692f15bd16e61a90dc6a3607e441a4dea37af840b83d4820cac"},
 ]
 django-cors-headers = [
     {file = "django-cors-headers-3.11.0.tar.gz", hash = "sha256:eb98389bf7a2afc5d374806af4a9149697e3a6955b5a2dc2bf049f7d33647456"},

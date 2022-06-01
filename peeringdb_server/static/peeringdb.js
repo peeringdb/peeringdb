@@ -839,7 +839,7 @@ PeeringDB.IXFProposals = twentyc.cls.define(
 
       // make sure all tooltips are closed
 
-      proposals.find('[data-toggle="tooltip"]').each(function() {
+      proposals.find('[data-bs-toggle="tooltip"]').each(function() {
         $(this).tooltip("hide");
       });
 
@@ -2664,7 +2664,7 @@ twentyc.editable.input.register(
       // update choice display
       let choices_element = this.element.data('choices_element')
       let row = $('<div class="alert autocomplete-choice alert-info">').attr('data-value', value);
-      row.attr("data-toggle","tooltip").attr("title", gettext("Click to remove") ).attr("data-placement", "left").tooltip()
+      row.attr("data-bs-toggle","tooltip").attr("title", gettext("Click to remove") ).attr("data-placement", "left").tooltip()
       row.on('click',()=> {
         row.tooltip("hide")
         this.multi_remove(value);
@@ -3477,7 +3477,7 @@ $(window).bind("load", function() {
 
 $(window).bind("pageshow", function() {
   PeeringDB.focus();
-  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+  $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
     PeeringDB.focus()
   });
 })

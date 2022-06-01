@@ -5,21 +5,21 @@
   <ul class="nav nav-tabs" role="tablist">
     {% if permissions.can_create_fac %}
     <li role="presentation" class="{{ tab_init.fac }}">
-      <a href="#add_fac" aria-controls="add_fac" role="tab" data-toggle="tab">
+      <a href="#add_fac" aria-controls="add_fac" role="tab" data-bs-toggle="tab">
         {% trans "Add Facility" %}
       </a>
     </li>
     {% endif %}
     {% if permissions.can_create_net %}
     <li role="presentation" class="{{ tab_init.net }}">
-      <a href="#add_net" aria-controls="add_net" role="tab" data-toggle="tab">
+      <a href="#add_net" aria-controls="add_net" role="tab" data-bs-toggle="tab">
         {% trans "Add Network" %}
       </a>
     </li>
     {% endif %}
     {% if permissions.can_create_ix %}
     <li role="presentation" class="{{ tab_init.ix}}">
-      <a href="#add_ix" aria-controls="add_ix" role="tab" data-toggle="tab">
+      <a href="#add_ix" aria-controls="add_ix" role="tab" data-bs-toggle="tab">
         {% trans "Add Exchange" %}
       </a>
     </li>
@@ -27,32 +27,32 @@
 
     {% if permissions.can_manage %}
     <li role="presentation" class="{{ tab_init.users }}">
-      <a href="#users" aria-controls="users" role="tab" data-toggle="tab">
+      <a href="#users" aria-controls="users" role="tab" data-bs-toggle="tab">
         {% trans "Users" %}
       </a>
     </li>
     <li role="presentation">
-      <a href="#manage_perms" aria-controls="manage_perms" role="tab" data-toggle="tab">
+      <a href="#manage_perms" aria-controls="manage_perms" role="tab" data-bs-toggle="tab">
         {% trans "Permissions" %}
       </a>
     </li>
     <li role="presentation">
-      <a href="#manage_keys" aria-controls="manage_keys" role="tab" data-toggle="tab">
+      <a href="#manage_keys" aria-controls="manage_keys" role="tab" data-bs-toggle="tab">
         {% trans "API Keys" %}
       </a>
     </li>
     <li role="presentation">
-      <a href="#manage_key_perms" aria-controls="manage_key_perms" role="tab" data-toggle="tab">
+      <a href="#manage_key_perms" aria-controls="manage_key_perms" role="tab" data-bs-toggle="tab">
         {% trans "API Key Permissions" %}
       </a>
     </li>
     <li role="presentation">
-      <a href="#manage_oauth" aria-controls="manage_oauth" role="tab" data-toggle="tab">
+      <a href="#manage_oauth" aria-controls="manage_oauth" role="tab" data-bs-toggle="tab">
         {% trans "OAuth" %}
       </a>
     </li>
     <li role="presentation" class="danger">
-      <a href="#manage_delete" aria-controls="manage_delete" role="tab" data-toggle="tab">
+      <a href="#manage_delete" aria-controls="manage_delete" role="tab" data-bs-toggle="tab">
         {% trans "Delete Organization" %}
       </a>
     </li>
@@ -197,7 +197,7 @@
             <div class="row">
               <div
                 class="col-xs-4 col-sm-5 col-md-4 help-text"
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 data-placement="top"
                 title="{{ data.phone_help_text }}">
               {% trans "Technical Phone" %}
@@ -218,7 +218,7 @@
             <div class="row">
               <div
                 class="col-xs-4 col-sm-5 col-md-4 help-text"
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 data-placement="top"
                 title="{{ data.phone_help_text }}">
               {% trans "Sales Phone" %}
@@ -553,7 +553,7 @@
             <div class="row">
               <div
                 class="col-xs-4 col-sm-5 col-md-4 help-text"
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 data-placement="top"
                 title="{{ data.phone_help_text }}">
               {% trans "Technical Phone" %}
@@ -575,7 +575,7 @@
             <div class="row">
               <div
                 class="col-xs-4 col-sm-5 col-md-4 help-text"
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 data-placement="top"
                 title="{{ data.phone_help_text }}">
                 {% trans "Policy Phone" %}
@@ -596,7 +596,7 @@
             <div class="row">
               <div
                 class="col-xs-4 col-sm-5 col-md-4 help-text"
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 data-placement="top"
                 title="{{ data.phone_help_text }}">
               {% trans "Sales Phone" %}
