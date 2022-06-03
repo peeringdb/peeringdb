@@ -27,7 +27,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.db import transaction
+from django.db import utils, transaction
 from django.db.models import Q
 from django.forms.models import modelform_factory
 from django.http import (
@@ -531,7 +531,12 @@ def view_set_user_locale(request):
             return JsonResponse(form.errors, status=400)
 
         loc = form.cleaned_data.get("locale")
-        request.user.set_locale(loc)
+        try:
+            request.user.set_locale(loc)
+        except utils.DataError:
+            return JsonResponse(
+                {"error": _("Malformed Language Preference")}, status=400
+            )
 
         translation.activate(loc)
         response = JsonResponse({"status": "ok"})
