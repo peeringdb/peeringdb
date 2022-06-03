@@ -666,6 +666,7 @@ MIDDLEWARE = (
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django_session_timeout.middleware.SessionTimeoutMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -1134,5 +1135,13 @@ if TUTORIAL_MODE:
     AUTO_VERIFY_USERS = True
 else:
     EMAIL_SUBJECT_PREFIX = f"[{RELEASE_ENV}] "
+
+
+# Session Timeout settings
+SESSION_COOKIE_AGE = 7200
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_SECONDS = 3600
+SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
+SESSION_TIMEOUT_REDIRECT = 'account/login/?next=/profile'
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

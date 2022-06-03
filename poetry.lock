@@ -348,6 +348,18 @@ python-versions = ">=3.7"
 Django = ">=2.2"
 
 [[package]]
+name = "django-session-timeout"
+version = "0.1.0"
+description = "Middleware to expire sessions after specific amount of time"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+Django = ">=1.11"
+six = ">=1.12"
+
+[[package]]
 name = "django-cors-middleware"
 version = "1.5.0"
 description = "django-cors-middleware is a Django application for handling the server headers required for Cross-Origin Resource Sharing (CORS). Fork of django-cors-headers."
@@ -2150,6 +2162,10 @@ django-reversion = [
 django-security-keys = [
     {file = "django-security-keys-1.0.1.tar.gz", hash = "sha256:1e1b76dd31bb8d147601337c2f365f6edcb629c575eb013583db7b203ea7dc75"},
     {file = "django_security_keys-1.0.1-py3-none-any.whl", hash = "sha256:f158f7a04ad8a2f3026a0df4d44606d560f121f67dd39cb8a5c4cd0ea8e1fb13"},
+]
+django-session-timeout = [
+    {file = "django-session-timeout-0.1.0.tar.gz", hash = "sha256:648fe4ffa762f3bb62ce7a9ed1bbba8e37648158d555f18a880471982941084c"},
+    {file = "django_session_timeout-0.1.0-py2.py3-none-any.whl", hash = "sha256:e01b2502d4b9995edb93be1a66f304d0314cecb4f671ddc26cb4525a07e56282"},
 ]
 django-simple-captcha = [
     {file = "django-simple-captcha-0.5.17.tar.gz", hash = "sha256:9649e66dab4e71efacbfef02f48b83b91684898352a1ab56f1686ce71033b328"},
