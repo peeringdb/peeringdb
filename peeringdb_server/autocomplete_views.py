@@ -15,7 +15,10 @@ from django import http
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import IntegerField, Q, Value
 from django.utils import html
-from grappelli.views.related import AutocompleteLookup as GrappelliAutocomplete
+from grappelli.views.related import (
+    AutocompleteLookup as GrappelliAutocomplete,
+    get_label,
+)
 from reversion.models import Version
 
 from peeringdb_server.admin_commandline_tools import TOOL_MAP
@@ -32,7 +35,16 @@ from peeringdb_server.models import (
 )
 
 
-class GrappelliHandlerefAutocomplete(GrappelliAutocomplete):
+class PDBAdminGrappelliAutocomplete(GrappelliAutocomplete):
+    def get_data(self):
+        # limit qs to 250 items
+        return [
+            {"value": self.get_return_value(f, f.pk), "label": get_label(f)}
+            for f in self.get_queryset()[:250]
+        ]
+
+
+class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
     """
     Make sure that the auto-complete fields managed
     by grappelli in django admin exclude soft-deleted
@@ -40,10 +52,33 @@ class GrappelliHandlerefAutocomplete(GrappelliAutocomplete):
     """
 
     def get_queryset(self):
+
         qs = super().get_queryset()
+
+        # Add support for ^ and $ regex anchors and add it to the top qs results
+        query = self.GET["term"]
+        if len(query) < 2:
+            return []
+        if query[0] in ["^", "$"]:
+            starts_with_qs = self.model.objects.filter(name__istartswith=query[1:])
+            ends_with_qs = self.model.objects.filter(name__iendswith=query[1:])
+            contains_qs = self.model.objects.filter(name__icontains=query[1:])
+        else:
+            starts_with_qs = self.model.objects.filter(name__istartswith=query)
+            ends_with_qs = self.model.objects.filter(name__iendswith=query)
+            contains_qs = self.model.objects.filter(name__icontains=query)
 
         if hasattr(self.model, "HandleRef"):
             qs = qs.exclude(status="deleted")
+            starts_with_qs = starts_with_qs.exclude(status="deleted")
+            ends_with_qs = ends_with_qs.exclude(status="deleted")
+            contains_qs = contains_qs.exclude(status="deleted")
+
+        if query.startswith("^"):
+            return starts_with_qs
+
+        if query.startswith("$"):
+            return ends_with_qs
 
         return qs
 
@@ -159,8 +194,16 @@ class OrganizationAutocomplete(AutocompleteHTMLResponse):
     def get_queryset(self):
         qs = Organization.objects.filter(status="ok")
         if self.q:
-            qs = qs.filter(name__icontains=self.q)
+
+            # Add support for ^ and $ regex anchors
+            if self.q.startswith("^"):
+                qs = qs.filter(name__istartswith=self.q[1:])
+            elif self.q.startswith("$"):
+                qs = qs.filter(name__iendswith=self.q[1:])
+            else:
+                qs = qs.filter(name__icontains=self.q)
         qs = qs.order_by("name")
+
         return qs
 
     def get_result_label(self, item):
