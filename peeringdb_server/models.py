@@ -1104,6 +1104,18 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         for affiliation in self.affiliation_requests.filter(status="pending"):
             affiliation.cancel()
 
+        # Remove users from user and admin usergroups
+        aug = self.admin_usergroup.user_set
+        for user in aug.all():
+            aug.remove(user)
+            user.save()
+        
+        ug = self.usergroup.user_set
+
+        for user in ug.all():
+            ug.remove(user)
+            user.save()
+
 
 def default_time_s():
     """
