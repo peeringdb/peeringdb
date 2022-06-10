@@ -634,7 +634,7 @@ class ApplicationDetail(ApplicationOwnerMixin, oauth2_views.ApplicationDetail):
     @never_cache
     def get(self, request, *args, **kwargs):
         return super(
-            oauth2_views.ApplicationDetail, self
+            ApplicationDetail, self
         ).get(request, *args, **kwargs)
 
 
