@@ -67,7 +67,9 @@ class Command(BaseCommand):
 
             self.log(f"Renumbering {prefix.descriptive_name} -> {new_prefix}")
 
-            exists_deleted = IXLanPrefix.objects.filter(prefix=new_prefix, status="deleted").first()
+            exists_deleted = IXLanPrefix.objects.filter(
+                prefix=new_prefix, status="deleted"
+            ).first()
 
             if exists_deleted:
 

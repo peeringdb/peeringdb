@@ -305,7 +305,6 @@ def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
     else:
         delimiter = ":"
 
-
     ip_octets = ipaddr.exploded.split(delimiter)
     net_octets = new_prefix.network_address.exploded.split(delimiter)
     hostmask = [o for o in new_prefix.hostmask.exploded.split(delimiter)]
@@ -322,10 +321,11 @@ def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
     new_ip = ipaddress.ip_address(f"{delimiter.join([str(o) for o in ip_octets])}")
 
     if new_ip not in new_prefix:
-        raise ValueError(f"Altered ip address `{new_ip}` not contained in `{new_prefix}`")
+        raise ValueError(
+            f"Altered ip address `{new_ip}` not contained in `{new_prefix}`"
+        )
 
     return new_ip
-
 
 
 def get_client_ip(request):

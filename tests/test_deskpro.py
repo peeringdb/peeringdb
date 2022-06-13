@@ -1,12 +1,10 @@
 from unicodedata import name
+
 import pytest
 from django.test import Client, RequestFactory, TestCase
-from peeringdb_server.models import (
-    DeskProTicket,
-    Group,
-    User,
-)
+
 from peeringdb_server.deskpro import MockAPIClient as DeskProClient
+from peeringdb_server.models import DeskProTicket, Group, User
 
 
 @pytest.fixture
@@ -39,9 +37,10 @@ def test_deskpro_person_noname(admin_user):
 
     assert payload.get("name") == admin_user.username
 
+
 @pytest.mark.django_db
 def test_deskpro_person_email(admin_user):
-    
+
     deskpro_client = DeskProClient("", "")
 
     admin_user.first_name = "Django"
@@ -53,6 +52,7 @@ def test_deskpro_person_email(admin_user):
     )
 
     assert payload.get("name") == admin_user.email
+
 
 @pytest.mark.django_db
 def test_deskpro_person(admin_user):
