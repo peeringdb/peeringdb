@@ -5,7 +5,7 @@ from django import template
 from django.utils.translation import ugettext_lazy as _
 from django_otp import devices_for_user
 from django_otp.plugins.otp_email.models import EmailDevice
-from two_factor.templatetags import two_factor
+from two_factor.plugins.phonenumber.templatetags import phonenumber
 
 register = template.Library()
 
@@ -18,7 +18,7 @@ def device_action(device):
         if device.method == "security-key":
             return _("U2F security key")
 
-    return two_factor.device_action(device)
+    return phonenumber.device_action(device)
 
 
 @register.filter
