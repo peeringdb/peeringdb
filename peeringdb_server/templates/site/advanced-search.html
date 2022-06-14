@@ -5,16 +5,16 @@
 <div class="advanced-search-view">
   <ul class="nav nav-tabs" role="tablist">
     <li role="presentation" class="{% if request.GET.reftag == "ix" or not request.GET.reftag %}active{% else %}inactive{% endif %}">
-      <a href="#ix" aria-controls="ix" role="tab" data-toggle="tab">{% trans "Exchanges" %}</a>
+      <a href="#ix" aria-controls="ix" role="tab" data-bs-toggle="tab">{% trans "Exchanges" %}</a>
     </li>
     <li role="presentation" class="{% if request.GET.reftag == "net" %}active{% else %}inactive{% endif %}">
-      <a href="#net" aria-controls="net" role="tab" data-toggle="tab">{% trans "Networks"  %}</a>
+      <a href="#net" aria-controls="net" role="tab" data-bs-toggle="tab">{% trans "Networks"  %}</a>
     </li>
     <li role="presentation" class="{% if request.GET.reftag == "fac" %}active{% else %}inactive{% endif %}">
-      <a href="#fac" aria-controls="fac" role="tab" data-toggle="tab">{% trans "Facilities" %}</a>
+      <a href="#fac" aria-controls="fac" role="tab" data-bs-toggle="tab">{% trans "Facilities" %}</a>
     </li>
     <li role="presentation" class="{% if request.GET.reftag == "org" %}active{% else %}inactive{% endif %}">
-      <a href="#org" aria-controls="org" role="tab" data-toggle="tab">{% trans "Organizations" %}</a>
+      <a href="#org" aria-controls="org" role="tab" data-bs-toggle="tab">{% trans "Organizations" %}</a>
     </li>
   </ul>
 

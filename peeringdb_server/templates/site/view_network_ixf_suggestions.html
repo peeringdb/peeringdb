@@ -22,7 +22,7 @@
 
     <p><small>
       {% trans "You have dismissed some suggestions that are still available." %}
-      <a id="btn-reset-proposals" class="interactive" data-reset-path="{% url "net-reset-ixf-proposals" net_id=instance.id %}" data-toggle="tooltip" title="{% trans "Will restore any suggestions you have previously dismissed" %}">{% trans "Reset Suggestions" %}</a>
+      <a id="btn-reset-proposals" class="interactive" data-reset-path="{% url "net-reset-ixf-proposals" net_id=instance.id %}" data-bs-toggle="tooltip" title="{% trans "Will restore any suggestions you have previously dismissed" %}">{% trans "Reset Suggestions" %}</a>
     </small></p>
 
   {% endif %}
@@ -57,7 +57,7 @@
   data-ixf-proposals-ix-name="{{ ixf_proposals.ix.name }}"
   data-ixf-proposals-net="{{ instance.id }}">
   <div class="marg-side-15 marg-top-15">
-  <div class="row item" role="button" data-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">
+  <div class="row item" role="button" data-bs-toggle="collapse" aria-expanded="false" data-target="#ixf-proposals-{{ ix_id }}">
     <div class="col-xs-10">
       <h4 class="marg-top"><a class="ix-name">{{ ixf_proposals.ix.name }}</a></h4>
     </div>
@@ -75,9 +75,9 @@
       <a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{% trans "Their PeeringDB entry" %}</a>
     </div>
     <div class="col-xs-6 right">
-      <button data-toggle="tooltip" title="{% trans "Automatically update and remove all suggested entries" %}" class="btn btn-default btn-sm resolve-all" type="button">{% trans "Auto-resolve" %}</button>
+      <button data-bs-toggle="tooltip" title="{% trans "Automatically update and remove all suggested entries" %}" class="btn btn-default btn-sm resolve-all" type="button">{% trans "Auto-resolve" %}</button>
 
-      <button data-toggle="tooltip" title="{% trans "Automatically add all suggested entries" %}" class="btn btn-default btn-sm add-all" type="button">{% trans "Auto-add" %}</button>
+      <button data-bs-toggle="tooltip" title="{% trans "Automatically add all suggested entries" %}" class="btn btn-default btn-sm add-all" type="button">{% trans "Auto-add" %}</button>
     </div>
   </div>
 
@@ -147,7 +147,7 @@
         </div>
       </div>
       <div class="col-xs-1 right">
-        <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" title="{{ x.reason }}"></span>
+        <span class="glyphicon glyphicon-question-sign" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
       </div>
       <div class="col-xs-12">
         <div class="row marg-top-15">
@@ -156,7 +156,7 @@
             <button type="button"
               class="btn btn-danger btn-sm dismiss"
               title="{% trans "Hide this suggestion until the exchange updates it." %}"
-              data-toggle="tooltip">{% trans "Dismiss" %}</button>
+              data-bs-toggle="tooltip">{% trans "Dismiss" %}</button>
           </div>
           <div class="col-xs-6 center">
             <div class="alert alert-compact alert-danger errors" style="display:none;"></div>
@@ -165,7 +165,7 @@
             <button type="button"
               class="btn btn-default btn-sm add"
               title="{% trans "Add this entry to public peering exchange points" %}"
-              data-toggle="tooltip">{% trans "Add" %}</button>
+              data-bs-toggle="tooltip">{% trans "Add" %}</button>
           </div>
         </div>
       </div>
@@ -208,7 +208,7 @@
       {% if x.ipaddr6 %}{{ x.ipaddr6 }}{% else %}{% trans "IPv6 not set" %}{% endif %}
       </div>
       <div class="col-xs-1 right">
-        <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" title="{{ x.reason }}"></span>
+        <span class="glyphicon glyphicon-question-sign" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
       </div>
       <div class="col-xs-12">
         <div class="row marg-top-15">
@@ -216,7 +216,7 @@
             <button type="button"
               class="btn btn-danger btn-sm dismiss"
               title="{% trans "Hide this suggestion until the exchange updates it." %}"
-              data-toggle="tooltip">{% trans "Dismiss" %}</button>
+              data-bs-toggle="tooltip">{% trans "Dismiss" %}</button>
           </div>
           <div class="col-xs-6 center">
             <div class="alert alert-compact alert-danger errors" style="display:none;"></div>
@@ -226,7 +226,7 @@
               class="btn btn-default btn-sm delete"
               title="{% trans "Remove this entry from your public peering exchange points list" %}"
               data-confirm="{% blocktrans trimmed %}Remove the entry {{ ixf_id }} for {{ ix_name }} from your public peering exchange points list?{% endblocktrans %}"
-              data-toggle="tooltip">{% trans "Delete" %}</button>
+              data-bs-toggle="tooltip">{% trans "Delete" %}</button>
           </div>
         </div>
       </div>
@@ -340,7 +340,7 @@
         <div class="ixf-suggested-change">
           <span class="field_name">{% trans "Speed" %}</span>:
           <span class="old-value">{{ x.changes.speed.from|pretty_speed }}</span>
-          <span class="glyphicon glyphicon-arrow-right" data-toggle="tooltip" title="{{ x.reason }}"></span>
+          <span class="glyphicon glyphicon-arrow-right" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
           <span class="new-value">{{ x.changes.speed.to|pretty_speed }}</span>
         </div>
         {% endif %}
@@ -351,7 +351,7 @@
           <span class="old-value">
             <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.is_rs_peer.from %}-off{% endif %}.png" />
           </span>
-          <span class="glyphicon glyphicon-arrow-right" data-toggle="tooltip" title="{{ x.reason }}"></span>
+          <span class="glyphicon glyphicon-arrow-right" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
           <span class="new-value">
             <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.is_rs_peer.to %}-off{% endif %}.png" />
           </span>
@@ -364,7 +364,7 @@
           <span class="old-value">
             <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.operational.from %}-off{% endif %}.png" />
           </span>
-          <span class="glyphicon glyphicon-arrow-right" data-toggle="tooltip" title="{{ x.reason }}"></span>
+          <span class="glyphicon glyphicon-arrow-right" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
           <span class="new-value">
             <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.operational.to %}-off{% endif %}.png" />
           </span>
@@ -374,7 +374,7 @@
 
       </div>
       <div class="col-xs-1 right">
-        <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" title="{{ x.reason }}"></span>
+        <span class="glyphicon glyphicon-question-sign" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
       </div>
       <div class="col-xs-12">
         <div class="row marg-top-15">
@@ -382,7 +382,7 @@
             <button type="button"
               class="btn btn-danger btn-sm dismiss"
               title="{% trans "Hide this suggestion until the exchange updates it." %}"
-              data-toggle="tooltip">{% trans "Dismiss" %}</button>
+              data-bs-toggle="tooltip">{% trans "Dismiss" %}</button>
           </div>
           <div class="col-xs-6 center">
             <div class="alert alert-compact alert-danger errors" style="display:none;"></div>
@@ -391,7 +391,7 @@
             <button type="button"
               class="btn btn-default btn-sm modify"
               title="{% trans "Update this entry in your public peering exchange points list. You will also need to save the network record to persist these changes after accepting them." %}"
-              data-toggle="tooltip">{% trans "Accept" %}</button>
+              data-bs-toggle="tooltip">{% trans "Accept" %}</button>
           </div>
         </div>
       </div>
@@ -411,11 +411,11 @@
 <!--
   <div class="row controls marg-top">
     <div class="col-xs-6">
-      <button data-toggle="tooltip" title="{% trans "Will restore any active suggestions from this exchange that have been dismissed by the network" %}" type="button" class="btn btn-warning btn-sm reset-suggestions">{% trans "Reset Suggestions" %}</button>
+      <button data-bs-toggle="tooltip" title="{% trans "Will restore any active suggestions from this exchange that have been dismissed by the network" %}" type="button" class="btn btn-warning btn-sm reset-suggestions">{% trans "Reset Suggestions" %}</button>
     </div>
 
     <div class="col-xs-6 right">
-      <button data-toggle="tooltip" title="{% trans "Will add all suggested entries" %}" type="button" class="btn btn-default btn-sm add">{% trans "Auto Add" %}</button>
+      <button data-bs-toggle="tooltip" title="{% trans "Will add all suggested entries" %}" type="button" class="btn btn-default btn-sm add">{% trans "Auto Add" %}</button>
     </div>
   </div>
 -->

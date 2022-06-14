@@ -598,7 +598,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.facebook",
-    "bootstrap3",
+    "django_bootstrap5",
     "corsheaders",
     "crispy_forms",
     "django_countries",
@@ -727,7 +727,7 @@ LOGIN_REDIRECT_URL = "/"
 
 # App config
 
-CRISPY_TEMPLATE_PACK = "bootstrap3"
+CRISPY_TEMPLATE_PACK = "django_bootstrap5"
 
 ## django-cors-headers
 

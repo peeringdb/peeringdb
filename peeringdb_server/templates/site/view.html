@@ -128,7 +128,7 @@
         <!-- row header -->
         <div class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
              {% if row.help_text %}
-             data-toggle="tooltip"
+             data-bs-toggle="tooltip"
              data-placement="top"
              {% if row.notify_incomplete_group %}data-notify-incomplete-group="{{ row.notify_incomplete_group }}"{% endif %}
              title="{{ row.help_text }}"
@@ -183,7 +183,7 @@
           {% for flag in row.value %}
             <span
                 {% if flag.help_text %}
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 title="{{ flag.help_text }}"
                 data-placement="right"
                 {% endif %}
@@ -403,7 +403,7 @@ $(document).ready(function() {
     }
   })
 
-  $('[data-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
+  $('[data-bs-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
 
 });
 </script>
