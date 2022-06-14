@@ -46,6 +46,7 @@ from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
@@ -635,7 +636,9 @@ oauth2_views.ApplicationRegistration = ApplicationRegistration
 
 
 class ApplicationDetail(ApplicationOwnerMixin, oauth2_views.ApplicationDetail):
-    pass
+    @never_cache
+    def get(self, request, *args, **kwargs):
+        return super(ApplicationDetail, self).get(request, *args, **kwargs)
 
 
 oauth2_views.ApplicationDetail = ApplicationDetail
