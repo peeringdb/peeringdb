@@ -1,3 +1,4 @@
+/* global $, jQuery, twentyc */
 (function() {
 
 /**
@@ -5,7 +6,7 @@
  * @module twentyc
  */
 
-twentyc = {}; // lgtm[js/missing-variable-declaration]
+window.twentyc = {};
 
 /**
  * class helper functions
@@ -13,8 +14,6 @@ twentyc = {}; // lgtm[js/missing-variable-declaration]
  * @class cls
  * @static
  */
-
-/// Contains 7 sentences fo devs, no need for translation
 
 twentyc.cls = {
 
@@ -67,14 +66,13 @@ twentyc.cls = {
 
     name = twentyc.cls.make_name(name);
 
+    // no constructor provided
+    var ctor = function(){};
     if(typeof(definition[name]) == "function") {
       // a constructor has been provided
-      var ctor = definition[name]
+      ctor = definition[name]
       delete definition[name]
-    } else {
-      // no constructor provided, substitute empty constructor
-      var ctor = function(){};
-    }
+    } 
 
     // cycle through definition and copy to class prototype
     for(k in definition) {
@@ -121,15 +119,14 @@ twentyc.cls = {
     var k;
     name = twentyc.cls.make_name(name);
 
+    // no constructor provided, substitute empty constructor
+    var ctor = function(){
+      parent.apply(this, arguments)
+    };
     if(typeof(definition[name]) == "function") {
       // a constructor has been provided
-      var ctor = definition[name]
+      ctor = definition[name]
       delete definition[name]
-    } else {
-      // no constructor provided, substitute empty constructor
-      var ctor = function(){
-        parent.apply(this, arguments)
-      };
     }
 
     // cycle through parent prototype and copy to class prototype
@@ -349,12 +346,6 @@ twentyc.data = {
    */
 
   /**
-   * fires when all loads are finished
-   *
-   * @event done
-   */
-
-  /**
    * keeps track of current loading status
    * @property _loading
    * @type Object
@@ -386,6 +377,44 @@ twentyc.data = {
 
   get : function(id) {
     return tc.u.get(this._data, id, {})
+  },
+
+  /**
+   * check if dataset with specified id exists at all
+   *
+   * @method has
+   * @param {String} id data id
+   * @returns {Boolean} has true if dataset exists, false if not
+   */
+
+  has : function(id) {
+    return (typeof this._data[id] == "object");
+  },
+
+  /**
+   * store dataset
+   *
+   * @method set
+   * @param {String} id data id
+   * @param {Object} data data to store
+   */
+
+  set : function(id, data) {
+    this._data[id] = data;
+  },
+
+  /**
+   * update existing dataset with additional data
+   *
+   * @method update
+   * @param {String} id data id
+   * @param {Object} data data to update
+   */
+
+  update : function(id, data) {
+    var existing = this.get(id);
+    $.extend(existing, data);
+    this.set(id, existing);
   },
 
   /**
@@ -430,23 +459,23 @@ twentyc.data = {
 
     // in order to load data we need to find a suitable loader for it
 
+
     var loader = this.loaders.loader(id, config);
     this._loading[id] = new Date().getTime()
     loader.load(
       {
         success : function(data) {
-          twentyc.data._data[id] = data
+          twentyc.data.set(id, data);
           twentyc.data._loading[id] = false;
-          $(twentyc.data).trigger("load", { id:id, data:data} );
           $(twentyc.data).trigger("load-"+id, { id:id, data:data });
           $(twentyc.data).off("load-"+id);
-          twentyc.data.done();
+          twentyc.data.loading_done();
         }
       }
     );
   },
 
-  done : function(callback) {
+  loading_done : function(callback) {
     var i;
     if(callback) {
       $(this).on("done", callback);
@@ -488,6 +517,17 @@ twentyc.data.LoaderRegistry = twentyc.cls.extend(
     },
 
     /**
+     * check if data id has been assigned loader
+     * @method assigned
+     * @param {String} id data id
+     * @returns {Boolean} assigned true if data id has been assigned loader, false if not
+     */
+
+    assigned : function(id) {
+      return (typeof this._loaders[id] != "undefined")
+    },
+
+    /**
      * assign loader to data id
      * @method assign
      * @param {String} id data id
@@ -497,10 +537,8 @@ twentyc.data.LoaderRegistry = twentyc.cls.extend(
     assign : function(id, loaderName) {
 
       // this will error if loaderName is not registered
-      this.get(loaderName);
-
-      // link loader
-      this._loaders[id] = loaderName;
+      if (this.get(loaderName))
+        this._loaders[id] = loaderName; //link loader
 
     },
 
@@ -597,6 +635,131 @@ twentyc.data.loaders.register(
 );
 
 /**
+ * Allows you to dynamically import js libraries
+ * @class libraries
+ * @namespace twentyc
+ */
+
+twentyc.libraries = {
+
+  /**
+   * Holds the current queue, libraries will be loaded
+   * blocking in order
+   * @property queue
+   * @type Array
+   */
+
+  queue : [],
+
+  /**
+   * Holds all libraries required, indexed by their url
+   * @property index
+   * @type Object
+   */
+
+  index : {},
+
+  /**
+   * require a javascript library from the specified url
+   *
+   * @method require
+   * @param {Boolean} test only load if this is false
+   * @param {String} url
+   * @returns self
+   */
+
+  require : function(test, url) {
+    if(!test) {
+      if(!this.index[url]) {
+        var importer = new twentyc.libraries.Importer(url);
+        this.index[url] = importer;
+        this.queue.push(importer);
+        this.load_next();
+      }
+    }
+    return this;
+  },
+
+  /**
+   * load next library in the queue - this is called automatically
+   * @method load_next
+   * @private
+   */
+
+  load_next : function() {
+    if(!this.queue.length)
+      return;
+    var importer = this.queue[0];
+    importer.load(function() {
+      this.queue.shift();
+      this.load_next();
+    }.bind(this));
+  }
+
+}
+
+/**
+ * Describes a requirement importer
+ * @class Importer
+ * @namespace twentyc.libraries
+ * @constructor
+ * @param {String} url
+ */
+
+twentyc.libraries.Importer = twentyc.cls.define(
+  "Importer",
+  {
+    Importer : function(url) {
+
+      /**
+       * Location of the library to be loaded
+       * @type String
+       */
+      this.url = url;
+
+      /**
+       * Describes the current state of the importer
+       * Can be
+       *
+       * - "waiting" : waiting to be loaded
+       * - "loading" : currently loading
+       * - "loaded" : loading complete
+       *
+       * @type String
+       */
+      this.status = "waiting";
+    },
+
+    /**
+     * Load the library
+     * @method load
+     * @param {Function} onload
+     * @param {DOM} container - where to insert the script element, will default to `document.head`
+     */
+    load : function(onload, container) {
+      if(this.status != "waiting")
+        return;
+      if(!container)
+        container = document.head;
+
+      var script = document.createElement("script")
+      script.onload = function() {
+        this.status = "loaded";
+        if(onload)
+          onload();
+      }.bind(this);
+      script.type = "text/javascript";
+      script.src = this.url;
+
+      this.status = "loading";
+
+      container.appendChild(script)
+      return script;
+    }
+  }
+)
+
+/**
  * Timeout that will reset itself when invoked again before
  * execution
  *
@@ -687,7 +850,8 @@ twentyc.jq = {
  * shortcuts
  */
 
-tc = {
+/* global tc */
+window.tc = {
   u : twentyc.util,
   def : twentyc.cls.define,
   ext : twentyc.cls.extend
