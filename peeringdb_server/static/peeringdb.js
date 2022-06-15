@@ -33,8 +33,7 @@ PeeringDB = {
     twentyc.listutil.filter_input.init();
     twentyc.listutil.sortable.init();
 
-    this.csrf = Cookies.get("csrftoken")
-
+    this.csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
     $.ajaxSetup({
       beforeSend : function(xhr, settings) {
         if(!/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type) && !this.crossDomain) {

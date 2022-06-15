@@ -1135,4 +1135,6 @@ if TUTORIAL_MODE:
 else:
     EMAIL_SUBJECT_PREFIX = f"[{RELEASE_ENV}] "
 
+CSRF_USE_SESSIONS = True
+
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")
