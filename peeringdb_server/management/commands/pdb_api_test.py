@@ -2218,7 +2218,7 @@ class TestJSON(unittest.TestCase):
             # test failure if speed is below limit
             {"invalid": {"speed": 1}},
             # test failure if speed is above limit
-            {"invalid": {"speed": 1250000}},
+            {"invalid": {"speed": 5250000}},
             # test failure if speed is None
             {"invalid": {"speed": None}},
         ]

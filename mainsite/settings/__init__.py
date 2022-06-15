@@ -304,6 +304,9 @@ set_option("API_THROTTLE_IXF_IMPORT", "1/minute")
 
 # Configuration for melissa request rate limiting in the api (#1124)
 
+set_option("API_THROTTLE_MELISSA_ENABLED_ADMIN", False)
+set_option("API_THROTTLE_MELISSA_RATE_ADMIN", "10/minute")
+
 set_option("API_THROTTLE_MELISSA_ENABLED_USER", False)
 set_option("API_THROTTLE_MELISSA_RATE_USER", "10/minute")
 
@@ -385,8 +388,8 @@ set_option("DATA_QUALITY_MAX_IRR_DEPTH", 3)
 # minimum value to allow for speed on an netixlan (currently 100Mbit)
 set_option("DATA_QUALITY_MIN_SPEED", 100)
 
-# maximum value to allow for speed on an netixlan (currently 1Tbit)
-set_option("DATA_QUALITY_MAX_SPEED", 1000000)
+# maximum value to allow for speed on an netixlan (currently 5Tbit)
+set_option("DATA_QUALITY_MAX_SPEED", 5000000)
 
 set_option(
     "RATELIMITS",
@@ -842,6 +845,7 @@ if API_THROTTLE_ENABLED:
                 "melissa_user": API_THROTTLE_MELISSA_RATE_USER,
                 "melissa_org": API_THROTTLE_MELISSA_RATE_ORG,
                 "melissa_ip": API_THROTTLE_MELISSA_RATE_IP,
+                "melissa_admin": API_THROTTLE_MELISSA_RATE_ADMIN,
             },
         }
     )

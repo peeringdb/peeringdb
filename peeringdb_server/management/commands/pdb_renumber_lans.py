@@ -64,11 +64,29 @@ class Command(BaseCommand):
             netixlans = netixlans.filter(ixlan=self.ixlan)
 
         for prefix in prefixes:
+
             self.log(f"Renumbering {prefix.descriptive_name} -> {new_prefix}")
-            prefix.prefix = new_prefix
-            prefix.full_clean()
-            if self.commit:
-                prefix.save()
+
+            exists_deleted = IXLanPrefix.objects.filter(
+                prefix=new_prefix, status="deleted"
+            ).first()
+
+            if exists_deleted:
+
+                # prefix to renumber to exists already in a soft-deleted state
+                # undelete it and assign it to renumbering exchange
+
+                exists_deleted.status = "ok"
+                exists_deleted.ixlan_id = self.ix
+                if self.commit:
+                    exists_deleted.save()
+                    prefix.delete()
+            else:
+
+                prefix.prefix = new_prefix
+                prefix.full_clean()
+                if self.commit:
+                    prefix.save()
 
         for netixlan in netixlans:
             old_addr = netixlan.ipaddr(old_prefix.version)

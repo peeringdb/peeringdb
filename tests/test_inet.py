@@ -43,43 +43,53 @@ def test_recurse_contacts(rdap):
     assert len(rdap.history) > 1
 
 
-def test_renumber_ipaddress():
-    ip4 = renumber_ipaddress(
-        ipaddress.ip_address("206.41.110.48"),
-        ipaddress.ip_network("206.41.110.0/24"),
-        ipaddress.ip_network("206.41.111.0/24"),
-    )
+@pytest.mark.parametrize(
+    "ip,old_prefix,new_prefix,valid",
+    [
+        # Test successes
+        ("206.41.110.48", "206.41.110.0/24", "206.41.111.0/24", "206.41.111.48"),
+        ("206.41.110.48", "206.41.110.0/25", "206.41.111.0/24", "206.41.111.48"),
+        ("206.41.110.48", "206.41.110.0/25", "206.41.111.0/25", "206.41.111.48"),
+        ("206.41.116.101", "206.41.116.0/23", "206.42.116.0/23", "206.42.116.101"),
+        ("206.41.116.101", "206.41.116.0/23", "206.42.116.0/24", "206.42.116.101"),
+        ("206.41.116.101", "206.41.116.0/23", "206.42.116.0/25", "206.42.116.101"),
+        (
+            "2001:504:41:110::20",
+            "2001:504:41:110::/64",
+            "2001:504:41:111::/64",
+            "2001:504:41:111::20",
+        ),
+        (
+            "2001:504:41:110::20",
+            "2001:504:41:110::/64",
+            "2001:504:42:110::/60",
+            "2001:504:42:110::20",
+        ),
+        (
+            "2001:504:41:110::20",
+            "2001:504:41:110::/64",
+            "2001:504:42::/48",
+            "2001:504:42:110::20",
+        ),
+        # Test failures
+        ("2001:504:41:110::20", "206.41.110.0/24", "206.41.111.0/24", False),
+        ("2001:504:41:110::20", "2001:504:41:110::/64", "206.41.111.0/24", False),
+        ("206.41.110.48", "206.41.110.0/25", "206.41.111.128/25", False),
+        ("206.41.116.101", "206.41.116.0/23", "206.41.110.0/23", False),
+    ],
+)
+def test_renumber_ipaddress(ip, old_prefix, new_prefix, valid):
 
-    assert ip4.compressed == "206.41.111.48"
+    ip = ipaddress.ip_address(ip)
+    old_prefix = ipaddress.ip_network(old_prefix)
+    new_prefix = ipaddress.ip_network(new_prefix)
 
-    ip6 = renumber_ipaddress(
-        ipaddress.ip_address("2001:504:41:110::20"),
-        ipaddress.ip_network("2001:504:41:110::/64"),
-        ipaddress.ip_network("2001:504:41:111::/64"),
-    )
-
-    assert ip6.compressed == "2001:504:41:111::20"
-
-    with pytest.raises(ValueError):
-        renumber_ipaddress(
-            ipaddress.ip_address("2001:504:41:110::20"),
-            ipaddress.ip_network("206.41.110.0/24"),
-            ipaddress.ip_network("206.41.111.0/24"),
-        )
-
-    with pytest.raises(ValueError):
-        renumber_ipaddress(
-            ipaddress.ip_address("2001:504:41:110::20"),
-            ipaddress.ip_network("2001:504:41:110::/64"),
-            ipaddress.ip_network("206.41.111.0/24"),
-        )
-
-    with pytest.raises(ValueError):
-        renumber_ipaddress(
-            ipaddress.ip_address("206.41.110.48"),
-            ipaddress.ip_network("206.41.0.0/21"),
-            ipaddress.ip_network("206.41.111.0/24"),
-        )
+    if valid:
+        renumbered = renumber_ipaddress(ip, old_prefix, new_prefix)
+        assert renumbered.compressed == valid
+    else:
+        with pytest.raises(ValueError):
+            renumber_ipaddress(ip, old_prefix, new_prefix)
 
 
 @pytest.mark.parametrize(
