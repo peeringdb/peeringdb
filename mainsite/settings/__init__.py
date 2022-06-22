@@ -1020,7 +1020,6 @@ set_option("GRAINY_ANONYMOUS_GROUP", "Guest")
 USER_GROUP_ID = 2
 
 
-
 CSRF_FAILURE_VIEW = "peeringdb_server.views.view_http_error_csrf"
 
 RECAPTCHA_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
