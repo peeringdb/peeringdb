@@ -1019,6 +1019,8 @@ set_option("GRAINY_ANONYMOUS_GROUP", "Guest")
 #'user' user group
 USER_GROUP_ID = 2
 
+
+
 CSRF_FAILURE_VIEW = "peeringdb_server.views.view_http_error_csrf"
 
 RECAPTCHA_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
@@ -1116,8 +1118,10 @@ set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)
 
 if RELEASE_ENV == "prod":
     set_option("PDB_PREPEND_WWW", True)
+    set_option("CSRF_TRUSTED_ORIGINS", ["www.peeringdb.com"])
 else:
     set_option("PDB_PREPEND_WWW", False)
+    set_option("CSRF_TRUSTED_ORIGINS", [])
 
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 
