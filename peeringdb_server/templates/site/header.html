@@ -44,7 +44,7 @@ window.STATIC_URL = "{{ STATIC_URL }}";
 <script src='https://www.google.com/recaptcha/api.js'></script>
 <script type="text/javascript" src="{{ STATIC_URL }}jquery/jquery.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js-cookie/js.cookie.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.bundle.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}showdown/showdown.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}dom-purify/purify.min.js"></script>
 <script type="text/javascript" src="{% static "base64/base64url-arraybuffer.js" %}"></script>
@@ -113,7 +113,7 @@ $(window).bind("load", function() {
           {% endif %}
           </div>
           <div class="dropdown" style="display:inline-block">
-            <a class="btn btn-default dropdown-toggle" id="usermenu" data-toggle="dropdown" aria-haspopup="true">
+            <a class="btn btn-default dropdown-toggle" id="usermenu" data-bs-toggle="dropdown" aria-haspopup="true">
               <img class="img-responsive" src="{{ STATIC_URL }}hamburger-colorful.png" alt="navigation" title="navigation" />
             </a>
             <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="usermenu">

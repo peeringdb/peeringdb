@@ -297,9 +297,6 @@ def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
     if new_prefix.version != ipaddr.version:
         raise ValueError("Prefix version needs to be same version as ip address")
 
-    if old_prefix.prefixlen != new_prefix.prefixlen:
-        raise ValueError("New prefix needs to be of same length")
-
     if ipaddr not in old_prefix:
         raise ValueError("Ip address not within old prefix")
 
@@ -308,33 +305,27 @@ def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
     else:
         delimiter = ":"
 
-    # split prefixes and ipaddress into their octets
-
-    old_octets, old_mask = old_prefix.exploded.split("/")
-    new_octets, new_mask = new_prefix.exploded.split("/")
-    old_octets = old_octets.split(delimiter)
-    new_octets = new_octets.split(delimiter)
     ip_octets = ipaddr.exploded.split(delimiter)
-
-    # get netmask octets so we can see which are to be replace
-
-    netmask_octets = new_prefix.netmask.exploded.split(delimiter)
+    net_octets = new_prefix.network_address.exploded.split(delimiter)
+    hostmask = [o for o in new_prefix.hostmask.exploded.split(delimiter)]
 
     i = 0
+    for octet in hostmask:
 
-    for octet in netmask_octets:
-
-        # replace any octet that is not a zero in the netmask
-
-        if (ipaddr.version == 4 and int(octet) > 0) or (
-            ipaddr.version == 6 and octet != "0000"
+        if (ipaddr.version == 4 and int(octet) == 0) or (
+            ipaddr.version == 6 and octet == "0000"
         ):
-            ip_octets[i] = new_octets[i]
+            ip_octets[i] = net_octets[i]
         i += 1
 
-    # return renumbered ipaddress
+    new_ip = ipaddress.ip_address(f"{delimiter.join([str(o) for o in ip_octets])}")
 
-    return ipaddress.ip_address(f"{delimiter.join([str(o) for o in ip_octets])}")
+    if new_ip not in new_prefix:
+        raise ValueError(
+            f"Altered ip address `{new_ip}` not contained in `{new_prefix}`"
+        )
+
+    return new_ip
 
 
 def get_client_ip(request):

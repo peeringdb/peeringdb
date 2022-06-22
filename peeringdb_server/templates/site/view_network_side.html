@@ -64,13 +64,13 @@
 
             <a href="/{{x.ixlan.ix|ref_tag}}/{{ x.ixlan.ix.id }}">{{ x.ixlan.ix.name }}</a>
 
-            <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
+            <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-bs-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
 
           </div>
           <div class="col-xs-6 col-sm-4 col-md-3">
             <div class="asn{% if permissions.can_write and x.asn != x.network.asn %} mark-value-error{% endif %}"
                {% if permissions.can_write and x.asn != x.network.asn %}
-               data-toggle="tooltip"
+               data-bs-toggle="tooltip"
                data-placement="left"
                title="{% trans "Entry needs to be moved to correct network" %}"
                {% endif %}
@@ -281,7 +281,7 @@
         </div>
         <div class="local_asn{% if permissions.can_write and f.local_asn != f.network.asn %} mark-value-error{% endif %}"
              {% if permissions.can_write and f.local_asn != f.network.asn %}
-             data-toggle="tooltip"
+             data-bs-toggle="tooltip"
              data-placement="left"
              title="{% trans "Entry needs to be moved to correct network" %}"
              {% endif %}

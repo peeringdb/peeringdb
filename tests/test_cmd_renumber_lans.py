@@ -28,12 +28,12 @@ class TestRenumberLans(ClientCase):
             "pdb_renumber_lans",
             ix=ix.id,
             old="206.223.116.0/23",
-            new="206.223.110.0/23",
+            new="206.224.116.0/23",
             commit=True,
         )
 
-        assert ixlan.ixpfx_set.first().prefix.compressed == "206.223.110.0/23"
-        assert ixlan.netixlan_set.first().ipaddr4.compressed == "206.223.110.101"
+        assert ixlan.ixpfx_set.first().prefix.compressed == "206.224.116.0/23"
+        assert ixlan.netixlan_set.first().ipaddr4.compressed == "206.224.116.101"
 
         call_command(
             "pdb_renumber_lans",

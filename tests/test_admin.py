@@ -868,3 +868,28 @@ class AdminTests(TestCase):
 
         for k, v in models.EnvironmentSetting.setting_validators.items():
             assert k in field_choices
+
+    def test_org_merge_usergroup_migration(self):
+        """
+        Test usergroup migration for orgamization merge
+        """
+        request = self.factory.post("/cp")
+        request.user = None
+        # TEST 1
+
+        # merge orgs b into org a
+        org_a = self.entities["org"][0]
+        org_b = self.entities["org"][1]
+
+        # Add users to both orgs usergroups
+        user_a = models.User.objects.create(
+            username="user_a",
+        )
+
+        org_a.admin_usergroup.user_set.add(user_a)
+        org_b.admin_usergroup.user_set.add(user_a)
+
+        admin.merge_organizations([org_a], org_b, request)
+
+        assert user_a in org_b.admin_usergroup.user_set.all()
+        assert user_a not in org_b.usergroup.user_set.all()

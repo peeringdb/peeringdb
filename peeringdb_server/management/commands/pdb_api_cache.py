@@ -94,6 +94,11 @@ class Command(BaseCommand):
 
         settings.API_DEPTH_ROW_LIMIT = 0
 
+        # will be using RequestFactory to spawn requests to generate api-cache
+        # CSRF_USE_SESSIONS needs to be disabled as these are not session-enabled requests
+
+        settings.CSRF_USE_SESSIONS = False
+
         try:
             cache = {}
 
