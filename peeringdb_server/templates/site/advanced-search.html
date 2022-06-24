@@ -82,7 +82,7 @@
       if(reftag == "net" || reftag == "ix" || reftag == "fac" || reftag == "org") {
         var searchForm = $('[data-edit-target="advanced_search:'+reftag+'"]')
         searchForm.editable("loading-shim","show");
-        twentyc.data.done(function() {
+        twentyc.data.loading_done(function() {
           var target = twentyc.editable.target.instantiate(searchForm);
           target.sender = searchForm
           $(target).on("success", function() {
