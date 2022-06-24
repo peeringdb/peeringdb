@@ -1257,10 +1257,7 @@ div.oauth img {
   border-bottom: none;
 }
 
-.nav-tabs li.active a,
-.nav-tabs li.active a:visited,
-.nav-tabs li.active a:hover,
-.nav-tabs li.active a:active {
+.nav-tabs a.active {
   text-decoration: none;
   background-color: #33744a !important;
   color: #fff !important;
