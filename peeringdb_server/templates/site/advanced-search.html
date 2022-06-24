@@ -4,17 +4,17 @@
 
 <div class="advanced-search-view">
   <ul class="nav nav-tabs" role="tablist">
-    <li role="presentation" class="{% if request.GET.reftag == "ix" or not request.GET.reftag %}active{% else %}inactive{% endif %}">
-      <a href="#ix" aria-controls="ix" role="tab" data-bs-toggle="tab">{% trans "Exchanges" %}</a>
+    <li role="presentation">
+      <a href="#ix" aria-controls="ix" role="tab" data-bs-toggle="tab" class="{% if request.GET.reftag == "ix" or not request.GET.reftag %}active{% else %}inactive{% endif %}">{% trans "Exchanges" %}</a>
     </li>
-    <li role="presentation" class="{% if request.GET.reftag == "net" %}active{% else %}inactive{% endif %}">
-      <a href="#net" aria-controls="net" role="tab" data-bs-toggle="tab">{% trans "Networks"  %}</a>
+    <li role="presentation">
+      <a href="#net" aria-controls="net" role="tab" data-bs-toggle="tab" class="{% if request.GET.reftag == "net" %}active{% else %}inactive{% endif %}">{% trans "Networks"  %}</a>
     </li>
-    <li role="presentation" class="{% if request.GET.reftag == "fac" %}active{% else %}inactive{% endif %}">
-      <a href="#fac" aria-controls="fac" role="tab" data-bs-toggle="tab">{% trans "Facilities" %}</a>
+    <li role="presentation">
+      <a href="#fac" aria-controls="fac" role="tab" data-bs-toggle="tab" class="{% if request.GET.reftag == "fac" %}active{% else %}inactive{% endif %}">{% trans "Facilities" %}</a>
     </li>
-    <li role="presentation" class="{% if request.GET.reftag == "org" %}active{% else %}inactive{% endif %}">
-      <a href="#org" aria-controls="org" role="tab" data-bs-toggle="tab">{% trans "Organizations" %}</a>
+    <li role="presentation">
+      <a href="#org" aria-controls="org" role="tab" data-bs-toggle="tab" class="{% if request.GET.reftag == "org" %}active{% else %}inactive{% endif %}">{% trans "Organizations" %}</a>
     </li>
   </ul>
 
