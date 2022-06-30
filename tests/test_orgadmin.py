@@ -223,6 +223,20 @@ class OrgAdminTests(TestCase):
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(json.loads(resp.content), {})
 
+        # Test #7 - should not be allowed to manage an admins permissions (#1157)
+        url = "/org-admin/user_permissions/update?org_id=%d&user_id=%d" % (
+            self.org.id,
+            self.org_admin.id,
+        )
+        request = self.factory.post(
+            url, data={"entity": "net.%d" % self.net.id, "perms": 0x03}
+        )
+        request._dont_enforce_csrf_checks = True
+        request.user = self.org_admin
+        resp = org_admin.user_permission_update(request)
+        assert resp.status_code == 400
+        assert json.loads(resp.content).get("non_field_errors") == ["Cannot manage permissions for organization admins"]
+
     def test_user_permissions(self):
         """
         Test the result of org_admin_views.user_permissions

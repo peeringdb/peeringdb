@@ -41,6 +41,7 @@ def save_user_permissions(org, user, perms):
 
     grainy_perms = {}
 
+
     for id, permissions in list(perms.items()):
 
         if not permissions & PERM_READ:
@@ -302,7 +303,6 @@ def manage_user_delete(request, **kwargs):
 
     org = kwargs.get("org")
     user = kwargs.get("user")
-
     save_user_permissions(org, user, {})
     org.usergroup.user_set.remove(user)
     org.admin_usergroup.user_set.remove(user)
@@ -331,6 +331,9 @@ def manage_user_update(request, **kwargs):
     if group == "admin":
         org.usergroup.user_set.remove(user)
         org.admin_usergroup.user_set.add(user)
+        # remove granular permissions user has to the org
+        # since user is now an organization admin (#1157)
+        user.grainy_permissions.filter(namespace__startswith=f"peeringdb.organization.{org.id}.").delete()
     elif group == "member":
         org.usergroup.user_set.add(user)
         org.admin_usergroup.user_set.remove(user)
@@ -377,6 +380,10 @@ def user_permission_update(request, **kwargs):
 
     org = kwargs.get("org")
     user = kwargs.get("user")
+
+    # cannot manage permissions for organization admins (#1157)
+    if user.is_org_admin(org):
+        return JsonResponse({"non_field_errors": [_("Cannot manage permissions for organization admins")]}, status=400)
 
     uperms, perms = load_user_permissions(org, user)
     form = OrgAdminUserPermissionForm(request.POST)

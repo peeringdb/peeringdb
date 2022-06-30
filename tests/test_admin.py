@@ -893,3 +893,67 @@ class AdminTests(TestCase):
 
         assert user_a in org_b.admin_usergroup.user_set.all()
         assert user_a not in org_b.usergroup.user_set.all()
+
+    def test_userpermission(self):
+        """
+        Test that userpermission is sane
+        """
+
+        user_permission = admin.UserPermission.objects.create(username="user")
+
+        org = models.Organization.objects.create(name="test-org", status="ok")
+        org.admin_usergroup.user_set.add(user_permission)
+        org.save()
+
+        # assert that user is in org admin usergroup
+        assert user_permission in org.admin_usergroup.user_set.all()
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        # Submit post request to save userpermission
+        url = reverse(
+            "admin:peeringdb_server_userpermission_change", args=[user_permission.id]
+        )
+
+        payload = {
+            "groups": org.admin_usergroup.id,
+            "affiliation_requests-TOTAL_FORMS": 0,
+            "affiliation_requests-INITIAL_FORMS": 0,
+            "affiliation_requests-MIN_NUM_FORMS": 0,
+            "affiliation_requests-MAX_NUM_FORMS": 1000,
+            "affiliation_requests-__prefix__-org": "",
+            "affiliation_requests-__prefix__-org_name": "",
+            "affiliation_requests-__prefix__-asn": "",
+            "affiliation_requests-__prefix__-status": "",
+            "affiliation_requests-__prefix__-user": user_permission.id,
+            "affiliation_requests-__prefix__-id": "",
+            "grainy_permissions-TOTAL_FORMS": 1,
+            "grainy_permissions-INITIAL_FORMS": 0,
+            "grainy_permissions-MIN_NUM_FORMS": 0,
+            "grainy_permissions-MAX_NUM_FORMS": 1000,
+            "grainy_permissions-0-namespace": f"peeringdb.organization.{org.id}.test",
+            "grainy_permissions-0-permission": 1,
+            "grainy_permissions-0-user": user_permission.id,
+            "grainy_permissions-0-id": "",
+            "grainy_permissions-__prefix__-namespace": "",
+            "grainy_permissions-__prefix__-user": user_permission.id,
+            "grainy_permissions-__prefix__-id": "",
+            "_continue": "Save and continue editing",
+        }
+
+        response = client.post(url, payload, follow=True)
+
+        assert response.status_code == 200
+
+        # assert that the there are 0 grainy permissions
+        assert len(user_permission.grainy_permissions.all()) == 0
+
+        # test that other namespaces can still be added
+        payload["grainy_permissions-0-namespace"] = "random.namespace"
+        response = client.post(url, payload, follow=True)
+
+        assert response.status_code == 200
+
+        # assert that the there are 0 grainy permissions
+        assert len(user_permission.grainy_permissions.all()) == 1

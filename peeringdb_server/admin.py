@@ -1828,8 +1828,32 @@ class UserPermissionAdmin(UserAdmin):
 
         return mark_safe(f'<a href="{url}">{obj.username}</a>')
 
+    def username(self, obj):
+        return obj.user.username
+
     def clean_password(self):
         pass
+
+    def save_formset(self, request, form, formset, change):
+
+        # get user
+        user = None
+        for inline_form in formset.forms:
+            user = inline_form.cleaned_data.get("user")
+            if user:
+                break
+
+        # save the form
+        result = super().save_formset(request, form, formset, change)
+
+        # remove unmanageable permission namespaces for all the organizations
+        # the user is an administrator of (#1157)
+        if user:
+            for org in user.admin_organizations:
+                user.grainy_permissions.filter(namespace__startswith=f"peeringdb.organization.{org.id}.").delete()
+
+        return result
+
 
 
 ## COMMANDLINE TOOL ADMIN
