@@ -4,22 +4,27 @@
 <div class="marg-top">
   <ul class="nav nav-tabs" role="tablist">
     {% if permissions.can_create_fac %}
+<<<<<<< HEAD
     <li role="presentation" class="{{ tab_init.fac }}">
       <a href="#add_fac" aria-controls="add_fac" role="tab" data-bs-toggle="tab">
+=======
+    <li role="presentation">
+      <a href="#add_fac"  class="{{ tab_init.fac }}" aria-controls="add_fac" role="tab" data-bs-toggle="tab">
+>>>>>>> upstream/master
         {% trans "Add Facility" %}
       </a>
     </li>
     {% endif %}
     {% if permissions.can_create_net %}
-    <li role="presentation" class="{{ tab_init.net }}">
-      <a href="#add_net" aria-controls="add_net" role="tab" data-bs-toggle="tab">
+    <li role="presentation">
+      <a href="#add_net"  class="{{ tab_init.net }}" aria-controls="add_net" role="tab" data-bs-toggle="tab">
         {% trans "Add Network" %}
       </a>
     </li>
     {% endif %}
     {% if permissions.can_create_ix %}
-    <li role="presentation" class="{{ tab_init.ix}}">
-      <a href="#add_ix" aria-controls="add_ix" role="tab" data-bs-toggle="tab">
+    <li role="presentation">
+      <a href="#add_ix"  class="{{ tab_init.ix}}" aria-controls="add_ix" role="tab" data-bs-toggle="tab">
         {% trans "Add Exchange" %}
       </a>
     </li>

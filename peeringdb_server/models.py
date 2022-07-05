@@ -5392,6 +5392,14 @@ class EnvironmentSetting(models.Model):
             ),
             # melissa rate throttle
             (
+                "API_THROTTLE_MELISSA_RATE_ADMIN",
+                _("API: Melissa request throttle rate for admin users"),
+            ),
+            (
+                "API_THROTTLE_MELISSA_ENABLED_ADMIN",
+                _("API: Melissa request throttle enabled for admin users"),
+            ),
+            (
                 "API_THROTTLE_MELISSA_RATE_USER",
                 _("API: Melissa request throttle rate for users"),
             ),
@@ -5531,6 +5539,8 @@ class EnvironmentSetting(models.Model):
         "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG": "value_bool",
         "API_THROTTLE_MELISSA_RATE_USER": "value_str",
         "API_THROTTLE_MELISSA_ENABLED_USER": "value_bool",
+        "API_THROTTLE_MELISSA_RATE_ADMIN": "value_str",
+        "API_THROTTLE_MELISSA_ENABLED_ADMIN": "value_bool",
         "API_THROTTLE_MELISSA_RATE_ORG": "value_str",
         "API_THROTTLE_MELISSA_ENABLED_ORG": "value_bool",
         "API_THROTTLE_MELISSA_RATE_IP": "value_str",
@@ -5550,9 +5560,11 @@ class EnvironmentSetting(models.Model):
         "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER": [validate_bool],
         "API_THROTTLE_RESPONSE_SIZE_RATE_ORG": [validate_api_rate],
         "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG": [validate_bool],
+        "API_THROTTLE_MELISSA_RATE_ADMIN": [validate_api_rate],
         "API_THROTTLE_MELISSA_RATE_USER": [validate_api_rate],
         "API_THROTTLE_MELISSA_RATE_ORG": [validate_api_rate],
         "API_THROTTLE_MELISSA_RATE_IP": [validate_api_rate],
+        "API_THROTTLE_MELISSA_ENABLED_ADMIN": [validate_bool],
         "API_THROTTLE_MELISSA_ENABLED_USER": [validate_bool],
         "API_THROTTLE_MELISSA_ENABLED_ORG": [validate_bool],
         "API_THROTTLE_MELISSA_ENABLED_IP": [validate_bool],

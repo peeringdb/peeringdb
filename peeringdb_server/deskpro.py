@@ -288,18 +288,30 @@ class APIClient:
 
             payload = {"primary_email": email}
 
-            if user:
+            self.update_person_payload(payload, user, email)
+
+            person = self.create("people", payload)
+
+        return person
+
+    def update_person_payload(self, payload, user=None, email=None):
+        if user:
+            # if no first name and last name are specified, use the username
+            if not user.first_name and not user.last_name:
+                payload.update(
+                    name=user.username,
+                )
+            else:
                 payload.update(
                     first_name=user.first_name,
                     last_name=user.last_name,
                     name=user.full_name,
                 )
-            else:
-                payload.update(name=email)
 
-            person = self.create("people", payload)
+        else:
+            payload.update(name=email)
 
-        return person
+        return payload
 
     def create_ticket(self, ticket):
 

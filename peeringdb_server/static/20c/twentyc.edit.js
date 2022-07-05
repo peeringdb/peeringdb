@@ -591,9 +591,12 @@ twentyc.editable.target.register(
       sender.editable("export", this.data)
     },
     data_clean : function(removeEmpty) {
-      var i, r = {};
+      var i, r = {}, item;
       for(i in this.data) {
-        if(removeEmpty && (this.data[i] === null || this.data[i] === "" || this.data[i] === undefined))
+        item = this.data[i];
+        if(removeEmpty && (item === null || item === "" || item === undefined))
+          continue;
+        if(removeEmpty && item && item.join && !item.length)
           continue;
         if(i.charAt(0) != "_")
           r[i] = this.data[i];

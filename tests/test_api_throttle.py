@@ -128,6 +128,19 @@ class APIThrottleTests(TestCase):
             response = MockView.as_view({"get": "get"})(request)
         assert response.status_code == 200
 
+    def test_admin_request_no_throttling(self):
+        """
+        admin users should not be throttled on generic api requests
+        """
+
+        user = models.User(username="test", is_superuser=True)
+        user.save()
+        request = self.factory.get("/")
+        request.user = user
+        for dummy in range(20):
+            response = MockView.as_view({"get": "get"})(request)
+        assert response.status_code == 200
+
     def test_anon_requests_above_throttle_rate(self):
         """
         Ensure request rate is limited for anonymous users
@@ -500,6 +513,31 @@ class APIThrottleTests(TestCase):
             response = ResponseSizeMockView.as_view({"get": "get"})(request)
             assert response.status_code == 200
 
+    def test_response_size_admin(self):
+        """
+        Response size throttling should not be enabled for admins (#1172)
+        """
+
+        user = models.User.objects.create_user(username="test", is_superuser=True)
+        request = self.factory.get("/")
+        request.user = user
+
+        thold = models.EnvironmentSetting.objects.create(
+            setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER", value_int=500
+        )
+        models.EnvironmentSetting.objects.create(
+            setting="API_THROTTLE_RESPONSE_SIZE_RATE_USER", value_str="3/minute"
+        )
+        models.EnvironmentSetting.objects.create(
+            setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_USER", value_bool=True
+        )
+
+        # no throttling since user is admin
+
+        for dummy in range(100):
+            response = ResponseSizeMockView.as_view({"get": "get"})(request)
+            assert response.status_code == 200
+
     def test_response_size_org_key(self):
         """
         Ensure request rate is limited based on response size
@@ -625,6 +663,57 @@ class APIThrottleTests(TestCase):
 
         models.EnvironmentSetting.objects.create(
             setting="API_THROTTLE_MELISSA_RATE_USER", value_str="3/minute"
+        )
+        models.EnvironmentSetting.objects.create(
+            setting="API_THROTTLE_MELISSA_ENABLED_USER", value_bool=True
+        )
+
+        # requesting 3 times (all should be ok)
+        for dummy in range(3):
+            response = MelissaMockView.as_view({"get": "get"})(request)
+            assert response.status_code == 200
+
+        # requesting 4th time (rate limited)
+        response = MelissaMockView.as_view({"get": "get"})(request)
+        assert response.status_code == 429
+        assert "geo address normalization" in response.data["message"]
+
+        # diff user requesting 1st time (ok)
+        request.user = user_b
+        response = MelissaMockView.as_view({"get": "get"})(request)
+        assert response.status_code == 200
+
+    def test_melissa_admin(self):
+        """
+        Ensure request rate is limited based on melissa enabled queries
+        for authenticated users with admin status
+        """
+
+        user = models.User.objects.create_user(username="test", is_superuser=True)
+        user_b = models.User.objects.create_user(username="test_2", is_superuser=True)
+        request = self.factory.get("/api/fac", {"country": "US", "state": "IL"})
+        request.user = user
+
+        # by default melissa rate limiting is disabled
+        # requesting 10 times (all should be ok)
+
+        for dummy in range(10):
+            response = MelissaMockView.as_view({"get": "get"})(request)
+            assert response.status_code == 200
+
+        # turn on response size throttling for responses bigger than 500 bytes
+
+        models.EnvironmentSetting.objects.create(
+            setting="API_THROTTLE_MELISSA_RATE_ADMIN", value_str="3/minute"
+        )
+        models.EnvironmentSetting.objects.create(
+            setting="API_THROTTLE_MELISSA_ENABLED_ADMIN", value_bool=True
+        )
+
+        # also set up normal user throttling to test that it is ignored.
+
+        models.EnvironmentSetting.objects.create(
+            setting="API_THROTTLE_MELISSA_RATE_USER", value_str="1/minute"
         )
         models.EnvironmentSetting.objects.create(
             setting="API_THROTTLE_MELISSA_ENABLED_USER", value_bool=True

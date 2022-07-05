@@ -99,6 +99,15 @@ def test_app_list(oauth2_apps):
 def test_app_detail(oauth2_apps):
     override_app_model()
 
+    def check_cache_headers(resp):
+        assert resp.has_header("Cache-Control")
+        cache_control_header = resp.headers.get("Cache-Control")
+        assert "max-age=0" in cache_control_header
+        assert "no-cache" in cache_control_header
+        assert "no-store" in cache_control_header
+        assert "must-revalidate" in cache_control_header
+        assert "private" in cache_control_header
+
     user_app, org_app, other_app = oauth2_apps
     user = user_app.user
 
@@ -112,6 +121,7 @@ def test_app_detail(oauth2_apps):
     resp = client.get(url)
 
     assert resp.status_code == 200
+    check_cache_headers(resp)
 
     # detail org owned app
 
@@ -120,6 +130,7 @@ def test_app_detail(oauth2_apps):
 
     assert resp.status_code == 200
     assert f"{org_app.org.name}'s management" in resp.content.decode("utf-8")
+    check_cache_headers(resp)
 
     # detail unprovisioned org owned app (prohibited)
 

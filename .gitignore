@@ -1,6 +1,7 @@
 .cache/
 .coverage
 .facsimile
+*.DS_STORE
 *.env
 *.log
 *.py[cod]
