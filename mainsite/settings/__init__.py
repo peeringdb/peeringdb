@@ -1129,6 +1129,13 @@ set_option(
     "API_THROTTLE_RATE_USER_MSG", "Request was throttled. Expected available in {time}."
 )
 
+set_option(
+    "RIR_ALLOCATION_DATA_PATH", os.path.join(BASE_DIR, "")
+)
+set_option(
+    "RIR_ALLOCATION_DATA_CACHE_DAYS", 7
+)
+
 
 if TUTORIAL_MODE:
     EMAIL_SUBJECT_PREFIX = "[PDB TUTORIAL] "

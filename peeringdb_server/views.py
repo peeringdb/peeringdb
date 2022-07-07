@@ -2185,6 +2185,20 @@ def view_network(request, id):
                 "value": network_d.get("notes", dismiss),
             },
             {
+                "name": "rir_status",
+                "readonly": True,
+                "label": _("RIR Status"),
+                "type": "fmt-text",
+                "value": network_d.get("rir_status", dismiss),
+            },
+            {
+                "name": "rir_status_updated",
+                "readonly": True,
+                "label": _("RIR Status Updated"),
+                "type": "fmt-text",
+                "value": format_last_updated_time(network_d.get("rir_status_updated")),
+            },
+            {
                 "name": "org_logo",
                 "label": "",
                 "value": org.get("logo", dismiss),
@@ -2268,7 +2282,7 @@ def view_network(request, id):
                 "label": _("Health Check"),
                 "value": network_d.get("status_dashboard", dismiss),
                 "type": "url",
-            },
+            }
         ],
     }
 

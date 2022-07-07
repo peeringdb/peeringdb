@@ -2325,6 +2325,13 @@ class NetworkSerializer(ModelSerializer):
         required=False, allow_null=True, allow_blank=True, default=""
     )
 
+    rir_status = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, default=""
+    )
+    rir_status_updated = serializers.DateTimeField(
+        required=False, allow_null=True, default=None
+    )
+
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
     class Meta:
@@ -2369,6 +2376,8 @@ class NetworkSerializer(ModelSerializer):
             "allow_ixp_update",
             "suggest",
             "status_dashboard",
+            "rir_status",
+            "rir_status_updated",
         ] + HandleRefSerializer.Meta.fields
         default_fields = ["id", "name", "asn"]
         related_fields = [
@@ -2381,6 +2390,8 @@ class NetworkSerializer(ModelSerializer):
             "netixlan_updated",
             "netfac_updated",
             "poc_updated",
+            "rir_status",
+            "rir_status_updated",
         ]
         list_exclude = ["org"]
 
