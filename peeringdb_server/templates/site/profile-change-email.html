@@ -12,7 +12,7 @@
       that exists in the ASN's public contact details.
       {% endblocktrans %}
       </div>
-
+       {% blocktrans trimmed %} You are logged in with email address  {% endblocktrans %} {{ request.user.email }}
       <input type="text"
              class="editable string form-control marg-bot-15"
              placeholder="{% trans "Email" %}"
