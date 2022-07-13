@@ -4906,7 +4906,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     created = CreatedDateTimeField()
     updated = UpdatedDateTimeField()
     status = models.CharField(_("status"), max_length=254, default="ok")
-    locale = models.CharField(_("language"), max_length=62, blank=True, null=True)
+    locale = models.CharField(
+        _("language"),
+        max_length=62,
+        blank=False,
+        null=False,
+        default="en",
+        choices=settings.LANGUAGES,
+    )
 
     objects = UserManager()
 
