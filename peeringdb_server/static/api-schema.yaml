@@ -2518,6 +2518,10 @@ paths:
         description: 'Filter results by matching a value against this field.
 
 
+          `cs-cz`, `de-de`, `el-gr`, `en`, `es-es`, `fr-fr`, `it`, `ja-jp`, `oc`,
+          `pt`, `ro-ro`, `ru-ru`, `zh-cn`, `zh-tw`
+
+
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
         required: false
         schema:
@@ -4365,6 +4369,14 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            rir_status:
+                              type: string
+                              nullable: true
+                              default: ''
+                            rir_status_updated:
+                              type: string
+                              format: date-time
+                              nullable: true
                             created:
                               type: string
                               format: date-time
@@ -5803,6 +5815,14 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            rir_status:
+                              type: string
+                              nullable: true
+                              default: ''
+                            rir_status_updated:
+                              type: string
+                              format: date-time
+                              nullable: true
                             created:
                               type: string
                               format: date-time
@@ -7188,6 +7208,14 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            rir_status:
+                              type: string
+                              nullable: true
+                              default: ''
+                            rir_status_updated:
+                              type: string
+                              format: date-time
+                              nullable: true
                             created:
                               type: string
                               format: date-time
@@ -9817,6 +9845,14 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      rir_status:
+                        type: string
+                        nullable: true
+                        default: ''
+                      rir_status_updated:
+                        type: string
+                        format: date-time
+                        nullable: true
                       created:
                         type: string
                         format: date-time
@@ -11337,6 +11373,24 @@ paths:
         required: false
         schema:
           type: string
+      - name: rir_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: rir_status_updated
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -11863,6 +11917,14 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                rir_status:
+                  type: string
+                  nullable: true
+                  default: ''
+                rir_status_updated:
+                  type: string
+                  format: date-time
+                  nullable: true
                 created:
                   type: string
                   format: date-time
@@ -12348,6 +12410,14 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                rir_status:
+                  type: string
+                  nullable: true
+                  default: ''
+                rir_status_updated:
+                  type: string
+                  format: date-time
+                  nullable: true
                 created:
                   type: string
                   format: date-time
@@ -12787,6 +12857,14 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                rir_status:
+                  type: string
+                  nullable: true
+                  default: ''
+                rir_status_updated:
+                  type: string
+                  format: date-time
+                  nullable: true
                 created:
                   type: string
                   format: date-time
@@ -13270,6 +13348,24 @@ paths:
         required: false
         schema:
           type: string
+      - name: net__rir_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__rir_status_updated
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: net__route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -14748,6 +14844,24 @@ paths:
         required: false
         schema:
           type: string
+      - name: net__rir_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__rir_status_updated
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: net__route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -15865,6 +15979,24 @@ paths:
         required: false
         schema:
           type: string
+      - name: net__rir_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__rir_status_updated
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: net__route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -17283,6 +17415,14 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      rir_status:
+                        type: string
+                        nullable: true
+                        default: ''
+                      rir_status_updated:
+                        type: string
+                        format: date-time
+                        nullable: true
                       created:
                         type: string
                         format: date-time
@@ -18886,6 +19026,14 @@ paths:
                                       .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                                       .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\\
                                       z"
+                                  rir_status:
+                                    type: string
+                                    nullable: true
+                                    default: ''
+                                  rir_status_updated:
+                                    type: string
+                                    format: date-time
+                                    nullable: true
                                   created:
                                     type: string
                                     format: date-time
@@ -19848,6 +19996,14 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      rir_status:
+                        type: string
+                        nullable: true
+                        default: ''
+                      rir_status_updated:
+                        type: string
+                        format: date-time
+                        nullable: true
                       created:
                         type: string
                         format: date-time
@@ -21451,6 +21607,14 @@ paths:
                                       .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                                       .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\\
                                       z"
+                                  rir_status:
+                                    type: string
+                                    nullable: true
+                                    default: ''
+                                  rir_status_updated:
+                                    type: string
+                                    format: date-time
+                                    nullable: true
                                   created:
                                     type: string
                                     format: date-time
@@ -22364,6 +22528,14 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      rir_status:
+                        type: string
+                        nullable: true
+                        default: ''
+                      rir_status_updated:
+                        type: string
+                        format: date-time
+                        nullable: true
                       created:
                         type: string
                         format: date-time
@@ -23967,6 +24139,14 @@ paths:
                                       .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                                       .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\\
                                       z"
+                                  rir_status:
+                                    type: string
+                                    nullable: true
+                                    default: ''
+                                  rir_status_updated:
+                                    type: string
+                                    format: date-time
+                                    nullable: true
                                   created:
                                     type: string
                                     format: date-time
@@ -25182,6 +25362,24 @@ paths:
         required: false
         schema:
           type: string
+      - name: rir_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: rir_status_updated
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -25961,6 +26159,24 @@ paths:
         required: false
         schema:
           type: string
+      - name: rir_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: rir_status_updated
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -27292,6 +27508,14 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            rir_status:
+                              type: string
+                              nullable: true
+                              default: ''
+                            rir_status_updated:
+                              type: string
+                              format: date-time
+                              nullable: true
                             created:
                               type: string
                               format: date-time
@@ -29041,6 +29265,14 @@ components:
                         -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                         -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                    rir_status:
+                      type: string
+                      nullable: true
+                      default: ''
+                    rir_status_updated:
+                      type: string
+                      format: date-time
+                      nullable: true
                     created:
                       type: string
                       format: date-time
@@ -29653,6 +29885,14 @@ components:
                   0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                   .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                   d{2,5})?(?:[/?#][^\\s]*)?\\z"
+              rir_status:
+                type: string
+                nullable: true
+                default: ''
+              rir_status_updated:
+                type: string
+                format: date-time
+                nullable: true
               created:
                 type: string
                 format: date-time
@@ -30143,6 +30383,14 @@ components:
             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
             -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
             s]*)?\\z"
+        rir_status:
+          type: string
+          nullable: true
+          default: ''
+        rir_status_updated:
+          type: string
+          format: date-time
+          nullable: true
         created:
           type: string
           format: date-time
@@ -30724,6 +30972,14 @@ components:
                   0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                   .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                   d{2,5})?(?:[/?#][^\\s]*)?\\z"
+              rir_status:
+                type: string
+                nullable: true
+                default: ''
+              rir_status_updated:
+                type: string
+                format: date-time
+                nullable: true
               created:
                 type: string
                 format: date-time
@@ -32308,6 +32564,14 @@ components:
                               .(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                               -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                               d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                          rir_status:
+                            type: string
+                            nullable: true
+                            default: ''
+                          rir_status_updated:
+                            type: string
+                            format: date-time
+                            nullable: true
                           created:
                             type: string
                             format: date-time
