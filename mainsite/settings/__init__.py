@@ -1130,7 +1130,10 @@ set_option(
     "API_THROTTLE_RATE_USER_MSG", "Request was throttled. Expected available in {time}."
 )
 
-set_option("RIR_ALLOCATION_DATA_PATH", os.path.join(BASE_DIR, ""))
+set_from_env(
+    "RIR_ALLOCATION_DATA_PATH", os.path.join(API_CACHE_ROOT, "rdap-rir-status")
+)
+
 set_option("RIR_ALLOCATION_DATA_CACHE_DAYS", 1)
 
 
