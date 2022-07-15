@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0087_oauth_constraints'),
+        ('peeringdb_server', '0088_alter_environmentsetting_setting'),
     ]
 
     operations = [
@@ -21,3 +21,4 @@ class Migration(migrations.Migration):
             field=models.DateTimeField(blank=True, null=True, verbose_name='RIR status updated'),
         )
     ]
+

@@ -668,7 +668,8 @@ TEST_RUNNER = "django.test.runner.DiscoverRunner"
 MIDDLEWARE = (
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
+    #"django.contrib.sessions.middleware.SessionMiddleware",
+    "peeringdb_server.middleware.PDBSessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
