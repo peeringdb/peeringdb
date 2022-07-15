@@ -7,6 +7,8 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import Client, RequestFactory, TestCase
 
+from tests.util import mock_csrf_session
+
 import peeringdb_server.models as models
 import peeringdb_server.views as views
 
@@ -140,7 +142,7 @@ class UserTests(TestCase):
         request = self.factory.post(
             "/reset-password", data={"email": self.user_a.email}
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = views.view_password_reset(request)
 
         # check that password-reset instance was created
@@ -164,7 +166,7 @@ class UserTests(TestCase):
                 "password_v": pwd,
             },
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = views.view_password_reset(request)
 
         self.assertEqual(json.loads(resp.content)["status"], "ok")
@@ -185,7 +187,7 @@ class UserTests(TestCase):
                 "password_v": pwd,
             },
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = views.view_password_reset(request)
         self.assertEqual(resp.status_code, 400)
 
@@ -199,7 +201,7 @@ class UserTests(TestCase):
                 "password_v": "a",
             },
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = views.view_password_reset(request)
         self.assertEqual(resp.status_code, 400)
 
@@ -213,7 +215,7 @@ class UserTests(TestCase):
                 "password_v": "a",
             },
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = views.view_password_reset(request)
         self.assertEqual(resp.status_code, 400)
 
@@ -227,7 +229,7 @@ class UserTests(TestCase):
                 "password_v": pwd,
             },
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = views.view_password_reset(request)
         self.assertEqual(resp.status_code, 400)
 

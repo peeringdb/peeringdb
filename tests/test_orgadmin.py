@@ -9,8 +9,7 @@ from grainy.const import *
 import peeringdb_server.models as models
 import peeringdb_server.org_admin_views as org_admin
 import peeringdb_server.views as views
-from tests.util import override_group_id
-
+from tests.util import override_group_id, mock_csrf_session
 
 class OrgAdminTests(TestCase):
     """
@@ -137,7 +136,7 @@ class OrgAdminTests(TestCase):
         request = self.factory.post(
             url, data={"entity": "net.%d" % self.net.id, "perms": 0x03}
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
 
         resp = org_admin.user_permission_update(request)
@@ -157,7 +156,7 @@ class OrgAdminTests(TestCase):
         request = self.factory.post(
             url, data={"entity": "net.%d" % self.net.id, "perms": 0x03}
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.user_permission_update(request)
         self.assertEqual(resp.status_code, 403)
@@ -173,7 +172,7 @@ class OrgAdminTests(TestCase):
         request = self.factory.post(
             url, data={"entity": "net.%d" % self.net.id, "perms": 0x03}
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.user_permission_update(request)
         self.assertEqual(resp.status_code, 403)
@@ -185,7 +184,7 @@ class OrgAdminTests(TestCase):
             self.user_a.id,
         )
         request = self.factory.post(url, data={"entity": "net.%d" % self.net.id})
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
 
         resp = org_admin.user_permission_remove(request)
@@ -202,7 +201,7 @@ class OrgAdminTests(TestCase):
             self.user_b.id,
         )
         request = self.factory.post(url, data={"entity": "net.%d" % self.net.id})
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
 
         resp = org_admin.user_permission_remove(request)
@@ -216,7 +215,7 @@ class OrgAdminTests(TestCase):
             self.user_b.id,
         )
         request = self.factory.post(url, data={"entity": "net.%d" % self.net.id})
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
 
         resp = org_admin.user_permission_remove(request)
@@ -231,7 +230,7 @@ class OrgAdminTests(TestCase):
         request = self.factory.post(
             url, data={"entity": "net.%d" % self.net.id, "perms": 0x03}
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.user_permission_update(request)
         assert resp.status_code == 400
@@ -319,7 +318,7 @@ class OrgAdminTests(TestCase):
             "/org-admin/manage_user/delete",
             {"org_id": self.org.id, "user_id": self.user_f.id},
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.manage_user_delete(request)
         self.assertEqual(json.loads(resp.content), {"status": "ok"})
@@ -333,7 +332,7 @@ class OrgAdminTests(TestCase):
             "/org-admin/manage_user/delete",
             {"org_id": self.org.id, "user_id": self.user_e.id},
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.manage_user_delete(request)
         self.assertEqual(json.loads(resp.content), {"status": "ok"})
@@ -347,7 +346,7 @@ class OrgAdminTests(TestCase):
             "/org-admin/manage_user/delete",
             {"org_id": self.org.id, "user_id": self.user_d.id},
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.manage_user_delete(request)
         self.assertEqual(resp.status_code, 403)
@@ -357,7 +356,7 @@ class OrgAdminTests(TestCase):
             "/org-admin/manage_user/delete",
             {"org_id": self.org_other.id, "user_id": self.user_d.id},
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.manage_user_delete(request)
         self.assertEqual(resp.status_code, 403)
@@ -376,7 +375,7 @@ class OrgAdminTests(TestCase):
             "/org-admin/manage_user/update",
             {"org_id": self.org.id, "user_id": self.user_a.id, "group": "admin"},
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
 
         resp = org_admin.manage_user_update(request)
@@ -391,7 +390,7 @@ class OrgAdminTests(TestCase):
             "/org-admin/manage_user/update",
             {"org_id": self.org.id, "user_id": self.user_a.id, "group": "member"},
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
 
         resp = org_admin.manage_user_update(request)
@@ -406,7 +405,7 @@ class OrgAdminTests(TestCase):
             "/org-admin/manage_user/update",
             {"org_id": self.org.id, "user_id": self.user_d.id, "group": "member"},
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.manage_user_update(request)
         self.assertEqual(resp.status_code, 403)
@@ -416,7 +415,7 @@ class OrgAdminTests(TestCase):
             "/org-admin/manage_user/update",
             {"org_id": self.org_other.id, "user_id": self.user_d.id, "group": "admin"},
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.manage_user_update(request)
         self.assertEqual(resp.status_code, 403)
@@ -531,7 +530,7 @@ class OrgAdminTests(TestCase):
             request = self.factory.post(
                 "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={"id": uoar.id}
             )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
 
         resp = json.loads(org_admin.uoar_approve(request).content)
@@ -564,7 +563,7 @@ class OrgAdminTests(TestCase):
                 "/org-admin/uoar/approve?org_id=%d" % self.org_other.id,
                 data={"id": uoar.id},
             )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.uoar_approve(request)
         self.assertEqual(resp.status_code, 403)
@@ -582,7 +581,7 @@ class OrgAdminTests(TestCase):
                 "/org-admin/uoar/approve?org_id=%d" % self.org.id,
                 data={"id": uoar_b.id},
             )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.uoar_approve(request)
         self.assertEqual(resp.status_code, 403)
@@ -608,7 +607,7 @@ class OrgAdminTests(TestCase):
         request = self.factory.post(
             "/org-admin/uoar/deny?org_id=%d" % self.org.id, data={"id": uoar.id}
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
 
         resp = json.loads(org_admin.uoar_deny(request).content)
@@ -635,7 +634,7 @@ class OrgAdminTests(TestCase):
         request = self.factory.post(
             "/org-admin/uoar/deny?org_id=%d" % self.org_other.id, data={"id": uoar.id}
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.uoar_approve(request)
         self.assertEqual(resp.status_code, 403)
@@ -651,7 +650,7 @@ class OrgAdminTests(TestCase):
         request = self.factory.post(
             "/org-admin/uoar/deny?org_id=%d" % self.org.id, data={"id": uoar_b.id}
         )
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         request.user = self.org_admin
         resp = org_admin.uoar_deny(request)
         self.assertEqual(resp.status_code, 403)
