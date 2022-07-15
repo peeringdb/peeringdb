@@ -223,7 +223,7 @@ def read_file(name):
 def set_from_file(name, path, default=_DEFAULT_ARG, envvar_type=None):
     try:
         value = read_file(path).strip()
-    except IOError:
+    except OSError:
         value = default
 
     set_option(name, value, envvar_type)
@@ -668,7 +668,8 @@ TEST_RUNNER = "django.test.runner.DiscoverRunner"
 MIDDLEWARE = (
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
+    # "django.contrib.sessions.middleware.SessionMiddleware",
+    "peeringdb_server.middleware.PDBSessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -1128,6 +1129,12 @@ set_option(
 set_option(
     "API_THROTTLE_RATE_USER_MSG", "Request was throttled. Expected available in {time}."
 )
+
+set_from_env(
+    "RIR_ALLOCATION_DATA_PATH", os.path.join(API_CACHE_ROOT, "rdap-rir-status")
+)
+
+set_option("RIR_ALLOCATION_DATA_CACHE_DAYS", 1)
 
 
 if TUTORIAL_MODE:

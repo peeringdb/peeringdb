@@ -6,8 +6,10 @@ import base64
 
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.http import HttpResponse, JsonResponse
 from django.middleware.common import CommonMiddleware
+from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 
 from peeringdb_server.context import current_request
@@ -15,6 +17,61 @@ from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import get_key_from_request
 
 ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged in. Please log out and try again."
+
+
+class PDBSessionMiddleware(SessionMiddleware):
+
+    """
+    As PeeringDB gets a lot of repeated anonymous requests that do not
+    store and re-use session cookies this lead to substantial amount of junk
+    django session objects.
+
+    It was decided in #1205 that new django sessions are only to be established
+    On the login and registration processes.
+    """
+
+    def process_response(self, request, response):
+
+        try:
+            request.session.is_empty()
+        except AttributeError:
+            return response
+        session_key = request.session.session_key
+
+        if session_key and not request.session.is_empty():
+
+            # request specifies session and session is not empty, proceed normally
+
+            return super().process_response(request, response)
+
+        elif not request.COOKIES.get(settings.SESSION_COOKIE_NAME):
+
+            # request specifies no session, check if the request.path falls into the
+            # set of valid paths for new session creation
+
+            NEW_SESSION_VALID_PATHS = [
+                reverse("login"),
+                reverse("register"),
+                reverse("username-retrieve"),
+                reverse("username-retrieve-initiate"),
+                reverse("reset-password"),
+            ]
+
+            if request.path in NEW_SESSION_VALID_PATHS:
+
+                # path is valid for a new session, proceed normally
+
+                return super().process_response(request, response)
+            else:
+
+                # path is NOT valid for a new session, abort session
+                # creation
+
+                return response
+
+        # proceed normally
+
+        return super().process_response(request, response)
 
 
 class CurrentRequestContext:
@@ -48,9 +105,7 @@ class PDBCommonMiddleware(CommonMiddleware):
     def process_request(self, request):
         must_prepend = settings.PDB_PREPEND_WWW and not self.has_subdomain(request)
         redirect_url = (
-            ("%s://www.%s" % (request.scheme, request.get_host()))
-            if must_prepend
-            else ""
+            (f"{request.scheme}://www.{request.get_host()}") if must_prepend else ""
         )
         # Check if a slash should be appended
         if self.should_redirect_with_slash(request):

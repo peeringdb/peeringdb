@@ -254,6 +254,7 @@ class AdvancedSearchExportView(ExportView):
         api_request = request_factory.get(
             f"/api/{self.tag}/?{urllib.parse.urlencode(params)}"
         )
+        api_request.session = request.session
 
         # we want to use the same user as the original request
         # so permissions are applied correctly

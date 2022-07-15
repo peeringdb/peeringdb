@@ -1,4 +1,4 @@
-Generated from autocomplete_views.py on 2022-06-14 09:38:55.118231
+Generated from autocomplete_views.py on 2022-07-15 18:42:55.852692
 
 # peeringdb_server.autocomplete_views
 
@@ -201,7 +201,7 @@ Filter the queryset with GET['q'].
 ## GrappelliHandlerefAutocomplete
 
 ```
-GrappelliHandlerefAutocomplete(grappelli.views.related.AutocompleteLookup)
+GrappelliHandlerefAutocomplete(peeringdb_server.autocomplete_views.PDBAdminGrappelliAutocomplete)
 ```
 
 Make sure that the auto-complete fields managed
@@ -281,6 +281,15 @@ Return the label of a result.
 
 ---
 
+## PDBAdminGrappelliAutocomplete
+
+```
+PDBAdminGrappelliAutocomplete(grappelli.views.related.AutocompleteLookup)
+```
+
+AutocompleteLookup
+
+
 ## ToolHistory
 
 ```
@@ -288,4 +297,3 @@ ToolHistory(peeringdb_server.autocomplete_views.CommandLineToolHistoryAutocomple
 ```
 
 Autocomplete for command line tools that were run via the admin ui.
-

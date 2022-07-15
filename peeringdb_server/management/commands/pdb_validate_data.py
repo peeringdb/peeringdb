@@ -135,7 +135,7 @@ class Command(PeeringDBBaseCommand):
             # Write the CSV output to django-cache
 
             result_csv = StringIO()
-            result_csv.writelines(["%s,%s\n" % (r[0], r[1]) for r in results])
+            result_csv.writelines([f"{r[0]},{r[1]}\n" for r in results])
             cache.delete(f"pdb_validate_data_{reftag}_{field_name}.csv")
 
             cache.set(
@@ -148,7 +148,7 @@ class Command(PeeringDBBaseCommand):
 
             # write the CSV output to console
 
-            self.log("\n".join(["%s,%s" % (r[0], r[1]) for r in results]))
+            self.log("\n".join([f"{r[0]},{r[1]}" for r in results]))
         if self.commit and not options.get("display_csv"):
 
             # write completion summary

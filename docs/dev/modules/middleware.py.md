@@ -1,4 +1,4 @@
-Generated from middleware.py on 2022-06-14 09:38:55.484251
+Generated from middleware.py on 2022-07-15 18:42:55.852692
 
 # peeringdb_server.middleware
 
@@ -99,5 +99,30 @@ Get the username and password from the HTTP auth header.
 `def response_unauthorized(self, request, status=None, message=None)`
 
 Return a Unauthorized response.
+
+---
+
+## PDBSessionMiddleware
+
+```
+PDBSessionMiddleware(django.contrib.sessions.middleware.SessionMiddleware)
+```
+
+As PeeringDB gets a lot of repeated anonymous requests that do not
+store and re-use session cookies this lead to substantial amount of junk
+django session objects.
+
+It was decided in #1205 that new django sessions are only to be established
+On the login and registration processes.
+
+
+### Methods
+
+#### process_response
+`def process_response(self, request, response)`
+
+If request.session was modified, or if the configuration is to save the
+session every time, save the changes and set a session cookie or delete
+the session cookie if the session has been emptied.
 
 ---

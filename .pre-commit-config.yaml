@@ -36,6 +36,6 @@ repos:
     hooks:
       - id: system
         name: flake8
-        entry: poetry run flake8 .
+        entry: poetry run flake8 peeringdb_server
         language: system
         pass_filenames: false
