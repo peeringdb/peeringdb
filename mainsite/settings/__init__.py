@@ -1131,7 +1131,7 @@ set_option(
 )
 
 set_option("RIR_ALLOCATION_DATA_PATH", os.path.join(BASE_DIR, ""))
-set_option("RIR_ALLOCATION_DATA_CACHE_DAYS", 7)
+set_option("RIR_ALLOCATION_DATA_CACHE_DAYS", 1)
 
 
 if TUTORIAL_MODE:
