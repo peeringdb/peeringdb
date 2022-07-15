@@ -164,7 +164,7 @@ def test_no_api_throttle():
             if f in ["log.log"]:
                 continue
             path = os.path.join(settings.API_CACHE_ROOT, f)
-            with open(path, "r") as fh:
+            with open(path) as fh:
                 data_raw = fh.read()
                 data = json.loads(data_raw)
                 assert not data.get("message")

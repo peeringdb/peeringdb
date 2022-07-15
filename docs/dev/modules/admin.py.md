@@ -1,4 +1,4 @@
-Generated from admin.py on 2022-06-14 09:38:55.484251
+Generated from admin.py on 2022-07-15 18:42:55.900858
 
 # peeringdb_server.admin
 
@@ -1534,6 +1534,15 @@ approve | deny controls to the top of its form.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
+
+### Methods
+
+#### save_formset
+`def save_formset(self, request, form, formset, change)`
+
+Given an inline formset save it to the database.
+
+---
 
 ## VerificationQueueAdmin
 

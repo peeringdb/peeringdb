@@ -517,7 +517,7 @@ class ToolValidateData(CommandLineToolWrapper):
 
     @property
     def description(self):
-        return "Validate data: {}.{}".format(self.args[0], self.args[1])
+        return f"Validate data: {self.args[0]}.{self.args[1]}"
 
     def set_arguments(self, form_data):
         self.args = [

@@ -32,8 +32,6 @@ class Command(BaseCommand):
     @transaction.atomic()
     def handle(self, *args, **options):
 
-        args = list(args)
-
         self.commit = options.get("commit", False)
 
         ixp_from = pdbm.InternetExchange.objects.get(id=options.get("ids"))

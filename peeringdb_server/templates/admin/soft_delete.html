@@ -7,9 +7,9 @@
 <h1>{% trans "The following objects will be deleted:" %}</h1>
 
 <form action="" method="post">{% csrf_token %}
-    
+
     {% for object in deletable_objects %}
-        
+
         {% if object.status != "deleted" %}
             <p style="margin-top: 10px">
             <strong style="font-size: 15px">{{ object }}</strong>

@@ -68,7 +68,7 @@ class MetaJSONRenderer(MungeRenderer):
         """
 
         if data is None:
-            return bytes()
+            return b""
 
         result = {}
 
