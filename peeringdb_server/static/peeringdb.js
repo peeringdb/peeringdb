@@ -112,7 +112,7 @@ PeeringDB = {
       // set html after further sanitizing output via DOMPurify
       $(this).html(DOMPurify.sanitize(html, {SAFE_FOR_JQUERY: true}))
       $(this).append(translate);
-    })
+    });
 
   },
 
@@ -3480,7 +3480,3 @@ $(window).bind("pageshow", function() {
     PeeringDB.focus()
   });
 })
-
-
-
-

@@ -6,11 +6,11 @@ import base64
 
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.http import HttpResponse, JsonResponse
 from django.middleware.common import CommonMiddleware
-from django.contrib.sessions.middleware import SessionMiddleware
-from django.utils.deprecation import MiddlewareMixin
 from django.urls import reverse
+from django.utils.deprecation import MiddlewareMixin
 
 from peeringdb_server.context import current_request
 from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
@@ -30,14 +30,10 @@ class PDBSessionMiddleware(SessionMiddleware):
     On the login and registration processes.
     """
 
-
     def process_response(self, request, response):
 
-
         try:
-            accessed = request.session.accessed
-            modified = request.session.modified
-            empty = request.session.is_empty()
+            request.session.is_empty()
         except AttributeError:
             return response
         session_key = request.session.session_key
@@ -109,9 +105,7 @@ class PDBCommonMiddleware(CommonMiddleware):
     def process_request(self, request):
         must_prepend = settings.PDB_PREPEND_WWW and not self.has_subdomain(request)
         redirect_url = (
-            ("%s://www.%s" % (request.scheme, request.get_host()))
-            if must_prepend
-            else ""
+            (f"{request.scheme}://www.{request.get_host()}") if must_prepend else ""
         )
         # Check if a slash should be appended
         if self.should_redirect_with_slash(request):

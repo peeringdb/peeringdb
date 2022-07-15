@@ -6,16 +6,12 @@ Network validation.
 Prefix renumbering.
 """
 import ipaddress
-import requests
 
 import rdap
 from django.utils.translation import ugettext_lazy as _
 from rdap.exceptions import RdapException, RdapNotFoundError
 
 from peeringdb_server import settings
-from django.core.cache import cache
-import datetime
-import os
 
 RdapAsn = rdap.RdapAsn  # noqa
 

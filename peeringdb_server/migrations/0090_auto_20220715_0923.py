@@ -6,18 +6,133 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0089_rir_fields'),
+        ("peeringdb_server", "0089_rir_fields"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='environmentsetting',
-            name='setting',
-            field=models.CharField(choices=[('API_THROTTLE_RATE_ANON', 'API: Anonymous API throttle rate'), ('API_THROTTLE_RATE_USER', 'API: Authenticated API throttle rate'), ('API_THROTTLE_MELISSA_RATE_ADMIN', 'API: Melissa request throttle rate for admin users'), ('API_THROTTLE_MELISSA_ENABLED_ADMIN', 'API: Melissa request throttle enabled for admin users'), ('API_THROTTLE_MELISSA_RATE_USER', 'API: Melissa request throttle rate for users'), ('API_THROTTLE_MELISSA_ENABLED_USER', 'API: Melissa request throttle enabled for users'), ('API_THROTTLE_MELISSA_RATE_ORG', 'API: Melissa request throttle rate for organizations'), ('API_THROTTLE_MELISSA_ENABLED_ORG', 'API: Melissa request throttle enabled for organizations'), ('API_THROTTLE_MELISSA_RATE_IP', 'API: Melissa request throttle rate for anonymous requests (ips)'), ('API_THROTTLE_MELISSA_ENABLED_IP', 'API: Melissa request throttle enabled for anonymous requests (ips)'), ('API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR', 'API: Response size throttle size threshold for ip blocks (bytes)'), ('API_THROTTLE_RESPONSE_SIZE_RATE_CIDR', 'API: Response size throttle rate for ip blocks'), ('API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR', 'API: Response size throttle enabled for ip blocks'), ('API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP', 'API: Response size throttle size threshold for ip addresses (bytes)'), ('API_THROTTLE_RESPONSE_SIZE_RATE_IP', 'API: Response size throttle rate for ip addresses'), ('API_THROTTLE_RESPONSE_SIZE_ENABLED_IP', 'API: Response size throttle enabled for ip addresses'), ('API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER', 'API: Response size throttle size threshold for authenticated users (bytes)'), ('API_THROTTLE_RESPONSE_SIZE_RATE_USER', 'API: Response size throttle rate for authenticated users'), ('API_THROTTLE_RESPONSE_SIZE_ENABLED_USER', 'API: Response size throttle enabled for authenticated users'), ('API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG', 'API: Response size throttle size threshold for organization api-keys (bytes)'), ('API_THROTTLE_RESPONSE_SIZE_RATE_ORG', 'API: Response size throttle rate for organization api-keys'), ('API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG', 'API: Response size throttle enabled for organization api-keys'), ('API_THROTTLE_RATE_ANON_MSG', 'API: Anonymous API throttle rate message'), ('API_THROTTLE_RATE_USER_MSG', 'API: Authenticated API throttle rate message')], max_length=255, unique=True),
+            model_name="environmentsetting",
+            name="setting",
+            field=models.CharField(
+                choices=[
+                    ("API_THROTTLE_RATE_ANON", "API: Anonymous API throttle rate"),
+                    ("API_THROTTLE_RATE_USER", "API: Authenticated API throttle rate"),
+                    (
+                        "API_THROTTLE_MELISSA_RATE_ADMIN",
+                        "API: Melissa request throttle rate for admin users",
+                    ),
+                    (
+                        "API_THROTTLE_MELISSA_ENABLED_ADMIN",
+                        "API: Melissa request throttle enabled for admin users",
+                    ),
+                    (
+                        "API_THROTTLE_MELISSA_RATE_USER",
+                        "API: Melissa request throttle rate for users",
+                    ),
+                    (
+                        "API_THROTTLE_MELISSA_ENABLED_USER",
+                        "API: Melissa request throttle enabled for users",
+                    ),
+                    (
+                        "API_THROTTLE_MELISSA_RATE_ORG",
+                        "API: Melissa request throttle rate for organizations",
+                    ),
+                    (
+                        "API_THROTTLE_MELISSA_ENABLED_ORG",
+                        "API: Melissa request throttle enabled for organizations",
+                    ),
+                    (
+                        "API_THROTTLE_MELISSA_RATE_IP",
+                        "API: Melissa request throttle rate for anonymous requests (ips)",
+                    ),
+                    (
+                        "API_THROTTLE_MELISSA_ENABLED_IP",
+                        "API: Melissa request throttle enabled for anonymous requests (ips)",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR",
+                        "API: Response size throttle size threshold for ip blocks (bytes)",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR",
+                        "API: Response size throttle rate for ip blocks",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR",
+                        "API: Response size throttle enabled for ip blocks",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP",
+                        "API: Response size throttle size threshold for ip addresses (bytes)",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_RATE_IP",
+                        "API: Response size throttle rate for ip addresses",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP",
+                        "API: Response size throttle enabled for ip addresses",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER",
+                        "API: Response size throttle size threshold for authenticated users (bytes)",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_RATE_USER",
+                        "API: Response size throttle rate for authenticated users",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER",
+                        "API: Response size throttle enabled for authenticated users",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG",
+                        "API: Response size throttle size threshold for organization api-keys (bytes)",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_RATE_ORG",
+                        "API: Response size throttle rate for organization api-keys",
+                    ),
+                    (
+                        "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG",
+                        "API: Response size throttle enabled for organization api-keys",
+                    ),
+                    (
+                        "API_THROTTLE_RATE_ANON_MSG",
+                        "API: Anonymous API throttle rate message",
+                    ),
+                    (
+                        "API_THROTTLE_RATE_USER_MSG",
+                        "API: Authenticated API throttle rate message",
+                    ),
+                ],
+                max_length=255,
+                unique=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='locale',
-            field=models.CharField(choices=[('cs-cz', 'Czech'), ('de-de', 'German'), ('el-gr', 'Greek'), ('en', 'English'), ('es-es', 'Spanish'), ('fr-fr', 'French'), ('it', 'Italian'), ('ja-jp', 'Japanese'), ('oc', 'Occitan'), ('pt', 'Portuguese'), ('ro-ro', 'Romanian'), ('ru-ru', 'Russian'), ('zh-cn', 'Chinese (Simplified)'), ('zh-tw', 'Chinese (Traditional)')], default='en', max_length=62, verbose_name='language'),
+            model_name="user",
+            name="locale",
+            field=models.CharField(
+                choices=[
+                    ("cs-cz", "Czech"),
+                    ("de-de", "German"),
+                    ("el-gr", "Greek"),
+                    ("en", "English"),
+                    ("es-es", "Spanish"),
+                    ("fr-fr", "French"),
+                    ("it", "Italian"),
+                    ("ja-jp", "Japanese"),
+                    ("oc", "Occitan"),
+                    ("pt", "Portuguese"),
+                    ("ro-ro", "Romanian"),
+                    ("ru-ru", "Russian"),
+                    ("zh-cn", "Chinese (Simplified)"),
+                    ("zh-tw", "Chinese (Traditional)"),
+                ],
+                default="en",
+                max_length=62,
+                verbose_name="language",
+            ),
         ),
     ]

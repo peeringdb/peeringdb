@@ -630,7 +630,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
                 # used by api tests to test atomicity
                 if self._test_mode_force_failure:
-                    raise IOError("simulated failure")
+                    raise OSError("simulated failure")
 
                 return r
         except PermissionDenied:
@@ -668,7 +668,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
                 # used by api tests to test atomicity
                 if self._test_mode_force_failure:
-                    raise IOError("simulated failure")
+                    raise OSError("simulated failure")
 
                 return r
 
@@ -721,7 +721,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
                 # used by api tests to test atomicity
                 if self._test_mode_force_failure:
-                    raise IOError("simulated failure")
+                    raise OSError("simulated failure")
 
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:

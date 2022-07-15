@@ -16,11 +16,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import IntegerField, Q, Value
 from django.utils import html
 from django.utils.encoding import smart_str
-from grappelli.views.related import (
-    AutocompleteLookup as GrappelliAutocomplete,
-    get_autocomplete_search_fields,
-    get_label,
-)
+from grappelli.views.related import AutocompleteLookup as GrappelliAutocomplete
+from grappelli.views.related import get_autocomplete_search_fields, get_label
 from reversion.models import Version
 
 from peeringdb_server.admin_commandline_tools import TOOL_MAP
@@ -69,7 +66,6 @@ class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
             return f"{name}__istartswith"
         return f"{name}__iendswith"
 
-
     def get_searched_queryset(self, qs):
         model = self.model
         term = self.GET["term"]
@@ -81,8 +77,8 @@ class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
 
         search_fields = get_autocomplete_search_fields(self.model)
 
-        anchor_start = (term and term[0] == "^")
-        anchor_end = (term and term[-1] == "$")
+        anchor_start = term and term[0] == "^"
+        anchor_end = term and term[-1] == "$"
 
         # by default multiple searches can be done at once by delimiting
         # search times via a space (grappelli default behaviour)
@@ -105,11 +101,11 @@ class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
             for word in term.split(delimiter):
                 term_query = Q()
                 for search_field in search_fields:
-                    search_field = self.adjust_search_field_for_anchors(search_field, anchor_start, anchor_end)
-                    print("SEARCH_FIELD", search_field, smart_str(search_field), term)
-                    term_query |= Q(
-                        **{smart_str(search_field): smart_str(word)}
+                    search_field = self.adjust_search_field_for_anchors(
+                        search_field, anchor_start, anchor_end
                     )
+                    print("SEARCH_FIELD", search_field, smart_str(search_field), term)
+                    term_query |= Q(**{smart_str(search_field): smart_str(word)})
                 search &= term_query
             qs = qs.filter(search)
         else:
@@ -124,7 +120,6 @@ class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
         query = self.GET["term"]
         if len(query) < 2:
             return []
-
 
         if hasattr(self.model, "HandleRef"):
             qs = qs.exclude(status="deleted")
@@ -244,10 +239,9 @@ class OrganizationAutocomplete(AutocompleteHTMLResponse):
         qs = Organization.objects.filter(status="ok")
         if self.q:
 
-            anchor_start = (self.q[0] == "^")
-            anchor_end = (self.q[-1] == "$")
+            anchor_start = self.q[0] == "^"
+            anchor_end = self.q[-1] == "$"
             self.q = self.q.strip("^$")
-
 
             if anchor_start and anchor_end:
                 qs = qs.filter(name__iexact=self.q)

@@ -1,12 +1,12 @@
-from django.core.management.base import BaseCommand
-from peeringdb_server.models import Network
-from rdap.assignment import RIRAssignmentLookup
-from django.utils import timezone
-from django.conf import settings as pdb_settings
-
-from django.db import transaction
-
 import reversion
+from django.conf import settings as pdb_settings
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.utils import timezone
+from rdap.assignment import RIRAssignmentLookup
+
+from peeringdb_server.models import Network
+
 
 class Command(BaseCommand):
 
@@ -44,22 +44,18 @@ class Command(BaseCommand):
         else:
             networks = Network.objects.filter(status="ok")
 
-
         if self.max_age:
             # Exclude networks that are updated less than max_age hours ago
             networks = networks.exclude(
-                rir_status_updated__gt=now
-                - timezone.timedelta(hours=self.max_age)
+                rir_status_updated__gt=now - timezone.timedelta(hours=self.max_age)
             )
 
         # order by asn
         networks = networks.order_by("asn")
 
-
         # if --limit is provided limit max entries to process
         if self.limit:
-            networks = networks[:self.limit]
-
+            networks = networks[: self.limit]
 
         rir = RIRAssignmentLookup()
         rir.load_data(
@@ -68,7 +64,6 @@ class Command(BaseCommand):
         )
 
         reversion.set_comment("pdb_rir_status script")
-
 
         for net in networks:
             status = rir.get_status(net.asn)

@@ -27,7 +27,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.db import utils, transaction
+from django.db import transaction
 from django.db.models import Q
 from django.forms.models import modelform_factory
 from django.http import (
@@ -532,7 +532,7 @@ def view_set_user_locale(request):
             return JsonResponse(form.errors, status=400)
 
         loc = form.cleaned_data.get("locale")
-        if loc in [l[0] for l in dj_settings.LANGUAGES]:
+        if loc in [lang[0] for lang in dj_settings.LANGUAGES]:
             request.user.set_locale(loc)
         else:
             return JsonResponse(
@@ -638,7 +638,7 @@ oauth2_views.ApplicationRegistration = ApplicationRegistration
 class ApplicationDetail(ApplicationOwnerMixin, oauth2_views.ApplicationDetail):
     @never_cache
     def get(self, request, *args, **kwargs):
-        return super(ApplicationDetail, self).get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
 
 oauth2_views.ApplicationDetail = ApplicationDetail
@@ -1897,7 +1897,7 @@ def watch_network(request, id):
         user=request.user, ref_tag="net", object_id=id
     )
 
-    return redirect(f"/net/{id}/")
+    return redirect(reverse("net-view", args=(id,)))
 
 
 @login_required
@@ -1914,7 +1914,7 @@ def unwatch_network(request, id):
         user=request.user, ref_tag="net", object_id=id
     ).delete()
 
-    return redirect(f"/net/{id}/")
+    return redirect(reverse("net-view", args=(id,)))
 
 
 @ensure_csrf_cookie
@@ -2282,7 +2282,7 @@ def view_network(request, id):
                 "label": _("Health Check"),
                 "value": network_d.get("status_dashboard", dismiss),
                 "type": "url",
-            }
+            },
         ],
     }
 

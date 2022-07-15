@@ -6,19 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0088_alter_environmentsetting_setting'),
+        ("peeringdb_server", "0088_alter_environmentsetting_setting"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='network',
-            name='rir_status',
-            field=models.CharField(default=None, max_length=255, null=True, verbose_name='RIR status'),
+            model_name="network",
+            name="rir_status",
+            field=models.CharField(
+                default=None, max_length=255, null=True, verbose_name="RIR status"
+            ),
         ),
         migrations.AddField(
-            model_name='network',
-            name='rir_status_updated',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='RIR status updated'),
-        )
+            model_name="network",
+            name="rir_status_updated",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="RIR status updated"
+            ),
+        ),
     ]
-

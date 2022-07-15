@@ -1850,10 +1850,11 @@ class UserPermissionAdmin(UserAdmin):
         # the user is an administrator of (#1157)
         if user:
             for org in user.admin_organizations:
-                user.grainy_permissions.filter(namespace__startswith=f"peeringdb.organization.{org.id}.").delete()
+                user.grainy_permissions.filter(
+                    namespace__startswith=f"peeringdb.organization.{org.id}."
+                ).delete()
 
         return result
-
 
 
 ## COMMANDLINE TOOL ADMIN

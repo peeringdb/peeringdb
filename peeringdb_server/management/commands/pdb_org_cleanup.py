@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+
 from peeringdb_server.models import Organization
 
 
@@ -43,9 +44,9 @@ class Command(BaseCommand):
                 for user in ug.all():
                     ug.remove(user)
                     user.save()
-                
+
                 # Remove all affiliation requests
                 for affiliation in org.affiliation_requests.filter(status="pending"):
                     affiliation.cancel()
-            
+
             self.log(f"Removed all users from deleted organization {org.id}")

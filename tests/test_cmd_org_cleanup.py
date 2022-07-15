@@ -51,8 +51,6 @@ class TestOrgCleanup(ClientCase):
                 user.save()
                 cls.org.save()
 
-
-
     def test_run(self):
         # Assert that all orgs have 3 users
 

@@ -235,7 +235,9 @@ class OrgAdminTests(TestCase):
         request.user = self.org_admin
         resp = org_admin.user_permission_update(request)
         assert resp.status_code == 400
-        assert json.loads(resp.content).get("non_field_errors") == ["Cannot manage permissions for organization admins"]
+        assert json.loads(resp.content).get("non_field_errors") == [
+            "Cannot manage permissions for organization admins"
+        ]
 
     def test_user_permissions(self):
         """

@@ -72,7 +72,7 @@ twentyc.cls = {
       // a constructor has been provided
       ctor = definition[name]
       delete definition[name]
-    } 
+    }
 
     // cycle through definition and copy to class prototype
     for(k in definition) {

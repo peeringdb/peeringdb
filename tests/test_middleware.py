@@ -1,17 +1,16 @@
 import base64
-import pytest
 
+import pytest
+from django.contrib.sessions.models import Session
 from django.http import HttpResponse
 from django.test import (
+    Client,
     RequestFactory,
     SimpleTestCase,
     modify_settings,
     override_settings,
 )
 from rest_framework.test import APIClient, APITestCase
-
-from django.contrib.sessions.models import Session
-from django.test import Client
 
 from peeringdb_server.middleware import PDBCommonMiddleware
 from peeringdb_server.models import Organization, OrganizationAPIKey, User, UserAPIKey
@@ -140,12 +139,14 @@ class PDBPermissionMiddlewareTest(APITestCase):
         assert response.headers.get("X-Auth-ID") is None
 
 
-
-@pytest.mark.parametrize("path,expected", (
-    ("/", 0),
-    ("/account/login/", 1),
-    ("/register", 1),
-))
+@pytest.mark.parametrize(
+    "path,expected",
+    (
+        ("/", 0),
+        ("/account/login/", 1),
+        ("/register", 1),
+    ),
+)
 @pytest.mark.django_db
 def test_pdb_session_middleware(path, expected):
 

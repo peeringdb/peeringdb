@@ -94,7 +94,11 @@ urlpatterns = [
     url(r"^reset-password$", view_password_reset, name="reset-password"),
     url(r"^change-password$", view_password_change),
     url(r"^set-user-locale$", view_set_user_locale),
-    url(r"^username-retrieve/initiate$", view_username_retrieve_initiate, name="username-retrieve-initiate"),
+    url(
+        r"^username-retrieve/initiate$",
+        view_username_retrieve_initiate,
+        name="username-retrieve-initiate",
+    ),
     url(r"^username-retrieve/complete$", view_username_retrieve_complete),
     url(r"^username-retrieve$", view_username_retrieve, name="username-retrieve"),
     url(r"^verify$", view_verify),

@@ -8,7 +8,7 @@ Overview of automated changes to your watched object(s)
 {% for entry in entry_groups %}
 {% if forloop.first %}{{ entry.title }}
 {% endif %}
-{{ entry.created|date:"Y-m-d H:i:s" }} - {{ entry.get_action_display.upper }} 
+{{ entry.created|date:"Y-m-d H:i:s" }} - {{ entry.get_action_display.upper }}
 {{ entry.details }}
 {% endfor %}
 {% endfor %}
