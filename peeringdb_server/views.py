@@ -2519,6 +2519,9 @@ class LoginView(TwoFactorLoginView):
         login process, instead redirect to /
         """
 
+        next_redirect = self.request.GET.get("next", False)
+        if next_redirect == '/oauth2/authorize/':
+            return super().get(*args, **kwargs)
         if self.request.user.is_authenticated:
             return redirect("/")
 
@@ -2692,7 +2695,10 @@ class LoginView(TwoFactorLoginView):
 
         user_language = self.get_user().get_locale()
         translation.activate(user_language)
+        success_url = self.get_success_url()
         response = redirect(self.get_success_url())
+        if success_url == "/oauth2/authorize/":
+            response.set_signed_cookie("oauth_session", self.request.user, max_age=1800)
         response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, user_language)
 
         return response

@@ -76,6 +76,7 @@ from peeringdb_server.views import (
     view_verify,
     watch_network,
 )
+from peeringdb_server.oauth_views import AuthorizationView
 
 # o
 # SITE
@@ -329,7 +330,9 @@ urlpatterns += [
 
 
 # Oauth2
-
+urlpatterns += [
+    url(r"^oauth2/authorize/", AuthorizationView.as_view(), name="authorize"),
+]
 urlpatterns += [
     url(r"^oauth2/", include("oauth2_provider.urls", namespace="oauth2_provider")),
 ]
