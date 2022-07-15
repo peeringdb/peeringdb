@@ -532,9 +532,9 @@ def view_set_user_locale(request):
             return JsonResponse(form.errors, status=400)
 
         loc = form.cleaned_data.get("locale")
-        try:
+        if loc in [l[0] for l in dj_settings.LANGUAGES]:
             request.user.set_locale(loc)
-        except utils.DataError:
+        else:
             return JsonResponse(
                 {"error": _("Malformed Language Preference")}, status=400
             )
