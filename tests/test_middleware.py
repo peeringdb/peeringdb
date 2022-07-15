@@ -1,4 +1,5 @@
 import base64
+import pytest
 
 from django.http import HttpResponse
 from django.test import (
@@ -8,6 +9,9 @@ from django.test import (
     override_settings,
 )
 from rest_framework.test import APIClient, APITestCase
+
+from django.contrib.sessions.models import Session
+from django.test import Client
 
 from peeringdb_server.middleware import PDBCommonMiddleware
 from peeringdb_server.models import Organization, OrganizationAPIKey, User, UserAPIKey
@@ -134,3 +138,24 @@ class PDBPermissionMiddlewareTest(APITestCase):
         response = other_client.get("/api/fac")
         self.assertEqual(response.status_code, 200)
         assert response.headers.get("X-Auth-ID") is None
+
+
+
+@pytest.mark.parametrize("path,expected", (
+    ("/", 0),
+    ("/account/login/", 1),
+    ("/register", 1),
+))
+@pytest.mark.django_db
+def test_pdb_session_middleware(path, expected):
+
+    """
+    test that new sessions only get established on certain paths
+    """
+
+    assert Session.objects.count() == 0
+
+    client = Client()
+    response = client.get(path)
+
+    assert Session.objects.count() == expected

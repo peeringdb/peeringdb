@@ -1109,7 +1109,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         for user in aug.all():
             aug.remove(user)
             user.save()
-        
+
         ug = self.usergroup.user_set
 
         for user in ug.all():

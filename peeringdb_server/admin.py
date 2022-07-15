@@ -1373,7 +1373,7 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name", "asn")
-    readonly_fields = ("id", "grainy_namespace")
+    readonly_fields = ("id", "grainy_namespace", "rir_status", "rir_status_updated")
     form = NetworkAdminForm
 
     inlines = (

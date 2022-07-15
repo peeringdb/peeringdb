@@ -65,5 +65,8 @@ urlpatterns += [
 
 urlpatterns += peeringdb_server.urls.urlpatterns
 
+# append the login view again,so the name is available for reverse lookups
+urlpatterns += [tf_urls[0][0]]
+
 handler_404 = "peeringdb_server.views.view_http_error_404"
 handler_403 = "peeringdb_server.views.view_http_error_403"
