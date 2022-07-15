@@ -9,7 +9,8 @@ from grainy.const import *
 import peeringdb_server.models as models
 import peeringdb_server.org_admin_views as org_admin
 import peeringdb_server.views as views
-from tests.util import override_group_id, mock_csrf_session
+from tests.util import mock_csrf_session, override_group_id
+
 
 class OrgAdminTests(TestCase):
     """

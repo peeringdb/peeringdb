@@ -7,10 +7,9 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import Client, RequestFactory, TestCase
 
-from tests.util import mock_csrf_session
-
 import peeringdb_server.models as models
 import peeringdb_server.views as views
+from tests.util import mock_csrf_session
 
 
 class UserTests(TestCase):
