@@ -15,8 +15,10 @@ from django import http
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import IntegerField, Q, Value
 from django.utils import html
+from django.utils.encoding import smart_str
 from grappelli.views.related import (
     AutocompleteLookup as GrappelliAutocomplete,
+    get_autocomplete_search_fields,
     get_label,
 )
 from reversion.models import Version
@@ -51,6 +53,69 @@ class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
     objects.
     """
 
+    def adjust_search_field_for_anchors(self, search_field, anchor_start, anchor_end):
+
+        if not anchor_start and not anchor_end:
+            return search_field
+
+        name, filt = search_field.split("__")
+
+        if filt != "icontains":
+            return search_field
+
+        if anchor_start and anchor_end:
+            return f"{name}"
+        elif anchor_start:
+            return f"{name}__istartswith"
+        return f"{name}__iendswith"
+
+
+    def get_searched_queryset(self, qs):
+        model = self.model
+        term = self.GET["term"]
+
+        try:
+            term = model.autocomplete_term_adjust(term)
+        except AttributeError:
+            pass
+
+        search_fields = get_autocomplete_search_fields(self.model)
+
+        anchor_start = (term[0] == "^")
+        anchor_end = (term[-1] == "$")
+
+        # by default multiple searches can be done at once by delimiting
+        # search times via a space (grappelli default behaviour)
+        #
+        # this makes little sense when doing an exact search while
+        # providing both ^ and $ anchors, so change the delimiter in that
+        # case
+        #
+        # TODO: just use a ; for a delimiter no matter what ?
+
+        if anchor_start and anchor_end:
+            delimiter = ";"
+        else:
+            delimiter = " "
+
+        term = term.strip("^$")
+
+        if search_fields:
+            search = Q()
+            for word in term.split(delimiter):
+                term_query = Q()
+                for search_field in search_fields:
+                    search_field = self.adjust_search_field_for_anchors(search_field, anchor_start, anchor_end)
+                    print("SEARCH_FIELD", search_field, smart_str(search_field), term)
+                    term_query |= Q(
+                        **{smart_str(search_field): smart_str(word)}
+                    )
+                search &= term_query
+            qs = qs.filter(search)
+        else:
+            qs = model.objects.none()
+        return qs
+
     def get_queryset(self):
 
         qs = super().get_queryset()
@@ -59,26 +124,10 @@ class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
         query = self.GET["term"]
         if len(query) < 2:
             return []
-        if query[0] in ["^", "$"]:
-            starts_with_qs = self.model.objects.filter(name__istartswith=query[1:])
-            ends_with_qs = self.model.objects.filter(name__iendswith=query[1:])
-            contains_qs = self.model.objects.filter(name__icontains=query[1:])
-        else:
-            starts_with_qs = self.model.objects.filter(name__istartswith=query)
-            ends_with_qs = self.model.objects.filter(name__iendswith=query)
-            contains_qs = self.model.objects.filter(name__icontains=query)
+
 
         if hasattr(self.model, "HandleRef"):
             qs = qs.exclude(status="deleted")
-            starts_with_qs = starts_with_qs.exclude(status="deleted")
-            ends_with_qs = ends_with_qs.exclude(status="deleted")
-            contains_qs = contains_qs.exclude(status="deleted")
-
-        if query.startswith("^"):
-            return starts_with_qs
-
-        if query.startswith("$"):
-            return ends_with_qs
 
         return qs
 
@@ -195,13 +244,20 @@ class OrganizationAutocomplete(AutocompleteHTMLResponse):
         qs = Organization.objects.filter(status="ok")
         if self.q:
 
-            # Add support for ^ and $ regex anchors
-            if self.q.startswith("^"):
-                qs = qs.filter(name__istartswith=self.q[1:])
-            elif self.q.startswith("$"):
-                qs = qs.filter(name__iendswith=self.q[1:])
+            anchor_start = (self.q[0] == "^")
+            anchor_end = (self.q[-1] == "$")
+            self.q = self.q.strip("^$")
+
+
+            if anchor_start and anchor_end:
+                qs = qs.filter(name__iexact=self.q)
+            elif anchor_start:
+                qs = qs.filter(name__istartswith=self.q)
+            elif anchor_end:
+                qs = qs.filter(name__iendswith=self.q)
             else:
                 qs = qs.filter(name__icontains=self.q)
+
         qs = qs.order_by("name")
 
         return qs

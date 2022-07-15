@@ -325,3 +325,9 @@ class Mock:
 
     def status_dashboard(self, data, reftag=None):
         return None
+
+    def rir_status(self, data, reftag=None):
+        return None
+
+    def rir_status_updated(self, data, reftag=None):
+        return None
