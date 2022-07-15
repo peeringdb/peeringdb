@@ -153,6 +153,12 @@ def test_pdb_session_middleware(path, expected):
     test that new sessions only get established on certain paths
     """
 
+    from django.conf import settings
+
+    # if other tests have run pdb_api_cache, this will be set to false,
+    # set it back to true
+    settings.CSRF_USE_SESSIONS = True
+
     assert Session.objects.count() == 0
 
     client = Client()
