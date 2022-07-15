@@ -81,8 +81,8 @@ class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
 
         search_fields = get_autocomplete_search_fields(self.model)
 
-        anchor_start = (term[0] == "^")
-        anchor_end = (term[-1] == "$")
+        anchor_start = (term and term[0] == "^")
+        anchor_end = (term and term[-1] == "$")
 
         # by default multiple searches can be done at once by delimiting
         # search times via a space (grappelli default behaviour)
