@@ -57,6 +57,7 @@ class PDBSessionMiddleware(SessionMiddleware):
                 reverse("login"),
                 reverse("register"),
                 reverse("username-retrieve"),
+                reverse("username-retrieve-initiate"),
                 reverse("reset-password"),
             ]
 
