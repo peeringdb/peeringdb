@@ -1108,13 +1108,13 @@ class ModelSerializer(serializers.ModelSerializer):
 
         return super().update(instance, validated_data)
 
-    def create(self, validated_data):
+    def create(self, validated_data, auto_approve=False):
         """
         Entities created via the API should go into the verification
         queue with status pending if they are in the QUEUE_ENABLED
         list.
         """
-        if self.Meta.model in QUEUE_ENABLED:
+        if self.Meta.model in QUEUE_ENABLED and not auto_approve:
             validated_data["status"] = "pending"
         else:
             validated_data["status"] = "ok"
@@ -2528,8 +2528,7 @@ class NetworkSerializer(ModelSerializer):
         if rdap and validate_rdap_user_or_key(request, rdap):
 
             # user email exists in RiR data, skip verification queue
-            validated_data["status"] = "ok"
-            net = super().create(validated_data)
+            net = super().create(validated_data, auto_approve=True)
             ticket_queue_asnauto_skipvq(request, validated_data["org"], net, rdap)
             return net
 
