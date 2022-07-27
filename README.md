@@ -10,8 +10,8 @@ interconnection related information for tens of thousands of network
 operators. Over the years, more and more organisations have built
 integrations to streamline their interconnection processes.
 
-We are pleased to announce PeeringDB's source code is now publicly
-available under a BSD 2-Clause license.
+The source code powering PeeringDB is publicly available under a BSD 2-Clause
+license.
 
 We anticipate that work considered to be "low hanging fruit" could be
 taken on by volunteers, and we expect that open sourcing the platform
