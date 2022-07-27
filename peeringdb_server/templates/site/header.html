@@ -5,12 +5,13 @@
 <head>
 <title>PeeringDB</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+<link rel="canonical" href="https://www.peeringdb.com{{ request.get_full_path }}" />
 
 {% with img_square="pdb-logo-square-coloured.png" img_rect="pdb-logo-rect-coloured.png" %}
 <meta property="og:title" content="PeeringDB" />
 <meta property="og:type" content="website" />
 <meta property="og:description" content="The Interconnection Database" />
-<meta property="og:url" content="https://{{ request.get_host }}{{ request.get_full_path }}" />
+<meta property="og:url" content="https://www.peeringdb.com{{ request.get_full_path }}" />
 
 <!-- open graph -->
 
@@ -26,7 +27,7 @@
 <meta property="twitter:site" content="@PeeringDB" />
 <meta property="twitter:title" content="PeeringDB" />
 <meta property="twitter:description" content="The Interconnection Database" />
-<meta property="twitter:url" content="https://{{ request.get_host }}{{ request.get_full_path }}" />
+<meta property="twitter:url" content="https://www.peeringdb.com{{ request.get_full_path }}" />
 <meta property="twitter:image" content="https://{{ request.get_host }}{{ STATIC_URL }}{{ img_square }}" />
 {% endwith %}
 
