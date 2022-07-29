@@ -2,6 +2,7 @@
 Utilities for geocoding and geo normalization.
 """
 
+import copy
 import re
 
 import googlemaps
@@ -123,7 +124,11 @@ class Melissa:
         with current_request() as request:
             if request:
                 source_url = request.build_absolute_uri()[:255]
-                logger.info("MELISSA", url=url, source=source_url)
+
+                search = copy.deepcopy(kwargs)
+                search.pop("id", None)
+
+                logger.info("MELISSA", url=url, source=source_url, search=search)
             else:
                 logger.info("MELISSA", url=url)
 
