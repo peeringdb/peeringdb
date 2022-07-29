@@ -4367,6 +4367,24 @@ class Network(pdb_models.NetworkBase):
         return qset
 
     @property
+    def ixlan_set_ixf_enabled_with_suggestions(self):
+        """
+        Returns IXLan queryset for IX-F import enabled ixlans connected
+        to this network through NetworkIXLan. Only contains ixlans that
+        have active suggestions for the network.
+        """
+        qset = self.ixlan_set_ixf_enabled
+
+        ixlan_ids = []
+
+        for ixlan in qset:
+            if ixlan.ixf_set.filter(asn=self.asn).exists():
+                ixlan_ids.append(ixlan.id)
+
+        return IXLan.objects.filter(id__in=ixlan_ids)
+
+
+    @property
     def poc_set_active(self):
         return self.poc_set(manager="handleref").filter(status="ok")
 

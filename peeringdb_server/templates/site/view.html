@@ -386,7 +386,6 @@ $(document).ready(function() {
 
   var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
   editForm.on('action-success:submit', function(e,data) {
-    console.log("SAVE", data)
     if(PeeringDB.ixf_proposals && PeeringDB.ixf_proposals.require_refresh) {
       document.location.href = document.location.href;
     } else {

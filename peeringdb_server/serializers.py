@@ -54,6 +54,7 @@ from peeringdb_server.models import (
     GeoCoordinateCache,
     InternetExchange,
     InternetExchangeFacility,
+    IXFMemberData,
     IXLan,
     IXLanPrefix,
     Network,
@@ -79,6 +80,8 @@ from peeringdb_server.validators import (
     validate_prefix_overlap,
     validate_zipcode,
 )
+
+import peeringdb_server.ixf as ixf
 
 # exclude certain query filters that would otherwise
 # be exposed to the api for filtering operations
@@ -2543,12 +2546,31 @@ class NetworkSerializer(ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
+
+        request = self._context.get("request")
+
         if validated_data.get("asn") != instance.asn:
             raise serializers.ValidationError(
                 {
                     "asn": _("ASN cannot be changed."),
                 }
             )
+
+        # if allow_ixp_update was turned on apply all existing suggestions for the network. (#499)
+
+        if validated_data.get("allow_ixp_update") and not instance.allow_ixp_update:
+
+            updated = super().update(instance, validated_data)
+
+            for suggestion in IXFMemberData.objects.filter(asn=instance.asn, requirement_of__isnull=True, ixlan__ixf_ixp_import_enabled=True):
+                try:
+                    wat = suggestion.apply(user=request.user, comment="Network enabled automatic IX-F updates", save=True)
+                except ValidationError as exc:
+                    pass
+
+            return updated
+
+
         return super().update(instance, validated_data)
 
     def finalize_create(self, request):

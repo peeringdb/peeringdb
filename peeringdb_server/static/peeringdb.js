@@ -397,6 +397,16 @@ PeeringDB.ViewTools = {
       addressFields.forEach(field => this.apply_data(container, data, field));
       this.update_geocode(data);
     }
+    if (target == "api:net:update") {
+
+      // check if "allow-ixp-update" option was turned a complete reload of the view is needed
+      var orig_data = $('[data-edit-name=allow_ixp_update]').data("edit-content-backup")
+      if(data.allow_ixp_update && orig_data.match(/checkmark-off.png/)) {
+        PeeringDB.refresh();
+      }
+
+      return;
+    }
     if (target == "api:fac:update") {
 
       // on facility `region_continent` is read-only and determined
