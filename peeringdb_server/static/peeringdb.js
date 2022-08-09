@@ -944,7 +944,7 @@ PeeringDB.IXFPreview = twentyc.cls.define(
       renderTo.find('.ixf-error-counter').empty();
       $.get('/import/ixlan/'+ixlanId+'/ixf/preview', function(result) {
         this.render(result, renderTo);
-      }.bind(this)).error(function(result) {
+      }.bind(this)).fail(function(result) {
         if(result.responseJSON) {
           this.render(result.responseJSON, renderTo);
         } else {
@@ -1066,7 +1066,7 @@ PeeringDB.IXFNetPreview =  twentyc.cls.extend(
       renderTo.find('.ixf-error-counter').empty();
       $.get('/import/net/'+netId+'/ixf/preview', function(result) {
         this.render(result, renderTo);
-      }.bind(this)).error(function(result) {
+      }.bind(this)).fail(function(result) {
         if(result.responseJSON) {
           this.render(result.responseJSON, renderTo);
         } else {
@@ -1145,7 +1145,7 @@ PeeringDB.IXFNetPostmortem =  twentyc.cls.extend(
 
       $.get('/import/net/'+netId+'/ixf/postmortem?limit='+limit, function(result) {
         this.render(result, renderTo);
-      }.bind(this)).error(function(result) {
+      }.bind(this)).fail(function(result) {
         if(result.responseJSON) {
           this.render(result.responseJSON, renderTo);
         } else {
