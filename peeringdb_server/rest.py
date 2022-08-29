@@ -576,7 +576,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         d = time.time() - t
         print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
-        applicator = APIPermissionsApplicator(request)
+        applicator = APIPermissionsApplicator(self.request)
 
         if not applicator.is_generating_api_cache:
             r.data = applicator.apply(r.data)

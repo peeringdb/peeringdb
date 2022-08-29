@@ -1172,6 +1172,8 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "website",
         "notes",
         "logo",
+        "restrict_user_emails",
+        "email_domains",
         "verification_queue",
         "version",
         "id",

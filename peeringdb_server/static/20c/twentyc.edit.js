@@ -28,6 +28,18 @@ twentyc.editable = {
 
     this.templates.init();
 
+    // initialize always toggled inputs
+    $('.editable.always').not(".auto-toggled").each(function(idx) {
+      var container = $(this);
+      container.find('[data-edit-type]').editable(
+        'filter', { belongs : container }
+      ).each(function(idx) {
+        $(this).data("edit-always", true);
+        twentyc.editable.input.manage($(this), container);
+      });
+    });
+
+
     $('[data-edit-target]').editable();
 
     // hook into data load so we can update selects with matching datasets
@@ -41,17 +53,6 @@ twentyc.editable = {
     $('[data-edit-module]').each(function(idx) {
       var module = twentyc.editable.module.instantiate($(this));
       module.init();
-    });
-
-    // initialize always toggled inputs
-    $('.editable.always').not(".auto-toggled").each(function(idx) {
-      var container = $(this);
-      container.find('[data-edit-type]').editable(
-        'filter', { belongs : container }
-      ).each(function(idx) {
-        $(this).data("edit-always", true);
-        twentyc.editable.input.manage($(this), container);
-      });
     });
 
     this.initialized = true;
@@ -624,6 +625,10 @@ twentyc.editable.target.register(
       else
         var sender = this.sender;
 
+      if(sender) {
+        sender.editable('clear-error-popins');
+      }
+
       $.ajax({
         url : this.args[0]+(appendUrl?"/"+appendUrl:""),
         method : "POST",
@@ -633,6 +638,11 @@ twentyc.editable.target.register(
           me.trigger("success", data);
           if(onSuccess)
             onSuccess(response, data)
+
+          if(sender && sender.data("edit-redirect-on-success")) {
+            window.document.location.href = sender.data("edit-redirect-on-success");
+          }
+
         }
       }).fail(function(response) {
         twentyc.editable.target.error_handlers.http_json(response, me, sender);
@@ -1527,7 +1537,7 @@ $.fn.editable = function(action, arg, dbg) {
 
         var input;
 
-        if(me.data("edit-always"))
+        if(me.data("editAlways"))
           return;
 
         if(mode == "edit") {

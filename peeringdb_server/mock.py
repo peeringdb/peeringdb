@@ -331,3 +331,15 @@ class Mock:
 
     def rir_status_updated(self, data, reftag=None):
         return None
+
+    def periodic_reauth(self, data, reftag=None):
+        return False
+
+    def periodic_reauth_period(self, data, reftag=None):
+        return "1y"
+
+    def restrict_user_emails(self, data, reftag=None):
+        return FalSe
+
+    def email_domains(self, data, reftag=None):
+        return None

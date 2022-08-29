@@ -4,6 +4,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import Client, RequestFactory, TestCase
+from django.urls import reverse
 from grainy.const import *
 
 import peeringdb_server.models as models
@@ -101,6 +102,99 @@ class OrgAdminTests(TestCase):
         resp = org_admin.users(request)
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(json.loads(resp.content), {})
+
+    def test_user_options(self):
+
+
+        # test updating user options
+
+        assert self.org.restrict_user_emails is False
+        assert self.org.email_domains_list  == []
+        assert self.org.periodic_reauth is False
+        assert self.org.periodic_reauth_period == "1y"
+
+        url = reverse("org-admin-user-options")
+
+        request = self.factory.post(
+            url,
+            data={
+                "org_id" : self.org.id,
+                "restrict_user_emails": True,
+                "email_domains": "domain.com\nexample.com",
+                "periodic_reauth": True,
+                "periodic_reauth_period": "1m",
+            }
+        )
+        mock_csrf_session(request)
+        request.user = self.org_admin
+
+        resp = org_admin.update_user_options(request)
+        self.assertEqual(json.loads(resp.content).get("status"), "ok")
+
+        self.org.refresh_from_db()
+
+        assert self.org.restrict_user_emails is True
+        assert self.org.email_domains_list == ["domain.com", "example.com"]
+        assert self.org.periodic_reauth is True
+        assert self.org.periodic_reauth_period == "1m"
+
+        # test org admin required
+
+        request = self.factory.post(
+            url,
+            data={
+                "org_id" : self.org_other.id,
+                "restrict_user_emails": False,
+                "periodic_reauth": False,
+            }
+        )
+        mock_csrf_session(request)
+        request.user = self.org_admin
+
+        resp = org_admin.update_user_options(request)
+
+        assert resp.status_code == 403
+        assert json.loads(resp.content) == {}
+
+        # test validation
+
+        request = self.factory.post(
+            url,
+            data={
+                "org_id" : self.org.id,
+                "email_domains": "invalid",
+                "periodic_reauth_period": "1z",
+            }
+        )
+        mock_csrf_session(request)
+        request.user = self.org_admin
+
+        resp = org_admin.update_user_options(request)
+        assert resp.status_code == 400
+        assert "email_domains" in json.loads(resp.content)
+        assert "periodic_reauth_period" in json.loads(resp.content)
+
+    def test_user_email_restriction_highlight(self):
+
+        self.org.restrict_user_emails = True
+        self.org.email_domains = "example.com"
+        self.org.save()
+
+        request = self.factory.get(f"/org/{self.org.id}")
+        mock_csrf_session(request)
+        request.user = self.org_admin
+
+        resp = views.view_organization(request, self.org.id)
+
+        assert "Email address requirements not met" in resp.content.decode("utf-8")
+
+        self.org.restrict_user_emails = False
+        self.org.save()
+
+        resp = views.view_organization(request, self.org.id)
+
+        assert "Email address requirements not met" not in resp.content.decode("utf-8")
+
 
     def test_load_all_user_permissions(self):
         """

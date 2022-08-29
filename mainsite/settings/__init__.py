@@ -1148,4 +1148,11 @@ else:
 
 CSRF_USE_SESSIONS = True
 
+# A toggle for the periodic re-authentication process propagated
+# by organizations (#736)
+set_option("PERIODIC_REAUTH_ENABLED", True)
+
+# Maximum amount of email addresses allowed per user
+set_option("USER_MAX_EMAIL_ADDRESSES", 5)
+
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

@@ -128,6 +128,14 @@ a, a:hover, a:visited {
   text-decoration: underline;
 }
 
+input[type=submit].link {
+  color: #1c3f28;
+  border: none;
+  padding: 0px;
+  text-decoration: underline;
+  font-weight: 400;
+}
+
 a.empty {
   color:#ffffff;
   text-decoration: none;
@@ -815,6 +823,8 @@ div.list div.row div.row.inner > div {
   padding-left: 0px;
 }
 
+
+div.panel .small,
 div.list div.row .small {
   font-size: 11px;
 }
@@ -853,6 +863,12 @@ div.list div.row.item img {
 div.list div.squeeze-15 {
   padding-left: 15px;
   padding-right: 15px;
+}
+
+div.panel .highlight-warning,
+div.list .highlight-warning {
+  color: darkred;
+  font-weight: bold;
 }
 
 *[data-sort-target] {
@@ -945,7 +961,10 @@ div.editable.input-frame > textarea.markdown {
 }
 
 
+
 div.view > input[type="text"],
+div.panel div.editable.input-frame > input[type="text"],
+div.panel div.editable.input-frame > input[type="password"],
 div.view div.editable.input-frame > input[type="text"] {
   width: 100%;
   padding: 3px;
@@ -981,6 +1000,10 @@ div.create-form div.editable > input.unit ~ select,
 div.advanced-search-view div.editable.input-frame > input.unit ~ select,
 div.view div.editable.input-frame > input.unit ~ select {
   width: 25%;
+  display: inline;
+}
+
+div.checkbox-inline div.editable.input-frame {
   display: inline;
 }
 
@@ -1656,3 +1679,4 @@ div.stats_row {
   white-space: nowrap;
   clear: both;
 }
+

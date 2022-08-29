@@ -1627,6 +1627,63 @@ twentyc.editable.module.register(
   "listing"
 );
 
+twentyc.editable.module.register(
+  "email_listing",
+  {
+    loading_shim : true,
+    org_id : function() {
+      return this.container.data("edit-id");
+    },
+
+    remove : function(id, row, trigger, container) {
+      var b = PeeringDB.confirm(gettext("Remove") + " " +row.data("edit-label"), "remove");  ///
+      var me = this;
+      $(this.target).on("success", function(ev, data) {
+        if(b)
+          me.listing_remove(id, row, trigger, container);
+      });
+      if(b) {
+        this.target.data = { email : id };
+        this.target.execute("delete");
+      } else {
+        $(this.target).trigger("success", [gettext("Canceled")]);  ///
+      }
+    },
+
+    execute_add : function(trigger, container) {
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      this.target.execute("add", this.components.add, function(response) {
+        document.location.href = document.location.href;
+      }.bind(this));
+    },
+
+    execute_primary : function(trigger, container) {
+      var row = this.row(trigger);
+      var id = row.data("edit-id");
+      this.target.data = { email : id };
+
+      $(this.target).on("success", function(ev, data) {
+        document.location.href = document.location.href;
+      });
+
+      row.editable("export", this.target.data);
+        this.target.execute("primary", trigger, function(response) {
+      }.bind(this));
+    },
+
+    execute_update : function(trigger, container) {
+      var row = this.row(trigger);
+      row.editable("export", this.target.data);
+      this.target.execute("update", trigger, function(response) {
+      }.bind(this));
+    }
+
+  },
+  "listing"
+);
+
+
 
 twentyc.editable.module.register(
   "key_listing",
@@ -3472,6 +3529,7 @@ twentyc.data.loaders.assign("enum/terms_types_trunc", "data");
 twentyc.data.loaders.assign("enum/terms_types_advs", "data");
 twentyc.data.loaders.assign("enum/property", "data");
 twentyc.data.loaders.assign("enum/available_voltage", "data");
+twentyc.data.loaders.assign("enum/reauth_periods", "data");
 
 $(twentyc.data).on("load-enum/traffic", function(e, payload) {
   var r = {}, i = 0, data=payload.data;

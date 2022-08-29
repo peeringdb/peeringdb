@@ -22,6 +22,10 @@ from peeringdb_server.models import (
 from peeringdb_server.org_admin_views import permission_ids
 from peeringdb_server.views import DoNotRender
 
+from allauth.account.models import EmailAddress
+
+
+
 countries_dict = dict(countries)
 
 register = template.Library()
@@ -271,3 +275,12 @@ def render_markdown(value):
     return bleach.clean(
         markdown.markdown(value), tags=markdown_tags, protocols=["http", "https"]
     )
+
+@register.filter
+def org_email(org, user):
+    return org.user_meets_email_requirements(user)
+
+@register.filter
+def email_confirmed(email):
+    return EmailAddress.objects.filter(email=email, verified=True).exists()
+

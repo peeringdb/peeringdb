@@ -218,3 +218,12 @@ class OrganizationLogoUploadForm(forms.ModelForm):
             )
 
         return logo
+
+
+class OrgUserOptions(forms.ModelForm):
+
+    class Meta:
+        model = Organization
+        fields = ["restrict_user_emails", "email_domains", "periodic_reauth", "periodic_reauth_period"]
+
+
