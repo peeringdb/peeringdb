@@ -1094,7 +1094,6 @@ twentyc.editable.input.register(
     },
 
     load : function(data) {
-      var k, v;
       this.element.empty();
       if(this.source.data("edit-data-all-entry")) {
         var allEntry = this.source.data("edit-data-all-entry").split(":")
@@ -1102,10 +1101,14 @@ twentyc.editable.input.register(
       } else {
         var allEntry = null;
       }
-      for(k in data) {
-        v = data[k];
+      var values = Object.values(data);
+      if(this.source.data("edit-sorted") == "yes") {
+        values.sort(
+          (a, b) => a.name.localeCompare(b.name));
+      }
+      for(var v of values) {
         if(allEntry && allEntry[0] == v.id)
-          continue
+          continue;
         this.add_opt(v.id, v.name);
       }
       this.element.trigger("change");
