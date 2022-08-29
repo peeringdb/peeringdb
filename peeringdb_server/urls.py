@@ -85,6 +85,7 @@ from peeringdb_server.views import (
 
 
 urlpatterns = [
+    url(r"^robots.txt$", TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
     url(r"^api_search$", request_api_search),
     url(r"^search$", request_search),
     url(r"^advanced_search", view_advanced_search),
