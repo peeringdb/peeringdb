@@ -38,9 +38,9 @@ from peeringdb_server.models import (
     GeoCoordinateCache,
     InternetExchange,
     InternetExchangeFacility,
+    IXFMemberData,
     IXLan,
     IXLanPrefix,
-    IXFMemberData,
     Network,
     NetworkContact,
     NetworkFacility,
@@ -1653,7 +1653,23 @@ class TestJSON(unittest.TestCase):
         ip4 = self.get_ip4(ixlan)
         ip6 = self.get_ip6(ixlan)
 
-        IXFDATA = {"asnum": net.asn, "member_type": "peering", "connection_list": [{"ixp_id": 20, "state": "active", "if_list": [{"if_speed": 10000}], "vlan_list": [{"ipv4": {"address": ip4, "routeserver": True}, "ipv6": {"address": ip6, "routeserver": True}}]}]}
+        IXFDATA = {
+            "asnum": net.asn,
+            "member_type": "peering",
+            "connection_list": [
+                {
+                    "ixp_id": 20,
+                    "state": "active",
+                    "if_list": [{"if_speed": 10000}],
+                    "vlan_list": [
+                        {
+                            "ipv4": {"address": ip4, "routeserver": True},
+                            "ipv6": {"address": ip6, "routeserver": True},
+                        }
+                    ],
+                }
+            ],
+        }
 
         member_data = IXFMemberData.objects.create(
             asn=net.asn,
@@ -1671,7 +1687,12 @@ class TestJSON(unittest.TestCase):
         ixlan.ixf_ixp_import_enabled = True
         ixlan.save()
 
-        qset_assert = NetworkIXLan.objects.filter(ixlan=ixlan, network=net, ipaddr4=member_data.ipaddr4, ipaddr6=member_data.ipaddr6)
+        qset_assert = NetworkIXLan.objects.filter(
+            ixlan=ixlan,
+            network=net,
+            ipaddr4=member_data.ipaddr4,
+            ipaddr6=member_data.ipaddr6,
+        )
 
         assert not qset_assert.exists()
 
@@ -1695,8 +1716,6 @@ class TestJSON(unittest.TestCase):
             print(netixlan)
 
         assert qset_assert.exists()
-
-
 
     ##########################################################################
 

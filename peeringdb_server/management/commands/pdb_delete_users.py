@@ -2,18 +2,21 @@
 Delete childless org objects
 """
 
+from datetime import timedelta
+
 import reversion
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.template import loader
 from django.utils import timezone
-from django.db import transaction
-from datetime import timedelta
 
 from peeringdb_server.models import User
 
+
 class PretendMode(IOError):
     pass
+
 
 class Command(BaseCommand):
 
@@ -25,7 +28,10 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--max-notify", type=int, default=25, help="maximum amount of user notifications to send"
+            "--max-notify",
+            type=int,
+            default=25,
+            help="maximum amount of user notifications to send",
         )
 
     def log(self, msg):
@@ -60,7 +66,6 @@ class Command(BaseCommand):
 
         self.send_emails()
 
-
     def flag_users(self):
 
         qset = User.objects.filter(flagged_for_deletion__isnull=True)
@@ -70,10 +75,12 @@ class Command(BaseCommand):
         qset = qset.exclude(never_flag_for_deletion=True)
 
         for user in qset:
-            deletion_date = timezone.now() + timedelta(days=settings.DELETE_ORPHANED_USER_DAYS)
+            deletion_date = timezone.now() + timedelta(
+                days=settings.DELETE_ORPHANED_USER_DAYS
+            )
             self.log(f"Flagging {user} for deletion on {deletion_date}")
-            user.flagged_for_deletion=deletion_date
-            user.notified_for_deletion=None
+            user.flagged_for_deletion = deletion_date
+            user.notified_for_deletion = None
             user.save()
 
     def unflag_users(self):
@@ -84,41 +91,45 @@ class Command(BaseCommand):
 
         for user in qset:
             self.log(f"{user} no longer orphaned - removing flag")
-            user.flagged_for_deletion=None
-            user.notified_for_deletion=None
+            user.flagged_for_deletion = None
+            user.notified_for_deletion = None
             user.save()
-
 
     def notify_users(self):
 
         now = timezone.now()
         qset = User.objects.filter(flagged_for_deletion__isnull=False)
-        qset = qset.filter(notified_for_deletion__isnull=True).order_by("flagged_for_deletion")
+        qset = qset.filter(notified_for_deletion__isnull=True).order_by(
+            "flagged_for_deletion"
+        )
 
-        for user in qset[:self.max_notify]:
+        for user in qset[: self.max_notify]:
 
-            notify_date = user.flagged_for_deletion - timedelta(days=settings.NOTIFY_ORPHANED_USER_DAYS)
+            notify_date = user.flagged_for_deletion - timedelta(
+                days=settings.NOTIFY_ORPHANED_USER_DAYS
+            )
 
             if notify_date > now:
                 continue
 
             self.log(f"Notifying {user} about pending deletion")
-            self.notifications.append((
-                user,
-                "Pending account removal",
-                f"As your account `{user.username}` is no longer associated with any "
-                f"organizations, it will be removed on {user.flagged_for_deletion}."
-                "\n\n"
-                "If you wish to keep your account, please affiliate it with an "
-                "organization."
-            ))
-            user.notified_for_deletion=timezone.now()
+            self.notifications.append(
+                (
+                    user,
+                    "Pending account removal",
+                    f"As your account `{user.username}` is no longer associated with any "
+                    f"organizations, it will be removed on {user.flagged_for_deletion}."
+                    "\n\n"
+                    "If you wish to keep your account, please affiliate it with an "
+                    "organization.",
+                )
+            )
+            user.notified_for_deletion = timezone.now()
             user.save()
 
     def send_emails(self):
 
         count = len(self.notifications)
-
 
         if not self.commit:
             self.log(f"Would send {count} emails ...")
@@ -129,12 +140,13 @@ class Command(BaseCommand):
         for user, subject, text in self.notifications:
             user.email_user(subject, text)
 
-
     def delete_users(self):
 
         now = timezone.now()
 
-        qset = User.objects.filter(flagged_for_deletion__lte=now, never_flag_for_deletion=False)
+        qset = User.objects.filter(
+            flagged_for_deletion__lte=now, never_flag_for_deletion=False
+        )
 
         for user in qset:
             self.log(f"Closing {user}'s account ..")

@@ -1,11 +1,16 @@
-import pytest
-
 from datetime import timedelta
 
+import pytest
 from django.test import Client
 from django.utils import timezone
-from peeringdb_server.models import EmailAddress, EmailAddressData, User, Organization, Network
 
+from peeringdb_server.models import (
+    EmailAddress,
+    EmailAddressData,
+    Network,
+    Organization,
+    User,
+)
 from tests.util import reset_group_ids
 
 
@@ -19,19 +24,35 @@ def reauth_objects():
     org_b = Organization.objects.create(name="Test B", status="ok")
     net = Network.objects.create(name="Test", asn=63311, status="ok", org=org)
     net_b = Network.objects.create(name="Test B", asn=63312, status="ok", org=org_b)
-    user = User.objects.create_user("user_a", password="user_a", email="user_a@localhost")
-    user_b = User.objects.create_user("user_b", password="user_b", email="user_b@domain.com")
-    user_c = User.objects.create_user("user_c", password="user_c", email="user_c@domain.com")
+    user = User.objects.create_user(
+        "user_a", password="user_a", email="user_a@localhost"
+    )
+    user_b = User.objects.create_user(
+        "user_b", password="user_b", email="user_b@domain.com"
+    )
+    user_c = User.objects.create_user(
+        "user_c", password="user_c", email="user_c@domain.com"
+    )
     email = EmailAddress.objects.create(user=user, email=user.email, verified=True)
     email_b = EmailAddress.objects.create(user=user, email="user_a@domain.com")
-    email_data = EmailAddressData.objects.create(email=email, confirmed_date=timezone.now())
-    email_data_b = EmailAddressData.objects.create(email=email_b, confirmed_date=timezone.now())
-    email_c = EmailAddress.objects.create(user=user_b, email="user_b@domain.com", verified=True)
+    email_data = EmailAddressData.objects.create(
+        email=email, confirmed_date=timezone.now()
+    )
+    email_data_b = EmailAddressData.objects.create(
+        email=email_b, confirmed_date=timezone.now()
+    )
+    email_c = EmailAddress.objects.create(
+        user=user_b, email="user_b@domain.com", verified=True
+    )
     user.set_verified()
     user_c.set_verified()
 
-    user.grainy_permissions.add_permission(f"peeringdb.organization.{org.id}.network.{net.id}", 15)
-    user.grainy_permissions.add_permission(f"peeringdb.organization.{org_b.id}.network.{net_b.id}", 15)
+    user.grainy_permissions.add_permission(
+        f"peeringdb.organization.{org.id}.network.{net.id}", 15
+    )
+    user.grainy_permissions.add_permission(
+        f"peeringdb.organization.{org_b.id}.network.{net_b.id}", 15
+    )
 
     org.usergroup.user_set.add(user)
     org.admin_usergroup.user_set.add(user_c)
@@ -45,7 +66,7 @@ def reauth_objects():
         "user": user,
         "user_b": user_b,
         "email": email,
-        "email_data": email_data
+        "email_data": email_data,
     }
 
 
@@ -89,6 +110,7 @@ def test_restrict_emails(reauth_objects):
     org.save()
 
     assert org.user_meets_email_requirements(user) == user.email
+
 
 @pytest.mark.django_db
 def test_restrict_emails_blocks_affiliations(reauth_objects):
@@ -137,7 +159,10 @@ def test_trigger_reauth(reauth_objects):
 
     content = client.get(f"/org/{org.id}").content.decode()
 
-    assert "Some of your organizations request that you confirm your email address" not in content
+    assert (
+        "Some of your organizations request that you confirm your email address"
+        not in content
+    )
 
     email.refresh_from_db()
 
@@ -155,7 +180,10 @@ def test_trigger_reauth(reauth_objects):
 
     content = client.get(f"/org/{org.id}").content.decode()
 
-    assert "Some of your organizations request that you confirm your email address" not in content
+    assert (
+        "Some of your organizations request that you confirm your email address"
+        not in content
+    )
 
     email.refresh_from_db()
 
@@ -173,7 +201,10 @@ def test_trigger_reauth(reauth_objects):
 
     assert not email.verified
 
-    assert "Some of your organizations request that you confirm your email address" in content
+    assert (
+        "Some of your organizations request that you confirm your email address"
+        in content
+    )
 
     # user should no longer have write permissions to network at first organization
 
@@ -200,10 +231,11 @@ def test_trigger_reauth(reauth_objects):
 
     content = client.get(f"/org/{org.id}").content.decode()
 
-    assert "Some of your organizations request that you confirm your email address" not in content
+    assert (
+        "Some of your organizations request that you confirm your email address"
+        not in content
+    )
 
     email.refresh_from_db()
 
     assert email.verified
-
-

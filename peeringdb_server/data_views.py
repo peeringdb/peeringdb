@@ -76,6 +76,7 @@ const.BOOL_CHOICE_WITH_OPT_OUT_STR = (
 
 const.REAUTH_PERIODS = models.REAUTH_PERIODS
 
+
 def countries_w_blank(request):
     """
     Return all valid countries and their country codes with a blank field.

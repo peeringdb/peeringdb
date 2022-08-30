@@ -46,7 +46,7 @@ class Command(BaseCommand):
                 continue
             self.log(f"Requeuing ticket with id {ticket.id}")
             ticket.subject = ticket.subject.replace("[FAILED]", "")
-            ticket.subject = re.sub("^\[.+\]", "", ticket.subject)
+            ticket.subject = re.sub(r"^\[.+\]", "", ticket.subject)
             ticket.subject = ticket.subject.strip(" ")
             ticket.body = re.sub(r"API Delivery Error(.+)$", "", ticket.body)
             ticket.published = None

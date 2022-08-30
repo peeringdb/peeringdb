@@ -2,20 +2,22 @@ import io
 from unicodedata import name
 
 import pytest
+from django.core.management import call_command
 from django.test import Client, RequestFactory, TestCase
 
-from peeringdb_server.models import DeskProTicket, Group, User
 import peeringdb_server.deskpro as deskpro
-
-from django.core.management import call_command
+from peeringdb_server.models import DeskProTicket, Group, User
 
 APIClient = deskpro.APIClient
+
 
 def setup_module(module):
     deskpro.APIClient = deskpro.FailingMockAPIClient
 
+
 def teardown_module(module):
     deskpro.APIClient = APIClient
+
 
 @pytest.fixture
 def admin_user():
@@ -57,13 +59,14 @@ def test_deskpro_error_handling(admin_user):
     assert "mock-error" in ticket.body
     assert "[FAILED]" in ticket.subject
 
-    assert "This email was sent because publishing to the deskpro API resulted in an error" in captured
+    assert (
+        "This email was sent because publishing to the deskpro API resulted in an error"
+        in captured
+    )
 
     call_command("pdb_deskpro_requeue", ticket.id, commit=True)
 
     ticket.refresh_from_db()
 
-
     assert ticket.subject == "test"
     assert "mock-error" not in ticket.body
-

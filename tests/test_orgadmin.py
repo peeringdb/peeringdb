@@ -105,11 +105,10 @@ class OrgAdminTests(TestCase):
 
     def test_user_options(self):
 
-
         # test updating user options
 
         assert self.org.restrict_user_emails is False
-        assert self.org.email_domains_list  == []
+        assert self.org.email_domains_list == []
         assert self.org.periodic_reauth is False
         assert self.org.periodic_reauth_period == "1y"
 
@@ -118,12 +117,12 @@ class OrgAdminTests(TestCase):
         request = self.factory.post(
             url,
             data={
-                "org_id" : self.org.id,
+                "org_id": self.org.id,
                 "restrict_user_emails": True,
                 "email_domains": "domain.com\nexample.com",
                 "periodic_reauth": True,
                 "periodic_reauth_period": "1m",
-            }
+            },
         )
         mock_csrf_session(request)
         request.user = self.org_admin
@@ -143,10 +142,10 @@ class OrgAdminTests(TestCase):
         request = self.factory.post(
             url,
             data={
-                "org_id" : self.org_other.id,
+                "org_id": self.org_other.id,
                 "restrict_user_emails": False,
                 "periodic_reauth": False,
-            }
+            },
         )
         mock_csrf_session(request)
         request.user = self.org_admin
@@ -161,10 +160,10 @@ class OrgAdminTests(TestCase):
         request = self.factory.post(
             url,
             data={
-                "org_id" : self.org.id,
+                "org_id": self.org.id,
                 "email_domains": "invalid",
                 "periodic_reauth_period": "1z",
-            }
+            },
         )
         mock_csrf_session(request)
         request.user = self.org_admin
@@ -194,7 +193,6 @@ class OrgAdminTests(TestCase):
         resp = views.view_organization(request, self.org.id)
 
         assert "Email address requirements not met" not in resp.content.decode("utf-8")
-
 
     def test_load_all_user_permissions(self):
         """

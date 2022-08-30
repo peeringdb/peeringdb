@@ -29,7 +29,6 @@ import json
 import re
 import uuid
 from itertools import chain
-from grainy.core import Namespace
 
 import django.urls
 import django_peeringdb.models as pdb_models
@@ -62,6 +61,7 @@ from django_grainy.models import Permission, PermissionManager
 from django_grainy.util import check_permissions
 from django_handleref.models import CreatedDateTimeField, UpdatedDateTimeField
 from django_inet.models import ASNField
+from grainy.core import Namespace
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
 
@@ -72,13 +72,13 @@ from peeringdb_server.validators import (
     validate_address_space,
     validate_api_rate,
     validate_bool,
+    validate_email_domains,
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_irr_as_set,
     validate_phonenumber,
     validate_poc_visible,
     validate_prefix_overlap,
-    validate_email_domains,
 )
 
 SPONSORSHIP_LEVELS = (
@@ -840,19 +840,34 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
     # restrict users in the organization to be required
     # to have an email address at the domains specified in `email_domains`.
-    restrict_user_emails = models.BooleanField(default=False, help_text=_("Require users in your organization to have email addresses within your specified domains."))
-    email_domains = models.TextField(null=True, blank=True, validators=[validate_email_domains,], help_text=_("If user email restriction is enabled: only allow users with emails in these domains. One domain per line, in the format of '@xyz.com'"))
+    restrict_user_emails = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Require users in your organization to have email addresses within your specified domains."
+        ),
+    )
+    email_domains = models.TextField(
+        null=True,
+        blank=True,
+        validators=[
+            validate_email_domains,
+        ],
+        help_text=_(
+            "If user email restriction is enabled: only allow users with emails in these domains. One domain per line, in the format of '@xyz.com'"
+        ),
+    )
 
     # require users in this organization to periodically reconfirm their
     # email addresses associated with the organization.
 
-    periodic_reauth = models.BooleanField(default=False, help_text=_("Require users in this organization to periodically re-authenticate"))
+    periodic_reauth = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Require users in this organization to periodically re-authenticate"
+        ),
+    )
     periodic_reauth_period = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        choices=REAUTH_PERIODS,
-        default="1y"
+        max_length=255, blank=True, null=True, choices=REAUTH_PERIODS, default="1y"
     )
 
     # Delete childless org objects #838
@@ -1151,7 +1166,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
     def reauth_period_to_days(self):
 
-        m = re.match("(\d+)([dwmy])", self.periodic_reauth_period)
+        m = re.match(r"(\d+)([dwmy])", self.periodic_reauth_period)
 
         num = int(m.group(1))
         unit = m.group(2)
@@ -1159,14 +1174,13 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         if unit == "d":
             return num
         if unit == "w":
-            return num*7
+            return num * 7
         if unit == "m":
-            return num*30
+            return num * 30
         if unit == "y":
-            return num*365
+            return num * 365
 
         raise ValueError("Invalid format")
-
 
     def user_meets_email_requirements(self, user):
 
@@ -1194,7 +1208,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
                 return email.email
 
         return None
-
 
     def user_requires_reauth(self, user):
 
@@ -1227,7 +1240,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
         try:
             email.data
-            requires_reauth = (email.data.confirmed_date + period <= timezone.now())
+            requires_reauth = email.data.confirmed_date + period <= timezone.now()
         except Exception:
             requires_reauth = True
 
@@ -1256,7 +1269,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
         return requires_reauth
 
-
     def adjust_permissions_for_periodic_reauth(self, user, perms):
 
         """
@@ -1284,6 +1296,7 @@ def default_time_e():
     """
     now = datetime.datetime.now()
     return now.replace(hour=23, minute=59, second=59, tzinfo=UTC())
+
 
 class OrganizationAPIKey(AbstractAPIKey):
     """
@@ -4535,7 +4548,6 @@ class Network(pdb_models.NetworkBase):
 
         return IXLan.objects.filter(id__in=ixlan_ids)
 
-
     @property
     def poc_set_active(self):
         return self.poc_set(manager="handleref").filter(status="ok")
@@ -5069,7 +5081,9 @@ class User(AbstractBaseUser, PermissionsMixin):
             )
         ],
     )
-    email = models.EmailField(_("email address"), max_length=254, null=True, unique=True)
+    email = models.EmailField(
+        _("email address"), max_length=254, null=True, unique=True
+    )
     first_name = models.CharField(_("first name"), max_length=254, blank=True)
     last_name = models.CharField(_("last name"), max_length=254, blank=True)
     is_staff = models.BooleanField(
@@ -5100,17 +5114,25 @@ class User(AbstractBaseUser, PermissionsMixin):
     flagged_for_deletion = models.DateTimeField(
         null=True,
         blank=True,
-        help_text=_("Account is orphaned and has been flagged for deletion at this date")
+        help_text=_(
+            "Account is orphaned and has been flagged for deletion at this date"
+        ),
     )
 
     notified_for_deletion = models.DateTimeField(
         null=True,
         blank=True,
-        help_text=_("User has been notified about pending account deletion at this date")
+        help_text=_(
+            "User has been notified about pending account deletion at this date"
+        ),
     )
 
-    never_flag_for_deletion = models.BooleanField(default=False, help_text=_("This user will never be flagged for deletion through the orphaned user cleanup process."))
-
+    never_flag_for_deletion = models.BooleanField(
+        default=False,
+        help_text=_(
+            "This user will never be flagged for deletion through the orphaned user cleanup process."
+        ),
+    )
 
     objects = UserManager()
 
@@ -5279,7 +5301,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         "Returns the short name for the user."
         return self.first_name
 
-    def email_user(self, subject, message, from_email=settings.DEFAULT_FROM_EMAIL, email=None):
+    def email_user(
+        self, subject, message, from_email=settings.DEFAULT_FROM_EMAIL, email=None
+    ):
         """
         Sends an email to this User.
         """
@@ -5299,8 +5323,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         else:
             debug_mail(subject, message, from_email, [email])
 
-
-    def email_user_all_addresses(self, subject, message, from_email=settings.DEFAULT_FROM_EMAIL, exclude=None):
+    def email_user_all_addresses(
+        self, subject, message, from_email=settings.DEFAULT_FROM_EMAIL, exclude=None
+    ):
 
         """
         Sends email to all email addresses for the user
@@ -5311,10 +5336,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             if exclude and email_address.email in exclude:
                 continue
 
-            self.email_user(
-                subject, message, from_email, email_address.email
-            )
-
+            self.email_user(subject, message, from_email, email_address.email)
 
     def notify_email_removed(self, email):
         """
@@ -5322,17 +5344,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         from their account (#907)
         """
 
-        msg = loader.get_template(
-            "email/notify-user-email-removed.txt"
-        ).render({
-            "support_email" : settings.DEFAULT_FROM_EMAIL
-        })
-
-        self.email_user(
-            "Email address removed from account",
-            msg,
-            email = email
+        msg = loader.get_template("email/notify-user-email-removed.txt").render(
+            {"support_email": settings.DEFAULT_FROM_EMAIL}
         )
+
+        self.email_user("Email address removed from account", msg, email=email)
 
     def notify_email_added(self, email):
         """
@@ -5340,17 +5356,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         to their account (#907)
         """
 
-        msg = loader.get_template(
-            "email/notify-user-email-added.txt"
-        ).render({
-            "email": email,
-            "support_email" : settings.DEFAULT_FROM_EMAIL
-        })
+        msg = loader.get_template("email/notify-user-email-added.txt").render(
+            {"email": email, "support_email": settings.DEFAULT_FROM_EMAIL}
+        )
 
         self.email_user_all_addresses(
-            "Email address added to account",
-            msg,
-            exclude=[email]
+            "Email address added to account", msg, exclude=[email]
         )
 
     def set_unverified(self):
@@ -5503,8 +5514,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.groups.clear()
         self.emailaddress_set.all().delete()
         self.api_keys.all().delete()
-
-
 
 
 class UserAPIKey(AbstractAPIKey):
@@ -6335,12 +6344,13 @@ class DataChangeNotificationQueue(models.Model):
 
 class EmailAddressData(models.Model):
 
-    email = models.OneToOneField(EmailAddress, on_delete=models.CASCADE, related_name="data")
+    email = models.OneToOneField(
+        EmailAddress, on_delete=models.CASCADE, related_name="data"
+    )
     confirmed_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "peeringdb_email_address_data"
-
 
 
 class DataChangeEmail(models.Model):

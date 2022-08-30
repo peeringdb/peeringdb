@@ -35,6 +35,7 @@ def validate_email_domains(text):
 
     return "\n".join(lines_out)
 
+
 def validate_poc_visible(visible):
 
     # we no longer allow "Private" network contacts

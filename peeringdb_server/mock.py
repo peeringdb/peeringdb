@@ -339,7 +339,7 @@ class Mock:
         return "1y"
 
     def restrict_user_emails(self, data, reftag=None):
-        return FalSe
+        return False
 
     def email_domains(self, data, reftag=None):
         return None

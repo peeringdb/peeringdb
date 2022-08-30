@@ -23,10 +23,10 @@ import oauth2_provider.views.application as oauth2_application_views
 import requests
 from allauth.account.models import EmailAddress
 from django.conf import settings as dj_settings
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.admin.models import LogEntry, CHANGE
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
@@ -105,6 +105,11 @@ from peeringdb_server.models import (
     UserPasswordReset,
 )
 from peeringdb_server.org_admin_views import load_all_user_permissions
+from peeringdb_server.permissions import (
+    APIPermissionsApplicator,
+    check_permissions,
+    init_permissions_helper,
+)
 from peeringdb_server.search import search
 from peeringdb_server.serializers import (
     FacilitySerializer,
@@ -114,7 +119,6 @@ from peeringdb_server.serializers import (
 )
 from peeringdb_server.stats import get_fac_stats, get_ix_stats
 from peeringdb_server.stats import stats as global_stats
-from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions, init_permissions_helper
 
 RATELIMITS = dj_settings.RATELIMITS
 
@@ -509,7 +513,9 @@ def resend_confirmation_mail(request):
             ],
         )
 
-    request.user.send_email_confirmation(request=request, email=request.POST.get("email"))
+    request.user.send_email_confirmation(
+        request=request, email=request.POST.get("email")
+    )
     return view_index(request, errors=[_("We have resent your confirmation email")])
 
 
@@ -738,7 +744,9 @@ def profile_add_email(request):
 
     password = request.POST.get("password")
     email = request.POST.get("email")
-    make_primary = request.POST.get("primary") == "true" or request.POST.get("primary") is True
+    make_primary = (
+        request.POST.get("primary") == "true" or request.POST.get("primary") is True
+    )
 
     was_limited = getattr(request, "limited", False)
 
@@ -768,12 +776,23 @@ def profile_add_email(request):
     # address already exists, bail with an error response
 
     if EmailAddress.objects.filter(email=email).exists():
-        return JsonResponse({"non_field_errors": [_("E-mail already exists in our system")]}, status=400)
+        return JsonResponse(
+            {"non_field_errors": [_("E-mail already exists in our system")]}, status=400
+        )
 
     # user has reached max limit of email addresses, bail with error response
 
     if request.user.emailaddress_set.count() >= dj_settings.USER_MAX_EMAIL_ADDRESSES:
-        return JsonResponse({"non_field_errors": [_("You may have a maximum of {} email addresses").format(dj_settings.USER_MAX_EMAIL_ADDRESSES)]}, status=400)
+        return JsonResponse(
+            {
+                "non_field_errors": [
+                    _("You may have a maximum of {} email addresses").format(
+                        dj_settings.USER_MAX_EMAIL_ADDRESSES
+                    )
+                ]
+            },
+            status=400,
+        )
 
     # add new email address
 
@@ -795,7 +814,7 @@ def profile_add_email(request):
         request.user.id,
         f"{email_obj}",
         CHANGE,
-        change_message=f"User added email address {email}"
+        change_message=f"User added email address {email}",
     )
 
     # send email confirmation process
@@ -806,8 +825,7 @@ def profile_add_email(request):
 
     request.user.notify_email_added(email)
 
-    return JsonResponse({"status": "ok", "email":email, "primary":make_primary})
-
+    return JsonResponse({"status": "ok", "email": email, "primary": make_primary})
 
 
 @csrf_protect
@@ -833,7 +851,9 @@ def profile_delete_email(request):
     # primary email address cannot be removed
 
     if email.primary:
-        return JsonResponse({"non_field_errors": [_("Cannot remove primary email")]}, status=400)
+        return JsonResponse(
+            {"non_field_errors": [_("Cannot remove primary email")]}, status=400
+        )
 
     # remove email
 
@@ -847,7 +867,7 @@ def profile_delete_email(request):
         request.user.id,
         f"{email}",
         CHANGE,
-        change_message=f"User removed email address {email.email}"
+        change_message=f"User removed email address {email.email}",
     )
 
     # let the user know that their email was removed
@@ -876,7 +896,9 @@ def profile_set_primary_email(request):
     try:
         email = EmailAddress.objects.get(user=request.user, email=email)
     except EmailAddress.DoesNotExist:
-        return JsonResponse({"non_field_errors": [_("Email address not found")]}, status=400)
+        return JsonResponse(
+            {"non_field_errors": [_("Email address not found")]}, status=400
+        )
 
     # set as primary
 
@@ -1467,7 +1489,7 @@ def view_organization(request, id):
         tab_init = {"users": "active"}
 
     if request.GET.get("tab"):
-        tab_init = {request.GET.get("tab") : "active"}
+        tab_init = {request.GET.get("tab"): "active"}
 
     keys = [
         {"prefix": key.prefix, "hashed_key": key.hashed_key, "name": key.name}

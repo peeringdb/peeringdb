@@ -6,6 +6,7 @@ from django.test import Client, RequestFactory, TestCase
 from peeringdb_server.deskpro import MockAPIClient as DeskProClient
 from peeringdb_server.models import DeskProTicket, Group, User
 
+
 @pytest.fixture
 def admin_user():
     from django.conf import settings

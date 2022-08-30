@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 
+
 def clean_up_dupe_email_accounts(apps, schema_editor):
 
     User = apps.get_model("peeringdb_server", "User")
@@ -34,19 +35,25 @@ def revert_clean_up_dupe_email_accounts(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0090_auto_20220715_0923'),
+        ("peeringdb_server", "0090_auto_20220715_0923"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='email',
-            field=models.EmailField(max_length=254, null=True, verbose_name='email address'),
+            model_name="user",
+            name="email",
+            field=models.EmailField(
+                max_length=254, null=True, verbose_name="email address"
+            ),
         ),
-        migrations.RunPython(clean_up_dupe_email_accounts, revert_clean_up_dupe_email_accounts),
+        migrations.RunPython(
+            clean_up_dupe_email_accounts, revert_clean_up_dupe_email_accounts
+        ),
         migrations.AlterField(
-            model_name='user',
-            name='email',
-            field=models.EmailField(max_length=254, null=True, unique=True, verbose_name='email address'),
+            model_name="user",
+            name="email",
+            field=models.EmailField(
+                max_length=254, null=True, unique=True, verbose_name="email address"
+            ),
         ),
     ]

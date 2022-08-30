@@ -43,13 +43,13 @@ from peeringdb_server.inet import RdapException, RdapLookup
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     QUEUE_NOTIFY,
+    EmailAddressData,
     Facility,
     Network,
     NetworkIXLan,
     Organization,
     UserOrgAffiliationRequest,
     VerificationQueueItem,
-    EmailAddressData,
 )
 from peeringdb_server.util import disable_auto_now_and_save
 
@@ -280,6 +280,7 @@ def recheck_ownership_requests(request, email_address, **kwargs):
     data, _ = EmailAddressData.objects.get_or_create(email=email_address)
     data.confirmed_date = timezone.now()
     data.save()
+
 
 # USER TO ORGANIZATION AFFILIATION
 

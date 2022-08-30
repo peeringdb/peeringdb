@@ -1,21 +1,29 @@
-import pytest
 import io
-
 from datetime import timedelta
-from django.utils import timezone
-from django.conf import settings
 
+import pytest
+from django.conf import settings
 from django.core.management import call_command
+from django.utils import timezone
+
 from peeringdb_server.models import Organization, User
+
 from .util import reset_group_ids
+
 
 def setup_users():
 
     reset_group_ids()
 
-    user_a = User.objects.create_user(username="user_a", password="user_a", email="user_a@localhost")
-    user_b = User.objects.create_user(username="user_b", password="user_b", email="user_b@localhost")
-    user_c = User.objects.create_user(username="user_c", password="user_c", email="user_c@localhost")
+    user_a = User.objects.create_user(
+        username="user_a", password="user_a", email="user_a@localhost"
+    )
+    user_b = User.objects.create_user(
+        username="user_b", password="user_b", email="user_b@localhost"
+    )
+    user_c = User.objects.create_user(
+        username="user_c", password="user_c", email="user_c@localhost"
+    )
 
     org = Organization.objects.create(name="Test", status="ok")
 
@@ -36,6 +44,7 @@ def setup_users():
     assert user_c.status == "pending"
 
     return (user_a, user_b, user_c, org)
+
 
 def assert_user(user, status, flagged, notified):
 
@@ -65,6 +74,7 @@ def test_run_non_committal():
     assert_user(user_b, "ok", False, False)
     assert_user(user_c, "pending", False, False)
 
+
 @pytest.mark.django_db
 def test_run():
 
@@ -79,10 +89,14 @@ def test_run():
     assert_user(user_b, "ok", True, False)
     assert_user(user_c, "pending", True, False)
 
-    user_b.flagged_for_deletion = user_b.flagged_for_deletion - timedelta(days=settings.DELETE_ORPHANED_USER_DAYS-settings.NOTIFY_ORPHANED_USER_DAYS)
+    user_b.flagged_for_deletion = user_b.flagged_for_deletion - timedelta(
+        days=settings.DELETE_ORPHANED_USER_DAYS - settings.NOTIFY_ORPHANED_USER_DAYS
+    )
     user_b.save()
 
-    user_c.flagged_for_deletion = user_c.flagged_for_deletion - timedelta(days=settings.DELETE_ORPHANED_USER_DAYS-settings.NOTIFY_ORPHANED_USER_DAYS)
+    user_c.flagged_for_deletion = user_c.flagged_for_deletion - timedelta(
+        days=settings.DELETE_ORPHANED_USER_DAYS - settings.NOTIFY_ORPHANED_USER_DAYS
+    )
     user_c.save()
 
     out = io.StringIO()
@@ -115,6 +129,7 @@ def test_run():
     assert user_b.is_active is False
     assert user_b.username == f"closed-account-{user_b.id}"
 
+
 @pytest.mark.django_db
 def test_run_unflag():
 
@@ -138,7 +153,6 @@ def test_run_unflag():
     assert_user(user_c, "pending", True, False)
 
 
-
 @pytest.mark.django_db
 def test_run_max_notifies():
 
@@ -153,10 +167,14 @@ def test_run_max_notifies():
     assert_user(user_b, "ok", True, False)
     assert_user(user_c, "pending", True, False)
 
-    user_b.flagged_for_deletion = user_b.flagged_for_deletion - timedelta(days=settings.DELETE_ORPHANED_USER_DAYS-settings.NOTIFY_ORPHANED_USER_DAYS)
+    user_b.flagged_for_deletion = user_b.flagged_for_deletion - timedelta(
+        days=settings.DELETE_ORPHANED_USER_DAYS - settings.NOTIFY_ORPHANED_USER_DAYS
+    )
     user_b.save()
 
-    user_c.flagged_for_deletion = user_c.flagged_for_deletion - timedelta(days=settings.DELETE_ORPHANED_USER_DAYS-settings.NOTIFY_ORPHANED_USER_DAYS)
+    user_c.flagged_for_deletion = user_c.flagged_for_deletion - timedelta(
+        days=settings.DELETE_ORPHANED_USER_DAYS - settings.NOTIFY_ORPHANED_USER_DAYS
+    )
     user_c.save()
 
     out = io.StringIO()
@@ -169,5 +187,3 @@ def test_run_max_notifies():
     assert_user(user_a, "ok", False, False)
     assert_user(user_b, "ok", True, True)
     assert_user(user_c, "pending", True, False)
-
-

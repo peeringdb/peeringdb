@@ -30,14 +30,14 @@ from django.db.models import DateTimeField
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import PermissionDenied
-from rest_framework import routers, status, viewsets, permissions
+from django_security_keys.models import SecurityKeyDevice
+from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 from two_factor.utils import devices_for_user
-from django_security_keys.models import SecurityKeyDevice
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented

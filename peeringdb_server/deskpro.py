@@ -431,15 +431,15 @@ class FailingMockAPIClient(MockAPIClient):
         self.ticket_count = 0
 
     def get(self, endpoint, param):
-        return {"error": "API error with get.", "code":"mock-error"}
+        return {"error": "API error with get.", "code": "mock-error"}
 
     def create(self, endpoint, param):
-        return {"error": "API error with create.", "code":"mock-error"}
+        return {"error": "API error with create.", "code": "mock-error"}
 
     def create_ticket(self, ticket=None):
         raise APIError(
             "API error when creating ticket.",
-            {"error": "API error when creating ticket.", "code":"mock-error"},
+            {"error": "API error when creating ticket.", "code": "mock-error"},
         )
 
 

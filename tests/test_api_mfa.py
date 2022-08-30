@@ -1,19 +1,21 @@
-import pytest
-
 from base64 import b64encode
+
+import pytest
+from django_security_keys.models import SecurityKey
 from rest_framework.test import APIClient
 
-from peeringdb_server.models import User, Organization, Network
-
-from django_security_keys.models import SecurityKey
+from peeringdb_server.models import Network, Organization, User
 
 from .util import reset_group_ids
+
 
 @pytest.mark.django_db
 def test_mfa_basic_auth_block_writes():
 
     reset_group_ids()
-    user = User.objects.create_user(username="user", password="password", email="user@localhost")
+    user = User.objects.create_user(
+        username="user", password="password", email="user@localhost"
+    )
     org = Organization.objects.create(name="Test", status="ok")
     net = Network.objects.create(name="Test", asn=63311, status="ok", org=org)
     net_2 = Network.objects.create(name="Test 2", asn=63312, status="ok", org=org)
@@ -43,27 +45,36 @@ def test_mfa_basic_auth_block_writes():
     # test 2: add MFA, POST PUT DELETE should return permission error
 
     SecurityKey.objects.create(
-        name = "test",
-        type = "security-key",
-        user = user,
-        credential_id = "1234",
-        credential_public_key = "deadbeef",
+        name="test",
+        type="security-key",
+        user=user,
+        credential_id="1234",
+        credential_public_key="deadbeef",
     )
 
     response = client.post("/api/net", data={})
 
     assert response.status_code == 403
-    assert response.json()["meta"]["error"] == "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
+    assert (
+        response.json()["meta"]["error"]
+        == "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
+    )
 
     response = client.put("/api/net/1", data={})
 
     assert response.status_code == 403
-    assert response.json()["meta"]["error"] == "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
+    assert (
+        response.json()["meta"]["error"]
+        == "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
+    )
 
     response = client.delete("/api/net/1", data={})
 
     assert response.status_code == 403
-    assert response.json()["meta"]["error"] == "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
+    assert (
+        response.json()["meta"]["error"]
+        == "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
+    )
 
     # test 3: remove MFA
 
@@ -80,5 +91,3 @@ def test_mfa_basic_auth_block_writes():
     response = client.delete("/api/net/1", data={})
 
     assert response.status_code == 204
-
-

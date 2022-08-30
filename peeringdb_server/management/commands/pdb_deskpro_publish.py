@@ -7,11 +7,11 @@ import datetime
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.template import loader
 
 from peeringdb_server import models
 from peeringdb_server.deskpro import APIClient, APIError, FailingMockAPIClient
 from peeringdb_server.mail import mail_admins_with_from
-from django.template import loader
 
 
 class Command(BaseCommand):
@@ -47,9 +47,7 @@ class Command(BaseCommand):
                 error_code = exc.data.get("code")
                 if error_code:
                     if error_code == "duplicate_ticket":
-                        self.log(
-                            f"Duplicate ticket #{ticket.id} - ignoring."
-                        )
+                        self.log(f"Duplicate ticket #{ticket.id} - ignoring.")
                         return
 
                 self.log(
@@ -61,10 +59,10 @@ class Command(BaseCommand):
                 ticket.body = f"{ticket.body}\nAPI Delivery Error: {exc.data}"
                 ticket.save()
 
-                template = loader.get_template("email/notify-pdb-admin-deskpro-error.txt")
-                message = template.render(
-                    {"ticket": ticket}
+                template = loader.get_template(
+                    "email/notify-pdb-admin-deskpro-error.txt"
                 )
+                message = template.render({"ticket": ticket})
 
                 if getattr(settings, "MAIL_DEBUG", False):
                     self.log(ticket.subject)

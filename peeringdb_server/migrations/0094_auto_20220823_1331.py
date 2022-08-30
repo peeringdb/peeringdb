@@ -6,18 +6,33 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0093_auto_20220822_1038'),
+        ("peeringdb_server", "0093_auto_20220822_1038"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organization',
-            name='periodic_reauth',
-            field=models.BooleanField(default=False, help_text='Require users in this organization to periodically re-authenticate'),
+            model_name="organization",
+            name="periodic_reauth",
+            field=models.BooleanField(
+                default=False,
+                help_text="Require users in this organization to periodically re-authenticate",
+            ),
         ),
         migrations.AddField(
-            model_name='organization',
-            name='periodic_reauth_period',
-            field=models.CharField(blank=True, choices=[('1w', '1 Week'), ('2w', '2 Weeks'), ('1m', '1 Month'), ('6m', '6 Months'), ('1y', '1 Year')], default='1y', max_length=255, null=True),
+            model_name="organization",
+            name="periodic_reauth_period",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("1w", "1 Week"),
+                    ("2w", "2 Weeks"),
+                    ("1m", "1 Month"),
+                    ("6m", "6 Months"),
+                    ("1y", "1 Year"),
+                ],
+                default="1y",
+                max_length=255,
+                null=True,
+            ),
         ),
     ]

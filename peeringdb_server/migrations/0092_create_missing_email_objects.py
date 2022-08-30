@@ -2,6 +2,7 @@
 
 from django.db import migrations
 
+
 def forward(apps, schema_editor):
 
     User = apps.get_model("peeringdb_server", "User")
@@ -14,19 +15,19 @@ def forward(apps, schema_editor):
         emails[email.user_id].append(email.email)
 
     for user in User.objects.exclude(email__isnull=True).exclude(email=""):
-        if user.email not in emails.get(user.id,[]):
+        if user.email not in emails.get(user.id, []):
             try:
                 EmailAddress.objects.create(email=user.email, user=user, primary=True)
             except Exception as exc:
-                print(f"Could not create missing email address object for user {user.username} - will need to handle manually")
+                print(
+                    f"Could not create missing email address object for user {user.username} - will need to handle manually"
+                )
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0091_alter_user_email'),
+        ("peeringdb_server", "0091_alter_user_email"),
     ]
 
-    operations = [
-        migrations.RunPython(forward, migrations.RunPython.noop)
-    ]
+    operations = [migrations.RunPython(forward, migrations.RunPython.noop)]
