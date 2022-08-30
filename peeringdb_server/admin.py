@@ -482,7 +482,7 @@ class CustomResultLengthFilter(admin.SimpleListFilter):
     CustomResultLengthAdmin.
     """
 
-    title = _("Resul length")
+    title = _("Result length")
     parameter_name = "sz"
 
     def lookups(self, request, model_admin):
