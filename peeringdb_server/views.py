@@ -1160,23 +1160,8 @@ def view_close_account(request):
     # If user is authenticated, check password
     if request.user.is_authenticated:
         if request.user.check_password(password):
-            # Set user as inactive
-            request.user.is_active = False
 
-            # Blank out email address , first and last name
-            request.user.email = None
-            request.user.first_name = ""
-            request.user.last_name = ""
-            request.user.save()
-
-            # Delete all email addresses
-            EmailAddress.objects.filter(user=request.user).delete()
-
-            # Delete all user's API keys
-            UserAPIKey.objects.filter(user=request.user).delete()
-
-            # Remove user from all groups
-            request.user.groups.clear()
+            request.user.close_account()
 
             # Logout the user
             logout(request)

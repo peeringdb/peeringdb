@@ -1112,6 +1112,12 @@ set_option("ORG_CHILDLESS_DELETE_DURATION", 90)
 # n days after creation
 set_option("ORG_CHILDLESS_GRACE_DURATION", 1)
 
+# Delete orphaned user accounts after n days
+set_option("DELETE_ORPHANED_USER_DAYS", 90)
+
+# Notify orphaned users n days before deletion
+set_option("NOTIFY_ORPHANED_USER_DAYS", 30)
+
 # pdb_validate_data cache timeout default
 set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)
 

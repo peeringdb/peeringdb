@@ -1715,6 +1715,7 @@ class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
         ((None, {"classes": ("wide",), "fields": ("email_status", "change_password")}),)
         + UserAdmin.fieldsets
         + ((None, {"classes": ("wide",), "fields": ("organizations",)}),)
+        + ((None, {"classes": ("wide",), "fields": ("never_flag_for_deletion", "flagged_for_deletion", "notified_for_deletion")}),)
     )
 
     # we want to get rid of user permissions and group editor as that
@@ -1743,6 +1744,11 @@ class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
         return a 0 version here.
         """
         return 0
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        qs = qs.exclude(is_active=False)
+        return qs
 
     def change_password(self, obj):
         return mark_safe(

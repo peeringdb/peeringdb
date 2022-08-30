@@ -5097,6 +5097,21 @@ class User(AbstractBaseUser, PermissionsMixin):
         choices=settings.LANGUAGES,
     )
 
+    flagged_for_deletion = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Account is orphaned and has been flagged for deletion at this date")
+    )
+
+    notified_for_deletion = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("User has been notified about pending account deletion at this date")
+    )
+
+    never_flag_for_deletion = models.BooleanField(default=False, help_text=_("This user will never be flagged for deletion through the orphaned user cleanup process."))
+
+
     objects = UserManager()
 
     USERNAME_FIELD = "username"
@@ -5463,6 +5478,33 @@ class User(AbstractBaseUser, PermissionsMixin):
             if email.lower() == self.email.lower():
                 return True
         return False
+
+    @transaction.atomic()
+    def close_account(self):
+
+        """
+        Removes all identifying information from the User instance
+        and flags it as inactive.
+
+        Warning: users that are status == "pending" are hard-deleted
+        """
+
+        if self.status == "pending":
+            self.delete()
+            return
+
+        self.is_active = False
+        self.email = None
+        self.first_name = ""
+        self.last_name = ""
+        self.username = f"closed-account-{self.id}"
+        self.save()
+
+        self.groups.clear()
+        self.emailaddress_set.all().delete()
+        self.api_keys.all().delete()
+
+
 
 
 class UserAPIKey(AbstractAPIKey):
