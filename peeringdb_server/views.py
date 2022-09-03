@@ -540,6 +540,7 @@ def view_set_user_locale(request):
             )
 
         translation.activate(loc)
+        # Not a real change.
         response = JsonResponse({"status": "ok"})
         response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, loc)
 
