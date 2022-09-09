@@ -47,6 +47,6 @@ jobs:
       - name: Start the DB
         run: ./Ctl/dev/compose.sh up -d database
       - name: build PeeringDB
-        run: ./Ctl/dev/compose.sh build peeringdb
+        run: ./Ctl/dev/compose.sh build --pull peeringdb
       - name: run tests
         run: ./Ctl/dev/run.sh run_tests
