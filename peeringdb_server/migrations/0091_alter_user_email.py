@@ -14,16 +14,26 @@ def clean_up_dupe_email_accounts(apps, schema_editor):
 
     for user in User.objects.all().order_by("-last_login"):
 
-        emails.setdefault(user.email, 0)
-        emails[user.email] += 1
+        if not user.email:
+            if user.email == '':
+                user.email = None
+                user.save()
+            continue
 
-        if emails[user.email] > 1:
+        email = user.email.lower()
+
+        emails.setdefault(email, 0)
+        emails[email] += 1
+
+        if emails[email] > 1:
             user.is_active = False
             user.email = None
             deactivated += 1
             user.save()
 
             EmailAddress.objects.filter(user=user).delete()
+
+    print(f"deactivated {deactivated} users due to duplicate emails")
 
 
 def revert_clean_up_dupe_email_accounts(apps, schema_editor):
