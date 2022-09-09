@@ -1,6 +1,30 @@
 # RUN true is used here to separate problematic COPY statements,
 # per this issue: https://github.com/moby/moby/issues/37965
 
+
+# rust and cargo for cryptography package
+ARG build_deps=" \
+    g++ \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    linux-headers \
+    make \
+    mariadb-dev \
+    libffi-dev \
+    curl \
+    rust \
+    cargo \
+    "
+ARG run_deps=" \
+    freetype \
+    ttf-freefont \
+    gettext \
+    libjpeg-turbo \
+    graphviz \
+    mariadb-connector-c \
+    libgcc \
+    "
+
 FROM python:3.9-alpine as base
 
 ARG virtual_env=/srv/www.peeringdb.com/venv
@@ -12,18 +36,9 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # build container
 FROM base as builder
 
-# rust and cargo for cryptography package
-RUN apk --update --no-cache add \
-  g++ \
-  freetype-dev \
-  libjpeg-turbo-dev \
-  linux-headers \
-  make \
-  mariadb-dev \
-  libffi-dev \
-  curl \
-  rust \
-  cargo
+ARG build_deps
+
+RUN apk --update --no-cache add $build_deps
 
 RUN pip install -U pip poetry
 # create venv and update venv pip
@@ -41,13 +56,14 @@ RUN apk add busybox-extras
 
 FROM base as final
 
+ARG run_deps
 ARG uid=996
 
 # extra settings file if needed
 ARG ADD_SETTINGS_FILE=mainsite/settings/dev.py
 
 # add dependencies
-RUN apk add --no-cache freetype ttf-freefont gettext libjpeg-turbo graphviz mariadb-connector-c libgcc
+RUN apk add --no-cache $run_deps
 
 RUN adduser -Du $uid pdb
 
@@ -82,6 +98,8 @@ RUN chown -R pdb:pdb api-cache locale media var/log coverage
 #### test image here
 FROM final as tester
 
+ARG build_deps
+
 WORKDIR /srv/www.peeringdb.com
 COPY poetry.lock pyproject.toml ./
 RUN true
@@ -90,6 +108,7 @@ RUN chown -R pdb:pdb tests/
 COPY Ctl/docker/entrypoint.sh .
 
 # install dev deps
+RUN apk --update --no-cache add $build_deps
 RUN pip install -U poetry
 RUN poetry install --no-root
 
