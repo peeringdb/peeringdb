@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 from django.template import loader
 
 from peeringdb_server import models
-from peeringdb_server.deskpro import APIClient, APIError, FailingMockAPIClient
+from peeringdb_server.deskpro import APIClient, APIError
 from peeringdb_server.mail import mail_admins_with_from
 
 

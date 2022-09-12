@@ -36,7 +36,6 @@ from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 
-import peeringdb_server.ixf as ixf
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
     ticket_queue_rdap_error,
@@ -2567,12 +2566,12 @@ class NetworkSerializer(ModelSerializer):
                 ixlan__ixf_ixp_import_enabled=True,
             ):
                 try:
-                    wat = suggestion.apply(
+                    suggestion.apply(
                         user=request.user,
                         comment="Network enabled automatic IX-F updates",
                         save=True,
                     )
-                except ValidationError as exc:
+                except ValidationError:
                     pass
 
             return updated

@@ -4,11 +4,9 @@ Delete childless org objects
 
 from datetime import timedelta
 
-import reversion
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.template import loader
 from django.utils import timezone
 
 from peeringdb_server.models import User
@@ -40,7 +38,6 @@ class Command(BaseCommand):
             default=0,
             help="maximum amount of user flags to set, set to not limit",
         )
-
 
     def log(self, msg):
         if self.commit:
@@ -88,7 +85,7 @@ class Command(BaseCommand):
 
         if self.max_flag > 0:
             self.log(f"Flagging {self.max_flag} of {qset.count()} orphaned users ...")
-            qset = qset[:self.max_flag]
+            qset = qset[: self.max_flag]
         else:
             self.log(f"Flagging {qset.count()} users ...")
 

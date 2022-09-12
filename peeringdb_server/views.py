@@ -100,16 +100,11 @@ from peeringdb_server.models import (
     Partnership,
     Sponsorship,
     User,
-    UserAPIKey,
     UserOrgAffiliationRequest,
     UserPasswordReset,
 )
 from peeringdb_server.org_admin_views import load_all_user_permissions
-from peeringdb_server.permissions import (
-    APIPermissionsApplicator,
-    check_permissions,
-    init_permissions_helper,
-)
+from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
 from peeringdb_server.search import search
 from peeringdb_server.serializers import (
     FacilitySerializer,

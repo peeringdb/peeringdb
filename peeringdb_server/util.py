@@ -4,11 +4,9 @@ Assorted utility functions for peeringdb site templates.
 import ipaddress
 from decimal import Decimal
 
-from django.conf import settings
 from django_grainy.util import Permissions, check_permissions, get_permissions  # noqa
-from grainy.core import NamespaceKeyApplicator
 
-from peeringdb_server.permissions import APIPermissionsApplicator
+from peeringdb_server.permissions import APIPermissionsApplicator  # noqa
 
 
 def disable_auto_now_and_save(entity):

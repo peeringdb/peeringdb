@@ -174,9 +174,13 @@ def test_user_api_key_generation():
 def test_close_account():
     reset_group_ids()
     user = User.objects.create_user(
-        username="test", email="test@localhost", password="test1234", first_name="Test", last_name="User", status="ok"
+        username="test",
+        email="test@localhost",
+        password="test1234",
+        first_name="Test",
+        last_name="User",
+        status="ok",
     )
-
 
     group = Group(name="test group")
     group.save()
@@ -207,11 +211,16 @@ def test_close_account():
     assert user.first_name == ""
     assert user.last_name == ""
 
+
 @pytest.mark.django_db
 def test_close_account_pending_user():
     reset_group_ids()
     user = User.objects.create_user(
-        username="test", email="test@localhost", password="test1234", first_name="Test", last_name="User"
+        username="test",
+        email="test@localhost",
+        password="test1234",
+        first_name="Test",
+        last_name="User",
     )
 
     group = Group(name="test group")
@@ -227,6 +236,7 @@ def test_close_account_pending_user():
     response = client.post("/profile/close", {"password": "test1234"})
 
     assert not User.objects.filter(username="test").exists()
+
 
 @pytest.mark.django_db
 def test_bogus_basic_auth():

@@ -39,7 +39,9 @@ def _datachange_objects():
 
     net = Network.objects.first()
     netixlan = net.netixlan_set.first()
-    user = User.objects.create_user(username="watcher", email="watcher@localhost", password="watcher")
+    user = User.objects.create_user(
+        username="watcher", email="watcher@localhost", password="watcher"
+    )
 
     EmailAddress.objects.create(user=user, email="watcher@localhost")
 

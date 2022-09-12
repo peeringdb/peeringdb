@@ -4,8 +4,8 @@ import os
 import urllib
 
 import pytest
-from django.contrib.auth.models import Group
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.contrib.messages import get_messages
 from django.core.management import call_command
 from django.test import Client, RequestFactory, TestCase
@@ -69,7 +69,10 @@ class AdminTests(TestCase):
             i += 1
 
         cls.admin_user = models.User.objects.create_user(
-            username="admin", email="admin@localhost", first_name="admin", last_name="admin"
+            username="admin",
+            email="admin@localhost",
+            first_name="admin",
+            last_name="admin",
         )
         cls.admin_user.is_superuser = True
         cls.admin_user.is_staff = True
@@ -79,7 +82,10 @@ class AdminTests(TestCase):
 
         # user and group for read-only access to /cp
         cls.readonly_admin = models.User.objects.create_user(
-            username="ro_admin", email="ro_admin@localhost", password="admin", is_staff=True
+            username="ro_admin",
+            email="ro_admin@localhost",
+            password="admin",
+            is_staff=True,
         )
         readonly_group = Group.objects.create(name="readonly")
         for app_label in admin.PERMISSION_APP_LABELS:
@@ -900,7 +906,9 @@ class AdminTests(TestCase):
         Test that userpermission is sane
         """
 
-        user_permission = get_user_model().objects.create_user(username="user", email="user@localhost", password="user")
+        user_permission = get_user_model().objects.create_user(
+            username="user", email="user@localhost", password="user"
+        )
 
         org = models.Organization.objects.create(name="test-org", status="ok")
         org.admin_usergroup.user_set.add(user_permission)

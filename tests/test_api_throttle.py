@@ -477,7 +477,9 @@ class APIThrottleTests(TestCase):
         """
 
         user = models.User.objects.create_user(username="test", email="test@localhost")
-        user_b = models.User.objects.create_user(username="test_2", email="test_2@localhost")
+        user_b = models.User.objects.create_user(
+            username="test_2", email="test_2@localhost"
+        )
         request = self.factory.get("/")
         mock_csrf_session(request)
         request.user = user
@@ -664,7 +666,9 @@ class APIThrottleTests(TestCase):
         """
 
         user = models.User.objects.create_user(username="test", email="test@localhost")
-        user_b = models.User.objects.create_user(username="test_2", email="test_2@localhost")
+        user_b = models.User.objects.create_user(
+            username="test_2", email="test_2@localhost"
+        )
         request = self.factory.get("/api/fac", {"country": "US", "state": "IL"})
         mock_csrf_session(request)
         request.user = user
@@ -706,8 +710,12 @@ class APIThrottleTests(TestCase):
         for authenticated users with admin status
         """
 
-        user = models.User.objects.create_user(username="test", email="test@localhost", is_superuser=True)
-        user_b = models.User.objects.create_user(username="test_2", email="test_2@localhost", is_superuser=True)
+        user = models.User.objects.create_user(
+            username="test", email="test@localhost", is_superuser=True
+        )
+        user_b = models.User.objects.create_user(
+            username="test_2", email="test_2@localhost", is_superuser=True
+        )
         request = self.factory.get("/api/fac", {"country": "US", "state": "IL"})
         mock_csrf_session(request)
         request.user = user

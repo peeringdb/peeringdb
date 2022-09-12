@@ -15,7 +15,7 @@ def clean_up_dupe_email_accounts(apps, schema_editor):
     for user in User.objects.all().order_by("-last_login"):
 
         if not user.email:
-            if user.email == '':
+            if user.email == "":
                 user.email = None
                 user.save()
             continue

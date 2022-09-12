@@ -61,7 +61,6 @@ from django_grainy.models import Permission, PermissionManager
 from django_grainy.util import check_permissions
 from django_handleref.models import CreatedDateTimeField, UpdatedDateTimeField
 from django_inet.models import ASNField
-from grainy.core import Namespace
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
 

@@ -12,8 +12,6 @@ Django signal handlers
 
 """
 
-from datetime import datetime
-
 import django.urls
 import reversion
 from allauth.account.signals import email_confirmed, user_signed_up

@@ -11,7 +11,7 @@ import peeringdb_server.inet as pdbinet
 import peeringdb_server.models as models
 import peeringdb_server.views as pdbviews
 
-from .util import SettingsCase, reset_group_ids, mock_csrf_session
+from .util import SettingsCase, mock_csrf_session, reset_group_ids
 
 ERR_COULD_NOT_GET_RIR_ENTRY = "This ASN is not assigned by any RIR"
 ERR_BOGON_ASN = "ASNs in this range are private or reserved"

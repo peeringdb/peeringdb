@@ -42,7 +42,7 @@ def validate_rdap_user_or_key(request, rdap):
 
 def validate_rdap_org_key(org_key, rdap):
     for email in rdap.emails:
-        if email and  email.lower() == org_key.email.lower():
+        if email and email.lower() == org_key.email.lower():
             return True
     return False
 

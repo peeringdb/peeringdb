@@ -20,8 +20,6 @@ def validate_email_domains(text):
     if not text:
         return ""
 
-    print("VALIDATE_EMAIL_DOMAINS", text)
-
     lines_in = text.split("\n")
     lines_out = []
     for line in lines_in:
@@ -33,7 +31,7 @@ def validate_email_domains(text):
         try:
             validate_email(f"name@{line}")
         except ValidationError:
-            raise ValidationError(_(f"Invalid format"))
+            raise ValidationError(_("Invalid format"))
 
         lines_out.append(line.lower())
 

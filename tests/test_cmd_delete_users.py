@@ -4,8 +4,8 @@ from datetime import timedelta
 import pytest
 from django.conf import settings
 from django.core.management import call_command
-from django.utils import timezone
 from django.test import override_settings
+from django.utils import timezone
 
 from peeringdb_server.models import Organization, User
 

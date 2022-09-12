@@ -2,6 +2,7 @@
 
 from django.db import migrations, transaction
 
+
 def forward(apps, schema_editor):
 
     User = apps.get_model("peeringdb_server", "User")
