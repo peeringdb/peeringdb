@@ -253,7 +253,11 @@ def organizations(request):
 def languages(request):
     from django.conf import settings
 
-    translation.get_language()
-    return JsonResponse(
-        {"locales": [{"id": id, "name": _(name)} for (id, name) in settings.LANGUAGES]}
-    )
+    locales = []
+    for (id, name) in settings.LANGUAGES:
+        li = translation.get_language_info(id)
+        locales.append(
+            {"id": id, "name": f"{li['name_translated']} ({li['name_local']})"}
+        )
+
+    return JsonResponse({"locales": locales})
