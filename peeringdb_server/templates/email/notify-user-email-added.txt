@@ -1,0 +1,5 @@
+The email address `{{ email }}` has been added to your PeeringDB account.
+
+This is an automatic notification, please do not respond directly to this message.
+
+For support please reach out to {{ support_email }}.

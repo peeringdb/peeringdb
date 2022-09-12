@@ -23,8 +23,10 @@ import oauth2_provider.views.application as oauth2_application_views
 import requests
 from allauth.account.models import EmailAddress
 from django.conf import settings as dj_settings
+from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
@@ -98,11 +100,11 @@ from peeringdb_server.models import (
     Partnership,
     Sponsorship,
     User,
-    UserAPIKey,
     UserOrgAffiliationRequest,
     UserPasswordReset,
 )
 from peeringdb_server.org_admin_views import load_all_user_permissions
+from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
 from peeringdb_server.search import search
 from peeringdb_server.serializers import (
     FacilitySerializer,
@@ -112,7 +114,6 @@ from peeringdb_server.serializers import (
 )
 from peeringdb_server.stats import get_fac_stats, get_ix_stats
 from peeringdb_server.stats import stats as global_stats
-from peeringdb_server.util import APIPermissionsApplicator, check_permissions
 
 RATELIMITS = dj_settings.RATELIMITS
 
@@ -507,7 +508,9 @@ def resend_confirmation_mail(request):
             ],
         )
 
-    request.user.send_email_confirmation(request=request)
+    request.user.send_email_confirmation(
+        request=request, email=request.POST.get("email")
+    )
     return view_index(request, errors=[_("We have resent your confirmation email")])
 
 
@@ -712,68 +715,191 @@ def view_profile_v1(request):
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
-@transaction.atomic
-@ratelimit(key="ip", rate=RATELIMITS["view_verify_POST"], method="POST")
+@require_http_methods(["GET"])
 def view_verify(request):
+    template = loader.get_template("site/verify.html")
+    env = BASE_ENV.copy()
+    env.update(
+        {"affiliations": request.user.organizations, "global_stats": global_stats()}
+    )
+    return HttpResponse(template.render(env, request))
 
-    if request.method in ["GET", "HEAD"]:
-        template = loader.get_template("site/verify.html")
-        env = BASE_ENV.copy()
-        env.update(
-            {"affiliations": request.user.organizations, "global_stats": global_stats()}
+
+@csrf_protect
+@ensure_csrf_cookie
+@login_required
+@transaction.atomic
+@require_http_methods(["POST"])
+@ratelimit(key="ip", rate=RATELIMITS["view_verify_POST"], method="POST")
+def profile_add_email(request):
+
+    """
+    Allows a user to add an additional email address
+    """
+
+    password = request.POST.get("password")
+    email = request.POST.get("email")
+    make_primary = (
+        request.POST.get("primary") == "true" or request.POST.get("primary") is True
+    )
+
+    was_limited = getattr(request, "limited", False)
+
+    # handle rate limiting
+
+    if was_limited:
+        return JsonResponse(
+            {
+                "non_field_errors": [
+                    _("Please wait a bit before requesting another email change")
+                ]
+            },
+            status=400,
         )
-        return HttpResponse(template.render(env, request))
-    elif request.method == "POST":
 
-        # change email address
+    # password authentication is required
 
-        password = request.POST.get("password")
+    if not authenticate(username=request.user.username, password=password):
+        return JsonResponse(
+            {
+                "status": "auth",
+                "non_field_errors": [_("Invalid password. Please try again.")],
+            },
+            status=401,
+        )
 
-        was_limited = getattr(request, "limited", False)
+    # address already exists, bail with an error response
 
-        if was_limited:
-            return JsonResponse(
-                {
-                    "non_field_errors": [
-                        _("Please wait a bit before requesting another email change")
-                    ]
-                },
-                status=400,
-            )
+    if EmailAddress.objects.filter(email=email).exists():
+        return JsonResponse(
+            {"non_field_errors": [_("E-mail already exists in our system")]}, status=400
+        )
 
-        if not request.user.has_oauth:
-            if not authenticate(username=request.user.username, password=password):
-                return JsonResponse(
-                    {
-                        "status": "auth",
-                        "non_field_errors": [_("Invalid password. Please try again.")],
-                    },
-                    status=401,
-                )
+    # user has reached max limit of email addresses, bail with error response
 
-        if EmailAddress.objects.filter(user=request.user).exists():
-            EmailAddress.objects.filter(user=request.user).delete()
+    if request.user.emailaddress_set.count() >= dj_settings.USER_MAX_EMAIL_ADDRESSES:
+        return JsonResponse(
+            {
+                "non_field_errors": [
+                    _("You may have a maximum of {} email addresses").format(
+                        dj_settings.USER_MAX_EMAIL_ADDRESSES
+                    )
+                ]
+            },
+            status=400,
+        )
 
-        # email hasn't change, so we just do nothing
-        if request.user.email == request.POST.get("email"):
-            return JsonResponse({"status": "ok"})
+    # add new email address
 
-        request.user.email = request.POST.get("email")
+    email_obj = EmailAddress.objects.create(email=email, user=request.user)
 
-        if (
-            User.objects.filter(email=request.user.email)
-            .exclude(id=request.user.id)
-            .exists()
-        ):
-            return JsonResponse(
-                {"email": _("E-mail already exists in our system")}, status=400
-            )
+    # make new email address primary email addess
+
+    if make_primary:
+        email_obj.set_as_primary()
+        request.user.email = email
         request.user.clean()
         request.user.save()
 
-        request.user.send_email_confirmation(request=request)
+    # create log entry for django-admin
 
+    LogEntry.objects.log_action(
+        request.user.id,
+        ContentType.objects.get_for_model(User).id,
+        request.user.id,
+        f"{email_obj}",
+        CHANGE,
+        change_message=f"User added email address {email}",
+    )
+
+    # send email confirmation process
+
+    request.user.send_email_confirmation(request=request, email=email)
+
+    # send notification that an email has been added to the user's account
+
+    request.user.notify_email_added(email)
+
+    return JsonResponse({"status": "ok", "email": email, "primary": make_primary})
+
+
+@csrf_protect
+@ensure_csrf_cookie
+@login_required
+@transaction.atomic
+@require_http_methods(["POST"])
+def profile_delete_email(request):
+
+    """
+    Allows a user to remove one of their emails
+    """
+
+    email = request.POST.get("email")
+
+    # if the specified email does not exist, just return
+
+    try:
+        email = EmailAddress.objects.get(user=request.user, email=email)
+    except EmailAddress.DoesNotExist:
         return JsonResponse({"status": "ok"})
+
+    # primary email address cannot be removed
+
+    if email.primary:
+        return JsonResponse(
+            {"non_field_errors": [_("Cannot remove primary email")]}, status=400
+        )
+
+    # remove email
+
+    email.delete()
+
+    # create log entry for django-admin
+
+    LogEntry.objects.log_action(
+        request.user.id,
+        ContentType.objects.get_for_model(User).id,
+        request.user.id,
+        f"{email}",
+        CHANGE,
+        change_message=f"User removed email address {email.email}",
+    )
+
+    # let the user know that their email was removed
+
+    request.user.notify_email_removed(email.email)
+
+    return JsonResponse({"status": "ok"})
+
+
+@csrf_protect
+@ensure_csrf_cookie
+@login_required
+@transaction.atomic
+@require_http_methods(["POST"])
+def profile_set_primary_email(request):
+
+    """
+    Allows a user to set a different email address as their primary
+    contact point for peeringdb
+    """
+
+    email = request.POST.get("email")
+
+    # check that email exists
+
+    try:
+        email = EmailAddress.objects.get(user=request.user, email=email)
+    except EmailAddress.DoesNotExist:
+        return JsonResponse(
+            {"non_field_errors": [_("Email address not found")]}, status=400
+        )
+
+    # set as primary
+
+    email.set_as_primary()
+
+    return JsonResponse({"status": "ok"})
 
 
 @csrf_protect
@@ -1051,23 +1177,8 @@ def view_close_account(request):
     # If user is authenticated, check password
     if request.user.is_authenticated:
         if request.user.check_password(password):
-            # Set user as inactive
-            request.user.is_active = False
 
-            # Blank out email address , first and last name
-            request.user.email = ""
-            request.user.first_name = ""
-            request.user.last_name = ""
-            request.user.save()
-
-            # Delete all email addresses
-            EmailAddress.objects.filter(user=request.user).delete()
-
-            # Delete all user's API keys
-            UserAPIKey.objects.filter(user=request.user).delete()
-
-            # Remove user from all groups
-            request.user.groups.clear()
+            request.user.close_account()
 
             # Logout the user
             logout(request)
@@ -1372,6 +1483,9 @@ def view_organization(request, id):
     if perms.get("can_manage") and org.pending_affiliations.count() > 0:
         tab_init = {"users": "active"}
 
+    if request.GET.get("tab"):
+        tab_init = {request.GET.get("tab"): "active"}
+
     keys = [
         {"prefix": key.prefix, "hashed_key": key.hashed_key, "name": key.name}
         for key in org.api_keys.filter(revoked=False).all()
@@ -1406,7 +1520,7 @@ def view_facility(request, id):
 
     data = FacilitySerializer(facility, context={"user": request.user}).data
 
-    applicator = APIPermissionsApplicator(request.user)
+    applicator = APIPermissionsApplicator(request)
 
     if not applicator.is_generating_api_cache:
         data = applicator.apply(data)
@@ -1620,7 +1734,7 @@ def view_exchange(request, id):
 
     data = InternetExchangeSerializer(exchange, context={"user": request.user}).data
 
-    applicator = APIPermissionsApplicator(request.user)
+    applicator = APIPermissionsApplicator(request)
 
     if not applicator.is_generating_api_cache:
         data = applicator.apply(data)
@@ -1959,7 +2073,7 @@ def view_network(request, id):
         return view_http_error_404(request)
 
     network_d = NetworkSerializer(network, context={"user": request.user}).data
-    applicator = APIPermissionsApplicator(request.user)
+    applicator = APIPermissionsApplicator(request)
 
     if not applicator.is_generating_api_cache:
         network_d = applicator.apply(network_d)

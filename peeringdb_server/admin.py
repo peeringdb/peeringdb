@@ -1172,6 +1172,8 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "website",
         "notes",
         "logo",
+        "restrict_user_emails",
+        "email_domains",
         "verification_queue",
         "version",
         "id",
@@ -1713,6 +1715,19 @@ class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
         ((None, {"classes": ("wide",), "fields": ("email_status", "change_password")}),)
         + UserAdmin.fieldsets
         + ((None, {"classes": ("wide",), "fields": ("organizations",)}),)
+        + (
+            (
+                None,
+                {
+                    "classes": ("wide",),
+                    "fields": (
+                        "never_flag_for_deletion",
+                        "flagged_for_deletion",
+                        "notified_for_deletion",
+                    ),
+                },
+            ),
+        )
     )
 
     # we want to get rid of user permissions and group editor as that

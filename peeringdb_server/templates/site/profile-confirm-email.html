@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n util %}
     <div class="editable always panel">
       {% if request.user.email_confirmed %}
       <p>
@@ -10,7 +10,7 @@
       <p>
       {% trans "Please specify an email address for your account, we won't be able to proceed with verification until you do." %}
       </p>
-      {% elif not request.user.email_confirmed %}
+      {% elif not request.user.email|email_confirmed %}
       <h3>{% trans "Email Confirmation" %}</h3>
       <p>
       <span class="attention">{% trans "Before getting access to any other features, you need to confirm your email address." %}</span>
@@ -18,7 +18,7 @@
       <div class="center marg-top">
         <form action="/resend_email_confirmation" method="POST">
           {% csrf_token %}
-          <input type="submit" value="Resend Confirmation Email" class="btn btn-default" />
+          <input type="submit" value="{% trans "Resend confirmation email" %}" class="btn btn-default" />
         </form>
       </div>
       </p>
@@ -27,4 +27,5 @@
       {% trans "You won't have full access until we or the organization you are affiliated with have reviewed your account. Thank you for your patience." %}
       </p>
       {% endif %}
+
     </div>

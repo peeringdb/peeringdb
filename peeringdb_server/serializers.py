@@ -54,6 +54,7 @@ from peeringdb_server.models import (
     GeoCoordinateCache,
     InternetExchange,
     InternetExchangeFacility,
+    IXFMemberData,
     IXLan,
     IXLanPrefix,
     Network,
@@ -1108,13 +1109,13 @@ class ModelSerializer(serializers.ModelSerializer):
 
         return super().update(instance, validated_data)
 
-    def create(self, validated_data):
+    def create(self, validated_data, auto_approve=False):
         """
         Entities created via the API should go into the verification
         queue with status pending if they are in the QUEUE_ENABLED
         list.
         """
-        if self.Meta.model in QUEUE_ENABLED:
+        if self.Meta.model in QUEUE_ENABLED and not auto_approve:
             validated_data["status"] = "pending"
         else:
             validated_data["status"] = "ok"
@@ -2528,8 +2529,7 @@ class NetworkSerializer(ModelSerializer):
         if rdap and validate_rdap_user_or_key(request, rdap):
 
             # user email exists in RiR data, skip verification queue
-            validated_data["status"] = "ok"
-            net = super().create(validated_data)
+            net = super().create(validated_data, auto_approve=True)
             ticket_queue_asnauto_skipvq(request, validated_data["org"], net, rdap)
             return net
 
@@ -2544,12 +2544,38 @@ class NetworkSerializer(ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
+
+        request = self._context.get("request")
+
         if validated_data.get("asn") != instance.asn:
             raise serializers.ValidationError(
                 {
                     "asn": _("ASN cannot be changed."),
                 }
             )
+
+        # if allow_ixp_update was turned on apply all existing suggestions for the network. (#499)
+
+        if validated_data.get("allow_ixp_update") and not instance.allow_ixp_update:
+
+            updated = super().update(instance, validated_data)
+
+            for suggestion in IXFMemberData.objects.filter(
+                asn=instance.asn,
+                requirement_of__isnull=True,
+                ixlan__ixf_ixp_import_enabled=True,
+            ):
+                try:
+                    suggestion.apply(
+                        user=request.user,
+                        comment="Network enabled automatic IX-F updates",
+                        save=True,
+                    )
+                except ValidationError:
+                    pass
+
+            return updated
+
         return super().update(instance, validated_data)
 
     def finalize_create(self, request):

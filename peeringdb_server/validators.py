@@ -7,11 +7,35 @@ import re
 import phonenumbers
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.utils.translation import ugettext_lazy as _
 
 import peeringdb_server.models
 from peeringdb_server.inet import IRR_SOURCE, network_is_pdb_valid
 from peeringdb_server.request import bypass_validation
+
+
+def validate_email_domains(text):
+
+    if not text:
+        return ""
+
+    lines_in = text.split("\n")
+    lines_out = []
+    for line in lines_in:
+        if not line:
+            continue
+
+        line = line.strip()
+
+        try:
+            validate_email(f"name@{line}")
+        except ValidationError:
+            raise ValidationError(_("Invalid format"))
+
+        lines_out.append(line.lower())
+
+    return "\n".join(lines_out)
 
 
 def validate_poc_visible(visible):

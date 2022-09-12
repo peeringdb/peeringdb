@@ -30,12 +30,14 @@ from django.db.models import DateTimeField
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import PermissionDenied
-from rest_framework import routers, status, viewsets
+from django_security_keys.models import SecurityKeyDevice
+from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
+from two_factor.utils import devices_for_user
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
@@ -281,6 +283,55 @@ class client_check:
                 )
 
 
+class BasicAuthMFABlockWrite(permissions.BasePermission):
+
+    """
+    When an account has MFA enabled and basic-auth is used
+    to authenticate the account for a write operation on the API
+    block the request.
+    """
+
+    message = "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
+
+    def has_permission(self, request, view):
+
+        # only check write operations
+
+        if request.method not in ["POST", "PUT", "DELETE", "PATCH"]:
+            return True
+
+        # only check basic auth
+
+        if request.headers.get("Authorization", "").split(" ")[0].lower() != "basic":
+            return True
+
+        # if user has any U2F devices, block operation
+
+        if request.user.webauthn_security_keys.exists():
+            return False
+
+        # if user has any TOPT devices, block operation
+
+        for device in devices_for_user(request.user):
+            if isinstance(device, SecurityKeyDevice):
+
+                # security keys are already checked above, and a user will always
+                # have one instance of SecurityKeyDevice once they have
+                # added a security key, even after they have removed all their
+                # keys, so ignore it for this check.
+
+                continue
+            else:
+
+                # topt device found, block operation
+
+                return False
+
+        # No MFA found, allow operation
+
+        return True
+
+
 ###############################################################################
 # VIEW SETS
 
@@ -292,7 +343,7 @@ class ModelViewSet(viewsets.ModelViewSet):
     """
 
     paginate_by_param = ("limit",)
-    permission_classes = (ModelViewSetPermissions,)
+    permission_classes = (ModelViewSetPermissions, BasicAuthMFABlockWrite)
 
     def get_queryset(self):
         """
@@ -576,7 +627,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         d = time.time() - t
         print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
-        applicator = APIPermissionsApplicator(request)
+        applicator = APIPermissionsApplicator(self.request)
 
         if not applicator.is_generating_api_cache:
             r.data = applicator.apply(r.data)

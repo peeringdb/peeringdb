@@ -11,7 +11,7 @@ import peeringdb_server.inet as pdbinet
 import peeringdb_server.models as models
 import peeringdb_server.views as pdbviews
 
-from .util import SettingsCase, reset_group_ids
+from .util import SettingsCase, mock_csrf_session, reset_group_ids
 
 ERR_COULD_NOT_GET_RIR_ENTRY = "This ASN is not assigned by any RIR"
 ERR_BOGON_ASN = "ASNs in this range are private or reserved"
@@ -154,7 +154,7 @@ class AsnAutomationTestCase(TestCase):
         # test 1: test affiliation to asn that has no RiR entry
         request = self.factory.post("/affiliate-to-org", data={"asn": asn_fail})
         request.user = self.user_a
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
         self.assertEqual(resp.get("asn"), ERR_COULD_NOT_GET_RIR_ENTRY)
 
@@ -162,7 +162,7 @@ class AsnAutomationTestCase(TestCase):
         # can be validated (ASN 9000001)
         request = self.factory.post("/affiliate-to-org", data={"asn": asn_ok})
         request.user = self.user_a
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
         self.assertEqual(resp.get("status"), "ok")
 
@@ -202,7 +202,7 @@ class AsnAutomationTestCase(TestCase):
         # cannot be verified (ASN 9000002)
         request = self.factory.post("/affiliate-to-org", data={"asn": asn_ok_b})
         request.user = self.user_b
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
         self.assertEqual(resp.get("status"), "ok")
 
@@ -239,7 +239,7 @@ class AsnAutomationTestCase(TestCase):
         # cannot be verified (ASN 9000002)
         request = self.factory.post("/affiliate-to-org", data={"asn": asn_ok})
         request.user = self.user_b
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
         self.assertEqual(resp.get("status"), "ok")
 
@@ -248,8 +248,14 @@ class AsnAutomationTestCase(TestCase):
         assert not net.org.admin_usergroup.user_set.filter(id=self.user_b.id).exists()
 
         # simulate email change
-        old_email = self.user_b.email
-        self.user_b.email = self.user_a.email
+        # change to user_a's email, since that email will allow the ownership of
+        # the org to be granted
+        new_email = self.user_a.email
+
+        self.user_a.email = "user_a_updated@localhost"
+        self.user_a.save()
+
+        self.user_b.email = new_email
         self.user_b.save()
 
         self.user_b.recheck_affiliation_requests()
@@ -259,9 +265,6 @@ class AsnAutomationTestCase(TestCase):
         )
 
         assert net.org.admin_usergroup.user_set.filter(id=self.user_b.id).exists()
-
-        self.user_b.email = old_email
-        self.user_b.save()
 
     def test_affiliate_limit(self):
         """
@@ -278,7 +281,7 @@ class AsnAutomationTestCase(TestCase):
                 "/affiliate-to-org", data={"org": f"AFFILORG{i}"}
             )
             request.user = self.user_b
-            request._dont_enforce_csrf_checks = True
+            mock_csrf_session(request)
             print("\n")
             print(i)
             response = pdbviews.view_affiliate_to_org(request)
@@ -296,7 +299,7 @@ class AsnAutomationTestCase(TestCase):
 
         request = self.factory.post("/affiliate-to-org", data={"org": "AFFILORG"})
         request.user = self.user_b
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         response = pdbviews.view_affiliate_to_org(request)
 
         assert response.status_code == 200
@@ -309,7 +312,7 @@ class AsnAutomationTestCase(TestCase):
             f"/cancel-affiliation-request/{affiliation_request.id}/"
         )
         request.user = self.user_b
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         response = pdbviews.cancel_affiliation_request(request, affiliation_request.id)
 
         assert response.status_code == 302
@@ -322,7 +325,7 @@ class AsnAutomationTestCase(TestCase):
 
         request = self.factory.post("/affiliate-to-org", data={"org": "AFFILORG"})
         request.user = self.user_b
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         response = pdbviews.view_affiliate_to_org(request)
 
         assert response.status_code == 200
@@ -335,7 +338,7 @@ class AsnAutomationTestCase(TestCase):
             f"/cancel-affiliation-request/{affiliation_request.id}/"
         )
         request.user = self.user_a
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         response = pdbviews.cancel_affiliation_request(request, affiliation_request.id)
 
         assert response.status_code == 404
@@ -363,7 +366,7 @@ class AsnAutomationTestCase(TestCase):
 
         request = self.factory.post("/affiliate-to-org", data={"asn": 9000002})
         request.user = self.user_b
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
         resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
         self.assertEqual(resp.get("status"), "ok")
 
@@ -395,7 +398,7 @@ class AsnAutomationTestCase(TestCase):
             request = self.factory.post("/affiliate-to-org", data={"asn": asn})
 
             request.user = self.user_a
-            request._dont_enforce_csrf_checks = True
+            mock_csrf_session(request)
             resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
             self.assertEqual(resp.get("asn"), ERR_BOGON_ASN)
 
@@ -412,7 +415,7 @@ class AsnAutomationTestCase(TestCase):
 
         request = self.factory.post("/request-ownership", data={"id": org.id})
         request.user = self.user_a
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
 
         resp = json.loads(pdbviews.view_request_ownership(request).content)
         self.assertEqual(resp.get("status"), "ok")
@@ -434,7 +437,7 @@ class AsnAutomationTestCase(TestCase):
 
         request = self.factory.post("/request-ownership", data={"id": org.id})
         request.user = self.user_b
-        request._dont_enforce_csrf_checks = True
+        mock_csrf_session(request)
 
         resp = json.loads(pdbviews.view_request_ownership(request).content)
         self.assertEqual(resp.get("status"), "ok")
@@ -457,7 +460,7 @@ class TestTutorialMode(SettingsCase):
         with tutorial mode enabled those should be allowed
         """
         user = get_user_model().objects.create_user(
-            "user_a", "user_a@localhost", "user_a"
+            username="user_a", email="user_a@localhost", password="user_a"
         )
         asns = []
         for a, b in pdbinet.TUTORIAL_ASN_RANGES:
@@ -467,6 +470,6 @@ class TestTutorialMode(SettingsCase):
             request = self.factory.post("/affiliate-to-org", data={"asn": asn})
 
             request.user = user
-            request._dont_enforce_csrf_checks = True
+            mock_csrf_session(request)
             resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
             self.assertEqual(resp.get("status"), "ok")

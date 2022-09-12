@@ -1,0 +1,6 @@
+{% load i18n %}
+This email was sent because publishing to the deskpro API resulted in an error.
+
+Could not create ticket {{ticket.id}} - error data has been attached to ticket body
+
+{{ticket.body}}

@@ -1,0 +1,5 @@
+You are receiving this message because this email address has been removed from your PeeringDB account.
+
+This is an automatic notification, please do not respond directly to this message.
+
+For support please reach out to {{ support_email }}.

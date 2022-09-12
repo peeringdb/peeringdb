@@ -1,4 +1,4 @@
-Generated from serializers.py on 2022-07-15 18:42:55.852692
+Generated from serializers.py on 2022-09-12 13:25:46.155090
 
 # peeringdb_server.serializers
 
@@ -417,7 +417,7 @@ exist on a deleted netixlan
 
 ---
 #### create
-`def create(self, validated_data)`
+`def create(self, validated_data, auto_approve=False)`
 
 Entities created via the API should go into the verification
 queue with status pending if they are in the QUEUE_ENABLED

@@ -38,6 +38,7 @@ from peeringdb_server.models import (
     GeoCoordinateCache,
     InternetExchange,
     InternetExchangeFacility,
+    IXFMemberData,
     IXLan,
     IXLanPrefix,
     Network,
@@ -334,7 +335,7 @@ class TestJSON(unittest.TestCase):
             "policy_locations": "Required - International",
             "policy_ratio": True,
             "policy_contracts": "Required",
-            "allow_ixp_update": True,
+            "allow_ixp_update": False,
         }
         data.update(**kwargs)
         return data
@@ -1642,6 +1643,79 @@ class TestJSON(unittest.TestCase):
             test_failures={"invalid": {"asn": 9999999}},
             test_success=False,
         )
+
+    ##########################################################################
+
+    def test_org_admin_002_PUT_net_toggle_allow_ixp_update(self):
+
+        net = SHARED["net_rw_ok"]
+        ixlan = SHARED["ixlan_rw_ok"]
+        ip4 = self.get_ip4(ixlan)
+        ip6 = self.get_ip6(ixlan)
+
+        IXFDATA = {
+            "asnum": net.asn,
+            "member_type": "peering",
+            "connection_list": [
+                {
+                    "ixp_id": 20,
+                    "state": "active",
+                    "if_list": [{"if_speed": 10000}],
+                    "vlan_list": [
+                        {
+                            "ipv4": {"address": ip4, "routeserver": True},
+                            "ipv6": {"address": ip6, "routeserver": True},
+                        }
+                    ],
+                }
+            ],
+        }
+
+        member_data = IXFMemberData.objects.create(
+            asn=net.asn,
+            ipaddr4=ip4,
+            ipaddr6=ip6,
+            ixlan=ixlan,
+            speed=10000,
+            operational=True,
+            is_rs_peer=True,
+            fetched=DATETIME,
+            data=json.dumps(IXFDATA),
+            status="ok",
+        )
+
+        ixlan.ixf_ixp_import_enabled = True
+        ixlan.save()
+
+        qset_assert = NetworkIXLan.objects.filter(
+            ixlan=ixlan,
+            network=net,
+            ipaddr4=member_data.ipaddr4,
+            ipaddr6=member_data.ipaddr6,
+        )
+
+        assert not qset_assert.exists()
+
+        self.assert_update(
+            self.db_org_admin,
+            "net",
+            SHARED["net_rw_ok"].id,
+            {"name": self.make_name("TesT")},
+        )
+
+        assert not qset_assert.exists()
+
+        self.assert_update(
+            self.db_org_admin,
+            "net",
+            SHARED["net_rw_ok"].id,
+            {"allow_ixp_update": True},
+        )
+
+        for netixlan in net.netixlan_set_active.all():
+            print(netixlan)
+
+        assert qset_assert.exists()
 
     ##########################################################################
 

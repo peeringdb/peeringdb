@@ -23,7 +23,7 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.util import check_permissions
 
-from .forms import OrgAdminUserPermissionForm
+from .forms import OrgAdminUserPermissionForm, OrgUserOptions
 
 
 def save_user_permissions(org, user, perms):
@@ -289,6 +289,22 @@ def users(request, **kwargs):
     rv.update({"status": "ok"})
 
     return JsonResponse(rv)
+
+
+@login_required
+@org_admin_required
+def update_user_options(request, **kwargs):
+
+    org = kwargs.get("org")
+
+    form = OrgUserOptions(request.POST, instance=org)
+
+    if not form.is_valid():
+        return JsonResponse(form.errors, status=400)
+
+    form.save()
+
+    return JsonResponse({"status": "ok"})
 
 
 @login_required

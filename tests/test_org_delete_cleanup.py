@@ -25,7 +25,8 @@ class TestOrgCleanup(ClientCase):
             # Add user to all orgs' admin_usergroups
             for index in range(0, 3):
                 user = User.objects.create_user(
-                    f"admin_user_{index}",
+                    username=f"admin_user_{index}",
+                    email=f"admin_user_{index}@localhost",
                     first_name=f"admin_user_{index}",
                     last_name=f"admin_user_{index}",
                 )
@@ -43,7 +44,8 @@ class TestOrgCleanup(ClientCase):
             # Add user to all orgs' usergroups
             for index in range(0, 3):
                 user = User.objects.create_user(
-                    f"user_{index}",
+                    username=f"user_{index}",
+                    email=f"user_{index}@localhost",
                     first_name=f"user_{index}",
                     last_name=f"user_{index}",
                 )
