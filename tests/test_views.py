@@ -172,11 +172,47 @@ def test_user_api_key_generation():
 
 @pytest.mark.django_db
 def test_close_account():
-    user = User.objects.create(
-        username="test", email="test@localhost", first_name="Test", last_name="User"
+    reset_group_ids()
+    user = User.objects.create_user(
+        username="test", email="test@localhost", password="test1234", first_name="Test", last_name="User", status="ok"
     )
-    user.set_password("test1234")
+
+
+    group = Group(name="test group")
+    group.save()
+
+    # add user to group
+    group.user_set.add(user)
+
+    user.set_verified()
+
+    user.status = "ok"
     user.save()
+
+    assert user.status == "ok"
+
+    client = Client()
+    client.login(username="test", password="test1234")
+
+    response = client.post("/user_keys/add", {"name": "test key"})
+    response = client.post("/profile/close", {"password": "test1234"})
+
+    user = User.objects.get(username=f"closed-account-{user.id}")
+    assert user.is_active is False
+    assert client.login(username="test", password="test1234") is False
+    assert UserAPIKey.objects.filter(user=user).count() == 0
+    assert EmailAddress.objects.filter(user=user).count() == 0
+    assert user.groups.count() == 0
+    assert user.email is None
+    assert user.first_name == ""
+    assert user.last_name == ""
+
+@pytest.mark.django_db
+def test_close_account_pending_user():
+    reset_group_ids()
+    user = User.objects.create_user(
+        username="test", email="test@localhost", password="test1234", first_name="Test", last_name="User"
+    )
 
     group = Group(name="test group")
     group.save()
@@ -190,16 +226,7 @@ def test_close_account():
     response = client.post("/user_keys/add", {"name": "test key"})
     response = client.post("/profile/close", {"password": "test1234"})
 
-    user = User.objects.get(username="test")
-    assert user.is_active is False
-    assert client.login(username="test", password="test1234") is False
-    assert UserAPIKey.objects.filter(user=user).count() == 0
-    assert EmailAddress.objects.filter(user=user).count() == 0
-    assert user.groups.count() == 0
-    assert user.email == ""
-    assert user.first_name == ""
-    assert user.last_name == ""
-
+    assert not User.objects.filter(username="test").exists()
 
 @pytest.mark.django_db
 def test_bogus_basic_auth():

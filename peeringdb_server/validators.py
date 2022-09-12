@@ -16,6 +16,12 @@ from peeringdb_server.request import bypass_validation
 
 
 def validate_email_domains(text):
+
+    if not text:
+        return ""
+
+    print("VALIDATE_EMAIL_DOMAINS", text)
+
     lines_in = text.split("\n")
     lines_out = []
     for line in lines_in:
@@ -30,8 +36,6 @@ def validate_email_domains(text):
             raise ValidationError(_(f"Invalid format"))
 
         lines_out.append(line.lower())
-
-    print(lines_out)
 
     return "\n".join(lines_out)
 

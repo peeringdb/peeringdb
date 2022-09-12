@@ -42,7 +42,7 @@ def validate_rdap_user_or_key(request, rdap):
 
 def validate_rdap_org_key(org_key, rdap):
     for email in rdap.emails:
-        if email.lower() == org_key.email.lower():
+        if email and  email.lower() == org_key.email.lower():
             return True
     return False
 
@@ -164,7 +164,7 @@ def init_permissions_helper(obj):
 
     if isinstance(obj, UserAPIKey):
         perms = return_user_api_key_perms(obj)
-    if isinstance(obj, OrganizationAPIKey):
+    elif isinstance(obj, OrganizationAPIKey):
         perms = return_org_api_key_perms(obj)
     else:
         perms = Permissions(obj)
@@ -257,7 +257,12 @@ class APIPermissionsApplicator(NamespaceKeyApplicator):
 
     def __init__(self, request):
         super().__init__(None)
-        perm_obj = get_permission_holder_from_request(request)
+
+        if isinstance(request, AnonymousUser):
+            perm_obj = request
+        else:
+            perm_obj = get_permission_holder_from_request(request)
+
         self.permissions = init_permissions_helper(perm_obj)
         self.pset = self.permissions
         self.set_peeringdb_handlers()

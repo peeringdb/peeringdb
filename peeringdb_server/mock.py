@@ -129,7 +129,7 @@ class Mock:
             # every other field
             elif not field.is_relation:
                 # emails
-                if field.name.find("email") > -1:
+                if field.name.find("email") > -1 and field.name != "email_domains":
                     data[field.name] = "test@peeringdb.com"
 
                 # phone numbers

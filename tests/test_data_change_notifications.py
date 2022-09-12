@@ -11,6 +11,7 @@ from peeringdb_server.models import (
     DataChangeEmail,
     DataChangeNotificationQueue,
     DataChangeWatchedObject,
+    EmailAddress,
     Network,
     NetworkIXLan,
     User,
@@ -38,7 +39,9 @@ def _datachange_objects():
 
     net = Network.objects.first()
     netixlan = net.netixlan_set.first()
-    user = User.objects.create_user("watcher", "watcher", "watcher@localhost")
+    user = User.objects.create_user(username="watcher", email="watcher@localhost", password="watcher")
+
+    EmailAddress.objects.create(user=user, email="watcher@localhost")
 
     watched = DataChangeWatchedObject.objects.create(
         user=user, ref_tag="net", object_id=net.id

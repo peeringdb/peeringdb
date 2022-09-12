@@ -29,8 +29,10 @@ class ClientCase(TestCase):
         settings.GUEST_GROUP_ID = cls.guest_group.id
 
         cls.guest_user = models.User.objects.create_user(
-            "guest", "guest@localhost", "guest"
+            username="guest", email="guest@localhost", password="guest"
         )
+        models.EmailAddress.objects.create(user=cls.guest_user, email="guest@localhost")
+
         cls.guest_group.user_set.add(cls.guest_user)
 
         GroupPermission.objects.create(

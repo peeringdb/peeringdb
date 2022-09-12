@@ -1757,11 +1757,6 @@ class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
         """
         return 0
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        qs = qs.exclude(is_active=False)
-        return qs
-
     def change_password(self, obj):
         return mark_safe(
             '<a href="{}">{}</a>'.format(

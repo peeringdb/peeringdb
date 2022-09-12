@@ -14,6 +14,8 @@ from peeringdb_server.rest_throttles import (
     ResponseSizeThrottle,
 )
 
+from .util import mock_csrf_session
+
 
 class MockView(ModelViewSet):
     """
@@ -111,6 +113,7 @@ class APIThrottleTests(TestCase):
         Test if request rate is limited for anonymous users
         """
         request = self.factory.get("/")
+        mock_csrf_session(request)
         for dummy in range(10):
             response = MockView.as_view({"get": "get"})(request)
         assert response.status_code == 200
@@ -123,6 +126,7 @@ class APIThrottleTests(TestCase):
         user = models.User(username="test")
         user.save()
         request = self.factory.get("/")
+        mock_csrf_session(request)
         request.user = user
         for dummy in range(10):
             response = MockView.as_view({"get": "get"})(request)
@@ -136,6 +140,7 @@ class APIThrottleTests(TestCase):
         user = models.User(username="test", is_superuser=True)
         user.save()
         request = self.factory.get("/")
+        mock_csrf_session(request)
         request.user = user
         for dummy in range(20):
             response = MockView.as_view({"get": "get"})(request)
@@ -147,6 +152,7 @@ class APIThrottleTests(TestCase):
         """
 
         request = self.factory.get("/")
+        mock_csrf_session(request)
         for dummy in range(11):
             response = MockView.as_view({"get": "get"})(request)
         assert response.status_code == 429
@@ -159,6 +165,7 @@ class APIThrottleTests(TestCase):
         """
 
         request = self.factory.get("/")
+        mock_csrf_session(request)
         for dummy in range(11):
             response = MockView.as_view({"get": "get"})(request)
         assert response.status_code == 429
@@ -218,6 +225,7 @@ class APIThrottleTests(TestCase):
         user = models.User(username="test")
         user.save()
         request = self.factory.get("/")
+        mock_csrf_session(request)
         request.user = user
         for dummy in range(11):
             response = MockView.as_view({"get": "get"})(request)
@@ -232,6 +240,7 @@ class APIThrottleTests(TestCase):
         user = models.User(username="test")
         user.save()
         request = self.factory.get("/")
+        mock_csrf_session(request)
         request.user = user
         for dummy in range(11):
             response = MockView.as_view({"get": "get"})(request)
@@ -291,6 +300,7 @@ class APIThrottleTests(TestCase):
         """
 
         request = self.factory.get("/")
+        mock_csrf_session(request)
         request.META.update({"REMOTE_ADDR": "10.10.10.10"})
 
         # by default ip-block response size rate limiting is disabled
@@ -349,6 +359,7 @@ class APIThrottleTests(TestCase):
         """
 
         request = self.factory.get("/")
+        mock_csrf_session(request)
         request.META.update({"HTTP_X_FORWARDED_FOR": "10.10.10.10,77.77.77.77"})
 
         # by default ip-block response size rate limiting is disabled
@@ -407,6 +418,7 @@ class APIThrottleTests(TestCase):
         """
 
         request = self.factory.get("/")
+        mock_csrf_session(request)
         request.META.update({"REMOTE_ADDR": "10.10.10.10"})
 
         # by default ip-address response size rate limiting is disabled
@@ -464,9 +476,10 @@ class APIThrottleTests(TestCase):
         for authenticated users
         """
 
-        user = models.User.objects.create_user(username="test")
-        user_b = models.User.objects.create_user(username="test_2")
+        user = models.User.objects.create_user(username="test", email="test@localhost")
+        user_b = models.User.objects.create_user(username="test_2", email="test_2@localhost")
         request = self.factory.get("/")
+        mock_csrf_session(request)
         request.user = user
 
         # by default user response size rate limiting is disabled
@@ -520,6 +533,7 @@ class APIThrottleTests(TestCase):
 
         user = models.User.objects.create_user(username="test", is_superuser=True)
         request = self.factory.get("/")
+        mock_csrf_session(request)
         request.user = user
 
         thold = models.EnvironmentSetting.objects.create(
@@ -555,6 +569,7 @@ class APIThrottleTests(TestCase):
         )
 
         request = self.factory.get("/")
+        mock_csrf_session(request)
         request.META["HTTP_AUTHORIZATION"] = f"Api-Key {key}"
 
         # by default user response size rate limiting is disabled
@@ -608,6 +623,7 @@ class APIThrottleTests(TestCase):
         """
 
         request = self.factory.get("/api/fac", {"country": "US", "state": "IL"})
+        mock_csrf_session(request)
         request.META.update({"REMOTE_ADDR": "10.10.10.10"})
 
         # by default melissa rate limiting is disabled
@@ -647,9 +663,10 @@ class APIThrottleTests(TestCase):
         for authenticated users
         """
 
-        user = models.User.objects.create_user(username="test")
-        user_b = models.User.objects.create_user(username="test_2")
+        user = models.User.objects.create_user(username="test", email="test@localhost")
+        user_b = models.User.objects.create_user(username="test_2", email="test_2@localhost")
         request = self.factory.get("/api/fac", {"country": "US", "state": "IL"})
+        mock_csrf_session(request)
         request.user = user
 
         # by default melissa rate limiting is disabled
@@ -689,9 +706,10 @@ class APIThrottleTests(TestCase):
         for authenticated users with admin status
         """
 
-        user = models.User.objects.create_user(username="test", is_superuser=True)
-        user_b = models.User.objects.create_user(username="test_2", is_superuser=True)
+        user = models.User.objects.create_user(username="test", email="test@localhost", is_superuser=True)
+        user_b = models.User.objects.create_user(username="test_2", email="test_2@localhost", is_superuser=True)
         request = self.factory.get("/api/fac", {"country": "US", "state": "IL"})
+        mock_csrf_session(request)
         request.user = user
 
         # by default melissa rate limiting is disabled
@@ -751,6 +769,7 @@ class APIThrottleTests(TestCase):
         )
 
         request = self.factory.get("/api/fac", {"country": "US", "state": "IL"})
+        mock_csrf_session(request)
         request.META["HTTP_AUTHORIZATION"] = f"Api-Key {key}"
 
         # by default melissa rate limiting is disabled

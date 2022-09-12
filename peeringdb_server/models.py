@@ -5486,7 +5486,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         # Exact email matching
         for email in rdap.emails:
-            if email.lower() == self.email.lower():
+            if email and self.email and email.lower() == self.email.lower():
                 return True
         return False
 
