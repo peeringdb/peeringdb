@@ -4,6 +4,7 @@ import os
 import sys
 
 import django.conf.global_settings
+import django.conf.locale
 import structlog
 
 from mainsite.oauth2.scopes import SupportedScopes
@@ -1084,6 +1085,19 @@ if ENABLE_ALL_LANGUAGES:
                 language_dict[code] = name
 
     LANGUAGES = sorted(language_dict.items())
+
+EXTRA_LANG_INFO = {
+    "oc": {
+        "bidi": False,
+        "code": "oc",
+        "name": "Occitan",
+        "name_local": "occitan",
+    },
+}
+
+# Add custom languages not provided by Django
+LANG_INFO = dict(django.conf.locale.LANG_INFO, **EXTRA_LANG_INFO)
+django.conf.locale.LANG_INFO = LANG_INFO
 
 
 # dynamic config starts here
