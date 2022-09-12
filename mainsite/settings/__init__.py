@@ -1118,6 +1118,10 @@ set_option("DELETE_ORPHANED_USER_DAYS", 90)
 # Notify orphaned users n days before deletion
 set_option("NOTIFY_ORPHANED_USER_DAYS", 30)
 
+# Grace peruid before a newly created user can be flagged for deletion
+# This is so users have some time to affiliate naturally. (days)
+set_option("MIN_AGE_ORPHANED_USER_DAYS", 14)
+
 # pdb_validate_data cache timeout default
 set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)
 

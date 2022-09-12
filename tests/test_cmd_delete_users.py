@@ -5,6 +5,7 @@ import pytest
 from django.conf import settings
 from django.core.management import call_command
 from django.utils import timezone
+from django.test import override_settings
 
 from peeringdb_server.models import Organization, User
 
@@ -61,6 +62,7 @@ def assert_user(user, status, flagged, notified):
         assert user.notified_for_deletion is None
 
 
+@override_settings(MIN_AGE_ORPHANED_USER_DAYS=-1)
 @pytest.mark.django_db
 def test_run_non_committal():
 
@@ -75,6 +77,7 @@ def test_run_non_committal():
     assert_user(user_c, "pending", False, False)
 
 
+@override_settings(MIN_AGE_ORPHANED_USER_DAYS=-1)
 @pytest.mark.django_db
 def test_run():
 
@@ -130,6 +133,7 @@ def test_run():
     assert user_b.username == f"closed-account-{user_b.id}"
 
 
+@override_settings(MIN_AGE_ORPHANED_USER_DAYS=-1)
 @pytest.mark.django_db
 def test_run_unflag():
 
@@ -153,6 +157,7 @@ def test_run_unflag():
     assert_user(user_c, "pending", True, False)
 
 
+@override_settings(MIN_AGE_ORPHANED_USER_DAYS=-1)
 @pytest.mark.django_db
 def test_run_max_notifies():
 

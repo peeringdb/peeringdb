@@ -30,9 +30,17 @@ class Command(BaseCommand):
         parser.add_argument(
             "--max-notify",
             type=int,
-            default=25,
+            default=10,
             help="maximum amount of user notifications to send",
         )
+
+        parser.add_argument(
+            "--max-flag",
+            type=int,
+            default=0,
+            help="maximum amount of user flags to set, set to not limit",
+        )
+
 
     def log(self, msg):
         if self.commit:
@@ -43,6 +51,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.commit = options.get("commit")
         self.max_notify = options.get("max_notify")
+        self.max_flag = options.get("max_flag")
 
         self.notifications = []
 
@@ -68,11 +77,20 @@ class Command(BaseCommand):
 
     def flag_users(self):
 
+        min_age = timezone.now() - timedelta(days=settings.MIN_AGE_ORPHANED_USER_DAYS)
+
         qset = User.objects.filter(flagged_for_deletion__isnull=True)
         qset = qset.filter(is_active=True)
         qset = qset.prefetch_related("groups")
         qset = qset.exclude(groups__name__startswith="org.")
         qset = qset.exclude(never_flag_for_deletion=True)
+        qset = qset.exclude(date_joined__gte=min_age)
+
+        if self.max_flag > 0:
+            self.log(f"Flagging {self.max_flag} of {qset.count()} orphaned users ...")
+            qset = qset[:self.max_flag]
+        else:
+            self.log(f"Flagging {qset.count()} users ...")
 
         for user in qset:
             deletion_date = timezone.now() + timedelta(
