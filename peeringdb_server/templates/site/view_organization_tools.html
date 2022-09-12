@@ -663,6 +663,7 @@
 
       {% if instance.pending_affiliations.count %}
         {% for uoar in instance.pending_affiliations %}
+        {% with user_email=instance|org_email:user %}
         <div class="row item" data-edit-id="{{ uoar.id }}" data-edit-label="{{ uoar.user.full_name }}">
 
           <div class="col-xs-6 col-sm-3 col-md-3">
@@ -670,8 +671,8 @@
             <div>{{ uoar.user.username }}</div>
           </div>
           <div class="col-xs-6 col-sm-3 col-md-3">
-            <div>{{ uoar.user.email }}</div>
-            <div>{% if uoar.user.email_confirmed %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</div>
+            <div>{{ user_email }}</div>
+            <div>{% if user_email|email_confirmed %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</div>
           </div>
           <div class="col-xs-6 col-sm-3 col-md-3">{{ uoar.created|date:"Y, N d" }}</div>
           <div class="col-xs-6 col-sm-3 col-md-3 right">
@@ -679,6 +680,7 @@
             <a class="btn btn-default" data-edit-action="deny">{% trans "Deny" %}</a>
           </div>
         </div>
+        {% endwith %}
         {% endfor %}
       {% else %}
 
@@ -687,7 +689,13 @@
 
       {% endif %}
       </div>
+
+
+<div class="row">
+  <div class="col-xs-12 col-md-9">
+
       <h5>{% trans "Users in Organization" %}</h5>
+
       <div class="editable always auto-toggled" data-edit-target="/org_admin/manage_user">
       <div class="list editable always" id="org-user-manager"
            data-edit-module="user_listing"
@@ -709,13 +717,14 @@
         <div data-edit-component="list"
              data-edit-template="user-item">
         {% for user in users %}
+        {% with user_email=instance|org_email:user %}
         <div class="row item editable" data-edit-id="{{ user.id }}" data-edit-label="{{ user.full_name }}">
           <div class="col-xs-4 col-sm-5 col-md-4">
             <div>{{ user.full_name }}</div>
             <div>{{ user.username }} {% if user.totpdevice_set.exists %}<span class="badge-2fa">2FA</span>{% endif %}</div>
           </div>
           <div class="col-xs-4 col-sm-5 col-md-4">
-            <div>{{ user.email }}</div>
+            <div class="{% if not user_email %} highlight-warning{% endif %}">{% if user_email %}{{ user_email }}{% else %}{% trans "Email address requirements not met" %}{% endif %}</div>
           </div>
           <div class="col-xs-4 col-sm-5 col-md-2">
             <div data-edit-type="select"
@@ -727,7 +736,7 @@
             <a class="btn btn-default" data-edit-action="remove">{% trans "Remove" %}</a>
           </div>
         </div>
-
+        {% endwith %}
         {% endfor %}
         </div>
 
@@ -735,6 +744,43 @@
 
       </div>
       </div>
+
+  </div>
+
+  <div class="col-xs-12 col-md-3">
+    <h5>{% trans "Options" %}</h5>
+
+    <div class="editable always auto-toggled" data-edit-redirect-on-success="?tab=users" data-edit-target="{% url "org-admin-user-options" %}">
+
+      <div class="editable payload">
+        <div data-edit-name="org_id">{{ instance.id }}</div>
+      </div>
+
+      <div class="mb-3 checkbox-inline">
+        <div data-edit-type="bool" data-edit-name="restrict_user_emails" data-edit-value="{{ instance.restrict_user_emails }}"></div>
+        {% trans "Restrict user email addresses to these domains" %}
+      </div>
+      <div class="mb-3">
+        <div data-edit-type="text" data-edit-name="email_domains" data-edit-value="{{ instance.email_domains }}"></div>
+      </div>
+      <div class="mb-3 checkbox-inline">
+        <div data-edit-type="bool" data-edit-name="periodic_reauth" data-edit-value="{{ instance.periodic_reauth }}"></div>
+        {% trans "Require users to periodically re-confirm their email address: " %}
+      </div>
+      <div class="mb-3">
+        <div data-edit-type="select"
+             data-edit-data="enum/reauth_periods"
+             data-edit-name="periodic_reauth_period"
+             data-edit-value="{{ instance.periodic_reauth_period }}">{{ instance.periodic_reauth_period }}</div>
+      </div>
+      <div class="right marg-top">
+        <a class="btn btn-default" data-edit-action="submit">{% trans "Update Options" %}</a>
+      </div>
+    </div>
+
+  </div>
+
+</div>
 
 
     </div>

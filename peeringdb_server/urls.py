@@ -41,6 +41,9 @@ from peeringdb_server.views import (
     cancel_affiliation_request,
     network_dismiss_ixf_proposal,
     network_reset_ixf_proposals,
+    profile_add_email,
+    profile_delete_email,
+    profile_set_primary_email,
     request_api_search,
     request_logout,
     request_search,
@@ -82,6 +85,10 @@ from peeringdb_server.views import (
 
 
 urlpatterns = [
+    url(
+        r"^robots.txt$",
+        TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
+    ),
     url(r"^api_search$", request_api_search),
     url(r"^search$", request_search),
     url(r"^advanced_search", view_advanced_search),
@@ -105,6 +112,13 @@ urlpatterns = [
     url(r"^profile$", view_profile, name="user-profile"),
     url(r"^profile/close$", view_close_account, name="close-account"),
     url(r"^profile/v1$", view_profile_v1),
+    url(r"^profile/email/add", profile_add_email, name="profile-add-email"),
+    url(r"^profile/email/delete", profile_delete_email, name="profile-remove-email"),
+    url(
+        r"^profile/email/primary",
+        profile_set_primary_email,
+        name="profile-set-primary-email",
+    ),
     url(r"^resend_email_confirmation$", resend_confirmation_mail),
     url(r"^sponsors$", view_sponsorships),
     # url(r'^partners$', view_partnerships),
@@ -194,6 +208,11 @@ urlpatterns = [
     url(
         r"^org_admin/manage_user/update$",
         peeringdb_server.org_admin_views.manage_user_update,
+    ),
+    url(
+        r"^org_admin/user_options$",
+        peeringdb_server.org_admin_views.update_user_options,
+        name="org-admin-user-options",
     ),
     url(
         r"^org_admin/manage_user/delete$",

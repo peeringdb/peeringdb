@@ -1,4 +1,4 @@
-Generated from models.py on 2022-07-15 18:42:55.852692
+Generated from models.py on 2022-09-12 13:25:46.155090
 
 # peeringdb_server.models
 
@@ -227,6 +227,15 @@ DeskProTicketCC(django.db.models.base.Model)
 ```
 
 Describes a contact to be cc'd on the deskpro ticket.
+
+
+## EmailAddressData
+
+```
+EmailAddressData(django.db.models.base.Model)
+```
+
+EmailAddressData(id, email, confirmed_date)
 
 
 ## EnvironmentSetting
@@ -1240,6 +1249,9 @@ These attributes / properties will be available on instances of the class
 through NetworkIXLan.
 - ixlan_set_ixf_enabled (`@property`): Returns IXLan queryset for IX-F import enabled ixlans connected
 to this network through NetworkIXLan.
+- ixlan_set_ixf_enabled_with_suggestions (`@property`): Returns IXLan queryset for IX-F import enabled ixlans connected
+to this network through NetworkIXLan. Only contains ixlans that
+have active suggestions for the network.
 - netfac_set_active (`@property`): None
 - netixlan_set_active (`@property`): None
 - poc_set_active (`@property`): None
@@ -1578,6 +1590,7 @@ of the following is True:
 - has a network under it with status=ok
 - has a facility under it with status=ok
 - has an exchange under it with status=ok
+- email_domains_list (`@property`): None
 - fac_set_active (`@property`): Returns queryset holding active facilities in this organization.
 - grainy_namespace (`@property`): None
 - grainy_namespace_manage (`@property`): Org administrators need CRUD to this namespace in order
@@ -1617,6 +1630,13 @@ Creates organization from rdap result object.
 
 ### Methods
 
+#### adjust_permissions_for_periodic_reauth
+`def adjust_permissions_for_periodic_reauth(self, user, perms)`
+
+Will strip users permission for the org if the org currently
+flags the user as needing re-authentication
+
+---
 #### delete_cleanup
 `def delete_cleanup(self, hard=False)`
 
@@ -1633,6 +1653,27 @@ Used by grappelli autocomplete for representation.
 Since grappelli doesn't easily allow one to filter status
 during autocomplete lookup, make sure the objects
 are marked accordingly in the result.
+
+---
+#### user_meets_email_requirements
+`def user_meets_email_requirements(self, user)`
+
+If organization has `restrict_user_emails` set to true
+this will check the specified user's email addresses against
+the values stored in `email_domains`.
+
+If the user has no email address that falls within the specified
+domain restrictions this will return `None`.
+
+If the user has at least one email address that falls within the specified
+domain restreictions this will retun that email address as a `str`
+
+---
+#### user_requires_reauth
+`def user_requires_reauth(self, user)`
+
+Returns whether the specified user requires re-authentication according
+to this organizations's periodic_reauth settings.
 
 ---
 
@@ -1876,10 +1917,25 @@ requests for this user.
 
 ### Methods
 
+#### close_account
+`def close_account(self)`
+
+Removes all identifying information from the User instance
+and flags it as inactive.
+
+Warning: users that are status == "pending" are hard-deleted
+
+---
 #### email_user
-`def email_user(self, subject, message, from_email=stefan@20c.com)`
+`def email_user(self, subject, message, from_email=stefan@20c.com, email=None)`
 
 Sends an email to this User.
+
+---
+#### email_user_all_addresses
+`def email_user_all_addresses(self, subject, message, from_email=stefan@20c.com, exclude=None)`
+
+Sends email to all email addresses for the user
 
 ---
 #### flush_affiliation_requests
@@ -1907,6 +1963,20 @@ Returns user preferred language.
 Returns the short name for the user.
 
 ---
+#### notify_email_added
+`def notify_email_added(self, email)`
+
+Notifies the user that the specified email address has been added
+to their account (#907)
+
+---
+#### notify_email_removed
+`def notify_email_removed(self, email)`
+
+Notifies the user that the specified email address has been removed
+from their account (#907)
+
+---
 #### password_reset_initiate
 `def password_reset_initiate(self)`
 
@@ -1931,7 +2001,7 @@ Used by grappelli autocomplete for representation.
 
 ---
 #### send_email_confirmation
-`def send_email_confirmation(self, request=None, signup=False)`
+`def send_email_confirmation(self, request=None, signup=False, email=None)`
 
 Use allauth email-confirmation process to make user
 confirm that the email they provided is theirs.

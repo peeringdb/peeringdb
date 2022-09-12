@@ -1,0 +1,5 @@
+User-Agent: *
+Disallow: /register
+Disallow: /account/login
+Disallow: /username-retrieve
+Disallow: /reset-password

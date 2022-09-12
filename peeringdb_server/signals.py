@@ -12,8 +12,6 @@ Django signal handlers
 
 """
 
-from datetime import datetime, timezone
-
 import django.urls
 import reversion
 from allauth.account.signals import email_confirmed, user_signed_up
@@ -24,6 +22,7 @@ from django.db.models import Count
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from django.template import loader
+from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.models import Group, GroupPermission
@@ -42,6 +41,7 @@ from peeringdb_server.inet import RdapException, RdapLookup
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     QUEUE_NOTIFY,
+    EmailAddressData,
     Facility,
     Network,
     NetworkIXLan,
@@ -56,7 +56,7 @@ def update_network_attribute(instance, attribute):
     """Updates 'attribute' field in Network whenever it's called."""
     if getattr(instance, "id"):
         network = instance.network
-        setattr(network, attribute, datetime.now(timezone.utc))
+        setattr(network, attribute, timezone.now())
         disable_auto_now_and_save(network)
 
 
@@ -275,6 +275,9 @@ def new_user_to_guests(request, user, sociallogin=None, **kwargs):
 def recheck_ownership_requests(request, email_address, **kwargs):
     if request.user.is_authenticated:
         request.user.recheck_affiliation_requests()
+    data, _ = EmailAddressData.objects.get_or_create(email=email_address)
+    data.confirmed_date = timezone.now()
+    data.save()
 
 
 # USER TO ORGANIZATION AFFILIATION
@@ -300,6 +303,12 @@ def uoar_creation(sender, instance, created=False, **kwargs):
         instance.save()
 
         if instance.org_id and instance.org.admin_usergroup.user_set.count() > 0:
+
+            # check if user's email address matches org requirements
+            if instance.org.restrict_user_emails:
+                if not instance.org.user_meets_email_requirements(instance.user):
+                    instance.deny()
+                    return
 
             # check that user is not already a member of that org
             if instance.user.groups.filter(name=instance.org.usergroup.name).exists():

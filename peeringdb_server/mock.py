@@ -129,7 +129,7 @@ class Mock:
             # every other field
             elif not field.is_relation:
                 # emails
-                if field.name.find("email") > -1:
+                if field.name.find("email") > -1 and field.name != "email_domains":
                     data[field.name] = "test@peeringdb.com"
 
                 # phone numbers
@@ -330,4 +330,16 @@ class Mock:
         return "ok"
 
     def rir_status_updated(self, data, reftag=None):
+        return None
+
+    def periodic_reauth(self, data, reftag=None):
+        return False
+
+    def periodic_reauth_period(self, data, reftag=None):
+        return "1y"
+
+    def restrict_user_emails(self, data, reftag=None):
+        return False
+
+    def email_domains(self, data, reftag=None):
         return None

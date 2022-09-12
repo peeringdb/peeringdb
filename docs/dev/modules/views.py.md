@@ -1,4 +1,4 @@
-Generated from views.py on 2022-07-15 18:42:55.852692
+Generated from views.py on 2022-09-12 13:25:46.155090
 
 # peeringdb_server.views
 
@@ -45,6 +45,25 @@ to be used in template context.
 
 Helper function return help_text of a model
 field.
+
+---
+## profile_add_email
+`def profile_add_email(request, *args, **kwargs)`
+
+Allows a user to add an additional email address
+
+---
+## profile_delete_email
+`def profile_delete_email(request, *args, **kwargs)`
+
+Allows a user to remove one of their emails
+
+---
+## profile_set_primary_email
+`def profile_set_primary_email(request, *args, **kwargs)`
+
+Allows a user to set a different email address as their primary
+contact point for peeringdb
 
 ---
 ## request_api_search

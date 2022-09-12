@@ -71,6 +71,7 @@ from peeringdb_server.validators import (
     validate_address_space,
     validate_api_rate,
     validate_bool,
+    validate_email_domains,
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_irr_as_set,
@@ -101,6 +102,14 @@ COMMANDLINE_TOOLS = (
     ("pdb_fac_merge_undo", _("Merge Facilities: UNDO")),
     ("pdb_undelete", _("Restore Object(s)")),
     ("pdb_validate_data", _("Validate Data")),
+)
+
+REAUTH_PERIODS = (
+    ("1w", _("1 Week")),
+    ("2w", _("2 Weeks")),
+    ("1m", _("1 Month")),
+    ("6m", _("6 Months")),
+    ("1y", _("1 Year")),
 )
 
 
@@ -828,6 +837,38 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         ),
     )
 
+    # restrict users in the organization to be required
+    # to have an email address at the domains specified in `email_domains`.
+    restrict_user_emails = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Require users in your organization to have email addresses within your specified domains."
+        ),
+    )
+    email_domains = models.TextField(
+        null=True,
+        blank=True,
+        validators=[
+            validate_email_domains,
+        ],
+        help_text=_(
+            "If user email restriction is enabled: only allow users with emails in these domains. One domain per line, in the format of '@xyz.com'"
+        ),
+    )
+
+    # require users in this organization to periodically reconfirm their
+    # email addresses associated with the organization.
+
+    periodic_reauth = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Require users in this organization to periodically re-authenticate"
+        ),
+    )
+    periodic_reauth_period = models.CharField(
+        max_length=255, blank=True, null=True, choices=REAUTH_PERIODS, default="1y"
+    )
+
     # Delete childless org objects #838
     # Flag any childless orgs for deletion
     flagged = models.BooleanField(
@@ -862,6 +903,12 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         if self.status == "deleted":
             return f"[DELETED] {self}"
         return f"{self}"
+
+    @property
+    def email_domains_list(self):
+        if not self.email_domains:
+            return []
+        return self.email_domains.split("\n")
 
     @property
     def search_result_name(self):
@@ -1115,6 +1162,123 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         for user in ug.all():
             ug.remove(user)
             user.save()
+
+    def reauth_period_to_days(self):
+
+        m = re.match(r"(\d+)([dwmy])", self.periodic_reauth_period)
+
+        num = int(m.group(1))
+        unit = m.group(2)
+
+        if unit == "d":
+            return num
+        if unit == "w":
+            return num * 7
+        if unit == "m":
+            return num * 30
+        if unit == "y":
+            return num * 365
+
+        raise ValueError("Invalid format")
+
+    def user_meets_email_requirements(self, user):
+
+        """
+        If organization has `restrict_user_emails` set to true
+        this will check the specified user's email addresses against
+        the values stored in `email_domains`.
+
+        If the user has no email address that falls within the specified
+        domain restrictions this will return `None`.
+
+        If the user has at least one email address that falls within the specified
+        domain restreictions this will retun that email address as a `str`
+        """
+
+        if not self.restrict_user_emails or not self.email_domains:
+            return user.email
+
+        email_domains = self.email_domains.split("\n")
+
+        for email in EmailAddress.objects.filter(user=user).order_by("-verified"):
+
+            domain = email.email.split("@")[1]
+            if f"{domain}".lower() in email_domains:
+                return email.email
+
+        return None
+
+    def user_requires_reauth(self, user):
+
+        """
+        Returns whether the specified user requires re-authentication according
+        to this organizations's periodic_reauth settings.
+        """
+
+        # re-auth is turned off either through django settings or on the org
+        # itself.
+
+        if not settings.PERIODIC_REAUTH_ENABLED or not self.periodic_reauth:
+            return False
+
+        # get best email address on the user's account for this org
+
+        email = self.user_meets_email_requirements(user)
+
+        if not email:
+            email = user.email
+
+        email = user.emailaddress_set.get(email=email)
+
+        # check if the email address has been confirmed within the specified
+        # period.
+        #
+        # Initiate re-confirmation process if needed.
+
+        period = datetime.timedelta(days=self.reauth_period_to_days())
+
+        try:
+            email.data
+            requires_reauth = email.data.confirmed_date + period <= timezone.now()
+        except Exception:
+            requires_reauth = True
+
+        if not email.verified:
+            requires_reauth = True
+
+        if requires_reauth:
+            if email.verified:
+
+                # set email to be unverified so user needs to re-confirm it
+
+                email.verified = False
+                email.save()
+
+                # send confirmation process to user
+
+                user.send_email_confirmation(email=email.email)
+
+            # keep track on user object which organizations are requesting
+            # re-authentication to the user.
+
+            if not hasattr(user, "orgs_require_reauth"):
+                user.orgs_require_reauth = [(self, email.email)]
+            else:
+                user.orgs_require_reauth.append((self, email.email))
+
+        return requires_reauth
+
+    def adjust_permissions_for_periodic_reauth(self, user, perms):
+
+        """
+        Will strip users permission for the org if the org currently
+        flags the user as needing re-authentication
+        """
+
+        if self.user_requires_reauth(user):
+            for namespace in list(perms.pset.namespaces):
+                if f"peeringdb.organization.{self.id}." in namespace:
+                    del perms.pset[namespace]
 
 
 def default_time_s():
@@ -4367,6 +4531,23 @@ class Network(pdb_models.NetworkBase):
         return qset
 
     @property
+    def ixlan_set_ixf_enabled_with_suggestions(self):
+        """
+        Returns IXLan queryset for IX-F import enabled ixlans connected
+        to this network through NetworkIXLan. Only contains ixlans that
+        have active suggestions for the network.
+        """
+        qset = self.ixlan_set_ixf_enabled
+
+        ixlan_ids = []
+
+        for ixlan in qset:
+            if ixlan.ixf_set.filter(asn=self.asn).exists():
+                ixlan_ids.append(ixlan.id)
+
+        return IXLan.objects.filter(id__in=ixlan_ids)
+
+    @property
     def poc_set_active(self):
         return self.poc_set(manager="handleref").filter(status="ok")
 
@@ -4899,7 +5080,9 @@ class User(AbstractBaseUser, PermissionsMixin):
             )
         ],
     )
-    email = models.EmailField(_("email address"), max_length=254)
+    email = models.EmailField(
+        _("email address"), max_length=254, null=True, unique=True
+    )
     first_name = models.CharField(_("first name"), max_length=254, blank=True)
     last_name = models.CharField(_("last name"), max_length=254, blank=True)
     is_staff = models.BooleanField(
@@ -4925,6 +5108,29 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=False,
         default="en",
         choices=settings.LANGUAGES,
+    )
+
+    flagged_for_deletion = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "Account is orphaned and has been flagged for deletion at this date"
+        ),
+    )
+
+    notified_for_deletion = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "User has been notified about pending account deletion at this date"
+        ),
+    )
+
+    never_flag_for_deletion = models.BooleanField(
+        default=False,
+        help_text=_(
+            "This user will never be flagged for deletion through the orphaned user cleanup process."
+        ),
     )
 
     objects = UserManager()
@@ -5007,12 +5213,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         been confirmed, False if not.
         """
 
-        try:
-            email = EmailAddress.objects.get(user=self, email=self.email, primary=True)
-        except EmailAddress.DoesNotExist:
-            return False
-
-        return email.verified
+        return self.emailaddress_set.filter(primary=True, verified=True).exists()
 
     @property
     def is_verified_user(self):
@@ -5099,21 +5300,68 @@ class User(AbstractBaseUser, PermissionsMixin):
         "Returns the short name for the user."
         return self.first_name
 
-    def email_user(self, subject, message, from_email=settings.DEFAULT_FROM_EMAIL):
+    def email_user(
+        self, subject, message, from_email=settings.DEFAULT_FROM_EMAIL, email=None
+    ):
         """
         Sends an email to this User.
         """
+
+        if not email:
+            email = self.email
+
         if not getattr(settings, "MAIL_DEBUG", False):
             mail = EmailMultiAlternatives(
                 subject,
                 message,
                 from_email,
-                [self.email],
+                [email],
                 headers={"Auto-Submitted": "auto-generated", "Return-Path": "<>"},
             )
             mail.send(fail_silently=False)
         else:
-            debug_mail(subject, message, from_email, [self.email])
+            debug_mail(subject, message, from_email, [email])
+
+    def email_user_all_addresses(
+        self, subject, message, from_email=settings.DEFAULT_FROM_EMAIL, exclude=None
+    ):
+
+        """
+        Sends email to all email addresses for the user
+        """
+
+        for email_address in self.emailaddress_set.filter(verified=True):
+
+            if exclude and email_address.email in exclude:
+                continue
+
+            self.email_user(subject, message, from_email, email_address.email)
+
+    def notify_email_removed(self, email):
+        """
+        Notifies the user that the specified email address has been removed
+        from their account (#907)
+        """
+
+        msg = loader.get_template("email/notify-user-email-removed.txt").render(
+            {"support_email": settings.DEFAULT_FROM_EMAIL}
+        )
+
+        self.email_user("Email address removed from account", msg, email=email)
+
+    def notify_email_added(self, email):
+        """
+        Notifies the user that the specified email address has been added
+        to their account (#907)
+        """
+
+        msg = loader.get_template("email/notify-user-email-added.txt").render(
+            {"email": email, "support_email": settings.DEFAULT_FROM_EMAIL}
+        )
+
+        self.email_user_all_addresses(
+            "Email address added to account", msg, exclude=[email]
+        )
 
     def set_unverified(self):
         """
@@ -5145,39 +5393,33 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.status = "ok"
         self.save()
 
-    def send_email_confirmation(self, request=None, signup=False):
+    def send_email_confirmation(self, request=None, signup=False, email=None):
         """
         Use allauth email-confirmation process to make user
         confirm that the email they provided is theirs.
         """
+        if not email:
+            email = self.email
 
-        # check if there is actually an email set on the user
-        if not self.email:
-            return None
+        if not email:
+            return
 
-        # allauth supports multiple email addresses per user, however
-        # we don't need that, so we check for the primary email address
-        # and if it already exist we make sure to update it to the
-        # email address currently specified on the user instance
+        email_obj, _ = EmailAddress.objects.get_or_create(user=self, email=email)
+        email_obj.verified = False
+
+        if EmailAddress.objects.filter(user=self, primary=True).count() == 0:
+            email_obj.primary = True
+
+        email_obj.save()
+
         try:
-            email = EmailAddress.objects.get(email=self.email)
-            email.email = self.email
-            email.user = self
-            email.verified = False
-            try:
-                EmailConfirmation.objects.get(email_address=email).delete()
-            except EmailConfirmation.DoesNotExist:
-                pass
-        except EmailAddress.DoesNotExist:
-            if EmailAddress.objects.filter(user=self).exists():
-                EmailAddress.objects.filter(user=self).delete()
-            email = EmailAddress(user=self, email=self.email, primary=True)
+            EmailConfirmation.objects.get(email_address=email_obj).delete()
+        except EmailConfirmation.DoesNotExist:
+            pass
 
-        email.save()
+        email_obj.send_confirmation(request=request, signup=signup)
 
-        email.send_confirmation(request=request, signup=signup)
-
-        return email
+        return email_obj
 
     def password_reset_complete(self, token, password):
         if self.password_reset.match(token):
@@ -5243,9 +5485,34 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         # Exact email matching
         for email in rdap.emails:
-            if email.lower() == self.email.lower():
+            if email and self.email and email.lower() == self.email.lower():
                 return True
         return False
+
+    @transaction.atomic()
+    def close_account(self):
+
+        """
+        Removes all identifying information from the User instance
+        and flags it as inactive.
+
+        Warning: users that are status == "pending" are hard-deleted
+        """
+
+        if self.status == "pending":
+            self.delete()
+            return
+
+        self.is_active = False
+        self.email = None
+        self.first_name = ""
+        self.last_name = ""
+        self.username = f"closed-account-{self.id}"
+        self.save()
+
+        self.groups.clear()
+        self.emailaddress_set.all().delete()
+        self.api_keys.all().delete()
 
 
 class UserAPIKey(AbstractAPIKey):
@@ -6072,6 +6339,17 @@ class DataChangeNotificationQueue(models.Model):
     @property
     def target_id(self):
         return (self.ref_tag, self.object_id)
+
+
+class EmailAddressData(models.Model):
+
+    email = models.OneToOneField(
+        EmailAddress, on_delete=models.CASCADE, related_name="data"
+    )
+    confirmed_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "peeringdb_email_address_data"
 
 
 class DataChangeEmail(models.Model):

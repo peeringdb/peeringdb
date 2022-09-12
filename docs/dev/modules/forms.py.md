@@ -1,4 +1,4 @@
-Generated from forms.py on 2022-07-15 18:42:55.852692
+Generated from forms.py on 2022-09-12 13:25:46.155090
 
 # peeringdb_server.forms
 
@@ -34,6 +34,24 @@ OrgAdminUserPermissionForm(django.forms.forms.Form)
 ```
 
 A collection of Fields, plus their associated data.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## OrgUserOptions
+
+```
+OrgUserOptions(django.forms.models.ModelForm)
+```
+
+The main implementation of all the Form logic. Note that this class is
+different than Form. See the comments by the Form class for more info. Any
+improvements to the form API should be made to this class, not to the Form
+class.
 
 
 ### Instanced Attributes

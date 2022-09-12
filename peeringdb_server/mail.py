@@ -65,7 +65,6 @@ def mail_admins_with_from(
 
     # attach html message
     mail.attach_alternative(msg.replace("\n", "<br />\n"), "text/html")
-
     mail.send(fail_silently=fail_silently)
 
 

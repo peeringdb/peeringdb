@@ -4,6 +4,7 @@ import random
 import bleach
 import markdown
 import tld
+from allauth.account.models import EmailAddress
 from django import template
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -271,3 +272,13 @@ def render_markdown(value):
     return bleach.clean(
         markdown.markdown(value), tags=markdown_tags, protocols=["http", "https"]
     )
+
+
+@register.filter
+def org_email(org, user):
+    return org.user_meets_email_requirements(user)
+
+
+@register.filter
+def email_confirmed(email):
+    return EmailAddress.objects.filter(email=email, verified=True).exists()
