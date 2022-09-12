@@ -1,4 +1,4 @@
-Generated from util.py on 2022-07-15 18:42:55.852692
+Generated from util.py on 2022-09-12 13:25:46.155090
 
 # peeringdb_server.util
 
@@ -15,32 +15,5 @@ This function will standardize a ipaddress string.
 
 Note: this function is not a validator. If it errors
 It will return the original string.
-
----
-# Classes
----
-
-## APIPermissionsApplicator
-
-```
-APIPermissionsApplicator(grainy.core.NamespaceKeyApplicator)
-```
-
-Applicator that looks for permission namespaces from
-a specified field in the dict it is scanning
-
-
-### Instanced Attributes
-
-These attributes / properties will be available on instances of the class
-
-- is_generating_api_cache (`@property`): None
-
-### Methods
-
-#### \__init__
-`def __init__(self, user)`
-
-Initialize self.  See help(type(self)) for accurate signature.
 
 ---

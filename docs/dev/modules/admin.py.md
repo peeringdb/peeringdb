@@ -1,4 +1,4 @@
-Generated from admin.py on 2022-07-15 18:42:55.900858
+Generated from admin.py on 2022-09-12 13:25:46.409615
 
 # peeringdb_server.admin
 
@@ -1516,7 +1516,7 @@ association with the field named '__all__'.
 UserPermission(peeringdb_server.models.User)
 ```
 
-UserPermission(id, password, last_login, is_superuser, username, email, first_name, last_name, is_staff, is_active, date_joined, created, updated, status, locale)
+UserPermission(id, password, last_login, is_superuser, username, email, first_name, last_name, is_staff, is_active, date_joined, created, updated, status, locale, flagged_for_deletion, notified_for_deletion, never_flag_for_deletion)
 
 
 ## UserPermissionAdmin

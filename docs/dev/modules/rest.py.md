@@ -1,4 +1,4 @@
-Generated from rest.py on 2022-07-15 18:42:55.852692
+Generated from rest.py on 2022-09-12 13:25:46.155090
 
 # peeringdb_server.rest
 
@@ -56,6 +56,26 @@ You may want to override this if you need to provide different
 querysets depending on the incoming request.
 
 (Eg. return a list of items that is specific to the user)
+
+---
+
+## BasicAuthMFABlockWrite
+
+```
+BasicAuthMFABlockWrite(rest_framework.permissions.BasePermission)
+```
+
+When an account has MFA enabled and basic-auth is used
+to authenticate the account for a write operation on the API
+block the request.
+
+
+### Methods
+
+#### has_permission
+`def has_permission(self, request, view)`
+
+Return `True` if permission is granted, `False` otherwise.
 
 ---
 

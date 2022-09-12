@@ -400,6 +400,19 @@ paths:
         required: false
         schema:
           type: date-time
+      - name: org__email_domains
+        in: query
+        description: 'If user email restriction is enabled: only allow users with
+          emails in these domains. One domain per line, in the format of ''@xyz.com''
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: org__flagged
         in: query
         description: 'Flag the organization for deletion
@@ -488,6 +501,37 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__periodic_reauth
+        in: query
+        description: 'Require users in this organization to periodically re-authenticate
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__periodic_reauth_period
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `1w`, `2w`, `1m`, `6m`, `1y`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__restrict_user_emails
+        in: query
+        description: 'Require users in your organization to have email addresses within
+          your specified domains.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -2457,6 +2501,19 @@ paths:
         required: false
         schema:
           type: string
+      - name: ixf_import_request_user__flagged_for_deletion
+        in: query
+        description: 'Account is orphaned and has been flagged for deletion at this
+          date
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: ixf_import_request_user__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -2526,6 +2583,29 @@ paths:
         required: false
         schema:
           type: string
+      - name: ixf_import_request_user__never_flag_for_deletion
+        in: query
+        description: 'This user will never be flagged for deletion through the orphaned
+          user cleanup process.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: ixf_import_request_user__notified_for_deletion
+        in: query
+        description: 'User has been notified about pending account deletion at this
+          date
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
       - name: ixf_import_request_user__password
         in: query
         description: 'Filter results by matching a value against this field.
@@ -2766,6 +2846,19 @@ paths:
         required: false
         schema:
           type: date-time
+      - name: org__email_domains
+        in: query
+        description: 'If user email restriction is enabled: only allow users with
+          emails in these domains. One domain per line, in the format of ''@xyz.com''
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: org__flagged
         in: query
         description: 'Flag the organization for deletion
@@ -2854,6 +2947,37 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__periodic_reauth
+        in: query
+        description: 'Require users in this organization to periodically re-authenticate
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__periodic_reauth_period
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `1w`, `2w`, `1m`, `6m`, `1y`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__restrict_user_emails
+        in: query
+        description: 'Require users in your organization to have email addresses within
+          your specified domains.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -11161,6 +11285,19 @@ paths:
         required: false
         schema:
           type: date-time
+      - name: org__email_domains
+        in: query
+        description: 'If user email restriction is enabled: only allow users with
+          emails in these domains. One domain per line, in the format of ''@xyz.com''
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: org__flagged
         in: query
         description: 'Flag the organization for deletion
@@ -11249,6 +11386,37 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__periodic_reauth
+        in: query
+        description: 'Require users in this organization to periodically re-authenticate
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__periodic_reauth_period
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `1w`, `2w`, `1m`, `6m`, `1y`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__restrict_user_emails
+        in: query
+        description: 'Require users in your organization to have email addresses within
+          your specified domains.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -16738,6 +16906,19 @@ paths:
           default: 0
           minimum: 0
           maximum: 2
+      - name: email_domains
+        in: query
+        description: 'If user email restriction is enabled: only allow users with
+          emails in these domains. One domain per line, in the format of ''@xyz.com''
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: flagged
         in: query
         description: 'Flag the organization for deletion
@@ -16851,6 +17032,37 @@ paths:
         required: false
         schema:
           type: string
+      - name: periodic_reauth
+        in: query
+        description: 'Require users in this organization to periodically re-authenticate
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: periodic_reauth_period
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `1w`, `2w`, `1m`, `6m`, `1y`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: restrict_user_emails
+        in: query
+        description: 'Require users in your organization to have email addresses within
+          your specified domains.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
       - name: since
         in: query
         required: false
@@ -25150,6 +25362,19 @@ paths:
         required: false
         schema:
           type: date-time
+      - name: org__email_domains
+        in: query
+        description: 'If user email restriction is enabled: only allow users with
+          emails in these domains. One domain per line, in the format of ''@xyz.com''
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: org__flagged
         in: query
         description: 'Flag the organization for deletion
@@ -25238,6 +25463,37 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__periodic_reauth
+        in: query
+        description: 'Require users in this organization to periodically re-authenticate
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__periodic_reauth_period
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `1w`, `2w`, `1m`, `6m`, `1y`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__restrict_user_emails
+        in: query
+        description: 'Require users in your organization to have email addresses within
+          your specified domains.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -25947,6 +26203,19 @@ paths:
         required: false
         schema:
           type: date-time
+      - name: org__email_domains
+        in: query
+        description: 'If user email restriction is enabled: only allow users with
+          emails in these domains. One domain per line, in the format of ''@xyz.com''
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: org__flagged
         in: query
         description: 'Flag the organization for deletion
@@ -26035,6 +26304,37 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__periodic_reauth
+        in: query
+        description: 'Require users in this organization to periodically re-authenticate
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__periodic_reauth_period
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `1w`, `2w`, `1m`, `6m`, `1y`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__restrict_user_emails
+        in: query
+        description: 'Require users in your organization to have email addresses within
+          your specified domains.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
