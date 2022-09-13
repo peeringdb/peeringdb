@@ -6,12 +6,8 @@ from django.contrib.auth.mixins import AccessMixin
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.core.signing import BadSignature
-from django.http import HttpResponse
 from django.shortcuts import resolve_url
 from django.utils import timezone
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.debug import sensitive_post_parameters
 from django.views.generic import FormView, View
 from oauth2_provider.exceptions import OAuthToolkitError
 from oauth2_provider.forms import AllowForm
@@ -19,8 +15,6 @@ from oauth2_provider.http import OAuth2ResponseRedirect
 from oauth2_provider.models import get_access_token_model, get_application_model
 from oauth2_provider.scopes import get_scopes_backend
 from oauth2_provider.settings import oauth2_settings
-from oauth2_provider.signals import app_authorized
-from oauth2_provider.views import AuthorizationView
 from oauth2_provider.views.mixins import OAuthLibMixin
 
 log = logging.getLogger("oauth2_provider")
@@ -31,7 +25,7 @@ class LoginRequiredMixin(AccessMixin):
 
     def dispatch(self, request, *args, **kwargs):
         try:
-            valid_cookie = request.get_signed_cookie("oauth_session")
+            request.get_signed_cookie("oauth_session")
         except (KeyError, BadSignature) as e:
             return self.handle_no_permission()
         response = super().dispatch(request, *args, **kwargs)
