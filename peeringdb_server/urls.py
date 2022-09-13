@@ -36,6 +36,7 @@ from peeringdb_server.import_views import (
     view_import_net_ixf_preview,
 )
 from peeringdb_server.models import Facility, InternetExchange, Network, Organization
+from peeringdb_server.oauth_views import AuthorizationView
 from peeringdb_server.views import (
     OrganizationLogoUpload,
     cancel_affiliation_request,
@@ -79,7 +80,6 @@ from peeringdb_server.views import (
     view_verify,
     watch_network,
 )
-from peeringdb_server.oauth_views import AuthorizationView
 
 # o
 # SITE

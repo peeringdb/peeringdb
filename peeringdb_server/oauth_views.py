@@ -13,7 +13,6 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.generic import FormView, View
-
 from oauth2_provider.exceptions import OAuthToolkitError
 from oauth2_provider.forms import AllowForm
 from oauth2_provider.http import OAuth2ResponseRedirect
@@ -21,8 +20,8 @@ from oauth2_provider.models import get_access_token_model, get_application_model
 from oauth2_provider.scopes import get_scopes_backend
 from oauth2_provider.settings import oauth2_settings
 from oauth2_provider.signals import app_authorized
-from oauth2_provider.views.mixins import OAuthLibMixin
 from oauth2_provider.views import AuthorizationView
+from oauth2_provider.views.mixins import OAuthLibMixin
 
 log = logging.getLogger("oauth2_provider")
 
