@@ -57,6 +57,7 @@ class LoginRequiredMixin(AccessMixin):
             self.get_redirect_field_name(),
         )
 
+
 class BaseAuthorizationView(LoginRequiredMixin, OAuthLibMixin, View):
     """
     Implements a generic endpoint to handle *Authorization Requests* as in :rfc:`4.1.1`. The view
@@ -135,7 +136,9 @@ class AuthorizationView(BaseAuthorizationView, FormView):
             "state": self.oauth2_data.get("state", None),
             "response_type": self.oauth2_data.get("response_type", None),
             "code_challenge": self.oauth2_data.get("code_challenge", None),
-            "code_challenge_method": self.oauth2_data.get("code_challenge_method", None),
+            "code_challenge_method": self.oauth2_data.get(
+                "code_challenge_method", None
+            ),
             "claims": self.oauth2_data.get("claims", None),
         }
         return initial_data
@@ -152,7 +155,9 @@ class AuthorizationView(BaseAuthorizationView, FormView):
         if form.cleaned_data.get("code_challenge", False):
             credentials["code_challenge"] = form.cleaned_data.get("code_challenge")
         if form.cleaned_data.get("code_challenge_method", False):
-            credentials["code_challenge_method"] = form.cleaned_data.get("code_challenge_method")
+            credentials["code_challenge_method"] = form.cleaned_data.get(
+                "code_challenge_method"
+            )
         if form.cleaned_data.get("nonce", False):
             credentials["nonce"] = form.cleaned_data.get("nonce")
         if form.cleaned_data.get("claims", False):
@@ -163,7 +168,10 @@ class AuthorizationView(BaseAuthorizationView, FormView):
 
         try:
             uri, headers, body, status = self.create_authorization_response(
-                request=self.request, scopes=scopes, credentials=credentials, allow=allow
+                request=self.request,
+                scopes=scopes,
+                credentials=credentials,
+                allow=allow,
             )
         except OAuthToolkitError as error:
             return self.error_response(error, application)
@@ -189,7 +197,9 @@ class AuthorizationView(BaseAuthorizationView, FormView):
         # at this point we know an Application instance with such client_id exists in the database
 
         # TODO: Cache this!
-        application = get_application_model().objects.get(client_id=credentials["client_id"])
+        application = get_application_model().objects.get(
+            client_id=credentials["client_id"]
+        )
 
         kwargs["application"] = application
         kwargs["client_id"] = credentials["client_id"]
@@ -212,7 +222,9 @@ class AuthorizationView(BaseAuthorizationView, FormView):
 
         # Check to see if the user has already granted access and return
         # a successful response depending on "approval_prompt" url parameter
-        require_approval = request.GET.get("approval_prompt", oauth2_settings.REQUEST_APPROVAL_PROMPT)
+        require_approval = request.GET.get(
+            "approval_prompt", oauth2_settings.REQUEST_APPROVAL_PROMPT
+        )
 
         try:
             # If skip_authorization field is True, skip the authorization screen even
@@ -221,7 +233,10 @@ class AuthorizationView(BaseAuthorizationView, FormView):
             # are already approved.
             if application.skip_authorization:
                 uri, headers, body, status = self.create_authorization_response(
-                    request=self.request, scopes=" ".join(scopes), credentials=credentials, allow=True
+                    request=self.request,
+                    scopes=" ".join(scopes),
+                    credentials=credentials,
+                    allow=True,
                 )
                 return self.redirect(uri, application)
 
@@ -229,7 +244,9 @@ class AuthorizationView(BaseAuthorizationView, FormView):
                 tokens = (
                     get_access_token_model()
                     .objects.filter(
-                        user=request.user, application=kwargs["application"], expires__gt=timezone.now()
+                        user=request.user,
+                        application=kwargs["application"],
+                        expires__gt=timezone.now(),
                     )
                     .all()
                 )

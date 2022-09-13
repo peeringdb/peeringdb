@@ -2648,7 +2648,7 @@ class LoginView(TwoFactorLoginView):
         """
 
         next_redirect = self.request.GET.get("next", False)
-        if next_redirect == '/oauth2/authorize/':
+        if next_redirect == "/oauth2/authorize/":
             return super().get(*args, **kwargs)
         if self.request.user.is_authenticated:
             return redirect("/")
