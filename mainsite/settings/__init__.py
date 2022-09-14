@@ -1,4 +1,4 @@
-# Django settings 
+# Django settings
 
 import os
 import sys
@@ -665,7 +665,7 @@ TEMPLATES = [
 ]
 
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = "DENY"
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
