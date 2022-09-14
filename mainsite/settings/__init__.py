@@ -1,4 +1,4 @@
-# Django settings
+# Django settings 
 
 import os
 import sys
