@@ -596,6 +596,7 @@ INSTALLED_APPS = [
     "dal",
     "dal_select2",
     "grappelli",
+    "import_export",
     "django.contrib.admin",
     "allauth",
     "allauth.account",

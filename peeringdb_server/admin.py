@@ -43,6 +43,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.admin import UserPermissionInlineAdmin
 from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
+from import_export.admin import ExportMixin
 from rest_framework_api_key.admin import APIKeyModelAdmin
 from rest_framework_api_key.models import APIKey
 from reversion.admin import VersionAdmin
@@ -601,7 +602,7 @@ class SanitizedAdmin(CustomResultLengthAdmin):
 
 
 class SoftDeleteAdmin(
-    SanitizedAdmin, HandleRefVersionAdmin, VersionAdmin, admin.ModelAdmin
+    ExportMixin, SanitizedAdmin, HandleRefVersionAdmin, VersionAdmin, admin.ModelAdmin
 ):
     """
     Soft delete admin.
@@ -1022,7 +1023,9 @@ class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
         return mark_safe(f'<div style="background-color:{color}">{text}</div>')
 
 
-class IXLanIXFMemberImportLogAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
+class IXLanIXFMemberImportLogAdmin(
+    ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin
+):
     search_fields = ("ixlan__ix__id",)
     list_display = ("id", "ix", "ixlan_name", "source", "created", "changes")
     readonly_fields = ("ix", "ixlan_name", "source", "changes")
@@ -1071,7 +1074,7 @@ class SponsorshipOrganizationInline(admin.TabularInline):
     }
 
 
-class SponsorshipAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
+class SponsorshipAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = ("organizations", "start_date", "end_date", "level", "status")
     readonly_fields = ("organizations", "status", "notify_date")
     inlines = (SponsorshipOrganizationInline,)
@@ -1110,7 +1113,7 @@ class PartnershipAdminForm(baseForms.ModelForm):
         fk_handleref_filter(self, "org")
 
 
-class PartnershipAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
+class PartnershipAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = ("org_name", "level", "status")
     readonly_fields = ("status", "org_name")
     form = PartnershipAdminForm
@@ -1684,7 +1687,7 @@ class UserGroupForm(UserChangeForm):
             self.fields["groups"].queryset = Group.objects.all().order_by("id")
 
 
-class UserAdmin(ModelAdminWithVQCtrl, UserAdmin):
+class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin):
     inlines = (UserOrgAffiliationRequestInline,)
     readonly_fields = (
         "email_status",
@@ -1884,7 +1887,7 @@ class CommandLineToolPrepareForm(baseForms.Form):
     tool = baseForms.ChoiceField(choices=COMMANDLINE_TOOLS)
 
 
-class CommandLineToolAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
+class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     """
     View that lets staff users run peeringdb command line tools.
     """
@@ -2061,7 +2064,7 @@ class CommandLineToolAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
         )
 
 
-class IXFImportEmailAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
+class IXFImportEmailAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = (
         "subject",
         "recipients",
@@ -2120,7 +2123,7 @@ class DeskProTicketCCInline(admin.TabularInline):
     model = DeskProTicketCC
 
 
-class DeskProTicketAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
+class DeskProTicketAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = (
         "id",
         "subject",
@@ -2195,7 +2198,7 @@ def apply_ixf_member_data(modeladmin, request, queryset):
 apply_ixf_member_data.short_description = _("Apply")
 
 
-class IXFMemberDataAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
+class IXFMemberDataAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     change_form_template = "admin/ixf_member_data_change_form.html"
 
     list_display = (
@@ -2357,7 +2360,7 @@ class EnvironmentSettingForm(baseForms.ModelForm):
         return cleaned_data
 
 
-class EnvironmentSettingAdmin(CustomResultLengthAdmin, admin.ModelAdmin):
+class EnvironmentSettingAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     list_display = ["setting", "value", "created", "updated", "user"]
 
     fields = ["setting", "value"]
