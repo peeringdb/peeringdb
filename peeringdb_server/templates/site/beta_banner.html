@@ -9,7 +9,7 @@ This is a beta/testing instance of PeeringDB. Some features may work differently
 {% endblocktrans %}
 {% if SHOW_AUTO_PROD_SYNC_WARNING %}
 {% blocktrans trimmed with beta_sync_dt|date:"Y-m-d H:i:s" as dt %}
-- all data will be refreshed from production at {{ dt }}Z
+- all data will be refreshed from production at {{ dt }}
 {% endblocktrans %}
 {% else %}
 - automatically scheduled refreshes from production are currently disabled.

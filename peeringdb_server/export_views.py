@@ -30,7 +30,7 @@ def export_ixf_ix_members(ixlans, pretty=False):
 
     rv = {
         "version": "0.6",
-        "timestamp": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timestamp": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "member_list": member_list,
         "ixp_list": [{"ixp_id": ixp.id, "shortname": ixp.name} for ixp in ixp_list],
     }
