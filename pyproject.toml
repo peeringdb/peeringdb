@@ -31,6 +31,7 @@ django-crispy-forms = ">=1.6.1"
 django-debug-toolbar = ">=1.9.1"
 django-extensions = ">=1.3.3"
 django-grappelli = ">=2.10.1"
+django-import-export = ">2.8.0,<3"
 django-hashers-passlib = ">=0.3"
 # django-oauth-toolkit needs to be locked to 1.6.1 because it introduced
 # api breaking changes that were then reverted in 1.6.2 - in order to upgrade
