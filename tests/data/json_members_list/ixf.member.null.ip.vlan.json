@@ -1,0 +1,51 @@
+{
+    "timestamp": "2020-07-13T09:23:47Z",
+    "version": "1.0",
+    "ixp_list": [
+        {
+          "shortname": "Test Exchange",
+          "ixp_id": 1,
+          "ixf_id": 1
+        }
+    ],
+    "member_list": [
+        {
+            "asnum": 1001,
+            "member_type": "peering",
+            "name": "Netflix",
+            "url": "http://netflix.com/",
+            "contact_email": [
+                "peering@netflix.com",
+                "mrpeering@netflix.com"
+            ],
+            "contact_phone": [
+                "+1 1234 5678"
+            ],
+            "contact_hours": "8/5",
+            "peering_policy": "open",
+            "peering_policy_url": "https://www.netflix.com/openconnect/",
+            "member_since": "2009-02-04T00:00:00Z",
+            "connection_list": [
+                {
+                    "ixp_id": 42,
+                    "connected_since": "2009-02-04T00:00:00Z",
+                    "state": "connected",
+                    "if_list": [
+                        {
+                            "switch_id": 1,
+                            "if_speed": 20000,
+                            "if_type": "LR4"
+                        }
+                    ],
+                    "vlan_list": [
+                        {
+                            "vlan_id": 1,
+                            "ipv4": null,
+                            "ipv6": null
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

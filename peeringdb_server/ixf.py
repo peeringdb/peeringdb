@@ -377,6 +377,15 @@ class Importer:
 
             id = vlan.get("vlan_id", 0)
 
+            # the ix-f schema allows setting ipv4 and ipv6 to
+            # null, in which case remove the property
+
+            if "ipv4" in vlan and not vlan.get("ipv4"):
+                del vlan["ipv4"]
+
+            if "ipv6" in vlan and not vlan.get("ipv6"):
+                del vlan["ipv6"]
+
             # neither ipv4 nor ipv6 is specified, there is
             # nothing to sanitize here, so skip
 
