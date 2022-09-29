@@ -1958,6 +1958,36 @@ class TestJSON(unittest.TestCase):
             },
         )
 
+        # pocs require email or phone to be set
+
+        self.assert_update(
+            self.db_org_admin,
+            "poc",
+            SHARED["poc_rw_ok_users"].id,
+            {
+                "email": "test@localhost",
+                "phone": ""
+            },
+            test_failures={
+                "invalid": {"email": "", "phone":""},
+            },
+        )
+
+
+        data = self.make_data_poc(net_id=SHARED["net_rw_ok"].id, role="Abuse")
+        data["email"] = ""
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "poc",
+            data,
+            test_failures={
+                "invalid": {"email": "", "phone":""},
+            },
+        )
+
+
+
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_ixlan(self):

@@ -1922,6 +1922,14 @@ class NetworkContactSerializer(ModelSerializer):
     def validate_visible(self, value):
         return validate_poc_visible(value)
 
+    def validate(self, data):
+        if not data.get("email") and not data.get("phone"):
+            raise ValidationError({
+                "phone": _("Phone or email required"),
+                "email": _("Phone or email required")
+            })
+        return data
+
     def to_representation(self, data):
         # When a network contact is marked as deleted we
         # want to return blank values for any sensitive
