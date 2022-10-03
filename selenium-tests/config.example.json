@@ -1,0 +1,51 @@
+{
+    "url": "http://localhost:8000",
+    "accounts":{
+        "verified": {
+            "username": "verified",
+            "password": "Verified@123"
+        },
+        "unverified": {
+            "username": "unverified",
+            "password": "Unverified@123"
+        }
+    },
+    "test_submit_exchange": {
+        "org_id": 1,
+        "name": "Test IX",
+        "prefix": "206.41.111.0/24"
+    },
+    "test_edit_exchange": {
+        "org_id": 1,
+        "old_name": "Test IX Edit",
+        "name": "Test IX Editing",
+        "website": "http://www.testixediting.com",
+        "email": "tech@testixediting.com"
+    },
+    "test_delete_exchange": {
+        "org_id": 1,
+        "name": "Test IX",
+        "prefix": "206.41.111.0/24"
+    },
+    "test_search_exchange": {
+        "name": "TEST"
+    },
+    "test_search_network": {
+        "name": "TEST-NET"
+    },
+    "test_search_facility": {
+        "name": "Test Facility"
+    },
+    "test_search_organization": {
+        "name": "Test"
+    },
+    "test_add_api_key": {
+        "description": "test"
+    },
+    "test_delete_api_key": {
+        "description": "test"
+    },
+    "test_change_password": {
+        "password": "Verified@test"
+    }
+}
