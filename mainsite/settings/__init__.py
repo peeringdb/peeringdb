@@ -797,6 +797,11 @@ OAUTH2_PROVIDER = {
 
 set_option("OAUTH2_PROVIDER_APPLICATION_MODEL", "oauth2_provider.Application")
 
+# This is setting is for cookie timeout for oauth sessions.
+# After the timeout, the ongoing oauth session would expire.
+
+set_option("OAUTH_COOKIE_MAX_AGE", 1800)
+
 ## grainy
 
 AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)

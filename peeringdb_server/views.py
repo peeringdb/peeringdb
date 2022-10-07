@@ -2826,7 +2826,7 @@ class LoginView(TwoFactorLoginView):
         success_url = self.get_success_url()
         response = redirect(self.get_success_url())
         if success_url == "/oauth2/authorize/":
-            response.set_signed_cookie("oauth_session", self.request.user, max_age=1800)
+            response.set_signed_cookie("oauth_session", self.request.user, max_age=settings.OAUTH_COOKIE_MAX_AGE)
         response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, user_language)
 
         return response
