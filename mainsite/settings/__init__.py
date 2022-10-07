@@ -665,12 +665,12 @@ TEMPLATES = [
 ]
 
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
-X_FRAME_OPTIONS = "DENY"
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_SECONDS = 47304000
-SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+set_option("X_FRAME_OPTIONS", "DENY")
+set_option("SECURE_BROWSER_XSS_FILTER", True)
+set_option("SECURE_CONTENT_TYPE_NOSNIFF", True)
+set_option("SECURE_HSTS_INCLUDE_SUBDOMAINS", True)
+set_option("SECURE_HSTS_SECONDS", 47304000)
+set_option("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
 
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
