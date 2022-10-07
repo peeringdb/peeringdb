@@ -36,7 +36,6 @@ from peeringdb_server.import_views import (
     view_import_net_ixf_preview,
 )
 from peeringdb_server.models import Facility, InternetExchange, Network, Organization
-from peeringdb_server.oauth_views import AuthorizationView
 from peeringdb_server.views import (
     OrganizationLogoUpload,
     cancel_affiliation_request,
@@ -353,9 +352,7 @@ urlpatterns += [
 
 
 # Oauth2
-urlpatterns += [
-    url(r"^oauth2/authorize/", AuthorizationView.as_view(), name="authorize"),
-]
+
 urlpatterns += [
     url(r"^oauth2/", include("oauth2_provider.urls", namespace="oauth2_provider")),
 ]
