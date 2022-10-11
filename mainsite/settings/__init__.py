@@ -666,10 +666,25 @@ TEMPLATES = [
 ]
 
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
+set_option("X_FRAME_OPTIONS", "DENY")
+set_option("SECURE_BROWSER_XSS_FILTER", True)
+set_option("SECURE_CONTENT_TYPE_NOSNIFF", True)
+set_option("SECURE_HSTS_INCLUDE_SUBDOMAINS", True)
+set_option("SECURE_HSTS_SECONDS", 47304000)
+set_option("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
+
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_SCRIPT_SRC = ("'self'", "www.google.com", "www.gstatic.com", "'unsafe-inline'")
+CSP_FRAME_SRC = ("'self'", "'unsafe-inline'")
+CSP_FONT_SRC = ("'self'",)
+CSP_IMG_SRC = ("'self'",)
 
 MIDDLEWARE = (
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     # "django.contrib.sessions.middleware.SessionMiddleware",
     "peeringdb_server.middleware.PDBSessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
