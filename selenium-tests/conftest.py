@@ -79,7 +79,9 @@ def config(request):
 def driver(request, config):
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+    driver = webdriver.Chrome(
+        service=ChromeService(ChromeDriverManager().install()), options=options
+    )
 
     driver.get(config["url"])
     test_account = request.config.getoption("--account")

@@ -1924,10 +1924,12 @@ class NetworkContactSerializer(ModelSerializer):
 
     def validate(self, data):
         if not data.get("email") and not data.get("phone"):
-            raise ValidationError({
-                "phone": _("Phone or email required"),
-                "email": _("Phone or email required")
-            })
+            raise ValidationError(
+                {
+                    "phone": _("Phone or email required"),
+                    "email": _("Phone or email required"),
+                }
+            )
         return data
 
     def to_representation(self, data):

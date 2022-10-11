@@ -151,7 +151,6 @@ def test_edit_exchange(config, driver):
         ).text
     )
 
-
     # restore name
     driver.find_element(
         By.CSS_SELECTOR, '.button-bar a[data-edit-action="toggle-edit"]'

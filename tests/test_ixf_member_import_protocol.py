@@ -2297,6 +2297,7 @@ def test_mark_invalid_multiple_vlans(entities, save):
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
 
+
 @pytest.mark.django_db
 def test_vlan_null_ips(entities, save):
     """

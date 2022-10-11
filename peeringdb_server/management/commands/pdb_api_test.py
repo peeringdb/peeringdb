@@ -1964,15 +1964,11 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "poc",
             SHARED["poc_rw_ok_users"].id,
-            {
-                "email": "test@localhost",
-                "phone": ""
-            },
+            {"email": "test@localhost", "phone": ""},
             test_failures={
-                "invalid": {"email": "", "phone":""},
+                "invalid": {"email": "", "phone": ""},
             },
         )
-
 
         data = self.make_data_poc(net_id=SHARED["net_rw_ok"].id, role="Abuse")
         data["email"] = ""
@@ -1982,11 +1978,9 @@ class TestJSON(unittest.TestCase):
             "poc",
             data,
             test_failures={
-                "invalid": {"email": "", "phone":""},
+                "invalid": {"email": "", "phone": ""},
             },
         )
-
-
 
     ##########################################################################
 
