@@ -1,0 +1,9 @@
+{
+  "vlan_list": [
+    {
+      "vlan_id":2,
+      "ipv4":null,
+      "ipv6":null
+    }
+  ]
+}

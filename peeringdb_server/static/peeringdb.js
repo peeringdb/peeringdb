@@ -400,7 +400,7 @@ PeeringDB.ViewTools = {
     if (target == "api:net:update") {
 
       // check if "allow-ixp-update" option was turned a complete reload of the view is needed
-      var orig_data = $('[data-edit-name=allow_ixp_update]').data("edit-content-backup")
+      var orig_data = $('[data-edit-name=allow_ixp_update]').data("edit-content-backup");
       if(data.allow_ixp_update && orig_data.match(/checkmark-off.png/)) {
         PeeringDB.refresh();
       }
@@ -1652,7 +1652,6 @@ twentyc.editable.module.register(
 
     execute_add : function(trigger, container) {
       this.components.add.editable("export", this.target.data);
-      var data = this.target.data;
       this.target.execute("add", this.components.add, function(response) {
         document.location.href = document.location.href;
       }.bind(this));

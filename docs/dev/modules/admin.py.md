@@ -1,4 +1,4 @@
-Generated from admin.py on 2022-09-12 13:25:46.409615
+Generated from admin.py on 2022-10-11 12:34:15.080076
 
 # peeringdb_server.admin
 
@@ -45,7 +45,7 @@ target <Organization> merge organizations with this organization
 ## CommandLineToolAdmin
 
 ```
-CommandLineToolAdmin(peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+CommandLineToolAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
 View that lets staff users run peeringdb command line tools.
@@ -216,10 +216,13 @@ These attributes / properties will be available on instances of the class
 ## DeskProTicketAdmin
 
 ```
-DeskProTicketAdmin(peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+DeskProTicketAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Encapsulate all admin options and functionality for a given model.
+Export mixin.
+
+This is intended to be mixed with django.contrib.admin.ModelAdmin
+https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
 
 ### Instanced Attributes
@@ -272,10 +275,13 @@ These attributes / properties will be available on instances of the class
 ## EnvironmentSettingAdmin
 
 ```
-EnvironmentSettingAdmin(peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+EnvironmentSettingAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Encapsulate all admin options and functionality for a given model.
+Export mixin.
+
+This is intended to be mixed with django.contrib.admin.ModelAdmin
+https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
 
 ### Instanced Attributes
@@ -390,10 +396,13 @@ These attributes / properties will be available on instances of the class
 ## IXFImportEmailAdmin
 
 ```
-IXFImportEmailAdmin(peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+IXFImportEmailAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Encapsulate all admin options and functionality for a given model.
+Export mixin.
+
+This is intended to be mixed with django.contrib.admin.ModelAdmin
+https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
 
 ### Instanced Attributes
@@ -415,10 +424,13 @@ and a boolean indicating if the results may contain duplicates.
 ## IXFMemberDataAdmin
 
 ```
-IXFMemberDataAdmin(peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+IXFMemberDataAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Encapsulate all admin options and functionality for a given model.
+Export mixin.
+
+This is intended to be mixed with django.contrib.admin.ModelAdmin
+https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
 
 ### Instanced Attributes
@@ -514,10 +526,13 @@ Initialize self.  See help(type(self)) for accurate signature.
 ## IXLanIXFMemberImportLogAdmin
 
 ```
-IXLanIXFMemberImportLogAdmin(peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+IXLanIXFMemberImportLogAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Encapsulate all admin options and functionality for a given model.
+Export mixin.
+
+This is intended to be mixed with django.contrib.admin.ModelAdmin
+https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
 
 ### Instanced Attributes
@@ -1140,10 +1155,13 @@ request has permission to delete *any* object of the given type.
 ## PartnershipAdmin
 
 ```
-PartnershipAdmin(peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+PartnershipAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Encapsulate all admin options and functionality for a given model.
+Export mixin.
+
+This is intended to be mixed with django.contrib.admin.ModelAdmin
+https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
 
 ### Instanced Attributes
@@ -1213,7 +1231,7 @@ request has permission to delete *any* object of the given type.
 ## SoftDeleteAdmin
 
 ```
-SoftDeleteAdmin(peeringdb_server.admin.SanitizedAdmin, django_handleref.admin.VersionAdmin, reversion.admin.VersionAdmin, django.contrib.admin.options.ModelAdmin)
+SoftDeleteAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.SanitizedAdmin, django_handleref.admin.VersionAdmin, reversion.admin.VersionAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
 Soft delete admin.
@@ -1244,10 +1262,13 @@ Given an inline formset save it to the database.
 ## SponsorshipAdmin
 
 ```
-SponsorshipAdmin(peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+SponsorshipAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Encapsulate all admin options and functionality for a given model.
+Export mixin.
+
+This is intended to be mixed with django.contrib.admin.ModelAdmin
+https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
 
 ### Instanced Attributes
@@ -1379,11 +1400,13 @@ These attributes / properties will be available on instances of the class
 ## UserAdmin
 
 ```
-UserAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, django.contrib.auth.admin.UserAdmin)
+UserAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.ModelAdminWithVQCtrl, django.contrib.auth.admin.UserAdmin)
 ```
 
-Extend from this model admin if you want to add verification queue
-approve | deny controls to the top of its form.
+Export mixin.
+
+This is intended to be mixed with django.contrib.admin.ModelAdmin
+https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
 
 ### Instanced Attributes
@@ -1525,8 +1548,10 @@ UserPermission(id, password, last_login, is_superuser, username, email, first_na
 UserPermissionAdmin(peeringdb_server.admin.UserAdmin)
 ```
 
-Extend from this model admin if you want to add verification queue
-approve | deny controls to the top of its form.
+Export mixin.
+
+This is intended to be mixed with django.contrib.admin.ModelAdmin
+https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
 
 ### Instanced Attributes

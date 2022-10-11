@@ -1,4 +1,4 @@
-Generated from stats.py on 2022-09-12 13:25:46.409615
+Generated from stats.py on 2022-10-11 12:34:15.080076
 
 # peeringdb_server.stats
 
