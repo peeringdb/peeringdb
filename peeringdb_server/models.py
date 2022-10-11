@@ -4680,6 +4680,15 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
             self._not_deletable_reason = None
             return True
 
+    def validate_requirements(self):
+        if not self.phone and not self.email:
+            raise ValidationError(
+                {
+                    "phone": _("Phone or email required"),
+                    "email": _("Phone or email required"),
+                }
+            )
+
     def clean(self):
         try:
             self.phone = validate_phonenumber(self.phone)
@@ -4687,6 +4696,7 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
             raise ValidationError({"phone": exc})
 
         self.visible = validate_poc_visible(self.visible)
+        self.validate_requirements()
 
 
 @grainy_model(namespace="netfac", parent="network")

@@ -9,6 +9,7 @@
 *.sw*
 *.tar
 OLD.*
+selenium-tests/config.json
 ci-dev.peeringdb.com/
 config/facsimile/*.yaml
 genstatic/
