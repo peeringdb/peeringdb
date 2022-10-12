@@ -2648,7 +2648,7 @@ class LoginView(TwoFactorLoginView):
         """
 
         next_redirect = self.request.GET.get("next", False)
-        if next_redirect == "/oauth2/authorize/":
+        if is_oauth_authorize(next_redirect):
             return super().get(*args, **kwargs)
         if self.request.user.is_authenticated:
             return redirect("/")
@@ -2797,7 +2797,6 @@ class LoginView(TwoFactorLoginView):
 
         # check if the redirect url can be resolved to a view
         # if yes, it's a valid redirect
-
         try:
             resolve(redir)
         except Resolver404:
@@ -2825,7 +2824,7 @@ class LoginView(TwoFactorLoginView):
         translation.activate(user_language)
         success_url = self.get_success_url()
         response = redirect(self.get_success_url())
-        if success_url == "/oauth2/authorize/":
+        if is_oauth_authorize(success_url):
             response.set_signed_cookie(
                 "oauth_session",
                 self.request.user,
