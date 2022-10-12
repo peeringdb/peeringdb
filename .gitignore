@@ -5,6 +5,7 @@
 *.env
 *.log
 *.py[cod]
+*.sql
 *.sqlite
 *.sw*
 *.tar
