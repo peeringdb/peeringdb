@@ -137,9 +137,11 @@ def field_help(model, field):
 
 
 def is_oauth_authorize(url):
-    if url.find("/oauth2/authorize/") == 0:
-        return True
-    return False
+    try:
+        match = resolve(url)
+        return match.url_name == "authorize"
+    except Resolver404:
+        return False
 
 
 def export_permissions(user, entity):
@@ -2647,8 +2649,8 @@ class LoginView(TwoFactorLoginView):
         login process, instead redirect to /
         """
 
-        next_redirect = self.request.GET.get("next", False)
-        if next_redirect == "/oauth2/authorize/":
+        next_redirect = self.request.GET.get("next", "")
+        if is_oauth_authorize(next_redirect):
             return super().get(*args, **kwargs)
         if self.request.user.is_authenticated:
             return redirect("/")
@@ -2797,7 +2799,6 @@ class LoginView(TwoFactorLoginView):
 
         # check if the redirect url can be resolved to a view
         # if yes, it's a valid redirect
-
         try:
             resolve(redir)
         except Resolver404:
@@ -2825,11 +2826,11 @@ class LoginView(TwoFactorLoginView):
         translation.activate(user_language)
         success_url = self.get_success_url()
         response = redirect(self.get_success_url())
-        if success_url == "/oauth2/authorize/":
+        if is_oauth_authorize(success_url):
             response.set_signed_cookie(
                 "oauth_session",
                 self.request.user,
-                max_age=settings.OAUTH_COOKIE_MAX_AGE,
+                max_age=dj_settings.OAUTH_COOKIE_MAX_AGE,
             )
         response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, user_language)
 

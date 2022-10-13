@@ -182,7 +182,7 @@ class AuthorizationView(BaseAuthorizationView, FormView):
             return self.error_response(error, application=None)
 
         prompt = request.GET.get("prompt")
-        if prompt == "login":
+        if prompt == "login" or not request.user.is_authenticated:
             return self.handle_prompt_login()
 
         all_scopes = get_scopes_backend().get_all_scopes()
@@ -277,7 +277,7 @@ class AuthorizationView(BaseAuthorizationView, FormView):
         parsed = urlparse(path)
 
         parsed_query = dict(parse_qsl(parsed.query))
-        parsed_query.pop("prompt")
+        parsed_query.pop("prompt", None)
 
         parsed = parsed._replace(query=urlencode(parsed_query))
 
