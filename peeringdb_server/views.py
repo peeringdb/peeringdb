@@ -139,7 +139,7 @@ def field_help(model, field):
 def is_oauth_authorize(url):
     try:
         match = resolve(url)
-        return (match.url_name == "authorize")
+        return match.url_name == "authorize"
     except Resolver404:
         return False
 
