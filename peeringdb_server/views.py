@@ -2647,7 +2647,7 @@ class LoginView(TwoFactorLoginView):
         login process, instead redirect to /
         """
 
-        next_redirect = self.request.GET.get("next", False)
+        next_redirect = self.request.GET.get("next", "")
         if is_oauth_authorize(next_redirect):
             return super().get(*args, **kwargs)
         if self.request.user.is_authenticated:
