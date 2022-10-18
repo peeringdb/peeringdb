@@ -2331,6 +2331,38 @@ def test_vlan_null_ips(entities, save):
 
 
 @pytest.mark.django_db
+def test_vlan_null_vlan_list_and_if_list(entities, save):
+    """
+    The IX-F data contains a vlan_list and if_list as null
+    Importer should treat them the same as if they werent set at all (#1244)
+    """
+
+    data = setup_test_data("ixf.member.null.vlan_list_and_if_list")
+    ixlan = entities["ixlan"][0]
+
+    importer = ixf.Importer()
+    importer.sanitize(data)
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert importer.ixlan.ixf_ixp_import_error_notified is None
+    assert importer.ixlan.ixf_ixp_import_error is None
+    assert_no_emails(ix=ixlan.ix)
+
+    # Assert idempotent / lock
+    importer.sanitize(data)
+    importer.update(ixlan, data=data)
+
+    assert importer.ixlan.ixf_ixp_import_error_notified is None
+    assert importer.ixlan.ixf_ixp_import_error is None
+    assert_no_emails(ix=ixlan.ix)
+
+
+@pytest.mark.django_db
 def test_vlan_list_empty(entities, save):
     """
     VLAN list is empty. Per issue 882, this shouldn't raise any errors.

@@ -442,10 +442,29 @@ class Importer:
         # This fixes instances where ixps provide two separate entries for
         # vlans in vlan_list for ipv4 and ipv6 (AMS-IX for example)
         for member in member_list:
+
+            # handle `null` properties inside connection list
+
+            for conn in member.get("connection_list", []):
+
+                # handle case where ix-f feed has set `vlan_list` to `null` (#1244)
+                # treat same as if it wasn't set at all
+
+                if conn.get("vlan_list", []) is None:
+                    conn.pop("vlan_list")
+
+                # handle case where ix-f feed has set `if_list` to `null` (#1244)
+                # treat same as if it wasn't set at all
+
+                if conn.get("if_list", []) is None:
+                    conn.pop("if_list")
+
             asn = member.get("asnum")
+
             connection_list = self.match_vlans_across_connections(
                 member.get("connection_list", [])
             )
+
             for conn in connection_list:
 
                 conn["vlan_list"] = self.sanitize_vlans(conn.get("vlan_list", []))
