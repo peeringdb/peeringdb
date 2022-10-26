@@ -674,11 +674,12 @@ set_option("SECURE_HSTS_SECONDS", 47304000)
 set_option("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
 
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-CSP_SCRIPT_SRC = ("'self'", "www.google.com", "www.gstatic.com", "'unsafe-inline'")
-CSP_FRAME_SRC = ("'self'", "'unsafe-inline'")
-CSP_FONT_SRC = ("'self'",)
-CSP_IMG_SRC = ("'self'",)
+CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com", "'unsafe-inline'")
+CSP_SCRIPT_SRC = ("'self'", "www.google.com", "www.gstatic.com", "cdn.redoc.ly", "'unsafe-inline'")
+CSP_FRAME_SRC = ("'self'", "www.google.com", "'unsafe-inline'")
+CSP_FONT_SRC = ("'self'", "fonts.gstatic.com")
+CSP_IMG_SRC = ("'self'", "cdn.redoc.ly", "data:")
+CSP_WORKER_SRC = ("'self'", "blob:")
 
 MIDDLEWARE = (
     "corsheaders.middleware.CorsMiddleware",
