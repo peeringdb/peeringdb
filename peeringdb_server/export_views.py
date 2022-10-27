@@ -138,22 +138,18 @@ class ExportView(View):
         fmt = fmt.replace("-", "_")
         if fmt not in self.formats:
             raise ValueError(_("Invalid export format"))
-        try:
-            response_handler = getattr(self, f"response_{fmt}")
-            response = response_handler(self.generate(request))
 
-            if self.download is True:
-                # send attachment header, triggering download on the client side
-                filename = self.download_name.format(extension=self.extensions.get(fmt))
-                response["Content-Disposition"] = 'attachment; filename="{}"'.format(
-                    filename
-                )
-            return response
+        response_handler = getattr(self, f"response_{fmt}")
+        response = response_handler(self.generate(request))
 
-        except Exception:
-            return JsonResponse(
-                {"non_field_errors": ["Internal Error (500)"]}, status=400
+        if self.download is True:
+            # send attachment header, triggering download on the client side
+            filename = self.download_name.format(extension=self.extensions.get(fmt))
+            response["Content-Disposition"] = 'attachment; filename="{}"'.format(
+                filename
             )
+        return response
+
 
     def generate(self, request):
         """
@@ -261,6 +257,9 @@ class AdvancedSearchExportView(ExportView):
         api_request.user = request.user
 
         response = viewset(api_request)
+
+        if response.data and "results" in response.data:
+            return response.data.get("results")
 
         return response.data
 
