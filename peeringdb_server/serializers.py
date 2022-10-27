@@ -445,45 +445,6 @@ def get_relation_filters(flds, serializer, **kwargs):
     return rv
 
 
-class UniqueFieldValidator:
-    """
-    For issue #70:
-
-    Django-side unique field validation.
-
-    Ideally this is done in mysql, however the other
-    duplicates need to be cleared first, so validate on the django side initially.
-    """
-
-    message = _("Need to be unique")
-
-    def __init__(self, fields, message=None, check_deleted=False):
-        self.fields = fields
-        self.message = message or self.message
-        self.check_deleted = check_deleted
-
-    def set_context(self, serializer):
-        self.instance = getattr(serializer, "instance", None)
-        self.model = serializer.Meta.model
-
-    def __call__(self, attrs):
-        id = getattr(self.instance, "id", 0)
-        collisions = {}
-        for field in self.fields:
-            value = attrs.get(field)
-
-            if value == "" or value is None:
-                continue
-
-            filters = {field: value}
-            if not self.check_deleted:
-                filters.update(status="ok")
-            if self.model.objects.filter(**filters).exclude(id=id).exists():
-                collisions[field] = self.message
-        if collisions:
-            raise RestValidationError(collisions, code="unique")
-
-
 class RequiredForMethodValidator:
     """
     A validator that makes a field required for certain
@@ -1994,11 +1955,6 @@ class NetworkIXLanSerializer(ModelSerializer):
             SoftRequiredValidator(
                 fields=("ipaddr4", "ipaddr6"), message="Input required for IPv4 or IPv6"
             ),
-            UniqueFieldValidator(
-                fields=("ipaddr4", "ipaddr6"),
-                message="IP already exists",
-                check_deleted=True,
-            ),
         ]
 
         model = NetworkIXLan
@@ -2115,6 +2071,22 @@ class NetworkIXLanSerializer(ModelSerializer):
             netixlan.validate_ipaddr6()
         except ValidationError as exc:
             raise serializers.ValidationError({"ipaddr6": exc.message})
+
+
+        if self.instance:
+            netixlan.id = self.instance.id
+
+        netixlan.validate_real_peer_vs_ghost_peer()
+        try:
+            netixlan.validate_ip_conflicts(check_deleted=True)
+        except ValidationError as exc:
+            collisions = {}
+            if "ipaddr4" in exc.error_dict:
+                collisions.update(ipaddr4=_("IP already exists"))
+            if "ipaddr6" in exc.error_dict:
+                collisions.update(ipaddr6=_("IP already exists"))
+
+            raise RestValidationError(collisions, code="unique")
 
         try:
             netixlan.validate_speed()
