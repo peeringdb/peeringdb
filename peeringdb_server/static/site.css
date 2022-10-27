@@ -869,6 +869,10 @@ div.list div.squeeze-15 {
   padding-right: 15px;
 }
 
+#manage_perms div[data-edit-name=entity]{
+  color: #000;
+}
+
 div.panel .highlight-warning,
 div.list .highlight-warning {
   color: darkred;
