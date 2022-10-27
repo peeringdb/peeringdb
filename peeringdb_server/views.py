@@ -415,6 +415,8 @@ def view_affiliate_to_org(request):
         if not form.is_valid():
             return JsonResponse(form.errors, status=400)
 
+        print("CLEANED", form.cleaned_data)
+
         if (
             not form.cleaned_data.get("org")
             and not form.cleaned_data.get("asn")
@@ -440,6 +442,17 @@ def view_affiliate_to_org(request):
         if asn != 0 and Network.objects.filter(asn=asn).exists():
             network = Network.objects.get(asn=asn)
             org_id = network.org.id
+
+        if org_id:
+            if Organization.objects.get(id=org_id).status == "deleted":
+                return JsonResponse(
+                    {
+                        "non_field_errors": [
+                            _("Unable to affiliate as this organization has been deleted. Please reach out to PeeringDB support if you wish to resolve this.")
+                        ]
+                    },
+                    status=400
+                )
 
         already_requested_affil_response = JsonResponse(
             {
