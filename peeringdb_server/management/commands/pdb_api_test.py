@@ -2105,23 +2105,6 @@ class TestJSON(unittest.TestCase):
             test_success=False,
         )
 
-        # test protected ixpfx cant be deleted
-        prefix = IXLanPrefix.objects.get(id=SHARED["ixpfx_id"])
-        prefix.status = "ok"
-        prefix.save()
-
-        NetworkIXLan.objects.create(
-            network=SHARED["net_rw_ok"],
-            asn=SHARED["net_rw_ok"].asn,
-            ixlan=SHARED["ixlan_rw_ok"],
-            ipaddr4=prefix.prefix[0],
-            status="ok",
-            speed=1000,
-        )
-
-        self.assert_delete(
-            self.db_org_admin, "ixpfx", test_protected=SHARED["ixpfx_id"]
-        )
 
     ##########################################################################
 

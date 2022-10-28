@@ -4298,42 +4298,6 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         except ValueError:
             return False
 
-    @property
-    def deletable(self):
-        """
-        Returns whether or not the prefix is currently
-        in a state where it can be marked as deleted.
-
-        This will be False for prefixes of which ANY
-        of the following is True:
-
-        - parent ixlan has netixlans that fall into
-          its address space
-        """
-
-        prefix = self.prefix
-        can_delete = True
-        for netixlan in self.ixlan.netixlan_set_active:
-            if self.protocol == "IPv4":
-                if netixlan.ipaddr4 and netixlan.ipaddr4 in prefix:
-                    can_delete = False
-                    break
-
-            if self.protocol == "IPv6":
-                if netixlan.ipaddr6 and netixlan.ipaddr6 in prefix:
-                    can_delete = False
-                    break
-
-        if not can_delete:
-            self._not_deletable_reason = _(
-                "There are active peers at this exchange that fall into "
-                "this address space"
-            )
-        else:
-            self._not_deletable_reason = None
-
-        return can_delete
-
     def clean(self):
         """
         Custom model validation.
