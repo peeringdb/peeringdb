@@ -21,3 +21,4 @@ peeringdb_com
 peeringdb_database/
 venv
 locale
+.idea/

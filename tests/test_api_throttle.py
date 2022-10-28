@@ -314,13 +314,13 @@ class APIThrottleTests(TestCase):
         # for ip blocks
 
         thold = models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR", value_int=500
+            setting="API_THROTTLE_REPEATED_REQUEST_THRESHOLD_CIDR", value_int=500
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_RATE_CIDR", value_str="3/minute"
+            setting="API_THROTTLE_REPEATED_REQUEST_RATE_CIDR", value_str="3/minute"
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR", value_bool=True
+            setting="API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR", value_bool=True
         )
 
         # ip 10.10.10.10 requesting 3 times (all should be ok)
@@ -373,13 +373,13 @@ class APIThrottleTests(TestCase):
         # for ip blocks
 
         thold = models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR", value_int=500
+            setting="API_THROTTLE_REPEATED_REQUEST_THRESHOLD_CIDR", value_int=500
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_RATE_CIDR", value_str="3/minute"
+            setting="API_THROTTLE_REPEATED_REQUEST_RATE_CIDR", value_str="3/minute"
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR", value_bool=True
+            setting="API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR", value_bool=True
         )
 
         # ip 10.10.10.10 requesting 3 times (all should be ok)
@@ -432,13 +432,13 @@ class APIThrottleTests(TestCase):
         # for ip addresses
 
         thold = models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP", value_int=500
+            setting="API_THROTTLE_REPEATED_REQUEST_THRESHOLD_IP", value_int=500
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_RATE_IP", value_str="3/minute"
+            setting="API_THROTTLE_REPEATED_REQUEST_RATE_IP", value_str="3/minute"
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_IP", value_bool=True
+            setting="API_THROTTLE_REPEATED_REQUEST_ENABLED_IP", value_bool=True
         )
 
         # ip 10.10.10.10 requesting 3 times (all should be ok)
@@ -495,13 +495,13 @@ class APIThrottleTests(TestCase):
         # for ip addresses
 
         thold = models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER", value_int=500
+            setting="API_THROTTLE_REPEATED_REQUEST_THRESHOLD_USER", value_int=500
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_RATE_USER", value_str="3/minute"
+            setting="API_THROTTLE_REPEATED_REQUEST_RATE_USER", value_str="3/minute"
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_USER", value_bool=True
+            setting="API_THROTTLE_REPEATED_REQUEST_ENABLED_USER", value_bool=True
         )
 
         # user requesting 3 times (all should be ok)
@@ -539,13 +539,13 @@ class APIThrottleTests(TestCase):
         request.user = user
 
         thold = models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER", value_int=500
+            setting="API_THROTTLE_REPEATED_REQUEST_THRESHOLD_USER", value_int=500
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_RATE_USER", value_str="3/minute"
+            setting="API_THROTTLE_REPEATED_REQUEST_RATE_USER", value_str="3/minute"
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_USER", value_bool=True
+            setting="API_THROTTLE_REPEATED_REQUEST_ENABLED_USER", value_bool=True
         )
 
         # no throttling since user is admin
@@ -585,13 +585,13 @@ class APIThrottleTests(TestCase):
         # for ip addresses
 
         thold = models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG", value_int=500
+            setting="API_THROTTLE_REPEATED_REQUEST_THRESHOLD_ORG", value_int=500
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_RATE_ORG", value_str="3/minute"
+            setting="API_THROTTLE_REPEATED_REQUEST_RATE_ORG", value_str="3/minute"
         )
         models.EnvironmentSetting.objects.create(
-            setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG", value_bool=True
+            setting="API_THROTTLE_REPEATED_REQUEST_ENABLED_ORG", value_bool=True
         )
 
         # requesting 3 times (all should be ok)

@@ -5932,63 +5932,63 @@ class EnvironmentSetting(models.Model):
                 "API_THROTTLE_MELISSA_ENABLED_IP",
                 _("API: Melissa request throttle enabled for anonymous requests (ips)"),
             ),
-            # api response size throttle: ip-block config
+            # api repeated request throttle: ip-block config
             (
-                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR",
-                _("API: Response size throttle size threshold for ip blocks (bytes)"),
+                "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_CIDR",
+                _("API: Repeated request throttle size threshold for ip blocks (bytes)"),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR",
-                _("API: Response size throttle rate for ip blocks"),
+                "API_THROTTLE_REPEATED_REQUEST_RATE_CIDR",
+                _("API: Repeated request throttle rate for ip blocks"),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR",
-                _("API: Response size throttle enabled for ip blocks"),
+                "API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR",
+                _("API: Repeated request throttle enabled for ip blocks"),
             ),
-            # api response size throttle: ip address config
+            # api repeated request throttle: ip address config
             (
-                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP",
+                "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_IP",
                 _(
-                    "API: Response size throttle size threshold for ip addresses (bytes)"
+                    "API: Repeated request throttle size threshold for ip addresses (bytes)"
                 ),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_RATE_IP",
-                _("API: Response size throttle rate for ip addresses"),
+                "API_THROTTLE_REPEATED_REQUEST_RATE_IP",
+                _("API: Repeated request throttle rate for ip addresses"),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP",
-                _("API: Response size throttle enabled for ip addresses"),
+                "API_THROTTLE_REPEATED_REQUEST_ENABLED_IP",
+                _("API: Repeated request throttle enabled for ip addresses"),
             ),
-            # api response size throttle: user config
+            # api repeated request throttle: user config
             (
-                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER",
+                "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_USER",
                 _(
-                    "API: Response size throttle size threshold for authenticated users (bytes)"
+                    "API: Repeated request throttle size threshold for authenticated users (bytes)"
                 ),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_RATE_USER",
-                _("API: Response size throttle rate for authenticated users"),
+                "API_THROTTLE_REPEATED_REQUEST_RATE_USER",
+                _("API: Repeated request throttle rate for authenticated users"),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER",
-                _("API: Response size throttle enabled for authenticated users"),
+                "API_THROTTLE_REPEATED_REQUEST_ENABLED_USER",
+                _("API: Repeated request throttle enabled for authenticated users"),
             ),
-            # api response size throttle: org config
+            # api repeated request throttle: org config
             (
-                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG",
+                "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_ORG",
                 _(
-                    "API: Response size throttle size threshold for organization api-keys (bytes)"
+                    "API: Repeated request throttle size threshold for organization api-keys (bytes)"
                 ),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_RATE_ORG",
-                _("API: Response size throttle rate for organization api-keys"),
+                "API_THROTTLE_REPEATED_REQUEST_RATE_ORG",
+                _("API: Repeated request throttle rate for organization api-keys"),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG",
-                _("API: Response size throttle enabled for organization api-keys"),
+                "API_THROTTLE_REPEATED_REQUEST_ENABLED_ORG",
+                _("API: Repeated request throttle enabled for organization api-keys"),
             ),
             # api throttling response messages
             (
@@ -6034,18 +6034,18 @@ class EnvironmentSetting(models.Model):
         # "IXF_IMPORTER_DAYS_UNTIL_TICKET": "value_int",
         "API_THROTTLE_RATE_ANON": "value_str",
         "API_THROTTLE_RATE_USER": "value_str",
-        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR": "value_int",
-        "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR": "value_str",
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR": "value_bool",
-        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP": "value_int",
-        "API_THROTTLE_RESPONSE_SIZE_RATE_IP": "value_str",
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP": "value_bool",
-        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER": "value_int",
-        "API_THROTTLE_RESPONSE_SIZE_RATE_USER": "value_str",
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER": "value_bool",
-        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG": "value_int",
-        "API_THROTTLE_RESPONSE_SIZE_RATE_ORG": "value_str",
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG": "value_bool",
+        "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_CIDR": "value_int",
+        "API_THROTTLE_REPEATED_REQUEST_RATE_CIDR": "value_str",
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR": "value_bool",
+        "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_IP": "value_int",
+        "API_THROTTLE_REPEATED_REQUEST_RATE_IP": "value_str",
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_IP": "value_bool",
+        "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_USER": "value_int",
+        "API_THROTTLE_REPEATED_REQUEST_RATE_USER": "value_str",
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_USER": "value_bool",
+        "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_ORG": "value_int",
+        "API_THROTTLE_REPEATED_REQUEST_RATE_ORG": "value_str",
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_ORG": "value_bool",
         "API_THROTTLE_MELISSA_RATE_USER": "value_str",
         "API_THROTTLE_MELISSA_ENABLED_USER": "value_bool",
         "API_THROTTLE_MELISSA_RATE_ADMIN": "value_str",
@@ -6061,14 +6061,14 @@ class EnvironmentSetting(models.Model):
     setting_validators = {
         "API_THROTTLE_RATE_ANON": [validate_api_rate],
         "API_THROTTLE_RATE_USER": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR": [validate_bool],
-        "API_THROTTLE_RESPONSE_SIZE_RATE_IP": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP": [validate_bool],
-        "API_THROTTLE_RESPONSE_SIZE_RATE_USER": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER": [validate_bool],
-        "API_THROTTLE_RESPONSE_SIZE_RATE_ORG": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG": [validate_bool],
+        "API_THROTTLE_REPEATED_REQUEST_RATE_CIDR": [validate_api_rate],
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR": [validate_bool],
+        "API_THROTTLE_REPEATED_REQUEST_RATE_IP": [validate_api_rate],
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_IP": [validate_bool],
+        "API_THROTTLE_REPEATED_REQUEST_RATE_USER": [validate_api_rate],
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_USER": [validate_bool],
+        "API_THROTTLE_REPEATED_REQUEST_RATE_ORG": [validate_api_rate],
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_ORG": [validate_bool],
         "API_THROTTLE_MELISSA_RATE_ADMIN": [validate_api_rate],
         "API_THROTTLE_MELISSA_RATE_USER": [validate_api_rate],
         "API_THROTTLE_MELISSA_RATE_ORG": [validate_api_rate],

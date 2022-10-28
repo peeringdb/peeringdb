@@ -438,7 +438,7 @@ class ResponseSizeThrottle(TargetedRateThrottle):
             cache.set(
                 cls.size_cache_key(request),
                 size,
-                settings.API_THROTTLE_RESPONSE_SIZE_CACHE_EXPIRY,
+                settings.API_THROTTLE_REPEATED_REQUEST_CACHE_EXPIRY,
             )
 
     @classmethod
@@ -485,7 +485,7 @@ class ResponseSizeThrottle(TargetedRateThrottle):
     def _check_source(self, request, src):
         suffix = src.upper()
         enabled = EnvironmentSetting.get_setting_value(
-            f"API_THROTTLE_RESPONSE_SIZE_ENABLED_{suffix}"
+            f"API_THROTTLE_REPEATED_REQUEST_ENABLED_{suffix}"
         )
 
         if not enabled:
@@ -497,11 +497,11 @@ class ResponseSizeThrottle(TargetedRateThrottle):
             return False
 
         limit = EnvironmentSetting.get_setting_value(
-            f"API_THROTTLE_RESPONSE_SIZE_THRESHOLD_{suffix}"
+            f"API_THROTTLE_REPEATED_REQUEST_THRESHOLD_{suffix}"
         )
 
         self._rate = EnvironmentSetting.get_setting_value(
-            f"API_THROTTLE_RESPONSE_SIZE_RATE_{suffix}"
+            f"API_THROTTLE_REPEATED_REQUEST_RATE_{suffix}"
         )
 
         return size >= limit
