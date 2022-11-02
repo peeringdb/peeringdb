@@ -1,6 +1,9 @@
 .cache/
 .coverage
 .facsimile
+.vscode/
+!.vscode/tasks.json
+!.vscode/launch.json
 *.DS_STORE
 *.env
 *.log
@@ -12,6 +15,7 @@
 OLD.*
 selenium-tests/config.json
 ci-dev.peeringdb.com/
+Ctl/dev/docker-compose.debug.yml
 config/facsimile/*.yaml
 genstatic/
 mainsite/settings/beta.py

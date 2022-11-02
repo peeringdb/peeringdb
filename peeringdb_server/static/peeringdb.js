@@ -568,7 +568,7 @@ PeeringDB.IXFProposals = twentyc.cls.define(
       $.ajax({
         method: "POST",
         url: path
-      }).done(PeerignDB.refresh);
+      }).done(PeeringDB.refresh);
     },
 
     /**
