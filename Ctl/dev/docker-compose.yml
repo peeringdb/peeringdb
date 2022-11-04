@@ -1,20 +1,13 @@
 version: "3.4"
 services:
   database:
-    image: "mysql:5.7"
+    image: "mysql:8"
     command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci
     environment:
       MYSQL_DATABASE: peeringdb
       MYSQL_USER: peeringdb
       MYSQL_PASSWORD: devPASSWORD
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
-      #MYSQL_ROOT_PASSWORD: devPASSWORD
-#    # set logging options to output in json
-#    logging:
-#      driver: json-file
-#      options:
-#        max-size: 100m
-#        max-file: "3"
     restart: always
     ports:
      - "13306:3306"
@@ -33,12 +26,6 @@ services:
       DATABASE_USER: peeringdb
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: database
-#    # set logging options to output in json
-#    logging:
-#      driver: json-file
-#      options:
-#        max-size: 100m
-#        max-file: "3"
     ports:
       # this needs to be set in the shell, compose env vars aren't read yet
       - "${DJANGO_PORT:-8000}:8000"
