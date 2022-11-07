@@ -150,7 +150,6 @@ class ExportView(View):
             )
         return response
 
-
     def generate(self, request):
         """
         Function that generates export data from request.

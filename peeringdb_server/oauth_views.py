@@ -26,7 +26,7 @@ class LoginRequiredMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
         try:
             request.get_signed_cookie("oauth_session")
-        except (KeyError, BadSignature) as e:
+        except (KeyError, BadSignature):
             return self.handle_no_permission()
         response = super().dispatch(request, *args, **kwargs)
         return response
@@ -171,7 +171,7 @@ class AuthorizationView(BaseAuthorizationView, FormView):
             return self.error_response(error, application)
 
         self.success_url = uri
-        log.debug("Success url for the request: {0}".format(self.success_url))
+        log.debug(f"Success url for the request: {self.success_url}")
         return self.redirect(self.success_url, application)
 
     def get(self, request, *args, **kwargs):

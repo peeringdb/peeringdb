@@ -2105,7 +2105,6 @@ class TestJSON(unittest.TestCase):
             test_success=False,
         )
 
-
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_netixlan(self):

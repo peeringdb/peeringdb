@@ -56,11 +56,13 @@ def assert_failing_affiliation_request(data, client):
     assert "You already requested affiliation to this ASN/org" in str(response.content)
     assert UserOrgAffiliationRequest.objects.count() == 1
 
+
 def assert_failing_affiliation_request_because_of_deletion(data, client):
     response = client.post(URL, data)
     assert response.status_code == 400
-    assert "Unable to affiliate as this organization has been deleted" in str(response.content)
-
+    assert "Unable to affiliate as this organization has been deleted" in str(
+        response.content
+    )
 
 
 """
@@ -111,11 +113,11 @@ def test_affiliate_to_deleted_org(client, org):
     org.delete()
     assert_failing_affiliation_request_because_of_deletion({"org": org.id}, client)
 
+
 @pytest.mark.django_db
 def test_affiliate_to_deleted_org_via_network(client, network):
     network.org.delete()
     assert_failing_affiliation_request_because_of_deletion({"asn": 123}, client)
-
 
 
 @pytest.mark.django_db

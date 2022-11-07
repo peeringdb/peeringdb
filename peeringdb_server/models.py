@@ -26,14 +26,13 @@ Please open a merge request in peeringdb/django-peeringdb for the field addition
 import datetime
 import ipaddress
 import json
+import logging
 import re
 import uuid
-import logging
 from itertools import chain
 
 import django.urls
 import django_peeringdb.models as pdb_models
-from django.core.cache import cache
 import oauth2_provider.models as oauth2
 import reversion
 from allauth.account.models import EmailAddress, EmailConfirmation
@@ -49,6 +48,7 @@ from django.contrib.auth.models import (
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core import validators
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.mail.message import EmailMultiAlternatives
 from django.db import models, transaction
@@ -1925,7 +1925,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
     def __unicode__(self):
         return self.name
 
-
     def peer_exists_in_ixf_data(self, asn, ipaddr4, ipaddr6):
         """
         Checks if the combination of ip-address and asn exists
@@ -1959,13 +1958,13 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         if ipaddr6:
             ipaddr6 = ipaddress.ip_address(ipaddr6)
 
-        for member in (ixf_data.get("member_list") or []):
+        for member in ixf_data.get("member_list") or []:
 
             if member.get("asnum") != asn:
                 continue
 
-            for connection in (member.get("connection_list") or []):
-                for vlan in (connection.get("vlan_list") or []):
+            for connection in member.get("connection_list") or []:
+                for vlan in connection.get("vlan_list") or []:
 
                     ixf_ip4 = (vlan.get("ipv4") or {}).get("address")
                     ixf_ip6 = (vlan.get("ipv6") or {}).get("address")
@@ -1976,12 +1975,10 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
                     if ipaddr6 and ixf_ip6 and ipaddr6 == ipaddress.ip_address(ixf_ip6):
                         ipaddr6_exists = True
 
-
             if (not ipaddr4 or ipaddr4_exists) and (not ipaddr6 or ipaddr6_exists):
                 break
 
         return (ipaddr4_exists, ipaddr6_exists)
-
 
     @classmethod
     def related_to_ixlan(cls, value=None, filt=None, field="ixlan_id", qset=None):
@@ -4952,20 +4949,15 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         """
 
         if not check_deleted:
-            ipv4 = NetworkIXLan.objects.filter(ipaddr4=self.ipaddr4, status="ok").exclude(
-                id=self.id
-            )
-            ipv6 = NetworkIXLan.objects.filter(ipaddr6=self.ipaddr6, status="ok").exclude(
-                id=self.id
-            )
+            ipv4 = NetworkIXLan.objects.filter(
+                ipaddr4=self.ipaddr4, status="ok"
+            ).exclude(id=self.id)
+            ipv6 = NetworkIXLan.objects.filter(
+                ipaddr6=self.ipaddr6, status="ok"
+            ).exclude(id=self.id)
         else:
-            ipv4 = NetworkIXLan.objects.filter(ipaddr4=self.ipaddr4).exclude(
-                id=self.id
-            )
-            ipv6 = NetworkIXLan.objects.filter(ipaddr6=self.ipaddr6).exclude(
-                id=self.id
-            )
-
+            ipv4 = NetworkIXLan.objects.filter(ipaddr4=self.ipaddr4).exclude(id=self.id)
+            ipv6 = NetworkIXLan.objects.filter(ipaddr6=self.ipaddr6).exclude(id=self.id)
 
         conflict_v4 = self.ipaddr4 and ipv4.exists()
         conflict_v6 = self.ipaddr6 and ipv6.exists()
@@ -4997,7 +4989,9 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         # check if self (new peer) is a real peer that exists in the
         # exchange's IX-f DATA
 
-        real4, real6 = self.ixlan.ix.peer_exists_in_ixf_data(self.network.asn, self.ipaddr4, self.ipaddr6)
+        real4, real6 = self.ixlan.ix.peer_exists_in_ixf_data(
+            self.network.asn, self.ipaddr4, self.ipaddr6
+        )
 
         if not real4 and not real6:
             return
@@ -5013,7 +5007,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         if conflict6:
             other6 = NetworkIXLan.objects.get(status="ok", ipaddr6=self.ipaddr6)
 
-
         # will be flagged for existance of other peer in IX-F data
         # False means other peer is a ghost peer
 
@@ -5026,7 +5019,9 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
                 # ip address conflicts are contained in the same NetworkIXLan, so other4 can be
                 # processed by itself
 
-                ip4, ip6 = self.ixlan.ix.peer_exists_in_ixf_data(other4.network.asn, other4.ipaddr4, other4.ipaddr6)
+                ip4, ip6 = self.ixlan.ix.peer_exists_in_ixf_data(
+                    other4.network.asn, other4.ipaddr4, other4.ipaddr6
+                )
 
             else:
 
@@ -5034,9 +5029,13 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
                 # process each separately.
 
                 if other4 and other4 != other6:
-                    ip4, _ = self.ixlan.ix.peer_exists_in_ixf_data(other4.network.asn, other4.ipaddr4, None)
+                    ip4, _ = self.ixlan.ix.peer_exists_in_ixf_data(
+                        other4.network.asn, other4.ipaddr4, None
+                    )
                 if other6 and other4 != other6:
-                    _, ip6 = self.ixlan.ix.peer_exists_in_ixf_data(other6.network.asn, None, other6.ipaddr6)
+                    _, ip6 = self.ixlan.ix.peer_exists_in_ixf_data(
+                        other6.network.asn, None, other6.ipaddr6
+                    )
 
         except Exception as exc:
 
@@ -5093,7 +5092,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
                     other6.delete()
                 else:
                     other6.save()
-
 
     def validate_speed(self):
         if self.speed in [None, 0]:
@@ -5899,7 +5897,9 @@ class EnvironmentSetting(models.Model):
             # api repeated request throttle: ip-block config
             (
                 "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_CIDR",
-                _("API: Repeated request throttle size threshold for ip blocks (bytes)"),
+                _(
+                    "API: Repeated request throttle size threshold for ip blocks (bytes)"
+                ),
             ),
             (
                 "API_THROTTLE_REPEATED_REQUEST_RATE_CIDR",

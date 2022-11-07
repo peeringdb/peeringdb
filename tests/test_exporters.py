@@ -1,11 +1,11 @@
 """
 Test peeringdb data export views
 """
+import datetime
 import difflib
 import json
 import os
 import re
-import datetime
 
 import pytest
 import reversion
@@ -174,7 +174,6 @@ class AdvancedSearchExportTest(ClientCase):
 
         self.test_export_net_csv()
 
-
     def test_export_fac_json(self):
         """test json export of facility search"""
         client = Client()
@@ -215,7 +214,6 @@ class AdvancedSearchExportTest(ClientCase):
 
         self.test_export_fac_csv()
 
-
     def test_export_ix_json(self):
         """test json export of exchange search"""
         client = Client()
@@ -254,7 +252,6 @@ class AdvancedSearchExportTest(ClientCase):
         call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
 
         self.test_export_ix_csv()
-
 
     def test_export_org_json(self):
         """test json export of organization search"""
@@ -298,5 +295,3 @@ class AdvancedSearchExportTest(ClientCase):
         call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
 
         self.test_export_org_csv()
-
-

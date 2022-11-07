@@ -4,9 +4,9 @@ import os
 import pytest
 import requests
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
-from django.core.cache import cache
 from django.test import RequestFactory, override_settings
 
 from peeringdb_server.context import current_request
@@ -29,7 +29,6 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_prefix_overlap,
 )
-
 from tests.test_ixf_member_import_protocol import setup_test_data
 
 pytestmark = pytest.mark.django_db
@@ -404,7 +403,9 @@ def test_ghost_peer_vs_real_peer_one_netixlan():
     org = Organization.objects.create(name="Test org", status="ok")
     ix = InternetExchange.objects.create(name="Test ix", status="ok", org=org)
     network = Network.objects.create(asn=1001, name="AS1001", status="ok", org=org)
-    network_other = Network.objects.create(asn=1010, name="AS1010", status="ok", org=org)
+    network_other = Network.objects.create(
+        asn=1010, name="AS1010", status="ok", org=org
+    )
     ixlan = ix.ixlan
     ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
     ixlan.save()
@@ -461,13 +462,13 @@ def test_ghost_peer_vs_real_peer_one_netixlan():
     # as the ghost peer
 
     real_peer = NetworkIXLan(
-        network = network,
-        status = "ok",
-        ipaddr4 = IP4,
-        ipaddr6 = IP6,
-        ixlan = ixlan,
-        speed = 1000,
-        asn = network.asn
+        network=network,
+        status="ok",
+        ipaddr4=IP4,
+        ipaddr6=IP6,
+        ixlan=ixlan,
+        speed=1000,
+        asn=network.asn,
     )
 
     # run full validation (this will run `validate_real_vs_ghost_peer`)
@@ -499,7 +500,9 @@ def test_ghost_peer_vs_real_peer_two_netixlan():
     org = Organization.objects.create(name="Test org", status="ok")
     ix = InternetExchange.objects.create(name="Test ix", status="ok", org=org)
     network = Network.objects.create(asn=1001, name="AS1001", status="ok", org=org)
-    network_other = Network.objects.create(asn=1010, name="AS1010", status="ok", org=org)
+    network_other = Network.objects.create(
+        asn=1010, name="AS1010", status="ok", org=org
+    )
     ixlan = ix.ixlan
     ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
     ixlan.save()
@@ -568,13 +571,13 @@ def test_ghost_peer_vs_real_peer_two_netixlan():
     # as the ghost peer
 
     real_peer = NetworkIXLan(
-        network = network,
-        status = "ok",
-        ipaddr4 = IP4,
-        ipaddr6 = IP6,
-        ixlan = ixlan,
-        speed = 1000,
-        asn = network.asn
+        network=network,
+        status="ok",
+        ipaddr4=IP4,
+        ipaddr6=IP6,
+        ixlan=ixlan,
+        speed=1000,
+        asn=network.asn,
     )
 
     # run full validation (this will run `validate_real_vs_ghost_peer`)
@@ -607,7 +610,9 @@ def test_ghost_peer_vs_real_peer_two_netixlan_partial():
     org = Organization.objects.create(name="Test org", status="ok")
     ix = InternetExchange.objects.create(name="Test ix", status="ok", org=org)
     network = Network.objects.create(asn=1001, name="AS1001", status="ok", org=org)
-    network_other = Network.objects.create(asn=1010, name="AS1010", status="ok", org=org)
+    network_other = Network.objects.create(
+        asn=1010, name="AS1010", status="ok", org=org
+    )
     ixlan = ix.ixlan
     ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
     ixlan.save()
@@ -676,13 +681,13 @@ def test_ghost_peer_vs_real_peer_two_netixlan_partial():
     # as the ghost peer
 
     real_peer = NetworkIXLan(
-        network = network,
-        status = "ok",
-        ipaddr4 = IP4,
-        ipaddr6 = IP6,
-        ixlan = ixlan,
-        speed = 1000,
-        asn = network.asn
+        network=network,
+        status="ok",
+        ipaddr4=IP4,
+        ipaddr6=IP6,
+        ixlan=ixlan,
+        speed=1000,
+        asn=network.asn,
     )
 
     # run full validation (this will run `validate_real_vs_ghost_peer`)
@@ -700,12 +705,9 @@ def test_ghost_peer_vs_real_peer_two_netixlan_partial():
     assert ghost_peer_a.ipaddr4 is None
     assert ghost_peer_a.ipaddr6 is not None
 
-
     assert ghost_peer_b.status == "ok"
     assert ghost_peer_b.ipaddr4 is not None
     assert ghost_peer_b.ipaddr6 is None
-
-
 
 
 @pytest.mark.django_db
@@ -722,7 +724,9 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
     org = Organization.objects.create(name="Test org", status="ok")
     ix = InternetExchange.objects.create(name="Test ix", status="ok", org=org)
     network = Network.objects.create(asn=1001, name="AS1001", status="ok", org=org)
-    network_other = Network.objects.create(asn=1010, name="AS1010", status="ok", org=org)
+    network_other = Network.objects.create(
+        asn=1010, name="AS1010", status="ok", org=org
+    )
     ixlan = ix.ixlan
     ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
     ixlan.save()
@@ -757,29 +761,22 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
     )
     # setup ix-f data
 
-    cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", {"invalid":"data"})
+    cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", {"invalid": "data"})
 
     ix = ixlan.ix
 
     real_peer = NetworkIXLan(
-        network = network,
-        status = "ok",
-        ipaddr4 = IP4,
-        ipaddr6 = IP6,
-        ixlan = ixlan,
-        speed = 1000,
-        asn = network.asn
+        network=network,
+        status="ok",
+        ipaddr4=IP4,
+        ipaddr6=IP6,
+        ixlan=ixlan,
+        speed=1000,
+        asn=network.asn,
     )
 
     # run full validation (this will run `validate_real_vs_ghost_peer`)
 
-
     with pytest.raises(Exception) as excinfo:
         real_peer.full_clean()
     assert "IP already exists" in str(excinfo.value)
-
-
-
-
-
-

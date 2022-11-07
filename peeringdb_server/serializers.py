@@ -2072,7 +2072,6 @@ class NetworkIXLanSerializer(ModelSerializer):
         except ValidationError as exc:
             raise serializers.ValidationError({"ipaddr6": exc.message})
 
-
         if self.instance:
             netixlan.id = self.instance.id
 
