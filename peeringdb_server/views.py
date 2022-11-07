@@ -415,8 +415,6 @@ def view_affiliate_to_org(request):
         if not form.is_valid():
             return JsonResponse(form.errors, status=400)
 
-        print("CLEANED", form.cleaned_data)
-
         if (
             not form.cleaned_data.get("org")
             and not form.cleaned_data.get("asn")
