@@ -671,8 +671,8 @@
             <div>{{ uoar.user.username }}</div>
           </div>
           <div class="col-xs-6 col-sm-3 col-md-3">
-            <div>{{ user_email }}</div>
-            <div>{% if user_email|email_confirmed %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</div>
+            <div>{{ uoar.user.email }}</div>
+            <div>{% if uoar.user.email|email_confirmed %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</div>
           </div>
           <div class="col-xs-6 col-sm-3 col-md-3">{{ uoar.created|date:"Y, N d" }}</div>
           <div class="col-xs-6 col-sm-3 col-md-3 right">

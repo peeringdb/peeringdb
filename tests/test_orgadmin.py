@@ -604,6 +604,26 @@ class OrgAdminTests(TestCase):
 
         self.assertEqual({"net": 0x01, "fac": 0x03, "ix": 0x01}, dest)
 
+
+    def test_uoar_listing(self):
+        """
+        Test that affilation requests are listed correctly
+        """
+
+        # create a user-organization-affiliation-request for user c
+        uoar = models.UserOrgAffiliationRequest.objects.create(
+            user=self.user_c, asn=1, status="pending"
+        )
+
+        request = self.factory.get(f"/org/{uoar.org.id}/")
+        mock_csrf_session(request)
+        request.user = self.org_admin
+
+        resp = views.view_organization(request, uoar.org.id)
+
+        assert "user_c@localhost" in resp.content.decode("utf-8")
+
+
     def test_uoar_approve(self):
         """
         Test approving of a user-org-affiliation-request
