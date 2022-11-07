@@ -1,6 +1,5 @@
 import json
 
-import py.test
 import pytest
 from django.test import Client, TestCase
 from rest_framework.test import APIClient
