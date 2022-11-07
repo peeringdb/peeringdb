@@ -687,7 +687,14 @@ set_option(
 set_option("CSP_STYLE_SRC", ["'self'", "fonts.googleapis.com", "'unsafe-inline'"])
 set_option(
     "CSP_SCRIPT_SRC",
-    ["'self'", "www.google.com", "www.googletagmanager.com", "www.gstatic.com", "cdn.redoc.ly", "'unsafe-inline'"],
+    [
+        "'self'",
+        "www.google.com",
+        "www.googletagmanager.com",
+        "www.gstatic.com",
+        "cdn.redoc.ly",
+        "'unsafe-inline'",
+    ],
 )
 set_option("CSP_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
 set_option("CSP_FONT_SRC", ["'self'", "fonts.gstatic.com"])
