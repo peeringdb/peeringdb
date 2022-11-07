@@ -1,6 +1,9 @@
 """
 Load and maintain global stats (displayed in peeringdb footer).
 """
+import datetime
+from django.conf import settings
+from django.utils import timezone
 
 from peeringdb_server.models import (
     Facility,
@@ -12,9 +15,20 @@ from peeringdb_server.models import (
     User,
 )
 
+STATS = {
+    "data": {},
+    "mod": None
+}
+STATS_MOD_DT = None
 
-def stats():
-    return {
+
+def gen_stats():
+
+    """
+    Regenerates global statics to stats.STATS['data']
+    """
+
+    STATS["data"] = {
         Network.handleref.tag: Network.handleref.filter(status="ok").count(),
         InternetExchange.handleref.tag: InternetExchange.handleref.filter(
             status="ok"
@@ -28,6 +42,24 @@ def stats():
         "registered_users": User.objects.count(),
         "organizations": Organization.objects.filter(status="ok").count(),
     }
+    STATS["mod"] = timezone.now()
+
+
+def stats():
+
+    """
+    Returns dict of global statistics
+
+    Will return cached statistics according to `GLOBAL_STATS_CACHE_DURATION` setting
+    """
+
+    if STATS["mod"]:
+        diff = timezone.now() - STATS["mod"]
+        if diff.total_seconds() < settings.GLOBAL_STATS_CACHE_DURATION:
+            return STATS["data"]
+
+    gen_stats()
+    return STATS["data"]
 
 
 def get_fac_stats(netfac, ixfac):

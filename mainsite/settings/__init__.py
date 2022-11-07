@@ -1169,6 +1169,9 @@ set_option("MIN_AGE_ORPHANED_USER_DAYS", 14)
 # pdb_validate_data cache timeout default
 set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)
 
+# cache global stats (footer statistics) for N seconds
+set_option("GLOBAL_STATS_CACHE_DURATION", 10)
+
 if RELEASE_ENV == "prod":
     set_option("PDB_PREPEND_WWW", True)
 else:
