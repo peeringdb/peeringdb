@@ -1,12 +1,12 @@
-import time
 import datetime
 import io
+import time
 
 import pytest
 from django.conf import settings
-from django.test import override_settings
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.test import override_settings
 
 from peeringdb_server.models import (
     REFTAG_MAP,
@@ -100,6 +100,7 @@ def test_global_stats(db, data_stats_global):
     global_stats = stats()
     assert global_stats == data_stats_global.expected
 
+
 @override_settings(GLOBAL_STATS_CACHE_DURATION=5)
 @pytest.mark.django_db
 def test_global_stats_cache(db, data_stats_global_cached):
@@ -117,9 +118,6 @@ def test_global_stats_cache(db, data_stats_global_cached):
 
     global_stats = stats()
     assert global_stats != data_stats_global_cached.expected
-
-
-
 
 
 @pytest.mark.django_db

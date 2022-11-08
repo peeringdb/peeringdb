@@ -604,7 +604,6 @@ class OrgAdminTests(TestCase):
 
         self.assertEqual({"net": 0x01, "fac": 0x03, "ix": 0x01}, dest)
 
-
     def test_uoar_listing(self):
         """
         Test that affilation requests are listed correctly
@@ -622,7 +621,6 @@ class OrgAdminTests(TestCase):
         resp = views.view_organization(request, uoar.org.id)
 
         assert "user_c@localhost" in resp.content.decode("utf-8")
-
 
     def test_uoar_approve(self):
         """

@@ -1,7 +1,6 @@
 """
 Load and maintain global stats (displayed in peeringdb footer).
 """
-import datetime
 from django.conf import settings
 from django.utils import timezone
 
@@ -15,10 +14,7 @@ from peeringdb_server.models import (
     User,
 )
 
-STATS = {
-    "data": {},
-    "mod": None
-}
+STATS = {"data": {}, "mod": None}
 STATS_MOD_DT = None
 
 
