@@ -452,11 +452,11 @@ python-versions = "*"
 
 [[package]]
 name = "django-handleref"
-version = "1.0.2"
+version = "1.1.0"
 description = "django object tracking"
 category = "main"
 optional = false
-python-versions = ">=3.6.2,<4.0.0"
+python-versions = ">=3.7,<4.0"
 
 [[package]]
 name = "django-hashers-passlib"
@@ -1923,7 +1923,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "c3cc07bd5438014d131a2731fd98c1c61aab7048bb7958f1039e113be9963a61"
+content-hash = "2495b5af12d11a3112edccd9db970589cda72cdeca6a20a405b5e76b1c1bc27a"
 
 [metadata.files]
 asgiref = [
@@ -2251,8 +2251,8 @@ django-grappelli = [
     {file = "django_grappelli-3.0.3-py2.py3-none-any.whl", hash = "sha256:a98883407f995896f4c4d108ef3ef6cfc00e581211738c5a13c536950a95bcc8"},
 ]
 django-handleref = [
-    {file = "django-handleref-1.0.2.tar.gz", hash = "sha256:7e23d4697cece9b85d081aee4cff69c12273da0bb9f9c1dbcc5480064c825e31"},
-    {file = "django_handleref-1.0.2-py3-none-any.whl", hash = "sha256:c6128fcf7e1863d5135e319947fcc8f113bb7a20026341fa5f106cb25ce93055"},
+    {file = "django-handleref-1.1.0.tar.gz", hash = "sha256:c5c29cc4b2791e72e224e4de1d24b50a229c7694ecc66ca921faedad35f6f96a"},
+    {file = "django_handleref-1.1.0-py3-none-any.whl", hash = "sha256:692c7074baf24070ad4c702b5a5b4f8e2ce2df78ac4c46b9a534fd2634c9cc78"},
 ]
 django-hashers-passlib = [
     {file = "django-hashers-passlib-0.4.tar.gz", hash = "sha256:c8f937cf4a9a21957e28735d1ffd8df242dff863c2e4b92665d98509cd6ae0c4"},
