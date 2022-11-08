@@ -483,7 +483,7 @@ class AdminTests(TestCase):
         response = client.post(url, post_data(netixlan_b.ipaddr4, netixlan_b.ipaddr6))
         assert netixlan.ipaddr6 is None
         assert netixlan.ipaddr4 is None
-        assert "Ip address already exists elsewhere" in response.content.decode("utf-8")
+        assert "IP already exists" in response.content.decode("utf-8")
 
     def _run_regex_search(self, model, search_term):
         c = Client()

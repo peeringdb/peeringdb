@@ -389,7 +389,6 @@ def validate_api_rate(value):
     if re.match(r"([/\d]+)\s*(?:minute|hour|seconds|day|week|month|year)", value):
         return value
     else:
-        print(value)
         raise ValidationError(
             _(
                 "Invalid setting! Acceptable value is a number followed by one of the following: minute, hour, seconds, day, week, month, year. eg (10/minute, 1/hour, 5/day, 1/week, 1/month, 1/year)"

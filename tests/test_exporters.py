@@ -1,6 +1,7 @@
 """
 Test peeringdb data export views
 """
+import datetime
 import difflib
 import json
 import os
@@ -165,6 +166,14 @@ class AdvancedSearchExportTest(ClientCase):
             "\r\n", "\n"
         ).rstrip() == self.expected_data("net", "csv")
 
+    def test_export_net_csv_with_api_cache(self):
+
+        """test csv export of net search while api-cache exists"""
+
+        call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
+
+        self.test_export_net_csv()
+
     def test_export_fac_json(self):
         """test json export of facility search"""
         client = Client()
@@ -197,6 +206,14 @@ class AdvancedSearchExportTest(ClientCase):
             "\r\n", "\n"
         ).rstrip() == self.expected_data("fac", "csv")
 
+    def test_export_fac_csv_with_api_cache(self):
+
+        """test csv export of facility search while api-cache exists"""
+
+        call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
+
+        self.test_export_fac_csv()
+
     def test_export_ix_json(self):
         """test json export of exchange search"""
         client = Client()
@@ -227,6 +244,14 @@ class AdvancedSearchExportTest(ClientCase):
         assert response.content.decode("utf-8").replace(
             "\r\n", "\n"
         ).rstrip() == self.expected_data("ix", "csv")
+
+    def test_export_ix_csv_with_api_cache(self):
+
+        """test csv export of ix search while api-cache exists"""
+
+        call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
+
+        self.test_export_ix_csv()
 
     def test_export_org_json(self):
         """test json export of organization search"""
@@ -262,3 +287,11 @@ class AdvancedSearchExportTest(ClientCase):
         assert response.content.decode("utf-8").replace(
             "\r\n", "\n"
         ).rstrip() == self.expected_data("org", "csv")
+
+    def test_export_org_csv_with_api_cache(self):
+
+        """test csv export of org search while api-cache exists"""
+
+        call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
+
+        self.test_export_org_csv()

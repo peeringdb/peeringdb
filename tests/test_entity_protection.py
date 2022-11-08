@@ -64,27 +64,11 @@ def test_protected_entities(db):
         for ixfac in ix.ixfac_set.all():
             ixfac.delete()
 
-        # process the prefixes under the exchange
-
-        for ixpfx in ix.ixlan.ixpfx_set.all():
-
-            # exchange has netixlans under it that fall
-            # into the address space for the prefix so
-            # the prefix is currently not deletable
-
-            assert_protected(ixpfx)
-
         # process the netixlans under the exchange and
         # delete them
 
         for netixlan in ix.ixlan.netixlan_set.all():
             netixlan.delete()
-
-        # with the netixlans gone, the prefixes can now
-        # be deleted
-
-        for ixpfx in ix.ixlan.ixpfx_set.all():
-            ixpfx.delete()
 
         # with netixlans gone the exchange can now be
         # deleted

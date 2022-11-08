@@ -1,4 +1,4 @@
-Generated from serializers.py on 2022-10-11 12:34:14.972233
+Generated from serializers.py on 2022-11-08 14:31:50.933987
 
 # peeringdb_server.serializers
 
@@ -763,33 +763,3 @@ with address fields.
 At minimum, a model needs a country and city field, but
 address1, address2, zipcode and state are also considered
 if they exist.
-
-
-## UniqueFieldValidator
-
-```
-UniqueFieldValidator(builtins.object)
-```
-
-For issue #70:
-
-Django-side unique field validation.
-
-Ideally this is done in mysql, however the other
-duplicates need to be cleared first, so validate on the django side initially.
-
-
-### Methods
-
-#### \__call__
-`def __call__(self, attrs)`
-
-Call self as a function.
-
----
-#### \__init__
-`def __init__(self, fields, message=None, check_deleted=False)`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
----

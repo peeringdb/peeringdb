@@ -326,38 +326,38 @@ set_option("API_THROTTLE_MELISSA_RATE_IP", "1/minute")
 
 
 # Anonymous (ip-address) - Size threshold (bytes, default = 1MB)
-set_option("API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP", 1000000)
+set_option("API_THROTTLE_REPEATED_REQUEST_THRESHOLD_IP", 1000000)
 # Anonymous (ip-address) - Rate limit
-set_option("API_THROTTLE_RESPONSE_SIZE_RATE_IP", "10/minute")
+set_option("API_THROTTLE_REPEATED_REQUEST_RATE_IP", "10/minute")
 # Anonymous (ip-address) - On/Off toggle
-set_option("API_THROTTLE_RESPONSE_SIZE_ENABLED_IP", False)
+set_option("API_THROTTLE_REPEATED_REQUEST_ENABLED_IP", False)
 
 
 # Anonymous (cidr ipv4/24, ipv6/64) - Size threshold (bytes, default = 1MB)
-set_option("API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR", 1000000)
+set_option("API_THROTTLE_REPEATED_REQUEST_THRESHOLD_CIDR", 1000000)
 # Anonymous (cidr ipv4/24, ipv6/64) - Rate limit
-set_option("API_THROTTLE_RESPONSE_SIZE_RATE_CIDR", "10/minute")
+set_option("API_THROTTLE_REPEATED_REQUEST_RATE_CIDR", "10/minute")
 # Anonymous (cidr ipv4/24, ipv6/64) - On/Off toggle
-set_option("API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR", False)
+set_option("API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR", False)
 
 
 # User - Size threshold (bytes, default = 1MB)
-set_option("API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER", 1000000)
+set_option("API_THROTTLE_REPEATED_REQUEST_THRESHOLD_USER", 1000000)
 # User - Rate limit
-set_option("API_THROTTLE_RESPONSE_SIZE_RATE_USER", "10/minute")
+set_option("API_THROTTLE_REPEATED_REQUEST_RATE_USER", "10/minute")
 # User - On/Off toggle
-set_option("API_THROTTLE_RESPONSE_SIZE_ENABLED_USER", False)
+set_option("API_THROTTLE_REPEATED_REQUEST_ENABLED_USER", False)
 
 
 # Organization- Size threshold (bytes, default = 1MB)
-set_option("API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG", 1000000)
+set_option("API_THROTTLE_REPEATED_REQUEST_THRESHOLD_ORG", 1000000)
 # Organization - Rate limit
-set_option("API_THROTTLE_RESPONSE_SIZE_RATE_ORG", "10/minute")
+set_option("API_THROTTLE_REPEATED_REQUEST_RATE_ORG", "10/minute")
 # Organization - On/Off toggle
-set_option("API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG", False)
+set_option("API_THROTTLE_REPEATED_REQUEST_ENABLED_ORG", False)
 
-# Expected response sizes are cached for n seconds (default = 31 days)
-set_option("API_THROTTLE_RESPONSE_SIZE_CACHE_EXPIRY", 86400 * 31)
+# Expected repeated requests are cached for n seconds (default = 31 days)
+set_option("API_THROTTLE_REPEATED_REQUEST_CACHE_EXPIRY", 86400 * 31)
 
 
 # spatial queries require user auth
@@ -882,10 +882,10 @@ if API_THROTTLE_ENABLED:
                 "user": API_THROTTLE_RATE_USER,
                 "filter_distance": API_THROTTLE_RATE_FILTER_DISTANCE,
                 "ixf_import_request": API_THROTTLE_IXF_IMPORT,
-                "response_size_ip": API_THROTTLE_RESPONSE_SIZE_RATE_IP,
-                "response_size_cidr": API_THROTTLE_RESPONSE_SIZE_RATE_CIDR,
-                "response_size_user": API_THROTTLE_RESPONSE_SIZE_RATE_USER,
-                "response_size_org": API_THROTTLE_RESPONSE_SIZE_RATE_ORG,
+                "response_size_ip": API_THROTTLE_REPEATED_REQUEST_RATE_IP,
+                "response_size_cidr": API_THROTTLE_REPEATED_REQUEST_RATE_CIDR,
+                "response_size_user": API_THROTTLE_REPEATED_REQUEST_RATE_USER,
+                "response_size_org": API_THROTTLE_REPEATED_REQUEST_RATE_ORG,
                 "melissa_user": API_THROTTLE_MELISSA_RATE_USER,
                 "melissa_org": API_THROTTLE_MELISSA_RATE_ORG,
                 "melissa_ip": API_THROTTLE_MELISSA_RATE_IP,
@@ -1180,6 +1180,9 @@ set_option("MIN_AGE_ORPHANED_USER_DAYS", 14)
 
 # pdb_validate_data cache timeout default
 set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)
+
+# cache global stats (footer statistics) for N seconds
+set_option("GLOBAL_STATS_CACHE_DURATION", 900)
 
 if RELEASE_ENV == "prod":
     set_option("PDB_PREPEND_WWW", True)

@@ -4,6 +4,7 @@ import os
 import pytest
 import requests
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import RequestFactory, override_settings
@@ -28,6 +29,7 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_prefix_overlap,
 )
+from tests.test_ixf_member_import_protocol import setup_test_data
 
 pytestmark = pytest.mark.django_db
 
@@ -386,3 +388,395 @@ def test_bypass_validation():
             NetworkIXLan(speed=1000, network=net, ixlan=ix.ixlan).clean()
         with pytest.raises(ValidationError):
             validate_irr_as_set("ripe::as-foo:as123:as345:as678")
+
+
+@pytest.mark.django_db
+def test_ghost_peer_vs_real_peer_one_netixlan():
+    """
+    Tests that a real peer can claim the ip addresses of a gohst peer. #983
+
+    In this test both ipv4 and ipv6 exist on the same netixlan.
+    """
+
+    # set up entities
+
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(name="Test ix", status="ok", org=org)
+    network = Network.objects.create(asn=1001, name="AS1001", status="ok", org=org)
+    network_other = Network.objects.create(
+        asn=1010, name="AS1010", status="ok", org=org
+    )
+    ixlan = ix.ixlan
+    ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
+    ixlan.save()
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        status="ok",
+        prefix="195.69.144.0/22",
+        protocol="IPv4",
+    )
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        status="ok",
+        prefix="2001:7f8:1::/64",
+        protocol="IPv6",
+    )
+
+    IP4 = "195.69.147.250"
+    IP6 = "2001:7f8:1::a500:2906:1"
+
+    ghost_peer = NetworkIXLan.objects.create(
+        network=network_other,
+        ixlan=ixlan,
+        asn=network_other.asn,
+        speed=20000,
+        ipaddr4=IP4,
+        ipaddr6=IP6,
+        status="ok",
+        is_rs_peer=False,
+        operational=False,
+    )
+
+    # setup ix-f cache
+
+    data = setup_test_data("ixf.member.1")
+    cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", data)
+
+    ix = ixlan.ix
+
+    # real peer should exist in ix-f data
+
+    real4, real6 = ix.peer_exists_in_ixf_data(1001, IP4, IP6)
+    assert real4
+    assert real6
+
+    # ghost peer should NOT exist in ix-f data
+
+    ghost4, ghost6 = ix.peer_exists_in_ixf_data(1010, IP4, IP6)
+    assert not ghost4
+    assert not ghost6
+
+    # create and save a real peer that has the same ip addresses
+    # as the ghost peer
+
+    real_peer = NetworkIXLan(
+        network=network,
+        status="ok",
+        ipaddr4=IP4,
+        ipaddr6=IP6,
+        ixlan=ixlan,
+        speed=1000,
+        asn=network.asn,
+    )
+
+    # run full validation (this will run `validate_real_vs_ghost_peer`)
+
+    real_peer.full_clean()
+    real_peer.save()
+
+    # real peer has been saved and since it claimed both ip4 and ip6, the ghost
+    # peer is now deleted
+
+    ghost_peer.refresh_from_db()
+
+    assert ghost_peer.status == "deleted"
+
+
+@pytest.mark.django_db
+def test_ghost_peer_vs_real_peer_two_netixlan():
+    """
+    Tests that a real peer can claim the ip addresses of a gohst peer. #983
+
+    In this test both ipv4 and ipv6 exist on separate netixlans.
+
+    In this test both conflicting netixlans will have neither ipv4 nor ipv6 set in the end
+    and will be deleted
+    """
+
+    # set up entities
+
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(name="Test ix", status="ok", org=org)
+    network = Network.objects.create(asn=1001, name="AS1001", status="ok", org=org)
+    network_other = Network.objects.create(
+        asn=1010, name="AS1010", status="ok", org=org
+    )
+    ixlan = ix.ixlan
+    ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
+    ixlan.save()
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        status="ok",
+        prefix="195.69.144.0/22",
+        protocol="IPv4",
+    )
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        status="ok",
+        prefix="2001:7f8:1::/64",
+        protocol="IPv6",
+    )
+
+    IP4 = "195.69.147.250"
+    IP6 = "2001:7f8:1::a500:2906:1"
+
+    ghost_peer_a = NetworkIXLan.objects.create(
+        network=network_other,
+        ixlan=ixlan,
+        asn=network_other.asn,
+        speed=20000,
+        ipaddr4=IP4,
+        ipaddr6=None,
+        status="ok",
+        is_rs_peer=False,
+        operational=False,
+    )
+
+    ghost_peer_b = NetworkIXLan.objects.create(
+        network=network_other,
+        ixlan=ixlan,
+        asn=network_other.asn,
+        speed=20000,
+        ipaddr4=None,
+        ipaddr6=IP6,
+        status="ok",
+        is_rs_peer=False,
+        operational=False,
+    )
+
+    # setup ix-f data
+
+    data = setup_test_data("ixf.member.1")
+    cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", data)
+
+    ix = ixlan.ix
+
+    # real peer should exist in ix-f data
+
+    real4, real6 = ix.peer_exists_in_ixf_data(1001, IP4, IP6)
+    assert real4
+    assert real6
+
+    # ghost peer should NOT exist in ix-f data
+
+    ghost4, ghost6 = ix.peer_exists_in_ixf_data(1010, IP4, IP6)
+    assert not ghost4
+    assert not ghost6
+
+    # create and save a real peer that has the same ip addresses
+    # as the ghost peer
+
+    real_peer = NetworkIXLan(
+        network=network,
+        status="ok",
+        ipaddr4=IP4,
+        ipaddr6=IP6,
+        ixlan=ixlan,
+        speed=1000,
+        asn=network.asn,
+    )
+
+    # run full validation (this will run `validate_real_vs_ghost_peer`)
+
+    real_peer.full_clean()
+    real_peer.save()
+
+    # real peer has been saved and since it claimed both ip4 and ip6, the ghost
+    # peer is now deleted
+
+    ghost_peer_a.refresh_from_db()
+    ghost_peer_b.refresh_from_db()
+
+    assert ghost_peer_a.status == "deleted"
+    assert ghost_peer_b.status == "deleted"
+
+
+@pytest.mark.django_db
+def test_ghost_peer_vs_real_peer_two_netixlan_partial():
+    """
+    Tests that a real peer can claim the ip addresses of a gohst peer. #983
+
+    In this test both ipv4 and ipv6 exist on separate netixlans.
+
+    In this test the conflicting netixlans will have the other ip address still set and will not be deleted.
+    """
+
+    # set up entities
+
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(name="Test ix", status="ok", org=org)
+    network = Network.objects.create(asn=1001, name="AS1001", status="ok", org=org)
+    network_other = Network.objects.create(
+        asn=1010, name="AS1010", status="ok", org=org
+    )
+    ixlan = ix.ixlan
+    ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
+    ixlan.save()
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        status="ok",
+        prefix="195.69.144.0/22",
+        protocol="IPv4",
+    )
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        status="ok",
+        prefix="2001:7f8:1::/64",
+        protocol="IPv6",
+    )
+
+    IP4 = "195.69.147.250"
+    IP6 = "2001:7f8:1::a500:2906:1"
+
+    ghost_peer_a = NetworkIXLan.objects.create(
+        network=network_other,
+        ixlan=ixlan,
+        asn=network_other.asn,
+        speed=20000,
+        ipaddr4=IP4,
+        ipaddr6="2001:7f8:1::a500:2906:2",
+        status="ok",
+        is_rs_peer=False,
+        operational=False,
+    )
+
+    ghost_peer_b = NetworkIXLan.objects.create(
+        network=network_other,
+        ixlan=ixlan,
+        asn=network_other.asn,
+        speed=20000,
+        ipaddr4="195.69.147.251",
+        ipaddr6=IP6,
+        status="ok",
+        is_rs_peer=False,
+        operational=False,
+    )
+
+    # setup ix-f data
+
+    data = setup_test_data("ixf.member.1")
+    cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", data)
+
+    ix = ixlan.ix
+
+    # real peer should exist in ix-f data
+
+    real4, real6 = ix.peer_exists_in_ixf_data(1001, IP4, IP6)
+    assert real4
+    assert real6
+
+    # ghost peer should NOT exist in ix-f data
+
+    ghost4, ghost6 = ix.peer_exists_in_ixf_data(1010, IP4, IP6)
+    assert not ghost4
+    assert not ghost6
+
+    # create and save a real peer that has the same ip addresses
+    # as the ghost peer
+
+    real_peer = NetworkIXLan(
+        network=network,
+        status="ok",
+        ipaddr4=IP4,
+        ipaddr6=IP6,
+        ixlan=ixlan,
+        speed=1000,
+        asn=network.asn,
+    )
+
+    # run full validation (this will run `validate_real_vs_ghost_peer`)
+
+    real_peer.full_clean()
+    real_peer.save()
+
+    # real peer has been saved and since it only claimed one ip address
+    # from either ghost peer, both ghost peers remain
+
+    ghost_peer_a.refresh_from_db()
+    ghost_peer_b.refresh_from_db()
+
+    assert ghost_peer_a.status == "ok"
+    assert ghost_peer_a.ipaddr4 is None
+    assert ghost_peer_a.ipaddr6 is not None
+
+    assert ghost_peer_b.status == "ok"
+    assert ghost_peer_b.ipaddr4 is not None
+    assert ghost_peer_b.ipaddr6 is None
+
+
+@pytest.mark.django_db
+def test_ghost_peer_vs_real_peer_invalid_ixf_data():
+    """
+    Tests that a real peer can claim the ip addresses of a gohst peer. #983
+
+    Test the handling of invalid ix-f data, in which case the ghost peer vs real peer
+    logic should be skipped.
+    """
+
+    # set up entities
+
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(name="Test ix", status="ok", org=org)
+    network = Network.objects.create(asn=1001, name="AS1001", status="ok", org=org)
+    network_other = Network.objects.create(
+        asn=1010, name="AS1010", status="ok", org=org
+    )
+    ixlan = ix.ixlan
+    ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
+    ixlan.save()
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        status="ok",
+        prefix="195.69.144.0/22",
+        protocol="IPv4",
+    )
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        status="ok",
+        prefix="2001:7f8:1::/64",
+        protocol="IPv6",
+    )
+
+    IP4 = "195.69.147.250"
+    IP6 = "2001:7f8:1::a500:2906:1"
+
+    ghost_peer = NetworkIXLan.objects.create(
+        network=network_other,
+        ixlan=ixlan,
+        asn=network_other.asn,
+        speed=20000,
+        ipaddr4=IP4,
+        ipaddr6=IP6,
+        status="ok",
+        is_rs_peer=False,
+        operational=False,
+    )
+    # setup ix-f data
+
+    cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", {"invalid": "data"})
+
+    ix = ixlan.ix
+
+    real_peer = NetworkIXLan(
+        network=network,
+        status="ok",
+        ipaddr4=IP4,
+        ipaddr6=IP6,
+        ixlan=ixlan,
+        speed=1000,
+        asn=network.asn,
+    )
+
+    # run full validation (this will run `validate_real_vs_ghost_peer`)
+
+    with pytest.raises(Exception) as excinfo:
+        real_peer.full_clean()
+    assert "IP already exists" in str(excinfo.value)

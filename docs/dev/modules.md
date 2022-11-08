@@ -1,4 +1,4 @@
-Generated on 2022-10-11 12:34:14.972233
+Generated on 2022-11-08 14:31:50.933987
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -159,6 +159,10 @@ When adding new fields to django-peeringdb make sure migration files for the sch
 
 Please open a merge request in peeringdb/django-peeringdb for the field addition as well.
 
+## [oauth_views.py](/docs/dev/modules/oauth_views.py.md)
+
+# Classes
+
 ## [org_admin_views.py](/docs/dev/modules/org_admin_views.py.md)
 
 View for organization administrative actions (/org endpoint).
@@ -284,4 +288,3 @@ View definitions:
 - Entity views (network, facility, internet exchange and organization)
 - Sponsorships
 - User Registration
-

@@ -240,6 +240,36 @@
             </div>
 
 
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Property" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="property"
+                     data-edit-data="enum/property"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Diverse Serving Substations" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="diverse_serving_substations"
+                     data-edit-data="enum/bool_choice_with_opt_out_str"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Available Voltage Services" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="available_voltage_services"
+                     data-edit-multiple="yes"
+                     data-edit-data="enum/available_voltage"></div>
+              </div>
+            </div>
+
+
+
           </div>
           <div class="col-xs-12 col-sm-6 col-md-6">
             {% include "site/entity_create.html" with entity_name="Facility" %}
@@ -671,8 +701,8 @@
             <div>{{ uoar.user.username }}</div>
           </div>
           <div class="col-xs-6 col-sm-3 col-md-3">
-            <div>{{ user_email }}</div>
-            <div>{% if user_email|email_confirmed %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</div>
+            <div>{{ uoar.user.email }}</div>
+            <div>{% if uoar.user.email|email_confirmed %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</div>
           </div>
           <div class="col-xs-6 col-sm-3 col-md-3">{{ uoar.created|date:"Y, N d" }}</div>
           <div class="col-xs-6 col-sm-3 col-md-3 right">

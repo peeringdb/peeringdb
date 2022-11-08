@@ -442,6 +442,19 @@ def view_affiliate_to_org(request):
             network = Network.objects.get(asn=asn)
             org_id = network.org.id
 
+        if org_id:
+            if Organization.objects.get(id=org_id).status == "deleted":
+                return JsonResponse(
+                    {
+                        "non_field_errors": [
+                            _(
+                                "Unable to affiliate as this organization has been deleted. Please reach out to PeeringDB support if you wish to resolve this."
+                            )
+                        ]
+                    },
+                    status=400,
+                )
+
         already_requested_affil_response = JsonResponse(
             {
                 "non_field_errors": [

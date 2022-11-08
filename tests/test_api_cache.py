@@ -131,23 +131,23 @@ def test_no_api_throttle():
     reset_group_ids()
 
     models.EnvironmentSetting.objects.create(
-        setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_IP", value_bool=True
+        setting="API_THROTTLE_REPEATED_REQUEST_ENABLED_IP", value_bool=True
     )
     models.EnvironmentSetting.objects.create(
-        setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP", value_int=1
+        setting="API_THROTTLE_REPEATED_REQUEST_THRESHOLD_IP", value_int=1
     )
     models.EnvironmentSetting.objects.create(
-        setting="API_THROTTLE_RESPONSE_SIZE_RATE_IP", value_str="1/minute"
+        setting="API_THROTTLE_REPEATED_REQUEST_RATE_IP", value_str="1/minute"
     )
 
     models.EnvironmentSetting.objects.create(
-        setting="API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR", value_bool=True
+        setting="API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR", value_bool=True
     )
     models.EnvironmentSetting.objects.create(
-        setting="API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR", value_int=1
+        setting="API_THROTTLE_REPEATED_REQUEST_THRESHOLD_CIDR", value_int=1
     )
     models.EnvironmentSetting.objects.create(
-        setting="API_THROTTLE_RESPONSE_SIZE_RATE_CIDR", value_str="1/minute"
+        setting="API_THROTTLE_REPEATED_REQUEST_RATE_CIDR", value_str="1/minute"
     )
 
     models.EnvironmentSetting.objects.create(

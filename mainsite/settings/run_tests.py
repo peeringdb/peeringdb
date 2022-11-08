@@ -35,6 +35,7 @@ IXF_IMPORTER_DAYS_UNTIL_TICKET = 6
 IXF_SEND_TICKETS = False
 TUTORIAL_MODE = False
 CAPTCHA_TEST_MODE = True
+GLOBAL_STATS_CACHE_DURATION = 0
 CLIENT_COMPAT = {
     "client": {"min": (0, 6), "max": (0, 6, 5)},
     "backends": {"django_peeringdb": {"min": (0, 6), "max": (0, 6, 5)}},

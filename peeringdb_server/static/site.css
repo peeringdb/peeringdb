@@ -514,6 +514,10 @@ div.landing_footer img.socialmedia_icon {
   margin: 5px;
 }
 
+div.landing_footer img.news_link {
+  width: 180px;
+}
+
 div.landing_footer a {
   color: #ffffff;
 }
@@ -863,6 +867,10 @@ div.list div.row.item img {
 div.list div.squeeze-15 {
   padding-left: 15px;
   padding-right: 15px;
+}
+
+#manage_perms div[data-edit-name=entity]{
+  color: #000;
 }
 
 div.panel .highlight-warning,

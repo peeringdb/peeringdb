@@ -26,6 +26,7 @@ Please open a merge request in peeringdb/django-peeringdb for the field addition
 import datetime
 import ipaddress
 import json
+import logging
 import re
 import uuid
 from itertools import chain
@@ -47,6 +48,7 @@ from django.contrib.auth.models import (
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core import validators
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.mail.message import EmailMultiAlternatives
 from django.db import models, transaction
@@ -117,6 +119,8 @@ if settings.TUTORIAL_MODE:
     COMMANDLINE_TOOLS += (("pdb_wipe", _("Reset Environment")),)
 
 COMMANDLINE_TOOLS += (("pdb_ixf_ixp_member_import", _("IX-F Import")),)
+
+logger = logging.getLogger(__name__)
 
 
 def debug_mail(*args):
@@ -1920,6 +1924,61 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
     def __unicode__(self):
         return self.name
+
+    def peer_exists_in_ixf_data(self, asn, ipaddr4, ipaddr6):
+        """
+        Checks if the combination of ip-address and asn exists
+        in the internet exchange's IX-F data.
+
+        Arguments:
+
+        - asn (`int`)
+        - ipaddr4 (`str`|`ipaddress.ip_address`)
+        - ipaddr6 (`str`|`ipaddress.ip_address`)
+        """
+
+        url = self.ixlan.ixf_ixp_member_list_url
+
+        if not url:
+            # IX-F url not specified
+            return (False, False)
+
+        ixf_data = cache.get(f"IXF-CACHE-{url}")
+
+        if not ixf_data:
+            # IX-F cache doesnt exist
+            return (False, False)
+
+        ipaddr4_exists = False
+        ipaddr6_exists = False
+
+        if ipaddr4:
+            ipaddr4 = ipaddress.ip_address(ipaddr4)
+
+        if ipaddr6:
+            ipaddr6 = ipaddress.ip_address(ipaddr6)
+
+        for member in ixf_data.get("member_list") or []:
+
+            if member.get("asnum") != asn:
+                continue
+
+            for connection in member.get("connection_list") or []:
+                for vlan in connection.get("vlan_list") or []:
+
+                    ixf_ip4 = (vlan.get("ipv4") or {}).get("address")
+                    ixf_ip6 = (vlan.get("ipv6") or {}).get("address")
+
+                    if ipaddr4 and ixf_ip4 and ipaddr4 == ipaddress.ip_address(ixf_ip4):
+                        ipaddr4_exists = True
+
+                    if ipaddr6 and ixf_ip6 and ipaddr6 == ipaddress.ip_address(ixf_ip6):
+                        ipaddr6_exists = True
+
+            if (not ipaddr4 or ipaddr4_exists) and (not ipaddr6 or ipaddr6_exists):
+                break
+
+        return (ipaddr4_exists, ipaddr6_exists)
 
     @classmethod
     def related_to_ixlan(cls, value=None, filt=None, field="ixlan_id", qset=None):
@@ -4236,42 +4295,6 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
         except ValueError:
             return False
 
-    @property
-    def deletable(self):
-        """
-        Returns whether or not the prefix is currently
-        in a state where it can be marked as deleted.
-
-        This will be False for prefixes of which ANY
-        of the following is True:
-
-        - parent ixlan has netixlans that fall into
-          its address space
-        """
-
-        prefix = self.prefix
-        can_delete = True
-        for netixlan in self.ixlan.netixlan_set_active:
-            if self.protocol == "IPv4":
-                if netixlan.ipaddr4 and netixlan.ipaddr4 in prefix:
-                    can_delete = False
-                    break
-
-            if self.protocol == "IPv6":
-                if netixlan.ipaddr6 and netixlan.ipaddr6 in prefix:
-                    can_delete = False
-                    break
-
-        if not can_delete:
-            self._not_deletable_reason = _(
-                "There are active peers at this exchange that fall into "
-                "this address space"
-            )
-        else:
-            self._not_deletable_reason = None
-
-        return can_delete
-
     def clean(self):
         """
         Custom model validation.
@@ -4909,10 +4932,14 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         """
         return cls.related_to_ix(value=value, filt=filt, field=field, qset=qset)
 
-    def ipaddress_conflict(self):
+    def ipaddress_conflict(self, check_deleted=False):
         """
         Checks whether the ip addresses specified on this netixlan
         exist on another netixlan (with status="ok").
+
+        Arguments
+
+        - check_deleted (`bool`) - if True also look for conflicts in deleted
 
         Returns:
             - tuple(bool, bool): tuple of two booleans, first boolean is
@@ -4921,12 +4948,17 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
                 address
         """
 
-        ipv4 = NetworkIXLan.objects.filter(ipaddr4=self.ipaddr4, status="ok").exclude(
-            id=self.id
-        )
-        ipv6 = NetworkIXLan.objects.filter(ipaddr6=self.ipaddr6, status="ok").exclude(
-            id=self.id
-        )
+        if not check_deleted:
+            ipv4 = NetworkIXLan.objects.filter(
+                ipaddr4=self.ipaddr4, status="ok"
+            ).exclude(id=self.id)
+            ipv6 = NetworkIXLan.objects.filter(
+                ipaddr6=self.ipaddr6, status="ok"
+            ).exclude(id=self.id)
+        else:
+            ipv4 = NetworkIXLan.objects.filter(ipaddr4=self.ipaddr4).exclude(id=self.id)
+            ipv6 = NetworkIXLan.objects.filter(ipaddr6=self.ipaddr6).exclude(id=self.id)
+
         conflict_v4 = self.ipaddr4 and ipv4.exists()
         conflict_v6 = self.ipaddr6 and ipv6.exists()
         return (conflict_v4, conflict_v6)
@@ -4938,6 +4970,128 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     def validate_ipaddr6(self):
         if self.ipaddr6 and not self.ixlan.test_ipv6_address(self.ipaddr6):
             raise ValidationError(_("IPv6 address outside of prefix"))
+
+    def validate_real_peer_vs_ghost_peer(self):
+
+        """
+        If there are ip-address conflicts with another NetworkIXLan object
+        try to resolve those conflicts if the new peer exists in the related
+        exchange's IX-F data (real peer) and the old peer does not (ghost peer)
+        """
+
+        # check for ip address conflicts
+
+        conflict4, conflict6 = self.ipaddress_conflict()
+
+        if not conflict4 and not conflict6:
+            return
+
+        # check if self (new peer) is a real peer that exists in the
+        # exchange's IX-f DATA
+
+        real4, real6 = self.ixlan.ix.peer_exists_in_ixf_data(
+            self.network.asn, self.ipaddr4, self.ipaddr6
+        )
+
+        if not real4 and not real6:
+            return
+
+        # retrieve the conflicting NetworkIXLan instances
+
+        other4 = None
+        other6 = None
+
+        if conflict4:
+            other4 = NetworkIXLan.objects.get(status="ok", ipaddr4=self.ipaddr4)
+
+        if conflict6:
+            other6 = NetworkIXLan.objects.get(status="ok", ipaddr6=self.ipaddr6)
+
+        # will be flagged for existance of other peer in IX-F data
+        # False means other peer is a ghost peer
+
+        ip4 = False
+        ip6 = False
+
+        try:
+            if other4 == other6:
+
+                # ip address conflicts are contained in the same NetworkIXLan, so other4 can be
+                # processed by itself
+
+                ip4, ip6 = self.ixlan.ix.peer_exists_in_ixf_data(
+                    other4.network.asn, other4.ipaddr4, other4.ipaddr6
+                )
+
+            else:
+
+                # conflicts for v4 and v6 are located on separate NetworkIXLan objects
+                # process each separately.
+
+                if other4 and other4 != other6:
+                    ip4, _ = self.ixlan.ix.peer_exists_in_ixf_data(
+                        other4.network.asn, other4.ipaddr4, None
+                    )
+                if other6 and other4 != other6:
+                    _, ip6 = self.ixlan.ix.peer_exists_in_ixf_data(
+                        other6.network.asn, None, other6.ipaddr6
+                    )
+
+        except Exception as exc:
+
+            # Any error here is likely invalid IX-F data, we dont want to hard fail the object creation
+            # Log the error and just return without applying the real vs ghost peer logic
+
+            logger.error(exc)
+            return
+
+        # Free up conflicting ghost peer ip addresses
+
+        if other4 == other6:
+
+            # ip address conflicts are contained in the same NetworkIXLan, so other4 can be processed
+            # by it self
+
+            if real4 and not ip4:
+                other4.ipaddr4 = None
+
+            if real6 and not ip6:
+                other4.ipaddr6 = None
+
+            # if both ipaddresses are None now, delete the ghost peer
+            # otherwise just save it
+
+            if not other4.ipaddr4 and not other4.ipaddr6:
+                other4.delete()
+            else:
+                other4.save()
+
+        else:
+
+            # conflicts for v4 and v6 are located on separate NetworkIXLan objects
+            # process each separately.
+
+            if other4 and real4 and not ip4:
+                other4.ipaddr4 = None
+
+                # if both ipaddresses are None now, delete the ghost peer
+                # otherwise just save it
+
+                if not other4.ipaddr4 and not other4.ipaddr6:
+                    other4.delete()
+                else:
+                    other4.save()
+
+            if other6 and real6 and not ip6:
+                other6.ipaddr6 = None
+
+                # if both ipaddresses are None now, delete the ghost peer
+                # otherwise just save it
+
+                if not other6.ipaddr4 and not other6.ipaddr6:
+                    other6.delete()
+                else:
+                    other6.save()
 
     def validate_speed(self):
         if self.speed in [None, 0]:
@@ -4959,6 +5113,30 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
                     format_speed(settings.DATA_QUALITY_MIN_SPEED)
                 )
             )
+
+    def validate_ip_conflicts(self, check_deleted=False):
+        """
+        Validates whether the ip addresses specified on this netixlan
+        are conflicting with any other netixlans.
+
+        Will raise a `ValidationError` on conflict
+
+        Arguments
+
+        - check_deleted (`bool`) - if True also look for conflicts in deleted
+          netixlans
+        """
+
+        errors = {}
+
+        conflict_v4, conflict_v6 = self.ipaddress_conflict(check_deleted=check_deleted)
+        if conflict_v4:
+            errors["ipaddr4"] = _("IP already exists")
+        if conflict_v6:
+            errors["ipaddr6"] = _("IP already exists")
+
+        if errors:
+            raise ValidationError(errors, code="unique")
 
     def clean(self):
         """
@@ -4987,16 +5165,13 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         if errors:
             raise ValidationError(errors)
 
+        # handle real peer versus ghost peer conflict resolution (#983)
+
+        self.validate_real_peer_vs_ghost_peer()
+
         # make sure this ip address is not claimed anywhere else
 
-        conflict_v4, conflict_v6 = self.ipaddress_conflict()
-        if conflict_v4:
-            errors["ipaddr4"] = _("Ip address already exists elsewhere")
-        if conflict_v6:
-            errors["ipaddr6"] = _("Ip address already exists elsewhere")
-
-        if errors:
-            raise ValidationError(errors)
+        self.validate_ip_conflicts()
 
         # when validating an existing netixlan that has a mismatching
         # asn value raise a validation error stating that it needs
@@ -5719,63 +5894,65 @@ class EnvironmentSetting(models.Model):
                 "API_THROTTLE_MELISSA_ENABLED_IP",
                 _("API: Melissa request throttle enabled for anonymous requests (ips)"),
             ),
-            # api response size throttle: ip-block config
+            # api repeated request throttle: ip-block config
             (
-                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR",
-                _("API: Response size throttle size threshold for ip blocks (bytes)"),
-            ),
-            (
-                "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR",
-                _("API: Response size throttle rate for ip blocks"),
-            ),
-            (
-                "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR",
-                _("API: Response size throttle enabled for ip blocks"),
-            ),
-            # api response size throttle: ip address config
-            (
-                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP",
+                "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_CIDR",
                 _(
-                    "API: Response size throttle size threshold for ip addresses (bytes)"
+                    "API: Repeated request throttle size threshold for ip blocks (bytes)"
                 ),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_RATE_IP",
-                _("API: Response size throttle rate for ip addresses"),
+                "API_THROTTLE_REPEATED_REQUEST_RATE_CIDR",
+                _("API: Repeated request throttle rate for ip blocks"),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP",
-                _("API: Response size throttle enabled for ip addresses"),
+                "API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR",
+                _("API: Repeated request throttle enabled for ip blocks"),
             ),
-            # api response size throttle: user config
+            # api repeated request throttle: ip address config
             (
-                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER",
+                "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_IP",
                 _(
-                    "API: Response size throttle size threshold for authenticated users (bytes)"
+                    "API: Repeated request throttle size threshold for ip addresses (bytes)"
                 ),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_RATE_USER",
-                _("API: Response size throttle rate for authenticated users"),
+                "API_THROTTLE_REPEATED_REQUEST_RATE_IP",
+                _("API: Repeated request throttle rate for ip addresses"),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER",
-                _("API: Response size throttle enabled for authenticated users"),
+                "API_THROTTLE_REPEATED_REQUEST_ENABLED_IP",
+                _("API: Repeated request throttle enabled for ip addresses"),
             ),
-            # api response size throttle: org config
+            # api repeated request throttle: user config
             (
-                "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG",
+                "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_USER",
                 _(
-                    "API: Response size throttle size threshold for organization api-keys (bytes)"
+                    "API: Repeated request throttle size threshold for authenticated users (bytes)"
                 ),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_RATE_ORG",
-                _("API: Response size throttle rate for organization api-keys"),
+                "API_THROTTLE_REPEATED_REQUEST_RATE_USER",
+                _("API: Repeated request throttle rate for authenticated users"),
             ),
             (
-                "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG",
-                _("API: Response size throttle enabled for organization api-keys"),
+                "API_THROTTLE_REPEATED_REQUEST_ENABLED_USER",
+                _("API: Repeated request throttle enabled for authenticated users"),
+            ),
+            # api repeated request throttle: org config
+            (
+                "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_ORG",
+                _(
+                    "API: Repeated request throttle size threshold for organization api-keys (bytes)"
+                ),
+            ),
+            (
+                "API_THROTTLE_REPEATED_REQUEST_RATE_ORG",
+                _("API: Repeated request throttle rate for organization api-keys"),
+            ),
+            (
+                "API_THROTTLE_REPEATED_REQUEST_ENABLED_ORG",
+                _("API: Repeated request throttle enabled for organization api-keys"),
             ),
             # api throttling response messages
             (
@@ -5821,18 +5998,18 @@ class EnvironmentSetting(models.Model):
         # "IXF_IMPORTER_DAYS_UNTIL_TICKET": "value_int",
         "API_THROTTLE_RATE_ANON": "value_str",
         "API_THROTTLE_RATE_USER": "value_str",
-        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_CIDR": "value_int",
-        "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR": "value_str",
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR": "value_bool",
-        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_IP": "value_int",
-        "API_THROTTLE_RESPONSE_SIZE_RATE_IP": "value_str",
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP": "value_bool",
-        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_USER": "value_int",
-        "API_THROTTLE_RESPONSE_SIZE_RATE_USER": "value_str",
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER": "value_bool",
-        "API_THROTTLE_RESPONSE_SIZE_THRESHOLD_ORG": "value_int",
-        "API_THROTTLE_RESPONSE_SIZE_RATE_ORG": "value_str",
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG": "value_bool",
+        "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_CIDR": "value_int",
+        "API_THROTTLE_REPEATED_REQUEST_RATE_CIDR": "value_str",
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR": "value_bool",
+        "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_IP": "value_int",
+        "API_THROTTLE_REPEATED_REQUEST_RATE_IP": "value_str",
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_IP": "value_bool",
+        "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_USER": "value_int",
+        "API_THROTTLE_REPEATED_REQUEST_RATE_USER": "value_str",
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_USER": "value_bool",
+        "API_THROTTLE_REPEATED_REQUEST_THRESHOLD_ORG": "value_int",
+        "API_THROTTLE_REPEATED_REQUEST_RATE_ORG": "value_str",
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_ORG": "value_bool",
         "API_THROTTLE_MELISSA_RATE_USER": "value_str",
         "API_THROTTLE_MELISSA_ENABLED_USER": "value_bool",
         "API_THROTTLE_MELISSA_RATE_ADMIN": "value_str",
@@ -5848,14 +6025,14 @@ class EnvironmentSetting(models.Model):
     setting_validators = {
         "API_THROTTLE_RATE_ANON": [validate_api_rate],
         "API_THROTTLE_RATE_USER": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_RATE_CIDR": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_CIDR": [validate_bool],
-        "API_THROTTLE_RESPONSE_SIZE_RATE_IP": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_IP": [validate_bool],
-        "API_THROTTLE_RESPONSE_SIZE_RATE_USER": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_USER": [validate_bool],
-        "API_THROTTLE_RESPONSE_SIZE_RATE_ORG": [validate_api_rate],
-        "API_THROTTLE_RESPONSE_SIZE_ENABLED_ORG": [validate_bool],
+        "API_THROTTLE_REPEATED_REQUEST_RATE_CIDR": [validate_api_rate],
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR": [validate_bool],
+        "API_THROTTLE_REPEATED_REQUEST_RATE_IP": [validate_api_rate],
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_IP": [validate_bool],
+        "API_THROTTLE_REPEATED_REQUEST_RATE_USER": [validate_api_rate],
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_USER": [validate_bool],
+        "API_THROTTLE_REPEATED_REQUEST_RATE_ORG": [validate_api_rate],
+        "API_THROTTLE_REPEATED_REQUEST_ENABLED_ORG": [validate_bool],
         "API_THROTTLE_MELISSA_RATE_ADMIN": [validate_api_rate],
         "API_THROTTLE_MELISSA_RATE_USER": [validate_api_rate],
         "API_THROTTLE_MELISSA_RATE_ORG": [validate_api_rate],
