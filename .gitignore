@@ -1,9 +1,6 @@
 .cache/
 .coverage
 .facsimile
-.vscode/
-!.vscode/tasks.json
-!.vscode/launch.json
 *.DS_STORE
 *.env
 *.log
@@ -25,4 +22,3 @@ peeringdb_com
 peeringdb_database/
 venv
 locale
-.idea/
