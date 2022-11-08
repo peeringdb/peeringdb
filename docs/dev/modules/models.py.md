@@ -1,4 +1,4 @@
-Generated from models.py on 2022-10-11 12:34:14.972233
+Generated from models.py on 2022-11-08 14:31:50.933987
 
 # peeringdb_server.models
 
@@ -931,14 +931,6 @@ Descries a Prefix at an Exchange LAN.
 
 These attributes / properties will be available on instances of the class
 
-- deletable (`@property`): Returns whether or not the prefix is currently
-in a state where it can be marked as deleted.
-
-This will be False for prefixes of which ANY
-of the following is True:
-
-- parent ixlan has netixlans that fall into
-  its address space
 - descriptive_name (`@property`): Returns a descriptive label of the ixpfx for logging purposes.
 - grainy_namespace (`@property`): None
 - ix_id (`@property`): None
@@ -1161,6 +1153,19 @@ Hook for doing any extra model-wide validation after clean() has been
 called on every field by self.clean_fields. Any ValidationError raised
 by this method will not be associated with a particular field; it will
 have a special-case association with the field defined by NON_FIELD_ERRORS.
+
+---
+#### peer_exists_in_ixf_data
+`def peer_exists_in_ixf_data(self, asn, ipaddr4, ipaddr6)`
+
+Checks if the combination of ip-address and asn exists
+in the internet exchange's IX-F data.
+
+Arguments:
+
+- asn (`int`)
+- ipaddr4 (`str`|`ipaddress.ip_address`)
+- ipaddr6 (`str`|`ipaddress.ip_address`)
 
 ---
 #### save
@@ -1517,16 +1522,42 @@ Return the netixlan's ipaddr for ip version.
 
 ---
 #### ipaddress_conflict
-`def ipaddress_conflict(self)`
+`def ipaddress_conflict(self, check_deleted=False)`
 
 Checks whether the ip addresses specified on this netixlan
 exist on another netixlan (with status="ok").
+
+Arguments
+
+- check_deleted (`bool`) - if True also look for conflicts in deleted
 
 Returns:
     - tuple(bool, bool): tuple of two booleans, first boolean is
         true if there was a conflict with the ip4 address, second
         boolean is true if there was a conflict with the ip6
         address
+
+---
+#### validate_ip_conflicts
+`def validate_ip_conflicts(self, check_deleted=False)`
+
+Validates whether the ip addresses specified on this netixlan
+are conflicting with any other netixlans.
+
+Will raise a `ValidationError` on conflict
+
+Arguments
+
+- check_deleted (`bool`) - if True also look for conflicts in deleted
+  netixlans
+
+---
+#### validate_real_peer_vs_ghost_peer
+`def validate_real_peer_vs_ghost_peer(self)`
+
+If there are ip-address conflicts with another NetworkIXLan object
+try to resolve those conflicts if the new peer exists in the related
+exchange's IX-F data (real peer) and the old peer does not (ghost peer)
 
 ---
 

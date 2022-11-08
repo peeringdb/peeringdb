@@ -1,4 +1,4 @@
-Generated on 2022-10-11 12:34:14.972233
+Generated on 2022-11-08 14:31:50.933987
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -158,6 +158,10 @@ For concrete models, django-peeringdb and peeringdb_server maintain separate mod
 When adding new fields to django-peeringdb make sure migration files for the schema changes exist in both places.
 
 Please open a merge request in peeringdb/django-peeringdb for the field addition as well.
+
+## [oauth_views.py](/docs/dev/modules/oauth_views.py.md)
+
+# Classes
 
 ## [org_admin_views.py](/docs/dev/modules/org_admin_views.py.md)
 
