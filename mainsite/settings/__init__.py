@@ -294,6 +294,11 @@ set_from_env(
     "OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH", os.path.join(API_CACHE_ROOT, "keys", "oidc.key")
 )
 
+# Google tags
+
+# Analytics
+
+set_option("GOOGLE_ANALYTICS_ID", "")
 
 # Limits
 
@@ -682,7 +687,14 @@ set_option(
 set_option("CSP_STYLE_SRC", ["'self'", "fonts.googleapis.com", "'unsafe-inline'"])
 set_option(
     "CSP_SCRIPT_SRC",
-    ["'self'", "www.google.com", "www.gstatic.com", "cdn.redoc.ly", "'unsafe-inline'"],
+    [
+        "'self'",
+        "www.google.com",
+        "www.googletagmanager.com",
+        "www.gstatic.com",
+        "cdn.redoc.ly",
+        "'unsafe-inline'",
+    ],
 )
 set_option("CSP_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
 set_option("CSP_FONT_SRC", ["'self'", "fonts.gstatic.com"])
