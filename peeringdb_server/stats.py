@@ -16,6 +16,7 @@ from peeringdb_server.models import (
 
 __STATS = {"data": {}, "mod": None}
 
+
 def gen_stats():
 
     """
