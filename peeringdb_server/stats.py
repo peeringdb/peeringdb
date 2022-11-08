@@ -14,15 +14,15 @@ from peeringdb_server.models import (
     User,
 )
 
-STATS = {"data": {}, "mod": None}
+__STATS = {"data": {}, "mod": None}
 
 def gen_stats():
 
     """
-    Regenerates global statics to stats.STATS['data']
+    Regenerates global statics to stats.__STATS['data']
     """
 
-    STATS["data"] = {
+    __STATS["data"] = {
         Network.handleref.tag: Network.handleref.filter(status="ok").count(),
         InternetExchange.handleref.tag: InternetExchange.handleref.filter(
             status="ok"
@@ -36,7 +36,7 @@ def gen_stats():
         "registered_users": User.objects.count(),
         "organizations": Organization.objects.filter(status="ok").count(),
     }
-    STATS["mod"] = timezone.now()
+    __STATS["mod"] = timezone.now()
 
 
 def stats():
@@ -47,13 +47,13 @@ def stats():
     Will return cached statistics according to `GLOBAL_STATS_CACHE_DURATION` setting
     """
 
-    if STATS["mod"]:
-        diff = timezone.now() - STATS["mod"]
+    if __STATS["mod"]:
+        diff = timezone.now() - __STATS["mod"]
         if diff.total_seconds() < settings.GLOBAL_STATS_CACHE_DURATION:
-            return STATS["data"]
+            return __STATS["data"]
 
     gen_stats()
-    return STATS["data"]
+    return __STATS["data"]
 
 
 def get_fac_stats(netfac, ixfac):
