@@ -439,9 +439,9 @@ PeeringDB.ViewActions = {
   init : function() {
     $('button[data-view-action]').each(function(){
       $(this).click(function() {
-        var action = $(this).data("view-action")
+        var action = $(this).data("view-action");
         var id = $(this).closest("[data-edit-id]").data("edit-id");
-        PeeringDB.ViewActions.actions[action](id);
+        PeeringDB.ViewActions.actions[action](id, $(this));
       });
     });
   },
@@ -487,6 +487,30 @@ PeeringDB.ViewActions.actions.net_ixf_postmortem = function(netId) {
   var postmortem = new PeeringDB.IXFNetPostmortem()
   postmortem.request(netId, $("#ixf-postmortem"));
 }
+
+PeeringDB.ViewActions.actions.fac_approve_carrier = function(carrierfac_id, button) {
+  $.post(`/api/carrierfac/${carrierfac_id}/approve`).done(
+    () => {
+      button.tooltip("hide");
+      button.siblings(".btn-danger").text(gettext("Remove"));
+      button.detach();
+    }
+  ).fail(
+    () => { button.attr('title',msg).tooltip("show") }
+  );
+}
+
+PeeringDB.ViewActions.actions.fac_reject_carrier = function(carrierfac_id, button) {
+  $.post(`/api/carrierfac/${carrierfac_id}/reject`).done(
+    () => {
+      button.tooltip("hide");
+      button.closest("div.row").detach();
+    }
+  ).fail(
+    () => { button.attr('title',msg).tooltip("show") }
+  );
+}
+
 
 /**
  * Handles the IX-F proposals UI for suggestions
@@ -2544,7 +2568,47 @@ twentyc.editable.module.register(
 
       this.finalize_add_netfac(data, callback);
 
+    },
+
+    // FINALIZERS: CARRIER_FACILITY
+
+    finalize_row_carrierfac : function(rowId, row, data) {
+
+      // finalize icfac row after add
+      // we need to make sure that the facility name
+      // is rendered as a link
+
+      var faclnk = $('<a></a>');
+      faclnk.attr("href", "/fac/"+data.fac_id);
+      faclnk.text(data.facility);
+      row.find(".facility").html(faclnk);
+
+      row.editable("payload", {
+        fac_id : data.fac_id,
+        ix_id : data.ix_id,
+      });
+
+      row.data("edit-label", gettext("Carrier presence at Facility") + ": "+data.facility); ///
+
+      if(data.status == "pending") {
+        row.find(".status").text(data.status);
+      }
+
+    },
+
+    finalize_add_carrierfac : function(data, callback) {
+
+      // finalize carrierfac data after add
+      // we need to get facility data so we can fill in
+      // the fields accordingly
+      //
+      // this is identical to what we need to for netfac, so
+      // just use that
+      this.finalize_add_netfac(data, callback);
+
+
     }
+
 
   },
   "listing"

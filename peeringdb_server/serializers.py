@@ -50,6 +50,8 @@ from peeringdb_server.inet import (
 )
 from peeringdb_server.models import (
     QUEUE_ENABLED,
+    Carrier,
+    CarrierFacility,
     Facility,
     GeoCoordinateCache,
     InternetExchange,
@@ -1256,6 +1258,9 @@ class ModelSerializer(serializers.ModelSerializer):
                     if type(instance) in QUEUE_ENABLED:
                         self._reapprove = True
                         self._undelete = False
+                    elif type(instance) == CarrierFacility:
+                        self._reapprove = True
+                        self._undelete = False
                     else:
                         self._reapprove = False
                         self._undelete = True
@@ -1733,6 +1738,128 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             raise serializers.ValidationError({"zipcode": exc.message})
 
         return data
+
+class CarrierFacilitySerializer(ModelSerializer):
+    """
+    Serializer for peeringdb_server.models.CarrierFacility
+    """
+
+    #  facilities = serializers.PrimaryKeyRelatedField(queryset='fac_set', many=True)
+
+    fac_id = serializers.PrimaryKeyRelatedField(
+        queryset=Facility.objects.all(), source="facility"
+    )
+    carrier_id = serializers.PrimaryKeyRelatedField(
+        queryset=Carrier.objects.all(), source="carrier"
+    )
+
+    fac = serializers.SerializerMethodField()
+    carrier = serializers.SerializerMethodField()
+
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+
+        model = CarrierFacility
+        depth = 0
+        fields = [
+            "id",
+            "name",
+            "carrier_id",
+            "carrier",
+            "fac_id",
+            "fac",
+        ] + HandleRefSerializer.Meta.fields
+        _ref_tag = model.handleref.tag
+
+        related_fields = ["carrier", "fac"]
+
+        list_exclude = ["carrier", "fac"]
+
+        validators = [
+            validators.UniqueTogetherValidator(
+                CarrierFacility.objects.all(), ["carrier_id", "fac_id"]
+            )
+        ]
+
+
+    def validate_create(self, data):
+        if data.get("facility") and data.get("facility").status != "ok":
+            raise ParentStatusException(
+                data.get("facility"), self.Meta.model.handleref.tag
+            )
+        if data.get("carrier") and data.get("carrier").status != "ok":
+            raise ParentStatusException(
+                data.get("carrier"), self.Meta.model.handleref.tag
+            )
+
+        # new carrier-facility relationship should be pending
+        # until the facility approves it.
+
+        data["status"] = "pending"
+
+        return super().validate_create(data)
+
+    def get_carrier(self, inst):
+        return self.sub_serializer(CarrierSerializer, inst.carrier)
+
+    def get_fac(self, inst):
+        return self.sub_serializer(FacilitySerializer, inst.facility)
+
+    def get_name(self, inst):
+        return inst.facility.name
+
+class CarrierSerializer(ModelSerializer):
+    """
+    Serializer for peeringdb_server.models.Carrier
+    """
+
+    carrierfac_set = nested(
+        CarrierFacilitySerializer,
+        exclude=["fac", "fac"],
+        source="carrierfac_set_active_prefetched",
+    )
+
+    org_id = serializers.PrimaryKeyRelatedField(
+        queryset=Organization.objects.all(), source="org"
+    )
+    org_name = serializers.CharField(source="org.name", read_only=True)
+
+    org = serializers.SerializerMethodField()
+
+    website = serializers.URLField()
+
+    def validate_create(self, data):
+        # we don't want users to be able to create carriers if the parent
+        # organization status is pending or deleted
+        if data.get("org") and data.get("org").status != "ok":
+            raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
+        return super().validate_create(data)
+
+    class Meta:
+        model = Carrier
+
+        fields = (
+            [
+                "id",
+                "org_id",
+                "org_name",
+                "org",
+                "name",
+                "aka",
+                "name_long",
+                "website",
+                "notes",
+                "carrierfac_set"
+            ]
+            + HandleRefSerializer.Meta.fields
+        )
+
+        related_fields = ["org", "carrierfac_set"]
+        list_exclude = ["org"]
+
+    def get_org(self, inst):
+        return self.sub_serializer(OrganizationSerializer, inst.org)
 
 
 class InternetExchangeFacilitySerializer(ModelSerializer):
@@ -3228,5 +3355,7 @@ REFTAG_MAP = {
         NetworkContactSerializer,
         IXLanSerializer,
         IXLanPrefixSerializer,
+        CarrierSerializer,
+        CarrierFacilitySerializer,
     ]
 }

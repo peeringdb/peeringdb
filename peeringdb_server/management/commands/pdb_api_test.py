@@ -33,6 +33,8 @@ from peeringdb_server import settings as pdb_settings
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     REFTAG_MAP,
+    Carrier,
+    CarrierFacility,
     DeskProTicket,
     Facility,
     GeoCoordinateCache,
@@ -339,6 +341,21 @@ class TestJSON(unittest.TestCase):
         }
         data.update(**kwargs)
         return data
+
+
+    @classmethod
+    def make_data_carrier(cls, **kwargs):
+
+        data = {
+            "name": cls.make_name("Test"),
+            "org_id": SHARED["org_rw_ok"].id,
+            "aka": cls.make_name("Also known as"),
+            "website": WEBSITE,
+        }
+        data.update(**kwargs)
+        return data
+
+
 
     ##########################################################################
 
@@ -990,6 +1007,16 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_user_001_GET_carrier(self):
+        self.assert_get_handleref(self.db_user, "carrier", SHARED["carrier_r_ok"].id)
+
+    ##########################################################################
+
+    def test_user_001_GET_carrierfac(self):
+        self.assert_get_handleref(self.db_user, "carrierfac", SHARED["carrierfac_r_ok"].id)
+
+    ##########################################################################
+
     def test_user_001_GET_fac(self):
         self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
 
@@ -1576,6 +1603,53 @@ class TestJSON(unittest.TestCase):
             data,
         )
         assert r_data["zipcode"] == ""
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_PUT_DELETE_carrier(self):
+
+        data = self.make_data_carrier()
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "carrier",
+            data,
+            test_failures={
+                "invalid": {"name": ""},
+                "perms": {
+                    # need to set name again so it doesnt fail unique validation
+                    "name": self.make_name("Test"),
+                    # set org to an organization the user doesnt have perms to
+                    "org_id": SHARED["org_r_ok"].id,
+                },
+                "status": {
+                    # need to set name again so it doesnt fail unique validation
+                    "name": self.make_name("Test"),
+                    "org_id": SHARED["org_rwp"].id,
+                },
+            },
+        )
+
+        SHARED["carrier_id"] = r_data.get("id")
+
+        self.assert_update(
+            self.db_org_admin,
+            "carrier",
+            SHARED["carrier_id"],
+            {"name": self.make_name("Test")},
+            test_failures={
+                "invalid": {"name": ""},
+                "perms": {"id": SHARED["carrier_r_ok"].id},
+            },
+        )
+
+        self.assert_delete(
+            self.db_org_admin,
+            "carrier",
+            test_success=SHARED["carrier_id"],
+            test_failure=SHARED["carrier_r_ok"].id,
+        )
+
 
     ##########################################################################
 
@@ -5010,7 +5084,7 @@ class Command(BaseCommand):
 
         # create various entities for rw testing
 
-        for model in [Network, Facility, InternetExchange]:
+        for model in [Network, Facility, InternetExchange, Carrier]:
             for status in ["ok", "pending"]:
                 for prefix in ["r", "rw"]:
                     cls.create_entity(
@@ -5034,7 +5108,7 @@ class Command(BaseCommand):
 
         # create entities for duplicate validation testing
 
-        for model in [Network, Facility, InternetExchange]:
+        for model in [Network, Facility, InternetExchange, Carrier]:
             cls.create_entity(
                 model,
                 status="deleted",
@@ -5112,6 +5186,13 @@ class Command(BaseCommand):
                     unset=["net_id"],
                     ixlan_id=SHARED[f"ixlan_{prefix}_{status}"].id,
                     network_id=SHARED[f"net_{prefix}_{status}"].id,
+                )
+                cls.create_entity(
+                    CarrierFacility,
+                    status=status,
+                    prefix=prefix,
+                    facility_id=SHARED[f"fac_{prefix}_{status}"].id,
+                    carrier_id=SHARED[f"carrier_{prefix}_{status}"].id,
                 )
 
                 # TODO: private can be removed once all private pocs have been

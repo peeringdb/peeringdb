@@ -87,6 +87,8 @@ from peeringdb_server.models import (
     PARTNERSHIP_LEVELS,
     REFTAG_MAP,
     UTC,
+    Carrier,
+    CarrierFacility,
     DataChangeWatchedObject,
     Facility,
     InternetExchange,
@@ -107,6 +109,7 @@ from peeringdb_server.org_admin_views import load_all_user_permissions
 from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
 from peeringdb_server.search import search
 from peeringdb_server.serializers import (
+    CarrierSerializer,
     FacilitySerializer,
     InternetExchangeSerializer,
     NetworkSerializer,
@@ -1219,6 +1222,7 @@ def view_index(request, errors=None):
         "net": Network.handleref.filter(status="ok").order_by("-updated")[:5],
         "fac": Facility.handleref.filter(status="ok").order_by("-updated")[:5],
         "ix": InternetExchange.handleref.filter(status="ok").order_by("-updated")[:5],
+        "carrier": Carrier.handleref.filter(status="ok").order_by("-updated")[:5],
     }
 
     env = BASE_ENV.copy()
@@ -1337,7 +1341,7 @@ def view_organization(request, id):
 
     perms = export_permissions(request.user, org)
 
-    tags = ["fac", "net", "ix"]
+    tags = ["fac", "net", "ix", "carrier"]
     for tag in tags:
         model = REFTAG_MAP.get(tag)
         perms["can_create_%s" % tag] = check_permissions(
@@ -1375,6 +1379,11 @@ def view_organization(request, id):
     else:
         networks = data["net_set"]
 
+    if perms.get("can_delete_carrier") or perms.get("can_create_carrier"):
+        carriers = org.carrier_set.filter(status__in=["ok", "pending"])
+    else:
+        carriers = org.carrier_set.filter(status__in=["ok"])
+
     dismiss = DoNotRender()
 
     # determine if logo is specified and set the
@@ -1390,6 +1399,7 @@ def view_organization(request, id):
         "exchanges": exchanges,
         "networks": networks,
         "facilities": facilities,
+        "carriers": carriers,
         "fields": [
             {
                 "name": "aka",
@@ -1561,6 +1571,12 @@ def view_facility(request, id):
         .select_related("network")
         .order_by("network__name")
     )
+    carriers = (
+        CarrierFacility.handleref.undeleted()
+        .filter(facility=facility)
+        .select_related("carrier")
+        .order_by("carrier__name")
+    )
 
     if facility.org.logo:
         org["logo"] = facility.org.logo.url
@@ -1571,6 +1587,7 @@ def view_facility(request, id):
         "title": data.get("name", dismiss),
         "exchanges": exchanges,
         "peers": peers,
+        "carriers": carriers,
         "fields": [
             {
                 "name": "org",
@@ -1734,6 +1751,95 @@ def view_facility(request, id):
 
     return view_component(
         request, "facility", data, "Facility", perms=perms, instance=facility
+    )
+
+
+@ensure_csrf_cookie
+def view_carrier(request, id):
+    """
+    View carrier data for carrier specified by id.
+    """
+
+    try:
+        carrier = Carrier.objects.get(id=id, status="ok")
+    except ObjectDoesNotExist:
+        return view_http_error_404(request)
+
+    data = CarrierSerializer(carrier, context={"user": request.user}).data
+
+    applicator = APIPermissionsApplicator(request)
+
+    if not applicator.is_generating_api_cache:
+        data = applicator.apply(data)
+
+    # find out if user can write to object
+    perms = export_permissions(request.user, carrier)
+
+    if not data:
+        return view_http_error_403(request)
+
+    dismiss = DoNotRender()
+
+    facilities = (
+        CarrierFacility.handleref.undeleted()
+        .select_related("carrier", "facility")
+        .filter(carrier=carrier)
+        .order_by("facility__name")
+    )
+
+    org = data.get("org")
+
+    if carrier.org.logo:
+        org["logo"] = carrier.org.logo.url
+
+    data = {
+        "id": carrier.id,
+        "title": data.get("name", dismiss),
+        "facilities": facilities,
+        "fields": [
+            {
+                "name": "org",
+                "label": _("Organization"),
+                "value": org.get("name", dismiss),
+                "type": "entity_link",
+                "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+            },
+            {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss),
+            },
+            {
+                "name": "name_long",
+                "label": _("Long Name"),
+                "value": data.get("name_long", dismiss),
+            },
+            {
+                "readonly": True,
+                "name": "updated",
+                "label": _("Last Updated"),
+                "value": data.get("updated", dismiss),
+            },
+            {
+                "name": "notes",
+                "label": _("Notes"),
+                "help_text": _("Markdown enabled"),
+                "type": "fmt-text",
+                "value": data.get("notes", dismiss),
+            },
+            {
+                "name": "org_logo",
+                "label": "",
+                "value": org.get("logo", dismiss),
+                "type": "image",
+                "readonly": True,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+            },
+        ],
+    }
+
+    return view_component(
+        request, "carrier", data, "Carrier", perms=perms, instance=carrier
     )
 
 

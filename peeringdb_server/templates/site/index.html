@@ -36,7 +36,7 @@
     {% include "site/notification_banner.html" %}
     <h2>{% trans "The Interconnection Database" %}</h2>
     <div class="row">
-      <div class="recent col-lg-6 col-md-12 col-sm-12 col-xs-12 left">
+      <div class="recent col-lg-4 col-md-12 col-sm-12 col-xs-12 left">
         <h3>{% trans "Join. Search. Grow your network." %}</h3>
       <p>
       {% blocktrans trimmed %}
@@ -52,10 +52,10 @@
       {% trans "Learn more" %} <a href="/about">{% trans "about" %}</a> PeeringDB or <a href="/register">{% trans "register" %}</a>.
       </p>
       </div>
-      <div class="recent col-lg-6 col-md-12 col-sm-12 col-xs-12 left">
+      <div class="recent col-lg-8 col-md-12 col-sm-12 col-xs-12 left">
         <h3>{% trans "Most Recent Updates" %}</h3>
         <div class="recent row">
-          <div class="col-xs-12 col-sm-4">
+          <div class="col-xs-12 col-sm-3">
           <h4>{% trans "Exchanges" %}</h4>
           {% for row in recent.ix %}
             <div class="participant">
@@ -66,7 +66,7 @@
             </div>
           {% endfor %}
           </div>
-          <div class="col-xs-12 col-sm-4">
+          <div class="col-xs-12 col-sm-3">
           <h4>{% trans "Networks" %}</h4>
           {% for row in recent.net %}
             <div class="participant">
@@ -77,9 +77,20 @@
             </div>
           {% endfor %}
           </div>
-          <div class="col-xs-12 col-sm-4">
+          <div class="col-xs-12 col-sm-3">
           <h4>{% trans "Facilities" %}</h4>
           {% for row in recent.fac %}
+            <div class="participant">
+              <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
+            </div>
+            <div class="age">
+              {{ row.updated|age }}
+            </div>
+          {% endfor %}
+          </div>
+          <div class="col-xs-12 col-sm-3">
+          <h4>{% trans "Carriers" %}</h4>
+          {% for row in recent.carrier %}
             <div class="participant">
               <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
             </div>
