@@ -5246,6 +5246,127 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         return f"{self.ixlan.ix.search_result_name} {ips}"
 
 
+@grainy_model(namespace="carrier", parent="org")
+@reversion.register
+class Carrier(pdb_models.CarrierBase):
+    """
+    Describes a carrier object.
+    """
+
+    org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="carrier_set"
+    )
+
+    @staticmethod
+    def autocomplete_search_fields():
+        """
+        Returns a tuple of field query strings to be used during quick search
+        query.
+        """
+        return (
+            "id__iexact",
+            "name__icontains",
+        )
+
+    @property
+    def sponsorship(self):
+        """
+        Returns sponsorship oject for this carrier (through the owning org).
+        """
+        return self.org.sponsorship
+
+    @property
+    def search_result_name(self):
+        """
+        This will be the name displayed for quick search matches
+        of this entity.
+        """
+        return self.name
+
+    @property
+    def carrierfac_set_active(self):
+        """
+        Returns queryset of active CarrierFacility objects connected to this
+        carrier.
+        """
+        return self.netfac_set.filter(status="ok")
+
+    @property
+    def view_url(self):
+        """
+        Return the URL to this carrier's web view.
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("carrier-view", args=(self.id,))
+        )
+
+
+
+@grainy_model(namespace="carrierfac", parent="carrier")
+@reversion.register
+class CarrierFacility(pdb_models.CarrierFacilityBase):
+    """
+    Describes a carrier <-> facility relationship.
+    """
+
+    carrier = models.ForeignKey(
+        Carrier, on_delete=models.CASCADE, default=0, related_name="carrierfac_set"
+    )
+    facility = models.ForeignKey(
+        Facility, on_delete=models.CASCADE, default=0, related_name="carrierfac_set"
+    )
+
+    class Meta(pdb_models.CarrierFacilityBase.Meta):
+        db_table = "peeringdb_carrier_facility"
+        unique_together = ("carrier", "facility")
+
+    @classmethod
+    def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
+        """
+        Filter queryset of carrierfac objects related to facilities with name match
+        in facility__name according to filter.
+
+        Relationship through facility.
+        """
+        if not qset:
+            qset = cls.handleref.undeleted()
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @classmethod
+    def related_to_country(
+        cls, value=None, filt=None, field="facility__country", qset=None
+    ):
+        """
+        Filter queryset of carrierfac objects related to country via match
+        in facility__country according to filter.
+
+        Relationship through facility.
+        """
+        if not qset:
+            qset = cls.handleref.filter(status="ok")
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @classmethod
+    def related_to_city(cls, value=None, filt=None, field="facility__city", qset=None):
+        """
+        Filter queryset of carrierfac objects related to city via match
+        in facility__city according to filter.
+
+        Relationship through facility.
+        """
+        if not qset:
+            qset = cls.handleref.undeleted()
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the netfac for logging purposes.
+        """
+        return f"carrierfac{self.id} {self.carrier.name} {self.facility.name}"
+
+
+
 class User(AbstractBaseUser, PermissionsMixin):
     """
     Proper length fields user.
@@ -6580,6 +6701,8 @@ REFTAG_MAP = {
     for cls in [
         Organization,
         Network,
+        Carrier,
+        CarrierFacility,
         Facility,
         InternetExchange,
         InternetExchangeFacility,
@@ -6597,8 +6720,8 @@ QUEUE_NOTIFY = []
 
 if not getattr(settings, "DISABLE_VERIFICATION_QUEUE", False):
     # enable verification queue for these models
-    QUEUE_ENABLED = (User, InternetExchange, Network, Facility, Organization)
+    QUEUE_ENABLED = (User, InternetExchange, Network, Facility, Carrier, Organization)
 
     if not getattr(settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False):
         # send admin notification emails for these models
-        QUEUE_NOTIFY = (InternetExchange, Network, Facility, Organization)
+        QUEUE_NOTIFY = (InternetExchange, Network, Facility, Carrier, Organization)

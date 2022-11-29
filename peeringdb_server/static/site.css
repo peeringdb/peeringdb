@@ -197,6 +197,15 @@ h5 {
   border: none;
 }
 
+.btn-danger {
+  display: inline-block;
+  text-decoration: none;
+  /* font-weight: bold; */
+  padding: 5px 10px 5px 10px;
+  border-radius: 5px;
+  border: none;
+}
+
 div.view_value.action .btn-sm {
   background-color: #33744a;
   color: #ffffff;

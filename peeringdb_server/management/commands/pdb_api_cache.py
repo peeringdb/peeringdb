@@ -31,12 +31,14 @@ VIEWSETS = {
     "net": pdbr.NetworkViewSet,
     "ix": pdbr.InternetExchangeViewSet,
     "fac": pdbr.FacilityViewSet,
+    "carrier": pdbr.CarrierViewSet,
     "ixlan": pdbr.IXLanViewSet,
     "ixfac": pdbr.InternetExchangeFacilityViewSet,
     "ixpfx": pdbr.IXLanPrefixViewSet,
     "netfac": pdbr.NetworkFacilityViewSet,
     "netixlan": pdbr.NetworkIXLanViewSet,
     "poc": pdbr.NetworkContactViewSet,
+    "carrierfac": pdbr.CarrierFacilityViewSet,
 }
 
 settings.DEBUG = False

@@ -35,7 +35,7 @@ from peeringdb_server.import_views import (
     view_import_net_ixf_postmortem,
     view_import_net_ixf_preview,
 )
-from peeringdb_server.models import Facility, InternetExchange, Network, Organization
+from peeringdb_server.models import Carrier, Facility, InternetExchange, Network, Organization
 from peeringdb_server.oauth_views import AuthorizationView
 from peeringdb_server.views import (
     OrganizationLogoUpload,
@@ -56,6 +56,7 @@ from peeringdb_server.views import (
     view_advanced_search,
     view_affiliate_to_org,
     view_aup,
+    view_carrier,
     view_close_account,
     view_exchange,
     view_facility,
@@ -165,6 +166,7 @@ urlpatterns = [
         name="ix-view",
     ),
     url(r"^%s/(?P<id>\d+)/?$" % Facility.handleref.tag, view_facility, name="fac-view"),
+    url(r"^%s/(?P<id>\d+)/?$" % Carrier.handleref.tag, view_carrier, name="carrier-view"),
     url(
         r"^%s/(?P<id>\d+)/?$" % Organization.handleref.tag,
         view_organization,

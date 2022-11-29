@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from peeringdb_server.models import (
+    Carrier,
     Facility,
     InternetExchange,
     Network,
@@ -33,6 +34,7 @@ def gen_stats():
         NetworkFacility.handleref.tag: NetworkFacility.handleref.filter(
             status="ok"
         ).count(),
+        Carrier.handleref.tag: Carrier.handleref.filter(status="ok").count(),
         "automated_nets": Network.handleref.filter(allow_ixp_update=True).count(),
         "registered_users": User.objects.count(),
         "organizations": Organization.objects.filter(status="ok").count(),

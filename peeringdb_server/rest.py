@@ -822,6 +822,52 @@ class InternetExchangeMixin:
         return self.retrieve(request, *args, **kwargs)
 
 
+class CarrierFacilityMixin:
+
+    """
+    Custom API endpoints for the carrier-facility
+    object, exposed to api/carrierfac/{id}/{action}
+    """
+
+    @transaction.atomic
+    @action(detail=True, methods=["POST"])
+    def approve(self, request, *args, **kwargs):
+
+        """
+        Allows the org to approve a carrier listing at their facility
+        """
+
+        carrierfac = self.get_object()
+
+        if not check_permissions_from_request(request, carrierfac.facility, "c"):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        carrierfac.status = "ok"
+        carrierfac.save()
+
+        return self.retrieve(request, *args, **kwargs)
+
+    @transaction.atomic
+    @action(detail=True, methods=["POST"])
+    def reject(self, request, *args, **kwargs):
+
+        """
+        Allows the org to reject a carrier listing at their facility
+        """
+
+        carrierfac = self.get_object()
+
+        if not check_permissions_from_request(request, carrierfac.facility, "c"):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        response = self.retrieve(request, *args, **kwargs)
+
+        carrierfac.delete()
+
+        return response
+
+
+
 # TODO: why are we doing the import like this??!
 pdb_serializers = importlib.import_module("peeringdb_server.serializers")
 router = RestRouter(trailing_slash=False)
@@ -869,6 +915,8 @@ def model_view_set(model, methods=None, mixins=None):
 
 
 FacilityViewSet = model_view_set("Facility")
+CarrierViewSet = model_view_set("Carrier")
+CarrierFacilityViewSet = model_view_set("CarrierFacility", mixins=(CarrierFacilityMixin,))
 InternetExchangeViewSet = model_view_set(
     "InternetExchange", mixins=(InternetExchangeMixin,)
 )

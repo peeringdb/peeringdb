@@ -53,3 +53,60 @@
 
   </div>
 </div>
+
+<!-- CARRIERS -->
+
+<div class="list" data-sort-container=".scrollable" data-sort-row=".row">
+  <div class="row">
+    <div class="col-xs-6 col-sm-8 col-md-8">
+      <h5>{% trans "Carriers" %}</h5>
+    </div>
+    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+      <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-carriers" class="form-control" />
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-xs-8 col-sm-8 col-md-8">
+      <div data-sort-target=".carrier" data-sort-initial="asc">{% trans "Carrier" %}</div>
+    </div>
+    <div class="col-xs-4 col-sm-4 col-md-4">
+    </div>
+  </div>
+
+  <div class="scrollable" id="list-carriers">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b></div>
+    </div>
+
+    {% for x in data.carriers %}
+
+    {% if x.status == "ok" or permissions.can_create %}
+
+    <div class="row item" data-edit-id="{{ x.id }}">
+      <div class="col-xs-8 col-sm-8 col-md-8">
+        <div class="exchange" data-sort-value="{{ x.carrier.name|lower }}" data-filter-value="{{ x.carrier.name }}">
+          <a href="/{{x.carrier|ref_tag}}/{{ x.carrier.id }}">{{ x.carrier.name }}</a>
+        </div>
+      </div>
+      <div class="col-xs-4 col-sm-4 col-md-4 right">
+        {% if permissions.can_create %}
+        <span class="approval-controls right">
+          {% if x.status == "pending" %}
+          <button class="btn-xs btn btn-primary" data-view-action="fac_approve_carrier" data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This carrier wants to list its presence at this facility." %} {% trans "Click to accept this request" %}">{% trans "Accept" %}</button>
+          <button class="btn-xs btn btn-danger" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This carrier wants to list its presence at this facility." %} {% trans "Click to reject this request" %}">{% trans "Reject" %}</button>
+          {% else %}
+          <button class="btn-xs btn btn-danger" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "Remove this carrier from your facility." %}">{% trans "Remove" %}</button>
+          {% endif %}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% endif %}
+
+    {% endfor %}
+
+  </div>
+</div>
