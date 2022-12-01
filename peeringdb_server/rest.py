@@ -25,6 +25,7 @@ import unidecode
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
+from django.contrib.auth.models import AnonymousUser
 from django.db import connection, transaction
 from django.db.models import DateTimeField
 from django.utils import timezone
@@ -175,9 +176,11 @@ class client_check:
 
     def __call__(self, fn):
         compat_check = self.compat_check
+        auth_check = self.auth_check
 
         def wrapped(self, request, *args, **kwargs):
             try:
+                auth_check(request)
                 compat_check(request)
             except ValueError as exc:
                 return Response(
@@ -209,6 +212,19 @@ class client_check:
     def backend_max_version(self, backend):
         """Return the max supported version for the specified backend."""
         return self.backends.get(backend, {}).get("max")
+
+    def auth_check(self, request):
+        for header in request.META.keys():
+            if header.startswith("HTTP_AUTH") and header != "HTTP_AUTHORIZATION":
+                if "HTTP_AUTHORIZATION" not in request.META:
+                    raise ValueError("Malformed authorization header")
+                break
+
+        if "HTTP_AUTHORIZATION" in request.META:
+            permission_holder = get_permission_holder_from_request(request)
+
+            if isinstance(permission_holder, AnonymousUser):
+                raise ValueError("Unknown authorization method")
 
     def client_info(self, request):
         """
