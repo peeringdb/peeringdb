@@ -891,6 +891,9 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         help_text="Date when the organization was flagged",
     )
 
+    class Meta(pdb_models.OrganizationBase.Meta):
+        indexes = [models.Index(fields=["status"], name="org_status")]
+
     @staticmethod
     def autocomplete_search_fields():
         return (
@@ -1621,7 +1624,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         delete_cascade = ["ixfac_set", "netfac_set"]
 
     class Meta(pdb_models.FacilityBase.Meta):
-        pass
+        indexes = [models.Index(fields=["status"], name="fac_status")]
 
     @staticmethod
     def autocomplete_search_fields():
@@ -1922,6 +1925,10 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         null=False,
         default=0,
     )
+
+    class Meta(pdb_models.InternetExchangeBase.Meta):
+        indexes = [models.Index(fields=["status"], name="ix_status")]
+
 
     @staticmethod
     def autocomplete_search_fields():
@@ -4379,6 +4386,10 @@ class Network(pdb_models.NetworkBase):
         default=0,
     )
 
+
+    class Meta(pdb_models.NetworkBase.Meta):
+        indexes = [models.Index(fields=["status", "allow_ixp_update"], name="net_status")]
+
     @staticmethod
     def autocomplete_search_fields():
         return (
@@ -4751,6 +4762,7 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     class Meta:
         db_table = "peeringdb_network_facility"
         unique_together = ("network", "facility", "local_asn")
+        indexes = [models.Index(fields=["status"], name="netfac_status")]
 
     @classmethod
     def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
@@ -4855,6 +4867,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             models.UniqueConstraint(fields=["ipaddr4"], name="unique_ipaddr4"),
             models.UniqueConstraint(fields=["ipaddr6"], name="unique_ipaddr6"),
         ]
+        indexes = [models.Index(fields=["status"], name="netixlan_status")]
 
     @property
     def name(self):
