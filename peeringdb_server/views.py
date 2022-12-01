@@ -29,7 +29,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Q
 from django.forms.models import modelform_factory
 from django.http import (
@@ -3045,3 +3045,15 @@ def validator_result_cache(request, cache_id):
     )
     response.write(data)
     return response
+
+
+def view_healthcheck(request):
+    """
+    Performs a simple database version query
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT version()")
+
+    return HttpResponse("")
+

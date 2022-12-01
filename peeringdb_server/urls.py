@@ -60,6 +60,7 @@ from peeringdb_server.views import (
     view_close_account,
     view_exchange,
     view_facility,
+    view_healthcheck,
     view_index,
     view_maintenance,
     view_network,
@@ -269,6 +270,7 @@ urlpatterns = [
     url(r"^(net|ix|fac|org|asn)/translate$", request_translation),
     url(r"^suggest/(?P<reftag>fac)$", view_suggest),
     url(r"^maintenance$", view_maintenance, name="maintenance"),
+    url(r"^healthcheck$", view_healthcheck, name="healthcheck"),
 ]
 
 # o
