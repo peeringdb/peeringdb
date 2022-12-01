@@ -33,7 +33,7 @@ from django_grainy.rest import PermissionDenied
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, APIException
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -41,13 +41,14 @@ from two_factor.utils import devices_for_user
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
-from peeringdb_server.models import UTC, Network, ProtectedAction
+from peeringdb_server.models import UTC, Network, ProtectedAction, OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import (
     APIPermissionsApplicator,
     ModelViewSetPermissions,
     check_permissions_from_request,
     get_org_key_from_request,
     get_user_key_from_request,
+    get_permission_holder_from_request,
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
@@ -58,6 +59,13 @@ from peeringdb_server.util import coerce_ipaddr
 class DataException(ValueError):
     pass
 
+class InactiveKeyException(APIException):
+    """
+    Raised on api authentications with inactive api keys
+    """
+    status_code = 403
+    default_detail = _("This key is currently inactive - please contact PeeringDB support for assistance.")
+    default_code = "permission_denied"
 
 class DataMissingException(DataException):
 
@@ -332,6 +340,32 @@ class BasicAuthMFABlockWrite(permissions.BasePermission):
         return True
 
 
+class InactiveKeyBlock(permissions.BasePermission):
+
+    """
+    When an OrganizationAPIKey or a UserAPIKey has status `inactive`
+    requests made with such keys should be blocked
+    """
+
+    def has_permission(self, request, view):
+
+        permission_holder = get_permission_holder_from_request(request)
+
+        if not isinstance(permission_holder, (UserAPIKey, OrganizationAPIKey)):
+            return True
+
+        if permission_holder.status == "inactive":
+            raise InactiveKeyException()
+
+        if isinstance(permission_holder, UserAPIKey):
+            if not permission_holder.user.is_active:
+                raise InactiveKeyException()
+
+        return True
+
+
+
+
 ###############################################################################
 # VIEW SETS
 
@@ -343,7 +377,7 @@ class ModelViewSet(viewsets.ModelViewSet):
     """
 
     paginate_by_param = ("limit",)
-    permission_classes = (ModelViewSetPermissions, BasicAuthMFABlockWrite)
+    permission_classes = (ModelViewSetPermissions, BasicAuthMFABlockWrite, InactiveKeyBlock)
 
     def get_queryset(self):
         """

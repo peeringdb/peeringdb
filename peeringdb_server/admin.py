@@ -2436,13 +2436,31 @@ class EnvironmentSettingAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelA
 
 
 class OrganizationAPIKeyAdmin(APIKeyModelAdmin):
-    list_display = ["org", "prefix", "name", "created", "revoked"]
+    list_display = ["org", "prefix", "name", "status", "created", "revoked"]
     search_fields = ("prefix", "org__name")
+
+    raw_id_fields = ("org",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "org",
+        ],
+    }
+
 
 
 class UserAPIKeyAdmin(APIKeyModelAdmin):
-    list_display = ["user", "prefix", "name", "readonly", "created", "revoked"]
+    list_display = ["user", "prefix", "name", "readonly", "status", "created", "revoked"]
     search_fields = ("prefix", "user__username", "user__email")
+
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
+
 
 
 class GeoCoordinateAdmin(admin.ModelAdmin):
