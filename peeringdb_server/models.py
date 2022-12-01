@@ -82,6 +82,11 @@ from peeringdb_server.validators import (
     validate_prefix_overlap,
 )
 
+API_KEY_STATUS = (
+    ("active", _("Active")),
+    ("inactive", _("Inactive")),
+)
+
 SPONSORSHIP_LEVELS = (
     (1, _("Silver")),
     (2, _("Gold")),
@@ -1314,6 +1319,13 @@ class OrganizationAPIKey(AbstractAPIKey):
     email = models.EmailField(
         _("email address"), max_length=254, null=False, blank=False
     )
+
+    status = models.CharField(
+        max_length=16,
+        choices=API_KEY_STATUS,
+        default="active"
+    )
+
 
     class Meta(AbstractAPIKey.Meta):
         verbose_name = "Organization API key"
@@ -5838,6 +5850,12 @@ class UserAPIKey(AbstractAPIKey):
         help_text=_(
             "Determines if API Key inherits the User Permissions or is readonly."
         ),
+    )
+
+    status = models.CharField(
+        max_length=16,
+        choices=API_KEY_STATUS,
+        default="active"
     )
 
     class Meta(AbstractAPIKey.Meta):
