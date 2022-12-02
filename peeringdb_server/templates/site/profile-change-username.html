@@ -1,0 +1,23 @@
+{% load i18n %}
+    <div class="editable always panel"
+         data-edit-target="/change-username"
+         id="form-change-username">
+
+      <h3>{% trans "Change username" %}</h3>
+      <div class="editable popin info" id="username-change-success" style="display:none;">{% trans "Username changed" %}!</div>
+      <input type="password"
+             class="editable string form-control marg-bot-15"
+             placeholder="{% trans "Password" %}"
+             data-edit-name="password"
+             data-edit-type="password"
+             data-edit-required="yes" />
+
+      <input type="text"
+             class="editable string form-control marg-bot-15"
+             placeholder="{% trans "New username" %}"
+             data-edit-name="username"
+             data-edit-type="string"
+             data-edit-required="yes" />
+
+      <a class="btn btn-default" data-edit-action="submit">{% trans "Change username" %}</a>
+    </div>

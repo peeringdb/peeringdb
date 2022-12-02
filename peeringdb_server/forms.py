@@ -107,6 +107,18 @@ class PasswordChangeForm(forms.Form):
         return password_v
 
 
+class UsernameChangeForm(forms.Form):
+    username = forms.CharField()
+
+    def clean_username(self):
+
+        username = self.cleaned_data.get("username")
+
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError(_("This username is already taken"))
+        return username
+
+
 class PasswordResetForm(forms.Form):
     email = forms.EmailField()
 
