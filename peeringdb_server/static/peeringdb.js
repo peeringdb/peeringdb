@@ -437,7 +437,7 @@ PeeringDB.ViewTools = {
 PeeringDB.ViewActions = {
 
   init : function() {
-    $('button[data-view-action]').each(function(){
+    $('[data-view-action]').each(function(){
       $(this).click(function() {
         var action = $(this).data("view-action");
         var id = $(this).closest("[data-edit-id]").data("edit-id");

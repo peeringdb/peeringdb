@@ -86,6 +86,9 @@
 
     <div class="row item" data-edit-id="{{ x.id }}">
       <div class="col-xs-8 col-sm-8 col-md-8">
+        {% if permissions.can_delete and x.status == "ok" %}
+        <a class="btn-row-delete" data-edit-toggled="edit" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "Remove this carrier from your facility." %}">&times;</a>
+        {% endif %}
         <div class="exchange" data-sort-value="{{ x.carrier.name|lower }}" data-filter-value="{{ x.carrier.name }}">
           <a href="/{{x.carrier|ref_tag}}/{{ x.carrier.id }}">{{ x.carrier.name }}</a>
         </div>
@@ -96,8 +99,6 @@
           {% if x.status == "pending" %}
           <button class="btn-xs btn btn-primary" data-view-action="fac_approve_carrier" data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This carrier wants to list its presence at this facility." %} {% trans "Click to accept this request" %}">{% trans "Accept" %}</button>
           <button class="btn-xs btn btn-danger" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This carrier wants to list its presence at this facility." %} {% trans "Click to reject this request" %}">{% trans "Reject" %}</button>
-          {% else %}
-          <button class="btn-xs btn btn-danger" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "Remove this carrier from your facility." %}">{% trans "Remove" %}</button>
           {% endif %}
         </span>
         {% endif %}
