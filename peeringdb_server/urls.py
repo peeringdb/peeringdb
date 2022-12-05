@@ -68,6 +68,7 @@ from peeringdb_server.views import (
     view_network_by_query,
     view_organization,
     view_password_change,
+    view_username_change,
     view_password_reset,
     view_profile,
     view_profile_v1,
@@ -103,6 +104,7 @@ urlpatterns = [
     url(r"^register$", view_registration, name="register"),
     url(r"^reset-password$", view_password_reset, name="reset-password"),
     url(r"^change-password$", view_password_change),
+    url(r"^change-username$", view_username_change),
     url(r"^set-user-locale$", view_set_user_locale),
     url(
         r"^username-retrieve/initiate$",

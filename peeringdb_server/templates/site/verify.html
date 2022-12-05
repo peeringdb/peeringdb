@@ -32,6 +32,8 @@
       {% include "site/profile-change-email.html" %}
       <!-- CHANGE PASSWORD -->
       {% include "site/profile-change-password.html" %}
+      <!-- CHANGE USERNAME -->
+      {% include "site/profile-change-username.html" %}
       {% endif %}
 
       <!-- API Keys -->
@@ -62,6 +64,13 @@ $('#form-change-password').each(function(idx) {
   $(this).on("action-success:submit", function(ev, data) {
     $('#password-change-success').show()
     $(this).editable("reset")
+  })
+});
+$('#form-change-username').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    $('#username-change-success').show()
+    $(this).editable("reset")
+    $('div.user>a').text(data['username']);
   })
 });
 $('#form-language-preference').each(function(idx) {

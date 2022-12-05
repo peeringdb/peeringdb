@@ -28,7 +28,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist, ValidationError
 from django.db import connection, transaction
 from django.db.models import Q
 from django.forms.models import modelform_factory
@@ -75,6 +75,7 @@ from peeringdb_server.forms import (
     UserCreationForm,
     UserLocaleForm,
     UsernameRetrieveForm,
+    UsernameChangeForm,
 )
 from peeringdb_server.inet import (
     RdapException,
@@ -949,6 +950,41 @@ def view_password_change(request):
         request.user.save()
 
         return JsonResponse({"status": "ok"})
+
+@csrf_protect
+@ensure_csrf_cookie
+@login_required
+@transaction.atomic
+def view_username_change(request):
+
+    if request.method in ["GET", "HEAD"]:
+        return view_verify(request)
+    elif request.method == "POST":
+
+        password = request.POST.get("password")
+
+        if not request.user.has_oauth:
+            if not authenticate(username=request.user.username, password=password):
+                return JsonResponse(
+                    {"status": "auth", "password": _("Wrong password")}, status=400
+                )
+        else:
+            return JsonResponse({"status": "auth"}, status=401)
+
+        form = UsernameChangeForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse(form.errors, status=400)
+
+        request.user.username = form.cleaned_data.get("username")
+        try:
+            request.user.full_clean()
+        except ValidationError as exc:
+            print(exc.error_dict)
+            return JsonResponse(exc.message_dict, status=400)
+        request.user.save()
+
+        return JsonResponse({"status": "ok", "username": request.user.username})
+
 
 
 @ensure_csrf_cookie

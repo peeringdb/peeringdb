@@ -255,6 +255,34 @@ class UserTests(TestCase):
         self.assertEqual(resp.redirect_chain, [("/", 302)])
         self.assertEqual(resp.context["user"].is_authenticated, True)
 
+    def test_username_change(self):
+
+        c = Client()
+        c.force_login(self.user_a)
+
+        response = c.post("/change-username", {"password": "user_a", "username": "updateduser"})
+
+        self.user_a.refresh_from_db()
+
+        assert self.user_a.username == "updateduser"
+
+        response = c.post("/change-username", {"password": "wrongpassword", "username": "user_a"})
+
+        assert response.status_code == 400
+
+        self.user_a.refresh_from_db()
+
+        assert self.user_a.username == "updateduser"
+
+        response = c.post("/change-username", {"password": "user_a", "username": "user a£%"})
+
+        assert response.status_code == 400
+
+        self.user_a.refresh_from_db()
+
+        assert self.user_a.username == "updateduser"
+
+
     def test_username_retrieve(self):
         """
         test the username retrieve process
