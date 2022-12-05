@@ -492,7 +492,7 @@ PeeringDB.ViewActions.actions.fac_approve_carrier = function(carrierfac_id, butt
   $.post(`/api/carrierfac/${carrierfac_id}/approve`).done(
     () => {
       button.tooltip("hide");
-      button.siblings(".btn-danger").text(gettext("Remove"));
+      button.siblings(".btn-danger").detach();
       button.detach();
     }
   ).fail(

@@ -86,7 +86,7 @@
 
     <div class="row item" data-edit-id="{{ x.id }}">
       <div class="col-xs-8 col-sm-8 col-md-8">
-        {% if permissions.can_delete and x.status == "ok" %}
+        {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "Remove this carrier from your facility." %}">&times;</a>
         {% endif %}
         <div class="exchange" data-sort-value="{{ x.carrier.name|lower }}" data-filter-value="{{ x.carrier.name }}">
