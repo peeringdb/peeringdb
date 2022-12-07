@@ -2435,10 +2435,10 @@ class NetworkSerializer(ModelSerializer):
     )
 
     rir_status = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True, default=""
+        default="", read_only=True
     )
     rir_status_updated = serializers.DateTimeField(
-        required=False, allow_null=True, default=None
+        default=None, read_only=True
     )
 
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])

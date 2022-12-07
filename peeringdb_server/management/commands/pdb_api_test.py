@@ -13,6 +13,7 @@ import uuid
 
 import pytest
 import reversion
+from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management import call_command
@@ -1790,6 +1791,29 @@ class TestJSON(unittest.TestCase):
             print(netixlan)
 
         assert qset_assert.exists()
+
+    ##########################################################################
+
+    def test_org_admin_002_PUT_net_rir_status(self):
+
+        net = SHARED["net_rw_ok"]
+
+        now = timezone.now()
+        net.rir_status = "ok"
+        net.rir_status_updated = now
+        net.save()
+
+        self.assert_update(
+            self.db_org_admin,
+            "net",
+            SHARED["net_rw_ok"].id,
+            {"name": self.make_name("TesT")},
+        )
+
+        net.refresh_from_db()
+
+        assert net.rir_status == "ok"
+        assert net.rir_status_updated == now
 
     ##########################################################################
 

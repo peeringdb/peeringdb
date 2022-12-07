@@ -36,6 +36,10 @@ class Command(BaseCommand):
         self.max_age = options.get("max_age")
         self.limit = options.get("limit")
 
+        # dont update network `updated` field on rir status changes
+
+        Network._meta.get_field("updated").auto_now = False
+
         now = timezone.now()
         networks = None
 
