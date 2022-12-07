@@ -1962,6 +1962,7 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         "created",
         "status",
     )
+    change_list_template = "admin/peeringdb_server/commandlinetool/change_list.html"
 
     def has_delete_permission(self, request, obj=None):
         return False
