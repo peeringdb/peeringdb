@@ -648,6 +648,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             )
         except CacheRedirect as inst:
             r = Response(status=200, data=inst.loader.load())
+            r.context_data = {"apicache": True}
         d = time.time() - t
 
         # FIXME: this waits for peeringdb-py fix to deal with 404 raise properly

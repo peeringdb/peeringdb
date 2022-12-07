@@ -257,3 +257,129 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
             response["X-Auth-ID"] = request.auth_id
         return response
+
+
+class CacheControlMiddleware(MiddlewareMixin):
+
+    """
+    Sets the Cache-Control s-maxage header on responses
+    """
+
+    # views using CACHE_CONTROL_DYNAMIC_PAGE as value for s-maxage
+    # views that will receive frequent update and require a shorter
+    # TTL
+
+    dynamic_views = [
+
+        "sponsors",
+        "home",
+
+        # entity views (net, ix, fac, org, carrier)
+
+        "net-view",
+        "net-view-asn",
+        "ix-view",
+        "org-view",
+        "fac-view",
+        "carrier-view",
+
+        # data views that fill select elements when editing
+        # fac, ix, net, org or carrier
+
+
+        "data-facilities",
+        "data-asns",
+    ]
+
+    # views using CACHE_CONTROL_STATIC_PAGE as a value for s-maxage
+    # views that generally dont change outside of deploys and can
+    # support a longer TTL
+
+    static_views = [
+
+        "about",
+        "aup",
+
+        # data views that fill select elements when editing
+        # fac, ix, net, org or carrier
+
+
+        "data-countries",
+        "data-enum",
+        "data-locales",
+    ]
+
+    # views that support caching while authenticated
+    # currently this NEEDS TO EXCLUDE anything that references
+    # the logged in user and or data only available to the logged
+    # in user
+
+    authenticated_views = [
+
+        # data views that fill select elements when editing
+        # fac, ix, net, org or carrier
+
+        "data-countries",
+        "data-enum",
+        "data-locales",
+        "data-facilities",
+        "data-asns",
+    ]
+
+    # REST api views are handled automatically and will use
+    # the `CACHE_CONTROL_API_CACHE` setting for api-cache responses
+    # and the `CACHE_CONTROL_API` setting for normal responses
+
+    def process_response(self, request, response):
+
+        # only on GET requests
+
+        if request.method != "GET":
+            return response
+
+        # generally, requests that dont have a resolver match
+        # are ignored as we are being specific which views
+        # get the Cache-Control header at this point, rather
+        # than applying some broad caching policy
+
+        match = request.resolver_match
+
+        if not match or not match.url_name:
+            return response
+
+        if request.user.is_authenticated and match.url_name not in self.authenticated_views:
+            # request is authenticated, dont set cache-control
+            # headers for authenticated responses.
+            return response
+
+        if match.namespace == "api":
+
+            # REST API
+
+            if getattr(response, "context_data", None):
+
+                # API CACHE
+
+                if response.context_data.get("apicache") is True and settings.CACHE_CONTROL_API_CACHE:
+                    response["Cache-Control"] = f"s-maxage={settings.CACHE_CONTROL_API_CACHE}"
+            elif settings.CACHE_CONTROL_API:
+
+                # NO API CACHE
+
+                response["Cache-Control"] = f"s-maxage={settings.CACHE_CONTROL_API}"
+
+        elif match.url_name in self.dynamic_views:
+
+            # DYNAMIC CONTENT VIEW
+
+            if settings.CACHE_CONTROL_DYNAMIC_PAGE:
+                response["Cache-Control"] = f"s-maxage={settings.CACHE_CONTROL_DYNAMIC_PAGE}"
+
+        elif match.url_name in self.static_views:
+
+            # STATIC CONTENT VIEW
+
+            if settings.CACHE_CONTROL_STATIC_PAGE:
+                response["Cache-Control"] = f"s-maxage={settings.CACHE_CONTROL_STATIC_PAGE}"
+
+        return response
