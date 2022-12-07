@@ -708,6 +708,7 @@ MIDDLEWARE = (
     "csp.middleware.CSPMiddleware",
     # "django.contrib.sessions.middleware.SessionMiddleware",
     "peeringdb_server.middleware.PDBSessionMiddleware",
+    "peeringdb_server.middleware.CacheControlMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -1183,6 +1184,20 @@ set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)
 
 # cache global stats (footer statistics) for N seconds
 set_option("GLOBAL_STATS_CACHE_DURATION", 900)
+
+# cache settings for optimal CDN use
+
+# static Pages - pages that only update through release deployment (seconds)
+set_option("CACHE_CONTROL_STATIC_PAGE", 15 * 60)
+
+# dynamic pages - entity views
+set_option("CACHE_CONTROL_DYNAMIC_PAGE", 10)
+
+# api cache responses (seconds)
+set_option("CACHE_CONTROL_API_CACHE",  15 * 60)
+
+# api responses (seconds)
+set_option("CACHE_CONTROL_API", 10)
 
 if RELEASE_ENV == "prod":
     set_option("PDB_PREPEND_WWW", True)
