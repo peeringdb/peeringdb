@@ -565,6 +565,24 @@ def view_set_user_locale(request):
         return response
 
 
+@csrf_protect
+@ensure_csrf_cookie
+def view_set_anon_locale(request):
+
+    form = UserLocaleForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse(form.errors, status=400)
+
+    loc = form.cleaned_data.get("locale")
+    if loc in [lang[0] for lang in dj_settings.LANGUAGES]:
+        translation.activate(loc)
+        response = JsonResponse({"status": "ok"})
+        response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, loc)
+        return response
+    else:
+        return JsonResponse({"error": _("Malformed Language Preference")}, status=400)
+
+
 # OAuth application management overrides
 
 

@@ -375,6 +375,10 @@ div.landing_search div.searchbox {
   width:100%;
 }
 
+#set-anon-locale {
+  margin-bottom:5px;
+}
+
 div.landing_search div.searchbox input[type=submit] {
   font-size: 18px;
   font-weight: bold;

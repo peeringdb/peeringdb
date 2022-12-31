@@ -71,6 +71,16 @@ $(window).bind("load", function() {
     url_request_authentication: "{% url "security-keys-request-authentication" %}"
   });
 
+  $('#form-anon-language-preference').each(function(idx) {
+    $(this).on("action-success:submit", function(ev, data) {
+      setTimeout(function(){
+          window.location.href=window.location.href;
+          window.location.reload();
+          // Reload the current page, without using the cache
+          document.location.reload(true);
+      }, 500 );
+    })
+  });
 });
 </script>
 </head>
@@ -98,38 +108,68 @@ $(window).bind("load", function() {
         </div>
       </div>
       <div class="col-lg-4 col-md-3 col-sm-3 col-xs-12 user-container">
-        <div class="nav right toolbar">
-        {% if request.user.is_authenticated %}
-          <div class="user">
-            <a href="/profile">{{ request.user.username }}</a>
-          {% if not request.user.is_verified_user %}
-          <div class="status">({% if not request.user.email %}<span class="attention">!</span>{%endif %}
-            {% if request.user.email_confirmed %}
-            <a href="/profile">{% trans "pending" %}</a>
-            {% else %}
-            <a href="/profile">{% trans "unverified" %}</a>
-            {% endif %})
-          </div>
+        <div class="row">
+          <div class="nav right toolbar">
+          {% if request.user.is_authenticated %}
+            <div class="user">
+              <a href="/profile">{{ request.user.username }}</a>
+            {% if not request.user.is_verified_user %}
+            <div class="status">({% if not request.user.email %}<span class="attention">!</span>{%endif %}
+              {% if request.user.email_confirmed %}
+              <a href="/profile">{% trans "pending" %}</a>
+              {% else %}
+              <a href="/profile">{% trans "unverified" %}</a>
+              {% endif %})
+            </div>
+            {% endif %}
+            </div>
+            <div class="dropdown" style="display:inline-block">
+              <a class="btn btn-default dropdown-toggle" id="usermenu" data-bs-toggle="dropdown" aria-haspopup="true">
+                <img class="img-responsive" src="{{ STATIC_URL }}hamburger-colorful.png" alt="navigation" title="navigation" />
+              </a>
+              <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="usermenu">
+                {% for org in user.organizations %}
+                <li><a href="/org/{{ org.id }}">{{ org.name }}</a></li>
+                {% endfor %}
+                {% if request.user.is_verified_user %}
+                <li><a href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
+                {% endif %}
+                <li><a href="/profile">{% trans "Profile" %}</a></li>
+                <li><a href="/logout">{% trans "Logout" %}</a></li>
+              </ul>
+            </div>
+          {% else %}
+            <a href="/register">{% trans "Register" %}</a> {% trans "or" %} <a href="{% url "two_factor:login" %}?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
           {% endif %}
           </div>
-          <div class="dropdown" style="display:inline-block">
-            <a class="btn btn-default dropdown-toggle" id="usermenu" data-bs-toggle="dropdown" aria-haspopup="true">
-              <img class="img-responsive" src="{{ STATIC_URL }}hamburger-colorful.png" alt="navigation" title="navigation" />
-            </a>
-            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="usermenu">
-              {% for org in user.organizations %}
-              <li><a href="/org/{{ org.id }}">{{ org.name }}</a></li>
-              {% endfor %}
-              {% if request.user.is_verified_user %}
-              <li><a href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
-              {% endif %}
-              <li><a href="/profile">{% trans "Profile" %}</a></li>
-              <li><a href="/logout">{% trans "Logout" %}</a></li>
-            </ul>
+        </div>
+        <div class="row">
+          <div class="right toolbar">
+            <div class="editable auto-toggled always col-sm-7 col-sm-offset-5"
+                data-edit-target="/set-anon-locale"
+                data-edit-always-submit="yes"
+                data-edit-enter-action="submit"
+                id="form-anon-language-preference">
+
+              {% get_current_language as LANGUAGE_CODE %}
+              <!-- Current language: {{ LANGUAGE_CODE }} -->
+
+              <div class="input-group">
+                <div
+                    data-edit-redirect-on-success="/"
+                    data-edit-type="select"
+                    data-edit-data="locales"
+                    data-edit-sorted="yes"
+                    data-edit-required="no"
+                    data-edit-name="locale"
+                    data-edit-value="{{ LANGUAGE_CODE }}"
+                    data-edit-reset-value=""></div>
+                <div class="input-group-btn">
+                  <a class="btn btn-link btn-xs" id="set-anon-locale" data-edit-action="submit">{% trans "Go" %}</a>
+                </div>
+              </div>
+            </div>
           </div>
-        {% else %}
-          <a href="/register">{% trans "Register" %}</a> {% trans "or" %} <a href="{% url "two_factor:login" %}?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
-        {% endif %}
         </div>
       </div>
     </div>
