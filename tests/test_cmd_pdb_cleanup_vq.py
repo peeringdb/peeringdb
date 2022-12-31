@@ -1,5 +1,5 @@
-import random
 import string
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -80,7 +80,7 @@ def create_users_and_vqi(users_to_generate, days_old):
     """
 
     def random_str():
-        return "".join(random.choice(string.ascii_letters) for i in range(4))
+        return str(uuid.uuid4())
 
     def admin_user():
         user, _ = User.objects.get_or_create(username="admin")

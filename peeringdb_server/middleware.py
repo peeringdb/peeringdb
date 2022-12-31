@@ -9,7 +9,6 @@ from django.contrib.auth import authenticate
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.http import HttpResponse, JsonResponse
 from django.middleware.common import CommonMiddleware
-from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 
 from peeringdb_server.context import current_request
@@ -46,28 +45,20 @@ class PDBSessionMiddleware(SessionMiddleware):
 
         elif not request.COOKIES.get(settings.SESSION_COOKIE_NAME):
 
-            # request specifies no session, check if the request.path falls into the
-            # set of valid paths for new session creation
+            # allow session creation for all request paths except the API
 
-            NEW_SESSION_VALID_PATHS = [
-                reverse("login"),
-                reverse("register"),
-                reverse("username-retrieve"),
-                reverse("username-retrieve-initiate"),
-                reverse("reset-password"),
+            no_session_prefixes = [
+                "api/",
+                "api-auth/",
             ]
 
-            if request.path in NEW_SESSION_VALID_PATHS:
+            for prefix in no_session_prefixes:
+                if request.path.startswith(prefix):
 
-                # path is valid for a new session, proceed normally
+                    # path is NOT valid for a new session, abort session
+                    # creation
 
-                return super().process_response(request, response)
-            else:
-
-                # path is NOT valid for a new session, abort session
-                # creation
-
-                return response
+                    return response
 
         # proceed normally
 

@@ -142,9 +142,11 @@ class PDBPermissionMiddlewareTest(APITestCase):
 @pytest.mark.parametrize(
     "path,expected",
     (
-        ("/", 0),
+        ("/", 1),
         ("/account/login/", 1),
         ("/register", 1),
+        ("/api/net/1", 0),
+        ("/api-auth/net/1", 0),
     ),
 )
 @pytest.mark.django_db
