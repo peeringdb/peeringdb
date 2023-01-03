@@ -3593,6 +3593,7 @@ twentyc.data.loaders.assign("enum/terms_types_advs", "data");
 twentyc.data.loaders.assign("enum/property", "data");
 twentyc.data.loaders.assign("enum/available_voltage", "data");
 twentyc.data.loaders.assign("enum/reauth_periods", "data");
+twentyc.data.loaders.assign("enum/mtus", "data");
 
 $(twentyc.data).on("load-enum/traffic", function(e, payload) {
   var r = {}, i = 0, data=payload.data;
