@@ -31,7 +31,7 @@ from django_grainy.rest import PermissionDenied
 # from drf_toolbox import serializers
 from django_handleref.rest.serializers import HandleRefSerializer
 from django_inet.rest import IPAddressField, IPNetworkField
-from django_peeringdb.const import AVAILABLE_VOLTAGE
+from django_peeringdb.const import AVAILABLE_VOLTAGE, MTUS
 from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -2851,6 +2851,11 @@ class IXLanSerializer(ModelSerializer):
         exclude=["ixlan_id", "ixlan"],
         source="ixpfx_set_active_prefetched",
     )
+
+    mtu = serializers.ChoiceField(
+        choices=MTUS, required=False, default=1500
+    )
+
 
     def validate_create(self, data):
         # we don't want users to be able to create ixlans if the parent

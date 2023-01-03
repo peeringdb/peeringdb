@@ -2083,10 +2083,11 @@ def view_exchange(request, id):
                 "payload": [{"name": "ix_id", "value": exchange.id}],
             },
             {
-                "type": "number",
                 "name": "mtu",
-                "label": _("MTU"),
-                "value": (ixlan.mtu or 0),
+                "type": "list",
+                "data": "enum/mtus",
+                "label": _("Payload MTU"),
+                "value": str(ixlan.mtu),
             },
             {
                 "type": "flags",

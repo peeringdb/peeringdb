@@ -2446,7 +2446,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         ixlan = self.ixlan
 
         if not ixlan and create_ixlan:
-            ixlan = IXLan(ix=self, status=self.status, mtu=0)
+            ixlan = IXLan(ix=self, status=self.status)
 
             # ixlan id will be set to match ix id in ixlan's clean()
             # call

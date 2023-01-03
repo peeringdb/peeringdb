@@ -384,7 +384,7 @@ class TestJSON(unittest.TestCase):
             "id": 1,
             "name": self.make_name("Test"),
             "descr": NOTE,
-            "mtu": 12345,
+            "mtu": 1500,
             "dot1q_support": False,
             "ixf_ixp_member_list_url_visible": "Private",
             "rs_asn": 12345,
@@ -2104,7 +2104,7 @@ class TestJSON(unittest.TestCase):
             SHARED["ixlan_rw_ok"].id,
             {"name": self.make_name("Test")},
             test_failures={
-                "invalid": {"mtu": "NEEDS TO BE INT"},
+                "invalid": {"mtu": "7000"},
                 "perms": {"ix_id": SHARED["ix_r_ok"].id},
             },
         )

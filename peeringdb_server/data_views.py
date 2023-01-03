@@ -176,6 +176,7 @@ def enum(request, name):
         "PROPERTY",
         "AVAILABLE_VOLTAGE",
         "REAUTH_PERIODS",
+        "MTUS",
     ]:
         raise Exception("Unknown enum")
 
