@@ -55,8 +55,12 @@ class PDBSessionMiddleware(SessionMiddleware):
                 reverse("username-retrieve"),
                 reverse("username-retrieve-initiate"),
                 reverse("reset-password"),
-                reverse("account_confirm_email", kwargs=request.resolver_match.kwargs, args=request.resolver_match.args),
             ]
+
+            if request.resolver_match and "key" in request.resolver_match.kwargs:
+                NEW_SESSION_VALID_PATHS.append(
+                    reverse("account_confirm_email", kwargs=request.resolver_match.kwargs),
+                )
 
             if request.path in NEW_SESSION_VALID_PATHS:
 
