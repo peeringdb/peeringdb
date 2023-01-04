@@ -700,6 +700,7 @@ set_option("CSP_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
 set_option("CSP_FONT_SRC", ["'self'", "fonts.gstatic.com"])
 set_option("CSP_IMG_SRC", ["'self'", "cdn.redoc.ly", "data:"])
 set_option("CSP_WORKER_SRC", ["'self'", "blob:"])
+set_option("CSP_CONNECT_SRC", ["'self'",])
 
 MIDDLEWARE = (
     "corsheaders.middleware.CorsMiddleware",
