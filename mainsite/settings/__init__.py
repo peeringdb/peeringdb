@@ -443,6 +443,10 @@ MEDIA_URL = f"/m/{PEERINGDB_VERSION}/"
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
 STATIC_URL = f"/s/{PEERINGDB_VERSION}/"
 
+# limit error emails (2/minute)
+set_option("ERROR_EMAILS_PERIOD", 60)
+set_option("ERROR_EMAILS_LIMIT", 2)
+
 # maximum number of entries in the cache
 set_option("CACHE_MAX_ENTRIES", 5000)
 
@@ -461,6 +465,14 @@ CACHES = {
             # once max entries are reach delete 500 of the oldest entries
             "CULL_FREQUENCY": 10,
         },
+    },
+
+    # local memory cache for throttling error emails (#1282)
+
+    "error_emails": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "error_emails",
+        "MAX_ENTRIES": 2,
     }
 }
 
@@ -535,7 +547,8 @@ LOGGING = {
         # Include the default Django email handler for errors
         # This is what you'd get without configuring logging at all.
         "mail_admins": {
-            "class": "django.utils.log.AdminEmailHandler",
+            #"class": "django.utils.log.AdminEmailHandler",
+            "class": "peeringdb_server.log.ThrottledAdminEmailHandler",
             # only send emails for error logs
             "level": "ERROR",
             # But the emails are plain text by default - HTML is nicer
