@@ -1851,6 +1851,12 @@ def view_carrier(request, id):
                 "value": data.get("name_long", dismiss),
             },
             {
+                "type": "url",
+                "name": "website",
+                "label": _("Company Website"),
+                "value": data.get("website", dismiss),
+            },
+            {
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),
