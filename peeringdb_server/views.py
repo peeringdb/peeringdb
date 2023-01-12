@@ -2959,7 +2959,7 @@ class LoginView(TwoFactorLoginView):
         Specify which redirect urls are valid.
         """
 
-        redir = self.request.POST.get("next") or "/"
+        redir = self.request.POST.get("next") or self.request.GET.get("next") or "/"
 
         # if the redirect url is to logout that makes little
         # sense as the user would get logged out immediately
