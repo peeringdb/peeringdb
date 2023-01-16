@@ -1302,6 +1302,7 @@ class CarrierFacilityAdmin(SoftDeleteAdmin):
         "grainy_namespace",
     ]
 
+
 class CarrierAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     list_display = ("name", "org", "status", "created", "updated")
     ordering = ("-created",)
@@ -1338,8 +1339,6 @@ class FacilityAdminForm(StatusForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         fk_handleref_filter(self, "org")
-
-
 
 
 class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
@@ -2449,9 +2448,16 @@ class OrganizationAPIKeyAdmin(APIKeyModelAdmin):
     }
 
 
-
 class UserAPIKeyAdmin(APIKeyModelAdmin):
-    list_display = ["user", "prefix", "name", "readonly", "status", "created", "revoked"]
+    list_display = [
+        "user",
+        "prefix",
+        "name",
+        "readonly",
+        "status",
+        "created",
+        "revoked",
+    ]
     search_fields = ("prefix", "user__username", "user__email")
 
     raw_id_fields = ("user",)
@@ -2461,7 +2467,6 @@ class UserAPIKeyAdmin(APIKeyModelAdmin):
             "user",
         ],
     }
-
 
 
 class GeoCoordinateAdmin(admin.ModelAdmin):

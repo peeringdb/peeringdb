@@ -1323,12 +1323,7 @@ class OrganizationAPIKey(AbstractAPIKey):
         _("email address"), max_length=254, null=False, blank=False
     )
 
-    status = models.CharField(
-        max_length=16,
-        choices=API_KEY_STATUS,
-        default="active"
-    )
-
+    status = models.CharField(max_length=16, choices=API_KEY_STATUS, default="active")
 
     class Meta(AbstractAPIKey.Meta):
         verbose_name = "Organization API key"
@@ -1928,7 +1923,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
     class Meta(pdb_models.InternetExchangeBase.Meta):
         indexes = [models.Index(fields=["status"], name="ix_status")]
-
 
     @staticmethod
     def autocomplete_search_fields():
@@ -4386,9 +4380,10 @@ class Network(pdb_models.NetworkBase):
         default=0,
     )
 
-
     class Meta(pdb_models.NetworkBase.Meta):
-        indexes = [models.Index(fields=["status", "allow_ixp_update"], name="net_status")]
+        indexes = [
+            models.Index(fields=["status", "allow_ixp_update"], name="net_status")
+        ]
 
     @staticmethod
     def autocomplete_search_fields():
@@ -5326,7 +5321,6 @@ class Carrier(pdb_models.CarrierBase):
         )
 
 
-
 @grainy_model(namespace="carrierfac", parent="carrier")
 @reversion.register
 class CarrierFacility(pdb_models.CarrierFacilityBase):
@@ -5389,7 +5383,6 @@ class CarrierFacility(pdb_models.CarrierFacilityBase):
         Returns a descriptive label of the netfac for logging purposes.
         """
         return f"carrierfac{self.id} {self.carrier.name} {self.facility.name}"
-
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -5865,11 +5858,7 @@ class UserAPIKey(AbstractAPIKey):
         ),
     )
 
-    status = models.CharField(
-        max_length=16,
-        choices=API_KEY_STATUS,
-        default="active"
-    )
+    status = models.CharField(max_length=16, choices=API_KEY_STATUS, default="active")
 
     class Meta(AbstractAPIKey.Meta):
         verbose_name = "User API key"

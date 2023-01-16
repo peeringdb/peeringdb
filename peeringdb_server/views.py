@@ -28,7 +28,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist, ValidationError
+from django.core.exceptions import (
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    ValidationError,
+)
 from django.db import connection, transaction
 from django.db.models import Q
 from django.forms.models import modelform_factory
@@ -74,8 +78,8 @@ from peeringdb_server.forms import (
     PasswordResetForm,
     UserCreationForm,
     UserLocaleForm,
-    UsernameRetrieveForm,
     UsernameChangeForm,
+    UsernameRetrieveForm,
 )
 from peeringdb_server.inet import (
     RdapException,
@@ -951,6 +955,7 @@ def view_password_change(request):
 
         return JsonResponse({"status": "ok"})
 
+
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
@@ -984,7 +989,6 @@ def view_username_change(request):
         request.user.save()
 
         return JsonResponse({"status": "ok", "username": request.user.username})
-
 
 
 @ensure_csrf_cookie
@@ -1855,7 +1859,9 @@ def view_carrier(request, id):
                 "name": "website",
                 "label": _("Company Website"),
                 "edit_label": _("Company Website Override"),
-                "edit_help_text": _("If this field is set, it will be displayed on this record. If not, we will display the website from the organization record this is tied to"),
+                "edit_help_text": _(
+                    "If this field is set, it will be displayed on this record. If not, we will display the website from the organization record this is tied to"
+                ),
                 "value": data.get("website", dismiss),
             },
             {
@@ -3101,4 +3107,3 @@ def view_healthcheck(request):
         cursor.execute("SELECT version()")
 
     return HttpResponse("")
-

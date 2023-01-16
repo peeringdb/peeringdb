@@ -2,12 +2,14 @@
 
 from django.db import migrations, models
 
+
 def closest_number(numbers, value):
     closest_number = None
     for number in numbers:
         if closest_number is None or abs(value - number) < abs(value - closest_number):
             closest_number = number
     return closest_number
+
 
 def normalize(apps, schema_editor):
 
@@ -26,14 +28,18 @@ def normalize(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0103_mtu_default'),
+        ("peeringdb_server", "0103_mtu_default"),
     ]
 
     operations = [
         migrations.RunPython(normalize, migrations.RunPython.noop),
         migrations.AlterField(
-            model_name='ixlan',
-            name='mtu',
-            field=models.PositiveIntegerField(choices=[(1500, "1500"), (9000, "9000")], default=1500, verbose_name='MTU'),
+            model_name="ixlan",
+            name="mtu",
+            field=models.PositiveIntegerField(
+                choices=[(1500, "1500"), (9000, "9000")],
+                default=1500,
+                verbose_name="MTU",
+            ),
         ),
     ]

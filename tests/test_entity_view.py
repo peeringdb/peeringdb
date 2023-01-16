@@ -92,9 +92,11 @@ class TestFacilityView(ViewTestCase):
     def test_view(self):
         self.run_view_test("fac")
 
+
 class TestCarrieriew(ViewTestCase):
     def test_view(self):
         self.run_view_test("carrier")
+
 
 class TestOrgView(ViewTestCase):
     def test_view(self):

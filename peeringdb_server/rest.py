@@ -24,8 +24,8 @@ import reversion
 import unidecode
 from django.apps import apps
 from django.conf import settings
-from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
 from django.db import connection, transaction
 from django.db.models import DateTimeField
 from django.utils import timezone
@@ -34,7 +34,7 @@ from django_grainy.rest import PermissionDenied
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError, APIException
+from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -42,14 +42,20 @@ from two_factor.utils import devices_for_user
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
-from peeringdb_server.models import UTC, Network, ProtectedAction, OrganizationAPIKey, UserAPIKey
+from peeringdb_server.models import (
+    UTC,
+    Network,
+    OrganizationAPIKey,
+    ProtectedAction,
+    UserAPIKey,
+)
 from peeringdb_server.permissions import (
     APIPermissionsApplicator,
     ModelViewSetPermissions,
     check_permissions_from_request,
     get_org_key_from_request,
-    get_user_key_from_request,
     get_permission_holder_from_request,
+    get_user_key_from_request,
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
@@ -60,13 +66,18 @@ from peeringdb_server.util import coerce_ipaddr
 class DataException(ValueError):
     pass
 
+
 class InactiveKeyException(APIException):
     """
     Raised on api authentications with inactive api keys
     """
+
     status_code = 403
-    default_detail = _("This key is currently inactive - please contact PeeringDB support for assistance.")
+    default_detail = _(
+        "This key is currently inactive - please contact PeeringDB support for assistance."
+    )
     default_code = "permission_denied"
+
 
 class DataMissingException(DataException):
 
@@ -380,8 +391,6 @@ class InactiveKeyBlock(permissions.BasePermission):
         return True
 
 
-
-
 ###############################################################################
 # VIEW SETS
 
@@ -393,7 +402,11 @@ class ModelViewSet(viewsets.ModelViewSet):
     """
 
     paginate_by_param = ("limit",)
-    permission_classes = (ModelViewSetPermissions, BasicAuthMFABlockWrite, InactiveKeyBlock)
+    permission_classes = (
+        ModelViewSetPermissions,
+        BasicAuthMFABlockWrite,
+        InactiveKeyBlock,
+    )
 
     def get_queryset(self):
         """
@@ -918,7 +931,6 @@ class CarrierFacilityMixin:
         return response
 
 
-
 # TODO: why are we doing the import like this??!
 pdb_serializers = importlib.import_module("peeringdb_server.serializers")
 router = RestRouter(trailing_slash=False)
@@ -967,7 +979,9 @@ def model_view_set(model, methods=None, mixins=None):
 
 FacilityViewSet = model_view_set("Facility")
 CarrierViewSet = model_view_set("Carrier")
-CarrierFacilityViewSet = model_view_set("CarrierFacility", mixins=(CarrierFacilityMixin,))
+CarrierFacilityViewSet = model_view_set(
+    "CarrierFacility", mixins=(CarrierFacilityMixin,)
+)
 InternetExchangeViewSet = model_view_set(
     "InternetExchange", mixins=(InternetExchangeMixin,)
 )

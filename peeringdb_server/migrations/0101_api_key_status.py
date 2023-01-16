@@ -6,18 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0100_carrier'),
+        ("peeringdb_server", "0100_carrier"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organizationapikey',
-            name='status',
-            field=models.CharField(choices=[('active', 'Active'), ('inactive', 'Inactive')], default='active', max_length=16),
+            model_name="organizationapikey",
+            name="status",
+            field=models.CharField(
+                choices=[("active", "Active"), ("inactive", "Inactive")],
+                default="active",
+                max_length=16,
+            ),
         ),
         migrations.AddField(
-            model_name='userapikey',
-            name='status',
-            field=models.CharField(choices=[('active', 'Active'), ('inactive', 'Inactive')], default='active', max_length=16),
+            model_name="userapikey",
+            name="status",
+            field=models.CharField(
+                choices=[("active", "Active"), ("inactive", "Inactive")],
+                default="active",
+                max_length=16,
+            ),
         ),
     ]

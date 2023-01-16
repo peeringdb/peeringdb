@@ -59,7 +59,9 @@ class PDBSessionMiddleware(SessionMiddleware):
 
             if request.resolver_match and "key" in request.resolver_match.kwargs:
                 NEW_SESSION_VALID_PATHS.append(
-                    reverse("account_confirm_email", kwargs=request.resolver_match.kwargs),
+                    reverse(
+                        "account_confirm_email", kwargs=request.resolver_match.kwargs
+                    ),
                 )
 
             if request.path in NEW_SESSION_VALID_PATHS:
@@ -275,23 +277,17 @@ class CacheControlMiddleware(MiddlewareMixin):
     # TTL
 
     dynamic_views = [
-
         "sponsors",
         "home",
-
         # entity views (net, ix, fac, org, carrier)
-
         "net-view",
         "net-view-asn",
         "ix-view",
         "org-view",
         "fac-view",
         "carrier-view",
-
         # data views that fill select elements when editing
         # fac, ix, net, org or carrier
-
-
         "data-facilities",
         "data-asns",
     ]
@@ -301,14 +297,10 @@ class CacheControlMiddleware(MiddlewareMixin):
     # support a longer TTL
 
     static_views = [
-
         "about",
         "aup",
-
         # data views that fill select elements when editing
         # fac, ix, net, org or carrier
-
-
         "data-countries",
         "data-enum",
         "data-locales",
@@ -320,10 +312,8 @@ class CacheControlMiddleware(MiddlewareMixin):
     # in user
 
     authenticated_views = [
-
         # data views that fill select elements when editing
         # fac, ix, net, org or carrier
-
         "data-countries",
         "data-enum",
         "data-locales",
@@ -352,7 +342,10 @@ class CacheControlMiddleware(MiddlewareMixin):
         if not match or not match.url_name:
             return response
 
-        if request.user.is_authenticated and match.url_name not in self.authenticated_views:
+        if (
+            request.user.is_authenticated
+            and match.url_name not in self.authenticated_views
+        ):
             # request is authenticated, dont set cache-control
             # headers for authenticated responses.
             return response
@@ -365,8 +358,13 @@ class CacheControlMiddleware(MiddlewareMixin):
 
                 # API CACHE
 
-                if response.context_data.get("apicache") is True and settings.CACHE_CONTROL_API_CACHE:
-                    response["Cache-Control"] = f"s-maxage={settings.CACHE_CONTROL_API_CACHE}"
+                if (
+                    response.context_data.get("apicache") is True
+                    and settings.CACHE_CONTROL_API_CACHE
+                ):
+                    response[
+                        "Cache-Control"
+                    ] = f"s-maxage={settings.CACHE_CONTROL_API_CACHE}"
             elif settings.CACHE_CONTROL_API:
 
                 # NO API CACHE
@@ -378,13 +376,17 @@ class CacheControlMiddleware(MiddlewareMixin):
             # DYNAMIC CONTENT VIEW
 
             if settings.CACHE_CONTROL_DYNAMIC_PAGE:
-                response["Cache-Control"] = f"s-maxage={settings.CACHE_CONTROL_DYNAMIC_PAGE}"
+                response[
+                    "Cache-Control"
+                ] = f"s-maxage={settings.CACHE_CONTROL_DYNAMIC_PAGE}"
 
         elif match.url_name in self.static_views:
 
             # STATIC CONTENT VIEW
 
             if settings.CACHE_CONTROL_STATIC_PAGE:
-                response["Cache-Control"] = f"s-maxage={settings.CACHE_CONTROL_STATIC_PAGE}"
+                response[
+                    "Cache-Control"
+                ] = f"s-maxage={settings.CACHE_CONTROL_STATIC_PAGE}"
 
         return response

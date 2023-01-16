@@ -260,13 +260,17 @@ class UserTests(TestCase):
         c = Client()
         c.force_login(self.user_a)
 
-        response = c.post("/change-username", {"password": "user_a", "username": "updateduser"})
+        response = c.post(
+            "/change-username", {"password": "user_a", "username": "updateduser"}
+        )
 
         self.user_a.refresh_from_db()
 
         assert self.user_a.username == "updateduser"
 
-        response = c.post("/change-username", {"password": "wrongpassword", "username": "user_a"})
+        response = c.post(
+            "/change-username", {"password": "wrongpassword", "username": "user_a"}
+        )
 
         assert response.status_code == 400
 
@@ -274,14 +278,15 @@ class UserTests(TestCase):
 
         assert self.user_a.username == "updateduser"
 
-        response = c.post("/change-username", {"password": "user_a", "username": "user a£%"})
+        response = c.post(
+            "/change-username", {"password": "user_a", "username": "user a£%"}
+        )
 
         assert response.status_code == 400
 
         self.user_a.refresh_from_db()
 
         assert self.user_a.username == "updateduser"
-
 
     def test_username_retrieve(self):
         """

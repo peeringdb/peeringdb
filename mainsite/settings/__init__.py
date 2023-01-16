@@ -466,14 +466,12 @@ CACHES = {
             "CULL_FREQUENCY": 10,
         },
     },
-
     # local memory cache for throttling error emails (#1282)
-
     "error_emails": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "error_emails",
         "MAX_ENTRIES": 2,
-    }
+    },
 }
 
 
@@ -547,7 +545,7 @@ LOGGING = {
         # Include the default Django email handler for errors
         # This is what you'd get without configuring logging at all.
         "mail_admins": {
-            #"class": "django.utils.log.AdminEmailHandler",
+            # "class": "django.utils.log.AdminEmailHandler",
             "class": "peeringdb_server.log.ThrottledAdminEmailHandler",
             # only send emails for error logs
             "level": "ERROR",
@@ -713,7 +711,12 @@ set_option("CSP_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
 set_option("CSP_FONT_SRC", ["'self'", "fonts.gstatic.com"])
 set_option("CSP_IMG_SRC", ["'self'", "cdn.redoc.ly", "data:"])
 set_option("CSP_WORKER_SRC", ["'self'", "blob:"])
-set_option("CSP_CONNECT_SRC", ["'self'",])
+set_option(
+    "CSP_CONNECT_SRC",
+    [
+        "'self'",
+    ],
+)
 
 MIDDLEWARE = (
     "corsheaders.middleware.CorsMiddleware",
@@ -1208,7 +1211,7 @@ set_option("CACHE_CONTROL_STATIC_PAGE", 15 * 60)
 set_option("CACHE_CONTROL_DYNAMIC_PAGE", 10)
 
 # api cache responses (seconds)
-set_option("CACHE_CONTROL_API_CACHE",  15 * 60)
+set_option("CACHE_CONTROL_API_CACHE", 15 * 60)
 
 # api responses (seconds)
 set_option("CACHE_CONTROL_API", 10)

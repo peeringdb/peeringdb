@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 
+
 def update_mtu_zero(apps, schema_editor):
 
     IXLan = apps.get_model("peeringdb_server", "IXLan")
@@ -11,17 +12,18 @@ def update_mtu_zero(apps, schema_editor):
             ixlan.mtu = 1500
             ixlan.save()
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0102_indexes'),
+        ("peeringdb_server", "0102_indexes"),
     ]
 
     operations = [
         migrations.RunPython(update_mtu_zero, migrations.RunPython.noop),
         migrations.AlterField(
-            model_name='ixlan',
-            name='mtu',
-            field=models.PositiveIntegerField(default=1500, verbose_name='MTU'),
+            model_name="ixlan",
+            name="mtu",
+            field=models.PositiveIntegerField(default=1500, verbose_name="MTU"),
         ),
     ]

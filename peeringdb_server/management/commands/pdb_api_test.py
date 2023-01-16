@@ -13,12 +13,12 @@ import uuid
 
 import pytest
 import reversion
-from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
+from django.utils import timezone
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework import serializers
 from rest_framework.test import APIRequestFactory
@@ -343,7 +343,6 @@ class TestJSON(unittest.TestCase):
         data.update(**kwargs)
         return data
 
-
     @classmethod
     def make_data_carrier(cls, **kwargs):
 
@@ -355,8 +354,6 @@ class TestJSON(unittest.TestCase):
         }
         data.update(**kwargs)
         return data
-
-
 
     ##########################################################################
 
@@ -1014,7 +1011,9 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_carrierfac(self):
-        self.assert_get_handleref(self.db_user, "carrierfac", SHARED["carrierfac_r_ok"].id)
+        self.assert_get_handleref(
+            self.db_user, "carrierfac", SHARED["carrierfac_r_ok"].id
+        )
 
     ##########################################################################
 
@@ -1650,7 +1649,6 @@ class TestJSON(unittest.TestCase):
             test_success=SHARED["carrier_id"],
             test_failure=SHARED["carrier_r_ok"].id,
         )
-
 
     ##########################################################################
 

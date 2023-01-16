@@ -120,7 +120,6 @@ class AdminTests(TestCase):
             for addr in ["207.41.110.37", "207.41.110.38", "207.41.110.39"]
         ]
 
-
         # set up carrier facility presences
         cls.entities["carrierfac"] = [
             models.CarrierFacility.objects.create(

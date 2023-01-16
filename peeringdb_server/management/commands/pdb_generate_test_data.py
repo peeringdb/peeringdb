@@ -99,7 +99,6 @@ class Command(BaseCommand):
                 if reftag in ["carrierfac"]:
                     params.update(carrier=self.entities["carrier"][i])
 
-
                 # create object
                 entity = self.mock.create(reftag, **params)
                 self.entities[reftag].append(entity)

@@ -1,7 +1,6 @@
-from django.utils.log import AdminEmailHandler
-from django.core.cache import caches
-
 from django.conf import settings
+from django.core.cache import caches
+from django.utils.log import AdminEmailHandler
 
 
 class ThrottledAdminEmailHandler(AdminEmailHandler):
@@ -34,4 +33,4 @@ class ThrottledAdminEmailHandler(AdminEmailHandler):
         else:
             if counter > settings.ERROR_EMAILS_LIMIT:
                 return
-        super(ThrottledAdminEmailHandler, self).emit(record)
+        super().emit(record)

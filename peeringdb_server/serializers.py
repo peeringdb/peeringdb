@@ -1739,6 +1739,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
         return data
 
+
 class CarrierFacilitySerializer(ModelSerializer):
     """
     Serializer for peeringdb_server.models.CarrierFacility
@@ -1782,7 +1783,6 @@ class CarrierFacilitySerializer(ModelSerializer):
             )
         ]
 
-
     def validate_create(self, data):
         if data.get("facility") and data.get("facility").status != "ok":
             raise ParentStatusException(
@@ -1808,6 +1808,7 @@ class CarrierFacilitySerializer(ModelSerializer):
 
     def get_name(self, inst):
         return inst.facility.name
+
 
 class CarrierSerializer(ModelSerializer):
     """
@@ -1837,28 +1838,24 @@ class CarrierSerializer(ModelSerializer):
     class Meta:
         model = Carrier
 
-        fields = (
-            [
-                "id",
-                "org_id",
-                "org_name",
-                "org",
-                "name",
-                "aka",
-                "name_long",
-                "website",
-                "notes",
-                "carrierfac_set"
-            ]
-            + HandleRefSerializer.Meta.fields
-        )
+        fields = [
+            "id",
+            "org_id",
+            "org_name",
+            "org",
+            "name",
+            "aka",
+            "name_long",
+            "website",
+            "notes",
+            "carrierfac_set",
+        ] + HandleRefSerializer.Meta.fields
 
         related_fields = ["org", "carrierfac_set"]
         list_exclude = ["org"]
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
-
 
     def to_representation(self, data):
 
@@ -2442,12 +2439,8 @@ class NetworkSerializer(ModelSerializer):
         required=False, allow_null=True, allow_blank=True, default=""
     )
 
-    rir_status = serializers.CharField(
-        default="", read_only=True
-    )
-    rir_status_updated = serializers.DateTimeField(
-        default=None, read_only=True
-    )
+    rir_status = serializers.CharField(default="", read_only=True)
+    rir_status_updated = serializers.DateTimeField(default=None, read_only=True)
 
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
@@ -2860,10 +2853,7 @@ class IXLanSerializer(ModelSerializer):
         source="ixpfx_set_active_prefetched",
     )
 
-    mtu = serializers.ChoiceField(
-        choices=MTUS, required=False, default=1500
-    )
-
+    mtu = serializers.ChoiceField(choices=MTUS, required=False, default=1500)
 
     def validate_create(self, data):
         # we don't want users to be able to create ixlans if the parent

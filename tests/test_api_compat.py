@@ -114,4 +114,3 @@ class TestAPIClientCompat(ClientCase):
         content = json.loads(r.content)
 
         assert content["meta"]["error"] == self.expected_malformed_auth_header_err_str
-

@@ -334,7 +334,6 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
             self.db_org_admin.all("net")
         assert "key is currently inactive" in str(excinfo.value)
 
-
     # TESTS WE ADD FOR USER API KEY
     def test_user_key_002_GET_as_set(self):
         """
@@ -346,7 +345,6 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         networks = models.Network.objects.filter(status="ok")
         for net in networks:
             self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
-
 
     def test_user_key_002_inactive_key(self):
         """
@@ -360,7 +358,6 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
             self.db_user.all("net")
         assert "key is currently inactive" in str(excinfo.value)
 
-
     def test_user_key_002_inactive_user(self):
         """
         Test that keys of inactive users are blocked
@@ -371,5 +368,3 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         with pytest.raises(PermissionDeniedException) as excinfo:
             self.db_user.all("net")
         assert "key is currently inactive" in str(excinfo.value)
-
-
