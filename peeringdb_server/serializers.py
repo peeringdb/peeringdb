@@ -1827,8 +1827,6 @@ class CarrierSerializer(ModelSerializer):
 
     org = serializers.SerializerMethodField()
 
-    website = serializers.URLField()
-
     def validate_create(self, data):
         # we don't want users to be able to create carriers if the parent
         # organization status is pending or deleted
@@ -1860,6 +1858,16 @@ class CarrierSerializer(ModelSerializer):
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
+
+
+    def to_representation(self, data):
+
+        representation = super().to_representation(data)
+
+        if not representation.get("website"):
+            representation["website"] = self.instance.org.website
+
+        return representation
 
 
 class InternetExchangeFacilitySerializer(ModelSerializer):

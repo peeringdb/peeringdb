@@ -126,7 +126,7 @@
         <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
       {% else %}
         <!-- row header -->
-        <div class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
+        <div {% if row.edit_label %}data-edit-toggled="view"{% endif %} class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
              {% if row.help_text %}
              data-bs-toggle="tooltip"
              data-placement="top"
@@ -134,10 +134,22 @@
              title="{{ row.help_text }}"
              {% endif %}>{% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %} {{ row.label }}
              {% if row.help_text %}<span class="glyphicon glyphicon-question-sign"></span>{% endif %}
-        {% if row.helper_text %}
-          <div data-edit-toggled="edit" style="display:none;" class="help">{{ row.help_text }}</div>
-        {% endif %}
         </div>
+        {% if row.edit_label %}
+
+        <!-- row header (edit mode), will only be set if `edit_label` is set on the field definition -->
+
+        <div data-edit-toggled="edit" class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text or row.edit_help_text %} help-text{% endif %}"
+             {% if row.help_text or row.edit_help_text %}
+             data-bs-toggle="tooltip"
+             data-placement="top"
+             {% if row.notify_incomplete_group %}data-notify-incomplete-group="{{ row.notify_incomplete_group }}"{% endif %}
+             title="{% if row.edit_help_text %}{{ row.edit_help_text }}{% else %}{{ row.help_text }}{% endif %}"
+             {% endif %}>{% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %} {{ row.edit_label }}
+             {% if row.help_text or row.edit_help_text %}<span class="glyphicon glyphicon-question-sign"></span>{% endif %}
+        </div>
+
+        {% endif %}
 
         <!-- row value -->
         {% if row.type == "url" %}

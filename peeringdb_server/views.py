@@ -1854,6 +1854,8 @@ def view_carrier(request, id):
                 "type": "url",
                 "name": "website",
                 "label": _("Company Website"),
+                "edit_label": _("Company Website Override"),
+                "edit_help_text": _("If this field is set, it will be displayed on this record. If not, we will display the website from the organization record this is tied to"),
                 "value": data.get("website", dismiss),
             },
             {
