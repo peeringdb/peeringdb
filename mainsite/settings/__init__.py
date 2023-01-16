@@ -714,6 +714,7 @@ set_option("CSP_WORKER_SRC", ["'self'", "blob:"])
 set_option(
     "CSP_CONNECT_SRC",
     [
+        "*.google-analytics.com",
         "'self'",
     ],
 )
