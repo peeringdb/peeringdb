@@ -60,7 +60,8 @@ class PDBSessionMiddleware(SessionMiddleware):
             if request.resolver_match and "key" in request.resolver_match.kwargs:
                 NEW_SESSION_VALID_PATHS.append(
                     reverse(
-                        "account_confirm_email", kwargs={"key": request.resolver_match.kwargs.get("key")}
+                        "account_confirm_email",
+                        kwargs={"key": request.resolver_match.kwargs.get("key")},
                     ),
                 )
 
