@@ -459,6 +459,7 @@ class AdminTests(TestCase):
                 "ixf_ixp_member_list_url_visible": "Private",
                 "ix": ixlan.ix.id,
                 "status": ixlan.status,
+                "mtu": 1500,
                 # required management form data
                 "ixpfx_set-TOTAL_FORMS": 0,
                 "ixpfx_set-INITIAL_FORMS": 0,
