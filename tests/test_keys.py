@@ -309,7 +309,7 @@ def test_get_network_w_org_key(org, network, user, groups):
         org_api_key=api_key, namespace=namespace, permission=PERM_READ
     )
     assert Network.objects.count() == 1
-    url = reverse("net-detail", args=(network.id,))
+    url = reverse("api:net-detail", args=(network.id,))
     client = APIClient()
 
     response = client.get(url, HTTP_AUTHORIZATION="Api-Key " + key)
@@ -331,7 +331,7 @@ def test_get_network_w_user_key(network, user, org):
 
     assert userperm == user.grainy_permissions.first()
     assert Network.objects.count() == 1
-    url = reverse("net-detail", args=(network.id,))
+    url = reverse("api:net-detail", args=(network.id,))
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
     response = client.get(url)
@@ -345,7 +345,7 @@ def test_get_network_w_user_key(network, user, org):
 
 @pytest.mark.django_db
 def test_bogus_api_key(network):
-    url = reverse("net-detail", args=(network.id,))
+    url = reverse("api:net-detail", args=(network.id,))
     key = "abcd"
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
@@ -362,7 +362,7 @@ def test_key_active_user_session(network, user, org):
     )
     api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
 
-    url = reverse("net-detail", args=(network.id,))
+    url = reverse("api:net-detail", args=(network.id,))
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
     client.login(username="user", password="user")
