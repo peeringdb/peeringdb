@@ -545,12 +545,19 @@ version = "2.14.1"
 description = "PeeringDB Django models"
 category = "main"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = "^3.7"
+develop = false
 
 [package.dependencies]
 django_countries = ">1"
-django_handleref = ">=1,<2"
-django_inet = ">=1,<2"
+django_handleref = "^1"
+django_inet = "^1"
+
+[package.source]
+type = "git"
+url = "https://github.com/peeringdb/django-peeringdb.git"
+reference = "support_202211"
+resolved_reference = "cba73e01d9f78ee8b2b21749d1274773cd3032ef"
 
 [[package]]
 name = "django-phonenumber-field"
@@ -1930,7 +1937,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "2495b5af12d11a3112edccd9db970589cda72cdeca6a20a405b5e76b1c1bc27a"
+content-hash = "f0c56a2408ab734987c92a6a6bc323fc71ee4719128fa99c6bfc20850c0aa98f"
 
 [metadata.files]
 asgiref = [
@@ -2364,10 +2371,7 @@ django-otp = [
     {file = "django-otp-1.1.4.tar.gz", hash = "sha256:0adead4aa5e34618fc4dba8ea15c71f6b3d520a6197a02a2edd6fa8b5140295c"},
     {file = "django_otp-1.1.4-py3-none-any.whl", hash = "sha256:373618cdf7e0c4ad849be3b2725e58258ebfbf864548a2b2d9ae1cff2eaea322"},
 ]
-django-peeringdb = [
-    {file = "django-peeringdb-2.14.1.tar.gz", hash = "sha256:73e004ac358e7be7a7addb3b8339678e0d028aac281188ba94eae56e1a7320bb"},
-    {file = "django_peeringdb-2.14.1-py3-none-any.whl", hash = "sha256:30d4a390d9483c25ff07ead0f72c67f4c0a26183aea8777de23dbdf1987d3b0c"},
-]
+django-peeringdb = []
 django-phonenumber-field = [
     {file = "django-phonenumber-field-6.4.0.tar.gz", hash = "sha256:72a3e7a3e7493bf2a12c07a3bc77ce89813acc16592bf04d0eee3b5a452097ed"},
     {file = "django_phonenumber_field-6.4.0-py3-none-any.whl", hash = "sha256:a31b4f05ac0ff898661516c84940f83adb5cdcf0ae4b9b1d31bb8ad3ff345b58"},
