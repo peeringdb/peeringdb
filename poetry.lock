@@ -587,11 +587,11 @@ django = "*"
 
 [[package]]
 name = "django-ratelimit"
-version = "4.0.0"
+version = "3.0.1"
 description = "Cache-based rate-limiting for Django."
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.4"
 
 [[package]]
 name = "django-rest-swagger"
@@ -1937,7 +1937,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "f0c56a2408ab734987c92a6a6bc323fc71ee4719128fa99c6bfc20850c0aa98f"
+content-hash = "f03ad2819a5b79858b98fd9a4e26bef3be20302b36905d831de8fc640b758eeb"
 
 [metadata.files]
 asgiref = [
@@ -2380,8 +2380,8 @@ django-ranged-response = [
     {file = "django-ranged-response-0.2.0.tar.gz", hash = "sha256:f71fff352a37316b9bead717fc76e4ddd6c9b99c4680cdf4783b9755af1cf985"},
 ]
 django-ratelimit = [
-    {file = "django-ratelimit-4.0.0.tar.gz", hash = "sha256:19cba9e8101277f28c7a974c54c997067341ab30175431d3739e8ffb63cdd2b2"},
-    {file = "django_ratelimit-4.0.0-py2.py3-none-any.whl", hash = "sha256:a610b5fd052c843a589084f6934bc6d827ec6242d5965110ebd436ca5a59ef39"},
+    {file = "django-ratelimit-3.0.1.tar.gz", hash = "sha256:73223d860abd5c5d7b9a807fabb39a6220068129b514be8d78044b52607ab154"},
+    {file = "django_ratelimit-3.0.1-py2.py3-none-any.whl", hash = "sha256:857e797f23de948b204a31dba9d88aea3ce731b7a5d926d0240c772e19b5486f"},
 ]
 django-rest-swagger = [
     {file = "django-rest-swagger-2.2.0.tar.gz", hash = "sha256:48f6aded9937e90ae7cbe9e6c932b9744b8af80cc4e010088b3278c700e0685b"},
