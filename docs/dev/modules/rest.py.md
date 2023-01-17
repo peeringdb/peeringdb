@@ -1,4 +1,4 @@
-Generated from rest.py on 2022-11-08 14:31:50.933987
+Generated from rest.py on 2023-01-17 22:33:48.360745
 
 # peeringdb_server.rest
 
@@ -79,6 +79,51 @@ Return `True` if permission is granted, `False` otherwise.
 
 ---
 
+## CarrierFacilityMixin
+
+```
+CarrierFacilityMixin(builtins.object)
+```
+
+Custom API endpoints for the carrier-facility
+object, exposed to api/carrierfac/{id}/{action}
+
+
+### Methods
+
+#### approve
+`def approve(self, request, *args, **kwargs)`
+
+Allows the org to approve a carrier listing at their facility
+
+---
+#### reject
+`def reject(self, request, *args, **kwargs)`
+
+Allows the org to reject a carrier listing at their facility
+
+---
+
+## CarrierFacilityViewSet
+
+```
+CarrierFacilityViewSet(peeringdb_server.rest.CarrierFacilityMixin, peeringdb_server.rest.ModelViewSet)
+```
+
+Custom API endpoints for the carrier-facility
+object, exposed to api/carrierfac/{id}/{action}
+
+
+## CarrierViewSet
+
+```
+CarrierViewSet(peeringdb_server.rest.ModelViewSet)
+```
+
+Generic ModelViewSet Base Class.
+This should probably be moved to a common lib ?
+
+
 ## DataException
 
 ```
@@ -155,6 +200,34 @@ IXLanViewSet(peeringdb_server.rest.ModelViewSet)
 
 Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
+
+
+## InactiveKeyBlock
+
+```
+InactiveKeyBlock(rest_framework.permissions.BasePermission)
+```
+
+When an OrganizationAPIKey or a UserAPIKey has status `inactive`
+requests made with such keys should be blocked
+
+
+### Methods
+
+#### has_permission
+`def has_permission(self, request, view)`
+
+Return `True` if permission is granted, `False` otherwise.
+
+---
+
+## InactiveKeyException
+
+```
+InactiveKeyException(rest_framework.exceptions.APIException)
+```
+
+Raised on api authentications with inactive api keys
 
 
 ## InternetExchangeFacilityViewSet

@@ -1,4 +1,4 @@
-Generated from middleware.py on 2022-11-08 14:31:50.933987
+Generated from middleware.py on 2023-01-17 22:33:48.360745
 
 # peeringdb_server.middleware
 
@@ -6,6 +6,15 @@ Custom django middleware.
 
 # Classes
 ---
+
+## CacheControlMiddleware
+
+```
+CacheControlMiddleware(django.utils.deprecation.MiddlewareMixin)
+```
+
+Sets the Cache-Control s-maxage header on responses
+
 
 ## CurrentRequestContext
 
