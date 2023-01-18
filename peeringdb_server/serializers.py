@@ -31,7 +31,7 @@ from django_grainy.rest import PermissionDenied
 # from drf_toolbox import serializers
 from django_handleref.rest.serializers import HandleRefSerializer
 from django_inet.rest import IPAddressField, IPNetworkField
-from django_peeringdb.const import AVAILABLE_VOLTAGE
+from django_peeringdb.const import AVAILABLE_VOLTAGE, MTUS
 from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -50,6 +50,8 @@ from peeringdb_server.inet import (
 )
 from peeringdb_server.models import (
     QUEUE_ENABLED,
+    Carrier,
+    CarrierFacility,
     Facility,
     GeoCoordinateCache,
     InternetExchange,
@@ -1256,6 +1258,9 @@ class ModelSerializer(serializers.ModelSerializer):
                     if type(instance) in QUEUE_ENABLED:
                         self._reapprove = True
                         self._undelete = False
+                    elif type(instance) == CarrierFacility:
+                        self._reapprove = True
+                        self._undelete = False
                     else:
                         self._reapprove = False
                         self._undelete = True
@@ -1733,6 +1738,133 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             raise serializers.ValidationError({"zipcode": exc.message})
 
         return data
+
+
+class CarrierFacilitySerializer(ModelSerializer):
+    """
+    Serializer for peeringdb_server.models.CarrierFacility
+    """
+
+    #  facilities = serializers.PrimaryKeyRelatedField(queryset='fac_set', many=True)
+
+    fac_id = serializers.PrimaryKeyRelatedField(
+        queryset=Facility.objects.all(), source="facility"
+    )
+    carrier_id = serializers.PrimaryKeyRelatedField(
+        queryset=Carrier.objects.all(), source="carrier"
+    )
+
+    fac = serializers.SerializerMethodField()
+    carrier = serializers.SerializerMethodField()
+
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+
+        model = CarrierFacility
+        depth = 0
+        fields = [
+            "id",
+            "name",
+            "carrier_id",
+            "carrier",
+            "fac_id",
+            "fac",
+        ] + HandleRefSerializer.Meta.fields
+        _ref_tag = model.handleref.tag
+
+        related_fields = ["carrier", "fac"]
+
+        list_exclude = ["carrier", "fac"]
+
+        validators = [
+            validators.UniqueTogetherValidator(
+                CarrierFacility.objects.all(), ["carrier_id", "fac_id"]
+            )
+        ]
+
+    def validate_create(self, data):
+        if data.get("facility") and data.get("facility").status != "ok":
+            raise ParentStatusException(
+                data.get("facility"), self.Meta.model.handleref.tag
+            )
+        if data.get("carrier") and data.get("carrier").status != "ok":
+            raise ParentStatusException(
+                data.get("carrier"), self.Meta.model.handleref.tag
+            )
+
+        # new carrier-facility relationship should be pending
+        # until the facility approves it.
+
+        data["status"] = "pending"
+
+        return super().validate_create(data)
+
+    def get_carrier(self, inst):
+        return self.sub_serializer(CarrierSerializer, inst.carrier)
+
+    def get_fac(self, inst):
+        return self.sub_serializer(FacilitySerializer, inst.facility)
+
+    def get_name(self, inst):
+        return inst.facility.name
+
+
+class CarrierSerializer(ModelSerializer):
+    """
+    Serializer for peeringdb_server.models.Carrier
+    """
+
+    carrierfac_set = nested(
+        CarrierFacilitySerializer,
+        exclude=["fac", "fac"],
+        source="carrierfac_set_active_prefetched",
+    )
+
+    org_id = serializers.PrimaryKeyRelatedField(
+        queryset=Organization.objects.all(), source="org"
+    )
+    org_name = serializers.CharField(source="org.name", read_only=True)
+
+    org = serializers.SerializerMethodField()
+
+    def validate_create(self, data):
+        # we don't want users to be able to create carriers if the parent
+        # organization status is pending or deleted
+        if data.get("org") and data.get("org").status != "ok":
+            raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
+        return super().validate_create(data)
+
+    class Meta:
+        model = Carrier
+
+        fields = [
+            "id",
+            "org_id",
+            "org_name",
+            "org",
+            "name",
+            "aka",
+            "name_long",
+            "website",
+            "notes",
+            "carrierfac_set",
+        ] + HandleRefSerializer.Meta.fields
+
+        related_fields = ["org", "carrierfac_set"]
+        list_exclude = ["org"]
+
+    def get_org(self, inst):
+        return self.sub_serializer(OrganizationSerializer, inst.org)
+
+    def to_representation(self, data):
+
+        representation = super().to_representation(data)
+
+        if not representation.get("website"):
+            representation["website"] = self.instance.org.website
+
+        return representation
 
 
 class InternetExchangeFacilitySerializer(ModelSerializer):
@@ -2307,12 +2439,8 @@ class NetworkSerializer(ModelSerializer):
         required=False, allow_null=True, allow_blank=True, default=""
     )
 
-    rir_status = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True, default=""
-    )
-    rir_status_updated = serializers.DateTimeField(
-        required=False, allow_null=True, default=None
-    )
+    rir_status = serializers.CharField(default="", read_only=True)
+    rir_status_updated = serializers.DateTimeField(default=None, read_only=True)
 
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
@@ -2724,6 +2852,8 @@ class IXLanSerializer(ModelSerializer):
         exclude=["ixlan_id", "ixlan"],
         source="ixpfx_set_active_prefetched",
     )
+
+    mtu = serializers.ChoiceField(choices=MTUS, required=False, default=1500)
 
     def validate_create(self, data):
         # we don't want users to be able to create ixlans if the parent
@@ -3228,5 +3358,7 @@ REFTAG_MAP = {
         NetworkContactSerializer,
         IXLanSerializer,
         IXLanPrefixSerializer,
+        CarrierSerializer,
+        CarrierFacilitySerializer,
     ]
 }

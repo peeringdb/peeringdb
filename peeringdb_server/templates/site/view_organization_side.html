@@ -204,3 +204,63 @@
   </div>
 </div>
 {% endif %}
+
+<!-- CARRIERS -->
+
+{% if data.carriers or permissions.can_create_carrier %}
+<div class="list"
+     id="api-listing-carrier"
+     data-sort-container=".scrollable"
+     data-sort-row=".row.item"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:carrier">
+  <div class="row">
+    <div class="col-xs-6 col-sm-8 col-md-8">
+      <h5>{% trans "Carriers" %}</h5>
+    </div>
+    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+      <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-carriers" class="form-control" />
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+      <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-carriers"
+       data-edit-component="list"
+       data-edit-template="carrier-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b></div>
+    </div>
+
+    {% for n in data.carriers %}
+
+    <div class="row item status-{{ n.status }}" data-edit-id="{{ n.id }}" data-edit-label="{{ n.name }}">
+      <div class="col-xs-12 col-sm-12 col-md-12">
+        {% if permissions.can_delete_carrier %}
+        <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+        {% endif %}
+        <div class="name" data-sort-value="{{ n.name|lower }}" data-filter-value="{{ n.name }}">
+          <a {% if n.status == "ok" %} href="/carrier/{{ n.id }}" {% else %} style="text-decoration: none !important;" {% endif %}>{{ n.name }}</a>
+        </div>
+        {% if permissions.can_edit and n.status != "ok" %}
+        <div>
+          {{ n.status }}
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+</div>
+{% endif %}

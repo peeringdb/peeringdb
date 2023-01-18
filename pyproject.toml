@@ -13,7 +13,9 @@ python = "^3.9"
 django = ">=3.2, <4"
 django-inet = "^1.0"
 django-handleref = "^1.1.0"
-django-peeringdb = "==2.14.1"
+#django-peeringdb = "==2.14.1"
+#install from git until 2.15 has a pypi release
+django-peeringdb =  { git = "https://github.com/peeringdb/django-peeringdb.git", branch="support_202211" }
 djangorestframework = ">=3.12,<3.13"
 mysqlclient = ">=1.3.9"
 peeringdb = ">=1.1.0, <2"
@@ -34,13 +36,15 @@ django-extensions = ">=1.3.3"
 django-grappelli = ">=2.10.1"
 django-import-export = ">2.8.0,<3"
 django-hashers-passlib = ">=0.3"
-# django-oauth-toolkit needs to be locked to 1.6.1 because it introduced
+# FIXME: django-oauth-toolkit needs to be locked to 1.6.1 because it introduced
 # api breaking changes that were then reverted in 1.6.2 - in order to upgrade
 # we need to wait for them to re-introduce the changes or adapt our code to
 # the reversion
 django-oauth-toolkit = "==1.6.1"
 django-phonenumber-field = ">=0.6"
-django-ratelimit = ">=3"
+# FIXME: django-ratelimit 4.0 changes package namespace and introduces changes
+# to default ratelimiting behaviour
+django-ratelimit = ">=3, <4"
 django-rest-swagger = ">=2.1.2"
 
 # FIXME: djangorestframework-api-key 2.2.0 breaks migrations

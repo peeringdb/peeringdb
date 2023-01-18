@@ -301,3 +301,11 @@ def test_pending_view():
 
     response = client.get(f"/fac/{fac.id}")
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_healthcheck():
+    client = Client()
+
+    response = client.get("/healthcheck")
+    assert response.status_code == 200

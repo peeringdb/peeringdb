@@ -213,12 +213,14 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
             user=api_test_user, name="User api key"
         )
         self.db_user = self.rest_client(URL, verbose=VERBOSE, key=user_key, **USER)
+        self.user_key = api_key
 
         # db_org_admin becomes the tester for rw org api key
         rw_org = models.Organization.objects.get(name="API Test Organization RW")
         rw_api_key, rw_org_key = models.OrganizationAPIKey.objects.create_key(
             name="test key", org=rw_org, email="test@localhost"
         )
+        self.org_key = rw_api_key
 
         # Transfer group permissions to org key
         for perm in rw_org.admin_usergroup.grainy_permissions.all():
@@ -320,6 +322,18 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         for net in networks:
             self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
 
+    def test_org_key_002_inactive(self):
+        """
+        Test that inactive org keys are blocked
+        """
+
+        self.org_key.status = "inactive"
+        self.org_key.save()
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_org_admin.all("net")
+        assert "key is currently inactive" in str(excinfo.value)
+
     # TESTS WE ADD FOR USER API KEY
     def test_user_key_002_GET_as_set(self):
         """
@@ -331,3 +345,26 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         networks = models.Network.objects.filter(status="ok")
         for net in networks:
             self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
+
+    def test_user_key_002_inactive_key(self):
+        """
+        Test that inactive user keys are blocked
+        """
+
+        self.user_key.status = "inactive"
+        self.user_key.save()
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_user.all("net")
+        assert "key is currently inactive" in str(excinfo.value)
+
+    def test_user_key_002_inactive_user(self):
+        """
+        Test that keys of inactive users are blocked
+        """
+        self.user_key.user.is_active = False
+        self.user_key.user.save()
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_user.all("net")
+        assert "key is currently inactive" in str(excinfo.value)

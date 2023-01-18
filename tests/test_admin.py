@@ -47,7 +47,7 @@ class AdminTests(TestCase):
         ]
 
         # set up a network,facility and ix under each org
-        for tag in ["ix", "net", "fac"]:
+        for tag in ["ix", "net", "fac", "carrier"]:
             cls.entities[tag] = [
                 models.REFTAG_MAP[tag].objects.create(**cls.entity_data(org, tag))
                 for org in cls.entities["org"]
@@ -118,6 +118,15 @@ class AdminTests(TestCase):
                 speed=1000,
             )
             for addr in ["207.41.110.37", "207.41.110.38", "207.41.110.39"]
+        ]
+
+        # set up carrier facility presences
+        cls.entities["carrierfac"] = [
+            models.CarrierFacility.objects.create(
+                carrier=cls.entities["carrier"][0],
+                facility=cls.entities["fac"][0],
+                status="ok",
+            )
         ]
 
     def setUp(self):
@@ -450,6 +459,7 @@ class AdminTests(TestCase):
                 "ixf_ixp_member_list_url_visible": "Private",
                 "ix": ixlan.ix.id,
                 "status": ixlan.status,
+                "mtu": 1500,
                 # required management form data
                 "ixpfx_set-TOTAL_FORMS": 0,
                 "ixpfx_set-INITIAL_FORMS": 0,
@@ -605,6 +615,8 @@ class AdminTests(TestCase):
             models.NetworkContact,
             models.IXLan,
             models.IXLanPrefix,
+            models.Carrier,
+            models.CarrierFacility,
             models.User,
             models.UserOrgAffiliationRequest,
             models.Sponsorship,
@@ -758,6 +770,7 @@ class AdminTests(TestCase):
             "ix",
             "net",
             "ixlan",
+            "carrier",
         ]
 
         # we also do auto complete on user relationships

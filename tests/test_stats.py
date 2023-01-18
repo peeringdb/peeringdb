@@ -34,7 +34,7 @@ def setup_data():
 
     # one object of each type moved to the past
 
-    for tag in ["fac", "net", "org", "ix"]:
+    for tag in ["fac", "net", "org", "ix", "carrier"]:
         for obj in REFTAG_MAP[tag].objects.all():
             obj.created = obj.updated = date_past
             obj.save()

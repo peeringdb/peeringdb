@@ -24,6 +24,7 @@ import reversion
 import unidecode
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
 from django.db import connection, transaction
 from django.db.models import DateTimeField
@@ -33,7 +34,7 @@ from django_grainy.rest import PermissionDenied
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -41,12 +42,19 @@ from two_factor.utils import devices_for_user
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
-from peeringdb_server.models import UTC, Network, ProtectedAction
+from peeringdb_server.models import (
+    UTC,
+    Network,
+    OrganizationAPIKey,
+    ProtectedAction,
+    UserAPIKey,
+)
 from peeringdb_server.permissions import (
     APIPermissionsApplicator,
     ModelViewSetPermissions,
     check_permissions_from_request,
     get_org_key_from_request,
+    get_permission_holder_from_request,
     get_user_key_from_request,
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
@@ -57,6 +65,18 @@ from peeringdb_server.util import coerce_ipaddr
 
 class DataException(ValueError):
     pass
+
+
+class InactiveKeyException(APIException):
+    """
+    Raised on api authentications with inactive api keys
+    """
+
+    status_code = 403
+    default_detail = _(
+        "This key is currently inactive - please contact PeeringDB support for assistance."
+    )
+    default_code = "permission_denied"
 
 
 class DataMissingException(DataException):
@@ -167,9 +187,11 @@ class client_check:
 
     def __call__(self, fn):
         compat_check = self.compat_check
+        auth_check = self.auth_check
 
         def wrapped(self, request, *args, **kwargs):
             try:
+                auth_check(request)
                 compat_check(request)
             except ValueError as exc:
                 return Response(
@@ -201,6 +223,19 @@ class client_check:
     def backend_max_version(self, backend):
         """Return the max supported version for the specified backend."""
         return self.backends.get(backend, {}).get("max")
+
+    def auth_check(self, request):
+        for header in request.META.keys():
+            if header.startswith("HTTP_AUTH") and header != "HTTP_AUTHORIZATION":
+                if "HTTP_AUTHORIZATION" not in request.META:
+                    raise ValueError("Malformed authorization header")
+                break
+
+        if "HTTP_AUTHORIZATION" in request.META:
+            permission_holder = get_permission_holder_from_request(request)
+
+            if isinstance(permission_holder, AnonymousUser):
+                raise ValueError("Unknown authorization method")
 
     def client_info(self, request):
         """
@@ -332,6 +367,30 @@ class BasicAuthMFABlockWrite(permissions.BasePermission):
         return True
 
 
+class InactiveKeyBlock(permissions.BasePermission):
+
+    """
+    When an OrganizationAPIKey or a UserAPIKey has status `inactive`
+    requests made with such keys should be blocked
+    """
+
+    def has_permission(self, request, view):
+
+        permission_holder = get_permission_holder_from_request(request)
+
+        if not isinstance(permission_holder, (UserAPIKey, OrganizationAPIKey)):
+            return True
+
+        if permission_holder.status == "inactive":
+            raise InactiveKeyException()
+
+        if isinstance(permission_holder, UserAPIKey):
+            if not permission_holder.user.is_active:
+                raise InactiveKeyException()
+
+        return True
+
+
 ###############################################################################
 # VIEW SETS
 
@@ -343,7 +402,11 @@ class ModelViewSet(viewsets.ModelViewSet):
     """
 
     paginate_by_param = ("limit",)
-    permission_classes = (ModelViewSetPermissions, BasicAuthMFABlockWrite)
+    permission_classes = (
+        ModelViewSetPermissions,
+        BasicAuthMFABlockWrite,
+        InactiveKeyBlock,
+    )
 
     def get_queryset(self):
         """
@@ -598,6 +661,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             )
         except CacheRedirect as inst:
             r = Response(status=200, data=inst.loader.load())
+            r.context_data = {"apicache": True}
         d = time.time() - t
 
         # FIXME: this waits for peeringdb-py fix to deal with 404 raise properly
@@ -822,6 +886,51 @@ class InternetExchangeMixin:
         return self.retrieve(request, *args, **kwargs)
 
 
+class CarrierFacilityMixin:
+
+    """
+    Custom API endpoints for the carrier-facility
+    object, exposed to api/carrierfac/{id}/{action}
+    """
+
+    @transaction.atomic
+    @action(detail=True, methods=["POST"])
+    def approve(self, request, *args, **kwargs):
+
+        """
+        Allows the org to approve a carrier listing at their facility
+        """
+
+        carrierfac = self.get_object()
+
+        if not check_permissions_from_request(request, carrierfac.facility, "c"):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        carrierfac.status = "ok"
+        carrierfac.save()
+
+        return self.retrieve(request, *args, **kwargs)
+
+    @transaction.atomic
+    @action(detail=True, methods=["POST"])
+    def reject(self, request, *args, **kwargs):
+
+        """
+        Allows the org to reject a carrier listing at their facility
+        """
+
+        carrierfac = self.get_object()
+
+        if not check_permissions_from_request(request, carrierfac.facility, "c"):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        response = self.retrieve(request, *args, **kwargs)
+
+        carrierfac.delete()
+
+        return response
+
+
 # TODO: why are we doing the import like this??!
 pdb_serializers = importlib.import_module("peeringdb_server.serializers")
 router = RestRouter(trailing_slash=False)
@@ -869,6 +978,10 @@ def model_view_set(model, methods=None, mixins=None):
 
 
 FacilityViewSet = model_view_set("Facility")
+CarrierViewSet = model_view_set("Carrier")
+CarrierFacilityViewSet = model_view_set(
+    "CarrierFacility", mixins=(CarrierFacilityMixin,)
+)
 InternetExchangeViewSet = model_view_set(
     "InternetExchange", mixins=(InternetExchangeMixin,)
 )

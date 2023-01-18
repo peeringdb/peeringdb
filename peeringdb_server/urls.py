@@ -35,7 +35,13 @@ from peeringdb_server.import_views import (
     view_import_net_ixf_postmortem,
     view_import_net_ixf_preview,
 )
-from peeringdb_server.models import Facility, InternetExchange, Network, Organization
+from peeringdb_server.models import (
+    Carrier,
+    Facility,
+    InternetExchange,
+    Network,
+    Organization,
+)
 from peeringdb_server.oauth_views import AuthorizationView
 from peeringdb_server.views import (
     OrganizationLogoUpload,
@@ -56,9 +62,11 @@ from peeringdb_server.views import (
     view_advanced_search,
     view_affiliate_to_org,
     view_aup,
+    view_carrier,
     view_close_account,
     view_exchange,
     view_facility,
+    view_healthcheck,
     view_index,
     view_maintenance,
     view_network,
@@ -74,6 +82,7 @@ from peeringdb_server.views import (
     view_set_user_locale,
     view_sponsorships,
     view_suggest,
+    view_username_change,
     view_username_retrieve,
     view_username_retrieve_complete,
     view_username_retrieve_initiate,
@@ -101,6 +110,7 @@ urlpatterns = [
     url(r"^register$", view_registration, name="register"),
     url(r"^reset-password$", view_password_reset, name="reset-password"),
     url(r"^change-password$", view_password_change),
+    url(r"^change-username$", view_username_change),
     url(r"^set-user-locale$", view_set_user_locale),
     url(
         r"^username-retrieve/initiate$",
@@ -121,10 +131,10 @@ urlpatterns = [
         name="profile-set-primary-email",
     ),
     url(r"^resend_email_confirmation$", resend_confirmation_mail),
-    url(r"^sponsors$", view_sponsorships),
+    url(r"^sponsors$", view_sponsorships, name="sponsors"),
     # url(r'^partners$', view_partnerships),
-    url(r"^aup$", view_aup),
-    url(r"^about$", view_about),
+    url(r"^aup$", view_aup, name="aup"),
+    url(r"^about$", view_about, name="about"),
     url(r"^affiliate-to-org$", view_affiliate_to_org),
     path(
         "org/<str:id>/upload-logo",
@@ -165,6 +175,9 @@ urlpatterns = [
         name="ix-view",
     ),
     url(r"^%s/(?P<id>\d+)/?$" % Facility.handleref.tag, view_facility, name="fac-view"),
+    url(
+        r"^%s/(?P<id>\d+)/?$" % Carrier.handleref.tag, view_carrier, name="carrier-view"
+    ),
     url(
         r"^%s/(?P<id>\d+)/?$" % Organization.handleref.tag,
         view_organization,
@@ -240,15 +253,39 @@ urlpatterns = [
         r"^org_admin/key_permissions/remove$",
         peeringdb_server.api_key_views.key_permission_remove,
     ),
-    url(r"^data/countries$", peeringdb_server.data_views.countries),
-    url(r"^data/sponsors$", peeringdb_server.data_views.sponsorships),
-    url(r"^data/countries_b$", peeringdb_server.data_views.countries_w_blank),
-    url(r"^data/facilities$", peeringdb_server.data_views.facilities),
-    url(r"^data/enum/(?P<name>[\w_]+)$", peeringdb_server.data_views.enum),
-    url(r"^data/asns$", peeringdb_server.data_views.asns),
-    url(r"^data/organizations$", peeringdb_server.data_views.organizations),
+    url(
+        r"^data/countries$",
+        peeringdb_server.data_views.countries,
+        name="data-countries",
+    ),
+    url(
+        r"^data/sponsors$",
+        peeringdb_server.data_views.sponsorships,
+        name="data-sponsors",
+    ),
+    url(
+        r"^data/countries_b$",
+        peeringdb_server.data_views.countries_w_blank,
+        name="data-countries",
+    ),
+    url(
+        r"^data/facilities$",
+        peeringdb_server.data_views.facilities,
+        name="data-facilities",
+    ),
+    url(
+        r"^data/enum/(?P<name>[\w_]+)$",
+        peeringdb_server.data_views.enum,
+        name="data-enum",
+    ),
+    url(r"^data/asns$", peeringdb_server.data_views.asns, name="data-asns"),
+    url(
+        r"^data/organizations$",
+        peeringdb_server.data_views.organizations,
+        name="data-organizations",
+    ),
     url(r"^data/my_organizations$", peeringdb_server.data_views.my_organizations),
-    url(r"^data/locales$", peeringdb_server.data_views.languages),
+    url(r"^data/locales$", peeringdb_server.data_views.languages, name="data-locales"),
     url(r"^export/ix/(?P<ix_id>\d+)/ixp-member-list$", view_export_ixf_ix_members),
     url(
         r"^export/ixlan/(?P<ixlan_id>\d+)/ixp-member-list$",
@@ -261,12 +298,13 @@ urlpatterns = [
     url(r"^import/ixlan/(?P<ixlan_id>\d+)/ixf/preview$", view_import_ixlan_ixf_preview),
     url(r"^import/net/(?P<net_id>\d+)/ixf/postmortem$", view_import_net_ixf_postmortem),
     url(r"^import/net/(?P<net_id>\d+)/ixf/preview$", view_import_net_ixf_preview),
-    url(r"^$", view_index),
+    url(r"^$", view_index, name="home"),
     url(r"^i18n/", include("django.conf.urls.i18n")),
     url("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
     url(r"^(net|ix|fac|org|asn)/translate$", request_translation),
     url(r"^suggest/(?P<reftag>fac)$", view_suggest),
     url(r"^maintenance$", view_maintenance, name="maintenance"),
+    url(r"^healthcheck$", view_healthcheck, name="healthcheck"),
 ]
 
 # o
@@ -290,7 +328,10 @@ urlpatterns += [
         ),
         name="redoc-ui",
     ),
-    url(r"^api/", include(peeringdb_server.rest.urls)),
+    url(
+        r"^api/",
+        include((peeringdb_server.rest.urls, "peeringdb_server"), namespace="api"),
+    ),
 ]
 
 # AUTOCOMPLETE

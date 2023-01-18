@@ -1,4 +1,4 @@
-Generated on 2022-11-08 14:31:50.933987
+Generated on 2023-01-17 22:33:48.360745
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -118,6 +118,10 @@ to follow.
 Handles notifications of networks and exchanges as part of that process.
 
 A substantial part of the import logic is handled through models.py::IXFMemberData
+
+## [log.py](/docs/dev/modules/log.py.md)
+
+# Classes
 
 ## [mail.py](/docs/dev/modules/mail.py.md)
 

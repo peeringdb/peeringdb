@@ -1,4 +1,4 @@
-Generated from models.py on 2022-11-08 14:31:50.933987
+Generated from models.py on 2023-01-17 22:33:48.360745
 
 # peeringdb_server.models
 
@@ -77,6 +77,73 @@ if any fail the permission check False is returned.
 
 ---
 # Classes
+---
+
+## Carrier
+
+```
+Carrier(django_peeringdb.models.abstract.CarrierBase)
+```
+
+Describes a carrier object.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- carrierfac_set_active (`@property`): Returns queryset of active CarrierFacility objects connected to this
+carrier.
+- grainy_namespace (`@property`): None
+- search_result_name (`@property`): This will be the name displayed for quick search matches
+of this entity.
+- sponsorship (`@property`): Returns sponsorship oject for this carrier (through the owning org).
+- view_url (`@property`): Return the URL to this carrier's web view.
+
+## CarrierFacility
+
+```
+CarrierFacility(django_peeringdb.models.abstract.CarrierFacilityBase)
+```
+
+Describes a carrier <-> facility relationship.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- descriptive_name (`@property`): Returns a descriptive label of the netfac for logging purposes.
+- grainy_namespace (`@property`): None
+
+### Class Methods
+
+#### related_to_city
+`def related_to_city(cls, value=None, filt=None, field=facility__city, qset=None)`
+
+Filter queryset of carrierfac objects related to city via match
+in facility__city according to filter.
+
+Relationship through facility.
+
+---
+#### related_to_country
+`def related_to_country(cls, value=None, filt=None, field=facility__country, qset=None)`
+
+Filter queryset of carrierfac objects related to country via match
+in facility__country according to filter.
+
+Relationship through facility.
+
+---
+#### related_to_name
+`def related_to_name(cls, value=None, filt=None, field=facility__name, qset=None)`
+
+Filter queryset of carrierfac objects related to facilities with name match
+in facility__name according to filter.
+
+Relationship through facility.
+
 ---
 
 ## CommandLineTool

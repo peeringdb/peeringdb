@@ -16,7 +16,7 @@ from .util import ClientCase
 
 class ViewTestCase(ClientCase):
 
-    entities = ["ix", "net", "fac"]
+    entities = ["ix", "net", "fac", "carrier"]
 
     @classmethod
     def setUpTestData(cls):
@@ -91,6 +91,11 @@ class TestExchangeView(ViewTestCase):
 class TestFacilityView(ViewTestCase):
     def test_view(self):
         self.run_view_test("fac")
+
+
+class TestCarrieriew(ViewTestCase):
+    def test_view(self):
+        self.run_view_test("carrier")
 
 
 class TestOrgView(ViewTestCase):

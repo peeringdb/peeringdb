@@ -28,8 +28,12 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.db import transaction
+from django.core.exceptions import (
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    ValidationError,
+)
+from django.db import connection, transaction
 from django.db.models import Q
 from django.forms.models import modelform_factory
 from django.http import (
@@ -74,6 +78,7 @@ from peeringdb_server.forms import (
     PasswordResetForm,
     UserCreationForm,
     UserLocaleForm,
+    UsernameChangeForm,
     UsernameRetrieveForm,
 )
 from peeringdb_server.inet import (
@@ -87,6 +92,8 @@ from peeringdb_server.models import (
     PARTNERSHIP_LEVELS,
     REFTAG_MAP,
     UTC,
+    Carrier,
+    CarrierFacility,
     DataChangeWatchedObject,
     Facility,
     InternetExchange,
@@ -107,6 +114,7 @@ from peeringdb_server.org_admin_views import load_all_user_permissions
 from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
 from peeringdb_server.search import search
 from peeringdb_server.serializers import (
+    CarrierSerializer,
     FacilitySerializer,
     InternetExchangeSerializer,
     NetworkSerializer,
@@ -948,6 +956,41 @@ def view_password_change(request):
         return JsonResponse({"status": "ok"})
 
 
+@csrf_protect
+@ensure_csrf_cookie
+@login_required
+@transaction.atomic
+def view_username_change(request):
+
+    if request.method in ["GET", "HEAD"]:
+        return view_verify(request)
+    elif request.method == "POST":
+
+        password = request.POST.get("password")
+
+        if not request.user.has_oauth:
+            if not authenticate(username=request.user.username, password=password):
+                return JsonResponse(
+                    {"status": "auth", "password": _("Wrong password")}, status=400
+                )
+        else:
+            return JsonResponse({"status": "auth"}, status=401)
+
+        form = UsernameChangeForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse(form.errors, status=400)
+
+        request.user.username = form.cleaned_data.get("username")
+        try:
+            request.user.full_clean()
+        except ValidationError as exc:
+            print(exc.error_dict)
+            return JsonResponse(exc.message_dict, status=400)
+        request.user.save()
+
+        return JsonResponse({"status": "ok", "username": request.user.username})
+
+
 @ensure_csrf_cookie
 @require_http_methods(["GET"])
 def view_username_retrieve(request):
@@ -1219,6 +1262,7 @@ def view_index(request, errors=None):
         "net": Network.handleref.filter(status="ok").order_by("-updated")[:5],
         "fac": Facility.handleref.filter(status="ok").order_by("-updated")[:5],
         "ix": InternetExchange.handleref.filter(status="ok").order_by("-updated")[:5],
+        "carrier": Carrier.handleref.filter(status="ok").order_by("-updated")[:5],
     }
 
     env = BASE_ENV.copy()
@@ -1337,7 +1381,7 @@ def view_organization(request, id):
 
     perms = export_permissions(request.user, org)
 
-    tags = ["fac", "net", "ix"]
+    tags = ["fac", "net", "ix", "carrier"]
     for tag in tags:
         model = REFTAG_MAP.get(tag)
         perms["can_create_%s" % tag] = check_permissions(
@@ -1375,6 +1419,11 @@ def view_organization(request, id):
     else:
         networks = data["net_set"]
 
+    if perms.get("can_delete_carrier") or perms.get("can_create_carrier"):
+        carriers = org.carrier_set.filter(status__in=["ok", "pending"])
+    else:
+        carriers = org.carrier_set.filter(status__in=["ok"])
+
     dismiss = DoNotRender()
 
     # determine if logo is specified and set the
@@ -1390,6 +1439,7 @@ def view_organization(request, id):
         "exchanges": exchanges,
         "networks": networks,
         "facilities": facilities,
+        "carriers": carriers,
         "fields": [
             {
                 "name": "aka",
@@ -1561,6 +1611,12 @@ def view_facility(request, id):
         .select_related("network")
         .order_by("network__name")
     )
+    carriers = (
+        CarrierFacility.handleref.undeleted()
+        .filter(facility=facility)
+        .select_related("carrier")
+        .order_by("carrier__name")
+    )
 
     if facility.org.logo:
         org["logo"] = facility.org.logo.url
@@ -1571,6 +1627,7 @@ def view_facility(request, id):
         "title": data.get("name", dismiss),
         "exchanges": exchanges,
         "peers": peers,
+        "carriers": carriers,
         "fields": [
             {
                 "name": "org",
@@ -1734,6 +1791,105 @@ def view_facility(request, id):
 
     return view_component(
         request, "facility", data, "Facility", perms=perms, instance=facility
+    )
+
+
+@ensure_csrf_cookie
+def view_carrier(request, id):
+    """
+    View carrier data for carrier specified by id.
+    """
+
+    try:
+        carrier = Carrier.objects.get(id=id, status="ok")
+    except ObjectDoesNotExist:
+        return view_http_error_404(request)
+
+    data = CarrierSerializer(carrier, context={"user": request.user}).data
+
+    applicator = APIPermissionsApplicator(request)
+
+    if not applicator.is_generating_api_cache:
+        data = applicator.apply(data)
+
+    # find out if user can write to object
+    perms = export_permissions(request.user, carrier)
+
+    if not data:
+        return view_http_error_403(request)
+
+    dismiss = DoNotRender()
+
+    facilities = (
+        CarrierFacility.handleref.undeleted()
+        .select_related("carrier", "facility")
+        .filter(carrier=carrier)
+        .order_by("facility__name")
+    )
+
+    org = data.get("org")
+
+    if carrier.org.logo:
+        org["logo"] = carrier.org.logo.url
+
+    data = {
+        "id": carrier.id,
+        "title": data.get("name", dismiss),
+        "facilities": facilities,
+        "fields": [
+            {
+                "name": "org",
+                "label": _("Organization"),
+                "value": org.get("name", dismiss),
+                "type": "entity_link",
+                "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+            },
+            {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss),
+            },
+            {
+                "name": "name_long",
+                "label": _("Long Name"),
+                "value": data.get("name_long", dismiss),
+            },
+            {
+                "type": "url",
+                "name": "website",
+                "label": _("Company Website"),
+                "edit_label": _("Company Website Override"),
+                "edit_help_text": _(
+                    "If this field is set, it will be displayed on this record. If not, we will display the website from the organization record this is tied to"
+                ),
+                "value": data.get("website", dismiss),
+            },
+            {
+                "readonly": True,
+                "name": "updated",
+                "label": _("Last Updated"),
+                "value": data.get("updated", dismiss),
+            },
+            {
+                "name": "notes",
+                "label": _("Notes"),
+                "help_text": _("Markdown enabled"),
+                "type": "fmt-text",
+                "value": data.get("notes", dismiss),
+            },
+            {
+                "name": "org_logo",
+                "label": "",
+                "value": org.get("logo", dismiss),
+                "type": "image",
+                "readonly": True,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+            },
+        ],
+    }
+
+    return view_component(
+        request, "carrier", data, "Carrier", perms=perms, instance=carrier
     )
 
 
@@ -1941,10 +2097,11 @@ def view_exchange(request, id):
                 "payload": [{"name": "ix_id", "value": exchange.id}],
             },
             {
-                "type": "number",
                 "name": "mtu",
-                "label": _("MTU"),
-                "value": (ixlan.mtu or 0),
+                "type": "list",
+                "data": "enum/mtus",
+                "label": _("Payload MTU"),
+                "value": str(ixlan.mtu),
             },
             {
                 "type": "flags",
@@ -2939,3 +3096,14 @@ def validator_result_cache(request, cache_id):
     )
     response.write(data)
     return response
+
+
+def view_healthcheck(request):
+    """
+    Performs a simple database version query
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT version()")
+
+    return HttpResponse("")

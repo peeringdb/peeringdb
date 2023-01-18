@@ -1,4 +1,4 @@
-Generated from views.py on 2022-11-08 14:31:50.933987
+Generated from views.py on 2023-01-17 22:33:48.360745
 
 # peeringdb_server.views
 
@@ -111,6 +111,12 @@ an ASN they provide.
 Render page containing acceptable use policy.
 
 ---
+## view_carrier
+`def view_carrier(request, id)`
+
+View carrier data for carrier specified by id.
+
+---
 ## view_close_account
 `def view_close_account(request, *args, **kwargs)`
 
@@ -133,6 +139,12 @@ View exchange data for exchange specified by id.
 `def view_facility(request, id)`
 
 View facility data for facility specified by id.
+
+---
+## view_healthcheck
+`def view_healthcheck(request)`
+
+Performs a simple database version query
 
 ---
 ## view_index

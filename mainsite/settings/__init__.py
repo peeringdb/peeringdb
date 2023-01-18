@@ -443,6 +443,10 @@ MEDIA_URL = f"/m/{PEERINGDB_VERSION}/"
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
 STATIC_URL = f"/s/{PEERINGDB_VERSION}/"
 
+# limit error emails (2/minute)
+set_option("ERROR_EMAILS_PERIOD", 60)
+set_option("ERROR_EMAILS_LIMIT", 2)
+
 # maximum number of entries in the cache
 set_option("CACHE_MAX_ENTRIES", 5000)
 
@@ -461,7 +465,13 @@ CACHES = {
             # once max entries are reach delete 500 of the oldest entries
             "CULL_FREQUENCY": 10,
         },
-    }
+    },
+    # local memory cache for throttling error emails (#1282)
+    "error_emails": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "error_emails",
+        "MAX_ENTRIES": 2,
+    },
 }
 
 
@@ -535,7 +545,8 @@ LOGGING = {
         # Include the default Django email handler for errors
         # This is what you'd get without configuring logging at all.
         "mail_admins": {
-            "class": "django.utils.log.AdminEmailHandler",
+            # "class": "django.utils.log.AdminEmailHandler",
+            "class": "peeringdb_server.log.ThrottledAdminEmailHandler",
             # only send emails for error logs
             "level": "ERROR",
             # But the emails are plain text by default - HTML is nicer
@@ -700,6 +711,13 @@ set_option("CSP_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
 set_option("CSP_FONT_SRC", ["'self'", "fonts.gstatic.com"])
 set_option("CSP_IMG_SRC", ["'self'", "cdn.redoc.ly", "data:"])
 set_option("CSP_WORKER_SRC", ["'self'", "blob:"])
+set_option(
+    "CSP_CONNECT_SRC",
+    [
+        "*.google-analytics.com",
+        "'self'",
+    ],
+)
 
 MIDDLEWARE = (
     "corsheaders.middleware.CorsMiddleware",
@@ -708,6 +726,7 @@ MIDDLEWARE = (
     "csp.middleware.CSPMiddleware",
     # "django.contrib.sessions.middleware.SessionMiddleware",
     "peeringdb_server.middleware.PDBSessionMiddleware",
+    "peeringdb_server.middleware.CacheControlMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -1183,6 +1202,20 @@ set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)
 
 # cache global stats (footer statistics) for N seconds
 set_option("GLOBAL_STATS_CACHE_DURATION", 900)
+
+# cache settings for optimal CDN use
+
+# static Pages - pages that only update through release deployment (seconds)
+set_option("CACHE_CONTROL_STATIC_PAGE", 15 * 60)
+
+# dynamic pages - entity views
+set_option("CACHE_CONTROL_DYNAMIC_PAGE", 10)
+
+# api cache responses (seconds)
+set_option("CACHE_CONTROL_API_CACHE", 15 * 60)
+
+# api responses (seconds)
+set_option("CACHE_CONTROL_API", 10)
 
 if RELEASE_ENV == "prod":
     set_option("PDB_PREPEND_WWW", True)

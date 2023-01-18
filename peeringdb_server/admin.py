@@ -60,6 +60,8 @@ from peeringdb_server.models import (
     QUEUE_ENABLED,
     REFTAG_MAP,
     UTC,
+    Carrier,
+    CarrierFacility,
     CommandLineTool,
     DataChangeEmail,
     DataChangeNotificationQueue,
@@ -1275,6 +1277,61 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
         return False
 
 
+class CarrierAdminForm(StatusForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        fk_handleref_filter(self, "org")
+
+
+class CarrierFacilityAdmin(SoftDeleteAdmin):
+    list_display = ("carrier", "facility", "status", "created", "updated")
+    search_fields = ("carrier__name", "facility__name")
+    readonly_fields = ("id", "grainy_namespace")
+
+    raw_id_fields = ("carrier", "facility")
+    autocomplete_lookup_fields = {"fk": ["carrier", "facility"]}
+
+    form = StatusForm
+
+    fields = [
+        "status",
+        "carrier",
+        "facility",
+        "version",
+        "id",
+        "grainy_namespace",
+    ]
+
+
+class CarrierAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
+    list_display = ("name", "org", "status", "created", "updated")
+    ordering = ("-created",)
+    list_filter = (StatusFilter,)
+    search_fields = ("name",)
+    readonly_fields = ("id", "grainy_namespace")
+
+    form = CarrierAdminForm
+
+    raw_id_fields = ("org",)
+    autocomplete_lookup_fields = {
+        "fk": ["org"],
+    }
+
+    fields = [
+        "status",
+        "name",
+        "aka",
+        "name_long",
+        "website",
+        "notes",
+        "org",
+        "verification_queue",
+        "version",
+        "id",
+        "grainy_namespace",
+    ]
+
+
 class FacilityAdminForm(StatusForm):
     latitude = RoundingDecimalFormField(max_digits=9, decimal_places=6, required=False)
     longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6, required=False)
@@ -1285,6 +1342,7 @@ class FacilityAdminForm(StatusForm):
 
 
 class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
+
     list_display = ("name", "org", "city", "country", "status", "created", "updated")
     ordering = ("-created",)
     list_filter = (StatusFilter,)
@@ -1903,6 +1961,7 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         "created",
         "status",
     )
+    change_list_template = "admin/peeringdb_server/commandlinetool/change_list.html"
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -2377,13 +2436,37 @@ class EnvironmentSettingAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelA
 
 
 class OrganizationAPIKeyAdmin(APIKeyModelAdmin):
-    list_display = ["org", "prefix", "name", "created", "revoked"]
+    list_display = ["org", "prefix", "name", "status", "created", "revoked"]
     search_fields = ("prefix", "org__name")
+
+    raw_id_fields = ("org",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "org",
+        ],
+    }
 
 
 class UserAPIKeyAdmin(APIKeyModelAdmin):
-    list_display = ["user", "prefix", "name", "readonly", "created", "revoked"]
+    list_display = [
+        "user",
+        "prefix",
+        "name",
+        "readonly",
+        "status",
+        "created",
+        "revoked",
+    ]
     search_fields = ("prefix", "user__username", "user__email")
+
+    raw_id_fields = ("user",)
+
+    autocomplete_lookup_fields = {
+        "fk": [
+            "user",
+        ],
+    }
 
 
 class GeoCoordinateAdmin(admin.ModelAdmin):
@@ -2463,6 +2546,8 @@ class DataChangeEmail(admin.ModelAdmin):
 admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
+admin.site.register(Carrier, CarrierAdmin)
+admin.site.register(CarrierFacility, CarrierFacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)
 admin.site.register(InternetExchangeFacility, InternetExchangeFacilityAdmin)
 admin.site.register(IXLan, IXLanAdmin)

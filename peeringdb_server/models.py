@@ -82,6 +82,11 @@ from peeringdb_server.validators import (
     validate_prefix_overlap,
 )
 
+API_KEY_STATUS = (
+    ("active", _("Active")),
+    ("inactive", _("Inactive")),
+)
+
 SPONSORSHIP_LEVELS = (
     (1, _("Silver")),
     (2, _("Gold")),
@@ -886,6 +891,9 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         help_text="Date when the organization was flagged",
     )
 
+    class Meta(pdb_models.OrganizationBase.Meta):
+        indexes = [models.Index(fields=["status"], name="org_status")]
+
     @staticmethod
     def autocomplete_search_fields():
         return (
@@ -1315,6 +1323,8 @@ class OrganizationAPIKey(AbstractAPIKey):
         _("email address"), max_length=254, null=False, blank=False
     )
 
+    status = models.CharField(max_length=16, choices=API_KEY_STATUS, default="active")
+
     class Meta(AbstractAPIKey.Meta):
         verbose_name = "Organization API key"
         verbose_name_plural = "Organization API keys"
@@ -1609,7 +1619,7 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         delete_cascade = ["ixfac_set", "netfac_set"]
 
     class Meta(pdb_models.FacilityBase.Meta):
-        pass
+        indexes = [models.Index(fields=["status"], name="fac_status")]
 
     @staticmethod
     def autocomplete_search_fields():
@@ -1910,6 +1920,9 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         null=False,
         default=0,
     )
+
+    class Meta(pdb_models.InternetExchangeBase.Meta):
+        indexes = [models.Index(fields=["status"], name="ix_status")]
 
     @staticmethod
     def autocomplete_search_fields():
@@ -2427,7 +2440,7 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         ixlan = self.ixlan
 
         if not ixlan and create_ixlan:
-            ixlan = IXLan(ix=self, status=self.status, mtu=0)
+            ixlan = IXLan(ix=self, status=self.status)
 
             # ixlan id will be set to match ix id in ixlan's clean()
             # call
@@ -4367,6 +4380,11 @@ class Network(pdb_models.NetworkBase):
         default=0,
     )
 
+    class Meta(pdb_models.NetworkBase.Meta):
+        indexes = [
+            models.Index(fields=["status", "allow_ixp_update"], name="net_status")
+        ]
+
     @staticmethod
     def autocomplete_search_fields():
         return (
@@ -4739,6 +4757,7 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     class Meta:
         db_table = "peeringdb_network_facility"
         unique_together = ("network", "facility", "local_asn")
+        indexes = [models.Index(fields=["status"], name="netfac_status")]
 
     @classmethod
     def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
@@ -4843,6 +4862,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             models.UniqueConstraint(fields=["ipaddr4"], name="unique_ipaddr4"),
             models.UniqueConstraint(fields=["ipaddr6"], name="unique_ipaddr6"),
         ]
+        indexes = [models.Index(fields=["status"], name="netixlan_status")]
 
     @property
     def name(self):
@@ -5244,6 +5264,125 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     def net_sub_result_name(self):
         ips = self.ix_sub_result_name
         return f"{self.ixlan.ix.search_result_name} {ips}"
+
+
+@grainy_model(namespace="carrier", parent="org")
+@reversion.register
+class Carrier(pdb_models.CarrierBase):
+    """
+    Describes a carrier object.
+    """
+
+    org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="carrier_set"
+    )
+
+    @staticmethod
+    def autocomplete_search_fields():
+        """
+        Returns a tuple of field query strings to be used during quick search
+        query.
+        """
+        return (
+            "id__iexact",
+            "name__icontains",
+        )
+
+    @property
+    def sponsorship(self):
+        """
+        Returns sponsorship oject for this carrier (through the owning org).
+        """
+        return self.org.sponsorship
+
+    @property
+    def search_result_name(self):
+        """
+        This will be the name displayed for quick search matches
+        of this entity.
+        """
+        return self.name
+
+    @property
+    def carrierfac_set_active(self):
+        """
+        Returns queryset of active CarrierFacility objects connected to this
+        carrier.
+        """
+        return self.netfac_set.filter(status="ok")
+
+    @property
+    def view_url(self):
+        """
+        Return the URL to this carrier's web view.
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("carrier-view", args=(self.id,))
+        )
+
+
+@grainy_model(namespace="carrierfac", parent="carrier")
+@reversion.register
+class CarrierFacility(pdb_models.CarrierFacilityBase):
+    """
+    Describes a carrier <-> facility relationship.
+    """
+
+    carrier = models.ForeignKey(
+        Carrier, on_delete=models.CASCADE, default=0, related_name="carrierfac_set"
+    )
+    facility = models.ForeignKey(
+        Facility, on_delete=models.CASCADE, default=0, related_name="carrierfac_set"
+    )
+
+    class Meta(pdb_models.CarrierFacilityBase.Meta):
+        db_table = "peeringdb_carrier_facility"
+        unique_together = ("carrier", "facility")
+
+    @classmethod
+    def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
+        """
+        Filter queryset of carrierfac objects related to facilities with name match
+        in facility__name according to filter.
+
+        Relationship through facility.
+        """
+        if not qset:
+            qset = cls.handleref.undeleted()
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @classmethod
+    def related_to_country(
+        cls, value=None, filt=None, field="facility__country", qset=None
+    ):
+        """
+        Filter queryset of carrierfac objects related to country via match
+        in facility__country according to filter.
+
+        Relationship through facility.
+        """
+        if not qset:
+            qset = cls.handleref.filter(status="ok")
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @classmethod
+    def related_to_city(cls, value=None, filt=None, field="facility__city", qset=None):
+        """
+        Filter queryset of carrierfac objects related to city via match
+        in facility__city according to filter.
+
+        Relationship through facility.
+        """
+        if not qset:
+            qset = cls.handleref.undeleted()
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @property
+    def descriptive_name(self):
+        """
+        Returns a descriptive label of the netfac for logging purposes.
+        """
+        return f"carrierfac{self.id} {self.carrier.name} {self.facility.name}"
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -5718,6 +5857,8 @@ class UserAPIKey(AbstractAPIKey):
             "Determines if API Key inherits the User Permissions or is readonly."
         ),
     )
+
+    status = models.CharField(max_length=16, choices=API_KEY_STATUS, default="active")
 
     class Meta(AbstractAPIKey.Meta):
         verbose_name = "User API key"
@@ -6580,6 +6721,8 @@ REFTAG_MAP = {
     for cls in [
         Organization,
         Network,
+        Carrier,
+        CarrierFacility,
         Facility,
         InternetExchange,
         InternetExchangeFacility,
@@ -6597,8 +6740,8 @@ QUEUE_NOTIFY = []
 
 if not getattr(settings, "DISABLE_VERIFICATION_QUEUE", False):
     # enable verification queue for these models
-    QUEUE_ENABLED = (User, InternetExchange, Network, Facility, Organization)
+    QUEUE_ENABLED = (User, InternetExchange, Network, Facility, Carrier, Organization)
 
     if not getattr(settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False):
         # send admin notification emails for these models
-        QUEUE_NOTIFY = (InternetExchange, Network, Facility, Organization)
+        QUEUE_NOTIFY = (InternetExchange, Network, Facility, Carrier, Organization)

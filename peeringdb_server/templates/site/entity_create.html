@@ -5,13 +5,19 @@
 <p><strong>{% trans "Only use this if you own the facility" %}</strong></p>
 {% elif entity_name == "Exchange" %}
 <p><strong>{% trans "Only use this if you own the exchange" %}</strong></p>
+{% elif entity_name == "Carrier" %}
+<p><strong>{% trans "Only use this if you own the carrier" %}</strong></p>
 {% endif %}
 
 
+{% if entity_name != "Carrier" %}
 {% blocktrans trimmed %}
 Add a new {{ entity_name }} to your Organization.
 Note that the newly created {{ entity_name }} will need to be
 approved by PeeringDB staff before it will appear in the search results or the API listings{% endblocktrans %}
+{% else %}
+{% trans "Add a new carrier to your Organization." %}
+{% endif %}
 
 {% if entity_name == "Facility" %}
 <p class="marg-top-15">

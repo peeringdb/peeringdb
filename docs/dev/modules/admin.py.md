@@ -1,4 +1,4 @@
-Generated from admin.py on 2022-11-08 14:31:51.010467
+Generated from admin.py on 2023-01-17 22:33:48.733266
 
 # peeringdb_server.admin
 
@@ -41,6 +41,64 @@ target <Organization> merge organizations with this organization
 ---
 # Classes
 ---
+
+## CarrierAdmin
+
+```
+CarrierAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin)
+```
+
+Extend from this model admin if you want to add verification queue
+approve | deny controls to the top of its form.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## CarrierAdminForm
+
+```
+CarrierAdminForm(peeringdb_server.admin.StatusForm)
+```
+
+The main implementation of all the Form logic. Note that this class is
+different than Form. See the comments by the Form class for more info. Any
+improvements to the form API should be made to this class, not to the Form
+class.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+### Methods
+
+#### \__init__
+`def __init__(self, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
+
+## CarrierFacilityAdmin
+
+```
+CarrierFacilityAdmin(peeringdb_server.admin.SoftDeleteAdmin)
+```
+
+Soft delete admin.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
 
 ## CommandLineToolAdmin
 

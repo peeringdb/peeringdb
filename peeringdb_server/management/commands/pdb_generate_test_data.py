@@ -60,6 +60,8 @@ class Command(BaseCommand):
             "net",
             "ix",
             "fac",
+            "carrier",
+            "carrierfac",
             "ixpfx",
             "ixfac",
             "netixlan",
@@ -88,12 +90,14 @@ class Command(BaseCommand):
                     params.update(ixlan=self.entities["ixlan"][i])
                 if reftag in ["poc", "netfac", "netixlan"]:
                     params.update(network=self.entities["net"][i])
-                if reftag in ["netfac", "ixfac"]:
+                if reftag in ["netfac", "ixfac", "carrierfac"]:
                     params.update(facility=self.entities["fac"][i])
                 if reftag in ["ixlan", "ixfac"]:
                     params.update(ix=self.entities["ix"][i])
-                if reftag in ["ix", "net", "fac"]:
+                if reftag in ["ix", "net", "fac", "carrier"]:
                     params.update(org=self.entities["org"][i])
+                if reftag in ["carrierfac"]:
+                    params.update(carrier=self.entities["carrier"][i])
 
                 # create object
                 entity = self.mock.create(reftag, **params)
@@ -111,6 +115,7 @@ class Command(BaseCommand):
         self.entities["net"].append(self.mock.create("net"))
         self.entities["ix"].append(self.mock.create("ix"))
         self.entities["fac"].append(self.mock.create("fac"))
+        self.entities["carrier"].append(self.mock.create("carrier"))
 
         self.entities["org"].append(self.mock.create("org"))
 
