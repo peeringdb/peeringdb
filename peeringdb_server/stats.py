@@ -35,7 +35,7 @@ def gen_stats():
             status="ok"
         ).count(),
         Carrier.handleref.tag: Carrier.handleref.filter(status="ok").count(),
-        "automated_nets": Network.handleref.filter(allow_ixp_update=True).count(),
+        "automated_nets": Network.handleref.filter(status="ok", allow_ixp_update=True).count(),
         "registered_users": User.objects.count(),
         "organizations": Organization.objects.filter(status="ok").count(),
     }
