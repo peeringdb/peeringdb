@@ -71,7 +71,6 @@ class Command(BaseCommand):
             )
             return
 
-
         if not options.get("commit"):
             self.stdout.write(
                 "This will sync data from {url} to this instance, and will take "
