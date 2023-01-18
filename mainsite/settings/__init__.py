@@ -909,7 +909,7 @@ set_bool("RDAP_IGNORE_RECURSE_ERRORS", True)
 set_option("SPONSORSHIPS_EMAIL", SERVER_EMAIL)
 
 
-set_option("API_URL", "https://peeringdb.com/api")
+set_option("API_URL", "https://www.peeringdb.com/api")
 set_option("API_DEPTH_ROW_LIMIT", 250)
 
 # limit results for the standard search
