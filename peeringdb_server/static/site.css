@@ -384,6 +384,12 @@ div.landing_search div.searchbox {
   width:100%;
 }
 
+#anon-language-preference {
+  height:auto;
+  width:auto;
+  margin-bottom:5px;
+}
+
 div.landing_search div.searchbox input[type=submit] {
   font-size: 18px;
   font-weight: bold;
