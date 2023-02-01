@@ -196,6 +196,23 @@ class UserLocaleForm(forms.Form):
         fields = "locale"
 
 
+class UserOrgForm(forms.Form):
+    """
+    Sets primary organization of the user
+    """
+    organization = forms.CharField()
+
+    def clean_org(self):
+        org = self.cleaned_data.get("organization")
+        if org:
+            return org
+        return None
+
+    class Meta:
+        model = User
+        fields = "primary_org"
+
+
 class OrganizationLogoUploadForm(forms.ModelForm):
     logo = forms.FileField()
 

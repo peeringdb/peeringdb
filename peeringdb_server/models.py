@@ -5425,6 +5425,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     created = CreatedDateTimeField()
     updated = UpdatedDateTimeField()
     status = models.CharField(_("status"), max_length=254, default="ok")
+    primary_org = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text=_(
+            "The user's primary organization"
+        ),
+    )
     locale = models.CharField(
         _("language"),
         max_length=62,
@@ -5499,6 +5506,14 @@ class User(AbstractBaseUser, PermissionsMixin):
                 ids.append(int(m.group(1)))
 
         return [org for org in Organization.objects.filter(id__in=ids, status="ok")]
+
+    @property
+    def self_entity_org(self):
+        if self.primary_org:
+            return self.primary_org
+
+        org_id = min([org.id for org in self.organizations])
+        return Organization.objects.get(id=org_id).id
 
     @property
     def admin_organizations(self):

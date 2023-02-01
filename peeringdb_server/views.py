@@ -79,6 +79,7 @@ from peeringdb_server.forms import (
     UserCreationForm,
     UserLocaleForm,
     UsernameChangeForm,
+    UserOrgForm,
     UsernameRetrieveForm,
 )
 from peeringdb_server.inet import (
@@ -3107,3 +3108,67 @@ def view_healthcheck(request):
         cursor.execute("SELECT version()")
 
     return HttpResponse("")
+
+@ensure_csrf_cookie
+@require_http_methods(["GET"])
+def view_self_entity(request, data_type):
+    """
+    Redirect self entity API to the corresponding url
+    """
+    org = Organization.objects.get(id=dj_settings.DEFAULT_SELF_ORG)
+    ix = InternetExchange.objects.get(id=dj_settings.DEFAULT_SELF_IX)
+    net = Network.objects.get(id=dj_settings.DEFAULT_SELF_NET)
+    fac = Facility.objects.get(id=dj_settings.DEFAULT_SELF_FAC)
+    mapping = {"org": org, "net": net, "ix": ix, "fac": fac}
+    reverse_view = reverse(f"{data_type}-view", kwargs={"id": mapping.get(data_type).id})
+
+    if request.user.is_authenticated and hasattr(request.user, "self_entity_org"):
+        primary_org = request.user.self_entity_org
+        if data_type == "org":
+            return redirect(reverse("org-view", kwargs={"id": primary_org}))
+        elif data_type == "net":
+            net = Organization.objects.get(id=primary_org).net_set.first()
+            if net:
+                return redirect(reverse("net-view", kwargs={"id": net.id}))
+            return redirect(reverse_view)
+        elif data_type == "ix":
+            ix = Organization.objects.get(id=primary_org).ix_set.first()
+            if ix:
+                return redirect(reverse("ix-view", kwargs={"id": ix.id}))
+            return redirect(reverse_view)
+        else:
+            fac = Organization.objects.get(id=primary_org).fac_set.first()
+            if fac:
+                return redirect(reverse("fac-view", kwargs={"id": fac.id}))
+            return redirect(reverse_view)
+    else:
+        return redirect(reverse_view)
+
+
+@csrf_protect
+@ensure_csrf_cookie
+@login_required
+@transaction.atomic
+def view_set_user_org(request):
+    """
+    Sets primary organization of the user
+    """
+    if request.method in ["GET", "HEAD"]:
+        return view_verify(request)
+    elif request.method == "POST":
+        form = UserOrgForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse(form.errors, status=400)
+
+        org = form.cleaned_data.get("organization")
+        if org:
+            user = request.user
+            user.primary_org = org
+            user.save()
+        else:
+            return JsonResponse(
+                {"error": _("Malformed Organization Preference")}, status=400
+            )
+
+        response = JsonResponse({"status": "ok"})
+        return response

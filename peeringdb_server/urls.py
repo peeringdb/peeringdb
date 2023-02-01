@@ -88,6 +88,8 @@ from peeringdb_server.views import (
     view_username_retrieve_initiate,
     view_verify,
     watch_network,
+    view_self_entity,
+    view_set_user_org,
 )
 
 # o
@@ -183,6 +185,8 @@ urlpatterns = [
         view_organization,
         name="org-view",
     ),
+    url(r"^(net|ix|org|fac)/self$", view_self_entity),
+    url(r"^set-organization/$", view_set_user_org, name="set-organization"),
     url(r"^%s$" % Network.handleref.tag, view_network_by_query),
     url(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn, name="net-view-asn"),
     url(r"^user_keys/add$", peeringdb_server.api_key_views.add_user_key),

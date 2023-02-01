@@ -1072,6 +1072,10 @@ set_option("SHOW_AUTO_PROD_SYNC_WARNING", False)
 # TODO -- why are the ids different for prod, beta, tutor, etc?
 # all suggested entities will be created under this org
 set_option("SUGGEST_ENTITY_ORG", 20525)
+set_option("DEFAULT_SELF_ORG", 20525)
+set_option("DEFAULT_SELF_NET", 1788)
+set_option("DEFAULT_SELF_IX", 35)
+set_option("DEFAULT_SELF_FAC", 1470)
 
 set_option("TUTORIAL_MODE", False)
 

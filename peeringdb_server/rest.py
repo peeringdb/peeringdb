@@ -25,16 +25,18 @@ import unidecode
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from django.conf.urls import url
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
 from django.db import connection, transaction
 from django.db.models import DateTimeField
+from django.shortcuts import redirect
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import PermissionDenied
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
-from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, ParseError
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -49,6 +51,9 @@ from peeringdb_server.models import (
     OrganizationAPIKey,
     ProtectedAction,
     UserAPIKey,
+    Organization,
+    InternetExchange,
+    Facility,
 )
 from peeringdb_server.permissions import (
     APIPermissionsApplicator,
@@ -1055,8 +1060,52 @@ class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
 router.register("as_set", ASSetViewSet, basename="as_set")
 
 
+@api_view(["GET"])
+@permission_classes([ModelViewSetPermissions, BasicAuthMFABlockWrite])
+def view_self_entity(request, data_type):
+    """
+    This API View redirect self entity API to the corresponding url
+    """
+    query = request.META['QUERY_STRING']
+    org = Organization.objects.get(id=settings.DEFAULT_SELF_ORG)
+    ix = InternetExchange.objects.get(id=settings.DEFAULT_SELF_IX)
+    net = Network.objects.get(id=settings.DEFAULT_SELF_NET)
+    fac = Facility.objects.get(id=settings.DEFAULT_SELF_FAC)
+    mapping = {"org": org, "net": net, "ix": ix, "fac": fac}
+    if query:
+        reverse_view = redirect(f"/api/{data_type}/{mapping.get(data_type).id}?{query}")
+    else:
+        reverse_view = redirect(f"/api/{data_type}/{mapping.get(data_type).id}")
+
+    if request.user.is_authenticated and hasattr(request.user, "self_entity_org"):
+        primary_org = request.user.primary_org
+        if data_type == "org":
+            return redirect(f"/api/org/{primary_org}?{query}") if query else redirect(f"/api/org/{primary_org}")
+        elif data_type == "net":
+            net = Organization.objects.get(id=primary_org).net_set.first()
+            if net:
+                return redirect(f"/api/net/{net.id}?{query}") if query else redirect(f"/api/net/{net.id}")
+            return reverse_view
+        elif data_type == "ix":
+            ix = Organization.objects.get(id=primary_org).ix_set.first()
+            if ix:
+                return redirect(f"/api/ix/{ix.id}?{query}") if query else redirect(f"/api/ix/{ix.id}")
+            return reverse_view
+        else:
+            fac = Organization.objects.get(id=primary_org).fac_set.first()
+            if fac:
+                return redirect(f"/api/fac/{fac.id}?{query}") if query else redirect(f"/api/fac/{fac.id}")
+            return reverse_view
+    else:
+        return reverse_view
+
+
 # set here in case we want to add more urls later
-urls = router.urls
+urlpatterns = [
+    url("(net|ix|org|fac)/self", view_self_entity),
+]
+rout_urls = router.urls
+urls = urlpatterns + rout_urls
 
 REFTAG_MAP = {
     cls.model.handleref.tag: cls
