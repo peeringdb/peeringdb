@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0099_auto_20221027_2023'),
+        ('peeringdb_server', '0105_carrier_website_optional'),
     ]
 
     operations = [
