@@ -1664,14 +1664,13 @@ class TestJSON(unittest.TestCase):
         carrier = SHARED["carrier_rw_ok"]
         facility = SHARED["fac_r_ok"]
 
-        data = {
-            "carrier_id" : carrier.id,
-            "fac_id": facility.id
-        }
+        data = {"carrier_id": carrier.id, "fac_id": facility.id}
 
-        r_data = self.db_org_admin._request(
-            f"carrierfac", method="POST", data=data
-        ).json().get("data")[0]
+        r_data = (
+            self.db_org_admin._request("carrierfac", method="POST", data=data)
+            .json()
+            .get("data")[0]
+        )
 
         SHARED["carrierfac_id"] = r_data.get("id")
 
@@ -1725,14 +1724,13 @@ class TestJSON(unittest.TestCase):
         carrier = SHARED["carrier_rw_ok"]
         facility = SHARED["fac_r_ok"]
 
-        data = {
-            "carrier_id" : carrier.id,
-            "fac_id": facility.id
-        }
+        data = {"carrier_id": carrier.id, "fac_id": facility.id}
 
-        r_data = self.db_org_admin._request(
-            f"carrierfac", method="POST", data=data
-        ).json().get("data")[0]
+        r_data = (
+            self.db_org_admin._request("carrierfac", method="POST", data=data)
+            .json()
+            .get("data")[0]
+        )
 
         SHARED["carrierfac_id"] = r_data.get("id")
 
@@ -1772,7 +1770,6 @@ class TestJSON(unittest.TestCase):
 
         assert carrierfac.status == "deleted"
 
-
     def test_org_admin_002_auto_approve_carrierfac(self):
 
         """
@@ -1790,14 +1787,13 @@ class TestJSON(unittest.TestCase):
 
         SHARED["carrierfac_rw_ok"].delete(hard=True)
 
-        data = {
-            "carrier_id" : carrier.id,
-            "fac_id": facility.id
-        }
+        data = {"carrier_id": carrier.id, "fac_id": facility.id}
 
-        r_data = self.db_org_admin._request(
-            f"carrierfac", method="POST", data=data
-        ).json().get("data")[0]
+        r_data = (
+            self.db_org_admin._request("carrierfac", method="POST", data=data)
+            .json()
+            .get("data")[0]
+        )
 
         SHARED["carrierfac_id"] = r_data.get("id")
 

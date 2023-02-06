@@ -1803,7 +1803,11 @@ class CarrierFacilitySerializer(ModelSerializer):
         # if the carrier org is the same as the facility org the connection
         # is auto-approved
 
-        if data.get("carrier") and data.get("facility") and data["carrier"].org_id == data["facility"].org_id:
+        if (
+            data.get("carrier")
+            and data.get("facility")
+            and data["carrier"].org_id == data["facility"].org_id
+        ):
             data["status"] = "ok"
         else:
             data["status"] = "pending"
