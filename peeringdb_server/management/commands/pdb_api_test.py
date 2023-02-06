@@ -1652,6 +1652,165 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_org_admin_002_approve_carrierfac(self):
+
+        """
+        Tests the carrier-facility creation and approval
+        processes
+        """
+
+        # create carrer-facility
+
+        carrier = SHARED["carrier_rw_ok"]
+        facility = SHARED["fac_r_ok"]
+
+        data = {
+            "carrier_id" : carrier.id,
+            "fac_id": facility.id
+        }
+
+        r_data = self.db_org_admin._request(
+            f"carrierfac", method="POST", data=data
+        ).json().get("data")[0]
+
+        SHARED["carrierfac_id"] = r_data.get("id")
+
+        carrierfac = CarrierFacility.objects.get(id=SHARED["carrierfac_id"])
+
+        # assert that the carrier-facility is status pending (needs to be approved)
+
+        assert carrierfac.facility == facility
+        assert carrierfac.carrier == carrier
+        assert carrierfac.status == "pending"
+
+        # only the facility org can approve
+
+        response = self.db_org_admin._request(
+            f"carrierfac/{carrierfac.id}/approve", method="POST", data="{}"
+        )
+
+        assert response.status_code == 403
+
+        # give user rights to approve the carrier facility (same as facility org)
+
+        self.db_org_admin.user_inst.grainy_permissions.add_permission(
+            f"peeringdb.organization.{facility.org.id}.facility", 15
+        )
+
+        # need to re-init rest client so permissions stick
+
+        self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_ADMIN)
+
+        response = self.db_org_admin._request(
+            f"carrierfac/{carrierfac.id}/approve", method="POST", data="{}"
+        )
+
+        assert response.status_code == 200
+
+        carrierfac.refresh_from_db()
+
+        assert carrierfac.status == "ok"
+
+    ##########################################################################
+
+    def test_org_admin_002_reject_carrierfac(self):
+
+        """
+        Tests the carrier-facility creation and rejection
+        processes
+        """
+
+        # create carrier-facility
+
+        carrier = SHARED["carrier_rw_ok"]
+        facility = SHARED["fac_r_ok"]
+
+        data = {
+            "carrier_id" : carrier.id,
+            "fac_id": facility.id
+        }
+
+        r_data = self.db_org_admin._request(
+            f"carrierfac", method="POST", data=data
+        ).json().get("data")[0]
+
+        SHARED["carrierfac_id"] = r_data.get("id")
+
+        carrierfac = CarrierFacility.objects.get(id=SHARED["carrierfac_id"])
+
+        # assert that the carrier-facility is status pending (needs to be rejected)
+
+        assert carrierfac.facility == facility
+        assert carrierfac.carrier == carrier
+        assert carrierfac.status == "pending"
+
+        # only the facility org can reject
+
+        response = self.db_org_admin._request(
+            f"carrierfac/{carrierfac.id}/reject", method="POST", data="{}"
+        )
+
+        assert response.status_code == 403
+
+        # give user rights to reject the carrier facility (same as facility org)
+
+        self.db_org_admin.user_inst.grainy_permissions.add_permission(
+            f"peeringdb.organization.{facility.org.id}.facility", 15
+        )
+
+        # need to re-init rest client so permissions stick
+
+        self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_ADMIN)
+
+        response = self.db_org_admin._request(
+            f"carrierfac/{carrierfac.id}/reject", method="POST", data="{}"
+        )
+
+        assert response.status_code == 200
+
+        carrierfac.refresh_from_db()
+
+        assert carrierfac.status == "deleted"
+
+
+    def test_org_admin_002_auto_approve_carrierfac(self):
+
+        """
+        Tests the carrier-facility creation and AUTO approval
+        processes
+
+        When the carrier and the facility have the same org, connection
+        should be automatically approvued
+        """
+
+        # create carrier-facility
+
+        carrier = SHARED["carrier_rw_ok"]
+        facility = SHARED["fac_rw_ok"]
+
+        SHARED["carrierfac_rw_ok"].delete(hard=True)
+
+        data = {
+            "carrier_id" : carrier.id,
+            "fac_id": facility.id
+        }
+
+        r_data = self.db_org_admin._request(
+            f"carrierfac", method="POST", data=data
+        ).json().get("data")[0]
+
+        SHARED["carrierfac_id"] = r_data.get("id")
+
+        carrierfac = CarrierFacility.objects.get(id=SHARED["carrierfac_id"])
+
+        # assert that the carrier-facility is status ok
+
+        assert carrierfac.facility == facility
+        assert carrierfac.carrier == carrier
+        assert carrierfac.status == "ok"
+
+    ##########################################################################
+
     def test_org_admin_002_POST_PUT_DELETE_net(self):
         data = self.make_data_net(asn=9000900)
 
