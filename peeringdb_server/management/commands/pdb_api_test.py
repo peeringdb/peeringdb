@@ -1690,15 +1690,18 @@ class TestJSON(unittest.TestCase):
 
         assert response.status_code == 403
 
-        # give user rights to approve the carrier facility (same as facility org)
+        # give permissions to approve the carrier facility (same as facility org)
+        if hasattr(self, "org_key"):
+            self.org_key.grainy_permissions.add_permission(
+                f"peeringdb.organization.{facility.org.id}.facility", 15
+            )
+        else:
+            self.db_org_admin.user_inst.grainy_permissions.add_permission(
+                f"peeringdb.organization.{facility.org.id}.facility", 15
+            )
 
-        self.db_org_admin.user_inst.grainy_permissions.add_permission(
-            f"peeringdb.organization.{facility.org.id}.facility", 15
-        )
-
-        # need to re-init rest client so permissions stick
-
-        self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_ADMIN)
+            # need to re-init rest client so permissions stick
+            self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_ADMIN)
 
         response = self.db_org_admin._request(
             f"carrierfac/{carrierfac.id}/approve", method="POST", data="{}"
@@ -1750,15 +1753,18 @@ class TestJSON(unittest.TestCase):
 
         assert response.status_code == 403
 
-        # give user rights to reject the carrier facility (same as facility org)
+        # give permissions to approve the carrier facility (same as facility org)
+        if hasattr(self, "org_key"):
+            self.org_key.grainy_permissions.add_permission(
+                f"peeringdb.organization.{facility.org.id}.facility", 15
+            )
+        else:
+            self.db_org_admin.user_inst.grainy_permissions.add_permission(
+                f"peeringdb.organization.{facility.org.id}.facility", 15
+            )
 
-        self.db_org_admin.user_inst.grainy_permissions.add_permission(
-            f"peeringdb.organization.{facility.org.id}.facility", 15
-        )
-
-        # need to re-init rest client so permissions stick
-
-        self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_ADMIN)
+            # need to re-init rest client so permissions stick
+            self.db_org_admin = self.rest_client(URL, verbose=VERBOSE, **USER_ORG_ADMIN)
 
         response = self.db_org_admin._request(
             f"carrierfac/{carrierfac.id}/reject", method="POST", data="{}"
