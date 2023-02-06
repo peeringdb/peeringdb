@@ -44,6 +44,7 @@ from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.models import (
     UTC,
+    CarrierFacility,
     Network,
     OrganizationAPIKey,
     ProtectedAction,
@@ -895,13 +896,13 @@ class CarrierFacilityMixin:
 
     @transaction.atomic
     @action(detail=True, methods=["POST"])
-    def approve(self, request, *args, **kwargs):
+    def approve(self, request, pk, *args, **kwargs):
 
         """
         Allows the org to approve a carrier listing at their facility
         """
 
-        carrierfac = self.get_object()
+        carrierfac = CarrierFacility.objects.get(id=pk)
 
         if not check_permissions_from_request(request, carrierfac.facility, "c"):
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -909,22 +910,22 @@ class CarrierFacilityMixin:
         carrierfac.status = "ok"
         carrierfac.save()
 
-        return self.retrieve(request, *args, **kwargs)
+        return Response(self.serializer_class(carrierfac).data)
 
     @transaction.atomic
     @action(detail=True, methods=["POST"])
-    def reject(self, request, *args, **kwargs):
+    def reject(self, request, pk, *args, **kwargs):
 
         """
         Allows the org to reject a carrier listing at their facility
         """
 
-        carrierfac = self.get_object()
+        carrierfac = CarrierFacility.objects.get(id=pk)
 
         if not check_permissions_from_request(request, carrierfac.facility, "c"):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
-        response = self.retrieve(request, *args, **kwargs)
+        response = Response(self.serializer_class(carrierfac).data)
 
         carrierfac.delete()
 

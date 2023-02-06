@@ -1259,8 +1259,12 @@ class ModelSerializer(serializers.ModelSerializer):
                         self._reapprove = True
                         self._undelete = False
                     elif type(instance) == CarrierFacility:
-                        self._reapprove = True
-                        self._undelete = False
+                        if instance.carrier.org_id == instance.facility.org_id:
+                            self._reapprove = False
+                            self._undelete = True
+                        else:
+                            self._reapprove = True
+                            self._undelete = False
                     else:
                         self._reapprove = False
                         self._undelete = True
@@ -1795,8 +1799,18 @@ class CarrierFacilitySerializer(ModelSerializer):
 
         # new carrier-facility relationship should be pending
         # until the facility approves it.
+        #
+        # if the carrier org is the same as the facility org the connection
+        # is auto-approved
 
-        data["status"] = "pending"
+        if (
+            data.get("carrier")
+            and data.get("facility")
+            and data["carrier"].org_id == data["facility"].org_id
+        ):
+            data["status"] = "ok"
+        else:
+            data["status"] = "pending"
 
         return super().validate_create(data)
 
@@ -1861,7 +1875,7 @@ class CarrierSerializer(ModelSerializer):
 
         representation = super().to_representation(data)
 
-        if not representation.get("website"):
+        if not representation.get("website") and self.instance:
             representation["website"] = self.instance.org.website
 
         return representation
