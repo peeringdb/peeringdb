@@ -12,8 +12,10 @@ Django signal handlers
 
 """
 
+from math import sin, cos, sqrt, atan2, radians
 import django.urls
 import reversion
+from django.core.exceptions import ValidationError
 from allauth.account.signals import email_confirmed, user_signed_up
 from corsheaders.signals import check_request_enabled
 from django.conf import settings
@@ -48,6 +50,7 @@ from peeringdb_server.models import (
     Organization,
     UserOrgAffiliationRequest,
     VerificationQueueItem,
+    Campus,
 )
 from peeringdb_server.util import disable_auto_now_and_save
 
@@ -162,6 +165,63 @@ def addressmodel_save(sender, instance=None, **kwargs):
 
 
 pre_save.connect(addressmodel_save, sender=Facility)
+
+
+def set_campus_to_facility(sender, instance=None, **kwargs):
+    """
+    Whenever a facility is saved, check the distance between
+    two facilities and validate if it falls within a CAMPUS_MAX_DISTANCE,
+    also check if latitude and longitude are in the facility or not
+    """
+    # Approximate radius of earth in km
+    R = 6373.0
+    if instance.campus_id:
+        if not (instance.latitude and instance.longitude):
+            raise ValidationError(_("Facility cannot be made part of a campus as it is missing its geolocation coordinates"))
+
+        latitude = radians(instance.latitude)
+        longitude = radians(instance.longitude)
+
+        fac = Facility.objects.filter(campus_id=instance.campus_id)
+
+        if fac:
+            for obj in fac:
+                prev_lat, prev_long = radians(obj.latitude), radians(obj.longitude)
+                dlat, dlon = prev_lat - latitude, prev_long - longitude
+
+                a = sin(dlat / 2) ** 2 + cos(latitude) * cos(prev_lat) * sin(dlon / 2) ** 2
+                c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+                distance = R * c
+
+                if distance > settings.CAMPUS_MAX_DISTANCE:
+                    raise ValidationError(
+                        _(f"Facility out of campus bounds (max. {settings.CAMPUS_MAX_DISTANCE}km)")
+                    )
+
+
+pre_save.connect(set_campus_to_facility, sender=Facility)
+
+
+def campus_status(sender, instance=None, **kwargs):
+    """
+    Whenever a campus is saved, set the status of
+    the campus object based on link facilities
+    """
+
+    if instance.status == "deleted":
+        # when the campus is deleted make sure all facilities
+        # are removed from it
+        Facility.objects.filter(campus=instance).update(campus=None)
+        return
+
+    if instance.fac_set.count() < 2:
+        instance.status = "pending"
+    else:
+        instance.status = "ok"
+
+
+pre_save.connect(campus_status, sender=Campus)
 
 
 def org_save(sender, **kwargs):

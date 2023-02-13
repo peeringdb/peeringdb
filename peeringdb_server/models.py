@@ -1587,6 +1587,119 @@ class OrganizationMergeEntity(models.Model):
         verbose_name_plural = _("Organization Merge: Entities")
 
 
+@grainy_model(namespace="campus", parent="org")
+@reversion.register
+# TODO: UNCOMMENT when #389 is merged
+# class Campus(ProtectedMixin, pdb_models.CampusBase, ParentStatusMixin):
+class Campus(ProtectedMixin, pdb_models.CampusBase):
+
+    """
+    Describes a peeringdb campus
+    """
+    org = models.ForeignKey(
+        Organization,
+        related_name="campus_set",
+        verbose_name=_("Organization"),
+        on_delete=models.CASCADE,
+    )
+
+    parent_relations = ["org"]
+
+    def save(self, *args, **kwargs):
+        """
+        Save the current instance
+        """
+        # TODO: UNCOMMENT when #389 is merged
+        # self.validate_parent_status()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def related_to_facility(cls, value=None, filt=None, field="fac_set__id", qset=None):
+        """
+        Filter queryset of campus objects related to facilities with name match
+        in fac_set__id according to filter.
+
+        Relationship through facility.
+        """
+        if not qset:
+            qset = cls.handleref.undeleted()
+
+        return qset.filter(**make_relation_filter(field, filt, value))
+
+    @property
+    def city(self):
+        """
+        Return city of related facility object
+        """
+        if self.fac_set.exists():
+            return self.fac_set.first().city
+        return ""
+
+    @property
+    def country(self):
+        """
+        Return country of related facility object
+        """
+        if self.fac_set.exists():
+            return self.fac_set.first().country
+        return ""
+
+    @property
+    def state(self):
+        """
+        Return state of related facility object
+        """
+        if self.fac_set.exists():
+            return self.fac_set.first().state
+        return ""
+
+    @property
+    def zipcode(self):
+        """
+        Return zipcode of related facility object
+        """
+        if self.fac_set.exists():
+            return self.fac_set.first().zipcode
+        return ""
+
+    @property
+    def latitude(self):
+        """
+        Return latitude of related facility object
+        """
+        if self.fac_set.exists():
+            return self.fac_set.first().latitude
+        return ""
+
+    @property
+    def longitude(self):
+        """
+        Return longitude of related facility object
+        """
+        if self.fac_set.exists():
+            return self.fac_set.first().longitude
+        return ""
+
+    @property
+    def search_result_name(self):
+        """
+        This will be the name displayed for quick search matches
+        of this entity.
+        """
+        return self.name
+
+    @property
+    def view_url(self):
+        """
+        Return the URL to this campus's web view.
+        """
+        return "{}{}".format(
+            settings.BASE_URL, django.urls.reverse("campus-view", args=(self.id,))
+        )
+
+
+
+
 @grainy_model(namespace="facility", parent="org")
 @reversion.register
 class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
@@ -1596,6 +1709,13 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
 
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="fac_set"
+    )
+    campus = models.ForeignKey(
+        Campus,
+        related_name="fac_set",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
     )
     website = models.URLField(_("Website"), blank=False)
 
@@ -6746,6 +6866,7 @@ REFTAG_MAP = {
         NetworkContact,
         IXLan,
         IXLanPrefix,
+        Campus,
     ]
 }
 

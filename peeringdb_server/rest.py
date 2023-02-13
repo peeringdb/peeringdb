@@ -47,6 +47,9 @@ from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.models import (
     UTC,
     CarrierFacility,
+    Campus,
+    Facility,
+    InternetExchange,
     Network,
     OrganizationAPIKey,
     ProtectedAction,
@@ -65,7 +68,7 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
-from peeringdb_server.serializers import ASSetSerializer, ParentStatusException
+from peeringdb_server.serializers import ASSetSerializer, ParentStatusException, FacilitySerializer
 from peeringdb_server.util import coerce_ipaddr
 
 
@@ -613,6 +616,10 @@ class ModelViewSet(viewsets.ModelViewSet):
         if api_cache.qualifies():
             raise CacheRedirect(api_cache)
 
+        # using nested filters will produce duplicates of the same object
+        # unless we call distinct()
+        qset = qset.distinct()
+
         if not self.kwargs:
             if since > 0:
                 # .filter(status__in=["ok","deleted"])
@@ -937,6 +944,64 @@ class CarrierFacilityMixin:
         return response
 
 
+class CampusFacilityMixin:
+
+    """
+    Custom API endpoints for the campus-facility
+    object, exposed to /api/campus/{campus_id}/add-facility/{fac_id}
+    and /api/campus/{campus_id}/remove-facility/{fac_id}
+    """
+
+    @transaction.atomic
+    @action(detail=True, methods=["POST"], url_path=r'add-facility/(?P<fac_id>[^/.]+)')
+    def add_facility(self, request, *args, **kwargs):
+
+        """
+        Allows the org to approve a campus listing at their facility
+        """
+
+        facility_id = self.kwargs.get('fac_id')
+        fac = Facility.objects.get(id=facility_id)
+
+        if not check_permissions_from_request(request, fac, "u"):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        campus = self.get_object()
+
+        if campus.org_id == fac.org_id:
+            fac.campus_id = campus.id
+            fac.save()
+            campus.save()
+
+            return Response(FacilitySerializer(fac).data)
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @transaction.atomic
+    @action(detail=True, methods=["post"], url_path=r'remove-facility/(?P<fac_id>[^/.]+)')
+    def remove_facility(self, request, *args, **kwargs):
+
+        """
+        Allows the org to reject a campus listing at their facility
+        """
+
+        fac = Facility.objects.get(id=self.kwargs.get('fac_id'))
+
+        if not fac.campus_id:
+            return Response(FacilitySerializer(fac).data)
+
+        campus = fac.campus
+
+        if not check_permissions_from_request(request, fac, "u"):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        fac.campus_id = None
+        fac.save()
+        campus.save()
+
+        return Response(FacilitySerializer(fac).data)
+
+
 # TODO: why are we doing the import like this??!
 pdb_serializers = importlib.import_module("peeringdb_server.serializers")
 router = RestRouter(trailing_slash=False)
@@ -999,6 +1064,9 @@ NetworkContactViewSet = model_view_set("NetworkContact")
 NetworkFacilityViewSet = model_view_set("NetworkFacility")
 NetworkIXLanViewSet = model_view_set("NetworkIXLan")
 OrganizationViewSet = model_view_set("Organization")
+CampusViewSet = model_view_set(
+    "Campus", mixins=(CampusFacilityMixin,)
+)
 
 
 class ReadOnlyMixin:
@@ -1120,5 +1188,6 @@ REFTAG_MAP = {
         NetworkContactViewSet,
         IXLanViewSet,
         IXLanPrefixViewSet,
+        CampusViewSet,
     ]
 }

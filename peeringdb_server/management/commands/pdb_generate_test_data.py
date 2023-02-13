@@ -6,8 +6,9 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models.signals import pre_save
 
-from peeringdb_server import models
+from peeringdb_server import models, signals
 from peeringdb_server.mock import Mock
 
 
@@ -29,6 +30,9 @@ class Command(BaseCommand):
             self.stdout.write(f"[pretend] {msg}")
 
     def handle(self, *args, **options):
+        pre_save.disconnect(signals.campus_status, sender=models.Campus)
+        pre_save.disconnect(signals.set_campus_to_facility, sender=models.Facility)
+
         self.commit = options.get("commit")
         self.limit = options.get("limit")
 
@@ -60,6 +64,7 @@ class Command(BaseCommand):
             "net",
             "ix",
             "fac",
+            "campus",
             "carrier",
             "carrierfac",
             "ixpfx",
@@ -94,7 +99,7 @@ class Command(BaseCommand):
                     params.update(facility=self.entities["fac"][i])
                 if reftag in ["ixlan", "ixfac"]:
                     params.update(ix=self.entities["ix"][i])
-                if reftag in ["ix", "net", "fac", "carrier"]:
+                if reftag in ["ix", "net", "fac", "carrier", "campus"]:
                     params.update(org=self.entities["org"][i])
                 if reftag in ["carrierfac"]:
                     params.update(carrier=self.entities["carrier"][i])

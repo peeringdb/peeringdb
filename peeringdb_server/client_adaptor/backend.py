@@ -34,6 +34,7 @@ class Backend(BaseBackend):
 
     RESOURCE_MAP = {
         resource.Facility: models.Facility,
+        resource.Campus: models.Campus,
         resource.InternetExchange: models.InternetExchange,
         resource.InternetExchangeFacility: models.InternetExchangeFacility,
         resource.InternetExchangeLan: models.IXLan,

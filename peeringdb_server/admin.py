@@ -60,6 +60,7 @@ from peeringdb_server.models import (
     QUEUE_ENABLED,
     REFTAG_MAP,
     UTC,
+    Campus,
     Carrier,
     CarrierFacility,
     CommandLineTool,
@@ -1275,6 +1276,39 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+class CampusAdminForm(StatusForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        fk_handleref_filter(self, "org")
+
+
+class CampusAdmin(SoftDeleteAdmin):
+    list_display = ("name", "org", "status", "created", "updated")
+    ordering = ("-created",)
+    list_filter = (StatusFilter,)
+    search_fields = ("name",)
+    readonly_fields = ("id", "grainy_namespace")
+
+    form = CampusAdminForm
+
+    raw_id_fields = ("org",)
+    autocomplete_lookup_fields = {
+        "fk": ["org"],
+    }
+
+    fields = [
+        "status",
+        "name",
+        "aka",
+        "name_long",
+        "website",
+        "org",
+        "version",
+        "id",
+        "grainy_namespace",
+    ]
 
 
 class CarrierAdminForm(StatusForm):
@@ -2546,6 +2580,7 @@ class DataChangeEmail(admin.ModelAdmin):
 admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
+admin.site.register(Campus, CampusAdmin)
 admin.site.register(Carrier, CarrierAdmin)
 admin.site.register(CarrierFacility, CarrierFacilityAdmin)
 admin.site.register(InternetExchange, InternetExchangeAdmin)

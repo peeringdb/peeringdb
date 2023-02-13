@@ -50,6 +50,7 @@ from peeringdb_server.inet import (
 )
 from peeringdb_server.models import (
     QUEUE_ENABLED,
+    Campus,
     Carrier,
     CarrierFacility,
     Facility,
@@ -3357,6 +3358,79 @@ class OrganizationSerializer(
             )
 
         return qset, filters
+
+
+class CampusSerializer(SpatialSearchMixin, ModelSerializer):
+    """
+    Serializer for peeringdb_server.models.Campus
+    """
+    fac_set = nested(
+        FacilitySerializer,
+        exclude=["org_id", "org"],
+        source="fac_set_active_prefetched",
+    )
+    org_id = serializers.PrimaryKeyRelatedField(
+        queryset=Organization.objects.all(), source="org"
+    )
+    org_name = serializers.CharField(source="org.name", read_only=True)
+    org = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Campus
+        depth = 0
+        fields = (
+            [
+                "id",
+                "org_id",
+                "org_name",
+                "org",
+                "status",
+                "created",
+                "updated",
+                "name",
+                "name_long",
+                "notes",
+                "aka",
+                "website",
+                "fac_set",
+                "country",
+                "city",
+                "zipcode",
+                "state",
+            ] + HandleRefSerializer.Meta.fields
+        )
+        related_fields = ["fac_set", "org"]
+        list_exclude = ["org"]
+
+        _ref_tag = model.handleref.tag
+
+    @classmethod
+    def prepare_query(cls, qset, **kwargs):
+        """
+        Allows filtering by indirect relationships.
+
+        Currently supports: facility
+        """
+        qset = qset.select_related("org")
+
+        filters = get_relation_filters(["facility"], cls, **kwargs)
+
+        for field, e in list(filters.items()):
+            field = field.replace("facility", "fac_set")
+            fn = getattr(cls.Meta.model, "related_to_facility")
+            qset = fn(field=field, qset=qset, **e)
+
+        return qset, filters
+
+    def validate_create(self, data):
+        # we don't want users to be able to create campus if the parent
+        # organization status is pending or deleted
+        if data.get("org") and data.get("org").status != "ok":
+            raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
+        return super().validate_create(data)
+
+    def get_org(self, inst):
+        return self.sub_serializer(OrganizationSerializer, inst.org)
 
 
 REFTAG_MAP = {

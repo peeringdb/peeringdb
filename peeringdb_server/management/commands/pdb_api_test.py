@@ -18,6 +18,7 @@ from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
+from django.db.models.signals import pre_save
 from django.utils import timezone
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework import serializers
@@ -29,11 +30,12 @@ from twentyc.rpc import (
     RestClient,
 )
 
-from peeringdb_server import inet
+from peeringdb_server import inet, models, signals
 from peeringdb_server import settings as pdb_settings
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     REFTAG_MAP,
+    Campus,
     Carrier,
     CarrierFacility,
     DeskProTicket,
@@ -345,6 +347,20 @@ class TestJSON(unittest.TestCase):
 
     @classmethod
     def make_data_carrier(cls, **kwargs):
+
+        data = {
+            "name": cls.make_name("Test"),
+            "org_id": SHARED["org_rw_ok"].id,
+            "aka": cls.make_name("Also known as"),
+            "website": WEBSITE,
+        }
+        data.update(**kwargs)
+        return data
+
+    ##########################################################################
+
+    @classmethod
+    def make_data_campus(cls, **kwargs):
 
         data = {
             "name": cls.make_name("Test"),
@@ -1007,6 +1023,11 @@ class TestJSON(unittest.TestCase):
 
     def test_user_001_GET_carrier(self):
         self.assert_get_handleref(self.db_user, "carrier", SHARED["carrier_r_ok"].id)
+
+    ##########################################################################
+
+    def test_user_001_GET_campus(self):
+        self.assert_get_handleref(self.db_user, "campus", SHARED["campus_r_ok"].id)
 
     ##########################################################################
 
@@ -1810,6 +1831,97 @@ class TestJSON(unittest.TestCase):
         assert carrierfac.facility == facility
         assert carrierfac.carrier == carrier
         assert carrierfac.status == "ok"
+
+    def test_org_admin_002_POST_PUT_DELETE_campus(self):
+
+        data = self.make_data_campus()
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "campus",
+            data,
+            test_failures={
+                "invalid": {"name": ""},
+                "perms": {
+                    # need to set name again so it doesnt fail unique validation
+                    "name": self.make_name("Test"),
+                    # set org to an organization the user doesnt have perms to
+                    "org_id": SHARED["org_r_ok"].id,
+                },
+                "status": {
+                    # need to set name again so it doesnt fail unique validation
+                    "name": self.make_name("Test"),
+                    "org_id": SHARED["org_rwp"].id,
+                },
+            },
+        )
+
+        SHARED["campus_id"] = r_data.get("id")
+
+        self.assert_update(
+            self.db_org_admin,
+            "campus",
+            SHARED["campus_id"],
+            {"name": self.make_name("Test")},
+            test_failures={
+                "invalid": {"name": ""},
+                "perms": {"id": SHARED["campus_r_ok"].id},
+            },
+        )
+
+        self.assert_delete(
+            self.db_org_admin,
+            "campus",
+            test_success=SHARED["campus_id"],
+            test_failure=SHARED["campus_r_ok"].id,
+        )
+
+    ##########################################################################
+
+    def test_campus_status(self):
+        pre_save.connect(signals.campus_status, sender=models.Campus)
+        pre_save.connect(signals.set_campus_to_facility, sender=models.Facility)
+
+        data = self.make_data_campus()
+
+        cam = Campus.objects.create(**data)
+
+        fac_data = self.make_data_fac()
+        fac_data["latitude"] = 40.736844
+        fac_data["longitude"] = -74.173402
+
+        fac = Facility.objects.create(status="ok", **fac_data)
+        self.db_org_admin._request(
+            f"campus/{cam.id}/add-facility/{fac.id}", method="POST", data="{}"
+        ).json().get("data")[0]
+
+        fac_data2 = self.make_data_fac()
+        fac_data2["latitude"] = 40.717723
+        fac_data2["longitude"] = -74.008299
+
+        fac2 = Facility.objects.create(status="ok", **fac_data2)
+        self.db_org_admin._request(
+            f"campus/{cam.id}/add-facility/{fac2.id}", method="POST", data="{}"
+        ).json().get("data")[0]
+
+        cam = Campus.objects.get(id=cam.id)
+        cam.name_long = "test lomng"
+        cam.save()
+
+        assert cam.status == "ok"
+
+        self.db_org_admin._request(
+            f"campus/{cam.id}/remove-facility/{fac2.id}", method="POST", data="{}"
+        ).json().get("data")[0]
+
+        cam = Campus.objects.get(id=cam.id)
+        cam.name_long = "test long"
+        cam.save()
+
+        assert cam.status == "pending"
+
+        pre_save.disconnect(signals.campus_status, sender=models.Campus)
+        pre_save.disconnect(signals.set_campus_to_facility, sender=models.Facility)
 
     ##########################################################################
 
@@ -5267,7 +5379,7 @@ class Command(BaseCommand):
 
         # create various entities for rw testing
 
-        for model in [Network, Facility, InternetExchange, Carrier]:
+        for model in [Network, Facility, InternetExchange, Carrier, Campus]:
             for status in ["ok", "pending"]:
                 for prefix in ["r", "rw"]:
                     cls.create_entity(
@@ -5291,7 +5403,7 @@ class Command(BaseCommand):
 
         # create entities for duplicate validation testing
 
-        for model in [Network, Facility, InternetExchange, Carrier]:
+        for model in [Network, Facility, InternetExchange, Carrier, Campus]:
             cls.create_entity(
                 model,
                 status="deleted",
@@ -5451,8 +5563,14 @@ class Command(BaseCommand):
         print("Deleted", deleted, "objects")
 
     def handle(self, *args, **options):
+
+        pre_save.disconnect(signals.campus_status, sender=models.Campus)
+        pre_save.disconnect(signals.set_campus_to_facility, sender=models.Facility)
+
         try:
             self.prepare()
+            pre_save.connect(signals.campus_status, sender=models.Campus)
+            pre_save.connect(signals.set_campus_to_facility, sender=models.Facility)
         except IntegrityError as inst:
             print(inst)
             self.cleanup()

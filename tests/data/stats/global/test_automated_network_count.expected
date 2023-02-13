@@ -3,9 +3,10 @@
   "ix": 4,
   "fac": 4,
   "carrier": 4,
+  "campus": 7,
   "netixlan": 3,
   "netfac": 3,
   "automated_nets": 3,
-  "organizations": 8,
+  "organizations": 12,
   "registered_users": 6
 }

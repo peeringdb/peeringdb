@@ -1076,6 +1076,7 @@ set_option("DEFAULT_SELF_ORG", 20525)
 set_option("DEFAULT_SELF_NET", 1788)
 set_option("DEFAULT_SELF_IX", 35)
 set_option("DEFAULT_SELF_FAC", 1470)
+set_option("CAMPUS_MAX_DISTANCE", 50)
 
 set_option("TUTORIAL_MODE", False)
 

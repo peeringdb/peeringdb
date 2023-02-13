@@ -95,6 +95,7 @@ from peeringdb_server.models import (
     UTC,
     Carrier,
     CarrierFacility,
+    Campus,
     DataChangeWatchedObject,
     Facility,
     InternetExchange,
@@ -116,6 +117,7 @@ from peeringdb_server.permissions import APIPermissionsApplicator, check_permiss
 from peeringdb_server.search import search
 from peeringdb_server.serializers import (
     CarrierSerializer,
+    CampusSerializer,
     FacilitySerializer,
     InternetExchangeSerializer,
     NetworkSerializer,
@@ -172,6 +174,34 @@ def export_permissions(user, entity):
     if entity.status == "pending":
         perms["can_create"] = False
         perms["can_delete"] = False
+
+    if perms["can_write"] or perms["can_create"] or perms["can_delete"]:
+        perms["can_edit"] = True
+
+    if hasattr(entity, "grainy_namespace_manage"):
+        perms["can_manage"] = check_permissions(
+            user, entity.grainy_namespace_manage, PERM_CRUD
+        )
+    else:
+        perms["can_manage"] = False
+
+    return perms
+
+
+def export_permissions_campus(user, entity):
+    """
+    Return dict of permission bools for the specified user and entity
+    to be used in template context.
+    """
+
+    if entity.status == "deleted":
+        return {}
+
+    perms = {
+        "can_write": check_permissions(user, entity, PERM_UPDATE),
+        "can_create": check_permissions(user, entity, PERM_CREATE),
+        "can_delete": check_permissions(user, entity, PERM_DELETE),
+    }
 
     if perms["can_write"] or perms["can_create"] or perms["can_delete"]:
         perms["can_edit"] = True
@@ -1382,7 +1412,7 @@ def view_organization(request, id):
 
     perms = export_permissions(request.user, org)
 
-    tags = ["fac", "net", "ix", "carrier"]
+    tags = ["fac", "net", "ix", "carrier", "campus"]
     for tag in tags:
         model = REFTAG_MAP.get(tag)
         perms["can_create_%s" % tag] = check_permissions(
@@ -1425,6 +1455,11 @@ def view_organization(request, id):
     else:
         carriers = org.carrier_set.filter(status__in=["ok"])
 
+    if perms.get("can_delete_campus") or perms.get("can_create_campus"):
+        campuses = org.campus_set.filter(status__in=["ok", "pending"])
+    else:
+        campuses = org.campus_set.filter(status__in=["ok"])
+
     dismiss = DoNotRender()
 
     # determine if logo is specified and set the
@@ -1441,6 +1476,7 @@ def view_organization(request, id):
         "networks": networks,
         "facilities": facilities,
         "carriers": carriers,
+        "campuses": campuses,
         "fields": [
             {
                 "name": "aka",
@@ -1624,6 +1660,15 @@ def view_facility(request, id):
 
     dismiss = DoNotRender()
 
+    if facility.campus_id and facility.campus.status == "ok":
+        campus = facility.campus
+        campus_name = campus.name
+        campus_id = campus.id
+    else:
+        campus = None
+        campus_name = None
+        campus_id = 0
+
     data = {
         "title": data.get("name", dismiss),
         "exchanges": exchanges,
@@ -1687,6 +1732,14 @@ def view_facility(request, id):
                 "label": _("Continental Region"),
                 "value": data.get("region_continent", dismiss),
                 "readonly": True,
+            },
+            {
+                "name": "campus",
+                "type": "entity_link",
+                "label": _("Campus"),
+                "value": (campus_name or dismiss),
+                "link": "/%s/%d" % (Campus._handleref.tag, campus_id),
+                "help_text": _("Facility is part of a campus"),
             },
             {
                 "name": "geocode",
@@ -1891,6 +1944,100 @@ def view_carrier(request, id):
 
     return view_component(
         request, "carrier", data, "Carrier", perms=perms, instance=carrier
+    )
+
+
+@ensure_csrf_cookie
+def view_campus(request, id):
+    """
+    View campus data for campus specified by id.
+    """
+
+    try:
+        campus = Campus.objects.get(id=id)
+    except ObjectDoesNotExist:
+        return view_http_error_404(request)
+
+    data = CampusSerializer(campus, context={"user": request.user}).data
+
+    applicator = APIPermissionsApplicator(request)
+
+    if not applicator.is_generating_api_cache:
+        data = applicator.apply(data)
+
+    # find out if user can write to object
+    perms = export_permissions_campus(request.user, campus)
+
+    if not data:
+        return view_http_error_403(request)
+
+    dismiss = DoNotRender()
+
+    facilities = Facility.objects.filter(campus=campus)
+
+    org = data.get("org")
+
+    if campus.org.logo:
+        org["logo"] = campus.org.logo.url
+
+    data = {
+        "id": campus.id,
+        "title": data.get("name", dismiss),
+        "facilities": facilities,
+        "fields": [
+            {
+                "name": "org",
+                "label": _("Organization"),
+                "value": org.get("name", dismiss),
+                "type": "entity_link",
+                "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+            },
+            {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss) or "",
+            },
+            {
+                "name": "name_long",
+                "label": _("Long Name"),
+                "value": data.get("name_long", dismiss) or "",
+            },
+            {
+                "type": "url",
+                "name": "website",
+                "label": _("Company Website"),
+                "edit_label": _("Company Website Override"),
+                "edit_help_text": _(
+                    "If this field is set, it will be displayed on this record. If not, we will display the website from the organization record this is tied to"
+                ),
+                "value": data.get("website", dismiss),
+            },
+            {
+                "readonly": True,
+                "name": "updated",
+                "label": _("Last Updated"),
+                "value": data.get("updated", dismiss),
+            },
+            {
+                "name": "notes",
+                "label": _("Notes"),
+                "help_text": _("Markdown enabled"),
+                "type": "fmt-text",
+                "value": data.get("notes", dismiss),
+            },
+            {
+                "name": "org_logo",
+                "label": "",
+                "value": org.get("logo", dismiss),
+                "type": "image",
+                "readonly": True,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+            },
+        ],
+    }
+
+    return view_component(
+        request, "campus", data, "Campus", perms=perms, instance=campus
     )
 
 

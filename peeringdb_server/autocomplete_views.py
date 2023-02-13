@@ -233,6 +233,22 @@ class FacilityAutocompleteForExchange(FacilityAutocomplete):
         qs = qs.exclude(id__in=fac_ids)
         return qs
 
+class FacilityAutocompleteForOrganization(FacilityAutocomplete):
+
+    """
+    List of facilities under same organization ownership
+    """
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        org_id = self.request.resolver_match.kwargs.get("org_id")
+        fac_ids = [
+            fac.id for fac in Facility.objects.filter(status="ok", org_id=org_id)
+        ]
+        qs = qs.filter(id__in=fac_ids)
+        return qs
+
+
 
 class OrganizationAutocomplete(AutocompleteHTMLResponse):
     def get_queryset(self):

@@ -18,6 +18,7 @@ from peeringdb_server.autocomplete_views import (
     ExchangeAutocompleteJSON,
     FacilityAutocomplete,
     FacilityAutocompleteForExchange,
+    FacilityAutocompleteForOrganization,
     FacilityAutocompleteForNetwork,
     FacilityAutocompleteJSON,
     IXLanAutocomplete,
@@ -36,6 +37,7 @@ from peeringdb_server.import_views import (
     view_import_net_ixf_preview,
 )
 from peeringdb_server.models import (
+    Campus,
     Carrier,
     Facility,
     InternetExchange,
@@ -63,6 +65,7 @@ from peeringdb_server.views import (
     view_affiliate_to_org,
     view_aup,
     view_carrier,
+    view_campus,
     view_close_account,
     view_exchange,
     view_facility,
@@ -179,6 +182,9 @@ urlpatterns = [
     url(r"^%s/(?P<id>\d+)/?$" % Facility.handleref.tag, view_facility, name="fac-view"),
     url(
         r"^%s/(?P<id>\d+)/?$" % Carrier.handleref.tag, view_carrier, name="carrier-view"
+    ),
+    url(
+        r"^%s/(?P<id>\d+)/?$" % Campus.handleref.tag, view_campus, name="campus-view"
     ),
     url(
         r"^%s/(?P<id>\d+)/?$" % Organization.handleref.tag,
@@ -350,6 +356,11 @@ urlpatterns += [
         r"^autocomplete/fac/ix/(?P<ix_id>\d+)/$",
         FacilityAutocompleteForExchange.as_view(),
         name="autocomplete-fac-ix",
+    ),
+    url(
+        r"^autocomplete/fac/org/(?P<org_id>\d+)/$",
+        FacilityAutocompleteForOrganization.as_view(),
+        name="autocomplete-fac-org",
     ),
     url(
         r"^autocomplete/org/$",

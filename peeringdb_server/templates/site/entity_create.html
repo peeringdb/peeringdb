@@ -7,15 +7,22 @@
 <p><strong>{% trans "Only use this if you own the exchange" %}</strong></p>
 {% elif entity_name == "Carrier" %}
 <p><strong>{% trans "Only use this if you own the carrier" %}</strong></p>
+{% elif entity_name == "Campus" %}
+<p><strong>{% trans "Only use this if you own the campus" %}</strong></p>
 {% endif %}
 
 
-{% if entity_name != "Carrier" %}
+{% if entity_name != "Carrier" and entity_name != "Campus" %}
 {% blocktrans trimmed %}
 Add a new {{ entity_name }} to your Organization.
 Note that the newly created {{ entity_name }} will need to be
 approved by PeeringDB staff before it will appear in the search results or the API listings{% endblocktrans %}
-{% else %}
+{% elif entity_name == "Campus" %}
+{% blocktrans trimmed %}
+Add a new {{ entity_name }} to your Organization.
+Note that your campus will not be visible to other users until it has at least <strong>2</strong> facilities in it.
+{% endblocktrans %}
+{% elif entity_name == "Carrier" %}
 {% trans "Add a new carrier to your Organization." %}
 {% endif %}
 

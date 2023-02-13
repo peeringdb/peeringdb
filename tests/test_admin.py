@@ -12,7 +12,9 @@ from django.test import Client, RequestFactory, TestCase
 from django.urls import resolve, reverse
 from django.utils import timezone
 from django_grainy.models import GroupPermission, UserPermission
+from django.db.models.signals import pre_save
 
+from peeringdb_server import signals
 import peeringdb_server.admin as admin
 import peeringdb_server.models as models
 
@@ -37,6 +39,9 @@ class AdminTests(TestCase):
 
         cls.entities = {}
 
+        pre_save.disconnect(signals.campus_status, sender=models.Campus)
+        pre_save.disconnect(signals.set_campus_to_facility, sender=models.Facility)
+
         # set up organizations
         cls.entities["org"] = [
             org
@@ -47,7 +52,7 @@ class AdminTests(TestCase):
         ]
 
         # set up a network,facility and ix under each org
-        for tag in ["ix", "net", "fac", "carrier"]:
+        for tag in ["ix", "net", "fac", "carrier", "campus"]:
             cls.entities[tag] = [
                 models.REFTAG_MAP[tag].objects.create(**cls.entity_data(org, tag))
                 for org in cls.entities["org"]
@@ -771,6 +776,7 @@ class AdminTests(TestCase):
             "net",
             "ixlan",
             "carrier",
+            "campus",
         ]
 
         # we also do auto complete on user relationships

@@ -8,9 +8,11 @@ import traceback
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db.models.signals import pre_save
 from rest_framework.test import APIRequestFactory
 
 import peeringdb_server.models as pdbm
+from peeringdb_server import signals
 import peeringdb_server.rest as pdbr
 from peeringdb_server.renderers import MetaJSONRenderer
 
@@ -39,6 +41,7 @@ VIEWSETS = {
     "netixlan": pdbr.NetworkIXLanViewSet,
     "poc": pdbr.NetworkContactViewSet,
     "carrierfac": pdbr.CarrierFacilityViewSet,
+    "campus": pdbr.CampusViewSet,
 }
 
 settings.DEBUG = False
@@ -75,6 +78,9 @@ class Command(BaseCommand):
         # this forced api responses to be generated without permission
         # checks
         settings.GENERATING_API_CACHE = True
+
+        pre_save.disconnect(signals.campus_status, sender=pdbm.Campus)
+        pre_save.disconnect(signals.set_campus_to_facility, sender=pdbm.Facility)
 
         if only:
             only = only.split(",")
