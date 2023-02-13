@@ -970,8 +970,11 @@ class CampusFacilityMixin:
 
         if campus.org_id == fac.org_id:
             fac.campus_id = campus.id
-            fac.save()
-            campus.save()
+            try:
+                fac.save()
+                campus.save()
+            except ValidationError as inst:
+                raise RestValidationError({"non_field_errors": inst.messages})
 
             return Response(FacilitySerializer(fac).data)
 

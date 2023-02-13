@@ -2012,6 +2012,13 @@ def view_campus(request, id):
                 ),
                 "value": data.get("website", dismiss),
             },
+            {"name": "city", "label": _("City"), "value": data.get("city", dismiss), "readonly": True},
+            {
+                "name": "country",
+                "label": _("Country Code"),
+                "value": data.get("country", dismiss),
+                "readonly": True,
+            },
             {
                 "readonly": True,
                 "name": "updated",
