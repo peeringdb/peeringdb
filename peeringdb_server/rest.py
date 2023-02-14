@@ -1129,8 +1129,6 @@ def view_self_entity(request, data_type):
     query = request.META["QUERY_STRING"]
     supported_tags = ["org", "net", "ix", "fac", "carrier", "campus"]
 
-    print(REFTAG_MAP)
-
     if data_type not in supported_tags:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
