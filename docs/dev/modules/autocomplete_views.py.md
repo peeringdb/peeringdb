@@ -1,4 +1,4 @@
-Generated from autocomplete_views.py on 2023-01-17 22:33:48.360745
+Generated from autocomplete_views.py on 2023-02-14 15:33:37.135106
 
 # peeringdb_server.autocomplete_views
 
@@ -180,6 +180,24 @@ Filter the queryset with GET['q'].
 
 ---
 
+## FacilityAutocompleteForOrganization
+
+```
+FacilityAutocompleteForOrganization(peeringdb_server.autocomplete_views.FacilityAutocomplete)
+```
+
+List of facilities under same organization ownership
+
+
+### Methods
+
+#### get_queryset
+`def get_queryset(self)`
+
+Filter the queryset with GET['q'].
+
+---
+
 ## FacilityAutocompleteJSON
 
 ```
@@ -297,3 +315,4 @@ ToolHistory(peeringdb_server.autocomplete_views.CommandLineToolHistoryAutocomple
 ```
 
 Autocomplete for command line tools that were run via the admin ui.
+

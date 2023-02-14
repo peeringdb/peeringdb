@@ -1,4 +1,4 @@
-Generated from models.py on 2023-01-17 22:33:48.360745
+Generated from models.py on 2023-02-14 15:33:37.135106
 
 # peeringdb_server.models
 
@@ -77,6 +77,51 @@ if any fail the permission check False is returned.
 
 ---
 # Classes
+---
+
+## Campus
+
+```
+Campus(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.CampusBase)
+```
+
+Describes a peeringdb campus
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- city (`@property`): Return city of related facility object
+- country (`@property`): Return country of related facility object
+- grainy_namespace (`@property`): None
+- latitude (`@property`): Return latitude of related facility object
+- longitude (`@property`): Return longitude of related facility object
+- search_result_name (`@property`): This will be the name displayed for quick search matches
+of this entity.
+- state (`@property`): Return state of related facility object
+- view_url (`@property`): Return the URL to this campus's web view.
+- zipcode (`@property`): Return zipcode of related facility object
+
+### Class Methods
+
+#### related_to_facility
+`def related_to_facility(cls, value=None, filt=None, field=fac_set__id, qset=None)`
+
+Filter queryset of campus objects related to facilities with name match
+in fac_set__id according to filter.
+
+Relationship through facility.
+
+---
+
+### Methods
+
+#### save
+`def save(self, *args, **kwargs)`
+
+Save the current instance
+
 ---
 
 ## Carrier
@@ -2012,6 +2057,7 @@ has been added to the 'user' user group.
 - organizations (`@property`): Returns all organizations this user is a member or admin of.
 - pending_affiliation_requests (`@property`): Returns the currently pending user -> org affiliation
 requests for this user.
+- self_entity_org (`@property`): None
 
 ### Methods
 

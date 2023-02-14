@@ -1,4 +1,4 @@
-Generated from signals.py on 2023-01-17 22:33:48.360745
+Generated from signals.py on 2023-02-14 15:33:37.135106
 
 # peeringdb_server.signals
 
@@ -23,6 +23,13 @@ Mark address model objects for geocode sync if one of the address
 fields is updated.
 
 ---
+## campus_status
+`def campus_status(sender, instance=None, **kwargs)`
+
+Whenever a campus is saved, set the status of
+the campus object based on link facilities
+
+---
 ## new_user_to_guests
 `def new_user_to_guests(request, user, sociallogin=None, **kwargs)`
 
@@ -45,6 +52,14 @@ usergroups tied to the organization.
 
 Create a user group for an organization when that
 organization is created.
+
+---
+## set_campus_to_facility
+`def set_campus_to_facility(sender, instance=None, **kwargs)`
+
+Whenever a facility is saved, check the distance between
+two facilities and validate if it falls within a CAMPUS_MAX_DISTANCE,
+also check if latitude and longitude are in the facility or not
 
 ---
 ## uoar_creation

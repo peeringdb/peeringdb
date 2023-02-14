@@ -1,4 +1,4 @@
-Generated from rest.py on 2023-01-17 22:33:48.360745
+Generated from rest.py on 2023-02-14 15:33:37.135106
 
 # peeringdb_server.rest
 
@@ -23,6 +23,12 @@ The peeringdb REST API is implemented through django-rest-framework.
 `def model_view_set(model, methods=None, mixins=None)`
 
 Shortcut for peeringdb models to generate viewset and register in the API urls.
+
+---
+## view_self_entity
+`def view_self_entity(request, *args, **kwargs)`
+
+This API View redirect self entity API to the corresponding url
 
 ---
 # Classes
@@ -79,6 +85,43 @@ Return `True` if permission is granted, `False` otherwise.
 
 ---
 
+## CampusFacilityMixin
+
+```
+CampusFacilityMixin(builtins.object)
+```
+
+Custom API endpoints for the campus-facility
+object, exposed to /api/campus/{campus_id}/add-facility/{fac_id}
+and /api/campus/{campus_id}/remove-facility/{fac_id}
+
+
+### Methods
+
+#### add_facility
+`def add_facility(self, request, *args, **kwargs)`
+
+Allows the org to approve a campus listing at their facility
+
+---
+#### remove_facility
+`def remove_facility(self, request, *args, **kwargs)`
+
+Allows the org to reject a campus listing at their facility
+
+---
+
+## CampusViewSet
+
+```
+CampusViewSet(peeringdb_server.rest.CampusFacilityMixin, peeringdb_server.rest.ModelViewSet)
+```
+
+Custom API endpoints for the campus-facility
+object, exposed to /api/campus/{campus_id}/add-facility/{fac_id}
+and /api/campus/{campus_id}/remove-facility/{fac_id}
+
+
 ## CarrierFacilityMixin
 
 ```
@@ -92,13 +135,13 @@ object, exposed to api/carrierfac/{id}/{action}
 ### Methods
 
 #### approve
-`def approve(self, request, *args, **kwargs)`
+`def approve(self, request, pk, *args, **kwargs)`
 
 Allows the org to approve a carrier listing at their facility
 
 ---
 #### reject
-`def reject(self, request, *args, **kwargs)`
+`def reject(self, request, pk, *args, **kwargs)`
 
 Allows the org to reject a carrier listing at their facility
 

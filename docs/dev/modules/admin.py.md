@@ -1,4 +1,4 @@
-Generated from admin.py on 2023-01-17 22:33:48.733266
+Generated from admin.py on 2023-02-14 15:33:37.171081
 
 # peeringdb_server.admin
 
@@ -40,6 +40,48 @@ target <Organization> merge organizations with this organization
 
 ---
 # Classes
+---
+
+## CampusAdmin
+
+```
+CampusAdmin(peeringdb_server.admin.SoftDeleteAdmin)
+```
+
+Soft delete admin.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## CampusAdminForm
+
+```
+CampusAdminForm(peeringdb_server.admin.StatusForm)
+```
+
+The main implementation of all the Form logic. Note that this class is
+different than Form. See the comments by the Form class for more info. Any
+improvements to the form API should be made to this class, not to the Form
+class.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+### Methods
+
+#### \__init__
+`def __init__(self, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
 ---
 
 ## CarrierAdmin
@@ -1597,7 +1639,7 @@ association with the field named '__all__'.
 UserPermission(peeringdb_server.models.User)
 ```
 
-UserPermission(id, password, last_login, is_superuser, username, email, first_name, last_name, is_staff, is_active, date_joined, created, updated, status, locale, flagged_for_deletion, notified_for_deletion, never_flag_for_deletion)
+UserPermission(id, password, last_login, is_superuser, username, email, first_name, last_name, is_staff, is_active, date_joined, created, updated, status, primary_org, locale, flagged_for_deletion, notified_for_deletion, never_flag_for_deletion)
 
 
 ## UserPermissionAdmin

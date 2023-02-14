@@ -1,4 +1,4 @@
-Generated from views.py on 2023-01-17 22:33:48.360745
+Generated from views.py on 2023-02-14 15:33:37.135106
 
 # peeringdb_server.views
 
@@ -35,6 +35,13 @@ Cancel a user's affiliation request.
 ---
 ## export_permissions
 `def export_permissions(user, entity)`
+
+Return dict of permission bools for the specified user and entity
+to be used in template context.
+
+---
+## export_permissions_campus
+`def export_permissions_campus(user, entity)`
 
 Return dict of permission bools for the specified user and entity
 to be used in template context.
@@ -109,6 +116,12 @@ an ASN they provide.
 `def view_aup(request)`
 
 Render page containing acceptable use policy.
+
+---
+## view_campus
+`def view_campus(request, id)`
+
+View campus data for campus specified by id.
 
 ---
 ## view_carrier
@@ -188,6 +201,18 @@ User registration page view.
 
 Render the form that allows users to request ownership
 to an unclaimed organization.
+
+---
+## view_self_entity
+`def view_self_entity(request, *args, **kwargs)`
+
+Redirect self entity API to the corresponding url
+
+---
+## view_set_user_org
+`def view_set_user_org(request, *args, **kwargs)`
+
+Sets primary organization of the user
 
 ---
 ## view_simple_content
