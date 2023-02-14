@@ -104,13 +104,13 @@ class BaseSchema(AutoSchema):
             elif "as_set" in path:
                 return f"{op_type} as-set"
             elif "campus" in path and "add-facility" in path:
-                return f"add facility to campus"
+                return "add facility to campus"
             elif "campus" in path and "remove-facility" in path:
-                return f"remove facility from campus"
+                return "remove facility from campus"
             elif "carrierfac" in path and "approve" in path:
-                return f"approve facility presence at carrier"
+                return "approve facility presence at carrier"
             elif "carrierfac" in path and "reject" in path:
-                return f"reject facility presence at carrier"
+                return "reject facility presence at carrier"
 
             return f"{op_type} {model.HandleRef.tag}"
 
@@ -137,7 +137,7 @@ class BaseSchema(AutoSchema):
         # attempt to relate a serializer and a model class to the operation
 
         serializer, model = self.get_classes(*args)
-        if args[0] == '/api/{var}/self':
+        if args[0] == "/api/{var}/self":
             return {}
 
         # Override the the requestBody with components instead of using reference
@@ -148,7 +148,6 @@ class BaseSchema(AutoSchema):
         ]
         # Override schema for create, update and patch operations
         if components and op_type in ["create", "update", "patch"]:
-
             for content_type in content_types:
                 op_dict["requestBody"]["content"][content_type]["schema"] = components
 
@@ -161,8 +160,6 @@ class BaseSchema(AutoSchema):
             "reject facility presence at carrier",
         ]:
             op_dict["requestBody"]["content"][content_type]["schema"] = None
-
-
 
         # if we were able to get a model we want to include the markdown documentation
         # for the model type in the openapi description field (docs/api/obj_*.md)
