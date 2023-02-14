@@ -103,6 +103,14 @@ class BaseSchema(AutoSchema):
                 return f"{op_type} as-set by asn"
             elif "as_set" in path:
                 return f"{op_type} as-set"
+            elif "campus" in path and "add-facility" in path:
+                return f"add facility to campus"
+            elif "campus" in path and "remove-facility" in path:
+                return f"remove facility from campus"
+            elif "carrierfac" in path and "approve" in path:
+                return f"approve facility presence at carrier"
+            elif "carrierfac" in path and "reject" in path:
+                return f"reject facility presence at carrier"
 
             return f"{op_type} {model.HandleRef.tag}"
 
@@ -129,6 +137,8 @@ class BaseSchema(AutoSchema):
         # attempt to relate a serializer and a model class to the operation
 
         serializer, model = self.get_classes(*args)
+        if args[0] == '/api/{var}/self':
+            return {}
 
         # Override the the requestBody with components instead of using reference
         components = super().get_components(*args).get(model.__name__)
@@ -138,8 +148,21 @@ class BaseSchema(AutoSchema):
         ]
         # Override schema for create, update and patch operations
         if components and op_type in ["create", "update", "patch"]:
+
             for content_type in content_types:
                 op_dict["requestBody"]["content"][content_type]["schema"] = components
+
+        op_id = op_dict.get("operationId")
+
+        if op_id in [
+            "add facility to campus",
+            "remove facility from campus",
+            "approve facility presence at carrier",
+            "reject facility presence at carrier",
+        ]:
+            op_dict["requestBody"]["content"][content_type]["schema"] = None
+
+
 
         # if we were able to get a model we want to include the markdown documentation
         # for the model type in the openapi description field (docs/api/obj_*.md)

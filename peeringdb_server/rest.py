@@ -35,7 +35,7 @@ from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import PermissionDenied
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, schema, permission_classes
 from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
@@ -1120,6 +1120,7 @@ router.register("as_set", ASSetViewSet, basename="as_set")
 
 
 @api_view(["GET"])
+@schema(None)
 @permission_classes([ModelViewSetPermissions, BasicAuthMFABlockWrite])
 def view_self_entity(request, data_type):
     """
