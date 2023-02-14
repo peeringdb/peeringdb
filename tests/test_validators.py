@@ -220,7 +220,6 @@ def test_validate_irr_as_set(value, validated):
 
 @pytest.mark.django_db
 def test_validate_phonenumber():
-
     # test standalone validator
 
     validate_phonenumber("+1 206 555 0199")
@@ -323,7 +322,6 @@ def test_validate_ixpfx_ixlan_status_match():
     DATA_QUALITY_MAX_SPEED=100,
 )
 def test_bypass_validation():
-
     User = get_user_model()
 
     superuser = User.objects.create_user(

@@ -34,7 +34,6 @@ def transfer_oauth_applications(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0084_data_change_watchlist"),
     ]

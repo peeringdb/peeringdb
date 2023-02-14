@@ -182,7 +182,6 @@ def _set_bool(name, value, context):
 
 
 def _set_list(name, value, context):
-
     """
     For list types we split the env variable value using a comma as a delimiter
     """

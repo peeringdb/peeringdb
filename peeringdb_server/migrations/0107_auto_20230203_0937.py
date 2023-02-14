@@ -10,7 +10,6 @@ import peeringdb_server.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0106_user_primary_org"),
     ]

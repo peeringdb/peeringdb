@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0056_add_last_updated_fields_to_network"),
     ]

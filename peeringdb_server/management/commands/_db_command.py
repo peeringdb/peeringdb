@@ -30,7 +30,6 @@ class DBCommand(BaseCommand):
         print("".join(["-" for i in range(0, 80)]))
 
     def handle(self, *args, **options):
-
         args = list(args)
 
         try:

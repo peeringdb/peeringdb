@@ -36,7 +36,6 @@ class Command(PeeringDBBaseCommand):
         super().add_arguments(parser)
 
     def handle(self, *args, **options):
-
         model = None
         exclude = options.get("exclude")
         self.commit = options.get("commit")
@@ -89,7 +88,6 @@ class Command(PeeringDBBaseCommand):
         # validate
 
         for item in q:
-
             try:
                 item.full_clean()
 
@@ -98,7 +96,6 @@ class Command(PeeringDBBaseCommand):
                 results.append([item.pk, True])
 
             except ValidationError as exc:
-
                 # if the provided field name did not contribute to the validation
                 # issues it is counted as valid
 
@@ -116,7 +113,6 @@ class Command(PeeringDBBaseCommand):
         # tally results
 
         for pk, result in results:
-
             # first row are header columns
 
             if pk == "id":
@@ -131,7 +127,6 @@ class Command(PeeringDBBaseCommand):
                 invalid_count += 1
 
         if self.commit:
-
             # Write the CSV output to django-cache
 
             result_csv = StringIO()
@@ -145,12 +140,10 @@ class Command(PeeringDBBaseCommand):
             )
 
         if options.get("display_csv"):
-
             # write the CSV output to console
 
             self.log("\n".join([f"{r[0]},{r[1]}" for r in results]))
         if self.commit and not options.get("display_csv"):
-
             # write completion summary
 
             self.log(

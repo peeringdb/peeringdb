@@ -145,7 +145,6 @@ def facilities(request):
 
 
 def enum(request, name):
-
     if name.upper() not in [
         "RATIOS",
         "RATIOS_TRUNC",
@@ -255,7 +254,7 @@ def languages(request):
     from django.conf import settings
 
     locales = []
-    for (id, name) in settings.LANGUAGES:
+    for id, name in settings.LANGUAGES:
         li = translation.get_language_info(id)
         locales.append(
             {"id": id, "name": f"{li['name_translated']} ({li['name_local']})"}

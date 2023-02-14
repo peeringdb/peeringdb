@@ -12,7 +12,6 @@ _current_request = contextvars.ContextVar("current_request")
 
 @contextmanager
 def current_request(request=None):
-
     """
     Will yield the current request, if there is one.
 

@@ -10,7 +10,6 @@ from .util import ClientCase
 
 
 class TestAPIClientCompat(ClientCase):
-
     expected_unknown_auth_method_err_str = "Unknown authorization method"
     expected_malformed_auth_header_err_str = "Malformed authorization header"
 
@@ -102,7 +101,6 @@ class TestAPIClientCompat(ClientCase):
         self._compat(None, None, False)
 
     def test_auth_header(self):
-
         # this should return 400 with an unknown authorization method message
         r = self.client.get("/api/net", HTTP_AUTHORIZATION="apikey deadbeef")
         content = json.loads(r.content)

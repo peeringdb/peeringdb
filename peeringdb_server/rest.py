@@ -119,7 +119,6 @@ class DataParseException(DataException):
 
 
 class RestRouter(routers.DefaultRouter):
-
     schema_title = "PeeringDB API"
     schema_url = ""
     schema_renderers = None
@@ -173,7 +172,6 @@ class RestRouter(routers.DefaultRouter):
 
 
 def pdb_exception_handler(exc):
-
     print(traceback.format_exc())
 
     return exception_handler(exc)
@@ -339,7 +337,6 @@ class BasicAuthMFABlockWrite(permissions.BasePermission):
     message = "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
 
     def has_permission(self, request, view):
-
         # only check write operations
 
         if request.method not in ["POST", "PUT", "DELETE", "PATCH"]:
@@ -359,7 +356,6 @@ class BasicAuthMFABlockWrite(permissions.BasePermission):
 
         for device in devices_for_user(request.user):
             if isinstance(device, SecurityKeyDevice):
-
                 # security keys are already checked above, and a user will always
                 # have one instance of SecurityKeyDevice once they have
                 # added a security key, even after they have removed all their
@@ -367,7 +363,6 @@ class BasicAuthMFABlockWrite(permissions.BasePermission):
 
                 continue
             else:
-
                 # topt device found, block operation
 
                 return False
@@ -385,7 +380,6 @@ class InactiveKeyBlock(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-
         permission_holder = get_permission_holder_from_request(request)
 
         if not isinstance(permission_holder, (UserAPIKey, OrganizationAPIKey)):
@@ -488,7 +482,6 @@ class ModelViewSet(viewsets.ModelViewSet):
         query_params = self.request.query_params
 
         for k, v in list(self.request.query_params.items()):
-
             if k == "q":
                 continue
 
@@ -879,7 +872,6 @@ class InternetExchangeMixin:
     @transaction.atomic
     @action(detail=True, methods=["POST"], throttle_classes=[IXFImportThrottle])
     def request_ixf_import(self, request, *args, **kwargs):
-
         """
         Allows managers of an ix to request an ix-f import.
         (#779)
@@ -910,7 +902,6 @@ class CarrierFacilityMixin:
     @transaction.atomic
     @action(detail=True, methods=["POST"])
     def approve(self, request, pk, *args, **kwargs):
-
         """
         Allows the org to approve a carrier listing at their facility
         """
@@ -928,7 +919,6 @@ class CarrierFacilityMixin:
     @transaction.atomic
     @action(detail=True, methods=["POST"])
     def reject(self, request, pk, *args, **kwargs):
-
         """
         Allows the org to reject a carrier listing at their facility
         """
@@ -956,7 +946,6 @@ class CampusFacilityMixin:
     @transaction.atomic
     @action(detail=True, methods=["POST"], url_path=r"add-facility/(?P<fac_id>[^/.]+)")
     def add_facility(self, request, *args, **kwargs):
-
         """
         Allows the org to approve a campus listing at their facility
         """
@@ -985,7 +974,6 @@ class CampusFacilityMixin:
         detail=True, methods=["post"], url_path=r"remove-facility/(?P<fac_id>[^/.]+)"
     )
     def remove_facility(self, request, *args, **kwargs):
-
         """
         Allows the org to reject a campus listing at their facility
         """

@@ -33,7 +33,6 @@ def save_key_permissions(org, key, perms):
     grainy_perms = {}
 
     for id, permissions in list(perms.items()):
-
         if not permissions & PERM_READ:
             permissions = permissions | PERM_READ
 

@@ -2,7 +2,6 @@ from django.db import migrations
 
 
 def create_email_instances(apps, schema_editor):
-
     users = apps.get_model("peeringdb_server", "User")
     emailAddresses = apps.get_model("account", "EmailAddress")
     all_emails = emailAddresses.objects.all()
@@ -17,7 +16,6 @@ def create_email_instances(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0014_clt_description"),
     ]

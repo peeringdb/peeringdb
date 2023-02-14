@@ -4,7 +4,6 @@ from django.db import migrations, transaction
 
 
 def forward(apps, schema_editor):
-
     User = apps.get_model("peeringdb_server", "User")
     EmailAddress = apps.get_model("account", "EmailAddress")
 
@@ -25,7 +24,6 @@ def forward(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0091_alter_user_email"),
     ]

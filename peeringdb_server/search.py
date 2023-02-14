@@ -180,7 +180,6 @@ def search(term, autocomplete=False):
 
 
 def categorize(sq, result, pk_map):
-
     if getattr(sq, "result_name", None):
         # main entity
         tag = sq.model.HandleRef.tag
@@ -206,7 +205,6 @@ def add_secondary_entries(sq, result, pk_map):
 
 
 def append_result(tag, pk, name, org_id, sub_name, result, pk_map):
-
     if pk in pk_map[tag]:
         return
 

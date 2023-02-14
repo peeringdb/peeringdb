@@ -21,7 +21,6 @@ from .util import ClientCase
 
 
 def save_netixlan(netixlan):
-
     with reversion.create_revision():
         netixlan.save()
 
@@ -65,7 +64,6 @@ def _datachange_objects():
 
 @pytest.mark.django_db
 def test_notification_queue_push(datachange_objects):
-
     assert DataChangeNotificationQueue.push(
         "ixf",
         "add",
@@ -77,7 +75,6 @@ def test_notification_queue_push(datachange_objects):
 
 @pytest.mark.django_db
 def test_notification_queue_push_no_watcher(datachange_objects):
-
     DataChangeWatchedObject.objects.all().delete()
 
     assert not DataChangeNotificationQueue.push(
@@ -136,7 +133,6 @@ def test_notification_queue_properties(datachange_objects):
 
 @pytest.mark.django_db
 def test_watched_object_cleanup_user_perms(datachange_objects):
-
     assert DataChangeWatchedObject.objects.count() == 1
 
     DataChangeWatchedObject.cleanup()
@@ -156,7 +152,6 @@ def test_watched_object_cleanup_user_perms(datachange_objects):
 
 @pytest.mark.django_db
 def test_watched_object_cleanup_obj_deleted(datachange_objects):
-
     assert DataChangeWatchedObject.objects.count() == 1
 
     DataChangeWatchedObject.cleanup()
@@ -174,7 +169,6 @@ def test_watched_object_cleanup_obj_deleted(datachange_objects):
 
 @pytest.mark.django_db
 def test_watched_object_collect(datachange_objects):
-
     user = datachange_objects["user"]
     netixlan = datachange_objects["netixlan"]
     watched = datachange_objects["watched_object"]
@@ -235,7 +229,6 @@ def test_watched_object_collect(datachange_objects):
 @pytest.mark.django_db
 @pytest.mark.parametrize("emails", [(True,), (False,)])
 def test_command(datachange_objects, emails):
-
     settings.DATA_CHANGE_SEND_EMAILS = emails
 
     user = datachange_objects["user"]

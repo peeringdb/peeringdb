@@ -12,7 +12,6 @@ from peeringdb_server.mock import Mock
 
 
 class Command(BaseCommand):
-
     help = "Will create test data. This will wipe all data locally, so use with caution. This command is NOT to be run on production or beta environments."
 
     def add_arguments(self, parser):

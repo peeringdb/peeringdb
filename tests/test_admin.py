@@ -35,7 +35,6 @@ class AdminTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-
         cls.entities = {}
 
         # set up organizations
@@ -423,7 +422,6 @@ class AdminTests(TestCase):
         self.assertEqual(str(self.entities["netixlan"][2].ipaddr4), "207.41.111.39")
 
     def test_netixlan_inline(self):
-
         """
         test that inline netixlan admin forms can handle blank
         values in ipaddress fields (#644)
@@ -447,7 +445,6 @@ class AdminTests(TestCase):
         client.force_login(self.admin_user)
 
         def post_data(ipaddr4, ipaddr6):
-
             """
             helper function that builds data to send to
             the ixlan django admin form with inline
@@ -690,7 +687,6 @@ class AdminTests(TestCase):
                 args = None
 
                 if op == "change":
-
                     # change op required object id
 
                     args = (cls.objects.all().first().id,)
@@ -699,7 +695,6 @@ class AdminTests(TestCase):
                         continue
 
                 elif op == "add":
-
                     if cls in ignore_add:
                         continue
 

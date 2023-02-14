@@ -12,7 +12,6 @@ def closest_number(numbers, value):
 
 
 def normalize(apps, schema_editor):
-
     IXLan = apps.get_model("peeringdb_server", "IXLan")
 
     values = [1500, 9000]
@@ -26,7 +25,6 @@ def normalize(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0103_mtu_default"),
     ]

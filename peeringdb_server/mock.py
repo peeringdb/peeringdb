@@ -95,7 +95,6 @@ class Mock:
 
         # then we set the other fields to mock values provided by this class
         for field in model._meta.get_fields():
-
             # field value specified alrady, skip
             if field.name in data:
                 continue

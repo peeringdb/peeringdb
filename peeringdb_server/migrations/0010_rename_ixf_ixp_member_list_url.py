@@ -5,7 +5,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0009_rename_json_member_list_field"),
     ]

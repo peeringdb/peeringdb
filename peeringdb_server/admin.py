@@ -187,7 +187,6 @@ class SponsorshipConflict(ValueError):
 
 
 def merge_organizations_handle_sponsors(source_orgs, target_org):
-
     target_sponsor = target_org.active_or_pending_sponsorship
 
     source_sponsors = {}
@@ -203,7 +202,6 @@ def merge_organizations_handle_sponsors(source_orgs, target_org):
     # find if any of the source orgs have a sponsorship that conflicts
 
     for source_sponsor, _orgs in source_sponsors.items():
-
         # source sponsorship is same as target sponsorship do nothing
 
         if target_sponsor and source_sponsor != target_sponsor:
@@ -222,7 +220,6 @@ def merge_organizations_handle_sponsors(source_orgs, target_org):
         raise SponsorshipConflict(list(set([target_org] + conflicting_orgs)))
 
     for source_sponsor, _orgs in source_sponsors.items():
-
         if target_sponsor == source_sponsor:
             continue
 
@@ -230,7 +227,6 @@ def merge_organizations_handle_sponsors(source_orgs, target_org):
 
 
 def merge_organizations_transfer_sponsor(sponsor, source_orgs, target_org):
-
     if not sponsor:
         return
 
@@ -275,7 +271,6 @@ def merge_organizations(targets, target, request):
     try:
         sponsorship_moved = merge_organizations_handle_sponsors(targets, target)
     except SponsorshipConflict as exc:
-
         mail_sponsorship_admin_merge_conflict(exc.orgs, target)
         return {
             "error": _(
@@ -284,7 +279,6 @@ def merge_organizations(targets, target, request):
         }
 
     for org in targets:
-
         merge = OrganizationMerge.objects.create(from_org=org, to_org=target)
         source_admins = []
 
@@ -307,7 +301,6 @@ def merge_organizations(targets, target, request):
 
         # move users
         for user in org.usergroup.user_set.all():
-
             # Skip user migration if user is already in the admin group
             if user in target.admin_usergroup.user_set.all():
                 continue
@@ -368,7 +361,6 @@ class StatusForm(baseForms.ModelForm):
                 self.fields["status"].choices = [("ok", "ok"), ("deleted", "deleted")]
 
     def clean(self):
-
         """
         Catches and raises validation errors where an object
         is to be soft-deleted but cannot be because it is currently
@@ -439,9 +431,7 @@ rollback.short_description = _("ROLLBACK")
 @transaction.atomic
 @reversion.create_revision()
 def soft_delete(modeladmin, request, queryset):
-
     if request.POST.get("delete"):
-
         if request.user:
             reversion.set_user(request.user)
 
@@ -461,7 +451,6 @@ def soft_delete(modeladmin, request, queryset):
                 messages.error(request, _("Protected object '{}': {}").format(row, err))
                 continue
     else:
-
         context = dict(
             admin.site.each_context(request),
             deletable_objects=queryset,
@@ -526,13 +515,11 @@ class CustomResultLengthAdmin:
         return list_filter + (CustomResultLengthFilter,)
 
     def get_changelist(self, request, **kwargs):
-
         # handle the customizable result length filter
         # in the django-admin change list listings (#587)
         #
         # this is accomplished through the `sz` url parameter
         if "sz" in request.GET:
-
             try:
                 sz = request.GET.get("sz")
                 # all currently translates to a max of 100k entries
@@ -918,7 +905,6 @@ class IXLanAdmin(SoftDeleteAdmin):
 
 
 class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
-
     model = IXLanIXFMemberImportLogEntry
     fields = (
         "netixlan",
@@ -1376,7 +1362,6 @@ class FacilityAdminForm(StatusForm):
 
 
 class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-
     list_display = ("name", "org", "city", "country", "status", "created", "updated")
     ordering = ("-created",)
     list_filter = (StatusFilter,)
@@ -1437,7 +1422,6 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
 
 
 class NetworkAdminForm(StatusForm):
-
     # set initial values on info_prefixes4 and 6 to 0
     # this streamlines the process of adding a network through
     # the django admin controlpanel (#289)
@@ -1745,7 +1729,6 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions, ProtectedDeleteAd
 
 
 class UserCreationForm(forms.UserCreationForm):
-
     # user creation through django-admin doesnt need
     # captcha checking
 
@@ -1769,7 +1752,6 @@ class UserCreationForm(forms.UserCreationForm):
 
 class UserGroupForm(UserChangeForm):
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
         # "groups" is oddly missing from the test-environment
@@ -1895,7 +1877,6 @@ class UserPermission(User):
 
 
 class UserPermissionAdmin(UserAdmin):
-
     search_fields = ("username",)
 
     inlines = (
@@ -1945,7 +1926,6 @@ class UserPermissionAdmin(UserAdmin):
         pass
 
     def save_formset(self, request, form, formset, change):
-
         # get user
         user = None
         for inline_form in formset.forms:
@@ -2001,7 +1981,6 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         return False
 
     def download(self, obj):
-
         tool = acltools.get_tool_from_data({"tool": obj.tool})
 
         if obj.status != "done" or not tool.download_link():
@@ -2431,7 +2410,6 @@ class IXFMemberDataAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin)
 
 
 class EnvironmentSettingForm(baseForms.ModelForm):
-
     value = baseForms.CharField(required=True, label=_("Value"))
 
     class Meta:

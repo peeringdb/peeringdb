@@ -7,7 +7,6 @@ class Command(BaseCommand):
     help = "Cleanup deleted Organization objects"
 
     def add_arguments(self, parser):
-
         parser.add_argument(
             "--commit",
             action="store_true",
@@ -21,7 +20,6 @@ class Command(BaseCommand):
             self.stdout.write(msg)
 
     def handle(self, *args, **options):
-
         self.commit = options.get("commit")
 
         orgs = Organization.objects.filter(status="deleted")

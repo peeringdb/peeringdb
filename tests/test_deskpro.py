@@ -28,7 +28,6 @@ def admin_user():
 
 @pytest.mark.django_db
 def test_deskpro_person_noname(admin_user):
-
     deskpro_client = DeskProClient("", "")
 
     payload = deskpro_client.update_person_payload(
@@ -40,7 +39,6 @@ def test_deskpro_person_noname(admin_user):
 
 @pytest.mark.django_db
 def test_deskpro_person_email(admin_user):
-
     deskpro_client = DeskProClient("", "")
 
     admin_user.first_name = "Django"
@@ -56,7 +54,6 @@ def test_deskpro_person_email(admin_user):
 
 @pytest.mark.django_db
 def test_deskpro_person(admin_user):
-
     deskpro_client = DeskProClient("", "")
 
     admin_user.first_name = "Django"

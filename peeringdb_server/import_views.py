@@ -56,7 +56,6 @@ def error_response(msg, status=400):
 )
 @enable_basic_auth
 def view_import_ixlan_ixf_preview(request, ixlan_id):
-
     # check if request was blocked by rate limiting
     was_limited = getattr(request, "limited", False)
     if was_limited:
@@ -84,7 +83,6 @@ def view_import_ixlan_ixf_preview(request, ixlan_id):
 )
 @enable_basic_auth
 def view_import_net_ixf_postmortem(request, net_id):
-
     # check if request was blocked by rate limiting
 
     was_limited = getattr(request, "limited", False)
@@ -134,7 +132,6 @@ def view_import_net_ixf_postmortem(request, net_id):
 )
 @enable_basic_auth
 def view_import_net_ixf_preview(request, net_id):
-
     # check if request was blocked by rate limiting
     was_limited = getattr(request, "limited", False)
     if was_limited:

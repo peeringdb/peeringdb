@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0003_add_lat_lon_to_address_models"),
     ]

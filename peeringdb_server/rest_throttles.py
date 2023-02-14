@@ -71,7 +71,6 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
         available_requests = self.num_requests - len(self.history) + 1
         if available_requests < 1:
-
             # a negative/zero value only occurs when rate limit has been adjusted
             # while already being tracked for the requesting client
 
@@ -93,7 +92,6 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         return remaining_duration / float(available_requests)
 
     def _allow_request_admin_auth(self, request, view, ident_prefix=""):
-
         self.ident = f"{ident_prefix}admin:{self.user.pk}"
         self.scope = self.scope_admin
         self.rate = self.get_rate()
@@ -118,7 +116,6 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         return allowed
 
     def _allow_request_org_auth(self, request, view, ident_prefix=""):
-
         self.ident = f"{ident_prefix}org:{self.org_key.org_id}"
         self.scope = self.scope_org
         self.rate = self.get_rate()
@@ -132,7 +129,6 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         return allowed
 
     def _allow_request_anon(self, request, view, ident_prefix=""):
-
         # first, check ip-address throttling
         # this is the default throttling mechanism for SimpleRateThrottle
         # so calling `get_ident` will give us the request ip-address
@@ -157,7 +153,6 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         # ip is allowed as well.
 
         if self.check_cidr(request):
-
             ip = ipaddress.ip_address(ip_address)
 
             if ip.version == 4:
@@ -188,7 +183,6 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         return allowed
 
     def allow_request(self, request, view):
-
         # skip rate throttling for the api-cache generate process
 
         if getattr(settings, "GENERATING_API_CACHE", False):
@@ -199,11 +193,9 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         ident_prefix = self.ident_prefix(request)
 
         if self.user and self.user.is_superuser:
-
             # admin user
 
             if self.check_admin(request):
-
                 return self._allow_request_admin_auth(request, view, ident_prefix)
 
             # user is admin and throttling for admins is not enabled past
@@ -212,13 +204,11 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
             return True
 
         if self.user and self.check_user(request):
-
             # authenticated user
 
             return self._allow_request_user_auth(request, view, ident_prefix)
 
         if self.org_key and self.check_org(request):
-
             # organization
 
             return self._allow_request_org_auth(request, view, ident_prefix)
@@ -253,7 +243,6 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         return super().get_rate()
 
     def get_cache_key(self, request, view):
-
         cache_key = self.cache_format % {"scope": self.scope, "ident": self.ident}
         return cache_key
 
@@ -272,7 +261,6 @@ class FilterThrottle(throttling.SimpleRateThrottle):
         pass
 
     def allow_request(self, request, view):
-
         # If the parameter specified in cls.filter_name
         # is set in request parameters, set the scope
         # accordingly
@@ -332,7 +320,6 @@ class FilterThrottle(throttling.SimpleRateThrottle):
         return super().allow_request(request, view)
 
     def get_cache_key(self, request, view):
-
         if self.org_key:
             ident = f"org-key:{self.org_key.prefix}"
         elif self.user and self.user.is_authenticated:

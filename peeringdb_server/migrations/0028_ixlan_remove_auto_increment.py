@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0027_never_via_route_servers"),
     ]

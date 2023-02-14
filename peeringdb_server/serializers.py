@@ -151,7 +151,6 @@ class GeocodeSerializerMixin:
         """
 
         if "state" in filters and ("country" in filters or "country__in" in filters):
-
             # in the case where country__in is provided as a country filter
             # there is no sensible way for us determine which country to use for the
             # state normalization, for now simply use the first country in the list
@@ -174,7 +173,6 @@ class GeocodeSerializerMixin:
         """
 
         for f in AddressSerializer.Meta.fields:
-
             # We do not need to sync if only the country is defined
             if f == "country":
                 continue
@@ -339,34 +337,29 @@ def queryable_field_xl(fld):
     """
 
     if re.match("^.+[^_]_id$", fld):
-
         # if field name is {rel}_id strip the `_id` suffix
 
         fld = fld[:-3]
 
     if fld == "fac":
-
         # if field name is `fac` rename to `facility`
         # since the model relationship field is called `facility`
 
         return "facility"
 
     elif fld == "net":
-
         # if field name is `net` rename to `network`
         # since the model relationship field is called `network`
 
         return "network"
 
     elif re.match("net_(.+)", fld):
-
         # if field name starts with `net_` rename to `network_`
         # since the model relationship field is called `network`
 
         return re.sub("^net_", "network_", fld)
 
     elif re.match("fac_(.+)", fld):
-
         # if field name starts with `fac_` rename to `facility_`
         # since the model relationship field is called `facility`
 
@@ -722,7 +715,6 @@ class ModelSerializer(serializers.ModelSerializer):
         rv = []
 
         for fld in self.Meta.model._meta.get_fields():
-
             if fld.name in FILTER_EXCLUDE:
                 continue
 
@@ -819,7 +811,6 @@ class ModelSerializer(serializers.ModelSerializer):
 
         if hasattr(cls.Meta, "fields"):
             for fld in cls.Meta.related_fields:
-
                 # cycle through all related fields declared on the serializer
 
                 o_fld = fld
@@ -863,7 +854,6 @@ class ModelSerializer(serializers.ModelSerializer):
                 model_field = getattr(cls.Meta.model, fld, None)
 
                 if type(model_field) == ReverseManyToOneDescriptor:
-
                     # nested sets
 
                     # build field and attribute names to prefetch to, this function will be
@@ -912,7 +902,6 @@ class ModelSerializer(serializers.ModelSerializer):
                     )
 
                 elif type(model_field) == ForwardManyToOneDescriptor and not is_list:
-
                     # single relations
 
                     if not nested:
@@ -1112,7 +1101,6 @@ class ModelSerializer(serializers.ModelSerializer):
                     return slz_fld.queryset.get(id=data[_fld])
 
     def run_validation(self, data=serializers.empty):
-
         """
         Custom validation handling.
 
@@ -1125,7 +1113,6 @@ class ModelSerializer(serializers.ModelSerializer):
         try:
             return super().run_validation(data=data)
         except RestValidationError as exc:
-
             filters = {}
             for k, v in list(exc.detail.items()):
                 v = v[0]
@@ -1149,7 +1136,6 @@ class ModelSerializer(serializers.ModelSerializer):
                 # restored.
 
                 if v.code == "unique" and k == "non_field_errors":
-
                     # unique-set errors - database blocked save
                     # because of a unique multi key constraint
 
@@ -1173,7 +1159,6 @@ class ModelSerializer(serializers.ModelSerializer):
                             filters[fld] = _value
 
                 elif v.code == "unique":
-
                     # unique single field error
 
                     # build django queryset filter we can use to
@@ -1202,7 +1187,6 @@ class ModelSerializer(serializers.ModelSerializer):
                 and request.user
                 and request.method in ["POST", "PUT"]
             ):
-
                 if "fac_id" in filters:
                     filters["facility_id"] = filters["fac_id"]
                     del filters["fac_id"]
@@ -1230,7 +1214,6 @@ class ModelSerializer(serializers.ModelSerializer):
                     raise exc
 
                 if request.method == "POST":
-
                     if (
                         (
                             instance._meta.model == Network
@@ -1289,7 +1272,6 @@ class ModelSerializer(serializers.ModelSerializer):
                 raise
 
     def _handle_netixlan_reclaim(self, ipaddr4, ipaddr6):
-
         """
         Handles logic of reclaiming ipaddresses from soft-deleted
         netixlans in case where ipv4 and ipv6 are on separate netixlan objects
@@ -1420,14 +1402,12 @@ class SpatialSearchMixin:
 
     @classmethod
     def prepare_spatial_search(cls, qset, filters, distance=50):
-
         # no distance or negative distance provided, bail
 
         if distance <= 0:
             return qset
 
         if "longitude" not in filters or "latitude" not in filters:
-
             # geo-coordinates have not been provided in the filter
             # so we can attempt to grab them for the provided
             # address filters
@@ -1577,7 +1557,6 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-
         qset = qset.select_related("org")
         filters = get_relation_filters(
             ["net_id", "net", "ix_id", "ix", "org_name", "ix_count", "net_count"],
@@ -1636,7 +1615,6 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             filters.update({"org_present": kwargs.get("org_present")[0]})
 
         if "org_not_present" in kwargs:
-
             org_list = kwargs.get("org_not_present")[0].split(",")
             fac_ids = []
 
@@ -1698,7 +1676,6 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
         return super().to_internal_value(data)
 
     def to_representation(self, instance):
-
         representation = super().to_representation(instance)
 
         if not isinstance(representation, dict):
@@ -1765,7 +1742,6 @@ class CarrierFacilitySerializer(ModelSerializer):
     name = serializers.SerializerMethodField()
 
     class Meta:
-
         model = CarrierFacility
         depth = 0
         fields = [
@@ -1873,7 +1849,6 @@ class CarrierSerializer(ModelSerializer):
         return self.sub_serializer(OrganizationSerializer, inst.org)
 
     def to_representation(self, data):
-
         representation = super().to_representation(data)
 
         if not representation.get("website") and self.instance:
@@ -2097,7 +2072,6 @@ class NetworkIXLanSerializer(ModelSerializer):
         return super().validate_create(data)
 
     class Meta:
-
         validators = [
             SoftRequiredValidator(
                 fields=("ipaddr4", "ipaddr6"), message="Input required for IPv4 or IPv6"
@@ -2205,7 +2179,6 @@ class NetworkIXLanSerializer(ModelSerializer):
             )
 
     def validate(self, data):
-
         self._validate_network_contact(data)
 
         netixlan = NetworkIXLan(**data)
@@ -2285,7 +2258,6 @@ class NetworkFacilitySerializer(ModelSerializer):
     city = serializers.SerializerMethodField()
 
     class Meta:
-
         model = NetworkFacility
         depth = 0
         fields = [
@@ -2313,7 +2285,6 @@ class NetworkFacilitySerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-
         qset = qset.select_related("network", "network__org")
 
         filters = get_relation_filters(["name", "country", "city"], cls, **kwargs)
@@ -2369,7 +2340,6 @@ class NetworkFacilitySerializer(ModelSerializer):
         return super().run_validation(data=data)
 
     def validate(self, data):
-
         # when validating an existing netfac that has a mismatching
         # local_asn value raise a validation error stating that it needs
         # to be moved
@@ -2651,7 +2621,6 @@ class NetworkSerializer(ModelSerializer):
 
         # add network to existing org
         if rdap and validate_rdap_user_or_key(request, rdap):
-
             # user email exists in RiR data, skip verification queue
             net = super().create(validated_data, auto_approve=True)
             ticket_queue_asnauto_skipvq(request, validated_data["org"], net, rdap)
@@ -2668,7 +2637,6 @@ class NetworkSerializer(ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-
         request = self._context.get("request")
 
         if validated_data.get("asn") != instance.asn:
@@ -2681,7 +2649,6 @@ class NetworkSerializer(ModelSerializer):
         # if allow_ixp_update was turned on apply all existing suggestions for the network. (#499)
 
         if validated_data.get("allow_ixp_update") and not instance.allow_ixp_update:
-
             updated = super().update(instance, validated_data)
 
             for suggestion in IXFMemberData.objects.filter(
@@ -2767,7 +2734,6 @@ class IXLanPrefixSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-
         qset = qset.select_related("ixlan", "ixlan__ix", "ixlan__ix__org")
 
         filters = get_relation_filters(["ix_id", "ix", "whereis"], cls, **kwargs)
@@ -2796,7 +2762,6 @@ class IXLanPrefixSerializer(ModelSerializer):
         return self.sub_serializer(IXLanSerializer, inst.ixlan)
 
     def validate(self, data):
-
         # validate prefix against selected protocol
         #
         # Note: While the IPNetworkField already has this validator set on it
@@ -3048,7 +3013,6 @@ class InternetExchangeSerializer(ModelSerializer):
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
-
         qset = qset.select_related("org")
 
         filters = get_relation_filters(
@@ -3070,7 +3034,6 @@ class InternetExchangeSerializer(ModelSerializer):
         )
 
         for field, e in list(filters.items()):
-
             for valid in ["ixlan", "ixfac", "fac", "net"]:
                 if validate_relation_filter_field(field, valid):
                     fn = getattr(cls.Meta.model, "related_to_%s" % valid)
@@ -3101,7 +3064,6 @@ class InternetExchangeSerializer(ModelSerializer):
             filters.update({"ipblock": kwargs.get("ipblock")})
 
         if "asn_overlap" in kwargs:
-
             asns = kwargs.get("asn_overlap", [""])[0].split(",")
             qset = cls.Meta.model.overlapping_asns(asns, qset=qset)
             filters.update({"asn_overlap": kwargs.get("asn_overlap")})
@@ -3151,7 +3113,6 @@ class InternetExchangeSerializer(ModelSerializer):
             filters.update({"org_present": kwargs.get("org_present")[0]})
 
         if "org_not_present" in kwargs:
-
             org_list = kwargs.get("org_not_present")[0].split(",")
             ix_ids = []
 

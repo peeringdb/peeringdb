@@ -256,7 +256,6 @@ class UserTests(TestCase):
         self.assertEqual(resp.context["user"].is_authenticated, True)
 
     def test_username_change(self):
-
         c = Client()
         c.force_login(self.user_a)
 

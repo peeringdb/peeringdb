@@ -12,7 +12,6 @@ import peeringdb_server.views as views
 
 
 class ViewTestCase(TestCase):
-
     entities = ["ix", "net", "fac"]
 
     @classmethod

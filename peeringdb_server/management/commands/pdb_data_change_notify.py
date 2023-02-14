@@ -74,7 +74,6 @@ class Command(BaseCommand):
             DataChangeNotificationQueue.objects.all().delete()
 
     def cleanup(self):
-
         """
         data-change notification state cleanup
 
@@ -102,7 +101,6 @@ class Command(BaseCommand):
             self.log(f"Removed {old_num} old notifications from queue (< {max_age})")
 
     def create_emails(self):
-
         users, collected = DataChangeWatchedObject.collect()
 
         self.emails = {}
@@ -123,7 +121,6 @@ class Command(BaseCommand):
             }
 
     def create_email(self, user, notifications):
-
         message = loader.get_template("email/data-change-notification.txt").render(
             {
                 "notifications": notifications,
@@ -140,7 +137,6 @@ class Command(BaseCommand):
         )
 
     def send_emails(self):
-
         self.log(f"Sending {len(self.emails)} email(s) ..")
 
         for _, email in self.emails.items():
@@ -168,10 +164,8 @@ class Command(BaseCommand):
 
     @transaction.atomic()
     def _run(self):
-
         sid = None
         try:
-
             sid = transaction.savepoint()
             self.cleanup()
             self.create_emails()

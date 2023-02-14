@@ -95,7 +95,6 @@ class BaseSchema(AutoSchema):
         op_type = self.get_operation_type(path, method)
 
         if model:
-
             # Overrides for duplicate operations ids
 
             if "request_ixf_import" in path:
@@ -110,7 +109,6 @@ class BaseSchema(AutoSchema):
         return super().get_operation_id(path, method)
 
     def get_operation(self, *args, **kwargs):
-
         """
         Override this so we can augment the operation dict
         for an openapi schema operation.
@@ -276,7 +274,6 @@ class BaseSchema(AutoSchema):
         op_dict.update(parameters=sorted(parameters, key=lambda x: x["name"]))
 
     def augment_list_filters(self, model, serializer, parameters):
-
         """
         Further augment openapi schema for object listing by filling
         the query parameter list with all the possible query filters
@@ -295,7 +292,6 @@ class BaseSchema(AutoSchema):
 
         blocked_prefixes = []
         for field, fld in field_names:
-
             typ = fld.get_internal_type()
 
             supported_filters = []
@@ -314,7 +310,6 @@ class BaseSchema(AutoSchema):
             if blocked:
                 continue
             elif typ == "ForeignKey" and (fld.one_to_many or hasattr(fld, "multiple")):
-
                 # mark prefix of nested object as blocked so we
                 # don't expose it's fields to the documentation
 

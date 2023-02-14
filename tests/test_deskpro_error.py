@@ -40,7 +40,6 @@ def admin_user():
 
 @pytest.mark.django_db
 def test_deskpro_error_handling(admin_user):
-
     ticket = DeskProTicket.objects.create(
         subject="test",
         body="",

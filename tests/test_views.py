@@ -172,7 +172,6 @@ def test_signup_page():
 
 @pytest.mark.django_db
 def test_user_api_key_generation():
-
     user = User.objects.create(username="test", email="test@localhost")
     user.set_password("test1234")
     user.save()

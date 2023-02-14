@@ -306,7 +306,6 @@ def view_request_ownership(request):
     was_limited = getattr(request, "limited", False)
 
     if request.method in ["GET", "HEAD"]:
-
         # check if reuqest was blocked by rate limiting
         if was_limited:
             return view_index(
@@ -333,7 +332,6 @@ def view_request_ownership(request):
         return HttpResponse(template.render(make_env(org=org), request))
 
     elif request.method == "POST":
-
         org_id = request.POST.get("id")
 
         # check if reuqest was blocked by rate limiting
@@ -429,7 +427,6 @@ def view_affiliate_to_org(request):
     """
 
     if request.method == "POST":
-
         # check if request was blocked by rate limiting
         was_limited = getattr(request, "limited", False)
         if was_limited:
@@ -529,11 +526,9 @@ def view_affiliate_to_org(request):
             )
 
         except RdapInvalidRange as exc:
-
             return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
 
         except RdapException as exc:
-
             ticket_queue_rdap_error(request, asn, exc)
 
             return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
@@ -580,11 +575,9 @@ def view_profile(request):
 @login_required
 @transaction.atomic
 def view_set_user_locale(request):
-
     if request.method in ["GET", "HEAD"]:
         return view_verify(request)
     elif request.method == "POST":
-
         form = UserLocaleForm(request.POST)
         if not form.is_valid():
             return JsonResponse(form.errors, status=400)
@@ -618,7 +611,6 @@ class ApplicationOwnerMixin:
     """
 
     def get_queryset(self):
-
         org_ids = [org.id for org in self.request.user.admin_organizations]
 
         return get_application_model().objects.filter(
@@ -656,7 +648,6 @@ class ApplicationFormMixin:
         )
 
     def get_form(self):
-
         form = super().get_form()
 
         # filter organization choices to only contain organizations manageable
@@ -787,7 +778,6 @@ def view_verify(request):
 @require_http_methods(["POST"])
 @ratelimit(key="ip", rate=RATELIMITS["view_verify_POST"], method="POST")
 def profile_add_email(request):
-
     """
     Allows a user to add an additional email address
     """
@@ -884,7 +874,6 @@ def profile_add_email(request):
 @transaction.atomic
 @require_http_methods(["POST"])
 def profile_delete_email(request):
-
     """
     Allows a user to remove one of their emails
     """
@@ -933,7 +922,6 @@ def profile_delete_email(request):
 @transaction.atomic
 @require_http_methods(["POST"])
 def profile_set_primary_email(request):
-
     """
     Allows a user to set a different email address as their primary
     contact point for peeringdb
@@ -962,11 +950,9 @@ def profile_set_primary_email(request):
 @login_required
 @transaction.atomic
 def view_password_change(request):
-
     if request.method in ["GET", "HEAD"]:
         return view_verify(request)
     elif request.method == "POST":
-
         password_c = request.POST.get("password_c")
 
         if not request.user.has_oauth:
@@ -992,11 +978,9 @@ def view_password_change(request):
 @login_required
 @transaction.atomic
 def view_username_change(request):
-
     if request.method in ["GET", "HEAD"]:
         return view_verify(request)
     elif request.method == "POST":
-
         password = request.POST.get("password")
 
         if not request.user.has_oauth:
@@ -1133,7 +1117,6 @@ def view_password_reset(request):
         return HttpResponse(template.render(env, request))
 
     elif request.method == "POST":
-
         token = request.POST.get("token")
         target = request.POST.get("target")
         if token and target:
@@ -1267,7 +1250,6 @@ def view_close_account(request):
     # If user is authenticated, check password
     if request.user.is_authenticated:
         if request.user.check_password(password):
-
             request.user.close_account()
 
             # Logout the user
@@ -1346,7 +1328,6 @@ class OrganizationLogoUpload(View):
 
     @transaction.atomic
     def post(self, request, id):
-
         """upload and set a new logo"""
 
         org = Organization.objects.get(pk=id)
@@ -1378,7 +1359,6 @@ class OrganizationLogoUpload(View):
 
     @transaction.atomic
     def delete(self, request, id):
-
         """delete the logo"""
 
         org = Organization.objects.get(pk=id)
@@ -2324,7 +2304,6 @@ def view_exchange(request, id):
 
 @login_required
 def watch_network(request, id):
-
     """
     Adds data-change notifications for the specified network (id)
     for the rquesting user.
@@ -2349,7 +2328,6 @@ def watch_network(request, id):
 
 @login_required
 def unwatch_network(request, id):
-
     # make sure network exists
     net = Network.objects.get(id=id)
 
@@ -3053,24 +3031,20 @@ class LoginView(TwoFactorLoginView):
         user = self.get_user()
 
         if user.email_confirmed:
-
             # only users with confirmed emails should have
             # the option to request otp to their email address
 
             try:
-
                 # check if user already has an EmailDevice instance
 
                 device = EmailDevice.objects.get(user=user)
 
                 if not device.confirmed:
-
                     # sync confirmed status
 
                     device.confirmed = True
                     device.save()
             except EmailDevice.DoesNotExist:
-
                 # create EmaiLDevice object for user if it does
                 # not exist
 
@@ -3081,7 +3055,6 @@ class LoginView(TwoFactorLoginView):
 
             return device
         else:
-
             # if user does NOT have a confirmed email address but
             # somehow has an EmailDevice object, delete it.
 
@@ -3102,7 +3075,6 @@ class LoginView(TwoFactorLoginView):
         if not self.device_cache:
             challenge_device_id = self.request.POST.get("challenge_device", None)
             if challenge_device_id:
-
                 # email device
                 device = self.get_email_device()
                 if device.persistent_id == challenge_device_id:
@@ -3133,7 +3105,6 @@ class LoginView(TwoFactorLoginView):
         try:
             resolve(redir)
         except Resolver404:
-
             # url could not be resolved to a view, so it's likely
             # invalid or pointing somewhere externally, the only
             # external urls we want to allow are the redirect urls
@@ -3171,7 +3142,6 @@ class LoginView(TwoFactorLoginView):
 @require_http_methods(["POST"])
 @ratelimit(key="ip", rate=RATELIMITS["request_translation"], method="POST")
 def request_translation(request, data_type):
-
     if not request.user.is_authenticated:
         return JsonResponse(
             {"status": "error", "error": "Please login to use translation service"}
@@ -3185,7 +3155,6 @@ def request_translation(request, data_type):
     target = user_language
 
     if note and target:
-
         translationURL = "https://translation.googleapis.com/language/translate/v2"
         call_params = {
             "key": dj_settings.GOOGLE_GEOLOC_API_KEY,

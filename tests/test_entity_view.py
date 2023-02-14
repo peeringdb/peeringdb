@@ -15,7 +15,6 @@ from .util import ClientCase
 
 
 class ViewTestCase(ClientCase):
-
     entities = ["ix", "net", "fac", "carrier", "campus"]
 
     @classmethod

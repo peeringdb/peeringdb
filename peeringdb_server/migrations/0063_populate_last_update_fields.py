@@ -37,7 +37,6 @@ def populate_last_updated_fields(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0062_adjust_geo_fields"),
     ]

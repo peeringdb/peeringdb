@@ -344,7 +344,6 @@ class GeocodeBaseMixin(models.Model):
         )
 
     def process_geo_location(self, geocode=True, save=True):
-
         """
         Sets longitude and latitude.
 
@@ -428,7 +427,6 @@ class GeoCoordinateCache(models.Model):
 
     @classmethod
     def request_coordinates(cls, **kwargs):
-
         address_fields = [
             "address1",
             "zipcode",
@@ -458,7 +456,6 @@ class GeoCoordinateCache(models.Model):
         # prepare geo-coordinate filters, params and lookup
 
         for field in address_fields:
-
             value = kwargs.get(field, None)
             if value and isinstance(value, list):
                 value = value[0]
@@ -488,14 +485,12 @@ class GeoCoordinateCache(models.Model):
                 cache = None
 
         if not cache:
-
             # valid geo-coord cache does not exist, request coordinates
             # from google and create a cache entry
 
             address = " ".join(address)
             google = geo.GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY)
             try:
-
                 if params.get("address1"):
                     typ = "premise"
                 elif params.get("zipcode"):
@@ -512,7 +507,6 @@ class GeoCoordinateCache(models.Model):
                     latitude=coords["lat"], longitude=coords["lng"], **params
                 )
             except geo.NotFound:
-
                 # google could not find address
                 # we still create a cache entry with null coordinates.
 
@@ -601,7 +595,6 @@ class UserOrgAffiliationRequest(models.Model):
         """
 
         if self.org_id:
-
             if self.user.is_org_admin(self.org) or self.user.is_org_member(self.org):
                 self.delete()
                 return
@@ -1176,7 +1169,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
             user.save()
 
     def reauth_period_to_days(self):
-
         m = re.match(r"(\d+)([dwmy])", self.periodic_reauth_period)
 
         num = int(m.group(1))
@@ -1194,7 +1186,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         raise ValueError("Invalid format")
 
     def user_meets_email_requirements(self, user):
-
         """
         If organization has `restrict_user_emails` set to true
         this will check the specified user's email addresses against
@@ -1213,7 +1204,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         email_domains = self.email_domains.split("\n")
 
         for email in EmailAddress.objects.filter(user=user).order_by("-verified"):
-
             domain = email.email.split("@")[1]
             if f"{domain}".lower() in email_domains:
                 return email.email
@@ -1221,7 +1211,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         return None
 
     def user_requires_reauth(self, user):
-
         """
         Returns whether the specified user requires re-authentication according
         to this organizations's periodic_reauth settings.
@@ -1260,7 +1249,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
         if requires_reauth:
             if email.verified:
-
                 # set email to be unverified so user needs to re-confirm it
 
                 email.verified = False
@@ -1281,7 +1269,6 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         return requires_reauth
 
     def adjust_permissions_for_periodic_reauth(self, user, perms):
-
         """
         Will strip users permission for the org if the org currently
         flags the user as needing re-authentication
@@ -2091,13 +2078,11 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
             ipaddr6 = ipaddress.ip_address(ipaddr6)
 
         for member in ixf_data.get("member_list") or []:
-
             if member.get("asnum") != asn:
                 continue
 
             for connection in member.get("connection_list") or []:
                 for vlan in connection.get("vlan_list") or []:
-
                     ixf_ip4 = (vlan.get("ipv4") or {}).get("address")
                     ixf_ip6 = (vlan.get("ipv6") or {}).get("address")
 
@@ -2568,7 +2553,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
             ixlan.save()
 
         elif ixlan and ixlan.status != self.status:
-
             # ixlan status should always be identical to ix status (#1077)
             if self.status == "deleted":
                 ixlan.delete()
@@ -2579,7 +2563,6 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         return r
 
     def validate_phonenumbers(self):
-
         try:
             self.tech_phone = validate_phonenumber(self.tech_phone, self.country.code)
         except ValidationError as exc:
@@ -2728,7 +2711,6 @@ class IXLan(pdb_models.IXLanBase):
 
     @classmethod
     def api_cache_permissions_applicator(cls, row, ns, permission_holder):
-
         """
         Applies permissions to a row in an api-cache result
         set for ixlan.
@@ -2831,7 +2813,6 @@ class IXLan(pdb_models.IXLanBase):
         # id is not set (new ixlan)
 
         if not self.id:
-
             # ixlan for ix already exists
 
             if self.ix.ixlan:
@@ -2983,7 +2964,6 @@ class IXLan(pdb_models.IXLanBase):
 
         # IPv4
         if ipv4 != netixlan.ipaddr4:
-
             # we need to check if this ipaddress exists on a
             # soft-deleted netixlan elsewhere, and
             # reset if so.
@@ -3004,7 +2984,6 @@ class IXLan(pdb_models.IXLanBase):
 
         # IPv6
         if ipv6 != netixlan.ipaddr6:
-
             # we need to check if this ipaddress exists on a
             # soft-deleted netixlan elsewhere, and
             # reset if so.
@@ -3012,7 +2991,6 @@ class IXLan(pdb_models.IXLanBase):
             # we only do this if ipaddr6 is not None
 
             if ipv6:
-
                 for other in NetworkIXLan.objects.filter(
                     ipaddr6=ipv6, status="deleted"
                 ).exclude(asn=asn):
@@ -3341,7 +3319,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 raise cls.DoesNotExist()
 
             if instances.count() > 1:
-
                 # this only happens when a network switches on/off
                 # ipv4/ipv6 protocol support inbetween importer
                 # runs.
@@ -3475,7 +3452,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         proposals = {}
 
         for ixf_member_data in qset:
-
             action = ixf_member_data.action
             ixf_member_data.error
 
@@ -3644,7 +3620,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def ixf_id(self):
-
         """
         Returns a tuple that identifies the ix-f member
         as a unqiue record by asn, ip4 and ip6 address.
@@ -3661,7 +3636,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def actionable_changes(self):
-
         self.requirements
 
         _changes = self.changes
@@ -3678,7 +3652,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def changes(self):
-
         """
         Returns a dict of changes (field, value)
         between this entry and the related netixlan.
@@ -3699,7 +3672,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         return self._changes(netixlan)
 
     def _changes(self, netixlan):
-
         changes = {}
 
         if self.marked_for_removal or not netixlan:
@@ -3804,7 +3776,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
 
         if not self.netixlan.id or self.netixlan.status == "deleted":
-
             # edge-case that should not really happen
             # non-existing netixlan cannot be removed
 
@@ -3947,7 +3918,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     @property
     def netixlan(self):
-
         """
         Will either return a matching existing netixlan
         instance (asn,ip4,ip6) or a new netixlan if
@@ -3960,7 +3930,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
 
         if not hasattr(self, "_netixlan"):
-
             if not hasattr(self, "for_deletion"):
                 self.for_deletion = self.remote_data_missing
 
@@ -4107,7 +4076,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
             self._netixlan = netixlan = result["netixlan"]
         elif action == "modify":
-
             self.validate_speed()
 
             if self.modify_speed and self.speed:
@@ -4120,7 +4088,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
                 netixlan.full_clean()
                 netixlan.save()
         elif action == "delete":
-
             if save:
                 netixlan.delete()
 
@@ -4204,7 +4171,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.save()
             return True
         elif self.previous_data != self.data and save:
-
             # since remote_changes only tracks changes to the
             # relevant data fields speed, operational and is_rs_peer
             # we check if the remote data has changed in general
@@ -4225,7 +4191,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             self.save()
             return True
         elif self.previous_data != self.data and save:
-
             # since remote_changes only tracks changes to the
             # relevant data fields speed, operational and is_rs_peer
             # we check if the remote data has changed in general
@@ -4248,7 +4213,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             return True
 
         elif self.previous_data != self.data and save:
-
             # since remote_changes only tracks changes to the
             # relevant data fields speed, operational and is_rs_peer
             # we check if the remote data has changed in general
@@ -4713,7 +4677,6 @@ class Network(pdb_models.NetworkBase):
 
     @property
     def ipv4_support(self):
-
         # network has not indicated either ip4 or ip6 support
         # so assume True (#771)
 
@@ -4724,7 +4687,6 @@ class Network(pdb_models.NetworkBase):
 
     @property
     def ipv6_support(self):
-
         # network has not indicated either ip4 or ip6 support
         # so assume True (#771)
 
@@ -4828,7 +4790,6 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
         ).count()
 
         if netixlan_count and tech_poc_count == 1:
-
             # there are active netixlans and this poc is the
             # only technical poc left
 
@@ -4926,7 +4887,6 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
         )
 
     def clean(self):
-
         # when validating an existing netfac that has a mismatching
         # local_asn value raise a validation error stating that it needs
         # to be moved
@@ -5012,7 +4972,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
     @property
     def ixf_id(self):
-
         """
         Returns a tuple that identifies the netixlan
         in the context of an ix-f member data entry as a unqiue record by asn, ip4 and ip6 address.
@@ -5111,7 +5070,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
             raise ValidationError(_("IPv6 address outside of prefix"))
 
     def validate_real_peer_vs_ghost_peer(self):
-
         """
         If there are ip-address conflicts with another NetworkIXLan object
         try to resolve those conflicts if the new peer exists in the related
@@ -5154,7 +5112,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
 
         try:
             if other4 == other6:
-
                 # ip address conflicts are contained in the same NetworkIXLan, so other4 can be
                 # processed by itself
 
@@ -5163,7 +5120,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
                 )
 
             else:
-
                 # conflicts for v4 and v6 are located on separate NetworkIXLan objects
                 # process each separately.
 
@@ -5177,7 +5133,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
                     )
 
         except Exception as exc:
-
             # Any error here is likely invalid IX-F data, we dont want to hard fail the object creation
             # Log the error and just return without applying the real vs ghost peer logic
 
@@ -5187,7 +5142,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
         # Free up conflicting ghost peer ip addresses
 
         if other4 == other6:
-
             # ip address conflicts are contained in the same NetworkIXLan, so other4 can be processed
             # by it self
 
@@ -5206,7 +5160,6 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
                 other4.save()
 
         else:
-
             # conflicts for v4 and v6 are located on separate NetworkIXLan objects
             # process each separately.
 
@@ -5719,7 +5672,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
 
         for req in self.pending_affiliation_requests.filter(asn__gt=0):
-
             # we dont want to re-evaluate for affiliation requests
             # with organizations that already have admin users managing them
             if req.org_id and req.org.admin_usergroup.user_set.exists():
@@ -5781,13 +5733,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     def email_user_all_addresses(
         self, subject, message, from_email=settings.DEFAULT_FROM_EMAIL, exclude=None
     ):
-
         """
         Sends email to all email addresses for the user
         """
 
         for email_address in self.emailaddress_set.filter(verified=True):
-
             if exclude and email_address.email in exclude:
                 continue
 
@@ -5891,7 +5841,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         # pylint: disable=access-member-before-definition
 
         if self.id:
-
             try:
                 self.password_reset.delete()
             except UserPasswordReset.DoesNotExist:
@@ -5947,7 +5896,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @transaction.atomic()
     def close_account(self):
-
         """
         Removes all identifying information from the User instance
         and flags it as inactive.
@@ -5999,7 +5947,6 @@ class UserAPIKey(AbstractAPIKey):
 
 
 def password_reset_token():
-
     token = str(uuid.uuid4())
     hashed = sha256_crypt.hash(token)
     return token, hashed
@@ -6318,7 +6265,6 @@ class EnvironmentSetting(models.Model):
 
     @classmethod
     def get_setting_value(cls, setting):
-
         """
         Get the current value of the setting specified by
         its setting name.
@@ -6459,7 +6405,6 @@ class DataChangeWatchedObject(models.Model):
 
     @classmethod
     def watching(cls, user, obj):
-
         if isinstance(user, AnonymousUser):
             return False
 
@@ -6469,7 +6414,6 @@ class DataChangeWatchedObject(models.Model):
 
     @classmethod
     def cleanup(cls):
-
         """
         1) checks for deleted objects and removes all watched object instances for them
 
@@ -6530,7 +6474,6 @@ class DataChangeWatchedObject(models.Model):
         users = {}
 
         for watched in qset:
-
             collected.setdefault(watched.user_id, {})
             key = (watched.ref_tag, watched.object_id)
 
@@ -6579,7 +6522,6 @@ class DataChangeWatchedObject(models.Model):
 
 
 class DataChangeNotificationQueue(models.Model):
-
     # object being watched
     # this serves as a point of consolidation, notifications will be sent
     # out as a summary for this object
@@ -6642,7 +6584,6 @@ class DataChangeNotificationQueue(models.Model):
 
     @classmethod
     def push(cls, source, action, obj, version_before, version_after, **kwargs):
-
         if not hasattr(obj, "data_change_parent"):
             raise AttributeError(f"{obj} does not have a `data_change_parent` property")
 
@@ -6680,7 +6621,6 @@ class DataChangeNotificationQueue(models.Model):
 
     @classmethod
     def consolidate(cls, watched_ref_tag, watched_object_id, date_limit):
-
         """
         Returns a dict of all DataChangeQueueNotification entries for the specified
         ref tag and object id.
@@ -6802,7 +6742,6 @@ class DataChangeNotificationQueue(models.Model):
 
 
 class EmailAddressData(models.Model):
-
     email = models.OneToOneField(
         EmailAddress, on_delete=models.CASCADE, related_name="data"
     )
@@ -6813,7 +6752,6 @@ class EmailAddressData(models.Model):
 
 
 class DataChangeEmail(models.Model):
-
     user = models.ForeignKey(
         User, related_name="data_change_emails", on_delete=models.CASCADE
     )
@@ -6838,7 +6776,6 @@ class DataChangeEmail(models.Model):
         verbose_name_plural = _("Data Change Emails")
 
     def send(self):
-
         if self.sent is not None:
             raise ValueError("Cannot send email again")
 

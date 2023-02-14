@@ -24,7 +24,6 @@ def get_response_empty(request):
 
 @override_settings(ROOT_URLCONF="middleware.urls")
 class PDBCommonMiddlewareTest(SimpleTestCase):
-
     rf = RequestFactory()
 
     @override_settings(PDB_PREPEND_WWW=True)
@@ -150,7 +149,6 @@ class PDBPermissionMiddlewareTest(APITestCase):
 @pytest.mark.django_db
 @override_settings(CSRF_USE_SESSIONS=True)
 def test_pdb_session_middleware(path, expected):
-
     """
     test that new sessions only get established on certain paths
     """

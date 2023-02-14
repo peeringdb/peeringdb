@@ -16,7 +16,6 @@ def format_wait_time(wait_time):
 
 
 def rest_exception_handler(exc, context):
-
     response = exception_handler(exc, context)
     request = context.get("request")
 

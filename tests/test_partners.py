@@ -12,7 +12,6 @@ import peeringdb_server.views as views
 
 
 class ViewTestCase(TestCase):
-
     entities = ["ix", "net", "fac"]
 
     @classmethod
@@ -59,7 +58,6 @@ class ViewTestCase(TestCase):
         self.factory = RequestFactory()
 
     def test_view(self):
-
         # disable this test until we re-enable the partners page
         return
 

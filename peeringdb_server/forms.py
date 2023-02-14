@@ -33,7 +33,6 @@ class OrganizationAPIKeyForm(forms.Form):
 
 
 class OrgAdminUserPermissionForm(forms.Form):
-
     entity = forms.CharField()
     perms = forms.IntegerField()
 
@@ -49,7 +48,6 @@ class OrgAdminUserPermissionForm(forms.Form):
 
 
 class AffiliateToOrgForm(forms.Form):
-
     asn = forms.CharField(required=False)
     org = forms.CharField(required=False)
 
@@ -111,7 +109,6 @@ class UsernameChangeForm(forms.Form):
     username = forms.CharField()
 
     def clean_username(self):
-
         username = self.cleaned_data.get("username")
 
         if User.objects.filter(username=username).exists():
@@ -222,7 +219,6 @@ class OrganizationLogoUploadForm(forms.ModelForm):
         fields = ["logo"]
 
     def clean_logo(self):
-
         logo = self.cleaned_data["logo"]
         max_size = dj_settings.ORG_LOGO_MAX_SIZE
 

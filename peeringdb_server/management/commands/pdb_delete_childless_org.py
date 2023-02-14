@@ -12,7 +12,6 @@ from peeringdb_server.models import Organization
 
 
 class Command(BaseCommand):
-
     help = "Flags and deletes childless Organizations"
 
     def add_arguments(self, parser):
@@ -32,7 +31,6 @@ class Command(BaseCommand):
 
     @reversion.create_revision()
     def _delete_childless_org(self):
-
         # Flag all childless orgs
 
         self.log("Flagging childless orgs.")
@@ -55,7 +53,6 @@ class Command(BaseCommand):
         reversion.set_comment("pdb_delete_childless_org processing")
 
         for org in org_qset:
-
             # we need to ignore sponsorship orgs, since they may only exist
             # for the purpose of being a sponsor
 
@@ -63,7 +60,6 @@ class Command(BaseCommand):
                 continue
 
             if org.is_empty:
-
                 admins = org.admin_usergroup.user_set.all()
 
                 self.log(f"Organization {org.name} flagged for deletion")
@@ -76,7 +72,6 @@ class Command(BaseCommand):
                     org.save()
 
                     for user in admins:
-
                         email_subject = f"Organization {org.name} flagged for deletion"
                         user.email_user(
                             email_subject,
@@ -102,7 +97,6 @@ class Command(BaseCommand):
 
         self.log("Deleting flagged orgs")
         for org in org_flagged_qset:
-
             # Before deleting, check again if the org is still childless
             #
             # Also check if org gained sponorship status

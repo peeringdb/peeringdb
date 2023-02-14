@@ -28,7 +28,6 @@ DATE_PAST = datetime.datetime(year=2019, month=11, day=1)
 
 
 def setup_data():
-
     call_command("pdb_generate_test_data", limit=3, commit=True)
 
     date_past = DATE_PAST.replace(tzinfo=UTC())

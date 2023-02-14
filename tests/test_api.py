@@ -20,7 +20,6 @@ RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 
 
 def setup_module(module):
-
     # RDAP LOOKUP OVERRIDE
     # Since we are working with fake ASNs throughout the api tests
     # we need to make sure the RdapLookup client can fake results

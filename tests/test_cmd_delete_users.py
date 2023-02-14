@@ -13,7 +13,6 @@ from .util import reset_group_ids
 
 
 def setup_users():
-
     reset_group_ids()
 
     user_a = User.objects.create_user(
@@ -48,7 +47,6 @@ def setup_users():
 
 
 def assert_user(user, status, flagged, notified):
-
     user.refresh_from_db()
     assert user.status == status
     if flagged:
@@ -65,7 +63,6 @@ def assert_user(user, status, flagged, notified):
 @override_settings(MIN_AGE_ORPHANED_USER_DAYS=-1)
 @pytest.mark.django_db
 def test_run_non_committal():
-
     user_a, user_b, user_c, org = setup_users()
 
     call_command("pdb_delete_users")
@@ -80,7 +77,6 @@ def test_run_non_committal():
 @override_settings(MIN_AGE_ORPHANED_USER_DAYS=-1)
 @pytest.mark.django_db
 def test_run():
-
     user_a, user_b, user_c, org = setup_users()
 
     out = io.StringIO()
@@ -136,7 +132,6 @@ def test_run():
 @override_settings(MIN_AGE_ORPHANED_USER_DAYS=-1)
 @pytest.mark.django_db
 def test_run_unflag():
-
     user_a, user_b, user_c, org = setup_users()
 
     out = io.StringIO()
@@ -160,7 +155,6 @@ def test_run_unflag():
 @override_settings(MIN_AGE_ORPHANED_USER_DAYS=-1)
 @pytest.mark.django_db
 def test_run_max_notifies():
-
     user_a, user_b, user_c, org = setup_users()
 
     out = io.StringIO()

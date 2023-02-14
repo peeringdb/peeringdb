@@ -49,7 +49,6 @@ def test_protected_entities(db):
     # and checking their protected status as well
 
     for ix in org.ix_set.all():
-
         assert ix.ixlan.ixpfx_set.exists()
         assert ix.ixlan.netixlan_set.exists()
         assert ix.ixfac_set.exists()
@@ -201,7 +200,6 @@ def test_tech_poc_hard_delete_1013(role):
 
 @pytest.mark.django_db
 def test_org_protection_sponsor(db):
-
     """
     test that organization cannot be deleted if it has
     an active sponsorship going

@@ -51,7 +51,6 @@ class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
     """
 
     def adjust_search_field_for_anchors(self, search_field, anchor_start, anchor_end):
-
         if not anchor_start and not anchor_end:
             return search_field
 
@@ -113,7 +112,6 @@ class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
         return qs
 
     def get_queryset(self):
-
         qs = super().get_queryset()
 
         # Add support for ^ and $ regex anchors and add it to the top qs results
@@ -128,7 +126,6 @@ class GrappelliHandlerefAutocomplete(PDBAdminGrappelliAutocomplete):
 
 
 class AutocompleteHTMLResponse(autocomplete.Select2QuerySetView):
-
     # Issue #469
     # Add IXP to AS record / dropdown limited
     paginate_by = 0
@@ -254,7 +251,6 @@ class OrganizationAutocomplete(AutocompleteHTMLResponse):
     def get_queryset(self):
         qs = Organization.objects.filter(status="ok")
         if self.q:
-
             anchor_start = self.q[0] == "^"
             anchor_end = self.q[-1] == "$"
             self.q = self.q.strip("^$")
@@ -281,11 +277,9 @@ class OrganizationAutocomplete(AutocompleteHTMLResponse):
 
 class IXLanAutocomplete(AutocompleteHTMLResponse):
     def get_queryset(self):
-
         qs = IXLan.objects.filter(status="ok").select_related("ix")
 
         if self.q:
-
             exact_qs = (
                 qs.filter(Q(ix__name__iexact=self.q))
                 .only(

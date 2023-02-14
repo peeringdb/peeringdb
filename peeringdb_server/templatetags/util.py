@@ -192,7 +192,6 @@ def ref_tag(value):
 
 @register.filter
 def autocomplete_preload_net(value):
-
     """
     Prefill autocomplete-network field value for
     multi-select field
@@ -208,7 +207,6 @@ def autocomplete_preload_net(value):
 
 @register.filter
 def autocomplete_preload_org_single(value):
-
     """
     Prefill autocomplete-organization field value for
     single-select field

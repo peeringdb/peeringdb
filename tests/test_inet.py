@@ -79,7 +79,6 @@ def test_recurse_contacts(rdap):
     ],
 )
 def test_renumber_ipaddress(ip, old_prefix, new_prefix, valid):
-
     ip = ipaddress.ip_address(ip)
     old_prefix = ipaddress.ip_network(old_prefix)
     new_prefix = ipaddress.ip_network(new_prefix)

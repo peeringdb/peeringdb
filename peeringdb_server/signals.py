@@ -370,7 +370,6 @@ def uoar_creation(sender, instance, created=False, **kwargs):
     """
 
     if created:
-
         if instance.asn and not instance.org_id:
             network = Network.objects.filter(asn=instance.asn).first()
             if network:
@@ -381,7 +380,6 @@ def uoar_creation(sender, instance, created=False, **kwargs):
         instance.save()
 
         if instance.org_id and instance.org.admin_usergroup.user_set.count() > 0:
-
             # check if user's email address matches org requirements
             if instance.org.restrict_user_emails:
                 if not instance.org.user_meets_email_requirements(instance.user):
@@ -462,7 +460,6 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     return
 
             if instance.org:
-
                 # organization has been set on affiliation request
                 entity_name = instance.org.name
                 if not instance.org.owned:
@@ -544,7 +541,6 @@ def uoar_creation(sender, instance, created=False, **kwargs):
             )
 
     elif instance.status == "approved" and instance.org_id:
-
         # uoar was not created, and status is now approved, call approve
         # to finalize
 
@@ -601,7 +597,6 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
         if type(item) in QUEUE_NOTIFY and not getattr(
             settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False
         ):
-
             if type(item) == Network:
                 rdap = RdapLookup().get_asn(item.asn)
             else:
@@ -630,7 +625,6 @@ check_request_enabled.connect(cors_allow_api_get_to_everyone)
 
 def auto_fill_region_continent(sender, instance, **kwargs):
     if instance.country.code:
-
         for region in REGION_MAPPING:
             if instance.country.code == region["code"]:
                 instance.region_continent = region["continent"]

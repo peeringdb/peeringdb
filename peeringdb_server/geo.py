@@ -42,7 +42,6 @@ class GoogleMaps:
         instance.longitude = geocode.get("lng")
 
     def geocode_address(self, address, country, typ="premise"):
-
         """
         Return the latitude, longitude field values of the specified
         address.
@@ -133,7 +132,6 @@ class Melissa:
                 logger.info("MELISSA", url=url)
 
     def sanitize(self, **kwargs):
-
         """
         Take an international address and sanitize it
         using the melissa global address service.
@@ -148,7 +146,6 @@ class Melissa:
         return self.apply_global_address(kwargs, best)
 
     def sanitize_address_model(self, instance):
-
         """
         Take an instance of AddressModel and
         run its address through the normalization
@@ -170,11 +167,9 @@ class Melissa:
         )
 
     def apply_global_address(self, pdb_data, melissa_data):
-
         # map peeringdb address fields to melissa result fields
         faddr = melissa_data["FormattedAddress"].split(";")
         for key in self.field_map.keys():
-
             # melissa tends to put things it does not comprehend
             # into address line 1 - meaning aribtrary data that currently
             # exists in our address2 fields will end up there.
@@ -197,7 +192,6 @@ class Melissa:
         return pdb_data
 
     def global_address_params(self, **kwargs):
-
         return {
             "a1": kwargs.get("address1"),
             "a2": kwargs.get("address2"),
@@ -207,7 +201,6 @@ class Melissa:
         }
 
     def global_address(self, **kwargs):
-
         """
         Send request to the global address service.
 
@@ -228,7 +221,6 @@ class Melissa:
         }
 
         try:
-
             self.log_request(self.global_address_url, **params)
 
             response = requests.get(
@@ -288,7 +280,6 @@ class Melissa:
 
         value = cache.get(key)
         if value is None:
-
             result = self.global_address(country=country_code, address1=state)
 
             try:

@@ -20,7 +20,6 @@ __STATS = {"data": {}, "mod": None}
 
 
 def gen_stats():
-
     """
     Regenerates global statics to stats.__STATS['data']
     """
@@ -47,7 +46,6 @@ def gen_stats():
 
 
 def stats():
-
     """
     Returns dict of global statistics
 
@@ -71,7 +69,6 @@ def get_fac_stats(netfac, ixfac):
 
 
 def get_ix_stats(netixlan, ixlan):
-
     peer_count = netixlan.values("network").distinct().filter(status="ok").count()
     connections_count = netixlan.filter(ixlan=ixlan, status="ok").count()
     open_peer_count = (

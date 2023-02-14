@@ -6,7 +6,6 @@ from peeringdb_server.context import current_request
 
 
 def bypass_validation(request=None, check_admin=False):
-
     """
     Return whether the specified request is to bypass
     certain data quality validations. (#741)

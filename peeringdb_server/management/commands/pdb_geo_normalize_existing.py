@@ -69,7 +69,6 @@ class Command(BaseCommand):
         )
 
     def log(self, msg):
-
         if self.state_only:
             msg = f"[state-only] {msg}"
 
@@ -121,7 +120,6 @@ class Command(BaseCommand):
             sys.exit(1)
 
     def parse_suite(self, instance):
-
         # Case: "Suite 1" or "Suite B"
         pattern = r"(?<=\b[Ss]uite\s)(\w+)"
         suite = re.findall(pattern, instance.address1) + re.findall(
@@ -214,7 +212,6 @@ class Command(BaseCommand):
             proceed_to_next = False
 
             while not proceed_to_next:
-
                 try:
                     if self.state_only:
                         self._normalize_state(entity, output_dict, self.commit)
@@ -238,7 +235,6 @@ class Command(BaseCommand):
     @reversion.create_revision()
     @transaction.atomic()
     def _normalize(self, instance, output_dict, save):
-
         suite = self.parse_suite(instance)
         floor = self.parse_floor(instance)
 
@@ -273,7 +269,6 @@ class Command(BaseCommand):
         self.snapshot_model(instance, "_after", output_dict)
 
     def _normalize_state(self, instance, output_dict, save):
-
         if not instance.state:
             self.snapshot_model(instance, "_after", output_dict)
             return

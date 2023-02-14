@@ -46,7 +46,6 @@ def restore_existing_instance_values(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0098_alter_environmentsetting_setting"),
     ]

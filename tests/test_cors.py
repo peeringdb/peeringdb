@@ -14,7 +14,6 @@ from .util import ClientCase
 
 
 class CorsTest(ClientCase):
-
     test_origin = "http://example.com"
 
     @classmethod

@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 def forwards_func(apps, schema_editor):
-
     NetworkIXLan = apps.get_model("peeringdb_server", "NetworkIXLan")
     Network = apps.get_model("peeringdb_server", "Network")
 
@@ -15,17 +14,14 @@ def forwards_func(apps, schema_editor):
 
     for netixlan in NetworkIXLan.handleref.all():
         if netixlan.asn != netixlan.network.asn:
-
             # asn differs from related network asn
 
             net = Network.handleref.filter(asn=netixlan.asn).first()
 
             if net and netixlan.status == "ok":
-
                 # set network object from asn
 
                 if net.status != netixlan.status:
-
                     # network status doesnt match netixlan status
                     # we update netixlan status to match as that is the least
                     # destructive behaviour while allowing us to still
@@ -51,7 +47,6 @@ def forwards_func(apps, schema_editor):
                 migrated += 1
 
             else:
-
                 # could not find network with asn matching asn
                 # in this case we should drop the netixlan and log it
 
@@ -71,7 +66,6 @@ def forwards_func(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0023_netfac_local_asn"),
     ]

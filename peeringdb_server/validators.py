@@ -16,7 +16,6 @@ from peeringdb_server.request import bypass_validation
 
 
 def validate_email_domains(text):
-
     if not text:
         return ""
 
@@ -39,7 +38,6 @@ def validate_email_domains(text):
 
 
 def validate_poc_visible(visible):
-
     # we no longer allow "Private" network contacts
     # however until all private network contacts have
     # been either changed or deleted we cannot remove
@@ -181,7 +179,6 @@ def validate_info_prefixes4(value):
 
 
 def validate_info_prefixes6(value):
-
     if not value:
         value = 0
 

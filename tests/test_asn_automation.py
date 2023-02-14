@@ -20,7 +20,6 @@ RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 
 
 def setup_module(module):
-
     # RDAP LOOKUP OVERRIDE
     # Since we are working with fake ASNs throughout the api tests
     # we need to make sure the RdapLookup client can fake results
@@ -273,7 +272,6 @@ class AsnAutomationTestCase(TestCase):
         """
 
         for i in range(0, settings.MAX_USER_AFFILIATION_REQUESTS + 1):
-
             # For this test we need the orgs to actually exist
 
             models.Organization.objects.create(name=f"AFFILORG{i}", status="ok")
@@ -345,7 +343,6 @@ class AsnAutomationTestCase(TestCase):
         assert self.user_b.pending_affiliation_requests.count() == 1
 
     def test_affil_already_affiliated(self):
-
         """
         When a user needs pdb admin approval of an affiliation an deskpro
         ticket is created.

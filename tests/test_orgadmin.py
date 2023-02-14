@@ -104,7 +104,6 @@ class OrgAdminTests(TestCase):
         self.assertEqual(json.loads(resp.content), {})
 
     def test_user_options(self):
-
         # test updating user options
 
         assert self.org.restrict_user_emails is False
@@ -174,7 +173,6 @@ class OrgAdminTests(TestCase):
         assert "periodic_reauth_period" in json.loads(resp.content)
 
     def test_user_email_restriction_highlight(self):
-
         self.org.restrict_user_emails = True
         self.org.email_domains = "example.com"
         self.org.save()
