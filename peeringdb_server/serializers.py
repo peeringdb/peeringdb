@@ -3408,5 +3408,6 @@ REFTAG_MAP = {
         IXLanPrefixSerializer,
         CarrierSerializer,
         CarrierFacilitySerializer,
+        CampusSerializer,
     ]
 }

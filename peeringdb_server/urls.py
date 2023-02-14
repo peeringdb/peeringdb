@@ -189,7 +189,7 @@ urlpatterns = [
         view_organization,
         name="org-view",
     ),
-    url(r"^(net|ix|org|fac)/self$", view_self_entity),
+    url(r"^(net|ix|org|fac|carrier|campus)/self$", view_self_entity),
     url(r"^set-organization/$", view_set_user_org, name="set-organization"),
     url(r"^%s$" % Network.handleref.tag, view_network_by_query),
     url(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn, name="net-view-asn"),

@@ -48,7 +48,6 @@ from peeringdb_server.models import (
     UTC,
     CarrierFacility,
     Facility,
-    InternetExchange,
     Network,
     Organization,
     OrganizationAPIKey,
@@ -1126,59 +1125,52 @@ def view_self_entity(request, data_type):
     """
     This API View redirect self entity API to the corresponding url
     """
-    query = request.META["QUERY_STRING"]
-    org = Organization.objects.get(id=settings.DEFAULT_SELF_ORG)
-    ix = InternetExchange.objects.get(id=settings.DEFAULT_SELF_IX)
-    net = Network.objects.get(id=settings.DEFAULT_SELF_NET)
-    fac = Facility.objects.get(id=settings.DEFAULT_SELF_FAC)
-    mapping = {"org": org, "net": net, "ix": ix, "fac": fac}
-    if query:
-        reverse_view = redirect(f"/api/{data_type}/{mapping.get(data_type).id}?{query}")
-    else:
-        reverse_view = redirect(f"/api/{data_type}/{mapping.get(data_type).id}")
 
-    if request.user.is_authenticated and hasattr(request.user, "self_entity_org"):
-        primary_org = request.user.primary_org
+    query = request.META["QUERY_STRING"]
+    supported_tags = ["org", "net", "ix", "fac", "carrier", "campus"]
+
+    print(REFTAG_MAP)
+
+    if data_type not in supported_tags:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if (
+        request.user.is_authenticated
+        and hasattr(request.user, "self_entity_org")
+        and request.user.primary_org
+    ):
+        org = Organization.objects.get(id=request.user.primary_org)
+
         if data_type == "org":
-            return (
-                redirect(f"/api/org/{primary_org}?{query}")
-                if query
-                else redirect(f"/api/org/{primary_org}")
-            )
-        elif data_type == "net":
-            net = Organization.objects.get(id=primary_org).net_set.first()
-            if net:
-                return (
-                    redirect(f"/api/net/{net.id}?{query}")
-                    if query
-                    else redirect(f"/api/net/{net.id}")
-                )
-            return reverse_view
-        elif data_type == "ix":
-            ix = Organization.objects.get(id=primary_org).ix_set.first()
-            if ix:
-                return (
-                    redirect(f"/api/ix/{ix.id}?{query}")
-                    if query
-                    else redirect(f"/api/ix/{ix.id}")
-                )
-            return reverse_view
+            obj = org
         else:
-            fac = Organization.objects.get(id=primary_org).fac_set.first()
-            if fac:
-                return (
-                    redirect(f"/api/fac/{fac.id}?{query}")
-                    if query
-                    else redirect(f"/api/fac/{fac.id}")
+            obj = getattr(org, f"{data_type}_set").filter(status="ok").first()
+            if not obj:
+                obj = REFTAG_MAP[data_type].model.objects.get(
+                    id=getattr(settings, f"DEFAULT_SELF_{data_type.upper()}")
                 )
-            return reverse_view
+
+        return (
+            redirect(f"/api/{data_type}/{obj.id}?{query}")
+            if query
+            else redirect(f"/api/{data_type}/{obj.id}")
+        )
+
     else:
-        return reverse_view
+        obj = REFTAG_MAP[data_type].model.objects.get(
+            id=getattr(settings, f"DEFAULT_SELF_{data_type.upper()}")
+        )
+
+        return (
+            redirect(f"/api/{data_type}/{obj.id}?{query}")
+            if query
+            else redirect(f"/api/{data_type}/{obj.id}")
+        )
 
 
 # set here in case we want to add more urls later
 urlpatterns = [
-    url("(net|ix|org|fac)/self", view_self_entity),
+    url("(net|ix|org|fac|carrier|campus)/self", view_self_entity),
 ]
 rout_urls = router.urls
 urls = urlpatterns + rout_urls
@@ -1197,5 +1189,7 @@ REFTAG_MAP = {
         IXLanViewSet,
         IXLanPrefixViewSet,
         CampusViewSet,
+        CarrierViewSet,
+        CarrierFacilityViewSet,
     ]
 }

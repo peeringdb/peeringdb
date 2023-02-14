@@ -3244,36 +3244,36 @@ def view_self_entity(request, data_type):
     """
     Redirect self entity API to the corresponding url
     """
-    org = Organization.objects.get(id=dj_settings.DEFAULT_SELF_ORG)
-    ix = InternetExchange.objects.get(id=dj_settings.DEFAULT_SELF_IX)
-    net = Network.objects.get(id=dj_settings.DEFAULT_SELF_NET)
-    fac = Facility.objects.get(id=dj_settings.DEFAULT_SELF_FAC)
-    mapping = {"org": org, "net": net, "ix": ix, "fac": fac}
-    reverse_view = reverse(
-        f"{data_type}-view", kwargs={"id": mapping.get(data_type).id}
-    )
 
-    if request.user.is_authenticated and hasattr(request.user, "self_entity_org"):
-        primary_org = request.user.self_entity_org
+    supported_tags = ["org", "net", "ix", "fac", "carrier", "campus"]
+
+    if data_type not in supported_tags:
+        return HttpResponse(status=404)
+
+    if (
+        request.user.is_authenticated
+        and hasattr(request.user, "self_entity_org")
+        and request.user.primary_org
+    ):
+        org = Organization.objects.get(id=request.user.primary_org)
+
         if data_type == "org":
-            return redirect(reverse("org-view", kwargs={"id": primary_org}))
-        elif data_type == "net":
-            net = Organization.objects.get(id=primary_org).net_set.first()
-            if net:
-                return redirect(reverse("net-view", kwargs={"id": net.id}))
-            return redirect(reverse_view)
-        elif data_type == "ix":
-            ix = Organization.objects.get(id=primary_org).ix_set.first()
-            if ix:
-                return redirect(reverse("ix-view", kwargs={"id": ix.id}))
-            return redirect(reverse_view)
+            obj = org
         else:
-            fac = Organization.objects.get(id=primary_org).fac_set.first()
-            if fac:
-                return redirect(reverse("fac-view", kwargs={"id": fac.id}))
-            return redirect(reverse_view)
+            obj = getattr(org, f"{data_type}_set").filter(status="ok").first()
+            if not obj:
+                obj = REFTAG_MAP[data_type].objects.get(
+                    id=getattr(dj_settings, f"DEFAULT_SELF_{data_type.upper()}")
+                )
+
+        return redirect(reverse(f"{data_type}-view", kwargs={"id": obj.id}))
+
     else:
-        return redirect(reverse_view)
+        obj = REFTAG_MAP[data_type].objects.get(
+            id=getattr(dj_settings, f"DEFAULT_SELF_{data_type.upper()}")
+        )
+
+        return redirect(reverse(f"{data_type}-view", kwargs={"id": obj.id}))
 
 
 @csrf_protect

@@ -5581,8 +5581,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     def self_entity_org(self):
         if self.primary_org:
             return self.primary_org
+        orgs = self.organizations
 
-        org_id = min(org.id for org in self.organizations)
+        if not orgs:
+            return None
+
+        org_id = min(org.id for org in orgs)
         return Organization.objects.get(id=org_id).id
 
     @property
