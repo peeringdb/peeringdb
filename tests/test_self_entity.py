@@ -1,12 +1,14 @@
 import pytest
-from peeringdb_server.models import (
-    User,
-    Organization,
-    Network,
-    InternetExchange, Facility,
-)
-from rest_framework.test import APIClient
 from django.conf import settings
+from rest_framework.test import APIClient
+
+from peeringdb_server.models import (
+    Facility,
+    InternetExchange,
+    Network,
+    Organization,
+    User,
+)
 
 
 @pytest.fixture
@@ -56,19 +58,19 @@ def test_view_self_entity(client):
     response = client.get("/org/self")
 
     assert response.status_code == 302
-    assert response.url == "/org/{}".format(org.id)
+    assert response.url == f"/org/{org.id}"
 
     response = client.get("/net/self")
 
     assert response.status_code == 302
-    assert response.url == "/net/{}".format(net.id)
+    assert response.url == f"/net/{net.id}"
 
     response = client.get("/ix/self")
 
     assert response.status_code == 302
-    assert response.url == "/ix/{}".format(ix.id)
+    assert response.url == f"/ix/{ix.id}"
 
     response = client.get("/fac/self")
 
     assert response.status_code == 302
-    assert response.url == "/fac/{}".format(fac.id)
+    assert response.url == f"/fac/{fac.id}"

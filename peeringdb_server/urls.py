@@ -18,8 +18,8 @@ from peeringdb_server.autocomplete_views import (
     ExchangeAutocompleteJSON,
     FacilityAutocomplete,
     FacilityAutocompleteForExchange,
-    FacilityAutocompleteForOrganization,
     FacilityAutocompleteForNetwork,
+    FacilityAutocompleteForOrganization,
     FacilityAutocompleteJSON,
     IXLanAutocomplete,
     NetworkAutocomplete,
@@ -64,8 +64,8 @@ from peeringdb_server.views import (
     view_advanced_search,
     view_affiliate_to_org,
     view_aup,
-    view_carrier,
     view_campus,
+    view_carrier,
     view_close_account,
     view_exchange,
     view_facility,
@@ -82,7 +82,9 @@ from peeringdb_server.views import (
     view_profile_v1,
     view_registration,
     view_request_ownership,
+    view_self_entity,
     view_set_user_locale,
+    view_set_user_org,
     view_sponsorships,
     view_suggest,
     view_username_change,
@@ -91,8 +93,6 @@ from peeringdb_server.views import (
     view_username_retrieve_initiate,
     view_verify,
     watch_network,
-    view_self_entity,
-    view_set_user_org,
 )
 
 # o
@@ -183,9 +183,7 @@ urlpatterns = [
     url(
         r"^%s/(?P<id>\d+)/?$" % Carrier.handleref.tag, view_carrier, name="carrier-view"
     ),
-    url(
-        r"^%s/(?P<id>\d+)/?$" % Campus.handleref.tag, view_campus, name="campus-view"
-    ),
+    url(r"^%s/(?P<id>\d+)/?$" % Campus.handleref.tag, view_campus, name="campus-view"),
     url(
         r"^%s/(?P<id>\d+)/?$" % Organization.handleref.tag,
         view_organization,

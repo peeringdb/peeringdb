@@ -29,7 +29,7 @@ from twentyc.rpc import (
     RestClient,
 )
 
-from peeringdb_server import inet, models, signals
+from peeringdb_server import inet
 from peeringdb_server import settings as pdb_settings
 from peeringdb_server.models import (
     QUEUE_ENABLED,
@@ -1860,7 +1860,7 @@ class TestJSON(unittest.TestCase):
                     "org_id": SHARED["org_rwp"].id,
                 },
             },
-            expected_status = "pending"
+            expected_status="pending",
         )
 
         SHARED["campus_id"] = r_data.get("id")
@@ -4960,7 +4960,9 @@ class TestJSON(unittest.TestCase):
 
         data = self.make_data_fac(org_id=settings.SUGGEST_ENTITY_ORG, suggest=True)
 
-        r_data = self.assert_create(self.db_user, "fac", data, ignore=["latitude", "longitude"])
+        r_data = self.assert_create(
+            self.db_user, "fac", data, ignore=["latitude", "longitude"]
+        )
 
         self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
         self.assertEqual(r_data["status"], "pending")
@@ -4971,7 +4973,12 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_fac(org_id=settings.SUGGEST_ENTITY_ORG, suggest=True)
 
         r_data = self.assert_create(
-            self.db_guest, "fac", data, test_success=False, test_failures={"perms": {}}, ignore=["latitude", "longitude"]
+            self.db_guest,
+            "fac",
+            data,
+            test_success=False,
+            test_failures={"perms": {}},
+            ignore=["latitude", "longitude"],
         )
 
     def test_z_misc_001_add_fac_bug(self):
@@ -4982,7 +4989,9 @@ class TestJSON(unittest.TestCase):
 
         # Add fac
         data = self.make_data_fac()
-        r_data = self.assert_create(self.db_org_admin, "fac", data, ignore=["latitude", "longitude"])
+        r_data = self.assert_create(
+            self.db_org_admin, "fac", data, ignore=["latitude", "longitude"]
+        )
 
         self.assertEqual(r_data["status"], "pending")
 
@@ -4999,7 +5008,9 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(fac.status, "deleted")
 
         # Re-add should go back to pending (previously was going to "ok")
-        re_add_data = self.assert_create(self.db_org_admin, "fac", data, ignore=["latitude", "longitude"])
+        re_add_data = self.assert_create(
+            self.db_org_admin, "fac", data, ignore=["latitude", "longitude"]
+        )
         self.assertEqual(re_add_data["status"], "pending")
         fac = Facility.objects.get(id=re_add_data["id"])
         self.assertEqual(fac.status, "pending")
@@ -5017,7 +5028,9 @@ class TestJSON(unittest.TestCase):
         del data["org_id"]
         print(data)
 
-        r_data = self.assert_create(self.db_user, "fac", data, ignore=["latitude", "longitude"])
+        r_data = self.assert_create(
+            self.db_user, "fac", data, ignore=["latitude", "longitude"]
+        )
 
         self.assertEqual(r_data["status"], "pending")
         self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
@@ -5404,7 +5417,6 @@ class Command(BaseCommand):
                         org_id=SHARED[f"org_{prefix}_{status}"].id,
                     )
 
-
         # create facilities for campus objects that are supposed to have status `ok`
         # since any campus requires at least 2 facilities to not be pending
 
@@ -5422,27 +5434,25 @@ class Command(BaseCommand):
                 Facility,
                 status="ok",
                 prefix=f"campus{campus.id}_1",
-                org_id = campus.org.id,
+                org_id=campus.org.id,
                 longitude=30.091435,
                 latitude=31.25435,
-                campus_id = campus.id
+                campus_id=campus.id,
             )
 
             cls.create_entity(
                 Facility,
                 status="ok",
                 prefix=f"campus{campus.id}_2",
-                org_id = campus.org.id,
+                org_id=campus.org.id,
                 longitude=30.091435,
                 latitude=31.25435,
-                campus_id = campus.id
+                campus_id=campus.id,
             )
-
 
             campus.refresh_from_db()
 
             assert campus.status == "ok"
-
 
         # create entities for duplicate validation testing
 
@@ -5589,7 +5599,7 @@ class Command(BaseCommand):
                 try:
                     obj.delete(hard=True)
                     deleted += 1
-                except AssertionError as exc:
+                except AssertionError:
                     pass
             elif k[-3:] == "_id":
                 reftag = re.match("^(.+)_id$", k).group(1)

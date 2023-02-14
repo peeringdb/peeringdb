@@ -7,13 +7,13 @@ from django.db.models import Q
 from haystack import indexes
 
 from peeringdb_server.models import (
+    Campus,
     Facility,
     InternetExchange,
     IXLanPrefix,
     Network,
     NetworkIXLan,
     Organization,
-    Campus,
 )
 from peeringdb_server.search import unaccent
 
@@ -125,9 +125,11 @@ class OrganizationIndex(MainEntity, indexes.Indexable):
     def get_model(self):
         return Organization
 
+
 class CampusIndex(MainEntity, indexes.Indexable):
     def get_model(self):
         return Campus
+
 
 class InternetExchangeIndex(MainEntity, indexes.Indexable):
     org_id = indexes.IntegerField(indexed=False, model_attr="org_id")

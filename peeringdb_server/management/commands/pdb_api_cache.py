@@ -11,7 +11,6 @@ from django.core.management.base import BaseCommand
 from rest_framework.test import APIRequestFactory
 
 import peeringdb_server.models as pdbm
-from peeringdb_server import signals
 import peeringdb_server.rest as pdbr
 from peeringdb_server.renderers import MetaJSONRenderer
 

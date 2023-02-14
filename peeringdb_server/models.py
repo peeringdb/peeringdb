@@ -1596,6 +1596,7 @@ class Campus(ProtectedMixin, pdb_models.CampusBase):
     """
     Describes a peeringdb campus
     """
+
     org = models.ForeignKey(
         Organization,
         related_name="campus_set",
@@ -1696,8 +1697,6 @@ class Campus(ProtectedMixin, pdb_models.CampusBase):
         return "{}{}".format(
             settings.BASE_URL, django.urls.reverse("campus-view", args=(self.id,))
         )
-
-
 
 
 @grainy_model(namespace="facility", parent="org")
@@ -5548,9 +5547,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     primary_org = models.IntegerField(
         blank=True,
         null=True,
-        help_text=_(
-            "The user's primary organization"
-        ),
+        help_text=_("The user's primary organization"),
     )
     locale = models.CharField(
         _("language"),
@@ -5632,7 +5629,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         if self.primary_org:
             return self.primary_org
 
-        org_id = min([org.id for org in self.organizations])
+        org_id = min(org.id for org in self.organizations)
         return Organization.objects.get(id=org_id).id
 
     @property

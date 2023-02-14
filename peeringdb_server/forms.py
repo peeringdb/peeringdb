@@ -200,6 +200,7 @@ class UserOrgForm(forms.Form):
     """
     Sets primary organization of the user
     """
+
     organization = forms.CharField()
 
     def clean_org(self):

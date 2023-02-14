@@ -3364,6 +3364,7 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
     """
     Serializer for peeringdb_server.models.Campus
     """
+
     fac_set = nested(
         FacilitySerializer,
         exclude=["org_id", "org"],
@@ -3378,27 +3379,25 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
     class Meta:
         model = Campus
         depth = 0
-        fields = (
-            [
-                "id",
-                "org_id",
-                "org_name",
-                "org",
-                "status",
-                "created",
-                "updated",
-                "name",
-                "name_long",
-                "notes",
-                "aka",
-                "website",
-                "fac_set",
-                "country",
-                "city",
-                "zipcode",
-                "state",
-            ] + HandleRefSerializer.Meta.fields
-        )
+        fields = [
+            "id",
+            "org_id",
+            "org_name",
+            "org",
+            "status",
+            "created",
+            "updated",
+            "name",
+            "name_long",
+            "notes",
+            "aka",
+            "website",
+            "fac_set",
+            "country",
+            "city",
+            "zipcode",
+            "state",
+        ] + HandleRefSerializer.Meta.fields
         related_fields = ["fac_set", "org"]
         list_exclude = ["org"]
 

@@ -233,6 +233,7 @@ class FacilityAutocompleteForExchange(FacilityAutocomplete):
         qs = qs.exclude(id__in=fac_ids)
         return qs
 
+
 class FacilityAutocompleteForOrganization(FacilityAutocomplete):
 
     """
@@ -247,7 +248,6 @@ class FacilityAutocompleteForOrganization(FacilityAutocomplete):
         ]
         qs = qs.filter(id__in=fac_ids)
         return qs
-
 
 
 class OrganizationAutocomplete(AutocompleteHTMLResponse):

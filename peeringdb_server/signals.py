@@ -12,14 +12,15 @@ Django signal handlers
 
 """
 
-from math import sin, cos, sqrt, atan2, radians
+from math import atan2, cos, radians, sin, sqrt
+
 import django.urls
 import reversion
-from django.core.exceptions import ValidationError
 from allauth.account.signals import email_confirmed, user_signed_up
 from corsheaders.signals import check_request_enabled
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
@@ -43,6 +44,7 @@ from peeringdb_server.inet import RdapException, RdapLookup
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     QUEUE_NOTIFY,
+    Campus,
     EmailAddressData,
     Facility,
     Network,
@@ -50,7 +52,6 @@ from peeringdb_server.models import (
     Organization,
     UserOrgAffiliationRequest,
     VerificationQueueItem,
-    Campus,
 )
 from peeringdb_server.util import disable_auto_now_and_save
 
@@ -177,7 +178,11 @@ def set_campus_to_facility(sender, instance=None, **kwargs):
     R = 6373.0
     if instance.campus_id:
         if not (instance.latitude and instance.longitude):
-            raise ValidationError(_("Facility cannot be made part of a campus as it is missing its geolocation coordinates"))
+            raise ValidationError(
+                _(
+                    "Facility cannot be made part of a campus as it is missing its geolocation coordinates"
+                )
+            )
 
         latitude = radians(instance.latitude)
         longitude = radians(instance.longitude)
@@ -189,22 +194,32 @@ def set_campus_to_facility(sender, instance=None, **kwargs):
                 prev_lat, prev_long = radians(obj.latitude), radians(obj.longitude)
                 dlat, dlon = prev_lat - latitude, prev_long - longitude
 
-                a = sin(dlat / 2) ** 2 + cos(latitude) * cos(prev_lat) * sin(dlon / 2) ** 2
+                a = (
+                    sin(dlat / 2) ** 2
+                    + cos(latitude) * cos(prev_lat) * sin(dlon / 2) ** 2
+                )
                 c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
                 distance = R * c
 
                 if distance > settings.CAMPUS_MAX_DISTANCE:
                     raise ValidationError(
-                        _(f"Facility out of campus bounds (max. {settings.CAMPUS_MAX_DISTANCE}km)")
+                        _(
+                            f"Facility out of campus bounds (max. {settings.CAMPUS_MAX_DISTANCE}km)"
+                        )
                     )
 
+
 pre_save.connect(set_campus_to_facility, sender=Facility)
+
 
 def propagate_campus_status(sender, instance=None, **kwargs):
     if instance and instance.campus_id:
         instance.campus.save()
+
+
 post_save.connect(propagate_campus_status, sender=Facility)
+
 
 def campus_status(sender, instance=None, **kwargs):
     """

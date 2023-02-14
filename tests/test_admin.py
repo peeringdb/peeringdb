@@ -13,9 +13,9 @@ from django.urls import resolve, reverse
 from django.utils import timezone
 from django_grainy.models import GroupPermission, UserPermission
 
-from peeringdb_server import signals
 import peeringdb_server.admin as admin
 import peeringdb_server.models as models
+from peeringdb_server import signals
 
 
 class AdminTests(TestCase):

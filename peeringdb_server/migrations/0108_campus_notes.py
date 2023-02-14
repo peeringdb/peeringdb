@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0107_auto_20230203_0937'),
+        ("peeringdb_server", "0107_auto_20230203_0937"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='campus',
-            name='notes',
-            field=models.TextField(blank=True, verbose_name='Notes'),
+            model_name="campus",
+            name="notes",
+            field=models.TextField(blank=True, verbose_name="Notes"),
         ),
     ]

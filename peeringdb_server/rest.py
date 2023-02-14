@@ -24,8 +24,8 @@ import reversion
 import unidecode
 from django.apps import apps
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from django.conf.urls import url
+from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
 from django.db import connection, transaction
 from django.db.models import DateTimeField
@@ -35,8 +35,8 @@ from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import PermissionDenied
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
-from rest_framework.exceptions import APIException, ParseError
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -47,16 +47,13 @@ from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.models import (
     UTC,
     CarrierFacility,
-    Campus,
     Facility,
     InternetExchange,
     Network,
+    Organization,
     OrganizationAPIKey,
     ProtectedAction,
     UserAPIKey,
-    Organization,
-    InternetExchange,
-    Facility,
 )
 from peeringdb_server.permissions import (
     APIPermissionsApplicator,
@@ -68,7 +65,11 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
-from peeringdb_server.serializers import ASSetSerializer, ParentStatusException, FacilitySerializer
+from peeringdb_server.serializers import (
+    ASSetSerializer,
+    FacilitySerializer,
+    ParentStatusException,
+)
 from peeringdb_server.util import coerce_ipaddr
 
 
@@ -953,14 +954,14 @@ class CampusFacilityMixin:
     """
 
     @transaction.atomic
-    @action(detail=True, methods=["POST"], url_path=r'add-facility/(?P<fac_id>[^/.]+)')
+    @action(detail=True, methods=["POST"], url_path=r"add-facility/(?P<fac_id>[^/.]+)")
     def add_facility(self, request, *args, **kwargs):
 
         """
         Allows the org to approve a campus listing at their facility
         """
 
-        facility_id = self.kwargs.get('fac_id')
+        facility_id = self.kwargs.get("fac_id")
         fac = Facility.objects.get(id=facility_id)
 
         if not check_permissions_from_request(request, fac, "u"):
@@ -980,14 +981,16 @@ class CampusFacilityMixin:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @transaction.atomic
-    @action(detail=True, methods=["post"], url_path=r'remove-facility/(?P<fac_id>[^/.]+)')
+    @action(
+        detail=True, methods=["post"], url_path=r"remove-facility/(?P<fac_id>[^/.]+)"
+    )
     def remove_facility(self, request, *args, **kwargs):
 
         """
         Allows the org to reject a campus listing at their facility
         """
 
-        fac = Facility.objects.get(id=self.kwargs.get('fac_id'))
+        fac = Facility.objects.get(id=self.kwargs.get("fac_id"))
 
         if not fac.campus_id:
             return Response(FacilitySerializer(fac).data)
@@ -1066,9 +1069,7 @@ NetworkContactViewSet = model_view_set("NetworkContact")
 NetworkFacilityViewSet = model_view_set("NetworkFacility")
 NetworkIXLanViewSet = model_view_set("NetworkIXLan")
 OrganizationViewSet = model_view_set("Organization")
-CampusViewSet = model_view_set(
-    "Campus", mixins=(CampusFacilityMixin,)
-)
+CampusViewSet = model_view_set("Campus", mixins=(CampusFacilityMixin,))
 
 
 class ReadOnlyMixin:
@@ -1136,7 +1137,7 @@ def view_self_entity(request, data_type):
     """
     This API View redirect self entity API to the corresponding url
     """
-    query = request.META['QUERY_STRING']
+    query = request.META["QUERY_STRING"]
     org = Organization.objects.get(id=settings.DEFAULT_SELF_ORG)
     ix = InternetExchange.objects.get(id=settings.DEFAULT_SELF_IX)
     net = Network.objects.get(id=settings.DEFAULT_SELF_NET)
@@ -1150,21 +1151,37 @@ def view_self_entity(request, data_type):
     if request.user.is_authenticated and hasattr(request.user, "self_entity_org"):
         primary_org = request.user.primary_org
         if data_type == "org":
-            return redirect(f"/api/org/{primary_org}?{query}") if query else redirect(f"/api/org/{primary_org}")
+            return (
+                redirect(f"/api/org/{primary_org}?{query}")
+                if query
+                else redirect(f"/api/org/{primary_org}")
+            )
         elif data_type == "net":
             net = Organization.objects.get(id=primary_org).net_set.first()
             if net:
-                return redirect(f"/api/net/{net.id}?{query}") if query else redirect(f"/api/net/{net.id}")
+                return (
+                    redirect(f"/api/net/{net.id}?{query}")
+                    if query
+                    else redirect(f"/api/net/{net.id}")
+                )
             return reverse_view
         elif data_type == "ix":
             ix = Organization.objects.get(id=primary_org).ix_set.first()
             if ix:
-                return redirect(f"/api/ix/{ix.id}?{query}") if query else redirect(f"/api/ix/{ix.id}")
+                return (
+                    redirect(f"/api/ix/{ix.id}?{query}")
+                    if query
+                    else redirect(f"/api/ix/{ix.id}")
+                )
             return reverse_view
         else:
             fac = Organization.objects.get(id=primary_org).fac_set.first()
             if fac:
-                return redirect(f"/api/fac/{fac.id}?{query}") if query else redirect(f"/api/fac/{fac.id}")
+                return (
+                    redirect(f"/api/fac/{fac.id}?{query}")
+                    if query
+                    else redirect(f"/api/fac/{fac.id}")
+                )
             return reverse_view
     else:
         return reverse_view

@@ -79,8 +79,8 @@ from peeringdb_server.forms import (
     UserCreationForm,
     UserLocaleForm,
     UsernameChangeForm,
-    UserOrgForm,
     UsernameRetrieveForm,
+    UserOrgForm,
 )
 from peeringdb_server.inet import (
     RdapException,
@@ -93,9 +93,9 @@ from peeringdb_server.models import (
     PARTNERSHIP_LEVELS,
     REFTAG_MAP,
     UTC,
+    Campus,
     Carrier,
     CarrierFacility,
-    Campus,
     DataChangeWatchedObject,
     Facility,
     InternetExchange,
@@ -116,8 +116,8 @@ from peeringdb_server.org_admin_views import load_all_user_permissions
 from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
 from peeringdb_server.search import search
 from peeringdb_server.serializers import (
-    CarrierSerializer,
     CampusSerializer,
+    CarrierSerializer,
     FacilitySerializer,
     InternetExchangeSerializer,
     NetworkSerializer,
@@ -2012,7 +2012,12 @@ def view_campus(request, id):
                 ),
                 "value": data.get("website", dismiss),
             },
-            {"name": "city", "label": _("City"), "value": data.get("city", dismiss), "readonly": True},
+            {
+                "name": "city",
+                "label": _("City"),
+                "value": data.get("city", dismiss),
+                "readonly": True,
+            },
             {
                 "name": "country",
                 "label": _("Country Code"),
@@ -3263,6 +3268,7 @@ def view_healthcheck(request):
 
     return HttpResponse("")
 
+
 @ensure_csrf_cookie
 @require_http_methods(["GET"])
 def view_self_entity(request, data_type):
@@ -3274,7 +3280,9 @@ def view_self_entity(request, data_type):
     net = Network.objects.get(id=dj_settings.DEFAULT_SELF_NET)
     fac = Facility.objects.get(id=dj_settings.DEFAULT_SELF_FAC)
     mapping = {"org": org, "net": net, "ix": ix, "fac": fac}
-    reverse_view = reverse(f"{data_type}-view", kwargs={"id": mapping.get(data_type).id})
+    reverse_view = reverse(
+        f"{data_type}-view", kwargs={"id": mapping.get(data_type).id}
+    )
 
     if request.user.is_authenticated and hasattr(request.user, "self_entity_org"):
         primary_org = request.user.self_entity_org

@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('peeringdb_server', '0105_carrier_website_optional'),
+        ("peeringdb_server", "0105_carrier_website_optional"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='primary_org',
-            field=models.IntegerField(blank=True, help_text="The user's primary organization", null=True),
+            model_name="user",
+            name="primary_org",
+            field=models.IntegerField(
+                blank=True, help_text="The user's primary organization", null=True
+            ),
         ),
     ]

@@ -7,7 +7,7 @@ from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from peeringdb_server import models, signals
+from peeringdb_server import models
 from peeringdb_server.mock import Mock
 
 
