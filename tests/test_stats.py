@@ -11,6 +11,7 @@ from django.test import override_settings
 from peeringdb_server.models import (
     REFTAG_MAP,
     UTC,
+    Campus,
     Facility,
     InternetExchange,
     InternetExchangeFacility,
@@ -39,6 +40,30 @@ def setup_data():
             obj.created = obj.updated = date_past
             obj.save()
             break
+
+    # add facilities to campus so its no longer pending
+
+    campus = Campus.objects.filter(status="ok").first()
+
+    for campus in Campus.objects.filter(status="pending"):
+        Facility.objects.create(
+            name=f"Campus Fac 1 {campus.id}",
+            status="ok",
+            campus=campus,
+            latitude=31.0,
+            longitude=30.0,
+            org=campus.org,
+        )
+        Facility.objects.create(
+            name=f"Campus Fac 2 {campus.id}",
+            status="ok",
+            campus=campus,
+            latitude=31.0,
+            longitude=30.0,
+            org=campus.org,
+        )
+        campus.refresh_from_db()
+        assert campus.status == "ok"
 
     # create users
 

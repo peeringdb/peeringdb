@@ -12,7 +12,6 @@ from django.test import Client, RequestFactory, TestCase
 from django.urls import resolve, reverse
 from django.utils import timezone
 from django_grainy.models import GroupPermission, UserPermission
-from django.db.models.signals import pre_save
 
 from peeringdb_server import signals
 import peeringdb_server.admin as admin
@@ -38,9 +37,6 @@ class AdminTests(TestCase):
     def setUpTestData(cls):
 
         cls.entities = {}
-
-        pre_save.disconnect(signals.campus_status, sender=models.Campus)
-        pre_save.disconnect(signals.set_campus_to_facility, sender=models.Facility)
 
         # set up organizations
         cls.entities["org"] = [

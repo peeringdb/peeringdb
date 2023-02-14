@@ -972,7 +972,6 @@ class CampusFacilityMixin:
             fac.campus_id = campus.id
             try:
                 fac.save()
-                campus.save()
             except ValidationError as inst:
                 raise RestValidationError({"non_field_errors": inst.messages})
 

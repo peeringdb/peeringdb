@@ -199,9 +199,12 @@ def set_campus_to_facility(sender, instance=None, **kwargs):
                         _(f"Facility out of campus bounds (max. {settings.CAMPUS_MAX_DISTANCE}km)")
                     )
 
-
 pre_save.connect(set_campus_to_facility, sender=Facility)
 
+def propagate_campus_status(sender, instance=None, **kwargs):
+    if instance and instance.campus_id:
+        instance.campus.save()
+post_save.connect(propagate_campus_status, sender=Facility)
 
 def campus_status(sender, instance=None, **kwargs):
     """
@@ -215,7 +218,7 @@ def campus_status(sender, instance=None, **kwargs):
         Facility.objects.filter(campus=instance).update(campus=None)
         return
 
-    if instance.fac_set.count() < 2:
+    if instance.fac_set.filter(status="ok").count() < 2:
         instance.status = "pending"
     else:
         instance.status = "ok"

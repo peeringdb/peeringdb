@@ -6,7 +6,6 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models.signals import pre_save
 
 from peeringdb_server import models, signals
 from peeringdb_server.mock import Mock
@@ -30,9 +29,6 @@ class Command(BaseCommand):
             self.stdout.write(f"[pretend] {msg}")
 
     def handle(self, *args, **options):
-        pre_save.disconnect(signals.campus_status, sender=models.Campus)
-        pre_save.disconnect(signals.set_campus_to_facility, sender=models.Facility)
-
         self.commit = options.get("commit")
         self.limit = options.get("limit")
 

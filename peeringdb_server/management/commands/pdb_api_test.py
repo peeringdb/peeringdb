@@ -18,7 +18,6 @@ from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
-from django.db.models.signals import pre_save
 from django.utils import timezone
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework import serializers
@@ -290,8 +289,8 @@ class TestJSON(unittest.TestCase):
             "clli": str(uuid.uuid4())[:6].upper(),
             "rencode": "",
             "npanxx": "000-111",
-            "latitude": None,
-            "longitude": None,
+            "latitude": 30.091435,
+            "longitude": 31.25435,
             "notes": NOTE,
             "country": COUNTRY,
             "tech_email": EMAIL,
@@ -523,10 +522,10 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def assert_get_handleref(self, db, typ, id):
+    def assert_get_handleref(self, db, typ, id, ignore=list()):
         data = self.assert_get_single(db.get(typ, id))
         self.assert_handleref_integrity(data)
-        self.assert_data_integrity(data, typ)
+        self.assert_data_integrity(data, typ, ignore=ignore)
         return data
 
     ##########################################################################
@@ -582,7 +581,8 @@ class TestJSON(unittest.TestCase):
                     status_checked = True
 
             if not status_checked:
-                self.assertEqual(r_data.get("status"), "ok")
+                expected_status = kwargs.get("expected_status", "ok")
+                self.assertEqual(r_data.get("status"), expected_status)
         else:
             r_data = {}
 
@@ -643,8 +643,10 @@ class TestJSON(unittest.TestCase):
         self, db, typ, id, data, test_failures=False, test_success=True, **kwargs
     ):
 
+        ignore = kwargs.pop("ignore", [])
+
         if test_success:
-            orig = self.assert_get_handleref(db, typ, id)
+            orig = self.assert_get_handleref(db, typ, id, ignore=ignore)
             orig.update(**data)
         else:
             orig = {"id": id}
@@ -656,14 +658,13 @@ class TestJSON(unittest.TestCase):
 
         if test_success:
             db.update(typ, **orig)
-            u_data = self.assert_get_handleref(db, typ, id)
+            u_data = self.assert_get_handleref(db, typ, id, ignore=ignore)
             if type(test_success) == list:
                 for test in test_success:
                     if test and callable(test):
                         test(data, u_data)
             else:
                 # self.assertGreater(u_data["version"], orig["version"])
-                ignore = kwargs.pop("ignore", [])
                 for k, v in list(data.items()):
                     if k in ignore:
                         continue
@@ -711,10 +712,10 @@ class TestJSON(unittest.TestCase):
             # we test failure to update readonly fields
             if "readonly" in test_failures:
                 data_ro = copy.copy(orig)
-                b_data = self.assert_get_handleref(db, typ, id)
+                b_data = self.assert_get_handleref(db, typ, id, ignore=ignore)
                 data_ro.update(**test_failures["readonly"])
                 db.update(typ, **data_ro)
-                u_data = self.assert_get_handleref(db, typ, id)
+                u_data = self.assert_get_handleref(db, typ, id, ignore=ignore)
                 for k, v in list(test_failures["readonly"].items()):
                     self.assertEqual(u_data.get(k), b_data.get(k))
 
@@ -1458,6 +1459,7 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "fac",
             data,
+            ignore=["latitude", "longitude"],
             test_failures={
                 "invalid": [
                     {"name": ""},
@@ -1483,6 +1485,7 @@ class TestJSON(unittest.TestCase):
             "fac",
             SHARED["fac_id"],
             {"name": self.make_name("Test")},
+            ignore=["latitude", "longitude"],
             test_failures={
                 "invalid": {"name": ""},
                 "perms": {"id": SHARED["fac_r_ok"].id},
@@ -1541,7 +1544,7 @@ class TestJSON(unittest.TestCase):
             data,
             # tell `assert_create` to not compare the value we pass
             # for region_continent with the value returned from the save
-            ignore=["region_continent"],
+            ignore=["region_continent", "latitude", "longitude"],
             test_failures={},
         )
         fac_id = r_data.get("id")
@@ -1560,7 +1563,7 @@ class TestJSON(unittest.TestCase):
             {"region_continent": "Europe"},
             # tell `assert_update` to not compare the value we pass
             # for region_continent with the value returned from the save
-            ignore=["region_continent"],
+            ignore=["region_continent", "latitude", "longitude"],
         )
 
         fac = Facility.objects.get(id=fac_id)
@@ -1581,6 +1584,7 @@ class TestJSON(unittest.TestCase):
                     {"available_voltage_services": ["Invalid"]},
                 ],
             },
+            ignore=["longitude", "latitude"],
         )
 
         SHARED["fac_id"] = r_data.get("id")
@@ -1593,6 +1597,7 @@ class TestJSON(unittest.TestCase):
             test_failures={
                 "invalid": {"available_voltage_services": ["Invalid"]},
             },
+            ignore=["longitude", "latitude"],
         )
 
     ##########################################################################
@@ -1622,6 +1627,7 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "fac",
             data,
+            ignore=["longitude", "latitude"],
         )
         assert r_data["zipcode"] == ""
 
@@ -1854,6 +1860,7 @@ class TestJSON(unittest.TestCase):
                     "org_id": SHARED["org_rwp"].id,
                 },
             },
+            expected_status = "pending"
         )
 
         SHARED["campus_id"] = r_data.get("id")
@@ -1879,8 +1886,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_campus_status(self):
-        pre_save.connect(signals.campus_status, sender=models.Campus)
-        pre_save.connect(signals.set_campus_to_facility, sender=models.Facility)
 
         data = self.make_data_campus()
 
@@ -1919,9 +1924,6 @@ class TestJSON(unittest.TestCase):
         cam.save()
 
         assert cam.status == "pending"
-
-        pre_save.disconnect(signals.campus_status, sender=models.Campus)
-        pre_save.disconnect(signals.set_campus_to_facility, sender=models.Facility)
 
     ##########################################################################
 
@@ -2789,6 +2791,7 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "fac",
             data,
+            ignore=["latitude", "longitude"],
         )
 
         assert r_data["status"] == "pending"
@@ -4957,7 +4960,7 @@ class TestJSON(unittest.TestCase):
 
         data = self.make_data_fac(org_id=settings.SUGGEST_ENTITY_ORG, suggest=True)
 
-        r_data = self.assert_create(self.db_user, "fac", data)
+        r_data = self.assert_create(self.db_user, "fac", data, ignore=["latitude", "longitude"])
 
         self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
         self.assertEqual(r_data["status"], "pending")
@@ -4968,7 +4971,7 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_fac(org_id=settings.SUGGEST_ENTITY_ORG, suggest=True)
 
         r_data = self.assert_create(
-            self.db_guest, "fac", data, test_success=False, test_failures={"perms": {}}
+            self.db_guest, "fac", data, test_success=False, test_failures={"perms": {}}, ignore=["latitude", "longitude"]
         )
 
     def test_z_misc_001_add_fac_bug(self):
@@ -4979,7 +4982,7 @@ class TestJSON(unittest.TestCase):
 
         # Add fac
         data = self.make_data_fac()
-        r_data = self.assert_create(self.db_org_admin, "fac", data)
+        r_data = self.assert_create(self.db_org_admin, "fac", data, ignore=["latitude", "longitude"])
 
         self.assertEqual(r_data["status"], "pending")
 
@@ -4996,7 +4999,7 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(fac.status, "deleted")
 
         # Re-add should go back to pending (previously was going to "ok")
-        re_add_data = self.assert_create(self.db_org_admin, "fac", data)
+        re_add_data = self.assert_create(self.db_org_admin, "fac", data, ignore=["latitude", "longitude"])
         self.assertEqual(re_add_data["status"], "pending")
         fac = Facility.objects.get(id=re_add_data["id"])
         self.assertEqual(fac.status, "pending")
@@ -5014,7 +5017,7 @@ class TestJSON(unittest.TestCase):
         del data["org_id"]
         print(data)
 
-        r_data = self.assert_create(self.db_user, "fac", data)
+        r_data = self.assert_create(self.db_user, "fac", data, ignore=["latitude", "longitude"])
 
         self.assertEqual(r_data["status"], "pending")
         self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
@@ -5228,7 +5231,7 @@ class Command(BaseCommand):
         if name_suffix:
             name = f"{name}{name_suffix}"
         data = {"status": status}
-        if tag in ["ix", "net", "fac", "org"]:
+        if tag in ["ix", "net", "fac", "org", "campus"]:
             data["name"] = name
 
         data.update(**kwargs)
@@ -5401,6 +5404,46 @@ class Command(BaseCommand):
                         org_id=SHARED[f"org_{prefix}_{status}"].id,
                     )
 
+
+        # create facilities for campus objects that are supposed to have status `ok`
+        # since any campus requires at least 2 facilities to not be pending
+
+        for k in list(SHARED.keys()):
+            if not k.startswith("campus_") or not k.endswith("_ok"):
+                continue
+
+            if "dupe" in k:
+                continue
+
+            campus = SHARED[k]
+            print(k, campus)
+
+            cls.create_entity(
+                Facility,
+                status="ok",
+                prefix=f"campus{campus.id}_1",
+                org_id = campus.org.id,
+                longitude=30.091435,
+                latitude=31.25435,
+                campus_id = campus.id
+            )
+
+            cls.create_entity(
+                Facility,
+                status="ok",
+                prefix=f"campus{campus.id}_2",
+                org_id = campus.org.id,
+                longitude=30.091435,
+                latitude=31.25435,
+                campus_id = campus.id
+            )
+
+
+            campus.refresh_from_db()
+
+            assert campus.status == "ok"
+
+
         # create entities for duplicate validation testing
 
         for model in [Network, Facility, InternetExchange, Carrier, Campus]:
@@ -5546,7 +5589,7 @@ class Command(BaseCommand):
                 try:
                     obj.delete(hard=True)
                     deleted += 1
-                except AssertionError:
+                except AssertionError as exc:
                     pass
             elif k[-3:] == "_id":
                 reftag = re.match("^(.+)_id$", k).group(1)
@@ -5564,13 +5607,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        pre_save.disconnect(signals.campus_status, sender=models.Campus)
-        pre_save.disconnect(signals.set_campus_to_facility, sender=models.Facility)
-
         try:
             self.prepare()
-            pre_save.connect(signals.campus_status, sender=models.Campus)
-            pre_save.connect(signals.set_campus_to_facility, sender=models.Facility)
         except IntegrityError as inst:
             print(inst)
             self.cleanup()
