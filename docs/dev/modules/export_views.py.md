@@ -1,4 +1,4 @@
-Generated from export_views.py on 2023-01-17 22:33:48.733266
+Generated from export_views.py on 2023-02-14 15:33:37.171081
 
 # peeringdb_server.export_views
 
@@ -42,6 +42,19 @@ Arguments:
 
 Returns:
     - list: list containing rendered data rows ready for export
+
+---
+#### generate_campus
+`def generate_campus(self, request)`
+
+Fetch campus data from the API according to request and then render
+it ready for export.
+
+Arguments:
+    - request <Request>
+
+Returns:
+    - list: list containing rendered data ready for export
 
 ---
 #### generate_fac

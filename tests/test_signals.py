@@ -189,7 +189,6 @@ def test_poc_update(entities):
 
 @pytest.mark.django_db
 def test_region_continent(entities):
-
     org = Organization.objects.first()
     fac = Facility.objects.first()
 

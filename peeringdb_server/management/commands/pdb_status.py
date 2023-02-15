@@ -31,7 +31,6 @@ class Command(BaseCommand):
         print("".join(["-" for i in range(0, 80)]))
 
     def handle(self, *args, **options):
-
         # STATUS: handleref status breakdown
         self.print_line()
         self.log("status", "handleref status breakdown")

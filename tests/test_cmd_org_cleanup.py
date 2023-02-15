@@ -19,7 +19,6 @@ class TestOrgCleanup(ClientCase):
     def setUpTestData(cls):
         super().setUpTestData()
         with reversion.create_revision():
-
             cls.org = Organization.objects.create(name="Test Org")
 
             # Add user to all orgs' admin_usergroups

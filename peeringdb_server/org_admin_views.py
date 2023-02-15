@@ -42,7 +42,6 @@ def save_user_permissions(org, user, perms):
     grainy_perms = {}
 
     for id, permissions in list(perms.items()):
-
         if not permissions & PERM_READ:
             permissions = permissions | PERM_READ
 
@@ -246,7 +245,6 @@ def target_user_validate(fnc):
     """
 
     def callback(request, **kwargs):
-
         user_id = request.POST.get("user_id", request.GET.get("user_id"))
         org = kwargs.get("org")
 
@@ -294,7 +292,6 @@ def users(request, **kwargs):
 @login_required
 @org_admin_required
 def update_user_options(request, **kwargs):
-
     org = kwargs.get("org")
 
     form = OrgUserOptions(request.POST, instance=org)

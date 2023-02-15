@@ -99,6 +99,105 @@ paths:
         required: false
         schema:
           type: string
+      - name: campus
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: campus__aka
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: campus__created
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: campus__id
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: campus__name
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: campus__name_long
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: campus__notes
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: campus__status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: campus__updated
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: campus__version
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: campus__website
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
       - name: city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -4436,6 +4535,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: ixf_import_request_user__primary_org
+        in: query
+        description: 'The user''s primary organization
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: ixf_import_request_user__status
         in: query
         description: 'Filter results by matching a value against this field.
@@ -26710,6 +26821,2068 @@ paths:
           description: ''
       tags:
       - api
+  /api/campus:
+    get:
+      operationId: list campus
+      description: "Retrieves a list of `campus` type objects\n\n## List objects\n\
+        \n### Querying\n\nYou may query the resultset by passing field names as url\
+        \ parameters\n\n### Numeric Queries\n\nOn numeric fields you can suffix the\
+        \ field names with the following filters:\n\n- \\_\\_lt : less-than\n- \\\
+        _\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n- \\_\\_gte : greater-than-equal\n\
+        - \\_\\_in : value inside set of values (comma separated)\n\n**examples**\n\
+        \n    ?<field_name>__lt=10\n    ?<field_name>__in=1,10\n\n### String Queries\n\
+        \nOn string fields you can suffix the field names with the following filters:\n\
+        \n- \\_\\_contains : field value contains specified value\n- \\_\\_startswith\
+        \ : field value starts with specified value\n- \\_\\_in : value contained\
+        \ inside set of values (comma separated)\n\n**examples**\n\n    ?<field_name>__contains=something\n\
+        \    ?<field_name>__in=this,that\n\nAll string filtering operations are case-insensitive\n\
+        \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
+        \ to retrieve all\nobjects updated since then. Note that this result will\
+        \ contain objects that were\ndeleted in that timeframe as well - you can spot\
+        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
+        \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
+        object, you can expand those lists with the 'depth' parameter as explained\
+        \ below.\n\nThe naming schema of the field will always tell you which type\
+        \ of object the set is holding\nand will correspond with the object's endpoint\
+        \ on the API\n\n    <object_type>_set\n\nSo a set called 'net_set' will hold\
+        \ Network objects (api endpoint /net)\n\n### Depth\n\nNested sets will not\
+        \ be loaded (any field ending with the _set suffix, with the exception of\
+        \ 'irr_as_set') unless the 'depth'\nparameter is passed in the request URL.\n\
+        \nDepth can be one of three values:\n\n  - 1 : expand sets into ids (slow)\n\
+        \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
+        \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
+        \nAny request that does not require lookups will be served a cached result.\
+        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
+        \ responses by checking for the \"generated\" property inside the \"meta\"\
+        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
+        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
+        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
+        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
+        \ that does lookup queries and has it's **depth** parameter specified will\
+        \ have a result limit of 250 entries, any entries past this limit will be\
+        \ truncated, at which point you either should be more specific with your query\
+        \ or use the skip and limit parameters to page through the result set\n\n\
+        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
+        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
+        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
+        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
+        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+      parameters:
+      - name: aka
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: created
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: depth
+        in: query
+        required: false
+        description: Expand nested sets according to depth.
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+          maximum: 2
+      - name: id
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        required: false
+        description: Limit the number of rows returned in the result set (use for
+          pagination in combination with `skip`)
+        schema:
+          type: integer
+      - name: name
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: name_long
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: notes
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: org__address1
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__address2
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__aka
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__city
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__country
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `AF`, `AX`, `AL`, `DZ`, `AS`, `AD`, `AO`, `AI`, `AQ`, `AG`, `AR`, `AM`,
+          `AW`, `AU`, `AT`, `AZ`, `BS`, `BH`, `BD`, `BB`, `BY`, `BE`, `BZ`, `BJ`,
+          `BM`, `BT`, `BO`, `BQ`, `BA`, `BW`, `BV`, `BR`, `IO`, `BN`, `BG`, `BF`,
+          `BI`, `CV`, `KH`, `CM`, `CA`, `KY`, `CF`, `TD`, `CL`, `CN`, `CX`, `CC`,
+          `CO`, `KM`, `CG`, `CD`, `CK`, `CR`, `CI`, `HR`, `CU`, `CW`, `CY`, `CZ`,
+          `DK`, `DJ`, `DM`, `DO`, `EC`, `EG`, `SV`, `GQ`, `ER`, `EE`, `SZ`, `ET`,
+          `FK`, `FO`, `FJ`, `FI`, `FR`, `GF`, `PF`, `TF`, `GA`, `GM`, `GE`, `DE`,
+          `GH`, `GI`, `GR`, `GL`, `GD`, `GP`, `GU`, `GT`, `GG`, `GN`, `GW`, `GY`,
+          `HT`, `HM`, `VA`, `HN`, `HK`, `HU`, `IS`, `IN`, `ID`, `IR`, `IQ`, `IE`,
+          `IM`, `IL`, `IT`, `JM`, `JP`, `JE`, `JO`, `KZ`, `KE`, `KI`, `XK`, `KW`,
+          `KG`, `LA`, `LV`, `LB`, `LS`, `LR`, `LY`, `LI`, `LT`, `LU`, `MO`, `MG`,
+          `MW`, `MY`, `MV`, `ML`, `MT`, `MH`, `MQ`, `MR`, `MU`, `YT`, `MX`, `FM`,
+          `MD`, `MC`, `MN`, `ME`, `MS`, `MA`, `MZ`, `MM`, `NA`, `NR`, `NP`, `NL`,
+          `NC`, `NZ`, `NI`, `NE`, `NG`, `NU`, `NF`, `KP`, `MK`, `MP`, `NO`, `OM`,
+          `PK`, `PW`, `PS`, `PA`, `PG`, `PY`, `PE`, `PH`, `PN`, `PL`, `PT`, `PR`,
+          `QA`, `RE`, `RO`, `RU`, `RW`, `BL`, `SH`, `KN`, `LC`, `MF`, `PM`, `VC`,
+          `WS`, `SM`, `ST`, `SA`, `SN`, `RS`, `SC`, `SL`, `SG`, `SX`, `SK`, `SI`,
+          `SB`, `SO`, `ZA`, `GS`, `KR`, `SS`, `ES`, `LK`, `SD`, `SR`, `SJ`, `SE`,
+          `CH`, `SY`, `TW`, `TJ`, `TZ`, `TH`, `TL`, `TG`, `TK`, `TO`, `TT`, `TN`,
+          `TR`, `TM`, `TC`, `TV`, `UG`, `UA`, `AE`, `GB`, `UM`, `US`, `UY`, `UZ`,
+          `VU`, `VE`, `VN`, `VG`, `VI`, `WF`, `EH`, `YE`, `ZM`, `ZW`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__created
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: org__email_domains
+        in: query
+        description: 'If user email restriction is enabled: only allow users with
+          emails in these domains. One domain per line, in the format of ''@xyz.com''
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__flagged
+        in: query
+        description: 'Flag the organization for deletion
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__flagged_date
+        in: query
+        description: 'Date when the organization was flagged
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: org__floor
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__geocode_date
+        in: query
+        description: 'Last time of attempted geocode
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: org__geocode_status
+        in: query
+        description: 'Has this object''s address been normalized with a call to the
+          Google Maps API
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__id
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: org__name
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__name_long
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__notes
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__periodic_reauth
+        in: query
+        description: 'Require users in this organization to periodically re-authenticate
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__periodic_reauth_period
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `1w`, `2w`, `1m`, `6m`, `1y`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__restrict_user_emails
+        in: query
+        description: 'Require users in your organization to have email addresses within
+          your specified domains.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: integer
+      - name: org__state
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__suite
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__updated
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: org__version
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: org__website
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: org__zipcode
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: since
+        in: query
+        required: false
+        description: Unix epoch time stamp (seconds). Only return objects that have
+          been updated since then
+        schema:
+          type: integer
+      - name: skip
+        in: query
+        required: false
+        description: Skip n results in the result set (use for pagination in combination
+          with `limit`)
+        schema:
+          type: integer
+      - name: status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: updated
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: version
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: website
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Campus'
+          description: ''
+      tags:
+      - api
+    post:
+      operationId: create campus
+      description: 'Creates a new `campus` type object.
+
+
+        ## Creating objects
+
+
+        ### Status `pending`
+
+
+        Some object types will be flagged as `pending` until they have been reviewed
+        and approved by peeringdb staff.
+
+
+        Currently this is the case for:
+
+
+
+        - `org` organizations (only administrative staff users are currently allowed
+        to create organizations)
+
+        - `fac` facilities
+
+        - `net` networks
+
+        - `ix` exchanges
+
+        - `ixpfx` prefixes (if part of a new exchange)
+
+        - `ixlan` exchange networks (if part of a new exchange)
+
+
+        ### Permissions
+
+
+        To be able to create an object, the requesting user requires `create` permissions
+        to one of the
+
+        object''s parents in the relationship hierarchy.
+
+
+        For example to create a `net` type object, the user needs to be permissioned
+        to create in the organization
+
+        that is to be the network''s holder entity.
+
+        '
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  readOnly: true
+                org_id:
+                  type: integer
+                org_name:
+                  type: string
+                  readOnly: true
+                org:
+                  type: string
+                  readOnly: true
+                status:
+                  type: string
+                  maxLength: 255
+                created:
+                  type: string
+                  format: date-time
+                  readOnly: true
+                updated:
+                  type: string
+                  format: date-time
+                  readOnly: true
+                name:
+                  type: string
+                  maxLength: 255
+                name_long:
+                  type: string
+                  nullable: true
+                  maxLength: 255
+                notes:
+                  type: string
+                aka:
+                  type: string
+                  nullable: true
+                  maxLength: 255
+                website:
+                  type: string
+                  format: uri
+                  nullable: true
+                  maxLength: 255
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                fac_set:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        readOnly: true
+                      org_name:
+                        type: string
+                        readOnly: true
+                      name:
+                        type: string
+                        maxLength: 255
+                      aka:
+                        type: string
+                        maxLength: 255
+                      name_long:
+                        type: string
+                        maxLength: 255
+                      website:
+                        type: string
+                        format: uri
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      clli:
+                        type: string
+                        maxLength: 18
+                      rencode:
+                        type: string
+                        readOnly: true
+                      npanxx:
+                        type: string
+                        maxLength: 21
+                      notes:
+                        type: string
+                      net_count:
+                        type: integer
+                        maximum: 4294967295
+                        format: int64
+                        description: number of networks at this facility
+                        minimum: 0
+                      ix_count:
+                        type: integer
+                        maximum: 4294967295
+                        format: int64
+                        description: number of exchanges at this facility
+                        minimum: 0
+                      suggest:
+                        type: boolean
+                        writeOnly: true
+                      sales_email:
+                        type: string
+                        format: email
+                        maxLength: 254
+                      sales_phone:
+                        type: string
+                        default: ''
+                      tech_email:
+                        type: string
+                        format: email
+                        maxLength: 254
+                      tech_phone:
+                        type: string
+                        default: ''
+                      available_voltage_services:
+                        type: array
+                        items:
+                          enum:
+                          - 48 VDC
+                          - 120 VAC
+                          - 208 VAC
+                          - 240 VAC
+                          - 480 VAC
+                          type: string
+                        nullable: true
+                      diverse_serving_substations:
+                        type: boolean
+                        nullable: true
+                        description: Two separate and distinct paths to individual
+                          substations which should maintain a separated path back
+                          to one or more utility generator stations.
+                      property:
+                        enum:
+                        - ''
+                        - Owner
+                        - Lessee
+                        type: string
+                        nullable: true
+                        description: A property owner is the individual or entity
+                          that has title to the property. A lessee is a user of a
+                          property who has a lease, an agreement, with the owner of
+                          the property.
+                      region_continent:
+                        type: string
+                        readOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      created:
+                        type: string
+                        format: date-time
+                        readOnly: true
+                      updated:
+                        type: string
+                        format: date-time
+                        readOnly: true
+                      status:
+                        type: string
+                        maxLength: 255
+                      address1:
+                        type: string
+                      address2:
+                        type: string
+                        maxLength: 255
+                      city:
+                        type: string
+                      country:
+                        enum:
+                        - AF
+                        - AX
+                        - AL
+                        - DZ
+                        - AS
+                        - AD
+                        - AO
+                        - AI
+                        - AQ
+                        - AG
+                        - AR
+                        - AM
+                        - AW
+                        - AU
+                        - AT
+                        - AZ
+                        - BS
+                        - BH
+                        - BD
+                        - BB
+                        - BY
+                        - BE
+                        - BZ
+                        - BJ
+                        - BM
+                        - BT
+                        - BO
+                        - BQ
+                        - BA
+                        - BW
+                        - BV
+                        - BR
+                        - IO
+                        - BN
+                        - BG
+                        - BF
+                        - BI
+                        - CV
+                        - KH
+                        - CM
+                        - CA
+                        - KY
+                        - CF
+                        - TD
+                        - CL
+                        - CN
+                        - CX
+                        - CC
+                        - CO
+                        - KM
+                        - CG
+                        - CD
+                        - CK
+                        - CR
+                        - CI
+                        - HR
+                        - CU
+                        - CW
+                        - CY
+                        - CZ
+                        - DK
+                        - DJ
+                        - DM
+                        - DO
+                        - EC
+                        - EG
+                        - SV
+                        - GQ
+                        - ER
+                        - EE
+                        - SZ
+                        - ET
+                        - FK
+                        - FO
+                        - FJ
+                        - FI
+                        - FR
+                        - GF
+                        - PF
+                        - TF
+                        - GA
+                        - GM
+                        - GE
+                        - DE
+                        - GH
+                        - GI
+                        - GR
+                        - GL
+                        - GD
+                        - GP
+                        - GU
+                        - GT
+                        - GG
+                        - GN
+                        - GW
+                        - GY
+                        - HT
+                        - HM
+                        - VA
+                        - HN
+                        - HK
+                        - HU
+                        - IS
+                        - IN
+                        - ID
+                        - IR
+                        - IQ
+                        - IE
+                        - IM
+                        - IL
+                        - IT
+                        - JM
+                        - JP
+                        - JE
+                        - JO
+                        - KZ
+                        - KE
+                        - KI
+                        - XK
+                        - KW
+                        - KG
+                        - LA
+                        - LV
+                        - LB
+                        - LS
+                        - LR
+                        - LY
+                        - LI
+                        - LT
+                        - LU
+                        - MO
+                        - MG
+                        - MW
+                        - MY
+                        - MV
+                        - ML
+                        - MT
+                        - MH
+                        - MQ
+                        - MR
+                        - MU
+                        - YT
+                        - MX
+                        - FM
+                        - MD
+                        - MC
+                        - MN
+                        - ME
+                        - MS
+                        - MA
+                        - MZ
+                        - MM
+                        - NA
+                        - NR
+                        - NP
+                        - NL
+                        - NC
+                        - NZ
+                        - NI
+                        - NE
+                        - NG
+                        - NU
+                        - NF
+                        - KP
+                        - MK
+                        - MP
+                        - 'NO'
+                        - OM
+                        - PK
+                        - PW
+                        - PS
+                        - PA
+                        - PG
+                        - PY
+                        - PE
+                        - PH
+                        - PN
+                        - PL
+                        - PT
+                        - PR
+                        - QA
+                        - RE
+                        - RO
+                        - RU
+                        - RW
+                        - BL
+                        - SH
+                        - KN
+                        - LC
+                        - MF
+                        - PM
+                        - VC
+                        - WS
+                        - SM
+                        - ST
+                        - SA
+                        - SN
+                        - RS
+                        - SC
+                        - SL
+                        - SG
+                        - SX
+                        - SK
+                        - SI
+                        - SB
+                        - SO
+                        - ZA
+                        - GS
+                        - KR
+                        - SS
+                        - ES
+                        - LK
+                        - SD
+                        - SR
+                        - SJ
+                        - SE
+                        - CH
+                        - SY
+                        - TW
+                        - TJ
+                        - TZ
+                        - TH
+                        - TL
+                        - TG
+                        - TK
+                        - TO
+                        - TT
+                        - TN
+                        - TR
+                        - TM
+                        - TC
+                        - TV
+                        - UG
+                        - UA
+                        - AE
+                        - GB
+                        - UM
+                        - US
+                        - UY
+                        - UZ
+                        - VU
+                        - VE
+                        - VN
+                        - VG
+                        - VI
+                        - WF
+                        - EH
+                        - YE
+                        - ZM
+                        - ZW
+                        type: string
+                      state:
+                        type: string
+                        maxLength: 255
+                      zipcode:
+                        type: string
+                        default: ''
+                      floor:
+                        type: string
+                        maxLength: 255
+                      suite:
+                        type: string
+                        maxLength: 255
+                      latitude:
+                        type: number
+                        readOnly: true
+                      longitude:
+                        type: number
+                        readOnly: true
+                    required:
+                    - name
+                    - website
+                    - address1
+                    - city
+                  readOnly: true
+                country:
+                  type: string
+                  readOnly: true
+                city:
+                  type: string
+                  readOnly: true
+                zipcode:
+                  type: string
+                  readOnly: true
+                state:
+                  type: string
+                  readOnly: true
+              required:
+              - org_id
+              - name
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Campus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Campus'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campus'
+          description: ''
+      tags:
+      - api
+  /api/campus/{id}:
+    get:
+      operationId: retrieve campus
+      description: "Retrieves a single `campus` type object by id\n\n## Retrieve a\
+        \ single object\n\n### Depth\n\nNested sets will not be expanded (any field\
+        \ ending with the _set suffix, with the exception of 'irr_as_set') unless\
+        \ the 'depth'\nparameter is passed in the request URL.\n\nDepth can be one\
+        \ of three values:\n\n  - 1 : expand sets into ids (slow)\n  - 2 : expand\
+        \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
+        \n**example**\n\n    ?depth=1\n"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      - name: depth
+        in: query
+        required: false
+        description: Expand nested sets according to depth.
+        schema:
+          type: integer
+          default: 1
+          minimum: 0
+          maximum: 2
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campus'
+          description: ''
+      tags:
+      - api
+    put:
+      operationId: update campus
+      description: 'Updates an existing `campus` type object.
+
+
+        ## Update existing objects
+
+
+        ### Permissions
+
+
+        In order to update an object the requesting user requires `update` permissions
+        to the object itself or one of the parent relationships in the object hierarchy
+
+        '
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  readOnly: true
+                org_id:
+                  type: integer
+                org_name:
+                  type: string
+                  readOnly: true
+                org:
+                  type: string
+                  readOnly: true
+                status:
+                  type: string
+                  maxLength: 255
+                created:
+                  type: string
+                  format: date-time
+                  readOnly: true
+                updated:
+                  type: string
+                  format: date-time
+                  readOnly: true
+                name:
+                  type: string
+                  maxLength: 255
+                name_long:
+                  type: string
+                  nullable: true
+                  maxLength: 255
+                notes:
+                  type: string
+                aka:
+                  type: string
+                  nullable: true
+                  maxLength: 255
+                website:
+                  type: string
+                  format: uri
+                  nullable: true
+                  maxLength: 255
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                fac_set:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        readOnly: true
+                      org_name:
+                        type: string
+                        readOnly: true
+                      name:
+                        type: string
+                        maxLength: 255
+                      aka:
+                        type: string
+                        maxLength: 255
+                      name_long:
+                        type: string
+                        maxLength: 255
+                      website:
+                        type: string
+                        format: uri
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      clli:
+                        type: string
+                        maxLength: 18
+                      rencode:
+                        type: string
+                        readOnly: true
+                      npanxx:
+                        type: string
+                        maxLength: 21
+                      notes:
+                        type: string
+                      net_count:
+                        type: integer
+                        maximum: 4294967295
+                        format: int64
+                        description: number of networks at this facility
+                        minimum: 0
+                      ix_count:
+                        type: integer
+                        maximum: 4294967295
+                        format: int64
+                        description: number of exchanges at this facility
+                        minimum: 0
+                      suggest:
+                        type: boolean
+                        writeOnly: true
+                      sales_email:
+                        type: string
+                        format: email
+                        maxLength: 254
+                      sales_phone:
+                        type: string
+                        default: ''
+                      tech_email:
+                        type: string
+                        format: email
+                        maxLength: 254
+                      tech_phone:
+                        type: string
+                        default: ''
+                      available_voltage_services:
+                        type: array
+                        items:
+                          enum:
+                          - 48 VDC
+                          - 120 VAC
+                          - 208 VAC
+                          - 240 VAC
+                          - 480 VAC
+                          type: string
+                        nullable: true
+                      diverse_serving_substations:
+                        type: boolean
+                        nullable: true
+                        description: Two separate and distinct paths to individual
+                          substations which should maintain a separated path back
+                          to one or more utility generator stations.
+                      property:
+                        enum:
+                        - ''
+                        - Owner
+                        - Lessee
+                        type: string
+                        nullable: true
+                        description: A property owner is the individual or entity
+                          that has title to the property. A lessee is a user of a
+                          property who has a lease, an agreement, with the owner of
+                          the property.
+                      region_continent:
+                        type: string
+                        readOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      created:
+                        type: string
+                        format: date-time
+                        readOnly: true
+                      updated:
+                        type: string
+                        format: date-time
+                        readOnly: true
+                      status:
+                        type: string
+                        maxLength: 255
+                      address1:
+                        type: string
+                      address2:
+                        type: string
+                        maxLength: 255
+                      city:
+                        type: string
+                      country:
+                        enum:
+                        - AF
+                        - AX
+                        - AL
+                        - DZ
+                        - AS
+                        - AD
+                        - AO
+                        - AI
+                        - AQ
+                        - AG
+                        - AR
+                        - AM
+                        - AW
+                        - AU
+                        - AT
+                        - AZ
+                        - BS
+                        - BH
+                        - BD
+                        - BB
+                        - BY
+                        - BE
+                        - BZ
+                        - BJ
+                        - BM
+                        - BT
+                        - BO
+                        - BQ
+                        - BA
+                        - BW
+                        - BV
+                        - BR
+                        - IO
+                        - BN
+                        - BG
+                        - BF
+                        - BI
+                        - CV
+                        - KH
+                        - CM
+                        - CA
+                        - KY
+                        - CF
+                        - TD
+                        - CL
+                        - CN
+                        - CX
+                        - CC
+                        - CO
+                        - KM
+                        - CG
+                        - CD
+                        - CK
+                        - CR
+                        - CI
+                        - HR
+                        - CU
+                        - CW
+                        - CY
+                        - CZ
+                        - DK
+                        - DJ
+                        - DM
+                        - DO
+                        - EC
+                        - EG
+                        - SV
+                        - GQ
+                        - ER
+                        - EE
+                        - SZ
+                        - ET
+                        - FK
+                        - FO
+                        - FJ
+                        - FI
+                        - FR
+                        - GF
+                        - PF
+                        - TF
+                        - GA
+                        - GM
+                        - GE
+                        - DE
+                        - GH
+                        - GI
+                        - GR
+                        - GL
+                        - GD
+                        - GP
+                        - GU
+                        - GT
+                        - GG
+                        - GN
+                        - GW
+                        - GY
+                        - HT
+                        - HM
+                        - VA
+                        - HN
+                        - HK
+                        - HU
+                        - IS
+                        - IN
+                        - ID
+                        - IR
+                        - IQ
+                        - IE
+                        - IM
+                        - IL
+                        - IT
+                        - JM
+                        - JP
+                        - JE
+                        - JO
+                        - KZ
+                        - KE
+                        - KI
+                        - XK
+                        - KW
+                        - KG
+                        - LA
+                        - LV
+                        - LB
+                        - LS
+                        - LR
+                        - LY
+                        - LI
+                        - LT
+                        - LU
+                        - MO
+                        - MG
+                        - MW
+                        - MY
+                        - MV
+                        - ML
+                        - MT
+                        - MH
+                        - MQ
+                        - MR
+                        - MU
+                        - YT
+                        - MX
+                        - FM
+                        - MD
+                        - MC
+                        - MN
+                        - ME
+                        - MS
+                        - MA
+                        - MZ
+                        - MM
+                        - NA
+                        - NR
+                        - NP
+                        - NL
+                        - NC
+                        - NZ
+                        - NI
+                        - NE
+                        - NG
+                        - NU
+                        - NF
+                        - KP
+                        - MK
+                        - MP
+                        - 'NO'
+                        - OM
+                        - PK
+                        - PW
+                        - PS
+                        - PA
+                        - PG
+                        - PY
+                        - PE
+                        - PH
+                        - PN
+                        - PL
+                        - PT
+                        - PR
+                        - QA
+                        - RE
+                        - RO
+                        - RU
+                        - RW
+                        - BL
+                        - SH
+                        - KN
+                        - LC
+                        - MF
+                        - PM
+                        - VC
+                        - WS
+                        - SM
+                        - ST
+                        - SA
+                        - SN
+                        - RS
+                        - SC
+                        - SL
+                        - SG
+                        - SX
+                        - SK
+                        - SI
+                        - SB
+                        - SO
+                        - ZA
+                        - GS
+                        - KR
+                        - SS
+                        - ES
+                        - LK
+                        - SD
+                        - SR
+                        - SJ
+                        - SE
+                        - CH
+                        - SY
+                        - TW
+                        - TJ
+                        - TZ
+                        - TH
+                        - TL
+                        - TG
+                        - TK
+                        - TO
+                        - TT
+                        - TN
+                        - TR
+                        - TM
+                        - TC
+                        - TV
+                        - UG
+                        - UA
+                        - AE
+                        - GB
+                        - UM
+                        - US
+                        - UY
+                        - UZ
+                        - VU
+                        - VE
+                        - VN
+                        - VG
+                        - VI
+                        - WF
+                        - EH
+                        - YE
+                        - ZM
+                        - ZW
+                        type: string
+                      state:
+                        type: string
+                        maxLength: 255
+                      zipcode:
+                        type: string
+                        default: ''
+                      floor:
+                        type: string
+                        maxLength: 255
+                      suite:
+                        type: string
+                        maxLength: 255
+                      latitude:
+                        type: number
+                        readOnly: true
+                      longitude:
+                        type: number
+                        readOnly: true
+                    required:
+                    - name
+                    - website
+                    - address1
+                    - city
+                  readOnly: true
+                country:
+                  type: string
+                  readOnly: true
+                city:
+                  type: string
+                  readOnly: true
+                zipcode:
+                  type: string
+                  readOnly: true
+                state:
+                  type: string
+                  readOnly: true
+              required:
+              - org_id
+              - name
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Campus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Campus'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campus'
+          description: ''
+      tags:
+      - api
+    patch:
+      operationId: patch campus
+      description: PATCH (partial update) is currently disabled.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  readOnly: true
+                org_id:
+                  type: integer
+                org_name:
+                  type: string
+                  readOnly: true
+                org:
+                  type: string
+                  readOnly: true
+                status:
+                  type: string
+                  maxLength: 255
+                created:
+                  type: string
+                  format: date-time
+                  readOnly: true
+                updated:
+                  type: string
+                  format: date-time
+                  readOnly: true
+                name:
+                  type: string
+                  maxLength: 255
+                name_long:
+                  type: string
+                  nullable: true
+                  maxLength: 255
+                notes:
+                  type: string
+                aka:
+                  type: string
+                  nullable: true
+                  maxLength: 255
+                website:
+                  type: string
+                  format: uri
+                  nullable: true
+                  maxLength: 255
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                    d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                    d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                    0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                    .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                    d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                fac_set:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        readOnly: true
+                      org_name:
+                        type: string
+                        readOnly: true
+                      name:
+                        type: string
+                        maxLength: 255
+                      aka:
+                        type: string
+                        maxLength: 255
+                      name_long:
+                        type: string
+                        maxLength: 255
+                      website:
+                        type: string
+                        format: uri
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      clli:
+                        type: string
+                        maxLength: 18
+                      rencode:
+                        type: string
+                        readOnly: true
+                      npanxx:
+                        type: string
+                        maxLength: 21
+                      notes:
+                        type: string
+                      net_count:
+                        type: integer
+                        maximum: 4294967295
+                        format: int64
+                        description: number of networks at this facility
+                        minimum: 0
+                      ix_count:
+                        type: integer
+                        maximum: 4294967295
+                        format: int64
+                        description: number of exchanges at this facility
+                        minimum: 0
+                      suggest:
+                        type: boolean
+                        writeOnly: true
+                      sales_email:
+                        type: string
+                        format: email
+                        maxLength: 254
+                      sales_phone:
+                        type: string
+                        default: ''
+                      tech_email:
+                        type: string
+                        format: email
+                        maxLength: 254
+                      tech_phone:
+                        type: string
+                        default: ''
+                      available_voltage_services:
+                        type: array
+                        items:
+                          enum:
+                          - 48 VDC
+                          - 120 VAC
+                          - 208 VAC
+                          - 240 VAC
+                          - 480 VAC
+                          type: string
+                        nullable: true
+                      diverse_serving_substations:
+                        type: boolean
+                        nullable: true
+                        description: Two separate and distinct paths to individual
+                          substations which should maintain a separated path back
+                          to one or more utility generator stations.
+                      property:
+                        enum:
+                        - ''
+                        - Owner
+                        - Lessee
+                        type: string
+                        nullable: true
+                        description: A property owner is the individual or entity
+                          that has title to the property. A lessee is a user of a
+                          property who has a lease, an agreement, with the owner of
+                          the property.
+                      region_continent:
+                        type: string
+                        readOnly: true
+                      status_dashboard:
+                        type: string
+                        format: uri
+                        nullable: true
+                        default: ''
+                        pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                          d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\\
+                          d?|[1-9]\\d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1\
+                          -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
+                          -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                          .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      created:
+                        type: string
+                        format: date-time
+                        readOnly: true
+                      updated:
+                        type: string
+                        format: date-time
+                        readOnly: true
+                      status:
+                        type: string
+                        maxLength: 255
+                      address1:
+                        type: string
+                      address2:
+                        type: string
+                        maxLength: 255
+                      city:
+                        type: string
+                      country:
+                        enum:
+                        - AF
+                        - AX
+                        - AL
+                        - DZ
+                        - AS
+                        - AD
+                        - AO
+                        - AI
+                        - AQ
+                        - AG
+                        - AR
+                        - AM
+                        - AW
+                        - AU
+                        - AT
+                        - AZ
+                        - BS
+                        - BH
+                        - BD
+                        - BB
+                        - BY
+                        - BE
+                        - BZ
+                        - BJ
+                        - BM
+                        - BT
+                        - BO
+                        - BQ
+                        - BA
+                        - BW
+                        - BV
+                        - BR
+                        - IO
+                        - BN
+                        - BG
+                        - BF
+                        - BI
+                        - CV
+                        - KH
+                        - CM
+                        - CA
+                        - KY
+                        - CF
+                        - TD
+                        - CL
+                        - CN
+                        - CX
+                        - CC
+                        - CO
+                        - KM
+                        - CG
+                        - CD
+                        - CK
+                        - CR
+                        - CI
+                        - HR
+                        - CU
+                        - CW
+                        - CY
+                        - CZ
+                        - DK
+                        - DJ
+                        - DM
+                        - DO
+                        - EC
+                        - EG
+                        - SV
+                        - GQ
+                        - ER
+                        - EE
+                        - SZ
+                        - ET
+                        - FK
+                        - FO
+                        - FJ
+                        - FI
+                        - FR
+                        - GF
+                        - PF
+                        - TF
+                        - GA
+                        - GM
+                        - GE
+                        - DE
+                        - GH
+                        - GI
+                        - GR
+                        - GL
+                        - GD
+                        - GP
+                        - GU
+                        - GT
+                        - GG
+                        - GN
+                        - GW
+                        - GY
+                        - HT
+                        - HM
+                        - VA
+                        - HN
+                        - HK
+                        - HU
+                        - IS
+                        - IN
+                        - ID
+                        - IR
+                        - IQ
+                        - IE
+                        - IM
+                        - IL
+                        - IT
+                        - JM
+                        - JP
+                        - JE
+                        - JO
+                        - KZ
+                        - KE
+                        - KI
+                        - XK
+                        - KW
+                        - KG
+                        - LA
+                        - LV
+                        - LB
+                        - LS
+                        - LR
+                        - LY
+                        - LI
+                        - LT
+                        - LU
+                        - MO
+                        - MG
+                        - MW
+                        - MY
+                        - MV
+                        - ML
+                        - MT
+                        - MH
+                        - MQ
+                        - MR
+                        - MU
+                        - YT
+                        - MX
+                        - FM
+                        - MD
+                        - MC
+                        - MN
+                        - ME
+                        - MS
+                        - MA
+                        - MZ
+                        - MM
+                        - NA
+                        - NR
+                        - NP
+                        - NL
+                        - NC
+                        - NZ
+                        - NI
+                        - NE
+                        - NG
+                        - NU
+                        - NF
+                        - KP
+                        - MK
+                        - MP
+                        - 'NO'
+                        - OM
+                        - PK
+                        - PW
+                        - PS
+                        - PA
+                        - PG
+                        - PY
+                        - PE
+                        - PH
+                        - PN
+                        - PL
+                        - PT
+                        - PR
+                        - QA
+                        - RE
+                        - RO
+                        - RU
+                        - RW
+                        - BL
+                        - SH
+                        - KN
+                        - LC
+                        - MF
+                        - PM
+                        - VC
+                        - WS
+                        - SM
+                        - ST
+                        - SA
+                        - SN
+                        - RS
+                        - SC
+                        - SL
+                        - SG
+                        - SX
+                        - SK
+                        - SI
+                        - SB
+                        - SO
+                        - ZA
+                        - GS
+                        - KR
+                        - SS
+                        - ES
+                        - LK
+                        - SD
+                        - SR
+                        - SJ
+                        - SE
+                        - CH
+                        - SY
+                        - TW
+                        - TJ
+                        - TZ
+                        - TH
+                        - TL
+                        - TG
+                        - TK
+                        - TO
+                        - TT
+                        - TN
+                        - TR
+                        - TM
+                        - TC
+                        - TV
+                        - UG
+                        - UA
+                        - AE
+                        - GB
+                        - UM
+                        - US
+                        - UY
+                        - UZ
+                        - VU
+                        - VE
+                        - VN
+                        - VG
+                        - VI
+                        - WF
+                        - EH
+                        - YE
+                        - ZM
+                        - ZW
+                        type: string
+                      state:
+                        type: string
+                        maxLength: 255
+                      zipcode:
+                        type: string
+                        default: ''
+                      floor:
+                        type: string
+                        maxLength: 255
+                      suite:
+                        type: string
+                        maxLength: 255
+                      latitude:
+                        type: number
+                        readOnly: true
+                      longitude:
+                        type: number
+                        readOnly: true
+                    required:
+                    - name
+                    - website
+                    - address1
+                    - city
+                  readOnly: true
+                country:
+                  type: string
+                  readOnly: true
+                city:
+                  type: string
+                  readOnly: true
+                zipcode:
+                  type: string
+                  readOnly: true
+                state:
+                  type: string
+                  readOnly: true
+              required:
+              - org_id
+              - name
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Campus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Campus'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campus'
+          description: ''
+      tags:
+      - api
+    delete:
+      operationId: delete campus
+      description: 'Marks an `campus` type object as `deleted`.
+
+
+        ## Deleting objects
+
+        '
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+      tags:
+      - api
   /api/as_set:
     get:
       operationId: list as-set
@@ -28386,7 +30559,7 @@ paths:
       - api
   /api/carrierfac/{id}/approve:
     post:
-      operationId: create carrierfac
+      operationId: approve facility presence at carrier
       description: 'Creates a new `carrierfac` type object.
 
 
@@ -28443,39 +30616,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              type: object
-              properties:
-                id:
-                  type: integer
-                  readOnly: true
-                name:
-                  type: string
-                  readOnly: true
-                carrier_id:
-                  type: integer
-                carrier:
-                  type: string
-                  readOnly: true
-                fac_id:
-                  type: integer
-                fac:
-                  type: string
-                  readOnly: true
-                created:
-                  type: string
-                  format: date-time
-                  readOnly: true
-                updated:
-                  type: string
-                  format: date-time
-                  readOnly: true
-                status:
-                  type: string
-                  maxLength: 255
-              required:
-              - carrier_id
-              - fac_id
+            schema: null
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/CarrierFacility'
@@ -28493,7 +30634,7 @@ paths:
       - api
   /api/carrierfac/{id}/reject:
     post:
-      operationId: create carrierfac
+      operationId: reject facility presence at carrier
       description: 'Creates a new `carrierfac` type object.
 
 
@@ -28550,39 +30691,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              type: object
-              properties:
-                id:
-                  type: integer
-                  readOnly: true
-                name:
-                  type: string
-                  readOnly: true
-                carrier_id:
-                  type: integer
-                carrier:
-                  type: string
-                  readOnly: true
-                fac_id:
-                  type: integer
-                fac:
-                  type: string
-                  readOnly: true
-                created:
-                  type: string
-                  format: date-time
-                  readOnly: true
-                updated:
-                  type: string
-                  format: date-time
-                  readOnly: true
-                status:
-                  type: string
-                  maxLength: 255
-              required:
-              - carrier_id
-              - fac_id
+            schema: null
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/CarrierFacility'
@@ -30037,6 +32146,168 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternetExchange'
+          description: ''
+      tags:
+      - api
+  /api/campus/{id}/add-facility/{fac_id}:
+    post:
+      operationId: add facility to campus
+      description: 'Creates a new `campus` type object.
+
+
+        ## Creating objects
+
+
+        ### Status `pending`
+
+
+        Some object types will be flagged as `pending` until they have been reviewed
+        and approved by peeringdb staff.
+
+
+        Currently this is the case for:
+
+
+
+        - `org` organizations (only administrative staff users are currently allowed
+        to create organizations)
+
+        - `fac` facilities
+
+        - `net` networks
+
+        - `ix` exchanges
+
+        - `ixpfx` prefixes (if part of a new exchange)
+
+        - `ixlan` exchange networks (if part of a new exchange)
+
+
+        ### Permissions
+
+
+        To be able to create an object, the requesting user requires `create` permissions
+        to one of the
+
+        object''s parents in the relationship hierarchy.
+
+
+        For example to create a `net` type object, the user needs to be permissioned
+        to create in the organization
+
+        that is to be the network''s holder entity.
+
+        '
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      - name: fac_id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema: null
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Campus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Campus'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campus'
+          description: ''
+      tags:
+      - api
+  /api/campus/{id}/remove-facility/{fac_id}:
+    post:
+      operationId: remove facility from campus
+      description: 'Creates a new `campus` type object.
+
+
+        ## Creating objects
+
+
+        ### Status `pending`
+
+
+        Some object types will be flagged as `pending` until they have been reviewed
+        and approved by peeringdb staff.
+
+
+        Currently this is the case for:
+
+
+
+        - `org` organizations (only administrative staff users are currently allowed
+        to create organizations)
+
+        - `fac` facilities
+
+        - `net` networks
+
+        - `ix` exchanges
+
+        - `ixpfx` prefixes (if part of a new exchange)
+
+        - `ixlan` exchange networks (if part of a new exchange)
+
+
+        ### Permissions
+
+
+        To be able to create an object, the requesting user requires `create` permissions
+        to one of the
+
+        object''s parents in the relationship hierarchy.
+
+
+        For example to create a `net` type object, the user needs to be permissioned
+        to create in the organization
+
+        that is to be the network''s holder entity.
+
+        '
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      - name: fac_id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema: null
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Campus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Campus'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campus'
           description: ''
       tags:
       - api
@@ -35488,6 +37759,475 @@ components:
           type: string
           maxLength: 255
       required:
+      - name
+    Campus:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        org_id:
+          type: integer
+        org_name:
+          type: string
+          readOnly: true
+        org:
+          type: string
+          readOnly: true
+        status:
+          type: string
+          maxLength: 255
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        updated:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        name_long:
+          type: string
+          nullable: true
+          maxLength: 255
+        notes:
+          type: string
+        aka:
+          type: string
+          nullable: true
+          maxLength: 255
+        website:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 255
+          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+            d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\d?)){3}|\\\
+            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+            -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+            -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
+            s]*)?\\z"
+        fac_set:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                readOnly: true
+              org_name:
+                type: string
+                readOnly: true
+              name:
+                type: string
+                maxLength: 255
+              aka:
+                type: string
+                maxLength: 255
+              name_long:
+                type: string
+                maxLength: 255
+              website:
+                type: string
+                format: uri
+                pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                  d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                  d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                  0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                  .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                  d{2,5})?(?:[/?#][^\\s]*)?\\z"
+              clli:
+                type: string
+                maxLength: 18
+              rencode:
+                type: string
+                readOnly: true
+              npanxx:
+                type: string
+                maxLength: 21
+              notes:
+                type: string
+              net_count:
+                type: integer
+                maximum: 4294967295
+                format: int64
+                description: number of networks at this facility
+                minimum: 0
+              ix_count:
+                type: integer
+                maximum: 4294967295
+                format: int64
+                description: number of exchanges at this facility
+                minimum: 0
+              suggest:
+                type: boolean
+                writeOnly: true
+              sales_email:
+                type: string
+                format: email
+                maxLength: 254
+              sales_phone:
+                type: string
+                default: ''
+              tech_email:
+                type: string
+                format: email
+                maxLength: 254
+              tech_phone:
+                type: string
+                default: ''
+              available_voltage_services:
+                type: array
+                items:
+                  enum:
+                  - 48 VDC
+                  - 120 VAC
+                  - 208 VAC
+                  - 240 VAC
+                  - 480 VAC
+                  type: string
+                nullable: true
+              diverse_serving_substations:
+                type: boolean
+                nullable: true
+                description: Two separate and distinct paths to individual substations
+                  which should maintain a separated path back to one or more utility
+                  generator stations.
+              property:
+                enum:
+                - ''
+                - Owner
+                - Lessee
+                type: string
+                nullable: true
+                description: A property owner is the individual or entity that has
+                  title to the property. A lessee is a user of a property who has
+                  a lease, an agreement, with the owner of the property.
+              region_continent:
+                type: string
+                readOnly: true
+              status_dashboard:
+                type: string
+                format: uri
+                nullable: true
+                default: ''
+                pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4]\\\
+                  d|1\\d?\\d?|[1-9]\\d?)(?:\\.(?:0|25[0-5]|2[0-4]\\d|1\\d?\\d?|[1-9]\\\
+                  d?)){3}|\\[[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                  0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                  .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
+                  d{2,5})?(?:[/?#][^\\s]*)?\\z"
+              created:
+                type: string
+                format: date-time
+                readOnly: true
+              updated:
+                type: string
+                format: date-time
+                readOnly: true
+              status:
+                type: string
+                maxLength: 255
+              address1:
+                type: string
+              address2:
+                type: string
+                maxLength: 255
+              city:
+                type: string
+              country:
+                enum:
+                - AF
+                - AX
+                - AL
+                - DZ
+                - AS
+                - AD
+                - AO
+                - AI
+                - AQ
+                - AG
+                - AR
+                - AM
+                - AW
+                - AU
+                - AT
+                - AZ
+                - BS
+                - BH
+                - BD
+                - BB
+                - BY
+                - BE
+                - BZ
+                - BJ
+                - BM
+                - BT
+                - BO
+                - BQ
+                - BA
+                - BW
+                - BV
+                - BR
+                - IO
+                - BN
+                - BG
+                - BF
+                - BI
+                - CV
+                - KH
+                - CM
+                - CA
+                - KY
+                - CF
+                - TD
+                - CL
+                - CN
+                - CX
+                - CC
+                - CO
+                - KM
+                - CG
+                - CD
+                - CK
+                - CR
+                - CI
+                - HR
+                - CU
+                - CW
+                - CY
+                - CZ
+                - DK
+                - DJ
+                - DM
+                - DO
+                - EC
+                - EG
+                - SV
+                - GQ
+                - ER
+                - EE
+                - SZ
+                - ET
+                - FK
+                - FO
+                - FJ
+                - FI
+                - FR
+                - GF
+                - PF
+                - TF
+                - GA
+                - GM
+                - GE
+                - DE
+                - GH
+                - GI
+                - GR
+                - GL
+                - GD
+                - GP
+                - GU
+                - GT
+                - GG
+                - GN
+                - GW
+                - GY
+                - HT
+                - HM
+                - VA
+                - HN
+                - HK
+                - HU
+                - IS
+                - IN
+                - ID
+                - IR
+                - IQ
+                - IE
+                - IM
+                - IL
+                - IT
+                - JM
+                - JP
+                - JE
+                - JO
+                - KZ
+                - KE
+                - KI
+                - XK
+                - KW
+                - KG
+                - LA
+                - LV
+                - LB
+                - LS
+                - LR
+                - LY
+                - LI
+                - LT
+                - LU
+                - MO
+                - MG
+                - MW
+                - MY
+                - MV
+                - ML
+                - MT
+                - MH
+                - MQ
+                - MR
+                - MU
+                - YT
+                - MX
+                - FM
+                - MD
+                - MC
+                - MN
+                - ME
+                - MS
+                - MA
+                - MZ
+                - MM
+                - NA
+                - NR
+                - NP
+                - NL
+                - NC
+                - NZ
+                - NI
+                - NE
+                - NG
+                - NU
+                - NF
+                - KP
+                - MK
+                - MP
+                - 'NO'
+                - OM
+                - PK
+                - PW
+                - PS
+                - PA
+                - PG
+                - PY
+                - PE
+                - PH
+                - PN
+                - PL
+                - PT
+                - PR
+                - QA
+                - RE
+                - RO
+                - RU
+                - RW
+                - BL
+                - SH
+                - KN
+                - LC
+                - MF
+                - PM
+                - VC
+                - WS
+                - SM
+                - ST
+                - SA
+                - SN
+                - RS
+                - SC
+                - SL
+                - SG
+                - SX
+                - SK
+                - SI
+                - SB
+                - SO
+                - ZA
+                - GS
+                - KR
+                - SS
+                - ES
+                - LK
+                - SD
+                - SR
+                - SJ
+                - SE
+                - CH
+                - SY
+                - TW
+                - TJ
+                - TZ
+                - TH
+                - TL
+                - TG
+                - TK
+                - TO
+                - TT
+                - TN
+                - TR
+                - TM
+                - TC
+                - TV
+                - UG
+                - UA
+                - AE
+                - GB
+                - UM
+                - US
+                - UY
+                - UZ
+                - VU
+                - VE
+                - VN
+                - VG
+                - VI
+                - WF
+                - EH
+                - YE
+                - ZM
+                - ZW
+                type: string
+              state:
+                type: string
+                maxLength: 255
+              zipcode:
+                type: string
+                default: ''
+              floor:
+                type: string
+                maxLength: 255
+              suite:
+                type: string
+                maxLength: 255
+              latitude:
+                type: number
+                readOnly: true
+              longitude:
+                type: number
+                readOnly: true
+            required:
+            - name
+            - website
+            - address1
+            - city
+          readOnly: true
+        country:
+          type: string
+          readOnly: true
+        city:
+          type: string
+          readOnly: true
+        zipcode:
+          type: string
+          readOnly: true
+        state:
+          type: string
+          readOnly: true
+      required:
+      - org_id
       - name
     ASSet:
       type: object

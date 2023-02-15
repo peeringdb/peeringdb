@@ -32,7 +32,6 @@ class AdvancedSearchExportTest(ClientCase):
 
     @classmethod
     def setUpTestData(cls):
-
         ClientCase.setUpTestData()
 
         entity_count = list(range(1, 4))
@@ -167,7 +166,6 @@ class AdvancedSearchExportTest(ClientCase):
         ).rstrip() == self.expected_data("net", "csv")
 
     def test_export_net_csv_with_api_cache(self):
-
         """test csv export of net search while api-cache exists"""
 
         call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
@@ -207,7 +205,6 @@ class AdvancedSearchExportTest(ClientCase):
         ).rstrip() == self.expected_data("fac", "csv")
 
     def test_export_fac_csv_with_api_cache(self):
-
         """test csv export of facility search while api-cache exists"""
 
         call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
@@ -246,7 +243,6 @@ class AdvancedSearchExportTest(ClientCase):
         ).rstrip() == self.expected_data("ix", "csv")
 
     def test_export_ix_csv_with_api_cache(self):
-
         """test csv export of ix search while api-cache exists"""
 
         call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
@@ -289,7 +285,6 @@ class AdvancedSearchExportTest(ClientCase):
         ).rstrip() == self.expected_data("org", "csv")
 
     def test_export_org_csv_with_api_cache(self):
-
         """test csv export of org search while api-cache exists"""
 
         call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))

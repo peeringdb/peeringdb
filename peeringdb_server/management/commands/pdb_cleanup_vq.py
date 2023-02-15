@@ -12,7 +12,6 @@ from peeringdb_server.models import User, VerificationQueueItem
 
 
 class Command(PeeringDBBaseCommand):
-
     help = "Use this tool to clean up the Verification Queue"
 
     def add_arguments(self, parser):

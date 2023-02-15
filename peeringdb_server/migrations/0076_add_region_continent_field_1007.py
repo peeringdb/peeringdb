@@ -9,20 +9,17 @@ from peeringdb_server.util import disable_auto_now_and_save
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0075_add_region_continent_field"),
     ]
 
     def update_region_continent_ok(apps, schema_editor):
-
         print("Updating fac region_continent")
         Facility = apps.get_model("peeringdb_server", "Facility")
 
         objects = Facility.handleref.all()
 
         for ob in objects:
-
             if ob.status != "ok":
                 continue
 

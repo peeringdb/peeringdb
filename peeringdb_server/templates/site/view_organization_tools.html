@@ -33,6 +33,14 @@
     </li>
     {% endif %}
 
+    {% if permissions.can_create_campus %}
+      <li role="presentation">
+        <a href="#add_campus" class="{{ tab_init.campus}}" aria-controls="add_campus" role="tab" data-bs-toggle="tab">
+          {% trans "Add Campus" %}
+        </a>
+      </li>
+    {% endif %}
+
     {% if permissions.can_manage %}
     <li role="presentation" class="{{ tab_init.users }}">
       <a href="#users" aria-controls="users" role="tab" data-bs-toggle="tab">
@@ -716,6 +724,47 @@
     <!-- END CAN_CREATE -->
     {% endif %}
 
+    {% if permissions.can_create_campus %}
+    <div role="tabpanel" class="tab-pane {{ tab_init.campus }}" id="add_campus">
+      <!-- CREATE CAMPUS FORM -->
+
+      <div class="editable always auto-toggled create-form"
+           id="create-campus-form"
+           data-edit-target="api:campus:create"
+           data-edit-enter-action="submit">
+        <div class="payload">
+          <div data-edit-name="org_id">{{ instance.id }}</div>
+        </div>
+
+        <div class="row">
+          <div class="col-xs-12 col-sm-6 col-md-6">
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="name"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-xs-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="website"></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="col-xs-12 col-sm-6 col-md-6">
+            {% include "site/entity_create.html" with entity_name="Campus" %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- END CAN_CREATE -->
+    {% endif %}
+
 
     {% if permissions.can_manage %}
     <div role="tabpanel" class="tab-pane {{ tab_init.users }}" id="users">
@@ -1043,6 +1092,8 @@ $(document).ready(function() {
   PeeringDB.list_ext_add($('#create-fac-form'),$('#api-listing-fac'));
   PeeringDB.list_ext_add($('#create-ix-form'),$('#api-listing-ix'));
   PeeringDB.list_ext_add($('#create-net-form'),$('#api-listing-net'));
+  PeeringDB.list_ext_add($('#create-carrier-form'),$('#api-listing-carrier'));
+  PeeringDB.list_ext_add($('#create-campus-form'),$('#api-listing-campus'));
   if(window.location.hash == "#users") {
     $('a[href="#users"]').tab('show');
   }

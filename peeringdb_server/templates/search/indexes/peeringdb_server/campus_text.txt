@@ -1,0 +1,6 @@
+Facility fac {{ object.name }}
+{{ object.name_long|default:"" }}
+{{ object.aka|default:"" }}
+
+{{ object.country.name }} {{ object.country.code }}
+{{ object.city }}

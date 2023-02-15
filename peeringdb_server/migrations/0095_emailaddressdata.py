@@ -6,7 +6,6 @@ from django.utils import timezone
 
 
 def create_email_address_data(apps, schema_editor):
-
     EmailAddress = apps.get_model("account", "EmailAddress")
     EmailAddressData = apps.get_model("peeringdb_server", "EmailAddressData")
 
@@ -17,7 +16,6 @@ def create_email_address_data(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("account", "0002_email_max_length"),
         ("peeringdb_server", "0094_auto_20220823_1331"),

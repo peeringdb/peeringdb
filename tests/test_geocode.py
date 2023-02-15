@@ -15,7 +15,6 @@ class MockMelissa(geo.Melissa):
         super().__init__("")
 
     def global_address(self, **kwargs):
-
         return {
             "Records": [
                 {
@@ -153,7 +152,6 @@ def test_melissa_global_address_best_result():
 
 
 def test_melissa_apply_global_address():
-
     client = geo.Melissa("")
 
     data = client.apply_global_address(
@@ -189,7 +187,6 @@ def test_melissa_apply_global_address():
 
 
 def test_melissa_sanitize(fac):
-
     client = MockMelissa()
 
     sanitized = client.sanitize_address_model(fac)

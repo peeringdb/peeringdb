@@ -31,7 +31,6 @@ class Command(BaseCommand):
     @reversion.create_revision()
     @transaction.atomic()
     def handle(self, *args, **options):
-
         self.commit = options.get("commit", False)
 
         ixp_from = pdbm.InternetExchange.objects.get(id=options.get("ids"))

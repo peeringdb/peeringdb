@@ -7,7 +7,6 @@ def adjust_traffic_levels(apps, schema_editor):
     Network = apps.get_model("peeringdb_server", "Network")
 
     for net in Network.handleref.all():
-
         # only save networks that actually had to have their value
         # adjusted
 
@@ -38,7 +37,6 @@ def adjust_traffic_levels(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0034_net_operational"),
     ]

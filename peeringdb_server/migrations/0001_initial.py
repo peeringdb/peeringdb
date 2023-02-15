@@ -17,7 +17,6 @@ import peeringdb_server.models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [

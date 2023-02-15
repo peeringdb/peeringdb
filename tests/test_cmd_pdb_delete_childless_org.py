@@ -23,7 +23,6 @@ class TestChildlessDeleteOrg(ClientCase):
             cls.org = Organization.objects.first()
 
     def test_cmd_delete_childless_org(self):
-
         dt = timezone.now() - timedelta(days=settings.ORG_CHILDLESS_DELETE_DURATION + 1)
 
         org = self.org

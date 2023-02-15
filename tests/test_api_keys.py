@@ -19,7 +19,6 @@ RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 
 
 def setup_module(module):
-
     # RDAP LOOKUP OVERRIDE
     # Since we are working with fake ASNs throughout the api tests
     # we need to make sure the RdapLookup client can fake results
@@ -277,7 +276,6 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         )
 
     def test_org_admin_002_POST_PUT_DELETE_as_set(self):
-
         """
         The as-set endpoint is readonly, so all of these should
         fail
@@ -300,7 +298,6 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
 
     # TESTS WE ADD FOR ORGANIZATION API KEY
     def test_org_key_admin_002_GET_as_set(self):
-
         """
         GET requests on the "as_set" endpoint should work with
         any org api key

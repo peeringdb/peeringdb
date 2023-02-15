@@ -13,7 +13,6 @@ from peeringdb_server.models import NetworkContact
 
 
 class Command(BaseCommand):
-
     help = "Hard deletes old soft-deleted network contact instances"
 
     def add_arguments(self, parser):
@@ -32,7 +31,6 @@ class Command(BaseCommand):
         self._hard_delete_old_pocs()
 
     def _hard_delete_old_pocs(self):
-
         qset = NetworkContact.objects.filter(status="deleted")
 
         date = timezone.now() - timedelta(days=settings.POC_DELETION_PERIOD)
@@ -46,12 +44,10 @@ class Command(BaseCommand):
         counter = 1
 
         for poc in qset:
-
             self.log(f"Deleting poc={poc.id} ... {counter} / {count}")
             counter += 1
 
             if self.commit:
-
                 # remove poc reversion data
 
                 versions = Version.objects.get_for_object(poc)

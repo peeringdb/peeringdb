@@ -11,7 +11,6 @@ from .util import reset_group_ids
 
 @pytest.mark.django_db
 def test_mfa_basic_auth_block_writes():
-
     reset_group_ids()
     user = User.objects.create_user(
         username="user", password="password", email="user@localhost"

@@ -13,7 +13,6 @@ def null_rencode(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0044_ixlan_ixf_fields"),
     ]

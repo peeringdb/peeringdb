@@ -17,7 +17,6 @@ class PretendMode(IOError):
 
 
 class Command(BaseCommand):
-
     help = "Flags and deletes elderyly orphaned user accounts"
 
     def add_arguments(self, parser):
@@ -73,7 +72,6 @@ class Command(BaseCommand):
         self.send_emails()
 
     def flag_users(self):
-
         min_age = timezone.now() - timedelta(days=settings.MIN_AGE_ORPHANED_USER_DAYS)
 
         qset = User.objects.filter(flagged_for_deletion__isnull=True)
@@ -99,7 +97,6 @@ class Command(BaseCommand):
             user.save()
 
     def unflag_users(self):
-
         qset = User.objects.filter(flagged_for_deletion__isnull=False)
         qset = qset.prefetch_related("groups")
         qset = qset.filter(groups__name__startswith="org.")
@@ -111,7 +108,6 @@ class Command(BaseCommand):
             user.save()
 
     def notify_users(self):
-
         now = timezone.now()
         qset = User.objects.filter(flagged_for_deletion__isnull=False)
         qset = qset.filter(notified_for_deletion__isnull=True).order_by(
@@ -119,7 +115,6 @@ class Command(BaseCommand):
         )
 
         for user in qset[: self.max_notify]:
-
             notify_date = user.flagged_for_deletion - timedelta(
                 days=settings.NOTIFY_ORPHANED_USER_DAYS
             )
@@ -143,7 +138,6 @@ class Command(BaseCommand):
             user.save()
 
     def send_emails(self):
-
         count = len(self.notifications)
 
         if not self.commit:
@@ -156,7 +150,6 @@ class Command(BaseCommand):
             user.email_user(subject, text)
 
     def delete_users(self):
-
         now = timezone.now()
 
         qset = User.objects.filter(

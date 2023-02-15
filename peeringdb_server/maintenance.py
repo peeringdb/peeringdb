@@ -60,7 +60,6 @@ class Middleware:
             return None
 
         if request.method.lower() in ["post", "put", "patch", "delete"]:
-
             view, args, kwargs = resolve(request.path_info)
 
             if view.__name__ in ["request_login"]:

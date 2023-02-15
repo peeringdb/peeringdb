@@ -288,7 +288,7 @@ class AdvancedSearchExportView(ExportView):
         Returns:
             - list: list containing rendered data rows ready for export
         """
-        if self.tag not in ["net", "ix", "fac", "org"]:
+        if self.tag not in ["net", "ix", "fac", "org", "campus"]:
             raise ValueError(_("Invalid tag"))
         data_function = getattr(self, f"generate_{self.tag}")
         return data_function(request)
@@ -407,6 +407,33 @@ class AdvancedSearchExportView(ExportView):
                         ("Name", row["name"]),
                         ("Country", row["country"]),
                         ("City", row["city"]),
+                    ]
+                )
+            )
+        return download_data
+
+    def generate_campus(self, request):
+        """
+        Fetch campus data from the API according to request and then render
+        it ready for export.
+
+        Arguments:
+            - request <Request>
+
+        Returns:
+            - list: list containing rendered data ready for export
+        """
+
+        data = self.fetch(request)
+        download_data = []
+        for row in data:
+            download_data.append(
+                collections.OrderedDict(
+                    [
+                        ("Name", row["name"]),
+                        ("Name Long", row["name_long"]),
+                        ("Website", row["website"]),
+                        ("Fac_set", row["fac_set"]),
                     ]
                 )
             )

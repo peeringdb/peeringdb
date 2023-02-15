@@ -22,7 +22,6 @@ class SearchTests(TestCase):
 
     @classmethod
     def create_instance(cls, model, org, asn=1, prefix="Test", accented=False):
-
         kwargs = {}
         if model.handleref.tag == "net":
             kwargs = {"asn": asn}
@@ -44,7 +43,6 @@ class SearchTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-
         cls.instances = {}
         cls.instances_accented = {}
         cls.instances_sponsored = {}

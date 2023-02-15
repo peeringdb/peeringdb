@@ -9,7 +9,6 @@ from tests.util import reset_group_ids
 
 @pytest.fixture
 def profile_user():
-
     reset_group_ids()
 
     user = User.objects.create_user(
@@ -29,7 +28,6 @@ def profile_user():
 
 @pytest.mark.django_db
 def test_add_email(profile_user):
-
     user = profile_user
 
     client = Client()
@@ -54,7 +52,6 @@ def test_add_email(profile_user):
 
 @pytest.mark.django_db
 def test_add_email_and_make_primary(profile_user):
-
     user = profile_user
 
     client = Client()
@@ -76,7 +73,6 @@ def test_add_email_and_make_primary(profile_user):
 
 @pytest.mark.django_db
 def test_remove_email(profile_user):
-
     user = profile_user
 
     client = Client()
@@ -105,7 +101,6 @@ def test_remove_email(profile_user):
 
 @pytest.mark.django_db
 def test_remove_email_cannot_remove_primary(profile_user):
-
     user = profile_user
 
     client = Client()
@@ -130,7 +125,6 @@ def test_remove_email_cannot_remove_primary(profile_user):
 
 @pytest.mark.django_db
 def test_change_primary(profile_user):
-
     user = profile_user
 
     client = Client()

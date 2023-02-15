@@ -31,7 +31,13 @@
 
       <div class="col-md-4 col-sm-4 col-xs-2 right button-bar">
         {% if instance.status == "pending" %}
-        <div class="status-pending">{% trans "Pending Review" %}</div>
+          <div class="status-pending">
+          {% if ref_tag == "campus" %}
+          {% trans "Add at least 2 facilities for your campus to be visible." %}
+          {% else %}
+          {% trans "Pending Review" %}
+          {% endif %}
+          </div>
         {% endif %}
         {% if permissions.can_edit %}
         <!-- toggle edit mode -->

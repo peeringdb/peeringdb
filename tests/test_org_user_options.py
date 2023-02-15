@@ -17,7 +17,6 @@ from tests.util import reset_group_ids
 @pytest.mark.django_db
 @pytest.fixture
 def reauth_objects():
-
     reset_group_ids()
 
     org = Organization.objects.create(name="Test", status="ok")
@@ -72,7 +71,6 @@ def reauth_objects():
 
 @pytest.mark.django_db
 def test_restrict_emails(reauth_objects):
-
     org = reauth_objects["org"]
     user = reauth_objects["user"]
 
@@ -114,7 +112,6 @@ def test_restrict_emails(reauth_objects):
 
 @pytest.mark.django_db
 def test_restrict_emails_blocks_affiliations(reauth_objects):
-
     org = reauth_objects["org"]
     user = reauth_objects["user_b"]
 
@@ -135,7 +132,6 @@ def test_restrict_emails_blocks_affiliations(reauth_objects):
 
 @pytest.mark.django_db
 def test_trigger_reauth(reauth_objects):
-
     user = reauth_objects["user"]
     org = reauth_objects["org"]
     email = reauth_objects["email"]

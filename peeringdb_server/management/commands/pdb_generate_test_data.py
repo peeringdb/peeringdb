@@ -12,7 +12,6 @@ from peeringdb_server.mock import Mock
 
 
 class Command(BaseCommand):
-
     help = "Will create test data. This will wipe all data locally, so use with caution. This command is NOT to be run on production or beta environments."
 
     def add_arguments(self, parser):
@@ -60,6 +59,7 @@ class Command(BaseCommand):
             "net",
             "ix",
             "fac",
+            "campus",
             "carrier",
             "carrierfac",
             "ixpfx",
@@ -94,7 +94,7 @@ class Command(BaseCommand):
                     params.update(facility=self.entities["fac"][i])
                 if reftag in ["ixlan", "ixfac"]:
                     params.update(ix=self.entities["ix"][i])
-                if reftag in ["ix", "net", "fac", "carrier"]:
+                if reftag in ["ix", "net", "fac", "carrier", "campus"]:
                     params.update(org=self.entities["org"][i])
                 if reftag in ["carrierfac"]:
                     params.update(carrier=self.entities["carrier"][i])

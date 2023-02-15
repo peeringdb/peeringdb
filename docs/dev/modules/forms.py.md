@@ -1,4 +1,4 @@
-Generated from forms.py on 2023-01-17 22:33:48.360745
+Generated from forms.py on 2023-02-14 15:33:37.135106
 
 # peeringdb_server.forms
 
@@ -158,6 +158,21 @@ UserLocaleForm(django.forms.forms.Form)
 ```
 
 A collection of Fields, plus their associated data.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## UserOrgForm
+
+```
+UserOrgForm(django.forms.forms.Form)
+```
+
+Sets primary organization of the user
 
 
 ### Instanced Attributes

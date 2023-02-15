@@ -6,7 +6,6 @@ import peeringdb_server.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0092_create_missing_email_objects"),
     ]

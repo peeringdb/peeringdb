@@ -13,7 +13,6 @@ def forwards_func(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0017_ixf_ixp_import_enabled"),
     ]

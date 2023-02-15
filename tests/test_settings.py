@@ -29,7 +29,6 @@ class TestAutoApproveAffiliation(SettingsCase):
     settings = {"AUTO_APPROVE_AFFILIATION": True}
 
     def test_setting(self):
-
         org = models.Organization.objects.create(name="Test Org", status="ok")
         net = models.Network.objects.create(
             name="Test Net", org=org, asn=63311, status="ok"
@@ -103,7 +102,6 @@ def test_set_option_coerce_env_var():
 
 
 def test_set_option_booleans():
-
     context = {}
     # env variables can only be set as strings
     os.environ["TEST_SETTING"] = "False"

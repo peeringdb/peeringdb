@@ -54,7 +54,6 @@ def test_reset_ixf_proposals(admin_user, entities, ip_addresses):
 
 @pytest.mark.django_db
 def test_dismiss_ixf_proposals(admin_user, entities, ip_addresses):
-
     network = entities["network"]
     ixlan = entities["ixlan"][0]
 
@@ -89,7 +88,6 @@ def test_reset_ixf_proposals_no_perm(regular_user, entities, ip_addresses):
 
 @pytest.mark.django_db
 def test_dismiss_ixf_proposals_no_perm(regular_user, entities, ip_addresses):
-
     network = entities["network"]
     ixlan = entities["ixlan"][0]
 

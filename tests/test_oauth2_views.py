@@ -35,7 +35,6 @@ def oauth2_org_admin_user():
 
 @pytest.fixture
 def oauth2_apps(oauth2_org_admin_user):
-
     user, org, org_other = oauth2_org_admin_user
 
     user_app = OAuthApplication.objects.create(

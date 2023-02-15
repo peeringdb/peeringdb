@@ -34,6 +34,7 @@ class Backend(BaseBackend):
 
     RESOURCE_MAP = {
         resource.Facility: models.Facility,
+        resource.Campus: models.Campus,
         resource.InternetExchange: models.InternetExchange,
         resource.InternetExchangeFacility: models.InternetExchangeFacility,
         resource.InternetExchangeLan: models.IXLan,
@@ -119,7 +120,6 @@ class Backend(BaseBackend):
         )
 
     def save(self, obj):
-
         # make sure all datetime values have their timezone set
 
         for field in obj._meta.get_fields():

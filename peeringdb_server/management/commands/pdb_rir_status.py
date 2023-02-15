@@ -9,7 +9,6 @@ from peeringdb_server.models import Network
 
 
 class Command(BaseCommand):
-
     help = "Checks and updates RIR status of networks"
 
     def add_arguments(self, parser):

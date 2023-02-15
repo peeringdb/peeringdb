@@ -5,7 +5,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0031_auto_20200404_0910"),
     ]

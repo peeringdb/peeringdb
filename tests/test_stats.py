@@ -11,6 +11,7 @@ from django.test import override_settings
 from peeringdb_server.models import (
     REFTAG_MAP,
     UTC,
+    Campus,
     Facility,
     InternetExchange,
     InternetExchangeFacility,
@@ -27,18 +28,41 @@ DATE_PAST = datetime.datetime(year=2019, month=11, day=1)
 
 
 def setup_data():
-
     call_command("pdb_generate_test_data", limit=3, commit=True)
 
     date_past = DATE_PAST.replace(tzinfo=UTC())
 
     # one object of each type moved to the past
 
-    for tag in ["fac", "net", "org", "ix", "carrier"]:
+    for tag in ["fac", "net", "org", "ix", "carrier", "campus"]:
         for obj in REFTAG_MAP[tag].objects.all():
             obj.created = obj.updated = date_past
             obj.save()
             break
+
+    # add facilities to campus so its no longer pending
+
+    campus = Campus.objects.filter(status="ok").first()
+
+    for campus in Campus.objects.filter(status="pending"):
+        Facility.objects.create(
+            name=f"Campus Fac 1 {campus.id}",
+            status="ok",
+            campus=campus,
+            latitude=31.0,
+            longitude=30.0,
+            org=campus.org,
+        )
+        Facility.objects.create(
+            name=f"Campus Fac 2 {campus.id}",
+            status="ok",
+            campus=campus,
+            latitude=31.0,
+            longitude=30.0,
+            org=campus.org,
+        )
+        campus.refresh_from_db()
+        assert campus.status == "ok"
 
     # create users
 

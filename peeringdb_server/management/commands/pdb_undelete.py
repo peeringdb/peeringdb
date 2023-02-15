@@ -136,7 +136,7 @@ class Command(BaseCommand):
                         relation = getattr(obj, field.name)
                     except Exception:
                         continue
-                    if relation.status == "deleted" and relation != parent:
+                    if relation and relation.status == "deleted" and relation != parent:
                         can_undelete_obj = False
                         self.log_warn(
                             "Cannot undelete {}, dependent relation marked as deleted: {}".format(

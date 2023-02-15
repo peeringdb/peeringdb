@@ -75,7 +75,6 @@ class Command(BaseCommand):
             self.stdout.write(msg)
 
     def handle(self, *args, **options):
-
         self.stats = {
             "created_ok": 0,
             "created_deleted": 0,
@@ -191,7 +190,6 @@ class Command(BaseCommand):
         self.stats[f"created_{ix.status}"] += 1
 
     def reparent_extra_ixlans(self):
-
         """
         Finds exchanges with more than one ixlan under them and
         re-parents those extra ixlans under a new exchange
@@ -205,7 +203,6 @@ class Command(BaseCommand):
 
         for ix in InternetExchange.objects.all():
             if ix.ixlan_set.all().count() > 1:
-
                 # we obtain the primary ixlan for the ix
                 # then reparent all the other ixlans to a new
                 # exchange
@@ -220,7 +217,6 @@ class Command(BaseCommand):
     @reversion.create_revision()
     @transaction.atomic()
     def reparent_ixlan(self, ixlan):
-
         """
         Reparent an ixlan to a new exchange
         """
@@ -318,7 +314,6 @@ class Command(BaseCommand):
 
     @transaction.atomic()
     def migrate_ixlan_id(self, ixlan, ixlans, trigger=None, tmp_id=False):
-
         """
         Migrate an ixlan id so it matches the parent exchange id
         """
@@ -341,13 +336,11 @@ class Command(BaseCommand):
         # targeted ixlan id currently claimed by another ixlan (that is not this ixlan)
 
         if ixlans.get(new_id) and ixlans.get(new_id) != ixlan:
-
             # migrate conflicting ixlan id
 
             if not trigger or trigger.id != new_id:
                 self.migrate_ixlan_id(ixlans[new_id], ixlans, trigger=ixlan)
             else:
-
                 # this ixlan id migration was triggered by the same ixlan
                 # we are trying to resolve the conflict for, so to avoid
                 # and endless loop we migrate to a temporary id
@@ -392,7 +385,6 @@ class Command(BaseCommand):
         # create reversion revision for all updated entities
 
         if self.commit:
-
             # on deleted exchanges we also need to save the ix
             # and the org so it will be available in the api's incrememental
             # update response
@@ -433,7 +425,6 @@ class Command(BaseCommand):
         self.stats[f"migrated_{ixlan.status}"] += 1
 
     def migrate_ixlan_id_sql(self, old_id, new_id):
-
         """
         Migrate ixlan id so it matches its parent id
 
@@ -488,7 +479,6 @@ class Command(BaseCommand):
         # execute queries
 
         with connection.cursor() as cursor:
-
             # since we are updated primary keys that are referenced
             # by foreign key constraints we need to temporarily turn
             # OFF foreign key checks
@@ -500,7 +490,6 @@ class Command(BaseCommand):
             cursor.execute("set foreign_key_checks=1")
 
     def post_migration_checks(self):
-
         """
         Will check that foreign key relations are in tact
 

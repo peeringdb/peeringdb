@@ -6,7 +6,6 @@ sql_select_fk_name = "select CONSTRAINT_NAME from INFORMATION_SCHEMA.KEY_COLUMN_
 
 
 def _fix_constraints(table, cursor):
-
     cursor.execute(sql_select_fk_name, [table])
     fk_name_row = cursor.fetchall()
     if not fk_name_row:
@@ -28,11 +27,9 @@ def _fix_constraints(table, cursor):
 
 
 def fix_constraints(apps, schema_editor):
-
     print("fixing constraints")
 
     with connection.cursor() as cursor:
-
         cursor.execute("START TRANSACTION;")
         try:
             _fix_constraints("oauth2_provider_grant", cursor)
@@ -46,7 +43,6 @@ def fix_constraints(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0086_auto_20220510_0949"),
     ]

@@ -83,7 +83,6 @@ class TestImportPreview(ClientCase):
         cls.org.admin_usergroup.user_set.add(cls.admin_user)
 
     def test_import_preview_net(self):
-
         data_ixf_preview_net = pytest_filedata.get_data("data_ixf_preview_net")[
             "test_0"
         ]

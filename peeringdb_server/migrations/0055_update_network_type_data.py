@@ -44,7 +44,6 @@ def unset_info_types(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0054_add_network_types_and_prefix_description"),
     ]

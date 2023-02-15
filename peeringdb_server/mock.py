@@ -84,13 +84,17 @@ class Mock:
         for field in model._meta.get_fields():
             if field.name in data:
                 continue
+
+            # dont create a campus for a facility
+            if field.name == "campus":
+                continue
+
             if field.is_relation and field.many_to_one:
                 if hasattr(field.related_model, "ref_tag"):
                     data[field.name] = self.create(field.related_model.handleref.tag)
 
         # then we set the other fields to mock values provided by this class
         for field in model._meta.get_fields():
-
             # field value specified alrady, skip
             if field.name in data:
                 continue

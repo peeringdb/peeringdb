@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("reversion", "0001_squashed_0004_auto_20160611_1202"),
         ("peeringdb_server", "0007_ixlan_json_member_list_url"),

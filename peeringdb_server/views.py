@@ -80,6 +80,7 @@ from peeringdb_server.forms import (
     UserLocaleForm,
     UsernameChangeForm,
     UsernameRetrieveForm,
+    UserOrgForm,
 )
 from peeringdb_server.inet import (
     RdapException,
@@ -92,6 +93,7 @@ from peeringdb_server.models import (
     PARTNERSHIP_LEVELS,
     REFTAG_MAP,
     UTC,
+    Campus,
     Carrier,
     CarrierFacility,
     DataChangeWatchedObject,
@@ -114,6 +116,7 @@ from peeringdb_server.org_admin_views import load_all_user_permissions
 from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
 from peeringdb_server.search import search
 from peeringdb_server.serializers import (
+    CampusSerializer,
     CarrierSerializer,
     FacilitySerializer,
     InternetExchangeSerializer,
@@ -171,6 +174,34 @@ def export_permissions(user, entity):
     if entity.status == "pending":
         perms["can_create"] = False
         perms["can_delete"] = False
+
+    if perms["can_write"] or perms["can_create"] or perms["can_delete"]:
+        perms["can_edit"] = True
+
+    if hasattr(entity, "grainy_namespace_manage"):
+        perms["can_manage"] = check_permissions(
+            user, entity.grainy_namespace_manage, PERM_CRUD
+        )
+    else:
+        perms["can_manage"] = False
+
+    return perms
+
+
+def export_permissions_campus(user, entity):
+    """
+    Return dict of permission bools for the specified user and entity
+    to be used in template context.
+    """
+
+    if entity.status == "deleted":
+        return {}
+
+    perms = {
+        "can_write": check_permissions(user, entity, PERM_UPDATE),
+        "can_create": check_permissions(user, entity, PERM_CREATE),
+        "can_delete": check_permissions(user, entity, PERM_DELETE),
+    }
 
     if perms["can_write"] or perms["can_create"] or perms["can_delete"]:
         perms["can_edit"] = True
@@ -275,7 +306,6 @@ def view_request_ownership(request):
     was_limited = getattr(request, "limited", False)
 
     if request.method in ["GET", "HEAD"]:
-
         # check if reuqest was blocked by rate limiting
         if was_limited:
             return view_index(
@@ -302,7 +332,6 @@ def view_request_ownership(request):
         return HttpResponse(template.render(make_env(org=org), request))
 
     elif request.method == "POST":
-
         org_id = request.POST.get("id")
 
         # check if reuqest was blocked by rate limiting
@@ -398,7 +427,6 @@ def view_affiliate_to_org(request):
     """
 
     if request.method == "POST":
-
         # check if request was blocked by rate limiting
         was_limited = getattr(request, "limited", False)
         if was_limited:
@@ -498,11 +526,9 @@ def view_affiliate_to_org(request):
             )
 
         except RdapInvalidRange as exc:
-
             return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
 
         except RdapException as exc:
-
             ticket_queue_rdap_error(request, asn, exc)
 
             return JsonResponse({"asn": rdap_pretty_error_message(exc)}, status=400)
@@ -549,11 +575,9 @@ def view_profile(request):
 @login_required
 @transaction.atomic
 def view_set_user_locale(request):
-
     if request.method in ["GET", "HEAD"]:
         return view_verify(request)
     elif request.method == "POST":
-
         form = UserLocaleForm(request.POST)
         if not form.is_valid():
             return JsonResponse(form.errors, status=400)
@@ -587,7 +611,6 @@ class ApplicationOwnerMixin:
     """
 
     def get_queryset(self):
-
         org_ids = [org.id for org in self.request.user.admin_organizations]
 
         return get_application_model().objects.filter(
@@ -625,7 +648,6 @@ class ApplicationFormMixin:
         )
 
     def get_form(self):
-
         form = super().get_form()
 
         # filter organization choices to only contain organizations manageable
@@ -756,7 +778,6 @@ def view_verify(request):
 @require_http_methods(["POST"])
 @ratelimit(key="ip", rate=RATELIMITS["view_verify_POST"], method="POST")
 def profile_add_email(request):
-
     """
     Allows a user to add an additional email address
     """
@@ -853,7 +874,6 @@ def profile_add_email(request):
 @transaction.atomic
 @require_http_methods(["POST"])
 def profile_delete_email(request):
-
     """
     Allows a user to remove one of their emails
     """
@@ -902,7 +922,6 @@ def profile_delete_email(request):
 @transaction.atomic
 @require_http_methods(["POST"])
 def profile_set_primary_email(request):
-
     """
     Allows a user to set a different email address as their primary
     contact point for peeringdb
@@ -931,11 +950,9 @@ def profile_set_primary_email(request):
 @login_required
 @transaction.atomic
 def view_password_change(request):
-
     if request.method in ["GET", "HEAD"]:
         return view_verify(request)
     elif request.method == "POST":
-
         password_c = request.POST.get("password_c")
 
         if not request.user.has_oauth:
@@ -961,11 +978,9 @@ def view_password_change(request):
 @login_required
 @transaction.atomic
 def view_username_change(request):
-
     if request.method in ["GET", "HEAD"]:
         return view_verify(request)
     elif request.method == "POST":
-
         password = request.POST.get("password")
 
         if not request.user.has_oauth:
@@ -1102,7 +1117,6 @@ def view_password_reset(request):
         return HttpResponse(template.render(env, request))
 
     elif request.method == "POST":
-
         token = request.POST.get("token")
         target = request.POST.get("target")
         if token and target:
@@ -1236,7 +1250,6 @@ def view_close_account(request):
     # If user is authenticated, check password
     if request.user.is_authenticated:
         if request.user.check_password(password):
-
             request.user.close_account()
 
             # Logout the user
@@ -1315,7 +1328,6 @@ class OrganizationLogoUpload(View):
 
     @transaction.atomic
     def post(self, request, id):
-
         """upload and set a new logo"""
 
         org = Organization.objects.get(pk=id)
@@ -1347,7 +1359,6 @@ class OrganizationLogoUpload(View):
 
     @transaction.atomic
     def delete(self, request, id):
-
         """delete the logo"""
 
         org = Organization.objects.get(pk=id)
@@ -1381,7 +1392,7 @@ def view_organization(request, id):
 
     perms = export_permissions(request.user, org)
 
-    tags = ["fac", "net", "ix", "carrier"]
+    tags = ["fac", "net", "ix", "carrier", "campus"]
     for tag in tags:
         model = REFTAG_MAP.get(tag)
         perms["can_create_%s" % tag] = check_permissions(
@@ -1424,6 +1435,11 @@ def view_organization(request, id):
     else:
         carriers = org.carrier_set.filter(status__in=["ok"])
 
+    if perms.get("can_delete_campus") or perms.get("can_create_campus"):
+        campuses = org.campus_set.filter(status__in=["ok", "pending"])
+    else:
+        campuses = org.campus_set.filter(status__in=["ok"])
+
     dismiss = DoNotRender()
 
     # determine if logo is specified and set the
@@ -1440,6 +1456,7 @@ def view_organization(request, id):
         "networks": networks,
         "facilities": facilities,
         "carriers": carriers,
+        "campuses": campuses,
         "fields": [
             {
                 "name": "aka",
@@ -1623,6 +1640,15 @@ def view_facility(request, id):
 
     dismiss = DoNotRender()
 
+    if facility.campus_id and facility.campus.status == "ok":
+        campus = facility.campus
+        campus_name = campus.name
+        campus_id = campus.id
+    else:
+        campus = None
+        campus_name = None
+        campus_id = 0
+
     data = {
         "title": data.get("name", dismiss),
         "exchanges": exchanges,
@@ -1686,6 +1712,14 @@ def view_facility(request, id):
                 "label": _("Continental Region"),
                 "value": data.get("region_continent", dismiss),
                 "readonly": True,
+            },
+            {
+                "name": "campus",
+                "type": "entity_link",
+                "label": _("Campus"),
+                "value": (campus_name or dismiss),
+                "link": "/%s/%d" % (Campus._handleref.tag, campus_id),
+                "help_text": _("Facility is part of a campus"),
             },
             {
                 "name": "geocode",
@@ -1890,6 +1924,112 @@ def view_carrier(request, id):
 
     return view_component(
         request, "carrier", data, "Carrier", perms=perms, instance=carrier
+    )
+
+
+@ensure_csrf_cookie
+def view_campus(request, id):
+    """
+    View campus data for campus specified by id.
+    """
+
+    try:
+        campus = Campus.objects.get(id=id)
+    except ObjectDoesNotExist:
+        return view_http_error_404(request)
+
+    data = CampusSerializer(campus, context={"user": request.user}).data
+
+    applicator = APIPermissionsApplicator(request)
+
+    if not applicator.is_generating_api_cache:
+        data = applicator.apply(data)
+
+    # find out if user can write to object
+    perms = export_permissions_campus(request.user, campus)
+
+    if not data:
+        return view_http_error_403(request)
+
+    dismiss = DoNotRender()
+
+    facilities = Facility.objects.filter(campus=campus)
+
+    org = data.get("org")
+
+    if campus.org.logo:
+        org["logo"] = campus.org.logo.url
+
+    data = {
+        "id": campus.id,
+        "title": data.get("name", dismiss),
+        "facilities": facilities,
+        "fields": [
+            {
+                "name": "org",
+                "label": _("Organization"),
+                "value": org.get("name", dismiss),
+                "type": "entity_link",
+                "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+            },
+            {
+                "name": "aka",
+                "label": _("Also Known As"),
+                "value": data.get("aka", dismiss) or "",
+            },
+            {
+                "name": "name_long",
+                "label": _("Long Name"),
+                "value": data.get("name_long", dismiss) or "",
+            },
+            {
+                "type": "url",
+                "name": "website",
+                "label": _("Company Website"),
+                "edit_label": _("Company Website Override"),
+                "edit_help_text": _(
+                    "If this field is set, it will be displayed on this record. If not, we will display the website from the organization record this is tied to"
+                ),
+                "value": data.get("website", dismiss),
+            },
+            {
+                "name": "city",
+                "label": _("City"),
+                "value": data.get("city", dismiss),
+                "readonly": True,
+            },
+            {
+                "name": "country",
+                "label": _("Country Code"),
+                "value": data.get("country", dismiss),
+                "readonly": True,
+            },
+            {
+                "readonly": True,
+                "name": "updated",
+                "label": _("Last Updated"),
+                "value": data.get("updated", dismiss),
+            },
+            {
+                "name": "notes",
+                "label": _("Notes"),
+                "help_text": _("Markdown enabled"),
+                "type": "fmt-text",
+                "value": data.get("notes", dismiss),
+            },
+            {
+                "name": "org_logo",
+                "label": "",
+                "value": org.get("logo", dismiss),
+                "type": "image",
+                "readonly": True,
+                "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+            },
+        ],
+    }
+
+    return view_component(
+        request, "campus", data, "Campus", perms=perms, instance=campus
     )
 
 
@@ -2164,7 +2304,6 @@ def view_exchange(request, id):
 
 @login_required
 def watch_network(request, id):
-
     """
     Adds data-change notifications for the specified network (id)
     for the rquesting user.
@@ -2189,7 +2328,6 @@ def watch_network(request, id):
 
 @login_required
 def unwatch_network(request, id):
-
     # make sure network exists
     net = Network.objects.get(id=id)
 
@@ -2893,24 +3031,20 @@ class LoginView(TwoFactorLoginView):
         user = self.get_user()
 
         if user.email_confirmed:
-
             # only users with confirmed emails should have
             # the option to request otp to their email address
 
             try:
-
                 # check if user already has an EmailDevice instance
 
                 device = EmailDevice.objects.get(user=user)
 
                 if not device.confirmed:
-
                     # sync confirmed status
 
                     device.confirmed = True
                     device.save()
             except EmailDevice.DoesNotExist:
-
                 # create EmaiLDevice object for user if it does
                 # not exist
 
@@ -2921,7 +3055,6 @@ class LoginView(TwoFactorLoginView):
 
             return device
         else:
-
             # if user does NOT have a confirmed email address but
             # somehow has an EmailDevice object, delete it.
 
@@ -2942,7 +3075,6 @@ class LoginView(TwoFactorLoginView):
         if not self.device_cache:
             challenge_device_id = self.request.POST.get("challenge_device", None)
             if challenge_device_id:
-
                 # email device
                 device = self.get_email_device()
                 if device.persistent_id == challenge_device_id:
@@ -2959,7 +3091,7 @@ class LoginView(TwoFactorLoginView):
         Specify which redirect urls are valid.
         """
 
-        redir = self.request.POST.get("next") or "/"
+        redir = self.request.POST.get("next") or self.request.GET.get("next") or "/"
 
         # if the redirect url is to logout that makes little
         # sense as the user would get logged out immediately
@@ -2973,7 +3105,6 @@ class LoginView(TwoFactorLoginView):
         try:
             resolve(redir)
         except Resolver404:
-
             # url could not be resolved to a view, so it's likely
             # invalid or pointing somewhere externally, the only
             # external urls we want to allow are the redirect urls
@@ -3011,7 +3142,6 @@ class LoginView(TwoFactorLoginView):
 @require_http_methods(["POST"])
 @ratelimit(key="ip", rate=RATELIMITS["request_translation"], method="POST")
 def request_translation(request, data_type):
-
     if not request.user.is_authenticated:
         return JsonResponse(
             {"status": "error", "error": "Please login to use translation service"}
@@ -3025,7 +3155,6 @@ def request_translation(request, data_type):
     target = user_language
 
     if note and target:
-
         translationURL = "https://translation.googleapis.com/language/translate/v2"
         call_params = {
             "key": dj_settings.GOOGLE_GEOLOC_API_KEY,
@@ -3107,3 +3236,70 @@ def view_healthcheck(request):
         cursor.execute("SELECT version()")
 
     return HttpResponse("")
+
+
+@ensure_csrf_cookie
+@require_http_methods(["GET"])
+def view_self_entity(request, data_type):
+    """
+    Redirect self entity API to the corresponding url
+    """
+
+    supported_tags = ["org", "net", "ix", "fac", "carrier", "campus"]
+
+    if data_type not in supported_tags:
+        return HttpResponse(status=404)
+
+    if (
+        request.user.is_authenticated
+        and hasattr(request.user, "self_entity_org")
+        and request.user.primary_org
+    ):
+        org = Organization.objects.get(id=request.user.primary_org)
+
+        if data_type == "org":
+            obj = org
+        else:
+            obj = getattr(org, f"{data_type}_set").filter(status="ok").first()
+            if not obj:
+                obj = REFTAG_MAP[data_type].objects.get(
+                    id=getattr(dj_settings, f"DEFAULT_SELF_{data_type.upper()}")
+                )
+
+        return redirect(reverse(f"{data_type}-view", kwargs={"id": obj.id}))
+
+    else:
+        obj = REFTAG_MAP[data_type].objects.get(
+            id=getattr(dj_settings, f"DEFAULT_SELF_{data_type.upper()}")
+        )
+
+        return redirect(reverse(f"{data_type}-view", kwargs={"id": obj.id}))
+
+
+@csrf_protect
+@ensure_csrf_cookie
+@login_required
+@transaction.atomic
+def view_set_user_org(request):
+    """
+    Sets primary organization of the user
+    """
+    if request.method in ["GET", "HEAD"]:
+        return view_verify(request)
+    elif request.method == "POST":
+        form = UserOrgForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse(form.errors, status=400)
+
+        org = form.cleaned_data.get("organization")
+        if org:
+            user = request.user
+            user.primary_org = org
+            user.save()
+        else:
+            return JsonResponse(
+                {"error": _("Malformed Organization Preference")}, status=400
+            )
+
+        response = JsonResponse({"status": "ok"})
+        return response

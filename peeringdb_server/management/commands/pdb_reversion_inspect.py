@@ -38,7 +38,6 @@ class Command(BaseCommand):
         parser.add_argument("id", nargs="+", type=int)
 
     def handle(self, *args, **options):
-
         ref_tag = options.get("reftag")
 
         ids = [int(i) for i in options.get("id")]

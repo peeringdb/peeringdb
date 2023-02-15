@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 def clean_up_dupe_email_accounts(apps, schema_editor):
-
     User = apps.get_model("peeringdb_server", "User")
     EmailAddress = apps.get_model("account", "EmailAddress")
 
@@ -13,7 +12,6 @@ def clean_up_dupe_email_accounts(apps, schema_editor):
     deactivated = 0
 
     for user in User.objects.all().order_by("-last_login"):
-
         if not user.email:
             if user.email == "":
                 user.email = None
@@ -37,13 +35,11 @@ def clean_up_dupe_email_accounts(apps, schema_editor):
 
 
 def revert_clean_up_dupe_email_accounts(apps, schema_editor):
-
     User = apps.get_model("peeringdb_server", "User")
     User.objects.filter(email__isnull=True).update(email="")
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0090_auto_20220715_0923"),
     ]

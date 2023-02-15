@@ -95,7 +95,6 @@ class BaseSchema(AutoSchema):
         op_type = self.get_operation_type(path, method)
 
         if model:
-
             # Overrides for duplicate operations ids
 
             if "request_ixf_import" in path:
@@ -104,13 +103,20 @@ class BaseSchema(AutoSchema):
                 return f"{op_type} as-set by asn"
             elif "as_set" in path:
                 return f"{op_type} as-set"
+            elif "campus" in path and "add-facility" in path:
+                return "add facility to campus"
+            elif "campus" in path and "remove-facility" in path:
+                return "remove facility from campus"
+            elif "carrierfac" in path and "approve" in path:
+                return "approve facility presence at carrier"
+            elif "carrierfac" in path and "reject" in path:
+                return "reject facility presence at carrier"
 
             return f"{op_type} {model.HandleRef.tag}"
 
         return super().get_operation_id(path, method)
 
     def get_operation(self, *args, **kwargs):
-
         """
         Override this so we can augment the operation dict
         for an openapi schema operation.
@@ -131,6 +137,8 @@ class BaseSchema(AutoSchema):
         # attempt to relate a serializer and a model class to the operation
 
         serializer, model = self.get_classes(*args)
+        if args[0] == "/api/{var}/self":
+            return {}
 
         # Override the the requestBody with components instead of using reference
         components = super().get_components(*args).get(model.__name__)
@@ -142,6 +150,16 @@ class BaseSchema(AutoSchema):
         if components and op_type in ["create", "update", "patch"]:
             for content_type in content_types:
                 op_dict["requestBody"]["content"][content_type]["schema"] = components
+
+        op_id = op_dict.get("operationId")
+
+        if op_id in [
+            "add facility to campus",
+            "remove facility from campus",
+            "approve facility presence at carrier",
+            "reject facility presence at carrier",
+        ]:
+            op_dict["requestBody"]["content"][content_type]["schema"] = None
 
         # if we were able to get a model we want to include the markdown documentation
         # for the model type in the openapi description field (docs/api/obj_*.md)
@@ -276,7 +294,6 @@ class BaseSchema(AutoSchema):
         op_dict.update(parameters=sorted(parameters, key=lambda x: x["name"]))
 
     def augment_list_filters(self, model, serializer, parameters):
-
         """
         Further augment openapi schema for object listing by filling
         the query parameter list with all the possible query filters
@@ -295,7 +312,6 @@ class BaseSchema(AutoSchema):
 
         blocked_prefixes = []
         for field, fld in field_names:
-
             typ = fld.get_internal_type()
 
             supported_filters = []
@@ -314,7 +330,6 @@ class BaseSchema(AutoSchema):
             if blocked:
                 continue
             elif typ == "ForeignKey" and (fld.one_to_many or hasattr(fld, "multiple")):
-
                 # mark prefix of nested object as blocked so we
                 # don't expose it's fields to the documentation
 

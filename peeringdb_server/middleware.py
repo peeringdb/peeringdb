@@ -31,7 +31,6 @@ class PDBSessionMiddleware(SessionMiddleware):
     """
 
     def process_response(self, request, response):
-
         try:
             request.session.is_empty()
         except AttributeError:
@@ -39,13 +38,11 @@ class PDBSessionMiddleware(SessionMiddleware):
         session_key = request.session.session_key
 
         if session_key and not request.session.is_empty():
-
             # request specifies session and session is not empty, proceed normally
 
             return super().process_response(request, response)
 
         elif not request.COOKIES.get(settings.SESSION_COOKIE_NAME):
-
             # request specifies no session, check if the request.path falls into the
             # set of valid paths for new session creation
 
@@ -66,12 +63,10 @@ class PDBSessionMiddleware(SessionMiddleware):
                 )
 
             if request.path in NEW_SESSION_VALID_PATHS:
-
                 # path is valid for a new session, proceed normally
 
                 return super().process_response(request, response)
             else:
-
                 # path is NOT valid for a new session, abort session
                 # creation
 
@@ -161,7 +156,6 @@ class PDBPermissionMiddleware(MiddlewareMixin):
         return JsonResponse({"meta": {"error": message}}, status=status)
 
     def process_request(self, request):
-
         http_auth = request.META.get("HTTP_AUTHORIZATION", None)
         req_key = get_key_from_request(request)
         api_key = None
@@ -187,7 +181,6 @@ class PDBPermissionMiddleware(MiddlewareMixin):
         # Check if HTTP auth is valid and if the request is made with basic auth.
 
         if http_auth and http_auth.startswith("Basic "):
-
             # Get the username and password from the HTTP auth header.
             username, password = self.get_username_and_password(http_auth)
             # Check if the username and password are valid.
@@ -199,7 +192,6 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
             # if user is not authenticated return 401 Unauthorized
             else:
-
                 # truncate the username if needed.
                 if len(username) > 255:
                     request.auth_id = username[:255]
@@ -235,7 +227,6 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
             # If API key is provided, check if the user has an active session
             else:
-
                 if isinstance(api_key, OrganizationAPIKey):
                     prefix = f"o{api_key.org_id}"
                 else:
@@ -246,7 +237,6 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                     if int(request.user.id) == int(
                         request.session.get("_auth_user_id")
                     ):
-
                         return self.response_unauthorized(
                             request,
                             message=ERR_MULTI_AUTH,
@@ -254,7 +244,6 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                         )
 
     def process_response(self, request, response):
-
         if hasattr(request, "auth_id"):
             # Sanitizes the auth_id
             request.auth_id = request.auth_id.replace(" ", "_")
@@ -327,7 +316,6 @@ class CacheControlMiddleware(MiddlewareMixin):
     # and the `CACHE_CONTROL_API` setting for normal responses
 
     def process_response(self, request, response):
-
         # only on GET requests
 
         if request.method != "GET":
@@ -352,11 +340,9 @@ class CacheControlMiddleware(MiddlewareMixin):
             return response
 
         if match.namespace == "api":
-
             # REST API
 
             if getattr(response, "context_data", None):
-
                 # API CACHE
 
                 if (
@@ -367,13 +353,11 @@ class CacheControlMiddleware(MiddlewareMixin):
                         "Cache-Control"
                     ] = f"s-maxage={settings.CACHE_CONTROL_API_CACHE}"
             elif settings.CACHE_CONTROL_API:
-
                 # NO API CACHE
 
                 response["Cache-Control"] = f"s-maxage={settings.CACHE_CONTROL_API}"
 
         elif match.url_name in self.dynamic_views:
-
             # DYNAMIC CONTENT VIEW
 
             if settings.CACHE_CONTROL_DYNAMIC_PAGE:
@@ -382,7 +366,6 @@ class CacheControlMiddleware(MiddlewareMixin):
                 ] = f"s-maxage={settings.CACHE_CONTROL_DYNAMIC_PAGE}"
 
         elif match.url_name in self.static_views:
-
             # STATIC CONTENT VIEW
 
             if settings.CACHE_CONTROL_STATIC_PAGE:

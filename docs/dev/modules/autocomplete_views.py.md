@@ -1,4 +1,4 @@
-Generated from autocomplete_views.py on 2023-01-17 22:33:48.360745
+Generated from autocomplete_views.py on 2023-02-14 15:33:37.135106
 
 # peeringdb_server.autocomplete_views
 
@@ -169,6 +169,24 @@ FacilityAutocompleteForNetwork(peeringdb_server.autocomplete_views.FacilityAutoc
 ```
 
 List options for a Select2 widget.
+
+
+### Methods
+
+#### get_queryset
+`def get_queryset(self)`
+
+Filter the queryset with GET['q'].
+
+---
+
+## FacilityAutocompleteForOrganization
+
+```
+FacilityAutocompleteForOrganization(peeringdb_server.autocomplete_views.FacilityAutocomplete)
+```
+
+List of facilities under same organization ownership
 
 
 ### Methods

@@ -19,6 +19,7 @@ from peeringdb_server.autocomplete_views import (
     FacilityAutocomplete,
     FacilityAutocompleteForExchange,
     FacilityAutocompleteForNetwork,
+    FacilityAutocompleteForOrganization,
     FacilityAutocompleteJSON,
     IXLanAutocomplete,
     NetworkAutocomplete,
@@ -36,6 +37,7 @@ from peeringdb_server.import_views import (
     view_import_net_ixf_preview,
 )
 from peeringdb_server.models import (
+    Campus,
     Carrier,
     Facility,
     InternetExchange,
@@ -62,6 +64,7 @@ from peeringdb_server.views import (
     view_advanced_search,
     view_affiliate_to_org,
     view_aup,
+    view_campus,
     view_carrier,
     view_close_account,
     view_exchange,
@@ -79,7 +82,9 @@ from peeringdb_server.views import (
     view_profile_v1,
     view_registration,
     view_request_ownership,
+    view_self_entity,
     view_set_user_locale,
+    view_set_user_org,
     view_sponsorships,
     view_suggest,
     view_username_change,
@@ -178,11 +183,14 @@ urlpatterns = [
     url(
         r"^%s/(?P<id>\d+)/?$" % Carrier.handleref.tag, view_carrier, name="carrier-view"
     ),
+    url(r"^%s/(?P<id>\d+)/?$" % Campus.handleref.tag, view_campus, name="campus-view"),
     url(
         r"^%s/(?P<id>\d+)/?$" % Organization.handleref.tag,
         view_organization,
         name="org-view",
     ),
+    url(r"^(net|ix|org|fac|carrier|campus)/self$", view_self_entity),
+    url(r"^set-organization/$", view_set_user_org, name="set-organization"),
     url(r"^%s$" % Network.handleref.tag, view_network_by_query),
     url(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn, name="net-view-asn"),
     url(r"^user_keys/add$", peeringdb_server.api_key_views.add_user_key),
@@ -346,6 +354,11 @@ urlpatterns += [
         r"^autocomplete/fac/ix/(?P<ix_id>\d+)/$",
         FacilityAutocompleteForExchange.as_view(),
         name="autocomplete-fac-ix",
+    ),
+    url(
+        r"^autocomplete/fac/org/(?P<org_id>\d+)/$",
+        FacilityAutocompleteForOrganization.as_view(),
+        name="autocomplete-fac-org",
     ),
     url(
         r"^autocomplete/org/$",

@@ -7,6 +7,7 @@ from django.db.models import Q
 from haystack import indexes
 
 from peeringdb_server.models import (
+    Campus,
     Facility,
     InternetExchange,
     IXLanPrefix,
@@ -40,7 +41,6 @@ class EntityIndex(indexes.SearchIndex):
         return filters
 
     def build_queryset(self, using=None, start_date=None, end_date=None):
-
         relations = self.Meta.relations
         qset = self.index_queryset()
 
@@ -125,6 +125,11 @@ class OrganizationIndex(MainEntity, indexes.Indexable):
         return Organization
 
 
+class CampusIndex(MainEntity, indexes.Indexable):
+    def get_model(self):
+        return Campus
+
+
 class InternetExchangeIndex(MainEntity, indexes.Indexable):
     org_id = indexes.IntegerField(indexed=False, model_attr="org_id")
 
@@ -161,7 +166,6 @@ class FacilityIndex(MainEntity, indexes.Indexable):
 
 
 class NetworkIXLanIndex(EntityIndex, indexes.Indexable):
-
     ix_id = indexes.IntegerField(indexed=False, model_attr="ixlan__ix__id")
     ix_org_id = indexes.IntegerField(indexed=False, model_attr="ixlan__ix__org_id")
     ix_result_name = indexes.CharField(indexed=False)
@@ -214,7 +218,6 @@ class NetworkIXLanIndex(EntityIndex, indexes.Indexable):
 
 
 class IXLanPrefixIndex(EntityIndex, indexes.Indexable):
-
     ix_id = indexes.IntegerField(indexed=False, model_attr="ixlan__ix__id")
     ix_org_id = indexes.IntegerField(indexed=False, model_attr="ixlan__ix__org_id")
     ix_result_name = indexes.CharField(indexed=False)

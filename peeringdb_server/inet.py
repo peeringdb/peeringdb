@@ -273,7 +273,6 @@ def get_prefix_protocol(prefix):
 
 
 def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
-
     """
     Renumber an ipaddress from old prefix to new prefix.
 
@@ -311,7 +310,6 @@ def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
 
     i = 0
     for octet in hostmask:
-
         if (ipaddr.version == 4 and int(octet) == 0) or (
             ipaddr.version == 6 and octet == "0000"
         ):

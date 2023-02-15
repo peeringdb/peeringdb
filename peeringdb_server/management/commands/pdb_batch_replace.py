@@ -38,7 +38,6 @@ class Command(BaseCommand):
     @reversion.create_revision()
     @transaction.atomic()
     def handle(self, *args, **options):
-
         self.commit = options.get("commit", False)
         self.search = options.get("search")
         self.replace = options.get("replace")

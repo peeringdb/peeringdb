@@ -34,6 +34,7 @@ from peeringdb_server import settings as pdb_settings
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     REFTAG_MAP,
+    Campus,
     Carrier,
     CarrierFacility,
     DeskProTicket,
@@ -141,7 +142,6 @@ PREFIXES_V6 = [
 
 
 class TestJSON(unittest.TestCase):
-
     rest_client = RestClient
 
     PREFIX_COUNT = 110
@@ -288,8 +288,8 @@ class TestJSON(unittest.TestCase):
             "clli": str(uuid.uuid4())[:6].upper(),
             "rencode": "",
             "npanxx": "000-111",
-            "latitude": None,
-            "longitude": None,
+            "latitude": 30.091435,
+            "longitude": 31.25435,
             "notes": NOTE,
             "country": COUNTRY,
             "tech_email": EMAIL,
@@ -345,7 +345,19 @@ class TestJSON(unittest.TestCase):
 
     @classmethod
     def make_data_carrier(cls, **kwargs):
+        data = {
+            "name": cls.make_name("Test"),
+            "org_id": SHARED["org_rw_ok"].id,
+            "aka": cls.make_name("Also known as"),
+            "website": WEBSITE,
+        }
+        data.update(**kwargs)
+        return data
 
+    ##########################################################################
+
+    @classmethod
+    def make_data_campus(cls, **kwargs):
         data = {
             "name": cls.make_name("Test"),
             "org_id": SHARED["org_rw_ok"].id,
@@ -359,7 +371,6 @@ class TestJSON(unittest.TestCase):
 
     @classmethod
     def make_data_poc(self, **kwargs):
-
         data = {
             "net_id": 1,
             "role": "Technical",
@@ -507,10 +518,10 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def assert_get_handleref(self, db, typ, id):
+    def assert_get_handleref(self, db, typ, id, ignore=list()):
         data = self.assert_get_single(db.get(typ, id))
         self.assert_handleref_integrity(data)
-        self.assert_data_integrity(data, typ)
+        self.assert_data_integrity(data, typ, ignore=ignore)
         return data
 
     ##########################################################################
@@ -566,16 +577,15 @@ class TestJSON(unittest.TestCase):
                     status_checked = True
 
             if not status_checked:
-                self.assertEqual(r_data.get("status"), "ok")
+                expected_status = kwargs.get("expected_status", "ok")
+                self.assertEqual(r_data.get("status"), expected_status)
         else:
             r_data = {}
 
         # if test_failures is set we want to test fail conditions
         if test_failures:
-
             # we test fail because of invalid data
             if "invalid" in test_failures:
-
                 tests = test_failures["invalid"]
                 if not isinstance(tests, list):
                     tests = [tests]
@@ -626,9 +636,10 @@ class TestJSON(unittest.TestCase):
     def assert_update(
         self, db, typ, id, data, test_failures=False, test_success=True, **kwargs
     ):
+        ignore = kwargs.pop("ignore", [])
 
         if test_success:
-            orig = self.assert_get_handleref(db, typ, id)
+            orig = self.assert_get_handleref(db, typ, id, ignore=ignore)
             orig.update(**data)
         else:
             orig = {"id": id}
@@ -640,14 +651,13 @@ class TestJSON(unittest.TestCase):
 
         if test_success:
             db.update(typ, **orig)
-            u_data = self.assert_get_handleref(db, typ, id)
+            u_data = self.assert_get_handleref(db, typ, id, ignore=ignore)
             if type(test_success) == list:
                 for test in test_success:
                     if test and callable(test):
                         test(data, u_data)
             else:
                 # self.assertGreater(u_data["version"], orig["version"])
-                ignore = kwargs.pop("ignore", [])
                 for k, v in list(data.items()):
                     if k in ignore:
                         continue
@@ -655,10 +665,8 @@ class TestJSON(unittest.TestCase):
 
         # if test_failures is set we want to test fail conditions
         if test_failures:
-
             # we test fail because of invalid data
             if "invalid" in test_failures:
-
                 tests = test_failures["invalid"]
 
                 # `invalid` test_failures can be a list to
@@ -695,10 +703,10 @@ class TestJSON(unittest.TestCase):
             # we test failure to update readonly fields
             if "readonly" in test_failures:
                 data_ro = copy.copy(orig)
-                b_data = self.assert_get_handleref(db, typ, id)
+                b_data = self.assert_get_handleref(db, typ, id, ignore=ignore)
                 data_ro.update(**test_failures["readonly"])
                 db.update(typ, **data_ro)
-                u_data = self.assert_get_handleref(db, typ, id)
+                u_data = self.assert_get_handleref(db, typ, id, ignore=ignore)
                 for k, v in list(test_failures["readonly"].items()):
                     self.assertEqual(u_data.get(k), b_data.get(k))
 
@@ -725,7 +733,6 @@ class TestJSON(unittest.TestCase):
 
         attr = getattr(REFTAG_MAP[target], rel, None)
         if attr and not isinstance(attr, property):
-
             valid_s = [
                 r.id
                 for r in REFTAG_MAP[target]
@@ -748,7 +755,6 @@ class TestJSON(unittest.TestCase):
                 SHARED["%s_rw_ok_public" % target].id,
             ]
         elif target == "ixpfx":
-
             valid_s = [
                 SHARED["%s_r_ok" % target].id,
                 SHARED["%s_r_v6_ok" % target].id,
@@ -762,7 +768,6 @@ class TestJSON(unittest.TestCase):
             ]
 
         else:
-
             valid_s = [SHARED["%s_r_ok" % target].id]
 
             valid_m = [SHARED["%s_r_ok" % target].id, SHARED["%s_rw_ok" % target].id]
@@ -811,7 +816,6 @@ class TestJSON(unittest.TestCase):
 
         # single primary key relation fields
         for pk_fld in pk_flds:
-
             # serializer has marked field as to be excluded from serialized data
             # don't check for it
             if pk_fld in list_exclude:
@@ -844,7 +848,6 @@ class TestJSON(unittest.TestCase):
         # nested set relations
         for n_fld, n_fld_cls in n_flds:
             if r_depth > 1:
-
                 # sets should be expanded to objects
                 self.assertIn(
                     n_fld, obj, msg=f"Nested set existing (dN) {note_tag} {n_fld}"
@@ -871,7 +874,6 @@ class TestJSON(unittest.TestCase):
                     )
 
             elif r_depth == 1:
-
                 # sets should be expanded to ids
                 self.assertIn(
                     n_fld, obj, msg=f"Nested set existing (d1) {note_tag} {n_fld}"
@@ -1010,6 +1012,11 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_user_001_GET_campus(self):
+        self.assert_get_handleref(self.db_user, "campus", SHARED["campus_r_ok"].id)
+
+    ##########################################################################
+
     def test_user_001_GET_carrierfac(self):
         self.assert_get_handleref(
             self.db_user, "carrierfac", SHARED["carrierfac_r_ok"].id
@@ -1023,7 +1030,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_fac_obj_count(self):
-
         facility = SHARED["fac_r_ok"]
         # Need to create revisions to send signals
         with reversion.create_revision():
@@ -1185,7 +1191,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_atomicity(self):
-
         """
         Test that POST, PUT and DELETE requests to the api use
         atomic database transactions
@@ -1291,7 +1296,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_ix(self):
-
         data = self.make_data_ix(prefix=self.get_prefix4())
 
         r_data = self.assert_create(
@@ -1437,6 +1441,7 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "fac",
             data,
+            ignore=["latitude", "longitude"],
             test_failures={
                 "invalid": [
                     {"name": ""},
@@ -1462,6 +1467,7 @@ class TestJSON(unittest.TestCase):
             "fac",
             SHARED["fac_id"],
             {"name": self.make_name("Test")},
+            ignore=["latitude", "longitude"],
             test_failures={
                 "invalid": {"name": ""},
                 "perms": {"id": SHARED["fac_r_ok"].id},
@@ -1520,7 +1526,7 @@ class TestJSON(unittest.TestCase):
             data,
             # tell `assert_create` to not compare the value we pass
             # for region_continent with the value returned from the save
-            ignore=["region_continent"],
+            ignore=["region_continent", "latitude", "longitude"],
             test_failures={},
         )
         fac_id = r_data.get("id")
@@ -1539,7 +1545,7 @@ class TestJSON(unittest.TestCase):
             {"region_continent": "Europe"},
             # tell `assert_update` to not compare the value we pass
             # for region_continent with the value returned from the save
-            ignore=["region_continent"],
+            ignore=["region_continent", "latitude", "longitude"],
         )
 
         fac = Facility.objects.get(id=fac_id)
@@ -1548,7 +1554,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_fac_available_voltage(self):
-
         data = self.make_data_fac()
 
         r_data = self.assert_create(
@@ -1560,6 +1565,7 @@ class TestJSON(unittest.TestCase):
                     {"available_voltage_services": ["Invalid"]},
                 ],
             },
+            ignore=["longitude", "latitude"],
         )
 
         SHARED["fac_id"] = r_data.get("id")
@@ -1572,6 +1578,7 @@ class TestJSON(unittest.TestCase):
             test_failures={
                 "invalid": {"available_voltage_services": ["Invalid"]},
             },
+            ignore=["longitude", "latitude"],
         )
 
     ##########################################################################
@@ -1601,13 +1608,13 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "fac",
             data,
+            ignore=["longitude", "latitude"],
         )
         assert r_data["zipcode"] == ""
 
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_carrier(self):
-
         data = self.make_data_carrier()
 
         r_data = self.assert_create(
@@ -1653,7 +1660,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_approve_carrierfac(self):
-
         """
         Tests the carrier-facility creation and approval
         processes
@@ -1716,7 +1722,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_reject_carrierfac(self):
-
         """
         Tests the carrier-facility creation and rejection
         processes
@@ -1777,7 +1782,6 @@ class TestJSON(unittest.TestCase):
         assert carrierfac.status == "deleted"
 
     def test_org_admin_002_auto_approve_carrierfac(self):
-
         """
         Tests the carrier-facility creation and AUTO approval
         processes
@@ -1810,6 +1814,91 @@ class TestJSON(unittest.TestCase):
         assert carrierfac.facility == facility
         assert carrierfac.carrier == carrier
         assert carrierfac.status == "ok"
+
+    def test_org_admin_002_POST_PUT_DELETE_campus(self):
+        data = self.make_data_campus()
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "campus",
+            data,
+            test_failures={
+                "invalid": {"name": ""},
+                "perms": {
+                    # need to set name again so it doesnt fail unique validation
+                    "name": self.make_name("Test"),
+                    # set org to an organization the user doesnt have perms to
+                    "org_id": SHARED["org_r_ok"].id,
+                },
+                "status": {
+                    # need to set name again so it doesnt fail unique validation
+                    "name": self.make_name("Test"),
+                    "org_id": SHARED["org_rwp"].id,
+                },
+            },
+            expected_status="pending",
+        )
+
+        SHARED["campus_id"] = r_data.get("id")
+
+        self.assert_update(
+            self.db_org_admin,
+            "campus",
+            SHARED["campus_id"],
+            {"name": self.make_name("Test")},
+            test_failures={
+                "invalid": {"name": ""},
+                "perms": {"id": SHARED["campus_r_ok"].id},
+            },
+        )
+
+        self.assert_delete(
+            self.db_org_admin,
+            "campus",
+            test_success=SHARED["campus_id"],
+            test_failure=SHARED["campus_r_ok"].id,
+        )
+
+    ##########################################################################
+
+    def test_campus_status(self):
+        data = self.make_data_campus()
+
+        cam = Campus.objects.create(**data)
+
+        fac_data = self.make_data_fac()
+        fac_data["latitude"] = 40.736844
+        fac_data["longitude"] = -74.173402
+
+        fac = Facility.objects.create(status="ok", **fac_data)
+        self.db_org_admin._request(
+            f"campus/{cam.id}/add-facility/{fac.id}", method="POST", data="{}"
+        ).json().get("data")[0]
+
+        fac_data2 = self.make_data_fac()
+        fac_data2["latitude"] = 40.717723
+        fac_data2["longitude"] = -74.008299
+
+        fac2 = Facility.objects.create(status="ok", **fac_data2)
+        self.db_org_admin._request(
+            f"campus/{cam.id}/add-facility/{fac2.id}", method="POST", data="{}"
+        ).json().get("data")[0]
+
+        cam = Campus.objects.get(id=cam.id)
+        cam.name_long = "test lomng"
+        cam.save()
+
+        assert cam.status == "ok"
+
+        self.db_org_admin._request(
+            f"campus/{cam.id}/remove-facility/{fac2.id}", method="POST", data="{}"
+        ).json().get("data")[0]
+
+        cam = Campus.objects.get(id=cam.id)
+        cam.name_long = "test long"
+        cam.save()
+
+        assert cam.status == "pending"
 
     ##########################################################################
 
@@ -1881,7 +1970,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_PUT_net_toggle_allow_ixp_update(self):
-
         net = SHARED["net_rw_ok"]
         ixlan = SHARED["ixlan_rw_ok"]
         ip4 = self.get_ip4(ixlan)
@@ -1954,7 +2042,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_PUT_net_rir_status(self):
-
         net = SHARED["net_rw_ok"]
 
         now = timezone.now()
@@ -2012,7 +2099,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_as_set(self):
-
         """
         The as-set endpoint is readonly, so all of these should
         fail.
@@ -2034,7 +2120,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_net_bogon_asn(self):
-
         # Test bogon asn failure
 
         data = self.make_data_net()
@@ -2062,7 +2147,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_net_website_required(self):
-
         # Test bogon asn failure
 
         data = self.make_data_net(website="")
@@ -2078,7 +2162,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_ix_website_required(self):
-
         # Test bogon asn failure
 
         data = self.make_data_ix(website="")
@@ -2094,7 +2177,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_netfac(self):
-
         data = {
             "net_id": SHARED["net_rw_ok"].id,
             "fac_id": SHARED["fac_rw_ok"].id,
@@ -2455,7 +2537,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_netixlan_reclaim(self):
-
         # create 1 deleted netixlan
 
         data_a = self.make_data_netixlan(
@@ -2492,7 +2573,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_netixlan_reclaim_separated(self):
-
         # create 2 deleted netixlans
 
         data_a = self.make_data_netixlan(
@@ -2628,7 +2708,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_zz_org_admin_004_DELETE_org(self):
-
         org = Organization.objects.create(name="Deletable org", status="ok")
         org.admin_usergroup.user_set.add(self.user_org_admin)
 
@@ -2677,6 +2756,7 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "fac",
             data,
+            ignore=["latitude", "longitude"],
         )
 
         assert r_data["status"] == "pending"
@@ -2763,7 +2843,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_ix_ixlan_status_mismatch_1077(self):
-
         """
         Tests that issue #1077 is fixed
 
@@ -3090,7 +3169,6 @@ class TestJSON(unittest.TestCase):
     def test_guest_005_list_filter_dates_numeric(self):
         for flt, ass in list(NUMERIC_TESTS.items()):
             for fld in ["created", "updated"]:
-
                 if flt in ["gt", "gte"]:
                     DATE = DATES["yesterday"]
                 elif flt in ["lt"]:
@@ -3346,7 +3424,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_ix_capacity(self):
-
         SHARED["netixlan_r_ok"].speed = 1000
         SHARED["netixlan_r_ok"].save()
 
@@ -3373,7 +3450,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_ix_all_net(self):
-
         net_ids = ",".join(
             [
                 str(SHARED["net_r_ok"].id),
@@ -3398,7 +3474,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_ix_not_net(self):
-
         net_ids = ",".join(
             [
                 str(SHARED["net_r_ok"].id),
@@ -3413,7 +3488,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_ix_org_present(self):
-
         data = self.db_guest.all("ix", org_present=SHARED["org_r_ok"].id)
         self.assertEqual(len(data), 1)
 
@@ -3423,7 +3497,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_ix_name_search(self):
-
         ix = InternetExchange.objects.create(
             status="ok",
             **self.make_data_ix(
@@ -3512,7 +3585,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_fac_distance(self):
-
         # facility coordinates
 
         lat_fac = 41.876212
@@ -3583,7 +3655,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_fac_org_present(self):
-
         data = self.db_guest.all("fac", org_present=SHARED["org_r_ok"].id)
         self.assertEqual(len(data), 1)
 
@@ -3593,7 +3664,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_fac_all_net(self):
-
         net_ids = ",".join(
             [
                 str(SHARED["net_r_ok"].id),
@@ -3618,7 +3688,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_fac_not_net(self):
-
         net_ids = ",".join(
             [
                 str(SHARED["net_r_ok"].id),
@@ -4001,7 +4070,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_netixlan_operational(self):
-
         # all netixlans are operational at this point,
         # filtering by operational=False should return empty list
 
@@ -4121,7 +4189,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_filter_accented(self):
-
         """
         Tests filtering with accented search terms.
         """
@@ -4476,7 +4543,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_z_crud_002_create(self):
-
         # user with create perms should be allowed to create a new poc under net_rw3_ok
         # but not under net_rw2_ok
         self.assert_create(
@@ -4498,7 +4564,6 @@ class TestJSON(unittest.TestCase):
             )
 
     def test_z_crud_003_update(self):
-
         # user with update perms should be allowed to update net_rw3_ok
         # but not net_rw2_ok
         self.assert_update(
@@ -4531,7 +4596,6 @@ class TestJSON(unittest.TestCase):
             )
 
     def test_z_crud_004_delete(self):
-
         # other crud test users should not be able to delete net_rw3_ok
         for p in ["update", "create"]:
             self.assert_delete(
@@ -4583,7 +4647,6 @@ class TestJSON(unittest.TestCase):
         ixlan.save()
 
         for visible, expected in tests:
-
             ixlan.ixf_ixp_member_list_url_visible = visible
             ixlan.full_clean()
             ixlan.save()
@@ -4598,7 +4661,6 @@ class TestJSON(unittest.TestCase):
                 assert "ixf_ixp_member_list_url" not in data
 
     def test_z_misc_GET_ixf_ixp_member_list_url(self):
-
         """
         Tests the visibility of ixlan.ixf_ixp_member_list_url for
         Guest, User, Org member and org admin.
@@ -4649,7 +4711,6 @@ class TestJSON(unittest.TestCase):
         db.create("ix", data, return_response=True).get("data")
 
     def test_z_misc_002_dupe_netixlan_ip(self):
-
         # test that addint duplicate netixlan ips is impossible
 
         A = SHARED["netixlan_rw_ok"]
@@ -4673,7 +4734,6 @@ class TestJSON(unittest.TestCase):
         )
 
     def test_z_misc_002_local_asn(self):
-
         # test that local_asn gets enforced (#186)
 
         net = SHARED["net_rw_ok"]
@@ -4722,7 +4782,6 @@ class TestJSON(unittest.TestCase):
         NetworkIXLan.objects.get(id=r_data["id"]).delete()
 
     def test_z_misc_002_dupe_name_update(self):
-
         # test that changing the name of entity A (status=ok)
         # to name of entity B (status=deleted) does raise the approporiate
         # unique key error and does not undelete entity B
@@ -4804,7 +4863,6 @@ class TestJSON(unittest.TestCase):
         )
 
     def test_z_misc_001_org_create(self):
-
         # no one should be allowed to create an org via the api
         # at this point in time
 
@@ -4845,7 +4903,9 @@ class TestJSON(unittest.TestCase):
 
         data = self.make_data_fac(org_id=settings.SUGGEST_ENTITY_ORG, suggest=True)
 
-        r_data = self.assert_create(self.db_user, "fac", data)
+        r_data = self.assert_create(
+            self.db_user, "fac", data, ignore=["latitude", "longitude"]
+        )
 
         self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
         self.assertEqual(r_data["status"], "pending")
@@ -4856,7 +4916,12 @@ class TestJSON(unittest.TestCase):
         data = self.make_data_fac(org_id=settings.SUGGEST_ENTITY_ORG, suggest=True)
 
         r_data = self.assert_create(
-            self.db_guest, "fac", data, test_success=False, test_failures={"perms": {}}
+            self.db_guest,
+            "fac",
+            data,
+            test_success=False,
+            test_failures={"perms": {}},
+            ignore=["latitude", "longitude"],
         )
 
     def test_z_misc_001_add_fac_bug(self):
@@ -4867,7 +4932,9 @@ class TestJSON(unittest.TestCase):
 
         # Add fac
         data = self.make_data_fac()
-        r_data = self.assert_create(self.db_org_admin, "fac", data)
+        r_data = self.assert_create(
+            self.db_org_admin, "fac", data, ignore=["latitude", "longitude"]
+        )
 
         self.assertEqual(r_data["status"], "pending")
 
@@ -4884,7 +4951,9 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(fac.status, "deleted")
 
         # Re-add should go back to pending (previously was going to "ok")
-        re_add_data = self.assert_create(self.db_org_admin, "fac", data)
+        re_add_data = self.assert_create(
+            self.db_org_admin, "fac", data, ignore=["latitude", "longitude"]
+        )
         self.assertEqual(re_add_data["status"], "pending")
         fac = Facility.objects.get(id=re_add_data["id"])
         self.assertEqual(fac.status, "pending")
@@ -4902,7 +4971,9 @@ class TestJSON(unittest.TestCase):
         del data["org_id"]
         print(data)
 
-        r_data = self.assert_create(self.db_user, "fac", data)
+        r_data = self.assert_create(
+            self.db_user, "fac", data, ignore=["latitude", "longitude"]
+        )
 
         self.assertEqual(r_data["status"], "pending")
         self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
@@ -5006,7 +5077,6 @@ class TestJSON(unittest.TestCase):
         # ignored
 
         for reftag in ["fac", "net"]:
-
             ent = SHARED[f"{reftag}_rw_ok"]
             org_id = ent.org_id
             db = self.db_org_admin
@@ -5116,7 +5186,7 @@ class Command(BaseCommand):
         if name_suffix:
             name = f"{name}{name_suffix}"
         data = {"status": status}
-        if tag in ["ix", "net", "fac", "org"]:
+        if tag in ["ix", "net", "fac", "org", "campus"]:
             data["name"] = name
 
         data.update(**kwargs)
@@ -5267,7 +5337,7 @@ class Command(BaseCommand):
 
         # create various entities for rw testing
 
-        for model in [Network, Facility, InternetExchange, Carrier]:
+        for model in [Network, Facility, InternetExchange, Carrier, Campus]:
             for status in ["ok", "pending"]:
                 for prefix in ["r", "rw"]:
                     cls.create_entity(
@@ -5289,9 +5359,46 @@ class Command(BaseCommand):
                         org_id=SHARED[f"org_{prefix}_{status}"].id,
                     )
 
+        # create facilities for campus objects that are supposed to have status `ok`
+        # since any campus requires at least 2 facilities to not be pending
+
+        for k in list(SHARED.keys()):
+            if not k.startswith("campus_") or not k.endswith("_ok"):
+                continue
+
+            if "dupe" in k:
+                continue
+
+            campus = SHARED[k]
+            print(k, campus)
+
+            cls.create_entity(
+                Facility,
+                status="ok",
+                prefix=f"campus{campus.id}_1",
+                org_id=campus.org.id,
+                longitude=30.091435,
+                latitude=31.25435,
+                campus_id=campus.id,
+            )
+
+            cls.create_entity(
+                Facility,
+                status="ok",
+                prefix=f"campus{campus.id}_2",
+                org_id=campus.org.id,
+                longitude=30.091435,
+                latitude=31.25435,
+                campus_id=campus.id,
+            )
+
+            campus.refresh_from_db()
+
+            assert campus.status == "ok"
+
         # create entities for duplicate validation testing
 
-        for model in [Network, Facility, InternetExchange, Carrier]:
+        for model in [Network, Facility, InternetExchange, Carrier, Campus]:
             cls.create_entity(
                 model,
                 status="deleted",

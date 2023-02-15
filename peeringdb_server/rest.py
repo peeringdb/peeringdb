@@ -24,16 +24,18 @@ import reversion
 import unidecode
 from django.apps import apps
 from django.conf import settings
+from django.conf.urls import url
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
 from django.db import connection, transaction
 from django.db.models import DateTimeField
+from django.shortcuts import redirect
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.rest import PermissionDenied
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes, schema
 from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
@@ -45,7 +47,9 @@ from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.models import (
     UTC,
     CarrierFacility,
+    Facility,
     Network,
+    Organization,
     OrganizationAPIKey,
     ProtectedAction,
     UserAPIKey,
@@ -60,7 +64,11 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
-from peeringdb_server.serializers import ASSetSerializer, ParentStatusException
+from peeringdb_server.serializers import (
+    ASSetSerializer,
+    FacilitySerializer,
+    ParentStatusException,
+)
 from peeringdb_server.util import coerce_ipaddr
 
 
@@ -110,7 +118,6 @@ class DataParseException(DataException):
 
 
 class RestRouter(routers.DefaultRouter):
-
     schema_title = "PeeringDB API"
     schema_url = ""
     schema_renderers = None
@@ -164,7 +171,6 @@ class RestRouter(routers.DefaultRouter):
 
 
 def pdb_exception_handler(exc):
-
     print(traceback.format_exc())
 
     return exception_handler(exc)
@@ -330,7 +336,6 @@ class BasicAuthMFABlockWrite(permissions.BasePermission):
     message = "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
 
     def has_permission(self, request, view):
-
         # only check write operations
 
         if request.method not in ["POST", "PUT", "DELETE", "PATCH"]:
@@ -350,7 +355,6 @@ class BasicAuthMFABlockWrite(permissions.BasePermission):
 
         for device in devices_for_user(request.user):
             if isinstance(device, SecurityKeyDevice):
-
                 # security keys are already checked above, and a user will always
                 # have one instance of SecurityKeyDevice once they have
                 # added a security key, even after they have removed all their
@@ -358,7 +362,6 @@ class BasicAuthMFABlockWrite(permissions.BasePermission):
 
                 continue
             else:
-
                 # topt device found, block operation
 
                 return False
@@ -376,7 +379,6 @@ class InactiveKeyBlock(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-
         permission_holder = get_permission_holder_from_request(request)
 
         if not isinstance(permission_holder, (UserAPIKey, OrganizationAPIKey)):
@@ -479,7 +481,6 @@ class ModelViewSet(viewsets.ModelViewSet):
         query_params = self.request.query_params
 
         for k, v in list(self.request.query_params.items()):
-
             if k == "q":
                 continue
 
@@ -607,6 +608,10 @@ class ModelViewSet(viewsets.ModelViewSet):
         api_cache = APICacheLoader(self, qset, filters)
         if api_cache.qualifies():
             raise CacheRedirect(api_cache)
+
+        # using nested filters will produce duplicates of the same object
+        # unless we call distinct()
+        qset = qset.distinct()
 
         if not self.kwargs:
             if since > 0:
@@ -866,7 +871,6 @@ class InternetExchangeMixin:
     @transaction.atomic
     @action(detail=True, methods=["POST"], throttle_classes=[IXFImportThrottle])
     def request_ixf_import(self, request, *args, **kwargs):
-
         """
         Allows managers of an ix to request an ix-f import.
         (#779)
@@ -897,7 +901,6 @@ class CarrierFacilityMixin:
     @transaction.atomic
     @action(detail=True, methods=["POST"])
     def approve(self, request, pk, *args, **kwargs):
-
         """
         Allows the org to approve a carrier listing at their facility
         """
@@ -915,7 +918,6 @@ class CarrierFacilityMixin:
     @transaction.atomic
     @action(detail=True, methods=["POST"])
     def reject(self, request, pk, *args, **kwargs):
-
         """
         Allows the org to reject a carrier listing at their facility
         """
@@ -930,6 +932,66 @@ class CarrierFacilityMixin:
         carrierfac.delete()
 
         return response
+
+
+class CampusFacilityMixin:
+
+    """
+    Custom API endpoints for the campus-facility
+    object, exposed to /api/campus/{campus_id}/add-facility/{fac_id}
+    and /api/campus/{campus_id}/remove-facility/{fac_id}
+    """
+
+    @transaction.atomic
+    @action(detail=True, methods=["POST"], url_path=r"add-facility/(?P<fac_id>[^/.]+)")
+    def add_facility(self, request, *args, **kwargs):
+        """
+        Allows the org to approve a campus listing at their facility
+        """
+
+        facility_id = self.kwargs.get("fac_id")
+        fac = Facility.objects.get(id=facility_id)
+
+        if not check_permissions_from_request(request, fac, "u"):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        campus = self.get_object()
+
+        if campus.org_id == fac.org_id:
+            fac.campus_id = campus.id
+            try:
+                fac.save()
+            except ValidationError as inst:
+                raise RestValidationError({"non_field_errors": inst.messages})
+
+            return Response(FacilitySerializer(fac).data)
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @transaction.atomic
+    @action(
+        detail=True, methods=["post"], url_path=r"remove-facility/(?P<fac_id>[^/.]+)"
+    )
+    def remove_facility(self, request, *args, **kwargs):
+        """
+        Allows the org to reject a campus listing at their facility
+        """
+
+        fac = Facility.objects.get(id=self.kwargs.get("fac_id"))
+
+        if not fac.campus_id:
+            return Response(FacilitySerializer(fac).data)
+
+        campus = fac.campus
+
+        if not check_permissions_from_request(request, fac, "u"):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        fac.campus_id = None
+        fac.save()
+        campus.save()
+
+        return Response(FacilitySerializer(fac).data)
 
 
 # TODO: why are we doing the import like this??!
@@ -994,6 +1056,7 @@ NetworkContactViewSet = model_view_set("NetworkContact")
 NetworkFacilityViewSet = model_view_set("NetworkFacility")
 NetworkIXLanViewSet = model_view_set("NetworkIXLan")
 OrganizationViewSet = model_view_set("Organization")
+CampusViewSet = model_view_set("Campus", mixins=(CampusFacilityMixin,))
 
 
 class ReadOnlyMixin:
@@ -1055,8 +1118,60 @@ class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
 router.register("as_set", ASSetViewSet, basename="as_set")
 
 
+@api_view(["GET"])
+@schema(None)
+@permission_classes([ModelViewSetPermissions, BasicAuthMFABlockWrite])
+def view_self_entity(request, data_type):
+    """
+    This API View redirect self entity API to the corresponding url
+    """
+
+    query = request.META["QUERY_STRING"]
+    supported_tags = ["org", "net", "ix", "fac", "carrier", "campus"]
+
+    if data_type not in supported_tags:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if (
+        request.user.is_authenticated
+        and hasattr(request.user, "self_entity_org")
+        and request.user.primary_org
+    ):
+        org = Organization.objects.get(id=request.user.primary_org)
+
+        if data_type == "org":
+            obj = org
+        else:
+            obj = getattr(org, f"{data_type}_set").filter(status="ok").first()
+            if not obj:
+                obj = REFTAG_MAP[data_type].model.objects.get(
+                    id=getattr(settings, f"DEFAULT_SELF_{data_type.upper()}")
+                )
+
+        return (
+            redirect(f"/api/{data_type}/{obj.id}?{query}")
+            if query
+            else redirect(f"/api/{data_type}/{obj.id}")
+        )
+
+    else:
+        obj = REFTAG_MAP[data_type].model.objects.get(
+            id=getattr(settings, f"DEFAULT_SELF_{data_type.upper()}")
+        )
+
+        return (
+            redirect(f"/api/{data_type}/{obj.id}?{query}")
+            if query
+            else redirect(f"/api/{data_type}/{obj.id}")
+        )
+
+
 # set here in case we want to add more urls later
-urls = router.urls
+urlpatterns = [
+    url("(net|ix|org|fac|carrier|campus)/self", view_self_entity),
+]
+rout_urls = router.urls
+urls = urlpatterns + rout_urls
 
 REFTAG_MAP = {
     cls.model.handleref.tag: cls
@@ -1071,5 +1186,8 @@ REFTAG_MAP = {
         NetworkContactViewSet,
         IXLanViewSet,
         IXLanPrefixViewSet,
+        CampusViewSet,
+        CarrierViewSet,
+        CarrierFacilityViewSet,
     ]
 }

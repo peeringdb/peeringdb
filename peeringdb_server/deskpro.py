@@ -266,7 +266,6 @@ class APIClient:
         return self.parse_response(response)
 
     def require_person(self, email, user=None):
-
         """
         Get or create a deskpro person using the deskpro API.
 
@@ -285,7 +284,6 @@ class APIClient:
         person = self.get("people", {"primary_email": email})
 
         if not person:
-
             payload = {"primary_email": email}
 
             self.update_person_payload(payload, user, email)
@@ -314,7 +312,6 @@ class APIClient:
         return payload
 
     def create_ticket(self, ticket):
-
         """
         Create a deskpro ticket using the deskpro API.
 
@@ -333,7 +330,6 @@ class APIClient:
             )
 
         if not ticket.deskpro_id:
-
             cc = []
 
             for _cc in ticket.cc_set.all():
@@ -353,7 +349,6 @@ class APIClient:
             ticket.deskpro_id = ticket_response["id"]
 
         else:
-
             self.reopen_ticket(ticket)
 
         self.create(
@@ -366,7 +361,6 @@ class APIClient:
         )
 
     def reopen_ticket(self, ticket):
-
         """
         Check the current status of existing tickets
         on deskpro's side.
@@ -402,7 +396,6 @@ class MockAPIClient(APIClient):
         self.ticket_count = 0
 
     def get(self, endpoint, param):
-
         if endpoint == "people":
             return {"id": 1}
 

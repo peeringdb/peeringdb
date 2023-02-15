@@ -58,7 +58,6 @@ def dedupe_ipaddrs(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0036_ixlanprefix_in_dfz"),
     ]

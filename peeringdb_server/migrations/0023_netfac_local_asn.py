@@ -6,7 +6,6 @@ from django.db.utils import IntegrityError
 
 
 def forwards_func(apps, schema_editor):
-
     """
     since `local_asn` will no longer be included as part of the
     unique key for netfac we need to remove any potential dupes
@@ -27,7 +26,6 @@ def forwards_func(apps, schema_editor):
 
     for netfac in NetworkFacility.handleref.all():
         if netfac.local_asn != netfac.network.asn:
-
             # local_asn differs from related network asn
 
             # next check if the network facility we are about
@@ -53,11 +51,9 @@ def forwards_func(apps, schema_editor):
             net = Network.handleref.filter(asn=netfac.local_asn).first()
 
             if net and netfac.status == "ok":
-
                 # set network object from local_asn
 
                 if net.status != netfac.status:
-
                     # network status doesnt match netfac status
                     # we update netfac status to match as that is the least
                     # destructive behaviour while allowing us to still
@@ -104,7 +100,6 @@ def forwards_func(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0022_ixlan_remove_auto_increment"),
     ]

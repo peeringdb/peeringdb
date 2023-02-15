@@ -159,7 +159,7 @@ def test_no_api_throttle():
     call_command("pdb_api_cache", date=now.strftime("%Y%m%d"))
     settings.GENERATING_API_CACHE = False
 
-    for (dirpath, dirnames, filenames) in os.walk(settings.API_CACHE_ROOT):
+    for dirpath, dirnames, filenames in os.walk(settings.API_CACHE_ROOT):
         for f in filenames:
             if f in ["log.log"]:
                 continue

@@ -1,10 +1,31 @@
-Generated from search_indexes.py on 2023-01-17 22:33:48.360745
+Generated from search_indexes.py on 2023-02-14 15:33:37.135106
 
 # peeringdb_server.search_indexes
 
 Defines django-haystack search indexes.
 
 # Classes
+---
+
+## CampusIndex
+
+```
+CampusIndex(peeringdb_server.search_indexes.MainEntity, haystack.constants.Indexable)
+```
+
+Search index for org, net, ix and fac entities.
+
+
+### Methods
+
+#### get_model
+`def get_model(self)`
+
+Should return the ``Model`` class (not an instance) that the rest of the
+``SearchIndex`` should use.
+
+This method is required & you must override it to return the correct class.
+
 ---
 
 ## EntityIndex

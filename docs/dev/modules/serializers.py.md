@@ -1,4 +1,4 @@
-Generated from serializers.py on 2023-01-17 22:33:48.360745
+Generated from serializers.py on 2023-02-14 15:33:37.135106
 
 # peeringdb_server.serializers
 
@@ -94,6 +94,26 @@ Call self as a function.
 `def __init__(self, field=asn, message=None, methods=None)`
 
 Initialize self.  See help(type(self)) for accurate signature.
+
+---
+
+## CampusSerializer
+
+```
+CampusSerializer(peeringdb_server.serializers.SpatialSearchMixin, peeringdb_server.serializers.ModelSerializer)
+```
+
+Serializer for peeringdb_server.models.Campus
+
+
+### Class Methods
+
+#### prepare_query
+`def prepare_query(cls, qset, **kwargs)`
+
+Allows filtering by indirect relationships.
+
+Currently supports: facility
 
 ---
 

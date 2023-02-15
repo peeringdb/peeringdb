@@ -48,7 +48,6 @@ class LocaleFilesTest(TestCase):
         errors = 0
 
         for msgid, msgstr in list(en_messages.items()):
-
             # %(name)s and %s type variables
             variables_a = sorted(re.findall(r"%\([^\(]+\)s|%s", msgid))
             variables_b = sorted(re.findall(r"%\([^\(]+\)s|%s", other_messages[msgid]))

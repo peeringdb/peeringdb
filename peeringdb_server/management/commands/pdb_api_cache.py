@@ -39,6 +39,7 @@ VIEWSETS = {
     "netixlan": pdbr.NetworkIXLanViewSet,
     "poc": pdbr.NetworkContactViewSet,
     "carrierfac": pdbr.CarrierFacilityViewSet,
+    "campus": pdbr.CampusViewSet,
 }
 
 settings.DEBUG = False

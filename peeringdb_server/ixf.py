@@ -83,7 +83,6 @@ class MultipleVlansInPrefix(ValueError):
 
 
 class Importer:
-
     allowed_states = [
         "",
         None,
@@ -370,7 +369,6 @@ class Importer:
         sanitized = []
 
         for vlan in vlans:
-
             # if the vlan_id is not specified we want
             # to default to 0 so we can still group based
             # on that
@@ -393,13 +391,11 @@ class Importer:
                 continue
 
             if id not in _vlans:
-
                 # first occurance of vlan id gets appended
                 # as is
 
                 _vlans[id] = [vlan]
             else:
-
                 # additional occurances of vlan id get checked
                 # on whether or not they will fill in a missing
                 # ipv4 or ipv6 address, and if so will update
@@ -442,11 +438,9 @@ class Importer:
         # This fixes instances where ixps provide two separate entries for
         # vlans in vlan_list for ipv4 and ipv6 (AMS-IX for example)
         for member in member_list:
-
             # handle `null` properties inside connection list
 
             for conn in member.get("connection_list", []):
-
                 # handle case where ix-f feed has set `vlan_list` to `null` (#1244)
                 # treat same as if it wasn't set at all
 
@@ -466,7 +460,6 @@ class Importer:
             )
 
             for conn in connection_list:
-
                 conn["vlan_list"] = self.sanitize_vlans(conn.get("vlan_list", []))
                 vlans = conn["vlan_list"]
 
@@ -595,7 +588,6 @@ class Importer:
             self.notify_error("\n".join(self.invalid_ip_errors))
 
         if save:
-
             # update exchange's ixf fields
             self.update_ix()
 
@@ -611,7 +603,6 @@ class Importer:
         return True
 
     def update_ix(self):
-
         """
         Determine if any data was changed during this import
         and update the exchange's ixf_last_import timestamp
@@ -648,7 +639,6 @@ class Importer:
                     reversion.set_user(self.ticket_user)
                     ix.save()
         finally:
-
             # always turn auto_now back on afterwards
 
             ix._meta.get_field("updated").auto_now = True
@@ -668,7 +658,6 @@ class Importer:
                     other.init_ipaddr6
                     and other.init_ipaddr6 == ixf_member_data.init_ipaddr6
                 ):
-
                     if not other.modify_speed:
                         other.speed = ixf_member_data.speed
 
@@ -709,7 +698,6 @@ class Importer:
 
         for netixlan in netixlan_qset:
             if netixlan.ixf_id not in self.ixf_ids:
-
                 ixf_member_data = IXFMemberData.instantiate(
                     netixlan.asn,
                     netixlan.ipaddr4,
@@ -741,9 +729,7 @@ class Importer:
                     self.log_ixf_member_data(ixf_member_data)
 
     def cleanup_ixf_member_data(self):
-
         if not self.save:
-
             """
             Do not run a cleanup process in some cases.
             For example, when the importer runs in preview mode
@@ -755,7 +741,6 @@ class Importer:
         qset = IXFMemberData.objects.filter(ixlan=self.ixlan)
 
         if self.asn:
-
             # if we are only processing for a specified asn
             # we only clean up member data for that asn
 
@@ -764,7 +749,6 @@ class Importer:
         # clean up old ix-f memeber data objects
 
         for ixf_member in qset:
-
             # proposed deletion got fulfilled
 
             if ixf_member.action == "delete":
@@ -802,7 +786,6 @@ class Importer:
         persist_log = IXLanIXFMemberImportLog.objects.create(ixlan=self.ixlan)
         for action in ["delete", "modify", "add"]:
             for info in self.actions_taken[action]:
-
                 netixlan = info["netixlan"]
                 version_before = info["version"]
 
@@ -887,11 +870,9 @@ class Importer:
 
         asn = member["asnum"]
         for connection in connection_list:
-
             self.connection_errors = {}
             state = connection.get("state", "active").lower()
             if state in self.allowed_states:
-
                 speed = self.parse_speed(connection.get("if_list", []))
 
                 self.parse_vlans(
@@ -916,7 +897,6 @@ class Importer:
 
         asn = member["asnum"]
         for lan in vlan_list:
-
             ipv4 = lan.get("ipv4", {})
             ipv6 = lan.get("ipv6", {})
 
@@ -984,14 +964,12 @@ class Importer:
                 continue
 
             elif not ipv4_valid_for_ixlan and not ipv6_addr:
-
                 # ipv4 address does not fall into address space
                 # and ipv6 is not provided, ignore
 
                 continue
 
             elif not ipv6_valid_for_ixlan and not ipv4_addr:
-
                 # ipv6 address does not fall into address space
                 # and ipv4 is not provided, ignore
 
@@ -1126,25 +1104,20 @@ class Importer:
         return speed
 
     def apply_add_or_update(self, ixf_member_data):
-
         if ixf_member_data.netixlan_exists:
-
             # importer-protocol: netixlan exists
 
             if not ixf_member_data.changes:
-
                 # importer-protocol: no changes
 
                 self.resolve(ixf_member_data)
 
             else:
-
                 # importer-protocol: data changes
 
                 self.apply_update(ixf_member_data)
 
         else:
-
             # importer-protocol: netixlan does not exist
 
             self.apply_add(ixf_member_data)
@@ -1188,9 +1161,7 @@ class Importer:
             self.log_ixf_member_data(ixf_member_data)
 
     def apply_add(self, ixf_member_data):
-
         if ixf_member_data.net.allow_ixp_update:
-
             try:
                 self.log_apply(
                     ixf_member_data.apply(save=self.save), reason=REASON_NEW_ENTRY
@@ -1215,7 +1186,6 @@ class Importer:
                 )
 
     def consolidate_delete_add(self, ixf_member_data):
-
         ip4_deletion = None
         ip6_deletion = None
 
@@ -1308,7 +1278,6 @@ class Importer:
         self.log = {"data": [], "errors": []}
 
     def log_apply(self, apply_result, reason=""):
-
         netixlan = apply_result["netixlan"]
         self.actions_taken[apply_result["action"]].append(
             {
@@ -1357,7 +1326,6 @@ class Importer:
         }
 
         if netixlan:
-
             # ixf-memberdata actions that are consolidated
             # requirements of other actions should be kept
             # out of the log as they are already implied by
@@ -1454,7 +1422,6 @@ class Importer:
         mail.send(fail_silently=False)
 
     def _ticket(self, ixf_member_data, subject, message, ix=False, net=False):
-
         """
         Create and send a deskpro ticket.
 
@@ -1506,7 +1473,6 @@ class Importer:
         cc = list(set(cc))
 
         for email in cc:
-
             # we need to relate a name to the emails
             # since deskpro will make a person for the email address
             # we should attempt to supply the best possibly option
@@ -1573,7 +1539,6 @@ class Importer:
         return ticket
 
     def consolidate_proposals(self):
-
         """
         Render and consolidate all proposals for each net and ix.
         (#772)
@@ -1619,7 +1584,6 @@ class Importer:
         self.current_proposal = None
 
         for notification in self.notifications:
-
             ixf_member_data = notification["ixf_member_data"]
             action = ixf_member_data.action
             typ = notification["typ"]
@@ -1754,7 +1718,6 @@ class Importer:
         }
 
     def notify_proposals(self, error_handler=None):
-
         """
         Send all collected notification proposals.
         """
@@ -1888,7 +1851,6 @@ class Importer:
         return
 
     def ticket_proposal(self, ixf_member_data, typ, ac, ix, net, context, action):
-
         """
         Create a deskpro ticket and contexts net and ix with
         ticket reference in the subject.
@@ -1927,7 +1889,6 @@ class Importer:
                 ixf_member_data.save()
 
     def ticket_consolidated_proposals(self, consolidated_proposals):
-
         """
         Create a single ticket for each network that is missing a
         network contact.
@@ -1941,7 +1902,6 @@ class Importer:
             return False
 
         for network, notification_list in consolidated_proposals.items():
-
             asn = network.asn
             name = network.name
 
@@ -1955,7 +1915,6 @@ class Importer:
                 continue
 
             for notification in notification_list:
-
                 ixf_member_data = notification["ixf_member_data"]
                 ixf_member_data_list.append(ixf_member_data)
                 typ = notification["typ"]
@@ -1997,7 +1956,6 @@ class Importer:
     @reversion.create_revision()
     @transaction.atomic()
     def notify_error(self, error):
-
         """
         Notifie the exchange and AC of any errors that
         were encountered when the IX-F data was
@@ -2069,7 +2027,6 @@ class Importer:
         return IXFImportEmail.objects.filter(sent__isnull=True).all()
 
     def _resend_email(self, email):
-
         subject = email.subject
         message = email.message
         resend_str = "This email could not be delivered initially and may contain stale information. \n"
@@ -2105,7 +2062,6 @@ class PostMortem:
     """
 
     def reset(self, asn, **kwargs):
-
         """
         Reset for a fresh run.
 
@@ -2149,7 +2105,6 @@ class PostMortem:
         return self.post_mortem
 
     def _process_logs(self, limit=100):
-
         """
         Process IX-F import logs.
 
@@ -2171,7 +2126,6 @@ class PostMortem:
             self._process_log_entry(entry.log, entry)
 
     def _process_log_entry(self, log, entry):
-
         """
         Process a single IX-F import log entry.
 

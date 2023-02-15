@@ -9,6 +9,9 @@
     <div class="col-xs-12 col-sm-6">
       <!-- CONFIRM EMAIL -->
       {% include "site/profile-confirm-email.html" %}
+      {% if request.user.organizations|length > 1 %}
+        {% include "site/self-object-list.html" %}
+      {% endif %}
       {% if request.user.email_confirmed %}
       <!-- AFFILIATE -->
       {% include "site/profile-affiliate.html" %}
@@ -80,6 +83,16 @@ $('#form-language-preference').each(function(idx) {
         window.location.href=window.location.href;
         window.location.reload();
         // Reload the current page, without using the cache
+        document.location.reload(true);
+    }, 500 );
+  })
+});
+$('#form-org-preference').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    $('#org-change-success').show()
+    setTimeout(function(){
+        window.location.href=window.location.href;
+        window.location.reload();
         document.location.reload(true);
     }, 500 );
   })

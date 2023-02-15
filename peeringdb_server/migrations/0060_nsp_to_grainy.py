@@ -10,7 +10,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0059_ixf_typos"),
     ]

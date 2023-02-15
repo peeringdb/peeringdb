@@ -31,7 +31,6 @@ class TestRenumberLans(ClientCase):
             )
 
     def test_run(self):
-
         # get current total count of pocs so we can
         # check against it later
 

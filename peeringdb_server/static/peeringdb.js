@@ -511,7 +511,6 @@ PeeringDB.ViewActions.actions.fac_reject_carrier = function(carrierfac_id, butto
   );
 }
 
-
 /**
  * Handles the IX-F proposals UI for suggestions
  * made to networks from exchanges through
@@ -2133,6 +2132,7 @@ twentyc.editable.target.register(
           data = this.data,
           id = parseInt(this.data._id);
 
+
       if(requestType == "update") {
         if(id)
           method = "PUT"
@@ -2307,13 +2307,32 @@ twentyc.editable.module.register(
       });
 
       if(b) {
-        this.target.args[2] = "delete";
+        if(!this.target.args[2])
+          this.target.args[2] = "delete";
         this.target.data = { _id : id };
         this.target.execute();
       } else {
         $(this.target).trigger("success", ["Canceled"]);
       }
     },
+
+
+    execute_add_campus_facility : function(trigger, container) {
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      this.target.args[1] = ["campus", data.campus_id, "add-facility", data.fac_id].join("/");
+      this.execute_add(trigger, container);
+    },
+
+    execute_remove_campus_facility : function(trigger, container) {
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      this.target.args[1] = ["campus", data.campus_id, "remove-facility"].join("/");
+      this.target.args[2] = "create";
+      this.execute_remove(trigger, container);
+    },
+
+
 
     // FINALIZERS: IX
 
@@ -2378,6 +2397,23 @@ twentyc.editable.module.register(
 
       row.data("edit-label", gettext("Facility") + ": " +data.name); ///
     },
+
+    // FINALIZERS: CAMPUS
+
+    finalize_row_campus : function(rowId, row, data) {
+      // finalize campus row after add
+      // we need to make sure that the campus name
+      // is rendered as a link
+
+      var faclnk = $('<a></a>');
+
+      faclnk.attr("href", "/campus/"+data.id);
+      faclnk.text(data.name);
+      row.find(".name").html(faclnk);
+
+      row.data("edit-label", gettext("Campus") + ": " +data.name); ///
+    },
+
 
     // FINALIZERS: POC
 
@@ -2608,7 +2644,6 @@ twentyc.editable.module.register(
 
 
     }
-
 
   },
   "listing"

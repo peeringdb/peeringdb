@@ -75,7 +75,6 @@ class EmptyId:
 
 
 class CommandLineToolWrapper:
-
     tool = None
     queue = 0
     maintenance = False
@@ -174,7 +173,6 @@ class CommandLineToolWrapper:
     @transaction.atomic
     def run(self, user, commit=False):
         if self.queue and commit:
-
             if (
                 CommandLineTool.objects.filter(tool=self.tool)
                 .exclude(status="done")
@@ -438,7 +436,6 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
         )
 
         if settings.RELEASE_ENV != "prod":
-
             # reset toggles are not available on production
             # environment
 

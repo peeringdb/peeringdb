@@ -192,7 +192,6 @@ def test_update_data_attributes(entities, use_ip, save):
     if (network.ipv4_support and not use_ip(4)) or (
         network.ipv6_support and not use_ip(6)
     ):
-
         # test (delete+add) consolidation (#770)
 
         assert len(importer.log["data"]) == 2
@@ -202,7 +201,6 @@ def test_update_data_attributes(entities, use_ip, save):
         assert log_add["action"] == "add"
 
     else:
-
         # test modify
         assert len(importer.log["data"]) == 1
         log = importer.log["data"][0]
@@ -346,7 +344,6 @@ def test_suggest_modify_local_ixf(entities, use_ip, save):
     if (network.ipv4_support and not network.ipv6_support and not use_ip(4)) or (
         network.ipv6_support and not network.ipv4_support and not use_ip(6)
     ):
-
         # edge case where network has the one ip set that
         # its not supporting and the other ip nto set at all
         # (see #771 and #770) and the existing suggestion was for
@@ -380,7 +377,6 @@ def test_suggest_modify_local_ixf(entities, use_ip, save):
     elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or (
         network.ipv6_support and network.ipv4_support and not use_ip(6)
     ):
-
         # network supports both protocols, old ix-f data only has one
         # of the ips set, suggest adding the other
         # #770 #771
@@ -405,7 +401,6 @@ def test_suggest_modify_local_ixf(entities, use_ip, save):
         assert ixf_member_data_delete.requirement_of == ixf_member_data_modify
 
     else:
-
         assert_no_emails(network, ixlan.ix)
         assert IXFMemberData.objects.count() == 1
         assert preexisting_ixfmember_data == IXFMemberData.objects.first()
@@ -453,7 +448,6 @@ def test_suggest_modify(entities, use_ip, save):
     if (not network.ipv4_support and not use_ip(6)) or (
         not network.ipv6_support and not use_ip(4)
     ):
-
         # data changes and signature (ip) change with
         # partial ip protocol support
         # #770 and #771
@@ -462,7 +456,6 @@ def test_suggest_modify(entities, use_ip, save):
     elif (network.ipv4_support and network.ipv6_support) and (
         not use_ip(6) or not use_ip(4)
     ):
-
         # data changes and signature (ip) change with
         # full ip protocol support
         # #770 and #771
@@ -538,7 +531,6 @@ def test_suggest_modify_no_routeserver(entities, save):
 
 
 def assert_data_change_notification(objects):
-
     """
     asserts that a set of data change notifications has
     been created after automated updates to netixlans (#403)
@@ -716,7 +708,6 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
     if (not network.ipv4_support and invalid_ip == 4) or (
         not network.ipv6_support and invalid_ip == 6
     ):
-
         # edge case, signature changed, and invalid ip
         # is on unsupported protocol, making the proposal
         # irrelevant
@@ -728,7 +719,6 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
     elif (network.ipv4_support and not use_ip(4)) or (
         network.ipv6_support and not use_ip(6)
     ):
-
         # edge case, signature changed, and invalid and
         # conflicting ip changed causing a drop of the original
         # erorring proposal, and a creation of a new one
@@ -818,7 +808,6 @@ def test_add_netixlan_conflict(entities, save):
         )
 
     else:
-
         # invalid ip is on unsupported protocol, so it was ignored
         # #771
 
@@ -914,7 +903,6 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
     elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or (
         network.ipv4_support and network.ipv6_support and not use_ip(6)
     ):
-
         # edge case, supported protocols changed
         # effectively changing the signature, send
         # out modify to the existing netixlan and re-create
@@ -1030,7 +1018,6 @@ def test_suggest_add(entities, use_ip, save):
     elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or (
         network.ipv4_support and network.ipv6_support and not use_ip(6)
     ):
-
         # edge case, supported protocols changed
         # effectively changing the signature, send
         # out modify to the existing netixlan and re-create
@@ -1124,7 +1111,6 @@ def test_suggest_add_delete(entities, use_ip_alt, save):
     if (not network.ipv6_support and not use_ip_alt(4)) or (
         not network.ipv4_support and not use_ip_alt(6)
     ):
-
         # edge case: network not supporting the only provided ip
         # do nothing
         assert IXFMemberData.objects.all().count() == 0
@@ -1212,7 +1198,6 @@ def test_suggest_add_no_netixlan_local_ixf(entities, use_ip, save):
     if (not network.ipv4_support and use_ip(4) and not use_ip(6)) or (
         not network.ipv6_support and use_ip(6) and not use_ip(4)
     ):
-
         # edge case where the network has only one ip
         # set and its on an unsupported protocol
         # we re-create the ixfmemberdata and re notify the
@@ -1232,7 +1217,6 @@ def test_suggest_add_no_netixlan_local_ixf(entities, use_ip, save):
     elif (network.ipv4_support and network.ipv6_support and not use_ip(4)) or (
         network.ipv4_support and network.ipv6_support and not use_ip(6)
     ):
-
         # edge case, supported protocols changed
         # effectively changing the signature, send
         # we re-create the ixfmemberdata and re notify the
@@ -1349,7 +1333,6 @@ def test_single_ipaddr_matches(entities, save):
     importer.notify_proposals()
 
     if not network.ipv4_support or not network.ipv6_support:
-
         # edge case
         #
         # one protocol is turned off, in this case we actually
@@ -1425,12 +1408,10 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
         and not (network.ipv4_support and use_ip(6) and not use_ip(4))
         and not (network.ipv6_support and use_ip(4) and not use_ip(6))
     ):
-
         assert len(importer.log["data"]) == 0
         assert_no_emails(network, ixlan.ix)
 
     else:
-
         # Assert NetworkIXLan is unchanged
         assert NetworkIXLan.objects.filter(status="ok").count() == 1
 
@@ -1561,7 +1542,6 @@ def test_two_missing_ipaddrs_no_auto_update(entities, save):
     assert NetworkIXLan.objects.filter(status="ok").count() == 2
 
     if not network.ipv4_support or not network.ipv6_support:
-
         # only one of the protocols is supported by the network
         # suggest deletion of the other ip address
 
@@ -2718,7 +2698,6 @@ def test_resolve_deskpro_ticket(entities):
 
     consolid_emails = IXFImportEmail.objects.exclude(subject__icontains="conflict")
     for email in consolid_emails:
-
         # if network is only supporting one ip protocol
         # since the ix is sending both it should be mentioned
         if not network.ipv4_support:
@@ -2782,7 +2761,6 @@ def test_vlan_sanitize(data_ixf_vlan):
 
 @pytest.mark.django_db
 def test_chained_consolidate_add_del(entities):
-
     """
     Tests the edge cause of a consolidated-add-del operation
     being the requirement of a new consolidated-add-del operation
@@ -2909,7 +2887,6 @@ def test_send_email(entities, use_ip):
 
 @pytest.mark.django_db
 def test_ixlan_add_netixlan_no_redundant_save_on_null_ip(entities):
-
     """
     Tests that if ixlan.add_netixlan receives a netixlan which
     has either ipaddr4 or ipaddr6 nulled will not cause redundant
@@ -3297,7 +3274,6 @@ def assert_ix_email(ix, email_info):
 
 
 def create_email_str(email):
-
     email = list(email)
 
     if not email[2]:
@@ -3324,7 +3300,6 @@ def assert_no_ix_email(ix):
 
 
 def assert_protocol_conflict_email(protocols, ix=None, network=None, solo=True):
-
     """
     Here we assert that protocol conflict notifications go out
 
@@ -3401,7 +3376,6 @@ def netixlan_list():
 
 
 def assert_idempotent(importer, ixlan, data, save=True):
-
     """
     run the importer for ixlan against data and
     assert that there are
