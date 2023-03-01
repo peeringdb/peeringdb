@@ -3808,7 +3808,7 @@ class TestJSON(unittest.TestCase):
         Exchanges by the number of Networks linked to them.
         """
         # need to modify objects for signals to propagate
-        for ix in InternetExchange.objects.all():
+        for ix in InternetExchange.objects.filter(status="ok"):
             netixlan = ix.ixlan.netixlan_set.first()
             if not netixlan:
                 continue

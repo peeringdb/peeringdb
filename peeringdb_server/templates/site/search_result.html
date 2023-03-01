@@ -1,6 +1,8 @@
 {% load util %}
 {% load i18n %}
+{% with page_title=request|make_page_title_for_search_result %}
 {% include 'site/header.html' %}
+{% endwith %}
 {% include 'site/view_header.html' %}
 
 <div class="view_info left">

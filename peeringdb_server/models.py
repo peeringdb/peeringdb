@@ -219,6 +219,29 @@ def is_suggested(entity):
     return org_id == settings.SUGGEST_ENTITY_ORG
 
 
+class ParentStatusException(IOError):
+    """
+    Throw this when an object cannot be created because its parent is
+    either status pending or deleted.
+    """
+
+    def __init__(self, parent, typ):
+        if parent.status == "pending":
+            super().__init__(
+                _(
+                    "Object of type '%(type)s' cannot be saved because its parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
+                )
+                % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
+            )
+        elif parent.status == "deleted":
+            super().__init__(
+                _(
+                    "Object of type '%(type)s' cannot be saved because its parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
+                )
+                % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
+            )
+
+
 class UTC(datetime.tzinfo):
     """
     UTC+0 tz for tz aware datetime fields.
@@ -249,6 +272,37 @@ class ProtectedAction(ValueError):
     def __init__(self, obj):
         super().__init__(obj.not_deletable_reason)
         self.protected_object = obj
+
+
+class ParentStatusCheckMixin:
+    """
+    Mixin that implements checks for creating
+    / updating an instance that will raise
+    exception under certain criteria
+    """
+
+    def validate_parent_status(self):
+        """
+        Validate parent status against object (child) status
+
+        A child cannot be `ok` or `pending` if the parent is `deleted`
+        A child cannot be `ok` if the parent is `pending`
+
+        Will raise ParentStatus exception on invalid status.
+        :return:
+        """
+        for field_name in self.parent_relations:
+            if (
+                getattr(self, field_name).status == "deleted"
+                and self.status != "deleted"
+            ):
+                raise ParentStatusException(
+                    getattr(self, field_name), self.HandleRef.tag
+                )
+            elif getattr(self, field_name).status == "pending" and self.status == "ok":
+                raise ParentStatusException(
+                    getattr(self, field_name), self.HandleRef.tag
+                )
 
 
 class ProtectedMixin:
@@ -1688,7 +1742,9 @@ class Campus(ProtectedMixin, pdb_models.CampusBase):
 
 @grainy_model(namespace="facility", parent="org")
 @reversion.register
-class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
+class Facility(
+    ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin, ParentStatusCheckMixin
+):
     """
     Describes a peeringdb facility.
     """
@@ -1724,8 +1780,17 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
         tag = "fac"
         delete_cascade = ["ixfac_set", "netfac_set"]
 
+    parent_relations = ["org"]
+
     class Meta(pdb_models.FacilityBase.Meta):
         indexes = [models.Index(fields=["status"], name="fac_status")]
+
+    def save(self, *args, **kwargs):
+        """
+        Save the current instance
+        """
+        self.validate_parent_status()
+        super().save(*args, **kwargs)
 
     @staticmethod
     def autocomplete_search_fields():
@@ -1975,7 +2040,9 @@ class Facility(ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin):
 
 @grainy_model(namespace="internetexchange", parent="org")
 @reversion.register
-class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
+class InternetExchange(
+    ProtectedMixin, pdb_models.InternetExchangeBase, ParentStatusCheckMixin
+):
     """
     Describes a peeringdb exchange.
     """
@@ -2029,6 +2096,8 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
     class Meta(pdb_models.InternetExchangeBase.Meta):
         indexes = [models.Index(fields=["status"], name="ix_status")]
+
+    parent_relations = ["org"]
 
     @staticmethod
     def autocomplete_search_fields():
@@ -2539,6 +2608,9 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
         - create_ixlan (`bool`=True): if True and the ix is missing
           its ixlan, create it
         """
+
+        self.validate_parent_status()
+
         r = super().save(**kwargs)
 
         ixlan = self.ixlan
@@ -2597,7 +2669,9 @@ class InternetExchange(ProtectedMixin, pdb_models.InternetExchangeBase):
 
 @grainy_model(namespace="ixfac", parent="ix")
 @reversion.register
-class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
+class InternetExchangeFacility(
+    pdb_models.InternetExchangeFacilityBase, ParentStatusCheckMixin
+):
     """
     Describes facility to exchange relationship.
     """
@@ -2608,6 +2682,8 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     facility = models.ForeignKey(
         Facility, on_delete=models.CASCADE, default=0, related_name="ixfac_set"
     )
+
+    parent_relations = ["ix", "facility"]
 
     @classmethod
     def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
@@ -2657,6 +2733,13 @@ class InternetExchangeFacility(pdb_models.InternetExchangeFacilityBase):
     class Meta:
         unique_together = ("ix", "facility")
         db_table = "peeringdb_ix_facility"
+
+    def save(self, *args, **kwargs):
+        """
+        Save the current instance
+        """
+        self.validate_parent_status()
+        super().save(*args, **kwargs)
 
 
 @grainy_model(namespace="ixlan", namespace_instance="{instance.ix.grainy_namespace}")
@@ -4429,7 +4512,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
 
 @grainy_model(namespace="network", parent="org")
 @reversion.register
-class Network(pdb_models.NetworkBase):
+class Network(pdb_models.NetworkBase, ParentStatusCheckMixin):
     """
     Describes a peeringdb network.
     """
@@ -4467,6 +4550,8 @@ class Network(pdb_models.NetworkBase):
         indexes = [
             models.Index(fields=["status", "allow_ixp_update"], name="net_status")
         ]
+
+    parent_relations = ["org"]
 
     @staticmethod
     def autocomplete_search_fields():
@@ -4740,6 +4825,13 @@ class Network(pdb_models.NetworkBase):
 
         return super().clean()
 
+    def save(self, *args, **kwargs):
+        """
+        Save the current instance
+        """
+        self.validate_parent_status()
+        super().save(*args, **kwargs)
+
 
 # class NetworkContact(HandleRefModel):
 @grainy_model(
@@ -4748,7 +4840,7 @@ class Network(pdb_models.NetworkBase):
     parent="network",
 )
 @reversion.register
-class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
+class NetworkContact(ProtectedMixin, pdb_models.ContactBase, ParentStatusCheckMixin):
     """
     Describes a contact point (phone, email etc.) for a network.
     """
@@ -4759,6 +4851,7 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
     )
 
     TECH_ROLES = ["Technical", "NOC", "Policy"]
+    parent_relations = ["network"]
 
     class Meta:
         db_table = "peeringdb_network_contact"
@@ -4819,10 +4912,17 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase):
         self.visible = validate_poc_visible(self.visible)
         self.validate_requirements()
 
+    def save(self, *args, **kwargs):
+        """
+        Save the current instance
+        """
+        self.validate_parent_status()
+        super().save(*args, **kwargs)
+
 
 @grainy_model(namespace="netfac", parent="network")
 @reversion.register
-class NetworkFacility(pdb_models.NetworkFacilityBase):
+class NetworkFacility(pdb_models.NetworkFacilityBase, ParentStatusCheckMixin):
     """
     Describes a network <-> facility relationship.
     """
@@ -4833,6 +4933,8 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
     facility = models.ForeignKey(
         Facility, on_delete=models.CASCADE, default=0, related_name="netfac_set"
     )
+
+    parent_relations = ["network", "facility"]
 
     class Meta:
         db_table = "peeringdb_network_facility"
@@ -4908,6 +5010,13 @@ class NetworkFacility(pdb_models.NetworkFacilityBase):
 
         self.local_asn = self.network.asn
 
+    def save(self, *args, **kwargs):
+        """
+        Save the current instance
+        """
+        self.validate_parent_status()
+        super().save(*args, **kwargs)
+
 
 def format_speed(value):
     if value >= 1000000:
@@ -4923,7 +5032,7 @@ def format_speed(value):
 
 @grainy_model(namespace="ixlan", parent="network")
 @reversion.register
-class NetworkIXLan(pdb_models.NetworkIXLanBase):
+class NetworkIXLan(pdb_models.NetworkIXLanBase, ParentStatusCheckMixin):
     """
     Describes a network relationship to an IX through an IX Lan.
     """
@@ -4934,6 +5043,8 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     ixlan = models.ForeignKey(
         IXLan, on_delete=models.CASCADE, default=0, related_name="netixlan_set"
     )
+
+    parent_relations = ["ixlan", "network"]
 
     class Meta:
         db_table = "peeringdb_network_ixlan"
@@ -5336,6 +5447,13 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase):
     def net_sub_result_name(self):
         ips = self.ix_sub_result_name
         return f"{self.ixlan.ix.search_result_name} {ips}"
+
+    def save(self, *args, **kwargs):
+        """
+        Save the current instance
+        """
+        self.validate_parent_status()
+        super().save(*args, **kwargs)
 
 
 @grainy_model(namespace="carrier", parent="org")

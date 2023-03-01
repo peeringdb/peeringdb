@@ -14,6 +14,7 @@ import ipaddress
 import json
 from smtplib import SMTPException
 
+import django
 import requests
 import reversion
 from django.conf import settings
@@ -29,6 +30,7 @@ import peeringdb_server.deskpro as deskpro
 from peeringdb_server.models import (
     DataChangeNotificationQueue,
     DeskProTicket,
+    EnvironmentSetting,
     IXFImportEmail,
     IXFMemberData,
     IXLanIXFMemberImportAttempt,
@@ -576,6 +578,8 @@ class Importer:
             self.process_saves()
 
         self.cleanup_ixf_member_data()
+
+        self.cleanup_aged_proposals()
 
         # create tickets for unresolved proposals
         # This function is currently disabled as per issue #860
@@ -1849,6 +1853,50 @@ class Importer:
             )
         """
         return
+
+    @reversion.create_revision()
+    def cleanup_aged_proposals(self):
+        """
+        Remove IXFMemberData objects that are older
+        than the period specified in IXF_REMOVE_STALE_NETIXLAN_PERIOD
+        and also remove associated netixlan object.
+        """
+
+        if not self.save:
+            """
+            Do not run a cleanup process in some cases.
+            For example, when the importer runs in preview mode
+            triggered by a network admin.
+            """
+
+            return
+
+        qset = IXFMemberData.objects.all()
+
+        cleanup_days = EnvironmentSetting.get_setting_value(
+            "IXF_REMOVE_STALE_NETIXLAN_PERIOD"
+        )
+
+        if cleanup_days > 0:
+            now = django.utils.timezone.now()
+            max_age = now - datetime.timedelta(days=cleanup_days)
+            qset = qset.filter(created__lte=max_age)
+
+        for ixf_member_data in qset:
+            action = ixf_member_data.action
+            if action == "delete" or action == "modify":
+                if ixf_member_data.netixlan is not None:
+                    self.actions_taken["delete"].append(
+                        {
+                            "netixlan": ixf_member_data.netixlan,
+                            "version": reversion.models.Version.objects.get_for_object(
+                                ixf_member_data.netixlan
+                            ).first(),
+                            "reason": "Stale netixlan removed due to long-standing unsolved data conflict (github#1271)",
+                        }
+                    )
+                    ixf_member_data.netixlan.delete()
+                ixf_member_data.delete()
 
     def ticket_proposal(self, ixf_member_data, typ, ac, ix, net, context, action):
         """

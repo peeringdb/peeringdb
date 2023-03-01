@@ -29,7 +29,7 @@ class VeriQueueTests(TestCase):
         settings.GUEST_GROUP_ID = cls.guest_group.id
 
         cls.inst = {}
-        org = models.Organization.objects.create(name="Test", status="pending")
+        org = models.Organization.objects.create(name="Test", status="ok")
         for model in models.QUEUE_ENABLED:
             if model == models.Organization:
                 continue
@@ -82,7 +82,6 @@ class VeriQueueTests(TestCase):
         """
         Test VerificationqueueItem.approve
         """
-
         ix = self.inst.get("ix")
         vqi = models.VerificationQueueItem.get_for_entity(ix)
 
