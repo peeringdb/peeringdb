@@ -3,6 +3,8 @@ Regen the api cache files.
 """
 import datetime
 import os
+import shutil
+import tempfile
 import time
 import traceback
 
@@ -42,6 +44,18 @@ VIEWSETS = {
     "campus": pdbr.CampusViewSet,
 }
 
+MONODEPTH = set(
+    (
+        "carrierfac",
+        "fac",
+        "ixfac",
+        "ixpfx",
+        "netfac",
+        "netixlan",
+        "poc",
+    )
+)
+
 settings.DEBUG = False
 
 
@@ -58,6 +72,12 @@ class Command(BaseCommand):
             default=None,
             help="generate cache for objects create before or at the specified date (YYYYMMDD)",
         )
+        parser.add_argument(
+            "--depths",
+            action="store",
+            default="0,1,2,3",
+            help="comma separated list of depths to generate",
+        )
 
     def log(self, id, msg):
         if self.log_file:
@@ -71,6 +91,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         only = options.get("only", None)
         date = options.get("date", None)
+        depths = list(map(int, options.get("depths").split(",")))
 
         # temporary setting to indicate api-cache is being generated
         # this forced api responses to be generated without permission
@@ -87,7 +108,7 @@ class Command(BaseCommand):
         dtstr = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
         self.log_file = open(settings.API_CACHE_LOG, "w+")
         self.log("info", "Regnerating cache files to '%s'" % settings.API_CACHE_ROOT)
-        self.log("info", "Caching data for timestamp: %s" % dtstr)
+        self.log("info", "Caching depths %s for timestamp: %s" % str(depths), dtstr)
         rf = APIRequestFactory()
         renderer = MetaJSONRenderer()
 
@@ -104,12 +125,18 @@ class Command(BaseCommand):
 
         try:
             cache = {}
+            # make a temp dir to create the cache files for an atomic swap
+            tmpdir = tempfile.TemporaryDirectory()
 
             for tag, viewset in list(VIEWSETS.items()):
                 if only and tag not in only:
                     continue
 
-                for depth in [0, 1, 2, 3]:
+                for depth in depths:
+                    if depth >= 1 and tag in MONODEPTH:
+                        print("breaking after depth {}".format(depth))
+                        break
+
                     self.log(tag, "generating depth %d" % depth)
                     if depth:
                         req = rf.get(
@@ -121,22 +148,43 @@ class Command(BaseCommand):
                     req.user = su
                     vs = viewset.as_view({"get": "list"})
                     res = vs(req)
-                    cache[f"{tag}-{depth}"] = renderer.render(
-                        res.data, renderer_context={"response": res}
+
+                    id = f"{tag}-{depth}"
+                    file_name = os.path.join(tmpdir.name, f"{tag}-{depth}.json")
+                    cache[id] = file_name
+                    renderer.render(
+                        res.data,
+                        renderer_context={"response": res},
+                        file_name=file_name,
                     )
+
                     del res
                     del vs
 
-            for id, data in list(cache.items()):
-                self.log(id, "saving file")
-                with open(
-                    os.path.join(settings.API_CACHE_ROOT, "%s.json" % (id)), "w+"
-                ) as output:
-                    output.write(data)
+            # move the tmp files to the cache dir
+            for id, src_file in list(cache.items()):
+                file_name = os.path.join(settings.API_CACHE_ROOT, "%s.json" % (id))
+                shutil.move(src_file, file_name)
+
+            # copy the monodepth files to the other depths
+            for tag in MONODEPTH:
+                if only and tag not in only:
+                    continue
+
+                for depth in [1, 2, 3]:
+                    id = f"{tag}-{depth}"
+                    src_file = os.path.join(settings.API_CACHE_ROOT, f"{tag}-0.json")
+                    file_name = os.path.join(settings.API_CACHE_ROOT, f"{id}.json")
+                    self.log("info", "copying %s to %s" % (src_file, file_name))
+                    shutil.copyfile(src_file, file_name)
 
         except Exception:
             self.log("error", traceback.format_exc())
             raise
+
+        finally:
+            tmpdir.cleanup()
+            self.log_file.close()
 
         t2 = time.time()
 

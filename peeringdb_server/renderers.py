@@ -41,13 +41,14 @@ class MungeRenderer(renderers.BaseRenderer):
     format = "txt"
     charset = "utf-8"
 
-    def render(self, data, media_type=None, renderer_context=None):
-        # TODO use munge:
+    def render(self, data, media_type=None, renderer_context=None, file_name=None):
         indent = None
         if "request" in renderer_context:
             request = renderer_context.get("request")
             if "pretty" in request.GET:
                 indent = 2
+        if file_name:
+            return json.dump(data, open(file_name, "w"), cls=JSONEncoder, indent=indent)
         return json.dumps(data, cls=JSONEncoder, indent=indent)
 
 
@@ -62,7 +63,7 @@ class MetaJSONRenderer(MungeRenderer):
     media_type = "application/json"
     format = "json"
 
-    def render(self, data, accepted_media_type=None, renderer_context=None):
+    def render(self, data, accepted_media_type=None, renderer_context=None, file_name=None):
         """
         Tweak output rendering and pass to parent.
         """
@@ -103,7 +104,7 @@ class MetaJSONRenderer(MungeRenderer):
         result["meta"] = meta
 
         rendered_content = super(self.__class__, self).render(
-            result, accepted_media_type, renderer_context
+            result, accepted_media_type, renderer_context, file_name=file_name
         )
 
         # handle caching of response size (#1129)
