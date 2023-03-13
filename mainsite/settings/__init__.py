@@ -370,10 +370,10 @@ set_option("API_DISTANCE_FILTER_REQUIRE_VERIFIED", True)
 set_option("GEOCOORD_CACHE_EXPIRY", 86400 * 30)
 
 # maximum value to allow in network.info_prefixes4
-set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 1000000)
+set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 1200000)
 
 # maximum value to allow in network.info_prefixes6
-set_option("DATA_QUALITY_MAX_PREFIX_V6_LIMIT", 100000)
+set_option("DATA_QUALITY_MAX_PREFIX_V6_LIMIT", 180000)
 
 # minimum value to allow for prefix length on a v4 prefix
 set_option("DATA_QUALITY_MIN_PREFIXLEN_V4", 18)
