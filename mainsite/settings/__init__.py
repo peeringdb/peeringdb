@@ -1039,6 +1039,10 @@ set_option("IXF_NOTIFY_NET_ON_CONFLICT", False)
 # deskpro ticket is created
 set_option("IXF_IMPORTER_DAYS_UNTIL_TICKET", 6)
 
+# number of days until bad NetworkIXLan data is deleted
+# regardless of ixf-automation status on the network (#1271)
+set_option("IXF_REMOVE_STALE_NETIXLAN_PERIOD", 90)
+
 # clean up data change notification queue by discarding
 # entries older than this (7 days)
 set_option("DATA_CHANGE_NOTIFY_MAX_AGE", 86400 * 7)

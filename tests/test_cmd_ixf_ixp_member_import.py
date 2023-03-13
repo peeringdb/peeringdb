@@ -20,6 +20,7 @@ from peeringdb_server.models import (
     IXFMemberData,
     IXLan,
     IXLanIXFMemberImportLog,
+    IXLanIXFMemberImportLogEntry,
     IXLanPrefix,
     Network,
     NetworkContact,
@@ -465,7 +466,7 @@ def entities():
             status="ok",
             role="Policy",
         )
-
+        entities["netixlan"] = []
         admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
         ixf_importer_user = User.objects.create_user(
             "ixf_importer", "ixf_importer@localhost", "ixf_importer"
@@ -650,3 +651,46 @@ def unsent_emails(entities):
         emails.append(net_email)
 
     return emails
+
+
+@pytest.mark.django_db
+def test_cleanup_aged_proposals(entities):
+    """
+    test cleanup_aged_proposals function
+    """
+    data = setup_test_data("ixf.member.1")
+    network = entities["net"]
+    ixlan = entities["ixlan"]
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.250",
+            ipaddr6=None,
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data, asn=network.asn)
+
+    qset = IXFMemberData.objects.filter(ipaddr4="195.69.147.250", ipaddr6=None).first()
+
+    assert qset.action == "delete"
+
+    for ixfm in IXFMemberData.objects.all():
+        ixfm.created = ixfm.created - datetime.timedelta(days=95)
+        ixfm.save()
+
+    importer.update(ixlan, data=data, asn=network.asn)
+
+    qset = IXFMemberData.objects.filter(ipaddr4="195.69.147.250", ipaddr6=None).first()
+
+    assert qset.action == "noop"
+    assert qset.status == "deleted"
+    assert qset.netixlan.status == "deleted"

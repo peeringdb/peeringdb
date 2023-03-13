@@ -280,3 +280,27 @@ def org_email(org, user):
 @register.filter
 def email_confirmed(email):
     return EmailAddress.objects.filter(email=email, verified=True).exists()
+
+
+@register.filter
+def make_page_title(entity):
+    """
+    Returns a page title based on an entity instance
+    such as a network or organization
+    """
+
+    if entity and hasattr(entity, "HandleRef"):
+        if entity.HandleRef.tag == "net":
+            return f"AS{entity.asn} - {entity.name} - PeeringDB"
+        elif hasattr(entity, "name"):
+            return f"{entity.name} - PeeringDB"
+
+
+@register.filter
+def make_page_title_for_search_result(request):
+    """
+    Returns a page title to use on the quick search results page
+    """
+
+    if request.GET.get("q"):
+        return f"{request.GET.get('q')} - PeeringDB search"

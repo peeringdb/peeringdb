@@ -2,6 +2,10 @@
 {% load util %}
 {% load i18n %}
 
+{% block header %}
+{% with page_title=instance|make_page_title %}{{ block.super }}{% endwith %}
+{% endblock %}
+
 {% block content %}
 <div id="view" class="view {% if permissions.can_edit %}editable{% endif %}" {% if permissions.can_edit %}data-edit-target="api:{{ref_tag}}:update" data-edit-id="{{instance.id}}" data-check-incomplete="Yes"{% endif %}>
 

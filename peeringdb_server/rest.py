@@ -51,6 +51,7 @@ from peeringdb_server.models import (
     Network,
     Organization,
     OrganizationAPIKey,
+    ParentStatusException,
     ProtectedAction,
     UserAPIKey,
 )
@@ -64,11 +65,7 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
-from peeringdb_server.serializers import (
-    ASSetSerializer,
-    FacilitySerializer,
-    ParentStatusException,
-)
+from peeringdb_server.serializers import ASSetSerializer, FacilitySerializer
 from peeringdb_server.util import coerce_ipaddr
 
 
