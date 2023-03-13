@@ -107,7 +107,18 @@
   <!-- fields -->
   <div class="view_fields">
   {% for row in data.fields %}
-    {% if row.type == "group" %}
+  {% if row.last_soc_field %}
+  <div class="row view_value text-center" data-edit-toggled="edit">
+    <button onclick="addSocialMediaElement(this)"
+          style="
+            display: inline-block;
+            position: center;
+          "
+        class="btn btn-xs btn-default"
+      >+ {% trans "Social Media" %}</button>
+  </div>
+  {% else %}
+  {% if row.type == "group" %}
       <div class="editable"
            --data-edit-module="api_grouped_update"
            data-edit-group="#view"
@@ -129,15 +140,18 @@
 
     {% if not row.value|dont_render and row.type != "group" and row.type != "group_end" %}
     {% if not row.admin or permissions.can_write %}
-    <div class="row view_row">
+    <div class="row view_row {% if row.type == "soc" %} social_media {% endif %} " {% if row.name == "social_media" %} data-edit-toggled="edit" {% endif %}>
 
       {% if row.type == "sub"%}
         <!-- sub header -->
         <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
       {% else %}
         <!-- row header -->
-        <div {% if row.edit_label %}data-edit-toggled="view"{% endif %} class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
-             {% if row.help_text %}
+        <div {% if row.edit_label or row.editable_label %}data-edit-toggled="view"{% endif %} class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
+            {% if row.editable_label %}
+            id="{{ row.label_name }}"
+            {% endif %}
+            {% if row.help_text %}
              data-bs-toggle="tooltip"
              data-placement="top"
              {% if row.notify_incomplete_group %}data-notify-incomplete-group="{{ row.notify_incomplete_group }}"{% endif %}
@@ -145,7 +159,21 @@
              {% endif %}>{% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %} {{ row.label }}
              {% if row.help_text %}<span class="glyphicon glyphicon-question-sign"></span>{% endif %}
         </div>
-        {% if row.edit_label %}
+
+        {% if row.editable_label %}
+
+          <div data-edit-toggled="edit" style="color:black" class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
+            {% if not row.readonly and permissions.can_write %}
+            data-edit-type="select"
+            {% endif %}
+            data-edit-name="{{ row.label_name }}"
+            data-edit-data="{{ row.label_data }}"
+            data-edit-value="{{ row.label_value }}">{{ row|editable_list_value }}</div>
+
+          {% if data.name != "social_media" %}
+          <button onclick="deleteElement(this)" data-edit-toggled="edit" class="btn btn-xs remove-inline-element"> - </button>
+          {% endif %}
+        {% elif row.edit_label %}
 
         <!-- row header (edit mode), will only be set if `edit_label` is set on the field definition -->
 
@@ -162,7 +190,17 @@
         {% endif %}
 
         <!-- row value -->
-        {% if row.type == "url" %}
+        {% if row.type == "soc" %}
+          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+            {% if not row.readonly and permissions.can_write %}
+            data-edit-type="social_media"
+            {% endif %}
+            {% if row.required %}
+            data-edit-required="yes"
+            {% endif %}
+            data-edit-name="{{ row.name }}">{{ row.value|social_media_link:row.label_value }}</div>
+
+        {% elif row.type == "url" %}
           <div class="view_value col-xs-8 col-sm-7 col-md-8"
               {% if not row.readonly and permissions.can_write %}
               data-edit-type="url"
@@ -382,7 +420,8 @@
     </div>
     {% endif %}
     {% endif %}
-  {% endfor %}
+    {% endif %}
+    {% endfor %}
   </div>
 
   {% include bottom_template_name with data=data instance=instance permissions=permissions %}
@@ -402,6 +441,22 @@
 
 {% if permissions.can_write %}
 <script language="javascript" type="text/javascript">
+
+  const deleteElement = (e) => {
+
+    $(e).parent().remove();
+
+    // mark form as changed
+    $('.view.editable').data("edit-changed", "yes");
+  }
+  const addSocialMediaElement = (e) => {
+    $(e).parent().before(`{% include "site/social_media.html" with social_media_enum=data.social_media_enum %}`);
+    var idx = $(".new_service_identifier").length
+    var new_service_identifier = $(".new_service_identifier[data-edit-name=smi_value_]")
+    new_service_identifier.attr("data-edit-name", "smi_value_" + idx)
+    new_service_identifier.editable("toggle");
+  }
+
 $(document).ready(function() {
   PeeringDB.incomplete_data_notify();
   PeeringDB.ViewActions.init();

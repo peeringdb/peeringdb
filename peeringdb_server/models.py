@@ -289,8 +289,15 @@ class ParentStatusCheckMixin:
         A child cannot be `ok` if the parent is `pending`
 
         Will raise ParentStatus exception on invalid status.
+
+        Can be disabled by setting `DATA_QUALITY_VALIDATE_PARENT_STATUS` to False
+
         :return:
         """
+
+        if not settings.DATA_QUALITY_VALIDATE_PARENT_STATUS:
+            return
+
         for field_name in self.parent_relations:
             if (
                 getattr(self, field_name).status == "deleted"

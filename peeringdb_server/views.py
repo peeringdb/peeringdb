@@ -125,6 +125,10 @@ from peeringdb_server.serializers import (
 )
 from peeringdb_server.stats import get_fac_stats, get_ix_stats
 from peeringdb_server.stats import stats as global_stats
+from peeringdb_server.util import (
+    generate_social_media_render_data,
+    v2_social_media_services,
+)
 
 RATELIMITS = dj_settings.RATELIMITS
 
@@ -1445,6 +1449,7 @@ def view_organization(request, id):
         campuses = org.campus_set.filter(status__in=["ok"])
 
     dismiss = DoNotRender()
+    social_media = data.get("social_media")
 
     # determine if logo is specified and set the
     # logo url accordingly
@@ -1455,6 +1460,7 @@ def view_organization(request, id):
         logo_url = ""
 
     data = {
+        "social_media_enum": v2_social_media_services(),
         "title": data.get("name", dismiss),
         "exchanges": exchanges,
         "networks": networks,
@@ -1543,6 +1549,8 @@ def view_organization(request, id):
             },
         ],
     }
+
+    data = generate_social_media_render_data(data, social_media, 2, dismiss)
 
     users = {}
     if perms.get("can_manage"):
@@ -1639,6 +1647,8 @@ def view_facility(request, id):
         .order_by("carrier__name")
     )
 
+    social_media = data.get("social_media")
+
     if facility.org.logo:
         org["logo"] = facility.org.logo.url
 
@@ -1654,6 +1664,7 @@ def view_facility(request, id):
         campus_id = 0
 
     data = {
+        "social_media_enum": v2_social_media_services(),
         "title": data.get("name", dismiss),
         "exchanges": exchanges,
         "peers": peers,
@@ -1682,7 +1693,7 @@ def view_facility(request, id):
                 "name": "website",
                 "type": "url",
                 "value": data.get("website", dismiss),
-                "label": _("Website"),
+                "label": _("Company Website"),
             },
             {
                 "name": "address1",
@@ -1825,8 +1836,9 @@ def view_facility(request, id):
         ],
     }
 
-    data["stats"] = get_fac_stats(peers, exchanges)
+    data = generate_social_media_render_data(data, social_media, 3, dismiss)
 
+    data["stats"] = get_fac_stats(peers, exchanges)
     return view_component(
         request, "facility", data, "Facility", perms=perms, instance=facility
     )
@@ -1867,10 +1879,13 @@ def view_carrier(request, id):
 
     org = data.get("org")
 
+    social_media = data.get("social_media")
+
     if carrier.org.logo:
         org["logo"] = carrier.org.logo.url
 
     data = {
+        "social_media_enum": v2_social_media_services(),
         "id": carrier.id,
         "title": data.get("name", dismiss),
         "facilities": facilities,
@@ -1926,6 +1941,8 @@ def view_carrier(request, id):
         ],
     }
 
+    data = generate_social_media_render_data(data, social_media, 3, dismiss)
+
     return view_component(
         request, "carrier", data, "Carrier", perms=perms, instance=carrier
     )
@@ -1961,10 +1978,13 @@ def view_campus(request, id):
 
     org = data.get("org")
 
+    social_media = data.get("social_media")
+
     if campus.org.logo:
         org["logo"] = campus.org.logo.url
 
     data = {
+        "social_media_enum": v2_social_media_services(),
         "id": campus.id,
         "title": data.get("name", dismiss),
         "facilities": facilities,
@@ -1987,6 +2007,12 @@ def view_campus(request, id):
                 "value": data.get("name_long", dismiss) or "",
             },
             {
+                "name": "city",
+                "label": _("City"),
+                "value": data.get("city", dismiss),
+                "readonly": True,
+            },
+            {
                 "type": "url",
                 "name": "website",
                 "label": _("Company Website"),
@@ -1995,12 +2021,6 @@ def view_campus(request, id):
                     "If this field is set, it will be displayed on this record. If not, we will display the website from the organization record this is tied to"
                 ),
                 "value": data.get("website", dismiss),
-            },
-            {
-                "name": "city",
-                "label": _("City"),
-                "value": data.get("city", dismiss),
-                "readonly": True,
             },
             {
                 "name": "country",
@@ -2031,6 +2051,8 @@ def view_campus(request, id):
             },
         ],
     }
+
+    data = generate_social_media_render_data(data, social_media, 3, dismiss)
 
     return view_component(
         request, "campus", data, "Campus", perms=perms, instance=campus
@@ -2074,6 +2096,7 @@ def view_exchange(request, id):
         .filter(ix=exchange)
         .order_by("facility__name")
     )
+    social_media = data.get("social_media")
 
     org = data.get("org")
 
@@ -2081,6 +2104,7 @@ def view_exchange(request, id):
         org["logo"] = exchange.org.logo.url
 
     data = {
+        "social_media_enum": v2_social_media_services(),
         "id": exchange.id,
         "title": data.get("name", dismiss),
         "facilities": facilities,
@@ -2226,6 +2250,8 @@ def view_exchange(request, id):
             },
         ],
     }
+
+    data = generate_social_media_render_data(data, social_media, 13, dismiss)
 
     # IXLAN field group (form)
 
@@ -2442,6 +2468,7 @@ def view_network(request, id):
         ]
 
     data = {
+        "social_media_enum": v2_social_media_services(),
         "title": network_d.get("name", dismiss),
         "facilities": facilities,
         "exchanges": exchanges,
@@ -2715,6 +2742,9 @@ def view_network(request, id):
         ],
     }
 
+    social_media = network_d.get("social_media", [])
+    data = generate_social_media_render_data(data, social_media, 3, dismiss)
+
     # Add POC data to dataset
     data["poc_set"] = network_d.get("poc_set")
 
@@ -2872,6 +2902,14 @@ def request_api_search(request):
 
     result = search(q, autocomplete=True)
 
+    campus_facilites = {
+        fac.id: fac for fac in Facility.objects.exclude(campus_id__isnull=True)
+    }
+
+    for item in result["fac"]:
+        if item["id"] in campus_facilites:
+            item["campus"] = campus_facilites[item["id"]].campus_id
+
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
@@ -2900,9 +2938,16 @@ def request_search(request):
         for org, sponsorship in Sponsorship.active_by_org()
     }
 
+    campus_facilites = {
+        fac.id: fac for fac in Facility.objects.exclude(campus_id__isnull=True)
+    }
+
     for tag, rows in list(result.items()):
         for item in rows:
             item["sponsorship"] = sponsors.get(item["org_id"])
+
+            if tag == "fac" and item["id"] in campus_facilites:
+                item["campus"] = campus_facilites[item["id"]].campus_id
 
     template = loader.get_template("site/search_result.html")
     env = make_env(

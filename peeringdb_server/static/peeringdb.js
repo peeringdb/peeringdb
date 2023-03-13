@@ -27,6 +27,39 @@ PeeringDB = {
     }
   },
 
+  /**
+   * Renders a social media link for a given identifier and service.
+   *
+   * For the "website" service, it renders a link with the identifier as the href.
+   * For other services, it renders a link with the identifier appended to the service URL.
+   *
+   * @param {string} identifier - The identifier to render (username or URL relevant to the service).
+   * @param {string} service - The service to render the identifier for.
+   * @returns {object} The jQuery node for the rendered link.
+   */
+  social_media_link: function(identifier, service) {
+    if (service === "website") {
+      return $('<a/>').attr('href', identifier).text(identifier);
+    }
+    if (service === "facebook") {
+      return $('<a/>').attr('href', 'https://www.facebook.com/' + identifier).text(identifier);
+    }
+    if (service === "twitter") {
+      return $('<a/>').attr('href', 'https://twitter.com/' + identifier).text(identifier);
+    }
+    if (service === "instagram") {
+      return $('<a/>').attr('href', 'https://www.instagram.com/' + identifier).text(identifier);
+    }
+    if (service === "linkedin") {
+      return $('<a/>').attr('href', 'https://www.linkedin.com/company/' + identifier).text(identifier);
+    }
+    if (service === "tiktok") {
+      return $('<a/>').attr('href', 'https://www.tiktok.com/@' + identifier).text(identifier);
+    }
+
+    return $('<span/>').text(identifier);
+  },
+
   init : function() {
     this.InlineSearch.init_search();
 
@@ -1303,6 +1336,8 @@ PeeringDB.InlineSearch = {
     var i, row, rowNode, type;
     var count = 0;
 
+    var campusIconPath = $("#search-result").data("campus-icon-path");
+
     for(type in data) {
       if(!this.resultNodes)
         this.resultNodes = {};
@@ -1322,6 +1357,18 @@ PeeringDB.InlineSearch = {
         rowNode.addClass("result_row")
         rowNode.append($('<a>').attr("href", "/"+type+"/"+row.id).text(row.name));
 
+        // add campus icon if applicable
+
+        if(row.campus) {
+          rowNode.append(
+            $('<span class="icon muted">').append(
+              $('<a>').attr("href", "/campus/"+row.campus).append(
+                $('<img alt="Part of a campus">').attr("src", campusIconPath)
+              )
+            )
+          );
+        }
+
         var sponsor = (twentyc.data.get("sponsors")[row.org_id] || {});
         if(sponsor && sponsor.name) {
           rowNode.append($('<a>').
@@ -1331,6 +1378,8 @@ PeeringDB.InlineSearch = {
         }
 
         this.resultNodes[type].lst.append(rowNode)
+
+
       }
     }
 
@@ -1361,7 +1410,6 @@ PeeringDB.API = {
       else
         prepared = JSON.stringify(data);
     }
-
     return $.ajax(
       {
         url : url,
@@ -2001,6 +2049,7 @@ twentyc.editable.target.register(
       var reftag = this.args[1];
       var data = this.data_clean(true);
       var me = $(this), mod=this, sender = this.sender, i;
+      var campusIconPath = $(".advanced-search-view").data("campus-icon-path");
 
       for(i in data) {
         if(typeof data[i] == "object" && data[i].join) {
@@ -2054,6 +2103,13 @@ twentyc.editable.target.register(
 
               row = twentyc.editable.templates.copy("advanced-search-"+reftag+"-item")
 
+              if(d.campus && d.campus.campus_id) {
+                $('<a>').
+                  attr("href", "/campus/"+d.campus.campus_id).
+                  append($('<span class="icon muted">').append($('<img alt="Part of a campus">').attr("src", campusIconPath))).
+                  insertAfter(row.find('.name'));
+              }
+
               if(d.sponsorship && d.sponsorship.name) {
                 $('<a>').
                   attr("href", "/sponsors").
@@ -2103,6 +2159,7 @@ twentyc.editable.target.register(
 
     finalize_data_fac : function(data) {
       data.sponsorship = (twentyc.data.get("sponsors")[data.org_id] || {});
+      data.campus = (twentyc.data.get("campus_facilities")[data.id] || {});
     }
   },
   "base"
@@ -2131,8 +2188,16 @@ twentyc.editable.target.register(
       var me = $(this),
           data = this.data,
           id = parseInt(this.data._id);
-
-
+      var social_media = [];
+      var social_media_labels = [];
+      $("div.view_row.social_media").each(function(idx, val) {
+        social_media.push({
+          "service": $(val).find("select").val(),
+          "identifier": $(val).find("input").val()
+        });
+        social_media_labels.push($(val).find("select option:selected").text());
+      });
+      data.social_media = social_media
       if(requestType == "update") {
         if(id)
           method = "PUT"
@@ -2150,13 +2215,30 @@ twentyc.editable.target.register(
           return;
         }
       }
-
       PeeringDB.API.request(
         method,
         endpoint,
         id,
         data,
         function(r) {
+
+          sender.find("div.view_row.social_media").each(function(idx, val) {
+            child = $(val).children()
+            label = child[0]
+            edit_label = child[1]
+            $(label).html(social_media_labels[idx])
+            $(edit_label).attr('data-edit-value',social_media[idx].service)
+            $(edit_label).find("select").each((idxs, el) =>{
+              $(el).find('option').each((i, e)=>{
+                if($(e).val() == social_media[idx].service){
+                  $(e).attr("selected","selected");
+                }
+              })
+              $(el).val(social_media[idx].service).trigger('change')
+            })
+
+          });
+
           if(r)
             me.trigger("success", r.data[0]);
           else
@@ -2168,6 +2250,7 @@ twentyc.editable.target.register(
         } else if (r && r.meta && r.meta.suggested_address){
           PeeringDB.add_suggested_address(r, endpoint);
         }
+
       }).fail(function(r) {
         if(r.status == 400) {
           var k,i,info=[gettext("The server rejected your data")]; ///
@@ -2652,6 +2735,17 @@ twentyc.editable.module.register(
 /*
  * showdown (markdown) input type
  */
+
+twentyc.editable.input.register(
+  "social_media",
+  {
+    apply : function(value) {
+      service = this.source.parent().find('[data-edit-toggled="view"].view_field').text();
+      this.source.html(PeeringDB.social_media_link(value, service.toLowerCase()));
+    }
+  },
+  "string"
+)
 
 twentyc.editable.input.register(
   "markdown",
@@ -3598,6 +3692,7 @@ twentyc.data.loaders.assign("countries", "data");
 twentyc.data.loaders.assign("countries_b", "data");
 twentyc.data.loaders.assign("facilities", "data");
 twentyc.data.loaders.assign("sponsors", "data");
+twentyc.data.loaders.assign("campus_facilities", "data");
 twentyc.data.loaders.assign("my_organizations", "data");
 twentyc.data.loaders.assign("enum/regions", "data");
 twentyc.data.loaders.assign("enum/org_groups", "data");
@@ -3629,6 +3724,7 @@ twentyc.data.loaders.assign("enum/property", "data");
 twentyc.data.loaders.assign("enum/available_voltage", "data");
 twentyc.data.loaders.assign("enum/reauth_periods", "data");
 twentyc.data.loaders.assign("enum/mtus", "data");
+twentyc.data.loaders.assign("enum/social_media_services", "data");
 
 $(twentyc.data).on("load-enum/traffic", function(e, payload) {
   var r = {}, i = 0, data=payload.data;

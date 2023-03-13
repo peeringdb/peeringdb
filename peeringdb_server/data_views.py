@@ -176,6 +176,7 @@ def enum(request, name):
         "AVAILABLE_VOLTAGE",
         "REAUTH_PERIODS",
         "MTUS",
+        "SOCIAL_MEDIA_SERVICES",
     ]:
         raise Exception("Unknown enum")
 
@@ -261,3 +262,22 @@ def languages(request):
         )
 
     return JsonResponse({"locales": locales})
+
+
+def campus_facilities(request):
+    """
+    Returns a JSON response with a dict of facilities that are part
+    of a campus
+    """
+
+    return JsonResponse(
+        {
+            "campus_facilities": {
+                fac.id: {"campus_id": fac.campus_id, "name": str(fac.name)}
+                for fac in models.Facility.handleref.all()
+                .undeleted()
+                .exclude(campus__isnull=True)
+                .order_by("name")
+            }
+        }
+    )

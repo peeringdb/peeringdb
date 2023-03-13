@@ -294,6 +294,11 @@ urlpatterns = [
     ),
     url(r"^data/my_organizations$", peeringdb_server.data_views.my_organizations),
     url(r"^data/locales$", peeringdb_server.data_views.languages, name="data-locales"),
+    url(
+        r"^data/campus_facilities$",
+        peeringdb_server.data_views.campus_facilities,
+        name="data-campus-facilities",
+    ),
     url(r"^export/ix/(?P<ix_id>\d+)/ixp-member-list$", view_export_ixf_ix_members),
     url(
         r"^export/ixlan/(?P<ixlan_id>\d+)/ixp-member-list$",

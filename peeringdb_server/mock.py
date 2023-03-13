@@ -178,6 +178,9 @@ class Mock:
     def website(self, data, reftag=None):
         return "https://www.peeringdb.com"
 
+    def social_media(self, data, reftag=None):
+        return [{"service": "website", "identifier": "https://www.peeringdb.com"}]
+
     def notes(self, data, reftag=None):
         return "Some notes"
 

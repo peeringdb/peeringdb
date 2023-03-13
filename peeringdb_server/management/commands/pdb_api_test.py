@@ -113,6 +113,7 @@ STATE = "IL"
 ZIPCODE = "1-2345"
 NOTE = "This is a test entry made by a script to test out the API"
 EMAIL = "test@20c.com"
+SOCIAL_MEDIA = [{"service": "website", "identifier": "http://www.test.apitest"}]
 
 VERBOSE = False
 
@@ -238,6 +239,7 @@ class TestJSON(unittest.TestCase):
         data = {
             "name": self.make_name("Test"),
             "website": WEBSITE,
+            "social_media": SOCIAL_MEDIA,
             "notes": NOTE,
             "address1": "address",
             "address2": "address",
@@ -263,6 +265,7 @@ class TestJSON(unittest.TestCase):
             "media": "Ethernet",
             "notes": NOTE,
             "website": WEBSITE,
+            "social_media": SOCIAL_MEDIA,
             "url_stats": "%s/stats" % WEBSITE,
             "tech_email": EMAIL,
             "tech_phone": PHONE,
@@ -282,6 +285,7 @@ class TestJSON(unittest.TestCase):
             "name": self.make_name("Test"),
             "org_id": SHARED["org_rw_ok"].id,
             "website": WEBSITE,
+            "social_media": SOCIAL_MEDIA,
             "city": CITY,
             "zipcode": ZIPCODE,
             "address1": "Some street",
@@ -321,6 +325,7 @@ class TestJSON(unittest.TestCase):
             "aka": self.make_name("Also known as"),
             "asn": asn,
             "website": WEBSITE,
+            "social_media": SOCIAL_MEDIA,
             "irr_as_set": "AS-ZZ-ZZZZZZ@RIPE",
             "info_type": "NSP",
             "info_prefixes4": 11000,
@@ -350,6 +355,7 @@ class TestJSON(unittest.TestCase):
             "org_id": SHARED["org_rw_ok"].id,
             "aka": cls.make_name("Also known as"),
             "website": WEBSITE,
+            "social_media": SOCIAL_MEDIA,
         }
         data.update(**kwargs)
         return data
@@ -363,6 +369,7 @@ class TestJSON(unittest.TestCase):
             "org_id": SHARED["org_rw_ok"].id,
             "aka": cls.make_name("Also known as"),
             "website": WEBSITE,
+            "social_media": SOCIAL_MEDIA,
         }
         data.update(**kwargs)
         return data
@@ -501,6 +508,8 @@ class TestJSON(unittest.TestCase):
                     self.assertIn(type(data.get(k)), [str, str], msg=msg % k)
                 elif type(v) in [int, int]:
                     self.assertIn(type(data.get(k)), [int, int], msg=msg % k)
+                elif type(v) in [list, list]:
+                    self.assertIn(type(data.get(k)), [dict, list], msg=msg % k)
                 else:
                     self.assertEqual(type(v), type(data.get(k)), msg=msg % k)
 
@@ -640,6 +649,7 @@ class TestJSON(unittest.TestCase):
 
         if test_success:
             orig = self.assert_get_handleref(db, typ, id, ignore=ignore)
+            print("ORIG", orig)
             orig.update(**data)
         else:
             orig = {"id": id}
@@ -847,6 +857,11 @@ class TestJSON(unittest.TestCase):
 
         # nested set relations
         for n_fld, n_fld_cls in n_flds:
+            # make exception for social media field, as that is a JSON field
+            # and will exist in its expanded form even at depth 0
+            if n_fld == "social_media":
+                continue
+
             if r_depth > 1:
                 # sets should be expanded to objects
                 self.assertIn(
@@ -1389,6 +1404,18 @@ class TestJSON(unittest.TestCase):
             data,
             test_success=False,
             test_failures={
+                "invalid": {
+                    "social_media": {"", ""},
+                },
+            },
+        )
+
+        self.assert_create(
+            self.db_org_admin,
+            "ix",
+            data,
+            test_success=False,
+            test_failures={
                 "invalid": {"prefix": ""},
             },
         )
@@ -1477,6 +1504,18 @@ class TestJSON(unittest.TestCase):
                     "rencode": str(uuid.uuid4())[
                         :6
                     ].upper(),  # this should not take as it is read only
+                },
+            },
+        )
+
+        self.assert_create(
+            self.db_org_admin,
+            "fac",
+            data,
+            test_success=False,
+            test_failures={
+                "invalid": {
+                    "social_media": {"service": "website"},
                 },
             },
         )
@@ -1647,6 +1686,18 @@ class TestJSON(unittest.TestCase):
             test_failures={
                 "invalid": {"name": ""},
                 "perms": {"id": SHARED["carrier_r_ok"].id},
+            },
+        )
+
+        self.assert_create(
+            self.db_org_admin,
+            "carrier",
+            data,
+            test_success=False,
+            test_failures={
+                "invalid": {
+                    "social_media": {"service": "website"},
+                },
             },
         )
 
@@ -1852,6 +1903,18 @@ class TestJSON(unittest.TestCase):
             },
         )
 
+        self.assert_create(
+            self.db_org_admin,
+            "carrier",
+            data,
+            test_success=False,
+            test_failures={
+                "invalid": {
+                    "social_media": {"service": "website"},
+                },
+            },
+        )
+
         self.assert_delete(
             self.db_org_admin,
             "campus",
@@ -1922,6 +1985,18 @@ class TestJSON(unittest.TestCase):
                     "org_id": SHARED["org_rwp"].id,
                     "asn": data["asn"] + 1,
                     "name": self.make_name("Test"),
+                },
+            },
+        )
+
+        self.assert_create(
+            self.db_org_admin,
+            "carrier",
+            data,
+            test_success=False,
+            test_failures={
+                "invalid": {
+                    "social_media": {"service": "website"},
                 },
             },
         )
@@ -2156,6 +2231,21 @@ class TestJSON(unittest.TestCase):
             "net",
             data,
             test_failures={"invalid": {"website": ""}},
+            test_success=False,
+        )
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_net_social_media_required(self):
+        # Test bogon asn failure
+
+        data = self.make_data_net(social_media="")
+
+        self.assert_create(
+            self.db_org_admin,
+            "net",
+            data,
+            test_failures={"invalid": {"social_media": ""}},
             test_success=False,
         )
 
@@ -3016,7 +3106,7 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def test_guest_005_fields_filter(self):
+    def test_guest_005_org_fields_filter(self):
         data = self.db_guest.all("org", limit=10, fields=",".join(["name", "status"]))
         self.assertGreater(len(data), 0)
         for row in data:
@@ -3027,6 +3117,26 @@ class TestJSON(unittest.TestCase):
         )
         self.assertGreater(len(data), 0)
         self.assertEqual(sorted(data[0].keys()), sorted(["name", "status"]))
+
+    ##########################################################################
+
+    def test_guest_005_carrier_fields_filter(self):
+        data = self.db_guest.all(
+            "carrier", limit=10, fields=",".join(["name", "org_id"])
+        )
+        self.assertEqual(len(data), 3)
+
+        for row in data:
+            self.assertTrue(
+                set(sorted(row.keys())).issubset({"name", "org_id", "website"})
+            )
+
+        data = self.db_guest.get(
+            "carrier", Carrier.objects.first().id, fields=",".join(["name", "org_id"])
+        )
+        self.assertGreater(len(data), 0)
+        for row in data:
+            self.assertEqual(sorted(row.keys()), sorted(["name", "org_id", "website"]))
 
     ##########################################################################
 
