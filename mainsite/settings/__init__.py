@@ -1111,6 +1111,7 @@ set_option("NON_ZIPCODE_COUNTRIES", non_zipcode_countries())
 ## Locale
 
 LANGUAGE_CODE = "en-us"
+LANGUAGE_COOKIE_AGE = 31557600  # one year
 USE_I18N = True
 USE_L10N = True
 
