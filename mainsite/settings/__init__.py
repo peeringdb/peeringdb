@@ -1070,14 +1070,17 @@ PEERINGDB_ABSTRACT_ONLY = True
 # the beta notification banner
 set_option("SHOW_AUTO_PROD_SYNC_WARNING", False)
 
+
+# TODO -- let's make this 1
+# TODO -- why are the ids different for prod, beta, tutor, etc?
 # all suggested entities will be created under this org
 set_option("SUGGEST_ENTITY_ORG", 20525)
-set_option("DEFAULT_SELF_ORG", 25554)
-set_option("DEFAULT_SELF_NET", 666)
-set_option("DEFAULT_SELF_IX", 4095)
-set_option("DEFAULT_SELF_FAC", 13346)
-set_option("DEFAULT_SELF_CARRIER", 66)
-set_option("DEFAULT_SELF_CAMPUS", 25)
+set_option("DEFAULT_SELF_ORG", 20525)
+set_option("DEFAULT_SELF_NET", 1788)
+set_option("DEFAULT_SELF_IX", 35)
+set_option("DEFAULT_SELF_FAC", 1470)
+set_option("DEFAULT_SELF_CARRIER", 1)
+set_option("DEFAULT_SELF_CAMPUS", 1)
 set_option("CAMPUS_MAX_DISTANCE", 50)
 
 set_option("TUTORIAL_MODE", False)
