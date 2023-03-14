@@ -44,17 +44,15 @@ VIEWSETS = {
     "campus": pdbr.CampusViewSet,
 }
 
-MONODEPTH = set(
-    (
-        "carrierfac",
-        "fac",
-        "ixfac",
-        "ixpfx",
-        "netfac",
-        "netixlan",
-        "poc",
-    )
-)
+MONODEPTH = {
+    "carrierfac",
+    "fac",
+    "ixfac",
+    "ixpfx",
+    "netfac",
+    "netixlan",
+    "poc",
+}
 
 settings.DEBUG = False
 
@@ -134,7 +132,6 @@ class Command(BaseCommand):
 
                 for depth in depths:
                     if depth >= 1 and tag in MONODEPTH:
-                        print("breaking after depth {}".format(depth))
                         break
 
                     self.log(tag, "generating depth %d" % depth)
@@ -175,7 +172,7 @@ class Command(BaseCommand):
                     id = f"{tag}-{depth}"
                     src_file = os.path.join(settings.API_CACHE_ROOT, f"{tag}-0.json")
                     file_name = os.path.join(settings.API_CACHE_ROOT, f"{id}.json")
-                    self.log("info", "copying %s to %s" % (src_file, file_name))
+                    self.log("info", "copying {} to {}".format(src_file, file_name))
                     shutil.copyfile(src_file, file_name)
 
         except Exception:
