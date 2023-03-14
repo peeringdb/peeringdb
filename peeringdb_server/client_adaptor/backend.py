@@ -33,8 +33,10 @@ class Backend(BaseBackend):
     # map peeringdb_server models to peeringdb client resources
 
     RESOURCE_MAP = {
-        resource.Facility: models.Facility,
+        resource.Carrier: models.Carrier,
+        resource.CarrierFacility: models.CarrierFacility,
         resource.Campus: models.Campus,
+        resource.Facility: models.Facility,
         resource.InternetExchange: models.InternetExchange,
         resource.InternetExchangeFacility: models.InternetExchangeFacility,
         resource.InternetExchangeLan: models.IXLan,
