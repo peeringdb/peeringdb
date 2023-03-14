@@ -106,7 +106,7 @@ class Command(BaseCommand):
         dtstr = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
         self.log_file = open(settings.API_CACHE_LOG, "w+")
         self.log("info", "Regnerating cache files to '%s'" % settings.API_CACHE_ROOT)
-        self.log("info", "Caching depths %s for timestamp: %s" % str(depths), dtstr)
+        self.log("info", "Caching depths %s for timestamp: %s" % (str(depths), str(dtstr)))
         rf = APIRequestFactory()
         renderer = MetaJSONRenderer()
 
