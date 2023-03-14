@@ -106,7 +106,10 @@ class Command(BaseCommand):
         dtstr = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
         self.log_file = open(settings.API_CACHE_LOG, "w+")
         self.log("info", "Regnerating cache files to '%s'" % settings.API_CACHE_ROOT)
-        self.log("info", "Caching depths %s for timestamp: %s" % (str(depths), str(dtstr)))
+        self.log(
+            "info",
+            "Caching depths {} for timestamp: {}".format(str(depths), str(dtstr)),
+        )
         rf = APIRequestFactory()
         renderer = MetaJSONRenderer()
 
@@ -172,7 +175,7 @@ class Command(BaseCommand):
                     id = f"{tag}-{depth}"
                     src_file = os.path.join(settings.API_CACHE_ROOT, f"{tag}-0.json")
                     file_name = os.path.join(settings.API_CACHE_ROOT, f"{id}.json")
-                    self.log("info", "copying {} to {}".format(src_file, file_name))
+                    self.log("info", f"copying {src_file} to {file_name}")
                     shutil.copyfile(src_file, file_name)
 
         except Exception:
