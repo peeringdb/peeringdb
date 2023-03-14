@@ -592,7 +592,11 @@ def view_set_user_locale(request):
 
         translation.activate(loc)
         response = JsonResponse({"status": "ok"})
-        response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, loc)
+        response.set_cookie(
+            dj_settings.LANGUAGE_COOKIE_NAME,
+            loc,
+            max_age=dj_settings.LANGUAGE_COOKIE_AGE,
+        )
 
         return response
 
@@ -3134,7 +3138,11 @@ class LoginView(TwoFactorLoginView):
                 self.request.user,
                 max_age=dj_settings.OAUTH_COOKIE_MAX_AGE,
             )
-        response.set_cookie(dj_settings.LANGUAGE_COOKIE_NAME, user_language)
+        response.set_cookie(
+            dj_settings.LANGUAGE_COOKIE_NAME,
+            user_language,
+            max_age=dj_settings.LANGUAGE_COOKIE_AGE,
+        )
 
         return response
 

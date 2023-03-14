@@ -65,6 +65,7 @@ from peeringdb_server.models import (
     NetworkFacility,
     NetworkIXLan,
     Organization,
+    ParentStatusException,
     VerificationQueueItem,
 )
 from peeringdb_server.permissions import (
@@ -574,29 +575,6 @@ class SaneIntegerField(serializers.IntegerField):
         if r is None:
             return 0
         return r
-
-
-class ParentStatusException(IOError):
-    """
-    Throw this when an object cannot be created because its parent is
-    either status pending or deleted.
-    """
-
-    def __init__(self, parent, typ):
-        if parent.status == "pending":
-            super().__init__(
-                _(
-                    "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has not yet been approved"
-                )
-                % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
-            )
-        elif parent.status == "deleted":
-            super().__init__(
-                _(
-                    "Object of type '%(type)s' cannot be created because its parent entity '%(parent_tag)s/%(parent_id)s' has been marked as deleted"
-                )
-                % {"type": typ, "parent_tag": parent.ref_tag, "parent_id": parent.id}
-            )
 
 
 class AddressSerializer(serializers.ModelSerializer):

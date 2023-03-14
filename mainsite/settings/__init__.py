@@ -370,10 +370,10 @@ set_option("API_DISTANCE_FILTER_REQUIRE_VERIFIED", True)
 set_option("GEOCOORD_CACHE_EXPIRY", 86400 * 30)
 
 # maximum value to allow in network.info_prefixes4
-set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 1000000)
+set_option("DATA_QUALITY_MAX_PREFIX_V4_LIMIT", 1200000)
 
 # maximum value to allow in network.info_prefixes6
-set_option("DATA_QUALITY_MAX_PREFIX_V6_LIMIT", 100000)
+set_option("DATA_QUALITY_MAX_PREFIX_V6_LIMIT", 180000)
 
 # minimum value to allow for prefix length on a v4 prefix
 set_option("DATA_QUALITY_MIN_PREFIXLEN_V4", 18)
@@ -1039,6 +1039,10 @@ set_option("IXF_NOTIFY_NET_ON_CONFLICT", False)
 # deskpro ticket is created
 set_option("IXF_IMPORTER_DAYS_UNTIL_TICKET", 6)
 
+# number of days until bad NetworkIXLan data is deleted
+# regardless of ixf-automation status on the network (#1271)
+set_option("IXF_REMOVE_STALE_NETIXLAN_PERIOD", 90)
+
 # clean up data change notification queue by discarding
 # entries older than this (7 days)
 set_option("DATA_CHANGE_NOTIFY_MAX_AGE", 86400 * 7)
@@ -1066,17 +1070,14 @@ PEERINGDB_ABSTRACT_ONLY = True
 # the beta notification banner
 set_option("SHOW_AUTO_PROD_SYNC_WARNING", False)
 
-
-# TODO -- let's make this 1
-# TODO -- why are the ids different for prod, beta, tutor, etc?
 # all suggested entities will be created under this org
 set_option("SUGGEST_ENTITY_ORG", 20525)
-set_option("DEFAULT_SELF_ORG", 20525)
-set_option("DEFAULT_SELF_NET", 1788)
-set_option("DEFAULT_SELF_IX", 35)
-set_option("DEFAULT_SELF_FAC", 1470)
-set_option("DEFAULT_SELF_CARRIER", 1)
-set_option("DEFAULT_SELF_CAMPUS", 1)
+set_option("DEFAULT_SELF_ORG", 25554)
+set_option("DEFAULT_SELF_NET", 666)
+set_option("DEFAULT_SELF_IX", 4095)
+set_option("DEFAULT_SELF_FAC", 13346)
+set_option("DEFAULT_SELF_CARRIER", 66)
+set_option("DEFAULT_SELF_CAMPUS", 25)
 set_option("CAMPUS_MAX_DISTANCE", 50)
 
 set_option("TUTORIAL_MODE", False)
@@ -1111,6 +1112,7 @@ set_option("NON_ZIPCODE_COUNTRIES", non_zipcode_countries())
 ## Locale
 
 LANGUAGE_CODE = "en-us"
+LANGUAGE_COOKIE_AGE = 31557600  # one year
 USE_I18N = True
 USE_L10N = True
 
