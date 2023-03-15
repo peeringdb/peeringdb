@@ -1829,8 +1829,8 @@ class CarrierSerializer(ModelSerializer):
     def to_representation(self, data):
         representation = super().to_representation(data)
 
-        if not representation.get("website") and self.instance:
-            representation["website"] = self.instance.org.website
+        if not representation.get("website"):
+            representation["website"] = data.org.website
 
         return representation
 
