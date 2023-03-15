@@ -3073,6 +3073,18 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_carrier_no_website(self):
+        carrier = SHARED["carrier_rw_ok"]
+        carrier.website = ""
+        carrier.save()
+
+        data = self.db_guest.all("carrier", since=int(START_TIMESTAMP) - 10)
+        self.assertEqual(len(data), 3)
+        self.assert_handleref_integrity(data[0])
+        self.assert_data_integrity(data[0], "carrier")
+
+    ##########################################################################
+
     def test_guest_005_get_depth_all(self):
         """
         Tests all end points single object GET with all valid depths.
