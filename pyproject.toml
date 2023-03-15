@@ -72,8 +72,7 @@ django-haystack = "<4"
 whoosh = "<3"
 django-structlog = ">=2.2.0"
 
-
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 # testing
 pytest = ">=6"
 pytest-cov = "*"
