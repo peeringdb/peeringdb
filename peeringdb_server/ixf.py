@@ -1747,8 +1747,6 @@ class Importer:
 
         template = loader.get_template("email/notify-ixf-consolidated.txt")
 
-        print("consolidated", consolidated)
-
         for recipient in ["ix", "net"]:
             for other_entity, data in consolidated[recipient].items():
                 try:
@@ -1887,8 +1885,6 @@ class Importer:
         )
         qset = qset.exclude(extra_notifications_net_num__gte=notify_max)
 
-        print("stale", qset.count(), max_age)
-
         for ixf_member_data in qset:
             # stale networks are only indicated by `delete` proposals
 
@@ -1942,7 +1938,6 @@ class Importer:
         if cleanup_days > 0:
             now = django.utils.timezone.now()
             max_age = now - datetime.timedelta(days=cleanup_days)
-            print("max age", max_age)
             qset = qset.filter(created__lte=max_age)
 
         for ixf_member_data in qset:
