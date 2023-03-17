@@ -149,6 +149,298 @@ def test_resolve_local_ixf(entities, use_ip, save):
 
 
 @pytest.mark.django_db
+def test_resolve_local_ixf_stale_netixlan(entities, use_ip, save):
+    """
+    Netixlan exists, remote data does not match the netixlan, and there is a local-ixf
+    entry that also matches all the data.
+
+    The local-ixf entry is past the allowed proposal age, so both it and the 
+    netixlan should be deleted.
+    """
+    data = setup_test_data("ixf.member.7")
+    network = entities["net"]["UPDATE_DISABLED_2"]
+    network_o = entities["net"]["UPDATE_ENABLED"]
+    
+    ixlan = entities["ixlan"][0]
+
+    netixlan = NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        ipaddr4=use_ip(4, "195.69.147.250"),
+        ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
+        status="ok",
+        is_rs_peer=True,
+        operational=True,
+    )
+
+    entities["netixlan"].append(netixlan)
+
+    # Create a local IXF that matches remote details
+    ixm = IXFMemberData.objects.create(
+        asn=network.asn,
+        ipaddr4=use_ip(4, "195.69.147.250"),
+        ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+        data="{}",
+        extra_notifications_net_num=0,
+        extra_notifications_net_date=None,
+    )
+
+    assert IXFMemberData.objects.count() == 1
+
+    ixm.created = ixm.created - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD+1)
+    ixm.save()
+
+    assert ixm.action == "delete"
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    # first update should not remove the netixlan or ix-f entry
+    # since the notification count requirement is not met
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert IXFMemberData.objects.count() == 1
+
+    netixlan.refresh_from_db()
+    assert netixlan.status == "ok"
+    
+    # ixf member data entry should have logged one notification
+    # to the network.
+    
+    ixm.refresh_from_db()
+    assert ixm.extra_notifications_net_num == 1
+    assert ixm.extra_notifications_net_date is not None
+
+    if not network_o.ipv4_support or not network_o.ipv6_support:
+
+        # this initial ixf import will send two additional emails (one to the net, one to the ix)
+        # due to protocol mismatch which we need to account for here - this is due to the test
+        # data which is not otherwise relevant to this test, but 
+        # needs to be there for the ix-f import to be valid
+        #
+        # then we also expect one re-notificaiton email about the stale network
+
+        assert IXFImportEmail.objects.count() == 3
+    else:
+
+        # otherwise expect one re-notification email about the stale network
+
+        assert IXFImportEmail.objects.count() == 1
+
+    # now notification count rquirement is set to the required amount
+    # stale netixlan and ix-f entry should be removed
+
+    ixm.extra_notifications_net_num = settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT
+    ixm.save()
+
+    # reset emails...
+    IXFImportEmail.objects.all().delete()
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert IXFMemberData.objects.count() == 0
+    assert IXFImportEmail.objects.count() == 0
+
+    netixlan.refresh_from_db()
+    assert netixlan.status == "deleted"
+
+    # Test idempotent
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+    assert_idempotent(importer, ixlan, data)
+
+@override_settings(
+    IXF_REMOVE_STALE_NETIXLAN = False
+)
+@pytest.mark.django_db
+def test_resolve_local_ixf_stale_netixlan_removal_disabled(entities, save):
+    """
+    Netixlan exists, remote data does not match the netixlan, and there is a local-ixf
+    entry that also matches all the data.
+
+    The local-ixf entry is past the allowed proposal age, but IXF_REMOVE_STALE_NETIXLAN
+    is disabled, nothing should be deleted.
+    """
+    
+    data = setup_test_data("ixf.member.7")
+    network = entities["net"]["UPDATE_DISABLED_2"]
+    network_o = entities["net"]["UPDATE_ENABLED"]
+    
+    ixlan = entities["ixlan"][0]
+
+    netixlan = NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        ipaddr4="195.69.147.250",
+        ipaddr6="2001:7f8:1::a500:2906:1",
+        status="ok",
+        is_rs_peer=True,
+        operational=True,
+    )
+
+    entities["netixlan"].append(netixlan)
+
+    # Create a local IXF that matches remote details
+    ixm = IXFMemberData.objects.create(
+        asn=network.asn,
+        ipaddr4="195.69.147.250",
+        ipaddr6="2001:7f8:1::a500:2906:1",
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+        data="{}",
+        extra_notifications_net_num=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT
+    )
+
+    assert IXFMemberData.objects.count() == 1
+
+    ixm.created = ixm.created - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD+1)
+    ixm.save()
+
+    assert ixm.action == "delete"
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    # first update should not remove the netixlan or ix-f entry
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert IXFMemberData.objects.count() == 1
+
+    netixlan.refresh_from_db()
+    assert netixlan.status == "ok"
+
+
+@override_settings(
+    IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD=10,
+    IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT=2
+)
+@pytest.mark.django_db
+def test_resolve_local_ixf_stale_netixlan_renotification(entities, save):
+    """
+    Netixlan exists, remote data does not match the netixlan, and there is a local-ixf
+    entry that also matches all the data.
+
+    Test the re-notification process to the network for its stale netixlan entries.
+    """
+
+    data = setup_test_data("ixf.member.7")
+    network = entities["net"]["UPDATE_DISABLED_2"]
+    ixlan = entities["ixlan"][0]
+
+    netixlan = NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        ipaddr4="195.69.147.250",
+        ipaddr6="2001:7f8:1::a500:2906:1",
+        status="ok",
+        is_rs_peer=True,
+        operational=True,
+    )
+
+    entities["netixlan"].append(netixlan)
+
+    # Create a local IXF that matches remote details
+    ixm = IXFMemberData.objects.create(
+        asn=network.asn,
+        ipaddr4="195.69.147.250",
+        ipaddr6="2001:7f8:1::a500:2906:1",
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+        data="{}",
+    )
+
+    assert IXFMemberData.objects.count() == 1
+
+    importer = ixf.Importer()
+
+    # first importer run, no re-notification
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    ixm.refresh_from_db()
+    assert ixm.extra_notifications_net_num == 0
+
+    # second importer run, firstre-notification after moving the date back
+
+    ixm.created = ixm.created - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD+1)
+    print("CREATED", ixm.created)
+    ixm.save()
+
+    IXFImportEmail.objects.all().delete()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    ixm.refresh_from_db()
+    assert ixm.extra_notifications_net_num == 1
+
+    # third importer run, no re-notification, not enough time has passed
+    # between last re-notification and now
+
+    IXFImportEmail.objects.all().delete()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    ixm.refresh_from_db()
+    assert ixm.extra_notifications_net_num == 1
+
+    # fourth importer run, set the notification date back to the past, causing
+    # the next notification to be sent
+
+    ixm.extra_notifications_net_date = ixm.extra_notifications_net_date - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD+1)
+    ixm.save()
+
+    IXFImportEmail.objects.all().delete()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    ixm.refresh_from_db()
+    assert ixm.extra_notifications_net_num == 2
+
+    # fifth importer run, set the notification date back to the past, but
+    # since max notification limit has been reached, no notification is sent
+
+    ixm.extra_notifications_net_date = ixm.extra_notifications_net_date - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD+1)
+    ixm.save()
+
+    IXFImportEmail.objects.all().delete()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    ixm.refresh_from_db()
+    assert ixm.extra_notifications_net_num == 2
+
+
+@pytest.mark.django_db
 def test_update_data_attributes(entities, use_ip, save):
     """
     The NetIXLan differs from the remote data, but allow_ixp_update is enabled
@@ -3145,6 +3437,12 @@ def entities_base():
             NetworkContact.objects.create(
                 email="network2@localhost",
                 network=entities["net"]["UPDATE_DISABLED"],
+                status="ok",
+                role="Policy",
+            ),
+            NetworkContact.objects.create(
+                email="network3@localhost",
+                network=entities["net"]["UPDATE_DISABLED_2"],
                 status="ok",
                 role="Policy",
             ),

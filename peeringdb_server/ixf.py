@@ -22,6 +22,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.mail.message import EmailMultiAlternatives
 from django.db import transaction
+from django.db.models import Q
 from django.template import loader
 from django.utils.html import strip_tags
 from django.utils.translation import ugettext_lazy as _
@@ -578,6 +579,8 @@ class Importer:
             self.process_saves()
 
         self.cleanup_ixf_member_data()
+
+        self.notify_stale_netixlans()
 
         self.cleanup_aged_proposals()
 
@@ -1745,6 +1748,8 @@ class Importer:
 
         template = loader.get_template("email/notify-ixf-consolidated.txt")
 
+        print("consolidated", consolidated)
+
         for recipient in ["ix", "net"]:
             for other_entity, data in consolidated[recipient].items():
                 try:
@@ -1854,6 +1859,58 @@ class Importer:
         """
         return
 
+    def notify_stale_netixlans(self):
+        """
+        Will send a repeat notification to the network about stale netixlans
+        according to settings specified in
+
+        * IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD - days to wait between re-notification
+        * IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT - limits number of total re-notifications
+        """
+    
+        # global off switch
+
+        if not settings.IXF_REMOVE_STALE_NETIXLAN:
+            return
+
+        if not self.save:
+            return
+
+        notify_period = settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD
+        notify_max = settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT
+        now = django.utils.timezone.now()
+        max_age = now - datetime.timedelta(days=notify_period)
+
+        qset = IXFMemberData.objects.filter(
+            Q(extra_notifications_net_date__lte=max_age) | Q(extra_notifications_net_date__isnull=True), created__lte=max_age)
+        qset = qset.exclude(extra_notifications_net_num__gte=notify_max)
+       
+        print("stale", qset.count(), max_age)
+
+        for ixf_member_data in qset:
+
+            # stale networks are only indicated by `delete` proposals
+
+            if ixf_member_data.action != "delete":
+                continue
+
+            # a delete proposal can be part of a modify proposal
+            # when the proposal is to combine ipv4 + ipv6 to the same
+            # netixlan object. in this case we do not want to remove
+            # as part of stale removal, since the same asn still owns
+            # both ips and is present at the ix.
+
+            if ixf_member_data.requirement_of_id:
+                continue
+
+            ixf_member_data.extra_notifications_net_num += 1
+            ixf_member_data.extra_notifications_net_date = now
+            ixf_member_data.save()
+            self.queue_notification(
+                ixf_member_data, "remove", ac=False, ix=False, net=True
+            )
+        
+
     @reversion.create_revision()
     def cleanup_aged_proposals(self):
         """
@@ -1863,40 +1920,62 @@ class Importer:
         """
 
         if not self.save:
-            """
-            Do not run a cleanup process in some cases.
-            For example, when the importer runs in preview mode
-            triggered by a network admin.
-            """
+            # Do not run a cleanup process in some cases.
+            # For example, when the importer runs in preview mode
+            # triggered by a network admin.
 
             return
 
-        qset = IXFMemberData.objects.all()
+        # global off switch
 
-        cleanup_days = EnvironmentSetting.get_setting_value(
-            "IXF_REMOVE_STALE_NETIXLAN_PERIOD"
-        )
+        if not settings.IXF_REMOVE_STALE_NETIXLAN:
+            return
+
+        notify_max = settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT
+        cleanup_days = settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD
+
+        # stale netixlan removal only happens after the network
+        # has been notified a number of times
+
+        qset = IXFMemberData.objects.filter(extra_notifications_net_num__gte=notify_max)
 
         if cleanup_days > 0:
             now = django.utils.timezone.now()
             max_age = now - datetime.timedelta(days=cleanup_days)
+            print("max age", max_age)
             qset = qset.filter(created__lte=max_age)
+        
 
         for ixf_member_data in qset:
+
             action = ixf_member_data.action
-            if action == "delete" or action == "modify":
-                if ixf_member_data.netixlan is not None:
-                    self.actions_taken["delete"].append(
-                        {
-                            "netixlan": ixf_member_data.netixlan,
-                            "version": reversion.models.Version.objects.get_for_object(
-                                ixf_member_data.netixlan
-                            ).first(),
-                            "reason": "Stale netixlan removed due to long-standing unsolved data conflict (github#1271)",
-                        }
-                    )
-                    ixf_member_data.netixlan.delete()
-                ixf_member_data.delete()
+
+            # stale networks are only indicated by delete proposals
+
+            if action != "delete":
+                continue
+
+            # a delete proposal can be part of a modify proposal
+            # when the proposal is to combine ipv4 + ipv6 to the same
+            # netixlan object. in this case we do not want to remove
+            # as part of stale removal, since the same asn still owns
+            # both ips and is present at the ix.
+
+            if ixf_member_data.requirement_of_id:
+                continue
+
+            if ixf_member_data.netixlan is not None and ixf_member_data.netixlan.id:
+                self.actions_taken["delete"].append(
+                    {
+                        "netixlan": ixf_member_data.netixlan,
+                        "version": reversion.models.Version.objects.get_for_object(
+                            ixf_member_data.netixlan
+                        ).first(),
+                        "reason": "Stale netixlan removed due to long-standing unsolved data conflict (github#1271)",
+                    }
+                )
+                ixf_member_data.netixlan.delete()
+            ixf_member_data.delete(hard=True)
 
     def ticket_proposal(self, ixf_member_data, typ, ac, ix, net, context, action):
         """

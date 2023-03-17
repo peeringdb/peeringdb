@@ -1043,6 +1043,18 @@ set_option("IXF_IMPORTER_DAYS_UNTIL_TICKET", 6)
 # regardless of ixf-automation status on the network (#1271)
 set_option("IXF_REMOVE_STALE_NETIXLAN_PERIOD", 90)
 
+# number of notifications required to the network before
+# stale removal period is started (#1271)
+set_option("IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT", 3)
+
+# number of days between repeated notification of stale 
+# #netixlan data (#1271)
+set_option("IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD", 30)
+
+# on / off toggle for automatic stale netixlan removal
+# through ix-f (#1271)
+set_option("IXF_REMOVE_STALE_NETIXLAN", True)
+
 # clean up data change notification queue by discarding
 # entries older than this (7 days)
 set_option("DATA_CHANGE_NOTIFY_MAX_AGE", 86400 * 7)
