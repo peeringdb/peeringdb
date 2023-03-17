@@ -1047,7 +1047,7 @@ set_option("IXF_REMOVE_STALE_NETIXLAN_PERIOD", 90)
 # stale removal period is started (#1271)
 set_option("IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT", 3)
 
-# number of days between repeated notification of stale 
+# number of days between repeated notification of stale
 # #netixlan data (#1271)
 set_option("IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD", 30)
 

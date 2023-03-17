@@ -31,7 +31,6 @@ import peeringdb_server.deskpro as deskpro
 from peeringdb_server.models import (
     DataChangeNotificationQueue,
     DeskProTicket,
-    EnvironmentSetting,
     IXFImportEmail,
     IXFMemberData,
     IXLanIXFMemberImportAttempt,
@@ -1867,7 +1866,7 @@ class Importer:
         * IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD - days to wait between re-notification
         * IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT - limits number of total re-notifications
         """
-    
+
         # global off switch
 
         if not settings.IXF_REMOVE_STALE_NETIXLAN:
@@ -1882,13 +1881,15 @@ class Importer:
         max_age = now - datetime.timedelta(days=notify_period)
 
         qset = IXFMemberData.objects.filter(
-            Q(extra_notifications_net_date__lte=max_age) | Q(extra_notifications_net_date__isnull=True), created__lte=max_age)
+            Q(extra_notifications_net_date__lte=max_age)
+            | Q(extra_notifications_net_date__isnull=True),
+            created__lte=max_age,
+        )
         qset = qset.exclude(extra_notifications_net_num__gte=notify_max)
-       
+
         print("stale", qset.count(), max_age)
 
         for ixf_member_data in qset:
-
             # stale networks are only indicated by `delete` proposals
 
             if ixf_member_data.action != "delete":
@@ -1909,7 +1910,6 @@ class Importer:
             self.queue_notification(
                 ixf_member_data, "remove", ac=False, ix=False, net=True
             )
-        
 
     @reversion.create_revision()
     def cleanup_aged_proposals(self):
@@ -1944,10 +1944,8 @@ class Importer:
             max_age = now - datetime.timedelta(days=cleanup_days)
             print("max age", max_age)
             qset = qset.filter(created__lte=max_age)
-        
 
         for ixf_member_data in qset:
-
             action = ixf_member_data.action
 
             # stale networks are only indicated by delete proposals

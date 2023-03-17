@@ -154,13 +154,13 @@ def test_resolve_local_ixf_stale_netixlan(entities, use_ip, save):
     Netixlan exists, remote data does not match the netixlan, and there is a local-ixf
     entry that also matches all the data.
 
-    The local-ixf entry is past the allowed proposal age, so both it and the 
+    The local-ixf entry is past the allowed proposal age, so both it and the
     netixlan should be deleted.
     """
     data = setup_test_data("ixf.member.7")
     network = entities["net"]["UPDATE_DISABLED_2"]
     network_o = entities["net"]["UPDATE_ENABLED"]
-    
+
     ixlan = entities["ixlan"][0]
 
     netixlan = NetworkIXLan.objects.create(
@@ -195,7 +195,9 @@ def test_resolve_local_ixf_stale_netixlan(entities, use_ip, save):
 
     assert IXFMemberData.objects.count() == 1
 
-    ixm.created = ixm.created - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD+1)
+    ixm.created = ixm.created - datetime.timedelta(
+        days=settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD + 1
+    )
     ixm.save()
 
     assert ixm.action == "delete"
@@ -215,26 +217,24 @@ def test_resolve_local_ixf_stale_netixlan(entities, use_ip, save):
 
     netixlan.refresh_from_db()
     assert netixlan.status == "ok"
-    
+
     # ixf member data entry should have logged one notification
     # to the network.
-    
+
     ixm.refresh_from_db()
     assert ixm.extra_notifications_net_num == 1
     assert ixm.extra_notifications_net_date is not None
 
     if not network_o.ipv4_support or not network_o.ipv6_support:
-
         # this initial ixf import will send two additional emails (one to the net, one to the ix)
         # due to protocol mismatch which we need to account for here - this is due to the test
-        # data which is not otherwise relevant to this test, but 
+        # data which is not otherwise relevant to this test, but
         # needs to be there for the ix-f import to be valid
         #
         # then we also expect one re-notificaiton email about the stale network
 
         assert IXFImportEmail.objects.count() == 3
     else:
-
         # otherwise expect one re-notification email about the stale network
 
         assert IXFImportEmail.objects.count() == 1
@@ -263,9 +263,8 @@ def test_resolve_local_ixf_stale_netixlan(entities, use_ip, save):
     importer.notify_proposals()
     assert_idempotent(importer, ixlan, data)
 
-@override_settings(
-    IXF_REMOVE_STALE_NETIXLAN = False
-)
+
+@override_settings(IXF_REMOVE_STALE_NETIXLAN=False)
 @pytest.mark.django_db
 def test_resolve_local_ixf_stale_netixlan_removal_disabled(entities, save):
     """
@@ -275,11 +274,11 @@ def test_resolve_local_ixf_stale_netixlan_removal_disabled(entities, save):
     The local-ixf entry is past the allowed proposal age, but IXF_REMOVE_STALE_NETIXLAN
     is disabled, nothing should be deleted.
     """
-    
+
     data = setup_test_data("ixf.member.7")
     network = entities["net"]["UPDATE_DISABLED_2"]
     network_o = entities["net"]["UPDATE_ENABLED"]
-    
+
     ixlan = entities["ixlan"][0]
 
     netixlan = NetworkIXLan.objects.create(
@@ -308,12 +307,14 @@ def test_resolve_local_ixf_stale_netixlan_removal_disabled(entities, save):
         is_rs_peer=True,
         status="ok",
         data="{}",
-        extra_notifications_net_num=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT
+        extra_notifications_net_num=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT,
     )
 
     assert IXFMemberData.objects.count() == 1
 
-    ixm.created = ixm.created - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD+1)
+    ixm.created = ixm.created - datetime.timedelta(
+        days=settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD + 1
+    )
     ixm.save()
 
     assert ixm.action == "delete"
@@ -335,8 +336,7 @@ def test_resolve_local_ixf_stale_netixlan_removal_disabled(entities, save):
 
 
 @override_settings(
-    IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD=10,
-    IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT=2
+    IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD=10, IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT=2
 )
 @pytest.mark.django_db
 def test_resolve_local_ixf_stale_netixlan_renotification(entities, save):
@@ -392,7 +392,9 @@ def test_resolve_local_ixf_stale_netixlan_renotification(entities, save):
 
     # second importer run, firstre-notification after moving the date back
 
-    ixm.created = ixm.created - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD+1)
+    ixm.created = ixm.created - datetime.timedelta(
+        days=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD + 1
+    )
     print("CREATED", ixm.created)
     ixm.save()
 
@@ -416,7 +418,10 @@ def test_resolve_local_ixf_stale_netixlan_renotification(entities, save):
     # fourth importer run, set the notification date back to the past, causing
     # the next notification to be sent
 
-    ixm.extra_notifications_net_date = ixm.extra_notifications_net_date - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD+1)
+    ixm.extra_notifications_net_date = (
+        ixm.extra_notifications_net_date
+        - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD + 1)
+    )
     ixm.save()
 
     IXFImportEmail.objects.all().delete()
@@ -429,7 +434,10 @@ def test_resolve_local_ixf_stale_netixlan_renotification(entities, save):
     # fifth importer run, set the notification date back to the past, but
     # since max notification limit has been reached, no notification is sent
 
-    ixm.extra_notifications_net_date = ixm.extra_notifications_net_date - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD+1)
+    ixm.extra_notifications_net_date = (
+        ixm.extra_notifications_net_date
+        - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD + 1)
+    )
     ixm.save()
 
     IXFImportEmail.objects.all().delete()
