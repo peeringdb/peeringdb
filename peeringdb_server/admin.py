@@ -2310,6 +2310,8 @@ class IXFMemberDataAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin)
         "requirements",
         "requirement_of",
         "requirement_detail",
+        "extra_notifications_net_num",
+        "extra_notifications_net_date",
     )
 
     search_fields = ("asn", "ixlan__id", "ixlan__ix__name", "ipaddr4", "ipaddr6")
@@ -2336,6 +2338,8 @@ class IXFMemberDataAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin)
         "requirement_detail",
         "deskpro_id",
         "deskpro_ref",
+        "extra_notifications_net_num",
+        "extra_notifications_net_date",
     )
 
     actions = [apply_ixf_member_data]

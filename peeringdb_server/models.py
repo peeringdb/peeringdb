@@ -3325,6 +3325,20 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         null=True, blank=True, help_text=_("Ticket id on the DeskPRO side")
     )
 
+    extra_notifications_net_num = models.PositiveIntegerField(
+        default=0,
+        help_text=_(
+            "Indicates how many extra notifications were sent to the network for this proposal. Extra notifications can be sent for stale netixlan entries over time."
+        ),
+    )
+    extra_notifications_net_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "Last time extra notifications were sent to the network for this proposal."
+        ),
+    )
+
     # field names of fields that can receive
     # modifications from ix-f
 
