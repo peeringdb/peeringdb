@@ -312,5 +312,5 @@ def make_page_title_for_advanced_search_result(request):
     Returns a page title to use on the advances search results page
     """
 
-    if request.META.get('QUERY_STRING'):
+    if request.META.get("QUERY_STRING"):
         return f"{request.META['QUERY_STRING']} - PeeringDB search"
