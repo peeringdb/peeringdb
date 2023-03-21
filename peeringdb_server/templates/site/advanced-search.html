@@ -1,5 +1,10 @@
 {% extends "site/base.html" %}
-{% load i18n %}
+{% load i18n util %}
+
+{% block header %}
+{% with page_title=request|make_page_title_for_advanced_search_result %}{{ block.super }}{% endwith %}
+{% endblock %}
+
 {% block content %}
 
 <div class="advanced-search-view">
