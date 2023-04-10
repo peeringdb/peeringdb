@@ -18,6 +18,7 @@ import os
 import re
 import uuid
 
+import googlemaps.exceptions
 import oauth2_provider.views as oauth2_views
 import oauth2_provider.views.application as oauth2_application_views
 import requests
@@ -67,6 +68,7 @@ from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 from ratelimit.decorators import ratelimit
 
+import peeringdb_server.geo
 from peeringdb_server import settings
 from peeringdb_server.api_key_views import load_all_key_permissions
 from peeringdb_server.data_views import BOOL_CHOICE, BOOL_CHOICE_WITH_OPT_OUT
@@ -114,7 +116,14 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.org_admin_views import load_all_user_permissions
 from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
-from peeringdb_server.search import search
+from peeringdb_server.search import (
+    elasticsearch_proximity_entity,
+    get_lat_long_from_search_result,
+    is_valid_latitude,
+    is_valid_longitude,
+    search,
+    search_v2,
+)
 from peeringdb_server.serializers import (
     CampusSerializer,
     CarrierSerializer,
@@ -759,7 +768,15 @@ def view_profile_v1(request):
         perms = Permissions(user)
         for net in user.networks:
             crud = perms.get(net.grainy_namespace)
-            networks.append(dict(id=net.id, name=net.name, asn=net.asn, perms=crud))
+            networks.append(
+                dict(
+                    id=net.id,
+                    name=net.name,
+                    asn=net.asn,
+                    perms=crud,
+                    manage_peering_sessions=perms.get([net, "sessions"]),
+                )
+            )
 
         data["networks"] = networks
 
@@ -2913,25 +2930,55 @@ def request_api_search(request):
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
-def request_search(request):
+def render_search_result(request, version=1):
     """
     Triggered by hitting enter on the main search bar.
     Renders a search result page.
     """
-    q = request.GET.get("q")
+    m = None
 
-    if not q:
-        return HttpResponseRedirect("/")
+    # will hold the entity the distance search is based on, if any (only v2 search)
+    geo = {}
+
+    if version == 2:
+        q = request.GET.getlist("q", [])
+        original_query = " ".join(q) if isinstance(q, list) else q
+        for x in q:
+            m = re.match(r"(asn|as)(\d+)", x.lower())
+
+        process_near_search(q, geo)
+        process_in_search(q, geo)
+
+        if not q and not geo:
+            return HttpResponseRedirect("/")
+    else:
+        q = request.GET.get("q")
+        original_query = " ".join(q) if isinstance(q, list) else q
+        if q:
+            m = re.match(r"(asn|as)(\d+)", q.lower())
+        else:
+            return HttpResponseRedirect("/")
 
     # if the user queried for an asn directly via AS*** or ASN***
     # redirect to the result
-    m = re.match(r"(asn|as)(\d+)", q.lower())
     if m:
         net = Network.objects.filter(asn=m.group(2), status="ok")
         if net.exists() and net.count() == 1:
             return HttpResponseRedirect(f"/net/{net.first().id}")
 
-    result = search(q)
+    incomplete_in_search = geo.pop("incomplete_in_search", False)
+
+    if original_query:
+        if version == 2:
+            result = search_v2(q, geo)
+        else:
+            result = search(q)
+    else:
+        result = {}
+
+    # Feedback message construction
+    query_combined = " ".join(q) if isinstance(q, list) else q
+    proximity_entity = geo.get("proximity_entity")
 
     sponsors = {
         org.id: {"label": sponsorship.label.lower(), "css": sponsorship.css}
@@ -2960,9 +3007,207 @@ def request_search(request):
             "count_net": len(result.get(Network._handleref.tag, [])),
             "count_fac": len(result.get(Facility._handleref.tag, [])),
             "count_org": len(result.get(Organization._handleref.tag, [])),
+            "proximity_entity": proximity_entity,
+            "geo": geo,
+            "query_combined": query_combined,
+            "incomplete_in_search": incomplete_in_search,
+            "search_version": version,
         }
     )
     return HttpResponse(template.render(env, request))
+
+
+def process_near_search(q, geo):
+    """
+    Handles "NEAR" search patterns.
+    Extracts and processes the "NEAR" search patterns from the query string
+    and updates the geo dictionary which includes the geographical search parameters.
+    """
+    for idx, query in enumerate(q):
+        list_of_words = query.split()
+
+        near_idxs = [i for i, w in enumerate(list_of_words) if w.lower() == "near"]
+        for i in near_idxs:
+            handle_coordinate_search(list(list_of_words), i, q, idx, geo)
+
+            if "lat" not in geo:
+                handle_city_country_search(list(list_of_words), i, q, idx, geo)
+
+            if "lat" not in geo:
+                handle_proximity_entity_search(list(list_of_words), i, q, idx, geo)
+
+    return geo
+
+
+def process_in_search(q, geo):
+    """
+    Handles "IN" search patterns.
+    Extracts and processes the "IN" search patterns from the query string
+    and updates the geo dictionary which includes the geographical search parameters.
+    """
+    for idx, query in enumerate(q):
+        list_of_words = query.split()
+
+        in_idxs = [i for i, w in enumerate(list_of_words) if w.lower() == "in"]
+
+        for i in in_idxs:
+            handle_city_country_search(list_of_words, i, q, idx, geo)
+
+    return geo
+
+
+def handle_coordinate_search(list_of_words, idx, q, query_idx, geo):
+    """
+    Handles coordinate search and updates the geo dictionary.
+    """
+    try:
+        next_index = list_of_words[idx + 1]
+        lt_lg = next_index.split(",")
+        if len(lt_lg) in [2, 3]:
+            if is_valid_latitude(lt_lg[0]) and is_valid_longitude(lt_lg[1]):
+                del list_of_words[idx : idx + 2]
+                q[query_idx] = " ".join(list_of_words)
+                lat = lt_lg[0]
+                lon = lt_lg[1]
+                dist = "10km"
+                if len(lt_lg) == 3:
+                    dist = lt_lg[2]
+                geo.update({"lat": lat, "long": lon, "dist": dist})
+                return geo
+        else:
+            raise ValueError()
+    except (IndexError, ValueError):
+        pass
+
+    return geo
+
+
+def handle_proximity_entity_search(list_of_words, idx, q, query_idx, geo):
+    """
+    Handles proximity entity search and updates the geo dictionary.
+
+    Will search for an entity (fac, org etc.) by name and return its lat/lng
+    to `geo` if found. The distance is set to 20km.
+    """
+    try:
+        search_string = " ".join(list_of_words[idx + 1 :])
+        search_result = elasticsearch_proximity_entity(search_string)
+
+        # print("search_result", search_string, search_result)
+        if search_result:
+            coords = get_lat_long_from_search_result(search_result)
+            del list_of_words[idx:]
+
+            if not coords:
+                return geo
+
+            lat, lon = coords
+            proximity_entity = search_result
+
+            q[query_idx] = " ".join(list_of_words)
+            geo.update(
+                {
+                    "lat": lat,
+                    "long": lon,
+                    "dist": "20km",
+                    "proximity_entity": proximity_entity,
+                }
+            )
+            return geo
+    except IndexError:
+        pass
+
+    return geo
+
+
+def handle_city_country_search(list_of_words, idx, q, query_idx, geo):
+    """
+    Handles city and country search and updates the geo dictionary.
+
+    This will send of a request to google maps to geocode the city and set the
+    lat and long to `geo`. The distance is set to 50km.
+    """
+    try:
+        # Find the location and country in the list of words
+        location_words = []
+        i = idx + 1
+        while i < len(list_of_words):
+            if list_of_words[i] in ["near", "in"]:
+                i += 1
+                continue
+
+            location_words.append(list_of_words[i].strip(","))
+            i += 1
+
+        location = " ".join(location_words)
+
+        del list_of_words[idx:i]
+        q[query_idx] = " ".join(list_of_words)
+
+        try:
+            # geo code the location using google
+            gmaps = peeringdb_server.geo.GoogleMaps(
+                dj_settings.GOOGLE_GEOLOC_API_KEY, timeout=5
+            )
+            geocode_result = gmaps.client.geocode(location)
+        except (OSError, googlemaps.exceptions.HTTPError):
+            geocode_result = None
+
+        # print(json.dumps(geocode_result, indent=2))
+
+        if not geocode_result:  # or not "locality" in geocode_result[0]["types"]:
+            # no result, or result isn't a city
+            #
+            # search for country and state can't be done through this as we have
+            # currently no good way to auto define a reasonable distance.
+            #
+            # state and country search is handled directly by matching in our db
+            geo.update({"incomplete_in_search": location})
+            return
+
+        # returns locality, state and country in a dict
+        location_dict = gmaps.build_location_dict(
+            geocode_result[0].get("address_components")
+        )
+
+        # get geo coords fromn google result
+        coords = geocode_result[0].get("geometry").get("location")
+
+        try:
+            dist = gmaps.distance_from_bounds(
+                geocode_result[0].get("geometry").get("bounds")
+            )
+        except TypeError:
+            geo.update({"incomplete_in_search": location})
+            return
+
+        # reasonable city distance
+        # TODO: make this configurable
+        dist = f"{int(dist)}km"
+
+        if location_dict.get("location") and location_dict.get("state"):
+            # when we have a city and a state, we drop the state
+            # because its not needed and may actually reduce result
+            # quality (since it will be compared against the state field we
+            # have in our database)
+            location_dict.pop("state")
+
+        # update geo dict
+        geo.update(location_dict)
+        geo.update({"lat": coords.get("lat"), "long": coords.get("lng"), "dist": dist})
+
+    except IndexError:
+        pass
+
+    return geo
+
+
+def request_search(request):
+    return render_search_result(request, 1)
+
+
+def request_search_v2(request):
+    return render_search_result(request, 2)
 
 
 @transaction.atomic

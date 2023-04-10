@@ -7,6 +7,56 @@
 <div class="view_info left">
 <div class="container">
 
+{% if search_version == 2 %}
+<div class="alert alert-sm alert-info center">
+
+
+  <p>
+    {% blocktrans with feedback="https://forms.gle/TYJgvrCGvyTCiaCY8" q="/search?q="|add:request.GET.q %}
+    You are using our new beta search interface.
+    <a href="{{ q }}">Click here</a> to return to the old interface.
+    <a href="{{ feedback }}">Click here</a> to provide feedback.
+    {% endblocktrans %}
+  </p>
+
+
+</div>
+
+  <!-- Add a new feedback div to display the message -->
+<div class="search-feedback center">
+{% if "location" in geo and "country" in geo %}
+    {% with qc=query_combined location=geo.location country=geo.country dist=geo.dist state=geo.state %}
+        {% trans "Showing results for" %} {{ qc }} {% trans "in" %} {% if location %}{{ location }}, {% endif %}{% if state %}{{ state }}, {% endif %}{{ country }}
+        {% if location %}{% trans "within" %} {{ dist }}{% endif %}
+    {% endwith %}
+{% elif "lat" in geo and "long" in geo %}
+    {% if proximity_entity %}
+        {% with qc=query_combined name=proximity_entity.name ref_tag=proximity_entity.ref_tag id=proximity_entity.id dist=geo.dist%}
+            {% trans "Showing results for" %} {{ qc }} {% trans "near" %} <a href="/{{ ref_tag }}/{{ id }}">{{ name }}</a> [{{ ref_tag }}] {% trans "within" %} {{ dist }}
+        {% endwith %}
+    {% else %}
+        {% with qc=query_combined lat=geo.lat long=geo.long dist=geo.dist %}
+            {% trans "Showing results for" %} {{ qc }} {% trans "near" %} {{ lat }},{{ long }} {% trans "within" %} {{ dist }}
+        {% endwith %}
+    {% endif %}
+{% else %}
+    {% with qc=query_combined %}
+      {% if qc %}
+        {% trans "Showing results for" %} {{ qc }}
+      {% endif %}
+    {% endwith %}
+{% endif %}
+{% if incomplete_in_search %}
+    <p class="small">
+    {% with qc=query_combined %}
+       {% trans "Could not resolve the location you provided: " %}{{ incomplete_in_search }}
+    {% endwith %}
+    </p>
+{% endif %}
+</div>
+
+{% endif %}
+
 <div class="search-result">
   <div class="row">
     <div class="col-md-3 col-sm-12 col-xs-12">

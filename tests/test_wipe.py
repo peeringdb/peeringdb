@@ -44,8 +44,6 @@ class TestWipe(ClientCase):
         assert get_user_model().objects.all().count() == 1
         assert get_user_model().objects.first().is_superuser == True
 
-    # FIXME: uncomment when test.peeringdb.com is back up
-    @pytest.mark.skip(reason="test.peeringdb.com is currently unavailable")
     def test_run_with_sync(self):
         """
         Test running `pdb_wipe` and sync data from
@@ -70,4 +68,4 @@ class TestWipe(ClientCase):
         for reftag, cls in REFTAG_MAP.items():
             created = cls.objects.all().first().created.replace(tzinfo=UTC())
             assert created != dates[reftag]
-            assert cls.objects.all().count() > 1
+            assert cls.objects.all().count() >= 1

@@ -1848,10 +1848,12 @@ this will check the specified user's email addresses against
 the values stored in `email_domains`.
 
 If the user has no email address that falls within the specified
-domain restrictions this will return `None`.
+domain restrictions this will return `[]` and all associated user's email
+addresses in `List`.
 
 If the user has at least one email address that falls within the specified
-domain restreictions this will retun that email address as a `str`
+domain restrictions this will return all restricted email addresses in `List`
+and all associated user's email addresses in `List`.
 
 ---
 #### user_requires_reauth

@@ -1268,7 +1268,9 @@ PeeringDB.InlineSearch = {
     $('#search').keypress(function(e) {
       if(e.which == 13) {
         PeeringDB.InlineSearch.keystrokeTimeout.cancel();
-        window.document.location.href= "/search?q="+$(this).val()
+        let quick_search_path = $("#quick-search").attr("action")
+
+        window.document.location.href= quick_search_path+"?q="+$(this).val()
         e.preventDefault();
       }
     });

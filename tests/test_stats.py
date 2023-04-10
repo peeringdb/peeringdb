@@ -133,6 +133,7 @@ def test_global_stats_cache(db, data_stats_global_cached):
     global_stats = stats()
 
     org = Organization.objects.first()
+
     net = Network.objects.create(org=org, asn=63311, status="ok", name="20C")
 
     global_stats = stats()

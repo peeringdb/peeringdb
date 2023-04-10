@@ -866,6 +866,17 @@ set_option("OAUTH_COOKIE_MAX_AGE", 1800)
 
 AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 
+## Django Elasticsearch DSL
+
+INSTALLED_APPS.append("django_elasticsearch_dsl")
+
+set_from_env("ELASTICSEARCH_HOST", "elasticsearch:9200")
+
+ELASTICSEARCH_DSL = {
+    "default": {"hosts": ELASTICSEARCH_HOST},
+}
+
+ELASTICSEARCH_DSL_INDEX_SETTINGS = {"number_of_shards": 1}
 
 ## Django Rest Framework
 

@@ -14,9 +14,11 @@ import re
 import unidecode
 from django.conf import settings
 from django.db.models import Q
+from elasticsearch import Elasticsearch
 from haystack.inputs import Exact
 from haystack.query import SearchQuerySet
 
+from mainsite.settings import ELASTICSEARCH_HOST
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
@@ -63,6 +65,21 @@ def unaccent(v):
 
 def valid_partial_ipv4_address(ip):
     return all(int(s) >= 0 and int(s) <= 255 for s in ip.split(".") if len(s) > 0)
+
+
+def is_valid_latitude(lat):
+    """Validates a latitude."""
+    return re.match(r"^[-]?((([0-8]?[0-9])\.(\d+))|(90(\.0+)?))$", str(lat)) is not None
+
+
+def is_valid_longitude(long):
+    """Validates a longitude."""
+    return (
+        re.match(
+            r"^[-]?((((1[0-7][0-9])|([0-9]?[0-9]))\.(\d+))|180(\.0+)?)$", str(long)
+        )
+        is not None
+    )
 
 
 def make_asn_query(term):
@@ -175,6 +192,146 @@ def search(term, autocomplete=False):
                 )
 
     # print("done", time.time() - t0)
+
+    return result
+
+
+def get_lat_long_from_search_result(search_result):
+    if search_result is None:
+        return None
+
+    latitude = search_result.get("latitude")
+    longitude = search_result.get("longitude")
+
+    if latitude is not None and longitude is not None:
+        return latitude, longitude
+    else:
+        return None
+
+
+def elasticsearch_proximity_entity(name):
+    es = Elasticsearch(ELASTICSEARCH_HOST)
+
+    body = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "multi_match": {
+                            "query": name,
+                            "fields": ["name", "name_long", "aka"],
+                        }
+                    },
+                    {"exists": {"field": "geocode_coordinates"}},
+                ]
+            }
+        },
+        "size": 1,  # Return only the first match
+    }
+
+    index = ["fac", "org"]  # Replace this with your desired index or indices
+    search_result = es.search(index=index, body=body)
+
+    # Check if there are any matches and return the first one if available
+    if search_result["hits"]["total"]["value"] > 0:
+        item = search_result["hits"]["hits"][0]
+        item["_source"]["ref_tag"] = item["_index"]
+        item["_source"]["id"] = item["_id"]
+        return item["_source"]
+    else:
+        return None
+
+
+def search_v2(term, geo={}):
+    """
+    Search searchable objects (ixp, network, facility ...) by term on elasticsearch engine.
+
+    Returns result dict.
+    """
+
+    es = Elasticsearch(ELASTICSEARCH_HOST)
+    qs = " ".join([str(elem) for elem in term])
+    term = f"*{' '.join(qs.split())}*"
+    body = {"query": {"bool": {"must": {"query_string": {"query": term}}}}}
+
+    if geo:
+        if is_valid_latitude(geo["lat"]) and is_valid_longitude(geo["long"]):
+            body["query"]["bool"]["filter"] = {
+                "geo_distance": {
+                    "distance": geo["dist"],
+                    "geocode_coordinates": {
+                        "lat": float(geo["lat"]),
+                        "lon": float(geo["long"]),
+                    },
+                }
+            }
+
+    limit = settings.SEARCH_RESULTS_LIMIT
+
+    indexes = ["fac", "ix", "net", "org"]  # Add new index names
+
+    if term and term.strip("*").split(" ")[0] in indexes:
+        ref_tag = term.strip("*").split(" ")[0]
+        indexes = [ref_tag]
+        term = term.replace(f"*{ref_tag}", "").strip()
+        if term:
+            body["query"]["bool"]["must"]["query_string"]["query"] = term
+        else:
+            del body["query"]["bool"]["must"]
+
+    search_query = es.search(index=indexes, body=body, size=limit)
+
+    categories = ("fac", "ix", "net", "org")
+    result = {tag: [] for tag in categories}
+    pk_map = {tag: {} for tag in categories}
+
+    # add entries to the result by order of scoring with the
+    # highest scored on top (beginning of list)
+
+    for sq in search_query["hits"]["hits"][:limit]:
+        if geo.get("country"):
+            if not sq["_source"].get("country"):
+                continue
+            if geo["country"] not in sq["_source"].get("country"):
+                continue
+
+        if geo.get("state"):
+            if not sq["_source"].get("state"):
+                continue
+            if geo["state"] not in sq["_source"].get("state"):
+                continue
+
+        if sq["_source"]["status"] == "ok":
+            if sq["_index"] == "net":
+                append_result(
+                    sq["_index"],
+                    sq["_id"],
+                    f"{sq['_source']['name']} ({sq['_source']['asn']})",
+                    sq["_source"]["org"]["id"],
+                    None,
+                    result,
+                    pk_map,
+                )
+            elif sq["_index"] == "org":
+                append_result(
+                    sq["_index"],
+                    sq["_id"],
+                    sq["_source"]["name"],
+                    sq["_id"],
+                    None,
+                    result,
+                    pk_map,
+                )
+            else:
+                append_result(
+                    sq["_index"],
+                    sq["_id"],
+                    sq["_source"]["name"],
+                    sq["_source"]["org"]["id"],
+                    None,
+                    result,
+                    pk_map,
+                )
 
     return result
 

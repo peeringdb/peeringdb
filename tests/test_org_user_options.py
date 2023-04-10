@@ -76,7 +76,10 @@ def test_restrict_emails(reauth_objects):
 
     # no email restriction in place
 
-    assert org.user_meets_email_requirements(user) == user.email
+    email_qs = EmailAddress.objects.filter(user=user).order_by("-verified")
+    email_list = list(email_qs.values_list("email", flat=True))
+
+    assert org.user_meets_email_requirements(user) == ([], email_list)
 
     # test 1: restrict user emails but provide no domains
     # email should not be restricted
@@ -84,7 +87,7 @@ def test_restrict_emails(reauth_objects):
     org.restrict_user_emails = True
     org.save()
 
-    assert org.user_meets_email_requirements(user) == user.email
+    assert org.user_meets_email_requirements(user) == ([], email_list)
 
     # test 2: restrict user emails and provide domains
     # restriction should be in place
@@ -93,21 +96,37 @@ def test_restrict_emails(reauth_objects):
     org.email_domains = "xyz.com"
     org.save()
 
-    assert org.user_meets_email_requirements(user) is None
+    assert org.user_meets_email_requirements(user) == (email_list, [])
 
     # test 3: user meets requirements
     # email matching domain requirements should be returned
 
     EmailAddress.objects.create(user=user, email="user_b@xyz.com", verified=True)
 
-    assert org.user_meets_email_requirements(user) == "user_b@xyz.com"
+    updated_email_qs = EmailAddress.objects.filter(user=user).order_by("-verified")
+    updated_email_list = list(updated_email_qs.values_list("email", flat=True))
+    valid_email_list = list(
+        updated_email_qs.filter(email__endswith="xyz.com").values_list(
+            "email", flat=True
+        )
+    )
+    invalid_email_list = list(
+        updated_email_qs.exclude(email__endswith="xyz.com").values_list(
+            "email", flat=True
+        )
+    )
+
+    assert org.user_meets_email_requirements(user) == (
+        invalid_email_list,
+        valid_email_list,
+    )
 
     # test 4: turn off restrictions again, return users primary email
 
     org.restrict_user_emails = False
     org.save()
 
-    assert org.user_meets_email_requirements(user) == user.email
+    assert org.user_meets_email_requirements(user) == ([], updated_email_list)
 
 
 @pytest.mark.django_db
@@ -122,7 +141,13 @@ def test_restrict_emails_blocks_affiliations(reauth_objects):
     org.email_domains = "xyz.com"
     org.save()
 
-    assert org.user_meets_email_requirements(user) is None
+    email_list = list(
+        EmailAddress.objects.filter(user=user)
+        .order_by("-verified")
+        .values_list("email", flat=True)
+    )
+
+    assert org.user_meets_email_requirements(user) == (email_list, [])
 
     client.post("/affiliate-to-org", data={"asn": 63311})
 
