@@ -108,7 +108,7 @@ class Command(BaseCommand):
         self.log("info", "Regnerating cache files to '%s'" % settings.API_CACHE_ROOT)
         self.log(
             "info",
-            "Caching depths {} for timestamp: {}".format(str(depths), str(dtstr)),
+            f"Caching depths {str(depths)} for timestamp: {str(dtstr)}",
         )
         rf = APIRequestFactory()
         renderer = MetaJSONRenderer()

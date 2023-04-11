@@ -1,6 +1,5 @@
-{% load util %}
-{% load i18n %}
-<div id="search-result">
+{% load util i18n static %}
+<div id="search-result" data-campus-icon-path="{% static "campus.svg" %}">
   <div class="row">
     <div class="col-md-3 col-sm-12 col-xs-12">
       <div class="view_title">{% trans "Exchanges" %} (<span id="search-result-length-{{'InternetExchange'|ref_tag}}"></span>)</div>

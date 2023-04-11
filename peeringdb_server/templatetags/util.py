@@ -314,3 +314,43 @@ def make_page_title_for_advanced_search_result(request):
 
     if request.META.get("QUERY_STRING"):
         return f"{request.META['QUERY_STRING']} - PeeringDB search"
+
+
+@register.filter
+def social_media_link(identifier, service):
+    """
+    Takes a sociail media identifier (service user name or url) and
+    renders the service url
+
+    For `website` it will just render a html link with the url as is, for services
+
+    For the services facebook, twitter, instagram, linkedIn and tiktok
+    it will render a html link to the url to the service.
+
+    Arguments:
+    - identifier (str): The identifier to render (url or username relevant to the service)
+    - service (str): The service to render the identifier for
+    """
+
+    if service == "website":
+        return mark_safe(f'<a href="{identifier}">{identifier}</a>')
+    if service == "facebook":
+        return mark_safe(
+            f'<a href="https://www.facebook.com/{identifier}">{identifier}</a>'
+        )
+    if service == "twitter":
+        return mark_safe(f'<a href="https://twitter.com/{identifier}">{identifier}</a>')
+    if service == "instagram":
+        return mark_safe(
+            f'<a href="https://www.instagram.com/{identifier}">{identifier}</a>'
+        )
+    if service == "linkedin":
+        return mark_safe(
+            f'<a href="https://www.linkedin.com/company/{identifier}">{identifier}</a>'
+        )
+    if service == "tiktok":
+        return mark_safe(
+            f'<a href="https://www.tiktok.com/@{identifier}">{identifier}</a>'
+        )
+
+    return identifier

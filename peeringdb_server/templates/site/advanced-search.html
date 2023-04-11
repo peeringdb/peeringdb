@@ -1,5 +1,5 @@
 {% extends "site/base.html" %}
-{% load i18n util %}
+{% load i18n util static %}
 
 {% block header %}
 {% with page_title=request|make_page_title_for_advanced_search_result %}{{ block.super }}{% endwith %}
@@ -7,7 +7,7 @@
 
 {% block content %}
 
-<div class="advanced-search-view">
+<div class="advanced-search-view" data-campus-icon-path="{% static "campus.svg" %}">
   <ul class="nav nav-tabs" role="tablist">
     <li role="presentation">
       <a href="#ix" aria-controls="ix" role="tab" data-bs-toggle="tab" class="{% if request.GET.reftag == "ix" or not request.GET.reftag %}active{% else %}inactive{% endif %}">{% trans "Exchanges" %}</a>
@@ -118,7 +118,9 @@
     };
 
     twentyc.data.load("enum/traffic", {callback:function() {
-      twentyc.data.load("sponsors", {callback:run_search});
+      twentyc.data.load("sponsors", {callback:function() {
+        twentyc.data.load("campus_facilities", {callback:run_search})
+      }});
     }});
 
 

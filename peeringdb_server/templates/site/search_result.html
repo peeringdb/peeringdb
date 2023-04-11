@@ -1,5 +1,4 @@
-{% load util %}
-{% load i18n %}
+{% load util i18n static %}
 {% with page_title=request|make_page_title_for_search_result %}
 {% include 'site/header.html' %}
 {% endwith %}
@@ -41,7 +40,7 @@
       <div class="view_title">{% trans "Facilities" %} ({{ count_fac }})</div>
       {% for row in search_fac %}
       <div class="result_row">
-        <a href="/{{'Facility'|ref_tag}}/{{row.id}}">{{row.name}}</a>
+        <a href="/{{'Facility'|ref_tag}}/{{row.id}}">{{row.name}}</a>{% if row.campus %}<span class="icon muted"><a href="/campus/{{ row.campus }}"><img src="{% static "campus.svg" %}"></a></span>{% endif %}
         {% if row.sponsorship %}
         <a href="/sponsors" class="sponsor {{ row.sponsorship.css }}">{{ row.sponsorship.label }} {% trans "sponsor" %}</a>
         {% endif %}

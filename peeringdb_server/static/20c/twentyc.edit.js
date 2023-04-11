@@ -270,9 +270,12 @@ twentyc.editable.action.register(
         }
       });
 
-      if(changed || container.data("edit-always-submit") == "yes"){
+      if(changed || container.data("edit-always-submit") == "yes" || container.data("edit-changed") == "yes"){
+
+
         $(target).on("success", function(ev, data) {
           me.signal_success(container, data);
+          container.data("edit-changed", null);
         });
         $(target).on("error", function(ev, error) {
           me.signal_error(container, error);

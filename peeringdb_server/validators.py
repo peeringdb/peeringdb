@@ -7,8 +7,9 @@ import re
 import phonenumbers
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import validate_email
+from django.core.validators import URLValidator, validate_email
 from django.utils.translation import ugettext_lazy as _
+from schema import Schema
 
 import peeringdb_server.models
 from peeringdb_server.inet import IRR_SOURCE, network_is_pdb_valid
@@ -391,3 +392,58 @@ def validate_api_rate(value):
                 "Invalid setting! Acceptable value is a number followed by one of the following: minute, hour, seconds, day, week, month, year. eg (10/minute, 1/hour, 5/day, 1/week, 1/month, 1/year)"
             )
         )
+
+
+def validate_social_media(value):
+    """
+    Validates a social media value
+
+    Will raise a ValidationError on failure
+
+    Arguments:
+
+    - value(`dict`)
+
+    Returns:
+
+    - validated value (`dict`)
+    """
+    if value:
+        schema = Schema([{"service": str, "identifier": str}])
+        try:
+            schema.validate(value)
+        except Exception:
+            raise ValidationError(_("Malformed social media data."))
+        service = [sc.get("service") for sc in value]
+        if not len(set(service)) == len(service):
+            raise ValidationError(_("Duplicate social media services set."))
+        for data in value:
+            service = data.get("service")
+            identifier = data.get("identifier")
+            if service == "":
+                raise ValidationError(_("Service should not be empty!"))
+            elif identifier == "":
+                raise ValidationError(_("Identifier should not be empty!"))
+            if service in ["website"]:
+                # validate URL
+                try:
+                    URLValidator(identifier)
+                except Exception:
+                    raise ValidationError(
+                        _("Invalid {service} URL!").format(service=service)
+                    )
+            elif service in ["instagram", "twitter", "tiktok", "facebook", "linkedin"]:
+                # validate username
+                regex = r"^(?=.{4,32}$)(?![.-])(?!.*[.]{2})[a-zA-Z0-9._]+(?<![.])$"
+                matches = re.search(regex, identifier)
+                if not matches:
+                    raise ValidationError(
+                        _("Invalid {service} username!").format(service=service)
+                    )
+            elif not service:
+                # service can't be None and empty.
+                raise ValidationError(_("Invalid service!"))
+            elif not identifier:
+                # identifier can't be None and empty.
+                raise ValidationError(_("Invalid identifier!"))
+    return value
