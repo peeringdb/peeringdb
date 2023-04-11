@@ -83,8 +83,21 @@ class Command(BaseCommand):
         # settings.USE_TZ = True
         db_settings = settings.DATABASES.get("default")
 
+        sync_options = {"url": options.get("url")}
+
+        # allow authentication for the sync (set as env vars)
+        if settings.PEERINGDB_SYNC_API_KEY:
+            sync_options["api_key"] = settings.PEERINGDB_SYNC_API_KEY
+        elif settings.PEERINGDB_SYNC_USERNAME and settings.PEERINGDB_SYNC_PASSWORD:
+            sync_options["user"] = settings.PEERINGDB_SYNC_USERNAME
+            sync_options["password"] = settings.PEERINGDB_SYNC_PASSWORD
+        else:
+            print(
+                "No authentication configured for sync, using anonymous access - this may cause rate limiting issues. Set PEERINGDB_SYNC_API_KEY or PEERINGDB_SYNC_USERNAME and PEERINGDB_SYNC_PASSWORD to configure authentication."
+            )
+
         config = {
-            "sync": {"url": options.get("url")},
+            "sync": sync_options,
             "orm": {
                 "secret_key": settings.SECRET_KEY,
                 "backend": "peeringdb_server",
@@ -111,6 +124,9 @@ class Command(BaseCommand):
         ]
 
         SUPPORTED_BACKENDS["peeringdb_server"] = "peeringdb_server.client_adaptor"
+
+        # disable validation of parent status during sync
+        settings.DATA_QUALITY_VALIDATE_PARENT_STATUS = False
 
         client = Client(config)
         client.update_all(resource.all_resources(), since=None)

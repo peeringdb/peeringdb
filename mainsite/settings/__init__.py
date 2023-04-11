@@ -396,6 +396,11 @@ set_option("DATA_QUALITY_MIN_SPEED", 100)
 # maximum value to allow for speed on an netixlan (currently 5Tbit)
 set_option("DATA_QUALITY_MAX_SPEED", 5000000)
 
+# validate parent status when saving objects (e.g., ensure an active object cannot have a deleted parent)
+# this SHOULD BE ENABLED in 99% of cases
+# developers may disable before running pdb_load if the sync source has broken parent -> child status relationships
+set_option("DATA_QUALITY_VALIDATE_PARENT_STATUS", True)
+
 set_option(
     "RATELIMITS",
     {
@@ -1276,5 +1281,12 @@ set_option("PERIODIC_REAUTH_ENABLED", True)
 
 # Maximum amount of email addresses allowed per user
 set_option("USER_MAX_EMAIL_ADDRESSES", 5)
+
+# Authentication settings to use when syncing via pdb_load
+set_option("PEERINGDB_SYNC_USERNAME", "")
+set_option("PEERINGDB_SYNC_PASSWORD", "")
+
+# If the api key is specified it will be used over the username and password
+set_option("PEERINGDB_SYNC_API_KEY", "")
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

@@ -2533,6 +2533,35 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
 
 
 @pytest.mark.django_db
+def test_notify_duplicate_ip(entities, save):
+    data = setup_test_data("ixf.member.dupe.ip")
+    ixlan = entities["ixlan"][0]
+    start = datetime.datetime.now(datetime.timezone.utc)
+
+    importer = ixf.Importer()
+    data = importer.sanitize(data)
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    assert importer.update(ixlan, data=data) == False
+    importer.notify_proposals()
+
+    assert IXFMemberData.objects.count() == 0
+    assert IXFImportEmail.objects.count() == 1
+    ERROR_MESSAGE = data.get("pdb_error")
+    assert "assigned to more than one distinct connection" in ERROR_MESSAGE
+    assert importer.ixlan.ixf_ixp_import_error_notified > start
+    assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
+    assert (
+        ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
+    )
+
+    # Test idempotent
+    assert_idempotent(importer, ixlan, data)
+
+
+@pytest.mark.django_db
 def test_mark_invalid_multiple_vlans(entities, save):
     """
     The IX-F data contains multiple vlans for prefixes specified

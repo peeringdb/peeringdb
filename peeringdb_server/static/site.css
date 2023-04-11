@@ -1702,3 +1702,23 @@ div.stats_row {
   white-space: nowrap;
   clear: both;
 }
+
+.muted {
+  opacity: 0.666;
+}
+
+.advanced-search-view .results .icon img,
+#search-result .icon img,
+.search-result .icon img {
+  height: 16px;
+  vertical-align: middle;
+  margin-left: 5px;
+}
+
+
+.remove-inline-element {
+  left: -20px;
+  top: 6px;
+  position: absolute;
+  border: 1.2px solid rgb(75, 96, 99);
+}

@@ -28,6 +28,7 @@ from peeringdb_server.validators import (
     validate_irr_as_set,
     validate_phonenumber,
     validate_prefix_overlap,
+    validate_social_media,
 )
 from tests.test_ixf_member_import_protocol import setup_test_data
 
@@ -778,3 +779,98 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
     with pytest.raises(Exception) as excinfo:
         real_peer.full_clean()
     assert "IP already exists" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    "value,validated",
+    [
+        # success validation
+        (
+            [
+                {"service": "website", "identifier": "https://www.example.com"},
+                {"service": "twitter", "identifier": "unknown12"},
+            ],
+            [
+                {"service": "website", "identifier": "https://www.example.com"},
+                {"service": "twitter", "identifier": "unknown12"},
+            ],
+        ),
+        (
+            [
+                {"service": "instagram", "identifier": "john__doe_"},
+                {"service": "tiktok", "identifier": "unknown_12"},
+            ],
+            [
+                {"service": "instagram", "identifier": "john__doe_"},
+                {"service": "tiktok", "identifier": "unknown_12"},
+            ],
+        ),
+        # fail validation
+        (
+            [
+                {"service": "website", "identifier": "https://www.example.com"},
+                {"service": "twitter", "identifier": "unknown11.-"},
+            ],
+            False,
+        ),
+        ([{"service": "instagram", "identifier": "john__doe_*"}], False),
+        (
+            [
+                {"service": "website", "identifier": ""},
+                {"service": "twitter", "identifier": "unknown"},
+            ],
+            False,
+        ),
+        (
+            [
+                {"service": "website", "identifier": "https://www.example.com"},
+                {"service": "", "identifier": "unknown"},
+            ],
+            False,
+        ),
+        (
+            [
+                {"service": "website", "identifier": None},
+                {"service": "twitter", "identifier": "unknown"},
+            ],
+            False,
+        ),
+        (
+            [
+                {"service": "website", "identifier": "https://www.example.com"},
+                {"service": None, "identifier": "unknown"},
+            ],
+            False,
+        ),
+        (
+            [
+                {"service": "website", "identifier": "https://www.example.com"},
+                {"service": "website", "identifier": "https://www.unknown.com"},
+            ],
+            False,
+        ),
+        (
+            [
+                {"service": "website", "identifier": "https://www.example.com"},
+                {"foo": "bar"},
+            ],
+            False,
+        ),
+        (
+            {
+                "service": {
+                    "service": "website",
+                    "identifier": "https://www.example.com",
+                },
+            },
+            False,
+        ),
+    ],
+)
+@pytest.mark.django_db
+def test_validate_ssocial_media(value, validated):
+    if not validated:
+        with pytest.raises(ValidationError):
+            validate_social_media(value)
+    else:
+        assert validate_social_media(value) == validated

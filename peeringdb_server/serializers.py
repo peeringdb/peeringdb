@@ -31,7 +31,7 @@ from django_grainy.rest import PermissionDenied
 # from drf_toolbox import serializers
 from django_handleref.rest.serializers import HandleRefSerializer
 from django_inet.rest import IPAddressField, IPNetworkField
-from django_peeringdb.const import AVAILABLE_VOLTAGE, MTUS
+from django_peeringdb.const import AVAILABLE_VOLTAGE, MTUS, SOCIAL_MEDIA_SERVICES
 from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -82,6 +82,7 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_poc_visible,
     validate_prefix_overlap,
+    validate_social_media,
     validate_zipcode,
 )
 
@@ -1011,9 +1012,35 @@ class ModelSerializer(serializers.ModelSerializer):
             else:
                 result = super().to_representation(data)
                 result["_grainy"] = data.grainy_namespace
+                self._render_social_media(result)
                 return result
         else:
             return data.id
+
+    def _render_social_media(self, output):
+        """
+        Until v3 the `website` field still drives the website url of the object
+        but we can start rendering in the `social_media` field as well.
+        """
+
+        if "website" in output and "social_media" in output:
+            # if website is not set we dont need to do anything
+
+            if not output["website"]:
+                return
+
+            # replace the social media website item with the object website entry
+
+            for i, item in enumerate(output["social_media"]):
+                if item["service"] == "website":
+                    output["social_media"][i]["identifier"] = output["website"]
+                    return
+
+            # website was not found in social media, so add it
+
+            output["social_media"].append(
+                {"service": "website", "identifier": output["website"]}
+            )
 
     def sub_serializer(self, serializer, data, exclude=None):
         if not exclude:
@@ -1093,7 +1120,10 @@ class ModelSerializer(serializers.ModelSerializer):
         except RestValidationError as exc:
             filters = {}
             for k, v in list(exc.detail.items()):
-                v = v[0]
+                try:
+                    v = v[0]
+                except (KeyError, IndexError):
+                    continue
 
                 # if code is not set on the error detail it's
                 # useless to us
@@ -1439,6 +1469,19 @@ class SpatialSearchMixin:
         return qset
 
 
+class SocialMediaSerializer(serializers.Serializer):
+
+    """
+    Renders the social_media property
+    """
+
+    service = serializers.ChoiceField(choices=SOCIAL_MEDIA_SERVICES)
+    identifier = serializers.CharField()
+
+    class Meta:
+        fields = ["service", "identifier"]
+
+
 # serializers get their own ref_tag in case we want to define different types
 # that aren't one to one with models and serializer turns model into a tuple
 # so always lookup the ref tag from the serializer (in fact, do we even need it
@@ -1466,6 +1509,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
     suggest = serializers.BooleanField(required=False, write_only=True)
 
     website = serializers.URLField()
+    social_media = SocialMediaSerializer(required=False, many=True)
     address1 = serializers.CharField()
     city = serializers.CharField()
     zipcode = serializers.CharField(required=False, allow_blank=True, default="")
@@ -1506,6 +1550,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
                 "aka",
                 "name_long",
                 "website",
+                "social_media",
                 "clli",
                 "rencode",
                 "npanxx",
@@ -1678,6 +1723,8 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
         return self.sub_serializer(OrganizationSerializer, inst.org)
 
     def validate(self, data):
+        social_media = data.get("social_media")
+        validate_social_media(social_media)
         try:
             data["tech_phone"] = validate_phonenumber(
                 data["tech_phone"], data["country"]
@@ -1691,7 +1738,6 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             )
         except ValidationError as exc:
             raise serializers.ValidationError({"sales_phone": exc.message})
-
         try:
             data["zipcode"] = validate_zipcode(data["zipcode"], data["country"])
         except ValidationError as exc:
@@ -1797,6 +1843,8 @@ class CarrierSerializer(ModelSerializer):
 
     org = serializers.SerializerMethodField()
 
+    social_media = SocialMediaSerializer(required=False, many=True)
+
     def validate_create(self, data):
         # we don't want users to be able to create carriers if the parent
         # organization status is pending or deleted
@@ -1816,6 +1864,7 @@ class CarrierSerializer(ModelSerializer):
             "aka",
             "name_long",
             "website",
+            "social_media",
             "notes",
             "carrierfac_set",
         ] + HandleRefSerializer.Meta.fields
@@ -1833,6 +1882,11 @@ class CarrierSerializer(ModelSerializer):
             representation["website"] = data.org.website
 
         return representation
+
+    def validate(self, data):
+        social_media = data.get("social_media")
+        validate_social_media(social_media)
+        return data
 
 
 class InternetExchangeFacilitySerializer(ModelSerializer):
@@ -2405,6 +2459,8 @@ class NetworkSerializer(ModelSerializer):
     rir_status = serializers.CharField(default="", read_only=True)
     rir_status_updated = serializers.DateTimeField(default=None, read_only=True)
 
+    social_media = SocialMediaSerializer(required=False, many=True)
+
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
     class Meta:
@@ -2418,6 +2474,7 @@ class NetworkSerializer(ModelSerializer):
             "aka",
             "name_long",
             "website",
+            "social_media",
             "asn",
             "looking_glass",
             "route_server",
@@ -2658,6 +2715,11 @@ class NetworkSerializer(ModelSerializer):
             return validate_irr_as_set(value)
         else:
             return value
+
+    def validate(self, data):
+        social_media = data.get("social_media")
+        validate_social_media(social_media)
+        return data
 
 
 # Create an Network serializer with no fields
@@ -2905,6 +2967,7 @@ class InternetExchangeSerializer(ModelSerializer):
     ixf_last_import = serializers.DateTimeField(read_only=True)
 
     website = serializers.URLField()
+    social_media = SocialMediaSerializer(required=False, many=True)
     tech_email = serializers.EmailField(required=True)
 
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
@@ -2962,6 +3025,7 @@ class InternetExchangeSerializer(ModelSerializer):
             "proto_multicast",
             "proto_ipv6",
             "website",
+            "social_media",
             "url_stats",
             "tech_email",
             "tech_phone",
@@ -3206,6 +3270,8 @@ class InternetExchangeSerializer(ModelSerializer):
         return inst.derived_proto_unicast
 
     def validate(self, data):
+        social_media = data.get("social_media")
+        validate_social_media(social_media)
         try:
             data["tech_phone"] = validate_phonenumber(
                 data["tech_phone"], data["country"]
@@ -3248,6 +3314,7 @@ class OrganizationSerializer(
 
     latitude = serializers.FloatField(read_only=True)
     longitude = serializers.FloatField(read_only=True)
+    social_media = SocialMediaSerializer(required=False, many=True)
 
     class Meta:  # (AddressSerializer.Meta):
         model = Organization
@@ -3259,6 +3326,7 @@ class OrganizationSerializer(
                 "aka",
                 "name_long",
                 "website",
+                "social_media",
                 "notes",
                 "net_set",
                 "fac_set",
@@ -3298,6 +3366,11 @@ class OrganizationSerializer(
 
         return qset, filters
 
+    def validate(self, data):
+        social_media = data.get("social_media")
+        validate_social_media(social_media)
+        return data
+
 
 class CampusSerializer(SpatialSearchMixin, ModelSerializer):
     """
@@ -3314,6 +3387,7 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
     )
     org_name = serializers.CharField(source="org.name", read_only=True)
     org = serializers.SerializerMethodField()
+    social_media = SocialMediaSerializer(required=False, many=True)
 
     class Meta:
         model = Campus
@@ -3331,6 +3405,7 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
             "notes",
             "aka",
             "website",
+            "social_media",
             "fac_set",
             "country",
             "city",
@@ -3369,6 +3444,11 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
+
+    def validate(self, data):
+        social_media = data.get("social_media")
+        validate_social_media(social_media)
+        return data
 
 
 REFTAG_MAP = {
