@@ -2226,7 +2226,7 @@ twentyc.editable.target.register(
             child = $(val).children()
             label = child[0]
             edit_label = child[1]
-            $(label).html(social_media_labels[idx])
+            $(label).text(social_media_labels[idx])
             $(edit_label).attr('data-edit-value',social_media[idx].service)
             $(edit_label).find("select").each((idxs, el) =>{
               $(el).find('option').each((i, e)=>{
