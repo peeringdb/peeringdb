@@ -1,4 +1,4 @@
-Generated from db_router.py on 2023-02-14 15:33:37.135106
+Generated from db_router.py on 2023-04-12 10:09:44.563425
 
 # peeringdb_server.db_router
 
@@ -27,3 +27,4 @@ TestRouter(peeringdb_server.db_router.DatabaseRouter)
 
 A very basic database router that routes to a different
 read and write db.
+

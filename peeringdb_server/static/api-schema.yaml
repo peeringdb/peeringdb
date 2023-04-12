@@ -981,6 +981,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 clli:
                   type: string
                   maxLength: 18
@@ -1487,6 +1506,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 clli:
                   type: string
                   maxLength: 18
@@ -1942,6 +1980,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 clli:
                   type: string
                   maxLength: 18
@@ -2922,6 +2979,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 notes:
                   type: string
                 carrierfac_set:
@@ -3080,6 +3156,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 notes:
                   type: string
                 carrierfac_set:
@@ -3191,6 +3286,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 notes:
                   type: string
                 carrierfac_set:
@@ -5563,6 +5677,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 url_stats:
                   type: string
                   format: uri
@@ -5626,6 +5759,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       clli:
                         type: string
                         maxLength: 18
@@ -6070,6 +6222,25 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            social_media:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  service:
+                                    enum:
+                                    - website
+                                    - facebook
+                                    - twitter
+                                    - instagram
+                                    - linkedin
+                                    - tiktok
+                                    type: string
+                                  identifier:
+                                    type: string
+                                required:
+                                - service
+                                - identifier
                             asn:
                               type: integer
                               maximum: 4294967295
@@ -7009,6 +7180,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 url_stats:
                   type: string
                   format: uri
@@ -7072,6 +7262,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       clli:
                         type: string
                         maxLength: 18
@@ -7516,6 +7725,25 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            social_media:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  service:
+                                    enum:
+                                    - website
+                                    - facebook
+                                    - twitter
+                                    - instagram
+                                    - linkedin
+                                    - tiktok
+                                    type: string
+                                  identifier:
+                                    type: string
+                                required:
+                                - service
+                                - identifier
                             asn:
                               type: integer
                               maximum: 4294967295
@@ -8402,6 +8630,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 url_stats:
                   type: string
                   format: uri
@@ -8465,6 +8712,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       clli:
                         type: string
                         maxLength: 18
@@ -8909,6 +9175,25 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            social_media:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  service:
+                                    enum:
+                                    - website
+                                    - facebook
+                                    - twitter
+                                    - instagram
+                                    - linkedin
+                                    - tiktok
+                                    type: string
+                                  identifier:
+                                    type: string
+                                required:
+                                - service
+                                - identifier
                             asn:
                               type: integer
                               maximum: 4294967295
@@ -11560,6 +11845,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       asn:
                         type: integer
                         maximum: 4294967295
@@ -13681,6 +13985,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 asn:
                   type: integer
                   maximum: 4294967295
@@ -14177,6 +14500,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 asn:
                   type: integer
                   maximum: 4294967295
@@ -14621,6 +14963,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 asn:
                   type: integer
                   maximum: 4294967295
@@ -19195,6 +19556,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 notes:
                   type: string
                 net_set:
@@ -19224,6 +19604,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       asn:
                         type: integer
                         maximum: 4294967295
@@ -19620,6 +20019,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       clli:
                         type: string
                         maxLength: 18
@@ -20306,6 +20724,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       url_stats:
                         type: string
                         format: uri
@@ -20371,6 +20808,25 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            social_media:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  service:
+                                    enum:
+                                    - website
+                                    - facebook
+                                    - twitter
+                                    - instagram
+                                    - linkedin
+                                    - tiktok
+                                    type: string
+                                  identifier:
+                                    type: string
+                                required:
+                                - service
+                                - identifier
                             clli:
                               type: string
                               maxLength: 18
@@ -20818,6 +21274,25 @@ paths:
                                       .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                                       .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\\
                                       z"
+                                  social_media:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        service:
+                                          enum:
+                                          - website
+                                          - facebook
+                                          - twitter
+                                          - instagram
+                                          - linkedin
+                                          - tiktok
+                                          type: string
+                                        identifier:
+                                          type: string
+                                      required:
+                                      - service
+                                      - identifier
                                   asn:
                                     type: integer
                                     maximum: 4294967295
@@ -21776,6 +22251,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 notes:
                   type: string
                 net_set:
@@ -21805,6 +22299,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       asn:
                         type: integer
                         maximum: 4294967295
@@ -22201,6 +22714,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       clli:
                         type: string
                         maxLength: 18
@@ -22887,6 +23419,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       url_stats:
                         type: string
                         format: uri
@@ -22952,6 +23503,25 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            social_media:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  service:
+                                    enum:
+                                    - website
+                                    - facebook
+                                    - twitter
+                                    - instagram
+                                    - linkedin
+                                    - tiktok
+                                    type: string
+                                  identifier:
+                                    type: string
+                                required:
+                                - service
+                                - identifier
                             clli:
                               type: string
                               maxLength: 18
@@ -23399,6 +23969,25 @@ paths:
                                       .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                                       .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\\
                                       z"
+                                  social_media:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        service:
+                                          enum:
+                                          - website
+                                          - facebook
+                                          - twitter
+                                          - instagram
+                                          - linkedin
+                                          - tiktok
+                                          type: string
+                                        identifier:
+                                          type: string
+                                      required:
+                                      - service
+                                      - identifier
                                   asn:
                                     type: integer
                                     maximum: 4294967295
@@ -24308,6 +24897,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 notes:
                   type: string
                 net_set:
@@ -24337,6 +24945,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       asn:
                         type: integer
                         maximum: 4294967295
@@ -24733,6 +25360,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       clli:
                         type: string
                         maxLength: 18
@@ -25419,6 +26065,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       url_stats:
                         type: string
                         format: uri
@@ -25484,6 +26149,25 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            social_media:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  service:
+                                    enum:
+                                    - website
+                                    - facebook
+                                    - twitter
+                                    - instagram
+                                    - linkedin
+                                    - tiktok
+                                    type: string
+                                  identifier:
+                                    type: string
+                                required:
+                                - service
+                                - identifier
                             clli:
                               type: string
                               maxLength: 18
@@ -25931,6 +26615,25 @@ paths:
                                       .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                                       .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\\
                                       z"
+                                  social_media:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        service:
+                                          enum:
+                                          - website
+                                          - facebook
+                                          - twitter
+                                          - instagram
+                                          - linkedin
+                                          - tiktok
+                                          type: string
+                                        identifier:
+                                          type: string
+                                      required:
+                                      - service
+                                      - identifier
                                   asn:
                                     type: integer
                                     maximum: 4294967295
@@ -27384,6 +28087,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 fac_set:
                   type: array
                   items:
@@ -27413,6 +28135,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       clli:
                         type: string
                         maxLength: 18
@@ -27929,6 +28670,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 fac_set:
                   type: array
                   items:
@@ -27958,6 +28718,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       clli:
                         type: string
                         maxLength: 18
@@ -28427,6 +29206,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 fac_set:
                   type: array
                   items:
@@ -28456,6 +29254,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       clli:
                         type: string
                         maxLength: 18
@@ -31099,6 +31916,25 @@ paths:
                     0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                     .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                     d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                social_media:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        enum:
+                        - website
+                        - facebook
+                        - twitter
+                        - instagram
+                        - linkedin
+                        - tiktok
+                        type: string
+                      identifier:
+                        type: string
+                    required:
+                    - service
+                    - identifier
                 url_stats:
                   type: string
                   format: uri
@@ -31162,6 +31998,25 @@ paths:
                           -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                           -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                           .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              enum:
+                              - website
+                              - facebook
+                              - twitter
+                              - instagram
+                              - linkedin
+                              - tiktok
+                              type: string
+                            identifier:
+                              type: string
+                          required:
+                          - service
+                          - identifier
                       clli:
                         type: string
                         maxLength: 18
@@ -31606,6 +32461,25 @@ paths:
                                 -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF\
                                 -]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                                 d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                            social_media:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  service:
+                                    enum:
+                                    - website
+                                    - facebook
+                                    - twitter
+                                    - instagram
+                                    - linkedin
+                                    - tiktok
+                                    type: string
+                                  identifier:
+                                    type: string
+                                required:
+                                - service
+                                - identifier
                             asn:
                               type: integer
                               maximum: 4294967295
@@ -32345,6 +33219,25 @@ components:
             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
             -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
             s]*)?\\z"
+        social_media:
+          type: array
+          items:
+            type: object
+            properties:
+              service:
+                enum:
+                - website
+                - facebook
+                - twitter
+                - instagram
+                - linkedin
+                - tiktok
+                type: string
+              identifier:
+                type: string
+            required:
+            - service
+            - identifier
         clli:
           type: string
           maxLength: 18
@@ -32755,6 +33648,25 @@ components:
             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
             -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
             s]*)?\\z"
+        social_media:
+          type: array
+          items:
+            type: object
+            properties:
+              service:
+                enum:
+                - website
+                - facebook
+                - twitter
+                - instagram
+                - linkedin
+                - tiktok
+                type: string
+              identifier:
+                type: string
+            required:
+            - service
+            - identifier
         notes:
           type: string
         carrierfac_set:
@@ -33149,6 +34061,25 @@ components:
             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
             -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
             s]*)?\\z"
+        social_media:
+          type: array
+          items:
+            type: object
+            properties:
+              service:
+                enum:
+                - website
+                - facebook
+                - twitter
+                - instagram
+                - linkedin
+                - tiktok
+                type: string
+              identifier:
+                type: string
+            required:
+            - service
+            - identifier
         url_stats:
           type: string
           format: uri
@@ -33212,6 +34143,25 @@ components:
                   0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                   .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                   d{2,5})?(?:[/?#][^\\s]*)?\\z"
+              social_media:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    service:
+                      enum:
+                      - website
+                      - facebook
+                      - twitter
+                      - instagram
+                      - linkedin
+                      - tiktok
+                      type: string
+                    identifier:
+                      type: string
+                  required:
+                  - service
+                  - identifier
               clli:
                 type: string
                 maxLength: 18
@@ -33653,6 +34603,25 @@ components:
                         -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                         -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                    social_media:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          service:
+                            enum:
+                            - website
+                            - facebook
+                            - twitter
+                            - instagram
+                            - linkedin
+                            - tiktok
+                            type: string
+                          identifier:
+                            type: string
+                        required:
+                        - service
+                        - identifier
                     asn:
                       type: integer
                       maximum: 4294967295
@@ -34274,6 +35243,25 @@ components:
                   0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                   .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                   d{2,5})?(?:[/?#][^\\s]*)?\\z"
+              social_media:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    service:
+                      enum:
+                      - website
+                      - facebook
+                      - twitter
+                      - instagram
+                      - linkedin
+                      - tiktok
+                      type: string
+                    identifier:
+                      type: string
+                  required:
+                  - service
+                  - identifier
               asn:
                 type: integer
                 maximum: 4294967295
@@ -34772,6 +35760,25 @@ components:
             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
             -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
             s]*)?\\z"
+        social_media:
+          type: array
+          items:
+            type: object
+            properties:
+              service:
+                enum:
+                - website
+                - facebook
+                - twitter
+                - instagram
+                - linkedin
+                - tiktok
+                type: string
+              identifier:
+                type: string
+            required:
+            - service
+            - identifier
         asn:
           type: integer
           maximum: 4294967295
@@ -35332,6 +36339,25 @@ components:
             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
             -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
             s]*)?\\z"
+        social_media:
+          type: array
+          items:
+            type: object
+            properties:
+              service:
+                enum:
+                - website
+                - facebook
+                - twitter
+                - instagram
+                - linkedin
+                - tiktok
+                type: string
+              identifier:
+                type: string
+            required:
+            - service
+            - identifier
         notes:
           type: string
         net_set:
@@ -35361,6 +36387,25 @@ components:
                   0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                   .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                   d{2,5})?(?:[/?#][^\\s]*)?\\z"
+              social_media:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    service:
+                      enum:
+                      - website
+                      - facebook
+                      - twitter
+                      - instagram
+                      - linkedin
+                      - tiktok
+                      type: string
+                    identifier:
+                      type: string
+                  required:
+                  - service
+                  - identifier
               asn:
                 type: integer
                 maximum: 4294967295
@@ -35755,6 +36800,25 @@ components:
                   0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                   .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                   d{2,5})?(?:[/?#][^\\s]*)?\\z"
+              social_media:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    service:
+                      enum:
+                      - website
+                      - facebook
+                      - twitter
+                      - instagram
+                      - linkedin
+                      - tiktok
+                      type: string
+                    identifier:
+                      type: string
+                  required:
+                  - service
+                  - identifier
               clli:
                 type: string
                 maxLength: 18
@@ -36440,6 +37504,25 @@ components:
                   0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                   .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                   d{2,5})?(?:[/?#][^\\s]*)?\\z"
+              social_media:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    service:
+                      enum:
+                      - website
+                      - facebook
+                      - twitter
+                      - instagram
+                      - linkedin
+                      - tiktok
+                      type: string
+                    identifier:
+                      type: string
+                  required:
+                  - service
+                  - identifier
               url_stats:
                 type: string
                 format: uri
@@ -36503,6 +37586,25 @@ components:
                         -\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1\
                         -\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::\\d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                    social_media:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          service:
+                            enum:
+                            - website
+                            - facebook
+                            - twitter
+                            - instagram
+                            - linkedin
+                            - tiktok
+                            type: string
+                          identifier:
+                            type: string
+                        required:
+                        - service
+                        - identifier
                     clli:
                       type: string
                       maxLength: 18
@@ -36945,6 +38047,25 @@ components:
                               .(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                               -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                               d{2,5})?(?:[/?#][^\\s]*)?\\z"
+                          social_media:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                service:
+                                  enum:
+                                  - website
+                                  - facebook
+                                  - twitter
+                                  - instagram
+                                  - linkedin
+                                  - tiktok
+                                  type: string
+                                identifier:
+                                  type: string
+                              required:
+                              - service
+                              - identifier
                           asn:
                             type: integer
                             maximum: 4294967295
@@ -37809,6 +38930,25 @@ components:
             -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
             -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\d{2,5})?(?:[/?#][^\\\
             s]*)?\\z"
+        social_media:
+          type: array
+          items:
+            type: object
+            properties:
+              service:
+                enum:
+                - website
+                - facebook
+                - twitter
+                - instagram
+                - linkedin
+                - tiktok
+                type: string
+              identifier:
+                type: string
+            required:
+            - service
+            - identifier
         fac_set:
           type: array
           items:
@@ -37838,6 +38978,25 @@ components:
                   0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                   .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::\\\
                   d{2,5})?(?:[/?#][^\\s]*)?\\z"
+              social_media:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    service:
+                      enum:
+                      - website
+                      - facebook
+                      - twitter
+                      - instagram
+                      - linkedin
+                      - tiktok
+                      type: string
+                    identifier:
+                      type: string
+                  required:
+                  - service
+                  - identifier
               clli:
                 type: string
                 maxLength: 18

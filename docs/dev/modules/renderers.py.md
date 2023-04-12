@@ -1,4 +1,4 @@
-Generated from renderers.py on 2023-02-14 15:33:37.171081
+Generated from renderers.py on 2023-04-12 10:09:44.702367
 
 # peeringdb_server.renderers
 
@@ -44,7 +44,7 @@ Does *not* apply JSON's character escaping for non-ascii characters.
 ### Methods
 
 #### render
-`def render(self, data, accepted_media_type=None, renderer_context=None)`
+`def render(self, data, accepted_media_type=None, renderer_context=None, file_name=None)`
 
 Tweak output rendering and pass to parent.
 
@@ -58,3 +58,4 @@ MungeRenderer(rest_framework.renderers.BaseRenderer)
 
 All renderers should extend this class, setting the `media_type`
 and `format` attributes, and override the `.render()` method.
+

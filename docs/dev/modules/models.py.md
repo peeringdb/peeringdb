@@ -1,4 +1,4 @@
-Generated from models.py on 2023-02-14 15:33:37.135106
+Generated from models.py on 2023-04-12 10:09:44.563425
 
 # peeringdb_server.models
 
@@ -406,7 +406,7 @@ Update the value for this setting.
 ## Facility
 
 ```
-Facility(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.FacilityBase, peeringdb_server.models.GeocodeBaseMixin)
+Facility(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.FacilityBase, peeringdb_server.models.GeocodeBaseMixin, peeringdb_server.models.ParentStatusCheckMixin)
 ```
 
 Describes a peeringdb facility.
@@ -499,6 +499,15 @@ Returns queryset of Facility objects that
 are related to the network specified via net_id
 
 Relationship through netfac -> net
+
+---
+
+### Methods
+
+#### save
+`def save(self, *args, **kwargs)`
+
+Save the current instance
 
 ---
 
@@ -1103,7 +1112,7 @@ Returns:
 ## InternetExchange
 
 ```
-InternetExchange(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.InternetExchangeBase)
+InternetExchange(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.InternetExchangeBase, peeringdb_server.models.ParentStatusCheckMixin)
 ```
 
 Describes a peeringdb exchange.
@@ -1303,7 +1312,7 @@ queue.
 ## InternetExchangeFacility
 
 ```
-InternetExchangeFacility(django_peeringdb.models.abstract.InternetExchangeFacilityBase)
+InternetExchangeFacility(django_peeringdb.models.abstract.InternetExchangeFacilityBase, peeringdb_server.models.ParentStatusCheckMixin)
 ```
 
 Describes facility to exchange relationship.
@@ -1346,10 +1355,19 @@ Relationship through facility.
 
 ---
 
+### Methods
+
+#### save
+`def save(self, *args, **kwargs)`
+
+Save the current instance
+
+---
+
 ## Network
 
 ```
-Network(django_peeringdb.models.abstract.NetworkBase)
+Network(django_peeringdb.models.abstract.NetworkBase, peeringdb_server.models.ParentStatusCheckMixin)
 ```
 
 Describes a peeringdb network.
@@ -1464,11 +1482,17 @@ Relationship through netixlan.
 Custom model validation.
 
 ---
+#### save
+`def save(self, *args, **kwargs)`
+
+Save the current instance
+
+---
 
 ## NetworkContact
 
 ```
-NetworkContact(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.ContactBase)
+NetworkContact(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.ContactBase, peeringdb_server.models.ParentStatusCheckMixin)
 ```
 
 Describes a contact point (phone, email etc.) for a network.
@@ -1498,11 +1522,17 @@ by this method will not be associated with a particular field; it will
 have a special-case association with the field defined by NON_FIELD_ERRORS.
 
 ---
+#### save
+`def save(self, *args, **kwargs)`
+
+Save the current instance
+
+---
 
 ## NetworkFacility
 
 ```
-NetworkFacility(django_peeringdb.models.abstract.NetworkFacilityBase)
+NetworkFacility(django_peeringdb.models.abstract.NetworkFacilityBase, peeringdb_server.models.ParentStatusCheckMixin)
 ```
 
 Describes a network <-> facility relationship.
@@ -1556,11 +1586,17 @@ by this method will not be associated with a particular field; it will
 have a special-case association with the field defined by NON_FIELD_ERRORS.
 
 ---
+#### save
+`def save(self, *args, **kwargs)`
+
+Save the current instance
+
+---
 
 ## NetworkIXLan
 
 ```
-NetworkIXLan(django_peeringdb.models.abstract.NetworkIXLanBase)
+NetworkIXLan(django_peeringdb.models.abstract.NetworkIXLanBase, peeringdb_server.models.ParentStatusCheckMixin)
 ```
 
 Describes a network relationship to an IX through an IX Lan.
@@ -1648,6 +1684,12 @@ Returns:
         true if there was a conflict with the ip4 address, second
         boolean is true if there was a conflict with the ip6
         address
+
+---
+#### save
+`def save(self, *args, **kwargs)`
+
+Save the current instance
 
 ---
 #### validate_ip_conflicts
@@ -1874,6 +1916,54 @@ OrganizationMergeEntity(django.db.models.base.Model)
 This holds the entities moved during an
 organization merge stored in OrganizationMerge.
 
+
+## ParentStatusCheckMixin
+
+```
+ParentStatusCheckMixin(builtins.object)
+```
+
+Mixin that implements checks for creating
+/ updating an instance that will raise
+exception under certain criteria
+
+
+### Methods
+
+#### validate_parent_status
+`def validate_parent_status(self)`
+
+Validate parent status against object (child) status
+
+A child cannot be `ok` or `pending` if the parent is `deleted`
+A child cannot be `ok` if the parent is `pending`
+
+Will raise ParentStatus exception on invalid status.
+
+Can be disabled by setting `DATA_QUALITY_VALIDATE_PARENT_STATUS` to False
+
+:return:
+
+---
+
+## ParentStatusException
+
+```
+ParentStatusException(builtins.OSError)
+```
+
+Throw this when an object cannot be created because its parent is
+either status pending or deleted.
+
+
+### Methods
+
+#### \__init__
+`def __init__(self, parent, typ)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
 
 ## Partnership
 

@@ -1,4 +1,4 @@
-Generated from validators.py on 2023-02-14 15:33:37.135106
+Generated from validators.py on 2023-04-12 10:09:44.563425
 
 # peeringdb_server.validators
 
@@ -116,6 +116,22 @@ Arguments:
 
 Raises:
     - ValidationError on failed validation
+
+---
+## validate_social_media
+`def validate_social_media(value)`
+
+Validates a social media value
+
+Will raise a ValidationError on failure
+
+Arguments:
+
+- value(`dict`)
+
+Returns:
+
+- validated value (`dict`)
 
 ---
 ## validate_zipcode

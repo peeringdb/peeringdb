@@ -1,4 +1,4 @@
-Generated from serializers.py on 2023-02-14 15:33:37.135106
+Generated from serializers.py on 2023-04-12 10:09:44.563425
 
 # peeringdb_server.serializers
 
@@ -463,6 +463,13 @@ Will raise a django DoesNotExist error if either ipaddress does not
 exist on a deleted netixlan
 
 ---
+#### _render_social_media
+`def _render_social_media(self, output)`
+
+Until v3 the `website` field still drives the website url of the object
+but we can start rendering in the `social_media` field as well.
+
+---
 #### create
 `def create(self, validated_data, auto_approve=False)`
 
@@ -681,25 +688,6 @@ Currently supports:
 
 ---
 
-## ParentStatusException
-
-```
-ParentStatusException(builtins.OSError)
-```
-
-Throw this when an object cannot be created because its parent is
-either status pending or deleted.
-
-
-### Methods
-
-#### \__init__
-`def __init__(self, parent, typ)`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
----
-
 ## RequestAwareListSerializer
 
 ```
@@ -773,6 +761,15 @@ that should be used for this field.
 
 ---
 
+## SocialMediaSerializer
+
+```
+SocialMediaSerializer(rest_framework.serializers.Serializer)
+```
+
+Renders the social_media property
+
+
 ## SoftRequiredValidator
 
 ```
@@ -810,3 +807,4 @@ with address fields.
 At minimum, a model needs a country and city field, but
 address1, address2, zipcode and state are also considered
 if they exist.
+
