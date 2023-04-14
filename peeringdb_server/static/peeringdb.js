@@ -2740,7 +2740,7 @@ twentyc.editable.input.register(
   "social_media",
   {
     apply : function(value) {
-      service = this.source.parent().find('[data-edit-toggled="view"].view_field').text();
+      let service = this.source.parent().find('[data-edit-toggled="view"].view_field').text().trim();
       this.source.html(PeeringDB.social_media_link(value, service.toLowerCase()));
     }
   },
