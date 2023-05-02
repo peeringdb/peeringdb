@@ -10,6 +10,7 @@ import traceback
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.contrib.auth.models import AnonymousUser
 from rest_framework.test import APIRequestFactory
 
 import peeringdb_server.models as pdbm
@@ -76,6 +77,18 @@ class Command(BaseCommand):
             default="0,1,2,3",
             help="comma separated list of depths to generate",
         )
+        parser.add_argument(
+            "--output-dir",
+            action="store",
+            default=settings.API_CACHE_ROOT,
+            help=f"output files to this directory (default: {settings.API_CACHE_ROOT})"
+        )
+        parser.add_argument(
+            "--public-data",
+            action="store_true",
+            default=False,
+            help="dump public data only as anonymous user",
+        )
 
     def log(self, id, msg):
         if self.log_file:
@@ -89,12 +102,20 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         only = options.get("only", None)
         date = options.get("date", None)
+        output_dir = options.get("output_dir")
         depths = list(map(int, options.get("depths").split(",")))
 
-        # temporary setting to indicate api-cache is being generated
-        # this forced api responses to be generated without permission
-        # checks
-        settings.GENERATING_API_CACHE = True
+        print(f"output_dir: {output_dir}")
+
+        if options.get("public_data"):
+            request_user = AnonymousUser()
+
+        else:
+            request_user = pdbm.User.objects.filter(is_superuser=True).first()
+            # temporary setting to indicate api-cache is being generated
+            # this forced api responses to be generated without permission
+            # checks
+            settings.GENERATING_API_CACHE = True
 
         if only:
             only = only.split(",")
@@ -105,7 +126,7 @@ class Command(BaseCommand):
             dt = datetime.datetime.now()
         dtstr = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
         self.log_file = open(settings.API_CACHE_LOG, "w+")
-        self.log("info", "Regnerating cache files to '%s'" % settings.API_CACHE_ROOT)
+        self.log("info", f"Regnerating cache files to '{output_dir}'")
         self.log(
             "info",
             f"Caching depths {str(depths)} for timestamp: {str(dtstr)}",
@@ -113,9 +134,6 @@ class Command(BaseCommand):
         request_factory = APIRequestFactory()
         renderer = MetaJSONRenderer()
 
-        start_time = time.time()
-
-        request_user = pdbm.User.objects.filter(is_superuser=True).first()
 
         settings.API_DEPTH_ROW_LIMIT = 0
 
@@ -123,6 +141,8 @@ class Command(BaseCommand):
         # CSRF_USE_SESSIONS needs to be disabled as these are not session-enabled requests
 
         settings.CSRF_USE_SESSIONS = False
+
+        start_time = time.time()
 
         try:
             cache = {}
@@ -163,7 +183,8 @@ class Command(BaseCommand):
 
             # move the tmp files to the cache dir
             for id, src_file in list(cache.items()):
-                file_name = os.path.join(settings.API_CACHE_ROOT, "%s.json" % (id))
+                print(f"output_dir: {output_dir}")
+                file_name = os.path.join(output_dir, "%s.json" % (id))
                 shutil.move(src_file, file_name)
 
             # copy the monodepth files to the other depths
@@ -173,8 +194,8 @@ class Command(BaseCommand):
 
                 for depth in [1, 2, 3]:
                     id = f"{tag}-{depth}"
-                    src_file = os.path.join(settings.API_CACHE_ROOT, f"{tag}-0.json")
-                    file_name = os.path.join(settings.API_CACHE_ROOT, f"{id}.json")
+                    src_file = os.path.join(output_dir, f"{tag}-0.json")
+                    file_name = os.path.join(output_dir, f"{id}.json")
                     self.log("info", f"copying {src_file} to {file_name}")
                     shutil.copyfile(src_file, file_name)
 
