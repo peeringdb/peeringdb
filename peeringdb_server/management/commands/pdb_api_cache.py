@@ -110,12 +110,12 @@ class Command(BaseCommand):
             "info",
             f"Caching depths {str(depths)} for timestamp: {str(dtstr)}",
         )
-        rf = APIRequestFactory()
+        request_factory = APIRequestFactory()
         renderer = MetaJSONRenderer()
 
-        t = time.time()
+        start_time = time.time()
 
-        su = pdbm.User.objects.filter(is_superuser=True).first()
+        request_user = pdbm.User.objects.filter(is_superuser=True).first()
 
         settings.API_DEPTH_ROW_LIMIT = 0
 
@@ -139,26 +139,26 @@ class Command(BaseCommand):
 
                     self.log(tag, "generating depth %d" % depth)
                     if depth:
-                        req = rf.get(
+                        request = request_factory.get(
                             "/api/%s?depth=%d&updated__lte=%s&_ctf"
                             % (tag, depth, dtstr)
                         )
                     else:
-                        req = rf.get(f"/api/{tag}?updated__lte={dtstr}&_ctf")
-                    req.user = su
+                        request = request_factory.get(f"/api/{tag}?updated__lte={dtstr}&_ctf")
+                    request.user = request_user
                     vs = viewset.as_view({"get": "list"})
-                    res = vs(req)
+                    response = vs(request)
 
                     id = f"{tag}-{depth}"
                     file_name = os.path.join(tmpdir.name, f"{tag}-{depth}.json")
                     cache[id] = file_name
                     renderer.render(
-                        res.data,
-                        renderer_context={"response": res},
+                        response.data,
+                        renderer_context={"response": response},
                         file_name=file_name,
                     )
 
-                    del res
+                    del response
                     del vs
 
             # move the tmp files to the cache dir
@@ -186,6 +186,6 @@ class Command(BaseCommand):
             tmpdir.cleanup()
             self.log_file.close()
 
-        t2 = time.time()
+        end_time = time.time()
 
-        print("Finished after %.2f seconds" % (t2 - t))
+        print("Finished after %.2f seconds" % (end_time - start_time))
