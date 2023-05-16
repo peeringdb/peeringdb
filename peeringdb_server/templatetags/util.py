@@ -273,8 +273,14 @@ def render_markdown(value):
 
 
 @register.filter
-def org_email(org, user):
+def org_emails(org, user):
     return org.user_meets_email_requirements(user)
+
+
+@register.filter
+def org_restricted_emails(org, user):
+    user_org_emails = org.user_meets_email_requirements(user)
+    return user_org_emails[0]
 
 
 @register.filter

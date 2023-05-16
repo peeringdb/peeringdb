@@ -382,7 +382,10 @@ def uoar_creation(sender, instance, created=False, **kwargs):
         if instance.org_id and instance.org.admin_usergroup.user_set.count() > 0:
             # check if user's email address matches org requirements
             if instance.org.restrict_user_emails:
-                if not instance.org.user_meets_email_requirements(instance.user):
+                user_org_emails = instance.org.user_meets_email_requirements(
+                    instance.user
+                )
+                if user_org_emails[0] and not user_org_emails[1]:
                     instance.deny()
                     return
 

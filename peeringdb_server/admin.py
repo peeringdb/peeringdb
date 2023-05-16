@@ -43,6 +43,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django_grainy.admin import UserPermissionInlineAdmin
 from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_security_keys.models import SecurityKey
 from import_export.admin import ExportMixin
 from rest_framework_api_key.admin import APIKeyModelAdmin
 from rest_framework_api_key.models import APIKey
@@ -809,6 +811,26 @@ class UserOrgAffiliationRequestInline(admin.TabularInline):
     raw_id_fields = ("org",)
     autocomplete_lookup_fields = {
         "fk": ["org"],
+    }
+
+
+class UserDeviceInline(admin.TabularInline):
+    model = TOTPDevice
+    extra = 0
+    verbose_name_plural = _("User has these TOTP devices")
+    raw_id_fields = ("user",)
+    autocomplete_lookup_fields = {
+        "fk": ["user"],
+    }
+
+
+class UserWebauthnSecurityKeyInline(admin.TabularInline):
+    model = SecurityKey
+    extra = 0
+    verbose_name_plural = _("User has these Webauthn Security Keys")
+    raw_id_fields = ("user",)
+    autocomplete_lookup_fields = {
+        "fk": ["user"],
     }
 
 
@@ -1762,7 +1784,11 @@ class UserGroupForm(UserChangeForm):
 
 
 class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin):
-    inlines = (UserOrgAffiliationRequestInline,)
+    inlines = (
+        UserOrgAffiliationRequestInline,
+        UserDeviceInline,
+        UserWebauthnSecurityKeyInline,
+    )
     readonly_fields = (
         "email_status",
         "organizations",

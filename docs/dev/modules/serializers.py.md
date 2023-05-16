@@ -807,4 +807,3 @@ with address fields.
 At minimum, a model needs a country and city field, but
 address1, address2, zipcode and state are also considered
 if they exist.
-

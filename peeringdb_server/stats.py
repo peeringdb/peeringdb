@@ -19,6 +19,14 @@ from peeringdb_server.models import (
 __STATS = {"data": {}, "mod": None}
 
 
+def reset_stats():
+    """
+    Resets global stats to empty. Useful to reset for testing purposes.
+    """
+    __STATS["data"] = {}
+    __STATS["mod"] = None
+
+
 def gen_stats():
     """
     Regenerates global statics to stats.__STATS['data']

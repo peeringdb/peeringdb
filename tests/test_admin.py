@@ -1,6 +1,5 @@
 import datetime
 import json
-import os
 import urllib
 
 import pytest
@@ -9,13 +8,14 @@ from django.contrib.auth.models import Group
 from django.contrib.messages import get_messages
 from django.core.management import call_command
 from django.test import Client, RequestFactory, TestCase
-from django.urls import resolve, reverse
+from django.urls import reverse
 from django.utils import timezone
-from django_grainy.models import GroupPermission, UserPermission
+from django_grainy.models import GroupPermission
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_security_keys.models import SecurityKey
 
 import peeringdb_server.admin as admin
 import peeringdb_server.models as models
-from peeringdb_server import signals
 
 
 class AdminTests(TestCase):
@@ -557,7 +557,7 @@ class AdminTests(TestCase):
 
         # create a verification queue item we can check
         org = models.Organization.objects.all().first()
-        net = models.Network.objects.create(
+        _ = models.Network.objects.create(
             name="Unverified network", org=org, asn=33333, status="pending"
         )
         vqitem = models.VerificationQueueItem.objects.all().first()
@@ -568,7 +568,7 @@ class AdminTests(TestCase):
         models.SponsorshipOrganization.objects.create(sponsorship=sponsorship, org=org)
 
         # create partnership we can check
-        partnership = models.Partnership.objects.create(org=org)
+        _ = models.Partnership.objects.create(org=org)
 
         # create ixlan ix-f import log we can check
         ixfmemberdata = models.IXFMemberData.instantiate(
@@ -580,17 +580,17 @@ class AdminTests(TestCase):
         ixfmemberdata.save()
 
         # create ixlan ix-f import log we can check
-        importlog = models.IXLanIXFMemberImportLog.objects.create(
+        _ = models.IXLanIXFMemberImportLog.objects.create(
             ixlan=models.IXLan.objects.all().first()
         )
 
         # create user to organization affiliation request
-        affil = models.UserOrgAffiliationRequest.objects.create(
+        _ = models.UserOrgAffiliationRequest.objects.create(
             org=org, user=self.readonly_admin
         )
 
         # create command line tool instance
-        cmdtool = models.CommandLineTool.objects.create(
+        _ = models.CommandLineTool.objects.create(
             user=self.readonly_admin, arguments="{}", tool="pdb_renumber_lans"
         )
 
@@ -849,7 +849,7 @@ class AdminTests(TestCase):
         client.force_login(self.admin_user)
 
         user = models.User.objects.first()
-        uoar = models.UserOrgAffiliationRequest.objects.create(
+        _ = models.UserOrgAffiliationRequest.objects.create(
             user=user, asn=1, status="pending"
         )
 
@@ -976,3 +976,46 @@ class AdminTests(TestCase):
 
         # assert that the there are 1 grainy permissions
         assert len(user_permission.grainy_permissions.all()) == 1
+
+    def test_get_user_change_form_with_inline_fields(self):
+        """
+        Test load page for TOTP devices and Webauthn Security Keys inline form fields
+        """
+
+        userchange = get_user_model().objects.create_user(
+            username="user", email="user@localhost", password="user"
+        )
+
+        # create user TOTP devices
+        totpdevice = TOTPDevice.objects.create(user=userchange, name="default")
+        totpdevice.save()
+
+        # create user to Webauthn Security Keys
+        securitykey = SecurityKey.objects.create(
+            name="test",
+            type="security-key",
+            user=userchange,
+            credential_id="1234",
+            credential_public_key="deadbeef",
+        )
+        securitykey.save()
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        url = reverse("admin:peeringdb_server_user_change", args=[userchange.id])
+        response = client.get(url, follow=True)
+
+        assert response.status_code == 200
+        page = response.content.decode()
+        # check the topt device is listed
+        assert (
+            '<h2 class="grp-collapse-handler">User has these TOTP devices</h2>' in page
+        )
+        assert f'name="totpdevice_set-0-key" value="{totpdevice.key}"' in page
+        # check the security key device is listed
+        assert (
+            '<h2 class="grp-collapse-handler">User has these Webauthn Security Keys</h2>'
+            in page
+        )
+        assert 'name="webauthn_security_keys-0-credential_id" value="1234"' in page

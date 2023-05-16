@@ -13,6 +13,8 @@ services:
      - "13306:3306"
     volumes:
       - peeringdb_database:/var/lib/mysql:Z
+    networks:
+      - peeringdb_network
 
   peeringdb:
     user: "0:0"
@@ -22,6 +24,8 @@ services:
       target: tester
     command: runserver 0.0.0.0:8000
     env_file: .env
+    depends_on:
+      - elasticsearch
     environment:
       DATABASE_USER: peeringdb
       DATABASE_PASSWORD: devPASSWORD
@@ -55,6 +59,20 @@ services:
       # directory
       # - ../../../django-peeringdb/src/django_peeringdb:/srv/www.peeringdb.com/venv/lib/python3.9/site-packages/django_peeringdb:Z
 
+    networks:
+      - peeringdb_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+    networks:
+      - peeringdb_network
 
 volumes:
   peeringdb_database:
+
+networks:
+  peeringdb_network:

@@ -34,7 +34,7 @@
         {% elif affiliation_request.status == "denied" %}
         <div class="editable popin alert alert-danger">
           {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was denied {% endblocktrans %}
-          {% if affiliation_request.org and not affiliation_request.org|org_email:affiliation_request.user %}
+          {% if affiliation_request.org and affiliation_request.org|org_restricted_emails:affiliation_request.user %}
             <div>
             {% blocktrans trimmed %}The organization requires you to have a confirmed email address at one of the following domains{% endblocktrans %}
             </div>

@@ -56,6 +56,7 @@ from peeringdb_server.views import (
     request_api_search,
     request_logout,
     request_search,
+    request_search_v2,
     request_translation,
     resend_confirmation_mail,
     unwatch_network,
@@ -106,6 +107,7 @@ urlpatterns = [
     ),
     url(r"^api_search$", request_api_search),
     url(r"^search$", request_search),
+    url(r"^search/v2$", request_search_v2),
     url(r"^advanced_search", view_advanced_search),
     url(r"^logout$", request_logout),
     url(
