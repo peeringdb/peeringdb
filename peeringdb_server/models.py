@@ -1246,30 +1246,49 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
         raise ValueError("Invalid format")
 
-    def user_meets_email_requirements(self, user):
+    def user_meets_email_requirements(self, user) -> tuple[list, list]:
         """
         If organization has `restrict_user_emails` set to true
         this will check the specified user's email addresses against
         the values stored in `email_domains`.
 
         If the user has no email address that falls within the specified
-        domain restrictions this will return `None`.
+        domain restrictions this will return `[]` and all associated user's email
+        addresses in `List`.
 
         If the user has at least one email address that falls within the specified
-        domain restreictions this will retun that email address as a `str`
+        domain restrictions this will return all restricted email addresses in `List`
+        and all associated user's email addresses in `List`.
         """
 
+        email_list = list(
+            EmailAddress.objects.filter(user=user)
+            .order_by("-verified")
+            .values_list("email", flat=True)
+        )
+        if not email_list:
+            if not user.email:
+                # currently its still possible to null a users email address
+                # via django-admin / db and this is done in some edge cases where
+                # user objects are created for internal operational purposes.
+                #
+                # For now just gracefully handle this case and return an empty
+                return ([], [])
+            email_list = [user.email]
+
         if not self.restrict_user_emails or not self.email_domains:
-            return user.email
+            return ([], email_list)
 
         email_domains = self.email_domains.split("\n")
-
-        for email in EmailAddress.objects.filter(user=user).order_by("-verified"):
-            domain = email.email.split("@")[1]
+        valid_email = []
+        invalid_email = []
+        for email in email_list:
+            domain = email.split("@")[1]
             if f"{domain}".lower() in email_domains:
-                return email.email
-
-        return None
+                valid_email.append(email)
+            else:
+                invalid_email.append(email)
+        return (invalid_email, valid_email)
 
     def user_requires_reauth(self, user):
         """
@@ -1285,11 +1304,12 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
 
         # get best email address on the user's account for this org
 
-        email = self.user_meets_email_requirements(user)
+        restricted_mail, email_list = self.user_meets_email_requirements(user)
+        email_list += restricted_mail
 
-        if not email:
-            email = user.email
+        email = email_list[0]
 
+        # will raise an error if not exists
         email = user.emailaddress_set.get(email=email)
 
         # check if the email address has been confirmed within the specified
@@ -4488,7 +4508,10 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
                 return False
             if isinstance(addr, str):
                 addr = ipaddress.ip_address(addr)
-            return addr in ipaddress.ip_network(self.prefix)
+            ip_range = ipaddress.ip_network(self.prefix)
+            if addr in [ip_range[0], ip_range[-1]]:
+                return False
+            return addr in ip_range
         except ipaddress.AddressValueError:
             return False
 

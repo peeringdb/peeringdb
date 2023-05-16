@@ -1268,7 +1268,19 @@ PeeringDB.InlineSearch = {
     $('#search').keypress(function(e) {
       if(e.which == 13) {
         PeeringDB.InlineSearch.keystrokeTimeout.cancel();
-        window.document.location.href= "/search?q="+$(this).val()
+        let quick_search_path = $("#quick-search").attr("action")
+
+        let searchValue = $(this).val();
+
+        // Construct a new URL object
+        let url = new URL(window.document.location.origin + quick_search_path);
+
+        // Set or update the 'q' search parameter
+        url.searchParams.set('q', searchValue);
+
+        // Navigate to the new URL
+        window.document.location.href = url.toString();
+
         e.preventDefault();
       }
     });

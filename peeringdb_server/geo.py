@@ -11,6 +11,7 @@ import structlog
 import unidecode
 from django.core.cache import cache
 from django.utils.translation import gettext_lazy as _
+from geopy.distance import geodesic
 
 from peeringdb_server.context import current_request
 
@@ -89,6 +90,64 @@ class GoogleMaps:
             return result[0].get("geometry").get("location")
         else:
             raise NotFound(_("Error in forward geocode: No results found"))
+
+    def geocode_freeform(self, location):
+        """
+        Return the latitude, longitude field values of the specified
+        location.
+        """
+
+        try:
+            result = self.client.geocode(
+                location,
+            )
+        except (
+            googlemaps.exceptions.HTTPError,
+            googlemaps.exceptions.ApiError,
+            googlemaps.exceptions.TransportError,
+        ) as exc:
+            raise RequestError(exc)
+        except googlemaps.exceptions.Timeout:
+            raise Timeout()
+
+        if not result:
+            raise NotFound()
+
+        return result[0].get("geometry").get("location")
+
+    def build_location_dict(self, address_components):
+        """
+        Returns a dict containing location, state and country name
+        from the address components.
+        """
+
+        locality = ""
+        admin_area_level_1 = ""
+        country = ""
+
+        for component in address_components:
+            if "locality" in component["types"]:
+                locality = component["long_name"]
+            elif "administrative_area_level_1" in component["types"]:
+                admin_area_level_1 = component["short_name"]
+            elif "country" in component["types"]:
+                country = component["short_name"]
+
+        if locality == admin_area_level_1:
+            admin_area_level_1 = None
+
+        return {
+            "location": locality,
+            "state": admin_area_level_1,
+            "country": country,
+        }
+
+    def distance_from_bounds(self, bounds):
+        northeast = bounds["northeast"]
+        southwest = bounds["southwest"]
+        point1 = (northeast["lat"], northeast["lng"])
+        point2 = (southwest["lat"], southwest["lng"])
+        return geodesic(point1, point2).kilometers
 
 
 class Melissa:

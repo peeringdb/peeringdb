@@ -20,7 +20,7 @@ from peeringdb_server.models import (
     NetworkIXLan,
     Organization,
 )
-from peeringdb_server.stats import get_fac_stats, get_ix_stats, stats
+from peeringdb_server.stats import get_fac_stats, get_ix_stats, reset_stats, stats
 
 from .util import ClientCase, Group, override_group_id
 
@@ -113,6 +113,7 @@ def test_generate_for_current_date(db, data_stats_current):
 @pytest.mark.django_db
 def test_global_stats(db, data_stats_global):
     setup_data()
+    reset_stats()
 
     # test_automated_network_count shows that "automated networks" counts
     # networks w allow_ixp_update=True
@@ -129,16 +130,35 @@ def test_global_stats(db, data_stats_global):
 @pytest.mark.django_db
 def test_global_stats_cache(db, data_stats_global_cached):
     setup_data()
+    reset_stats()
+
+    # set testing state of 3 automated networks
+
+    Network.objects.update(allow_ixp_update=False)
+    for network in Network.objects.filter(status="ok")[:3]:
+        network.allow_ixp_update = True
+        network.save()
+
+    # run global stats and cache (automated network = 3)
 
     global_stats = stats()
 
     org = Organization.objects.first()
+
+    # create additional network (automated networks in db = 4)
+
     net = Network.objects.create(org=org, asn=63311, status="ok", name="20C")
+
+    # run global stats using cached result (automated network = 3)
 
     global_stats = stats()
     assert global_stats == data_stats_global_cached.expected
 
+    # sleep until the cache expires
+
     time.sleep(6)
+
+    # run global stats and cache (automated network = 4 and will no longer match)
 
     global_stats = stats()
     assert global_stats != data_stats_global_cached.expected

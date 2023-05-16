@@ -59,6 +59,8 @@ def save_user_permissions(org, user, perms):
             grainy_perms[f"{org.grainy_namespace}.internetexchange"] = permissions
         elif id == "fac":
             grainy_perms[f"{org.grainy_namespace}.facility"] = permissions
+        elif id == "sessions":
+            grainy_perms[f"{org.grainy_namespace}.network.*.sessions"] = permissions
         elif id.find(".") > -1:
             id = id.split(".")
             if id[0] == "net":
@@ -72,6 +74,10 @@ def save_user_permissions(org, user, perms):
                 ] = permissions
             elif id[0] == "fac":
                 grainy_perms[f"{org.grainy_namespace}.facility.{id[1]}"] = permissions
+            elif id[0] == "sessions":
+                grainy_perms[
+                    f"{org.grainy_namespace}.network.{id[1]}.sessions"
+                ] = permissions
 
     # save
     for ns, p in list(grainy_perms.items()):
@@ -117,6 +123,8 @@ def load_entity_permissions(org, entity):
     perms = {}
 
     extract_permission_id(entity_perms, perms, org, org)
+    # extract session for any network
+    extract_permission_id(entity_perms, perms, "sessions", org)
 
     # extract entity's permissioning ids from grainy_namespaces targeting
     # organization's entities
@@ -128,13 +136,14 @@ def load_entity_permissions(org, entity):
     # to THAT specific network)
     for net in org.net_set_active:
         extract_permission_id(entity_perms, perms, net, org)
+        # extract session per network
+        extract_permission_id(entity_perms, perms, net, org, True)
 
-    for net in org.ix_set_active:
-        extract_permission_id(entity_perms, perms, net, org)
+    for ix in org.ix_set_active:
+        extract_permission_id(entity_perms, perms, ix, org)
 
-    for net in org.fac_set_active:
-        extract_permission_id(entity_perms, perms, net, org)
-
+    for fac in org.fac_set_active:
+        extract_permission_id(entity_perms, perms, fac, org)
     return entity_perms, perms
 
 
@@ -149,7 +158,17 @@ def permission_ids(org):
         "net": _("Any Network"),
         "fac": _("Any Facility"),
         "ix": _("Any Exchange"),
+        "sessions": _("Manage peering sessions - Any Network"),
     }
+
+    perms.update(
+        {
+            "sessions.%d"
+            % net.id: _("Manage peering sessions - %(net_name)s")
+            % {"net_name": net.name}
+            for net in org.net_set_active
+        }
+    )
 
     perms.update(
         {
@@ -175,7 +194,7 @@ def permission_ids(org):
     return perms
 
 
-def extract_permission_id(source, dest, entity, org):
+def extract_permission_id(source, dest, entity, org, is_session=False):
     """
     Extract a user's permissioning id for the specified
     entity from source <dict> and store it in dest <dict>.
@@ -186,16 +205,25 @@ def extract_permission_id(source, dest, entity, org):
     Dest should be a dict where permission ids are to be
     exracted to.
 
-    Entity can either be a HandleRef instance or class.
+    Entity can either be a HandleRef instance or class or str.
 
     Org must be an Organization instance that owns the
     entity.
+
+    is_session to handle the peering sessions permission
     """
 
     if isinstance(entity, HandleRefModel):
-        # instance
-        k = entity.grainy_namespace
-        j = "%s.%d" % (entity.ref_tag, entity.id)
+        if not is_session:
+            # instance
+            k = entity.grainy_namespace
+            j = "%s.%d" % (entity.ref_tag, entity.id)
+        else:
+            j = "sessions.%d" % (entity.id)
+            k = f"{entity.grainy_namespace}.sessions"
+    elif entity == "sessions":
+        j = "sessions"
+        k = f"{org.grainy_namespace}.network.*.sessions"
     else:
         # class
         j = entity.handleref.tag

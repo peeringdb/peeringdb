@@ -322,6 +322,7 @@ div.header div.nav div.dropdown img {
   height: 18px;
 }
 
+div.header div.v2-search,
 div.header div.advanced-search {
   padding: 5px;
 }
@@ -334,6 +335,7 @@ img.logo {
 
 /* landing page: search */
 @media (max-width: 991px) {
+  div.header div.v2-search,
   div.header div.advanced-search {
     padding-top: 0px;
     padding-bottom: 0px;
@@ -357,7 +359,8 @@ img.logo {
   div.header div.toolbar {
     padding-bottom: 10px;
   }
-  div.header div.advanced-search {
+  div.header div.advanced-search,
+  div.header div.v2-search {
     font-size: 12px;
     padding: 5px;
   }
