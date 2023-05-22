@@ -1,12 +1,9 @@
 import re
-
-from django_elasticsearch_dsl import Document, fields
-from django_elasticsearch_dsl.registries import registry
-import elasticsearch.helpers.errors as errors
-from elasticsearch import Elasticsearch
-from django.conf import settings
 from types import GeneratorType
 
+import elasticsearch.helpers.errors as errors
+from django_elasticsearch_dsl import Document, fields
+from django_elasticsearch_dsl.registries import registry
 
 from peeringdb_server.models import Facility, InternetExchange, Network, Organization
 
