@@ -36,23 +36,23 @@ class StatusMixin:
     def should_index_object(self, obj):
         return obj.status == "ok"
 
-    def update(self, instance, **kwargs):
+    def update(self, thing, **kwargs):
         """
         Updates the document with the given kwargs.
         """
 
         # if is iterable then we are bulk indexing and can just proceed normally
-        if isinstance(instance, GeneratorType):
-            return super().update(instance, **kwargs)
+        if isinstance(thing, GeneratorType):
+            return super().update(thing, **kwargs)
 
         attempt_delete = False
 
         # otherwise we are updating a single object
-        if instance.status != "ok":
+        if thing.status != "ok":
             kwargs["action"] = "delete"
             attempt_delete = True
         try:
-            return super().update(instance, **kwargs)
+            return super().update(thing, **kwargs)
         except errors.BulkIndexError as e:
             if attempt_delete:
                 pass
