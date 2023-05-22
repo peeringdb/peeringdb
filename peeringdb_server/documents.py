@@ -1,5 +1,7 @@
 import re
+from types import GeneratorType
 
+import elasticsearch.helpers.errors as errors
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 
@@ -21,7 +23,44 @@ def is_valid_longitude(long):
     )
 
 
-class GeocodeMixin:
+class StatusMixin:
+
+    """
+    Ensures only objects with status=ok are indexed
+    and deleted from the index if status is no longer ok
+    """
+
+    def get_queryset(self):
+        return super().get_queryset().filter(status="ok")
+
+    def should_index_object(self, obj):
+        return obj.status == "ok"
+
+    def update(self, thing, **kwargs):
+        """
+        Updates the document with the given kwargs.
+        """
+
+        # if is iterable then we are bulk indexing and can just proceed normally
+        if isinstance(thing, GeneratorType):
+            return super().update(thing, **kwargs)
+
+        attempt_delete = False
+
+        # otherwise we are updating a single object
+        if thing.status != "ok":
+            kwargs["action"] = "delete"
+            attempt_delete = True
+        try:
+            return super().update(thing, **kwargs)
+        except errors.BulkIndexError as e:
+            if attempt_delete:
+                pass
+            else:
+                raise e
+
+
+class GeocodeMixin(StatusMixin):
 
     """
     Cleans up invalid lat/lng values beforee passing
