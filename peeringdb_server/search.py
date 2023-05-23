@@ -270,7 +270,7 @@ def search_v2(term, geo={}):
 
     indexes = ["fac", "ix", "net", "org"]  # Add new index names
 
-    if term and term.strip("*").split(" ")[0] in indexes:
+    if term and term.strip("*").split(" ")[0].lower() in indexes:
         ref_tag = term.strip("*").split(" ")[0]
         indexes = [ref_tag]
         term = term.replace(f"*{ref_tag}", "").strip()
