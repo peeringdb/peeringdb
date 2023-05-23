@@ -9,6 +9,9 @@ from contextlib import contextmanager
 # manner.
 _current_request = contextvars.ContextVar("current_request")
 
+# stores the current incremental update period
+_incremental_update = contextvars.ContextVar("incremental_update")
+
 
 @contextmanager
 def current_request(request=None):
@@ -30,3 +33,18 @@ def current_request(request=None):
     finally:
         if token:
             _current_request.reset(token)
+
+
+@contextmanager
+def incremental_period(max_age=None):
+    if max_age:
+        token = _incremental_update.set(int(max_age))
+    else:
+        token = None
+    try:
+        yield _incremental_update.get()
+    except LookupError:
+        yield None
+    finally:
+        if token:
+            _incremental_update.reset(token)

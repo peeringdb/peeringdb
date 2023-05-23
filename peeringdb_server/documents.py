@@ -1,10 +1,13 @@
 import re
+from datetime import timedelta
 from types import GeneratorType
 
 import elasticsearch.helpers.errors as errors
+from django.utils import timezone
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 
+from peeringdb_server.context import incremental_period
 from peeringdb_server.models import Facility, InternetExchange, Network, Organization
 
 
@@ -31,7 +34,14 @@ class StatusMixin:
     """
 
     def get_queryset(self):
-        return super().get_queryset().filter(status="ok")
+        with incremental_period() as max_age:
+            if max_age is None or max_age < 0:
+                return super().get_queryset().filter(status="ok")
+            else:
+                max_age_dt = timezone.now() - timedelta(seconds=max_age)
+                return (
+                    super().get_queryset().filter(status="ok", updated__gte=max_age_dt)
+                )
 
     def should_index_object(self, obj):
         return obj.status == "ok"
