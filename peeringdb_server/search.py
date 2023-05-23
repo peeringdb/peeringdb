@@ -272,7 +272,7 @@ def search_v2(term, geo={}):
 
     if term and term.strip("*").split(" ")[0].lower() in indexes:
         ref_tag = term.strip("*").split(" ")[0]
-        indexes = [ref_tag]
+        indexes = [ref_tag.lower()]
         term = term.replace(f"*{ref_tag}", "").strip()
         if term:
             body["query"]["bool"]["must"]["query_string"]["query"] = term
