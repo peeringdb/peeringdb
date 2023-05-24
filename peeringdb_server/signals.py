@@ -16,6 +16,7 @@ from math import atan2, cos, radians, sin, sqrt
 
 import django.urls
 import reversion
+import structlog
 from allauth.account.signals import email_confirmed, user_signed_up
 from corsheaders.signals import check_request_enabled
 from django.conf import settings
@@ -28,6 +29,7 @@ from django.template import loader
 from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
+from django_elasticsearch_dsl.signals import RealTimeSignalProcessor
 from django_grainy.models import Group, GroupPermission
 from django_peeringdb.const import REGION_MAPPING
 from django_peeringdb.models.abstract import AddressModel
@@ -634,3 +636,42 @@ def auto_fill_region_continent(sender, instance, **kwargs):
 
 
 pre_save.connect(auto_fill_region_continent, sender=Facility)
+
+
+class ESSilentRealTimeSignalProcessor(RealTimeSignalProcessor):
+    """
+    Elasticsearch real time signal processor that silently handles
+    update errors
+    """
+
+    @property
+    def log(self):
+        if hasattr(self, "_log"):
+            return self._log
+        self._log = structlog.getLogger("django")
+        return self._log
+
+    def handle_save(self, sender, instance, **kwargs):
+        try:
+            super().handle_save(sender, instance, **kwargs)
+        except Exception as e:
+            self.log.error(f"ELASTICSEARCH", action="save", error=e, instance=instance)
+            pass
+
+    def handle_delete(self, sender, instance, **kwargs):
+        try:
+            super().handle_delete(sender, instance, **kwargs)
+        except Exception as e:
+            self.log.error(
+                f"ELASTICSEARCH", action="delete", error=e, instance=instance
+            )
+            pass
+
+    def handle_pre_delete(self, sender, instance, **kwargs):
+        try:
+            return super().handle_pre_delete(sender, instance, **kwargs)
+        except Exception as e:
+            self.log.error(
+                f"ELASTICSEARCH", action="pre_delete", error=e, instance=instance
+            )
+            pass
