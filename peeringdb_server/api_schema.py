@@ -9,7 +9,7 @@ Specify custom fields to be added to the generated open-api schema.
 import re
 
 from django.conf import settings
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from rest_framework.schemas.openapi import AutoSchema
 
 

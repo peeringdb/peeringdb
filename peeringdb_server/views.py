@@ -51,13 +51,14 @@ from django.urls import Resolver404, resolve, reverse
 from django.utils import translation
 from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
 from django_otp.plugins.otp_email.models import EmailDevice
+from django_ratelimit.decorators import ratelimit
 from django_security_keys.ext.two_factor.views import (  # noqa
     DisableView as TwoFactorDisableView,
 )
@@ -66,7 +67,6 @@ from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
-from ratelimit.decorators import ratelimit
 
 import peeringdb_server.geo
 from peeringdb_server import settings
@@ -100,6 +100,7 @@ from peeringdb_server.models import (
     CarrierFacility,
     DataChangeWatchedObject,
     Facility,
+    GeoCoordinateCache,
     InternetExchange,
     InternetExchangeFacility,
     IXFMemberData,
@@ -308,8 +309,12 @@ def view_maintenance(request):
 
 @login_required
 @transaction.atomic
-@ratelimit(key="ip", rate=RATELIMITS["view_request_ownership_GET"], method="GET")
-@ratelimit(key="ip", rate=RATELIMITS["view_request_ownership_POST"], method="POST")
+@ratelimit(
+    key="ip", rate=RATELIMITS["view_request_ownership_GET"], method="GET", block=False
+)
+@ratelimit(
+    key="ip", rate=RATELIMITS["view_request_ownership_POST"], method="POST", block=False
+)
 def view_request_ownership(request):
     """
     Render the form that allows users to request ownership
@@ -432,7 +437,9 @@ def cancel_affiliation_request(request, uoar_id):
 @ensure_csrf_cookie
 @login_required
 @transaction.atomic
-@ratelimit(key="ip", method="POST", rate=RATELIMITS["view_affiliate_to_org_POST"])
+@ratelimit(
+    key="ip", method="POST", rate=RATELIMITS["view_affiliate_to_org_POST"], block=False
+)
 def view_affiliate_to_org(request):
     """
     Allow the user to request affiliation with an organization through
@@ -558,7 +565,7 @@ def view_affiliate_to_org(request):
 @ensure_csrf_cookie
 @login_required
 @transaction.atomic
-@ratelimit(key="ip", rate=RATELIMITS["resend_confirmation_mail"])
+@ratelimit(key="ip", rate=RATELIMITS["resend_confirmation_mail"], block=False)
 def resend_confirmation_mail(request):
     was_limited = getattr(request, "limited", False)
     if was_limited:
@@ -702,7 +709,7 @@ oauth2_views.ApplicationRegistration = ApplicationRegistration
 
 
 class ApplicationDetail(ApplicationOwnerMixin, oauth2_views.ApplicationDetail):
-    @never_cache
+    @method_decorator(never_cache)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
@@ -801,7 +808,7 @@ def view_verify(request):
 @login_required
 @transaction.atomic
 @require_http_methods(["POST"])
-@ratelimit(key="ip", rate=RATELIMITS["view_verify_POST"], method="POST")
+@ratelimit(key="ip", rate=RATELIMITS["view_verify_POST"], method="POST", block=False)
 def profile_add_email(request):
     """
     Allows a user to add an additional email address
@@ -1046,7 +1053,7 @@ def view_username_retrieve(request):
 @ensure_csrf_cookie
 @require_http_methods(["POST"])
 @transaction.atomic
-@ratelimit(key="ip", rate=RATELIMITS["view_username_retrieve_initiate"])
+@ratelimit(key="ip", rate=RATELIMITS["view_username_retrieve_initiate"], block=False)
 def view_username_retrieve_initiate(request):
     """
     Username retrieval initiate view.
@@ -3029,7 +3036,6 @@ def process_near_search(q, geo):
         near_idxs = [i for i, w in enumerate(list_of_words) if w.lower() == "near"]
         for i in near_idxs:
             handle_coordinate_search(list(list_of_words), i, q, idx, geo)
-
             if "lat" not in geo:
                 handle_city_country_search(list(list_of_words), i, q, idx, geo)
 
@@ -3438,7 +3444,7 @@ class LoginView(TwoFactorLoginView):
 
 
 @require_http_methods(["POST"])
-@ratelimit(key="ip", rate=RATELIMITS["request_translation"], method="POST")
+@ratelimit(key="ip", rate=RATELIMITS["request_translation"], method="POST", block=False)
 def request_translation(request, data_type):
     if not request.user.is_authenticated:
         return JsonResponse(

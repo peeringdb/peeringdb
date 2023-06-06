@@ -10,7 +10,7 @@ import django_peeringdb.const as const
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import translation
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from peeringdb_server.models import Network, Organization, Sponsorship
 

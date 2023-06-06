@@ -9,16 +9,16 @@
 
 {% include "site/inline_search.html" %}
 
-<div id="inline-search-container" class="hidden">
+<div id="inline-search-container" class="d-none">
 {% include "site/search_result_frame.html" %}
 </div>
 
 <div id="content">
 <div class="view">
 <div class="row">
-<div class="col-md-1 col-sm-12 col-xs-12"></div>
+<div class="col-md-1 col-sm-12 col-12"></div>
 
-<div class="col-md-10 col-sm-12 col-xs-12">
+<div class="col-md-10 col-sm-12 col-12">
 {% block error %}
 {% if status == 404 %}
 <h1>{% trans "404 - Not Found" %}</h4>
@@ -31,7 +31,7 @@
 <p><a href="/">{% trans "Take me home" %}</a>.</p>
 </div>
 
-<div class="col-md-1 col-sm-12 col-xs-12"></div>
+<div class="col-md-1 col-sm-12 col-12"></div>
 </div>
 </div>
 </div>

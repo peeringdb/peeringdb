@@ -9,10 +9,10 @@
         <div class="editable popin alert alert-warning">
           <div class="row">
             {% if affiliation_request.org.owned %}
-            <div class="col-xs-8 col-md-9">
+            <div class="col-8 col-md-9">
           {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} is pending approval.  {% endblocktrans %}
             </div>
-            <div class="col-xs-4 col-md-3 right">
+            <div class="col-4 col-md-3 right">
               <form
                 action="{% url "cancel-affiliation-request" uoar_id=affiliation_request.id %}"
                 method="POST">
@@ -21,7 +21,7 @@
               </form>
             </div>
             {% else %}
-            <div class="col-xs-12">
+            <div class="col-12">
           {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} is being reviewed by the PeeringDB administrative staff.{% endblocktrans %}
             </div>
             {% endif %}

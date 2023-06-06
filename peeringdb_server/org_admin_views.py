@@ -6,8 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse
 from django.template import loader
+from django.utils.translation import gettext_lazy as _
 from django.utils.translation import override
-from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django_grainy.models import UserPermission
 from django_handleref.models import HandleRefModel

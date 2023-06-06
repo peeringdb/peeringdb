@@ -95,30 +95,30 @@ $(window).bind("load", function() {
 <div class="header" id="header">
   <div class="container">
     <div class="row">
-      <div class="col-lg-3 col-md-4 col-sm-4 col-xs-12 logo-container">
-        <a href="/"><img class="logo img-responsive" src="{{ STATIC_URL }}/pdb-logo-coloured.png" /></a>
+      <div class="col-lg-3 col-md-4 col-sm-4 col-12 logo-container">
+        <a href="/"><img class="logo img-fluid" src="{{ STATIC_URL }}/pdb-logo-coloured.png" /></a>
       </div>
-      <div class="col-lg-5 col-md-5 col-sm-5 col-xs-12 search-container">
+      <div class="col-lg-5 col-md-5 col-sm-5 col-12 search-container">
         <form action="/search{% if search_version == 2 %}/v2{% endif %}" id="quick-search" method="POST">
           {% csrf_token %}
           <input placeholder="{% trans "Search here for a network, IX, or facility." %}" value="{{ request.GET.q }}" class="form-control" name="term" id="search" type="text" />
         </form>
         <div class="row">
-          <div class="col-xs-6 col-sm-6">
+          <div class="col-6 col-sm-6">
             <div class="advanced-search">
               <a href="/advanced_search">{% trans "Advanced Search" %}</a>
             </div>
           </div>
-          <div class="col-xs-6 col-sm-6 right">
+          <div class="col-6 col-sm-6 right">
             <div class="v2-search">
               <a href="/search/v2?q={{ request.GET.q }}">{% trans "v2 Search (Beta)" %}</a>
             </div>
-          </div>
+          </div>         
         </div>
       </div>
-      <div class="col-lg-4 col-md-3 col-sm-3 col-xs-12 user-container">
+      <div class="col-lg-4 col-md-3 col-sm-3 col-12 user-container">
         <div class="row">
-          <div class="nav right toolbar">
+          <div class="nav right toolbar" style="justify-content: flex-end; align-items: flex-start;">
           {% if request.user.is_authenticated %}
             <div class="user">
               <a href="/profile">{{ request.user.username }}</a>
@@ -134,17 +134,17 @@ $(window).bind("load", function() {
             </div>
             <div class="dropdown" style="display:inline-block">
               <a class="btn btn-default dropdown-toggle" id="usermenu" data-bs-toggle="dropdown" aria-haspopup="true">
-                <img class="img-responsive" src="{{ STATIC_URL }}hamburger-colorful.png" alt="navigation" title="navigation" />
+                <img class="img-fluid" src="{{ STATIC_URL }}hamburger-colorful.png" alt="navigation" title="navigation" />
               </a>
               <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="usermenu">
                 {% for org in user.organizations %}
-                <li><a href="/org/{{ org.id }}">{{ org.name }}</a></li>
+                <li><a class="dropdown-item" href="/org/{{ org.id }}">{{ org.name }}</a></li>
                 {% endfor %}
                 {% if request.user.is_verified_user %}
-                <li><a href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
+                <li><a class="dropdown-item" href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
                 {% endif %}
-                <li><a href="/profile">{% trans "Profile" %}</a></li>
-                <li><a href="/logout">{% trans "Logout" %}</a></li>
+                <li><a class="dropdown-item" href="/profile">{% trans "Profile" %}</a></li>
+                <li><a class="dropdown-item" href="/logout">{% trans "Logout" %}</a></li>
               </ul>
             </div>
           {% else %}
@@ -153,7 +153,7 @@ $(window).bind("load", function() {
           </div>
         </div>
         <div class="row">
-          <div class="pull-right">
+          <div style="justify-content: flex-end; align-items: flex-start; display: flex;">
             <select name="language" id="anon-language-preference" class="form-control">
               {% get_current_language as LANGUAGE_CODE %}
               {% get_available_languages as LANGUAGES %}

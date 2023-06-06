@@ -30,6 +30,8 @@ import logging
 import re
 import uuid
 from itertools import chain
+from typing import List, Tuple
+from urllib.parse import quote as urlquote
 
 import django.urls
 import django_peeringdb.models as pdb_models
@@ -55,9 +57,8 @@ from django.db import models, transaction
 from django.template import loader
 from django.utils import timezone
 from django.utils.functional import Promise
-from django.utils.http import urlquote
+from django.utils.translation import gettext_lazy as _
 from django.utils.translation import override
-from django.utils.translation import ugettext_lazy as _
 from django_grainy.decorators import grainy_model
 from django_grainy.models import Permission, PermissionManager
 from django_grainy.util import check_permissions
@@ -3975,6 +3976,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         that are still active requirements for this
         IXFMemberData object.
         """
+        if not self.id:
+            return []
         return [
             requirement
             for requirement in self.requirement_set.all()

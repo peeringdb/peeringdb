@@ -4,71 +4,71 @@
 <div class="marg-top">
   <ul class="nav nav-tabs" role="tablist">
     {% if permissions.can_create_fac %}
-    <li role="presentation">
-      <a href="#add_fac"  class="{{ tab_init.fac }}" aria-controls="add_fac" role="tab" data-bs-toggle="tab">
+    <li role="presentation" class"nav-item">
+      <a href="#add_fac"  class="nav-link {{ tab_init.fac }}" aria-controls="add_fac" role="tab" data-bs-toggle="tab">
         {% trans "Add Facility" %}
       </a>
     </li>
     {% endif %}
     {% if permissions.can_create_net %}
-    <li role="presentation">
-      <a href="#add_net"  class="{{ tab_init.net }}" aria-controls="add_net" role="tab" data-bs-toggle="tab">
+    <li role="presentation" class"nav-item">
+      <a href="#add_net"  class="nav-link {{ tab_init.net }}" aria-controls="add_net" role="tab" data-bs-toggle="tab">
         {% trans "Add Network" %}
       </a>
     </li>
     {% endif %}
     {% if permissions.can_create_ix %}
-    <li role="presentation">
-      <a href="#add_ix"  class="{{ tab_init.ix}}" aria-controls="add_ix" role="tab" data-bs-toggle="tab">
+    <li role="presentation" class"nav-item">
+      <a href="#add_ix"  class="nav-link {{ tab_init.ix}}" aria-controls="add_ix" role="tab" data-bs-toggle="tab">
         {% trans "Add Exchange" %}
       </a>
     </li>
     {% endif %}
 
     {% if permissions.can_create_carrier %}
-    <li role="presentation">
-      <a href="#add_carrier"  class="{{ tab_init.carrier}}" aria-controls="add_carrier" role="tab" data-bs-toggle="tab">
+    <li role="presentation" class"nav-item">
+      <a href="#add_carrier"  class="nav-link {{ tab_init.carrier}}" aria-controls="add_carrier" role="tab" data-bs-toggle="tab">
         {% trans "Add Carrier" %}
       </a>
     </li>
     {% endif %}
 
     {% if permissions.can_create_campus %}
-      <li role="presentation">
-        <a href="#add_campus" class="{{ tab_init.campus}}" aria-controls="add_campus" role="tab" data-bs-toggle="tab">
+      <li role="presentation" class"nav-item">
+        <a href="#add_campus" class="nav-link {{ tab_init.campus}}" aria-controls="add_campus" role="tab" data-bs-toggle="tab">
           {% trans "Add Campus" %}
         </a>
       </li>
     {% endif %}
 
     {% if permissions.can_manage %}
-    <li role="presentation" class="{{ tab_init.users }}">
-      <a href="#users" aria-controls="users" role="tab" data-bs-toggle="tab">
+    <li role="presentation" class="nav-item {{ tab_init.users }}">
+      <a href="#users" aria-controls="users" role="tab" data-bs-toggle="tab" class="nav-link">
         {% trans "Users" %}
       </a>
     </li>
-    <li role="presentation">
-      <a href="#manage_perms" aria-controls="manage_perms" role="tab" data-bs-toggle="tab">
+    <li role="presentation" class"nav-item">
+      <a href="#manage_perms" aria-controls="manage_perms" role="tab" data-bs-toggle="tab" class="nav-link">
         {% trans "Permissions" %}
       </a>
     </li>
-    <li role="presentation">
-      <a href="#manage_keys" aria-controls="manage_keys" role="tab" data-bs-toggle="tab">
+    <li role="presentation" class"nav-item">
+      <a href="#manage_keys" aria-controls="manage_keys" role="tab" data-bs-toggle="tab" class="nav-link">
         {% trans "API Keys" %}
       </a>
     </li>
-    <li role="presentation">
-      <a href="#manage_key_perms" aria-controls="manage_key_perms" role="tab" data-bs-toggle="tab">
+    <li role="presentation" class"nav-item">
+      <a href="#manage_key_perms" aria-controls="manage_key_perms" role="tab" data-bs-toggle="tab" class="nav-link">
         {% trans "API Key Permissions" %}
       </a>
     </li>
-    <li role="presentation">
-      <a href="#manage_oauth" aria-controls="manage_oauth" role="tab" data-bs-toggle="tab">
+    <li role="presentation" class"nav-item">
+      <a href="#manage_oauth" aria-controls="manage_oauth" role="tab" data-bs-toggle="tab" class="nav-link">
         {% trans "OAuth" %}
       </a>
     </li>
-    <li role="presentation" class="danger">
-      <a href="#manage_delete" aria-controls="manage_delete" role="tab" data-bs-toggle="tab">
+    <li role="presentation" class="danger nav-item">
+      <a href="#manage_delete" aria-controls="manage_delete" role="tab" data-bs-toggle="tab" class="nav-link">
         {% trans "Delete Organization" %}
       </a>
     </li>
@@ -86,21 +86,21 @@
            id="create-fac-form"
            data-edit-target="api:fac:create"
            data-edit-enter-action="submit">
-        <div class="editable popin alert alert-warning geovalidation-warning center marg-top-15 marg-bot-15 hidden"
+        <div class="editable popin alert alert-warning geovalidation-warning center marg-top-15 marg-bot-15 d-none"
              data-edit-geotag="fac">
         </div>
 
       <div data-edit-geotag="fac"
-        class="editable popin alert alert-warning suggested-address marg-top-15 marg-bot-15 hidden">
+        class="editable popin alert alert-warning suggested-address marg-top-15 marg-bot-15 d-none">
         <div class="row">
-          <div class="col-xs-8">
+          <div class="col-8">
             <p>{% trans "Suggested Address:" %}</p>
             <div data-edit-field="address1" class="address-field"></div>
             <span data-edit-field="city" class="address-field"></span>
             <span data-edit-field="state" class="address-field"></span>
             <span data-edit-field="zipcode" class="address-field"></span>
           </div>
-          <div class="col-xs-4 text-right">
+          <div class="col-4 text-right">
             <a class="btn btn-default suggestion-accept">{% trans "Accept" %}</a>
           </div>
         </div>
@@ -112,10 +112,10 @@
         </div>
 
         <div class="row">
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-12 col-sm-6 col-md-6">
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-required="yes"
                      data-edit-name="name"></div>
@@ -123,8 +123,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
                      data-edit-required="yes"
                      data-edit-name="website"></div>
@@ -132,8 +132,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Address 1" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Address 1" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-required="yes"
                      data-edit-name="address1"></div>
@@ -141,16 +141,16 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Address 2" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Address 2" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="address2"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "City" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "City" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-required="yes"
                      data-edit-name="city"></div>
@@ -158,16 +158,16 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "State" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "State" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="state"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Zip-Code" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Zip-Code" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-required="no"
                      data-edit-name="zipcode"></div>
@@ -177,8 +177,8 @@
 
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Country" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Country" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="country"
                      data-edit-required="yes"
@@ -188,68 +188,68 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "CLLI Code" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "CLLI Code" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="clli"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "NPA-NXX" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "NPA-NXX" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="npanxx"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Technical E-mail" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Technical E-mail" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="email"
                      data-edit-name="tech_email"></div>
               </div>
             </div>
             <div class="row">
               <div
-                class="col-xs-4 col-sm-5 col-md-4 help-text"
+                class="col-4 col-sm-5 col-md-4 help-text"
                 data-bs-toggle="tooltip"
                 data-placement="top"
                 title="{{ data.phone_help_text }}">
               {% trans "Technical Phone" %}
-              <span class="glyphicon glyphicon-question-sign"></span>
+              <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
             </div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="tech_phone"></div>
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Sales E-mail" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Sales E-mail" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="email"
                      data-edit-name="sales_email"></div>
               </div>
             </div>
             <div class="row">
               <div
-                class="col-xs-4 col-sm-5 col-md-4 help-text"
+                class="col-4 col-sm-5 col-md-4 help-text"
                 data-bs-toggle="tooltip"
                 data-placement="top"
                 title="{{ data.phone_help_text }}">
               {% trans "Sales Phone" %}
-              <span class="glyphicon glyphicon-question-sign"></span>
+              <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
               </div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="sales_phone"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4"> {% trans "Health Check" %}
+              <div class="col-4 col-sm-5 col-md-4"> {% trans "Health Check" %}
               </div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
                      data-edit-name="status_dashboard"></div>
               </div>
@@ -257,8 +257,8 @@
 
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Property" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Property" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="property"
                      data-edit-data="enum/property"></div>
@@ -266,8 +266,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Diverse Serving Substations" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Diverse Serving Substations" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="diverse_serving_substations"
                      data-edit-data="enum/bool_choice_with_opt_out_str"></div>
@@ -275,8 +275,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Available Voltage Services" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Available Voltage Services" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="available_voltage_services"
                      data-edit-multiple="yes"
@@ -287,7 +287,7 @@
 
 
           </div>
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-12 col-sm-6 col-md-6">
             {% include "site/entity_create.html" with entity_name="Facility" %}
           </div>
         </div>
@@ -308,10 +308,10 @@
         </div>
 
         <div class="row">
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-12 col-sm-6 col-md-6">
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-required="yes"
                      data-edit-name="name"></div>
@@ -319,16 +319,16 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
                      data-edit-name="website"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "ASN" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "ASN" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-required="yes"
                      data-edit-name="asn"></div>
@@ -336,8 +336,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "IRR as-set/route-set" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "IRR as-set/route-set" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="irr_as_set"></div>
               </div>
@@ -345,8 +345,8 @@
 
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Network Type" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Network Type" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="info_type"
                      data-edit-data="enum/net_types_trunc"></div>
@@ -354,8 +354,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Traffic Levels" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Traffic Levels" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="info_traffic"
                      data-edit-data="enum/traffic"></div>
@@ -363,8 +363,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Traffic Ratios" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Traffic Ratios" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="info_ratio"
                      data-edit-data="enum/ratios_trunc"></div>
@@ -372,8 +372,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Geographic Scope" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Geographic Scope" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="info_scope"
                      data-edit-data="enum/scopes_trunc"></div>
@@ -381,30 +381,30 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Unicast IPv4" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Unicast IPv4" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="bool"
                      data-edit-name="info_unicast"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Multicast" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Multicast" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="bool"
                      data-edit-name="info_multicast"></div>
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "IPv6" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "IPv6" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="bool"
                      data-edit-name="info_ipv6"></div>
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Policy URL" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Policy URL" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
                      data-edit-name="policy_url"></div>
               </div>
@@ -412,8 +412,8 @@
 
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "General Policy" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "General Policy" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="policy_general"
                      data-edit-required="yes"
@@ -422,8 +422,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Multiple Locations" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Multiple Locations" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="policy_locations"
                      data-edit-required="yes"
@@ -432,16 +432,16 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Ratio Requirement" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Ratio Requirement" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="bool"
                      data-edit-name="policy_ratio"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Contract Requirement" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Contract Requirement" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="policy_contracts"
                      data-edit-required="yes"
@@ -451,16 +451,16 @@
 
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4"> {% trans "Health Check" %}
+              <div class="col-4 col-sm-5 col-md-4"> {% trans "Health Check" %}
               </div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
                      data-edit-name="status_dashboard"></div>
               </div>
             </div>
 
           </div>
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-12 col-sm-6 col-md-6">
 
             <div class="editable note info">
               <p><strong>{% trans "Only use this if you own the network" %}</strong></p>
@@ -500,10 +500,10 @@
         </div>
 
         <div class="row">
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-12 col-sm-6 col-md-6">
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-required="yes"
                      data-edit-name="name"></div>
@@ -511,8 +511,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
                      data-edit-name="website"></div>
               </div>
@@ -520,16 +520,16 @@
 
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "City" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "City" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="city"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Country" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Country" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="country"
                      data-edit-required="yes"
@@ -539,8 +539,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Continental Region" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Continental Region" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="region_continent"
                      data-edit-required="yes"
@@ -549,8 +549,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Media Type" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Media Type" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="select"
                      data-edit-name="media"
                      data-edit-required="yes"
@@ -559,38 +559,38 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Unicast IPv4" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Unicast IPv4" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="mandatory_bool"
                      data-edit-name="proto_unicast"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Multicast" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Multicast" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="mandatory_bool"
                      data-edit-name="proto_multicast"></div>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "IPv6" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "IPv6" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="mandatory_bool"
                      data-edit-name="proto_ipv6"></div>
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Traffic Stats Website" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Traffic Stats Website" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
                      data-edit-name="url_stats"></div>
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Technical E-mail" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Technical E-mail" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="email"
                      data-edit-required="yes"
                      data-edit-name="tech_email"></div>
@@ -598,64 +598,64 @@
             </div>
             <div class="row">
               <div
-                class="col-xs-4 col-sm-5 col-md-4 help-text"
+                class="col-4 col-sm-5 col-md-4 help-text"
                 data-bs-toggle="tooltip"
                 data-placement="top"
                 title="{{ data.phone_help_text }}">
               {% trans "Technical Phone" %}
-              <span class="glyphicon glyphicon-question-sign"></span>
+              <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
             </div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="tech_phone">
                 </div>
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Policy E-mail" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Policy E-mail" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="email"
                      data-edit-name="policy_email"></div>
               </div>
             </div>
             <div class="row">
               <div
-                class="col-xs-4 col-sm-5 col-md-4 help-text"
+                class="col-4 col-sm-5 col-md-4 help-text"
                 data-bs-toggle="tooltip"
                 data-placement="top"
                 title="{{ data.phone_help_text }}">
                 {% trans "Policy Phone" %}
-              <span class="glyphicon glyphicon-question-sign"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
               </div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="policy_phone"></div>
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Sales E-mail" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Sales E-mail" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="email"
                      data-edit-name="sales_email"></div>
               </div>
             </div>
             <div class="row">
               <div
-                class="col-xs-4 col-sm-5 col-md-4 help-text"
+                class="col-4 col-sm-5 col-md-4 help-text"
                 data-bs-toggle="tooltip"
                 data-placement="top"
                 title="{{ data.phone_help_text }}">
               {% trans "Sales Phone" %}
-              <span class="glyphicon glyphicon-question-sign"></span>
+              <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
               </div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-name="sales_phone"></div>
               </div>
             </div>
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Prefix" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Prefix" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-required="yes"
                      data-edit-placeholder="{% trans "IPv4 or IPv6 prefix" %}"
@@ -665,9 +665,9 @@
 
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4"> {% trans "Health Check" %}
+              <div class="col-4 col-sm-5 col-md-4"> {% trans "Health Check" %}
               </div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
                      data-edit-name="status_dashboard"></div>
               </div>
@@ -675,7 +675,7 @@
 
 
           </div>
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-12 col-sm-6 col-md-6">
             {% include "site/entity_create.html" with entity_name="Exchange" %}
           </div>
         </div>
@@ -696,10 +696,10 @@
         </div>
 
         <div class="row">
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-12 col-sm-6 col-md-6">
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-required="yes"
                      data-edit-name="name"></div>
@@ -707,8 +707,8 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
                      data-edit-name="website"></div>
               </div>
@@ -716,7 +716,7 @@
 
 
           </div>
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-12 col-sm-6 col-md-6">
             {% include "site/entity_create.html" with entity_name="Carrier" %}
           </div>
         </div>
@@ -738,10 +738,10 @@
         </div>
 
         <div class="row">
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-12 col-sm-6 col-md-6">
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="string"
                      data-edit-required="yes"
                      data-edit-name="name"></div>
@@ -749,15 +749,15 @@
             </div>
 
             <div class="row">
-              <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
-              <div class="col-xs-8 col-sm-7 col-md-8">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
                 <div data-edit-type="url"
                      data-edit-name="website"></div>
               </div>
             </div>
 
           </div>
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-12 col-sm-6 col-md-6">
             {% include "site/entity_create.html" with entity_name="Campus" %}
           </div>
         </div>
@@ -779,16 +779,16 @@
         </div>
 
         <div class="row header">
-          <div class="col-xs-6 col-sm-3 col-md-3">
+          <div class="col-6 col-sm-3 col-md-3">
             <div>{% trans "Name" %}</div>
             <div>{% trans "User" %}</div>
           </div>
-          <div class="col-xs-6 col-sm-3 col-md-3">
+          <div class="col-6 col-sm-3 col-md-3">
             <div>{% trans "Email" %}</div>
             <div>{% trans "Confirmed" %}</div>
           </div>
-          <div class="col-xs-6 col-sm-3 col-md-3">{% trans "Date" %}</div>
-          <div class="col-xs-12 col-sm-3 col-md-3"></div>
+          <div class="col-6 col-sm-3 col-md-3">{% trans "Date" %}</div>
+          <div class="col-12 col-sm-3 col-md-3"></div>
         </div>
 
       {% if instance.pending_affiliations.count %}
@@ -796,11 +796,11 @@
         {% with user_emails=instance|org_emails:uoar.user %}
         <div class="row item" data-edit-id="{{ uoar.id }}" data-edit-label="{{ uoar.user.full_name }}">
 
-          <div class="col-xs-6 col-sm-3 col-md-3">
+          <div class="col-6 col-sm-3 col-md-3">
             <div>{{ uoar.user.full_name }}</div>
             <div>{{ uoar.user.username }}</div>
           </div>
-          <div class="col-xs-6 col-sm-3 col-md-3">
+          <div class="col-6 col-sm-3 col-md-3">
 
             {% for valid_email in user_emails.1 %}
             <div>{{ valid_email }} ({% if valid_email|email_confirmed %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %})</div>
@@ -815,8 +815,8 @@
               {% endfor %}
             {% endif %}
           </div>
-          <div class="col-xs-6 col-sm-3 col-md-3">{{ uoar.created|date:"Y, N d" }}</div>
-          <div class="col-xs-6 col-sm-3 col-md-3 right">
+          <div class="col-6 col-sm-3 col-md-3">{{ uoar.created|date:"Y, N d" }}</div>
+          <div class="col-6 col-sm-3 col-md-3 right">
             <a class="btn btn-default" data-edit-action="approve">{% trans "Approve" %}</a>
             <a class="btn btn-default" data-edit-action="deny">{% trans "Deny" %}</a>
           </div>
@@ -833,7 +833,7 @@
 
 
 <div class="row">
-  <div class="col-xs-12 col-md-9">
+  <div class="col-12 col-md-9">
 
       <h5>{% trans "Users in Organization" %}</h5>
 
@@ -844,15 +844,15 @@
            data-edit-target="/org_admin/manage_user">
 
         <div class="row header">
-          <div class="col-xs-4 col-sm-5 col-md-4">
+          <div class="col-4 col-sm-5 col-md-4">
             <div>{% trans "Name" %}</div>
             <div>{% trans "User" %}</div>
           </div>
-          <div class="col-xs-4 col-sm-5 col-md-4">
+          <div class="col-4 col-sm-5 col-md-4">
             <div>{% trans "Email" %}</div>
           </div>
-          <div class="col-xs-4 col-sm-5 col-md-2">{% trans "Group" %}</div>
-          <div class="col-xs-4 col-sm-2 col-md-2"></div>
+          <div class="col-4 col-sm-5 col-md-2">{% trans "Group" %}</div>
+          <div class="col-4 col-sm-2 col-md-2"></div>
         </div>
 
         <div data-edit-component="list"
@@ -860,11 +860,11 @@
         {% for user in users %}
         {% with user_emails=instance|org_emails:user %}
         <div class="row item editable" data-edit-id="{{ user.id }}" data-edit-label="{{ user.full_name }}">
-          <div class="col-xs-4 col-sm-5 col-md-4">
+          <div class="col-4 col-sm-5 col-md-4">
             <div>{{ user.full_name }}</div>
             <div>{{ user.username }} {% if user.totpdevice_set.exists %}<span class="badge-2fa">2FA</span>{% endif %}{% if user.webauthn_security_keys.exists %}<span class="badge-2fa" style="margin-left:2px;">U2F</span>{% endif %}</div>
           </div>
-          <div class="col-xs-4 col-sm-5 col-md-4">
+          <div class="col-4 col-sm-5 col-md-4">
             {% for valid_email in user_emails.1 %}
             <div>{{ valid_email }}</div>
             {% endfor %}
@@ -877,13 +877,13 @@
               {% endfor %}
             {% endif %}
           </div>
-          <div class="col-xs-4 col-sm-5 col-md-2">
+          <div class="col-4 col-sm-5 col-md-2">
             <div data-edit-type="select"
                  data-edit-data="enum/org_groups"
                  data-edit-name="group"
                  data-edit-value="{{ instance|user_org_group:user }}">{{ instance|user_org_group:user }}</div>
           </div>
-          <div class="col-xs-4 col-sm-2 col-md-2 right">
+          <div class="col-4 col-sm-2 col-md-2 right">
             <a class="btn btn-default" data-edit-action="remove">{% trans "Remove" %}</a>
           </div>
         </div>
@@ -898,7 +898,7 @@
 
   </div>
 
-  <div class="col-xs-12 col-md-3">
+  <div class="col-12 col-md-3">
     <h5>{% trans "Options" %}</h5>
 
     <div class="editable always auto-toggled" data-edit-redirect-on-success="?tab=users" data-edit-target="{% url "org-admin-user-options" %}">
@@ -960,19 +960,19 @@
              data-edit-target="/org_admin/user_permissions">
 
           <div class="row header">
-            <div class="col-xs-12 col-sm-5 col-md-5">
+            <div class="col-12 col-sm-5 col-md-5">
               <div>{{ uperms.name }}</div>
             </div>
-            <div class="col-xs-4 col-sm-2 col-md-2">
+            <div class="col-4 col-sm-2 col-md-2">
               <div>{% trans "Create" %}</div>
             </div>
-            <div class="col-xs-4 col-sm-2 col-md-2">
+            <div class="col-4 col-sm-2 col-md-2">
               <div>{% trans "Update" %}</div>
             </div>
-            <div class="col-xs-4 col-sm-2 col-md-2">
+            <div class="col-4 col-sm-2 col-md-2">
               <div>{% trans "Delete" %}</div>
             </div>
-            <div class="col-xs-1 col-sm-1 col-md-1">
+            <div class="col-1 col-sm-1 col-md-1">
             </div>
           </div>
 
@@ -987,20 +987,20 @@
                   <div data-edit-name="org_id">{{ instance.id }}</div>
                   <div data-edit-name="entity">{{ entity }}</div>
                 </div>
-                <div class="col-xs-12 col-sm-5 col-md-5">
+                <div class="col-12 col-sm-5 col-md-5">
                   <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
                   <div data-edit-name="entity">{{ instance|org_permission_id_xl:entity }}</div>
                 </div>
-                <div class="col-xs-4 col-sm-2 col-md-2">
+                <div class="col-4 col-sm-2 col-md-2">
                   <div data-edit-name="perm_c" data-edit-type="bool" data-edit-value="{{ perm|check_perms:'c' }}"></div>
                 </div>
-                <div class="col-xs-4 col-sm-2 col-md-2">
+                <div class="col-4 col-sm-2 col-md-2">
                   <div data-edit-name="perm_u" data-edit-type="bool" data-edit-value="{{ perm|check_perms:'u' }}"></div>
                 </div>
-                <div class="col-xs-4 col-sm-2 col-md-2">
+                <div class="col-4 col-sm-2 col-md-2">
                   <div data-edit-name="perm_d" data-edit-type="bool" data-edit-value="{{ perm|check_perms:'d' }}"></div>
                 </div>
-                <div class="col-xs-12 col-sm-1 col-md-1 right">
+                <div class="col-12 col-sm-1 col-md-1 right">
                 </div>
               </div>
 
@@ -1018,21 +1018,21 @@
             </div>
 
             <div class="row marg-top">
-              <div class="col-xs-12 col-sm-5 col-md-5">
+              <div class="col-12 col-sm-5 col-md-5">
                 <div data-edit-name="entity"
                      data-edit-type="select"
                      data-edit-data="permissions"></div>
               </div>
-              <div class="col-xs-4 col-sm-2 col-md-2">
+              <div class="col-4 col-sm-2 col-md-2">
                 <div data-edit-name="perm_c" data-edit-type="bool"></div>
               </div>
-              <div class="col-xs-4 col-sm-2 col-md-2">
+              <div class="col-4 col-sm-2 col-md-2">
                 <div data-edit-name="perm_u" data-edit-type="bool"></div>
               </div>
-              <div class="col-xs-4 col-sm-2 col-md-2">
+              <div class="col-4 col-sm-2 col-md-2">
                 <div data-edit-name="perm_d" data-edit-type="bool"></div>
               </div>
-              <div class="col-xs-12 col-sm-1 col-md-1 right">
+              <div class="col-12 col-sm-1 col-md-1 right">
                 <a class="btn btn-default" data-edit-action="add">{% trans "Add" %}</a>
               </div>
             </div>

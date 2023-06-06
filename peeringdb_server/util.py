@@ -5,7 +5,7 @@ import ipaddress
 from decimal import Decimal
 
 import django_peeringdb.const as const
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_grainy.util import Permissions, check_permissions, get_permissions  # noqa
 
 from peeringdb_server.permissions import APIPermissionsApplicator  # noqa
