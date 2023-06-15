@@ -25,7 +25,7 @@ Edit the peeringdb docker compose config to make the translation files and djang
 
 ```sh
 cd peeringdb
-vim Ctl/dev/docker-compose.sh
+vim Ctl/dev/docker-compose.yml
 ```
 
 Uncomment the mount point for `locale` under `volumes`
@@ -36,6 +36,12 @@ Uncomment the mount point for `locale` under `volumes`
       - ../../../translations/locale:/srv/www.peeringdb.com/locale:Z
       - ../../../django-peeringdb/src/django_peeringdb:/srv/www.peeringdb.com/venv/lib/python3.9/site-packages/django_peeringdb:Z
 
+```
+
+Create an empty .venv to avoid errors when bringing containers up:
+
+```sh
+touch Ctl/dev/.env
 ```
 
 ## Generate a new locale
