@@ -658,16 +658,14 @@ class ESSilentRealTimeSignalProcessor(RealTimeSignalProcessor):
         try:
             super().handle_save(sender, instance, **kwargs)
         except Exception as e:
-            self.log.error(f"ELASTICSEARCH", action="save", error=e, instance=instance)
+            self.log.error("ELASTICSEARCH", action="save", error=e, instance=instance)
             pass
 
     def handle_delete(self, sender, instance, **kwargs):
         try:
             super().handle_delete(sender, instance, **kwargs)
         except Exception as e:
-            self.log.error(
-                f"ELASTICSEARCH", action="delete", error=e, instance=instance
-            )
+            self.log.error("ELASTICSEARCH", action="delete", error=e, instance=instance)
             pass
 
     def handle_pre_delete(self, sender, instance, **kwargs):
@@ -675,6 +673,6 @@ class ESSilentRealTimeSignalProcessor(RealTimeSignalProcessor):
             return super().handle_pre_delete(sender, instance, **kwargs)
         except Exception as e:
             self.log.error(
-                f"ELASTICSEARCH", action="pre_delete", error=e, instance=instance
+                "ELASTICSEARCH", action="pre_delete", error=e, instance=instance
             )
             pass

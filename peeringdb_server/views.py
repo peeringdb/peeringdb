@@ -100,7 +100,6 @@ from peeringdb_server.models import (
     CarrierFacility,
     DataChangeWatchedObject,
     Facility,
-    GeoCoordinateCache,
     InternetExchange,
     InternetExchangeFacility,
     IXFMemberData,

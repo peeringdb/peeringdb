@@ -30,7 +30,6 @@ import logging
 import re
 import uuid
 from itertools import chain
-from typing import List, Tuple
 from urllib.parse import quote as urlquote
 
 import django.urls
