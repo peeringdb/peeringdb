@@ -12,8 +12,10 @@ python = "^3.9"
 # core requirements
 django = "==4.2"
 django-inet = "^1.1.1"
-django-handleref = "^1.1.0"
-django-peeringdb = "==3.0.0"
+django-handleref = "^2.0.0"
+# Install from pypi once 4.0.0 is released
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "support_202305" }
+#django-peeringdb = "==3.0.0"
 djangorestframework = ">=3.14.0"
 mysqlclient = ">=2.1.1"
 peeringdb = ">=1.1.0, <2"
@@ -63,7 +65,7 @@ coreapi = ">=2.3.1"
 # emailing of one time password
 django-two-factor-auth = ">=1.11,<1.15.0"
 grainy = ">=1.7,<2"
-django-grainy = ">=1.9.1,<2"
+django-grainy = "^2.0.0"
 django-haystack = "<4"
 whoosh = "<3"
 django-structlog = ">=2.2.0"
