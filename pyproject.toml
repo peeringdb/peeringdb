@@ -13,9 +13,8 @@ python = "^3.9"
 django = "==4.2"
 django-inet = "^1.1.1"
 django-handleref = "^2.0.0"
-# Install from pypi once 4.0.0 is released
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "support_202305" }
-#django-peeringdb = "==3.0.0"
+# Install from pypi once 3.1.0 is released
+django-peeringdb = "==3.1.0"
 djangorestframework = ">=3.14.0"
 mysqlclient = ">=2.1.1"
 peeringdb = ">=1.1.0, <2"
@@ -39,6 +38,12 @@ django-hashers-passlib = { git = "https://github.com/mathiasertl/django-hashers-
 # api breaking changes that were then reverted in 1.6.2 - in order to upgrade
 # we need to wait for them to re-introduce the changes or adapt our code to
 # the reversion
+#
+# django-oauth-toolkit 2.0.0 is ready but also introduces additional BREAKING changes that may
+# need to be communicated to users, such as unreversible hashing of their current client
+# secrets.
+#
+# See https://django-oauth-toolkit.readthedocs.io/en/latest/changelog.html#id10
 django-oauth-toolkit = "==1.6.1"
 django-phonenumber-field = ">=0.6"
 django-ratelimit = ">=4.0.0"
