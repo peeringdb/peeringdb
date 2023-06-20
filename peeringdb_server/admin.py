@@ -22,7 +22,6 @@ import django.urls
 import reversion
 from django import forms as baseForms
 from django.conf import settings
-from django.conf.urls import url
 from django.contrib import admin, messages
 from django.contrib.admin import helpers
 from django.contrib.admin.actions import delete_selected
@@ -35,12 +34,14 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.utils import OperationalError
 from django.forms import DecimalField
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect
 from django.template import loader
 from django.template.response import TemplateResponse
+from django.urls import re_path
 from django.utils import html
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_grainy.admin import UserPermissionInlineAdmin
 from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
 from django_otp.plugins.otp_totp.models import TOTPDevice
@@ -100,7 +101,6 @@ from peeringdb_server.models import (
     VerificationQueueItem,
 )
 from peeringdb_server.util import coerce_ipaddr, round_decimal
-from peeringdb_server.views import HttpResponseForbidden, JsonResponse
 
 from . import forms
 
@@ -409,7 +409,7 @@ class ModelAdminWithUrlActions(admin.ModelAdmin):
         info = self.model._meta.app_label, self.model._meta.model_name
 
         urls = [
-            url(
+            re_path(
                 r"^(\d+)/action/([\w]+)/$",
                 self.admin_site.admin_view(self.actions_view),
                 name="%s_%s_actions" % info,
@@ -580,6 +580,7 @@ class CustomResultLengthAdmin:
             list_max_show_all,
             self.list_editable,
             self,
+            None,
             sortable_by,
         )
 
@@ -1199,8 +1200,8 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     def get_urls(self):
         urls = super().get_urls()
         my_urls = [
-            url(r"^org-merge-tool/merge$", self.org_merge_tool_merge_action),
-            url(r"^org-merge-tool/$", self.org_merge_tool_view),
+            re_path(r"^org-merge-tool/merge$", self.org_merge_tool_merge_action),
+            re_path(r"^org-merge-tool/$", self.org_merge_tool_view),
         ]
         return my_urls + urls
 
@@ -2026,17 +2027,17 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
     def get_urls(self):
         urls = super().get_urls()
         my_urls = [
-            url(
+            re_path(
                 r"^prepare/$",
                 self.prepare_command_view,
                 name="peeringdb_server_commandlinetool_prepare",
             ),
-            url(
+            re_path(
                 r"^preview/$",
                 self.preview_command_view,
                 name="peeringdb_server_commandlinetool_preview",
             ),
-            url(
+            re_path(
                 r"^run/$",
                 self.run_command_view,
                 name="peeringdb_server_commandlinetool_run",

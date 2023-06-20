@@ -279,7 +279,6 @@ class FacilityDocument(GeocodeMixin, Document):
             }
         }
     )
-
     state = fields.TextField(
         fields={
             "raw": {

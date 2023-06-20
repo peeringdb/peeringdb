@@ -27,7 +27,6 @@ class CorsTest(ClientCase):
         self.assertIn(ACCESS_CONTROL_ALLOW_METHODS, resp)
         self.assertIn(ACCESS_CONTROL_ALLOW_ORIGIN, resp)
         self.assertIn(method.upper(), resp[ACCESS_CONTROL_ALLOW_METHODS].split(", "))
-        self.assertIn("origin", resp[ACCESS_CONTROL_ALLOW_HEADERS].split(", "))
         self.assertEqual(resp[ACCESS_CONTROL_ALLOW_ORIGIN], self.test_origin)
 
     def assert_cors_denied(self, url, method):

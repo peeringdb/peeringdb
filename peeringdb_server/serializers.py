@@ -25,8 +25,8 @@ from django.db.models.fields.related import (
     ReverseManyToOneDescriptor,
 )
 from django.db.models.query import QuerySet
-from django.utils.translation import ugettext_lazy as _
-from django_grainy.rest import PermissionDenied
+from django.utils.translation import gettext_lazy as _
+from django_grainy.exceptions import PermissionDenied
 
 # from drf_toolbox import serializers
 from django_handleref.rest.serializers import HandleRefSerializer
@@ -449,6 +449,7 @@ class RequiredForMethodValidator:
     methods.
     """
 
+    requires_context = True
     message = _("This field is required")
 
     def __init__(self, field, methods=["POST", "PUT"], message=None):
@@ -456,15 +457,13 @@ class RequiredForMethodValidator:
         self.methods = methods
         self.messages = message or self.message
 
-    def __call__(self, attrs):
+    def __call__(self, attrs, serializer_field):
+        self.instance = getattr(serializer_field.context, "instance", None)
+        self.request = serializer_field.context["request"]
         if self.request.method in self.methods and not attrs.get(self.field):
             raise RestValidationError(
                 {self.field: self.message.format(methods=self.methods)}
             )
-
-    def set_context(self, serializer):
-        self.instance = getattr(serializer, "instance", None)
-        self.request = serializer._context.get("request")
 
 
 class SoftRequiredValidator:
@@ -499,6 +498,7 @@ class AsnRdapValidator:
     and will fail if no matching asn is found.
     """
 
+    requires_context = True
     message = _("RDAP Lookup Error")
 
     def __init__(self, field="asn", message=None, methods=None):
@@ -509,7 +509,9 @@ class AsnRdapValidator:
         self.field = field
         self.methods = methods
 
-    def __call__(self, attrs):
+    def __call__(self, attrs, serializer_field):
+        self.instance = getattr(serializer_field.context, "instance", None)
+        self.request = serializer_field.context["request"]
         if self.request.method not in self.methods:
             return
         asn = attrs.get(self.field)
@@ -524,10 +526,6 @@ class AsnRdapValidator:
         except RdapException as exc:
             self.request.rdap_error = (asn, exc)
             raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
-
-    def set_context(self, serializer):
-        self.instance = getattr(serializer, "instance", None)
-        self.request = serializer._context.get("request")
 
 
 class FieldMethodValidator:

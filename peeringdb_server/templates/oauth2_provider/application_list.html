@@ -11,23 +11,23 @@
           {% if applications %}
           <div class="list">
             <div class="row header">
-              <div class="col-xs-12 col-sm-5">{% trans "Name" %}</div>
-              <div class="col-xs-12 col-sm-5">{% trans "Organization" %}</div>
-              <div class="col-xs-12 col-sm-2"></div>
+              <div class="col-12 col-sm-5">{% trans "Name" %}</div>
+              <div class="col-12 col-sm-5">{% trans "Organization" %}</div>
+              <div class="col-12 col-sm-2"></div>
             </div>
 
             {% for application in applications %}
               <div class="row">
-                <div class="col-xs-12 col-sm-5">{{ application.name }}</div>
-                <div class="col-xs-12 col-sm-5">{{ application.org.name|default:"-" }}</div>
-                <div class="col-xs-12 col-sm-2 right">
+                <div class="col-12 col-sm-5">{{ application.name }}</div>
+                <div class="col-12 col-sm-5">{{ application.org.name|default:"-" }}</div>
+                <div class="col-12 col-sm-2 right">
                   <a class="btn btn-primary" href="{{ application.get_absolute_url }}">{% trans "Details" %}</a>
                 </div>
               </div>
             {% endfor %}
 
             <div class="row">
-              <div class="col-xs-12 center">
+              <div class="col-12 center">
                 <a class="btn btn-success" href="{% url "oauth2_provider:register" %}">{% trans "New Application" %}</a>
               </div>
             </div>

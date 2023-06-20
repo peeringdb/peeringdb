@@ -25,7 +25,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.template import loader
 from django.utils.html import strip_tags
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 import peeringdb_server.deskpro as deskpro
 from peeringdb_server.models import (

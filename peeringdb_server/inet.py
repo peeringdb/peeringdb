@@ -8,7 +8,7 @@ Prefix renumbering.
 import ipaddress
 
 import rdap
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from rdap.exceptions import RdapException, RdapNotFoundError
 
 from peeringdb_server import settings

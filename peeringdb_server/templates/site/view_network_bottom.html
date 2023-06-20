@@ -10,7 +10,7 @@
      data-edit-target="api:poc">
 
      <div class="row">
-       <div class="col-xs-12 col-sm-12 col-md-12">
+       <div class="col-12 col-sm-12 col-md-12">
          <h5>{% trans "Contact Information" %}</h5>
        </div>
      </div>
@@ -26,21 +26,21 @@
      {% endif %}
 
      <div class="row header">
-       <div class="col-xs-3 col-sm-3 col-md-3">
+       <div class="col-3 col-sm-3 col-md-3">
          <div data-sort-target=".role"
               data-sort-initial="asc">
               {% trans "Role" %}
          </div>
        </div>
 
-       <div class="col-xs-4 col-sm-4 col-md-4">
+       <div class="col-4 col-sm-4 col-md-4">
          <div data-sort-target=".name">
               {% trans "Name" %}
          </div>
          <div data-edit-toggled="edit">{% trans "Visiblity" %}</div>
        </div>
 
-       <div class="col-xs-5 col-sm-5 col-md-5">
+       <div class="col-5 col-sm-5 col-md-5">
          <div
             class="help-text"
             data-bs-toggle="tooltip"
@@ -48,7 +48,7 @@
             title="{{ data.phone_help_text }}"
           >
               {% trans "Phone" %}
-              <span class="glyphicon glyphicon-question-sign"></span>
+              <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
          </div>
          <div>
               {% trans "E-Mail" %}
@@ -71,7 +71,7 @@
                  <div data-edit-name="role">{{ p.role }}</div>
                </div>
 
-               <div class="col-xs-3 col-sm-3 col-md-3">
+               <div class="col-3 col-sm-3 col-md-3">
                  {% if permissions.can_delete %}
                  <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
                  {% endif %}
@@ -80,7 +80,7 @@
                    {{ p.role }}
                  </div>
                </div>
-               <div class="col-xs-4 col-sm-4 col-md-4">
+               <div class="col-4 col-sm-4 col-md-4">
                  <div class="name"
                       {% if permissions.can_write %}
                       data-edit-type="string"
@@ -102,7 +102,7 @@
                  </div>
 
                </div>
-               <div class="col-xs-5 col-sm-5 col-md-5">
+               <div class="col-5 col-sm-5 col-md-5">
                  <div class="phone"
                       {% if permissions.can_write %}
                       data-edit-type="string"
@@ -136,8 +136,8 @@
           </div>
 
           <div class="row view_row">
-            <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Role" %}</div>
-            <div class="view_value col-xs-8 col-sm-7 col-md-8">
+            <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Role" %}</div>
+            <div class="view_value col-8 col-sm-7 col-md-8">
               <div data-edit-type="select"
                    data-edit-data="enum/poc_roles"
                    data-edit-name="role">
@@ -146,8 +146,8 @@
           </div>
 
           <div class="row view_row">
-            <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
-            <div class="view_value col-xs-8 col-sm-7 col-md-8">
+            <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+            <div class="view_value col-8 col-sm-7 col-md-8">
               <div data-edit-type="string"
                    data-edit-name="name"
                    data-edit-required="yes">
@@ -156,8 +156,8 @@
           </div>
 
           <div class="row view_row">
-            <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Email" %}</div>
-            <div class="view_value col-xs-8 col-sm-7 col-md-8">
+            <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Email" %}</div>
+            <div class="view_value col-8 col-sm-7 col-md-8">
               <div data-edit-type="email"
                    data-edit-name="email">
               </div>
@@ -165,8 +165,8 @@
           </div>
 
           <div class="row view_row">
-            <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Phone" %}</div>
-            <div class="view_value col-xs-8 col-sm-7 col-md-8">
+            <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Phone" %}</div>
+            <div class="view_value col-8 col-sm-7 col-md-8">
               <div data-edit-type="string"
                    data-edit-name="phone">
               </div>
@@ -174,8 +174,8 @@
           </div>
 
           <div class="row view_row">
-            <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Visibility" %}</div>
-            <div class="view_value col-xs-8 col-sm-7 col-md-8">
+            <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Visibility" %}</div>
+            <div class="view_value col-8 col-sm-7 col-md-8">
               <div data-edit-type="select"
                    data-edit-data="enum/poc_visibility"
                    data-edit-value="Users"
@@ -186,7 +186,7 @@
 
 
           <div class="row marg-top">
-            <div class="col-xs-12 right">
+            <div class="col-12 right">
               <a class="btn btn-default" data-edit-action="add">{% trans "Add Contact" %}</a>
             </div>
           </div>
@@ -198,7 +198,7 @@
 {% elif data.poc_hidden %}
 <div class="list">
      <div class="row">
-       <div class="col-xs-12 col-sm-12 col-md-12">
+       <div class="col-12 col-sm-12 col-md-12">
          <h5>{% trans "Contact Information" %}</h5>
        </div>
      </div>
@@ -227,13 +227,13 @@
         <p>{% blocktrans %}We use locally cached IX-F data to generate this preview - if you are expecting changes to an exchange's IX-F data please give it some time to be reflected here.{% endblocktrans %}</p>
         <div class="ixf-log" id="ixf-log">
           <ul class="nav nav-tabs" role="tablist">
-            <li role="presentation" class="active">
-              <a href="#ixf-changes" id="tab-ixf-changes" aria-controls="add_fac" role="tab" data-bs-toggle="tab">
+            <li role="presentation" class="active nav-item">
+              <a href="#ixf-changes" id="tab-ixf-changes" aria-controls="add_fac" role="tab" data-bs-toggle="tab" class="nav-link">
                 {% trans "Changes" %}
               </a>
             </li>
-            <li role="presentation">
-              <a href="#ixf-errors" id="tab-ixf-errors" aria-controls="add_net" role="tab" data-bs-toggle="tab">
+            <li role="presentation" class"nav-item">
+              <a href="#ixf-errors" id="tab-ixf-errors" aria-controls="add_net" role="tab" data-bs-toggle="tab" class="nav-link">
                 {% trans "Errors" %}<span class="ixf-error-counter"></span>
               </a>
             </li>
@@ -277,13 +277,13 @@
         <p>{% blocktrans %}Below is a log of changes done to you network -&gt; exchange connections as a result of IX-F data imports. Note that this does not contain any adjustments done by staff to rollback such changes, but should be viewed as a raw log of actions taken by the IX-F data import.{% endblocktrans %}</p>
         <div class="ixf-log" id="ixf-postmortem">
           <ul class="nav nav-tabs" role="tablist">
-            <li role="presentation" class="active">
-              <a href="#ixf-postmortem-changes" id="tab-ixf-changes" aria-controls="add_fac" role="tab" data-bs-toggle="tab">
+            <li role="presentation" class="active nav-item">
+              <a href="#ixf-postmortem-changes" id="tab-ixf-changes" aria-controls="add_fac" role="tab" data-bs-toggle="tab" class="nav-link">
                 {% trans "Changes" %}
               </a>
             </li>
-            <li role="presentation">
-              <a href="#ixf-postmortem-errors" id="tab-ixf-errors" aria-controls="add_net" role="tab" data-bs-toggle="tab">
+            <li role="presentation" class"nav-item">
+              <a href="#ixf-postmortem-errors" id="tab-ixf-errors" aria-controls="add_net" role="tab" data-bs-toggle="tab" class="nav-link">
                 {% trans "Errors" %}<span class="ixf-error-counter"></span>
               </a>
             </li>

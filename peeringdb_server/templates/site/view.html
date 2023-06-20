@@ -19,9 +19,9 @@
 {% endif %}
 
 <div class="row">
-  <div class="col-md-12 col-sm-12 col-xs-12">
+  <div class="col-md-12 col-sm-12 col-12">
     <div class="view_title row">
-      <div class="col-md-8 col-sm-8 col-xs-10"
+      <div class="col-md-8 col-sm-8 col-10"
            {% if permissions.can_write %}
            data-edit-type="string"
            {% endif %}
@@ -33,7 +33,7 @@
            {% endif %}
            </div>
 
-      <div class="col-md-4 col-sm-4 col-xs-2 right button-bar">
+      <div class="col-md-4 col-sm-4 col-2 right button-bar">
         {% if instance.status == "pending" %}
           <div class="status-pending">
           {% if ref_tag == "campus" %}
@@ -46,18 +46,18 @@
         {% if permissions.can_edit %}
         <!-- toggle edit mode -->
         <div data-edit-toggled="view">
-          <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
+          <a class="btn btn-primary" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
         </div>
         <div data-edit-toggled="edit" style="display:none;">
-          <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
-          <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+          <a class="btn btn-primary" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+          <a class="btn btn-primary" data-edit-action="submit">{% trans "Save" %}</a>
         </div>
         {% else %}
         <div>
 
         {% if instance.org and not instance.org.owned and request.user.is_authenticated %}
           {% if request.user.is_verified_user or request.user.email_confirmed %}
-          <a class="btn btn-default" href="/request-ownership?id={{ instance.org.id }}">Request Ownership</a>
+          <a class="btn btn-primary" href="/request-ownership?id={{ instance.org.id }}">Request Ownership</a>
           {% endif %}
         {% endif %}
         </div>
@@ -72,11 +72,11 @@
 
 <div class="row">
 
-  <div class="col-md-6 col-sm-12 col-xs-12 view-left">
+  <div class="col-md-6 col-sm-12 col-12 view-left">
   {% if permissions.can_edit %}
   <div class="editable popin note info incomplete marg-top-15 marg-bot-15 hidden">
   {% trans "Some of the data on this page is incomplete, please update the fields marked with" %}
-    <span class="glyphicon glyphicon-exclamation-sign"></span>
+  <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
   {% trans "to improve data quality" %}.
   </div>
 
@@ -87,7 +87,7 @@
   <div data-edit-geotag="{{ref_tag}}"
     class="editable popin alert alert-warning suggested-address marg-top-15 marg-bot-15 hidden">
     <div class="row">
-      <div class="col-xs-8">
+      <div class="col-8">
         <p>{% trans "Suggested Address:" %}</p>
         <div data-edit-field="address1" class="address-field"></div>
         <div data-edit-field="address2" class="address-field"></div>
@@ -95,8 +95,8 @@
         <span data-edit-field="state" class="address-field"></span>
         <span data-edit-field="zipcode" class="address-field"></span>
       </div>
-      <div class="col-xs-4 text-right">
-        <a class="btn btn-default suggestion-accept">{% trans "Accept" %}</a>
+      <div class="col-4 text-right">
+        <a class="btn btn-primary suggestion-accept">{% trans "Accept" %}</a>
       </div>
     </div>
   </div>
@@ -112,9 +112,9 @@
     <button onclick="addSocialMediaElement(this)"
           style="
             display: inline-block;
-            position: center;
+            width: auto;
           "
-        class="btn btn-xs btn-default"
+        class="btn btn-primary btn-sm"
       >+ {% trans "Social Media" %}</button>
   </div>
   {% else %}
@@ -125,7 +125,7 @@
            data-edit-target="{{ row.target }}"
            data-edit-id="{{ row.id }}">
            <div class="row view_row">
-             <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
+             <div class="view_field view_sub col-12 col-sm-12 col-md-12">{{ row.label }}</div>
           </div>
 
           <div class="editable payload">
@@ -144,10 +144,10 @@
 
       {% if row.type == "sub"%}
         <!-- sub header -->
-        <div class="view_field view_sub col-xs-12 col-sm-12 col-md-12">{{ row.label }}</div>
+        <div class="view_field view_sub col-12 col-sm-12 col-md-12">{{ row.label }}</div>
       {% else %}
         <!-- row header -->
-        <div {% if row.edit_label or row.editable_label %}data-edit-toggled="view"{% endif %} class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
+        <div {% if row.edit_label or row.editable_label %}data-edit-toggled="view"{% endif %} class="view_field col-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
             {% if row.editable_label %}
             id="{{ row.label_name }}"
             {% endif %}
@@ -156,13 +156,13 @@
              data-placement="top"
              {% if row.notify_incomplete_group %}data-notify-incomplete-group="{{ row.notify_incomplete_group }}"{% endif %}
              title="{{ row.help_text }}"
-             {% endif %}>{% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %} {{ row.label }}
-             {% if row.help_text %}<span class="glyphicon glyphicon-question-sign"></span>{% endif %}
+             {% endif %}>{% if row.notify_incomplete %}<svg class="incomplete hidden" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>{% endif %} {{ row.label }}
+             {% if row.help_text %}<svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>{% endif %}
         </div>
 
         {% if row.editable_label %}
 
-          <div data-edit-toggled="edit" style="color:black" class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
+          <div data-edit-toggled="edit" style="color:black" class="view_field col-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
             {% if not row.readonly and permissions.can_write %}
             data-edit-type="select"
             {% endif %}
@@ -171,27 +171,27 @@
             data-edit-value="{{ row.label_value }}">{{ row|editable_list_value }}</div>
 
           {% if data.name != "social_media" %}
-          <button onclick="deleteElement(this)" data-edit-toggled="edit" class="btn btn-xs remove-inline-element"> - </button>
+          <button onclick="deleteElement(this)" data-edit-toggled="edit" class="btn btn-primary btn-sm remove-inline-element"> - </button>
           {% endif %}
         {% elif row.edit_label %}
 
         <!-- row header (edit mode), will only be set if `edit_label` is set on the field definition -->
 
-        <div data-edit-toggled="edit" class="view_field col-xs-4 col-sm-5 col-md-4{% if row.help_text or row.edit_help_text %} help-text{% endif %}"
+        <div data-edit-toggled="edit" class="view_field col-4 col-sm-5 col-md-4{% if row.help_text or row.edit_help_text %} help-text{% endif %}"
              {% if row.help_text or row.edit_help_text %}
              data-bs-toggle="tooltip"
              data-placement="top"
              {% if row.notify_incomplete_group %}data-notify-incomplete-group="{{ row.notify_incomplete_group }}"{% endif %}
              title="{% if row.edit_help_text %}{{ row.edit_help_text }}{% else %}{{ row.help_text }}{% endif %}"
-             {% endif %}>{% if row.notify_incomplete %}<span class="incomplete glyphicon glyphicon-exclamation-sign hidden"></span>{% endif %} {{ row.edit_label }}
-             {% if row.help_text or row.edit_help_text %}<span class="glyphicon glyphicon-question-sign"></span>{% endif %}
+             {% endif %}>{% if row.notify_incomplete %}<svg class="incomplete hidden" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>{% endif %} {{ row.edit_label }}
+             {% if row.help_text or row.edit_help_text %}<svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>{% endif %}
         </div>
 
         {% endif %}
 
         <!-- row value -->
         {% if row.type == "soc" %}
-          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+          <div class="view_value col-8 col-sm-7 col-md-8"
             {% if not row.readonly and permissions.can_write %}
             data-edit-type="social_media"
             {% endif %}
@@ -201,7 +201,7 @@
             data-edit-name="{{ row.name }}">{{ row.value|social_media_link:row.label_value }}</div>
 
         {% elif row.type == "url" %}
-          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+          <div class="view_value col-8 col-sm-7 col-md-8"
               {% if not row.readonly and permissions.can_write %}
               data-edit-type="url"
               {% endif %}
@@ -212,7 +212,7 @@
               data-edit-template="link">{% if row.value %}<a href="{{ row.value }}">{{ row.value }}</a>{% endif %}</div>
 
         {% elif row.type == "email" %}
-          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+          <div class="view_value col-8 col-sm-7 col-md-8"
               {% if not row.readonly and permissions.can_write %}
               data-edit-type="email"
               {% endif %}
@@ -223,7 +223,7 @@
               data-edit-template="link">{% if row.value %}<a href="mailto:{{ row.value }}">{{ row.value }}</a>{% endif %}</div>
 
         {% elif row.type == "list" %}
-          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+          <div class="view_value col-8 col-sm-7 col-md-8"
               {% if not row.readonly and permissions.can_write %}
               data-edit-type="select"
               {%   if row.multiple %}
@@ -239,7 +239,7 @@
               {% endif %}
 
         {% elif row.type == "flags" %}
-          <div class="view_value flags col-xs-8 col-sm-7 col-md-8">
+          <div class="view_value flags col-8 col-sm-7 col-md-8">
           {% for flag in row.value %}
             <span
                 {% if flag.help_text %}
@@ -262,13 +262,13 @@
                   {{ flag.label }}
               </span>
               {% if flag.help_text %}
-                <span class="glyphicon glyphicon-question-sign"/>
+              <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
               {% endif %}
             </span>
           {% endfor %}
           </div>
         {% elif row.type == "action" %}
-          <div class="view_value col-xs-8 col-sm-7 col-md-8 action">
+          <div class="view_value col-8 col-sm-7 col-md-8 action">
             {% for action in row.actions %}
             {% if action.action %}
             <button class="btn btn-sm" data-placement="right" data-container="body" data-view-action="{{ref_tag}}_{{ action.action }}">{{ action.label }}</button>
@@ -280,7 +280,7 @@
             {% endfor %}
           </div>
         {% elif row.type == "fmt-text" %}
-          <div class="view_value col-xs-8 col-sm-7 col-md-8 fmt_text"
+          <div class="view_value col-8 col-sm-7 col-md-8 fmt_text"
                data-render-markdown="yes"
                {% if not row.readonly and permissions.can_write %}
                data-edit-type="markdown"
@@ -293,7 +293,7 @@
                     {{ row.value }}
                     {% if row.name == "notes" and row.value and request.user.is_authenticated %}
                         <div class="translate">
-                            <!-- select name="language-from">
+                            {% comment %} <!-- select name="language-from">
                               <option value="" selected="selected" selected>Detect</option>
                               {% for lang in LANGUAGES %} <option value="{{ lang.0 }}">{{ lang.1 }}</option> {% endfor %}
                             </select -->
@@ -301,13 +301,13 @@
                               {% for lang in LANGUAGES %}
                                 <option value="{{ lang.0 }}"{% ifequal LANGUAGE_CODE lang.0 %} selected="selected"{% endifequal %}>{{ lang.1 }}</option>
                               {% endfor %}
-                            </select -->
-                          <a class="btn btn-default translate-btn btn-xs" style="vertical-align: bottom;">Translate &#xbb;</a>
+                            </select --> {% endcomment %}
+                          <a class="btn btn-primary translate-btn btn-sm" style="vertical-align: bottom;">Translate &#xbb;</a>
                         </div>
                     {% endif %}
                 </div>
         {% elif row.type == "safe" %}
-          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+          <div class="view_value col-8 col-sm-7 col-md-8"
                {% if not row.readonly and permissions.can_write %}
                data-edit-type="text"
                {% endif %}
@@ -317,7 +317,7 @@
                data-edit-name="{{ row.name }}">{{ row.value|safe }}</div>
 
         {% elif row.type == "bool" %}
-          <div class="view_value col-xs-8 col-sm-7 col-md-8">
+          <div class="view_value col-8 col-sm-7 col-md-8">
             <span class="checkmark"
                 {% if not row.readonly and permissions.can_write %}
                 data-edit-type="bool"
@@ -329,7 +329,7 @@
             </span>
           </div>
         {% elif row.type == "location"  %}
-          <div class="view_value inline col-xs-8 col-sm-7 col-md-8">
+          <div class="view_value inline col-8 col-sm-7 col-md-8">
             <span class="inline delimited"
                 {% if not row.readonly and permissions.can_write %}
                 data-edit-type="string"
@@ -363,7 +363,7 @@
             </span>
           </div>
         {% elif row.type == "geocode" %}
-          <div id="geocode" class="view_value col-xs-8 col-sm-7 col-md-8">
+          <div id="geocode" class="view_value col-8 col-sm-7 col-md-8">
             {% if row.value.latitude and row.value.longitude %}
               <span id="geocode_active">
                 <a href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
@@ -380,13 +380,13 @@
           </div>
         {% elif row.type == "entity_link"  %}
 
-          <div class="view_value col-xs-8 col-sm-7 col-md-8">
+          <div class="view_value col-8 col-sm-7 col-md-8">
             <a href="{{ row.link }}">{{ row.value }}</a>
           </div>
 
         {% elif row.type == "image" %}
 
-          <div class="view_value col-xs-8 col-sm-7 col-md-8 img {{ row.name }}"
+          <div class="view_value col-8 col-sm-7 col-md-8 img {{ row.name }}"
               data-edit-upload-path="{{ row.upload_handler }}"
               {% if not row.readonly and permissions.can_write %}
               data-edit-type="image"
@@ -402,11 +402,11 @@
               {% endif %}
               data-edit-value="{{ row.value }}"
               data-edit-name="{{ row.name }}">
-                <img class="img-responsive" src="{{ row.value }}" alt="{{ row.label }}" style="{% if row.max_height %}max-height: {{ row.max_height }}px;{% endif %} {% if not row.value %}display:none;{% endif %}">
+                <img class="img-fluid" src="{{ row.value }}" alt="{{ row.label }}" style="{% if row.max_height %}max-height: {{ row.max_height }}px;{% endif %} {% if not row.value %}display:none;{% endif %}">
               </div>
 
         {% else %}
-          <div class="view_value col-xs-8 col-sm-7 col-md-8"
+          <div class="view_value col-8 col-sm-7 col-md-8"
               {% if not row.readonly and permissions.can_write %}
               data-edit-type="string"
               {% endif %}
@@ -428,14 +428,14 @@
 
   </div>
 
-  <div class="col-md-6 col-sm-12 col-xs-12">
+  <div class="col-md-6 col-sm-12 col-12">
   {% include side_template_name with data=data instance=instance permissions=permissions %}
   </div>
 
 </div>
     <div class="view_title right" data-edit-toggled="edit"  style="display:none;">
-      <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
-      <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+      <a class="btn btn-primary" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+      <a class="btn btn-primary" data-edit-action="submit">{% trans "Save" %}</a>
     </div>
 </div>
 

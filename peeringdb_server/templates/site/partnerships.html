@@ -16,7 +16,7 @@
       {% for row in rows|shuffle %}
         {% if row.logo %}
           {% if row.url %}<a href="{{row.url}}">{% endif %}
-            <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-responsive" />
+            <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-fluid" />
           {% if row.url %}</a>{% endif %}
         {% endif %}
       {% endfor %}

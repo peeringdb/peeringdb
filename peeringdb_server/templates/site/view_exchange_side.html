@@ -5,27 +5,27 @@
 
 <div class="list" data-sort-container=".scrollable" data-sort-row=".row">
   <div class="row">
-    <div class="col-xs-6 col-sm-8 col-md-8">
+    <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Peers at this Exchange Point" %}</h5>
     </div>
-    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+    <div class="col-6 col-sm-4 col-md-4 filter">
       <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-networks" class="form-control" />
     </div>
   </div>
   <div class="row header">
-    <div class="col-xs-6 col-sm-4 col-md-4">
+    <div class="col-6 col-sm-4 col-md-4">
       <div data-sort-target=".peer" data-sort-initial="asc">{% trans "Peer Name" %}</div>
       <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
 
     </div>
-    <div class="col-xs-6 col-sm-3 col-md-3">
+    <div class="col-6 col-sm-3 col-md-3">
       <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
       <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
-    <div class="col-xs-2 col-sm-2 col-md-2 hidden-xs">
+    <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
     </div>
-    <div class="col-xs-2 col-sm-2 col-md-2 hidden-xs">
+    <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
       <div>{% trans "Policy" %}</div>
     </div>
   </div>
@@ -46,7 +46,7 @@
     {% for x in data.networks %}
 
     <div class="row item {% if x.operational %}operational{% endif %}">
-      <div class="col-xs-4 col-sm-4 col-md-4">
+      <div class="col-4 col-sm-4 col-md-4">
 
         <div class="peer" data-sort-value="{{ x.network.name|lower }}" data-filter-value="{{ x.network.name }}">
           <a href="/{{ x.network|ref_tag }}/{{ x.network.id }}">
@@ -54,16 +54,16 @@
             {{ x.network.name }}
           </a>
 
-          <span class="glyphicon glyphicon-warning-sign not-operational" data-edit-toggled="view" data-bs-toggle="tooltip" title="{% trans "Not operational" %}" aria-hidden="true"></span>
+          <svg class="not-operational" data-edit-toggled="view" data-bs-toggle="tooltip" title="{% trans "Not operational" %}" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="15px" viewBox="0 0 24 24" width="15px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><g><g><path d="M12,5.99L19.53,19H4.47L12,5.99 M12,2L1,21h22L12,2L12,2z"/><polygon points="13,16 11,16 11,18 13,18"/><polygon points="13,10 11,10 11,15 13,15"/></g></g></g></svg>
         </div>
       </div>
-      <div class="col-xs-6 col-sm-3 col-md-3">
+      <div class="col-6 col-sm-3 col-md-3">
       <div class="asn" data-sort-value="{{ x.asn }}" data-filter-value="{{ x.asn }}">{{ x.asn }}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2 hidden-xs">
+      <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
         <div class="speed" data-sort-value="{{ x.speed }}" data-filter-value="{{ x.speed|pretty_speed}}">{{ x.speed|pretty_speed }}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-3 hidden-xs">
+      <div class="col-2 col-sm-2 col-md-3 d-none d-sm-block">
         <div class="policy" data-filter-value="{{ x.network.policy_general }}">
           {% if x.is_rs_peer %}
             <span alt="RS Peer" title="RS Peer" class="rs-peer-badge">
@@ -74,10 +74,10 @@
           {{ x.network.policy_general }}
         </div>
       </div>
-      <div class="col-xs-12 col-sm-4 col-md-4">
+      <div class="col-12 col-sm-4 col-md-4">
           <div class="ip4" data-sort-value="{{ x.ipaddr4|none_blank }} {{ x.ipaddr6|none_blank }}" data-filter-value="{{x.ipaddr4}}">{{ x.ipaddr4|none_blank }}</div>
       </div>
-      <div class="col-xs-12 col-sm-4 col-md-8">
+      <div class="col-12 col-sm-4 col-md-8">
         <div class="ip6" data-sort-value="{{ x.ipaddr6|none_blank }} {{ x.ipaddr4|none_blank }}" data-filter-value="{{x.ipaddr6}}">{{ x.ipaddr6|none_blank }}</div>
       </div>
 

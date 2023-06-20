@@ -126,7 +126,7 @@ def test_global_stats(db, data_stats_global):
     assert global_stats == data_stats_global.expected
 
 
-@override_settings(GLOBAL_STATS_CACHE_DURATION=5)
+@override_settings(GLOBAL_STATS_CACHE_DURATION=500)
 @pytest.mark.django_db
 def test_global_stats_cache(db, data_stats_global_cached):
     setup_data()
@@ -154,9 +154,9 @@ def test_global_stats_cache(db, data_stats_global_cached):
     global_stats = stats()
     assert global_stats == data_stats_global_cached.expected
 
-    # sleep until the cache expires
+    # expire cache
 
-    time.sleep(6)
+    reset_stats()
 
     # run global stats and cache (automated network = 4 and will no longer match)
 

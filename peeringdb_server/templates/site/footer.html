@@ -2,7 +2,7 @@
 <div class="landing_footer">
   <div class="container">
     <div class="row">
-      <div class="col-md-3 col-sm-4 col-xs-12">
+      <div class="col-md-3 col-sm-4 col-12">
       {% spaceless %}
       {% now "Y" as current_year %}
       &copy; 2004-{{current_year}} PeeringDB <br/>
@@ -23,7 +23,7 @@
           <a target='_blank' href='https://docs.peeringdb.com/news'><img class="news_link" src='{{ STATIC_URL }}/logo-white.png' alt="News"></a>
       </p>
       </div>
-      <div class="col-md-3 col-sm-4 col-xs-12">
+      <div class="col-md-3 col-sm-4 col-12">
         <div>
         <a href="/about">{% trans "About" %}</a>
         </div>
@@ -49,7 +49,7 @@
       <a href="mailto:support@peeringdb.com">support@peeringdb.com</a>
       <p></p>
       </div>
-      <div class="col-md-4 col-sm-4 col-xs-12">
+      <div class="col-md-4 col-sm-4 col-12">
       <h4><b>{% trans "Global System Statistics" %}</b></h4>
       <div class="global_stats">
         <div>{{ global_stats.ix }} {% trans "Exchanges" %}</div>

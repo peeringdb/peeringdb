@@ -6,11 +6,11 @@
      data-sort-container=".results"
      data-sort-row=".row">
   <div class="row">
-    <div class="col-xs-12 col-sm-6 col-md-6">
+    <div class="col-12 col-sm-6 col-md-6">
       <!-- LEFT COLUMN -->
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="string"
                data-edit-value="{{ request.GET.name_search }}"
                data-edit-reset-value=""
@@ -20,11 +20,11 @@
 
       {% include "site/advanced-search-location.html" %}
     </div>
-    <div class="col-xs-12 col-sm-6 col-md-6">
+    <div class="col-12 col-sm-6 col-md-6">
       <!-- RIGHT COLUMN -->
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Organization" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Organization" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="autocomplete"
                data-edit-autocomplete="org"
 
@@ -45,8 +45,8 @@
       </div>
 
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "CLLI" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "CLLI" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="string"
                data-edit-value="{{ request.GET.clli__startswith }}"
                data-edit-reset-value=""
@@ -55,8 +55,8 @@
       </div>
 
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "NPA-NXX" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "NPA-NXX" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="string"
                data-edit-value="{{ request.GET.npanxx__startswith }}"
                data-edit-reset-value=""
@@ -65,8 +65,8 @@
       </div>
 
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Property" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Property" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="select"
                data-edit-data="enum/property"
                data-edit-value="{{ request.GET.property|default:"" }}"
@@ -78,8 +78,8 @@
 
 
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Diverse Serving Substations" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Diverse Serving Substations" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="select"
                data-edit-data="enum/bool_choice_str"
                data-edit-value="{{ request.GET.diverse_serving_substations }}"
@@ -90,8 +90,8 @@
       </div>
 
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Available Voltage Services" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Available Voltage Services" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="select"
                data-edit-data="enum/available_voltage"
                data-edit-value="{{ request.GET.available_voltage_services__contains }}"
@@ -115,29 +115,29 @@
   </div>
 
   <div class="right marg-top-30">
-    <a class="btn btn-default btn-xs hidden" data-export-format="json-pretty" data-export-tag="fac"><span class="glyphicon glyphicon-download"></span> JSON</a>
-    <a class="btn btn-default btn-xs hidden" data-export-format="csv" data-export-tag="fac"><span class="glyphicon glyphicon-download"></span> CSV</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="json-pretty" data-export-tag="fac"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> JSON</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="csv" data-export-tag="fac"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</a>
   </div>
 
   <div class="editable-templates">
     <div id="advanced-search-fac-item" class="row">
-      <div class="col-xs-4 col-sm-4 col-md-4">
+      <div class="col-4 col-sm-4 col-md-4">
         <a href="/fac/$id" data-edit-name="name" class="name"></a>
         <div class="org_name" data-edit-name="org_name"></div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div class="clli" data-edit-name="clli"></div>
         <div class="npanxx" data-edit-name="npanxx"></div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div class="city" data-edit-name="city"></div>
         <div class="country" data-edit-name="country"></div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div class="state" data-edit-name="state"></div>
         <div class="zipcode" data-edit-name="zipcode"></div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div class="net_count" data-edit-name="net_count"></div>
       </div>
     </div>
@@ -145,23 +145,23 @@
 
   <div class="headers marg-top-15">
     <div class="row">
-      <div class="col-xs-4 col-sm-4 col-md-4">
+      <div class="col-4 col-sm-4 col-md-4">
         <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
         <div data-sort-target=".org_name">{% trans "Management" %}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div data-sort-target=".clli">{% trans "CLLI" %}</div>
         <div data-sort-target=".npanxx" class="ambiguous">{% trans "NPA-NXX" %}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div data-sort-target=".city">{% trans "City" %}</div>
         <div data-sort-target=".country">{% trans "Country" %}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div data-sort-target=".state">{% trans "State" %}</div>
         <div data-sort-target=".zipcode" class="ambiguous">{% trans "Postal Code" %}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div data-sort-target=".net_count" class="numeric">{% trans "Networks" %}</div>
       </div>
 

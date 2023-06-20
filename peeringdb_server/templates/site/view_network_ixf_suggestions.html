@@ -36,7 +36,7 @@
 {% if data.ixf %}
 <div class="marg-side-15">
   <div class="row">
-    <div class="col-xs-12 editable note info">
+    <div class="col-12 editable note info">
     <p><strong>
     {% trans "Some exchanges suggest updates to your entries in their peering list." %}
     </strong></p>
@@ -58,12 +58,12 @@
   data-ixf-proposals-net="{{ instance.id }}">
   <div class="marg-side-15 marg-top-15">
   <div class="row item" role="button" data-bs-toggle="collapse" aria-expanded="false" data-bs-target="#ixf-proposals-{{ ix_id }}">
-    <div class="col-xs-10">
+    <div class="col-10">
       <h4 class="marg-top"><a class="ix-name">{{ ixf_proposals.ix.name }}</a></h4>
     </div>
-    <div class="col-xs-2 right">
-      <span class="collapsed glyphicon glyphicon-expand"></span>
-      <span class="expanded glyphicon glyphicon-collapse-down"></span>
+    <div class="col-2 right">
+      <svg class="collapsed" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+      <svg class="expanded" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
     </div>
   </div>
   </div>
@@ -71,10 +71,10 @@
   <div id="ixf-proposals-{{ ix_id }}" class="list padded-rows collapse">
 
   <div class="row controls">
-    <div class="col-xs-6">
+    <div class="col-6">
       <a href="{% url "ix-view" id=ixf_proposals.ix.id %}">{% trans "Their PeeringDB entry" %}</a>
     </div>
-    <div class="col-xs-6 right">
+    <div class="col-6 right">
       <button data-bs-toggle="tooltip" title="{% trans "Automatically update and remove all suggested entries" %}" class="btn btn-default btn-sm resolve-all" type="button">{% trans "Auto-resolve" %}</button>
 
       <button data-bs-toggle="tooltip" title="{% trans "Automatically add all suggested entries" %}" class="btn btn-default btn-sm add-all" type="button">{% trans "Auto-add" %}</button>
@@ -84,13 +84,13 @@
   {% if ixf_proposals.add %}
 
   <div class="row header header-add">
-    <div class="col-xs-5">
+    <div class="col-5">
       <div>{% trans "Add" %}</div>
     </div>
-    <div class="col-xs-3">
+    <div class="col-3">
       <div>{% trans "Speed" %}</div>
     </div>
-    <div class="col-xs-4">
+    <div class="col-4">
       <div>{% trans "Options" %}</div>
     </div>
   </div>
@@ -105,7 +105,7 @@
 
     <div class="row item" data-ixf-id="{{ x.ixf_id_pretty_str }}">
       <div class="loading-shim" style="display:none;"></div>
-      <div class="col-xs-5">
+      <div class="col-5">
         <div class="editable input-frame">
           {% if x.net.ipv4_support %}
           <input type="text" placeholder="{% trans "IPv4" %}" data-field="ipaddr4" value="{{ x.ipaddr4|none_blank }}">
@@ -121,14 +121,14 @@
           {% endif %}
         </div>
       </div>
-      <div class="col-xs-3">
+      <div class="col-3">
         <div>
           <div class="editable input-frame">
             <input type="text" placeholder="{% trans "Speed" %}" data-field="speed" value="{{ x.speed }}" id="{{ x.id }}-speed">
           </div>
         </div>
       </div>
-      <div class="col-xs-3">
+      <div class="col-3">
         <div>
           <div class="editable input-frame">
             <input type="checkbox"
@@ -146,22 +146,22 @@
           </div>
         </div>
       </div>
-      <div class="col-xs-1 right">
-        <span class="glyphicon glyphicon-question-sign" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
+      <div class="col-1 right">
+        <svg data-bs-toggle="tooltip" title="{{ x.reason }}" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
       </div>
-      <div class="col-xs-12">
+      <div class="col-12">
         <div class="row marg-top-15">
-          <div class="col-xs-3">
+          <div class="col-3">
             <input type="hidden" data-field="suggestion_id" value="{{ x.id }}">
             <button type="button"
               class="btn btn-danger btn-sm dismiss"
               title="{% trans "Hide this suggestion until the exchange updates it." %}"
               data-bs-toggle="tooltip">{% trans "Dismiss" %}</button>
           </div>
-          <div class="col-xs-6 center">
+          <div class="col-6 center">
             <div class="alert alert-compact alert-danger errors" style="display:none;"></div>
           </div>
-          <div class="col-xs-3 right">
+          <div class="col-3 right">
             <button type="button"
               class="btn btn-default btn-sm add"
               title="{% trans "Add this entry to public peering exchange points" %}"
@@ -183,7 +183,7 @@
   {% if ixf_proposals.delete %}
 
   <div class="row header header-delete">
-    <div class="col-xs-12">
+    <div class="col-12">
       <div>{% trans "Remove" %}</div>
     </div>
   </div>
@@ -201,27 +201,27 @@
         <div data-field="suggestion_id" data-value="{{ x.id }}"></div>
         <div data-field="id" data-value="{{ x.netixlan.id }}"></div>
       </div>
-      <div class="col-xs-5">
+      <div class="col-5">
       {% if x.ipaddr4 %}{{ x.ipaddr4 }}{% else %}{% trans "IPv4 not set" %}{% endif %}
       </div>
-      <div class="col-xs-6">
+      <div class="col-6">
       {% if x.ipaddr6 %}{{ x.ipaddr6 }}{% else %}{% trans "IPv6 not set" %}{% endif %}
       </div>
-      <div class="col-xs-1 right">
-        <span class="glyphicon glyphicon-question-sign" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
+      <div class="col-1 right">
+        <svg data-bs-toggle="tooltip" title="{{ x.reason }}" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
       </div>
-      <div class="col-xs-12">
+      <div class="col-12">
         <div class="row marg-top-15">
-          <div class="col-xs-3">
+          <div class="col-3">
             <button type="button"
               class="btn btn-danger btn-sm dismiss"
               title="{% trans "Hide this suggestion until the exchange updates it." %}"
               data-bs-toggle="tooltip">{% trans "Dismiss" %}</button>
           </div>
-          <div class="col-xs-6 center">
+          <div class="col-6 center">
             <div class="alert alert-compact alert-danger errors" style="display:none;"></div>
           </div>
-          <div class="col-xs-3 right">
+          <div class="col-3 right">
             <button type="button"
               class="btn btn-default btn-sm delete"
               title="{% trans "Remove this entry from your public peering exchange points list" %}"
@@ -246,10 +246,10 @@
   {% if ixf_proposals.modify %}
 
   <div class="row header header-modify">
-    <div class="col-xs-5">
+    <div class="col-5">
       <div>{% trans "Update" %}</div>
     </div>
-    <div class="col-xs-7">
+    <div class="col-7">
       <div>{% trans "Changes" %}</div>
     </div>
   </div>
@@ -275,7 +275,7 @@
         {% endfor %}
 
       </div>
-      <div class="col-xs-5">
+      <div class="col-5">
         {% if x.net.ipv4_support %}
         <div data-field="ipaddr4" data-value="{{ x.ipaddr4|none_blank }}">
         {{ x.ipaddr4|none_blank }}
@@ -296,7 +296,7 @@
         </div>
         {% endif %}
       </div>
-      <div class="col-xs-6">
+      <div class="col-6">
         <input type="hidden" data-field="ixlan_id" value="{{ x.ixlan_id }}">
         <input type="hidden" data-field="net_id" value="{{ x.net.id }}">
         <input type="hidden" data-field="asn" value="{{ x.asn }}">
@@ -340,7 +340,7 @@
         <div class="ixf-suggested-change">
           <span class="field_name">{% trans "Speed" %}</span>:
           <span class="old-value">{{ x.changes.speed.from|pretty_speed }}</span>
-          <span class="glyphicon glyphicon-arrow-right" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
+          <svg data-bs-toggle="tooltip" title="{{ x.reason }}" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
           <span class="new-value">{{ x.changes.speed.to|pretty_speed }}</span>
         </div>
         {% endif %}
@@ -351,7 +351,7 @@
           <span class="old-value">
             <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.is_rs_peer.from %}-off{% endif %}.png" />
           </span>
-          <span class="glyphicon glyphicon-arrow-right" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
+          <svg data-bs-toggle="tooltip" title="{{ x.reason }}" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
           <span class="new-value">
             <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.is_rs_peer.to %}-off{% endif %}.png" />
           </span>
@@ -364,7 +364,7 @@
           <span class="old-value">
             <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.operational.from %}-off{% endif %}.png" />
           </span>
-          <span class="glyphicon glyphicon-arrow-right" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
+          <svg data-bs-toggle="tooltip" title="{{ x.reason }}" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
           <span class="new-value">
             <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.operational.to %}-off{% endif %}.png" />
           </span>
@@ -373,21 +373,21 @@
 
 
       </div>
-      <div class="col-xs-1 right">
-        <span class="glyphicon glyphicon-question-sign" data-bs-toggle="tooltip" title="{{ x.reason }}"></span>
+      <div class="col-1 right">
+        <svg data-bs-toggle="tooltip" title="{{ x.reason }}" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
       </div>
-      <div class="col-xs-12">
+      <div class="col-12">
         <div class="row marg-top-15">
-          <div class="col-xs-3">
+          <div class="col-3">
             <button type="button"
               class="btn btn-danger btn-sm dismiss"
               title="{% trans "Hide this suggestion until the exchange updates it." %}"
               data-bs-toggle="tooltip">{% trans "Dismiss" %}</button>
           </div>
-          <div class="col-xs-6 center">
+          <div class="col-6 center">
             <div class="alert alert-compact alert-danger errors" style="display:none;"></div>
           </div>
-          <div class="col-xs-3 right">
+          <div class="col-3 right">
             <button type="button"
               class="btn btn-default btn-sm modify"
               title="{% trans "Update this entry in your public peering exchange points list. You will also need to save the network record to persist these changes after accepting them." %}"
@@ -410,11 +410,11 @@
 
 <!--
   <div class="row controls marg-top">
-    <div class="col-xs-6">
+    <div class="col-6">
       <button data-bs-toggle="tooltip" title="{% trans "Will restore any active suggestions from this exchange that have been dismissed by the network" %}" type="button" class="btn btn-warning btn-sm reset-suggestions">{% trans "Reset Suggestions" %}</button>
     </div>
 
-    <div class="col-xs-6 right">
+    <div class="col-6 right">
       <button data-bs-toggle="tooltip" title="{% trans "Will add all suggested entries" %}" type="button" class="btn btn-default btn-sm add">{% trans "Auto Add" %}</button>
     </div>
   </div>
