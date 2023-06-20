@@ -568,7 +568,7 @@ div.recent div.age {
 /* views */
 
 div.view_fields {
-  padding-left: 15px;
+  padding-left: 10px;
   padding-right: 10px;
   background-color: #4b6063;
 }
@@ -1720,8 +1720,9 @@ div.stats_row {
 
 
 .remove-inline-element {
-  left: -20px;
+  left: -30px;
   top: 6px;
+  width: 25px;
   position: absolute;
   border: 1.2px solid rgb(75, 96, 99);
 }

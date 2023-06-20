@@ -7,7 +7,7 @@ import tld
 from allauth.account.models import EmailAddress
 from django import template
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_countries import countries
 from django_grainy.helpers import int_flags
 

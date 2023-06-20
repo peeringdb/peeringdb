@@ -9,20 +9,20 @@
 
 <div class="advanced-search-view" data-campus-icon-path="{% static "campus.svg" %}">
   <ul class="nav nav-tabs" role="tablist">
-    <li role="presentation">
-      <a href="#ix" aria-controls="ix" role="tab" data-bs-toggle="tab" class="{% if request.GET.reftag == "ix" or not request.GET.reftag %}active{% else %}inactive{% endif %}">{% trans "Exchanges" %}</a>
+    <li role="presentation" class"nav-item">
+      <a href="#ix" aria-controls="ix" role="tab" data-bs-toggle="tab" class="nav-link {% if request.GET.reftag == "ix" or not request.GET.reftag %}active{% else %}inactive{% endif %}">{% trans "Exchanges" %}</a>
     </li>
-    <li role="presentation">
-      <a href="#net" aria-controls="net" role="tab" data-bs-toggle="tab" class="{% if request.GET.reftag == "net" %}active{% else %}inactive{% endif %}">{% trans "Networks"  %}</a>
+    <li role="presentation" class"nav-item">
+      <a href="#net" aria-controls="net" role="tab" data-bs-toggle="tab" class="nav-link {% if request.GET.reftag == "net" %}active{% else %}inactive{% endif %}">{% trans "Networks"  %}</a>
     </li>
-    <li role="presentation">
-      <a href="#fac" aria-controls="fac" role="tab" data-bs-toggle="tab" class="{% if request.GET.reftag == "fac" %}active{% else %}inactive{% endif %}">{% trans "Facilities" %}</a>
+    <li role="presentation" class"nav-item">
+      <a href="#fac" aria-controls="fac" role="tab" data-bs-toggle="tab" class="nav-link {% if request.GET.reftag == "fac" %}active{% else %}inactive{% endif %}">{% trans "Facilities" %}</a>
     </li>
-    <li role="presentation">
-      <a href="#org" aria-controls="org" role="tab" data-bs-toggle="tab" class="{% if request.GET.reftag == "org" %}active{% else %}inactive{% endif %}">{% trans "Organizations" %}</a>
+    <li role="presentation" class"nav-item">
+      <a href="#org" aria-controls="org" role="tab" data-bs-toggle="tab" class="nav-link {% if request.GET.reftag == "org" %}active{% else %}inactive{% endif %}">{% trans "Organizations" %}</a>
     </li>
-    <li role="presentation">
-      <a href="#campus" aria-controls="campus" role="tab" data-bs-toggle="tab" class="{% if request.GET.reftag == "campus" %}active{% else %}inactive{% endif %}">{% trans "Campus" %}</a>
+    <li role="presentation" class"nav-item">
+      <a href="#campus" aria-controls="campus" role="tab" data-bs-toggle="tab" class="nav-link {% if request.GET.reftag == "campus" %}active{% else %}inactive{% endif %}">{% trans "Campus" %}</a>
     </li>
   </ul>
 
@@ -100,7 +100,7 @@
             searchForm.parent().find("[data-export-format]").each(function() {
               var tag = $(this).data("export-tag");
               var format = $(this).data("export-format");
-              $(this).removeClass("hidden")
+              $(this).removeClass("d-none")
               $(this).attr("href", "/export/advanced-search/"+tag+"/"+format+"?"+PeeringDB.advanced_search_result[tag].param);
             })
           });

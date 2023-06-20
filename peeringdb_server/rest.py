@@ -24,15 +24,15 @@ import reversion
 import unidecode
 from django.apps import apps
 from django.conf import settings
-from django.conf.urls import url
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
 from django.db import connection, transaction
 from django.db.models import DateTimeField
 from django.shortcuts import redirect
+from django.urls import re_path
 from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
-from django_grainy.rest import PermissionDenied
+from django.utils.translation import gettext_lazy as _
+from django_grainy.exceptions import PermissionDenied
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes, schema
@@ -1165,7 +1165,7 @@ def view_self_entity(request, data_type):
 
 # set here in case we want to add more urls later
 urlpatterns = [
-    url("(net|ix|org|fac|carrier|campus)/self", view_self_entity),
+    re_path("(net|ix|org|fac|carrier|campus)/self", view_self_entity),
 ]
 rout_urls = router.urls
 urls = urlpatterns + rout_urls

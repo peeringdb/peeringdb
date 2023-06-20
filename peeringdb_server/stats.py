@@ -38,17 +38,17 @@ def gen_stats():
             status="ok"
         ).count(),
         Facility.handleref.tag: Facility.handleref.filter(status="ok").count(),
+        Carrier.handleref.tag: Carrier.handleref.filter(status="ok").count(),
+        Campus.handleref.tag: Campus.handleref.filter(status="ok").count(),
         NetworkIXLan.handleref.tag: NetworkIXLan.handleref.filter(status="ok").count(),
         NetworkFacility.handleref.tag: NetworkFacility.handleref.filter(
             status="ok"
         ).count(),
-        Carrier.handleref.tag: Carrier.handleref.filter(status="ok").count(),
-        Campus.handleref.tag: Campus.handleref.filter(status="ok").count(),
         "automated_nets": Network.handleref.filter(
             status="ok", allow_ixp_update=True
         ).count(),
-        "registered_users": User.objects.count(),
         "organizations": Organization.objects.filter(status="ok").count(),
+        "registered_users": User.objects.count(),
     }
     __STATS["mod"] = timezone.now()
 

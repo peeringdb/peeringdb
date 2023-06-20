@@ -9,9 +9,9 @@
 
   {% if request.user.is_verified_user or request.user.email_confirmed %}
   <div class="row marg-top-15">
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
+    <div class="col-md-4 col-sm-3 col-12"></div>
 
-    <div id="success-note-pending" style="display:none" class="editable always col-md-4 col-sm-6 col-xs-12 panel">
+    <div id="success-note-pending" style="display:none" class="editable always col-md-4 col-sm-6 col-12 panel">
     <h3>{% trans "Thank you" %}</h3>
     {% spaceless %}
     {% blocktrans with o_name=org.name trimmed %} We have received your ownership request for {{ o_name }} and will review it.  {% endblocktrans %}
@@ -19,7 +19,7 @@
     <div class="marg-top"></div>
     </div>
 
-    <div id="success-note-approved" style="display:none" class="editable always col-md-4 col-sm-6 col-xs-12 panel">
+    <div id="success-note-approved" style="display:none" class="editable always col-md-4 col-sm-6 col-12 panel">
     <h3>{% trans "Thank you" %}</h3>
     {% trans "We have verified your relationship with this entity and you have successfully claimed ownership. You may view / edit" %}
     <a href="/org/{{ org.id }}">{% trans "here" %}</a>.
@@ -27,7 +27,7 @@
     </div>
 
 
-    <div class="editable always col-md-4 col-sm-6 col-xs-12 panel"
+    <div class="editable always col-md-4 col-sm-6 col-12 panel"
          data-edit-target="/request-ownership"
          data-edit-always-submit="yes"
          id="form-affiliate-account">
@@ -54,7 +54,7 @@
      </div>
     </div>
 
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
+    <div class="col-md-4 col-sm-3 col-12"></div>
   </div>
   {% else %}
   <div class="editable popin error">

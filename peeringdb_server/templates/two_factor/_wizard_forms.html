@@ -18,13 +18,13 @@
 
   <input type="hidden" name="next" id="next" value="{{ request.GET.next }}" />
 
-  <div class="form-group">
+  <div class="mb-3">
      <div class="errors">
       {{ wizard.form.errors.username }}
      </div>
      <input placeholder="{% trans "Username" %}" class="form-control" type="text" id="id_auth-username" name="auth-username" value="{{ wizard.form.username.value|default:"" }}" />
   </div>
-  <div class="form-group">
+  <div class="mb-3">
      <div class="errors">
       {{ wizard.form.errors.password }}
      </div>

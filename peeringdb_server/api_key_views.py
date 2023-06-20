@@ -4,7 +4,7 @@ Views for organization api key management.
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from grainy.const import PERM_READ
 

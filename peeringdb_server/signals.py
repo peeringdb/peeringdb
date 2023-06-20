@@ -27,8 +27,8 @@ from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from django.template import loader
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from django.utils.translation import override
-from django.utils.translation import ugettext_lazy as _
 from django_elasticsearch_dsl.signals import RealTimeSignalProcessor
 from django_grainy.models import Group, GroupPermission
 from django_peeringdb.const import REGION_MAPPING
@@ -232,13 +232,16 @@ def campus_status(sender, instance=None, **kwargs):
     if instance.status == "deleted":
         # when the campus is deleted make sure all facilities
         # are removed from it
-        Facility.objects.filter(campus=instance).update(campus=None)
+        if instance.id:
+            Facility.objects.filter(campus=instance).update(campus=None)
         return
-
-    if instance.fac_set.filter(status="ok").count() < 2:
-        instance.status = "pending"
+    if instance.id:
+        if instance.fac_set.filter(status="ok").count() < 2:
+            instance.status = "pending"
+        else:
+            instance.status = "ok"
     else:
-        instance.status = "ok"
+        instance.status = "pending"
 
 
 pre_save.connect(campus_status, sender=Campus)
@@ -655,16 +658,14 @@ class ESSilentRealTimeSignalProcessor(RealTimeSignalProcessor):
         try:
             super().handle_save(sender, instance, **kwargs)
         except Exception as e:
-            self.log.error(f"ELASTICSEARCH", action="save", error=e, instance=instance)
+            self.log.error("ELASTICSEARCH", action="save", error=e, instance=instance)
             pass
 
     def handle_delete(self, sender, instance, **kwargs):
         try:
             super().handle_delete(sender, instance, **kwargs)
         except Exception as e:
-            self.log.error(
-                f"ELASTICSEARCH", action="delete", error=e, instance=instance
-            )
+            self.log.error("ELASTICSEARCH", action="delete", error=e, instance=instance)
             pass
 
     def handle_pre_delete(self, sender, instance, **kwargs):
@@ -672,6 +673,6 @@ class ESSilentRealTimeSignalProcessor(RealTimeSignalProcessor):
             return super().handle_pre_delete(sender, instance, **kwargs)
         except Exception as e:
             self.log.error(
-                f"ELASTICSEARCH", action="pre_delete", error=e, instance=instance
+                "ELASTICSEARCH", action="pre_delete", error=e, instance=instance
             )
             pass
