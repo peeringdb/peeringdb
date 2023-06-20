@@ -10,7 +10,7 @@ license = "BSD-2-Clause"
 [tool.poetry.dependencies]
 python = "^3.9"
 # core requirements
-django = "==4.2"
+django = "==4.2.1"
 django-inet = "^1.1.1"
 django-handleref = "^2.0.0"
 # Install from pypi once 3.1.0 is released
