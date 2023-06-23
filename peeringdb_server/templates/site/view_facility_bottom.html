@@ -5,21 +5,21 @@
 
 <div class="list" data-sort-container=".scrollable" data-sort-row=".row">
   <div class="row">
-    <div class="col-xs-6 col-sm-8 col-md-8">
+    <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Exchanges" %}</h5>
     </div>
-    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+    <div class="col-6 col-sm-4 col-md-4 filter">
       <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-exchanges" class="form-control" />
     </div>
   </div>
   <div class="row header">
-    <div class="col-xs-4 col-sm-4 col-md-4">
+    <div class="col-4 col-sm-4 col-md-4">
       <div data-sort-target=".exchange" data-sort-initial="asc">{% trans "Exchange" %}</div>
     </div>
-    <div class="col-xs-5 col-sm-5 col-md-5">
+    <div class="col-5 col-sm-5 col-md-5">
       <div data-sort-target=".name">{% trans "Long Name" %}</div>
     </div>
-    <div class="col-xs-3 col-sm-3 col-md-3">
+    <div class="col-3 col-sm-3 col-md-3">
       <div data-sort-target=".participants" class="numeric">{% trans "Networks" %}</div>
     </div>
   </div>
@@ -34,15 +34,15 @@
     {% for x in data.exchanges %}
 
     <div class="row item">
-      <div class="col-xs-4 col-sm-4 col-md-4">
+      <div class="col-4 col-sm-4 col-md-4">
         <div class="exchange" data-sort-value="{{ x.ix.name|lower }}" data-filter-value="{{ x.ix.name }}">
           <a href="/{{x.ix|ref_tag}}/{{ x.ix.id }}">{{ x.ix.name }}</a>
         </div>
       </div>
-      <div class="col-xs-5 col-sm-5 col-md-5">
+      <div class="col-5 col-sm-5 col-md-5">
         <div class="name" data-sort-value="{{ x.ix.name_long|lower }}" data-filter-value="{{ x.ix.name_long }}">{{ x.ix.name_long }}</div>
       </div>
-      <div class="col-xs-3 col-sm-3 col-md-3">
+      <div class="col-3 col-sm-3 col-md-3">
         {% with x.ix.net_count as num %}
         <div class="participants" data-sort-value="{{ num }}">{{ num }}</div>
         {% endwith %}
@@ -58,18 +58,18 @@
 
 <div class="list" data-sort-container=".scrollable" data-sort-row=".row">
   <div class="row">
-    <div class="col-xs-6 col-sm-8 col-md-8">
+    <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Carriers" %}</h5>
     </div>
-    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+    <div class="col-6 col-sm-4 col-md-4 filter">
       <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-carriers" class="form-control" />
     </div>
   </div>
   <div class="row header">
-    <div class="col-xs-8 col-sm-8 col-md-8">
+    <div class="col-8 col-sm-8 col-md-8">
       <div data-sort-target=".carrier" data-sort-initial="asc">{% trans "Carrier" %}</div>
     </div>
-    <div class="col-xs-4 col-sm-4 col-md-4">
+    <div class="col-4 col-sm-4 col-md-4">
     </div>
   </div>
 
@@ -85,7 +85,7 @@
     {% if x.status == "ok" or permissions.can_create %}
 
     <div class="row item" data-edit-id="{{ x.id }}">
-      <div class="col-xs-8 col-sm-8 col-md-8">
+      <div class="col-8 col-sm-8 col-md-8">
         {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "Remove this carrier from your facility." %}">&times;</a>
         {% endif %}
@@ -93,12 +93,12 @@
           <a href="/{{x.carrier|ref_tag}}/{{ x.carrier.id }}">{{ x.carrier.name }}</a>
         </div>
       </div>
-      <div class="col-xs-4 col-sm-4 col-md-4 right">
+      <div class="col-4 col-sm-4 col-md-4 right">
         {% if permissions.can_create %}
         <span class="approval-controls right">
           {% if x.status == "pending" %}
-          <button class="btn-xs btn btn-primary" data-view-action="fac_approve_carrier" data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This carrier wants to list its presence at this facility." %} {% trans "Click to accept this request" %}">{% trans "Accept" %}</button>
-          <button class="btn-xs btn btn-danger" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This carrier wants to list its presence at this facility." %} {% trans "Click to reject this request" %}">{% trans "Reject" %}</button>
+          <button class="btn-sm btn btn-primary" data-view-action="fac_approve_carrier" data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This carrier wants to list its presence at this facility." %} {% trans "Click to accept this request" %}">{% trans "Accept" %}</button>
+          <button class="btn-sm btn btn-danger" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This carrier wants to list its presence at this facility." %} {% trans "Click to reject this request" %}">{% trans "Reject" %}</button>
           {% endif %}
         </span>
         {% endif %}

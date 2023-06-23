@@ -8,8 +8,8 @@
   {% include "site/beta_banner.html" %}
 
   <div class="row marg-top-15" id="success-create-account" style="display:none;">
-    <div class="col-md-2 col-sm-3 col-xs-12"></div>
-    <div class="col-md-8 col-sm-6 col-xs-12 panel">
+    <div class="col-md-2 col-sm-3 col-12"></div>
+    <div class="col-md-8 col-sm-6 col-12 panel">
       <h3>{% trans "Account Created" %}</h3>
       <p>
       {% trans "Your account was created, but won't have full access until we have reviewed it. Thank you for your patience." %}
@@ -18,15 +18,15 @@
       <a href="/">{% trans "Return Home" %}</a>
       </p>
     </div>
-    <div class="col-md-2 col-sm-3 col-xs-12"></div>
+    <div class="col-md-2 col-sm-3 col-12"></div>
   </div>
 
   {% include "site/oauth-login.html" with OAUTH_ENABLED=OAUTH_ENABLED %}
   <div class="row{% if not OAUTH_ENABLED %} marg-top-15{% endif %}" id="container-create-account">
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
+    <div class="col-md-4 col-sm-3 col-12"></div>
 
     <!-- REGISTER VIA SITE -->
-    <div class="editable always col-md-4 col-sm-6 col-xs-12 panel marg-right"
+    <div class="editable always col-md-4 col-sm-6 col-12 panel marg-right"
          data-edit-target="/register"
          id="form-create-account">
       <h3>{% trans "Create account" %}</h3>
@@ -95,7 +95,7 @@
       <a class="btn btn-default" data-edit-action="submit">{% trans "Create" %}</a>
     </div>
 
-    <div class="col-md-4 col-sm-3 col-xs-12"></div>
+    <div class="col-md-4 col-sm-3 col-12"></div>
   </div>
 </div>
 </div>

@@ -6,11 +6,11 @@
      data-sort-container=".results"
      data-sort-row=".row">
   <div class="row">
-    <div class="col-xs-12 col-sm-6 col-md-6">
+    <div class="col-12 col-sm-6 col-md-6">
       <!-- LEFT COLUMN -->
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="string"
                data-edit-name="name_search"
                data-edit-reset-value=""
@@ -18,8 +18,8 @@
         </div>
       </div>
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Address" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Address" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="string"
                data-edit-value="{{ request.GET.facility__address1 }}"
                data-edit-reset-value=""
@@ -27,22 +27,22 @@
         </div>
       </div>
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "City" %}/ {% trans "State" %}/ {% trans "Postal" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "City" %}/ {% trans "State" %}/ {% trans "Postal" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div class="row">
-            <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="col-4 col-sm-4 col-md-4">
               <div data-edit-type="string"
                    data-edit-value="{{ request.GET.facility__city }}"
                    data-edit-reset-value=""
                    data-edit-name="facility__city"></div>
             </div>
-            <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="col-4 col-sm-4 col-md-4">
               <div data-edit-type="string"
                    data-edit-value="{{ request.GET.facility__state }}"
                    data-edit-reset-value=""
                    data-edit-name="facility__state"></div>
             </div>
-            <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="col-4 col-sm-4 col-md-4">
               <div data-edit-type="string"
                    data-edit-value="{{ request.GET.facility__zipcode }}"
                    data-edit-reset-value=""
@@ -52,8 +52,8 @@
         </div>
       </div>
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Country" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Country" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="select"
                data-edit-name="facility__country__in"
                data-edit-error-field="country"
@@ -72,8 +72,8 @@
 
 
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Continental Region" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Continental Region" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="select"
                data-edit-name="facility__region_continent__in"
                data-edit-data="enum/regions"
@@ -85,11 +85,11 @@
       </div>
       {% if can_use_distance_filter %}
         <div class="row">
-          <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Within Distance" %}
+          <div class="col-4 col-sm-5 col-md-4">{% trans "Within Distance" %}
           </div>
-          <div class="col-xs-8 col-sm-7 col-md-8">
+          <div class="col-8 col-sm-7 col-md-8">
             <div class="row">
-              <div class="col-xs-12">
+              <div class="col-12">
                 <div data-edit-type="spatial_distance"
                      data-edit-value="{{ request.GET.distance|default:0 }}"
                      data-edit-reset-value=""
@@ -109,11 +109,11 @@
         </div>
       {% endif %}
     </div>
-    <div class="col-xs-12 col-sm-6 col-md-6">
+    <div class="col-12 col-sm-6 col-md-6">
       <!-- RIGHT COLUMN -->
       <div class="row">
-        <div class="col-xs-4 col-sm-5 col-md-4">{% trans "Organization" %}</div>
-        <div class="col-xs-8 col-sm-7 col-md-8">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Organization" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="autocomplete"
                data-edit-autocomplete="org"
                {% if request.GET.org__name__contains %}
@@ -138,21 +138,21 @@
   </div>
 
   <div class="right marg-top-30">
-    <a class="btn btn-default btn-xs hidden" data-export-format="json-pretty" data-export-tag="campus"><span class="glyphicon glyphicon-download"></span> JSON</a>
-    <a class="btn btn-default btn-xs hidden" data-export-format="csv" data-export-tag="campus"><span class="glyphicon glyphicon-download"></span> CSV</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="json-pretty" data-export-tag="campus"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> JSON</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="csv" data-export-tag="campus"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</a>
   </div>
 
   <div class="editable-templates">
     <div id="advanced-search-campus-item" class="row">
-      <div class="col-xs-4 col-sm-4 col-md-4">
+      <div class="col-4 col-sm-4 col-md-4">
         <a href="/campus/$id" data-edit-name="name" class="name"></a>
         <div class="org_name" data-edit-name="org_name"></div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div class="city" data-edit-name="city"></div>
         <div class="country" data-edit-name="country"></div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div class="state" data-edit-name="state"></div>
         <div class="zipcode" data-edit-name="zipcode"></div>
       </div>
@@ -161,15 +161,15 @@
 
   <div class="headers marg-top-15">
     <div class="row">
-      <div class="col-xs-4 col-sm-4 col-md-4">
+      <div class="col-4 col-sm-4 col-md-4">
         <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
         <div data-sort-target=".org_name">{% trans "Management" %}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div data-sort-target=".city">{% trans "City" %}</div>
         <div data-sort-target=".country">{% trans "Country" %}</div>
       </div>
-      <div class="col-xs-2 col-sm-2 col-md-2">
+      <div class="col-2 col-sm-2 col-md-2">
         <div data-sort-target=".state">{% trans "State" %}</div>
         <div data-sort-target=".zipcode" class="ambiguous">{% trans "Postal Code" %}</div>
       </div>

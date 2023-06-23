@@ -993,6 +993,7 @@ else:
 # collect webauthn device attestation
 set_option("WEBAUTHN_ATTESTATION", "none")
 
+
 # haystack
 
 set_option("WHOOSH_INDEX_PATH", os.path.join(API_CACHE_ROOT, "whoosh-index"))
@@ -1005,6 +1006,7 @@ HAYSTACK_CONNECTIONS = {
         "BATCH_SIZE": 40000,
     },
 }
+
 
 set_option("HAYSTACK_ITERATOR_LOAD_PER_QUERY", 20000)
 set_option("HAYSTACK_LIMIT_TO_REGISTERED_MODELS", False)
@@ -1288,6 +1290,8 @@ else:
     EMAIL_SUBJECT_PREFIX = f"[{RELEASE_ENV}] "
 
 CSRF_USE_SESSIONS = True
+
+set_option("CSRF_TRUSTED_ORIGINS", WEBAUTHN_ORIGIN)
 
 # A toggle for the periodic re-authentication process propagated
 # by organizations (#736)

@@ -1,5 +1,7 @@
 # Maintaining Translations
 
+NOTE!: This page is for PeeringDB developers, not translators. Per [https://docs.peeringdb.com/translation/](https://docs.peeringdb.com/translation/) translations are performed at [https://translate.peeringdb.com/](https://translate.peeringdb.com/).
+
 ## Setup
 
 Clone the [translations](https://github.com/peeringdb/translations) repository in the location that

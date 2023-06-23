@@ -8,8 +8,8 @@ import json
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.http import HttpResponse, JsonResponse
-from django.utils.translation import ugettext_lazy as _
-from ratelimit.decorators import ratelimit
+from django.utils.translation import gettext_lazy as _
+from django_ratelimit.decorators import ratelimit
 
 from peeringdb_server import ixf
 from peeringdb_server.models import IXLan, Network
@@ -52,7 +52,10 @@ def error_response(msg, status=400):
 
 
 @ratelimit(
-    key="ip", rate=RATELIMITS["view_import_ixlan_ixf_preview"], group="ixf_preview"
+    key="ip",
+    rate=RATELIMITS["view_import_ixlan_ixf_preview"],
+    group="ixf_preview",
+    block=False,
 )
 @enable_basic_auth
 def view_import_ixlan_ixf_preview(request, ixlan_id):
@@ -79,7 +82,10 @@ def view_import_ixlan_ixf_preview(request, ixlan_id):
 
 
 @ratelimit(
-    key="ip", rate=RATELIMITS["view_import_net_ixf_postmortem"], group="ixf_postmortem"
+    key="ip",
+    rate=RATELIMITS["view_import_net_ixf_postmortem"],
+    group="ixf_postmortem",
+    block=False,
 )
 @enable_basic_auth
 def view_import_net_ixf_postmortem(request, net_id):
@@ -128,7 +134,10 @@ def view_import_net_ixf_postmortem(request, net_id):
 
 
 @ratelimit(
-    key="ip", rate=RATELIMITS["view_import_ixlan_ixf_preview"], group="ixf_preview"
+    key="ip",
+    rate=RATELIMITS["view_import_ixlan_ixf_preview"],
+    group="ixf_preview",
+    block=False,
 )
 @enable_basic_auth
 def view_import_net_ixf_preview(request, net_id):

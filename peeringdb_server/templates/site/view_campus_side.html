@@ -9,21 +9,21 @@
      data-edit-target="api:campus">
 
   <div class="row">
-    <div class="col-xs-6 col-sm-8 col-md-8">
+    <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Facilities" %}</h5>
     </div>
-    <div class="col-xs-6 col-sm-4 col-md-4 filter">
+    <div class="col-6 col-sm-4 col-md-4 filter">
       <input type="text" placeholder="{% trans 'Filter' %}" data-filter-target="#list-facilities" class="form-control" />
     </div>
   </div>
   <div class="row header">
-    <div class="col-xs-6 col-sm-6 col-md-6">
+    <div class="col-6 col-sm-6 col-md-6">
       <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
     </div>
-    <div class="col-xs-3 col-sm-3 col-md-3">
+    <div class="col-3 col-sm-3 col-md-3">
       <div data-sort-target=".country">{% trans "Country" %}</div>
     </div>
-    <div class="col-xs-3 col-sm-3 col-md-3">
+    <div class="col-3 col-sm-3 col-md-3">
       <div data-sort-target=".city">{% trans "City" %}</div>
     </div>
   </div>
@@ -47,7 +47,7 @@
          <div data-edit-name="campus_id">{{ f.campus_id }}</div>
          <div data-edit-name="fac_id">{{ f.id }}</div>
        </div>
-       <div class="col-xs-6 col-sm-6 col-md-6">
+       <div class="col-6 col-sm-6 col-md-6">
          {% if permissions.can_delete %}
              <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove_campus_facility"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans 'Remove this carrier from your facility.' %}">&times;</a>
          {% endif %}
@@ -56,10 +56,10 @@
          </div>
          <div class="status">{% if f.status == "pending" %}{% trans "Pending" %}{% endif %}</div>
        </div>
-       <div class="col-xs-3 col-sm-3 col-md-3">
+       <div class="col-3 col-sm-3 col-md-3">
          <div class="country" data-sort-value="{{ f.country.name|lower }}" data-filter-value="{{ f.country.name }}">{{ f.country.name }}</div>
        </div>
-       <div class="col-xs-3 col-sm-3 col-md-3">
+       <div class="col-3 col-sm-3 col-md-3">
          <div class="city" data-sort-value="{{ f.city }}" data-filter-value="{{ f.city }}">{{ f.city }}</div>
        </div>
      </div>
@@ -81,8 +81,8 @@
        </div>
 
        <div class="row view_row">
-         <div class="view_field col-xs-4 col-sm-5 col-md-4">{% trans "Facility" %}</div>
-         <div class="view_value col-xs-8 col-sm-7 col-md-8">
+         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Facility" %}</div>
+         <div class="view_value col-8 col-sm-7 col-md-8">
            <div data-edit-type="autocomplete"
                 data-edit-autocomplete="fac/org/{{ instance.org.id }}"
                 data-edit-name="fac_id">
@@ -92,7 +92,7 @@
        </div>
 
        <div class="row marg-top">
-         <div class="col-xs-12 right">
+         <div class="col-12 right">
            {% if permissions.can_delete %}
              <a class="btn btn-default" data-edit-action="add_campus_facility">{% trans "Add Facility" %}</a>
            {% endif %}
