@@ -40,7 +40,7 @@ Uncomment the mount point for `locale` under `volumes`
 
 ```
 
-Create an empty .venv to avoid errors when bringing containers up:
+Create an empty .env to avoid errors when bringing containers up:
 
 ```sh
 touch Ctl/dev/.env
