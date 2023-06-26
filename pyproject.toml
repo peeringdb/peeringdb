@@ -10,9 +10,9 @@ license = "BSD-2-Clause"
 [tool.poetry.dependencies]
 python = "^3.9"
 # core requirements
-django = "==4.2"
-django-inet = "^1.1.1"
-django-handleref = "^2.0.0"
+django = "^4.2"
+django-inet = ">=1.1.1"
+django-handleref = ">=2"
 # Install from pypi once 3.1.0 is released
 django-peeringdb = "==3.1.0"
 djangorestframework = ">=3.14.0"
@@ -70,7 +70,7 @@ coreapi = ">=2.3.1"
 # emailing of one time password
 django-two-factor-auth = ">=1.11,<1.15.0"
 grainy = ">=1.7,<2"
-django-grainy = "^2.0.0"
+django-grainy = ">=2"
 django-haystack = "<4"
 whoosh = "<3"
 django-structlog = ">=2.2.0"
@@ -97,10 +97,10 @@ pre-commit = ">=2.13"
 pyupgrade = ">=2.19"
 
 # docs
-pymdgen = "^1.0.0"
-mkdocs = "^1.1.2"
+pymdgen = ">=1"
+mkdocs = ">=1.1.2"
 markdown-include = ">=0.5,<1"
-pydot = "^1.4.2"
+pydot = ">=1.4.2"
 
 [build-system]
 requires = [ "poetry>=0.12",]
