@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from grainy.const import *
 
 import peeringdb_server.models as models
@@ -634,7 +635,12 @@ class OrgAdminTests(TestCase):
         # test that org id was properly derived from network asn
         self.assertEqual(uoar.org.id, self.org.id)
 
-        # test approval
+        # set org.require_2fa to True
+        org = self.org
+        org.require_2fa = True
+        org.save()
+
+        # test approval for user without 2FA request affiliation in organization that require 2FA
         with override_group_id():
             request = self.factory.post(
                 "/org-admin/uoar/approve?org_id=%d" % self.org.id, data={"id": uoar.id}
@@ -642,8 +648,25 @@ class OrgAdminTests(TestCase):
         mock_csrf_session(request)
         request.user = self.org_admin
 
-        resp = json.loads(org_admin.uoar_approve(request).content)
+        resp = org_admin.uoar_approve(request)
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(
+            json.loads(resp.content),
+            {
+                "message": "User   requests affiliation with Organization Test org but has "
+                "not enabled 2FA. Org Test org does not allow users to affiliate "
+                "unless they have enabled 2FA on their account. You will be able "
+                "to approve an affiliation request from User  , and assign "
+                "permissions to them, when they have enabled 2FA."
+            },
+        )
 
+        # create user TOTP devices
+        totpdevice = TOTPDevice.objects.create(user=self.user_c, name="default")
+        totpdevice.save()
+
+        # test approval
+        resp = json.loads(org_admin.uoar_approve(request).content)
         self.assertEqual(
             {
                 "status": "ok",
@@ -697,6 +720,73 @@ class OrgAdminTests(TestCase):
         self.assertEqual(json.loads(resp.content), {})
 
         uoar_b.delete()
+
+    def test_handle_2fa(self):
+        """
+        Test handling a user turning off 2FA while they are in an organization that requires it
+        views.handle_2fa
+        """
+        org = self.org
+        org_other = self.org_other
+        member = self.user_c
+        org.usergroup.user_set.add(self.user_c)
+        actions = ["leave", "disable", "drop"]
+        settings.CSRF_USE_SESSIONS = False
+
+        # check if request.user is not admin of the organization and member is not the member of the organization
+        request = self.factory.get(
+            f"/org_admin/handle-2fa?org={org_other.id}&member={member.id}&action={actions[0]}&commit=1"
+        )
+        mock_csrf_session(request)
+        request.user = self.org_admin
+        resp = views.handle_2fa(request)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(
+            f"Only admin of the {org_other} can perform the action".encode(),
+            resp.content,
+        )
+
+        # confirming dialog before perform the action
+        for action in actions:
+            request = self.factory.get(
+                f"/org_admin/handle-2fa?org={org.id}&member={member.id}&action={action}"
+            )
+            mock_csrf_session(request)
+            request.user = self.org_admin
+            resp = views.handle_2fa(request)
+            self.assertEqual(resp.status_code, 200)
+            if action == "leave":
+                self.assertIn(
+                    f"This will allow {member} to keep all privileges within {org}. This conflicts with your 2FA Policy".encode(),
+                    resp.content,
+                )
+            if action == "disable":
+                self.assertIn(
+                    f"This will turn off the 2FA requirement for {org}, users will not need to use 2FA to login".encode(),
+                    resp.content,
+                )
+            if action == "drop":
+                self.assertIn(
+                    f"This will completely remove {member} from {org}".encode(),
+                    resp.content,
+                )
+
+        # after agree in the confirming dialog
+        for action in actions:
+            request = self.factory.get(
+                f"/org_admin/handle-2fa?org={org.id}&member={member.id}&action={action}&commit=1"
+            )
+            mock_csrf_session(request)
+            request.user = self.org_admin
+            resp = views.handle_2fa(request)
+            self.assertEqual(resp.status_code, 302)
+            if action == "leave":
+                self.assertIn(member, org.usergroup.user_set.all())
+            if action == "disable":
+                self.assertFalse(org.require_2fa)
+            if action == "drop":
+                self.assertNotIn(member, org.usergroup.user_set.all())
+        settings.CSRF_USE_SESSIONS = True
 
     def test_uoar_deny(self):
         """

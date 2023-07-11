@@ -1,0 +1,22 @@
+{% extends "site/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="row">
+<div class="col-12 col-md-4"></div>
+<div class="panel center col-12 col-md-4">
+<script>
+    function confirmAction() {
+        window.location.href = "{{ confirm_url|safe }}";
+    }
+</script>
+
+<h2>{% trans "Confirmation" %}</h2>
+<p>{{ confirm_message }}</p>
+<button class="btn btn-sm btn-success" onclick="confirmAction()">Confirm</button>
+<button class="btn btn-sm btn-danger" onclick="window.location.href = '/'">Cancel</button>
+
+</div>
+<div class="col-12 col-md-4"></div>
+</div>
+</div>
+{% endblock %}

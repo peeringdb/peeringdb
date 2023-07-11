@@ -1,0 +1,6 @@
+{% load i18n %}
+{{ member }}
+--------------------------------------------{% blocktrans %}
+Would you like to drop their affiliation or leave it in place? If you drop affiliations, they will not be able to re-affiliate until they have 2FA turned on.
+{% endblocktrans %}
+[<a href="{{ drop_member_url|safe }}">{{ _('Drop Affiliations') }}</a>] [<a href="{{ leave_member_affiliate_url|safe }}">{{ _('Leave them Affiliated') }}</a>] [<a href="{{ cancel_2fa_url|safe }}">{{ _('Cancel 2FA Requirement') }}</a>]

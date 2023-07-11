@@ -5,7 +5,7 @@ from importlib import import_module
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, Group
 from django.contrib.sessions.models import Session
-from django.middleware.csrf import CSRF_SESSION_KEY
+from django.middleware.csrf import CSRF_SESSION_KEY, _get_new_csrf_string
 from django.test import TestCase
 from django_grainy.models import GroupPermission, UserPermission
 
@@ -135,5 +135,5 @@ def setup_test_data(filename):
 def mock_csrf_session(request):
     engine = import_module(settings.SESSION_ENGINE)
     request.session = engine.SessionStore("deadbeef")
-    request.session[CSRF_SESSION_KEY] = "csrf-session-key"
+    request.session[CSRF_SESSION_KEY] = _get_new_csrf_string()
     request._dont_enforce_csrf_checks = True

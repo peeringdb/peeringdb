@@ -811,6 +811,11 @@ CORS_ALLOW_METHODS = ["GET", "OPTIONS"]
 # allows PeeringDB to use external OAuth2 sources
 set_bool("OAUTH_ENABLED", False)
 
+# https://django-oauth-toolkit.readthedocs.io/en/latest/changelog.html#id12
+# default changed to True in django-oauth-toolkit v2, set to False for now
+# to avoid breaking existing clients
+set_bool("PKCE_REQUIRED", False)
+
 # enables OpenID Connect support
 set_bool("OIDC_ENABLED", True)
 
@@ -840,6 +845,7 @@ MIDDLEWARE += (
 OAUTH2_PROVIDER = {
     "OIDC_ENABLED": OIDC_ENABLED,
     "OIDC_RSA_PRIVATE_KEY": OIDC_RSA_PRIVATE_KEY,
+    "PKCE_REQUIRED": PKCE_REQUIRED,
     "OAUTH2_VALIDATOR_CLASS": "mainsite.oauth2.validators.OIDCValidator",
     "SCOPES": {
         SupportedScopes.OPENID: "OpenID Connect scope",
@@ -1234,9 +1240,12 @@ set_option("DELETE_ORPHANED_USER_DAYS", 90)
 # Notify orphaned users n days before deletion
 set_option("NOTIFY_ORPHANED_USER_DAYS", 30)
 
-# Grace peruid before a newly created user can be flagged for deletion
+# Grace period before a newly created user can be flagged for deletion
 # This is so users have some time to affiliate naturally. (days)
 set_option("MIN_AGE_ORPHANED_USER_DAYS", 14)
+
+# Notification period to notify organizations of users missing 2FA (days)
+set_option("NOTIFY_MISSING_2FA_DAYS", 30)
 
 # pdb_validate_data cache timeout default
 set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)
@@ -1306,5 +1315,9 @@ set_option("PEERINGDB_SYNC_PASSWORD", "")
 
 # If the api key is specified it will be used over the username and password
 set_option("PEERINGDB_SYNC_API_KEY", "")
+
+# peeringdb sync cache
+set_option("PEERINGDB_SYNC_CACHE_URL", "https://cache.peeringdb.com")
+set_option("PEERINGDB_SYNC_CACHE_DIR", os.path.join(BASE_DIR, "sync-cache"))
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

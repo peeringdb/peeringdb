@@ -681,6 +681,10 @@ twentyc.editable.target.error_handlers.http_json = function(response, me, sender
 
     info = ["Too Many Requests", response.responseJSON.message];
 
+  } else if(response.status == 403) {
+
+    info = ["Forbidden", response.responseJSON.message];
+
   } else {
 
     if(response.responseJSON && response.responseJSON.non_field_errors) {

@@ -47,6 +47,7 @@ from peeringdb_server.oauth_views import AuthorizationView
 from peeringdb_server.views import (
     OrganizationLogoUpload,
     cancel_affiliation_request,
+    handle_2fa,
     network_dismiss_ixf_proposal,
     network_reset_ixf_proposals,
     profile_add_email,
@@ -245,6 +246,7 @@ urlpatterns = [
         peeringdb_server.org_admin_views.update_user_options,
         name="org-admin-user-options",
     ),
+    re_path(r"^org_admin/handle-2fa$", handle_2fa, name="handle-2fa"),
     re_path(
         r"^org_admin/manage_user/delete$",
         peeringdb_server.org_admin_views.manage_user_delete,

@@ -945,6 +945,20 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         help_text="Date when the organization was flagged",
     )
 
+    # restrict users in the organization to be required
+    # to always activate 2FA.
+    require_2fa = models.BooleanField(
+        default=False,
+        help_text=_("Require users in your organization to activate 2FA."),
+    )
+    last_notified = models.DateTimeField(
+        null=True,
+        blank=True,
+        auto_now=False,
+        auto_now_add=False,
+        help_text="Date when the organization admins were notified about 2FA",
+    )
+
     class Meta(pdb_models.OrganizationBase.Meta):
         indexes = [models.Index(fields=["status"], name="org_status")]
 
@@ -5804,6 +5818,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         group = Group.objects.get(id=settings.USER_GROUP_ID)
         return group in self.groups.all()
+
+    @property
+    def has_2fa(self):
+        """
+        Returns true if the user has set up any TOTP or webauth security keys.
+        """
+
+        return self.totpdevice_set.exists() or self.webauthn_security_keys.exists()
 
     @staticmethod
     def autocomplete_search_fields():
