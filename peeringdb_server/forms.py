@@ -250,6 +250,7 @@ class OrgUserOptions(forms.ModelForm):
     class Meta:
         model = Organization
         fields = [
+            "require_2fa",
             "restrict_user_emails",
             "email_domains",
             "periodic_reauth",

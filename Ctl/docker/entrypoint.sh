@@ -12,6 +12,7 @@ function migrate() {
 
 cd /srv/www.peeringdb.com
 
+
 case "$1" in
   "uwsgi" )
     echo starting uwsgi
@@ -35,6 +36,7 @@ case "$1" in
     export DATABASE_USER=root
     export DATABASE_PASSWORD=""
     export RELEASE_ENV=run_tests
+    export PEERINGDB_SYNC_CACHE_URL=""
     unset BASE_URL
     unset OAUTH2_PROVIDER_APPLICATION_MODEL
     unset SESSION_COOKIE_DOMAIN

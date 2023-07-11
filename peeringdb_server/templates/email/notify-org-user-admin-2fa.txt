@@ -1,0 +1,9 @@
+{% load i18n %}{% blocktrans %}
+The following users affiliated with {{ org_name }} organization do not have 2FA turned on:
+{% endblocktrans %}
+{% for member_2fa_notification in users_without_2fa %}
+{{member_2fa_notification|safe}}
+{% endfor %}
+{% trans "You may view and edit your organization users at" %} {{ org_url }}.
+
+{% trans "If you have questions, please don't hesitate to contact peeringdb support at" %} {{ support_email }}.
