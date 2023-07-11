@@ -1317,7 +1317,7 @@ set_option("PEERINGDB_SYNC_PASSWORD", "")
 set_option("PEERINGDB_SYNC_API_KEY", "")
 
 # peeringdb sync cache
-set_option("PEERINGDB_SYNC_CACHE_URL", "https://cache.peeringdb.com/api")
+set_option("PEERINGDB_SYNC_CACHE_URL", "https://cache.peeringdb.com")
 set_option("PEERINGDB_SYNC_CACHE_DIR", os.path.join(BASE_DIR, "sync-cache"))
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")
