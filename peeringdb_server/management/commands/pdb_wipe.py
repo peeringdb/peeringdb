@@ -43,6 +43,9 @@ class Command(BaseCommand):
         self.load_data = options.get("load_data", False)
         self.load_data_url = options.get("load_data_url")
 
+        settings.ELASTICSEARCH_DSL_AUTOSYNC = False
+        settings.ELASTICSEARCH_DSL_AUTO_REFRESH = False
+
         if not settings.TUTORIAL_MODE:
             self.log("Command can only be run with tutorial mode enabled")
             return
@@ -74,6 +77,10 @@ class Command(BaseCommand):
             call_command("clearsessions", stdout=self.stdout)
 
         self.log("Cleared seassions")
+
+        self.log(
+            "Search indexes will need to be manually updated (if applicable) using the search_index command"
+        )
 
         if self.load_data:
             call_command(

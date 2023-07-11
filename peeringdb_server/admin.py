@@ -1713,6 +1713,14 @@ class UserOrgAffiliationRequestAdmin(ModelAdminWithUrlActions, ProtectedDeleteAd
                     request, _("Cannot approve a canceled affiliation request")
                 )
                 continue
+            if each.org.require_2fa and not each.user.has_2fa:
+                messages.error(
+                    request,
+                    _(
+                        "Cannot approve while User has 2FA disabled - organization requires 2FA"
+                    ),
+                )
+                continue
 
             each.approve()
             each.notify_ownership_approved()

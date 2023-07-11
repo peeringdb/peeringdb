@@ -17,7 +17,8 @@ django-handleref = ">=2"
 django-peeringdb = "==3.1.0"
 djangorestframework = ">=3.14.0"
 mysqlclient = ">=2.1.1"
-peeringdb = ">=1.1.0, <2"
+# locked to support_202306 branch until that is tagged and released to pypi
+peeringdb = { git = "https://github.com/peeringdb/peeringdb-py.git", branch = "support_202306" }
 uwsgi = ">=2.0.14"
 # ancilary packages
 bleach = ">=2.1.3"
@@ -34,17 +35,7 @@ django-extensions = ">=1.3.3"
 django-grappelli = ">=2.10.1"
 django-import-export = ">2.8.0,<3"
 django-hashers-passlib = { git = "https://github.com/mathiasertl/django-hashers-passlib.git" }
-# FIXME: django-oauth-toolkit needs to be locked to 1.6.1 because it introduced
-# api breaking changes that were then reverted in 1.6.2 - in order to upgrade
-# we need to wait for them to re-introduce the changes or adapt our code to
-# the reversion
-#
-# django-oauth-toolkit 2.0.0 is ready but also introduces additional BREAKING changes that may
-# need to be communicated to users, such as unreversible hashing of their current client
-# secrets.
-#
-# See https://django-oauth-toolkit.readthedocs.io/en/latest/changelog.html#id10
-django-oauth-toolkit = "==1.6.1"
+django-oauth-toolkit = ">=2"
 django-phonenumber-field = ">=0.6"
 django-ratelimit = ">=4.0.0"
 django-rest-swagger = ">=2.1.2"

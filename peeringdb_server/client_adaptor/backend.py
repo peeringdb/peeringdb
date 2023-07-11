@@ -135,9 +135,17 @@ class Backend(BaseBackend):
                 setattr(obj, field.name, value)
 
         if obj.HandleRef.tag == "ix":
+            obj._meta.get_field("updated").auto_now = False
+            obj._meta.get_field("created").auto_now = False
             obj.save(create_ixlan=False)
+            obj._meta.get_field("updated").auto_now = True
+            obj._meta.get_field("created").auto_now = True
         else:
+            obj._meta.get_field("updated").auto_now = False
+            obj._meta.get_field("created").auto_now = False
             obj.save()
+            obj._meta.get_field("updated").auto_now = True
+            obj._meta.get_field("created").auto_now = True
 
     def detect_uniqueness_error(self, exc):
         """
