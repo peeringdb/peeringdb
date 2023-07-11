@@ -63,6 +63,10 @@ class Command(BaseCommand):
             "--commit", action="store_true", help="will commit the changes"
         )
 
+        parser.add_argument(
+            "--no-cache", action="store_true", help="will not use the sync cache"
+        )
+
     def handle(self, *args, **options):
         if settings.RELEASE_ENV != "dev" and not settings.TUTORIAL_MODE:
             self.stdout.write(
@@ -83,7 +87,14 @@ class Command(BaseCommand):
         # settings.USE_TZ = True
         db_settings = settings.DATABASES.get("default")
 
-        sync_options = {"url": options.get("url")}
+        sync_options = {
+            "url": options.get("url"),
+            "cache_url": settings.PEERINGDB_SYNC_CACHE_URL,
+            "cache_dir": settings.PEERINGDB_SYNC_CACHE_DIR,
+        }
+
+        if options.get("no_cache"):
+            sync_options["cache_url"] = ""
 
         # allow authentication for the sync (set as env vars)
         if settings.PEERINGDB_SYNC_API_KEY:
@@ -95,6 +106,8 @@ class Command(BaseCommand):
             print(
                 "No authentication configured for sync, using anonymous access - this may cause rate limiting issues. Set PEERINGDB_SYNC_API_KEY or PEERINGDB_SYNC_USERNAME and PEERINGDB_SYNC_PASSWORD to configure authentication."
             )
+
+        print("Syncing data from {url}".format(**sync_options))
 
         config = {
             "sync": sync_options,
@@ -127,6 +140,11 @@ class Command(BaseCommand):
 
         # disable validation of parent status during sync
         settings.DATA_QUALITY_VALIDATE_PARENT_STATUS = False
+
+        # disable elasticsearch auto indexing if there are zero records
+        if pdb_models.Organization.objects.count() == 0:
+            settings.ELASTICSEARCH_DSL_AUTOSYNC = False
+            settings.ELASTICSEARCH_DSL_AUTO_REFRESH = False
 
         client = Client(config)
         client.update_all(resource.all_resources(), since=None)

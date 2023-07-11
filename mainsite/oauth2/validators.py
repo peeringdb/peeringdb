@@ -5,6 +5,10 @@ from mainsite.oauth2.scopes import SupportedScopes
 
 
 class OIDCValidator(OAuth2Validator):
+
+    # https://django-oauth-toolkit.readthedocs.io/en/latest/changelog.html#id12
+    oidc_claim_scope = None
+
     def get_additional_claims(self):
         """PeeringDB-specific claims added to the standard claims defined in a JWT token.
 

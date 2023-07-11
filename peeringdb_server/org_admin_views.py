@@ -511,6 +511,17 @@ def uoar_approve(request, **kwargs):
             uoar.delete()
             return JsonResponse({"status": "ok"})
 
+        if org.require_2fa:
+            if not uoar.user.has_2fa:
+                message = (
+                    f"User {uoar.user.full_name} requests affiliation with Organization {uoar.org.name} "
+                    f"but has not enabled 2FA. Org {uoar.org.name} does not allow users to affiliate "
+                    f"unless they have enabled 2FA on their account. You will be able to approve an "
+                    f"affiliation request from User {uoar.user.full_name}, and assign permissions to "
+                    f"them, when they have enabled 2FA."
+                )
+                return JsonResponse({"message": message}, status=403)
+
         uoar.approve()
 
         # notify rest of org admins that the affiliation request has been

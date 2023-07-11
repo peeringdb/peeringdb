@@ -862,7 +862,7 @@
         <div class="row item editable" data-edit-id="{{ user.id }}" data-edit-label="{{ user.full_name }}">
           <div class="col-4 col-sm-5 col-md-4">
             <div>{{ user.full_name }}</div>
-            <div>{{ user.username }} {% if user.totpdevice_set.exists %}<span class="badge-2fa">2FA</span>{% endif %}{% if user.webauthn_security_keys.exists %}<span class="badge-2fa" style="margin-left:2px;">U2F</span>{% endif %}</div>
+            <div>{{ user.username }} {% if user.has_2fa %}<span class="badge-2fa-enabled">2FA</span>{% else %}<span class="badge-2fa-disabled">{% trans "No 2FA" %}</span>{% endif %}{% if user.webauthn_security_keys.exists %}<span class="badge-2fa" style="margin-left:2px;">U2F</span>{% endif %}</div>
           </div>
           <div class="col-4 col-sm-5 col-md-4">
             {% for valid_email in user_emails.1 %}
@@ -907,6 +907,10 @@
         <div data-edit-name="org_id">{{ instance.id }}</div>
       </div>
 
+      <div class="mb-3 checkbox-inline">
+        <div data-edit-type="bool" data-edit-name="require_2fa" data-edit-value="{{ instance.require_2fa }}"></div>
+        {% trans "Require users in your organization to enable 2FA." %}
+      </div>
       <div class="mb-3 checkbox-inline">
         <div data-edit-type="bool" data-edit-name="restrict_user_emails" data-edit-value="{{ instance.restrict_user_emails }}"></div>
         {% trans "Restrict user email addresses to these domains" %}

@@ -1645,11 +1645,19 @@ div.captcha .fallback {
   padding-left: 0px;
 }
 
-.badge-2fa {
+.badge-2fa-enabled {
   border-radius: 3px;
-  background-color: orange;
+  background-color: green;
   padding: 1px 3px;
   color: #fff;
+  font-weight: bold;
+}
+
+.badge-2fa-disabled {
+  border-radius: 3px;
+  background-color: transparent;
+  padding: 1px 3px;
+  color: #000;
   font-weight: bold;
 }
 
@@ -1725,4 +1733,15 @@ div.stats_row {
   width: 25px;
   position: absolute;
   border: 1.2px solid rgb(75, 96, 99);
+}
+
+
+textarea#id_redirect_uris {
+  width: 100%;
+}
+
+textarea.input-block-level,
+input.input-block-level {
+  display: block;
+  width: 100%;
 }

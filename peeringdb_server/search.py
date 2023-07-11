@@ -242,6 +242,37 @@ def elasticsearch_proximity_entity(name):
         return None
 
 
+def order_results_alphabetically(result, search_term):
+    """
+    Order the search results alphabetically and put the exact case-insensitive matches in front.
+
+    Args:
+    - result: A dictionary containing categories and their search results.
+    - search_term: A string representing the search term.
+
+    Returns:
+    - result: A dictionary containing the search results in alphabetical order.
+    """
+
+    search_term_lower = search_term.lower()
+
+    for category in result:
+        result[category] = sorted(result[category], key=lambda x: x["name"].lower())
+
+        exact_match_index = -1
+
+        for index, item in enumerate(result[category]):
+            if item["name"].lower() == search_term_lower:
+                exact_match_index = index
+                break
+
+        if exact_match_index != -1:
+            exact_match = result[category].pop(exact_match_index)
+            result[category].insert(0, exact_match)
+
+    return result
+
+
 def search_v2(term, geo={}):
     """
     Search searchable objects (ixp, network, facility ...) by term on elasticsearch engine.
@@ -332,6 +363,8 @@ def search_v2(term, geo={}):
                     result,
                     pk_map,
                 )
+
+    result = order_results_alphabetically(result, term)
 
     return result
 

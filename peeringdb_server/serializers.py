@@ -283,8 +283,8 @@ class GeocodeSerializerMixin:
                 suggested_address = instance.process_geo_location()
 
                 # normalize state if needed
-                if suggested_address.get("state") != instance.state:
-                    instance.state = suggested_address.get("state")
+                if suggested_address.get("state", "") != instance.state:
+                    instance.state = suggested_address.get("state", "")
                     instance.save()
 
                 # provide other normalization options as suggestion to the user
@@ -1796,20 +1796,8 @@ class CarrierFacilitySerializer(ModelSerializer):
                 data.get("carrier"), self.Meta.model.handleref.tag
             )
 
-        # new carrier-facility relationship should be pending
-        # until the facility approves it.
-        #
-        # if the carrier org is the same as the facility org the connection
-        # is auto-approved
-
-        if (
-            data.get("carrier")
-            and data.get("facility")
-            and data["carrier"].org_id == data["facility"].org_id
-        ):
-            data["status"] = "ok"
-        else:
-            data["status"] = "pending"
+        # new carrier-facility relationship should be auto-approved
+        data["status"] = "ok"
 
         return super().validate_create(data)
 
@@ -3326,6 +3314,7 @@ class OrganizationSerializer(
                 "website",
                 "social_media",
                 "notes",
+                "require_2fa",
                 "net_set",
                 "fac_set",
                 "ix_set",

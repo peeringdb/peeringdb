@@ -22,9 +22,11 @@ services:
       context: ../..
       dockerfile: Dockerfile
       target: tester
+    container_name: peeringdb
     command: runserver 0.0.0.0:8000
     env_file: .env
     depends_on:
+      - database
       - elasticsearch
     environment:
       DATABASE_USER: peeringdb

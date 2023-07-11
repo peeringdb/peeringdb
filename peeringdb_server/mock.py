@@ -350,3 +350,6 @@ class Mock:
 
     def email_domains(self, data, reftag=None):
         return None
+
+    def last_notified(self, data, reftag=None):
+        return None
