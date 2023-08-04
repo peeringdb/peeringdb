@@ -1092,6 +1092,7 @@ class SponsorshipAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     inlines = (SponsorshipOrganizationInline,)
 
     raw_id_fields = ("orgs",)
+    search_fields = ("orgs__name", "level", "start_date", "end_date")
 
     autocomplete_lookup_fields = {
         "m2m": ["orgs"],
@@ -1133,6 +1134,7 @@ class PartnershipAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     autocomplete_lookup_fields = {
         "fk": ["org"],
     }
+    search_fields = ("org__name",)
 
     def org_name(self, obj):
         if not obj.org:
@@ -1492,6 +1494,20 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
             "org",
         ],
     }
+
+    def get_search_results(self, request, queryset, search_term):
+        # Check if the search_term starts with 'AS' or 'ASN'
+        asn = re.match(r"(asn|as)(\d+)", search_term.lower())
+        if asn:
+            # Filter the queryset to find the Network with the specified ASN
+            matching_networks = queryset.filter(asn=asn.group(2))
+
+            if matching_networks.count() == 1:
+                # Redirect to the detail view of the matching Network
+                return matching_networks, False
+
+        # If the search_term doesn't start with 'AS' or 'ASN', perform a regular search
+        return super().get_search_results(request, queryset, search_term)
 
 
 class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
@@ -2011,6 +2027,7 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         "status",
     )
     change_list_template = "admin/peeringdb_server/commandlinetool/change_list.html"
+    search_fields = ("tool", "description")
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -2532,6 +2549,15 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
         "latitude",
         "fetched",
     ]
+    search_fields = (
+        "country",
+        "city",
+        "state",
+        "zipcode",
+        "address1",
+        "longitude",
+        "latitude",
+    )
 
 
 @admin.register(DataChangeWatchedObject)
@@ -2539,6 +2565,7 @@ class DataChangeWatchedObjectAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "ref_tag", "object_id", "last_notified", "created")
 
     raw_id_fields = ("user",)
+    search_fields = ("object_id", "user__username")
 
     autocomplete_lookup_fields = {
         "fk": [
@@ -2565,6 +2592,7 @@ class DataChangeNotificationQueueAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = ("watched_object", "target_object", "title", "details")
+    search_fields = ("action", "watched_object_id", "reason")
 
     def has_change_permission(self, request, obj=None):
         return
@@ -2586,6 +2614,7 @@ class DataChangeEmail(admin.ModelAdmin):
     )
 
     raw_id_fields = ("user",)
+    search_fields = ("email", "subject", "user__username")
 
     autocomplete_lookup_fields = {
         "fk": [

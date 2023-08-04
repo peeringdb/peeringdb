@@ -67,6 +67,7 @@ from peeringdb_server.models import (
     Organization,
     ParentStatusException,
     VerificationQueueItem,
+    is_suggested,
 )
 from peeringdb_server.permissions import (
     check_permissions_from_request,
@@ -83,6 +84,7 @@ from peeringdb_server.validators import (
     validate_poc_visible,
     validate_prefix_overlap,
     validate_social_media,
+    validate_website_override,
     validate_zipcode,
 )
 
@@ -1504,9 +1506,15 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
     org = serializers.SerializerMethodField()
 
+    campus_id = serializers.PrimaryKeyRelatedField(
+        queryset=Campus.objects.all(), source="campus"
+    )
+
+    campus = serializers.SerializerMethodField()
+
     suggest = serializers.BooleanField(required=False, write_only=True)
 
-    website = serializers.URLField()
+    website = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     social_media = SocialMediaSerializer(required=False, many=True)
     address1 = serializers.CharField()
     city = serializers.CharField()
@@ -1544,6 +1552,8 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
                 "org_id",
                 "org_name",
                 "org",
+                "campus_id",
+                "campus",
                 "name",
                 "aka",
                 "name_long",
@@ -1715,14 +1725,30 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
             representation["available_voltage_services"] = avs
 
+        if not representation.get("website"):
+            representation["website"] = instance.org.website
+
         return representation
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
 
+    def get_campus(self, inst):
+        if inst.campus:
+            return self.sub_serializer(CampusSerializer, inst.campus)
+        else:
+            return None
+
     def validate(self, data):
         social_media = data.get("social_media")
+        website = data.get("website")
+        org_website = (
+            data.get("org").website
+            if data.get("org") and not is_suggested(data.get("org"))
+            else None
+        )
         validate_social_media(social_media)
+        validate_website_override(website, org_website)
         try:
             data["tech_phone"] = validate_phonenumber(
                 data["tech_phone"], data["country"]
@@ -1871,7 +1897,10 @@ class CarrierSerializer(ModelSerializer):
 
     def validate(self, data):
         social_media = data.get("social_media")
+        website = data.get("website")
+        org_website = data.get("org").website
         validate_social_media(social_media)
+        validate_website_override(website, org_website)
         return data
 
 
@@ -2657,6 +2686,17 @@ class NetworkSerializer(ModelSerializer):
 
         return super().create(validated_data)
 
+    def to_representation(self, data):
+        # When an ix is created we want to add the ixlan_id and ixpfx_id
+        # that were created to the representation (see #609)
+
+        representation = super().to_representation(data)
+
+        if not representation.get("website"):
+            representation["website"] = data.org.website
+
+        return representation
+
     def update(self, instance, validated_data):
         request = self._context.get("request")
 
@@ -2704,7 +2744,10 @@ class NetworkSerializer(ModelSerializer):
 
     def validate(self, data):
         social_media = data.get("social_media")
+        website = data.get("website")
+        org_website = data.get("org").website
         validate_social_media(social_media)
+        validate_website_override(website, org_website)
         return data
 
 
@@ -2952,7 +2995,7 @@ class InternetExchangeSerializer(ModelSerializer):
     ixf_net_count = serializers.IntegerField(read_only=True)
     ixf_last_import = serializers.DateTimeField(read_only=True)
 
-    website = serializers.URLField()
+    website = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     social_media = SocialMediaSerializer(required=False, many=True)
     tech_email = serializers.EmailField(required=True)
 
@@ -3199,6 +3242,10 @@ class InternetExchangeSerializer(ModelSerializer):
             ixlan = self.instance.ixlan
             ixpfx = ixlan.ixpfx_set.first()
             representation.update(ixlan_id=ixlan.id, ixpfx_id=ixpfx.id)
+
+        if not representation.get("website"):
+            representation["website"] = data.org.website
+
         return representation
 
     def create(self, validated_data):
@@ -3257,7 +3304,10 @@ class InternetExchangeSerializer(ModelSerializer):
 
     def validate(self, data):
         social_media = data.get("social_media")
+        website = data.get("website")
+        org_website = data.get("org").website
         validate_social_media(social_media)
+        validate_website_override(website, org_website)
         try:
             data["tech_phone"] = validate_phonenumber(
                 data["tech_phone"], data["country"]
@@ -3272,90 +3322,6 @@ class InternetExchangeSerializer(ModelSerializer):
         except ValidationError as exc:
             raise serializers.ValidationError({"policy_phone": exc.message})
 
-        return data
-
-
-class OrganizationSerializer(
-    SpatialSearchMixin, GeocodeSerializerMixin, ModelSerializer
-):
-    """
-    Serializer for peeringdb_server.models.Organization
-    """
-
-    net_set = nested(
-        NetworkSerializer, exclude=["org_id", "org"], source="net_set_active_prefetched"
-    )
-
-    fac_set = nested(
-        FacilitySerializer,
-        exclude=["org_id", "org"],
-        source="fac_set_active_prefetched",
-    )
-
-    ix_set = nested(
-        InternetExchangeSerializer,
-        exclude=["org_id", "org"],
-        source="ix_set_active_prefetched",
-    )
-
-    latitude = serializers.FloatField(read_only=True)
-    longitude = serializers.FloatField(read_only=True)
-    social_media = SocialMediaSerializer(required=False, many=True)
-
-    class Meta:  # (AddressSerializer.Meta):
-        model = Organization
-        depth = 1
-        fields = (
-            [
-                "id",
-                "name",
-                "aka",
-                "name_long",
-                "website",
-                "social_media",
-                "notes",
-                "require_2fa",
-                "net_set",
-                "fac_set",
-                "ix_set",
-            ]
-            + AddressSerializer.Meta.fields
-            + HandleRefSerializer.Meta.fields
-        )
-        related_fields = [
-            "fac_set",
-            "net_set",
-            "ix_set",
-        ]
-
-        _ref_tag = model.handleref.tag
-
-    @classmethod
-    def prepare_query(cls, qset, **kwargs):
-        """
-        Add special filter options
-
-        Currently supports:
-
-        - asn: filter by network asn
-        """
-        filters = {}
-
-        if "asn" in kwargs:
-            asn = kwargs.get("asn", [""])[0]
-            qset = qset.filter(net_set__asn=asn, net_set__status="ok")
-            filters.update({"asn": kwargs.get("asn")})
-
-        if "distance" in kwargs:
-            qset = cls.prepare_spatial_search(
-                qset, kwargs, single_url_param(kwargs, "distance", float)
-            )
-
-        return qset, filters
-
-    def validate(self, data):
-        social_media = data.get("social_media")
-        validate_social_media(social_media)
         return data
 
 
@@ -3431,6 +3397,109 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
+
+    def validate(self, data):
+        social_media = data.get("social_media")
+        website = data.get("website")
+        org_website = data.get("org").website
+        validate_social_media(social_media)
+        validate_website_override(website, org_website)
+        return data
+
+
+class OrganizationSerializer(
+    SpatialSearchMixin, GeocodeSerializerMixin, ModelSerializer
+):
+    """
+    Serializer for peeringdb_server.models.Organization
+    """
+
+    net_set = nested(
+        NetworkSerializer, exclude=["org_id", "org"], source="net_set_active_prefetched"
+    )
+
+    fac_set = nested(
+        FacilitySerializer,
+        exclude=["org_id", "org"],
+        source="fac_set_active_prefetched",
+    )
+
+    ix_set = nested(
+        InternetExchangeSerializer,
+        exclude=["org_id", "org"],
+        source="ix_set_active_prefetched",
+    )
+
+    carrier_set = nested(
+        CarrierSerializer,
+        exclude=["org_id", "org"],
+        source="carrier_set_active_prefetched",
+    )
+
+    campus_set = nested(
+        CampusSerializer,
+        exclude=["org_id", "org"],
+        source="campus_set_active_prefetched",
+    )
+
+    latitude = serializers.FloatField(read_only=True)
+    longitude = serializers.FloatField(read_only=True)
+    social_media = SocialMediaSerializer(required=False, many=True)
+
+    class Meta:  # (AddressSerializer.Meta):
+        model = Organization
+        depth = 1
+        fields = (
+            [
+                "id",
+                "name",
+                "aka",
+                "name_long",
+                "website",
+                "social_media",
+                "notes",
+                "require_2fa",
+                "net_set",
+                "fac_set",
+                "ix_set",
+                "carrier_set",
+                "campus_set",
+            ]
+            + AddressSerializer.Meta.fields
+            + HandleRefSerializer.Meta.fields
+        )
+        related_fields = [
+            "fac_set",
+            "net_set",
+            "ix_set",
+            "carrier_set",
+            "campus_set",
+        ]
+
+        _ref_tag = model.handleref.tag
+
+    @classmethod
+    def prepare_query(cls, qset, **kwargs):
+        """
+        Add special filter options
+
+        Currently supports:
+
+        - asn: filter by network asn
+        """
+        filters = {}
+
+        if "asn" in kwargs:
+            asn = kwargs.get("asn", [""])[0]
+            qset = qset.filter(net_set__asn=asn, net_set__status="ok")
+            filters.update({"asn": kwargs.get("asn")})
+
+        if "distance" in kwargs:
+            qset = cls.prepare_spatial_search(
+                qset, kwargs, single_url_param(kwargs, "distance", float)
+            )
+
+        return qset, filters
 
     def validate(self, data):
         social_media = data.get("social_media")

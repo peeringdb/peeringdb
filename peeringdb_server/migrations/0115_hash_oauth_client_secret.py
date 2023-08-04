@@ -15,7 +15,6 @@ def forwards_func(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("oauth2_provider", "0005_auto_20211222_2352"),
         (

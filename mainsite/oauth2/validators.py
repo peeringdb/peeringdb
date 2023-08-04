@@ -5,7 +5,6 @@ from mainsite.oauth2.scopes import SupportedScopes
 
 
 class OIDCValidator(OAuth2Validator):
-
     # https://django-oauth-toolkit.readthedocs.io/en/latest/changelog.html#id12
     oidc_claim_scope = None
 

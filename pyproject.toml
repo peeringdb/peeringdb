@@ -43,6 +43,7 @@ djangorestframework-api-key = ">=2.3.0"
 
 django-tables2 = ">=1.0.4"
 django-vanilla-views = ">=1.0.2"
+# Need to update django-security-keys for search feature once it's released
 django-security-keys = "^1.0.1"
 googlemaps = ">=2.5.1"
 markdown = ">=2.6.7"

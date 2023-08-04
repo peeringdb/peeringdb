@@ -1145,6 +1145,20 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         return self.ix_set(manager="handleref").filter(status="ok")
 
     @property
+    def carrier_set_active(self):
+        """
+        Returns queryset holding active carrier in this organization.
+        """
+        return self.carrier_set(manager="handleref").filter(status="ok")
+
+    @property
+    def campus_set_active(self):
+        """
+        Returns queryset holding active campus in this organization.
+        """
+        return self.campus_set(manager="handleref").filter(status="ok")
+
+    @property
     def group_name(self):
         """
         Returns usergroup name for this organization.
@@ -1800,7 +1814,7 @@ class Facility(
         null=True,
         blank=True,
     )
-    website = models.URLField(_("Website"), blank=False)
+    website = models.URLField(_("Website"), blank=True, null=True)
 
     ix_count = models.PositiveIntegerField(
         _("number of exchanges at this facility"),
@@ -2897,6 +2911,13 @@ class IXLan(pdb_models.IXLanBase):
         # return Network.handleref.filter(id__in=[i.network_id for i in
         # q]).filter(status="ok")
 
+    @property
+    def ready_for_ixf_import(self):
+        """
+        Returns True if IX-F data is ready to be imported.
+        """
+        return self.ixf_ixp_import_enabled and self.ixf_ixp_member_list_url
+
     @staticmethod
     def autocomplete_search_fields():
         """
@@ -3559,6 +3580,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
 
         for ixf_member_data in cls.dismissed_for_network(net):
+            if not ixf_member_data.ixlan.ready_for_ixf_import:
+                continue
             if ixf_member_data.action != "noop":
                 return True
         return False
@@ -3590,6 +3613,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         proposals = {}
 
         for ixf_member_data in qset:
+            if not ixf_member_data.ixlan.ready_for_ixf_import:
+                continue
+
             action = ixf_member_data.action
             ixf_member_data.error
 
@@ -5518,7 +5544,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase, ParentStatusCheckMixin):
 
 @grainy_model(namespace="carrier", parent="org")
 @reversion.register
-class Carrier(pdb_models.CarrierBase):
+class Carrier(ProtectedMixin, pdb_models.CarrierBase):
     """
     Describes a carrier object.
     """
@@ -5559,7 +5585,7 @@ class Carrier(pdb_models.CarrierBase):
         Returns queryset of active CarrierFacility objects connected to this
         carrier.
         """
-        return self.netfac_set.filter(status="ok")
+        return self.carrierfac_set.filter(status="ok")
 
     @property
     def view_url(self):

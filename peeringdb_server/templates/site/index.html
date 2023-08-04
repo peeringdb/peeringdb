@@ -89,7 +89,10 @@
           {% endfor %}
           </div>
           <div class="col-12 col-sm-3">
-          <h4>{% trans "Carriers" %}</h4>
+          <h4
+          data-bs-toggle="tooltip"
+          data-placement="top"
+          title="{{ recent.carrier_help_text }}">{% trans "Carriers" %}</h4>
           {% for row in recent.carrier %}
             <div class="participant">
               <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
