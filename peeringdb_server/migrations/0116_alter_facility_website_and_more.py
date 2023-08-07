@@ -13,20 +13,20 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="facility",
             name="website",
-            field=models.URLField(blank=True, null=True, verbose_name="Website"),
+            field=models.URLField(blank=True, default="", verbose_name="Website"),
         ),
         migrations.AlterField(
             model_name="internetexchange",
             name="website",
             field=django_peeringdb.models.abstract.URLField(
-                blank=True, max_length=255, null=True, verbose_name="Company Website"
+                blank=True, max_length=255, default="", verbose_name="Company Website"
             ),
         ),
         migrations.AlterField(
             model_name="network",
             name="website",
             field=django_peeringdb.models.abstract.URLField(
-                blank=True, max_length=255, null=True, verbose_name="Website"
+                blank=True, max_length=255, default="", verbose_name="Website"
             ),
         ),
     ]

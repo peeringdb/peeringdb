@@ -1507,7 +1507,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
     org = serializers.SerializerMethodField()
 
     campus_id = serializers.PrimaryKeyRelatedField(
-        queryset=Campus.objects.all(), source="campus"
+        queryset=Campus.objects.all(), source="campus", allow_null=True, required=False
     )
 
     campus = serializers.SerializerMethodField()
@@ -1725,7 +1725,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
             representation["available_voltage_services"] = avs
 
-        if not representation.get("website"):
+        if isinstance(representation, dict) and not representation.get("website"):
             representation["website"] = instance.org.website
 
         return representation
@@ -1890,7 +1890,7 @@ class CarrierSerializer(ModelSerializer):
     def to_representation(self, data):
         representation = super().to_representation(data)
 
-        if not representation.get("website"):
+        if isinstance(representation, dict) and not representation.get("website"):
             representation["website"] = data.org.website
 
         return representation
@@ -2692,7 +2692,7 @@ class NetworkSerializer(ModelSerializer):
 
         representation = super().to_representation(data)
 
-        if not representation.get("website"):
+        if isinstance(representation, dict) and not representation.get("website"):
             representation["website"] = data.org.website
 
         return representation
@@ -3243,7 +3243,7 @@ class InternetExchangeSerializer(ModelSerializer):
             ixpfx = ixlan.ixpfx_set.first()
             representation.update(ixlan_id=ixlan.id, ixpfx_id=ixpfx.id)
 
-        if not representation.get("website"):
+        if isinstance(representation, dict) and not representation.get("website"):
             representation["website"] = data.org.website
 
         return representation
@@ -3405,6 +3405,14 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
         validate_social_media(social_media)
         validate_website_override(website, org_website)
         return data
+    
+    def to_representation(self, data):
+        representation = super().to_representation(data)
+
+        if isinstance(representation, dict) and not representation.get("website"):
+            representation["website"] = data.org.website
+
+        return representation
 
 
 class OrganizationSerializer(
