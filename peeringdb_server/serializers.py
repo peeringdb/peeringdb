@@ -1582,9 +1582,9 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
         read_only_fields = ["rencode", "region_continent"]
 
-        related_fields = ["org"]
+        related_fields = ["org","campus"]
 
-        list_exclude = ["org"]
+        list_exclude = ["org","campus"]
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):

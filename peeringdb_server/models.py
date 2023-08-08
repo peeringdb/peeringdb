@@ -1814,7 +1814,10 @@ class Facility(
         null=True,
         blank=True,
     )
-    website = models.URLField(_("Website"), blank=True, null=True)
+
+    # TODO: why are we redefining this, seems same as the one
+    # defined in django-peeringdb
+    website = models.URLField(_("Website"), blank=True, default="")
 
     ix_count = models.PositiveIntegerField(
         _("number of exchanges at this facility"),

@@ -807,6 +807,7 @@ class TestJSON(unittest.TestCase):
         note_tag,
         typ="listing",
         list_exclude=[],
+        field_name=None,
     ):
         """
         Asserts the data integrity of structures within a result that has
@@ -822,7 +823,12 @@ class TestJSON(unittest.TestCase):
 
         # first check that the provided object is not None, as this should
         # never be the case
-        self.assertNotEqual(obj, None, msg=note_tag)
+        #
+        # special case: facility.campus is allowed to be None
+        if field_name not in ["campus"]:
+            self.assertNotEqual(obj, None, msg=note_tag)
+        elif obj is None:
+            return
 
         # single primary key relation fields
         for pk_fld in pk_flds:
@@ -847,6 +853,7 @@ class TestJSON(unittest.TestCase):
                         t_depth,
                         f"{note_tag}.{pk_fld}",
                         typ=typ,
+                        field_name=pk_fld,
                     )
                 else:
                     self.assertIn(
@@ -886,6 +893,7 @@ class TestJSON(unittest.TestCase):
                         f"{note_tag}.{n_fld}",
                         typ=typ,
                         list_exclude=getattr(n_fld_cls.Meta, "list_exclude", []),
+                        field_name=n_fld,
                     )
 
             elif r_depth == 1:
