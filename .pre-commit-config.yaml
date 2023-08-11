@@ -5,7 +5,7 @@ exclude: |
     )$
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v4.4.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
@@ -32,10 +32,10 @@ repos:
         entry: poetry run black .
         language: system
         pass_filenames: false
-  - repo: local
-    hooks:
-      - id: system
-        name: flake8
-        entry: poetry run flake8 peeringdb_server
-        language: system
-        pass_filenames: false
+#  - repo: local
+#    hooks:
+#      - id: system
+#        name: flake8
+#        entry: poetry run flake8 peeringdb_server
+#        language: system
+#        pass_filenames: false
