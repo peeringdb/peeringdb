@@ -2207,7 +2207,7 @@ class IXFImportEmailAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin
 
     def stale_info(self, obj):
         not_sent = obj.sent is None
-        if type(obj.sent) == datetime.datetime:
+        if isinstance(obj.sent, datetime.datetime):
             re_sent = (obj.sent - obj.created) > datetime.timedelta(minutes=5)
         else:
             re_sent = False

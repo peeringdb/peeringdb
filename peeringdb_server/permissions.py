@@ -114,7 +114,7 @@ def get_org_key_from_request(request):
     """
     perm_holder = get_permission_holder_from_request(request)
 
-    if type(perm_holder) == OrganizationAPIKey:
+    if isinstance(perm_holder, OrganizationAPIKey):
         return perm_holder
 
     return None
@@ -129,7 +129,7 @@ def get_user_key_from_request(request):
     """
     perm_holder = get_permission_holder_from_request(request)
 
-    if type(perm_holder) == UserAPIKey:
+    if isinstance(perm_holder, UserAPIKey):
         return perm_holder
 
     return None

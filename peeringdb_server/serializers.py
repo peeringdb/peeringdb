@@ -832,7 +832,7 @@ class ModelSerializer(serializers.ModelSerializer):
                 # retrieve the model field for the relationship
                 model_field = getattr(cls.Meta.model, fld, None)
 
-                if type(model_field) == ReverseManyToOneDescriptor:
+                if isinstance(model_field, ReverseManyToOneDescriptor):
                     # nested sets
 
                     # build field and attribute names to prefetch to, this function will be
@@ -880,7 +880,7 @@ class ModelSerializer(serializers.ModelSerializer):
                         is_list=is_list,
                     )
 
-                elif type(model_field) == ForwardManyToOneDescriptor and not is_list:
+                elif isinstance(model_field, ForwardManyToOneDescriptor) and not is_list:
                     # single relations
 
                     if not nested:
@@ -920,13 +920,13 @@ class ModelSerializer(serializers.ModelSerializer):
     def is_root(self):
         if not self.parent:
             return True
-        if type(self.parent) == serializers.ListSerializer and not self.parent.parent:
+        if isinstance(self.parent, serializers.ListSerializer) and not self.parent.parent:
             return True
         return False
 
     @property
     def in_list(self):
-        return type(self.parent) == serializers.ListSerializer
+        return isinstance(self.parent, serializers.ListSerializer)
 
     @property
     def depth(self):
@@ -1102,7 +1102,7 @@ class ModelSerializer(serializers.ModelSerializer):
     def _unique_filter(self, fld, data):
         for _fld, slz_fld in list(self._declared_fields.items()):
             if fld == slz_fld.source:
-                if type(slz_fld) == serializers.PrimaryKeyRelatedField:
+                if isinstance(slz_fld, serializers.PrimaryKeyRelatedField):
                     return slz_fld.queryset.get(id=data[_fld])
 
     def run_validation(self, data=serializers.empty):
@@ -1250,7 +1250,7 @@ class ModelSerializer(serializers.ModelSerializer):
                     if type(instance) in QUEUE_ENABLED:
                         self._reapprove = True
                         self._undelete = False
-                    elif type(instance) == CarrierFacility:
+                    elif isinstance(instance, CarrierFacility):
                         if instance.carrier.org_id == instance.facility.org_id:
                             self._reapprove = False
                             self._undelete = True
@@ -1582,9 +1582,9 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
         read_only_fields = ["rencode", "region_continent"]
 
-        related_fields = ["org","campus"]
+        related_fields = ["org", "campus"]
 
-        list_exclude = ["org","campus"]
+        list_exclude = ["org", "campus"]
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
@@ -3405,7 +3405,7 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
         validate_social_media(social_media)
         validate_website_override(website, org_website)
         return data
-    
+
     def to_representation(self, data):
         representation = super().to_representation(data)
 

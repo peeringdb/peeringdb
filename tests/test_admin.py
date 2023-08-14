@@ -27,7 +27,12 @@ class AdminTests(TestCase):
 
     @classmethod
     def entity_data(cls, org, tag):
-        kwargs = {"name": f"{org.name} {tag}", "status": "ok", "org": org, "website":""}
+        kwargs = {
+            "name": f"{org.name} {tag}",
+            "status": "ok",
+            "org": org,
+            "website": "",
+        }
         if tag == "net":
             cls.asn_count += 1
             kwargs.update(asn=cls.asn_count)

@@ -470,7 +470,7 @@ class TestJSON(unittest.TestCase):
         nested_rel = []
 
         for name, fld in list(serializer_class._declared_fields.items()):
-            if type(fld) == serializers.PrimaryKeyRelatedField:
+            if isinstance(fld, serializers.PrimaryKeyRelatedField):
                 pk_rel.append(name[:-3])
             elif isinstance(fld, serializers.ListSerializer):
                 nested_rel.append((name, fld.child))
@@ -662,7 +662,7 @@ class TestJSON(unittest.TestCase):
         if test_success:
             db.update(typ, **orig)
             u_data = self.assert_get_handleref(db, typ, id, ignore=ignore)
-            if type(test_success) == list:
+            if isinstance(test_success, list):
                 for test in test_success:
                     if test and callable(test):
                         test(data, u_data)
