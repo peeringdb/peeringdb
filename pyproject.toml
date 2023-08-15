@@ -14,7 +14,7 @@ django = "^4.2"
 django-inet = ">=1.1.1"
 django-handleref = ">=2"
 # Install from pypi once 3.1.0 is released
-django-peeringdb = "==3.1.0"
+django-peeringdb = "==3.2.0"
 djangorestframework = ">=3.14.0"
 mysqlclient = ">=2.1.1"
 # locked to support_202306 branch until that is tagged and released to pypi
