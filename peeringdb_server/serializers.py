@@ -880,7 +880,9 @@ class ModelSerializer(serializers.ModelSerializer):
                         is_list=is_list,
                     )
 
-                elif isinstance(model_field, ForwardManyToOneDescriptor) and not is_list:
+                elif (
+                    isinstance(model_field, ForwardManyToOneDescriptor) and not is_list
+                ):
                     # single relations
 
                     if not nested:
@@ -920,7 +922,10 @@ class ModelSerializer(serializers.ModelSerializer):
     def is_root(self):
         if not self.parent:
             return True
-        if isinstance(self.parent, serializers.ListSerializer) and not self.parent.parent:
+        if (
+            isinstance(self.parent, serializers.ListSerializer)
+            and not self.parent.parent
+        ):
             return True
         return False
 
