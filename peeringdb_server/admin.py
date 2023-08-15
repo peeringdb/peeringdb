@@ -864,6 +864,7 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "proto_unicast_readonly",
         "proto_ipv6_readonly",
         "proto_multicast_readonly",
+        "org_website"
     )
     inlines = (InternetExchangeFacilityInline, IXLanInline)
     form = InternetExchangeAdminForm
@@ -903,6 +904,11 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     proto_ipv6_readonly.short_description = _("Unicast IPv6")
     proto_multicast_readonly.short_description = _("Multicast")
 
+    def org_website(self, obj):
+        if obj.org and obj.org.website:
+            url = html.escape(obj.org.website)
+            return mark_safe(f"<a href=\"{url}\">{url}</a>")
+        return None
 
 class IXLanAdminForm(StatusForm):
     def __init__(self, *args, **kwargs):
@@ -1391,7 +1397,7 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name",)
-    readonly_fields = ("id", "grainy_namespace")
+    readonly_fields = ("id", "grainy_namespace","org_website")
 
     raw_id_fields = ("org",)
     autocomplete_lookup_fields = {
@@ -1421,6 +1427,7 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "latitude",
         "longitude",
         "website",
+        "org_website",
         "clli",
         "rencode",
         "npanxx",
@@ -1444,6 +1451,12 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "grainy_namespace",
         "status_dashboard",
     ]
+
+    def org_website(self, obj):
+        if obj.org and obj.org.website:
+            url = html.escape(obj.org.website)
+            return mark_safe(f"<a href=\"{url}\">{url}</a>")
+        return None
 
 
 class NetworkAdminForm(StatusForm):
@@ -1479,7 +1492,7 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name", "asn")
-    readonly_fields = ("id", "grainy_namespace", "rir_status", "rir_status_updated")
+    readonly_fields = ("id", "grainy_namespace", "rir_status", "rir_status_updated", "org_website")
     form = NetworkAdminForm
 
     inlines = (
@@ -1494,6 +1507,12 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
             "org",
         ],
     }
+
+    def org_website(self, obj):
+        if obj.org and obj.org.website:
+            url = html.escape(obj.org.website)
+            return mark_safe(f"<a href=\"{url}\">{url}</a>")
+        return None
 
     def get_search_results(self, request, queryset, search_term):
         # Check if the search_term starts with 'AS' or 'ASN'
