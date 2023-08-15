@@ -447,3 +447,24 @@ def validate_social_media(value):
                 # identifier can't be None and empty.
                 raise ValidationError(_("Invalid identifier!"))
     return value
+
+
+def validate_website_override(website, org_website):
+    """
+    Validates a website value
+
+    Will raise a ValidationError on failure
+
+    Arguments:
+
+    - value(`str`)
+
+    Returns:
+
+    - validated value (`str`)
+    """
+    if not website and not org_website:
+        raise ValidationError({"website": ["Website required"]})
+    elif not website and org_website:
+        return org_website
+    return website

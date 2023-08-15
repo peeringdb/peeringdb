@@ -1870,7 +1870,14 @@ class Importer:
         if not settings.IXF_REMOVE_STALE_NETIXLAN:
             return
 
+        # currently running in preview mode, so no notifications should be sent
+
         if not self.save:
+            return
+
+        # ix has import disabled, so no notifications should be sent (#1360)
+
+        if not self.ixlan.ready_for_ixf_import:
             return
 
         notify_period = settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD
@@ -1900,6 +1907,17 @@ class Importer:
             if ixf_member_data.requirement_of_id:
                 continue
 
+            # check the date of when the ix-f information that suggests
+            # the netixlan removal was last seen in the ix-f data.
+            # ignore any that were not seen the last time the importer ran
+            #
+            # this is to catch edge cases where the ix has had i turned off
+            # for a while, turned it back on and now needs to process
+            # current vs old data. (#1360)
+
+            if ixf_member_data.fetched <= self.now:
+                continue
+
             ixf_member_data.extra_notifications_net_num += 1
             ixf_member_data.extra_notifications_net_date = now
             ixf_member_data.save()
@@ -1925,6 +1943,11 @@ class Importer:
         # global off switch
 
         if not settings.IXF_REMOVE_STALE_NETIXLAN:
+            return
+
+        # ix has import disabled, so no notifications should be sent (#1360)
+
+        if not self.ixlan.ready_for_ixf_import:
             return
 
         notify_max = settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT
@@ -1955,6 +1978,17 @@ class Importer:
             # both ips and is present at the ix.
 
             if ixf_member_data.requirement_of_id:
+                continue
+
+            # check the date of when the ix-f information that suggests
+            # the netixlan removal was last seen in the ix-f data.
+            # ignore any that were not seen the last time the importer ran
+            #
+            # this is to catch edge cases where the ix has had i turned off
+            # for a while, turned it back on and now needs to process
+            # current vs old data. (#1360)
+
+            if ixf_member_data.fetched <= self.now:
                 continue
 
             if ixf_member_data.netixlan is not None and ixf_member_data.netixlan.id:

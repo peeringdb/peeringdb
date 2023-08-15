@@ -58,6 +58,11 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
 from django_otp.plugins.otp_email.models import EmailDevice
+from django_peeringdb.const import (
+    CAMPUS_HELP_TEXT,
+    CARRIER_HELP_TEXT,
+    WEBSITE_OVERRIDE_HELP_TEXT,
+)
 from django_ratelimit.decorators import ratelimit
 from django_security_keys.ext.two_factor.views import (  # noqa
     DisableView as TwoFactorDisableView,
@@ -1308,13 +1313,14 @@ def view_index(request, errors=None):
         )
     else:
         organizations_require_2fa = False
-
+    carrier_help_text = CARRIER_HELP_TEXT
     recent = {
         "organizations_require_2fa": organizations_require_2fa,
         "net": Network.handleref.filter(status="ok").order_by("-updated")[:5],
         "fac": Facility.handleref.filter(status="ok").order_by("-updated")[:5],
         "ix": InternetExchange.handleref.filter(status="ok").order_by("-updated")[:5],
         "carrier": Carrier.handleref.filter(status="ok").order_by("-updated")[:5],
+        "carrier_help_text": carrier_help_text,
     }
 
     env = BASE_ENV.copy()
@@ -1517,6 +1523,8 @@ def view_organization(request, id):
                 "notify_incomplete": True,
                 "value": data.get("website", dismiss),
                 "label": _("Website"),
+                "edit_label": _("Company Website Override"),
+                "edit_help_text": WEBSITE_OVERRIDE_HELP_TEXT,
             },
             {
                 "name": "address1",
@@ -1725,6 +1733,8 @@ def view_facility(request, id):
                 "type": "url",
                 "value": data.get("website", dismiss),
                 "label": _("Company Website"),
+                "edit_label": _("Company Website Override"),
+                "edit_help_text": WEBSITE_OVERRIDE_HELP_TEXT,
             },
             {
                 "name": "address1",
@@ -1943,9 +1953,7 @@ def view_carrier(request, id):
                 "name": "website",
                 "label": _("Company Website"),
                 "edit_label": _("Company Website Override"),
-                "edit_help_text": _(
-                    "If this field is set, it will be displayed on this record. If not, we will display the website from the organization record this is tied to"
-                ),
+                "edit_help_text": WEBSITE_OVERRIDE_HELP_TEXT,
                 "value": data.get("website", dismiss),
             },
             {
@@ -2048,9 +2056,7 @@ def view_campus(request, id):
                 "name": "website",
                 "label": _("Company Website"),
                 "edit_label": _("Company Website Override"),
-                "edit_help_text": _(
-                    "If this field is set, it will be displayed on this record. If not, we will display the website from the organization record this is tied to"
-                ),
+                "edit_help_text": WEBSITE_OVERRIDE_HELP_TEXT,
                 "value": data.get("website", dismiss),
             },
             {
@@ -2136,6 +2142,7 @@ def view_exchange(request, id):
 
     data = {
         "social_media_enum": v2_social_media_services(),
+        "policy_general_help_text": field_help(Network, "policy_general"),
         "id": exchange.id,
         "title": data.get("name", dismiss),
         "facilities": facilities,
@@ -2226,6 +2233,8 @@ def view_exchange(request, id):
                 "type": "url",
                 "name": "website",
                 "label": _("Company Website"),
+                "edit_label": _("Company Website Override"),
+                "edit_help_text": WEBSITE_OVERRIDE_HELP_TEXT,
                 "value": data.get("website", dismiss),
             },
             {
@@ -2528,6 +2537,8 @@ def view_network(request, id):
             {
                 "name": "website",
                 "label": _("Company Website"),
+                "edit_label": _("Company Website Override"),
+                "edit_help_text": WEBSITE_OVERRIDE_HELP_TEXT,
                 "type": "url",
                 "notify_incomplete": True,
                 "value": network_d.get("website", dismiss),
@@ -2916,6 +2927,8 @@ def view_advanced_search(request):
         dj_settings.API_DISTANCE_FILTER_REQUIRE_VERIFIED is False
         or (request.user.is_authenticated and request.user.is_verified_user)
     )
+
+    env["campus_help_text"] = CAMPUS_HELP_TEXT
 
     return HttpResponse(template.render(env, request))
 

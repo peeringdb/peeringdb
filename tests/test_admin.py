@@ -27,7 +27,12 @@ class AdminTests(TestCase):
 
     @classmethod
     def entity_data(cls, org, tag):
-        kwargs = {"name": f"{org.name} {tag}", "status": "ok", "org": org}
+        kwargs = {
+            "name": f"{org.name} {tag}",
+            "status": "ok",
+            "org": org,
+            "website": "",
+        }
         if tag == "net":
             cls.asn_count += 1
             kwargs.update(asn=cls.asn_count)
@@ -539,6 +544,25 @@ class AdminTests(TestCase):
         for e in expected_not:
             assert e not in content
 
+    def test_search_network_prefixed(self):
+        expected = [
+            f'Org {i} net</a></th><td class="field-asn">{i+1}</td>' for i in range(0, 9)
+        ]
+        for i, e in enumerate(expected):
+            ## AS prefix
+            content_as = self._run_regex_search("network", f"AS{i+1}")
+            assert e in content_as
+
+            for x in set(expected) - {expected[i]}:
+                assert x not in content_as
+
+            ## ASN prefix
+            content_asn = self._run_regex_search("network", f"ASN{i+1}")
+            assert e in content_asn
+
+            for x in set(expected) - {expected[i]}:
+                assert x not in content_asn
+
     def test_all_views_readonly(self):
         self._test_all_views(
             self.readonly_admin,
@@ -551,6 +575,28 @@ class AdminTests(TestCase):
 
     def test_all_views_superuser(self):
         self._test_all_views(self.admin_user)
+
+    def test_superuser_search(self):
+        urls = [
+            "/cp/django_security_keys/securitykey/?q=example",
+            "/cp/peeringdb_server/commandlinetool/?q=example",
+            "/cp/peeringdb_server/datachangeemail/?q=example",
+            "/cp/peeringdb_server/datachangenotificationqueue/?q=example",
+            "/cp/peeringdb_server/datachangewatchedobject/?q=example",
+            "/cp/peeringdb_server/geocoordinatecache/?q=example",
+            # "/cp/peeringdb_server/oauthapplication/?q=example",  # This route doesn't exist with the default OAuth provider application under the test environment. Needs to be peeringdb_server.OAuthApplication
+            "/cp/peeringdb_server/partnership/?q=example",
+            "/cp/peeringdb_server/sponsorship/?q=example",
+        ]
+
+        client = Client()
+        client.force_login(self.admin_user)
+        assert self.admin_user.is_staff
+
+        for url in urls:
+            fn = getattr(client, "get")
+            response = fn(url, follow=True)
+            assert response.status_code == 200
 
     def _test_all_views(self, user, **kwargs):
         call_command("pdb_generate_test_data", limit=2, commit=True)

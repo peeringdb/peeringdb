@@ -864,6 +864,7 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "proto_unicast_readonly",
         "proto_ipv6_readonly",
         "proto_multicast_readonly",
+        "org_website",
     )
     inlines = (InternetExchangeFacilityInline, IXLanInline)
     form = InternetExchangeAdminForm
@@ -902,6 +903,12 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     proto_unicast_readonly.short_description = _("Unicast IPv4")
     proto_ipv6_readonly.short_description = _("Unicast IPv6")
     proto_multicast_readonly.short_description = _("Multicast")
+
+    def org_website(self, obj):
+        if obj.org and obj.org.website:
+            url = html.escape(obj.org.website)
+            return mark_safe(f'<a href="{url}">{url}</a>')
+        return None
 
 
 class IXLanAdminForm(StatusForm):
@@ -1092,6 +1099,7 @@ class SponsorshipAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     inlines = (SponsorshipOrganizationInline,)
 
     raw_id_fields = ("orgs",)
+    search_fields = ("orgs__name", "level", "start_date", "end_date")
 
     autocomplete_lookup_fields = {
         "m2m": ["orgs"],
@@ -1133,6 +1141,7 @@ class PartnershipAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
     autocomplete_lookup_fields = {
         "fk": ["org"],
     }
+    search_fields = ("org__name",)
 
     def org_name(self, obj):
         if not obj.org:
@@ -1389,7 +1398,7 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name",)
-    readonly_fields = ("id", "grainy_namespace")
+    readonly_fields = ("id", "grainy_namespace", "org_website")
 
     raw_id_fields = ("org",)
     autocomplete_lookup_fields = {
@@ -1419,6 +1428,7 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "latitude",
         "longitude",
         "website",
+        "org_website",
         "clli",
         "rencode",
         "npanxx",
@@ -1442,6 +1452,12 @@ class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "grainy_namespace",
         "status_dashboard",
     ]
+
+    def org_website(self, obj):
+        if obj.org and obj.org.website:
+            url = html.escape(obj.org.website)
+            return mark_safe(f'<a href="{url}">{url}</a>')
+        return None
 
 
 class NetworkAdminForm(StatusForm):
@@ -1477,7 +1493,13 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name", "asn")
-    readonly_fields = ("id", "grainy_namespace", "rir_status", "rir_status_updated")
+    readonly_fields = (
+        "id",
+        "grainy_namespace",
+        "rir_status",
+        "rir_status_updated",
+        "org_website",
+    )
     form = NetworkAdminForm
 
     inlines = (
@@ -1492,6 +1514,26 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
             "org",
         ],
     }
+
+    def org_website(self, obj):
+        if obj.org and obj.org.website:
+            url = html.escape(obj.org.website)
+            return mark_safe(f'<a href="{url}">{url}</a>')
+        return None
+
+    def get_search_results(self, request, queryset, search_term):
+        # Check if the search_term starts with 'AS' or 'ASN'
+        asn = re.match(r"(asn|as)(\d+)", search_term.lower())
+        if asn:
+            # Filter the queryset to find the Network with the specified ASN
+            matching_networks = queryset.filter(asn=asn.group(2))
+
+            if matching_networks.count() == 1:
+                # Redirect to the detail view of the matching Network
+                return matching_networks, False
+
+        # If the search_term doesn't start with 'AS' or 'ASN', perform a regular search
+        return super().get_search_results(request, queryset, search_term)
 
 
 class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
@@ -2011,6 +2053,7 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         "status",
     )
     change_list_template = "admin/peeringdb_server/commandlinetool/change_list.html"
+    search_fields = ("tool", "description")
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -2190,7 +2233,7 @@ class IXFImportEmailAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin
 
     def stale_info(self, obj):
         not_sent = obj.sent is None
-        if type(obj.sent) == datetime.datetime:
+        if isinstance(obj.sent, datetime.datetime):
             re_sent = (obj.sent - obj.created) > datetime.timedelta(minutes=5)
         else:
             re_sent = False
@@ -2532,6 +2575,15 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
         "latitude",
         "fetched",
     ]
+    search_fields = (
+        "country",
+        "city",
+        "state",
+        "zipcode",
+        "address1",
+        "longitude",
+        "latitude",
+    )
 
 
 @admin.register(DataChangeWatchedObject)
@@ -2539,6 +2591,7 @@ class DataChangeWatchedObjectAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "ref_tag", "object_id", "last_notified", "created")
 
     raw_id_fields = ("user",)
+    search_fields = ("object_id", "user__username")
 
     autocomplete_lookup_fields = {
         "fk": [
@@ -2565,6 +2618,7 @@ class DataChangeNotificationQueueAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = ("watched_object", "target_object", "title", "details")
+    search_fields = ("action", "watched_object_id", "reason")
 
     def has_change_permission(self, request, obj=None):
         return
@@ -2586,6 +2640,7 @@ class DataChangeEmail(admin.ModelAdmin):
     )
 
     raw_id_fields = ("user",)
+    search_fields = ("email", "subject", "user__username")
 
     autocomplete_lookup_fields = {
         "fk": [
