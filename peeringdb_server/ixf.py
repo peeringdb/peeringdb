@@ -1878,7 +1878,6 @@ class Importer:
         # ix has import disabled, so no notifications should be sent (#1360)
 
         if not self.ixlan.ready_for_ixf_import:
-            print("NOT READY FOR IXF IMPORT")
             return
 
         notify_period = settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD
