@@ -16,7 +16,6 @@ from peeringdb_server.models import REFTAG_MAP
 
 
 class Command(BaseCommand):
-
     help = "Fetch api cache files from PEERINGDB_SYNC_CACHE_URL to API_CACHE_ROOT"
 
     def handle(self, *args, **options):
@@ -26,7 +25,6 @@ class Command(BaseCommand):
         tags = REFTAG_MAP.keys()
 
         for tag in tags:
-
             url = urljoin(f"{settings.PEERINGDB_SYNC_CACHE_URL}/", tag) + "-0.json"
             response = requests.get(url)
 

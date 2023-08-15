@@ -29,6 +29,7 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_prefix_overlap,
     validate_social_media,
+    validate_website_override,
 )
 from tests.test_ixf_member_import_protocol import setup_test_data
 
@@ -874,3 +875,31 @@ def test_validate_ssocial_media(value, validated):
             validate_social_media(value)
     else:
         assert validate_social_media(value) == validated
+
+
+@pytest.mark.parametrize(
+    "website,org_website,validated",
+    [
+        # success validation website not null
+        (
+            "https://www.example.com",
+            "https://www.example1.com",
+            "https://www.example.com",
+        ),
+        # success validation website null and overrided by organization website
+        (None, "https://www.example1.com", "https://www.example1.com"),
+        # fail validation
+        (
+            None,
+            None,
+            False,
+        ),
+    ],
+)
+@pytest.mark.django_db
+def test_validate_website_override(website, org_website, validated):
+    if not validated:
+        with pytest.raises(ValidationError):
+            validate_website_override(website, org_website)
+    else:
+        assert validate_website_override(website, org_website) == validated

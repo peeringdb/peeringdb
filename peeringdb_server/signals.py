@@ -605,7 +605,7 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
         if type(item) in QUEUE_NOTIFY and not getattr(
             settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False
         ):
-            if type(item) == Network:
+            if isinstance(item, Network):
                 rdap = RdapLookup().get_asn(item.asn)
             else:
                 rdap = None

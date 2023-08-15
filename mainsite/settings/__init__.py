@@ -1080,7 +1080,9 @@ set_option("IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD", 30)
 
 # on / off toggle for automatic stale netixlan removal
 # through ix-f (#1271)
-set_option("IXF_REMOVE_STALE_NETIXLAN", True)
+#
+# default was changed to False as part of #1360
+set_option("IXF_REMOVE_STALE_NETIXLAN", False)
 
 # clean up data change notification queue by discarding
 # entries older than this (7 days)

@@ -26,7 +26,6 @@ def run_pdb_load_data():
 
 
 if __name__ == "__main__":
-
     try:
         PEERINGDB_SYNC_INTERVAL = int(
             os.environ.get("PEERINGDB_SYNC_INTERVAL", 15 * 60)
@@ -44,7 +43,6 @@ if __name__ == "__main__":
     first_run = True
 
     while bool(PEERINGDB_SYNC_INTERVAL):
-
         # sleep for a random amount of time between the default interval
         # and the maximum interval
         if first_run:

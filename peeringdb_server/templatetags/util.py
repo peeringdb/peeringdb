@@ -115,7 +115,7 @@ def ownership_warning(org, user):
 
 @register.filter
 def long_country_name(v):
-    if type(v) == str:
+    if isinstance(v, str):
         return countries_dict.get(v, v)
     else:
         return v.name
@@ -137,12 +137,12 @@ def fallback(a, b):
 
 @register.filter
 def is_dict(value):
-    return type(value) == dict
+    return isinstance(value, dict)
 
 
 @register.filter
 def is_bool(value):
-    return type(value) == bool
+    return isinstance(value, bool)
 
 
 @register.filter
