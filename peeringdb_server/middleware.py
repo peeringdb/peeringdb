@@ -7,7 +7,6 @@ import base64
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.sessions.middleware import SessionMiddleware
-from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.urls import reverse
