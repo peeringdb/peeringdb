@@ -299,6 +299,12 @@ set_from_env(
 
 set_option("GOOGLE_ANALYTICS_ID", "")
 
+# Inactive API key caching (duration in seconds)
+# When inactive api keys are encountered we cache them for N
+# seconds to avoid repeated lookups
+
+set_option("API_INACTIVE_KEY_CACHE_DURATION", 900)
+
 # Limits
 
 API_THROTTLE_ENABLED = True

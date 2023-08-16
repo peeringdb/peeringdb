@@ -7,9 +7,11 @@ import base64
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
 from peeringdb_server.context import current_request
@@ -17,6 +19,12 @@ from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import get_key_from_request
 
 ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged in. Please log out and try again."
+
+ERR_INACTIVE_KEY = (
+    "This key is currently inactive - please contact PeeringDB support for assistance."
+)
+
+INVALID_API_KEY_CACHE = {}
 
 
 class PDBSessionMiddleware(SessionMiddleware):
@@ -204,6 +212,20 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
         # Check API keys
         if req_key:
+
+            # invalid api keys are cached to prevent excessive db lookups
+            # invalid key cache is cleared every 15 minutes and the cache
+            # is stored as a dict of {key: expiry datetime}
+
+            if req_key in INVALID_API_KEY_CACHE:
+                if INVALID_API_KEY_CACHE[req_key] > timezone.now():
+                    request.auth_id = f"apikey_{req_key}"
+                    return self.response_unauthorized(
+                        request, message=ERR_INACTIVE_KEY, status=403
+                    )
+                else:
+                    del INVALID_API_KEY_CACHE[req_key]
+
             try:
                 api_key = OrganizationAPIKey.objects.get_from_key(req_key)
 
@@ -225,7 +247,9 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                     request, message="Invalid API key", status=401
                 )
 
-            # If API key is provided, check if the user has an active session
+            # If API key is provided
+            # - check if key is active and not revoked
+            # - check if the user has an active session
             else:
                 if isinstance(api_key, OrganizationAPIKey):
                     prefix = f"o{api_key.org_id}"
@@ -233,6 +257,21 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                     prefix = f"u{api_key.user_id}"
 
                 request.auth_id = f"{prefix}_apikey_{api_key.prefix}"
+
+                # if api key is inactive/revoked return 403 Forbidden
+                if api_key.status == "inactive" or api_key.revoked:
+                    request.auth_id = f"apikey_{api_key.prefix}"
+
+                    # we cache inactive keys to prevent excessive db lookups
+                    INVALID_API_KEY_CACHE[
+                        req_key
+                    ] = timezone.now() + timezone.timedelta(
+                        seconds=settings.API_INACTIVE_KEY_CACHE_DURATION
+                    )
+                    return self.response_unauthorized(
+                        request, message=ERR_INACTIVE_KEY, status=403
+                    )
+
                 if request.session.get("_auth_user_id") and request.user.id:
                     if int(request.user.id) == int(
                         request.session.get("_auth_user_id")
