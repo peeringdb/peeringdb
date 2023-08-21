@@ -612,20 +612,18 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         if not self.kwargs:
             if since > 0:
-                
                 # incremental update query (used by peeringdb-py client
                 # to handle incremental updates, will include `deleted` objects)
 
                 allowed_status = ["ok", "deleted"]
 
                 if self.model.HandleRef.tag == "campus":
-
                     # Special treatment for campus objects, since their status
                     # is fluid, depending on the number of facilities. #1472
                     #
                     # If the campus has less than 2 facilities in it is considered pending
                     # If the campus has 2 or more facilities in it is considered ok
-                    # 
+                    #
                     # Pending campuses need to be included in the incremental update , since
                     # a pending campus may be referenced by a facility
 

@@ -3101,7 +3101,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_campus_since(self):
-
         # test that pending campuses are included in incremental update
         # query (?since parameter)
 
@@ -3114,7 +3113,6 @@ class TestJSON(unittest.TestCase):
 
         for row in data:
             assert row["status"] == "pending"
-
 
     ##########################################################################
 
