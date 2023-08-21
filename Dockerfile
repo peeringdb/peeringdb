@@ -25,7 +25,7 @@ ARG run_deps=" \
     libgcc \
     "
 
-FROM python:3.9-alpine as base
+FROM python:3.11-alpine as base
 
 ARG virtual_env=/srv/www.peeringdb.com/venv
 

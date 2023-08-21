@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "peeringdb_server"
-version = "2.49.0-beta"
+version = "2.50.0-beta"
 description = "source code for PeeringDB.com"
 readme = "README.md"
 repository = "https://github.com/peeringdb/peeringdb"
@@ -14,7 +14,7 @@ django = "^4.2"
 django-inet = ">=1.1.1"
 django-handleref = ">=2"
 # Install from pypi once 3.1.0 is released
-django-peeringdb = "==3.1.0"
+django-peeringdb = "==3.2.0"
 djangorestframework = ">=3.14.0"
 mysqlclient = ">=2.1.1"
 # locked to support_202306 branch until that is tagged and released to pypi
@@ -43,7 +43,7 @@ djangorestframework-api-key = ">=2.3.0"
 
 django-tables2 = ">=1.0.4"
 django-vanilla-views = ">=1.0.2"
-django-security-keys = "^1.0.1"
+django-security-keys = ">=1.1.0"
 googlemaps = ">=2.5.1"
 markdown = ">=2.6.7"
 passlib = ">=1.7.1"

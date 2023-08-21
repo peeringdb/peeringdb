@@ -119,6 +119,109 @@ def test_ix_order(admin_user, entities, ip_addresses, ip_addresses_other):
     assert matches == ["Test Exchange One", "Test Exchange Two"]
 
 
+@pytest.mark.django_db
+def test_ix_disabled_import_hides_proposals(
+    admin_user, entities, ip_addresses, ip_addresses_other
+):
+    """
+    Test that disabling the import hides proposals made by it
+    """
+
+    network = entities["network"]
+    ixlan_a = entities["ixlan"][0]
+    ixlan_b = entities["ixlan"][1]
+
+    create_IXFMemberData(network, ixlan_a, ip_addresses, False)
+    create_IXFMemberData(network, ixlan_b, ip_addresses_other, False)
+
+    ixlan_a.ixf_ixp_import_enabled = False
+    ixlan_a.save()
+
+    client = setup_client(admin_user)
+
+    url = reverse("net-view", args=(network.id,))
+
+    with override_group_id():
+        response = client.get(url)
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+
+    matches = re.findall('<a class="ix-name">([^<]+)</a>', content)
+    assert matches == ["Test Exchange Two"]
+
+
+@pytest.mark.django_db
+def test_ix_unset_ixf_url_hides_proposals(
+    admin_user, entities, ip_addresses, ip_addresses_other
+):
+    """
+    Test that disabling the import hides proposals made by it
+    """
+
+    network = entities["network"]
+    ixlan_a = entities["ixlan"][0]
+    ixlan_b = entities["ixlan"][1]
+
+    create_IXFMemberData(network, ixlan_a, ip_addresses, False)
+    create_IXFMemberData(network, ixlan_b, ip_addresses_other, False)
+
+    ixlan_a.ixf_ixp_member_list_url = ""
+    ixlan_a.save()
+
+    client = setup_client(admin_user)
+
+    url = reverse("net-view", args=(network.id,))
+
+    with override_group_id():
+        response = client.get(url)
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+
+    matches = re.findall('<a class="ix-name">([^<]+)</a>', content)
+    assert matches == ["Test Exchange Two"]
+
+
+@pytest.mark.django_db
+def test_ix_disabled_import_hides_dismissed(
+    admin_user, entities, ip_addresses, ip_addresses_other
+):
+    """
+    Test that disabling the import hides proposals made by it
+    """
+
+    network = entities["network"]
+    ixlan_a = entities["ixlan"][0]
+
+    create_IXFMemberData(network, ixlan_a, [ip_addresses[0]], True)
+
+    client = setup_client(admin_user)
+    url = reverse("net-view", args=(network.id,))
+
+    with override_group_id():
+        response = client.get(url)
+    content = response.content.decode("utf-8")
+
+    # dismissed suggestion still relevant, confirm note is shown
+
+    assert response.status_code == 200
+    assert "You have dismissed some suggestions" in content
+
+    ixlan_a.ixf_ixp_import_enabled = False
+    ixlan_a.save()
+
+    with override_group_id():
+        response = client.get(url)
+
+    content = response.content.decode("utf-8")
+
+    # dismissed suggestion no longer relevant, confirm note is gibe
+
+    assert response.status_code == 200
+    assert "You have dismissed some suggestions" not in content
+
+
 @pytest.mark.django_db()
 def test_dismissed_note(admin_user, entities, ip_addresses):
     """
@@ -343,6 +446,11 @@ def entities():
 
         # create ixlan(s)
         entities["ixlan"] = [ix.ixlan for ix in entities["ix"]]
+
+        for ixlan in entities["ixlan"]:
+            ixlan.ixf_ixp_import_enabled = True
+            ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
+            ixlan.save()
 
         # create ixlan prefix(s)
         entities["ixpfx"] = [

@@ -24,7 +24,6 @@ class Command(BaseCommand):
         parser.add_argument("--limit", type=int, default=10)
 
     def handle(self, *args, **options):
-
         threshold = timezone.now() - timedelta(days=settings.NOTIFY_MISSING_2FA_DAYS)
 
         orgs_require_2fa = Organization.objects.filter(
@@ -66,7 +65,6 @@ class Command(BaseCommand):
                 )
 
     def notify_org(self, org, users):
-
         users_without_2fa = []
 
         for user in users:

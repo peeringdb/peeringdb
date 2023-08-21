@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0112_organization_require_totpdevice_and_more"),
     ]

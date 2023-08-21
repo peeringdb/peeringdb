@@ -28,6 +28,12 @@ class TestUndelete(ClientCase):
         cls.fac_a = cls.org_a.fac_set.first()
         cls.fac_b = cls.org_b.fac_set.first()
 
+        cls.carrier_a = cls.org_a.carrier_set.first()
+        cls.carrier_b = cls.org_b.carrier_set.first()
+
+        cls.campus_a = cls.org_a.campus_set.first()
+        cls.campus_b = cls.org_b.campus_set.first()
+
         cls.ixlan_a = cls.ix_a.ixlan_set.first()
         cls.ixlan_b = cls.ix_b.ixlan_set.first()
 
@@ -67,6 +73,21 @@ class TestUndelete(ClientCase):
         # assert self.ixlan_a.netixlan_set_active.count() == 1
 
         assert self.ixlan_a.ixpfx_set_active.count() == 2
+
+    def test_undelete_carrier(self):
+        assert self.carrier_a.carrierfac_set.count() == 1
+
+        # need to manually delete ixfacs and netfacs so
+        # the facility becomes deletable
+
+        self.carrier_a.carrierfac_set_active.all().update(status="deleted")
+        self.carrier_a.delete()
+
+        assert self.carrier_a.status == "deleted"
+
+        self._undelete(self.carrier_a)
+
+        assert self.carrier_a.status == "ok"
 
     def test_undelete_fac(self):
         assert self.fac_a.netfac_set_active.count() == 1

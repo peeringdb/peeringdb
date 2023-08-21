@@ -39,6 +39,8 @@ def test_protected_entities(db):
     assert org.ix_set_active.exists()
     assert org.fac_set_active.exists()
     assert org.net_set_active.exists()
+    assert org.carrier_set_active.exists()
+    # assert org.campus_set_active.exists()
 
     # org has ix, net and fac under it, and should not be
     # deletable
@@ -108,6 +110,26 @@ def test_protected_entities(db):
         # facility can now be deleted
 
         fac.delete()
+
+    # org still has active net objects under it
+    # and should not be deletable
+
+    assert_protected(org)
+
+    # delete carriers
+
+    for carrier in org.carrier_set.all():
+        carrier.delete()
+
+    # org still has active net objects under it
+    # and should not be deletable
+
+    assert_protected(org)
+
+    # delete campuses
+
+    for campus in org.campus_set.all():
+        campus.delete()
 
     # org still has active net objects under it
     # and should not be deletable
