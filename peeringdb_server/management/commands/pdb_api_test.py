@@ -3100,6 +3100,24 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_campus_since(self):
+
+        # test that pending campuses are included in incremental update
+        # query (?since parameter)
+
+        data = self.db_guest.all(
+            "campus", since=int(START_TIMESTAMP) - 10, status="pending"
+        )
+        self.assertEqual(len(data), 7)
+        self.assert_handleref_integrity(data[0])
+        self.assert_data_integrity(data[0], "campus")
+
+        for row in data:
+            assert row["status"] == "pending"
+
+
+    ##########################################################################
+
     def test_guest_005_list_carrier_no_website(self):
         carrier = SHARED["carrier_rw_ok"]
         carrier.website = ""
