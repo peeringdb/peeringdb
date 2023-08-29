@@ -45,7 +45,8 @@ services:
       # - ../../search-data:/srv/www.peeringdb.com/search-data
 
       # uncomment if you want api cache files to be persistent
-      # - ../../api-cache:/srv/www.peeringdb.com/api-cache
+      - ../../api-cache:/srv/www.peeringdb.com/api-cache
+      - ../../LOCAL/mnt:/srv/www.peeringdb.com/mnt
 
       # uncomment if you want localization to be available for development
       #
