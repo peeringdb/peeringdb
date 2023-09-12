@@ -62,6 +62,10 @@ CACHES["negative"] = {
     "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     "LOCATION": "negative",
 }
+CACHES["session"] = {
+    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    "LOCATION": "session", 
+}
 
 # set to high amount so we dont trigger it during tests
 NEGATIVE_CACHE_REPEATED_RATE_LIMIT = 10000000

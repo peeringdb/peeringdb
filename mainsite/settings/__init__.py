@@ -541,7 +541,7 @@ set_option("SESSION_CACHE_ALIAS", "session")
 set_option("SESSION_CACHE_BACKEND", "RedisCache")
 
 # setup caches
-cache_names = ["default", "negative", "sessions", "error_emails"]
+cache_names = ["default", "negative", "session", "error_emails"]
 for cache_name in cache_names:
     if cache_name not in CACHES:
         CACHES[cache_name] = get_cache_backend(cache_name)
