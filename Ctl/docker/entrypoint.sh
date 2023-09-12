@@ -45,11 +45,11 @@ case "$1" in
   "gen_docs" )
     source venv/bin/activate
     export DJANGO_SETTINGS_MODULE=mainsite.settings
-    ln -s /srv/www.peeringdb.com/peeringdb_server /srv/www.peeringdb.com/venv/lib/python3.9/site-packages/peeringdb_server
-    ln -s /srv/www.peeringdb.com/mainsite /srv/www.peeringdb.com/venv/lib/python3.9/site-packages/mainsite
-    mkdir /srv/www.peeringdb.com/venv/lib/python3.9/site-packages/etc/
-    mkdir /srv/www.peeringdb.com/venv/lib/python3.9/site-packages/var/log -p
-    cp etc/VERSION /srv/www.peeringdb.com/venv/lib/python3.9/site-packages/etc/
+    ln -s /srv/www.peeringdb.com/peeringdb_server /srv/www.peeringdb.com/venv/lib/python3.11/site-packages/peeringdb_server
+    ln -s /srv/www.peeringdb.com/mainsite /srv/www.peeringdb.com/venv/lib/python3.11/site-packages/mainsite
+    mkdir /srv/www.peeringdb.com/venv/lib/python3.11/site-packages/etc/
+    mkdir /srv/www.peeringdb.com/venv/lib/python3.11/site-packages/var/log -p
+    cp etc/VERSION /srv/www.peeringdb.com/venv/lib/python3.11/site-packages/etc/
     echo generating module documentation files
     python peeringdb_server/gendocs.py
     echo generating schema visualization
