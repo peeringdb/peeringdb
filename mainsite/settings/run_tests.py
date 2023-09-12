@@ -64,7 +64,7 @@ CACHES["negative"] = {
 }
 CACHES["session"] = {
     "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-    "LOCATION": "session", 
+    "LOCATION": "session",
 }
 
 # set to high amount so we dont trigger it during tests
