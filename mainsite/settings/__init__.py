@@ -233,7 +233,7 @@ def get_cache_backend(cache_name):
     """
     Function to get cache backend based on environment variable
     """
-    cache_backend = globals().get(f'{cache_name.upper()}_CACHE_BACKEND', 'RedisCache')
+    cache_backend = globals().get(f"{cache_name.upper()}_CACHE_BACKEND", "RedisCache")
 
     options = {}
 
@@ -243,24 +243,25 @@ def get_cache_backend(cache_name):
         options["MAX_ENTRIES"] = CACHE_MAX_ENTRIES
         options["CULL_FREQUENCY"] = 10
 
-    if cache_backend == 'RedisCache':
+    if cache_backend == "RedisCache":
         return {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
             "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
             "OPTIONS": {},
         }
-    elif cache_backend == 'LocMemCache':
+    elif cache_backend == "LocMemCache":
         return {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
             "LOCATION": cache_name,
             "OPTIONS": options,
         }
-    elif cache_backend == 'DatabaseCache':
+    elif cache_backend == "DatabaseCache":
         return {
             "BACKEND": "django.core.cache.backends.db.DatabaseCache",
             "LOCATION": "django_cache",
             "OPTIONS": options,
         }
+
 
 _ = lambda s: s
 
@@ -480,11 +481,11 @@ set_option("NEGATIVE_CACHE_EXPIRY_401", 60)
 # permission namespaces
 set_option("NEGATIVE_CACHE_EXPIRY_403", 10)
 
-# 429 - too many requests - 10 seconds 
-# recommended to keep this low as to not interfer with the 
+# 429 - too many requests - 10 seconds
+# recommended to keep this low as to not interfer with the
 # REST api rate limiting that is already in place which includes
 # a timer as to when the rate limit will reset - the negative
-# cache will be on top of that and will obscure the accurate 
+# cache will be on top of that and will obscure the accurate
 # rate limit reset time
 set_option("NEGATIVE_CACHE_EXPIRY_429", 10)
 
@@ -540,7 +541,7 @@ set_option("SESSION_CACHE_ALIAS", "session")
 set_option("SESSION_CACHE_BACKEND", "RedisCache")
 
 # setup caches
-cache_names = ['default', 'negative', 'sessions', 'error_emails']
+cache_names = ["default", "negative", "sessions", "error_emails"]
 for cache_name in cache_names:
     if cache_name not in CACHES:
         CACHES[cache_name] = get_cache_backend(cache_name)

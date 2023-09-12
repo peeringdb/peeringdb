@@ -59,8 +59,8 @@ USER_GROUP_ID = 2
 WHOOSH_STORAGE = "ram"
 IXF_REMOVE_STALE_NETIXLAN = True
 CACHES["default"] = {
-    'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-    'LOCATION': 'test-cache',
+    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    "LOCATION": "test-cache",
 }
 
 # set to high amount so we dont trigger it during tests

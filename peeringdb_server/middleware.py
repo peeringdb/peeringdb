@@ -8,11 +8,12 @@ import json
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.core.cache import caches
 from django.http import HttpResponse, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
-from django.core.cache import caches
+
 from peeringdb_server.context import current_request
 from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import get_key_from_request
@@ -274,7 +275,7 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                 pass
 
             if not api_key:
-                
+
                 # If api key is not valid return 401 Unauthorized
 
                 if len(req_key) > 16:
@@ -354,7 +355,9 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
                 "content-type": response.get("content-type"),
             }
             expiry_setting = f"NEGATIVE_CACHE_EXPIRY_{response.status_code}"
-            caches["negative"].set(cache_key, cache_data, timeout=getattr(settings, expiry_setting))
+            caches["negative"].set(
+                cache_key, cache_data, timeout=getattr(settings, expiry_setting)
+            )
 
             # If the response is 401 or 403, increment the count for this IP address
             # so we can throttle it if it exceeds the limit
@@ -362,9 +365,9 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
                 throttle_key = self.generate_ratelimit_key(request)
                 throttle_count = caches["negative"].get(throttle_key, 0)
                 throttle_count += 1
-                
+
                 # cache for 1 minute
-                caches["negative"].set(throttle_key, throttle_count, timeout=60) 
+                caches["negative"].set(throttle_key, throttle_count, timeout=60)
 
         return response
 
@@ -385,7 +388,14 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
 
         # If the count exceeds the limit, return a throttled error response
         if throttle_count > settings.NEGATIVE_CACHE_REPEATED_RATE_LIMIT:
-            response = JsonResponse({"meta": {"error": "Too many requests that resulted in 401 or 403 responses"}}, status=429)
+            response = JsonResponse(
+                {
+                    "meta": {
+                        "error": "Too many requests that resulted in 401 or 403 responses"
+                    }
+                },
+                status=429,
+            )
             response["X-Throttled-Response"] = "True"
             return response
 
@@ -397,7 +407,9 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
                         {"meta": {"error": "Inactive API key"}}, status=401
                     )
                 else:
-                    response = JsonResponse({"meta": {"error": "Inactive account"}}, status=401)
+                    response = JsonResponse(
+                        {"meta": {"error": "Inactive account"}}, status=401
+                    )
                 response["X-Cached-Response"] = "True"
                 return response
 
@@ -405,7 +417,10 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
         cache_key = self.generate_cache_key(request)
         # Check if the response is cached
         cached_response = caches["negative"].get(cache_key)
-        if cached_response and cached_response.get("content-type") == "application/json":
+        if (
+            cached_response
+            and cached_response.get("content-type") == "application/json"
+        ):
             # Deserialize the cached response content and return it with the cached status code
             response = JsonResponse(
                 json.loads(cached_response["content"]),
@@ -431,7 +446,7 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
         """
         Get the IP address of the client, taking both X-Forwarded-For and REMOTE_ADDR into account.
         """
-        
+
         xff = request.META.get("HTTP_X_FORWARDED_FOR")
         remote_addr = request.META.get("REMOTE_ADDR")
         return "".join(xff.split()) if xff else remote_addr

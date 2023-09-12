@@ -1,8 +1,8 @@
+import base64
 import json
 import os
 
 import pytest
-import base64
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import TestCase
@@ -32,7 +32,9 @@ def setup_module(module):
     #
     # ALL ASNs outside of this range will raise a RdapNotFoundError
     ASN_RANGE_OVERRIDE = list(range(9000000, 9000999))
-    PREFIX_RANGE_OVERRIDE = [f"206.41.{ip_suffix}.0/24" for ip_suffix in range(110, 226)]
+    PREFIX_RANGE_OVERRIDE = [
+        f"206.41.{ip_suffix}.0/24" for ip_suffix in range(110, 226)
+    ]
 
     with open(
         os.path.join(os.path.dirname(__file__), "data", "api", "rdap_override.json"),
@@ -40,7 +42,9 @@ def setup_module(module):
         pdbinet.RdapLookup.override_result = json.load(fh)
 
     with open(
-        os.path.join(os.path.dirname(__file__), "data", "api", "rdap_prefix_override.json"),
+        os.path.join(
+            os.path.dirname(__file__), "data", "api", "rdap_prefix_override.json"
+        ),
     ) as fh:
         pdbinet.RdapLookup.override_prefix_result = json.load(fh)
 
@@ -68,13 +72,14 @@ def teardown_module(module):
 
 
 class APIClientWithIdenity(APIClient):
-
     def __init__(self, identity, **kwargs):
         super().__init__(**kwargs)
 
-        if identity:        
+        if identity:
             credentials = f"{identity.username}:{identity.username}"
-            base64_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
+            base64_credentials = base64.b64encode(credentials.encode("utf-8")).decode(
+                "utf-8"
+            )
             self.credentials(HTTP_AUTHORIZATION=f"Basic {base64_credentials}")
 
 

@@ -15,9 +15,9 @@ import pytest
 import reversion
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django.core.cache import cache, caches
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
-from django.core.cache import caches, cache
 from django.db.utils import IntegrityError
 from django.utils import timezone
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
@@ -143,8 +143,10 @@ PREFIXES_V6 = [
     "2001:504:0:9::/64",
 ]
 
+
 def clear_negative_cache():
     caches["negative"].clear()
+
 
 class TestJSON(unittest.TestCase):
     rest_client = RestClient
@@ -637,7 +639,6 @@ class TestJSON(unittest.TestCase):
                 # as we may run successive tests with different permissions
                 # and dont want to get a false positive
                 clear_negative_cache()
-
 
         return r_data
 

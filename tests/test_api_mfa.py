@@ -1,9 +1,8 @@
 from base64 import b64encode
 
 import pytest
-from django_security_keys.models import SecurityKey
 from django.core.cache import caches
-
+from django_security_keys.models import SecurityKey
 from rest_framework.test import APIClient
 
 from peeringdb_server.models import Network, Organization, User

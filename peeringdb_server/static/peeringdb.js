@@ -2204,7 +2204,7 @@ twentyc.editable.target.register(
       var social_media_labels = [];
       $("div.view_row.social_media").each(function(idx, val) {
         var identifier = $(val).find("input").val(); // Get the identifier value
-      
+
         // Check if an identifier exists before pushing the data
         if (identifier) {
           social_media.push({
@@ -2214,7 +2214,7 @@ twentyc.editable.target.register(
           social_media_labels.push($(val).find("select option:selected").text());
         }
       });
-      
+
       data.social_media = social_media;
       if(requestType == "update") {
         if(id)

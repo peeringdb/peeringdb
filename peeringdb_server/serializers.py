@@ -36,10 +36,11 @@ from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 
+from peeringdb_server.auto_approval import auto_approve_ix
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
-    ticket_queue_rdap_error,
     ticket_queue_prefixauto_approve,
+    ticket_queue_rdap_error,
 )
 from peeringdb_server.geo import Melissa
 from peeringdb_server.inet import (
@@ -49,7 +50,6 @@ from peeringdb_server.inet import (
     get_prefix_protocol,
     rdap_pretty_error_message,
 )
-from peeringdb_server.auto_approval import auto_approve_ix
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     Campus,
@@ -3270,7 +3270,7 @@ class InternetExchangeSerializer(ModelSerializer):
         if not website:
             raise RestValidationError({"website": _("This field may not be blank.")})
 
-        request = self.context.get('request', None)
+        request = self.context.get("request", None)
 
         auto_approve, status = auto_approve_ix(request, prefix)
 

@@ -1,6 +1,7 @@
+import base64
 import json
 import os
-import base64
+
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -69,9 +70,7 @@ class DummyRestClientWithKeyAuth(RestClient):
             self.api_client.credentials(
                 HTTP_AUTHORIZATION="Basic "
                 + base64.b64encode(
-                    f"{self.user_inst.username}:{self.user_inst.username}".encode(
-                        "utf-8"
-                    )
+                    f"{self.user_inst.username}:{self.user_inst.username}".encode()
                 ).decode("utf-8")
             )
 
@@ -220,7 +219,9 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         )
 
     def tearDown(self):
-        teardown_module(self.__class__)  # Call the teardown_module function from your setup file
+        teardown_module(
+            self.__class__
+        )  # Call the teardown_module function from your setup file
         super().tearDown()
 
     # TESTS WE SKIP OR REWRITE IN API KEY CONTEXT

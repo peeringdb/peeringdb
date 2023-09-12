@@ -36,5 +36,6 @@ def cleanup(request):
     """Cleanup a django cache after each test"""
 
     from django.core.cache import caches
+
     for name in caches:
         caches[name].clear()

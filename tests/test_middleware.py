@@ -12,15 +12,18 @@ from django.test import (
     override_settings,
 )
 from django.urls.resolvers import ResolverMatch
-from rest_framework.test import APIClient, APITestCase
 from rest_framework.response import Response
+from rest_framework.test import APIClient, APITestCase
+
 from peeringdb_server.middleware import PDBCommonMiddleware
 from peeringdb_server.models import Organization, OrganizationAPIKey, User, UserAPIKey
 
 from .util import reset_group_ids
 
+
 def get_response_empty(request):
     return HttpResponse()
+
 
 @override_settings(ROOT_URLCONF="middleware.urls")
 class PDBCommonMiddlewareTest(SimpleTestCase):
@@ -137,6 +140,7 @@ class PDBPermissionMiddlewareTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         assert response.headers.get("X-Auth-ID") is None
 
+
 class RedisNegativeCacheMiddlewareTest(APITestCase):
     """
     Test case for RedisNegativeCacheMiddleware class
@@ -175,7 +179,9 @@ class RedisNegativeCacheMiddlewareTest(APITestCase):
         Test negative caching for invalid user
         """
         # Send an initial request with invalid credentials
-        self.client.credentials(HTTP_AUTHORIZATION="Basic Ym9ndXM6Ym9ndXM=")  # bogus:bogus
+        self.client.credentials(
+            HTTP_AUTHORIZATION="Basic Ym9ndXM6Ym9ndXM="
+        )  # bogus:bogus
         response = self.client.get("/api/fac")
         # Test that cache wasn't used
         self.assertIsNone(response.headers.get("X-Cached-Response"))
@@ -235,7 +241,10 @@ class RedisNegativeCacheMiddlewareTest(APITestCase):
         self.assertEqual(response.headers.get("X-Cached-Response"), "True")
         assert response.status_code == 401
 
-    @patch("peeringdb_server.rest.FacilityViewSet.list", return_value=Response({}, status=401))
+    @patch(
+        "peeringdb_server.rest.FacilityViewSet.list",
+        return_value=Response({}, status=401),
+    )
     def test_401_response(self, mock_list):
         """
         Test negative caching for 401 response
@@ -252,7 +261,10 @@ class RedisNegativeCacheMiddlewareTest(APITestCase):
         self.assertEqual(response.headers.get("X-Cached-Response"), "True")
         assert response.status_code == 401
 
-    @patch("peeringdb_server.rest.FacilityViewSet.list", return_value=Response({}, status=403))
+    @patch(
+        "peeringdb_server.rest.FacilityViewSet.list",
+        return_value=Response({}, status=403),
+    )
     def test_403_response(self, mock_list):
         """
         Test negative caching for 403 response
@@ -269,7 +281,10 @@ class RedisNegativeCacheMiddlewareTest(APITestCase):
         self.assertEqual(response.headers.get("X-Cached-Response"), "True")
         assert response.status_code == 403
 
-    @patch("peeringdb_server.rest.FacilityViewSet.list", return_value=Response({}, status=429))
+    @patch(
+        "peeringdb_server.rest.FacilityViewSet.list",
+        return_value=Response({}, status=429),
+    )
     def test_429_response(self, mock_list):
         """
         Test negative caching for 429 response
@@ -285,6 +300,7 @@ class RedisNegativeCacheMiddlewareTest(APITestCase):
         # Test that the cache was used
         self.assertEqual(response.headers.get("X-Cached-Response"), "True")
         assert response.status_code == 429
+
 
 @pytest.mark.parametrize(
     "path,expected",
@@ -310,6 +326,7 @@ def test_pdb_session_middleware(path, expected):
     else:
         assert client.cookies.get(settings.SESSION_COOKIE_NAME) is None
 
+
 @pytest.mark.parametrize(
     "http_status_code,expected",
     (
@@ -317,11 +334,11 @@ def test_pdb_session_middleware(path, expected):
         (401, True),
         (403, True),
         (429, True),
-    )
-)    
+    ),
+)
 @pytest.mark.django_db
 @override_settings(CSRF_USE_SESSIONS=False)
-@patch('django.urls.resolvers.URLResolver.resolve')
+@patch("django.urls.resolvers.URLResolver.resolve")
 def test_pdb_negative_cache(mock_resolve, http_status_code, expected):
 
     """
@@ -333,7 +350,7 @@ def test_pdb_negative_cache(mock_resolve, http_status_code, expected):
     def mock_view_repsonse(request):
         return HttpResponse(f"Response {http_status_code}", status=http_status_code)
 
-    mock_match = ResolverMatch(mock_view_repsonse, [], {}, '')
+    mock_match = ResolverMatch(mock_view_repsonse, [], {}, "")
     mock_resolve.return_value = mock_match
 
     response = client.get(f"/?test_status={http_status_code}")
@@ -341,7 +358,7 @@ def test_pdb_negative_cache(mock_resolve, http_status_code, expected):
     assert response.status_code == http_status_code
 
     assert response.headers.get("X-Cached-Response") is None
-    
+
     response = client.get(f"/?test_status={http_status_code}")
 
     # Get session key from client's cookies
@@ -357,11 +374,11 @@ def test_pdb_negative_cache(mock_resolve, http_status_code, expected):
         (400, False),
         (401, True),
         (403, True),
-    )
-)    
+    ),
+)
 @pytest.mark.django_db
 @override_settings(CSRF_USE_SESSIONS=False, NEGATIVE_CACHE_REPEATED_RATE_LIMIT=3)
-@patch('django.urls.resolvers.URLResolver.resolve')
+@patch("django.urls.resolvers.URLResolver.resolve")
 def test_pdb_negative_cache_ratelimit(mock_resolve, http_status_code, expected):
 
     """
@@ -375,13 +392,13 @@ def test_pdb_negative_cache_ratelimit(mock_resolve, http_status_code, expected):
     def mock_view_repsonse(request):
         return HttpResponse(f"Response {http_status_code}", status=http_status_code)
 
-    mock_match = ResolverMatch(mock_view_repsonse, [], {}, '')
+    mock_match = ResolverMatch(mock_view_repsonse, [], {}, "")
     mock_resolve.return_value = mock_match
 
     for i in range(num_requests):
         response = client.get(f"/?test_status={http_status_code}")
 
-        if i < limit+1 or not expected:
+        if i < limit + 1 or not expected:
             assert response.status_code == http_status_code
             assert response.headers.get("X-Throttled-Response") is None
         else:

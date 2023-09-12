@@ -59,7 +59,6 @@ class Backend(BaseBackend):
                     field.auto_now_add = False
                     field.auto_now = False
 
-
     def get_resource(self, cls):
         """
         Override this so it doesn't hard fail on a non
@@ -146,13 +145,10 @@ class Backend(BaseBackend):
                 value = value.replace(tzinfo=models.UTC())
                 setattr(obj, field.name, value)
 
-
         if obj.HandleRef.tag == "ix":
             obj.save(create_ixlan=False)
         else:
             obj.save()
-
-
 
     def detect_uniqueness_error(self, exc):
         """

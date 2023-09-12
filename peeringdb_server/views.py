@@ -2359,7 +2359,9 @@ def view_exchange(request, id):
                         "css": f"ixf-import-request-status {exchange.ixf_import_css}",
                     },
                 ],
-                "help_text": _("Fill the 'IX-F Member Export URL' field to perform 'IX-F Import'"),
+                "help_text": _(
+                    "Fill the 'IX-F Member Export URL' field to perform 'IX-F Import'"
+                ),
                 "admin": True,
             },
             {"type": "group_end"},

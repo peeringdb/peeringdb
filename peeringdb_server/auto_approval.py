@@ -1,5 +1,7 @@
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from django.contrib.auth.models import AnonymousUser
+
+from peeringdb_server.inet import RdapLookup, RdapNotFoundError
+
 
 def auto_approve_ix(request, prefix):
     user = request.user

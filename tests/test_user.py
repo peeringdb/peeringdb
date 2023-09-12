@@ -394,12 +394,12 @@ class UserTests(TestCase):
         # first dialog if user is the last member of the org
         response = c.get(f"/remove-affiliation/?org={self.org_a.id}")
         self.assertIn(
-            "Are you sure you want to do this...?".encode(),
+            b"Are you sure you want to do this...?",
             response.content,
         )
         # check if the submit button is redirecting to the second dialog page
         self.assertIn(
-            "window.location.href + '&commit=1'".encode(),
+            b"window.location.href + '&commit=1'",
             response.content,
         )
 
@@ -414,11 +414,11 @@ class UserTests(TestCase):
         self.org_a.usergroup.user_set.add(self.user_b)
         response = c.get(f"/remove-affiliation/?org={self.org_a.id}")
         self.assertIn(
-            "Are you sure you want to do this...?".encode(),
+            b"Are you sure you want to do this...?",
             response.content,
         )
         # check if the submit button is not redirecting to the second dialog page
         self.assertNotIn(
-            "window.location.href + '&commit=1'".encode(),
+            b"window.location.href + '&commit=1'",
             response.content,
         )

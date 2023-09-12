@@ -2463,12 +2463,16 @@ class InternetExchange(
 
     @classmethod
     def ixf_import_request_queue(cls, limit=0):
-        qset = InternetExchange.objects.filter(
-            ixf_import_request__isnull=False,
-            ixf_import_request_status="queued"
-        ).exclude(
-            models.Q(ixlan_set__ixf_ixp_member_list_url__isnull=True) | models.Q(ixlan_set__ixf_ixp_member_list_url="")
-        ).order_by("ixf_import_request")
+        qset = (
+            InternetExchange.objects.filter(
+                ixf_import_request__isnull=False, ixf_import_request_status="queued"
+            )
+            .exclude(
+                models.Q(ixlan_set__ixf_ixp_member_list_url__isnull=True)
+                | models.Q(ixlan_set__ixf_ixp_member_list_url="")
+            )
+            .order_by("ixf_import_request")
+        )
 
         if limit:
             qset = qset[:limit]
