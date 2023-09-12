@@ -901,47 +901,52 @@ div.list .highlight-warning {
   cursor: pointer;
 }
 
-.sort-desc:after {
-  font-family: 'Glyphicons Halflings';
-  content: "\e152";
-  vertical-align: bottom;
-  padding-left: 3px;
-}
-
 .sort-asc:after {
-  font-family: 'Glyphicons Halflings';
-  content: "\e151";
+  content: "\e053\e313";
+  font-family: "Material Icons";
   vertical-align: bottom;
   padding-left: 3px;
+  font-size: 16px;
+}
+.sort-desc:after {
+  content: "\e053\e316";
+  font-family: "Material Icons";
+  vertical-align: bottom;
+  padding-left: 3px;
+  font-size: 16px;
 }
 
 
 .sort-desc.numeric:after {
-  font-family: 'Glyphicons Halflings';
-  content: "\e154";
+  content: "\e313";
+  font-family: "Material Icons";
   vertical-align: bottom;
   padding-left: 3px;
+  font-size: 16px;
 }
 
 .sort-asc.numeric:after {
-  font-family: 'Glyphicons Halflings';
-  content: "\e153";
+  content: "\e316";
+  font-family: "Material Icons";
   vertical-align: bottom;
   padding-left: 3px;
+  font-size: 16px;
 }
 
 .sort-desc.ambiguous:after {
-  font-family: 'Glyphicons Halflings';
-  content: "\e156";
+  content: "\e313";
+  font-family: "Material Icons";
   vertical-align: bottom;
   padding-left: 3px;
+  font-size: 16px;
 }
 
 .sort-asc.ambiguous:after {
-  font-family: 'Glyphicons Halflings';
-  content: "\e155";
+  content: "\e316";
+  font-family: "Material Icons";
   vertical-align: bottom;
   padding-left: 3px;
+  font-size: 16px;
 }
 
 

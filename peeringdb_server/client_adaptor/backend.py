@@ -48,6 +48,18 @@ class Backend(BaseBackend):
         resource.Organization: models.Organization,
     }
 
+    @classmethod
+    def setup(cls):
+        # in order to copy updated / created times from server
+        # we need to turn off auto updating of those fields
+        # during update and add
+        for model in cls.RESOURCE_MAP.values():
+            for field in model._meta.fields:
+                if field.name in ["created", "updated"]:
+                    field.auto_now_add = False
+                    field.auto_now = False
+
+
     def get_resource(self, cls):
         """
         Override this so it doesn't hard fail on a non
@@ -134,18 +146,13 @@ class Backend(BaseBackend):
                 value = value.replace(tzinfo=models.UTC())
                 setattr(obj, field.name, value)
 
+
         if obj.HandleRef.tag == "ix":
-            obj._meta.get_field("updated").auto_now = False
-            obj._meta.get_field("created").auto_now = False
             obj.save(create_ixlan=False)
-            obj._meta.get_field("updated").auto_now = True
-            obj._meta.get_field("created").auto_now = True
         else:
-            obj._meta.get_field("updated").auto_now = False
-            obj._meta.get_field("created").auto_now = False
             obj.save()
-            obj._meta.get_field("updated").auto_now = True
-            obj._meta.get_field("created").auto_now = True
+
+
 
     def detect_uniqueness_error(self, exc):
         """

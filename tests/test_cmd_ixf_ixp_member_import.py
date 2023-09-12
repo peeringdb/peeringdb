@@ -68,9 +68,37 @@ def test_import_processed_count(entities_base):
         "pdb_ixf_ixp_member_import", process_requested=1, commit=True, cache=True
     )
 
+    for email in IXFImportEmail.objects.filter(ix=ixlan.ix):
+        assert f"Exchange: {ixlan.ix.view_url}" in email.message
+
     assert (
         InternetExchange.objects.filter(ixf_import_request_status="finished").count()
         == 1
+    )
+
+
+@pytest.mark.django_db
+def test_import_not_processed_import_url_empty(entities_base):
+    ixf_import_data = setup_test_data("ixf.member.0")
+
+    importer = ixf.Importer()
+    cache.set(
+        importer.cache_key("http://www.localhost.com"), ixf_import_data, timeout=None
+    )
+    ixlans = entities_base["ixlan"]
+    for ixlan in ixlans:
+        ixlan.ixf_ixp_import_enabled = False
+        ixlan.ixf_ixp_member_list_url = ""
+        importer.update(ixlan, data=None)
+        ixlan.ix.request_ixf_import()
+
+    call_command(
+        "pdb_ixf_ixp_member_import", process_requested=1, commit=True, cache=True
+    )
+
+    assert (
+        InternetExchange.objects.filter(ixf_import_request_status="finished").count()
+        == 0
     )
 
 

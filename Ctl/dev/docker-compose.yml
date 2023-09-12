@@ -16,6 +16,31 @@ services:
     networks:
       - peeringdb_network
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+    networks:
+      - peeringdb_network
+
+  redis:
+    image: "docker.io/redis:7"
+    restart: always
+    command:
+      - sh
+      - -c
+      - 'redis-server --requirepass devPASSWORD'
+    # environment:
+    #   REDIS_PASSWORD: devPASSWORD
+    ports:
+      - "6379:6379"
+    networks:
+      - peeringdb_network
+    volumes:
+      - peeringdb_redis_data:/data:Z
+
   peeringdb:
     user: "0:0"
     build:
@@ -32,6 +57,8 @@ services:
       DATABASE_USER: peeringdb
       DATABASE_PASSWORD: devPASSWORD
       DATABASE_HOST: database
+      REDIS_HOST: redis
+      REDIS_PASSWORD: devPASSWORD
     ports:
       # this needs to be set in the shell, compose env vars aren't read yet
       - "${DJANGO_PORT:-8000}:8000"
@@ -63,17 +90,10 @@ services:
     networks:
       - peeringdb_network
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
-    ports:
-      - "9200:9200"
-    environment:
-      - discovery.type=single-node
-    networks:
-      - peeringdb_network
 
 volumes:
   peeringdb_database:
+  peeringdb_redis_data:
 
 networks:
   peeringdb_network:

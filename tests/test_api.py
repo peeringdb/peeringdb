@@ -2,6 +2,7 @@ import json
 import os
 
 import pytest
+import base64
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import TestCase
@@ -17,6 +18,7 @@ import peeringdb_server.models as models
 from .util import reset_group_ids
 
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
+RdapLookup_get_ip = pdbinet.RdapLookup.get_ip
 
 
 def setup_module(module):
@@ -30,11 +32,17 @@ def setup_module(module):
     #
     # ALL ASNs outside of this range will raise a RdapNotFoundError
     ASN_RANGE_OVERRIDE = list(range(9000000, 9000999))
+    PREFIX_RANGE_OVERRIDE = [f"206.41.{ip_suffix}.0/24" for ip_suffix in range(110, 226)]
 
     with open(
         os.path.join(os.path.dirname(__file__), "data", "api", "rdap_override.json"),
     ) as fh:
         pdbinet.RdapLookup.override_result = json.load(fh)
+
+    with open(
+        os.path.join(os.path.dirname(__file__), "data", "api", "rdap_prefix_override.json"),
+    ) as fh:
+        pdbinet.RdapLookup.override_prefix_result = json.load(fh)
 
     def get_asn(self, asn):
         if asn in ASN_RANGE_OVERRIDE:
@@ -44,11 +52,30 @@ def setup_module(module):
         else:
             raise pdbinet.RdapNotFoundError()
 
+    def get_ip(self, prefix):
+        if prefix in PREFIX_RANGE_OVERRIDE:
+            return pdbinet.RdapNetwork(self.override_prefix_result)
+        else:
+            raise pdbinet.RdapNotFoundError()
+
+    pdbinet.RdapLookup.get_ip = get_ip
     pdbinet.RdapLookup.get_asn = get_asn
 
 
 def teardown_module(module):
     pdbinet.RdapLookup.get_asn = RdapLookup_get_asn
+    pdbinet.RdapLookup.get_ip = RdapLookup_get_ip
+
+
+class APIClientWithIdenity(APIClient):
+
+    def __init__(self, identity, **kwargs):
+        super().__init__(**kwargs)
+
+        if identity:        
+            credentials = f"{identity.username}:{identity.username}"
+            base64_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
+            self.credentials(HTTP_AUTHORIZATION=f"Basic {base64_credentials}")
 
 
 class DummyResponse:
@@ -84,7 +111,6 @@ class DummyRestClient(RestClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.factory = APIRequestFactory()
-        self.api_client = APIClient()
         self.useragent = kwargs.get("useragent")
         if self.user:
             self.user_inst = models.User.objects.get(username=self.user)
@@ -93,8 +119,7 @@ class DummyRestClient(RestClient):
         else:
             self.user_inst = models.User.objects.get(username="guest")
 
-        if self.user_inst:
-            self.api_client.force_authenticate(self.user_inst)
+        self.api_client = APIClientWithIdenity(self.user_inst)
 
     def _request(self, typ, id=0, method="GET", params=None, data=None, url=None):
         if not url:

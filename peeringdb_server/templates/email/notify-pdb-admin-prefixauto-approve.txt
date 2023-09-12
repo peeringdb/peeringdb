@@ -1,0 +1,4 @@
+{% load i18n %}
+{% language 'en' %}
+    Internet Exchange {{ ix.name }} (<a href="{{ ix.view_url }}">{{ ix.id }}</a>) was automatically approved during user '{{ user.username }}'s create with prefix {{ prefix }}
+{% endlanguage %}

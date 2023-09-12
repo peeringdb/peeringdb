@@ -2,6 +2,8 @@ from base64 import b64encode
 
 import pytest
 from django_security_keys.models import SecurityKey
+from django.core.cache import caches
+
 from rest_framework.test import APIClient
 
 from peeringdb_server.models import Network, Organization, User
@@ -74,6 +76,10 @@ def test_mfa_basic_auth_block_writes():
         response.json()["meta"]["error"]
         == "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
     )
+
+    # clear negative cache
+
+    caches["negative"].clear()
 
     # test 3: remove MFA
 

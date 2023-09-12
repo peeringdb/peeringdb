@@ -99,6 +99,21 @@ def ticket_queue_asnauto_affil(user, org, net, rir_data):
     )
 
 
+def ticket_queue_prefixauto_approve(user, ix, prefix):
+    """
+    Queue deskro ticket creation for prefix automation action: create.
+    """
+
+    ticket_queue(
+        "[PREFIXAUTO] Approval granted to Internet Exchange '%s' created by user '%s'"
+        % (ix.name, user.username),
+        loader.get_template("email/notify-pdb-admin-prefixauto-approve.txt").render(
+            {"user": user, "ix": ix, "prefix": prefix}
+        ),
+        user,
+    )
+
+
 def ticket_queue_asnauto_create(
     user, org, net, rir_data, asn, org_created=False, net_created=False
 ):

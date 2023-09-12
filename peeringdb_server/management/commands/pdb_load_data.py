@@ -125,6 +125,7 @@ class Command(BaseCommand):
 
         djpdb_models.all_models = [
             pdb_models.Organization,
+            pdb_models.Campus,
             pdb_models.Facility,
             pdb_models.Network,
             pdb_models.InternetExchange,
@@ -134,6 +135,8 @@ class Command(BaseCommand):
             pdb_models.NetworkContact,
             pdb_models.NetworkFacility,
             pdb_models.NetworkIXLan,
+            pdb_models.Carrier,
+            pdb_models.CarrierFacility,
         ]
 
         SUPPORTED_BACKENDS["peeringdb_server"] = "peeringdb_server.client_adaptor"

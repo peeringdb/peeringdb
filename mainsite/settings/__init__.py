@@ -229,9 +229,47 @@ def set_from_file(name, path, default=_DEFAULT_ARG, envvar_type=None):
     set_option(name, value, envvar_type)
 
 
+def get_cache_backend(cache_name):
+    """
+    Function to get cache backend based on environment variable
+    """
+    cache_backend = globals().get(f'{cache_name.upper()}_CACHE_BACKEND', 'RedisCache')
+
+    options = {}
+
+    if cache_name == "error_emails":
+        options["MAX_ENTRIES"] = 2
+    elif cache_name == "default":
+        options["MAX_ENTRIES"] = CACHE_MAX_ENTRIES
+        options["CULL_FREQUENCY"] = 10
+
+    if cache_backend == 'RedisCache':
+        return {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
+            "OPTIONS": {},
+        }
+    elif cache_backend == 'LocMemCache':
+        return {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": cache_name,
+            "OPTIONS": options,
+        }
+    elif cache_backend == 'DatabaseCache':
+        return {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": "django_cache",
+            "OPTIONS": options,
+        }
+
 _ = lambda s: s
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+# initial CACHES object so it can be used by release env specific
+# setup files
+
+CACHES = {}
 
 # set RELEASE_ENV, usually one of dev, beta, tutor, prod
 set_option("RELEASE_ENV", "dev")
@@ -270,14 +308,17 @@ set_option("DATABASE_NAME", "peeringdb")
 set_option("DATABASE_USER", "peeringdb")
 set_option("DATABASE_PASSWORD", "")
 
-# API Cache
+# redis
+set_option("REDIS_HOST", "127.0.0.1")
+set_option("REDIS_PORT", "6379")
+set_from_env("REDIS_PASSWORD")
 
+# API Cache
 set_option("API_CACHE_ENABLED", True)
 set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
 set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
 
 # Keys
-
 set_from_env("MELISSA_KEY")
 set_from_env("GOOGLE_GEOLOC_API_KEY")
 
@@ -428,6 +469,35 @@ set_option("POC_DELETION_PERIOD", 30)
 # Otherwise we delete with the pdb_cleanup_vq tool
 set_option("VQUEUE_USER_MAX_AGE", 90)
 
+# NEGATIVE CACHE
+
+# 401 - unauthorized - 1 minute
+set_option("NEGATIVE_CACHE_EXPIRY_401", 60)
+
+# 403 - forbidden - 10 seconds (permission check failure)
+# it is recommended to keep this low as some permission checks
+# on write (POST, PUT) requests check the payload to determine
+# permission namespaces
+set_option("NEGATIVE_CACHE_EXPIRY_403", 10)
+
+# 429 - too many requests - 10 seconds 
+# recommended to keep this low as to not interfer with the 
+# REST api rate limiting that is already in place which includes
+# a timer as to when the rate limit will reset - the negative
+# cache will be on top of that and will obscure the accurate 
+# rate limit reset time
+set_option("NEGATIVE_CACHE_EXPIRY_429", 10)
+
+# inactive users and inactive keys - 1 hour
+set_option("NEGATIVE_CACHE_EXPIRY_INACTIVE_AUTH", 3600)
+
+# throttled negative cache for repeated 401/403s (X per minute)
+set_option("NEGATIVE_CACHE_REPEATED_RATE_LIMIT", 10)
+
+# global on / off switch for negative cache
+set_option("NEGATIVE_CACHE_ENABLED", True)
+
+
 # Django config
 
 ALLOWED_HOSTS = ["*"]
@@ -459,25 +529,21 @@ if CACHE_MAX_ENTRIES < 5000:
     raise ValueError("CACHE_MAX_ENTRIES needs to be >= 5000 (#1151)")
 
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
-        "LOCATION": "django_cache",
-        "OPTIONS": {
-            # maximum number of entries in the cache
-            "MAX_ENTRIES": CACHE_MAX_ENTRIES,
-            # once max entries are reach delete 500 of the oldest entries
-            "CULL_FREQUENCY": 10,
-        },
-    },
-    # local memory cache for throttling error emails (#1282)
-    "error_emails": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "error_emails",
-        "MAX_ENTRIES": 2,
-    },
-}
+set_option("SESSION_ENGINE", "django.contrib.sessions.backends.db")
 
+set_option("DEFAULT_CACHE_BACKEND", "DatabaseCache")
+set_option("ERROR_EMAILS_CACHE_BACKEND", "LocMemCache")
+set_option("NEGATIVE_CACHE_BACKEND", "RedisCache")
+
+# only relevant if SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+set_option("SESSION_CACHE_ALIAS", "session")
+set_option("SESSION_CACHE_BACKEND", "RedisCache")
+
+# setup caches
+cache_names = ['default', 'negative', 'sessions', 'error_emails']
+for cache_name in cache_names:
+    if cache_name not in CACHES:
+        CACHES[cache_name] = get_cache_backend(cache_name)
 
 # keep database connection open for n seconds
 # this is defined at the module level so we can expose
@@ -727,8 +793,8 @@ MIDDLEWARE = (
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "peeringdb_server.middleware.RedisNegativeCacheMiddleware",
     "csp.middleware.CSPMiddleware",
-    # "django.contrib.sessions.middleware.SessionMiddleware",
     "peeringdb_server.middleware.PDBSessionMiddleware",
     "peeringdb_server.middleware.CacheControlMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -737,6 +803,7 @@ MIDDLEWARE = (
     "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 )
 
 AUTHENTICATION_BACKENDS = list()

@@ -58,3 +58,10 @@ GUEST_GROUP_ID = 1
 USER_GROUP_ID = 2
 WHOOSH_STORAGE = "ram"
 IXF_REMOVE_STALE_NETIXLAN = True
+CACHES["default"] = {
+    'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    'LOCATION': 'test-cache',
+}
+
+# set to high amount so we dont trigger it during tests
+NEGATIVE_CACHE_REPEATED_RATE_LIMIT = 10000000

@@ -2203,13 +2203,19 @@ twentyc.editable.target.register(
       var social_media = [];
       var social_media_labels = [];
       $("div.view_row.social_media").each(function(idx, val) {
-        social_media.push({
-          "service": $(val).find("select").val(),
-          "identifier": $(val).find("input").val()
-        });
-        social_media_labels.push($(val).find("select option:selected").text());
+        var identifier = $(val).find("input").val(); // Get the identifier value
+      
+        // Check if an identifier exists before pushing the data
+        if (identifier) {
+          social_media.push({
+            "service": $(val).find("select").val(),
+            "identifier": identifier
+          });
+          social_media_labels.push($(val).find("select option:selected").text());
+        }
       });
-      data.social_media = social_media
+      
+      data.social_media = social_media;
       if(requestType == "update") {
         if(id)
           method = "PUT"

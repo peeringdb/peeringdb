@@ -17,6 +17,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
+from django.core.cache import caches, cache
 from django.db.utils import IntegrityError
 from django.utils import timezone
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
@@ -29,6 +30,7 @@ from twentyc.rpc import (
     RestClient,
 )
 
+import peeringdb_server.inet as pdbinet
 from peeringdb_server import inet
 from peeringdb_server import settings as pdb_settings
 from peeringdb_server.models import (
@@ -88,16 +90,16 @@ IX_R = "%s:Exchange" % ORG_R
 FAC_R = "%s:Facility" % ORG_R
 
 # user specs
-USER = {"user": "api_test", "password": "89c8ec05-b897"}
+USER = {"user": "api_test", "password": "api_test"}
 
-USER_ORG_ADMIN = {"user": "api_test_org_admin", "password": "89c8ec05-b897"}
+USER_ORG_ADMIN = {"user": "api_test_org_admin", "password": "api_test_org_admin"}
 
-USER_ORG_MEMBER = {"user": "api_test_org_member", "password": "89c8ec05-b897"}
+USER_ORG_MEMBER = {"user": "api_test_org_member", "password": "api_test_org_member"}
 
 USER_CRUD = {
-    "delete": {"user": "api_test_crud_delete", "password": "89c8ec05-b897"},
-    "update": {"user": "api_test_crud_update", "password": "89c8ec05-b897"},
-    "create": {"user": "api_test_crud_create", "password": "89c8ec05-b897"},
+    "delete": {"user": "api_test_crud_delete", "password": "api_test_crud_delete"},
+    "update": {"user": "api_test_crud_update", "password": "api_test_crud_update"},
+    "create": {"user": "api_test_crud_create", "password": "api_test_crud_create"},
 }
 
 # server location
@@ -141,6 +143,8 @@ PREFIXES_V6 = [
     "2001:504:0:9::/64",
 ]
 
+def clear_negative_cache():
+    caches["negative"].clear()
 
 class TestJSON(unittest.TestCase):
     rest_client = RestClient
@@ -593,6 +597,7 @@ class TestJSON(unittest.TestCase):
 
         # if test_failures is set we want to test fail conditions
         if test_failures:
+
             # we test fail because of invalid data
             if "invalid" in test_failures:
                 tests = test_failures["invalid"]
@@ -627,6 +632,12 @@ class TestJSON(unittest.TestCase):
 
                 with pytest.raises(PermissionDeniedException):
                     db.create(typ, data_perms, return_response=True)
+
+                # clear negative cache after testing for perm failures
+                # as we may run successive tests with different permissions
+                # and dont want to get a false positive
+                clear_negative_cache()
+
 
         return r_data
 
@@ -3684,6 +3695,10 @@ class TestJSON(unittest.TestCase):
         with pytest.raises(PermissionDeniedException) as excinfo:
             self.db_anon.all("fac", country="US", city="Chicago", distance=10)
         assert "authenticate" in f"{excinfo.value}"
+
+        # clear negative cache
+
+        caches["negative"].clear()
 
         # adjust settings to allow the above
 
