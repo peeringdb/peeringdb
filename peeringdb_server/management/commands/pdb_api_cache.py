@@ -9,8 +9,8 @@ import time
 import traceback
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
 from django.contrib.auth.models import AnonymousUser
+from django.core.management.base import BaseCommand
 from rest_framework.test import APIRequestFactory
 
 import peeringdb_server.models as pdbm
@@ -81,7 +81,7 @@ class Command(BaseCommand):
             "--output-dir",
             action="store",
             default=settings.API_CACHE_ROOT,
-            help=f"output files to this directory (default: {settings.API_CACHE_ROOT})"
+            help=f"output files to this directory (default: {settings.API_CACHE_ROOT})",
         )
         parser.add_argument(
             "--public-data",
@@ -134,7 +134,6 @@ class Command(BaseCommand):
         request_factory = APIRequestFactory()
         renderer = MetaJSONRenderer()
 
-
         settings.API_DEPTH_ROW_LIMIT = 0
 
         # will be using RequestFactory to spawn requests to generate api-cache
@@ -164,7 +163,9 @@ class Command(BaseCommand):
                             % (tag, depth, dtstr)
                         )
                     else:
-                        request = request_factory.get(f"/api/{tag}?updated__lte={dtstr}&_ctf")
+                        request = request_factory.get(
+                            f"/api/{tag}?updated__lte={dtstr}&_ctf"
+                        )
                     request.user = request_user
                     vs = viewset.as_view({"get": "list"})
                     response = vs(request)
