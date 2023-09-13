@@ -1,0 +1,24 @@
+{% load i18n %}
+
+<div class="editable always auto-toggled panel"
+     data-edit-target="/remove-affiliation/"
+     data-edit-always-submit="yes"
+     data-edit-enter-action="submit"
+     id="form-delete-affiliate">
+
+    <h3>{% trans "Delete Affiliation" %}</h3>
+
+    <div class="col-12 col-sm-12 col-md-12"
+         data-edit-type="select"
+         data-edit-data="my_organizations"
+         data-edit-sorted="yes"
+         data-edit-required="no"
+         data-edit-name="organization"
+         data-edit-value="{{ request.user.self_entity_org }}"
+         data-edit-reset-value="">
+    </div>
+
+    <a class="btn btn-danger">
+        {% trans "Delete" %}
+    </a>
+</div>

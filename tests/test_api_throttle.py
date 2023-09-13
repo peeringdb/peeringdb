@@ -1,5 +1,5 @@
 import pytest
-from django.core.cache import cache
+from django.core.cache import caches
 from django.core.management import call_command
 from django.test import TestCase
 from rest_framework.response import Response
@@ -65,7 +65,8 @@ class APIThrottleTests(TestCase):
         """
         Reset the cache so that no throttles will be active
         """
-        cache.clear()
+        caches["default"].clear()
+        caches["negative"].clear()
 
         self.factory = APIRequestFactory()
         self.rate_anon = env = models.EnvironmentSetting(

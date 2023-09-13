@@ -2359,6 +2359,9 @@ def view_exchange(request, id):
                         "css": f"ixf-import-request-status {exchange.ixf_import_css}",
                     },
                 ],
+                "help_text": _(
+                    "Fill the 'IX-F Member Export URL' field to perform 'IX-F Import'"
+                ),
                 "admin": True,
             },
             {"type": "group_end"},
@@ -3620,6 +3623,68 @@ def view_set_user_org(request):
             user = request.user
             user.primary_org = org
             user.save()
+        else:
+            return JsonResponse(
+                {"error": _("Malformed Organization Preference")}, status=400
+            )
+
+        response = JsonResponse({"status": "ok"})
+        return response
+
+
+@csrf_protect
+@ensure_csrf_cookie
+@login_required
+@transaction.atomic
+def view_remove_org_affiliation(request):
+    """
+    Remove organization affiliation of the user
+    """
+    if request.method in ["GET", "HEAD"]:
+
+        user = request.user
+        try:
+            org = Organization.objects.get(id=request.GET.get("org"))
+        except Organization.DoesNotExist:
+            return view_verify(request)
+        if not (user.is_org_admin(org) or user.is_org_member(org)):
+            return view_verify(request)
+        commit = request.GET.get("commit")
+        members = len(org.all_users)
+        confirm_message = "Are you sure you want to do this...?"
+        if members <= 1 and commit:
+            confirm_message = f"if you remove your affiliation to {org}, organization {org} will be abandoned"
+        return render(
+            request,
+            "site/confirm-delete-affiliate.html",
+            {
+                "org": org,
+                "confirm_message": confirm_message,
+                "members": len(org.all_users),
+                "commit": commit,
+            },
+        )
+    elif request.method == "POST":
+        form = UserOrgForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse(form.errors, status=400)
+
+        org_id = form.cleaned_data.get("organization")
+        if org_id:
+            try:
+                org = Organization.objects.get(id=org_id)
+            except ObjectDoesNotExist:
+                return JsonResponse(
+                    {"error": _("Organization does not exist")}, status=400
+                )
+            user = request.user
+            if user.is_org_admin(org) or user.is_org_member(org):
+                org.usergroup.user_set.remove(user)
+                org.admin_usergroup.user_set.remove(user)
+            else:
+                return JsonResponse(
+                    {"error": _(f"{user} is not member of {org}")}, status=400
+                )
         else:
             return JsonResponse(
                 {"error": _("Malformed Organization Preference")}, status=400

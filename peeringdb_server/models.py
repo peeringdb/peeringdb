@@ -31,6 +31,7 @@ import re
 import uuid
 from itertools import chain
 from urllib.parse import quote as urlquote
+from urllib.parse import urljoin
 
 import django.urls
 import django_peeringdb.models as pdb_models
@@ -720,7 +721,10 @@ class UserOrgAffiliationRequest(models.Model):
                 ).render(
                     {
                         "uoar": self,
-                        "org_url": f"{settings.BASE_URL}/org/{self.org.id}",
+                        "org_url": urljoin(
+                            settings.BASE_URL,
+                            django.urls.reverse("org-view", args=(self.org.id,)),
+                        ),
                         "support_email": settings.DEFAULT_FROM_EMAIL,
                     }
                 ),
@@ -1012,7 +1016,7 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         """
         Return the URL to this organizations web view.
         """
-        return "{}{}".format(
+        return urljoin(
             settings.BASE_URL, django.urls.reverse("org-view", args=(self.id,))
         )
 
@@ -1790,7 +1794,7 @@ class Campus(ProtectedMixin, pdb_models.CampusBase):
         """
         Return the URL to this campus's web view.
         """
-        return "{}{}".format(
+        return urljoin(
             settings.BASE_URL, django.urls.reverse("campus-view", args=(self.id,))
         )
 
@@ -2047,7 +2051,7 @@ class Facility(
         """
         Return the URL to this facility's web view.
         """
-        return "{}{}".format(
+        return urljoin(
             settings.BASE_URL, django.urls.reverse("fac-view", args=(self.id,))
         )
 
@@ -2459,9 +2463,16 @@ class InternetExchange(
 
     @classmethod
     def ixf_import_request_queue(cls, limit=0):
-        qset = InternetExchange.objects.filter(
-            ixf_import_request__isnull=False, ixf_import_request_status="queued"
-        ).order_by("ixf_import_request")
+        qset = (
+            InternetExchange.objects.filter(
+                ixf_import_request__isnull=False, ixf_import_request_status="queued"
+            )
+            .exclude(
+                models.Q(ixlan_set__ixf_ixp_member_list_url__isnull=True)
+                | models.Q(ixlan_set__ixf_ixp_member_list_url="")
+            )
+            .order_by("ixf_import_request")
+        )
 
         if limit:
             qset = qset[:limit]
@@ -2536,7 +2547,7 @@ class InternetExchange(
         """
         Return the URL to this facility's web view.
         """
-        return "{}{}".format(
+        return urljoin(
             settings.BASE_URL, django.urls.reverse("ix-view", args=(self.id,))
         )
 
@@ -4455,7 +4466,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             "admin:peeringdb_server_networkixlan_change",
             args=(self.netixlan.id,),
         )
-        return f"{settings.BASE_URL}{path}"
+        return urljoin(settings.BASE_URL, path)
 
     @property
     def ac_url(self):
@@ -4465,7 +4476,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
             "admin:peeringdb_server_ixfmemberdata_change",
             args=(self.id,),
         )
-        return f"{settings.BASE_URL}{path}"
+        return urljoin(settings.BASE_URL, path)
 
 
 # read only, or can make bigger, making smaller could break links
@@ -4878,7 +4889,7 @@ class Network(pdb_models.NetworkBase, ParentStatusCheckMixin):
         """
         Return the URL to this networks web view.
         """
-        return "{}{}".format(
+        return urljoin(
             settings.BASE_URL, django.urls.reverse("net-view", args=(self.id,))
         )
 
@@ -4887,7 +4898,7 @@ class Network(pdb_models.NetworkBase, ParentStatusCheckMixin):
         """
         Return the URL to this networks web view.
         """
-        return "{}{}".format(
+        return urljoin(
             settings.BASE_URL, django.urls.reverse("net-view-asn", args=(self.asn,))
         )
 
@@ -5595,7 +5606,7 @@ class Carrier(ProtectedMixin, pdb_models.CarrierBase):
         """
         Return the URL to this carrier's web view.
         """
-        return "{}{}".format(
+        return urljoin(
             settings.BASE_URL, django.urls.reverse("carrier-view", args=(self.id,))
         )
 

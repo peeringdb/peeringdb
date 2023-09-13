@@ -80,7 +80,7 @@ class InactiveKeyException(APIException):
 
     status_code = 403
     default_detail = _(
-        "This key is currently inactive - please contact PeeringDB support for assistance."
+        "Inactive API key - please contact PeeringDB support for assistance."
     )
     default_code = "permission_denied"
 

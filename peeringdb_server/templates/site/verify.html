@@ -11,6 +11,9 @@
       {% include "site/profile-confirm-email.html" %}
       {% if request.user.organizations|length > 1 %}
         {% include "site/self-object-list.html" %}
+        {% include "site/self-object-affiliates.html" %}
+      {% elif request.user.organizations|length >= 1 %}
+        {% include "site/self-object-affiliates.html" %}
       {% endif %}
       {% if request.user.email_confirmed %}
       <!-- AFFILIATE -->
@@ -101,6 +104,13 @@ $('#form-delete-account').each(function(idx) {
   $(this).on("action-success:submit", function(ev, data) {
     window.document.location.href = "/account/login";
   })
+});
+$('#form-delete-affiliate').each(function(idx) {
+    $(this).find('.btn-danger').click(function(e) {
+        e.preventDefault(); // Prevent the default click behavior
+        var OrgID = $(`select[data-edit-data="my_organizations"]`).val()
+        window.location.href = "/remove-affiliation?org="+OrgID;
+    });
 });
 
 

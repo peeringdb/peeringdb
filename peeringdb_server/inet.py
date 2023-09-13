@@ -14,6 +14,7 @@ from rdap.exceptions import RdapException, RdapNotFoundError
 from peeringdb_server import settings
 
 RdapAsn = rdap.RdapAsn  # noqa
+RdapNetwork = rdap.objects.RdapNetwork  # noqa
 
 # Valid IRR Source values
 # reference: http://www.irr.net/docs/list.html

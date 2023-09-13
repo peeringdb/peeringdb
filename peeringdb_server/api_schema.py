@@ -196,7 +196,7 @@ class BaseSchema(AutoSchema):
         - tuple(serializers.Serializer, models.Model)
         """
 
-        serializer = self._get_serializer(*op_args)
+        serializer = self.get_serializer(*op_args)
         model = None
         if hasattr(serializer, "Meta"):
             if hasattr(serializer.Meta, "model"):

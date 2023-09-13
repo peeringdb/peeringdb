@@ -3,10 +3,12 @@ Custom django middleware.
 """
 
 import base64
+import json
 
 from django.conf import settings
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.core.cache import caches
 from django.http import HttpResponse, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.urls import reverse
@@ -17,6 +19,39 @@ from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import get_key_from_request
 
 ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged in. Please log out and try again."
+
+
+def get_auth_identity(request):
+
+    """
+    Returns a string that uniquely identifies the authentication
+    method used for the request.
+
+    This is used to cache negative authentication responses
+    """
+
+    auth_value = request.META.get("HTTP_AUTHORIZATION", "")
+    session_id = request.COOKIES.get("sessionid", "")[:10]
+
+    if session_id:
+        return f"session__{session_id}"
+
+    auth_type = None
+
+    if auth_value:
+        method, auth_value = auth_value.split(" ", 1)
+        if method.lower() == "basic":
+            # base 64 auth value is decoded and split to get the username
+            auth_value = base64.b64decode(auth_value).decode("utf-8").split(":", 1)[0]
+            auth_type = "user"
+        elif method.lower() == "api-key":
+            # api key auth value is truncated to prefix
+            auth_value = auth_value.split(".", 1)[0]
+            auth_type = "key"
+
+        return f"{auth_type}__{auth_value}"
+
+    return "anonymous__guest"
 
 
 class PDBSessionMiddleware(SessionMiddleware):
@@ -183,8 +218,31 @@ class PDBPermissionMiddleware(MiddlewareMixin):
         if http_auth and http_auth.startswith("Basic "):
             # Get the username and password from the HTTP auth header.
             username, password = self.get_username_and_password(http_auth)
-            # Check if the username and password are valid.
-            user = authenticate(username=username, password=password)
+
+            user = None
+            try:
+                user_object = get_user_model().objects.get(username=username)
+
+                if not user_object.is_active:
+
+                    # If user is inactive, cache the inactive auth
+                    # and return unauthorized
+
+                    identifier = get_auth_identity(request)
+                    caches["negative"].set(
+                        f"inactive__{identifier}",
+                        True,
+                        timeout=settings.NEGATIVE_CACHE_EXPIRY_INACTIVE_AUTH,
+                    )
+
+                    return self.response_unauthorized(
+                        request, message="Inactive account", status=401
+                    )
+                else:
+                    # Check if the username and password are valid.
+                    user = authenticate(username=username, password=password)
+            except get_user_model().DoesNotExist:
+                user_object = None
 
             # return username input in x-auth-id header
             if user:
@@ -216,13 +274,30 @@ class PDBPermissionMiddleware(MiddlewareMixin):
             except UserAPIKey.DoesNotExist:
                 pass
 
-            # If api key is not valid return 401 Unauthorized
             if not api_key:
+
+                # If api key is not valid return 401 Unauthorized
+
                 if len(req_key) > 16:
                     req_key = req_key[:16]
                 request.auth_id = f"apikey_{req_key}"
                 return self.response_unauthorized(
                     request, message="Invalid API key", status=401
+                )
+            elif api_key.revoked or api_key.status != "active":
+
+                # If api key is revoked or inactive, cache as inactive
+                # and return 401 Unauthorized
+
+                identifier = get_auth_identity(request)
+                caches["negative"].set(
+                    f"inactive__{identifier}",
+                    True,
+                    timeout=settings.NEGATIVE_CACHE_EXPIRY_INACTIVE_AUTH,
+                )
+
+                return self.response_unauthorized(
+                    request, message="Inactive API key", status=401
                 )
 
             # If API key is provided, check if the user has an active session
@@ -254,6 +329,146 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
             response["X-Auth-ID"] = request.auth_id
         return response
+
+
+class RedisNegativeCacheMiddleware(MiddlewareMixin):
+    """
+    Middleware that uses Django's cache framework with Redis backend to cache error responses.
+    """
+
+    def process_response(self, request, response):
+        """
+        Process the response before it's sent to the client.
+        """
+
+        if not settings.NEGATIVE_CACHE_ENABLED:
+            return response
+
+        # Check if the response is an error response
+        if response.status_code in [401, 403, 429]:
+            # Generate the cache key
+            cache_key = self.generate_cache_key(request)
+            # Cache the response content and status code with specific expiry time
+            cache_data = {
+                "content": response.content.decode(),
+                "status": response.status_code,
+                "content-type": response.get("content-type"),
+            }
+            expiry_setting = f"NEGATIVE_CACHE_EXPIRY_{response.status_code}"
+            caches["negative"].set(
+                cache_key, cache_data, timeout=getattr(settings, expiry_setting)
+            )
+
+            # If the response is 401 or 403, increment the count for this IP address
+            # so we can throttle it if it exceeds the limit
+            if response.status_code in [401, 403]:
+                throttle_key = self.generate_ratelimit_key(request)
+                throttle_count = caches["negative"].get(throttle_key, 0)
+                throttle_count += 1
+
+                # cache for 1 minute
+                caches["negative"].set(throttle_key, throttle_count, timeout=60)
+
+        return response
+
+    def process_request(self, request):
+        """
+        Process the request before it's passed to the view.
+        """
+
+        if not settings.NEGATIVE_CACHE_ENABLED:
+            return
+
+        # Check if inactive auth cache
+        identifier = get_auth_identity(request)
+
+        # Check if the IP address has been throttled for too many 401 or 403 responses
+        throttle_key = self.generate_ratelimit_key(request)
+        throttle_count = caches["negative"].get(throttle_key, 0)
+
+        # If the count exceeds the limit, return a throttled error response
+        if throttle_count > settings.NEGATIVE_CACHE_REPEATED_RATE_LIMIT:
+            response = JsonResponse(
+                {
+                    "meta": {
+                        "error": "Too many requests that resulted in 401 or 403 responses"
+                    }
+                },
+                status=429,
+            )
+            response["X-Throttled-Response"] = "True"
+            return response
+
+        if identifier:
+            inactive_cache = caches["negative"].get(f"inactive__{identifier}")
+            if inactive_cache:
+                if identifier.startswith("key__"):
+                    response = JsonResponse(
+                        {"meta": {"error": "Inactive API key"}}, status=401
+                    )
+                else:
+                    response = JsonResponse(
+                        {"meta": {"error": "Inactive account"}}, status=401
+                    )
+                response["X-Cached-Response"] = "True"
+                return response
+
+        # Generate the cache key
+        cache_key = self.generate_cache_key(request)
+        # Check if the response is cached
+        cached_response = caches["negative"].get(cache_key)
+        if (
+            cached_response
+            and cached_response.get("content-type") == "application/json"
+        ):
+            # Deserialize the cached response content and return it with the cached status code
+            response = JsonResponse(
+                json.loads(cached_response["content"]),
+                safe=False,
+                status=cached_response["status"],
+            )
+        elif cached_response:
+            # Return the cached response as is
+            response = HttpResponse(
+                cached_response["content"],
+                content_type=cached_response["content-type"],
+                status=cached_response["status"],
+            )
+        else:
+            # No cached response found, return
+            return
+
+        # Add a custom header to indicate that this is a cached response
+        response["X-Cached-Response"] = "True"
+        return response
+
+    def get_ident(self, request):
+        """
+        Get the IP address of the client, taking both X-Forwarded-For and REMOTE_ADDR into account.
+        """
+
+        xff = request.META.get("HTTP_X_FORWARDED_FOR")
+        remote_addr = request.META.get("REMOTE_ADDR")
+        return "".join(xff.split()) if xff else remote_addr
+
+    def generate_ratelimit_key(self, request):
+        return f"negcache__throttle__{self.get_ident(request)}"
+
+    def generate_cache_key(self, request):
+        """
+        Generate the cache key using the IP address, HTTP_AUTHORIZATION value or session ID, request path, and URL parameters.
+        """
+        ip_address = self.get_ident(request)
+        request_path = request.path
+        url_parameters = request.GET.urlencode()
+        identifier = get_auth_identity(request)
+        method = request.method
+
+        # Generate the key and sanitize it by replacing spaces and colons with underscores
+        cache_key = f"negcache_{ip_address}__{identifier}__{method}__{request_path}__{url_parameters}"
+        sanitized_cache_key = cache_key.replace(" ", "_").replace(":", "_")
+
+        return sanitized_cache_key
 
 
 class CacheControlMiddleware(MiddlewareMixin):

@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 
@@ -13,41 +14,8 @@ import peeringdb_server.inet as pdbinet
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
 
+from .test_api import setup_module, teardown_module
 from .util import reset_group_ids
-
-RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
-
-
-def setup_module(module):
-    # RDAP LOOKUP OVERRIDE
-    # Since we are working with fake ASNs throughout the api tests
-    # we need to make sure the RdapLookup client can fake results
-    # for us
-
-    # These ASNs will be seen as valid and a prepared json object
-    # will be returned for them (data/api/rdap_override.json)
-    #
-    # ALL ASNs outside of this range will raise a RdapNotFoundError
-    ASN_RANGE_OVERRIDE = list(range(9000000, 9000999))
-
-    with open(
-        os.path.join(os.path.dirname(__file__), "data", "api", "rdap_override.json"),
-    ) as fh:
-        pdbinet.RdapLookup.override_result = json.load(fh)
-
-    def get_asn(self, asn):
-        if asn in ASN_RANGE_OVERRIDE:
-            return pdbinet.RdapAsn(self.override_result)
-        elif pdbinet.asn_is_bogon(asn):
-            return RdapLookup_get_asn(self, asn)
-        else:
-            raise pdbinet.RdapNotFoundError()
-
-    pdbinet.RdapLookup.get_asn = get_asn
-
-
-def teardown_module(module):
-    pdbinet.RdapLookup.get_asn = RdapLookup_get_asn
 
 
 class DummyResponse:
@@ -98,9 +66,13 @@ class DummyRestClientWithKeyAuth(RestClient):
         if kwargs.get("key") is not None:
             self.key = kwargs.get("key")
             self.api_client.credentials(HTTP_AUTHORIZATION="Api-Key " + self.key)
-            print(f"authenticating {self.user} w key {self.key}")
         elif self.user_inst:
-            self.api_client.force_authenticate(self.user_inst)
+            self.api_client.credentials(
+                HTTP_AUTHORIZATION="Basic "
+                + base64.b64encode(
+                    f"{self.user_inst.username}:{self.user_inst.username}".encode()
+                ).decode("utf-8")
+            )
 
     def _request(self, typ, id=0, method="GET", params=None, data=None, url=None):
         if not url:
@@ -205,6 +177,7 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
 
     def setUp(self):
         super().setUp()
+        setup_module(self.__class__)
 
         # db_user becomes the tester for user key
         api_test_user = models.User.objects.get(username=USER["user"])
@@ -244,6 +217,12 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         self.db_org_member = self.rest_client(
             URL, verbose=VERBOSE, key=r_org_key, **USER_ORG_MEMBER
         )
+
+    def tearDown(self):
+        teardown_module(
+            self.__class__
+        )  # Call the teardown_module function from your setup file
+        super().tearDown()
 
     # TESTS WE SKIP OR REWRITE IN API KEY CONTEXT
     def test_org_member_001_POST_ix_with_perms(self):
@@ -329,7 +308,7 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
 
         with pytest.raises(PermissionDeniedException) as excinfo:
             self.db_org_admin.all("net")
-        assert "key is currently inactive" in str(excinfo.value)
+        assert "Inactive API key" in str(excinfo.value)
 
     # TESTS WE ADD FOR USER API KEY
     def test_user_key_002_GET_as_set(self):
@@ -353,7 +332,7 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
 
         with pytest.raises(PermissionDeniedException) as excinfo:
             self.db_user.all("net")
-        assert "key is currently inactive" in str(excinfo.value)
+        assert "Inactive API key" in str(excinfo.value)
 
     def test_user_key_002_inactive_user(self):
         """
@@ -364,4 +343,4 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
 
         with pytest.raises(PermissionDeniedException) as excinfo:
             self.db_user.all("net")
-        assert "key is currently inactive" in str(excinfo.value)
+        assert "Inactive API key" in str(excinfo.value)

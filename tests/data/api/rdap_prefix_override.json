@@ -1,0 +1,372 @@
+{
+    "rdapConformance": [
+      "nro_rdap_profile_0",
+      "rdap_level_0",
+      "cidr0",
+      "arin_originas0"
+    ],
+    "notices": [
+      {
+        "title": "Terms of Service",
+        "description": [
+          "By using the ARIN RDAP/Whois service, you are agreeing to the RDAP/Whois Terms of Use"
+        ],
+        "links": [
+          {
+            "value": "https://rdap.arin.net/registry/ip/206.41.110.0/24",
+            "rel": "terms-of-service",
+            "type": "text/html",
+            "href": "https://www.arin.net/resources/registry/whois/tou/"
+          }
+        ]
+      },
+      {
+        "title": "Whois Inaccuracy Reporting",
+        "description": [
+          "If you see inaccuracies in the results, please visit: "
+        ],
+        "links": [
+          {
+            "value": "https://rdap.arin.net/registry/ip/206.41.110.0/24",
+            "rel": "inaccuracy-report",
+            "type": "text/html",
+            "href": "https://www.arin.net/resources/registry/whois/inaccuracy_reporting/"
+          }
+        ]
+      },
+      {
+        "title": "Copyright Notice",
+        "description": [
+          "Copyright 1997-2023, American Registry for Internet Numbers, Ltd."
+        ]
+      }
+    ],
+    "handle": "NET-206-41-110-0-1",
+    "startAddress": "206.41.110.0",
+    "endAddress": "206.41.110.255",
+    "ipVersion": "v4",
+    "name": "CHIX",
+    "type": "DIRECT ALLOCATION",
+    "parentHandle": "NET-206-0-0-0-0",
+    "remarks": [
+      {
+        "title": "Registration Comments",
+        "description": [
+          "https://unitedix.net/"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "eventAction": "last changed",
+        "eventDate": "2021-12-14T20:28:45-05:00"
+      },
+      {
+        "eventAction": "registration",
+        "eventDate": "2014-10-17T18:32:20-04:00"
+      }
+    ],
+    "links": [
+      {
+        "value": "https://rdap.arin.net/registry/ip/206.41.110.0/24",
+        "rel": "self",
+        "type": "application/rdap+json",
+        "href": "https://rdap.arin.net/registry/ip/206.41.110.0"
+      },
+      {
+        "value": "https://rdap.arin.net/registry/ip/206.41.110.0/24",
+        "rel": "alternate",
+        "type": "application/xml",
+        "href": "https://whois.arin.net/rest/net/NET-206-41-110-0-1"
+      }
+    ],
+    "entities": [
+      {
+        "handle": "UIEL",
+        "vcardArray": [
+          "vcard",
+          [
+            [
+              "version",
+              {},
+              "text",
+              "4.0"
+            ],
+            [
+              "fn",
+              {},
+              "text",
+              "United-IX"
+            ],
+            [
+              "adr",
+              {
+                "label": "603 Discovery Dr\\nWest Chicago\\nIL\\n60185\\nUnited States"
+              },
+              "text",
+              [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ]
+            ],
+            [
+              "kind",
+              {},
+              "text",
+              "org"
+            ]
+          ]
+        ],
+        "roles": [
+          "registrant"
+        ],
+        "links": [
+          {
+            "value": "https://rdap.arin.net/registry/ip/206.41.110.0/24",
+            "rel": "self",
+            "type": "application/rdap+json",
+            "href": "https://rdap.arin.net/registry/entity/UIEL"
+          },
+          {
+            "value": "https://rdap.arin.net/registry/ip/206.41.110.0/24",
+            "rel": "alternate",
+            "type": "application/xml",
+            "href": "https://whois.arin.net/rest/org/UIEL"
+          }
+        ],
+        "events": [
+          {
+            "eventAction": "last changed",
+            "eventDate": "2018-08-02T14:03:07-04:00"
+          },
+          {
+            "eventAction": "registration",
+            "eventDate": "2014-07-11T10:33:06-04:00"
+          }
+        ],
+        "entities": [
+          {
+            "handle": "UIE-ARIN",
+            "vcardArray": [
+              "vcard",
+              [
+                [
+                  "version",
+                  {},
+                  "text",
+                  "4.0"
+                ],
+                [
+                  "adr",
+                  {
+                    "label": "603 Discovery Dr\\nWest Chicago\\nIL\\n60185\\nUnited States"
+                  },
+                  "text",
+                  [
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    ""
+                  ]
+                ],
+                [
+                  "fn",
+                  {},
+                  "text",
+                  "United IX Engineers"
+                ],
+                [
+                  "org",
+                  {},
+                  "text",
+                  "United IX Engineers"
+                ],
+                [
+                  "kind",
+                  {},
+                  "text",
+                  "group"
+                ],
+                [
+                  "email",
+                  {},
+                  "text",
+                  "neteng@unitedix.net"
+                ],
+                [
+                  "tel",
+                  {
+                    "type": [
+                      "work",
+                      "voice"
+                    ]
+                  },
+                  "text",
+                  "+1-877-432-2656"
+                ]
+              ]
+            ],
+            "roles": [
+              "abuse",
+              "noc",
+              "technical"
+            ],
+            "links": [
+              {
+                "value": "https://rdap.arin.net/registry/ip/206.41.110.0/24",
+                "rel": "self",
+                "type": "application/rdap+json",
+                "href": "https://rdap.arin.net/registry/entity/UIE-ARIN"
+              },
+              {
+                "value": "https://rdap.arin.net/registry/ip/206.41.110.0/24",
+                "rel": "alternate",
+                "type": "application/xml",
+                "href": "https://whois.arin.net/rest/poc/UIE-ARIN"
+              }
+            ],
+            "events": [
+              {
+                "eventAction": "last changed",
+                "eventDate": "2023-09-05T13:27:59-04:00"
+              },
+              {
+                "eventAction": "registration",
+                "eventDate": "2014-11-19T00:39:22-05:00"
+              }
+            ],
+            "status": [
+              "validated"
+            ],
+            "port43": "whois.arin.net",
+            "objectClassName": "entity"
+          },
+          {
+            "handle": "MGR73-ARIN",
+            "vcardArray": [
+              "vcard",
+              [
+                [
+                  "version",
+                  {},
+                  "text",
+                  "4.0"
+                ],
+                [
+                  "adr",
+                  {
+                    "label": "630 Discovery Dr\\nWest Chicago\\nIL\\n60185\\nUnited States"
+                  },
+                  "text",
+                  [
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    ""
+                  ]
+                ],
+                [
+                  "fn",
+                  {},
+                  "text",
+                  "Matt Griswold"
+                ],
+                [
+                  "n",
+                  {},
+                  "text",
+                  [
+                    "Griswold",
+                    "Matt",
+                    "",
+                    "",
+                    ""
+                  ]
+                ],
+                [
+                  "kind",
+                  {},
+                  "text",
+                  "individual"
+                ],
+                [
+                  "email",
+                  {},
+                  "text",
+                  "grizz@20c.com"
+                ],
+                [
+                  "tel",
+                  {
+                    "type": [
+                      "work",
+                      "voice"
+                    ]
+                  },
+                  "text",
+                  "+1-312-423-2232"
+                ]
+              ]
+            ],
+            "roles": [
+              "administrative"
+            ],
+            "links": [
+              {
+                "value": "https://rdap.arin.net/registry/ip/206.41.110.0/24",
+                "rel": "self",
+                "type": "application/rdap+json",
+                "href": "https://rdap.arin.net/registry/entity/MGR73-ARIN"
+              },
+              {
+                "value": "https://rdap.arin.net/registry/ip/206.41.110.0/24",
+                "rel": "alternate",
+                "type": "application/xml",
+                "href": "https://whois.arin.net/rest/poc/MGR73-ARIN"
+              }
+            ],
+            "events": [
+              {
+                "eventAction": "last changed",
+                "eventDate": "2023-03-04T07:38:12-05:00"
+              },
+              {
+                "eventAction": "registration",
+                "eventDate": "2006-02-10T14:50:46-05:00"
+              }
+            ],
+            "status": [
+              "validated"
+            ],
+            "port43": "whois.arin.net",
+            "objectClassName": "entity"
+          }
+        ],
+        "port43": "whois.arin.net",
+        "objectClassName": "entity"
+      }
+    ],
+    "port43": "whois.arin.net",
+    "status": [
+      "active"
+    ],
+    "objectClassName": "ip network",
+    "cidr0_cidrs": [
+      {
+        "v4prefix": "206.41.110.0",
+        "length": 24
+      }
+    ],
+    "arin_originas0_originautnums": []
+}

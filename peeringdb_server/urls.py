@@ -82,6 +82,7 @@ from peeringdb_server.views import (
     view_profile,
     view_profile_v1,
     view_registration,
+    view_remove_org_affiliation,
     view_request_ownership,
     view_self_entity,
     view_set_user_locale,
@@ -201,6 +202,9 @@ urlpatterns = [
     ),
     re_path(r"^(net|ix|org|fac|carrier|campus)/self$", view_self_entity),
     re_path(r"^set-organization/$", view_set_user_org, name="set-organization"),
+    re_path(
+        r"^remove-affiliation/$", view_remove_org_affiliation, name="remove-affiliation"
+    ),
     re_path(r"^%s$" % Network.handleref.tag, view_network_by_query),
     re_path(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn, name="net-view-asn"),
     re_path(r"^user_keys/add$", peeringdb_server.api_key_views.add_user_key),

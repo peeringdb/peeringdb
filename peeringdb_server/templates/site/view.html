@@ -268,10 +268,10 @@
           {% endfor %}
           </div>
         {% elif row.type == "action" %}
-          <div class="view_value col-8 col-sm-7 col-md-8 action">
+          <div class="view_value col-8 col-sm-7 col-md-8 action {% if row.help_text or row.edit_help_text %} help-text {% endif %}" title="{% if row.help_text %}{{ row.help_text }}{% endif %}">
             {% for action in row.actions %}
             {% if action.action %}
-            <button class="btn btn-sm" data-placement="right" data-container="body" data-view-action="{{ref_tag}}_{{ action.action }}">{{ action.label }}</button>
+            <button class="btn btn-sm" data-placement="right" data-container="body" data-view-action="{{ref_tag}}_{{ action.action }}" {% if action.action == "ixf_request_import" and not instance.ixlan.ixf_ixp_member_list_url %} disabled {% endif %}>{{ action.label }}</button>
             {% elif action.href %}
             <a href="{{ action.href }}" class="btn btn-sm" data-placement="right" data-container="body" data-view-action="{{ref_tag}}_{{ action.action }}">{{ action.label }}</a>
             {% else %}

@@ -360,3 +360,65 @@ class UserTests(TestCase):
         )
 
         self.assertEqual(json.loads(response.content), {"status": "ok"})
+
+    def test_remove_org_affiliation_process_success(self):
+        c = Client()
+        c.force_login(self.user_a)
+
+        self.assertTrue(self.user_a.is_org_member(self.org_a))
+
+        data = {"organization": self.org_a.id}
+        # first dialog if user is the last member of the org
+        response = c.post("/remove-affiliation/", data)
+        data = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(self.user_a.is_org_member(self.org_a))
+        self.assertEqual(data["status"], "ok")
+
+    def test_remove_org_affiliation_process_not_affiliated(self):
+        c = Client()
+        c.force_login(self.user_a)
+
+        self.assertFalse(self.user_a.is_org_member(self.org_b))
+
+        data = {"organization": self.org_b.id}
+        response = c.post("/remove-affiliation/", data)
+        data = json.loads(response.content)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(data["error"], f"{self.user_a} is not member of {self.org_b}")
+
+    def test_remove_org_affiliation_dialog(self):
+        c = Client()
+        c.force_login(self.user_a)
+
+        # first dialog if user is the last member of the org
+        response = c.get(f"/remove-affiliation/?org={self.org_a.id}")
+        self.assertIn(
+            b"Are you sure you want to do this...?",
+            response.content,
+        )
+        # check if the submit button is redirecting to the second dialog page
+        self.assertIn(
+            b"window.location.href + '&commit=1'",
+            response.content,
+        )
+
+        # second dialog, its redirected from the first dialog if user is the last member of the org
+        response = c.get(f"/remove-affiliation/?org={self.org_a.id}&commit=1")
+        self.assertIn(
+            f"if you remove your affiliation to {self.org_a}, organization {self.org_a} will be abandoned".encode(),
+            response.content,
+        )
+
+        # first dialog if user is the last member of the org
+        self.org_a.usergroup.user_set.add(self.user_b)
+        response = c.get(f"/remove-affiliation/?org={self.org_a.id}")
+        self.assertIn(
+            b"Are you sure you want to do this...?",
+            response.content,
+        )
+        # check if the submit button is not redirecting to the second dialog page
+        self.assertNotIn(
+            b"window.location.href + '&commit=1'",
+            response.content,
+        )

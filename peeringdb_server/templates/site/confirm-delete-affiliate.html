@@ -1,0 +1,44 @@
+{% extends "site/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 col-md-2"></div>
+    <div class="panel center col-12 col-md-8">
+        <h2>{% blocktrans %}Delete your affiliation to {{ org }}{% endblocktrans %}</h2>
+        <p>{{ confirm_message }}</p>
+        <div class="editable always auto-toggled panel"
+             data-edit-target="/remove-affiliation/"
+             data-edit-always-submit="yes"
+             data-edit-enter-action="submit"
+             id="form-delete-affiliate">
+            <div data-edit-type="string"
+                 data-edit-value="{{ org.id }}"
+                 data-edit-name="organization"
+                 hidden></div>
+            <a class="btn btn btn-danger" onclick="window.location.href = '/verify'">{% trans "Cancel" %}</a>
+            <a class="btn btn btn-success"
+               {% if members > 1 %}
+               data-edit-action="submit"
+               {% elif members <= 1 and commit %}
+               data-edit-action="submit"
+               {% else %}
+               onclick="window.location.href = window.location.href + '&commit=1'"
+               {% endif %}>
+               {% trans "Delete" %}
+            </a>
+        </div>
+    </div>
+    <div class="col-12 col-md-2"></div>
+</div>
+<script>
+
+$('#form-delete-affiliate').each(function(idx) {
+    $(this).on("action-success:submit", function(ev, data) {
+        setTimeout(function(){
+            window.location.href="/profile";
+        }, 500 );
+    })
+});
+</script>
+{% endblock %}

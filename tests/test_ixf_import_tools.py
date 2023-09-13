@@ -136,6 +136,8 @@ class TestImportPreview(ClientCase):
 
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
 
+        print(response.content)
+
         assert response.status_code == 200
         assert json.loads(response.content)["errors"] == [
             "IX-F import url not specified"

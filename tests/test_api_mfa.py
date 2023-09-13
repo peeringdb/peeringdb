@@ -1,6 +1,7 @@
 from base64 import b64encode
 
 import pytest
+from django.core.cache import caches
 from django_security_keys.models import SecurityKey
 from rest_framework.test import APIClient
 
@@ -74,6 +75,10 @@ def test_mfa_basic_auth_block_writes():
         response.json()["meta"]["error"]
         == "Cannot perform write operations with a MFA enabled account when authenticating with Basic authentication."
     )
+
+    # clear negative cache
+
+    caches["negative"].clear()
 
     # test 3: remove MFA
 

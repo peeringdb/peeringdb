@@ -36,8 +36,10 @@ from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 
+from peeringdb_server.auto_approval import auto_approve_ix
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
+    ticket_queue_prefixauto_approve,
     ticket_queue_rdap_error,
 )
 from peeringdb_server.geo import Melissa
@@ -3268,8 +3270,12 @@ class InternetExchangeSerializer(ModelSerializer):
         if not website:
             raise RestValidationError({"website": _("This field may not be blank.")})
 
+        request = self.context.get("request", None)
+
+        auto_approve, status = auto_approve_ix(request, prefix)
+
         # create ix
-        r = super().create(validated_data)
+        r = super().create(validated_data, auto_approve=auto_approve)
 
         ixlan = r.ixlan
 
@@ -3285,16 +3291,18 @@ class InternetExchangeSerializer(ModelSerializer):
             # if it does, we want to re-assign it to this ix and
             # undelete it
             ixpfx.ixlan = ixlan
-            ixpfx.status = "pending"
+            ixpfx.status = status
             ixpfx.save()
         else:
             # if it does not exist we will create a new ixpfx object
             IXLanPrefix.objects.create(
                 ixlan=ixlan,
                 prefix=prefix,
-                status="pending",
+                status=status,
                 protocol=get_prefix_protocol(prefix),
             )
+        if auto_approve:
+            ticket_queue_prefixauto_approve(user=request.user, ix=r, prefix=prefix)
 
         return r
 

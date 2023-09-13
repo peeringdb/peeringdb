@@ -806,11 +806,21 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
                 {"service": "tiktok", "identifier": "unknown_12"},
             ],
         ),
+        (
+            [
+                {"service": "instagram", "identifier": "john-doe-"},
+                {"service": "tiktok", "identifier": "-unknown-12"},
+            ],
+            [
+                {"service": "instagram", "identifier": "john-doe-"},
+                {"service": "tiktok", "identifier": "-unknown-12"},
+            ],
+        ),
         # fail validation
         (
             [
                 {"service": "website", "identifier": "https://www.example.com"},
-                {"service": "twitter", "identifier": "unknown11.-"},
+                {"service": "twitter", "identifier": "unknown11."},
             ],
             False,
         ),
