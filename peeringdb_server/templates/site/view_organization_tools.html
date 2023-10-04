@@ -808,10 +808,23 @@
             {% endfor %}
             {% if user_emails.0 %}
               {% if user_emails.1|length == 0 %}
-                <div class="highlight-warning">{% trans "Email address requirements not met" %}</div>
+                <div class="highlight-warning help-text"
+                  data-bs-toggle="tooltip"
+                  data-placement="top"
+                  title="Email address requirements not met"
+                >
+                  {{ invalid_email }}
+                </div>
               {% endif %}
               {% for invalid_email in user_emails.0 %}
-                <div style="font-weight: bold;">{{ invalid_email }} ({% if invalid_email|email_confirmed %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %})</div>
+              <div class="highlight-warning help-text"
+                data-bs-toggle="tooltip"
+                data-placement="top"
+                title="Email address requirements not met"
+                style="font-weight: bold;"
+              >
+                {{ invalid_email }} ({% if invalid_email|email_confirmed %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %})
+              </div>
               {% endfor %}
             {% endif %}
           </div>
@@ -870,10 +883,23 @@
             {% endfor %}
             {% if user_emails.0 %}
               {% if user_emails.1|length == 0 %}
-                <div class="highlight-warning">{% trans "Email address requirements not met" %}</div>
+              <div class="highlight-warning help-text"
+                data-bs-toggle="tooltip"
+                data-placement="top"
+                title="Email address requirements not met"
+                style="font-weight: bold;"
+              >
+                {{ invalid_email }}
+              </div>
               {% endif %}
               {% for invalid_email in user_emails.0 %}
-              <div style="font-weight: bold;">{{ invalid_email }}</div>
+              <div class="highlight-warning help-text"
+                data-bs-toggle="tooltip"
+                data-placement="top"
+                title="Email address requirements not met"
+              >
+                {{ invalid_email }}
+              </div>
               {% endfor %}
             {% endif %}
           </div>
