@@ -367,6 +367,17 @@ class ProtectedMixin:
             self._meta.get_field("updated").auto_now = True
 
 
+class SocialMediaMixin(models.Model):
+    def save(self, *args, **kwargs):
+        # Check if social_media is null, and if so, set it to [{}]
+        if self.social_media is None:
+            self.social_media = {}
+        super(SocialMediaMixin, self).save(*args, **kwargs)
+
+    class Meta:
+        abstract = True
+
+
 class GeocodeBaseMixin(models.Model):
     """
     Mixin to use for geocode enabled entities.
@@ -887,7 +898,9 @@ class DeskProTicketCC(models.Model):
 
 @grainy_model(namespace="peeringdb.organization")
 @reversion.register
-class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin):
+class Organization(
+    ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin, SocialMediaMixin
+):
     """
     Describes a peeringdb organization.
     """
@@ -1691,7 +1704,7 @@ class OrganizationMergeEntity(models.Model):
 @reversion.register
 # TODO: UNCOMMENT when #389 is merged
 # class Campus(ProtectedMixin, pdb_models.CampusBase, ParentStatusMixin):
-class Campus(ProtectedMixin, pdb_models.CampusBase):
+class Campus(ProtectedMixin, pdb_models.CampusBase, SocialMediaMixin):
 
     """
     Describes a peeringdb campus
@@ -1802,7 +1815,11 @@ class Campus(ProtectedMixin, pdb_models.CampusBase):
 @grainy_model(namespace="facility", parent="org")
 @reversion.register
 class Facility(
-    ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin, ParentStatusCheckMixin
+    ProtectedMixin,
+    pdb_models.FacilityBase,
+    GeocodeBaseMixin,
+    ParentStatusCheckMixin,
+    SocialMediaMixin,
 ):
     """
     Describes a peeringdb facility.
@@ -2103,7 +2120,10 @@ class Facility(
 @grainy_model(namespace="internetexchange", parent="org")
 @reversion.register
 class InternetExchange(
-    ProtectedMixin, pdb_models.InternetExchangeBase, ParentStatusCheckMixin
+    ProtectedMixin,
+    pdb_models.InternetExchangeBase,
+    ParentStatusCheckMixin,
+    SocialMediaMixin,
 ):
     """
     Describes a peeringdb exchange.
@@ -4612,7 +4632,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
 
 @grainy_model(namespace="network", parent="org")
 @reversion.register
-class Network(pdb_models.NetworkBase, ParentStatusCheckMixin):
+class Network(pdb_models.NetworkBase, ParentStatusCheckMixin, SocialMediaMixin):
     """
     Describes a peeringdb network.
     """
@@ -5558,7 +5578,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase, ParentStatusCheckMixin):
 
 @grainy_model(namespace="carrier", parent="org")
 @reversion.register
-class Carrier(ProtectedMixin, pdb_models.CarrierBase):
+class Carrier(ProtectedMixin, pdb_models.CarrierBase, SocialMediaMixin):
     """
     Describes a carrier object.
     """
