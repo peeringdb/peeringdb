@@ -1625,6 +1625,7 @@ def view_organization(request, id):
         for key in org.api_keys.filter(revoked=False).all()
     ]
     data["phone_help_text"] = field_help(NetworkContact, "phone")
+    data["periodic_reauth_period_help_text"] = field_help(Organization, "periodic_reauth_period")
 
     return view_component(
         request,

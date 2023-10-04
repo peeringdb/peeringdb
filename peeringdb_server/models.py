@@ -116,6 +116,7 @@ REAUTH_PERIODS = (
     ("1w", _("1 Week")),
     ("2w", _("2 Weeks")),
     ("1m", _("1 Month")),
+    ("3m", _("3 Month")),
     ("6m", _("6 Months")),
     ("1y", _("1 Year")),
 )
@@ -946,7 +947,16 @@ class Organization(
         ),
     )
     periodic_reauth_period = models.CharField(
-        max_length=255, blank=True, null=True, choices=REAUTH_PERIODS, default="1y"
+        max_length=255,
+        blank=True,
+        null=True,
+        choices=REAUTH_PERIODS,
+        default="3m",
+        help_text=_(
+            "Range of options is available:\n"
+            "1 Week, 2 Weeks, 1 Month, \n"
+            "3 Month, 6 Month, 1 Year"
+        ),
     )
 
     # Delete childless org objects #838
