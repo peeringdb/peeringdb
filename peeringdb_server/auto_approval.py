@@ -1,6 +1,9 @@
+import structlog
 from django.contrib.auth.models import AnonymousUser
 
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError
+from peeringdb_server.inet import RdapException, RdapLookup
+
+log = structlog.get_logger("django")
 
 
 def auto_approve_ix(request, prefix):
@@ -14,8 +17,9 @@ def auto_approve_ix(request, prefix):
     # Get administration emails of the prefix using RdapLookup
     try:
         rdap = RdapLookup().get_ip(prefix)
-    except RdapNotFoundError:
-        # administrative details not found, no auto approval possible
+    except Exception as exc:
+        # unhandled rdap issue, log and return pending
+        log.error("rdap_error", prefix=prefix, exc=exc)
         return False, "pending"
 
     # Calculate status and auto_approve values

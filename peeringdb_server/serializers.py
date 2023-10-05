@@ -14,6 +14,7 @@ method.
 import ipaddress
 import re
 
+import structlog
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldError, ValidationError
@@ -124,6 +125,7 @@ FILTER_EXCLUDE = [
     "affiliation_requests__id",
 ]
 
+log = structlog.get_logger("django")
 
 # def _(x):
 #    return x
@@ -523,12 +525,12 @@ class AsnRdapValidator:
             rdap = RdapLookup().get_asn(asn)
             rdap.emails
             self.request.rdap_result = rdap
-        except RdapInvalidRange as exc:
+        except (RdapException, RdapInvalidRange) as exc:
             # Issue 995: Block registering private ASN ranges
             # raise an error if ANS is in private or reserved range
             raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
-        except RdapException as exc:
-            self.request.rdap_error = (asn, exc)
+        except Exception as exc:
+            log.error("rdap_error", exc=exc, asn=asn)
             raise RestValidationError({self.field: rdap_pretty_error_message(exc)})
 
 
@@ -2667,11 +2669,12 @@ class NetworkSerializer(ModelSerializer):
             if not rdap:
                 try:
                     rdap = RdapLookup().get_asn(asn)
-                except RdapInvalidRange as exc:
+                except (RdapException, RdapInvalidRange) as exc:
                     raise RestValidationError(
                         {self.field: rdap_pretty_error_message(exc)}
                     )
-                except RdapException as exc:
+                except Exception as exc:
+                    log.error("rdap_error", exc=exc, asn=asn)
                     raise RestValidationError(
                         {self.field: rdap_pretty_error_message(exc)}
                     )

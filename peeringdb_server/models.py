@@ -1114,6 +1114,8 @@ class Organization(
                     r[net.asn] = rdap
             except RdapNotFoundError:
                 pass
+            except Exception as exc:
+                logger.error(exc)
         return r
 
     @property
