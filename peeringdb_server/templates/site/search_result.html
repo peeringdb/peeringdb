@@ -111,8 +111,28 @@
       </div>
       {% endfor %}
     </div>
-
   </div>
+  {% if search_version == 2 %}
+  <div class="row">
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Campus" %} ({{ count_campus }})</div>
+      {% for row in search_campus %}
+      <div class="result_row">
+        <a href="/campus/{{row.id}}">{{row.name}}</a>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Carriers" %} ({{ count_carrier }})</div>
+      {% for row in search_carrier %}
+      <div class="result_row">
+        <a href="/carrier/{{row.id}}">{{row.name}}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 {% if request.user.is_verified_user %}

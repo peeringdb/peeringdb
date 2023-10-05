@@ -86,6 +86,7 @@ $(window).bind("load", function() {
 </script>
 </head>
 
+
 {% get_current_language_bidi as RTL_LANGUAGE %}
 {% if RTL_LANGUAGE %}
 <body dir="rtl">
@@ -100,7 +101,7 @@ $(window).bind("load", function() {
         <a href="/"><img class="logo img-fluid" src="{{ STATIC_URL }}/pdb-logo-coloured.png" /></a>
       </div>
       <div class="col-lg-5 col-md-5 col-sm-5 col-12 search-container">
-        <form action="/search{% if search_version == 2 %}/v2{% endif %}" id="quick-search" method="POST">
+        <form action="/search{% if not search_version or search_version == 2 %}/v2{% endif %}" id="quick-search" method="POST">
           {% csrf_token %}
           <input placeholder="{% trans "Search here for a network, IX, or facility." %}" value="{{ request.GET.q }}" class="form-control" name="term" id="search" type="text" />
         </form>
@@ -112,7 +113,11 @@ $(window).bind("load", function() {
           </div>
           <div class="col-6 col-sm-6 right">
             <div class="v2-search">
-              <a href="/search/v2?q={{ request.GET.q }}">{% trans "v2 Search (Beta)" %}</a>
+              {% if not search_version or search_version == 2%}
+              <a href="/search?q={{ request.GET.q }}">{% trans "Legacy Search" %}</a>
+              {% elif search_version == 1 %}
+              <a href="/search/v2?q={{ request.GET.q }}">{% trans "v2 Search" %}</a>
+              {% endif %}
             </div>
           </div>
         </div>
