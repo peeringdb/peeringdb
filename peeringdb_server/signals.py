@@ -42,7 +42,12 @@ from peeringdb_server.deskpro import (
     ticket_queue_asnauto_create,
     ticket_queue_vqi_notify,
 )
-from peeringdb_server.inet import RdapException, RdapLookup
+from peeringdb_server.inet import (
+    RdapException,
+    RdapInvalidRange,
+    RdapLookup,
+    rdap_pretty_error_message,
+)
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     QUEUE_NOTIFY,
@@ -56,6 +61,8 @@ from peeringdb_server.models import (
     VerificationQueueItem,
 )
 from peeringdb_server.util import disable_auto_now_and_save
+
+log = structlog.getLogger("django")
 
 
 def update_network_attribute(instance, attribute):
@@ -433,6 +440,11 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                 except RdapException:
                     instance.deny()
                     raise
+                except Exception as exc:
+                    # unhandled exception, deny request and log error
+                    instance.deny()
+                    log.error("rdap_error", exc=exc, asn=instance.asn)
+                    raise RdapException(rdap_pretty_error_message(exc))
 
                 # create organization
                 instance.org, org_created = Organization.create_from_rdap(
@@ -606,7 +618,14 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
             settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False
         ):
             if isinstance(item, Network):
-                rdap = RdapLookup().get_asn(item.asn)
+                try:
+                    rdap = RdapLookup().get_asn(item.asn)
+                except (RdapException, RdapInvalidRange):
+                    rdap = None
+                except Exception as exc:
+                    # unhandled exception, log error
+                    log.error("rdap_error", exc=exc, asn=item.asn)
+                    rdap = None
             else:
                 rdap = None
 

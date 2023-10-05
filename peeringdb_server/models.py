@@ -1091,6 +1091,8 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
                     r[net.asn] = rdap
             except RdapNotFoundError:
                 pass
+            except Exception as exc:
+                logger.error(exc)
         return r
 
     @property
