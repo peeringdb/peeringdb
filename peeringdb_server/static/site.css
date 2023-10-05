@@ -183,6 +183,10 @@ h5 {
   top: -5px;
 }
 
+.bg-primary-peeringdb{
+  background-color: #4B6063;
+  color: #ffffff;
+}
 
 .btn-primary,
 .btn-secondary,

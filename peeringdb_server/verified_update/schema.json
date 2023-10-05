@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "source": {
+            "type": "string"
+        },
+        "reason": {
+            "type": "string"
+        },
+        "updates": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "ref_tag": {
+                        "type": "string"
+                    },
+                    "obj_id": {
+                        "type": "integer"
+                    },
+                    "data": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "anyOf": [
+                                {"type": "string"},
+                                {"type": "integer"},
+                                {"type": "boolean"},
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "anyOf": [
+                                            {"type": "string"},
+                                            {"type": "integer"}
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+                "required": ["ref_tag", "obj_id", "data"]
+            }
+        }
+    },
+    "required": ["source", "reason", "updates"]
+}

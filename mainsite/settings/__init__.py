@@ -456,6 +456,8 @@ set_option(
         "view_username_retrieve_initiate": "2/m",
         "view_import_ixlan_ixf_preview": "1/m",
         "view_import_net_ixf_postmortem": "1/m",
+        "view_verified_update_POST": "3/m",
+        "view_verified_update_accept_POST": "4/m",
     },
 )
 
