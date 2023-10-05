@@ -8,7 +8,7 @@ from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 
 from peeringdb_server.context import incremental_period
-from peeringdb_server.models import Facility, InternetExchange, Network, Organization
+from peeringdb_server.models import Facility, InternetExchange, Network, Organization, Campus, Carrier
 
 
 def is_valid_latitude(lat):
@@ -85,7 +85,7 @@ class GeocodeMixin(StatusMixin):
         geo coordinates and country and state
         """
 
-        if instance.HandleRef.tag not in ["net", "ix"]:
+        if instance.HandleRef.tag not in ["net", "ix", "carrier"]:
             return None
 
         if instance.HandleRef.tag == "net":
@@ -94,6 +94,9 @@ class GeocodeMixin(StatusMixin):
         elif instance.HandleRef.tag == "ix":
             qset = instance.ixfac_set.filter(status="ok").select_related("facility")
             return [ixfac.facility for ixfac in qset]
+        elif instance.HandleRef.tag == "carrier":
+            qset = instance.carrierfac_set_active.select_related("facility")
+            return [carrierfac.facility for carrierfac in qset]
 
         return None
 
@@ -497,4 +500,111 @@ class NetworkDocument(GeocodeMixin, Document):
             # "poc_updated",
             # "ix_count",
             # "fac_count",
+        ]
+
+@registry.register_document
+class CampusDocument(GeocodeMixin, Document):
+    org = fields.NestedField(
+        properties={
+            "id": fields.IntegerField(),
+            "name": fields.TextField(),
+        }
+    )
+    city = fields.TextField(
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        }
+    )
+    latitude = fields.FloatField(
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        }
+    )
+    longitude = fields.FloatField(
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        }
+    )
+    geocode_coordinates = fields.GeoPointField()
+    country = fields.TextField(
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        }
+    )
+    state = fields.TextField(
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        }
+    )
+
+    class Index:
+        name = "campus"
+        settings = {"number_of_shards": 1, "number_of_replicas": 0}
+
+    class Django:
+        model = Campus
+        fields = [
+            # "id",
+            # "org_id",
+            # "org_name",
+            # "org",
+            "status",
+            # "created",
+            # "updated",
+            "name",
+            "name_long",
+            "notes",
+            "aka",
+            # "country",
+            # "city",
+            # "zipcode",
+            # "state",
+        ]
+
+
+@registry.register_document
+class CarrierDocument(GeocodeMixin, Document):
+    org = fields.NestedField(
+        properties={
+            "id": fields.IntegerField(),
+            "name": fields.TextField(),
+        }
+    )
+    geocode_coordinates = fields.GeoPointField()
+    country = fields.TextField(
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        }
+    )
+
+    class Index:
+        name = "carrier"
+        settings = {"number_of_shards": 1, "number_of_replicas": 0}
+
+    class Django:
+        model = Carrier
+        fields = [
+            # "id",
+            # "org_id",
+            # "org_name",
+            # "org",
+            "name",
+            "aka",
+            "name_long",
+            # "social_media",
+            "status",
+            "notes",
+            # "carrierfac_set",
         ]
