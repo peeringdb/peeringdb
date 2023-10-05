@@ -44,6 +44,10 @@ from peeringdb_server.models import (
     Organization,
 )
 from peeringdb_server.oauth_views import AuthorizationView
+from peeringdb_server.verified_update.views import (
+    view_verified_update,
+    view_verified_update_accept,
+)
 from peeringdb_server.views import (
     OrganizationLogoUpload,
     cancel_affiliation_request,
@@ -157,6 +161,8 @@ urlpatterns = [
         name="cancel-affiliation-request",
     ),
     re_path(r"^request-ownership$", view_request_ownership),
+    re_path(r"^verified-update/$", view_verified_update),
+    re_path(r"^verified-update/accept/$", view_verified_update_accept),
     re_path(
         r"^%s/(?P<net_id>\d+)/dismiss-ixf-proposal/(?P<ixf_id>\d+)/$"
         % Network.handleref.tag,

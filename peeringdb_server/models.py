@@ -2962,6 +2962,15 @@ class IXLan(pdb_models.IXLanBase):
         """
         return self.ixf_ixp_import_enabled and self.ixf_ixp_member_list_url
 
+    @property
+    def view_url(self):
+        """
+        Return the URL to related networks web view.
+        """
+        return urljoin(
+            settings.BASE_URL, django.urls.reverse("ix-view", args=(self.ix_id,))
+        )
+    
     @staticmethod
     def autocomplete_search_fields():
         """
@@ -5023,6 +5032,16 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase, ParentStatusCheckMi
         else:
             self._not_deletable_reason = None
             return True
+
+    @property
+    def view_url(self):
+        """
+        Return the URL to related networks web view.
+        """
+        return urljoin(
+            settings.BASE_URL, django.urls.reverse("net-view", args=(self.network_id,))
+        )
+
 
     def validate_requirements(self):
         if not self.phone and not self.email:
