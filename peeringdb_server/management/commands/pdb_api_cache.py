@@ -16,6 +16,7 @@ from rest_framework.test import APIRequestFactory
 import peeringdb_server.models as pdbm
 import peeringdb_server.rest as pdbr
 from peeringdb_server.renderers import MetaJSONRenderer
+from peeringdb_server.export_kmz import fac_export_kmz
 
 MODELS = [
     pdbm.Organization,
@@ -64,6 +65,11 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--only", action="store", default=False, help="only run specified type"
+        )
+        parser.add_argument(
+            "--gen-kmz",
+            action="store_true",
+            help="will generate kmz file in from the api-cache data"
         )
         parser.add_argument(
             "--date",
@@ -207,7 +213,11 @@ class Command(BaseCommand):
         finally:
             tmpdir.cleanup()
             self.log_file.close()
+        
+        if options.get("gen_kmz"):
+            print("Generating kmz file")
+            fac_export_kmz()
 
         end_time = time.time()
-
+            
         print("Finished after %.2f seconds" % (end_time - start_time))
