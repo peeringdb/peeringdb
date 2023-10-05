@@ -29,6 +29,7 @@ from peeringdb_server.export_views import (
     AdvancedSearchExportView,
     view_export_ixf_ix_members,
     view_export_ixf_ixlan_members,
+    kmz_download,
 )
 from peeringdb_server.import_views import (
     view_import_ixlan_ixf_preview,
@@ -332,6 +333,11 @@ urlpatterns = [
     re_path(
         r"^export/advanced-search/(?P<tag>[\w_]+)/(?P<fmt>[\w_-]+)$",
         AdvancedSearchExportView.as_view(),
+    ),
+    re_path(
+        settings.KMZ_DOWNLOAD_PATH,
+        kmz_download,
+        name="kmz-download",
     ),
     re_path(
         r"^import/ixlan/(?P<ixlan_id>\d+)/ixf/preview$", view_import_ixlan_ixf_preview

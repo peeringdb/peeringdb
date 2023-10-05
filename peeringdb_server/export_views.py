@@ -2,6 +2,7 @@
 Define export views used for IX-F export and advanced search file download.
 """
 
+import os
 import collections
 import csv
 import datetime
@@ -10,6 +11,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.utils.translation import gettext_lazy as _
 from django.views import View
@@ -438,3 +440,26 @@ class AdvancedSearchExportView(ExportView):
                 )
             )
         return download_data
+
+
+def kmz_download(request):
+
+    """
+    Will return a file download of the KMZ file located at
+    settings.KMZ_EXPORT_FILE if it exists.
+
+    Will also send cache headers based on the file's modification time
+    """
+
+    try:
+        with open(settings.KMZ_EXPORT_FILE, "rb") as file:
+            response = HttpResponse(file.read(), content_type="application/vnd.google-earth.kmz")
+            response["Content-Disposition"] = 'attachment; filename="{}"'.format(
+                os.path.basename(settings.KMZ_EXPORT_FILE)
+            )
+            response["Last-Modified"] = datetime.datetime.fromtimestamp(
+                os.path.getmtime(settings.KMZ_EXPORT_FILE)
+            ).strftime("%a, %d %b %Y %H:%M:%S GMT")
+            return response
+    except IOError:
+        return HttpResponse(status=404)
