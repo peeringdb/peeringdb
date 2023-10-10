@@ -34,7 +34,13 @@ django-countries = ">=7.5.1"
 django-crispy-forms = ">=2.0"
 django-csp = "^3.7"
 django-debug-toolbar = ">=4.0.0"
-django-elasticsearch-dsl = ">=7.3"
+
+# elasticsearch-dsl / django-elasticsearch-dsl version is
+# synced to major elasticsearch version and needs to be upgraded
+# when elasticsearch is upgraded
+# https://elasticsearch-dsl.readthedocs.io/en/latest/index.html#compatibility
+django-elasticsearch-dsl = ">=7.3,<8"
+
 django-extensions = ">=1.3.3"
 django-grainy = ">=2"
 django-grappelli = ">=2.10.1"
