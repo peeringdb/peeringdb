@@ -319,6 +319,10 @@ set_option("API_CACHE_ENABLED", True)
 set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
 set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
 
+# KMZ export file
+set_option("KMZ_EXPORT_FILE", os.path.join(API_CACHE_ROOT, "peeringdb.kmz"))
+set_option("KMZ_DOWNLOAD_PATH", "^export/kmz/$")
+
 # Keys
 set_from_env("MELISSA_KEY")
 set_from_env("GOOGLE_GEOLOC_API_KEY")
@@ -456,6 +460,8 @@ set_option(
         "view_username_retrieve_initiate": "2/m",
         "view_import_ixlan_ixf_preview": "1/m",
         "view_import_net_ixf_postmortem": "1/m",
+        "view_verified_update_POST": "3/m",
+        "view_verified_update_accept_POST": "4/m",
     },
 )
 

@@ -1625,6 +1625,7 @@ def view_organization(request, id):
         for key in org.api_keys.filter(revoked=False).all()
     ]
     data["phone_help_text"] = field_help(NetworkContact, "phone")
+    data["periodic_reauth_period_help_text"] = field_help(Organization, "periodic_reauth_period")
 
     return view_component(
         request,
@@ -2960,7 +2961,7 @@ def request_api_search(request):
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
-def render_search_result(request, version=1):
+def render_search_result(request, version=2):
     """
     Triggered by hitting enter on the main search bar.
     Renders a search result page.
@@ -2986,8 +2987,6 @@ def render_search_result(request, version=1):
         original_query = " ".join(q) if isinstance(q, list) else q
         if q:
             m = re.match(r"(asn|as)(\d+)", q.lower())
-        else:
-            return HttpResponseRedirect("/")
 
     # if the user queried for an asn directly via AS*** or ASN***
     # redirect to the result
@@ -3033,10 +3032,14 @@ def render_search_result(request, version=1):
             "search_net": result.get(Network._handleref.tag),
             "search_fac": result.get(Facility._handleref.tag),
             "search_org": result.get(Organization._handleref.tag),
+            "search_campus": result.get(Campus._handleref.tag),
+            "search_carrier": result.get(Carrier._handleref.tag),
             "count_ixp": len(result.get(InternetExchange._handleref.tag, [])),
             "count_net": len(result.get(Network._handleref.tag, [])),
             "count_fac": len(result.get(Facility._handleref.tag, [])),
             "count_org": len(result.get(Organization._handleref.tag, [])),
+            "count_campus": len(result.get(Campus._handleref.tag, [])),
+            "count_carrier": len(result.get(Carrier._handleref.tag, [])),
             "proximity_entity": proximity_entity,
             "geo": geo,
             "query_combined": query_combined,

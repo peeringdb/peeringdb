@@ -1,0 +1,101 @@
+{% extends "site/simple_content.html" %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col-xs-12 col-md-3"></div>
+  <div class="col-xs-12 col-md-6">
+    <form id="myForm" method="POST" action="/verified-update/accept/">
+      <input type="hidden" name="reason" value="{{ reason }}" />
+      <input type="hidden" name="source" value="{{ source }}" />
+      <input type="hidden" name="referer" value="{{ referer }}" />
+
+      {% csrf_token %}
+
+      <div class="alert alert-{% if not invalid_permissions %}info{% else %}danger{% endif %}">
+        {% if objects.items %}
+          <b>{{ source }}</b> proposes the following changes to:
+          <p></p>
+          {% for obj, type in objects.items %}
+          <ul>
+            <li>
+              <p>{{ obj }} - <a style="font-size: 12px;">{{ type|title }}</a></p>
+            </li>
+          </ul>
+          {% endfor %}
+          {% if invalid_permissions %}
+            <br>
+            You do not have permissions to make changes to:
+            <p></p>
+            {% for obj, type in invalid_permissions.items %}
+            <ul>
+              <li>
+                <p>{{ obj }} - <a style="font-size: 12px;">{{ type|title }}</a></p>
+              </li>
+            </ul>
+            {% endfor %}
+          {% endif %}
+          <p>
+            {{ reason }}
+          </p>
+        {% elif invalid_permissions %}
+          <br>
+          <b>{{ source }}</b> proposes changes.
+          You do not have permissions to make changes to:
+          <p></p>
+          {% for obj, type in invalid_permissions.items %}
+          <ul>
+            <li>
+              <p>{{ obj }} - <a style="font-size: 12px;">{{ type|title }}</a></p>
+            </li>
+          </ul>
+          {% endfor %}
+        {% else %}
+          <b>{{ source }}</b> proposes changes, but there is nothing to update.
+        {% endif %}
+      </div>
+
+      <div class="list editable always panel">
+        <div class="loading-shim" style="display:none"></div>
+        {% for data in diffs %}
+        {% with forloop.counter0 as index %}
+        {% for obj, type in objects.items %}
+        {% if forloop.counter0 == index %}
+        <h3>{% if obj.ref_tag == "ixlan" %}{{ obj.ix.name }}{% else %}{{ obj }}{% endif %} - <a style="font-size: 15px;">{{ type|title }}</a></h3>
+        {% endif %}
+        {% endfor %}
+        {% endwith %}
+        <input type="hidden" name="data[]" value="{{ data.ref_tag }}">
+        <input type="hidden" name="data[]" value="{{ data.obj_id }}">
+        <table class="table">
+          <thead class="bg-primary-peeringdb">
+            <tr>
+              <td data-field-name="">Field</td>
+              <td>Current</td>
+              <td>Proposed Update</td>
+            </tr>
+          </thead>
+          <tbody>
+            {% for field, values in data.diff.items %}
+            <tr>
+              <td><input data-element="selected-field" name="data[][{{ field }}]" value="{{ values.new }}" type="checkbox" checked> {{ values.label }}</td>
+              <td>{{ values.old }}</td>
+              <td>{{ values.new }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endfor %}
+        {% if objects.items %}
+        <div class="row">
+          <div class="col-xs-12 right">
+            <button type="submit" class="btn btn-primary commit">Accept selected changes</button>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+  <div class="col-xs-12 col-md-3"></div>
+</div>
+{% endblock %}
