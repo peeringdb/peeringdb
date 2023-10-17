@@ -6,6 +6,7 @@ import elasticsearch.helpers.errors as errors
 from django.utils import timezone
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
+from elasticsearch_dsl import analyzer
 
 from peeringdb_server.context import incremental_period
 from peeringdb_server.models import Facility, InternetExchange, Network, Organization, Campus, Carrier
@@ -24,6 +25,13 @@ def is_valid_longitude(long):
         )
         is not None
     )
+
+
+name_analyzer = analyzer(
+    "name_analyzer",
+    tokenizer="keyword",
+    filter=["lowercase"],
+)
 
 
 class StatusMixin:
@@ -168,6 +176,14 @@ class GeocodeMixin(StatusMixin):
 
 @registry.register_document
 class OrganizationDocument(GeocodeMixin, Document):
+    name = fields.TextField(
+        analyzer=name_analyzer,
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        },
+    )
     city = fields.TextField(
         fields={
             "raw": {
@@ -228,7 +244,7 @@ class OrganizationDocument(GeocodeMixin, Document):
             # "version",
             "address1",
             "address2",
-            "name",
+            # "name",
             "aka",
             "name_long",
             # "notes",
@@ -246,6 +262,14 @@ class OrganizationDocument(GeocodeMixin, Document):
 
 @registry.register_document
 class FacilityDocument(GeocodeMixin, Document):
+    name = fields.TextField(
+        analyzer=name_analyzer,
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        },
+    )
     org = fields.NestedField(
         properties={
             "id": fields.IntegerField(),
@@ -312,7 +336,7 @@ class FacilityDocument(GeocodeMixin, Document):
             # 'floor',
             # 'latitude',
             # 'longitude',
-            "name",
+            # "name",
             # 'social_media',
             "aka",
             "name_long",
@@ -338,6 +362,14 @@ class FacilityDocument(GeocodeMixin, Document):
 
 @registry.register_document
 class InternetExchangeDocument(GeocodeMixin, Document):
+    name = fields.TextField(
+        analyzer=name_analyzer,
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        },
+    )
     org = fields.NestedField(
         properties={
             "id": fields.IntegerField(),
@@ -377,7 +409,7 @@ class InternetExchangeDocument(GeocodeMixin, Document):
             # 'ix_email_set',
             "status",
             # "version",
-            "name",
+            # "name",
             "aka",
             "name_long",
             "city",
@@ -408,11 +440,12 @@ class InternetExchangeDocument(GeocodeMixin, Document):
 @registry.register_document
 class NetworkDocument(GeocodeMixin, Document):
     name = fields.TextField(
+        analyzer=name_analyzer,
         fields={
             "raw": {
                 "type": "keyword",
             }
-        }
+        },
     )
     asn = fields.LongField(
         fields={
@@ -504,6 +537,14 @@ class NetworkDocument(GeocodeMixin, Document):
 
 @registry.register_document
 class CampusDocument(GeocodeMixin, Document):
+    name = fields.TextField(
+        analyzer=name_analyzer,
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        },
+    )
     org = fields.NestedField(
         properties={
             "id": fields.IntegerField(),
@@ -561,7 +602,7 @@ class CampusDocument(GeocodeMixin, Document):
             "status",
             # "created",
             # "updated",
-            "name",
+            # "name",
             "name_long",
             "notes",
             "aka",
@@ -574,6 +615,14 @@ class CampusDocument(GeocodeMixin, Document):
 
 @registry.register_document
 class CarrierDocument(GeocodeMixin, Document):
+    name = fields.TextField(
+        analyzer=name_analyzer,
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        },
+    )
     org = fields.NestedField(
         properties={
             "id": fields.IntegerField(),
@@ -600,7 +649,7 @@ class CarrierDocument(GeocodeMixin, Document):
             # "org_id",
             # "org_name",
             # "org",
-            "name",
+            #"name",
             "aka",
             "name_long",
             # "social_media",
