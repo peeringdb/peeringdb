@@ -105,10 +105,9 @@ class Command(BaseCommand):
         output_dir = options.get("output_dir")
         depths = list(map(int, options.get("depths").split(",")))
 
-        print(f"output_dir: {output_dir}")
-
         if options.get("public_data"):
             request_user = AnonymousUser()
+            settings.GENERATING_API_CACHE = True
 
         else:
             request_user = pdbm.User.objects.filter(is_superuser=True).first()
@@ -156,7 +155,7 @@ class Command(BaseCommand):
                     if depth >= 1 and tag in MONODEPTH:
                         break
 
-                    self.log(tag, "generating depth %d" % depth)
+                    self.log(tag, f"generating depth {depth} to {tmpdir.name}...")
                     if depth:
                         request = request_factory.get(
                             "/api/%s?depth=%d&updated__lte=%s&_ctf"

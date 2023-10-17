@@ -186,6 +186,7 @@ def set_campus_to_facility(sender, instance=None, **kwargs):
                 )
             )
 
+        print(f"long lat {instance.longitude} {instance.latitude}")
         latitude = radians(instance.latitude)
         longitude = radians(instance.longitude)
 
