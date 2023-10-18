@@ -113,7 +113,6 @@ class Command(BaseCommand):
 
         if options.get("public_data"):
             request_user = AnonymousUser()
-            settings.GENERATING_API_CACHE = True
 
         else:
             request_user = pdbm.User.objects.filter(is_superuser=True).first()
