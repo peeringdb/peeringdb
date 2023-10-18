@@ -64,7 +64,7 @@ class MetaJSONRenderer(MungeRenderer):
     format = "json"
 
     def render(
-        self, data, accepted_media_type=None, renderer_context=None, file_name=None
+        self, data, accepted_media_type=None, renderer_context=None, file_name=None, default_meta=None
     ):
         """
         Tweak output rendering and pass to parent.
@@ -78,7 +78,7 @@ class MetaJSONRenderer(MungeRenderer):
         if "__meta" in data:
             meta = data.pop("__meta")
         else:
-            meta = dict()
+            meta = default_meta or dict()
 
         if "request" in renderer_context:
             request = renderer_context.get("request")
