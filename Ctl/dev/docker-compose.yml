@@ -31,9 +31,8 @@ services:
     command:
       - sh
       - -c
-      - 'redis-server --requirepass devPASSWORD'
-    # environment:
-    #   REDIS_PASSWORD: devPASSWORD
+      - redis-server --requirepass "$${REDIS_PASSWORD:?REDIS_PASSWORD variable is not set}"
+    env_file: .env
     ports:
       - "127.0.0.1:6379:6379"
     networks:
