@@ -125,15 +125,16 @@ class Command(BaseCommand):
             only = only.split(",")
 
         if date:
-            dt = datetime.datetime.strptime(date, "%Y%m%d")
+            last_updated = datetime.datetime.strptime(date, "%Y%m%d")
         else:
-            dt = datetime.datetime.now()
-        dtstr = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+            last_updated = datetime.datetime.now()
+
+        meta = {"generated": last_updated.timestamp()}
         self.log_file = open(settings.API_CACHE_LOG, "w+")
         self.log("info", f"Regnerating cache files to '{output_dir}'")
         self.log(
             "info",
-            f"Caching depths {str(depths)} for timestamp: {str(dtstr)}",
+            f"Caching depths {depths} for timestamp: {last_updated}",
         )
         request_factory = APIRequestFactory()
         renderer = MetaJSONRenderer()
@@ -163,12 +164,11 @@ class Command(BaseCommand):
                     self.log(tag, f"generating depth {depth} to {tmpdir.name}...")
                     if depth:
                         request = request_factory.get(
-                            "/api/%s?depth=%d&updated__lte=%s&_ctf"
-                            % (tag, depth, dtstr)
+                            f"/api/{tag}?depth={depth}&updated__lte={last_updated}Z&_ctf"
                         )
                     else:
                         request = request_factory.get(
-                            f"/api/{tag}?updated__lte={dtstr}&_ctf"
+                            f"/api/{tag}?updated__lte={last_updated}Z&_ctf"
                         )
                     request.user = request_user
                     vs = viewset.as_view({"get": "list"})
@@ -181,6 +181,7 @@ class Command(BaseCommand):
                         response.data,
                         renderer_context={"response": response},
                         file_name=file_name,
+                        default_meta=meta,
                     )
 
                     del response
