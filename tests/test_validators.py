@@ -917,6 +917,5 @@ def test_validate_website_override(website, org_website, validated):
 
 @pytest.mark.django_db
 def test_org_create_with_none_social_media():
-
     org = Organization.objects.create(name="Test org", status="ok", social_media=None)
     assert org.social_media == {}

@@ -340,7 +340,6 @@ def test_pdb_session_middleware(path, expected):
 @override_settings(CSRF_USE_SESSIONS=False)
 @patch("django.urls.resolvers.URLResolver.resolve")
 def test_pdb_negative_cache(mock_resolve, http_status_code, expected):
-
     """
     Tests negative caching outside of /api endpoints
     """
@@ -380,7 +379,6 @@ def test_pdb_negative_cache(mock_resolve, http_status_code, expected):
 @override_settings(CSRF_USE_SESSIONS=False, NEGATIVE_CACHE_REPEATED_RATE_LIMIT=3)
 @patch("django.urls.resolvers.URLResolver.resolve")
 def test_pdb_negative_cache_ratelimit(mock_resolve, http_status_code, expected):
-
     """
     Tests negative caching rate limiting
     """

@@ -139,7 +139,7 @@ class VerifiedUpdateTestCase(TestCase):
             "/search/v2?q=carrier",
         )
         self.assertIn(
-            f'<div class="view_title">Carrier ({models.Carrier.objects.count()})</div>',
+            f'<div class="view_title">Carriers ({models.Carrier.objects.count()})</div>',
             response.content.decode("utf-8"),
         )
         for id, obj in enumerate(models.Carrier.objects.all()):

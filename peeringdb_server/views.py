@@ -155,6 +155,7 @@ BASE_ENV = {
     "RELEASE_ENV": settings.RELEASE_ENV,
     "SHOW_AUTO_PROD_SYNC_WARNING": settings.SHOW_AUTO_PROD_SYNC_WARNING,
     "GOOGLE_ANALYTICS_ID": dj_settings.GOOGLE_ANALYTICS_ID,
+    "KMZ_DOWNLOAD_URL": dj_settings.KMZ_DOWNLOAD_URL,
 }
 
 
@@ -3646,7 +3647,6 @@ def view_remove_org_affiliation(request):
     Remove organization affiliation of the user
     """
     if request.method in ["GET", "HEAD"]:
-
         user = request.user
         try:
             org = Organization.objects.get(id=request.GET.get("org"))

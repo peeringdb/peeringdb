@@ -443,7 +443,6 @@ class AdvancedSearchExportView(ExportView):
 
 
 def kmz_download(request):
-
     """
     Will return a file download of the KMZ file located at
     settings.KMZ_EXPORT_FILE if it exists.

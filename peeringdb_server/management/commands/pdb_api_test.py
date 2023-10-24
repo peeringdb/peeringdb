@@ -599,7 +599,6 @@ class TestJSON(unittest.TestCase):
 
         # if test_failures is set we want to test fail conditions
         if test_failures:
-
             # we test fail because of invalid data
             if "invalid" in test_failures:
                 tests = test_failures["invalid"]
