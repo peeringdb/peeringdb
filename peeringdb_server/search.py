@@ -18,7 +18,7 @@ from elasticsearch import Elasticsearch
 from haystack.inputs import Exact
 from haystack.query import SearchQuerySet
 
-from mainsite.settings import ELASTICSEARCH_HOST
+from mainsite.settings import ELASTICSEARCH_URL, ELASTIC_PASSWORD
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
@@ -210,7 +210,7 @@ def get_lat_long_from_search_result(search_result):
 
 
 def elasticsearch_proximity_entity(name):
-    es = Elasticsearch(ELASTICSEARCH_HOST)
+    es = new_elasticsearch()
 
     body = {
         "query": {
@@ -240,6 +240,16 @@ def elasticsearch_proximity_entity(name):
         return item["_source"]
     else:
         return None
+
+
+def new_elasticsearch():
+    es_kwargs = dict(
+        http_auth=("elastic", ELASTIC_PASSWORD),
+        verify_certs=False,
+    )
+
+    es = Elasticsearch(ELASTICSEARCH_URL, **es_kwargs)
+    return es
 
 
 def order_results_alphabetically(result, search_term):
@@ -280,7 +290,7 @@ def search_v2(term, geo={}):
     Returns result dict.
     """
 
-    es = Elasticsearch(ELASTICSEARCH_HOST)
+    es = new_elasticsearch()
     qs = " ".join([str(elem) for elem in term])
     term = f"*{' '.join(qs.split())}*"
     body = {"query": {"bool": {"must": {"query_string": {"query": term}}}}}
