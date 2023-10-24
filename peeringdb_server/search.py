@@ -299,7 +299,7 @@ def search_v2(term, geo={}):
 
     limit = settings.SEARCH_RESULTS_LIMIT
 
-    indexes = ["fac", "ix", "net", "org"]  # Add new index names
+    indexes = ["fac", "ix", "net", "org", "campus", "carrier"]  # Add new index names
 
     if term and term.strip("*").split(" ")[0].lower() in indexes:
         ref_tag = term.strip("*").split(" ")[0]
@@ -312,7 +312,7 @@ def search_v2(term, geo={}):
 
     search_query = es.search(index=indexes, body=body, size=limit)
 
-    categories = ("fac", "ix", "net", "org")
+    categories = ("fac", "ix", "net", "org", "campus", "carrier")
     result = {tag: [] for tag in categories}
     pk_map = {tag: {} for tag in categories}
 

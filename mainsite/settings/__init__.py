@@ -5,6 +5,7 @@ import sys
 
 import django.conf.global_settings
 import django.conf.locale
+import redis
 import structlog
 
 from mainsite.oauth2.scopes import SupportedScopes
@@ -229,9 +230,20 @@ def set_from_file(name, path, default=_DEFAULT_ARG, envvar_type=None):
     set_option(name, value, envvar_type)
 
 
+def can_ping_redis(host, port, password):
+    """
+    Check if Redis is available.
+    """
+    client = redis.StrictRedis(host=host, port=port, password=password)
+    try:
+        return client.ping()
+    except redis.ConnectionError:
+        return False
+
+
 def get_cache_backend(cache_name):
     """
-    Function to get cache backend based on environment variable
+    Function to get cache backend based on environment variable.
     """
     cache_backend = globals().get(f"{cache_name.upper()}_CACHE_BACKEND", "RedisCache")
 
@@ -244,18 +256,29 @@ def get_cache_backend(cache_name):
         options["CULL_FREQUENCY"] = 10
 
     if cache_backend == "RedisCache":
-        return {
-            "BACKEND": "django.core.cache.backends.redis.RedisCache",
-            "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
-            "OPTIONS": {},
-        }
-    elif cache_backend == "LocMemCache":
+        if can_ping_redis(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD):
+            print("Was able to ping Redis, using RedisCache")
+            return {
+                "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
+                "OPTIONS": {},
+            }
+        else:
+            # fall back to DatabseCache if cache_name is sessions else
+            # LocMemCache
+            cache_backend = (
+                "DatabaseCache" if cache_name == "session" else "LocMemCache"
+            )
+            print(f"Was not able to ping Redis, falling back to {cache_backend}")
+
+    if cache_backend == "LocMemCache":
         return {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
             "LOCATION": cache_name,
             "OPTIONS": options,
         }
-    elif cache_backend == "DatabaseCache":
+
+    if cache_backend == "DatabaseCache":
         return {
             "BACKEND": "django.core.cache.backends.db.DatabaseCache",
             "LOCATION": "django_cache",
@@ -318,6 +341,18 @@ set_from_env("REDIS_PASSWORD")
 set_option("API_CACHE_ENABLED", True)
 set_option("API_CACHE_ROOT", os.path.join(BASE_DIR, "api-cache"))
 set_option("API_CACHE_LOG", os.path.join(BASE_DIR, "var/log/api-cache.log"))
+
+# KMZ export file
+set_option("KMZ_EXPORT_FILE", os.path.join(API_CACHE_ROOT, "peeringdb.kmz"))
+set_option("KMZ_DOWNLOAD_PATH", "^export/kmz/$")
+if RELEASE_ENV == "dev":
+    # setting to blank means KMZ_DOWNLOAD_PATH is used instead and
+    # the file is served from the local filesystem
+    set_option("KMZ_DOWNLOAD_URL", "")
+else:
+    # setting this will override KMZ_DOWNLOAD_PATH to an absolute / external
+    # url. We do this by default if the release env is not dev
+    set_option("KMZ_DOWNLOAD_URL", "https://public.peeringdb.com/peeringdb.kmz")
 
 # Keys
 set_from_env("MELISSA_KEY")
@@ -456,6 +491,8 @@ set_option(
         "view_username_retrieve_initiate": "2/m",
         "view_import_ixlan_ixf_preview": "1/m",
         "view_import_net_ixf_postmortem": "1/m",
+        "view_verified_update_POST": "3/m",
+        "view_verified_update_accept_POST": "4/m",
     },
 )
 

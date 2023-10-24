@@ -22,7 +22,6 @@ ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged 
 
 
 def get_auth_identity(request):
-
     """
     Returns a string that uniquely identifies the authentication
     method used for the request.
@@ -224,7 +223,6 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                 user_object = get_user_model().objects.get(username=username)
 
                 if not user_object.is_active:
-
                     # If user is inactive, cache the inactive auth
                     # and return unauthorized
 
@@ -275,7 +273,6 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                 pass
 
             if not api_key:
-
                 # If api key is not valid return 401 Unauthorized
 
                 if len(req_key) > 16:
@@ -285,7 +282,6 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                     request, message="Invalid API key", status=401
                 )
             elif api_key.revoked or api_key.status != "active":
-
                 # If api key is revoked or inactive, cache as inactive
                 # and return 401 Unauthorized
 

@@ -14,6 +14,7 @@ from schema import Schema
 import peeringdb_server.models
 from peeringdb_server.inet import IRR_SOURCE, network_is_pdb_valid
 from peeringdb_server.request import bypass_validation
+from peeringdb_server.verified_update import const
 
 
 def validate_email_domains(text):
@@ -471,3 +472,51 @@ def validate_website_override(website, org_website):
     elif not website and org_website:
         return org_website
     return website
+
+
+def validate_verified_update_data(ref_tag, obj_id, data):
+    """
+    Validates a VerifiedUpdate updates value
+
+    Will return a False and message on failure
+
+    Arguments:
+
+    - ref_tag(`str`)
+    - obj_id(`int`)
+    - data(`dict`)
+
+    Returns:
+
+    - status (`bool`)
+    - validated data (`dict`)
+    """
+    if not data:
+        return False, _("Data is empty")
+    if ref_tag not in const.SUPPORTED_FIELDS:
+        return False, _(f"Unknown object type: {ref_tag}")
+    model = peeringdb_server.models.REFTAG_MAP[ref_tag]
+    try:
+        obj = model.objects.get(id=obj_id)
+    except model.DoesNotExist:
+        return False, _(f"object {ref_tag}.{obj_id} not found")
+    result = {}
+    for field, value in data.items():
+        if field not in const.SUPPORTED_FIELDS[ref_tag]:
+            continue
+
+        if not hasattr(obj, field):
+            continue
+
+        if value == "true":
+            value = True
+        elif value == "false":
+            value = False
+        else:
+            try:
+                value = int(value)
+            except (TypeError, ValueError):
+                pass
+        if value != getattr(obj, field):
+            result.update({field: value})
+    return True, result
