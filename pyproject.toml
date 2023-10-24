@@ -39,7 +39,7 @@ django-debug-toolbar = ">=4.0.0"
 # synced to major elasticsearch version and needs to be upgraded
 # when elasticsearch is upgraded
 # https://elasticsearch-dsl.readthedocs.io/en/latest/index.html#compatibility
-django-elasticsearch-dsl = ">=7.3,<8"
+django-elasticsearch-dsl = "^8"
 
 django-extensions = ">=1.3.3"
 django-grainy = ">=2"
