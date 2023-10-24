@@ -18,7 +18,7 @@ from elasticsearch import Elasticsearch
 from haystack.inputs import Exact
 from haystack.query import SearchQuerySet
 
-from mainsite.settings import ELASTICSEARCH_URL, ELASTIC_PASSWORD
+from mainsite.settings import ELASTIC_PASSWORD, ELASTICSEARCH_URL
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
