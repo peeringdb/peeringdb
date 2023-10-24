@@ -110,7 +110,7 @@ class OrgAdminTests(TestCase):
         assert self.org.restrict_user_emails is False
         assert self.org.email_domains_list == []
         assert self.org.periodic_reauth is False
-        assert self.org.periodic_reauth_period == "1y"
+        assert self.org.periodic_reauth_period == "3m"
 
         url = reverse("org-admin-user-options")
 

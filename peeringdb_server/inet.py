@@ -8,6 +8,7 @@ Prefix renumbering.
 import ipaddress
 
 import rdap
+from django.conf import settings as django_settings
 from django.utils.translation import gettext_lazy as _
 from rdap.exceptions import RdapException, RdapNotFoundError
 
@@ -164,9 +165,15 @@ def rdap_pretty_error_message(exc):
     if isinstance(exc, RdapNotFoundError):
         return _("This ASN is not assigned by any RIR")
     if isinstance(exc, RdapInvalidRange):
-        return _("ASNs in this range are private or reserved")
+        return _("ASNs in this range are private or reserved")  #
+    if isinstance(exc, RdapException):
+        return f"{exc}"
 
-    return _("{}").format(exc)
+    return _(
+        "Unable to retrieve RDAP data. If the issue persists, please contact {support_email}."
+    ).format(
+        support_email=django_settings.DEFAULT_FROM_EMAIL,
+    )
 
 
 def asn_is_bogon(asn):

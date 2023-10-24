@@ -145,6 +145,14 @@ class Backend(BaseBackend):
                 value = value.replace(tzinfo=models.UTC())
                 setattr(obj, field.name, value)
 
+            elif field.get_internal_type() == "DecimalField":
+                value = getattr(obj, field.name)
+                if not value:
+                    continue
+                if isinstance(value, str):
+                    value = field.to_python(value)
+                setattr(obj, field.name, value)
+
         if obj.HandleRef.tag == "ix":
             obj.save(create_ixlan=False)
         else:

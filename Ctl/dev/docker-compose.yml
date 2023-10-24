@@ -10,16 +10,16 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     restart: always
     ports:
-     - "13306:3306"
+     - "127.0.0.1:13306:3306"
     volumes:
       - peeringdb_database:/var/lib/mysql:Z
     networks:
       - peeringdb_network
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.4
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     environment:
       - discovery.type=single-node
     networks:
@@ -31,11 +31,10 @@ services:
     command:
       - sh
       - -c
-      - 'redis-server --requirepass devPASSWORD'
-    # environment:
-    #   REDIS_PASSWORD: devPASSWORD
+      - redis-server --requirepass "$${REDIS_PASSWORD:?REDIS_PASSWORD variable is not set}"
+    env_file: .env
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     networks:
       - peeringdb_network
     volumes:

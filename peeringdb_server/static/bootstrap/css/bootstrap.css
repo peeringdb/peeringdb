@@ -5515,7 +5515,7 @@ textarea.form-control-lg {
   letter-spacing: normal;
   word-break: normal;
   word-spacing: normal;
-  white-space: normal;
+  white-space: pre-line;
   line-break: auto;
   font-size: 0.875rem;
   word-wrap: break-word;

@@ -1,0 +1,31 @@
+{
+    "url": "https://localhost:8000",
+    "accounts":{
+        "user": {
+            "username": "<username>",
+            "password": "<password>"
+        }
+    },
+    "test_search_exchange": {
+        "name": "ChIX"
+    },
+    "test_search_network": {
+        "name": "20C",
+        "quick_search_result": "20C (63311)"
+    },
+    "test_search_facility": {
+        "name": "CoreSite - Chicago (CH1)"
+    },
+    "test_search_organization": {
+        "name": "20C, LLC"
+    },
+    "test_add_api_key": {
+        "description": "test"
+    },
+    "test_delete_api_key": {
+        "description": "test"
+    },
+    "test_change_password": {
+        "password": "Verified@test"
+    }
+}

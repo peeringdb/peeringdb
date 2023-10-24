@@ -15,6 +15,7 @@ from rest_framework.test import APIRequestFactory
 
 import peeringdb_server.models as pdbm
 import peeringdb_server.rest as pdbr
+from peeringdb_server.export_kmz import fac_export_kmz
 from peeringdb_server.renderers import MetaJSONRenderer
 
 MODELS = [
@@ -66,6 +67,11 @@ class Command(BaseCommand):
             "--only", action="store", default=False, help="only run specified type"
         )
         parser.add_argument(
+            "--gen-kmz",
+            action="store_true",
+            help="will generate kmz file in from the api-cache data",
+        )
+        parser.add_argument(
             "--date",
             action="store",
             default=None,
@@ -105,8 +111,6 @@ class Command(BaseCommand):
         output_dir = options.get("output_dir")
         depths = list(map(int, options.get("depths").split(",")))
 
-        print(f"output_dir: {output_dir}")
-
         if options.get("public_data"):
             request_user = AnonymousUser()
 
@@ -121,15 +125,16 @@ class Command(BaseCommand):
             only = only.split(",")
 
         if date:
-            dt = datetime.datetime.strptime(date, "%Y%m%d")
+            last_updated = datetime.datetime.strptime(date, "%Y%m%d")
         else:
-            dt = datetime.datetime.now()
-        dtstr = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+            last_updated = datetime.datetime.now()
+
+        meta = {"generated": last_updated.timestamp()}
         self.log_file = open(settings.API_CACHE_LOG, "w+")
         self.log("info", f"Regnerating cache files to '{output_dir}'")
         self.log(
             "info",
-            f"Caching depths {str(depths)} for timestamp: {str(dtstr)}",
+            f"Caching depths {depths} for timestamp: {last_updated}",
         )
         request_factory = APIRequestFactory()
         renderer = MetaJSONRenderer()
@@ -156,15 +161,14 @@ class Command(BaseCommand):
                     if depth >= 1 and tag in MONODEPTH:
                         break
 
-                    self.log(tag, "generating depth %d" % depth)
+                    self.log(tag, f"generating depth {depth} to {tmpdir.name}...")
                     if depth:
                         request = request_factory.get(
-                            "/api/%s?depth=%d&updated__lte=%s&_ctf"
-                            % (tag, depth, dtstr)
+                            f"/api/{tag}?depth={depth}&updated__lte={last_updated}Z&_ctf"
                         )
                     else:
                         request = request_factory.get(
-                            f"/api/{tag}?updated__lte={dtstr}&_ctf"
+                            f"/api/{tag}?updated__lte={last_updated}Z&_ctf"
                         )
                     request.user = request_user
                     vs = viewset.as_view({"get": "list"})
@@ -177,6 +181,7 @@ class Command(BaseCommand):
                         response.data,
                         renderer_context={"response": response},
                         file_name=file_name,
+                        default_meta=meta,
                     )
 
                     del response
@@ -207,6 +212,10 @@ class Command(BaseCommand):
         finally:
             tmpdir.cleanup()
             self.log_file.close()
+
+        if options.get("gen_kmz"):
+            print("Generating kmz file")
+            fac_export_kmz()
 
         end_time = time.time()
 

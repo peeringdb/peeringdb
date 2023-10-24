@@ -7,6 +7,7 @@ at the REST api to handle updates (such as /net, /ix, /fac or /org endpoints).
 Look in rest.py and serializers.py for those.
 """
 
+import json
 import os.path
 import re
 import uuid
@@ -21,6 +22,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from grainy.const import PERM_CRUD, PERM_DENY, PERM_READ
+from schema import Schema, SchemaError
 
 from peeringdb_server.inet import get_client_ip
 from peeringdb_server.models import Organization, User
@@ -191,6 +193,22 @@ class UserLocaleForm(forms.Form):
     class Meta:
         model = User
         fields = "locale"
+
+
+class VerifiedUpdateForm(forms.Form):
+    source = forms.CharField(required=False)
+    reason = forms.CharField(required=False)
+    updates = forms.JSONField(required=True)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        updates = cleaned_data.get("updates")
+        schema = Schema([{"ref_tag": str, "obj_id": int, "data": dict}])
+        try:
+            updates = json.loads(json.dumps(updates))
+            schema.validate(updates)
+        except (json.JSONDecodeError, TypeError, SchemaError):
+            raise ValidationError("Malformed update data.")
 
 
 class UserOrgForm(forms.Form):

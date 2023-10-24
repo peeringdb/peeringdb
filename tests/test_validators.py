@@ -879,7 +879,7 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
     ],
 )
 @pytest.mark.django_db
-def test_validate_ssocial_media(value, validated):
+def test_validate_social_media(value, validated):
     if not validated:
         with pytest.raises(ValidationError):
             validate_social_media(value)
@@ -913,3 +913,9 @@ def test_validate_website_override(website, org_website, validated):
             validate_website_override(website, org_website)
     else:
         assert validate_website_override(website, org_website) == validated
+
+
+@pytest.mark.django_db
+def test_org_create_with_none_social_media():
+    org = Organization.objects.create(name="Test org", status="ok", social_media=None)
+    assert org.social_media == {}

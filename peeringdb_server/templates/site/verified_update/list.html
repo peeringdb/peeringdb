@@ -1,0 +1,30 @@
+{% extends "site/simple_content.html" %}
+{% block content %}
+<div class="pb-3">
+{% if updated_obj%}
+    <h3>Successfully updated</h3>
+    <ul>
+      {% for obj in updated_obj %}
+        <li><a href="{{ obj.view_url }}">{{ obj.name|default:obj }}</a></li>
+      {% endfor %}
+    </ul>
+{% else %}
+  <div class="alert alert-danger">
+    {% if invalid_permissions %}
+    You do not have permissions to make changes to
+    <p></p>
+    <ul>
+      {% for obj, type in invalid_permissions.items %}
+        <li>
+          <p><a href="{{ obj.view_url }}">{{ obj }}</a> - <a style="font-size: 12px;">{{ type|title }}</a></p>
+        </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    {{error_message}}
+    {% endif %}
+  </div>
+  <button class="btn btn-warning" onclick="history.back()">Back</button>
+{% endif %}
+</div>
+{% endblock %}

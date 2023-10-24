@@ -116,6 +116,7 @@ REAUTH_PERIODS = (
     ("1w", _("1 Week")),
     ("2w", _("2 Weeks")),
     ("1m", _("1 Month")),
+    ("3m", _("3 Month")),
     ("6m", _("6 Months")),
     ("1y", _("1 Year")),
 )
@@ -365,6 +366,17 @@ class ProtectedMixin:
             self.save()
         finally:
             self._meta.get_field("updated").auto_now = True
+
+
+class SocialMediaMixin(models.Model):
+    def save(self, *args, **kwargs):
+        # Check if social_media is null, and if so, set it to [{}]
+        if self.social_media is None:
+            self.social_media = {}
+        super().save(*args, **kwargs)
+
+    class Meta:
+        abstract = True
 
 
 class GeocodeBaseMixin(models.Model):
@@ -887,7 +899,9 @@ class DeskProTicketCC(models.Model):
 
 @grainy_model(namespace="peeringdb.organization")
 @reversion.register
-class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin):
+class Organization(
+    ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin, SocialMediaMixin
+):
     """
     Describes a peeringdb organization.
     """
@@ -933,7 +947,16 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
         ),
     )
     periodic_reauth_period = models.CharField(
-        max_length=255, blank=True, null=True, choices=REAUTH_PERIODS, default="1y"
+        max_length=255,
+        blank=True,
+        null=True,
+        choices=REAUTH_PERIODS,
+        default="3m",
+        help_text=_(
+            "Range of options is available:\n"
+            "1 Week, 2 Weeks, 1 Month, \n"
+            "3 Month, 6 Month, 1 Year"
+        ),
     )
 
     # Delete childless org objects #838
@@ -1091,6 +1114,8 @@ class Organization(ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin
                     r[net.asn] = rdap
             except RdapNotFoundError:
                 pass
+            except Exception as exc:
+                logger.error(exc)
         return r
 
     @property
@@ -1691,7 +1716,7 @@ class OrganizationMergeEntity(models.Model):
 @reversion.register
 # TODO: UNCOMMENT when #389 is merged
 # class Campus(ProtectedMixin, pdb_models.CampusBase, ParentStatusMixin):
-class Campus(ProtectedMixin, pdb_models.CampusBase):
+class Campus(ProtectedMixin, pdb_models.CampusBase, SocialMediaMixin):
 
     """
     Describes a peeringdb campus
@@ -1802,7 +1827,11 @@ class Campus(ProtectedMixin, pdb_models.CampusBase):
 @grainy_model(namespace="facility", parent="org")
 @reversion.register
 class Facility(
-    ProtectedMixin, pdb_models.FacilityBase, GeocodeBaseMixin, ParentStatusCheckMixin
+    ProtectedMixin,
+    pdb_models.FacilityBase,
+    GeocodeBaseMixin,
+    ParentStatusCheckMixin,
+    SocialMediaMixin,
 ):
     """
     Describes a peeringdb facility.
@@ -2103,7 +2132,10 @@ class Facility(
 @grainy_model(namespace="internetexchange", parent="org")
 @reversion.register
 class InternetExchange(
-    ProtectedMixin, pdb_models.InternetExchangeBase, ParentStatusCheckMixin
+    ProtectedMixin,
+    pdb_models.InternetExchangeBase,
+    ParentStatusCheckMixin,
+    SocialMediaMixin,
 ):
     """
     Describes a peeringdb exchange.
@@ -2931,6 +2963,15 @@ class IXLan(pdb_models.IXLanBase):
         Returns True if IX-F data is ready to be imported.
         """
         return self.ixf_ixp_import_enabled and self.ixf_ixp_member_list_url
+
+    @property
+    def view_url(self):
+        """
+        Return the URL to related networks web view.
+        """
+        return urljoin(
+            settings.BASE_URL, django.urls.reverse("ix-view", args=(self.ix_id,))
+        )
 
     @staticmethod
     def autocomplete_search_fields():
@@ -4612,7 +4653,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
 
 @grainy_model(namespace="network", parent="org")
 @reversion.register
-class Network(pdb_models.NetworkBase, ParentStatusCheckMixin):
+class Network(pdb_models.NetworkBase, ParentStatusCheckMixin, SocialMediaMixin):
     """
     Describes a peeringdb network.
     """
@@ -4993,6 +5034,15 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase, ParentStatusCheckMi
         else:
             self._not_deletable_reason = None
             return True
+
+    @property
+    def view_url(self):
+        """
+        Return the URL to related networks web view.
+        """
+        return urljoin(
+            settings.BASE_URL, django.urls.reverse("net-view", args=(self.network_id,))
+        )
 
     def validate_requirements(self):
         if not self.phone and not self.email:
@@ -5558,7 +5608,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase, ParentStatusCheckMixin):
 
 @grainy_model(namespace="carrier", parent="org")
 @reversion.register
-class Carrier(ProtectedMixin, pdb_models.CarrierBase):
+class Carrier(ProtectedMixin, pdb_models.CarrierBase, SocialMediaMixin):
     """
     Describes a carrier object.
     """
