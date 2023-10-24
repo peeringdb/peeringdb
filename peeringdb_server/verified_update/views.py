@@ -1,10 +1,9 @@
-import json
 import base64
+import json
 import os
 
 import jsonschema
 import reversion
-
 from django.conf import settings as dj_settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
@@ -26,14 +25,13 @@ from peeringdb_server.views import view_http_error_invalid
 RATELIMITS = dj_settings.RATELIMITS
 
 # load json schema from file
-schema_path = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "schema.json"
-)
+schema_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "schema.json")
 
 JSON_SCHEMA = None
 
-with open(schema_path, "r") as f:
+with open(schema_path) as f:
     JSON_SCHEMA = json.load(f)
+
 
 @csrf_exempt
 @login_required
@@ -57,7 +55,7 @@ def view_verified_update(request):
             {"error": _("Please wait a bit before proposing verified updates again.")},
             status=400,
         )
-    
+
     # payload is a base64 encoded json string that contains
     # the following keys: `updates`, `source`, `reason`
 
@@ -120,7 +118,7 @@ def view_verified_update(request):
                 # sort
                 value = sorted(value)
                 value = ",".join(value)
-            
+
             if isinstance(old, list):
                 # sort
                 old = sorted(old)
@@ -135,10 +133,9 @@ def view_verified_update(request):
                 "label": model._meta.get_field(field).verbose_name,
             }
 
-
             # setattr on obj and validate
             setattr(obj, field, value)
-            print(diff[field], getattr(obj, field)) 
+            print(diff[field], getattr(obj, field))
 
             try:
                 obj.full_clean()
@@ -170,7 +167,8 @@ def view_verified_update(request):
     return HttpResponse(template.render(context, request), status=200)
 
 
-# decroator 
+# decroator
+
 
 @csrf_protect
 @login_required
@@ -219,7 +217,6 @@ def view_verified_update_accept(request):
         ref_tag = data_list[i]
         obj_id = data_list[i + 1]
         updates = {}
-
 
         for field, value in request.POST.items():
             if field.startswith("data[][") and field.endswith("]"):

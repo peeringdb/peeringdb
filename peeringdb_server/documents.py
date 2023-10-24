@@ -9,7 +9,14 @@ from django_elasticsearch_dsl.registries import registry
 from elasticsearch_dsl import analyzer
 
 from peeringdb_server.context import incremental_period
-from peeringdb_server.models import Facility, InternetExchange, Network, Organization, Campus, Carrier
+from peeringdb_server.models import (
+    Campus,
+    Carrier,
+    Facility,
+    InternetExchange,
+    Network,
+    Organization,
+)
 
 
 def is_valid_latitude(lat):
@@ -535,6 +542,7 @@ class NetworkDocument(GeocodeMixin, Document):
             # "fac_count",
         ]
 
+
 @registry.register_document
 class CampusDocument(GeocodeMixin, Document):
     name = fields.TextField(
@@ -649,7 +657,7 @@ class CarrierDocument(GeocodeMixin, Document):
             # "org_id",
             # "org_name",
             # "org",
-            #"name",
+            # "name",
             "aka",
             "name_long",
             # "social_media",

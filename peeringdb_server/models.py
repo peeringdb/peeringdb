@@ -373,7 +373,7 @@ class SocialMediaMixin(models.Model):
         # Check if social_media is null, and if so, set it to [{}]
         if self.social_media is None:
             self.social_media = {}
-        super(SocialMediaMixin, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     class Meta:
         abstract = True
@@ -2972,7 +2972,7 @@ class IXLan(pdb_models.IXLanBase):
         return urljoin(
             settings.BASE_URL, django.urls.reverse("ix-view", args=(self.ix_id,))
         )
-    
+
     @staticmethod
     def autocomplete_search_fields():
         """
@@ -5043,7 +5043,6 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase, ParentStatusCheckMi
         return urljoin(
             settings.BASE_URL, django.urls.reverse("net-view", args=(self.network_id,))
         )
-
 
     def validate_requirements(self):
         if not self.phone and not self.email:

@@ -1,8 +1,10 @@
 import os
+
 import pytest
+from django.conf import settings
 from django.core.management import call_command
 from django.test import Client
-from django.conf import settings
+
 
 @pytest.mark.django_db
 def test_kmz_generation_and_download():
@@ -23,9 +25,12 @@ def test_kmz_generation_and_download():
 
     # Use a Django test client to send a GET request to the kmz download endpoint
     client = Client()
-    response = client.get('/export/kmz/')
+    response = client.get("/export/kmz/")
 
     # Check the response
     assert response.status_code == 200
-    assert response['Content-Type'] == 'application/vnd.google-earth.kmz'
-    assert response['Content-Disposition'] == f'attachment; filename="{os.path.basename(settings.KMZ_EXPORT_FILE)}"'
+    assert response["Content-Type"] == "application/vnd.google-earth.kmz"
+    assert (
+        response["Content-Disposition"]
+        == f'attachment; filename="{os.path.basename(settings.KMZ_EXPORT_FILE)}"'
+    )

@@ -27,9 +27,9 @@ from peeringdb_server.autocomplete_views import (
 )
 from peeringdb_server.export_views import (
     AdvancedSearchExportView,
+    kmz_download,
     view_export_ixf_ix_members,
     view_export_ixf_ixlan_members,
-    kmz_download,
 )
 from peeringdb_server.import_views import (
     view_import_ixlan_ixf_preview,

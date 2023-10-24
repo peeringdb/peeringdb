@@ -2,11 +2,11 @@
 Define export views used for IX-F export and advanced search file download.
 """
 
-import os
 import collections
 import csv
 import datetime
 import json
+import os
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -453,7 +453,9 @@ def kmz_download(request):
 
     try:
         with open(settings.KMZ_EXPORT_FILE, "rb") as file:
-            response = HttpResponse(file.read(), content_type="application/vnd.google-earth.kmz")
+            response = HttpResponse(
+                file.read(), content_type="application/vnd.google-earth.kmz"
+            )
             response["Content-Disposition"] = 'attachment; filename="{}"'.format(
                 os.path.basename(settings.KMZ_EXPORT_FILE)
             )
@@ -461,5 +463,5 @@ def kmz_download(request):
                 os.path.getmtime(settings.KMZ_EXPORT_FILE)
             ).strftime("%a, %d %b %Y %H:%M:%S GMT")
             return response
-    except IOError:
+    except OSError:
         return HttpResponse(status=404)

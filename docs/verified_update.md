@@ -3,7 +3,7 @@
 
 Wit the new `/verified-update/` endpoint it is now possible for your web application to propose changes to an object in PeeringDB.
 
-This is done via a form that will be submitted to PeeringDB. The form contains a hidden field with a Base64 encoded JSON object that contains the proposed changes. 
+This is done via a form that will be submitted to PeeringDB. The form contains a hidden field with a Base64 encoded JSON object that contains the proposed changes.
 
 The user will be redirected to a page where they can review the changes and either accept or reject them. If the user accepts the changes, they will be applied to the object. If the user rejects the changes, they will be discarded.
 
@@ -49,13 +49,13 @@ The user will be redirected to a page where they can review the changes and eith
                 // the updates
                 "updates": [{"ref_tag": OBJECT_TAG, "obj_id": OBJECT_ID, "data": UPDATES}]
             };
-            
+
             // convert the JSON object to a string
             var jsonString = JSON.stringify(jsonData);
 
             // Base64 encode the JSON string
-            var encodedData = btoa(jsonString); 
-            
+            var encodedData = btoa(jsonString);
+
             // set the value of the hidden input field
             document.getElementById('p').value = encodedData;
         });

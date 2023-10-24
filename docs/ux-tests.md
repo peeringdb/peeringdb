@@ -15,7 +15,7 @@ playwright install
 
 The ux-tests are designed to be run using pytest, and the tests can be targeted to different browsers and user accounts by using command-line options.
 
-## Command-line Options 
+## Command-line Options
 
 - `--browser`: The type of browser to run tests on. Can be either `chromium`, `firefox`, `webkit` or `all`. If not specified, `all` is used by default.
 
@@ -63,7 +63,7 @@ pytest -m 'search or links' --browser firefox --account user --config path/to/co
 
 # Setup Configuration
 
-Before running the tests, we will need to set up the configuration for the tests. An example configuration file (`config.dev.example.json`) has been provided, and this needs to be filled in with actual values and saved as `config.json` or some other filename. 
+Before running the tests, we will need to set up the configuration for the tests. An example configuration file (`config.dev.example.json`) has been provided, and this needs to be filled in with actual values and saved as `config.json` or some other filename.
 
 ```json
 {

@@ -64,7 +64,12 @@ class MetaJSONRenderer(MungeRenderer):
     format = "json"
 
     def render(
-        self, data, accepted_media_type=None, renderer_context=None, file_name=None, default_meta=None
+        self,
+        data,
+        accepted_media_type=None,
+        renderer_context=None,
+        file_name=None,
+        default_meta=None,
     ):
         """
         Tweak output rendering and pass to parent.

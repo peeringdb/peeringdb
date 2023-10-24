@@ -13,7 +13,6 @@ import re
 import uuid
 
 import requests
-from schema import Schema, SchemaError
 from captcha.fields import CaptchaField
 from captcha.models import CaptchaStore
 from django import forms
@@ -23,6 +22,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from grainy.const import PERM_CRUD, PERM_DENY, PERM_READ
+from schema import Schema, SchemaError
 
 from peeringdb_server.inet import get_client_ip
 from peeringdb_server.models import Organization, User
@@ -194,6 +194,7 @@ class UserLocaleForm(forms.Form):
         model = User
         fields = "locale"
 
+
 class VerifiedUpdateForm(forms.Form):
     source = forms.CharField(required=False)
     reason = forms.CharField(required=False)
@@ -208,6 +209,7 @@ class VerifiedUpdateForm(forms.Form):
             schema.validate(updates)
         except (json.JSONDecodeError, TypeError, SchemaError):
             raise ValidationError("Malformed update data.")
+
 
 class UserOrgForm(forms.Form):
     """
