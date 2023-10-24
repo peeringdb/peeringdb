@@ -96,6 +96,7 @@ def fac_export_kmz(limit=None):
             )
 
             for key, value in fac.items():
+
                 if key in exclude_keys:
                     continue
 

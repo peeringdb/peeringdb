@@ -7,6 +7,7 @@ import django.conf.global_settings
 import django.conf.locale
 import redis
 import structlog
+import urllib3
 
 from mainsite.oauth2.scopes import SupportedScopes
 
@@ -981,11 +982,19 @@ AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 
 INSTALLED_APPS.append("django_elasticsearch_dsl")
 
-set_from_env("ELASTICSEARCH_HOST", "elasticsearch:9200")
+set_from_env("ELASTICSEARCH_URL", "https://elasticsearch:9200")
+# same env var as used by ES server docker image
+set_from_env("ELASTIC_PASSWORD", "")
 
 ELASTICSEARCH_DSL = {
-    "default": {"hosts": ELASTICSEARCH_HOST},
+    "default": {
+        "hosts": ELASTICSEARCH_URL,
+        "http_auth": ("elastic", ELASTIC_PASSWORD),
+        "verify_certs": False,
+    }
 }
+# stop ES from spamming about unsigned certs
+urllib3.disable_warnings()
 
 ELASTICSEARCH_DSL_INDEX_SETTINGS = {"number_of_shards": 1}
 ELASTICSEARCH_DSL_SIGNAL_PROCESSOR = (
