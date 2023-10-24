@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "peeringdb_server"
-version = "2.51.0"
+version = "2.52.0-beta"
 description = "source code for PeeringDB.com"
 readme = "README.md"
 repository = "https://github.com/peeringdb/peeringdb"
