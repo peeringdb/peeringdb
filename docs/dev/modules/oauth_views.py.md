@@ -82,4 +82,3 @@ LoginRequiredMixin(django.contrib.auth.mixins.AccessMixin)
 ```
 
 Verify that the current user is authenticated.
-
