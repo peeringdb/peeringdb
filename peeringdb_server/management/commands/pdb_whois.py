@@ -2,6 +2,7 @@
 Command line whois.
 """
 import logging
+import warnings
 
 from django.contrib.auth.models import AnonymousUser
 from django_handleref import util
@@ -11,6 +12,9 @@ from peeringdb_server import models, serializers
 from peeringdb_server.util import APIPermissionsApplicator
 
 from ._db_command import DBCommand
+
+# This will suppress all warnings
+warnings.filterwarnings("ignore")
 
 
 class Command(DBCommand):
