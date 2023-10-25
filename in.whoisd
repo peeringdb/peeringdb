@@ -4,6 +4,11 @@
 import logging
 import os
 import sys
+import warnings
+
+# supress warnings
+
+warnings.filterwarnings("ignore")
 
 # print "path", sys.path
 
