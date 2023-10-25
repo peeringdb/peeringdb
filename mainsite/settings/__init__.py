@@ -258,7 +258,7 @@ def get_cache_backend(cache_name):
 
     if cache_backend == "RedisCache":
         if can_ping_redis(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD):
-            print("Was able to ping Redis, using RedisCache")
+            print_debug("Was able to ping Redis, using RedisCache")
             return {
                 "BACKEND": "django.core.cache.backends.redis.RedisCache",
                 "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
@@ -270,7 +270,7 @@ def get_cache_backend(cache_name):
             cache_backend = (
                 "DatabaseCache" if cache_name == "session" else "LocMemCache"
             )
-            print(f"Was not able to ping Redis, falling back to {cache_backend}")
+            print_debug(f"Was not able to ping Redis, falling back to {cache_backend}")
 
     if cache_backend == "LocMemCache":
         return {
