@@ -1,6 +1,8 @@
 """
 Load initial data from another peeringdb instance using the REST API.
 """
+import logging
+
 from confu.schema import apply_defaults
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -14,12 +16,10 @@ from peeringdb.config import ClientSchema
 from peeringdb_server import models as pdb_models
 from peeringdb_server import signals
 
-import logging
-
 Fetcher__entries = peeringdb.fetch.Fetcher.entries
 
 
-def entries(self, tag:str):
+def entries(self, tag: str):
     """
     Some foreign keys differ in peeringdb_server from how they
     are exposed in the api, these need to be adjusted before
@@ -69,7 +69,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-
         if settings.RELEASE_ENV != "dev" and not settings.TUTORIAL_MODE:
             self.stdout.write(
                 "Command can only be run on dev instances and instances "
@@ -102,11 +101,15 @@ class Command(BaseCommand):
         # allow authentication for the sync (set as env vars)
         if settings.PEERINGDB_SYNC_API_KEY:
             sync_options["api_key"] = settings.PEERINGDB_SYNC_API_KEY
-            self.stdout.write(f"Using API key for sync: prefix {settings.PEERINGDB_SYNC_API_KEY[:8]}")
+            self.stdout.write(
+                f"Using API key for sync: prefix {settings.PEERINGDB_SYNC_API_KEY[:8]}"
+            )
         elif settings.PEERINGDB_SYNC_USERNAME and settings.PEERINGDB_SYNC_PASSWORD:
             sync_options["user"] = settings.PEERINGDB_SYNC_USERNAME
             sync_options["password"] = settings.PEERINGDB_SYNC_PASSWORD
-            self.stdout.write(f"Using username/password for sync: {settings.PEERINGDB_SYNC_USERNAME}")
+            self.stdout.write(
+                f"Using username/password for sync: {settings.PEERINGDB_SYNC_USERNAME}"
+            )
         else:
             self.stdout.write(
                 "No authentication configured for sync, using anonymous access - this may cause rate limiting issues. Set PEERINGDB_SYNC_API_KEY or PEERINGDB_SYNC_USERNAME and PEERINGDB_SYNC_PASSWORD to configure authentication."
@@ -156,7 +159,6 @@ class Command(BaseCommand):
 
         client = Client(config)
 
-        
         # if verbosity is > 0 set logging level to show debug messages
         if options.get("verbosity", 1) > 0:
             client.fetcher._log.setLevel(logging.DEBUG)

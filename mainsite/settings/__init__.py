@@ -271,7 +271,9 @@ def get_cache_backend(cache_name):
             cache_backend = (
                 "DatabaseCache" if cache_name == "session" else "LocMemCache"
             )
-            print_debug(f"Was not able to ping Redis for {cache_name}, falling back to {cache_backend}")
+            print_debug(
+                f"Was not able to ping Redis for {cache_name}, falling back to {cache_backend}"
+            )
 
     if cache_backend == "LocMemCache":
         return {
@@ -1003,6 +1005,11 @@ if ELASTICSEARCH_URL:
     ELASTICSEARCH_DSL_SIGNAL_PROCESSOR = (
         "peeringdb_server.signals.ESSilentRealTimeSignalProcessor"
     )
+else:
+    # disable ES
+
+    ELASTICSEARCH_DSL_AUTOSYNC = False
+    ELASTICSEARCH_DSL_AUTO_REFRESH = False
 
 ## Django Rest Framework
 

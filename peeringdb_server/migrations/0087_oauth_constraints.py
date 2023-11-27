@@ -27,7 +27,7 @@ def _fix_constraints(table, cursor):
 
 
 def fix_constraints(apps, schema_editor):
-    if schema_editor.connection.vendor != 'mysql':
+    if schema_editor.connection.vendor != "mysql":
         print("skipping fix_constraints")
         return
 
@@ -44,6 +44,7 @@ def fix_constraints(apps, schema_editor):
         except Exception:
             cursor.execute("ROLLBACK;")
             raise
+
 
 class Migration(migrations.Migration):
     dependencies = [
