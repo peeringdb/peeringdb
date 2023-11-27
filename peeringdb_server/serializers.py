@@ -11,9 +11,9 @@ Special api filtering implementation should be done through the `prepare_query`
 method.
 """
 
+import datetime
 import ipaddress
 import re
-import datetime
 
 import structlog
 from django.conf import settings
@@ -651,7 +651,9 @@ class ModelSerializer(serializers.ModelSerializer):
         # object at 0x7fa5604e86d0>, u'format': None}}
         for field_name, field in self.fields.items():
             if isinstance(field, serializers.DateTimeField):
-                self.fields[field_name] = RemoveMillisecondsDateTimeField(read_only=True)
+                self.fields[field_name] = RemoveMillisecondsDateTimeField(
+                    read_only=True
+                )
 
         try:
             data = args[0]

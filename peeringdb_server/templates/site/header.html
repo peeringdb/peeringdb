@@ -104,14 +104,14 @@ $(window).bind("load", function() {
       }
     });
   });
-  
+
   function reloadPage() {
     window.location.href = window.location.href;
     window.location.reload();
     // Reload the current page, without using the cache
     document.location.reload(true);
   }
-  
+
   function getCSRFToken() {
     var csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
     return csrfToken ? csrfToken.value : '';

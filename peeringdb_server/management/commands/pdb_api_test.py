@@ -467,7 +467,13 @@ class TestJSON(unittest.TestCase):
         timestamps = []
 
         if isinstance(data, dict):
-            fields_to_check = ['created', 'updated', 'rir_status_updated', 'ixf_import_request', 'ixf_last_import']
+            fields_to_check = [
+                "created",
+                "updated",
+                "rir_status_updated",
+                "ixf_import_request",
+                "ixf_last_import",
+            ]
 
             for field in fields_to_check:
                 if field in data and data[field]:

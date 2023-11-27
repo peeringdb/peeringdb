@@ -17,7 +17,6 @@ import datetime
 import ipaddress
 import json
 import re
-from django.db import models
 
 import django.urls
 import reversion
@@ -31,7 +30,7 @@ from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import Q
 from django.db.utils import OperationalError
 from django.forms import DecimalField
@@ -658,7 +657,11 @@ class ISODateTimeMixin:
 
     def format_as_iso_datetime(self, obj, field_name):
         field_value = getattr(obj, field_name)
-        return field_value.replace(microsecond=0, tzinfo=None).isoformat() + 'Z' if field_value else ""
+        return (
+            field_value.replace(microsecond=0, tzinfo=None).isoformat() + "Z"
+            if field_value
+            else ""
+        )
 
     datetime_fields = [
         ("created", _("Created")),
@@ -1451,7 +1454,15 @@ class FacilityAdminForm(StatusForm):
 
 
 class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin):
-    list_display = ("name", "org", "city", "country", "status", "iso_created", "iso_updated")
+    list_display = (
+        "name",
+        "org",
+        "city",
+        "country",
+        "status",
+        "iso_created",
+        "iso_updated",
+    )
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name",)
@@ -1546,7 +1557,15 @@ class NetworkAdminForm(StatusForm):
 
 
 class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin):
-    list_display = ("name", "asn", "aka", "name_long", "status", "iso_created", "iso_updated")
+    list_display = (
+        "name",
+        "asn",
+        "aka",
+        "name_long",
+        "status",
+        "iso_created",
+        "iso_updated",
+    )
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name", "asn")
@@ -1607,7 +1626,15 @@ class InternetExchangeFacilityAdmin(SoftDeleteAdmin, ISODateTimeMixin):
 
 
 class IXLanPrefixAdmin(SoftDeleteAdmin, ISODateTimeMixin):
-    list_display = ("id", "prefix", "ixlan", "ix", "status", "iso_created", "iso_updated")
+    list_display = (
+        "id",
+        "prefix",
+        "ixlan",
+        "ix",
+        "status",
+        "iso_created",
+        "iso_updated",
+    )
     readonly_fields = ("ix", "id", "in_dfz")
     search_fields = ("ixlan__name", "ixlan__ix__name", "prefix")
     list_filter = (StatusFilter,)
@@ -2271,7 +2298,9 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         )
 
 
-class IXFImportEmailAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin):
+class IXFImportEmailAdmin(
+    ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin
+):
     list_display = (
         "subject",
         "recipients",
@@ -2330,7 +2359,9 @@ class DeskProTicketCCInline(admin.TabularInline):
     model = DeskProTicketCC
 
 
-class DeskProTicketAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin):
+class DeskProTicketAdmin(
+    ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin
+):
     list_display = (
         "id",
         "subject",
@@ -2405,7 +2436,9 @@ def apply_ixf_member_data(modeladmin, request, queryset):
 apply_ixf_member_data.short_description = _("Apply")
 
 
-class IXFMemberDataAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin):
+class IXFMemberDataAdmin(
+    ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin
+):
     change_form_template = "admin/ixf_member_data_change_form.html"
 
     list_display = (
@@ -2572,7 +2605,9 @@ class EnvironmentSettingForm(baseForms.ModelForm):
         return cleaned_data
 
 
-class EnvironmentSettingAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin):
+class EnvironmentSettingAdmin(
+    ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin
+):
     list_display = ["setting", "value", "iso_created", "iso_updated", "user"]
 
     fields = ["setting", "value"]
@@ -2647,7 +2682,14 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
 
 @admin.register(DataChangeWatchedObject)
 class DataChangeWatchedObjectAdmin(admin.ModelAdmin, ISODateTimeMixin):
-    list_display = ("id", "user", "ref_tag", "object_id", "iso_last_notified", "created")
+    list_display = (
+        "id",
+        "user",
+        "ref_tag",
+        "object_id",
+        "iso_last_notified",
+        "created",
+    )
 
     raw_id_fields = ("user",)
     search_fields = ("object_id", "user__username")

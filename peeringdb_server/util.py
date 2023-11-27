@@ -8,8 +8,12 @@ import django_peeringdb.const as const
 from django.utils.translation import gettext_lazy as _
 from django_grainy.util import Permissions, check_permissions, get_permissions  # noqa
 
+from peeringdb_server.models import (
+    CarrierFacility,
+    InternetExchangeFacility,
+    NetworkFacility,
+)
 from peeringdb_server.permissions import APIPermissionsApplicator  # noqa
-from peeringdb_server.models import CarrierFacility, NetworkFacility, InternetExchangeFacility
 
 
 def disable_auto_now_and_save(entity):
@@ -82,6 +86,7 @@ def generate_social_media_render_data(data, social_media, insert_index, dismiss)
     soc_data = {"last_soc_field": True}
     data.get("fields").insert(idx + 1, soc_data)
     return data
+
 
 def objfac_tupple(objfac_qset, obj):
     data = {}
