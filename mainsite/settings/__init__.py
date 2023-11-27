@@ -836,6 +836,7 @@ MIDDLEWARE = (
     "csp.middleware.CSPMiddleware",
     "peeringdb_server.middleware.PDBSessionMiddleware",
     "peeringdb_server.middleware.CacheControlMiddleware",
+    "peeringdb_server.middleware.ActivateUserLocaleMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",

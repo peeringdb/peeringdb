@@ -61,6 +61,7 @@ window.STATIC_URL = "{{ STATIC_URL }}";
 <script type="text/javascript" src="{{ STATIC_URL }}peeringdb.js"></script>
 {{ form.media }}
 <script type="text/javascript" language="javascript">
+const is_authenticated = `{{request.user.is_authenticated}}` == 'True'
 $(window).bind("load", function() {
   if(!PeeringDB.csrf)
     PeeringDB.csrf = '{{ csrf_token }}';
@@ -75,13 +76,46 @@ $(window).bind("load", function() {
 
   $('#anon-language-preference').each(function(idx) {
     $(this).on("change", function() {
-      Cookies.set('django_language', this.value, { expires: 365 });  // matches dj_settings.LANGUAGE_COOKIE_AGE
-      window.location.href=window.location.href;
-      window.location.reload();
-      // Reload the current page, without using the cache
-      document.location.reload(true);
-    })
+      Cookies.set('django_language', this.value, { expires: 365 });
+      if (is_authenticated) {
+        var selectedLocale = this.value;
+        var formData = new FormData();
+        formData.append('locale', selectedLocale);
+        fetch('/set-user-locale', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRFToken': getCSRFToken()
+          }
+        })
+        .then(response => {
+          if (response.ok) {
+            reloadPage();
+          } else {
+            console.error('Failed to set user locale');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+      } else {
+        console.log("User is not authenticated");
+        reloadPage();
+      }
+    });
   });
+  
+  function reloadPage() {
+    window.location.href = window.location.href;
+    window.location.reload();
+    // Reload the current page, without using the cache
+    document.location.reload(true);
+  }
+  
+  function getCSRFToken() {
+    var csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return csrfToken ? csrfToken.value : '';
+  }
 });
 </script>
 </head>

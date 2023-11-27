@@ -17,6 +17,7 @@ import datetime
 import ipaddress
 import json
 import re
+from django.db import models
 
 import django.urls
 import reversion
@@ -625,6 +626,62 @@ class SoftDeleteAdmin(
         return actions
 
 
+class ISODateTimeMixin:
+    """
+    A mixin for Django ModelAdmin classes to format DateTimeField values as ISO strings.
+
+    This mixin provides methods to format DateTimeField values in ISO 8601 format for the specified fields.
+    The list of fields to be formatted and their display names is defined in the `datetime_fields` attribute.
+    Each field's name will be prepended with "iso_" for the formatted version.
+
+    Example:
+    ```
+    datetime_fields = [
+        ("created", _("Created")),
+        ("updated", _("Updated")),
+        ("sent", _("Sent")),
+        ("last_login", _("Last login")),
+        ("last_notified", _("Last notified")),
+        ("rir_status_updated", _("RIR status updated")),
+        ("ixf_last_import", _("IX-F Last Import")),
+    ]
+    ```
+
+    The formatted fields will be added to the ModelAdmin class with appropriate short descriptions and ordering.
+
+    Usage:
+    ```
+    class YourModelAdmin(admin.ModelAdmin, ISODateTimeMixin):
+        list_display = ("name", "iso_created", "iso_updated", "other_fields",)
+    ```
+    """
+
+    def format_as_iso_datetime(self, obj, field_name):
+        field_value = getattr(obj, field_name)
+        return field_value.replace(microsecond=0, tzinfo=None).isoformat() + 'Z' if field_value else ""
+
+    datetime_fields = [
+        ("created", _("Created")),
+        ("updated", _("Updated")),
+        ("sent", _("Sent")),
+        ("last_login", _("Last login")),
+        ("last_notified", _("Last notified")),
+        ("rir_status_updated", _("RIR status updated")),
+        ("ixf_last_import", _("IX-F Last Import")),
+    ]
+
+    for field_name, display_name in datetime_fields:
+        formatted_field_name = f"iso_{field_name}"
+
+        def iso_datetime(self, obj, field_name=field_name):
+            return self.format_as_iso_datetime(obj, field_name)
+
+        iso_datetime.admin_order_field = field_name
+        iso_datetime.short_description = display_name
+
+        locals()[formatted_field_name] = iso_datetime
+
+
 class ProtectedDeleteAdmin(admin.ModelAdmin):
     """
     Allow deletion of objects if the user is superuser
@@ -841,7 +898,7 @@ class InternetExchangeAdminForm(StatusForm):
         fk_handleref_filter(self, "org")
 
 
-class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
+class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin):
     list_display = (
         "name",
         "aka",
@@ -849,8 +906,8 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "city",
         "country",
         "status",
-        "created",
-        "updated",
+        "iso_created",
+        "iso_updated",
     )
     ordering = ("-created",)
     list_filter = (StatusFilter,)
@@ -859,7 +916,7 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "id",
         "grainy_namespace",
         "ixf_import_history",
-        "ixf_last_import",
+        "iso_ixf_last_import",
         "ixf_net_count",
         "proto_unicast_readonly",
         "proto_ipv6_readonly",
@@ -1168,8 +1225,8 @@ class OrganizationAdminForm(StatusForm):
     longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6, required=False)
 
 
-class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-    list_display = ("handle", "name", "status", "created", "updated")
+class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin):
+    list_display = ("handle", "name", "status", "iso_created", "iso_updated")
     ordering = ("-created",)
     search_fields = ("name",)
     list_filter = (StatusFilter, "flagged")
@@ -1302,8 +1359,8 @@ class CampusAdminForm(StatusForm):
         fk_handleref_filter(self, "org")
 
 
-class CampusAdmin(SoftDeleteAdmin):
-    list_display = ("name", "org", "status", "created", "updated")
+class CampusAdmin(SoftDeleteAdmin, ISODateTimeMixin):
+    list_display = ("name", "org", "status", "iso_created", "iso_updated")
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name",)
@@ -1335,8 +1392,8 @@ class CarrierAdminForm(StatusForm):
         fk_handleref_filter(self, "org")
 
 
-class CarrierFacilityAdmin(SoftDeleteAdmin):
-    list_display = ("carrier", "facility", "status", "created", "updated")
+class CarrierFacilityAdmin(SoftDeleteAdmin, ISODateTimeMixin):
+    list_display = ("carrier", "facility", "status", "iso_created", "iso_updated")
     search_fields = ("carrier__name", "facility__name")
     readonly_fields = ("id", "grainy_namespace")
 
@@ -1355,8 +1412,8 @@ class CarrierFacilityAdmin(SoftDeleteAdmin):
     ]
 
 
-class CarrierAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-    list_display = ("name", "org", "status", "created", "updated")
+class CarrierAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin):
+    list_display = ("name", "org", "status", "iso_created", "iso_updated")
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name",)
@@ -1393,8 +1450,8 @@ class FacilityAdminForm(StatusForm):
         fk_handleref_filter(self, "org")
 
 
-class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-    list_display = ("name", "org", "city", "country", "status", "created", "updated")
+class FacilityAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin):
+    list_display = ("name", "org", "city", "country", "status", "iso_created", "iso_updated")
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name",)
@@ -1488,8 +1545,8 @@ class NetworkAdminForm(StatusForm):
         return name
 
 
-class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
-    list_display = ("name", "asn", "aka", "name_long", "status", "created", "updated")
+class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin):
+    list_display = ("name", "asn", "aka", "name_long", "status", "iso_created", "iso_updated")
     ordering = ("-created",)
     list_filter = (StatusFilter,)
     search_fields = ("name", "asn")
@@ -1497,7 +1554,7 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         "id",
         "grainy_namespace",
         "rir_status",
-        "rir_status_updated",
+        "iso_rir_status_updated",
         "org_website",
     )
     form = NetworkAdminForm
@@ -1536,8 +1593,8 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin):
         return super().get_search_results(request, queryset, search_term)
 
 
-class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
-    list_display = ("id", "ix", "facility", "status", "created", "updated")
+class InternetExchangeFacilityAdmin(SoftDeleteAdmin, ISODateTimeMixin):
+    list_display = ("id", "ix", "facility", "status", "iso_created", "iso_updated")
     search_fields = ("ix__name", "facility__name")
     readonly_fields = ("id",)
     list_filter = (StatusFilter,)
@@ -1549,8 +1606,8 @@ class InternetExchangeFacilityAdmin(SoftDeleteAdmin):
     }
 
 
-class IXLanPrefixAdmin(SoftDeleteAdmin):
-    list_display = ("id", "prefix", "ixlan", "ix", "status", "created", "updated")
+class IXLanPrefixAdmin(SoftDeleteAdmin, ISODateTimeMixin):
+    list_display = ("id", "prefix", "ixlan", "ix", "status", "iso_created", "iso_updated")
     readonly_fields = ("ix", "id", "in_dfz")
     search_fields = ("ixlan__name", "ixlan__ix__name", "prefix")
     list_filter = (StatusFilter,)
@@ -1565,7 +1622,7 @@ class IXLanPrefixAdmin(SoftDeleteAdmin):
         return obj.ixlan.ix
 
 
-class NetworkIXLanAdmin(SoftDeleteAdmin):
+class NetworkIXLanAdmin(SoftDeleteAdmin, ISODateTimeMixin):
     list_display = (
         "id",
         "asn",
@@ -1575,8 +1632,8 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
         "ipaddr4",
         "ipaddr6",
         "status",
-        "created",
-        "updated",
+        "iso_created",
+        "iso_updated",
     )
     search_fields = (
         "asn",
@@ -1612,7 +1669,7 @@ class NetworkIXLanAdmin(SoftDeleteAdmin):
         return queryset, use_distinct
 
 
-class NetworkContactAdmin(SoftDeleteAdmin):
+class NetworkContactAdmin(SoftDeleteAdmin, ISODateTimeMixin):
     list_display = (
         "id",
         "net",
@@ -1621,8 +1678,8 @@ class NetworkContactAdmin(SoftDeleteAdmin):
         "phone",
         "email",
         "status",
-        "created",
-        "updated",
+        "iso_created",
+        "iso_updated",
     )
     search_fields = ("network__asn", "network__name")
     readonly_fields = ("id", "net")
@@ -1640,8 +1697,8 @@ class NetworkContactAdmin(SoftDeleteAdmin):
         return f"{obj.network.name} (AS{obj.network.asn})"
 
 
-class NetworkFacilityAdmin(SoftDeleteAdmin):
-    list_display = ("id", "net", "facility", "status", "created", "updated")
+class NetworkFacilityAdmin(SoftDeleteAdmin, ISODateTimeMixin):
+    list_display = ("id", "net", "facility", "status", "iso_created", "iso_updated")
     search_fields = ("network__asn", "network__name", "facility__name")
     readonly_fields = ("id", "net")
     list_filter = (StatusFilter,)
@@ -1834,7 +1891,7 @@ class UserGroupForm(UserChangeForm):
             self.fields["groups"].queryset = Group.objects.all().order_by("id")
 
 
-class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin):
+class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin, ISODateTimeMixin):
     inlines = (
         UserOrgAffiliationRequestInline,
         UserDeviceInline,
@@ -1853,7 +1910,7 @@ class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin):
         "last_name",
         "email_status",
         "status",
-        "last_login",
+        "iso_last_login",
     )
     add_form = UserCreationForm
     add_fieldsets = (
@@ -2214,12 +2271,12 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         )
 
 
-class IXFImportEmailAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
+class IXFImportEmailAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin):
     list_display = (
         "subject",
         "recipients",
-        "created",
-        "sent",
+        "iso_created",
+        "iso_sent",
         "net",
         "ix",
         "stale_info",
@@ -2273,12 +2330,12 @@ class DeskProTicketCCInline(admin.TabularInline):
     model = DeskProTicketCC
 
 
-class DeskProTicketAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
+class DeskProTicketAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin):
     list_display = (
         "id",
         "subject",
         "user",
-        "created",
+        "iso_created",
         "published",
         "deskpro_ref",
         "deskpro_id",
@@ -2348,7 +2405,7 @@ def apply_ixf_member_data(modeladmin, request, queryset):
 apply_ixf_member_data.short_description = _("Apply")
 
 
-class IXFMemberDataAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
+class IXFMemberDataAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin):
     change_form_template = "admin/ixf_member_data_change_form.html"
 
     list_display = (
@@ -2362,8 +2419,8 @@ class IXFMemberDataAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin)
         "speed",
         "operational",
         "is_rs_peer",
-        "created",
-        "updated",
+        "iso_created",
+        "iso_updated",
         "fetched",
         "changes",
         "actionable_error",
@@ -2381,8 +2438,8 @@ class IXFMemberDataAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin)
         "log",
         "error",
         "actionable_error",
-        "created",
-        "updated",
+        "iso_created",
+        "iso_updated",
         "status",
         "remote_data",
         "requirements",
@@ -2390,6 +2447,8 @@ class IXFMemberDataAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin)
         "requirement_detail",
         "extra_notifications_net_num",
         "extra_notifications_net_date",
+        "created",
+        "updated",
     )
 
     search_fields = ("asn", "ixlan__id", "ixlan__ix__name", "ipaddr4", "ipaddr6")
@@ -2513,12 +2572,12 @@ class EnvironmentSettingForm(baseForms.ModelForm):
         return cleaned_data
 
 
-class EnvironmentSettingAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin):
-    list_display = ["setting", "value", "created", "updated", "user"]
+class EnvironmentSettingAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmin, ISODateTimeMixin):
+    list_display = ["setting", "value", "iso_created", "iso_updated", "user"]
 
     fields = ["setting", "value"]
 
-    readonly_fields = ["created", "updated"]
+    readonly_fields = ["iso_created", "iso_updated"]
     search_fields = ["setting"]
 
     form = EnvironmentSettingForm
@@ -2529,8 +2588,8 @@ class EnvironmentSettingAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelA
         return obj.set_value(form.cleaned_data["value"])
 
 
-class OrganizationAPIKeyAdmin(APIKeyModelAdmin):
-    list_display = ["org", "prefix", "name", "status", "created", "revoked"]
+class OrganizationAPIKeyAdmin(APIKeyModelAdmin, ISODateTimeMixin):
+    list_display = ["org", "prefix", "name", "status", "iso_created", "revoked"]
     search_fields = ("prefix", "org__name")
 
     raw_id_fields = ("org",)
@@ -2587,8 +2646,8 @@ class GeoCoordinateAdmin(admin.ModelAdmin):
 
 
 @admin.register(DataChangeWatchedObject)
-class DataChangeWatchedObjectAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "ref_tag", "object_id", "last_notified", "created")
+class DataChangeWatchedObjectAdmin(admin.ModelAdmin, ISODateTimeMixin):
+    list_display = ("id", "user", "ref_tag", "object_id", "iso_last_notified", "created")
 
     raw_id_fields = ("user",)
     search_fields = ("object_id", "user__username")
@@ -2601,7 +2660,7 @@ class DataChangeWatchedObjectAdmin(admin.ModelAdmin):
 
 
 @admin.register(DataChangeNotificationQueue)
-class DataChangeNotificationQueueAdmin(admin.ModelAdmin):
+class DataChangeNotificationQueueAdmin(admin.ModelAdmin, ISODateTimeMixin):
     list_display = (
         "id",
         "watched_ref_tag",
@@ -2614,7 +2673,7 @@ class DataChangeNotificationQueueAdmin(admin.ModelAdmin):
         "source",
         "action",
         "details",
-        "created",
+        "iso_created",
     )
 
     readonly_fields = ("watched_object", "target_object", "title", "details")
@@ -2628,15 +2687,15 @@ class DataChangeNotificationQueueAdmin(admin.ModelAdmin):
 
 
 @admin.register(DataChangeEmail)
-class DataChangeEmail(admin.ModelAdmin):
+class DataChangeEmail(admin.ModelAdmin, ISODateTimeMixin):
     list_display = (
         "id",
         "user",
         "email",
         "subject",
         "watched_object",
-        "created",
-        "sent",
+        "iso_created",
+        "iso_sent",
     )
 
     raw_id_fields = ("user",)

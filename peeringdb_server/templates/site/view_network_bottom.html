@@ -81,7 +81,7 @@
                  </div>
                </div>
                <div class="col-4 col-sm-4 col-md-4">
-                 <div class="name"
+                 <div class="name {% if p.visible == "Public" %}visible_icon{% else %}invisible_icon{% endif %}"
                       {% if permissions.can_write %}
                       data-edit-type="string"
                       {% endif %}

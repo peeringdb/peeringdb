@@ -901,6 +901,22 @@ div.list .highlight-warning {
   font-weight: bold;
 }
 
+.visible_icon:after {
+  content: "\e8f4";
+  font-family: "Material Icons";
+  vertical-align: bottom;
+  padding-left: 4px;
+  font-size: 15px;
+}
+
+.invisible_icon:after {
+  content: "\e8f5";
+  font-family: "Material Icons";
+  vertical-align: bottom;
+  padding-left: 4px;
+  font-size: 15px;
+}
+
 *[data-sort-target] {
   cursor: pointer;
 }

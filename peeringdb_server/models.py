@@ -2076,6 +2076,14 @@ class Facility(
         return self.ixfac_set.filter(status="ok")
 
     @property
+    def carrierfac_set_active(self):
+        """
+        Returns queryset of active CarrierFacility objects connected
+        to this facility.
+        """
+        return self.carrierfac_set.filter(status="ok")
+
+    @property
     def view_url(self):
         """
         Return the URL to this facility's web view.

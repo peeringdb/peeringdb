@@ -141,6 +141,7 @@ from peeringdb_server.stats import get_fac_stats, get_ix_stats
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.util import (
     generate_social_media_render_data,
+    objfac_tupple,
     v2_social_media_services,
 )
 
@@ -1565,7 +1566,7 @@ def view_organization(request, id):
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),
-                "value": data.get("updated", dismiss),
+                "value": format_last_updated_time(data.get("updated", dismiss)),
             },
             {
                 "name": "notes",
@@ -1801,7 +1802,7 @@ def view_facility(request, id):
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),
-                "value": data.get("updated", dismiss),
+                "value": format_last_updated_time(data.get("updated", dismiss)),
             },
             {
                 "name": "notes",
@@ -1964,7 +1965,7 @@ def view_carrier(request, id):
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),
-                "value": data.get("updated", dismiss),
+                "value": format_last_updated_time(data.get("updated", dismiss)),
             },
             {
                 "name": "notes",
@@ -2018,7 +2019,18 @@ def view_campus(request, id):
     dismiss = DoNotRender()
 
     facilities = Facility.objects.filter(campus=campus)
+    ixfac = InternetExchangeFacility.objects.none()
+    netfac = NetworkFacility.objects.none()
+    carrierfac = CarrierFacility.objects.none()
 
+    # Merge all the related sets into the 'exchanges' QuerySet
+    for facility in facilities:
+        ixfac = ixfac.union(facility.ixfac_set_active, all=False)
+        netfac = netfac.union(facility.netfac_set_active, all=False)
+        carrierfac = carrierfac.union(facility.carrierfac_set_active, all=False)
+    carriers = objfac_tupple(carrierfac, "carrier")
+    networks = objfac_tupple(netfac, "network")
+    exchanges = objfac_tupple(ixfac, "ix")
     org = data.get("org")
 
     social_media = data.get("social_media")
@@ -2031,6 +2043,9 @@ def view_campus(request, id):
         "id": campus.id,
         "title": data.get("name", dismiss),
         "facilities": facilities,
+        "exchanges": exchanges,
+        "networks": networks,
+        "carriers": carriers,
         "fields": [
             {
                 "name": "org",
@@ -2073,7 +2088,7 @@ def view_campus(request, id):
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),
-                "value": data.get("updated", dismiss),
+                "value": format_last_updated_time(data.get("updated", dismiss)),
             },
             {
                 "name": "notes",
@@ -2215,7 +2230,7 @@ def view_exchange(request, id):
                 "readonly": True,
                 "name": "updated",
                 "label": _("Last Updated"),
-                "value": data.get("updated", dismiss),
+                "value": format_last_updated_time(data.get("updated", dismiss)),
             },
             {
                 "name": "notes",
@@ -2445,7 +2460,7 @@ def format_last_updated_time(last_updated_time):
     if last_updated_time is None:
         return ""
     elif isinstance(last_updated_time, str):
-        return last_updated_time.split(".")[0]
+        return last_updated_time.split(".")[0].rstrip("Z") + "Z"
 
 
 @ensure_csrf_cookie

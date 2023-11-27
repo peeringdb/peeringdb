@@ -63,23 +63,44 @@ class ViewTestCase(ClientCase):
         self.factory = RequestFactory()
 
     def run_view_test(self, reftag):
-        id = getattr(self, reftag).id
-        # test #1 - not logged in
-        c = Client()
-        resp = c.get("/%s/%d" % (reftag, id), follow=True)
-        self.assertEqual(resp.status_code, 200)
+        obj = getattr(self, reftag)
+        formated_updated = obj.updated.isoformat().split(".")[0]
 
-        # test #2 - guest logged in (not affiliated to any org)
-        c = Client()
-        c.login(username="guest", password="guest")
-        resp = c.get("/%s/%d" % (reftag, id), follow=True)
-        self.assertEqual(resp.status_code, 200)
+        def perform_test(username=None):
+            c = Client()
+            if username:
+                c.login(username=username, password=username)
+            resp = c.get("/%s/%d" % (reftag, obj.id), follow=True)
+            content = resp.content.decode("utf-8")
+            self.assertIn(
+                f'data-edit-name="updated">{formated_updated}Z</div>', content
+            )
+            if reftag == "net":
+                if obj.netixlan_updated:
+                    self.assertIn(
+                        f'data-edit-name="netixlan_updated">{obj.netixlan_updated.isoformat().split(".")[0]}Z</div>',
+                        content,
+                    )
+                if obj.netfac_updated:
+                    self.assertIn(
+                        f'data-edit-name="netfac_updated">{obj.netfac_updated.isoformat().split(".")[0]}Z</div>',
+                        content,
+                    )
+                if obj.poc_updated:
+                    self.assertIn(
+                        f'data-edit-name="poc_updated">{obj.poc_updated.isoformat().split(".")[0]}Z</div>',
+                        content,
+                    )
+            self.assertEqual(resp.status_code, 200)
 
-        # test #3 - user logged in
-        c = Client()
-        c.login(username="user_a", password="user_a")
-        resp = c.get("/%s/%d" % (reftag, id), follow=True)
-        self.assertEqual(resp.status_code, 200)
+        # Test #1 - not logged in
+        perform_test()
+
+        # Test #2 - guest logged in (not affiliated to any org)
+        perform_test("guest")
+
+        # Test #3 - user logged in
+        perform_test("user_a")
 
 
 class TestExchangeView(ViewTestCase):
