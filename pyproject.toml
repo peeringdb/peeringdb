@@ -20,7 +20,7 @@ redis = ">=5.0.0"
 hiredis = ">=2.2.3"
 
 # locked to support_202306 branch until that is tagged and released to pypi
-peeringdb = { git = "https://github.com/peeringdb/peeringdb-py.git", branch = "support_202306" }
+peeringdb = { git = "https://github.com/peeringdb/peeringdb-py.git", tag = "2.0.0" }
 uwsgi = ">=2.0.14"
 
 # ancilary packages
