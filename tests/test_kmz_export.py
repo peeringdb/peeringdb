@@ -28,6 +28,7 @@ def test_kmz_generation_and_download():
 
         # Use a Django test client to send a GET request to the kmz download endpoint
         client = Client()
+        settings.KMZ_EXPORT_FILE = output_file
         response = client.get("/export/kmz/")
 
         # Check the response
