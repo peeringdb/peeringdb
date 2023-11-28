@@ -257,6 +257,7 @@ def get_cache_backend(cache_name):
         options["CULL_FREQUENCY"] = 10
 
     if cache_backend == "RedisCache":
+        print_debug(f"Checking if Redis is available for {cache_name}")
         if can_ping_redis(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD):
             print_debug("Was able to ping Redis, using RedisCache")
             return {
@@ -270,7 +271,9 @@ def get_cache_backend(cache_name):
             cache_backend = (
                 "DatabaseCache" if cache_name == "session" else "LocMemCache"
             )
-            print_debug(f"Was not able to ping Redis, falling back to {cache_backend}")
+            print_debug(
+                f"Was not able to ping Redis for {cache_name}, falling back to {cache_backend}"
+            )
 
     if cache_backend == "LocMemCache":
         return {
@@ -336,7 +339,7 @@ set_option("DATABASE_PASSWORD", "")
 # redis
 set_option("REDIS_HOST", "127.0.0.1")
 set_option("REDIS_PORT", "6379")
-set_from_env("REDIS_PASSWORD")
+set_from_env("REDIS_PASSWORD", "")
 
 # API Cache
 set_option("API_CACHE_ENABLED", True)
@@ -836,6 +839,7 @@ MIDDLEWARE = (
     "csp.middleware.CSPMiddleware",
     "peeringdb_server.middleware.PDBSessionMiddleware",
     "peeringdb_server.middleware.CacheControlMiddleware",
+    "peeringdb_server.middleware.ActivateUserLocaleMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -980,26 +984,32 @@ AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 
 ## Django Elasticsearch DSL
 
-INSTALLED_APPS.append("django_elasticsearch_dsl")
 
-set_from_env("ELASTICSEARCH_URL", "https://elasticsearch:9200")
+set_from_env("ELASTICSEARCH_URL", "")
 # same env var as used by ES server docker image
 set_from_env("ELASTIC_PASSWORD", "")
 
-ELASTICSEARCH_DSL = {
-    "default": {
-        "hosts": ELASTICSEARCH_URL,
-        "http_auth": ("elastic", ELASTIC_PASSWORD),
-        "verify_certs": False,
+if ELASTICSEARCH_URL:
+    INSTALLED_APPS.append("django_elasticsearch_dsl")
+    ELASTICSEARCH_DSL = {
+        "default": {
+            "hosts": ELASTICSEARCH_URL,
+            "http_auth": ("elastic", ELASTIC_PASSWORD),
+            "verify_certs": False,
+        }
     }
-}
-# stop ES from spamming about unsigned certs
-urllib3.disable_warnings()
+    # stop ES from spamming about unsigned certs
+    urllib3.disable_warnings()
 
-ELASTICSEARCH_DSL_INDEX_SETTINGS = {"number_of_shards": 1}
-ELASTICSEARCH_DSL_SIGNAL_PROCESSOR = (
-    "peeringdb_server.signals.ESSilentRealTimeSignalProcessor"
-)
+    ELASTICSEARCH_DSL_INDEX_SETTINGS = {"number_of_shards": 1}
+    ELASTICSEARCH_DSL_SIGNAL_PROCESSOR = (
+        "peeringdb_server.signals.ESSilentRealTimeSignalProcessor"
+    )
+else:
+    # disable ES
+
+    ELASTICSEARCH_DSL_AUTOSYNC = False
+    ELASTICSEARCH_DSL_AUTO_REFRESH = False
 
 ## Django Rest Framework
 
@@ -1433,7 +1443,7 @@ set_option("PEERINGDB_SYNC_PASSWORD", "")
 set_option("PEERINGDB_SYNC_API_KEY", "")
 
 # peeringdb sync cache
-set_option("PEERINGDB_SYNC_CACHE_URL", "https://cache.peeringdb.com")
+set_option("PEERINGDB_SYNC_CACHE_URL", "https://public.peeringdb.com")
 set_option("PEERINGDB_SYNC_CACHE_DIR", os.path.join(BASE_DIR, "sync-cache"))
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

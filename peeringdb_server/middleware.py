@@ -12,6 +12,7 @@ from django.core.cache import caches
 from django.http import HttpResponse, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.urls import reverse
+from django.utils import translation
 from django.utils.deprecation import MiddlewareMixin
 
 from peeringdb_server.context import current_request
@@ -585,3 +586,14 @@ class CacheControlMiddleware(MiddlewareMixin):
                 ] = f"s-maxage={settings.CACHE_CONTROL_STATIC_PAGE}"
 
         return response
+
+
+class ActivateUserLocaleMiddleware(MiddlewareMixin):
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def process_view(self, request, view_func, *view_args, **view_kwargs):
+        # Check if the 'django_language' cookie is not set
+        if not request.COOKIES.get("django_language"):
+            if request.user.is_authenticated:
+                translation.activate(request.user.locale)

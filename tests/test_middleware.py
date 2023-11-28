@@ -402,3 +402,37 @@ def test_pdb_negative_cache_ratelimit(mock_resolve, http_status_code, expected):
         else:
             assert response.status_code == 429
             assert response.headers.get("X-Throttled-Response") == "True"
+
+
+class ActivateUserLocaleMiddlewareTests(APITestCase):
+    """
+    Test case for ActivateUserLocaleMiddleware class
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create(username="test_user")
+        self.user.set_password("test_user")
+        self.user.locale = "en"
+        self.user.save()
+        self.client.force_login(self.user)
+        self.language_codes = [code for code, _ in settings.LANGUAGES if code != "oc"]
+
+    def test_django_language_cookies_set(self):
+        for language in self.language_codes:
+            self.client.cookies["django_language"] = language
+            request = self.client.get("/")
+            content = request.content.decode("utf-8")
+            self.assertIn("django_language", self.client.cookies)
+            self.assertIn(f'<option value="{language}" selected>', content)
+            self.assertEqual(request.status_code, 200)
+
+    def test_django_language_user_locale(self):
+        for language in self.language_codes:
+            self.user.locale = language
+            self.user.save()
+            request = self.client.get("/")
+            content = request.content.decode("utf-8")
+            self.assertNotIn("django_language", self.client.cookies)
+            self.assertIn(f'<option value="{language}" selected>', content)
+            self.assertEqual(request.status_code, 200)

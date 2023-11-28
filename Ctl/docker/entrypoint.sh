@@ -63,7 +63,7 @@ case "$1" in
     ;;
   "/bin/sh" )
     echo dropping to shell
-    exec /bin/sh
+    exec $@
     ;;
   "makemessages" | "compilemessages" )
     cd /mnt

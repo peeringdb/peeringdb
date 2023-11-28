@@ -360,3 +360,14 @@ def social_media_link(identifier, service):
         )
 
     return identifier
+
+
+@register.filter
+def ix_routeservers(ix):
+    return ix.ixlan.netixlan_set_active.filter(is_rs_peer=True).count()
+
+
+@register.filter
+def prefix(ix):
+    prefixes = ix.ixlan.ixpfx_set_active
+    return prefixes

@@ -59,7 +59,10 @@ RATELIMITS = {
 GUEST_GROUP_ID = 1
 USER_GROUP_ID = 2
 WHOOSH_STORAGE = "ram"
+ELASTICSEARCH_DSL_AUTOSYNC = False
+ELASTICSEARCH_DSL_AUTO_REFRESH = False
 IXF_REMOVE_STALE_NETIXLAN = True
+
 CACHES["negative"] = {
     "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     "LOCATION": "negative",

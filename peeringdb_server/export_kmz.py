@@ -7,12 +7,15 @@ from django.utils.html import escape
 from simplekml import Kml
 
 
-def collect_exchanges():
+def collect_exchanges(path=None):
     """
     This function collects all the exchanges and relates them to facilities.
     """
 
-    cached_ix_path = f"{settings.API_CACHE_ROOT}/ix-1.json"
+    if not path:
+        path = settings.API_CACHE_ROOT
+
+    cached_ix_path = f"{path}/ix-1.json"
     # relate ix to facilities
     mapping = {}
     with open(cached_ix_path) as file:
@@ -25,12 +28,15 @@ def collect_exchanges():
     return mapping
 
 
-def collect_networks():
+def collect_networks(path=None):
     """
     This function collects all the networks and relates them to facilities.
     """
 
-    cached_net_path = f"{settings.API_CACHE_ROOT}/net-2.json"
+    if not path:
+        path = settings.API_CACHE_ROOT
+
+    cached_net_path = f"{path}/net-2.json"
     # relate net to facilities
     mapping = {}
     with open(cached_net_path) as file:
@@ -44,12 +50,14 @@ def collect_networks():
     return mapping
 
 
-def collect_carriers():
+def collect_carriers(path=None):
     """
     This function collects all the carriers and relates them to facilities.
     """
+    if not path:
+        path = settings.API_CACHE_ROOT
 
-    cached_carrier_path = f"{settings.API_CACHE_ROOT}/carrier-2.json"
+    cached_carrier_path = f"{path}/carrier-2.json"
 
     # relate carrier to facilities
     mapping = {}
@@ -64,7 +72,7 @@ def collect_carriers():
     return mapping
 
 
-def fac_export_kmz(limit=None):
+def fac_export_kmz(limit=None, path=None):
     """
     This function exports facility data to a KMZ file.
     It reads the facility data from a JSON file, creates a KML object, and adds points to a folder in the KML.
@@ -72,11 +80,14 @@ def fac_export_kmz(limit=None):
     The KML is then saved as a KMZ file.
     """
 
-    cached_fac_path = f"{settings.API_CACHE_ROOT}/fac-0.json"
+    if not path:
+        path = settings.API_CACHE_ROOT
 
-    ix_fac = collect_exchanges()
-    net_fac = collect_networks()
-    carrier_fac = collect_carriers()
+    cached_fac_path = f"{path}/fac-0.json"
+
+    ix_fac = collect_exchanges(path=path)
+    net_fac = collect_networks(path=path)
+    carrier_fac = collect_carriers(path=path)
 
     with open(cached_fac_path) as file:
         data = json.load(file)
@@ -96,7 +107,6 @@ def fac_export_kmz(limit=None):
             )
 
             for key, value in fac.items():
-
                 if key in exclude_keys:
                     continue
 
@@ -128,4 +138,4 @@ def fac_export_kmz(limit=None):
                 displayname="Carriers",
             )
 
-    kml.savekmz(settings.KMZ_EXPORT_FILE)
+    kml.savekmz(f"{path}/peeringdb.kmz")

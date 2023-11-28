@@ -11,6 +11,7 @@ Special api filtering implementation should be done through the `prepare_query`
 method.
 """
 
+import datetime
 import ipaddress
 import re
 
@@ -648,6 +649,11 @@ class ModelSerializer(serializers.ModelSerializer):
         # kwargs: {u'context': {u'view': <peeringdb.rest.NetworkViewSet object
         # at 0x7fa5604e8410>, u'request': <rest_framework.request.Request
         # object at 0x7fa5604e86d0>, u'format': None}}
+        for field_name, field in self.fields.items():
+            if isinstance(field, serializers.DateTimeField):
+                self.fields[field_name] = RemoveMillisecondsDateTimeField(
+                    read_only=True
+                )
 
         try:
             data = args[0]
@@ -1489,6 +1495,13 @@ class SocialMediaSerializer(serializers.Serializer):
 
     class Meta:
         fields = ["service", "identifier"]
+
+
+class RemoveMillisecondsDateTimeField(serializers.DateTimeField):
+    def to_representation(self, value):
+        if value is not None and isinstance(value, datetime.datetime):
+            value = value.replace(microsecond=0)
+        return super().to_representation(value)
 
 
 # serializers get their own ref_tag in case we want to define different types
@@ -2481,7 +2494,7 @@ class NetworkSerializer(ModelSerializer):
     )
 
     rir_status = serializers.CharField(default="", read_only=True)
-    rir_status_updated = serializers.DateTimeField(default=None, read_only=True)
+    rir_status_updated = RemoveMillisecondsDateTimeField(default=None, read_only=True)
 
     social_media = SocialMediaSerializer(required=False, many=True)
 
@@ -3003,7 +3016,7 @@ class InternetExchangeSerializer(ModelSerializer):
     # suggest = serializers.BooleanField(required=False, write_only=True)
 
     ixf_net_count = serializers.IntegerField(read_only=True)
-    ixf_last_import = serializers.DateTimeField(read_only=True)
+    ixf_last_import = RemoveMillisecondsDateTimeField(read_only=True)
 
     website = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     social_media = SocialMediaSerializer(required=False, many=True)

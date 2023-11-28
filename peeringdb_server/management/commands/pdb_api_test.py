@@ -463,6 +463,34 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     @classmethod
+    def extract_timestamps(self, data):
+        timestamps = []
+
+        if isinstance(data, dict):
+            fields_to_check = [
+                "created",
+                "updated",
+                "rir_status_updated",
+                "ixf_import_request",
+                "ixf_last_import",
+            ]
+
+            for field in fields_to_check:
+                if field in data and data[field]:
+                    timestamps.append(data[field])
+
+            for key, value in data.items():
+                timestamps.extend(self.extract_timestamps(value))
+
+        elif isinstance(data, list):
+            for item in data:
+                timestamps.extend(self.extract_timestamps(item))
+
+        return timestamps
+
+    ##########################################################################
+
+    @classmethod
     def serializer_related_fields(cls, serializer_class):
         """
         Returns declared relation fields on the provided serializer class.
@@ -507,6 +535,8 @@ class TestJSON(unittest.TestCase):
         if hasattr(self, "make_data_%s" % typ):
             msg = "data integrity failed on key '%s'"
             func = getattr(self, "make_data_%s" % typ)
+            for timestamp in self.extract_timestamps(data):
+                self.assertTrue(timestamp.endswith("Z") and "." not in timestamp)
             for k, v in list(func().items()):
                 if k in ignore:
                     continue

@@ -4,9 +4,10 @@ from django.core.management import call_command
 from django.test import TestCase
 
 import peeringdb_server.models as models
+import peeringdb_server.search as search
 
 
-class VerifiedUpdateTestCase(TestCase):
+class SearchV2TestCase(TestCase):
     @classmethod
     def setUpTestData(self):
         call_command("pdb_generate_test_data", limit=2, commit=True)
@@ -47,6 +48,12 @@ class VerifiedUpdateTestCase(TestCase):
                         hits["_source"].update({"asn": obj.asn})
                 search_result["hits"]["hits"].append(hits)
             setattr(self, f"{model._handleref.tag}_result", search_result)
+
+    def setUp(self):
+        search.ELASTICSEARCH_URL = "https://test:9200"
+
+    def tearDown(self):
+        search.ELASTICSEARCH_URL = ""
 
     @patch("elasticsearch.Elasticsearch.search")
     def test_search_ix(self, mock_search):

@@ -215,7 +215,7 @@ class Command(BaseCommand):
 
         if options.get("gen_kmz"):
             print("Generating kmz file")
-            fac_export_kmz()
+            fac_export_kmz(path=output_dir)
 
         end_time = time.time()
 
