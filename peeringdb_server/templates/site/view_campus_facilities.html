@@ -1,0 +1,114 @@
+{% load util %}
+{% load i18n %}
+
+<div class="list"
+     data-sort-container=".scrollable"
+     data-sort-row=".row"
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:campus">
+
+     <!-- FACILITIES -->
+
+     <div class="list"
+          id="api-listing-facility"
+          data-sort-container=".scrollable"
+          data-sort-row=".row.item"
+
+          data-edit-module="api_listing"
+          data-edit-group="#view"
+          data-edit-target="api:facility">
+       <div class="row">
+         <div class="col-6 col-sm-8 col-md-8">
+          <h5>{% trans "Facilities" %}</h5>
+         </div>
+         <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+          <input type="text" placeholder="{% trans 'Filter' %}" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
+         </div>
+       </div>
+       <div class="row header align-items-center">
+        <div class="col-6 col-sm-6 col-md-4">
+          <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
+        </div>
+        <div class="col-3 col-sm-3 col-md-3">
+          <div data-sort-target=".country">{% trans "Country" %}</div>
+        </div>
+        <div class="col-3 col-sm-3 col-md-3">
+          <div data-sort-target=".city">{% trans "City" %}</div>
+        </div>
+        <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
+         <input type="text" placeholder="{% trans 'Filter' %}" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
+        </div>
+        </div>
+
+        <div class="scrollable"
+        id="list-facilities"
+        data-edit-component="list"
+        data-edit-template="campusfac-item">
+
+        <div class="empty-result">
+          <div class="message">{% trans "No filter matches." %}</div>
+          <div class="help">{% trans "You may filter by" %} <b>{% trans "Facility" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
+        </div>
+
+        {% for f in data.facilities %}
+        {% if f.status == "ok" or permissions.can_create %}
+          <div class="row item" data-edit-id="{{ f.id }}" data-edit-label="{% trans 'Facility link' %}: {{ f.name }}">
+            <div class="editable payload">
+              <div data-edit-name="campus_id">{{ f.campus_id }}</div>
+              <div data-edit-name="fac_id">{{ f.id }}</div>
+            </div>
+            <div class="col-6 col-sm-6 col-md-4">
+              {% if permissions.can_delete %}
+              <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove_campus_facility"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans 'Remove this carrier from your facility.' %}">&times;</a>
+              {% endif %}
+              <div class="facility" data-sort-value="{{ f.name|lower }}" data-filter-value="{{ f.name }}">
+                <a href="/{{ f|ref_tag }}/{{ f.id }}">{{ f.name }}</a>
+              </div>
+              <div class="status">{% if f.status == "pending" %}{% trans "Pending" %}{% endif %}</div>
+            </div>
+            <div class="col-3 col-sm-3 col-md-3">
+              <div class="country" data-sort-value="{{ f.country.name|lower }}" data-filter-value="{{ f.country.name }}">{{ f.country.name }}</div>
+            </div>
+            <div class="col-3 col-sm-3 col-md-3">
+              <div class="city" data-sort-value="{{ f.city }}" data-filter-value="{{ f.city }}">{{ f.city }}</div>
+            </div>
+          </div>
+        {% endif %}
+        {% endfor %}
+
+       </div>
+     </div>
+     {% if permissions.can_create %}
+    <!-- ADD CAMPUS FACILITY  -->
+    <div class="editable list"
+        data-edit-toggled="edit"
+        data-edit-component="add">
+
+        <div class="payload">
+          <div data-edit-name="campus_id">{{ instance.id }}</div>
+        </div>
+
+        <div class="row view_row">
+          <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Facility" %}</div>
+          <div class="view_value col-8 col-sm-7 col-md-8">
+            <div data-edit-type="autocomplete"
+                  data-edit-autocomplete="fac/org/{{ instance.org.id }}"
+                  data-edit-name="fac_id">
+            </div>
+            <div data-autocomplete-confirm></div>
+          </div>
+        </div>
+
+        <div class="row marg-top">
+          <div class="col-12 right">
+            {% if permissions.can_delete %}
+              <a class="btn btn-default" data-edit-action="add_campus_facility">{% trans "Add Facility" %}</a>
+            {% endif %}
+          </div>
+        </div>
+    </div>
+    <!-- END ADD -->
+    {% endif %}
+
+  </div>

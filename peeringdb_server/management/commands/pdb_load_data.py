@@ -2,6 +2,7 @@
 Load initial data from another peeringdb instance using the REST API.
 """
 import logging
+import os
 
 from confu.schema import apply_defaults
 from django.conf import settings
@@ -69,6 +70,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        settings.AUTO_UPDATE_RIR_STATUS = False
         if settings.RELEASE_ENV != "dev" and not settings.TUTORIAL_MODE:
             self.stdout.write(
                 "Command can only be run on dev instances and instances "
@@ -164,3 +166,4 @@ class Command(BaseCommand):
             client.fetcher._log.setLevel(logging.DEBUG)
 
         client.updater.update_all(resource.all_resources(), since=None)
+        settings.AUTO_UPDATE_RIR_STATUS = True

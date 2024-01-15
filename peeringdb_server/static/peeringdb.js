@@ -3716,6 +3716,7 @@ twentyc.data.loaders.assign("enum/regions", "data");
 twentyc.data.loaders.assign("enum/org_groups", "data");
 twentyc.data.loaders.assign("enum/media", "data");
 twentyc.data.loaders.assign("enum/net_types", "data");
+twentyc.data.loaders.assign("enum/net_types_multi_choice", "data");
 twentyc.data.loaders.assign("enum/net_types_trunc", "data");
 twentyc.data.loaders.assign("enum/net_types_advs", "data");
 twentyc.data.loaders.assign("enum/ratios", "data");

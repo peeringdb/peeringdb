@@ -5,6 +5,8 @@ from django.db import transaction
 from django.utils import timezone
 from rdap.assignment import RIRAssignmentLookup
 
+from peeringdb_server.deskpro import ticket_queue_rir_status_update
+from peeringdb_server.inet import rir_status_is_ok
 from peeringdb_server.models import Network
 
 
@@ -69,15 +71,28 @@ class Command(BaseCommand):
         reversion.set_comment("pdb_rir_status script")
 
         for net in networks:
-            status = rir.get_status(net.asn)
+            new_rir_status = rir.get_status(net.asn)
+            old_rir_status = net.rir_status
 
-            if status in ["assigned", "allocated"]:
-                status = "ok"
-            else:
-                status = None
-
-            self.log(f"{net.name} ({net.asn}) RIR status: {status}")
-            if self.commit and (net.rir_status != status or not net.rir_status_updated):
-                net.rir_status = status
-                net.rir_status_updated = now
-                net.save()
+            if rir_status_is_ok(old_rir_status) and old_rir_status != new_rir_status:
+                self.log(f"{net.name} ({net.asn}) RIR status: {new_rir_status}")
+                if self.commit:
+                    net.rir_status = new_rir_status
+                    net.rir_status_updated = now
+                    net.save(update_fields=["rir_status", "rir_status_updated"])
+            elif not rir_status_is_ok(old_rir_status):
+                if rir_status_is_ok(new_rir_status):
+                    self.log(f"{net.name} ({net.asn}) RIR status: {new_rir_status}")
+                    if self.commit:
+                        ticket_queue_rir_status_update(net)
+                else:
+                    notok_since = now - net.rir_status_updated
+                    if (
+                        notok_since.total_seconds()
+                        >= pdb_settings.KEEP_RIR_STATUS * 86400
+                    ):
+                        self.log(
+                            f"{net.name} ({net.asn}) has been RIR unassigned for too long, deleting"
+                        )
+                        if self.commit:
+                            net.delete()

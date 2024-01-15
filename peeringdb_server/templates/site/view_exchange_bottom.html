@@ -87,22 +87,25 @@
      data-edit-group="#view"
      data-edit-target="api:ixfac">
   <div class="row">
-    <div class="col-sm-6 col-sm-8 col-md-8">
+    <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Local Facilities" %}</h5>
     </div>
-    <div class="col-sm-6 col-sm-4 col-md-4 filter">
-      <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-facilities" class="form-control" />
+    <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+      <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
     </div>
   </div>
   <div class="row header">
-    <div class="col-sm-6 col-sm-6 col-md-6">
+    <div class="col-6 col-sm-6 col-md-4">
       <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
     </div>
-    <div class="col-sm-3 col-sm-3 col-md-3">
+    <div class="col-3 col-sm-3 col-md-3">
       <div data-sort-target=".country">{% trans "Country" %}</div>
     </div>
-    <div class="col-sm-3 col-sm-3 col-md-3">
+    <div class="col-3 col-sm-3 col-md-3">
       <div data-sort-target=".city">{% trans "City" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2" id="filter-web">
+      <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-facilities" class="form-control" />
     </div>
   </div>
 
@@ -123,7 +126,7 @@
         <div data-edit-name="ix_id">{{ f.ix_id }}</div>
         <div data-edit-name="fac_id">{{ f.facility_id }}</div>
       </div>
-      <div class="col-sm-6 col-sm-6 col-md-6">
+      <div class="col-6 col-sm-6 col-md-4">
         {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
         {% endif %}
@@ -131,10 +134,10 @@
           <a href="/{{ f.facility|ref_tag }}/{{ f.facility.id }}">{{ f.facility.name }}</a>
         </div>
       </div>
-      <div class="col-sm-3 col-sm-3 col-md-3">
+      <div class="col-3 col-sm-3 col-md-3">
         <div class="country" data-sort-value="{{ f.facility.country.name|lower }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
       </div>
-      <div class="col-sm-3 col-sm-3 col-md-3">
+      <div class="col-3 col-sm-3 col-md-3">
         <div class="city" data-sort-value="{{ f.facility.city }}" data-filter-value="{{ f.facility.city }}">{{ f.facility.city }}</div>
       </div>
     </div>

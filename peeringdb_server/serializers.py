@@ -33,7 +33,13 @@ from django_grainy.exceptions import PermissionDenied
 # from drf_toolbox import serializers
 from django_handleref.rest.serializers import HandleRefSerializer
 from django_inet.rest import IPAddressField, IPNetworkField
-from django_peeringdb.const import AVAILABLE_VOLTAGE, MTUS, SOCIAL_MEDIA_SERVICES
+from django_peeringdb.const import (
+    AVAILABLE_VOLTAGE,
+    MTUS,
+    NET_TYPES,
+    NET_TYPES_MULTI_CHOICE,
+    SOCIAL_MEDIA_SERVICES,
+)
 from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -81,6 +87,7 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.validators import (
     validate_address_space,
+    validate_asn_prefix,
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_irr_as_set,
@@ -2429,6 +2436,26 @@ class NetworkFacilitySerializer(ModelSerializer):
         return data
 
 
+class LegacyInfoTypeField(serializers.Field):
+    def to_representation(self, obj):
+        return obj
+
+    def to_internal_value(self, data):
+        if not data:
+            return []
+        return [data]
+
+    def validate(self, data):
+        if data == "Not Disclosed" or not data:
+            return None
+        if data not in NET_TYPES:
+            raise serializers.ValidationError(
+                _("Invalid value for info_type: %(value)s"),
+                code="invalid",
+                params={"value": data},
+            )
+
+
 class NetworkSerializer(ModelSerializer):
     # TODO override these so they dn't repeat network ID, or add a kwarg to
     # disable fields
@@ -2500,6 +2527,12 @@ class NetworkSerializer(ModelSerializer):
 
     # irr_as_set = serializers.CharField(validators=[validate_irr_as_set])
 
+    info_types = serializers.MultipleChoiceField(
+        choices=NET_TYPES_MULTI_CHOICE, required=False, allow_null=True
+    )
+
+    info_type = LegacyInfoTypeField(required=False, allow_null=True)
+
     class Meta:
         model = Network
         depth = 1
@@ -2517,6 +2550,7 @@ class NetworkSerializer(ModelSerializer):
             "route_server",
             "irr_as_set",
             "info_type",
+            "info_types",
             "info_prefixes4",
             "info_prefixes6",
             "info_traffic",
@@ -2622,6 +2656,60 @@ class NetworkSerializer(ModelSerializer):
         return qset, filters
 
     @classmethod
+    def finalize_query_params(cls, qset, query_params: dict):
+
+        # legacy info_type field needs to be converted to info_types
+        # we do this by creating an annotation based on the info_types split by ','
+
+        update_params = {}
+
+        from django.db.models import Q
+
+        for key, value in query_params.items():
+
+            if key == "info_type":
+
+                # handle direct info_type filter by converting to info_types
+                # and doing a direct filter with the same value against
+                # info_types checking for startswith, contains, or endswith taking
+                # the delimiter into account
+
+                query = (
+                    Q(info_types__istartswith=value)
+                    | Q(info_types__icontains=f",{value},")
+                    | Q(info_types__iendswith=f",{value}")
+                )
+                qset = qset.filter(query)
+
+            elif key == "info_type__contains":
+
+                # info_type__contains filter can simply be converted to info_types
+
+                update_params["info_types__contains"] = value
+            elif key == "info_type__in" or key == "info_types__in":
+
+                # info_types__in will filter on the info_types field
+                # doing an overlap check against the provided values
+
+                query = Q()
+                for _value in value.split(","):
+                    query |= Q(info_types__icontains=_value.strip())
+                qset = qset.filter(query)
+
+            elif key == "info_type__startswith" or key == "info_types__startswith":
+
+                # info_type__startswith filter can simply be converted to info_types
+
+                query = Q(info_types__istartswith=value) | Q(
+                    info_types__icontains=f",{value}"
+                )
+                qset = qset.filter(query)
+            else:
+                update_params[key] = value
+
+        return (qset, update_params)
+
+    @classmethod
     def is_unique_query(cls, request):
         if "asn" in request.GET:
             return True
@@ -2634,11 +2722,13 @@ class NetworkSerializer(ModelSerializer):
         # this happens here so it is done before the validators run
         if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
+        asn = validate_asn_prefix(data.get("asn"))
+        data["asn"] = asn
 
         # if an asn exists already but is currently deleted, fail
         # with a specific error message indicating it (#288)
 
-        if Network.objects.filter(asn=data.get("asn"), status="deleted").exists():
+        if Network.objects.filter(asn=asn, status="deleted").exists():
             errmsg = _("Network has been deleted. Please contact {}").format(
                 settings.DEFAULT_FROM_EMAIL
             )
@@ -2709,14 +2799,40 @@ class NetworkSerializer(ModelSerializer):
 
         return super().create(validated_data)
 
-    def to_representation(self, data):
-        # When an ix is created we want to add the ixlan_id and ixpfx_id
-        # that were created to the representation (see #609)
+    def validate_legacy_info_type(self, instance, validated_data):
+        # Handle a write to the legacy info_type field (keep API backwards compatible)
+        #
+        # we still need to be able to handle writes to the legacy
+        # info_type field so we need to pop it out of the validated
+        legacy_info_type = validated_data.pop("info_type", None)
+        if legacy_info_type:
+            validated_data["info_types"] = legacy_info_type
 
+    def to_representation(self, data):
         representation = super().to_representation(data)
 
-        if isinstance(representation, dict) and not representation.get("website"):
-            representation["website"] = data.org.website
+        if isinstance(representation, dict):
+            if not representation.get("website"):
+                representation["website"] = data.org.website
+
+            instance = data
+
+            # django-rest-framework multiplechoicefield maintains
+            # a set of values and thus looses sorting.
+            #
+            # we always want to return values sorted by choice
+            # definition order
+
+            if instance.info_types:
+                sorted_info_types = sorted([x for x in instance.info_types])
+                representation["info_types"] = sorted_info_types
+
+            # legacy info_type field informed from info_types
+            # using the first value if it exists else empty string
+
+            representation["info_type"] = (
+                list(instance.info_types)[0] if instance.info_types else ""
+            )
 
         return representation
 
@@ -2771,6 +2887,7 @@ class NetworkSerializer(ModelSerializer):
         org_website = data.get("org").website
         validate_social_media(social_media)
         validate_website_override(website, org_website)
+        self.validate_legacy_info_type(self.instance, data)
         return data
 
 

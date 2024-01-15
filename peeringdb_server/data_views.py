@@ -154,6 +154,7 @@ def enum(request, name):
         "SCOPES_TRUNC",
         "SCOPES_ADVS",
         "NET_TYPES",
+        "NET_TYPES_MULTI_CHOICE",
         "NET_TYPES_TRUNC",
         "NET_TYPES_ADVS",
         "POLICY_GENERAL",

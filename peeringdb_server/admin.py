@@ -45,6 +45,7 @@ from django.utils.translation import gettext_lazy as _
 from django_grainy.admin import UserPermissionInlineAdmin
 from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
 from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_peeringdb.const import NET_TYPES_MULTI_CHOICE
 from django_security_keys.models import SecurityKey
 from import_export.admin import ExportMixin
 from rest_framework_api_key.admin import APIKeyModelAdmin
@@ -1535,6 +1536,13 @@ class NetworkAdminForm(StatusForm):
     info_prefixes4 = baseForms.IntegerField(required=False, initial=0)
     info_prefixes6 = baseForms.IntegerField(required=False, initial=0)
 
+    # info_types should be multiple choice
+    info_types = baseForms.MultipleChoiceField(
+        choices=NET_TYPES_MULTI_CHOICE,
+        widget=baseForms.CheckboxSelectMultiple,
+        required=False,
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         fk_handleref_filter(self, "org")
@@ -1575,6 +1583,7 @@ class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin):
         "rir_status",
         "iso_rir_status_updated",
         "org_website",
+        "info_type",
     )
     form = NetworkAdminForm
 

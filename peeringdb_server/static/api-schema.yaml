@@ -92,7 +92,7 @@ paths:
           Filter results by matching a value against this field.
 
 
-          `48 VDC`, `120 VAC`, `208 VAC`, `240 VAC`, `480 VAC`
+          `48 VDC`, `400 VAC`, `480 VAC`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
@@ -1073,9 +1073,7 @@ paths:
                   items:
                     enum:
                     - 48 VDC
-                    - 120 VAC
-                    - 208 VAC
-                    - 240 VAC
+                    - 400 VAC
                     - 480 VAC
                     type: string
                   nullable: true
@@ -1601,9 +1599,7 @@ paths:
                   items:
                     enum:
                     - 48 VDC
-                    - 120 VAC
-                    - 208 VAC
-                    - 240 VAC
+                    - 400 VAC
                     - 480 VAC
                     type: string
                   nullable: true
@@ -2084,9 +2080,7 @@ paths:
                   items:
                     enum:
                     - 48 VDC
-                    - 120 VAC
-                    - 208 VAC
-                    - 240 VAC
+                    - 400 VAC
                     - 480 VAC
                     type: string
                   nullable: true
@@ -3649,7 +3643,7 @@ paths:
           Filter results by matching a value against this field.
 
 
-          `48 VDC`, `120 VAC`, `208 VAC`, `240 VAC`, `480 VAC`
+          `48 VDC`, `400 VAC`, `480 VAC`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
@@ -5909,9 +5903,7 @@ paths:
                         items:
                           enum:
                           - 48 VDC
-                          - 120 VAC
-                          - 208 VAC
-                          - 240 VAC
+                          - 400 VAC
                           - 480 VAC
                           type: string
                         nullable: true
@@ -7423,9 +7415,7 @@ paths:
                         items:
                           enum:
                           - 48 VDC
-                          - 120 VAC
-                          - 208 VAC
-                          - 240 VAC
+                          - 400 VAC
                           - 480 VAC
                           type: string
                         nullable: true
@@ -8884,9 +8874,7 @@ paths:
                         items:
                           enum:
                           - 48 VDC
-                          - 120 VAC
-                          - 208 VAC
-                          - 240 VAC
+                          - 400 VAC
                           - 480 VAC
                           type: string
                         nullable: true
@@ -9995,7 +9983,7 @@ paths:
           Filter results by matching a value against this field.
 
 
-          `48 VDC`, `120 VAC`, `208 VAC`, `240 VAC`, `480 VAC`
+          `48 VDC`, `400 VAC`, `480 VAC`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
@@ -16763,7 +16751,7 @@ paths:
           Filter results by matching a value against this field.
 
 
-          `48 VDC`, `120 VAC`, `208 VAC`, `240 VAC`, `480 VAC`
+          `48 VDC`, `400 VAC`, `480 VAC`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
@@ -20280,9 +20268,7 @@ paths:
                         items:
                           enum:
                           - 48 VDC
-                          - 120 VAC
-                          - 208 VAC
-                          - 240 VAC
+                          - 400 VAC
                           - 480 VAC
                           type: string
                         nullable: true
@@ -21076,9 +21062,7 @@ paths:
                               items:
                                 enum:
                                 - 48 VDC
-                                - 120 VAC
-                                - 208 VAC
-                                - 240 VAC
+                                - 400 VAC
                                 - 480 VAC
                                 type: string
                               nullable: true
@@ -22299,9 +22283,7 @@ paths:
                               items:
                                 enum:
                                 - 48 VDC
-                                - 120 VAC
-                                - 208 VAC
-                                - 240 VAC
+                                - 400 VAC
                                 - 480 VAC
                                 type: string
                               nullable: true
@@ -23611,9 +23593,7 @@ paths:
                         items:
                           enum:
                           - 48 VDC
-                          - 120 VAC
-                          - 208 VAC
-                          - 240 VAC
+                          - 400 VAC
                           - 480 VAC
                           type: string
                         nullable: true
@@ -24407,9 +24387,7 @@ paths:
                               items:
                                 enum:
                                 - 48 VDC
-                                - 120 VAC
-                                - 208 VAC
-                                - 240 VAC
+                                - 400 VAC
                                 - 480 VAC
                                 type: string
                               nullable: true
@@ -25630,9 +25608,7 @@ paths:
                               items:
                                 enum:
                                 - 48 VDC
-                                - 120 VAC
-                                - 208 VAC
-                                - 240 VAC
+                                - 400 VAC
                                 - 480 VAC
                                 type: string
                               nullable: true
@@ -26893,9 +26869,7 @@ paths:
                         items:
                           enum:
                           - 48 VDC
-                          - 120 VAC
-                          - 208 VAC
-                          - 240 VAC
+                          - 400 VAC
                           - 480 VAC
                           type: string
                         nullable: true
@@ -27689,9 +27663,7 @@ paths:
                               items:
                                 enum:
                                 - 48 VDC
-                                - 120 VAC
-                                - 208 VAC
-                                - 240 VAC
+                                - 400 VAC
                                 - 480 VAC
                                 type: string
                               nullable: true
@@ -28912,9 +28884,7 @@ paths:
                               items:
                                 enum:
                                 - 48 VDC
-                                - 120 VAC
-                                - 208 VAC
-                                - 240 VAC
+                                - 400 VAC
                                 - 480 VAC
                                 type: string
                               nullable: true
@@ -30316,9 +30286,7 @@ paths:
                         items:
                           enum:
                           - 48 VDC
-                          - 120 VAC
-                          - 208 VAC
-                          - 240 VAC
+                          - 400 VAC
                           - 480 VAC
                           type: string
                         nullable: true
@@ -30904,9 +30872,7 @@ paths:
                         items:
                           enum:
                           - 48 VDC
-                          - 120 VAC
-                          - 208 VAC
-                          - 240 VAC
+                          - 400 VAC
                           - 480 VAC
                           type: string
                         nullable: true
@@ -31445,9 +31411,7 @@ paths:
                         items:
                           enum:
                           - 48 VDC
-                          - 120 VAC
-                          - 208 VAC
-                          - 240 VAC
+                          - 400 VAC
                           - 480 VAC
                           type: string
                         nullable: true
@@ -34244,9 +34208,7 @@ paths:
                         items:
                           enum:
                           - 48 VDC
-                          - 120 VAC
-                          - 208 VAC
-                          - 240 VAC
+                          - 400 VAC
                           - 480 VAC
                           type: string
                         nullable: true
@@ -35474,9 +35436,7 @@ components:
           items:
             enum:
             - 48 VDC
-            - 120 VAC
-            - 208 VAC
-            - 240 VAC
+            - 400 VAC
             - 480 VAC
             type: string
           nullable: true
@@ -36400,9 +36360,7 @@ components:
                 items:
                   enum:
                   - 48 VDC
-                  - 120 VAC
-                  - 208 VAC
-                  - 240 VAC
+                  - 400 VAC
                   - 480 VAC
                   type: string
                 nullable: true
@@ -39072,9 +39030,7 @@ components:
                 items:
                   enum:
                   - 48 VDC
-                  - 120 VAC
-                  - 208 VAC
-                  - 240 VAC
+                  - 400 VAC
                   - 480 VAC
                   type: string
                 nullable: true
@@ -39865,9 +39821,7 @@ components:
                       items:
                         enum:
                         - 48 VDC
-                        - 120 VAC
-                        - 208 VAC
-                        - 240 VAC
+                        - 400 VAC
                         - 480 VAC
                         type: string
                       nullable: true
@@ -41068,9 +41022,7 @@ components:
                       items:
                         enum:
                         - 48 VDC
-                        - 120 VAC
-                        - 208 VAC
-                        - 240 VAC
+                        - 400 VAC
                         - 480 VAC
                         type: string
                       nullable: true
@@ -41872,9 +41824,7 @@ components:
                 items:
                   enum:
                   - 48 VDC
-                  - 120 VAC
-                  - 208 VAC
-                  - 240 VAC
+                  - 400 VAC
                   - 480 VAC
                   type: string
                 nullable: true

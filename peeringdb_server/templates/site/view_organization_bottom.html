@@ -1,0 +1,62 @@
+{% load util %}
+{% load i18n %}
+
+{% if data.campuses or permissions.can_create_campus %}
+<div class="list"
+     id="api-listing-campus"
+     data-sort-container=".scrollable"
+     data-sort-row=".row.item"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:campus">
+  <div class="row">
+    <div class="col-6 col-sm-8 col-md-8">
+      <h5>{% trans "Campuses" %}</h5>
+    </div>
+    <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+      <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-campuses" class="form-control" />
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-12 col-sm-12 col-md-10">
+      <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
+      <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-campuses" class="form-control" />
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-campuses"
+       data-edit-component="list"
+       data-edit-template="campus-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b></div>
+    </div>
+
+    {% for n in data.campuses %}
+    <div class="row item status-{{ n.status }}" data-edit-id="{{ n.id }}" data-edit-label="{{ n.name }}">
+      <div class="col-12 col-sm-12 col-md-10">
+        {% if permissions.can_delete_campus %}
+        <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+        {% endif %}
+        <div class="name" data-sort-value="{{ n.name|lower }}" data-filter-value="{{ n.name }}">
+          <a {% if n.status != "deleted" %} href="/campus/{{ n.id }}" {% else %} style="text-decoration: none !important;" {% endif %}>{{ n.name }}</a>
+        </div>
+        {% if permissions.can_edit and n.status != "ok" %}
+        <div>
+          {{ n.status }}
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+</div>
+{% endif %}

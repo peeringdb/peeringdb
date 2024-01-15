@@ -155,6 +155,7 @@ BASE_ENV = {
     "TUTORIAL_MODE": settings.TUTORIAL_MODE,
     "RELEASE_ENV": settings.RELEASE_ENV,
     "SHOW_AUTO_PROD_SYNC_WARNING": settings.SHOW_AUTO_PROD_SYNC_WARNING,
+    "DATABASE_LAST_SYNC": dj_settings.DATABASE_LAST_SYNC,
     "GOOGLE_ANALYTICS_ID": dj_settings.GOOGLE_ANALYTICS_ID,
     "KMZ_DOWNLOAD_URL": dj_settings.KMZ_DOWNLOAD_URL,
 }
@@ -1342,8 +1343,6 @@ def view_component(
     if not perms:
         perms = {}
 
-    template = loader.get_template("site/view.html")
-
     env = BASE_ENV.copy()
     env.update(
         {
@@ -1354,12 +1353,28 @@ def view_component(
             "instance": instance,
             "ref_tag": instance._handleref.tag,
             "global_stats": global_stats(),
-            "asset_template_name": "site/view_%s_assets.html" % component,
-            "tools_template_name": "site/view_%s_tools.html" % component,
-            "side_template_name": "site/view_%s_side.html" % component,
-            "bottom_template_name": "site/view_%s_bottom.html" % component,
         }
     )
+    if component == "campus":
+        template = loader.get_template("site/view.html")
+        env.update(
+            {
+                "facilities_template_name": "site/view_%s_facilities.html" % component,
+                "carriers_template_name": "site/view_%s_carriers.html" % component,
+                "exchanges_template_name": "site/view_%s_exchanges.html" % component,
+                "networks_template_name": "site/view_%s_networks.html" % component,
+            }
+        )
+    else:
+        template = loader.get_template("site/view.html")
+        env.update(
+            {
+                "asset_template_name": "site/view_%s_assets.html" % component,
+                "tools_template_name": "site/view_%s_tools.html" % component,
+                "side_template_name": "site/view_%s_side.html" % component,
+                "bottom_template_name": "site/view_%s_bottom.html" % component,
+            }
+        )
 
     update_env_beta_sync_dt(env)
 
@@ -1706,6 +1721,7 @@ def view_facility(request, id):
         campus = None
         campus_name = None
         campus_id = 0
+    campuses = Campus.objects.filter(fac_set=facility, status="ok")
 
     data = {
         "social_media_enum": v2_social_media_services(),
@@ -1713,6 +1729,7 @@ def view_facility(request, id):
         "exchanges": exchanges,
         "peers": peers,
         "carriers": carriers,
+        "campuses": campuses,
         "fields": [
             {
                 "name": "org",
@@ -2028,9 +2045,9 @@ def view_campus(request, id):
         ixfac = ixfac.union(facility.ixfac_set_active, all=False)
         netfac = netfac.union(facility.netfac_set_active, all=False)
         carrierfac = carrierfac.union(facility.carrierfac_set_active, all=False)
-    carriers = objfac_tupple(carrierfac, "carrier")
-    networks = objfac_tupple(netfac, "network")
-    exchanges = objfac_tupple(ixfac, "ix")
+    carriers = objfac_tupple(carrierfac, "carrier", "mixed")
+    networks = objfac_tupple(netfac, "network", "grouped")
+    exchanges = objfac_tupple(ixfac, "ix", "grouped")
     org = data.get("org")
 
     social_media = data.get("social_media")
@@ -2594,13 +2611,12 @@ def view_network(request, id):
                 "value": network_d.get("looking_glass", dismiss),
             },
             {
-                "name": "info_type",
+                "name": "info_types",
                 "type": "list",
-                "data": "enum/net_types",
-                "blank": _("Not Disclosed"),
-                "label": _("Network Type"),
-                "notify_incomplete": True,
-                "value": network_d.get("info_type", dismiss),
+                "multiple": True,
+                "data": "enum/net_types_multi_choice",
+                "label": _("Network Types"),
+                "value": network_d.get("info_types", dismiss),
             },
             {
                 "name": "info_prefixes4",

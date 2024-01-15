@@ -477,7 +477,12 @@ class ModelViewSet(viewsets.ModelViewSet):
         filters = {}
         query_params = self.request.query_params
 
-        for k, v in list(self.request.query_params.items()):
+        if hasattr(self.serializer_class, "finalize_query_params"):
+            qset, query_params = self.serializer_class.finalize_query_params(
+                qset, query_params
+            )
+
+        for k, v in list(query_params.items()):
             if k == "q":
                 continue
 
@@ -564,6 +569,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 # provided search value into a list
                 elif m.group(2) == "in":
                     filters[k] = v.split(",")
+                    print(filters[k])
                 else:
                     filters[k] = v
             elif k in field_names:

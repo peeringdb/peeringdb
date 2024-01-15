@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, validate_email
 from django.utils.translation import gettext_lazy as _
+from rest_framework.exceptions import ValidationError as RestValidationError
 from schema import Schema
 
 import peeringdb_server.models
@@ -520,3 +521,26 @@ def validate_verified_update_data(ref_tag, obj_id, data):
         if value != getattr(obj, field):
             result.update({field: value})
     return True, result
+
+
+def validate_asn_prefix(asn):
+    """
+    Validates a ASN prefix value
+
+    Will raise RestValidationError on failure
+
+    Arguments:
+
+    - asn(`str`)
+
+    Returns:
+
+    - status (`bool`)
+    - validated_value (`int`)
+    """
+    value = str(asn)
+    validated_value = re.match(r"^(asn|as|)(\d+)$", value.lower())
+    if validated_value:
+        return validated_value.group(2)
+    else:
+        raise RestValidationError({"asn": ["ASN contains invalid value"]})

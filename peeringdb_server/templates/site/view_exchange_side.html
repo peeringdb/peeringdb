@@ -8,21 +8,21 @@
     <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Peers at this Exchange Point" %}</h5>
     </div>
-    <div class="col-6 col-sm-4 col-md-4 filter">
-      <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-networks" class="form-control" />
+    <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+      <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-networks" class="form-control" />
     </div>
   </div>
   <div class="row header">
-    <div class="col-6 col-sm-4 col-md-4">
+    <div class="col-3 col-sm-3 col-md-3">
       <div data-sort-target=".peer" data-sort-initial="asc">{% trans "Peer Name" %}</div>
       <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
 
     </div>
-    <div class="col-6 col-sm-3 col-md-3">
+    <div class="col-5 col-sm-5 col-md-4">
       <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
       <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
-    <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
+    <div class="col-2 col-sm-2 col-md-1 d-none d-sm-block">
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
     </div>
     <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
@@ -34,6 +34,9 @@
           {% trans "Policy" %}
           <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
       </div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2" id="filter-web">
+      <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-networks" class="form-control" />
     </div>
   </div>
 
@@ -53,7 +56,7 @@
     {% for x in data.networks %}
 
     <div class="row item {% if x.operational %}operational{% endif %}">
-      <div class="col-4 col-sm-4 col-md-4">
+      <div class="col-3 col-sm-3 col-md-3">
 
         <div class="peer" data-sort-value="{{ x.network.name|lower }}" data-filter-value="{{ x.network.name }}">
           <a href="/{{ x.network|ref_tag }}/{{ x.network.id }}">
@@ -63,14 +66,17 @@
 
           <svg class="not-operational" data-edit-toggled="view" data-bs-toggle="tooltip" title="{% trans "Not operational" %}" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="15px" viewBox="0 0 24 24" width="15px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><g><g><path d="M12,5.99L19.53,19H4.47L12,5.99 M12,2L1,21h22L12,2L12,2z"/><polygon points="13,16 11,16 11,18 13,18"/><polygon points="13,10 11,10 11,15 13,15"/></g></g></g></svg>
         </div>
+        <div class="ip4" data-sort-value="{{ x.ipaddr4|none_blank }} {{ x.ipaddr6|none_blank }}" data-filter-value="{{x.ipaddr4}}">{{ x.ipaddr4|none_blank }}</div>
+
       </div>
-      <div class="col-6 col-sm-3 col-md-3">
-      <div class="asn" data-sort-value="{{ x.asn }}" data-filter-value="{{ x.asn }}">{{ x.asn }}</div>
+      <div class="col-5 col-sm-5 col-md-4">
+        <div class="asn" data-sort-value="{{ x.asn }}" data-filter-value="{{ x.asn }}">{{ x.asn }}</div>
+        <div class="ip6" data-sort-value="{{ x.ipaddr6|none_blank }} {{ x.ipaddr4|none_blank }}" data-filter-value="{{x.ipaddr6}}">{{ x.ipaddr6|none_blank }}</div>
       </div>
-      <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
+      <div class="col-2 col-sm-2 col-md-1 d-none d-sm-block">
         <div class="speed" data-sort-value="{{ x.speed }}" data-filter-value="{{ x.speed|pretty_speed}}">{{ x.speed|pretty_speed }}</div>
       </div>
-      <div class="col-2 col-sm-2 col-md-3 d-none d-sm-block">
+      <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
         <div class="policy" data-filter-value="{{ x.network.policy_general }}">
           {% if x.is_rs_peer %}
             <span alt="RS Peer" title="RS Peer" class="rs-peer-badge">
@@ -80,12 +86,6 @@
 
           {{ x.network.policy_general }}
         </div>
-      </div>
-      <div class="col-12 col-sm-4 col-md-4">
-          <div class="ip4" data-sort-value="{{ x.ipaddr4|none_blank }} {{ x.ipaddr6|none_blank }}" data-filter-value="{{x.ipaddr4}}">{{ x.ipaddr4|none_blank }}</div>
-      </div>
-      <div class="col-12 col-sm-4 col-md-8">
-        <div class="ip6" data-sort-value="{{ x.ipaddr6|none_blank }} {{ x.ipaddr4|none_blank }}" data-filter-value="{{x.ipaddr6}}">{{ x.ipaddr6|none_blank }}</div>
       </div>
 
     </div>
