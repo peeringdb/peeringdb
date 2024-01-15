@@ -114,6 +114,20 @@ def ticket_queue_prefixauto_approve(user, ix, prefix):
     )
 
 
+def ticket_queue_rir_status_update(net):
+    """
+    Queue deskro ticket creation for prefix automation action: create.
+    """
+
+    ticket_queue_email_only(
+        f"[RIR_STATUS] RIR status updated on Network '{net.name}' in '{net.rir_status_updated}'",
+        loader.get_template("email/notify-pdb-admin-rir-status.txt").render(
+            {"ix": net}
+        ),
+        None,
+    )
+
+
 def ticket_queue_asnauto_create(
     user, org, net, rir_data, asn, org_created=False, net_created=False
 ):

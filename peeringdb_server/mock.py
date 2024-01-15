@@ -238,6 +238,9 @@ class Mock:
     def notes_private(self, data, reftag=None):
         return "Private notes"
 
+    def info_types(self, data, reftag=None):
+        return ["Content"]
+
     def info_prefixes4(self, data, reftag=None):
         return 50000
 

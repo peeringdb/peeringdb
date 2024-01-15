@@ -316,6 +316,10 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                         )
 
     def process_response(self, request, response):
+        response["X-Auth-Status"] = (
+            "authenticated" if request.user.is_authenticated else "unauthenticated"
+        )
+        response["X-App-Version"] = settings.PEERINGDB_VERSION
         if hasattr(request, "auth_id"):
             # Sanitizes the auth_id
             request.auth_id = request.auth_id.replace(" ", "_")

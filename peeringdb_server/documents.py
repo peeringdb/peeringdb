@@ -15,6 +15,7 @@ from peeringdb_server.models import (
     Facility,
     InternetExchange,
     Network,
+    NetworkIXLan,
     Organization,
 )
 
@@ -39,6 +40,23 @@ name_analyzer = analyzer(
     tokenizer="keyword",
     filter=["lowercase"],
 )
+
+
+class MultipleChoiceKeywordField(fields.KeywordField):
+    def get_value_from_instance(self, instance, field_value_to_ignore=None):
+        # Retrieve the value of the MultipleChoiceField from the instance
+        value = super().get_value_from_instance(instance, field_value_to_ignore)
+
+        # If the value is a list or a set, convert it to a list of strings
+        if isinstance(value, (list, set)):
+            return list(map(str, value))
+
+        # If the value is a string, assume it's a comma-separated list and split it
+        if isinstance(value, str):
+            return value.split(",")
+
+        # If the value is None or another type, return it as-is
+        return value
 
 
 class StatusMixin:
@@ -83,6 +101,39 @@ class StatusMixin:
                 pass
             else:
                 raise e
+
+
+class IpAddressMixin:
+    def cached_netixlan(self, instance):
+        netixlan_set = NetworkIXLan.objects.none()
+
+        if instance.HandleRef.tag in ["net", "ix"]:
+            if instance.HandleRef.tag == "net":
+                netixlan_set = instance.netixlan_set.filter(status="ok")
+            elif instance.HandleRef.tag == "ix":
+                ixlan_set = instance.ixlan_set.filter(status="ok")
+                netixlan_set = NetworkIXLan.objects.none()
+                for ixlan in ixlan_set:
+                    netixlan_set = netixlan_set.union(
+                        ixlan.netixlan_set.filter(status="ok")
+                    )
+
+        return netixlan_set.distinct()
+
+    def prepare_ip_addresses(self, instance, field_name):
+        netixlan_set = self.cached_netixlan(instance)
+        if netixlan_set.exists():
+            ip_addresses = [
+                str(getattr(netixlan, field_name)) for netixlan in netixlan_set
+            ]
+            return list(set(ip_addresses))
+        return None
+
+    def prepare_ipaddr4(self, instance):
+        return self.prepare_ip_addresses(instance, "ipaddr4")
+
+    def prepare_ipaddr6(self, instance):
+        return self.prepare_ip_addresses(instance, "ipaddr6")
 
 
 class GeocodeMixin(StatusMixin):
@@ -368,7 +419,7 @@ class FacilityDocument(GeocodeMixin, Document):
 
 
 @registry.register_document
-class InternetExchangeDocument(GeocodeMixin, Document):
+class InternetExchangeDocument(GeocodeMixin, IpAddressMixin, Document):
     name = fields.TextField(
         analyzer=name_analyzer,
         fields={
@@ -396,6 +447,24 @@ class InternetExchangeDocument(GeocodeMixin, Document):
     )
 
     state = fields.TextField(
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        },
+        multi=True,
+    )
+
+    ipaddr4 = fields.TextField(
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        },
+        multi=True,
+    )
+
+    ipaddr6 = fields.TextField(
         fields={
             "raw": {
                 "type": "keyword",
@@ -445,7 +514,7 @@ class InternetExchangeDocument(GeocodeMixin, Document):
 
 
 @registry.register_document
-class NetworkDocument(GeocodeMixin, Document):
+class NetworkDocument(GeocodeMixin, IpAddressMixin, Document):
     name = fields.TextField(
         analyzer=name_analyzer,
         fields={
@@ -491,6 +560,26 @@ class NetworkDocument(GeocodeMixin, Document):
         multi=True,
     )
 
+    ipaddr4 = fields.TextField(
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        },
+        multi=True,
+    )
+
+    ipaddr6 = fields.TextField(
+        fields={
+            "raw": {
+                "type": "keyword",
+            }
+        },
+        multi=True,
+    )
+
+    info_types = MultipleChoiceKeywordField(attr="info_types")
+
     class Index:
         name = "net"
         settings = {"number_of_shards": 1, "number_of_replicas": 0}
@@ -520,7 +609,6 @@ class NetworkDocument(GeocodeMixin, Document):
             "info_traffic",
             "info_ratio",
             "info_scope",
-            "info_type",
             "info_prefixes4",
             "info_prefixes6",
             "info_unicast",

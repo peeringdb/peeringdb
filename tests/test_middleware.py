@@ -52,12 +52,14 @@ class PDBPermissionMiddlewareTest(APITestCase):
         response = self.client.get("/api/fac")
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.headers.get("X-Auth-ID"), "apikey_bogus")
+        self.assertEqual(response.headers.get("X-Auth-Status"), "unauthenticated")
 
     def test_bogus_credentials_auth_id_response(self):
         self.client.credentials(HTTP_AUTHORIZATION="Basic Ym9ndXM6Ym9ndXM=")
         response = self.client.get("/api/fac")
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.headers.get("X-Auth-ID"), "bogus")
+        self.assertEqual(response.headers.get("X-Auth-Status"), "unauthenticated")
 
     def test_auth_id_api_key(self):
         user = User.objects.create(username="test_user")
@@ -115,12 +117,14 @@ class PDBPermissionMiddlewareTest(APITestCase):
         response = self.client.get("/api/fac")
         self.assertEqual(response.status_code, 200)
         assert response.headers.get("X-Auth-ID") == f"u{user.id}"
+        self.assertEqual(response.headers.get("X-Auth-Status"), "authenticated")
 
         # test that header gets cleared between requests
         other_client = APIClient()
         response = other_client.get("/api/fac")
         self.assertEqual(response.status_code, 200)
         assert response.headers.get("X-Auth-ID") is None
+        self.assertEqual(response.headers.get("X-Auth-Status"), "unauthenticated")
 
     def test_auth_id_basic_auth(self):
         user = User.objects.create(username="test_user")
@@ -133,12 +137,14 @@ class PDBPermissionMiddlewareTest(APITestCase):
         response = self.client.get("/api/fac")
         self.assertEqual(response.status_code, 200)
         assert response.headers.get("X-Auth-ID") == f"u{user.id}"
+        self.assertEqual(response.headers.get("X-Auth-Status"), "authenticated")
 
         # test that header gets cleared between requests
         other_client = APIClient()
         response = other_client.get("/api/fac")
         self.assertEqual(response.status_code, 200)
         assert response.headers.get("X-Auth-ID") is None
+        self.assertEqual(response.headers.get("X-Auth-Status"), "unauthenticated")
 
 
 class RedisNegativeCacheMiddlewareTest(APITestCase):

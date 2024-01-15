@@ -1,0 +1,78 @@
+{% load util %}
+{% load i18n %}
+
+<div class="row">
+<div class="col-md-6 col-sm-12 col-12 offset-pr-md-2 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
+  <div class="list"
+     data-sort-container=".scrollable"
+     data-sort-row=".row"
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:campus">
+
+     <!-- CARRIERS -->
+    {% if data.carriers or permissions.can_create_carrier %}
+    <div class="list"
+        id="api-listing-carrier"
+        data-sort-container=".scrollable"
+        data-sort-row=".row.item"
+
+        data-edit-module="api_listing"
+        data-edit-group="#view"
+        data-edit-target="api:carrier">
+      <div class="row">
+        <div class="col-6 col-sm-8 col-md-8">
+          <h5>{% trans "Carriers" %}</h5>
+        </div>
+        <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-carriers" class="form-control" />
+        </div>
+      </div>
+      <div class="row header align-items-center">
+        <div class="col-6 col-sm-6 col-md-6">
+          <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+        </div>
+        <div class="col-6 col-sm-6 col-md-4">
+          <div data-sort-target=".facility">{% trans "Facilities" %}</div>
+        </div>
+        <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
+          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-carriers" class="form-control" />
+        </div>
+      </div>
+
+      <div class="scrollable"
+          id="list-carriers"
+          data-edit-component="list"
+          data-edit-template="carrier-item">
+
+        <div class="empty-result">
+          <div class="message">{% trans "No filter matches." %}</div>
+          <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b></div>
+        </div>
+
+        {% for carrier, facilities in data.carriers.items %}
+
+        <div class="row item status-{{ carrier.status }}" data-edit-id="{{ carrier.id }}" data-edit-label="{{ carrier.name }}">
+          <div class="col-6 col-sm-6 col-md-6">
+            <div class="name" data-sort-value="{{ carrier.name|lower }}" data-filter-value="{{ carrier.name }}">
+              <a {% if carrier.status == "ok" %} href="/carrier/{{ carrier.id }}" {% else %} style="text-decoration: none !important;" {% endif %}>{{ carrier.name }}</a>
+            </div>
+            {% if permissions.can_edit and carrier.status != "ok" %}
+            <div>
+              {{ carrier.status }}
+            </div>
+            {% endif %}
+          </div>
+          <div class="col-6 col-sm-6 col-md-4">
+            <div class="facility" data-sort-value="{{ facilities|length }}" {% if facilities|length == data.facilities|length %} style="color:#4B9166">{% trans "ALL" %}{% else %}>{{facilities|length}}{% endif %} </div>
+          </div>
+        </div>
+
+        {% endfor %}
+
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+</div>

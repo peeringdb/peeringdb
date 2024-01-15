@@ -1,4 +1,4 @@
 Name,Also known as,ASN,General Policy,Network Type,Network Scope,Traffic Levels,Traffic Ratio,Exchanges,Facilities
-Network 1,AKA 1,1,Open,Not Disclosed,Not Disclosed,0-20Mbps,Not Disclosed,1,1
-Network 2,AKA 2,2,Open,Not Disclosed,Not Disclosed,0-20Mbps,Not Disclosed,1,1
-Network 3,AKA 3,3,Open,Not Disclosed,Not Disclosed,0-20Mbps,Not Disclosed,1,1
+Network 1,AKA 1,1,Open,Content,Not Disclosed,0-20Mbps,Not Disclosed,1,1
+Network 2,AKA 2,2,Open,Content,Not Disclosed,0-20Mbps,Not Disclosed,1,1
+Network 3,AKA 3,3,Open,Content,Not Disclosed,0-20Mbps,Not Disclosed,1,1

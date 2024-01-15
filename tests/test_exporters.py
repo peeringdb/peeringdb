@@ -59,6 +59,7 @@ class AdvancedSearchExportTest(ClientCase):
                 aka=f"AKA {i}",
                 policy_general="Open",
                 info_traffic="0-20Mbps",
+                info_types=["Content"],
                 asn=i,
                 org=cls.org[i - 1],
             )

@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import RequestFactory, override_settings
+from rest_framework.exceptions import ValidationError as RestValidationError
 
 from peeringdb_server.context import current_request
 from peeringdb_server.models import (
@@ -23,6 +24,7 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.validators import (
     validate_address_space,
+    validate_asn_prefix,
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_irr_as_set,
@@ -921,3 +923,28 @@ def test_validate_website_override(website, org_website, validated):
 def test_org_create_with_none_social_media():
     org = Organization.objects.create(name="Test org", status="ok", social_media=None)
     assert org.social_media == {}
+
+
+@pytest.mark.parametrize(
+    "value,is_valid,validated",
+    [
+        # success validation
+        ("63311", True, "63311"),
+        ("as63311", True, "63311"),
+        ("asn63311", True, "63311"),
+        ("AS63311", True, "63311"),
+        ("ASN63311", True, "63311"),
+        # fail validation
+        ("AN63311", False, None),
+        ("6as3311", False, None),
+        ("63311asn", False, None),
+    ],
+)
+@pytest.mark.django_db
+def test_validate_asn_prefix(value, is_valid, validated):
+    print(is_valid)
+    if not is_valid:
+        with pytest.raises(RestValidationError):
+            validate_asn_prefix(value)
+    else:
+        assert validate_asn_prefix(value) == validated

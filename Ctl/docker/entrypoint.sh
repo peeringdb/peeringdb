@@ -40,6 +40,7 @@ case "$1" in
     unset BASE_URL
     unset OAUTH2_PROVIDER_APPLICATION_MODEL
     unset SESSION_COOKIE_DOMAIN
+    unset PEERINGDB_SYNC_API_KEY
     pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 tests/
     ;;
   "gen_docs" )

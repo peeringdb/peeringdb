@@ -13,14 +13,14 @@ python = "^3.9"
 django = "^4.2"
 django-inet = ">=1.1.1"
 django-handleref = ">=2"
-django-peeringdb = "==3.2.0"
+# pinned until 3.3.0 release if django-peeringdb
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "support_202311" }
 djangorestframework = ">=3.14.0"
 mysqlclient = ">=2.1.1"
 redis = ">=5.0.0"
 hiredis = ">=2.2.3"
 
-# locked to support_202306 branch until that is tagged and released to pypi
-peeringdb = { git = "https://github.com/peeringdb/peeringdb-py.git", tag = "2.0.0" }
+peeringdb = ">=2.0.0"
 uwsgi = ">=2.0.14"
 
 # ancilary packages

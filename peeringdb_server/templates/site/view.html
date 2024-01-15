@@ -7,6 +7,29 @@
 {% endblock %}
 
 {% block content %}
+
+{% if ref_tag != "campus" %}
+<div class="row mb-5">
+  <div class="col-md-6 col-sm-12 col-12 offset-pr-md-1 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0 d-flex">
+    <form id="quick-search-view" method="POST" onsubmit="return submitForm()" class="me-2">
+      {% csrf_token %}
+        <div class="input-group">
+            <input size="60" maxlength="60" placeholder="{% trans "Search here for a network, IX, or facility." %}" class="form-control" name="term" type="text" id="searchInput">
+            <div class="input-group-append">
+                <button class="btn btn-lg rounded-group-button" type="submit">
+                    <i class="material-icons" style="font-size: 40px; padding: 0px;">search</i>
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <a href="/advanced_search" class="btn btn-lg rounded-button py-2 d-flex align-items-center ms-auto" style="height: 100%; min-width: 170px; font-size: 14px;">ADVANCED SEARCH</a>
+  </div>
+  <div class="col-md-6 col-sm-12 col-12 offset-pl-md-1 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0 d-flex">
+  </div>
+</div>
+{% endif %}
+
 <div id="view" class="view {% if permissions.can_edit %}editable{% endif %}" {% if permissions.can_edit %}data-edit-target="api:{{ref_tag}}:update" data-edit-id="{{instance.id}}" data-check-incomplete="Yes"{% endif %}>
 
 {% if permissions.can_edit %}
@@ -21,7 +44,7 @@
 <div class="row">
   <div class="col-md-12 col-sm-12 col-12">
     <div class="view_title row">
-      <div class="col-md-8 col-sm-8 col-10"
+      <div class="col-md-8 col-sm-8 col-9"
            {% if permissions.can_write %}
            data-edit-type="string"
            {% endif %}
@@ -31,9 +54,12 @@
            {% if instance.sponsorship %}
            <a data-edit-static="yes" href="/sponsors" class="sponsor {{ instance.sponsorship.css }}">{{ instance.sponsorship.label }} {% trans "sponsor" %}</a>
            {% endif %}
+           {% if request.user.is_authenticated|flag_bad_data_needs_auth %}
+           <a href="#" id="showReportData" class="bad-data-flag">{% trans "report" %}</a>
+           {% endif %}
            </div>
 
-      <div class="col-md-4 col-sm-4 col-2 right button-bar">
+      <div class="col-md-4 col-sm-4 col-3 right button-bar">
         {% if instance.status == "pending" %}
           <div class="status-pending">
           {% if ref_tag == "campus" %}
@@ -46,11 +72,11 @@
         {% if permissions.can_edit %}
         <!-- toggle edit mode -->
         <div data-edit-toggled="view">
-          <a class="btn btn-primary" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
+          <a class="btn btn-primary" data-edit-action="toggle-edit" style="min-width: 45px;">{% trans "Edit" %}</a>
         </div>
         <div data-edit-toggled="edit" style="display:none;">
-          <a class="btn btn-primary" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
-          <a class="btn btn-primary" data-edit-action="submit">{% trans "Save" %}</a>
+          <a class="btn btn-primary" data-edit-action="toggle-edit" style="min-width: 64px;">{% trans "Cancel" %}</a>
+          <a class="btn btn-primary" data-edit-action="submit" style="min-width: 52px;">{% trans "Save" %}</a>
         </div>
         {% else %}
         <div>
@@ -70,9 +96,28 @@
 
 {% include "site/stats.html" %}
 
+
+{% if ref_tag == "campus" %}
+<div class="campus-nav-container" style="max-height: 94px;">
+  <div class="scroller-campus scroller-left float-left mt-2"><i class="material-icons">chevron_left</i></div>
+    <div class="wrapper campus-list flex-grow-1" style="width: 100%;">
+      <nav class="nav nav-tabs nav-list-campus mt-2 ps-0" id="myTab" role="tablist" style="border-bottom: none;">
+        <a class="nav-item nav-link active campus-tab flex-fill" data-bs-toggle="tab" data-bs-target="#nav-main" role="tab" aria-controls="public" aria-expanded="true">{{ instance }} ({{ data.facilities|length }})</a>
+        <a class="nav-item nav-link campus-tab flex-fill" data-bs-toggle="tab" data-bs-target="#nav-carriers" data-toggle="tab">Carriers ({{ data.carriers|length }})</a>
+        <a class="nav-item nav-link campus-tab flex-fill" data-bs-toggle="tab" data-bs-target="#nav-exchanges" data-toggle="tab">Exchanges ({{ data.exchanges.values|objfac_value_length }})</a>
+        <a class="nav-item nav-link campus-tab flex-fill" data-bs-toggle="tab" data-bs-target="#nav-networks" data-toggle="tab">Networks ({{ data.networks.values|objfac_value_length }})</a>
+      </nav>
+    </div>
+  <div class="scroller-campus scroller-right float-right mt-2"><i class="material-icons">chevron_right</i></div>
+</div>
+
+<div class="tab-content" id="nav-tabContent">
+  <div class="tab-pane fade show active" id="nav-main" role="tabpanel" aria-labelledby="nav-main-tab">
+{% endif %}
+
 <div class="row">
 
-  <div class="col-md-6 col-sm-12 col-12 view-left">
+  <div class="col-md-6 col-sm-12 col-12 offset-pr-md-1 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
   {% if permissions.can_edit %}
   <div class="editable popin note info incomplete marg-top-15 marg-bot-15 hidden">
   {% trans "Some of the data on this page is incomplete, please update the fields marked with" %}
@@ -424,13 +469,32 @@
     {% endfor %}
   </div>
 
+  {% if ref_tag != "campus" %}
   {% include bottom_template_name with data=data instance=instance permissions=permissions %}
+  {% endif %}
 
   </div>
 
-  <div class="col-md-6 col-sm-12 col-12">
-  {% include side_template_name with data=data instance=instance permissions=permissions %}
+  {% if ref_tag != "campus" %}
+  <div class="col-md-6 col-sm-12 col-12 offset-pl-md-1 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0"
+    {% include side_template_name with data=data instance=instance permissions=permissions %}
   </div>
+  {% else %}
+  <div class="col-md-6 col-sm-12 col-12 offset-pl-md-1 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0"
+    {% include facilities_template_name with data=data instance=instance permissions=permissions %}
+  </div>
+  </div>
+  <div class="tab-pane fade" id="nav-carriers" role="tabpanel" aria-labelledby="nav-carriers-tab">
+    {% include carriers_template_name with data=data instance=instance permissions=permissions %}
+  </div>
+  <div class="tab-pane fade" id="nav-exchanges" role="tabpanel" aria-labelledby="nav-exchanges-tab">
+    {% include exchanges_template_name with data=data instance=instance permissions=permissions %}
+  </div>
+  <div class="tab-pane fade" id="nav-networks" role="tabpanel" aria-labelledby="nav-networks-tab">
+    {% include networks_template_name with data=data instance=instance permissions=permissions %}
+  </div>
+</div>
+{% endif %}
 
 </div>
     <div class="view_title right" data-edit-toggled="edit"  style="display:none;">
@@ -439,8 +503,50 @@
     </div>
 </div>
 
+<div class="modal fade" id="report-bad-data" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">{% trans "I am seeing bad data with" %} {{data.title}} {% trans "at" %} <a href="{{instance.view_url}}">{{instance.view_url}}<a></h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <form id="reportDataForm">
+      <div class="modal-body">
+          {% csrf_token %}
+          <input name="server_email" value="{% server_email %}" hidden/>
+          <input name="obj_type" value="{{ref_tag|obj_type}}" hidden/>
+          <input name="view_url" value="{{instance.view_url}}" hidden/>
+          <label for="fields" class="col-form-label">The fields in question are:</label>
+          <div class="px-5">
+            <input placeholder="please fill in" name="fields" type="text" class="form-control" />
+          </div>
+          <label for="reason" class="col-form-label">I think this is bad data because:</label>
+          <div class="px-5">
+            <input placeholder="please fill in reason you're flagging this as bad data" name="reason" type="text" class="form-control" />
+          </div>
+          <label for="expected" class="col-form-label">The correct data is probably:</label>
+          <div class="px-5">
+            <input placeholder="please fill this in if you feel strongly you know what the correct data should be" name="expected" type="text" class="form-control" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-default" type="submit">{% trans "Confirm" %}</button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+        </div>
+      </form>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 {% if permissions.can_write %}
 <script language="javascript" type="text/javascript">
+
+function submitForm() {
+  let inputValue = document.getElementById('searchInput').value;
+  let form = document.getElementById('quick-search-view');
+  form.action = "/search/v2?q=" + encodeURIComponent(inputValue);
+  return true;
+}
 
   const deleteElement = (e) => {
 
@@ -456,6 +562,40 @@
     new_service_identifier.attr("data-edit-name", "smi_value_" + idx)
     new_service_identifier.editable("toggle");
   }
+
+document.getElementById("showReportData").addEventListener("click", function() {
+  // Show the modal using Bootstrap's modal method
+  $('#report-bad-data').modal('show');
+});
+
+document.getElementById("reportDataForm").addEventListener("submit", function(event) {
+  event.preventDefault(); // Prevent the default form submission
+
+  // Retrieve form data
+  const formData = new FormData(event.target);
+  const formObject = {};
+  formData.forEach(function(value, key) {
+    formObject[key] = value;
+  });
+
+  // You can now use the form data as needed, for example, send it to a server via AJAX or process it in JavaScript
+  console.log(formObject);
+
+  var subject = "I am seeing bad data with " + formObject["obj_type"] + " at " + formObject["view_url"];
+  var fields = "The field(s) in question are:\n"+formObject["fields"]+"\n";
+  var reason = "I think this is bad data because:\n"+formObject["reason"]+"\n";
+  var expected = "The correct data is probably:\n"+formObject["expected"]+"\n";
+  var body = fields+reason+expected;
+
+  // Construct the mailto link
+  var mailtoLink = `mailto:${formObject["server_email"]}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  // Open a pop-up window with the mailto link
+  var popup = window.open(mailtoLink, "EmailPopup", "width=600, height=400");
+  console.log(mailtoLink);
+  // Clear the form or perform other actions
+  event.target.reset();
+});
 
 $(document).ready(function() {
   PeeringDB.incomplete_data_notify();
@@ -482,12 +622,99 @@ $(document).ready(function() {
   $('[data-bs-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
 
 });
+
+
+// tab campus
+var hidWidth;
+var scrollBarWidths = 40;
+
+var widthOfList = function(){
+  var itemsWidth = 0;
+  $('.nav-list-campus a').each(function(){
+    var itemWidth = $(this).outerWidth();
+    itemsWidth+=itemWidth;
+  });
+  return itemsWidth;
+};
+
+var widthOfHidden = function(){
+    var ww = 0 - $('.wrapper').outerWidth();
+    var hw = (($('.wrapper').outerWidth())-widthOfList()-getLeftPosi())-scrollBarWidths;
+    var rp = $(document).width() - ($('.nav-item.nav-link').last().offset().left + $('.nav-item.nav-link').last().outerWidth());
+
+    if (ww>hw) {
+        return ww;
+    }
+    else {
+        return hw;
+    }
+};
+
+var getLeftPosi = function(){
+
+    var ww = 0 - $('.wrapper').outerWidth();
+    var lp = $('.nav-list-campus').position().left;
+
+    if (ww>lp) {
+        return ww;
+    }
+    else {
+        return lp;
+    }
+};
+
+var reAdjust = function(){
+
+  // check right pos of last nav item
+  var rp = $(document).width() - ($('.nav-item.nav-link').last().offset().left + $('.nav-item.nav-link').last().outerWidth());
+  if (($('.wrapper').outerWidth()) < widthOfList() && (rp<0)) {
+    $('.scroller-right').show().css('display', 'flex');
+  }
+  else {
+    $('.scroller-right').hide();
+  }
+
+  if (getLeftPosi()<0) {
+    $('.scroller-left').show().css('display', 'flex');
+  }
+  else {
+  	$('.scroller-left').hide();
+  }
+}
+
+reAdjust();
+
+$(window).on('resize',function(e){
+  	reAdjust();
+});
+
+$('.scroller-right').click(function() {
+
+  $('.scroller-left').fadeIn('slow');
+  $('.scroller-right').fadeOut('slow');
+
+  $('.nav-list-campus').animate({left:"+="+widthOfHidden()+"px"},'slow',function(){
+    reAdjust();
+  });
+});
+
+$('.scroller-left').click(function() {
+
+	$('.scroller-right').fadeIn('slow');
+	$('.scroller-left').fadeOut('slow');
+
+  	$('.nav-list-campus').animate({left:"-="+getLeftPosi()+"px"},'slow',function(){
+  	    reAdjust();
+  	});
+});
 </script>
 {% endif %}
 
+{% if ref_tag != "campus" %}
 {% if permissions.can_use_tools %}
 {% include tools_template_name with data=data instance=instance permissions=permissions %}
 {% endif %}
 
 {% include asset_template_name with data=data instance=instance permissions=permissions %}
+{% endif %}
 {% endblock %}

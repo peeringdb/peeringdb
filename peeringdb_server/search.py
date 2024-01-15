@@ -292,7 +292,18 @@ def search_v2(term, geo={}):
 
     es = new_elasticsearch()
     qs = " ".join([str(elem) for elem in term])
-    term = f"*{' '.join(qs.split())}*"
+    keywords = qs.split()
+
+    result = ""
+    for keyword in keywords:
+        if keyword == "OR" or keyword == "AND":
+            result += f" {keyword}"
+        else:
+            result += f" *{keyword}*"
+    term = result
+    if PARTIAL_IPV6_ADDRESS.match(" ".join(qs.split())):
+        ipv6 = "\\:".join(qs.split(":"))
+        term = f"*{ipv6}*"
     body = {"query": {"bool": {"must": {"query_string": {"query": term}}}}}
 
     if geo:

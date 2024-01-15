@@ -147,6 +147,20 @@ class RdapLookup(rdap.RdapClient):
         return super().get_asn(asn)
 
 
+def rir_status_is_ok(rir_status: str) -> bool:
+    """
+    Returns True if the rir_status is ok (allocated or assigned) or not
+    """
+    return rir_status in [
+        # actual rir statuses returned via rdap rir assigment check
+        "assigned",
+        "allocated",
+        # status peeringdb sets on creation of network, indicating rir status
+        # is pending
+        "pending",
+    ]
+
+
 def rdap_pretty_error_message(exc):
     """
     Take an RdapException instance and return a customer friendly

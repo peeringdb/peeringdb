@@ -867,6 +867,7 @@ ROOT_URLCONF = "mainsite.urls"
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
+set_from_env("FLAG_BAD_DATA_NEEDS_AUTH", None)
 
 # email vars should be already set from the release environment file
 # override here from env if set
@@ -1157,7 +1158,7 @@ set_option(
         },
         "backends": {
             "django_peeringdb": {
-                "min": (2, 3, 0, 1),
+                "min": (3, 3, 0),
                 "max": (255, 0),
             },
         },
@@ -1412,7 +1413,17 @@ set_from_env(
     "RIR_ALLOCATION_DATA_PATH", os.path.join(API_CACHE_ROOT, "rdap-rir-status")
 )
 
+# Setting for number of days before deleting notok RIR
+set_option("KEEP_RIR_STATUS", 90)
+
+# A toggle for RIR status check
+set_option("AUTO_UPDATE_RIR_STATUS", True)
+
 set_option("RIR_ALLOCATION_DATA_CACHE_DAYS", 1)
+
+
+# show last database sync
+set_from_env("DATABASE_LAST_SYNC", None)
 
 
 if TUTORIAL_MODE:

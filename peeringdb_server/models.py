@@ -4951,6 +4951,12 @@ class Network(pdb_models.NetworkBase, ParentStatusCheckMixin, SocialMediaMixin):
             settings.BASE_URL, django.urls.reverse("net-view-asn", args=(self.asn,))
         )
 
+    @property
+    def info_type(self):
+        if self.info_types:
+            return list(self.info_types)[0]
+        return ""
+
     def clean(self):
         """
         Custom model validation.
@@ -6471,6 +6477,11 @@ class EnvironmentSetting(models.Model):
                 "API_THROTTLE_RATE_USER_MSG",
                 _("API: Authenticated API throttle rate message"),
             ),
+            # show database last sync
+            (
+                "DATABASE_LAST_SYNC",
+                _("Show last database sync"),
+            ),
         ),
         unique=True,
     )
@@ -6528,6 +6539,7 @@ class EnvironmentSetting(models.Model):
         "API_THROTTLE_MELISSA_ENABLED_IP": "value_bool",
         "API_THROTTLE_RATE_ANON_MSG": "value_str",
         "API_THROTTLE_RATE_USER_MSG": "value_str",
+        "DATABASE_LAST_SYNC": "value_str",
     }
 
     setting_validators = {
