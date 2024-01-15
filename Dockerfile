@@ -105,12 +105,16 @@ COPY poetry.lock pyproject.toml ./
 RUN true
 COPY tests/ tests
 RUN chown -R pdb:pdb tests/
-COPY Ctl/docker/entrypoint.sh .
 
 # install dev deps
 RUN apk --update --no-cache add $build_deps
 RUN pip install -U poetry
 RUN poetry install --no-root
+
+# Same as final entrypoint for running in dev mode
+COPY Ctl/docker/entrypoint.sh .
+RUN true
+COPY Ctl/docker/django-uwsgi.ini etc/
 
 USER pdb
 ENTRYPOINT ["./entrypoint.sh"]
@@ -124,6 +128,5 @@ RUN true
 COPY Ctl/docker/django-uwsgi.ini etc/
 
 USER pdb
-
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["runserver"]
