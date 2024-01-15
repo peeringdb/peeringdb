@@ -1,1 +1,40 @@
-{"results": [{"Name": "Network 1", "Also known as": "AKA 1", "ASN": 1, "General Policy": "Open", "Network Type": "Not Disclosed", "Network Scope": "Not Disclosed", "Traffic Levels": "0-20Mbps", "Traffic Ratio": "Not Disclosed", "Exchanges": 1, "Facilities": 1}, {"Name": "Network 2", "Also known as": "AKA 2", "ASN": 2, "General Policy": "Open", "Network Type": "Not Disclosed", "Network Scope": "Not Disclosed", "Traffic Levels": "0-20Mbps", "Traffic Ratio": "Not Disclosed", "Exchanges": 1, "Facilities": 1}, {"Name": "Network 3", "Also known as": "AKA 3", "ASN": 3, "General Policy": "Open", "Network Type": "Not Disclosed", "Network Scope": "Not Disclosed", "Traffic Levels": "0-20Mbps", "Traffic Ratio": "Not Disclosed", "Exchanges": 1, "Facilities": 1}]}
+{
+    "results": [
+        {
+            "Name": "Network 1",
+            "Also known as": "AKA 1",
+            "ASN": 1,
+            "General Policy": "Open",
+            "Network Type": "Content",
+            "Network Scope": "Not Disclosed",
+            "Traffic Levels": "0-20Mbps",
+            "Traffic Ratio": "Not Disclosed",
+            "Exchanges": 1,
+            "Facilities": 1
+        },
+        {
+            "Name": "Network 2",
+            "Also known as": "AKA 2",
+            "ASN": 2,
+            "General Policy": "Open",
+            "Network Type": "Content",
+            "Network Scope": "Not Disclosed",
+            "Traffic Levels": "0-20Mbps",
+            "Traffic Ratio": "Not Disclosed",
+            "Exchanges": 1,
+            "Facilities": 1
+        },
+        {
+            "Name": "Network 3",
+            "Also known as": "AKA 3",
+            "ASN": 3,
+            "General Policy": "Open",
+            "Network Type": "Content",
+            "Network Scope": "Not Disclosed",
+            "Traffic Levels": "0-20Mbps",
+            "Traffic Ratio": "Not Disclosed",
+            "Exchanges": 1,
+            "Facilities": 1
+        }
+    ]
+}

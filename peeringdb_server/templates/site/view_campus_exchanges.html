@@ -1,0 +1,98 @@
+{% load util %}
+{% load i18n %}
+
+<div class="row">
+  {% for  facility, ixfac_data in data.exchanges.items %}
+  {% if forloop.counter|divisibleby:2 %}
+  <div class="col-md-6 col-sm-12 col-12 offset-pl-md-2 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0">
+  {% else %}
+  <div class="col-md-6 col-sm-12 col-12 offset-pr-md-2 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
+  {% endif %}
+
+    <!-- EXCHANGES -->
+
+    {% if data.exchanges  or permissions.can_create_ix %}
+    <div class="list"
+        id="api-listing-ix"
+        data-sort-container=".scrollable"
+        data-sort-row=".row.item"
+        data-edit-module="api_listing"
+        data-edit-group="#view"
+        data-edit-target="api:ix">
+
+      <div class="row">
+        <div class="col-6 col-sm-8 col-md-8">
+          <h5>{{facility}}</h5>
+        </div>
+        <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-exchanges" class="form-control" />
+        </div>
+      </div>
+      <div class="row header align-items-center">
+        <div class="col-2 col-sm-2 col-md-2">
+          <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name"%}</div>
+        </div>
+        <div class="col-2 col-sm-2 col-md-2">
+          <div data-sort-target=".facility">{% trans "Facilities" %}</div>
+        </div>
+        <div class="col-2 col-sm-2 col-md-1">
+          <div data-sort-target=".asns">{% trans "ASNs" %}</div>
+        </div>
+        <div class="col-4 col-sm-4 col-md-3">
+          <div data-sort-target=".prefix">{% trans "Prefixes" %}</div>
+          <div>{% trans "(IPv4/IPv6)" %}</div>
+        </div>
+        <div class="col-2 col-sm-2 col-md-2">
+          <div data-sort-target=".routeservers">{% trans "Routeservers" %}</div>
+        </div>
+        <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
+          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-exchanges" class="form-control" />
+        </div>
+      </div>
+
+      <div class="scrollable"
+      id="list-exchanges"
+      data-edit-component="list"
+      data-edit-template="exchange-item">
+
+      <div class="empty-result">
+        <div class="message">{% trans "No filter matches." %}</div>
+        <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
+      </div>
+      {% for ix in ixfac_data %}
+        <div class="row item status-{{ ix.status }}" data-edit-id="{{ ix.id }}" data-edit-label="{% trans "Exchange" %}: {{ ix.name }}">
+          <div class="col-2 col-sm-2 col-md-2">
+            <div class="name" data-sort-value="{{ ix.name|lower }}" data-filter-value="{{ ix.name }}">
+              <a {% if ix.status == "ok" %} href="/ix/{{ ix.id }}" {% else %} style="text-decoration: none !important;" {% endif %}>{{ ix.name }}</a>
+            </div>
+            {% if permissions.can_edit and ix.status != "ok" %}
+            <div>
+              {{ ix.status }}
+            </div>
+            {% endif %}
+          </div>
+          <div class="col-2 col-sm-2 col-md-2">
+            {% with related_fac=ix|objfac_tupple_fac_length:data.exchanges.values %}
+            <div class="facility" data-sort-value="{{ related_fac }}">{% if related_fac == data.facilities|length %}{% trans "ALL" %}{% else %}{{related_fac}}{% endif %} </div>
+            {% endwith %}
+          </div>
+          <div class="col-2 col-sm-2 col-md-1">
+            <div class="asns" data-sort-value="{{ix.ixlan.netixlan_set.count}}">{{ix.ixlan.netixlan_set.count}}</div>
+          </div>
+          <div class="col-4 col-sm-4 col-md-3">
+            {% for perfix in ix|prefix %}
+            <div class="prefix" data-sort-value="{{perfix.prefix}}">{{perfix.prefix}}</div>
+            {% endfor %}
+          </div>
+          <div class="col-2 col-sm-2 col-md-2">
+            <div class="routeservers" data-sort-value="{{ix|ix_routeservers}}">{{ix|ix_routeservers}}</div>
+          </div>
+
+        </div>
+      {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+{% endfor %}
+</div>

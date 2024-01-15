@@ -6,6 +6,7 @@ import markdown
 import tld
 from allauth.account.models import EmailAddress
 from django import template
+from django.conf import settings as dj_settings
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_countries import countries
@@ -14,6 +15,7 @@ from django_grainy.helpers import int_flags
 from peeringdb_server.inet import RdapException
 from peeringdb_server.models import (
     PARTNERSHIP_LEVELS,
+    EnvironmentSetting,
     Facility,
     InternetExchange,
     Network,
@@ -371,3 +373,66 @@ def ix_routeservers(ix):
 def prefix(ix):
     prefixes = ix.ixlan.ixpfx_set_active
     return prefixes
+
+
+@register.filter
+def obj_type(ref_tag):
+    obj_types = {
+        "org": "Organization",
+        "net": "Network",
+        "ix": "Internet Exchange",
+        "fac": "Facility",
+        "carrier": "Carrier",
+        "campus": "Campus",
+    }
+    return obj_types[ref_tag]
+
+
+@register.simple_tag(takes_context=True)
+def server_email(context):
+    return dj_settings.SERVER_EMAIL
+
+
+@register.filter
+def flag_bad_data_needs_auth(authenticated):
+    if dj_settings.FLAG_BAD_DATA_NEEDS_AUTH:
+        if authenticated:
+            return True
+        else:
+            return False
+    else:
+        return True
+
+
+@register.simple_tag(name="last_database_sync")
+def last_database_sync():
+    last_db_sync = dj_settings.DATABASE_LAST_SYNC
+    if not last_db_sync:
+        value_db = EnvironmentSetting.objects.filter(
+            setting="DATABASE_LAST_SYNC"
+        ).first()
+        if value_db:
+            last_db_sync = value_db.value
+    formatted_date = None
+    if last_db_sync:
+        formatted_date = datetime.datetime.strptime(last_db_sync, "%Y-%m-%dT%H:%M:%S")
+    return formatted_date
+
+
+@register.filter
+def objfac_tupple_fac_length(ixfac, exchanges_values):
+    related_fac = sum(sublist.count(ixfac) for sublist in exchanges_values)
+    return related_fac
+
+
+@register.filter
+def objfac_value_length(values):
+    total = []
+    for x in values:
+        total = total + x
+    return len(total)
+
+
+@register.filter
+def get_user_initial(username):
+    return username[0].upper()

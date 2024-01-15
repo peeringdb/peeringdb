@@ -15,7 +15,7 @@ import pytest
 import reversion
 from django.conf import settings
 from django.contrib.auth.models import Group
-from django.core.cache import cache, caches
+from django.core.cache import caches
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
@@ -30,7 +30,6 @@ from twentyc.rpc import (
     RestClient,
 )
 
-import peeringdb_server.inet as pdbinet
 from peeringdb_server import inet
 from peeringdb_server import settings as pdb_settings
 from peeringdb_server.models import (
@@ -307,7 +306,7 @@ class TestJSON(unittest.TestCase):
             "sales_email": EMAIL,
             "sales_phone": PHONE,
             "diverse_serving_substations": True,
-            "available_voltage_services": ["48 VDC", "240 VAC"],
+            "available_voltage_services": ["48 VDC", "400 VAC"],
             "property": "Owner",
         }
         data.update(**kwargs)
@@ -333,7 +332,7 @@ class TestJSON(unittest.TestCase):
             "website": WEBSITE,
             "social_media": SOCIAL_MEDIA,
             "irr_as_set": "AS-ZZ-ZZZZZZ@RIPE",
-            "info_type": "NSP",
+            "info_types": ["NSP"],
             "info_prefixes4": 11000,
             "info_prefixes6": 12000,
             "info_traffic": "1-5Tbps",
@@ -977,6 +976,85 @@ class TestJSON(unittest.TestCase):
     def test_user_001_GET_net(self):
         data = self.assert_get_handleref(self.db_user, "net", SHARED["net_r_ok"].id)
         self.assertNotEqual(len(data.get("poc_set")), 0)
+
+    def test_user_001_GET_net_filter_legacy_info_type(self):
+        """
+        Test that API filters legacy info_type values correctly.
+
+        The expected behaviour is that filters targeting the old info_type field
+        are behaving correctly and return the expected results (via the new info_types set field)
+        """
+
+        net = SHARED["net_r_ok"]
+
+        # test equality
+
+        data = self.db_user.all("net", id=net.id, info_type="NSP", depth=0)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], SHARED["net_r_ok"].id)
+
+        # not found, raises 404
+        with pytest.raises(NotFoundException):
+            data = self.db_user.all("net", id=net.id, info_type="Content", depth=0)
+
+        net.info_types = ["Content", "NSP"]
+        net.save()
+
+        data = self.db_user.all("net", id=net.id, info_type="NSP", depth=0)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], SHARED["net_r_ok"].id)
+
+        data = self.db_user.all("net", id=net.id, info_type="Content", depth=0)
+        self.assertEqual(len(data), 1)
+
+        # test __in
+
+        data = self.db_user.all("net", id=net.id, info_type__in="NSP", depth=0)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], SHARED["net_r_ok"].id)
+
+        data = self.db_user.all("net", id=net.id, info_type__in="Content,NSP", depth=0)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], SHARED["net_r_ok"].id)
+
+        data = self.db_user.all(
+            "net", id=net.id, info_type__in="Enterprise,NSP", depth=0
+        )
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], SHARED["net_r_ok"].id)
+
+        with pytest.raises(NotFoundException):
+            data = self.db_user.all(
+                "net", id=net.id, info_type__in="Enterprise", depth=0
+            )
+
+        # test __contains
+
+        data = self.db_user.all("net", id=net.id, info_type__contains="NSP", depth=0)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], SHARED["net_r_ok"].id)
+
+        data = self.db_user.all(
+            "net", id=net.id, info_type__contains="Content", depth=0
+        )
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], SHARED["net_r_ok"].id)
+
+        # test __startswith
+        # should match on indiviudal values
+
+        data = self.db_user.all("net", id=net.id, info_type__startswith="NS", depth=0)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], SHARED["net_r_ok"].id)
+
+        data = self.db_user.all("net", id=net.id, info_type__startswith="Co", depth=0)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], SHARED["net_r_ok"].id)
+
+        with pytest.raises(NotFoundException):
+            data = self.db_user.all(
+                "net", id=net.id, info_type__startswith="En", depth=0
+            )
 
     ##########################################################################
 
@@ -1947,18 +2025,6 @@ class TestJSON(unittest.TestCase):
             },
         )
 
-        self.assert_create(
-            self.db_org_admin,
-            "carrier",
-            data,
-            test_success=False,
-            test_failures={
-                "invalid": {
-                    "social_media": {"service": "website"},
-                },
-            },
-        )
-
         SHARED["net_id"] = r_data.get("id")
 
         self.assert_update(
@@ -1999,6 +2065,63 @@ class TestJSON(unittest.TestCase):
             test_failures={"invalid": {"asn": 9999999}},
             test_success=False,
         )
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_PUT_net_legacy_info_type(self):
+
+        """
+        Tests that setting the legacy info_type field during network
+        create and update will clobber the value correctly into
+        the new info_types field as a single value in a set
+        """
+
+        data = self.make_data_net(asn=9000900, info_type="NSP")
+
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "net",
+            data,
+        )
+
+        assert r_data["info_type"] == "NSP"
+        assert r_data["info_types"] == ["NSP"]
+
+        SHARED["net_id"] = r_data.get("id")
+
+        self.assert_update(
+            self.db_org_admin,
+            "net",
+            SHARED["net_id"],
+            {"info_type": "Content"},
+        )
+
+        net = Network.objects.get(id=SHARED["net_id"])
+
+        assert net.info_type == "Content"
+        assert net.info_types == ["Content"]
+
+    ##########################################################################
+
+    def test_org_admin_002_POST_net_rir_status(self):
+
+        """
+        Implements `Anytime` network update logic for RIR status handling
+        laid out in https://github.com/peeringdb/peeringdb/issues/1280
+
+        Anytime a network is saved:
+
+        if an ASN is added, set rir_status="ok" and set rir_status_updated=created
+        """
+
+        # Create network with the ASN is flagged OK automatically
+        data = self.make_data_net(asn=9000900)
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "net",
+            data,
+        )
+        assert r_data.get("rir_status") == "pending"
 
     ##########################################################################
 

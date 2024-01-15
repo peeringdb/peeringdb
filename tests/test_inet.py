@@ -17,11 +17,6 @@ def test_rdap_asn_lookup(rdap):
 
 def test_rdap_asn_lookup_not_found(rdap):
     with pytest.raises(RdapNotFoundError):
-        rdap.get_asn(65535)
-
-
-def test_rdap_asn_lookup_not_found(rdap):
-    with pytest.raises(RdapNotFoundError):
         rdap.get_asn(9999999)
 
 
@@ -36,6 +31,13 @@ def test_arin0(rdap):
     assert asn.emails == ["neteng@20c.com"]
 
 
+# looks like this ASN no longer provides the required condition for testing.
+# this should be tested in the RDAP module anyhow
+# skipping for now, but should probably just remove
+# TODO
+@pytest.mark.skip(
+    reason="looks like this ASN no longer provides the required condition for testing."
+)
 def test_recurse_contacts(rdap):
     asn = rdap.get_asn(3333)
     assert rdap == asn._rdapc

@@ -1,4 +1,5 @@
 {% load i18n static %}
+{% load util %}
 
 <!DOCTYPE HTML>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -62,6 +63,12 @@ window.STATIC_URL = "{{ STATIC_URL }}";
 {{ form.media }}
 <script type="text/javascript" language="javascript">
 const is_authenticated = `{{request.user.is_authenticated}}` == 'True'
+function toggleSearch() {
+  var searchContainer = document.getElementById('search-container');
+  if (searchContainer) {
+    searchContainer.hidden = !searchContainer.hidden;
+  }
+}
 $(window).bind("load", function() {
   if(!PeeringDB.csrf)
     PeeringDB.csrf = '{{ csrf_token }}';
@@ -104,14 +111,12 @@ $(window).bind("load", function() {
       }
     });
   });
-
   function reloadPage() {
     window.location.href = window.location.href;
     window.location.reload();
     // Reload the current page, without using the cache
     document.location.reload(true);
   }
-
   function getCSRFToken() {
     var csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
     return csrfToken ? csrfToken.value : '';
@@ -130,70 +135,55 @@ $(window).bind("load", function() {
 
 <div class="header" id="header">
   <div class="container">
-    <div class="row">
-      <div class="col-lg-3 col-md-4 col-sm-4 col-12 logo-container">
-        <a href="/"><img class="logo img-fluid" src="{{ STATIC_URL }}/pdb-logo-coloured.png" /></a>
-      </div>
-      <div class="col-lg-5 col-md-5 col-sm-5 col-12 search-container">
-        <form action="/search{% if not search_version or search_version == 2 %}/v2{% endif %}" id="quick-search" method="POST">
-          {% csrf_token %}
-          <input placeholder="{% trans "Search here for a network, IX, or facility." %}" value="{{ request.GET.q }}" class="form-control" name="term" id="search" type="text" />
-        </form>
-        <div class="row">
-          <div class="col-6 col-sm-6">
-            <div class="advanced-search">
-              <a href="/advanced_search">{% trans "Advanced Search" %}</a>
-            </div>
-          </div>
-          <div class="col-6 col-sm-6 right">
-            <div class="v2-search">
-              {% if not search_version or search_version == 2%}
-              <a href="/search?q={{ request.GET.q }}">{% trans "Legacy Search" %}</a>
-              {% elif search_version == 1 %}
-              <a href="/search/v2?q={{ request.GET.q }}">{% trans "v2 Search" %}</a>
-              {% endif %}
-            </div>
-          </div>
+    <nav class="navbar navbar-expand-lg navbar-light bg-transparent">
+      <div class="container-fluid">
+        <div class="logo-container">
+          <a href="/" id="wide-logo"><img class="logo img-fluid" src="{{ STATIC_URL }}/pdb-logo-coloured.png" /></a>
+          <a href="/" id="square-logo"><img class="logo img-fluid" src="{{ STATIC_URL }}/pdb-logo-square-coloured.png" /></a>
         </div>
-      </div>
-      <div class="col-lg-4 col-md-3 col-sm-3 col-12 user-container">
-        <div class="row">
-          <div class="nav right toolbar" style="justify-content: flex-end; align-items: flex-start;">
-          {% if request.user.is_authenticated %}
-            <div class="user">
-              <a href="/profile">{{ request.user.username }}</a>
-            {% if not request.user.is_verified_user %}
-            <div class="status">({% if not request.user.email %}<span class="attention">!</span>{%endif %}
-              {% if request.user.email_confirmed %}
-              <a href="/profile">{% trans "pending" %}</a>
-              {% else %}
-              <a href="/profile">{% trans "unverified" %}</a>
-              {% endif %})
+        <div class="navbar-nav" style="display: flex; align-items: center; flex-direction: row;">
+          <a class="nav-link right" onclick="toggleSearch()"style="text-decoration:none;">
+            <i class="material-icons" id="search-icon">search</i>
+          </a>
+          <div class="search-container" id="search-container" hidden>
+            <form action="/search{% if not search_version or search_version == 2 %}/v2{% endif %}" id="quick-search" method="POST">
+              {% csrf_token %}
+              <input placeholder="{% trans "Search here for a network, IX, or facility." %}" value="{{ request.GET.q }}" class="form-control" name="term" id="search" type="text" />
+            </form>
+            <div class="row">
+              <div class="col-6 col-sm-6">
+                <div class="advanced-search">
+                  <a href="/advanced_search">{% trans "Advanced Search" %}</a>
+                </div>
+              </div>
+              <div class="col-6 col-sm-6 right">
+                <div class="v2-search">
+                  {% if not search_version or search_version == 2%}
+                  <a href="/search?q={{ request.GET.q }}">{% trans "Legacy Search" %}</a>
+                  {% elif search_version == 1 %}
+                  <a href="/search/v2?q={{ request.GET.q }}">{% trans "v2 Search" %}</a>
+                  {% endif %}
+                </div>
+              </div>
             </div>
-            {% endif %}
-            </div>
-            <div class="dropdown" style="display:inline-block">
-              <a class="btn btn-default dropdown-toggle" id="usermenu" data-bs-toggle="dropdown" aria-haspopup="true">
-                <img class="img-fluid" src="{{ STATIC_URL }}hamburger-colorful.png" alt="navigation" title="navigation" />
-              </a>
-              <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="usermenu">
-                {% for org in user.organizations %}
-                <li><a class="dropdown-item" href="/org/{{ org.id }}">{{ org.name }}</a></li>
-                {% endfor %}
-                {% if request.user.is_verified_user %}
-                <li><a class="dropdown-item" href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
-                {% endif %}
-                <li><a class="dropdown-item" href="/profile">{% trans "Profile" %}</a></li>
-                <li><a class="dropdown-item" href="/logout">{% trans "Logout" %}</a></li>
-              </ul>
-            </div>
-          {% else %}
-            <a href="/register">{% trans "Register" %}</a> {% trans "or" %} <a href="{% url "two_factor:login" %}?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
-          {% endif %}
           </div>
-        </div>
-        <div class="row">
-          <div style="justify-content: flex-end; align-items: flex-start; display: flex;">
+
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <a class="nav-link" href="/about" style="text-decoration:none;">
+              About
+            </a>
+            <a class="nav-link" href="/apidocs" style="text-decoration:none;">
+              API
+            </a>
+            <a target="_blank" class="nav-link" href="http://docs.peeringdb.com/" style="text-decoration:none;">
+              Documentation
+            </a>
+          </div>
+
+          <div class="user-container">
             <select name="language" id="anon-language-preference" class="form-control">
               {% get_current_language as LANGUAGE_CODE %}
               {% get_available_languages as LANGUAGES %}
@@ -205,8 +195,39 @@ $(window).bind("load", function() {
               {% endfor %}
             </select>
           </div>
+          <div class="nav right toolbar">
+            {% if request.user.is_authenticated %}
+
+              <div class="user">
+                {% if not request.user.is_verified_user %}
+                <div class="status">({% if not request.user.email %}<span class="attention">!</span>{%endif %}
+                  {% if request.user.email_confirmed %}
+                  <a href="/profile">{% trans "pending" %}</a>
+                  {% else %}
+                  <a href="/profile">{% trans "unverified" %}</a>
+                  {% endif %})
+                </div>
+                {% endif %}
+              </div>
+              <div class="dropdown" style="display:inline-block">
+                <div data-initials="{{request.user.username|get_user_initial}}" id="usermenu" data-bs-toggle="dropdown" aria-haspopup="true"></div>
+                <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="usermenu">
+                  {% for org in user.organizations %}
+                  <li><a class="dropdown-item" href="/org/{{ org.id }}">{{ org.name }}</a></li>
+                  {% endfor %}
+                  {% if request.user.is_verified_user %}
+                  <li><a class="dropdown-item" href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
+                  {% endif %}
+                  <li><a class="dropdown-item" href="/profile">{% trans "Profile" %}</a></li>
+                  <li><a class="dropdown-item" href="/logout">{% trans "Logout" %}</a></li>
+                </ul>
+              </div>
+            {% else %}
+            <a href="/register" style="margin-right: 5px;">{% trans "Register" %}</a>{% trans "or" %}<a href="{% url "two_factor:login" %}?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
+            {% endif %}
+          </div>
         </div>
       </div>
-    </div>
+    </nav>
   </div>
 </div>

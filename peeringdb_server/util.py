@@ -8,11 +8,6 @@ import django_peeringdb.const as const
 from django.utils.translation import gettext_lazy as _
 from django_grainy.util import Permissions, check_permissions, get_permissions  # noqa
 
-from peeringdb_server.models import (
-    CarrierFacility,
-    InternetExchangeFacility,
-    NetworkFacility,
-)
 from peeringdb_server.permissions import APIPermissionsApplicator  # noqa
 
 
@@ -88,11 +83,17 @@ def generate_social_media_render_data(data, social_media, insert_index, dismiss)
     return data
 
 
-def objfac_tupple(objfac_qset, obj):
+def objfac_tupple(objfac_qset, obj, output):
     data = {}
     for objfac in objfac_qset:
-        if not data.get(getattr(objfac, obj)):
-            data[getattr(objfac, obj)] = [objfac.facility]
-        else:
-            data[getattr(objfac, obj)].append(objfac.facility)
+        if output == "mixed":
+            if not data.get(getattr(objfac, obj)):
+                data[getattr(objfac, obj)] = [objfac.facility]
+            else:
+                data[getattr(objfac, obj)].append(objfac.facility)
+        elif output == "grouped":
+            if objfac.facility not in data:
+                data[objfac.facility] = [getattr(objfac, obj)]
+            else:
+                data[objfac.facility].append(getattr(objfac, obj))
     return data

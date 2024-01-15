@@ -1,0 +1,4 @@
+{% load i18n %}
+{% language 'en' %}
+    Network {{ net.name }} ({{ net.id }}) RIR Status updated to '{{ net.rir_status }}' at {{ net.rir_status_updated }}
+{% endlanguage %}

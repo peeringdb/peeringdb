@@ -47,6 +47,7 @@ from peeringdb_server.inet import (
     RdapInvalidRange,
     RdapLookup,
     rdap_pretty_error_message,
+    rir_status_is_ok,
 )
 from peeringdb_server.models import (
     QUEUE_ENABLED,
@@ -695,3 +696,44 @@ class ESSilentRealTimeSignalProcessor(RealTimeSignalProcessor):
                 "ELASTICSEARCH", action="pre_delete", error=e, instance=instance
             )
             pass
+
+
+@receiver(pre_save, sender=Network)
+def rir_status_initial(sender, instance=None, **kwargs):
+
+    """
+    Implements `Anytime` network update logic for RIR status handling
+    laid out in https://github.com/peeringdb/peeringdb/issues/1280
+
+    Anytime a network is saved:
+
+    if an ASN is added, set rir_status="ok" and set `=created
+    if an ASN is deleted (manually), set rir_status="notok" and set rir_status_updated=updated
+    if an ASN is re-added, set rir_status="ok" and set rir_status_updated=updated
+    """
+
+    if not settings.AUTO_UPDATE_RIR_STATUS:
+        return
+
+    created = not instance.id
+
+    # if an ASN is added, set rir_status="ok" and set rir_status_updated=created
+
+    if created:
+        instance.rir_status = "pending"
+        instance.rir_status_updated = timezone.now()
+
+    else:
+        old = Network.objects.get(id=instance.id)
+
+        # if an ASN is deleted (manually), set rir_status="notok" and set rir_status_updated=updated
+
+        if old.status == "ok" and instance.status == "deleted":
+            instance.rir_status = ""
+            instance.rir_status_updated = timezone.now()
+
+        # if an ASN is re-added, set rir_status="ok" and set rir_status_updated=updated
+
+        elif old.status == "deleted" and instance.status == "ok":
+            instance.rir_status = "pending"
+            instance.rir_status_updated = timezone.now()
