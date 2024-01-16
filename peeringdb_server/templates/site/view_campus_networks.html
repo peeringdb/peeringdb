@@ -26,7 +26,7 @@
           <h5>{{ facility }}</h5>
         </div>
         <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
-          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-networks" class="form-control" />
+          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-networks{{ forloop.counter }}" class="form-control" />
         </div>
       </div>
       <div class="row header align-items-center">
@@ -43,12 +43,12 @@
           <div data-sort-target=".ixs">{% trans "IX Connections" %}</div>
         </div>
         <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
-          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-networks" class="form-control" />
+          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-networks{{ forloop.counter }}" class="form-control" />
         </div>
       </div>
 
       <div class="scrollable"
-          id="list-networks"
+          id="list-networks{{ forloop.counter }}"
           data-edit-component="list"
           data-edit-template="network-item"
           style="max-height: 220px">
