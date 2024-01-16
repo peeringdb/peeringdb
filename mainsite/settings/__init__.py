@@ -553,10 +553,10 @@ ADMINS = [
 ]
 MANAGERS = ADMINS
 
-MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, "media"))
+set_option("MEDIA_ROOT", os.path.abspath(os.path.join(BASE_DIR, "media")))
 MEDIA_URL = f"/m/{PEERINGDB_VERSION}/"
 
-STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
+set_option("STATIC_ROOT", os.path.abspath(os.path.join(BASE_DIR, "static")))
 STATIC_URL = f"/s/{PEERINGDB_VERSION}/"
 
 # limit error emails (2/minute)

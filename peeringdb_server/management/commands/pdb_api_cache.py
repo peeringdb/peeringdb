@@ -72,6 +72,11 @@ class Command(BaseCommand):
             help="will generate kmz file in from the api-cache data",
         )
         parser.add_argument(
+            "--gen-kmz-only",
+            action="store_true",
+            help="generate kmz file from api-cache data, output to output dir, and exit",
+        )
+        parser.add_argument(
             "--date",
             action="store",
             default=None,
@@ -120,6 +125,11 @@ class Command(BaseCommand):
             # this forced api responses to be generated without permission
             # checks
             settings.GENERATING_API_CACHE = True
+
+        if options.get("gen_kmz_only"):
+            print("Generating kmz file")
+            fac_export_kmz(output_dir=output_dir)
+            return
 
         if only:
             only = only.split(",")
@@ -215,6 +225,7 @@ class Command(BaseCommand):
 
         if options.get("gen_kmz"):
             print("Generating kmz file")
+            # uses path here so it's using the newly generated cache files
             fac_export_kmz(path=output_dir)
 
         end_time = time.time()

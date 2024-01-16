@@ -72,16 +72,20 @@ def collect_carriers(path=None):
     return mapping
 
 
-def fac_export_kmz(limit=None, path=None):
+def fac_export_kmz(limit=None, path=None, output_dir=None):
     """
     This function exports facility data to a KMZ file.
     It reads the facility data from a JSON file, creates a KML object, and adds points to a folder in the KML.
     Each point represents a facility with its name, notes, and coordinates.
     The KML is then saved as a KMZ file.
+
+    If `output_dir` is not passed, it uses `path`
     """
 
     if not path:
         path = settings.API_CACHE_ROOT
+    if not output_dir:
+        output_dir = path
 
     cached_fac_path = f"{path}/fac-0.json"
 
@@ -138,4 +142,4 @@ def fac_export_kmz(limit=None, path=None):
                 displayname="Carriers",
             )
 
-    kml.savekmz(f"{path}/peeringdb.kmz")
+    kml.savekmz(f"{output_dir}/peeringdb.kmz")
