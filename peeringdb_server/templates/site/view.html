@@ -98,7 +98,7 @@
 
 
 {% if ref_tag == "campus" %}
-<div class="campus-nav-container" style="max-height: 94px;">
+<div class="campus-nav-container">
   <div class="scroller-campus scroller-left float-left mt-2"><i class="material-icons">chevron_left</i></div>
     <div class="wrapper campus-list flex-grow-1" style="width: 100%;">
       <nav class="nav nav-tabs nav-list-campus mt-2 ps-0" id="myTab" role="tablist" style="border-bottom: none;">
@@ -624,92 +624,45 @@ $(document).ready(function() {
 });
 
 
+</script>
+{% endif %}
+
+{% if ref_tag == "campus" %}
+<script>
+
 // tab campus
-var hidWidth;
-var scrollBarWidths = 40;
-
-var widthOfList = function(){
-  var itemsWidth = 0;
-  $('.nav-list-campus a').each(function(){
-    var itemWidth = $(this).outerWidth();
-    itemsWidth+=itemWidth;
-  });
-  return itemsWidth;
-};
-
-var widthOfHidden = function(){
-    var ww = 0 - $('.wrapper').outerWidth();
-    var hw = (($('.wrapper').outerWidth())-widthOfList()-getLeftPosi())-scrollBarWidths;
-    var rp = $(document).width() - ($('.nav-item.nav-link').last().offset().left + $('.nav-item.nav-link').last().outerWidth());
-
-    if (ww>hw) {
-        return ww;
-    }
-    else {
-        return hw;
-    }
-};
-
-var getLeftPosi = function(){
-
-    var ww = 0 - $('.wrapper').outerWidth();
-    var lp = $('.nav-list-campus').position().left;
-
-    if (ww>lp) {
-        return ww;
-    }
-    else {
-        return lp;
-    }
-};
-
-var reAdjust = function(){
-
-  // check right pos of last nav item
-  var rp = $(document).width() - ($('.nav-item.nav-link').last().offset().left + $('.nav-item.nav-link').last().outerWidth());
-  if (($('.wrapper').outerWidth()) < widthOfList() && (rp<0)) {
+$('.wrapper').scroll(()=>{
+    reAdjust()
+  })
+const reAdjust = () =>{
+  if (($('.wrapper').scrollLeft() + $('.wrapper').innerWidth() >= $('.wrapper')[0].scrollWidth - 10)){
+    $('.scroller-right').hide();
+  }else{
     $('.scroller-right').show().css('display', 'flex');
   }
-  else {
-    $('.scroller-right').hide();
-  }
 
-  if (getLeftPosi()<0) {
+  if ($('.wrapper').scrollLeft()){
     $('.scroller-left').show().css('display', 'flex');
-  }
-  else {
-  	$('.scroller-left').hide();
+  }else{
+    $('.scroller-left').hide();
   }
 }
-
-reAdjust();
-
+$(document).ready(()=>{
+  reAdjust();
+})
 $(window).on('resize',function(e){
   	reAdjust();
 });
 
 $('.scroller-right').click(function() {
-
-  $('.scroller-left').fadeIn('slow');
-  $('.scroller-right').fadeOut('slow');
-
-  $('.nav-list-campus').animate({left:"+="+widthOfHidden()+"px"},'slow',function(){
-    reAdjust();
-  });
+  $('.wrapper').animate( { scrollLeft: '+=200' }, "fast");
 });
 
 $('.scroller-left').click(function() {
-
-	$('.scroller-right').fadeIn('slow');
-	$('.scroller-left').fadeOut('slow');
-
-  	$('.nav-list-campus').animate({left:"-="+getLeftPosi()+"px"},'slow',function(){
-  	    reAdjust();
-  	});
+  $('.wrapper').animate( { scrollLeft: '-=200' }, "fast");
 });
 </script>
 {% endif %}
-
 {% if ref_tag != "campus" %}
 {% if permissions.can_use_tools %}
 {% include tools_template_name with data=data instance=instance permissions=permissions %}
