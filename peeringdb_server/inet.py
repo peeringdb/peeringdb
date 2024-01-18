@@ -155,9 +155,11 @@ def rir_status_is_ok(rir_status: str) -> bool:
         # actual rir statuses returned via rdap rir assigment check
         "assigned",
         "allocated",
-        # status peeringdb sets on creation of network, indicating rir status
-        # is pending
-        "pending",
+        # normalized status for networks that are assigned or allocated and "ok"
+        # in the peeringdb sense
+        "ok",
+        # rir status has never been fetched and is pending
+        None,
     ]
 
 

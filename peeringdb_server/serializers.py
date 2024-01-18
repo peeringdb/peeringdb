@@ -57,6 +57,7 @@ from peeringdb_server.inet import (
     RdapLookup,
     get_prefix_protocol,
     rdap_pretty_error_message,
+    rir_status_is_ok,
 )
 from peeringdb_server.models import (
     QUEUE_ENABLED,
@@ -2520,7 +2521,7 @@ class NetworkSerializer(ModelSerializer):
         required=False, allow_null=True, allow_blank=True, default=""
     )
 
-    rir_status = serializers.CharField(default="", read_only=True)
+    rir_status = serializers.SerializerMethodField()
     rir_status_updated = RemoveMillisecondsDateTimeField(default=None, read_only=True)
 
     social_media = SocialMediaSerializer(required=False, many=True)
@@ -2745,6 +2746,14 @@ class NetworkSerializer(ModelSerializer):
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
+
+    def get_rir_status(self, inst):
+        """
+        Normalized RIR status for network
+        """
+        if rir_status_is_ok(inst.rir_status):
+            return "ok"
+        return ""
 
     def create(self, validated_data):
         request = self._context.get("request")

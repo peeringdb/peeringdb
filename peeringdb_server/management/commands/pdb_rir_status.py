@@ -70,18 +70,43 @@ class Command(BaseCommand):
 
         reversion.set_comment("pdb_rir_status script")
 
+        batch_save = []
+
         for net in networks:
             new_rir_status = rir.get_status(net.asn)
             old_rir_status = net.rir_status
 
-            if rir_status_is_ok(old_rir_status) and old_rir_status != new_rir_status:
-                self.log(f"{net.name} ({net.asn}) RIR status: {new_rir_status}")
-                if self.commit:
-                    net.rir_status = new_rir_status
+            if old_rir_status == new_rir_status:
+                continue
+
+            if rir_status_is_ok(old_rir_status):
+
+                # old status was ok
+
+                if not rir_status_is_ok(new_rir_status):
+
+                    # new status not ok
+
+                    # we only update a rir status as changed in the data
+                    # if it was previously ok and is now not ok
+
+                    self.log(f"{net.name} ({net.asn}) RIR status: {new_rir_status}")
                     net.rir_status_updated = now
-                    net.save(update_fields=["rir_status", "rir_status_updated"])
+
+                # store new status regardless of ok/not ok
+
+                net.rir_status = new_rir_status
+
+                if self.commit:
+                    batch_save.append(net)
             elif not rir_status_is_ok(old_rir_status):
+
+                # old status not ok
+
                 if rir_status_is_ok(new_rir_status):
+
+                    # new status is ok
+
                     self.log(f"{net.name} ({net.asn}) RIR status: {new_rir_status}")
                     if self.commit:
                         ticket_queue_rir_status_update(net)
@@ -96,3 +121,10 @@ class Command(BaseCommand):
                         )
                         if self.commit:
                             net.delete()
+
+        # batch update
+
+        if self.commit:
+            Network.objects.bulk_update(
+                batch_save, ["rir_status", "rir_status_updated"]
+            )

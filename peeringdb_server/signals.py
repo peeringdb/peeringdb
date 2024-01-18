@@ -720,7 +720,7 @@ def rir_status_initial(sender, instance=None, **kwargs):
     # if an ASN is added, set rir_status="ok" and set rir_status_updated=created
 
     if created:
-        instance.rir_status = "pending"
+        instance.rir_status = None
         instance.rir_status_updated = timezone.now()
 
     else:
@@ -735,5 +735,5 @@ def rir_status_initial(sender, instance=None, **kwargs):
         # if an ASN is re-added, set rir_status="ok" and set rir_status_updated=updated
 
         elif old.status == "deleted" and instance.status == "ok":
-            instance.rir_status = "pending"
+            instance.rir_status = None
             instance.rir_status_updated = timezone.now()
