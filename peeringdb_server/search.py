@@ -252,19 +252,23 @@ def new_elasticsearch():
     return es
 
 
-def order_results_alphabetically(result, search_term):
+def order_results_alphabetically(result, search_terms):
     """
     Order the search results alphabetically and put the exact case-insensitive matches in front.
 
     Args:
     - result: A dictionary containing categories and their search results.
-    - search_term: A string representing the search term.
+    - search_term: A list of search terms.
 
     Returns:
     - result: A dictionary containing the search results in alphabetical order.
     """
 
-    search_term_lower = search_term.lower()
+    # Make sure the search terms are lower case
+    search_terms_lower = [term.lower() for term in search_terms]
+
+    # Add the search terms as a single string to the list of search terms
+    search_terms_lower.append(" ".join(search_terms_lower))
 
     for category in result:
         result[category] = sorted(result[category], key=lambda x: x["name"].lower())
@@ -272,7 +276,7 @@ def order_results_alphabetically(result, search_term):
         exact_match_index = -1
 
         for index, item in enumerate(result[category]):
-            if item["name"].lower() == search_term_lower:
+            if item["name"].lower() in search_terms_lower:
                 exact_match_index = index
                 break
 
@@ -294,11 +298,16 @@ def search_v2(term, geo={}):
     qs = " ".join([str(elem) for elem in term])
     keywords = qs.split()
 
+    # will track the exact matches to put them on top of the results
+    look_for_exact_matches = []
+
     result = ""
     for keyword in keywords:
         if keyword == "OR" or keyword == "AND":
             result += f" {keyword}"
         else:
+            # track the exact matches
+            look_for_exact_matches.append(keyword)
             result += f" *{keyword}*"
     term = result
     if PARTIAL_IPV6_ADDRESS.match(" ".join(qs.split())):
@@ -358,11 +367,12 @@ def search_v2(term, geo={}):
                 append_result(
                     sq["_index"],
                     sq["_id"],
-                    f"{sq['_source']['name']} ({sq['_source']['asn']})",
+                    f"{sq['_source']['name']}",
                     sq["_source"]["org"]["id"],
                     None,
                     result,
                     pk_map,
+                    {"asn": sq["_source"]["asn"]},
                 )
             elif sq["_index"] == "org":
                 append_result(
@@ -385,7 +395,7 @@ def search_v2(term, geo={}):
                     pk_map,
                 )
 
-    result = order_results_alphabetically(result, term)
+    result = order_results_alphabetically(result, look_for_exact_matches)
 
     return result
 
@@ -415,12 +425,18 @@ def add_secondary_entries(sq, result, pk_map):
         append_result(tag, pk, name, org_id, sub_name, result, pk_map)
 
 
-def append_result(tag, pk, name, org_id, sub_name, result, pk_map):
+def append_result(tag, pk, name, org_id, sub_name, result, pk_map, extra={}):
     if pk in pk_map[tag]:
         return
 
     pk_map[tag][pk] = True
 
     result[tag].append(
-        {"id": pk, "name": name, "org_id": int(org_id), "sub_name": sub_name}
+        {
+            "id": pk,
+            "name": name,
+            "org_id": int(org_id),
+            "sub_name": sub_name,
+            "extra": extra,
+        }
     )

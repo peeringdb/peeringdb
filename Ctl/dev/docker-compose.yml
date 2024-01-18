@@ -24,6 +24,10 @@ services:
       - discovery.type=single-node
     networks:
       - peeringdb_network
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
 
   redis:
     image: "docker.io/redis:7"
