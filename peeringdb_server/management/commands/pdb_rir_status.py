@@ -22,8 +22,14 @@ class Command(BaseCommand):
             type=int,
             help="Only check networks with a RIR status older than this age",
         )
-        parser.add_argument("--reset", action="store_true", help="Reset all RIR status.")
-        parser.add_argument("-o", "--output", help="Output file for --reset, will contain all networks with bad RIR status")
+        parser.add_argument(
+            "--reset", action="store_true", help="Reset all RIR status."
+        )
+        parser.add_argument(
+            "-o",
+            "--output",
+            help="Output file for --reset, will contain all networks with bad RIR status",
+        )
 
     def log(self, msg):
         if self.commit:
@@ -54,7 +60,7 @@ class Command(BaseCommand):
                 bad_networks.append(net)
 
             batch_save.append(net)
-        
+
         self.log(f"Saving {len(batch_save)} networks")
         if self.commit:
             Network.objects.bulk_update(
@@ -79,7 +85,7 @@ class Command(BaseCommand):
         self.max_age = options.get("max_age")
         self.limit = options.get("limit")
         self.output = options.get("output")
-        
+
         reset = options.get("reset")
         if reset:
             self.reset()
