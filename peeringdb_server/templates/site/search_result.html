@@ -76,7 +76,7 @@
       <div class="view_title">{% trans "Networks" %} ({{ count_net }})</div>
       {% for row in search_net%}
       <div class="result_row">
-        <a href="/{{'Network'|ref_tag}}/{{row.id}}">{{row.name}}</a>
+        <a href="/{{'Network'|ref_tag}}/{{row.id}}">{{row.name}}{% if search_version == 2 %} ({{ row.extra.asn }}){% endif %}</a>
         {% if row.sponsorship %}
         <a href="/sponsors" class="sponsor {{ row.sponsorship.css }}">{{ row.sponsorship.label }} {% trans "sponsor" %}</a>
         {% endif %}

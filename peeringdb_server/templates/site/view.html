@@ -537,16 +537,53 @@
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
-
-{% if permissions.can_write %}
 <script language="javascript" type="text/javascript">
+  {% if request.user.is_authenticated|flag_bad_data_needs_auth %}
+  var showReportDataElmnt = document.getElementById("showReportData")
+  if(showReportDataElmnt != null){
+    showReportDataElmnt.addEventListener("click", function() {
+      // Show the modal using Bootstrap's modal method
+      $('#report-bad-data').modal('show');
+    });
+  }
 
-function submitForm() {
-  let inputValue = document.getElementById('searchInput').value;
-  let form = document.getElementById('quick-search-view');
-  form.action = "/search/v2?q=" + encodeURIComponent(inputValue);
-  return true;
-}
+  reportDataFormElmnt = document.getElementById("reportDataForm")
+  if(reportDataFormElmnt != null){
+    reportDataFormElmnt.addEventListener("submit", function(event) {
+      event.preventDefault(); // Prevent the default form submission
+
+      // Retrieve form data
+      const formData = new FormData(event.target);
+      const formObject = {};
+      formData.forEach(function(value, key) {
+        formObject[key] = value;
+      });
+
+      var subject = "I am seeing bad data with " + formObject["obj_type"] + " at " + formObject["view_url"];
+      var fields = "The field(s) in question are:\n"+formObject["fields"]+"\n";
+      var reason = "I think this is bad data because:\n"+formObject["reason"]+"\n";
+      var expected = "The correct data is probably:\n"+formObject["expected"]+"\n";
+      var body = fields+reason+expected;
+
+      // Construct the mailto link
+      var mailtoLink = `mailto:${formObject["server_email"]}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+      // Open a pop-up window with the mailto link
+      var popup = window.open(mailtoLink, "EmailPopup", "width=600, height=400");
+
+      // Clear the form or perform other actions
+      event.target.reset();
+    });
+  }
+  {% endif %}
+
+  {% if permissions.can_write %}
+  function submitForm() {
+    let inputValue = document.getElementById('searchInput').value;
+    let form = document.getElementById('quick-search-view');
+    form.action = "/search/v2?q=" + encodeURIComponent(inputValue);
+    return true;
+  }
 
   const deleteElement = (e) => {
 
@@ -563,69 +600,35 @@ function submitForm() {
     new_service_identifier.editable("toggle");
   }
 
-document.getElementById("showReportData").addEventListener("click", function() {
-  // Show the modal using Bootstrap's modal method
-  $('#report-bad-data').modal('show');
-});
+  $(document).ready(function() {
+    PeeringDB.incomplete_data_notify();
+    PeeringDB.ViewActions.init();
 
-document.getElementById("reportDataForm").addEventListener("submit", function(event) {
-  event.preventDefault(); // Prevent the default form submission
-
-  // Retrieve form data
-  const formData = new FormData(event.target);
-  const formObject = {};
-  formData.forEach(function(value, key) {
-    formObject[key] = value;
-  });
-
-  // You can now use the form data as needed, for example, send it to a server via AJAX or process it in JavaScript
-  console.log(formObject);
-
-  var subject = "I am seeing bad data with " + formObject["obj_type"] + " at " + formObject["view_url"];
-  var fields = "The field(s) in question are:\n"+formObject["fields"]+"\n";
-  var reason = "I think this is bad data because:\n"+formObject["reason"]+"\n";
-  var expected = "The correct data is probably:\n"+formObject["expected"]+"\n";
-  var body = fields+reason+expected;
-
-  // Construct the mailto link
-  var mailtoLink = `mailto:${formObject["server_email"]}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-  // Open a pop-up window with the mailto link
-  var popup = window.open(mailtoLink, "EmailPopup", "width=600, height=400");
-  console.log(mailtoLink);
-  // Clear the form or perform other actions
-  event.target.reset();
-});
-
-$(document).ready(function() {
-  PeeringDB.incomplete_data_notify();
-  PeeringDB.ViewActions.init();
-
-  var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
-  editForm.on('action-success:submit', function(e,data) {
-    if(PeeringDB.ixf_proposals && PeeringDB.ixf_proposals.require_refresh) {
-      document.location.href = document.location.href;
-    } else {
-      PeeringDB.ViewTools.after_submit(editForm, data);
-      setTimeout(PeeringDB.incomplete_data_notify, 500);
-    }
-  });
-
-  editForm.on('action-success:toggle', function(e, payload) {
-    if(payload.mode == "view") {
+    var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
+    editForm.on('action-success:submit', function(e,data) {
       if(PeeringDB.ixf_proposals && PeeringDB.ixf_proposals.require_refresh) {
         document.location.href = document.location.href;
+      } else {
+        PeeringDB.ViewTools.after_submit(editForm, data);
+        setTimeout(PeeringDB.incomplete_data_notify, 500);
       }
-    }
-  })
+    });
 
-  $('[data-bs-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
+    editForm.on('action-success:toggle', function(e, payload) {
+      if(payload.mode == "view") {
+        if(PeeringDB.ixf_proposals && PeeringDB.ixf_proposals.require_refresh) {
+          document.location.href = document.location.href;
+        }
+      }
+    })
 
-});
+    $('[data-bs-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
 
+  });
+
+  {% endif %}
 
 </script>
-{% endif %}
 
 {% if ref_tag == "campus" %}
 <script>
