@@ -38,6 +38,20 @@ class Command(BaseCommand):
             self.stdout.write(f"[pretend] {msg}")
 
     def reset(self):
+        """
+        Reset RIR status for all networks, setting their
+        rir_status to the value read from the RIR allocation data.
+
+        This will also set the rir_status_updated field to now.
+
+        Running this essentially resets the rir status state, resetting
+        timelines for stale network deletion.
+
+        This will NOT send any deskpro notifications.
+
+        If the --output option is provided, all networks with a bad
+        RIR status will be written to the file.
+        """
 
         # reset all rir status
         rir = RIRAssignmentLookup()
