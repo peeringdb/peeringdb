@@ -140,6 +140,14 @@ class Command(BaseCommand):
             new_rir_status = rir.get_status(net.asn)
             old_rir_status = net.rir_status
 
+            if not new_rir_status:
+
+                # missing from rir data, we use None to indicate
+                # never checked, so we set this to missing to
+                # indicate that we have checked and it is missing
+
+                new_rir_status = "missing"
+
             if rir_status_is_ok(old_rir_status) or old_rir_status is None:
 
                 # old status was ok (assigned) or never set

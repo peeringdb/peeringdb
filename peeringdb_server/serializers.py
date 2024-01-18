@@ -2751,6 +2751,11 @@ class NetworkSerializer(ModelSerializer):
         """
         Normalized RIR status for network
         """
+
+        if inst.rir_status is None:
+            # never been checked
+            return "ok"
+
         if rir_status_is_ok(inst.rir_status):
             return "ok"
         return ""

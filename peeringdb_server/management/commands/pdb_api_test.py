@@ -2121,7 +2121,7 @@ class TestJSON(unittest.TestCase):
             "net",
             data,
         )
-        assert r_data.get("rir_status") == "pending"
+        assert r_data.get("rir_status") == "ok"
 
     ##########################################################################
 
@@ -2197,24 +2197,19 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def test_org_admin_002_PUT_net_rir_status(self):
+    def test_org_admin_002_GET_net_rir_status(self):
         net = SHARED["net_rw_ok"]
 
         now = timezone.now()
-        net.rir_status = "ok"
+        net.rir_status = "assigned"
         net.rir_status_updated = now
         net.save()
 
-        self.assert_update(
-            self.db_org_admin,
-            "net",
-            SHARED["net_rw_ok"].id,
-            {"name": self.make_name("TesT")},
-        )
+        api_data = self.db_org_admin.get("net", SHARED["net_rw_ok"].id)
 
         net.refresh_from_db()
-
-        assert net.rir_status == "ok"
+        assert api_data[0]["rir_status"] == "ok"
+        assert net.rir_status == "assigned"
         assert net.rir_status_updated == now
 
     ##########################################################################
