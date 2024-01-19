@@ -337,7 +337,7 @@ class Mock:
         return None
 
     def rir_status(self, data, reftag=None):
-        return "ok"
+        return "assigned"
 
     def rir_status_updated(self, data, reftag=None):
         return None
