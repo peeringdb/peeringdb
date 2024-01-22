@@ -10,4 +10,6 @@ class TestGenerateTestData(TestCase):
         for reftag, cls in list(REFTAG_MAP.items()):
             self.assertGreater(cls.objects.count(), 0)
             for instance in cls.objects.all():
+                if hasattr(instance, "rir_status"):
+                    print("RIR STATUS", instance.rir_status, type(instance.rir_status))
                 instance.full_clean()

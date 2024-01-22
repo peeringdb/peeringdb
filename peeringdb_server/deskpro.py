@@ -114,16 +114,35 @@ def ticket_queue_prefixauto_approve(user, ix, prefix):
     )
 
 
-def ticket_queue_rir_status_update(net):
+def ticket_queue_rir_status_updates(networks: list, threshold: int, date: datetime):
     """
-    Queue deskro ticket creation for prefix automation action: create.
+    Queue a single deskpro ticket creation for multiple network RIR status
+    updates and raise an exception if the threshold is exceeded.
+
+    :param networks: List of network objects that have updated RIR status.
+    :param threshold: Threshold number for network count to raise exception.
+    :param date: Date of RIR status update.
     """
 
+    if not threshold:
+        threshold = 100
+
+    if len(networks) > threshold:
+        raise Exception(
+            f"RIR status update threshold of {threshold} exceeded. Manual review required."
+        )
+
+    ticket_body = loader.get_template("email/notify-pdb-admin-rir-status.txt").render(
+        {
+            "networks": networks,
+            "date": date,
+            "days_until_deletion": settings.KEEP_RIR_STATUS,
+        }
+    )
+
     ticket_queue_email_only(
-        f"[RIR_STATUS] RIR status updated on Network '{net.name}' in '{net.rir_status_updated}'",
-        loader.get_template("email/notify-pdb-admin-rir-status.txt").render(
-            {"ix": net}
-        ),
+        "[RIR_STATUS] RIR status degradation updates",
+        ticket_body,
         None,
     )
 

@@ -4,6 +4,7 @@ SUPPORTED_FIELDS = {
         "route_server",
         "looking_glass",
         "info_type",
+        "info_types",
         "info_prefixes4",
         "info_prefixes6",
         "info_traffic",

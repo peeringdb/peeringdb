@@ -150,6 +150,7 @@ class Mock:
                 # with the same name as the field name
                 else:
                     data[field.name] = getattr(self, field.name)(data, reftag=reftag)
+
         obj = model(**data)
         obj.clean()
         obj.save()

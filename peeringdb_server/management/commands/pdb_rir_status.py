@@ -1,11 +1,11 @@
 import reversion
 from django.conf import settings as pdb_settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 from rdap.assignment import RIRAssignmentLookup
 
-from peeringdb_server.deskpro import ticket_queue_rir_status_update
+from peeringdb_server.deskpro import ticket_queue_rir_status_updates
 from peeringdb_server.inet import rir_status_is_ok
 from peeringdb_server.models import Network
 
@@ -29,6 +29,13 @@ class Command(BaseCommand):
             "-o",
             "--output",
             help="Output file for --reset, will contain all networks with bad RIR status",
+        )
+        parser.add_argument(
+            "-M",
+            "--max-networks-from-good-to-bad",
+            type=int,
+            default=100,
+            help="Maximum amount of networks going from good to bad. If exceeded, script will exit with error and a human should look at. This is to help prevent mass flagging of networks because of bad RIR data. Default to 100.",
         )
 
     def log(self, msg):
@@ -62,13 +69,14 @@ class Command(BaseCommand):
         self.log("Resetting all RIR status")
 
         qset = Network.objects.filter(status="ok")
+        now = timezone.now()
 
         bad_networks = []
 
         batch_save = []
         for net in qset:
             net.rir_status = rir.get_status(net.asn)
-            net.rir_status_updated = timezone.now()
+            net.rir_status_updated = now
 
             if not rir_status_is_ok(net.rir_status):
                 bad_networks.append(net)
@@ -99,6 +107,9 @@ class Command(BaseCommand):
         self.max_age = options.get("max_age")
         self.limit = options.get("limit")
         self.output = options.get("output")
+        self.max_networks_from_good_to_bad = options.get(
+            "max_networks_from_good_to_bad"
+        )
 
         reset = options.get("reset")
         if reset:
@@ -136,6 +147,11 @@ class Command(BaseCommand):
 
         batch_save = []
 
+        # tracks networks going from ok rir status to not ok
+        # rir status, networks in this list will be notified to the AC via
+        # deskpro API
+        networks_from_good_to_bad = []
+
         for net in networks:
             new_rir_status = rir.get_status(net.asn)
             old_rir_status = net.rir_status
@@ -148,15 +164,25 @@ class Command(BaseCommand):
 
                 new_rir_status = "missing"
 
-            if rir_status_is_ok(old_rir_status) or old_rir_status is None:
+            if rir_status_is_ok(old_rir_status):
 
                 # old status was ok (assigned) or never set
 
-                if not rir_status_is_ok(new_rir_status) or old_rir_status is None:
+                if not rir_status_is_ok(new_rir_status):
 
                     # new status is not ok (!assigned) or old status was never set
 
                     self.log(f"{net.name} ({net.asn}) RIR status: {new_rir_status}")
+                    net.rir_status_updated = now
+                    net.rir_status = new_rir_status
+                    networks_from_good_to_bad.append(net)
+
+                    if self.commit:
+                        batch_save.append(net)
+
+                elif old_rir_status != new_rir_status:
+
+                    # both old and new status are ok (assigned), but they are different
                     net.rir_status_updated = now
                     net.rir_status = new_rir_status
 
@@ -165,17 +191,9 @@ class Command(BaseCommand):
 
             elif not rir_status_is_ok(new_rir_status):
 
-                # new status is not ok (!assigned)
+                # new status is not ok
 
-                if rir_status_is_ok(old_rir_status) or old_rir_status is None:
-
-                    # old status was ok (assigned) or never set
-                    # notify via deskpro api
-
-                    self.log(f"{net.name} ({net.asn}) RIR status: {new_rir_status}")
-                    if self.commit:
-                        ticket_queue_rir_status_update(net)
-                elif not rir_status_is_ok(old_rir_status):
+                if not rir_status_is_ok(old_rir_status):
 
                     # old status was not ok (!assigned)
                     # check if we should delete the network, because
@@ -190,15 +208,44 @@ class Command(BaseCommand):
                             f"{net.name} ({net.asn}) has been RIR unassigned for too long, deleting"
                         )
                         if self.commit:
-                            net.delete()
+                            # call with force so delete isn't blocked by DOTF protection
+                            net.delete(force=True)
                     else:
                         days = pdb_settings.KEEP_RIR_STATUS - notok_since.days
-                        self.log(f"Network still unassigned, {days} left to deletion")
+                        self.log(
+                            f"Network still unassigned, {days} days left to deletion"
+                        )
+
+        if networks_from_good_to_bad:
+
+            # if we have too many networks going from good to bad
+            # we exit with an error to prevent mass flagging of networks due to bad
+            # RIR data
+
+            num_networks_from_good_to_bad = len(networks_from_good_to_bad)
+            self.log(
+                f"Found {num_networks_from_good_to_bad} networks going from good to bad"
+            )
+            if num_networks_from_good_to_bad > self.max_networks_from_good_to_bad:
+                raise CommandError(
+                    f"Too many networks going from good to bad ({num_networks_from_good_to_bad}), exiting to prevent mass flagging of networks. Please check manually. You can specify a threshold for this via the -M option."
+                )
 
         # batch update
 
         if self.commit:
-            self.log(f"Saving {len(batch_save)} networks")
+
+            if networks_from_good_to_bad:
+
+                # notify admin comittee on networks changed from ok RIR status to not ok RIR status
+
+                ticket_queue_rir_status_updates(
+                    networks_from_good_to_bad,
+                    self.max_networks_from_good_to_bad,
+                    now,
+                )
+
+            self.log(f"Applying rir status updates for {len(batch_save)} networks")
             Network.objects.bulk_update(
                 batch_save, ["rir_status", "rir_status_updated"]
             )

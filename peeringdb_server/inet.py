@@ -156,6 +156,9 @@ def rir_status_is_ok(rir_status: str) -> bool:
         # that we consider 'ok'
         "assigned",
         "allocated",
+        # peeringdb initial status (after creation or undeletion)
+        # should be treated as `ok`
+        "pending",
     ]
 
 

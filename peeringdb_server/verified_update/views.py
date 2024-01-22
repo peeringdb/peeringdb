@@ -108,6 +108,12 @@ def view_verified_update(request):
             invalid_permissions[obj] = obj._meta.verbose_name
             continue
 
+        # backwards compatibility for network info_type
+        if "info_type" in data:
+            info_type = data.pop("info_type")
+            if "info_types" not in data:
+                data["info_types"] = [info_type]
+
         update_data = {}
         diff = {}
         update_data.update({"ref_tag": ref_tag, "obj_id": obj_id})

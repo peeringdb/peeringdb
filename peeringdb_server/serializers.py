@@ -2751,14 +2751,12 @@ class NetworkSerializer(ModelSerializer):
         """
         Normalized RIR status for network
         """
-
-        if inst.rir_status is None:
-            # never been checked
-            return "ok"
-
+        # backwards compatibility for rir status on the api
+        # `ok` if ok
+        # None if not ok
         if rir_status_is_ok(inst.rir_status):
             return "ok"
-        return ""
+        return None
 
     def create(self, validated_data):
         request = self._context.get("request")
