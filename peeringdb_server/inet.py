@@ -153,10 +153,11 @@ def rir_status_is_ok(rir_status: str) -> bool:
     """
     return rir_status in [
         # actual rir statuses returned via rdap rir assigment check
+        # that we consider 'ok'
         "assigned",
         "allocated",
-        # status peeringdb sets on creation of network, indicating rir status
-        # is pending
+        # peeringdb initial status (after creation or undeletion)
+        # should be treated as `ok`
         "pending",
     ]
 

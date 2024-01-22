@@ -708,7 +708,6 @@ def rir_status_initial(sender, instance=None, **kwargs):
     Anytime a network is saved:
 
     if an ASN is added, set rir_status="ok" and set `=created
-    if an ASN is deleted (manually), set rir_status="notok" and set rir_status_updated=updated
     if an ASN is re-added, set rir_status="ok" and set rir_status_updated=updated
     """
 
@@ -717,7 +716,7 @@ def rir_status_initial(sender, instance=None, **kwargs):
 
     created = not instance.id
 
-    # if an ASN is added, set rir_status="ok" and set rir_status_updated=created
+    # if an ASN is added, set rir_status=ok (reset) and set rir_status_updated=created
 
     if created:
         instance.rir_status = "pending"
@@ -726,14 +725,8 @@ def rir_status_initial(sender, instance=None, **kwargs):
     else:
         old = Network.objects.get(id=instance.id)
 
-        # if an ASN is deleted (manually), set rir_status="notok" and set rir_status_updated=updated
+        # if an ASN is re-added, set rir_status=ok (reset) and set rir_status_updated=updated
 
-        if old.status == "ok" and instance.status == "deleted":
-            instance.rir_status = ""
-            instance.rir_status_updated = timezone.now()
-
-        # if an ASN is re-added, set rir_status="ok" and set rir_status_updated=updated
-
-        elif old.status == "deleted" and instance.status == "ok":
+        if old.status == "deleted" and instance.status == "ok":
             instance.rir_status = "pending"
             instance.rir_status_updated = timezone.now()

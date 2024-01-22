@@ -47,7 +47,11 @@ class VerifiedUpdateTestCase(TestCase):
                 {
                     "ref_tag": "net",
                     "obj_id": self.net.id,
-                    "data": {"info_prefixes4": 4, "info_prefixes6": 6},
+                    "data": {
+                        "info_prefixes4": 4,
+                        "info_prefixes6": 6,
+                        "info_type": "Content",
+                    },
                 },
                 {
                     "ref_tag": "poc",
