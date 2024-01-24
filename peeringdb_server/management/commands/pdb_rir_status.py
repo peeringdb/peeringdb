@@ -213,8 +213,21 @@ class Command(BaseCommand):
                     else:
                         days = pdb_settings.KEEP_RIR_STATUS - notok_since.days
                         self.log(
-                            f"Network still unassigned, {days} days left to deletion"
+                            f"AS{net.asn} still unassigned, {days} days left to deletion"
                         )
+            
+            elif rir_status_is_ok(new_rir_status):
+
+                # new status is ok (assigned)
+
+                if not rir_status_is_ok(old_rir_status):
+
+                    # old status was not ok (!assigned)
+                    # but new status is ok (assigned)
+                    net.rir_status_updated = now
+                    net.rir_status = new_rir_status
+                    if self.commit:
+                        batch_save.append(net)
 
         if networks_from_good_to_bad:
 
