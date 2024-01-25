@@ -1,0 +1,23 @@
+{% load i18n %}
+<form action="/search{% if not search_version or search_version == 2 %}/v2{% endif %}" id="quick-search"
+    method="POST">
+    {% csrf_token %}
+    <input placeholder="{% trans " Search here for a network, IX, or facility." %}" value="{{ request.GET.q }}"
+        class="form-control search-input" name="term" id="search" type="text" />
+</form>
+<div class="row">
+    <div class="col-6 col-sm-6">
+        <div class="advanced-search">
+            <a href="/advanced_search">{% trans "Advanced Search" %}</a>
+        </div>
+    </div>
+    <div class="col-6 col-sm-6 right">
+        <div class="v2-search">
+            {% if not search_version or search_version == 2%}
+            <a href="/search?q={{ request.GET.q }}">{% trans "Legacy Search" %}</a>
+            {% elif search_version == 1 %}
+            <a href="/search/v2?q={{ request.GET.q }}">{% trans "v2 Search" %}</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
