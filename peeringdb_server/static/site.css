@@ -1364,7 +1364,7 @@ div.oauth img {
   max-width: 25%;
 }
 
-.no-arrow::after{ 
+.no-arrow::after{
   display: none;
 }
 
@@ -1437,7 +1437,7 @@ div.oauth img {
   #mobile-search-container {
     display: none;
   }
-  
+
   #extra-nav-collapsed {
     display: block;
   }
@@ -1445,7 +1445,7 @@ div.oauth img {
   #extra-nav-expanded {
     display: none;
   }
-  
+
   #search {
     margin-top:8px;
     width: 275px;
@@ -1529,7 +1529,7 @@ div.oauth img {
   #search {
     margin-top:8px;
     width: 350px;
-  }  
+  }
 }
 
 @media (min-width: 1500px) {

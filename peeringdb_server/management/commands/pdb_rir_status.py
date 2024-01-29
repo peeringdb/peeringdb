@@ -215,7 +215,7 @@ class Command(BaseCommand):
                         self.log(
                             f"AS{net.asn} still unassigned, {days} days left to deletion"
                         )
-            
+
             elif rir_status_is_ok(new_rir_status):
 
                 # new status is ok (assigned)
