@@ -1265,7 +1265,7 @@ PeeringDB.InlineSearch = {
 
     );
 
-    $('.search-input').keypress(function(e) {
+    $('#search').keypress(function(e) {
       if(e.which == 13) {
         PeeringDB.InlineSearch.keystrokeTimeout.cancel();
         let quick_search_path = $("#quick-search").attr("action")
@@ -1285,7 +1285,7 @@ PeeringDB.InlineSearch = {
       }
     });
 
-    $('.search-input').keyup(function(e) {
+    $('#search').keyup(function(e) {
       if(e.which == 13)
         return;
 

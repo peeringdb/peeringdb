@@ -558,7 +558,7 @@ progress {
   color: #6c757d;
 }
 .blockquote-footer::before {
-  content: "— ";
+  content: "— ";
 }
 
 .img-fluid {
@@ -605,17 +605,12 @@ progress {
 
 @media (min-width: 576px) {
   .container-sm, .container {
-    max-width: 720px;
+    max-width: 540px;
   }
 }
 @media (min-width: 768px) {
   .container-md, .container-sm, .container {
     max-width: 720px;
-  }
-}
-@media (min-width: 820px) {
-  .container-md, .container-sm, .container {
-    max-width: 800px;
   }
 }
 @media (min-width: 992px) {
@@ -630,17 +625,7 @@ progress {
 }
 @media (min-width: 1400px) {
   .container-xxl, .container-xl, .container-lg, .container-md, .container-sm, .container {
-    max-width: 1200px;
-  }
-}
-@media (min-width: 1720px) {
-  .container-xxxl, .container-xxl, .container-xl, .container-lg, .container-md, .container-sm, .container {
-    max-width: 1500px;
-  }
-}
-@media (min-width: 1920px) {
-  .container-xxxxl, .container-xxxl, .container-xxl, .container-xl, .container-lg, .container-md, .container {
-    max-width: 1700px;
+    max-width: 1320px;
   }
 }
 .row {
@@ -1009,38 +994,6 @@ progress {
   margin-left: 91.66666667%;
 }
 
-.offset-pl-0 {
-  padding-left: 0;
-}
-
-.offset-pl-1 {
-  padding-left: 1%;
-}
-
-.offset-pl-2 {
-  padding-left: 2%;
-}
-
-.offset-pl-3 {
-  padding-left: 3%;
-}
-
-.offset-pr-0 {
-  padding-right: 0;
-}
-
-.offset-pr-1 {
-  padding-right: 1%;
-}
-
-.offset-pr-2 {
-  padding-right: 2%;
-}
-
-.offset-pr-3 {
-  padding-right: 3%;
-}
-
 .g-0,
 .gx-0 {
   --bs-gutter-x: 0;
@@ -1213,38 +1166,6 @@ progress {
 
   .offset-sm-11 {
     margin-left: 91.66666667%;
-  }
-
-  .offset-pl-sm-0 {
-    padding-left: 0;
-  }
-
-  .offset-pl-sm-1 {
-    padding-left: 2%;
-  }
-
-  .offset-pl-sm-2 {
-    padding-left: 4%;
-  }
-
-  .offset-pl-sm-3 {
-    padding-left: 6%;
-  }
-
-  .offset-pr-sm-0 {
-    padding-right: 0;
-  }
-
-  .offset-pr-sm-1 {
-    padding-right: 2%;
-  }
-
-  .offset-pr-sm-2 {
-    padding-right: 4%;
-  }
-
-  .offset-pr-sm-3 {
-    padding-right: 6%;
   }
 
   .g-sm-0,
@@ -1421,38 +1342,6 @@ progress {
     margin-left: 91.66666667%;
   }
 
-  .offset-pl-md-0 {
-    padding-left: 0;
-  }
-
-  .offset-pl-md-1 {
-    padding-left: 4%;
-  }
-
-  .offset-pl-md-2 {
-    padding-left: 6%;
-  }
-
-  .offset-pl-md-3 {
-    padding-left: 8%;
-  }
-
-  .offset-pr-md-0 {
-    padding-right: 0;
-  }
-
-  .offset-pr-md-1 {
-    padding-right: 4%;
-  }
-
-  .offset-pr-md-2 {
-    padding-right: 6%;
-  }
-
-  .offset-pr-md-3 {
-    padding-right: 8%;
-  }
-
   .g-md-0,
 .gx-md-0 {
     --bs-gutter-x: 0;
@@ -1625,38 +1514,6 @@ progress {
 
   .offset-lg-11 {
     margin-left: 91.66666667%;
-  }
-
-  .offset-pl-lg-0 {
-    padding-left: 0;
-  }
-
-  .offset-pl-lg-1 {
-    padding-left: 6%;
-  }
-
-  .offset-pl-lg-2 {
-    padding-left: 8%;
-  }
-
-  .offset-pl-lg-3 {
-    padding-left: 10%;
-  }
-
-  .offset-pr-lg-0 {
-    padding-right: 0;
-  }
-
-  .offset-pr-lg-1 {
-    padding-right: 6%;
-  }
-
-  .offset-pr-lg-2 {
-    padding-right: 8%;
-  }
-
-  .offset-pr-lg-3 {
-    padding-right: 10%;
   }
 
   .g-lg-0,
@@ -3976,35 +3833,12 @@ textarea.form-control-lg {
   border-top-right-radius: 0;
 }
 
-
-@media (min-width: 992px) {
-  .nav {
-    display: flex;
-    flex-wrap: wrap;
-    padding-left: 1.5rem !important;
-    margin-bottom: 0;
-    list-style: none;
-  }
-}
-
-@media (min-width: 1500px) {
-  .nav {
-    display: flex;
-    flex-wrap: wrap;
-    padding-left: 2rem !important;
-    margin-bottom: 0;
-    list-style: none;
-  }
-}
-
-@media (min-width: 1720px) {
-  .nav {
-    display: flex;
-    flex-wrap: wrap;
-    padding-left: 3rem !important;
-    margin-bottom: 0;
-    list-style: none;
-  }
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  padding-left: 0;
+  margin-bottom: 0;
+  list-style: none;
 }
 
 .nav-link {
@@ -4126,7 +3960,6 @@ textarea.form-control-lg {
 }
 .navbar-nav {
   display: flex;
-  margin-left: auto !important;
   flex-direction: column;
   padding-left: 0;
   margin-bottom: 0;
@@ -4146,13 +3979,13 @@ textarea.form-control-lg {
 }
 
 .navbar-collapse {
-  flex-basis: fit-content;
+  flex-basis: 100%;
   flex-grow: 1;
   align-items: center;
 }
 
 .navbar-toggler {
-  margin-left: 15px;
+  padding: 0.25rem 0.75rem;
   font-size: 1.25rem;
   line-height: 1;
   background-color: transparent;
@@ -4351,7 +4184,7 @@ textarea.form-control-lg {
   color: rgba(0, 0, 0, 0.9);
 }
 .navbar-light .navbar-nav .nav-link {
-  color: #1c3f28 solid !important;
+  color: rgba(0, 0, 0, 0.55);
 }
 .navbar-light .navbar-nav .nav-link:hover, .navbar-light .navbar-nav .nav-link:focus {
   color: rgba(0, 0, 0, 0.7);
