@@ -8,101 +8,96 @@
      data-edit-module="api_listing"
      data-edit-group="#view"
      data-edit-target="api:carrierfac">
-  <div class="list">
-    <div class="row">
-      <div class="col-6 col-sm-8 col-md-8">
-        <h5>{% trans "Facilities" %}</h5>
-      </div>
-      <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
-        <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
-      </div>
+  <div class="row">
+    <div class="col-6 col-sm-8 col-md-8">
+      <h5>{% trans "Facilities" %}</h5>
     </div>
-    <div class="row header">
-      <div class="col-6 col-sm-6 col-md-4">
-        <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
-      </div>
-      <div class="col-3 col-sm-3 col-md-3">
-        <div data-sort-target=".country">{% trans "Country" %}</div>
-      </div>
-      <div class="col-3 col-sm-3 col-md-3">
-        <div data-sort-target=".city">{% trans "City" %}</div>
-      </div>
-      <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
-        <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
-      </div>
+    <div class="col-6 col-sm-4 col-md-4 filter">
+      <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-facilities" class="form-control" />
     </div>
-
-    <div class="scrollable"
-         id="list-facilities"
-         data-edit-component="list"
-         data-edit-template="carrierfac-item">
-
-      <div class="empty-result">
-        <div class="message">{% trans "No filter matches." %}</div>
-        <div class="help">{% trans "You may filter by" %} <b>{% trans "Facility" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
-      </div>
-
-      {% for f in data.facilities %}
-
-      {% if f.status == "ok" or permissions.can_create %}
-
-      <div class="row item" data-edit-id="{{ f.id }}" data-edit-label="{% trans "Exchange - Facility link" %}: {{ f.facility.name }}">
-        <div class="editable payload">
-          <div data-edit-name="carrier_id">{{ f.carrier_id }}</div>
-          <div data-edit-name="fac_id">{{ f.facility_id }}</div>
-        </div>
-        <div class="col-6 col-sm-6 col-md-4">
-          {% if permissions.can_delete %}
-          <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
-          {% endif %}
-          <div class="facility" data-sort-value="{{ f.facility.name|lower }}" data-filter-value="{{ f.facility.name }}">
-            <a href="/{{ f.facility|ref_tag }}/{{ f.facility.id }}">{{ f.facility.name }}</a>
-          </div>
-          <div class="status">{% if f.status == "pending" %}{% trans "Pending" %}{% endif %}</div>
-        </div>
-        <div class="col-3 col-sm-3 col-md-3">
-          <div class="country" data-sort-value="{{ f.facility.country.name|lower }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
-        </div>
-        <div class="col-3 col-sm-3 col-md-3">
-          <div class="city" data-sort-value="{{ f.facility.city }}" data-filter-value="{{ f.facility.city }}">{{ f.facility.city }}</div>
-        </div>
-      </div>
-
-      {% endif %}
-
-      {% endfor %}
-
-    </div>
-    {% if permissions.can_create %}
-    <!-- ADD CARRIER FACILITY  -->
-    <div class="editable"
-         data-edit-toggled="edit"
-         data-edit-component="add">
-
-         <div class="payload">
-           <div data-edit-name="carrier_id">{{ instance.id }}</div>
-         </div>
-
-         <div class="row view_row">
-           <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Facility" %}</div>
-           <div class="view_value col-8 col-sm-7 col-md-8">
-             <div data-edit-type="autocomplete"
-                  data-edit-autocomplete="fac/ix/{{ instance.id }}"
-                  data-edit-name="fac_id">
-             </div>
-             <div data-autocomplete-confirm></div>
-           </div>
-         </div>
-
-         <div class="row marg-top">
-           <div class="col-12 right">
-             <a class="btn btn-default" data-edit-action="add">{% trans "Add Facility" %}</a>
-           </div>
-         </div>
-    </div>
-    <!-- END ADD -->
-    {% endif %}
   </div>
+  <div class="row header">
+    <div class="col-6 col-sm-6 col-md-6">
+      <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
+    </div>
+    <div class="col-3 col-sm-3 col-md-3">
+      <div data-sort-target=".country">{% trans "Country" %}</div>
+    </div>
+    <div class="col-3 col-sm-3 col-md-3">
+      <div data-sort-target=".city">{% trans "City" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-facilities"
+       data-edit-component="list"
+       data-edit-template="carrierfac-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Facility" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
+    </div>
+
+    {% for f in data.facilities %}
+
+    {% if f.status == "ok" or permissions.can_create %}
+
+    <div class="row item" data-edit-id="{{ f.id }}" data-edit-label="{% trans "Exchange - Facility link" %}: {{ f.facility.name }}">
+      <div class="editable payload">
+        <div data-edit-name="carrier_id">{{ f.carrier_id }}</div>
+        <div data-edit-name="fac_id">{{ f.facility_id }}</div>
+      </div>
+      <div class="col-6 col-sm-6 col-md-6">
+        {% if permissions.can_delete %}
+        <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+        {% endif %}
+        <div class="facility" data-sort-value="{{ f.facility.name|lower }}" data-filter-value="{{ f.facility.name }}">
+          <a href="/{{ f.facility|ref_tag }}/{{ f.facility.id }}">{{ f.facility.name }}</a>
+        </div>
+        <div class="status">{% if f.status == "pending" %}{% trans "Pending" %}{% endif %}</div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div class="country" data-sort-value="{{ f.facility.country.name|lower }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div class="city" data-sort-value="{{ f.facility.city }}" data-filter-value="{{ f.facility.city }}">{{ f.facility.city }}</div>
+      </div>
+    </div>
+
+    {% endif %}
+
+    {% endfor %}
+
+  </div>
+  {% if permissions.can_create %}
+  <!-- ADD CARRIER FACILITY  -->
+  <div class="editable"
+       data-edit-toggled="edit"
+       data-edit-component="add">
+
+       <div class="payload">
+         <div data-edit-name="carrier_id">{{ instance.id }}</div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Facility" %}</div>
+         <div class="view_value col-8 col-sm-7 col-md-8">
+           <div data-edit-type="autocomplete"
+                data-edit-autocomplete="fac/ix/{{ instance.id }}"
+                data-edit-name="fac_id">
+           </div>
+           <div data-autocomplete-confirm></div>
+         </div>
+       </div>
+
+       <div class="row marg-top">
+         <div class="col-12 right">
+           <a class="btn btn-default" data-edit-action="add">{% trans "Add Facility" %}</a>
+         </div>
+       </div>
+  </div>
+  <!-- END ADD -->
+  {% endif %}
 
 
 </div>

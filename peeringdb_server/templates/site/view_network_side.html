@@ -15,27 +15,24 @@
     <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Public Peering Exchange Points" %}</h5>
     </div>
-    <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+    <div class="col-6 col-sm-4 col-md-4 filter">
       <input name="filter-exchanges" type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-exchanges" class="form-control" />
     </div>
   </div>
   <div class="row header">
-    <div class="col-4 col-sm-4 col-md-3">
+    <div class="col-6 col-sm-4 col-md-4">
       <div data-sort-target=".exchange" data-sort-initial="asc">{% trans "Exchange" %}</div>
       <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
     </div>
-    <div class="col-8 col-sm-4 col-md-4">
+    <div class="col-6 col-sm-4 col-md-3">
       <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
       <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
-    <div class="col-3 col-sm-2 col-md-1 d-none d-sm-block">
+    <div class="col-3 col-sm-2 col-md-3 d-none d-sm-block">
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
     </div>
     <div class="col-3 col-sm-2 col-md-2 d-none d-sm-block">
       <div data-sort-target=".speed" class="numeric">{% trans "RS Peer" %}</div>
-    </div>
-    <div class="col-2 col-sm-2 col-md-2" id="filter-web">
-      <input name="filter-exchanges" type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-exchanges" class="form-control" />
     </div>
   </div>
 
@@ -58,7 +55,7 @@
       </div>
       <div class="row squeeze-15">
 
-          <div class="exchange col-4 col-sm-4 col-md-3" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
+          <div class="exchange col-6 col-sm-4 col-md-4" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
 
             {% if permissions.can_delete %}
             <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
@@ -70,7 +67,7 @@
             <svg class="not-operational" data-edit-toggled="view" data-bs-toggle="tooltip" title="{% trans "Not operational" %}" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="15px" viewBox="0 0 24 24" width="15px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><g><g><path d="M12,5.99L19.53,19H4.47L12,5.99 M12,2L1,21h22L12,2L12,2z"/><polygon points="13,16 11,16 11,18 13,18"/><polygon points="13,10 11,10 11,15 13,15"/></g></g></g></svg>
 
           </div>
-          <div class="col-8 col-sm-4 col-md-4">
+          <div class="col-6 col-sm-4 col-md-3">
             <div class="asn{% if permissions.can_write and x.asn != x.network.asn %} mark-value-error{% endif %}"
                {% if permissions.can_write and x.asn != x.network.asn %}
                data-bs-toggle="tooltip"
@@ -97,7 +94,7 @@
           </div>
 
 
-          <div class="speed col-2 col-sm-2 col-md-1 d-none d-sm-block"
+          <div class="speed col-3 col-sm-2 col-md-3 d-none d-sm-block"
                data-sort-value="{{ x.speed }}"
                data-filter-value="{{ x.speed|pretty_speed}}"
                {% if permissions.can_write %}
@@ -108,7 +105,7 @@
                data-edit-required="yes">
                {{ x.speed|pretty_speed }}
           </div>
-          <div class= "col-2 col-sm-2 col-md-2 d-none d-sm-block" data-edit-type="bool"
+          <div class= "col-3 col-sm-2 col-md-2 d-none d-sm-block" data-edit-type="bool"
                data-edit-name="is_rs_peer"
                data-edit-template="check"
                data-sort-value="{{ x.is_rs_peer }}"
@@ -119,7 +116,7 @@
       </div>
       <div class="ip-addr row squeeze-15">
 
-        <div class="col-12 col-sm-4 col-md-3">
+        <div class="col-12 col-sm-4">
           <div class="ip4"
                {% if permissions.can_write %}
                data-edit-type="string"
@@ -130,7 +127,7 @@
                {{ x.ipaddr4|none_blank }}
           </div>
         </div>
-        <div class="col-12 col-sm-8 col-md-4">
+        <div class="col-12 col-sm-8">
           <div class="ip6"
                {% if permissions.can_write %}
                data-edit-type="string"
@@ -242,21 +239,18 @@
     <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Interconnection Facilities" %}</h5>
     </div>
-    <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
-      <input name="filter-facilities" type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
+    <div class="col-6 col-sm-4 col-md-4 filter">
+      <input name="filter-facilities" type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-facilities" class="form-control" />
     </div>
   </div>
   <div class="row header">
-    <div class="col-6 col-sm-6 col-md-5">
+    <div class="col-6 col-sm-6 col-md-6">
       <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
       <div>{% trans "ASN" %}</div>
     </div>
-    <div class="col-6 col-sm-6 col-md-5">
+    <div class="col-6 col-sm-6 col-md-6">
       <div data-sort-target=".country">{% trans "Country" %}</div>
       <div data-sort-target=".city">{% trans "City" %}</div>
-    </div>
-    <div class="col-2 col-sm-2 col-md-2" id="filter-web">
-      <input name="filter-facilities" type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
     </div>
   </div>
 
@@ -277,7 +271,7 @@
         <div data-edit-name="fac_id">{{ f.facility_id }}</div>
         <div data-edit-name="net_id">{{ instance.id }}</div>
       </div>
-      <div class="col-6 col-sm-6 col-md-5">
+      <div class="col-6 col-sm-6 col-md-6">
 
         {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
@@ -300,7 +294,7 @@
         </div>
 
       </div>
-      <div class="col-6 col-sm-6 col-md-5">
+      <div class="col-6 col-sm-6 col-md-6">
         <div class="country" data-sort-value="{{ f.facility.country.name|lower }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
         <div class="city" data-sort-value="{{ f.facility.city }}" data-filter-value="{{ f.facility.city }}">{{ f.facility.city }}</div>
       </div>

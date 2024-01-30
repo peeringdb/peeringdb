@@ -1,79 +1,104 @@
 {% load util %}
 {% load i18n %}
 
-<!-- CAMPUSES -->
+<!-- LOCAL EXCHANGES-->
 
 <div class="list" data-sort-container=".scrollable" data-sort-row=".row">
   <div class="row">
     <div class="col-6 col-sm-8 col-md-8">
-      <h5>{% trans "Campuses" %}</h5>
+      <h5>{% trans "Exchanges" %}</h5>
     </div>
-    <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
-      <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-campuses" class="form-control" />
+    <div class="col-6 col-sm-4 col-md-4 filter">
+      <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-exchanges" class="form-control" />
     </div>
   </div>
   <div class="row header">
-    <div class="col-6 col-sm-6 col-md-4">
-      <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
-      <div data-sort-target=".management" data-sort-initial="asc">{% trans "Management" %}</div>
+    <div class="col-4 col-sm-4 col-md-4">
+      <div data-sort-target=".exchange" data-sort-initial="asc">{% trans "Exchange" %}</div>
+    </div>
+    <div class="col-5 col-sm-5 col-md-5">
+      <div data-sort-target=".name">{% trans "Long Name" %}</div>
     </div>
     <div class="col-3 col-sm-3 col-md-3">
-      <div data-sort-target=".city" data-sort-initial="asc">{% trans "City" %}</div>
-      <div data-sort-target=".country" data-sort-initial="asc">{% trans "Country" %}</div>
-    </div>
-    <div class="col-3 col-sm-3 col-md-3">
-      <div data-sort-target=".postal" data-sort-initial="asc">{% trans "Postal" %}</div>
-      <div data-sort-target=".state" data-sort-initial="asc">{% trans "State" %}</div>
-    </div>
-    <div class="col-2 col-sm-2 col-md-2 right" id="filter-web">
-      <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-campuses" class="form-control" />
+      <div data-sort-target=".participants" class="numeric">{% trans "Networks" %}</div>
     </div>
   </div>
 
-  <div class="scrollable" id="list-campuses">
+  <div class="scrollable" id="list-exchanges">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Exchange" %}</b> {% trans "or" %} <b>{%trans "Long Name" %}.</b></div>
+    </div>
+
+    {% for x in data.exchanges %}
+
+    <div class="row item">
+      <div class="col-4 col-sm-4 col-md-4">
+        <div class="exchange" data-sort-value="{{ x.ix.name|lower }}" data-filter-value="{{ x.ix.name }}">
+          <a href="/{{x.ix|ref_tag}}/{{ x.ix.id }}">{{ x.ix.name }}</a>
+        </div>
+      </div>
+      <div class="col-5 col-sm-5 col-md-5">
+        <div class="name" data-sort-value="{{ x.ix.name_long|lower }}" data-filter-value="{{ x.ix.name_long }}">{{ x.ix.name_long }}</div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        {% with x.ix.net_count as num %}
+        <div class="participants" data-sort-value="{{ num }}">{{ num }}</div>
+        {% endwith %}
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+</div>
+
+<!-- CARRIERS -->
+
+<div class="list" data-sort-container=".scrollable" data-sort-row=".row">
+  <div class="row">
+    <div class="col-6 col-sm-8 col-md-8">
+      <h5>{% trans "Carriers" %}</h5>
+    </div>
+    <div class="col-6 col-sm-4 col-md-4 filter">
+      <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-carriers" class="form-control" />
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-8 col-sm-8 col-md-8">
+      <div data-sort-target=".carrier" data-sort-initial="asc">{% trans "Carrier" %}</div>
+    </div>
+    <div class="col-4 col-sm-4 col-md-4">
+    </div>
+  </div>
+
+  <div class="scrollable" id="list-carriers">
 
     <div class="empty-result">
       <div class="message">{% trans "No filter matches." %}</div>
       <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b></div>
     </div>
-    {% for x in data.campuses %}
+
+    {% for x in data.carriers %}
 
     {% if x.status == "ok" or permissions.can_create %}
 
     <div class="row item" data-edit-id="{{ x.id }}">
-      <div class="col-6 col-sm-6 col-md-4">
+      <div class="col-8 col-sm-8 col-md-8">
         {% if permissions.can_delete %}
-        <a class="btn-row-delete" data-edit-toggled="edit" data-view-action="fac_reject_campus"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "Remove this campus from your facility." %}">&times;</a>
+        <a class="btn-row-delete" data-edit-toggled="edit" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "Remove this carrier from your facility." %}">&times;</a>
         {% endif %}
-        <div class="name" data-sort-value="{{ x.name|lower }}" data-filter-value="{{ x.name }}">
-          <a href="/{{x|ref_tag}}/{{ x.id }}">{{ x.name }}</a>
-        </div>
-        <div class="management" data-sort-value="{{ x.org.name|lower }}" data-filter-value="{{ x.org.name }}">
-          <a>{{ x.org.name }}</a>
-        </div>
-      </div>
-      <div class="col-3 col-sm-3 col-md-3">
-        <div class="city" data-sort-value="{{ x.city|lower }}" data-filter-value="{{ x.city }}">
-          <a>{{ x.city }}</a>
-        </div>
-        <div class="country" data-sort-value="{{ x.country.name|lower }}" data-filter-value="{{ x.country.name }}">
-          <a>{{ x.country.name }}</a>
-        </div>
-      </div>
-      <div class="col-3 col-sm-3 col-md-3">
-        <div class="postal" data-sort-value="{{ x.zipcode|lower }}" data-filter-value="{{ x.zipcode }}">
-          <a>{{ x.zipcode }}</a>
-        </div>
-        <div class="state" data-sort-value="{{ x.state|lower }}" data-filter-value="{{ x.state }}">
-          <a>{{ x.state }}</a>
+        <div class="exchange" data-sort-value="{{ x.carrier.name|lower }}" data-filter-value="{{ x.carrier.name }}">
+          <a href="/{{x.carrier|ref_tag}}/{{ x.carrier.id }}">{{ x.carrier.name }}</a>
         </div>
       </div>
       <div class="col-4 col-sm-4 col-md-4 right">
         {% if permissions.can_create %}
         <span class="approval-controls right">
           {% if x.status == "pending" %}
-          <button class="btn-sm btn btn-primary" data-view-action="fac_approve_campus" data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This campus wants to list its presence at this facility." %} {% trans "Click to accept this request" %}">{% trans "Accept" %}</button>
-          <button class="btn-sm btn btn-danger" data-view-action="fac_reject_campus"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This campus wants to list its presence at this facility." %} {% trans "Click to reject this request" %}">{% trans "Reject" %}</button>
+          <button class="btn-sm btn btn-primary" data-view-action="fac_approve_carrier" data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This carrier wants to list its presence at this facility." %} {% trans "Click to accept this request" %}">{% trans "Accept" %}</button>
+          <button class="btn-sm btn btn-danger" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "This carrier wants to list its presence at this facility." %} {% trans "Click to reject this request" %}">{% trans "Reject" %}</button>
           {% endif %}
         </span>
         {% endif %}
