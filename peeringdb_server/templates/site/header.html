@@ -135,43 +135,35 @@ $(window).bind("load", function() {
 
 <div class="header" id="header">
   <div class="container">
-    <nav class="navbar navbar-expand-lg navbar-light bg-transparent">
+    <nav class="navbar navbar-expand navbar-light bg-transparent">
       <div class="container-fluid">
         <div class="logo-container">
           <a href="/" id="wide-logo"><img class="logo img-fluid" src="{{ STATIC_URL }}/pdb-logo-coloured.png" /></a>
           <a href="/" id="square-logo"><img class="logo img-fluid" src="{{ STATIC_URL }}/pdb-logo-square-coloured.png" /></a>
         </div>
         <div class="navbar-nav" style="display: flex; align-items: center; flex-direction: row;">
-          <a class="nav-link right" onclick="toggleSearch()"style="text-decoration:none;">
+          <a class="nav-link right search-icon" style="text-decoration:none;">
             <i class="material-icons" id="search-icon">search</i>
           </a>
-          <div class="search-container" id="search-container" hidden>
-            <form action="/search{% if not search_version or search_version == 2 %}/v2{% endif %}" id="quick-search" method="POST">
-              {% csrf_token %}
-              <input placeholder="{% trans "Search here for a network, IX, or facility." %}" value="{{ request.GET.q }}" class="form-control" name="term" id="search" type="text" />
-            </form>
-            <div class="row">
-              <div class="col-6 col-sm-6">
-                <div class="advanced-search">
-                  <a href="/advanced_search">{% trans "Advanced Search" %}</a>
-                </div>
-              </div>
-              <div class="col-6 col-sm-6 right">
-                <div class="v2-search">
-                  {% if not search_version or search_version == 2%}
-                  <a href="/search?q={{ request.GET.q }}">{% trans "Legacy Search" %}</a>
-                  {% elif search_version == 1 %}
-                  <a href="/search/v2?q={{ request.GET.q }}">{% trans "v2 Search" %}</a>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
+          <div class="search-container" id="search-container">
+            {% include "site/header-search-container.html" with search_version=search_version %}
           </div>
 
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+          <!-- Dropdown Toggle -->
+          <li class="nav-item dropdown" id="extra-nav-collapsed">
+            <a class="nav-link dropdown-toggle no-arrow" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="navbar-toggler-icon"></span>
+            </a>
+
+            <!-- Dropdown Menu -->
+            <ul class="dropdown-menu position-absolute" aria-labelledby="navbarDropdown">
+              <li><a class="dropdown-item" href="/about">About</a></li>
+              <li><a class="dropdown-item" href="/apidocs">API</a></li>
+              <li><a class="dropdown-item" href="http://docs.peeringdb.com/" target="_blank">Documentation</a></li>
+            </ul>
+          </li>
+
+          <div id="extra-nav-expanded" class="navbar-expand">
             <a class="nav-link" href="/about" style="text-decoration:none;">
               About
             </a>
@@ -195,7 +187,7 @@ $(window).bind("load", function() {
               {% endfor %}
             </select>
           </div>
-          <div class="nav right toolbar">
+          <div class="nav right toolbar" id="user-menu">
             {% if request.user.is_authenticated %}
 
               <div class="user">
@@ -211,7 +203,7 @@ $(window).bind("load", function() {
               </div>
               <div class="dropdown" style="display:inline-block">
                 <div data-initials="{{request.user.username|get_user_initial}}" id="usermenu" data-bs-toggle="dropdown" aria-haspopup="true"></div>
-                <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="usermenu">
+                <ul class="dropdown-menu dropdown-menu-end position-absolute" aria-labelledby="usermenu">
                   {% for org in user.organizations %}
                   <li><a class="dropdown-item" href="/org/{{ org.id }}">{{ org.name }}</a></li>
                   {% endfor %}
@@ -229,5 +221,8 @@ $(window).bind("load", function() {
         </div>
       </div>
     </nav>
+    <div id="mobile-search-container">
+      {% include "site/header-search-container.html" with search_version=search_version %}
+    </div>
   </div>
 </div>

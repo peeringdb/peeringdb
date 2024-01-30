@@ -362,9 +362,6 @@ img.logo {
 }
 
 @media (max-width: 768px) {
-  div.header div.toolbar {
-    padding-bottom: 10px;
-  }
   div.header div.advanced-search,
   div.header div.v2-search {
     font-size: 12px;
@@ -1367,7 +1364,42 @@ div.oauth img {
   max-width: 25%;
 }
 
+.no-arrow::after{
+  display: none;
+}
+
+
 @media (max-width: 825px) {
+  #search {
+    margin-top:8px;
+    width: 100%;
+  }
+
+  #extra-nav-collapsed {
+    display: block;
+  }
+
+  #extra-nav-expanded {
+    display: none;
+  }
+
+  #navbarNavAltMarkup {
+    margin-left: 5px;
+  }
+
+  .search-icon {
+    display: none;
+  }
+
+  #search-container {
+    display: none;
+  }
+
+  #mobile-search-container {
+    display: block;
+    padding-bottom: 10px;
+  }
+
   .nav-tabs a.campus-tab {
     min-height: 120px;
     min-width: 200px;
@@ -1394,16 +1426,29 @@ div.oauth img {
   }
   #anon-language-preference {
     height: auto;
-    max-width: 100px;
+    max-width: 150px;
     margin-top: 5px;
     margin-left: 15px;
+    margin-right: 15px;
   }
 }
 
 @media (min-width: 825px) {
+  #mobile-search-container {
+    display: none;
+  }
+
+  #extra-nav-collapsed {
+    display: block;
+  }
+
+  #extra-nav-expanded {
+    display: none;
+  }
+
   #search {
     margin-top:8px;
-    width: 200px;
+    width: 275px;
   }
   #search-icon{
     font-size: 33px;
@@ -1450,9 +1495,53 @@ div.oauth img {
     margin-top: 5px;
     margin-left: 15px;
   }
+
+  [data-initials]:before {
+    margin-left: 5px;
+  }
+}
+
+@media (max-width: 992px) {
+  #wide-logo {
+    display: none;
+  }
+  #square-logo {
+    display: block;
+  }
+}
+
+
+@media (min-width: 992px) {
+  #search {
+    margin-top:8px;
+    width: 340px;
+  }
+  #wide-logo {
+    max-width: 150px;
+  }
+}
+
+
+@media (min-width: 1200px) {
+  #wide-logo {
+    max-width: 100%;
+  }
+  #search {
+    margin-top:8px;
+    width: 350px;
+  }
 }
 
 @media (min-width: 1500px) {
+  #extra-nav-collapsed {
+    display: none;
+  }
+
+  #extra-nav-expanded {
+    display: flex;
+    width: auto%;
+    flex-direction: row-reverse;
+  }
   #search {
     margin-top:8px;
     width: 300px;
@@ -1483,6 +1572,13 @@ div.oauth img {
     top:0px;
     min-width:100%;
     margin-top:0px;
+  }
+
+  #anon-language-preference {
+    height: auto;
+    max-width: auto;
+    margin-top: 5px;
+    margin-left: 15px;
   }
 }
 

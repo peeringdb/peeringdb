@@ -8,28 +8,6 @@
 
 {% block content %}
 
-{% if ref_tag != "campus" %}
-<div class="row mb-5">
-  <div class="col-md-6 col-sm-12 col-12 offset-pr-md-1 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0 d-flex">
-    <form id="quick-search-view" method="POST" onsubmit="return submitForm()" class="me-2">
-      {% csrf_token %}
-        <div class="input-group">
-            <input size="60" maxlength="60" placeholder="{% trans "Search here for a network, IX, or facility." %}" class="form-control" name="term" type="text" id="searchInput">
-            <div class="input-group-append">
-                <button class="btn btn-lg rounded-group-button" type="submit">
-                    <i class="material-icons" style="font-size: 40px; padding: 0px;">search</i>
-                </button>
-            </div>
-        </div>
-    </form>
-
-    <a href="/advanced_search" class="btn btn-lg rounded-button py-2 d-flex align-items-center ms-auto" style="height: 100%; min-width: 170px; font-size: 14px;">ADVANCED SEARCH</a>
-  </div>
-  <div class="col-md-6 col-sm-12 col-12 offset-pl-md-1 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0 d-flex">
-  </div>
-</div>
-{% endif %}
-
 <div id="view" class="view {% if permissions.can_edit %}editable{% endif %}" {% if permissions.can_edit %}data-edit-target="api:{{ref_tag}}:update" data-edit-id="{{instance.id}}" data-check-incomplete="Yes"{% endif %}>
 
 {% if permissions.can_edit %}
