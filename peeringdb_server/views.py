@@ -1994,6 +1994,7 @@ def view_carrier(request, id):
         request, "carrier", data, "Carrier", perms=perms, instance=carrier
     )
 
+
 @ensure_csrf_cookie
 def view_campus(request, id):
     """
@@ -2115,6 +2116,7 @@ def view_campus(request, id):
     return view_component(
         request, "campus", data, "Campus", perms=perms, instance=campus
     )
+
 
 @ensure_csrf_cookie
 def view_exchange(request, id):
