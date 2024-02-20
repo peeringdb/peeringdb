@@ -484,8 +484,8 @@
 {% if ref_tag == "fac" %}
   <script>
     $(document).on('input', 'input.latitude, input.longitude',() => {
-      let latitude = $("input.latitude").val().trim()
-      let longitude = $("input.longitude").val().trim()
+      let latitude = PeeringDB.escape_html($("input.latitude").val().trim())
+      let longitude = PeeringDB.escape_html($("input.longitude").val().trim())
       const geo_preview = $("#geocode_preview");
       validate_lat = latitude !== "" && isFinite(latitude) && Math.abs(latitude) <= 90
       validate_lon = longitude !== "" && isFinite(longitude) && Math.abs(longitude) <= 180;
