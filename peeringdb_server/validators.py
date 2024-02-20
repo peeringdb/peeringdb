@@ -9,9 +9,11 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, validate_email
 from django.utils.translation import gettext_lazy as _
+from geopy.distance import geodesic
 from rest_framework.exceptions import ValidationError as RestValidationError
 from schema import Schema
 
+import peeringdb_server.geo as geo
 import peeringdb_server.models
 from peeringdb_server.inet import IRR_SOURCE, network_is_pdb_valid
 from peeringdb_server.request import bypass_validation
@@ -544,3 +546,63 @@ def validate_asn_prefix(asn):
         return validated_value.group(2)
     else:
         raise RestValidationError({"asn": ["ASN contains invalid value"]})
+
+
+def validate_latitude(latitude):
+    try:
+        value = float(latitude)
+        is_valid = -90 <= value <= 90
+    except ValueError:
+        is_valid = False
+    if not is_valid:
+        raise ValidationError({"latitude": f"Invalid {latitude} latitude!"})
+    return value
+
+
+def validate_longitude(longitude):
+    try:
+        value = float(longitude)
+        is_valid = -180 <= value <= 180
+    except ValueError:
+        is_valid = False
+    if not is_valid:
+        raise ValidationError({"longitude": f"Invalid {longitude} longitude!"})
+    return value
+
+
+def validate_distance_geocode(current_geocode, new_geocode, city):
+    if (
+        current_geocode
+        and type(tuple)
+        and all(value is not None for value in current_geocode)
+    ):
+        # When geocode already
+        max_distance = settings.FACILITY_MAX_DISTANCE_GEOCODE_EXISTS
+        distance = geodesic(current_geocode, new_geocode).km
+        if distance > max_distance:
+            message = f"exceeds the maximum distance of {max_distance}KM from the previous geocode"
+            raise ValidationError({"latitude": message, "longitude": message})
+    else:
+        # When no geocode currently exists
+        gmaps = geo.GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
+        city_geocode = ()
+        max_distance = settings.FACILITY_MAX_DISTANCE_GEOCODE_NOT_EXISTS
+
+        try:
+            result = gmaps.geocode_freeform(city)
+            city_geocode = (result.get("lat"), result.get("lng"))
+        except geo.Timeout:
+            raise ValidationError(_("Geo coding timed out"))
+        except geo.RequestError as exc:
+            raise ValidationError(_("Geo coding failed: {}").format(exc))
+        except geo.NotFound:
+            raise ValidationError(_("Geo coding failed: City not found"))
+
+        distance = geodesic(city_geocode, new_geocode).km
+        if distance > max_distance:
+            message = (
+                f"exceeds a maximum distance of {max_distance}KM from the city center"
+            )
+            raise ValidationError({"latitude": message, "longitude": message})
+
+    return new_geocode

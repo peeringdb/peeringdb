@@ -10,7 +10,19 @@ import re
 
 from django.conf import settings
 from django.utils.translation import gettext as _
+from rest_framework import serializers
 from rest_framework.schemas.openapi import AutoSchema
+
+from peeringdb_server.serializers import (
+    CampusSerializer,
+    CarrierSerializer,
+    FacilitySerializer,
+    InternetExchangeSerializer,
+    IXLanSerializer,
+    NetworkSerializer,
+    OrganizationSerializer,
+    RequestAwareListSerializer,
+)
 
 
 class CustomField:
@@ -63,6 +75,33 @@ class BaseSchema(AutoSchema):
         "DateField": "date",
         "NumberSearchField": "number",
     }
+
+    serializer_method_field_map = {
+        "org": OrganizationSerializer,
+        "campus": CampusSerializer,
+        "carrier": CarrierSerializer,
+        "net": NetworkSerializer,
+        "ix": InternetExchangeSerializer,
+        "ixlan": IXLanSerializer,
+        "fac": FacilitySerializer,
+    }
+
+    def map_field(self, field):
+        if isinstance(field, serializers.SerializerMethodField):
+            serializer = self.serializer_method_field_map.get(field.field_name)
+            if serializer:
+                serializer_instance = serializer()
+                data = self.map_serializer(serializer_instance)
+                data["type"] = "object"
+                return data
+
+        if isinstance(field, RequestAwareListSerializer):
+            mapping = {
+                "type": "array",
+                "items": {"type": "integer"},
+            }
+            return mapping
+        return super().map_field(field)
 
     def get_operation_type(self, *args):
         """

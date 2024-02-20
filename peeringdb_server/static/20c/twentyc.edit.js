@@ -951,6 +951,38 @@ twentyc.editable.input.register(
 );
 
 twentyc.editable.input.register(
+  "latitude",
+  {
+    validate : function() {
+      return isFinite(this.element.val()) && Math.abs(this.element.val()) <= 90;
+    },
+    validation_message : function() {
+      return gettext("Needs to be a valid latitude") ///
+    },
+    get: function() {
+      return parseFloat(this.element.val()) || null;
+    }
+  },
+  "string"
+);
+
+twentyc.editable.input.register(
+  "longitude",
+  {
+    validate : function() {
+      return isFinite(this.element.val()) && Math.abs(this.element.val()) <= 180;
+    },
+    validation_message : function() {
+      return gettext("Needs to be a valid longitude") ///
+    },
+    get: function() {
+      return parseFloat(this.element.val()) || null;
+    }
+  },
+  "string"
+);
+
+twentyc.editable.input.register(
   "url",
   {
     placeholder : "http://www.example.com",

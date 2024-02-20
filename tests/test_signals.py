@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 import reversion
+from django_grainy.models import Group
 
 from peeringdb_server.models import (
     Facility,
@@ -199,3 +200,12 @@ def test_region_continent(entities):
         fac.save()
 
     assert fac.region_continent == "North America"
+
+
+@pytest.mark.django_db
+def test_bulk_create_signal():
+    org_list = [Organization(id=i, name=f"org-{i}") for i in range(1, 6)]
+    Organization.objects.bulk_create(org_list)
+    for i in range(1, 6):
+        assert Group.objects.filter(name=f"org.{i}").exists() == True
+        assert Group.objects.filter(name=f"org.{i}.admin").exists() == True
