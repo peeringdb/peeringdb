@@ -69,6 +69,7 @@ from rest_framework_api_key.models import AbstractAPIKey
 
 import peeringdb_server.geo as geo
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
+from peeringdb_server.managers import CustomManager
 from peeringdb_server.request import bypass_validation
 from peeringdb_server.validators import (
     validate_address_space,
@@ -905,6 +906,8 @@ class Organization(
     """
     Describes a peeringdb organization.
     """
+
+    objects = CustomManager()
 
     # FIXME: change this to ImageField - keep
     # FileField for now as the server doesn't have all the
@@ -1863,6 +1866,11 @@ class Facility(
         help_text=_("number of networks at this facility"),
         null=False,
         default=0,
+    )
+
+    notified_for_geocoords = models.BooleanField(
+        default=False,
+        help_text="Indicates whether the facility has been notified to update their geocoordinates.",
     )
 
     # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove

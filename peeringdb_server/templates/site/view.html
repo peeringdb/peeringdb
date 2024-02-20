@@ -363,7 +363,47 @@
             </span>
           </div>
         {% elif row.type == "geocode" %}
-          <div id="geocode" class="view_value col-8 col-sm-7 col-md-8">
+        <div id="geocode" class="view_value col-8 col-sm-7 col-md-8">
+          {% if ref_tag == "fac" %}
+              <span class="inline delimited show-on-edit"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="latitude"
+                data-edit-placeholder="Latitude"
+                {% endif %}
+                {% if row.required %}
+                data-edit-required="yes"
+                {% endif %}
+                data-edit-name="latitude">
+                {{ row.value.latitude | default:"" }}
+            </span>
+            <span class="inline delimited show-on-edit"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="longitude"
+                data-edit-placeholder="Longitude"
+                {% endif %}
+                {% if row.required %}
+                data-edit-required="yes"
+                {% endif %}
+                data-edit-name="longitude">
+                {{ row.value.longitude | default:"" }}
+            </span>
+            <span class="show-on-edit" id="geocode_preview">
+              {% if row.value.latitude and row.value.longitude %}
+                <a target="_blank" rel="noopener noreferrer" href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">Preview in google maps</a>
+              {% endif %}            </span>
+            <div class="hide-on-edit">
+              {% if row.value.latitude and row.value.longitude  %}
+              <span id="geocode_active">
+                <a href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
+              </span>
+              {% else %}
+              <span id="geocode_active"></span>
+              <div id="geocode_inactive" class="note inactive">
+                  {% trans "Geocode data for this entity could not be obtained at this point. This is done automatically upon address field changes."%}
+              </div>
+              {% endif %}
+            </div>
+          {% else %}
             {% if row.value.latitude and row.value.longitude %}
               <span id="geocode_active">
                 <a href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
@@ -377,7 +417,8 @@
               {% trans "Geocode data for this entity could not be obtained at this point. This is done automatically upon address field changes."%}
             </div>
             {% endif %}
-          </div>
+          {% endif %}
+        </div>
         {% elif row.type == "entity_link"  %}
 
           <div class="view_value col-8 col-sm-7 col-md-8">
@@ -440,6 +481,25 @@
 </div>
 
 {% if permissions.can_write %}
+{% if ref_tag == "fac" %}
+  <script>
+    $(document).on('input', 'input.latitude, input.longitude',() => {
+      let latitude = PeeringDB.escape_html($("input.latitude").val().trim())
+      let longitude = PeeringDB.escape_html($("input.longitude").val().trim())
+      const geo_preview = $("#geocode_preview");
+      validate_lat = latitude !== "" && isFinite(latitude) && Math.abs(latitude) <= 90
+      validate_lon = longitude !== "" && isFinite(longitude) && Math.abs(longitude) <= 180;
+      if (validate_lat && validate_lon){
+        let link = `https://maps.google.com/?q=${latitude},${longitude}`
+        let contents = `<a target="_blank" rel="noopener noreferrer" href="${link}">Preview in google maps</a>`
+        geo_preview.empty().append(contents);
+      }else{
+        let contents = `Please enter valid geocode`
+        geo_preview.empty().append(contents);
+      }
+  });
+  </script>
+{% endif %}
 <script language="javascript" type="text/javascript">
 
   const deleteElement = (e) => {

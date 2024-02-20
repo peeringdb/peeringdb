@@ -1,5 +1,6 @@
 import ipaddress
 import os
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -10,6 +11,7 @@ from django.core.management import call_command
 from django.test import RequestFactory, override_settings
 from rest_framework.exceptions import ValidationError as RestValidationError
 
+import peeringdb_server.geo as geo
 from peeringdb_server.context import current_request
 from peeringdb_server.models import (
     Facility,
@@ -25,9 +27,12 @@ from peeringdb_server.models import (
 from peeringdb_server.validators import (
     validate_address_space,
     validate_asn_prefix,
+    validate_distance_geocode,
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_irr_as_set,
+    validate_latitude,
+    validate_longitude,
     validate_phonenumber,
     validate_prefix_overlap,
     validate_social_media,
@@ -948,3 +953,123 @@ def test_validate_asn_prefix(value, is_valid, validated):
             validate_asn_prefix(value)
     else:
         assert validate_asn_prefix(value) == validated
+
+
+@pytest.mark.parametrize(
+    "value,is_valid,validated",
+    [
+        # success validation
+        (37.7749, True, 37.7749),
+        (-23.5505, True, -23.5505),
+        (51.5074, True, 51.5074),
+        (40.7128, True, 40.7128),
+        ("-33.8688", True, -33.8688),
+        # fail validation
+        (95.1234, False, None),
+        (-120.5678, False, None),
+        ("-122.5678", False, None),
+        ("abcdef", False, None),
+    ],
+)
+@pytest.mark.django_db
+def test_validate_latitude(value, is_valid, validated):
+    if not is_valid:
+        with pytest.raises(ValidationError):
+            validate_latitude(value)
+    else:
+        assert validate_latitude(value) == validated
+
+
+@pytest.mark.parametrize(
+    "value,is_valid,validated",
+    [
+        # success validation
+        (-122.4194, True, -122.4194),
+        (-46.6333, True, -46.6333),
+        (-0.1270, True, -0.1270),
+        (-74.0060, True, -74.0060),
+        ("151.2093", True, 151.2093),
+        # fail validation
+        (190.1234, False, None),
+        (-250.5678, False, None),
+        ("360.9876", False, None),
+        ("abcdef", False, None),
+    ],
+)
+@pytest.mark.django_db
+def test_validate_longitude(value, is_valid, validated):
+    if not is_valid:
+        with pytest.raises(ValidationError):
+            validate_longitude(value)
+    else:
+        assert validate_longitude(value) == validated
+
+
+def geo_mock_init(self, key, timeout):
+    pass
+
+
+def geo_gmaps_mock_geocode_freeform(location):
+    return {"lat": 40.712776, "lng": -74.005974}
+
+
+@pytest.mark.parametrize(
+    "current_geocode,new_geocode,city,is_valid,validated",
+    [
+        # test success with exists geocode (max 1km from previous geocode)
+        (
+            (50.951533, 1.852570),
+            (50.951533, 1.851440),
+            "london",
+            True,
+            (50.951533, 1.851440),
+        ),
+        (
+            (40.712776, -74.005974),
+            (40.712790, -74.003974),
+            "new york",
+            True,
+            (40.712790, -74.003974),
+        ),
+        # # test fail with exists geocode (max 1km from previous geocode)
+        ((40.712776, -74.005974), (40.712790, -73.003974), "new york", False, None),
+        ((50.951533, 1.852570), (51.951533, 0.851440), "london", False, None),
+        # test success with not exists geocode (max 50km from city)
+        (
+            (None, None),
+            (40.712771, -74.005970),
+            "new york",
+            True,
+            (40.712771, -74.005970),
+        ),
+        (
+            (None, None),
+            (40.716822, -73.991032),
+            "new york",
+            True,
+            (40.716822, -73.991032),
+        ),
+        # test fail with not exists geocode (max 50km from city)
+        ((None, None), (36.169941, -115.139832), "new york", False, None),
+        ((None, None), (36.201902, -115.328808), "new york", False, None),
+    ],
+)
+@patch.object(geo.GoogleMaps, "__init__", geo_mock_init)
+@patch.object(geo.Melissa, "__init__", geo_mock_init)
+@pytest.mark.django_db
+def test_validate_distance_geocode(
+    current_geocode, new_geocode, city, is_valid, validated, settings
+):
+    settings.MELISSA_KEY = ""
+    settings.GOOGLE_GEOLOC_API_KEY = ""
+    with patch.object(
+        geo.GoogleMaps, "geocode_freeform", side_effect=geo_gmaps_mock_geocode_freeform
+    ):
+        if not is_valid:
+            with pytest.raises(ValidationError):
+                validate_distance_geocode(current_geocode, new_geocode, city)
+        else:
+            assert (
+                validate_distance_geocode(current_geocode, new_geocode, city)
+                == validated
+            )

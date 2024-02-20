@@ -89,9 +89,12 @@ from peeringdb_server.permissions import (
 from peeringdb_server.validators import (
     validate_address_space,
     validate_asn_prefix,
+    validate_distance_geocode,
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_irr_as_set,
+    validate_latitude,
+    validate_longitude,
     validate_phonenumber,
     validate_poc_visible,
     validate_prefix_overlap,
@@ -277,43 +280,42 @@ class GeocodeSerializerMixin:
 
         return False
 
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data, ignore_geosync=False):
         """
         When updating a geo-enabled object,
         update the model first
         and then normalize the geofields.
         """
-
-        # Need to check if we need geosync before updating the instance
-        need_geosync = self._need_geosync(instance, validated_data)
-
         instance = super().update(instance, validated_data)
+        if not ignore_geosync:
+            # Need to check if we need geosync before updating the instance
+            need_geosync = self._need_geosync(instance, validated_data)
 
-        # we dont want to geocode on tests
-        if settings.RELEASE_ENV == "run_tests":
-            return instance
+            # we dont want to geocode on tests
+            if settings.RELEASE_ENV == "run_tests":
+                return instance
 
-        if need_geosync:
-            try:
-                suggested_address = instance.process_geo_location()
+            if need_geosync:
+                try:
+                    suggested_address = instance.process_geo_location()
 
-                # normalize state if needed
-                if suggested_address.get("state", "") != instance.state:
-                    instance.state = suggested_address.get("state", "")
-                    instance.save()
+                    # normalize state if needed
+                    if suggested_address.get("state", "") != instance.state:
+                        instance.state = suggested_address.get("state", "")
+                        instance.save()
 
-                # provide other normalization options as suggestion to the user
-                if self.needs_address_suggestion(suggested_address, instance):
-                    self._add_meta_information(
-                        {
-                            "suggested_address": suggested_address,
-                        }
-                    )
+                    # provide other normalization options as suggestion to the user
+                    if self.needs_address_suggestion(suggested_address, instance):
+                        self._add_meta_information(
+                            {
+                                "suggested_address": suggested_address,
+                            }
+                        )
 
-            # Reraise the model validation error
-            # as a serializer validation error
-            except ValidationError as exc:
-                self.handle_geo_error(exc, instance)
+                # Reraise the model validation error
+                # as a serializer validation error
+                except ValidationError as exc:
+                    self.handle_geo_error(exc, instance)
 
         return instance
 
@@ -1553,8 +1555,8 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
     sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
 
-    latitude = serializers.FloatField(read_only=True)
-    longitude = serializers.FloatField(read_only=True)
+    latitude = serializers.FloatField(required=False, allow_null=True)
+    longitude = serializers.FloatField(required=False, allow_null=True)
 
     available_voltage_services = serializers.MultipleChoiceField(
         choices=AVAILABLE_VOLTAGE, required=False, allow_null=True
@@ -1565,6 +1567,13 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
     status_dashboard = serializers.URLField(
         required=False, allow_null=True, allow_blank=True, default=""
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.context.get("request") and self.context["request"].method == "POST":
+            # make lat and long fields readonly on create
+            self.fields["latitude"].read_only = True
+            self.fields["longitude"].read_only = True
 
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
@@ -1769,6 +1778,10 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
         else:
             return None
 
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data, ignore_geosync=True)
+        return instance
+
     def validate(self, data):
         social_media = data.get("social_media")
         website = data.get("website")
@@ -1796,6 +1809,37 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             data["zipcode"] = validate_zipcode(data["zipcode"], data["country"])
         except ValidationError as exc:
             raise serializers.ValidationError({"zipcode": exc.message})
+
+        latitude = data.get("latitude")
+        longitude = data.get("longitude")
+
+        # unsetting existing latitude and longitude is NOT allowed
+
+        if self.instance and self.instance.latitude and not latitude:
+            raise serializers.ValidationError(
+                {"latitude": _("Valid latitude is required")}
+            )
+
+        elif self.instance and self.instance.longitude and not longitude:
+            raise serializers.ValidationError(
+                {"longitude": _("Valid longitude is required")}
+            )
+
+        # if latitude or longitude has changed, validate the distance
+
+        if self.instance and latitude and longitude:
+
+            if (
+                latitude != self.instance.latitude
+                or longitude != self.instance.longitude
+            ):
+                validate_latitude(latitude)
+                validate_longitude(longitude)
+                validate_distance_geocode(
+                    (self.instance.latitude, self.instance.longitude),
+                    (latitude, longitude),
+                    self.instance.city,
+                )
 
         return data
 
@@ -3084,10 +3128,6 @@ class IXLanSerializer(ModelSerializer):
         related_fields = ["ix", "net_set", "ixpfx_set"]
 
         list_exclude = ["ix"]
-
-        extra_kwargs = {
-            "ixf_ixp_import_enabled": {"write_only": True},
-        }
 
         _ref_tag = model.handleref.tag
 

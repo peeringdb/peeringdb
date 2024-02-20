@@ -27,6 +27,15 @@ PeeringDB = {
     }
   },
 
+  escape_html: function(string) {
+    return String(string)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+  },
+
   /**
    * Renders a social media link for a given identifier and service.
    *

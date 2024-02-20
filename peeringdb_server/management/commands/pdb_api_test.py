@@ -10,6 +10,7 @@ import re
 import time
 import unittest
 import uuid
+from unittest.mock import patch
 
 import pytest
 import reversion
@@ -19,6 +20,7 @@ from django.core.cache import caches
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
+from django.test.utils import override_settings
 from django.utils import timezone
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework import serializers
@@ -30,6 +32,7 @@ from twentyc.rpc import (
     RestClient,
 )
 
+import peeringdb_server.geo as geo
 from peeringdb_server import inet
 from peeringdb_server import settings as pdb_settings
 from peeringdb_server.models import (
@@ -1238,7 +1241,8 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_ixlan(self):
-        self.assert_get_handleref(self.db_user, "ixlan", SHARED["ixlan_r_ok"].id)
+        data = self.assert_get_handleref(self.db_user, "ixlan", SHARED["ixlan_r_ok"].id)
+        assert data.get("ixf_ixp_import_enabled") != None
 
     ##########################################################################
 
@@ -1626,8 +1630,6 @@ class TestJSON(unittest.TestCase):
                 "invalid": {"name": ""},
                 "perms": {"id": SHARED["fac_r_ok"].id},
                 "readonly": {
-                    "latitude": 1,  # this should not take as it is read only
-                    "longitude": 1,  # this should not take as it is read only
                     "rencode": str(uuid.uuid4())[
                         :6
                     ].upper(),  # this should not take as it is read only
@@ -1716,6 +1718,85 @@ class TestJSON(unittest.TestCase):
 
         fac = Facility.objects.get(id=fac_id)
         assert fac.region_continent == "North America"
+
+    ##########################################################################
+
+    def geo_mock_init(self, key, timeout):
+        pass
+
+    def geo_gmaps_mock_geocode_freeform(location):
+        return {"lat": 30.091435, "lng": 31.25435}
+
+    @patch.object(geo.GoogleMaps, "__init__", geo_mock_init)
+    @patch.object(geo.Melissa, "__init__", geo_mock_init)
+    @override_settings(MELISSA_KEY="")
+    @override_settings(GOOGLE_GEOLOC_API_KEY="")
+    def test_org_admin_002_PUT_fac_geocode_missing_geocode(self):
+        with patch.object(
+            geo.GoogleMaps,
+            "geocode_freeform",
+            side_effect=lambda location: {"lat": 30.091435, "lng": 31.25435},
+        ):
+            data = self.make_data_fac()
+            data.pop("latitude")
+            data.pop("longitude")
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "fac",
+                data,
+            )
+            fac_id = r_data.get("id")
+
+            assert r_data["latitude"] == None
+            assert r_data["longitude"] == None
+
+            self.assert_update(
+                self.db_org_admin,
+                "fac",
+                fac_id,
+                {"latitude": 30.093435, "longitude": 31.255350},
+                test_failures={
+                    "invalid": [
+                        {"latitude": 35.689487, "longitude": 139.691711},
+                    ],
+                },
+                ignore=["latitude", "longitude"],
+            )
+
+    ##########################################################################
+
+    @patch.object(geo.GoogleMaps, "__init__", geo_mock_init)
+    @patch.object(geo.Melissa, "__init__", geo_mock_init)
+    def test_org_admin_002_PUT_fac_geocode_existing_geocode(self):
+        with patch.object(
+            geo.GoogleMaps,
+            "geocode_freeform",
+            side_effect=lambda location: {"lat": 30.091435, "lng": 31.25435},
+        ):
+            data = self.make_data_fac()
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "fac",
+                data,
+                ignore=["latitude", "longitude"],
+            )
+            fac_id = r_data.get("id")
+
+            Facility.objects.filter(id=fac_id).update(
+                latitude=data.get("latitude"), longitude=data.get("longitude")
+            )
+
+            self.assert_update(
+                self.db_org_admin,
+                "fac",
+                fac_id,
+                {"latitude": 30.093445, "longitude": 31.24535},
+                test_failures={
+                    "invalid": [
+                        {"latitude": 30.059545, "longitude": 31.24935},
+                    ],
+                },
+            )
 
     ##########################################################################
 
@@ -3111,7 +3192,10 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_001_GET_ixlan(self):
-        self.assert_get_handleref(self.db_guest, "ixlan", SHARED["ixlan_r_ok"].id)
+        data = self.assert_get_handleref(
+            self.db_guest, "ixlan", SHARED["ixlan_r_ok"].id
+        )
+        assert data.get("ixf_ixp_import_enabled") != None
 
     ##########################################################################
 
