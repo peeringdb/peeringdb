@@ -43,6 +43,7 @@ class Command(BaseCommand):
         facilities_without_geocoords = Facility.objects.filter(
             Q(latitude__isnull=True) | Q(longitude__isnull=True),
             notified_for_geocoords=False,
+            status="ok",
         )
 
         # Exclude facilities with a created date younger than min_age days
