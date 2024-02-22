@@ -14,7 +14,7 @@ html { font-size:20px }
     .sponsors-group.platinum h2 { font-size:1.45rem }
     .sponsors-group.gold h2 { font-size:1.3rem }
     .sponsors-group.silver h2 { font-size:1.15rem }
-    .sponsors-group .sponsors { background:#FFF ; border-left:5px solid #4b6063 ; margin-left:230px ; padding:30px 0 0 30px }
+    .sponsors-group .sponsors { background:#FFF ; border-left:5px solid #455157 ; margin-left:230px ; padding:30px 0 0 30px }
         .sponsors-group .sponsors img { display:inline-block ; height:auto ; margin:0 30px 30px 0 ; max-height:170px ; max-width:1190px ; vertical-align:middle ; width:auto }
         .sponsors-group.platinum .sponsors img { max-height:85px ; max-width:595px }
         .sponsors-group.gold .sponsors img { max-height:65px ; max-width:455px }
@@ -106,5 +106,5 @@ body[dir="rtl"] div.sponsors-group > div {
   margin-right: 230px;
   margin-left: auto;
   border-left: none;
-  border-right:5px solid #4b6063;
+  border-right:5px solid #455157;
 }

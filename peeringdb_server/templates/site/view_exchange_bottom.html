@@ -4,6 +4,7 @@
 
 
 <div class="list"
+     id="api-listing-ixpfx"
      data-edit-module="api_listing"
      data-edit-group="#view"
      data-edit-target="api:ixpfx">
@@ -29,7 +30,7 @@
     <div class="row sub" data-edit-id="{{ prefix.id }}" data-edit-label="{% trans "IXLAN Prefix" %}: {{ prefix.prefix }}">
       <div class="editable payload">
         <div data-edit-name="ixlan_id">{{ x.id }}</div>
-        <div data-edit-name="protocol">{{ prefix.protocol }}</div>
+        <div data-edit-name="protocol" class="protocol">{{ prefix.protocol }}</div>
       </div>
       <div class="col-sm-3">
         {% if permissions.can_delete %}
@@ -37,7 +38,7 @@
         {% endif %}
         {{ prefix.protocol }}
       </div>
-      <div class="col-sm-9"
+      <div class="col-sm-9 prefix"
            {% if permissions.can_write %}
            data-edit-type="string"
            {% endif %}
@@ -80,6 +81,7 @@
 <!-- IXFACS -->
 
 <div class="list"
+     id="api-listing-ixfac"
      data-sort-container=".scrollable"
      data-sort-row=".row"
 
@@ -87,22 +89,31 @@
      data-edit-group="#view"
      data-edit-target="api:ixfac">
   <div class="row">
-    <div class="col-sm-6 col-sm-8 col-md-8">
+    <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Local Facilities" %}</h5>
     </div>
-    <div class="col-sm-6 col-sm-4 col-md-4 filter">
-      <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-facilities" class="form-control" />
+    <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
+      </div>
     </div>
   </div>
   <div class="row header">
-    <div class="col-sm-6 col-sm-6 col-md-6">
+    <div class="col-6 col-sm-6 col-md-4">
       <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
     </div>
-    <div class="col-sm-3 col-sm-3 col-md-3">
+    <div class="col-3 col-sm-3 col-md-3">
       <div data-sort-target=".country">{% trans "Country" %}</div>
     </div>
-    <div class="col-sm-3 col-sm-3 col-md-3">
+    <div class="col-3 col-sm-3 col-md-3">
       <div data-sort-target=".city">{% trans "City" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2" id="filter-web">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" data-filter-target="#list-facilities" class="form-control" />
+      </div>
     </div>
   </div>
 
@@ -123,7 +134,7 @@
         <div data-edit-name="ix_id">{{ f.ix_id }}</div>
         <div data-edit-name="fac_id">{{ f.facility_id }}</div>
       </div>
-      <div class="col-sm-6 col-sm-6 col-md-6">
+      <div class="col-6 col-sm-6 col-md-4">
         {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
         {% endif %}
@@ -131,10 +142,10 @@
           <a href="/{{ f.facility|ref_tag }}/{{ f.facility.id }}">{{ f.facility.name }}</a>
         </div>
       </div>
-      <div class="col-sm-3 col-sm-3 col-md-3">
+      <div class="col-3 col-sm-3 col-md-3">
         <div class="country" data-sort-value="{{ f.facility.country.name|lower }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
       </div>
-      <div class="col-sm-3 col-sm-3 col-md-3">
+      <div class="col-3 col-sm-3 col-md-3">
         <div class="city" data-sort-value="{{ f.facility.city }}" data-filter-value="{{ f.facility.city }}">{{ f.facility.city }}</div>
       </div>
     </div>

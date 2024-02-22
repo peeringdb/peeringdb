@@ -13,7 +13,7 @@
 
     {% if data.networks  or permissions.can_create_net %}
     <div class="list"
-        id="api-listing-net"
+        id="api-listing-net{{ forloop.counter }}"
         data-sort-container=".scrollable"
         data-sort-row=".row.item"
 
@@ -22,11 +22,14 @@
         data-edit-target="api:net">
 
       <div class="row">
-        <div class="col-6 col-sm-8 col-md-8">
+        <div class="col-6 col-sm-8 col-md-8 table-name">
           <h5>{{ facility }}</h5>
         </div>
         <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
-          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-networks{{ forloop.counter }}" class="form-control" />
+          <div class="inner-addon left-addon">
+            <i class="material-icons input-icon">filter_list</i>
+            <input type="text" oninput="syncValue(this)" data-filter-target="#list-networks{{ forloop.counter }}" class="form-control" />
+          </div>
         </div>
       </div>
       <div class="row header align-items-center">
@@ -43,7 +46,10 @@
           <div data-sort-target=".ixs">{% trans "IX Connections" %}</div>
         </div>
         <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
-          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-networks{{ forloop.counter }}" class="form-control" />
+          <div class="inner-addon left-addon">
+            <i class="material-icons input-icon">filter_list</i>
+            <input type="text" oninput="syncValue(this)" data-filter-target="#list-networks{{ forloop.counter }}" class="form-control" />
+          </div>
         </div>
       </div>
 

@@ -25,7 +25,10 @@
           <h5>{% trans "Carriers" %}</h5>
         </div>
         <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
-          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-carriers" class="form-control" />
+          <div class="inner-addon left-addon">
+            <i class="material-icons input-icon">filter_list</i>
+            <input type="text" oninput="syncValue(this)" data-filter-target="#list-carriers" class="form-control" />
+          </div>
         </div>
       </div>
       <div class="row header align-items-center">
@@ -36,7 +39,10 @@
           <div data-sort-target=".facility">{% trans "Facilities" %}</div>
         </div>
         <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
-          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-carriers" class="form-control" />
+          <div class="inner-addon left-addon">
+            <i class="material-icons input-icon">filter_list</i>
+            <input type="text" oninput="syncValue(this)" data-filter-target="#list-carriers" class="form-control" />
+          </div>
         </div>
       </div>
 

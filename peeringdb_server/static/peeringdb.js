@@ -1274,7 +1274,7 @@ PeeringDB.InlineSearch = {
 
     );
 
-    $('#search').keypress(function(e) {
+    $('.search-input').keypress(function(e) {
       if(e.which == 13) {
         PeeringDB.InlineSearch.keystrokeTimeout.cancel();
         let quick_search_path = $("#quick-search").attr("action")
@@ -1294,7 +1294,7 @@ PeeringDB.InlineSearch = {
       }
     });
 
-    $('#search').keyup(function(e) {
+    $('.search-input').keyup(function(e) {
       if(e.which == 13)
         return;
 
@@ -3771,3 +3771,335 @@ $(window).bind("pageshow", function() {
     PeeringDB.focus()
   });
 })
+
+// for tab campus
+function scrollToNextTab() {
+  var tabs = document.querySelectorAll('.nav-tabs .nav-item.nav-link');
+  var activeTab = document.querySelector('.nav-tabs .nav-item.nav-link.active');
+
+  if (activeTab) {
+    var index = Array.from(tabs).indexOf(activeTab);
+    var nextIndex = (index + 1) % tabs.length;
+    tabs[nextIndex].click(); // Simulate a click on the next tab
+  }
+}
+
+function scrollToPreviousTab() {
+  var tabs = document.querySelectorAll('.nav-tabs .nav-item.nav-link');
+  var activeTab = document.querySelector('.nav-tabs .nav-item.nav-link.active');
+
+  if (activeTab) {
+    var index = Array.from(tabs).indexOf(activeTab);
+    var previousIndex = (index - 1 + tabs.length) % tabs.length;
+    tabs[previousIndex].click(); // Simulate a click on the previous tab
+  }
+}
+
+function toggleHeight(listId) {
+  current_element = event.target
+  let scrollable = document.getElementById(listId);
+  if (scrollable) {
+    let is_xpanded = scrollable.classList.toggle('expanded');
+    current_element.style.transform = is_xpanded ? "rotate(-90deg)" : "rotate(90deg)";
+  }
+}
+
+/**
+ * Collects and returns the data from the multiple tables to be exported
+ * This is currently only relevant for campus exports.
+ *
+ * @param {String} container_name
+ * @param {String} row_name
+ * @returns
+ */
+
+function extractMultipleTableForExport(container_name,row_name) {
+  let max_table = 10
+  let table = 1
+  let list_container = []
+  let list_row = []
+  let result = {}
+  while(true){
+    if (table > max_table) break
+    if ($(`#api-listing-${container_name}${table}`).length !=0){
+      list_container.push(`${container_name}${table}`)
+      list_row.push(`${row_name}${table}`)
+    }
+    table+=1
+  }
+  list_container.forEach((v,i) => {
+    table_name = $(`#api-listing-${v}`).find(".table-name").text().trim()
+    table_result = extractFromTableForExport(v,list_row[i])
+    result[table_name] = table_result
+  })
+  return result
+
+}
+
+/**
+ * Collects and returns the data from the table to be exported
+ *
+ * @param {String} container_name
+ * @param {String} row_name
+ * @returns
+ */
+
+function extractFromTableForExport(container_name,row_name) {
+  // collecting data from a table to be exported
+  result = []
+  container_selector = $(`#api-listing-${container_name}`)
+  header = container_selector.find(".row.header")
+  rows = container_selector.find(`#list-${row_name}`)
+  keys = header.find("[data-sort-target], [data-export-field-header]").map((i,v)=>{
+    if($(v).attr("id") !== "filter-web"){
+      let fieldClass = $(v).attr("data-sort-target") ? $(v).attr("data-sort-target") : $(v).attr("data-export-field-header")
+      return {label: $(v).text().trim(), field: fieldClass}
+    }
+  })
+  rows.find(".row.item, .row.sub").each((i,v)=>{
+    fac_data = {};
+    x=0;
+
+    for(let key of keys){
+      fac_data[key.label] = $(v).find(key.field).text().trim();
+    }
+
+    result.push(fac_data)
+  })
+  return result
+}
+
+  /**
+   * Flatten a nested object
+   *
+   * @function flattenObject
+   * @param {Object} obj - The object to flatten
+   */
+
+  flattenObject = (obj) => {
+    let flattenKeys = {};
+    for (let i in obj) {
+        if (!obj.hasOwnProperty(i)) continue;
+        if ((typeof obj[i]) == 'object') {
+            let flatObject = flattenObject(obj[i]);
+            for (let j in flatObject) {
+                if (!flatObject.hasOwnProperty(j)) continue;
+                flattenKeys[i + '.' + j] = flatObject[j];
+            }
+        } else {
+            flattenKeys[i] = obj[i];
+        }
+    }
+    return flattenKeys;
+}
+
+/**
+ * Convert a flattened object to a CSV string
+ *
+ * This supports the following structures in the flattened object keys:
+ *
+ * - {Type}.{Column}
+ * - {Type}.{Row Index}.{Column}
+ * - {Type}.{Group Name}.{Row Index}.{Column}
+ *
+ * @function convertObjectToCSV
+ * @param {Object} data - The flattened object to convert, as returned from flattenObject
+ */
+
+const convertObjectToCSV = (data, groupName) => {
+
+  if(!groupName){
+    groupName = 'group';
+  }
+
+  // Helper function to split the key and extract relevant parts
+  const splitKey = (key) => {
+      const parts = key.split('.');
+      // Check if the key includes a group and an index
+      if (parts.length >= 4) {
+          return {
+              group: parts[1],
+              rowIndex: parts[2],
+              column: parts.slice(3).join('.')
+          };
+      } else if( parts.length == 3) {
+          return {
+              group: '',
+              rowIndex: parts[1],
+              column: parts.slice(2).join('.')
+          };
+      } else {
+          // Handle simpler structure without group and index
+          return { group: '', rowIndex: null, column: parts.slice(1).join('.') };
+      }
+  };
+
+  // Process the object to transform into rows and track unique columns
+  let rows = {};
+  let columns = new Set();
+  for (const key in data) {
+      const { group, rowIndex, column } = splitKey(key);
+      columns.add(column);
+
+      // Create a unique key for each row, considering both structures
+      let rowKey = group ? group : 'default';
+
+      if(rowIndex !== null) {
+        rowKey = `${rowKey}_${rowIndex}`
+      }
+
+      if (!rows[rowKey]) {
+          rows[rowKey] = { group };
+      }
+      rows[rowKey][column] = data[key];
+  }
+
+  const hasGroup = Object.values(rows).some(row => row.group);
+
+  // Create the header row
+  if(hasGroup){
+    // Adding 'group' as the first column
+    columns = [groupName, ...columns];
+  } else {
+    columns = [...columns];
+  }
+  const csvHeader = columns.join(',');
+
+  // Create each row
+  const csvRows = Object.entries(rows).map(([_, values]) => {
+      return columns.map(column => {
+
+          if(column == groupName) {
+            column = 'group';
+          }
+
+          const value = values[column];
+          if (typeof value === 'string' && value.includes(',')) {
+              return `"${value}"`;
+          }
+          return value || ''; // Handle missing data with empty string
+      }).join(',');
+  });
+
+  // Combine header and rows
+  const csvContent = [csvHeader, ...csvRows].join('\n');
+
+  return csvContent;
+};
+
+/**
+ * Generate and download export files
+ *
+ * @function exportData
+ * @param {Object} data
+ * @param {Array} outputFormats
+ * @param {String} refTag
+ */
+
+function exportData(data, outputFormats, refTag) {
+  if (outputFormats.includes('JSON')) {
+    const jsonData = JSON.stringify(data, null, 2);
+    const jsonBlob = new Blob([jsonData], { type: 'application/json' });
+    const jsonLink = document.createElement('a');
+    jsonLink.href = URL.createObjectURL(jsonBlob);
+    jsonLink.download = 'export.json';
+    jsonLink.click();
+  }
+
+  if (outputFormats.includes('CSV')) {
+    data = flattenObject(data)
+    let csvData = convertObjectToCSV(data, refTag);
+    const csvBlob = new Blob([csvData], { type: 'text/csv' });
+    const csvLink = document.createElement('a');
+    csvLink.href = URL.createObjectURL(csvBlob);
+    csvLink.download = 'export.csv';
+    csvLink.click();
+  }
+}
+
+function getSectionDataForExport(fields, refTag) {
+  let data = {};
+
+  // Iterate over each section
+  $(".export-section").each((i, section) => {
+      const sectionName = $(section).find('input').val()
+      const exportRowName = $(section).data("export-row-name");
+      const exportContainerName = $(section).data("export-container-name");
+      const extractionMethod = $(section).data("export-method");
+      // Check if the current section is among the fields to be exported
+      if (fields.includes(sectionName) || fields.includes("All")) {
+          let result = {};
+
+          // exclude "All" and "JSON" and "CSV" from the fields
+
+          if (sectionName === "All" || sectionName === "JSON" || sectionName === "CSV") {
+              return;
+          }
+
+          if (extractionMethod === "single-table") {
+              result = extractFromTableForExport(exportContainerName, exportRowName);
+          } else if (extractionMethod === "multiple-tables") {
+              result = extractMultipleTableForExport(exportContainerName, exportRowName);
+          } else if (extractionMethod === "object") {
+            if(exportRowName == refTag) {
+              // Campus from old method
+              let section = $(`#${refTag}_section`).children();
+              let name = $(`[data-edit-name="name"]`).text().trim();
+              if(name)
+                result["Name"] = name;
+
+              section.each((i, v) => {
+                let key = $(v).find('.view_field:not([style*="display:none"])').first().text().trim();
+                let value = $(v).find('.view_value:not([style*="display:none"])').first().text().trim();
+                if (key != "") {
+                  result[key] = value;
+                }
+              });
+            }
+
+          }
+
+          data[sectionName] = result;
+      }
+  });
+
+  return data;
+}
+
+$(document).ready(function () {
+
+  $('#btn-export').on('click', function () {
+    exportOptions = [];
+    outputFormats = [];
+
+    const refTag = $('[data-ref-tag]').data('ref-tag');
+
+    updateSelectedOptions('#export-field input[type="checkbox"]', exportOptions);
+    updateSelectedOptions('#export-format input[type="checkbox"]', outputFormats);
+    const filteredData = getSectionDataForExport(exportOptions, refTag)
+    exportData(filteredData, outputFormats, refTag);
+  });
+
+  function updateSelectedOptions(selector, optionsArray) {
+    $(selector).each(function () {
+      if ($(this).prop('checked')) {
+        optionsArray.push($(this).val());
+      }
+    });
+  }
+
+});
+
+$(document).ready(function () {
+  var modal = $('#modalExport');
+
+  $('#dropdownMenuLinked').click(function() {
+    modal.modal('show');
+  });
+
+  modal.on("hidden.bs.modal", function () {
+    $("#modalExport input[type='checkbox']").each(function() {
+      $(this).prop("checked",false)
+    });
+  });
+});

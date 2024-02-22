@@ -14,7 +14,6 @@
           id="api-listing-facility"
           data-sort-container=".scrollable"
           data-sort-row=".row.item"
-
           data-edit-module="api_listing"
           data-edit-group="#view"
           data-edit-target="api:facility">
@@ -22,8 +21,10 @@
          <div class="col-6 col-sm-8 col-md-8">
           <h5>{% trans "Facilities" %}</h5>
          </div>
-         <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
-          <input type="text" placeholder="{% trans 'Filter' %}" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
+         <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">        <div class="inner-addon left-addon">
+          <i class="material-icons input-icon">filter_list</i>
+          <input type="text" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
+        </div>
          </div>
        </div>
        <div class="row header align-items-center">
@@ -37,20 +38,20 @@
           <div data-sort-target=".city">{% trans "City" %}</div>
         </div>
         <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
-         <input type="text" placeholder="{% trans 'Filter' %}" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
+          <div class="inner-addon left-addon">
+            <i class="material-icons input-icon">filter_list</i>
+            <input type="text" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
+          </div>
         </div>
         </div>
-
         <div class="scrollable"
         id="list-facilities"
         data-edit-component="list"
         data-edit-template="campusfac-item">
-
         <div class="empty-result">
           <div class="message">{% trans "No filter matches." %}</div>
           <div class="help">{% trans "You may filter by" %} <b>{% trans "Facility" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
         </div>
-
         {% for f in data.facilities %}
         {% if f.status == "ok" or permissions.can_create %}
           <div class="row item" data-edit-id="{{ f.id }}" data-edit-label="{% trans 'Facility link' %}: {{ f.name }}">

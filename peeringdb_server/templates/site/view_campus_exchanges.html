@@ -13,19 +13,21 @@
 
     {% if data.exchanges  or permissions.can_create_ix %}
     <div class="list"
-        id="api-listing-ix"
+        id="api-listing-ix{{ forloop.counter }}"
         data-sort-container=".scrollable"
         data-sort-row=".row.item"
         data-edit-module="api_listing"
         data-edit-group="#view"
         data-edit-target="api:ix">
-
       <div class="row">
-        <div class="col-6 col-sm-8 col-md-8">
+        <div class="col-6 col-sm-8 col-md-8 table-name">
           <h5>{{facility}}</h5>
         </div>
         <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
-          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-exchanges" class="form-control" />
+          <div class="inner-addon left-addon">
+            <i class="material-icons input-icon">filter_list</i>
+            <input type="text" oninput="syncValue(this)" data-filter-target="#list-exchanges{{ forloop.counter }}" class="form-control" />
+          </div>
         </div>
       </div>
       <div class="row header align-items-center">
@@ -46,15 +48,16 @@
           <div data-sort-target=".routeservers">{% trans "Routeservers" %}</div>
         </div>
         <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
-          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-exchanges" class="form-control" />
+          <div class="inner-addon left-addon">
+            <i class="material-icons input-icon">filter_list</i>
+            <input type="text" oninput="syncValue(this)" data-filter-target="#list-exchanges{{ forloop.counter }}" class="form-control" />
+          </div>
         </div>
       </div>
-
       <div class="scrollable"
-      id="list-exchanges"
+      id="list-exchanges{{ forloop.counter }}"
       data-edit-component="list"
       data-edit-template="exchange-item">
-
       <div class="empty-result">
         <div class="message">{% trans "No filter matches." %}</div>
         <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>

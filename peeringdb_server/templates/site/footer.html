@@ -1,77 +1,82 @@
 {% load i18n %}
 <div class="landing_footer">
   <div class="container">
-    <div class="row">
-      <div class="col-md-3 col-sm-4 col-12">
-      {% spaceless %}
-      {% now "Y" as current_year %}
-      &copy; 2004-{{current_year}} PeeringDB <br/>
-      {% trans "All Rights Reserved. By using this service, you agree to adhere to our" %}
-      <a href="/aup">{% trans "AUP" %}</a>.<br/>
-      {% endspaceless %}
-      <p class="marg-top-15">
-      <a href="https://github.com/peeringdb/peeringdb/issues">{{PEERINGDB_VERSION}}</a> - <a href="https://docs.peeringdb.com/gov/misc/2017-04-02-PeeringDB_Privacy_Policy.pdf">{% trans "Privacy Policy" %}</a>
-      </p>
-      <p>
-          <a target='_blank' href='https://www.facebook.com/peeringdb/'><img class="socialmedia_icon" src='{{ STATIC_URL }}/social-facebook.png' alt="Facebook"></a>
-          <a target="_blank" href="https://github.com/peeringdb/peeringdb/issues"><img class="socialmedia_icon" src="{{ STATIC_URL }}/social-github.png" alt="GitHub"></a>
-          <a target="_blank" href="https://www.linkedin.com/company/peeringdb"><img class="socialmedia_icon" src="{{ STATIC_URL }}/social-linkedin.png" alt="LinkedIn"></a>
-          <a target='_blank' href='https://twitter.com/PeeringDB'><img class="socialmedia_icon" src='{{ STATIC_URL }}/social-twitter.png' alt="Twitter"></a>
-          <a target="_blank" href="https://www.youtube.com/channel/UCOrYWUg-dbL9UTFV_Lry6Wg"><img class="socialmedia_icon" src='{{ STATIC_URL }}/social-youtube.png' alt="YouTube"></a>
-        </p>
-      <p>
+    <div class="row mt-4 mb-4">
+      <div class="col-sm-6 content-footer">
+        <p>
           <a target='_blank' href='https://docs.peeringdb.com/news'><img class="news_link" src='{{ STATIC_URL }}/logo-white.png' alt="News"></a>
-      </p>
+        </p>
       </div>
-      <div class="col-md-3 col-sm-4 col-12">
+      <div class="pt-3 col-sm-6 content-footer">
+          <p>
+            <a target='_blank' class="w-100 " href='https://www.facebook.com/peeringdb/'><img class="socialmedia_icon" src='{{ STATIC_URL }}/fb-logo.svg' alt="Facebook"></a>
+            <a target='_blank' href='https://twitter.com/PeeringDB'><img class="socialmedia_icon" src='{{ STATIC_URL }}/x-logo.png' alt="Twitter" style="max-height: 38px !important; max-width: 38px !important;"></a>
+            <a target="_blank" href="https://www.linkedin.com/company/peeringdb"><img class="socialmedia_icon" src="{{ STATIC_URL }}/linkedin-logo.svg" alt="LinkedIn"></a>
+            <a target="_blank" href="https://www.youtube.com/channel/UCOrYWUg-dbL9UTFV_Lry6Wg"><img class="socialmedia_icon" src='{{ STATIC_URL }}/yt-logo.png' alt="YouTube"></a>
+            <a target="_blank" href="https://github.com/peeringdb/peeringdb/issues"><img class="socialmedia_icon" src="{{ STATIC_URL }}/github-logo.svg" alt="GitHub"></a>
+            <a target="_blank" href="mailto:support@peeringdb.com"><img class="socialmedia_icon" src="{{ STATIC_URL }}/social-email.png" alt="Email"></a>
+          </p>
+      </div>
+    </div>
+    <div class="row mt-2">
+      <div class="col-md-3 col-sm-4 col-4">
+          <div>
+            <a href="/about">{% trans "About" %}</a>
+          </div>
+          <div>
+            <a href="/register">{% trans "Register" %}</a>
+          </div>
+          <div>
+            <a href="/advanced_search">{% trans "Search" %}</a>
+          </div>
+          <div>
+            <a href="/sponsors">{% trans "Sponsors" %}</a>
+          </div>
+      </div>
+      <div class="col-md-3 col-sm-4 col-4">
+            <div>
+              <a>{% trans "Resources" %}</a>
+            </div>
+            <div>
+              <a href="/apidocs" target="_blank">{% trans "API" %}</a>
+            </div>
+            <div>
+              <a href="/docs" target="_blank">{% trans "Documentation" %}</a></div>
+            <div>
+              <a href="https://docs.peeringdb.com/release_notes/#release-notes" target="_blank">{% trans "Release Notes" %}</a>
+            </div>
+      </div>
+      <div class="col-md-4 col-sm-4 col-4">
         <div>
-        <a href="/about">{% trans "About" %}</a>
+          <a href="http://docs.peeringdb.com/faq/" target="_blank">{% trans "FAQ" %}</a>
         </div>
         <div>
-        <a href="/register">{% trans "Register" %}</a>
+          <a href="http://gov.peeringdb.com/" target="_blank">{% trans "Governance" %}</a>
         </div>
         <div>
-        <a href="/advanced_search">{% trans "Search" %}</a>
+          <a href="http://status.peeringdb.com/" target="_blank">{% trans "Status" %}</a>
         </div>
-        <div>
-        <a href="/sponsors">{% trans "Sponsors" %}</a>
-        </div>
-      <p> </p>
-      <h4><b>{% trans "Resources" %}</b></h4>
-        <div><a href="/apidocs" target="_blank">{% trans "API" %}</a></div>
-        <div><a href="/docs" target="_blank">{% trans "Documentation" %}</a></div>
-        <div><a href="https://docs.peeringdb.com/release_notes/#release-notes" target="_blank">{% trans "Release Notes" %}</a></div>
-        <div><a href="http://docs.peeringdb.com/faq/" target="_blank">{% trans "FAQ" %}</a></div>
-        <div><a href="http://gov.peeringdb.com/" target="_blank">{% trans "Governance" %}</a></div>
-        <div><a href="http://status.peeringdb.com/" target="_blank">{% trans "Status" %}</a></div>
         {% if KMZ_DOWNLOAD_URL %}
-        <div><a href="{{ KMZ_DOWNLOAD_URL }}" download>{% trans "Google Earth KMZ" %}</a></div>
+        <div>
+          <a href="{{ KMZ_DOWNLOAD_URL }}" download>{% trans "Google Earth KMZ" %}</a>
+        </div>
         {% else %}
-        <div><a href="{% url "kmz-download" %}" download>{% trans "Google Earth KMZ" %}</a></div>
+        <div>
+          <a href="{% url "kmz-download" %}" download>{% trans "Google Earth KMZ" %}</a>
+        </div>
         {% endif %}
-      <p> </p>
-      <h4><b>{% trans "Contact Us" %}</b></h4>
-      <a href="mailto:support@peeringdb.com">support@peeringdb.com</a>
-      <p></p>
-      </div>
-      <div class="col-md-4 col-sm-4 col-12">
-      <h4><b>{% trans "Global System Statistics" %}</b></h4>
-      <div class="global_stats">
-        <div>{{ global_stats.ix }} {% trans "Exchanges" %}</div>
-        <div>{{ global_stats.net }} {% trans "Networks" %}</div>
-        <div>{{ global_stats.fac }} {% trans "Facilities" %}</div>
-        <div>{{ global_stats.campus }} {% trans "Campuses" %}</div>
-        <div>{{ global_stats.carrier }} {% trans "Carriers" %}</div>
-        <div>{{ global_stats.netixlan }} {% trans "Connections to Exchanges" %}</div>
-        <div>{{ global_stats.netfac }} {% trans "Connections to Facilities" %}</div>
-        <div>{{ global_stats.automated_nets }} {% trans "Automated Networks" %}</div>
-        <div>{{ global_stats.registered_users }} {% trans "Registered Users" %}</div>
-        <div>{{ global_stats.organizations }} {% trans "Organizations" %}</div>
-      </div>
     </div>
   </div>
 </div>
 
+
+<button
+  type="button"
+  class="btn btn-primary btn-floating btn-lg"
+  id="btn-back-to-top"
+>
+  <i class="material-icons">arrow_upward</i>
+</button>
 
 {% if GOOGLE_ANALYTICS_ID %}
 <!-- Google tag (gtag.js) -->
@@ -83,6 +88,43 @@
   gtag('config', '{{ GOOGLE_ANALYTICS_ID }}', {cookie_flags: 'SameSite=None;Secure'});
 </script>
 {% endif %}
+<script>
+  //Get the button
+  let mybutton = document.getElementById("btn-back-to-top");
+  // When the user scrolls down 20px from the top of the document, show the button
+  window.onscroll = function () {
+    scrollFunction();
+  };
+
+  function scrollFunction() {
+    if (
+      document.body.scrollTop > 20 ||
+      document.documentElement.scrollTop > 20
+    ) {
+      mybutton.style.display = "block";
+    } else {
+      mybutton.style.display = "none";
+    }
+  }
+  // When the user clicks on the button, scroll to the top of the document
+  mybutton.addEventListener("click", backToTop);
+
+  function backToTop() {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }
+  const syncValue = (e)=>{
+    const type = e.parentElement.id
+    const parrent_element = e.closest(".list")
+    let second_input
+    if (type === "filter-mobile"){
+      second_input = parrent_element.querySelector("#filter-web > input")
+    }else{
+      second_input = parrent_element.querySelector("#filter-mobile > input")
+    }
+    second_input.value = e.value
+  }
+</script>
 
 </body>
 </html>

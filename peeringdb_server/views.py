@@ -1343,8 +1343,6 @@ def view_component(
     if not perms:
         perms = {}
 
-    template = loader.get_template("site/view.html")
-
     env = BASE_ENV.copy()
     env.update(
         {
@@ -1355,12 +1353,27 @@ def view_component(
             "instance": instance,
             "ref_tag": instance._handleref.tag,
             "global_stats": global_stats(),
-            "asset_template_name": "site/view_%s_assets.html" % component,
-            "tools_template_name": "site/view_%s_tools.html" % component,
-            "side_template_name": "site/view_%s_side.html" % component,
-            "bottom_template_name": "site/view_%s_bottom.html" % component,
         }
     )
+    template = loader.get_template("site/view.html")
+    if component == "campus":
+        env.update(
+            {
+                "facilities_template_name": f"site/view_{component}_facilities.html",
+                "carriers_template_name": f"site/view_{component}_carriers.html",
+                "exchanges_template_name": f"site/view_{component}_exchanges.html",
+                "networks_template_name": f"site/view_{component}_networks.html",
+            }
+        )
+    else:
+        env.update(
+            {
+                "asset_template_name": f"site/view_{component}_assets.html",
+                "tools_template_name": f"site/view_{component}_tools.html",
+                "side_template_name": f"site/view_{component}_side.html",
+                "bottom_template_name": f"site/view_{component}_bottom.html",
+            }
+        )
 
     update_env_beta_sync_dt(env)
 
@@ -2031,9 +2044,9 @@ def view_campus(request, id):
         ixfac = ixfac.union(facility.ixfac_set_active, all=False)
         netfac = netfac.union(facility.netfac_set_active, all=False)
         carrierfac = carrierfac.union(facility.carrierfac_set_active, all=False)
-    carriers = objfac_tupple(carrierfac, "carrier")
-    networks = objfac_tupple(netfac, "network")
-    exchanges = objfac_tupple(ixfac, "ix")
+    carriers = objfac_tupple(carrierfac, "carrier", "mixed")
+    networks = objfac_tupple(netfac, "network", "grouped")
+    exchanges = objfac_tupple(ixfac, "ix", "grouped")
     org = data.get("org")
 
     social_media = data.get("social_media")
