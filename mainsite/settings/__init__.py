@@ -963,6 +963,7 @@ OAUTH2_PROVIDER = {
         SupportedScopes.PROFILE: "user profile",
         SupportedScopes.EMAIL: "email address",
         SupportedScopes.NETWORKS: "list of user networks and permissions",
+        SupportedScopes.AMR: "authentication method reference",
     },
     "ALLOWED_REDIRECT_URI_SCHEMES": ["https"],
     "REQUEST_APPROVAL_PROMPT": "auto",
@@ -973,6 +974,8 @@ OAUTH2_PROVIDER = {
 # migration 0085 has been applied.
 
 set_option("OAUTH2_PROVIDER_APPLICATION_MODEL", "oauth2_provider.Application")
+set_option("OAUTH2_PROVIDER_GRANT_MODEL", "oauth2_provider.Grant")
+set_option("OAUTH2_PROVIDER_ACCESS_TOKEN_MODEL", "oauth2_provider.AccessToken")
 
 # This is setting is for cookie timeout for oauth sessions.
 # After the timeout, the ongoing oauth session would expire.
