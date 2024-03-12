@@ -37,7 +37,7 @@ class PeeringDBOAuth2(BaseOAuth2):
         """Load user data from service."""
         headers = {"Authorization": "Bearer %s" % access_token}
         data = self.get_json(self.PROFILE_URL, headers=headers)
-        
+
         return data
 ```
 
