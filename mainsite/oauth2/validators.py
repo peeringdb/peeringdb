@@ -36,14 +36,6 @@ class OIDCValidator(OAuth2Validator):
             ("networks", claims.Networks([SupportedScopes.NETWORKS])),
         ]
 
-    def invalidate_authorization_code(self, client_id, code, request, *args, **kwargs):
-        print("invalidate_authorization_code")
-        grant = Grant.objects.get(code=code, application=request.client)
-        self.grant = grant
-        return super().invalidate_authorization_code(
-            client_id, code, request, *args, **kwargs
-        )
-
     def _create_access_token(self, expires, request, token, source_refresh_token=None):
 
         """
