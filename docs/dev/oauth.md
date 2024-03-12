@@ -48,13 +48,13 @@ PeeringDB currently is not collecting device attestation, thus has no way to ide
 - `pwd` - Password
 - `mfa` - Multi-factor authentication
 - `otp` - One-time password
-- `webauthn` - security key authentication (not in the RFC spec, but since we're not able to collect device attestation, we're using this as a proxy for security key usage - e.g., YubiKey, device pin, fingerprint scanner etc.)
+- `swk` - security key  (not in the RFC spec, but since we're not able to collect device attestation, we're using this as a proxy for security key usage - e.g., YubiKey, device pin, fingerprint scanner etc.)
 
 ```python
 "amr": ["pwd", "mfa", "otp"] # password entered + OTP
-"amr": ["pwd", "mfa", "webauthn"] # password entered + Security Key
+"amr": ["pwd", "mfa", "swk"] # password entered + Security Key
 "amr": ["pwd"] # password entered
-"amr": ["mfa", "webauthn", "otp"] # passwordless with security key + OTP
-"amr": ["mfa", "webauthn", "webauthn"] # passwordless with security key + plus 2fa with another security key
-"amr": ["webauthn"] # password less without mfa
+"amr": ["mfa", "swk", "otp"] # passwordless with security key + OTP
+"amr": ["mfa", "swk", "swk"] # passwordless with security key + plus 2fa with another security key
+"amr": ["swk"] # password less without mfa
 ```
