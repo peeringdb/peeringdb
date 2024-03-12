@@ -33,6 +33,7 @@ class OIDCValidator(OAuth2Validator):
             ("id", claims.UserId([SupportedScopes.PROFILE])),
             ("verified_user", claims.UserVerified([SupportedScopes.PROFILE])),
             ("networks", claims.Networks([SupportedScopes.NETWORKS])),
+            ("amr", claims.AMR([SupportedScopes.OPENID])),
         ]
 
     def _create_access_token(self, expires, request, token, source_refresh_token=None):

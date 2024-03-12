@@ -37,6 +37,7 @@ case "$1" in
     export DATABASE_PASSWORD=""
     export RELEASE_ENV=run_tests
     export PEERINGDB_SYNC_CACHE_URL=""
+    export OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH=/srv/www.peeringdb.com/tests/data/oidc/oidc.key
     unset BASE_URL
     unset OAUTH2_PROVIDER_APPLICATION_MODEL
     unset SESSION_COOKIE_DOMAIN
