@@ -21,6 +21,7 @@ import uuid
 import googlemaps.exceptions
 import oauth2_provider.views as oauth2_views
 import oauth2_provider.views.application as oauth2_application_views
+import pycountry
 import requests
 from allauth.account.models import EmailAddress
 from django.conf import settings as dj_settings
@@ -3195,6 +3196,11 @@ def handle_city_country_search(list_of_words, idx, q, query_idx, geo):
 
         del list_of_words[idx:i]
         q[query_idx] = " ".join(list_of_words)
+
+        alpha_2_country = pycountry.countries.get(alpha_2=location.strip())
+        if alpha_2_country:
+            # if location is alpha-2 country codes, change location with country name
+            location = alpha_2_country.name
 
         try:
             # geo code the location using google

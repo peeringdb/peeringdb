@@ -2215,6 +2215,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             "ipaddr4",
             "ipaddr6",
             "is_rs_peer",
+            "bfd_support",
             "operational",
         ] + HandleRefSerializer.Meta.fields
 

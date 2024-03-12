@@ -15,7 +15,11 @@ from django.urls.resolvers import ResolverMatch
 from rest_framework.response import Response
 from rest_framework.test import APIClient, APITestCase
 
-from peeringdb_server.middleware import PDBCommonMiddleware
+from peeringdb_server.middleware import (
+    ERR_BASE64_DECODE,
+    ERR_VALUE_ERROR,
+    PDBCommonMiddleware,
+)
 from peeringdb_server.models import Organization, OrganizationAPIKey, User, UserAPIKey
 
 from .util import reset_group_ids
@@ -442,3 +446,33 @@ class ActivateUserLocaleMiddlewareTests(APITestCase):
             self.assertNotIn("django_language", self.client.cookies)
             self.assertIn(f'<option value="{language}" selected>', content)
             self.assertEqual(request.status_code, 200)
+
+
+@pytest.mark.parametrize(
+    "auth,status_code,message,success",
+    (
+        ("", 400, ERR_VALUE_ERROR, False),
+        ("base64", 400, ERR_BASE64_DECODE, False),
+        ("123", 400, ERR_BASE64_DECODE, False),
+        ("https://testbad:testpass@beta.peeringdb.com", 400, ERR_BASE64_DECODE, False),
+        ("Ym9ndXM6Ym9ndXM=", 401, "Invalid username or password", False),
+        (None, 200, "Invalid username or password", True),
+    ),
+)
+@pytest.mark.django_db
+@override_settings(CSRF_USE_SESSIONS=False)
+def test_auth_basic(auth, status_code, message, success):
+    if success:
+        user = User.objects.create(username="test_user")
+        user.set_password("test_user")
+        user.save()
+        auth = base64.b64encode(b"test_user:test_user").decode("utf-8")
+    client = Client()
+    headers = {"HTTP_AUTHORIZATION": f"Basic {auth}"}
+    res = client.get("/api/fac", **headers)
+    json = res.json()
+    if success:
+        assert json["meta"].get("error") is None
+    else:
+        assert json["meta"]["error"] == message
+    assert res.status_code == status_code

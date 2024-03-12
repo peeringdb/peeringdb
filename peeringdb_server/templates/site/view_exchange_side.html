@@ -78,6 +78,11 @@
             </span>
           {% endif %}
 
+          {% if x.bfd_support %}
+            <span alt="BFD Support" title="BFD Support" class="bfd-support-badge">
+              <img class="checkmark" src="{{ STATIC_URL }}bfd_support.png" alt="BFD Support" />
+            </span>
+          {% endif %}
           {{ x.network.policy_general }}
         </div>
       </div>
