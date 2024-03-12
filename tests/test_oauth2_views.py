@@ -472,7 +472,6 @@ def test_oauth_authorization_process(oauth2_org_admin_user):
     # Clean up
     AccessToken.objects.all().delete()
     RefreshToken.objects.all().delete()
-<<<<<<< HEAD
 
 
 @pytest.mark.django_db
@@ -718,5 +717,3 @@ def expand_id_token(id_token):
     payload = jwt.utils.base64url_decode(parts[1]).decode("utf-8")
     payload_json = json.loads(payload)
     return payload_json
-=======
->>>>>>> github/master
