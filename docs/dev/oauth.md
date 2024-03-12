@@ -43,7 +43,7 @@ class PeeringDBOAuth2(BaseOAuth2):
 
 ## AMR values
 
-PeeringDB currently is not collecting device attestation, thus has no way to verify the device type according to RFC 8176 (https://datatracker.ietf.org/doc/html/rfc8176). However, we are collecting the following AMR values:
+PeeringDB currently is not collecting device attestation, thus has no way to identify the authentication method according to RFC 8176 (https://datatracker.ietf.org/doc/html/rfc8176). However, we are collecting the following AMR values:
 
 - `pwd` - Password
 - `mfa` - Multi-factor authentication
