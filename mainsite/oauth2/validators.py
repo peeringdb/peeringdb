@@ -1,4 +1,3 @@
-from django.contrib.sessions.backends.db import SessionStore
 from oauth2_provider.oauth2_validators import Grant, OAuth2Validator
 
 from mainsite.oauth2 import claims
