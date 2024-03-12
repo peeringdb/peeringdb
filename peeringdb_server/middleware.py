@@ -3,6 +3,7 @@ Custom django middleware.
 """
 
 import base64
+import binascii
 import json
 
 from django.conf import settings
@@ -20,6 +21,9 @@ from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import get_key_from_request
 
 ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged in. Please log out and try again."
+ERR_BASE64_DECODE = "Corrupt base64 input."
+ERR_UNKNOWN = "Unknown error."
+ERR_VALUE_ERROR = "Invalid Input."
 
 
 def get_auth_identity(request):
@@ -39,17 +43,22 @@ def get_auth_identity(request):
     auth_type = None
 
     if auth_value:
-        method, auth_value = auth_value.split(" ", 1)
-        if method.lower() == "basic":
-            # base 64 auth value is decoded and split to get the username
-            auth_value = base64.b64decode(auth_value).decode("utf-8").split(":", 1)[0]
-            auth_type = "user"
-        elif method.lower() == "api-key":
-            # api key auth value is truncated to prefix
-            auth_value = auth_value.split(".", 1)[0]
-            auth_type = "key"
-
-        return f"{auth_type}__{auth_value}"
+        try:
+            method, auth_value = auth_value.split(" ", 1)
+            if method.lower() == "basic":
+                # base 64 auth value is decoded and split to get the username
+                auth_value = (
+                    base64.b64decode(auth_value).decode("utf-8").split(":", 1)[0]
+                )
+                auth_type = "user"
+            elif method.lower() == "api-key":
+                # api key auth value is truncated to prefix
+                auth_value = auth_value.split(".", 1)[0]
+                auth_type = "key"
+            return f"{auth_type}__{auth_value}"
+        except Exception:
+            # avoid 500 error in decode and split
+            pass
 
     return "anonymous__guest"
 
@@ -216,8 +225,22 @@ class PDBPermissionMiddleware(MiddlewareMixin):
         # Check if HTTP auth is valid and if the request is made with basic auth.
 
         if http_auth and http_auth.startswith("Basic "):
-            # Get the username and password from the HTTP auth header.
-            username, password = self.get_username_and_password(http_auth)
+            error = None
+            try:
+                # Get the username and password from the HTTP auth header.
+                username, password = self.get_username_and_password(http_auth)
+            except (
+                UnicodeDecodeError,
+                binascii.Error,
+            ):
+                error = ERR_BASE64_DECODE
+            except ValueError:
+                error = ERR_VALUE_ERROR
+            except Exception:
+                error = ERR_UNKNOWN
+            if error:
+                # avoid 500 error when decode and split in the get_username_and_password
+                return self.response_unauthorized(request, message=error, status=400)
 
             user = None
             try:

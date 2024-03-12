@@ -169,9 +169,8 @@
             data-edit-name="{{ row.label_name }}"
             data-edit-data="{{ row.label_data }}"
             data-edit-value="{{ row.label_value }}">{{ row|editable_list_value }}</div>
-
-          {% if data.name != "social_media" %}
-          <button onclick="deleteElement(this)" data-edit-toggled="edit" class="btn btn-primary btn-sm remove-inline-element"> - </button>
+          {% if row.admin or permissions.can_write %}
+            <button onclick="deleteElement(this)" data-edit-toggled="edit" class="btn btn-primary btn-sm remove-inline-element"> -</button>
           {% endif %}
         {% elif row.edit_label %}
 
@@ -501,7 +500,9 @@
   </script>
 {% endif %}
 <script language="javascript" type="text/javascript">
-
+  $('a.btn.btn-primary[data-edit-action="toggle-edit"]').click(()=>{
+    $("div[data-edit-name='irr_as_set']").tooltip('dispose');
+  })
   const deleteElement = (e) => {
 
     $(e).parent().remove();
@@ -520,6 +521,7 @@
 $(document).ready(function() {
   PeeringDB.incomplete_data_notify();
   PeeringDB.ViewActions.init();
+  checkAsSet();
 
   var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
   editForm.on('action-success:submit', function(e,data) {

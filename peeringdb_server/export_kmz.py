@@ -99,7 +99,24 @@ def fac_export_kmz(limit=None, path=None, output_dir=None):
     kml = Kml()
     fac_folder = kml.newfolder(name="Facilities")
 
-    exclude_keys = ["_grainy"]
+    exclude_keys = [
+        "_grainy",
+        "id",
+        "org_id",
+        "status",
+        "latitude",
+        "longitude",
+        "clli",
+        "npanxx",
+        "name",
+    ]
+    rename_key = {
+        "net_count": "Network Count",
+        "ix_count": "IX Count",
+        "ix_count": "IX Count",
+        "org_name": "Organization",
+        "zipcode": "Postal Code",
+    }
 
     for fac in data.get("data")[:limit]:
         if fac.get("latitude") and fac.get("longitude"):
@@ -118,22 +135,18 @@ def fac_export_kmz(limit=None, path=None, output_dir=None):
                     continue
 
                 # Add all the facility data as extended data to the point
+                key_name = rename_key.get(key, key)
+
                 point.extendeddata.newdata(
-                    name=key, value=escape(value), displayname=key.title()
+                    name=key_name, value=escape(value), displayname=key_name.title()
                 )
 
-            # Include exchanges, networks, and carriers
+            # Include exchange, and carriers
 
             point.extendeddata.newdata(
                 name="exchanges",
                 value="\n".join(ix_fac.get(fac.get("id"), [])),
                 displayname="Exchanges",
-            )
-
-            point.extendeddata.newdata(
-                name="networks",
-                value="\n".join(net_fac.get(fac.get("id"), [])),
-                displayname="Networks",
             )
 
             point.extendeddata.newdata(
