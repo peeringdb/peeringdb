@@ -3517,7 +3517,7 @@ class LoginView(TwoFactorLoginView):
         if not passwordless:
             amr.append("pwd")
         else:
-            amr.append("u2f")
+            amr.append("webauthn")
 
         if "token" in done_forms:
             # user used OTP to login
@@ -3526,7 +3526,7 @@ class LoginView(TwoFactorLoginView):
         if "security-key" in done_forms:
             # user used a security key to login
             # TODO: we cannot currently differentiate between
-            # sub types of security keys, so we just add "u2f" for now
+            # sub types of security keys, so we just add "webauthn" for now
             #
             # We'd want to differentiate fingerprint readers, iris scanners etc.
             # but for that webauthn attestation is needed, which we currently
@@ -3534,9 +3534,9 @@ class LoginView(TwoFactorLoginView):
             #
             # NOTE: by design if passwordless authentication was used
             # it is required to be a different security key, so there may
-            # actually be cases of amr being "u2f u2f" which is accurate
+            # actually be cases of amr being "webauthn webauthn" which is accurate
             # and RFC 8176 does not seem to disallow this (multiples of the same type).
-            amr.append("u2f")
+            amr.append("webauthn")
 
         # if user used more than one method to authenticate
         # we add "mfa" to the amr list
