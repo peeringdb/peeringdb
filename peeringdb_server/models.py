@@ -6655,6 +6655,65 @@ class OAuthApplication(oauth2.AbstractApplication):
             self.user = None
 
 
+class OAuthGrantInfo(models.Model):
+
+    """
+    OAuth grant info
+
+    Used to store additional information about a grant
+
+    - amr: Authentication method reference set on the session that
+        created the grant
+    """
+
+    grant = models.OneToOneField(
+        oauth2.Grant,
+        on_delete=models.CASCADE,
+        related_name="grant_info",
+    )
+
+    amr = models.CharField(
+        max_length=255,
+        help_text=_("Authentication method reference"),
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "peeringdb_oauth_grant_info"
+        verbose_name = _("OAuth Grant Info")
+        verbose_name_plural = _("OAuth Grant Info")
+
+
+class OAuthAccessTokenInfo(models.Model):
+    """
+    OAuth access token info
+
+    Used to store additional information about an access token
+
+    - amr: Authentication method reference set on the session that
+        created the grant that resulted in this access token
+    """
+
+    access_token = models.OneToOneField(
+        oauth2.AccessToken,
+        on_delete=models.CASCADE,
+        related_name="access_token_info",
+    )
+
+    amr = models.CharField(
+        max_length=255,
+        help_text=_("Authentication method reference"),
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "peeringdb_oauth_access_token_info"
+        verbose_name = _("OAuth Access Token Info")
+        verbose_name_plural = _("OAuth Access Token Info")
+
+
 WATCHABLE_OBJECTS = [
     ("net", _("Network")),
 ]
