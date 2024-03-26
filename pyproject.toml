@@ -59,7 +59,8 @@ googlemaps = ">=2.5.1"
 markdown = ">=2.6.7"
 passlib = ">=1.7.1"
 phonenumbers = ">=8.11.1"
-schema = ">=0.7.5"
+# 0.7.6 breaks import
+schema = "==0.7.5"
 rdap = ">=1.5.2"
 unidecode = ">=1.0.23"
 # these should just be pulled in automatically?

@@ -2956,13 +2956,13 @@ files = [
 
 [[package]]
 name = "schema"
-version = "0.7.6"
+version = "0.7.5"
 description = "Simple data validation library"
 optional = false
 python-versions = "*"
 files = [
-    {file = "schema-0.7.6-py2.py3-none-any.whl", hash = "sha256:9c5c448fdfe59e90e010c3689e219a68e03ef8bf67a4432ffde2c5968d53e3d0"},
-    {file = "schema-0.7.6.tar.gz", hash = "sha256:ce0186666940271e5faeb31b92c830aab6e7eb3f0d6feb88a107a76bba964ba7"},
+    {file = "schema-0.7.5-py2.py3-none-any.whl", hash = "sha256:f3ffdeeada09ec34bf40d7d79996d9f7175db93b7a5065de0faa7f41083c1e6c"},
+    {file = "schema-0.7.5.tar.gz", hash = "sha256:f06717112c61895cabc4707752b88716e8420a8819d71404501e114f91043197"},
 ]
 
 [package.dependencies]
@@ -3557,4 +3557,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "5af11219b52cbb46a1ee0f52632478e112693adf35cc068a623c24cec8e1c672"
+content-hash = "d7010383629ad0cc4be9d318b90b2ea7e7e7d95490a6d4356649bdb53bfe2806"
