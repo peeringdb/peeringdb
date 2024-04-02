@@ -4,7 +4,9 @@ from django.conf import settings
 
 # import html escape
 from django.utils.html import escape
-from simplekml import Kml
+from simplekml import Kml, Style
+
+from peeringdb_server.util import generate_balloonstyle_text
 
 
 def collect_exchanges(path=None):
@@ -98,61 +100,57 @@ def fac_export_kmz(limit=None, path=None, output_dir=None):
 
     kml = Kml()
     fac_folder = kml.newfolder(name="Facilities")
-
-    exclude_keys = [
-        "_grainy",
-        "id",
-        "org_id",
-        "status",
+    style = Style()
+    include_keys = [
+        "org_name",
+        "peeringDB",
+        "website",
+        "net_count",
+        "ix_count",
+        "address1",
+        "city",
+        "country",
+        "state",
+        "zipcode",
         "latitude",
         "longitude",
-        "clli",
-        "npanxx",
-        "name",
     ]
     rename_key = {
-        "net_count": "Network Count",
-        "ix_count": "IX Count",
-        "ix_count": "IX Count",
-        "org_name": "Organization",
-        "zipcode": "Postal Code",
+        "net_count": "Networks",
+        "ix_count": "Exchanges",
+        "address1": "Address",
+        "org_name": "name",
     }
 
+    filtered_keys = []
     for fac in data.get("data")[:limit]:
         if fac.get("latitude") and fac.get("longitude"):
+            fac.update(
+                {
+                    "peeringDB": f"https://peeringdb.com/fac/{fac.get('id')}",
+                }
+            )
             # Add a new point to the "Facilities" folder
             point = fac_folder.newpoint(
-                name=fac.get("name"),
+                name=fac.get("org_name"),
                 description=fac.get("notes"),
                 coords=[(fac.get("longitude"), fac.get("latitude"))],
             )
 
-            for key, value in fac.items():
-                if key in exclude_keys:
-                    continue
-
+            for key in include_keys:
+                value = fac.get(key, "")
                 if not isinstance(value, (int, str, float)):
                     continue
 
-                # Add all the facility data as extended data to the point
                 key_name = rename_key.get(key, key)
 
+                if key_name not in filtered_keys:
+                    filtered_keys.append(key_name)
                 point.extendeddata.newdata(
                     name=key_name, value=escape(value), displayname=key_name.title()
                 )
 
-            # Include exchange, and carriers
-
-            point.extendeddata.newdata(
-                name="exchanges",
-                value="\n".join(ix_fac.get(fac.get("id"), [])),
-                displayname="Exchanges",
-            )
-
-            point.extendeddata.newdata(
-                name="carriers",
-                value="\n".join(carrier_fac.get(fac.get("id"), [])),
-                displayname="Carriers",
-            )
+            point.style = style
+    style.balloonstyle.text = generate_balloonstyle_text(filtered_keys)
 
     kml.savekmz(f"{output_dir}/peeringdb.kmz")

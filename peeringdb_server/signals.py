@@ -13,6 +13,7 @@ Django signal handlers
 """
 
 from math import atan2, cos, radians, sin, sqrt
+from urllib.parse import urljoin
 
 import django.urls
 import reversion
@@ -76,6 +77,11 @@ def update_network_attribute(instance, attribute):
 
 def network_post_revision_commit(**kwargs):
     for vs in kwargs.get("versions"):
+
+        # ignore objects that don't have the HandleRef meta class
+        if not hasattr(vs.object, "HandleRef"):
+            continue
+
         if vs.object.HandleRef.tag in ["netixlan", "poc", "netfac"]:
             update_network_attribute(vs.object, f"{vs.object.HandleRef.tag}_updated")
 
@@ -144,6 +150,11 @@ def update_counts_for_ixfac(ixfac):
 
 def connector_objects_post_revision_commit(**kwargs):
     for vs in kwargs.get("versions"):
+
+        # ignore objects that don't have the HandleRef meta class
+        if not hasattr(vs.object, "HandleRef"):
+            continue
+
         if vs.object.HandleRef.tag == "netixlan":
             update_counts_for_netixlan(vs.object)
         if vs.object.HandleRef.tag == "netfac":
@@ -422,8 +433,9 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                             {
                                 "user": instance.user,
                                 "org": instance.org,
-                                "org_management_url": "%s/org/%d#users"
-                                % (settings.BASE_URL, instance.org.id),
+                                "org_management_url": urljoin(
+                                    settings.BASE_URL, f"/org/{instance.org.id}#users"
+                                ),
                             }
                         ),
                     )

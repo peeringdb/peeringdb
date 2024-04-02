@@ -17,11 +17,12 @@ from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from rest_framework.test import APIRequestFactory
-from simplekml import Kml
+from simplekml import Kml, Style
 
 from peeringdb_server.models import Campus, InternetExchange, IXLan
 from peeringdb_server.renderers import JSONEncoder
 from peeringdb_server.rest import REFTAG_MAP as RestViewSets
+from peeringdb_server.util import generate_balloonstyle_text
 
 
 def export_ixf_ix_members(ixlans, pretty=False):
@@ -246,7 +247,14 @@ class ExportView(View):
             return ""
 
         kml = Kml()
-
+        style = Style()
+        keys = list(data[0].keys())
+        for exclude_key in ["Latitude", "Longitude", "Notes"]:
+            try:
+                keys.remove(exclude_key)
+            except ValueError:
+                pass
+        style.balloonstyle.text = generate_balloonstyle_text(keys)
         for row in data:
             lat = row.pop("Latitude", None)
             lon = row.pop("Longitude", None)
@@ -260,7 +268,7 @@ class ExportView(View):
                 description=notes,
                 coords=[(lon, lat)],
             )
-
+            point.style = style
             for key, value in row.items():
                 point.extendeddata.newdata(
                     name=key, value=escape(value), displayname=key.title()

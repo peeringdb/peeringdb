@@ -1,6 +1,8 @@
 """
 View for organization administrative actions (/org endpoint).
 """
+from urllib.parse import urljoin
+
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -14,6 +16,7 @@ from django_handleref.models import HandleRefModel
 from grainy.const import PERM_READ
 
 from peeringdb_server.models import (
+    Carrier,
     Facility,
     InternetExchange,
     Network,
@@ -59,6 +62,8 @@ def save_user_permissions(org, user, perms):
             grainy_perms[f"{org.grainy_namespace}.internetexchange"] = permissions
         elif id == "fac":
             grainy_perms[f"{org.grainy_namespace}.facility"] = permissions
+        elif id == "carrier":
+            grainy_perms[f"{org.grainy_namespace}.carrier"] = permissions
         elif id == "sessions":
             grainy_perms[f"{org.grainy_namespace}.network.*.sessions"] = permissions
         elif id.find(".") > -1:
@@ -74,6 +79,8 @@ def save_user_permissions(org, user, perms):
                 ] = permissions
             elif id[0] == "fac":
                 grainy_perms[f"{org.grainy_namespace}.facility.{id[1]}"] = permissions
+            elif id[0] == "carrier":
+                grainy_perms[f"{org.grainy_namespace}.carrier.{id[1]}"] = permissions
             elif id[0] == "sessions":
                 grainy_perms[
                     f"{org.grainy_namespace}.network.{id[1]}.sessions"
@@ -128,7 +135,7 @@ def load_entity_permissions(org, entity):
 
     # extract entity's permissioning ids from grainy_namespaces targeting
     # organization's entities
-    for model in [Network, InternetExchange, Facility]:
+    for model in [Network, InternetExchange, Facility, Carrier]:
         extract_permission_id(entity_perms, perms, model, org)
 
     # extract entity's permissioning ids from grainy_namespaces targeting
@@ -144,6 +151,9 @@ def load_entity_permissions(org, entity):
 
     for fac in org.fac_set_active:
         extract_permission_id(entity_perms, perms, fac, org)
+
+    for carrier in org.carrier_set_active:
+        extract_permission_id(entity_perms, perms, carrier, org)
     return entity_perms, perms
 
 
@@ -158,6 +168,7 @@ def permission_ids(org):
         "net": _("Any Network"),
         "fac": _("Any Facility"),
         "ix": _("Any Exchange"),
+        "carrier": _("Any Carrier"),
         "sessions": _("Manage peering sessions - Any Network"),
     }
 
@@ -188,6 +199,15 @@ def permission_ids(org):
         {
             "fac.%d" % fac.id: _("Facility - %(fac_name)s") % {"fac_name": fac.name}
             for fac in org.fac_set_active
+        }
+    )
+
+    perms.update(
+        {
+            "carrier.%d"
+            % carrier.id: _("Carrier - %(carrier_name)s")
+            % {"carrier_name": carrier.name}
+            for carrier in org.carrier_set_active
         }
     )
 
@@ -500,6 +520,11 @@ def uoar_approve(request, **kwargs):
 
     org = kwargs.get("org")
 
+    if request.user.is_staff:
+        req_user = "PeeringDB Support"
+    else:
+        req_user = request.user.full_name
+
     try:
         uoar = UserOrgAffiliationRequest.objects.get(id=request.POST.get("id"))
         if uoar.org != org:
@@ -537,10 +562,11 @@ def uoar_approve(request, **kwargs):
                             "email/notify-org-admin-user-affil-approved.txt"
                         ).render(
                             {
-                                "user": request.user,
+                                "user": req_user,
                                 "uoar": uoar,
-                                "org_management_url": "%s/org/%d#users"
-                                % (settings.BASE_URL, org.id),
+                                "org_management_url": urljoin(
+                                    settings.BASE_URL, f"/org/{org.id}#users"
+                                ),
                             }
                         ),
                     )
@@ -566,11 +592,16 @@ def uoar_deny(request, **kwargs):
     """
     Deny a user request to affiliate with the organization.
     """
-
     org = kwargs.get("org")
+
+    if request.user.is_staff:
+        req_user = "PeeringDB Support"
+    else:
+        req_user = request.user.full_name
 
     try:
         uoar = UserOrgAffiliationRequest.objects.get(id=request.POST.get("id"))
+
         if uoar.org != org:
             return JsonResponse({}, status=403)
         try:
@@ -594,10 +625,11 @@ def uoar_deny(request, **kwargs):
                             "email/notify-org-admin-user-affil-denied.txt"
                         ).render(
                             {
-                                "user": request.user,
+                                "user": req_user,
                                 "uoar": uoar,
-                                "org_management_url": "%s/org/%d#users"
-                                % (settings.BASE_URL, org.id),
+                                "org_management_url": urljoin(
+                                    settings.BASE_URL, f"/org/{org.id}#users"
+                                ),
                             }
                         ),
                     )

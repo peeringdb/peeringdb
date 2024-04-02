@@ -1,0 +1,4 @@
+
+Your pending affiliation request to {{org}} was deleted because it was older than {{days_old}} days.
+
+Please submit a new request if you still need to be affiliated with the organization.
