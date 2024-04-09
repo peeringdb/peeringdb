@@ -1084,7 +1084,7 @@ PeeringDB.IXFPreview = twentyc.cls.define(
 
     render_data : function(data, renderTo) {
       /**
-       * Renders the changes made by the ix-f import, called automatically
+       * Renders the changes made by the IX-F import, called automatically
        * by `render`
        *
        * @method render_data
@@ -1151,7 +1151,7 @@ PeeringDB.IXFNetPreview =  twentyc.cls.extend(
 
     render_data : function(data, renderTo) {
       /**
-       * Renders the changes made by the ix-f import, called automatically
+       * Renders the changes made by the IX-F import, called automatically
        * by `render`
        *
        * @method render_data
@@ -1230,7 +1230,7 @@ PeeringDB.IXFNetPostmortem =  twentyc.cls.extend(
 
     render_data : function(data, renderTo) {
       /**
-       * Renders the changes made by the ix-f import, called automatically
+       * Renders the changes made by the IX-F import, called automatically
        * by `render`
        *
        * @method render_data

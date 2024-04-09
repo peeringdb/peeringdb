@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
                     "data",
                     models.TextField(
                         default="{}",
-                        help_text="JSON snapshot of the ix-f member data that created this entry",
+                        help_text="JSON snapshot of the IX-F member data that created this entry",
                     ),
                 ),
                 (

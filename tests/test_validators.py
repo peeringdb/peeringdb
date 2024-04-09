@@ -416,7 +416,7 @@ def test_ghost_peer_vs_real_peer_one_netixlan():
         asn=1010, name="AS1010", status="ok", org=org
     )
     ixlan = ix.ixlan
-    ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
+    ixlan.ixf_ixp_member_list_url = "https://localhost/IX-F"
     ixlan.save()
 
     IXLanPrefix.objects.create(
@@ -448,20 +448,20 @@ def test_ghost_peer_vs_real_peer_one_netixlan():
         operational=False,
     )
 
-    # setup ix-f cache
+    # setup IX-F cache
 
     data = setup_test_data("ixf.member.1")
     cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", data)
 
     ix = ixlan.ix
 
-    # real peer should exist in ix-f data
+    # real peer should exist in IX-F data
 
     real4, real6 = ix.peer_exists_in_ixf_data(1001, IP4, IP6)
     assert real4
     assert real6
 
-    # ghost peer should NOT exist in ix-f data
+    # ghost peer should NOT exist in IX-F data
 
     ghost4, ghost6 = ix.peer_exists_in_ixf_data(1010, IP4, IP6)
     assert not ghost4
@@ -513,7 +513,7 @@ def test_ghost_peer_vs_real_peer_two_netixlan():
         asn=1010, name="AS1010", status="ok", org=org
     )
     ixlan = ix.ixlan
-    ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
+    ixlan.ixf_ixp_member_list_url = "https://localhost/IX-F"
     ixlan.save()
 
     IXLanPrefix.objects.create(
@@ -557,20 +557,20 @@ def test_ghost_peer_vs_real_peer_two_netixlan():
         operational=False,
     )
 
-    # setup ix-f data
+    # setup IX-F data
 
     data = setup_test_data("ixf.member.1")
     cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", data)
 
     ix = ixlan.ix
 
-    # real peer should exist in ix-f data
+    # real peer should exist in IX-F data
 
     real4, real6 = ix.peer_exists_in_ixf_data(1001, IP4, IP6)
     assert real4
     assert real6
 
-    # ghost peer should NOT exist in ix-f data
+    # ghost peer should NOT exist in IX-F data
 
     ghost4, ghost6 = ix.peer_exists_in_ixf_data(1010, IP4, IP6)
     assert not ghost4
@@ -623,7 +623,7 @@ def test_ghost_peer_vs_real_peer_two_netixlan_partial():
         asn=1010, name="AS1010", status="ok", org=org
     )
     ixlan = ix.ixlan
-    ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
+    ixlan.ixf_ixp_member_list_url = "https://localhost/IX-F"
     ixlan.save()
 
     IXLanPrefix.objects.create(
@@ -667,20 +667,20 @@ def test_ghost_peer_vs_real_peer_two_netixlan_partial():
         operational=False,
     )
 
-    # setup ix-f data
+    # setup IX-F data
 
     data = setup_test_data("ixf.member.1")
     cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", data)
 
     ix = ixlan.ix
 
-    # real peer should exist in ix-f data
+    # real peer should exist in IX-F data
 
     real4, real6 = ix.peer_exists_in_ixf_data(1001, IP4, IP6)
     assert real4
     assert real6
 
-    # ghost peer should NOT exist in ix-f data
+    # ghost peer should NOT exist in IX-F data
 
     ghost4, ghost6 = ix.peer_exists_in_ixf_data(1010, IP4, IP6)
     assert not ghost4
@@ -724,7 +724,7 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
     """
     Tests that a real peer can claim the ip addresses of a gohst peer. #983
 
-    Test the handling of invalid ix-f data, in which case the ghost peer vs real peer
+    Test the handling of invalid IX-F data, in which case the ghost peer vs real peer
     logic should be skipped.
     """
 
@@ -737,7 +737,7 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         asn=1010, name="AS1010", status="ok", org=org
     )
     ixlan = ix.ixlan
-    ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
+    ixlan.ixf_ixp_member_list_url = "https://localhost/IX-F"
     ixlan.save()
 
     IXLanPrefix.objects.create(
@@ -768,7 +768,7 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         is_rs_peer=False,
         operational=False,
     )
-    # setup ix-f data
+    # setup IX-F data
 
     cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", {"invalid": "data"})
 

@@ -419,8 +419,8 @@ class ToolUndelete(CommandLineToolWrapper):
 @register_tool
 class ToolIXFIXPMemberImport(CommandLineToolWrapper):
     """
-    Allows resets for various parts of the ix-f member data import protocol.
-    And import ix-f member data for a single Ixlan at a time.
+    Allows resets for various parts of the IX-F member data import protocol.
+    And import IX-F member data for a single Ixlan at a time.
     """
 
     tool = "pdb_ixf_ixp_member_import"
@@ -431,7 +431,7 @@ class ToolIXFIXPMemberImport(CommandLineToolWrapper):
             queryset=InternetExchange.objects.all(),
             widget=autocomplete.ModelSelect2(url="/autocomplete/ix/json"),
             help_text=_(
-                "Select an Internet Exchange to perform an ix-f memberdata import"
+                "Select an Internet Exchange to perform an IX-F memberdata import"
             ),
         )
 

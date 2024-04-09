@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                     ("finished", "Finished"),
                 ],
                 default="queued",
-                help_text="The current status of the manual ix-f import request",
+                help_text="The current status of the manual IX-F import request",
                 max_length=32,
                 verbose_name="Manual IX-F import status",
             ),
@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
             name="ixf_import_request_user",
             field=models.ForeignKey(
                 blank=True,
-                help_text="The user that triggered the manual ix-f import request",
+                help_text="The user that triggered the manual IX-F import request",
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
                 related_name="requested_ixf_imports",

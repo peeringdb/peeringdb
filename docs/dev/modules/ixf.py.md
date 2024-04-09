@@ -4,7 +4,7 @@ Generated from ixf.py on 2023-04-12 10:09:44.563425
 
 IX-F importer implementation.
 
-Handles import of ix-f feeds, creation of suggestions for networks and exchanges
+Handles import of IX-F feeds, creation of suggestions for networks and exchanges
 to follow.
 
 Handles notifications of networks and exchanges as part of that process.
@@ -20,7 +20,7 @@ A substantial part of the import logic is handled through models.py::IXFMemberDa
 MultipleVlansInPrefix(builtins.ValueError)
 ```
 
-This error is raised when an ix-f export contains
+This error is raised when an IX-F export contains
 multiple vlan ids for the prefixes defined in the processed ixlan.
 
 Since peeringdb treats each vlan as it's own exchange this currently
@@ -42,7 +42,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 PostMortem(builtins.object)
 ```
 
-Generate postmortem report for ix-f import.
+Generate postmortem report for IX-F import.
 
 
 ### Methods
