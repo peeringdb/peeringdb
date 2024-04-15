@@ -1171,24 +1171,24 @@ set_option(
 
 set_option("IXF_POSTMORTEM_LIMIT", 250)
 
-# when encountering problems where an exchange's ix-f feed
+# when encountering problems where an exchange's IX-F feed
 # becomes unavilable / unparsable this setting controls
 # the interval in which we communicate the issue to them (hours)
 set_option("IXF_PARSE_ERROR_NOTIFICATION_PERIOD", 360)
 
-# toggle the creation of DeskPRO tickets from ix-f importer
+# toggle the creation of DeskPRO tickets from IX-F importer
 # conflicts
 set_option("IXF_TICKET_ON_CONFLICT", True)
 
-# send the ix-f importer generated tickets to deskpro
+# send the IX-F importer generated tickets to deskpro
 set_option("IXF_SEND_TICKETS", False)
 
 # toggle the notification of exchanges via email
-# for ix-f importer conflicts
+# for IX-F importer conflicts
 set_option("IXF_NOTIFY_IX_ON_CONFLICT", False)
 
 # toggle the notification of networks via email
-# for ix-f importer conflicts
+# for IX-F importer conflicts
 set_option("IXF_NOTIFY_NET_ON_CONFLICT", False)
 
 # number of days of a conflict being unresolved before
@@ -1208,7 +1208,7 @@ set_option("IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT", 3)
 set_option("IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD", 30)
 
 # on / off toggle for automatic stale netixlan removal
-# through ix-f (#1271)
+# through IX-F (#1271)
 #
 # default was changed to False as part of #1360
 set_option("IXF_REMOVE_STALE_NETIXLAN", False)

@@ -98,7 +98,7 @@ Utilities for geocoding and geo normalization.
 
 ## [import_views.py](/docs/dev/modules/import_views.py.md)
 
-Define ix-f import preview, review and post-mortem views.
+Define IX-F import preview, review and post-mortem views.
 
 ## [inet.py](/docs/dev/modules/inet.py.md)
 
@@ -112,7 +112,7 @@ Prefix renumbering.
 
 IX-F importer implementation.
 
-Handles import of ix-f feeds, creation of suggestions for networks and exchanges
+Handles import of IX-F feeds, creation of suggestions for networks and exchanges
 to follow.
 
 Handles notifications of networks and exchanges as part of that process.

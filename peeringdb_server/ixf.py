@@ -1,7 +1,7 @@
 """
 IX-F importer implementation.
 
-Handles import of ix-f feeds, creation of suggestions for networks and exchanges
+Handles import of IX-F feeds, creation of suggestions for networks and exchanges
 to follow.
 
 Handles notifications of networks and exchanges as part of that process.
@@ -61,7 +61,7 @@ REASON_VALUES_CHANGED = _(
 class MultipleVlansInPrefix(ValueError):
 
     """
-    This error is raised when an ix-f export contains
+    This error is raised when an IX-F export contains
     multiple vlan ids for the prefixes defined in the processed ixlan.
 
     Since peeringdb treats each vlan as it's own exchange this currently
@@ -118,7 +118,7 @@ class Importer:
     @property
     def tickets_enabled(self):
         """
-        Return whether deskpr ticket creation for ix-f
+        Return whether deskpr ticket creation for IX-F
         conflicts are enabled or not.
 
         This can be controlled by the IXF_TICKET_ON_CONFLICT
@@ -221,7 +221,7 @@ class Importer:
 
     def cache_key(self, url):
         """
-        Return the django cache key to use for caching ix-f data.
+        Return the django cache key to use for caching IX-F data.
 
         Argument:
 
@@ -377,7 +377,7 @@ class Importer:
 
             id = vlan.get("vlan_id", 0)
 
-            # the ix-f schema allows setting ipv4 and ipv6 to
+            # the IX-F schema allows setting ipv4 and ipv6 to
             # null, in which case remove the property
 
             if "ipv4" in vlan and not vlan.get("ipv4"):
@@ -443,13 +443,13 @@ class Importer:
             # handle `null` properties inside connection list
 
             for conn in member.get("connection_list", []):
-                # handle case where ix-f feed has set `vlan_list` to `null` (#1244)
+                # handle case where IX-F feed has set `vlan_list` to `null` (#1244)
                 # treat same as if it wasn't set at all
 
                 if conn.get("vlan_list", []) is None:
                     conn.pop("vlan_list")
 
-                # handle case where ix-f feed has set `if_list` to `null` (#1244)
+                # handle case where IX-F feed has set `if_list` to `null` (#1244)
                 # treat same as if it wasn't set at all
 
                 if conn.get("if_list", []) is None:
@@ -558,7 +558,7 @@ class Importer:
             self.log_error(f"Internal Error 'KeyError': {exc}", save=save)
             return False
 
-        # null ix-f error note on ixlan if it had error'd before
+        # null IX-F error note on ixlan if it had error'd before
         if self.ixlan.ixf_ixp_import_error:
             with transaction.atomic():
                 with reversion.create_revision():
@@ -752,7 +752,7 @@ class Importer:
 
             qset = qset.filter(asn=self.asn)
 
-        # clean up old ix-f memeber data objects
+        # clean up old IX-F memeber data objects
 
         for ixf_member in qset:
             # proposed deletion got fulfilled
@@ -773,7 +773,7 @@ class Importer:
                     self.queue_notification(ixf_member, "resolved")
 
             # proposed change / addition is now gone from
-            # ix-f data
+            # IX-F data
 
             elif not self.skip_import and ixf_member.ixf_id not in self.ixf_ids:
                 if ixf_member.action in ["add", "modify"]:
@@ -844,7 +844,7 @@ class Importer:
             if self.asn and asn != self.asn:
                 continue
 
-            # keep track of asns we find in the ix-f data
+            # keep track of asns we find in the IX-F data
             if asn not in self.asns:
                 self.asns.append(asn)
 
@@ -1907,8 +1907,8 @@ class Importer:
             if ixf_member_data.requirement_of_id:
                 continue
 
-            # check the date of when the ix-f information that suggests
-            # the netixlan removal was last seen in the ix-f data.
+            # check the date of when the IX-F information that suggests
+            # the netixlan removal was last seen in the IX-F data.
             # ignore any that were not seen the last time the importer ran
             #
             # this is to catch edge cases where the ix has had i turned off
@@ -1980,8 +1980,8 @@ class Importer:
             if ixf_member_data.requirement_of_id:
                 continue
 
-            # check the date of when the ix-f information that suggests
-            # the netixlan removal was last seen in the ix-f data.
+            # check the date of when the IX-F information that suggests
+            # the netixlan removal was last seen in the IX-F data.
             # ignore any that were not seen the last time the importer ran
             #
             # this is to catch edge cases where the ix has had i turned off
@@ -2212,7 +2212,7 @@ class Importer:
 class PostMortem:
 
     """
-    Generate postmortem report for ix-f import.
+    Generate postmortem report for IX-F import.
     """
 
     def reset(self, asn, **kwargs):

@@ -2206,7 +2206,7 @@ class InternetExchange(
 
     ixf_import_request_status = models.CharField(
         _("Manual IX-F import status"),
-        help_text=_("The current status of the manual ix-f import request"),
+        help_text=_("The current status of the manual IX-F import request"),
         choices=(
             ("queued", _("Queued")),
             ("importing", _("Importing")),
@@ -2221,7 +2221,7 @@ class InternetExchange(
         "peeringdb_server.User",
         null=True,
         blank=True,
-        help_text=_("The user that triggered the manual ix-f import request"),
+        help_text=_("The user that triggered the manual IX-F import request"),
         on_delete=models.SET_NULL,
         related_name="requested_ixf_imports",
     )
@@ -3388,7 +3388,7 @@ class IXLanIXFMemberImportLogEntry(models.Model):
     def changes(self):
         """
         Returns a dict of changes between the netixlan version
-        saved by the ix-f import and the version before.
+        saved by the IX-F import and the version before.
 
         Fields `created`, `updated` and `version` will be ignored.
         """
@@ -3429,14 +3429,14 @@ class IXLanIXFMemberImportLogEntry(models.Model):
 class NetworkProtocolsDisabled(ValueError):
     """
     Raised when a network has both ipv6 and ipv4 support
-    disabled during ix-f import.
+    disabled during IX-F import.
     """
 
 
 class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     """
-    Describes a potential data update that arose during an ix-f import
+    Describes a potential data update that arose during an IX-F import
     attempt for a specific member (asn, ip4, ip6) to netixlan
     (asn, ip4, ip6) where the importer could not complete the
     update automatically.
@@ -3445,7 +3445,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     data = models.TextField(
         null=False,
         default="{}",
-        help_text=_("JSON snapshot of the ix-f member data that " "created this entry"),
+        help_text=_("JSON snapshot of the IX-F member data that " "created this entry"),
     )
 
     log = models.TextField(blank=True, help_text=_("Activity for this entry"))
@@ -3513,7 +3513,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     )
 
     # field names of fields that can receive
-    # modifications from ix-f
+    # modifications from IX-F
 
     data_fields = [
         "speed",
@@ -3896,7 +3896,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     @property
     def ixf_id(self):
         """
-        Returns a tuple that identifies the ix-f member
+        Returns a tuple that identifies the IX-F member
         as a unqiue record by asn, ip4 and ip6 address.
         """
 
@@ -4035,7 +4035,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         had data at the IX-F source.
 
         If not it indicates that it does not exist at the
-        ix-f source.
+        IX-F source.
         """
 
         return self.data == "{}" or not self.data
@@ -4046,7 +4046,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Returns whether or not this entry implies that
         the related netixlan should be removed.
 
-        We do this by checking if the ix-f data was provided
+        We do this by checking if the IX-F data was provided
         or not.
         """
 
@@ -4372,7 +4372,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     def validate_speed(self):
         """
-        Speed errors in ix-f data are raised during parse
+        Speed errors in IX-F data are raised during parse
         and speed will be on the attribute.
 
         In order to properly handle invalid speed values,
@@ -4505,7 +4505,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         self.reason = reason
 
-        # we perist this ix-f member data that proposes removal
+        # we perist this IX-F member data that proposes removal
         # if any of these conditions are met
 
         # marked for removal, but not saved
@@ -5297,7 +5297,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase, ParentStatusCheckMixin):
     def ixf_id(self):
         """
         Returns a tuple that identifies the netixlan
-        in the context of an ix-f member data entry as a unqiue record by asn, ip4 and ip6 address.
+        in the context of an IX-F member data entry as a unqiue record by asn, ip4 and ip6 address.
         """
 
         self.network

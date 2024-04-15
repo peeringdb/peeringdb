@@ -13059,7 +13059,7 @@ paths:
           type: date-time
       - name: ixf_import_request_status
         in: query
-        description: 'The current status of the manual ix-f import request
+        description: 'The current status of the manual IX-F import request
 
 
           Filter results by matching a value against this field.
@@ -13074,7 +13074,7 @@ paths:
           type: string
       - name: ixf_import_request_user
         in: query
-        description: 'The user that triggered the manual ix-f import request
+        description: 'The user that triggered the manual IX-F import request
 
 
           Filter results by matching a value against this field.
@@ -14738,7 +14738,7 @@ paths:
                   - finished
                   - error
                   type: string
-                  description: The current status of the manual ix-f import request
+                  description: The current status of the manual IX-F import request
                 service_level:
                   enum:
                   - ''
@@ -15653,7 +15653,7 @@ paths:
                   - finished
                   - error
                   type: string
-                  description: The current status of the manual ix-f import request
+                  description: The current status of the manual IX-F import request
                 service_level:
                   enum:
                   - ''
@@ -16521,7 +16521,7 @@ paths:
                   - finished
                   - error
                   type: string
-                  description: The current status of the manual ix-f import request
+                  description: The current status of the manual IX-F import request
                 service_level:
                   enum:
                   - ''
@@ -17214,7 +17214,7 @@ paths:
           type: date-time
       - name: ix__ixf_import_request_status
         in: query
-        description: 'The current status of the manual ix-f import request
+        description: 'The current status of the manual IX-F import request
 
 
           Filter results by matching a value against this field.
@@ -18393,7 +18393,7 @@ paths:
                       - finished
                       - error
                       type: string
-                      description: The current status of the manual ix-f import request
+                      description: The current status of the manual IX-F import request
                     service_level:
                       enum:
                       - ''
@@ -20592,7 +20592,7 @@ paths:
                       - finished
                       - error
                       type: string
-                      description: The current status of the manual ix-f import request
+                      description: The current status of the manual IX-F import request
                     service_level:
                       enum:
                       - ''
@@ -22743,7 +22743,7 @@ paths:
                       - finished
                       - error
                       type: string
-                      description: The current status of the manual ix-f import request
+                      description: The current status of the manual IX-F import request
                     service_level:
                       enum:
                       - ''
@@ -24320,7 +24320,7 @@ paths:
           type: date-time
       - name: ix__ixf_import_request_status
         in: query
-        description: 'The current status of the manual ix-f import request
+        description: 'The current status of the manual IX-F import request
 
 
           Filter results by matching a value against this field.
@@ -25606,7 +25606,7 @@ paths:
                       - finished
                       - error
                       type: string
-                      description: The current status of the manual ix-f import request
+                      description: The current status of the manual IX-F import request
                     service_level:
                       enum:
                       - ''
@@ -26948,7 +26948,7 @@ paths:
                           - finished
                           - error
                           type: string
-                          description: The current status of the manual ix-f import
+                          description: The current status of the manual IX-F import
                             request
                         service_level:
                           enum:
@@ -27974,7 +27974,7 @@ paths:
                           - finished
                           - error
                           type: string
-                          description: The current status of the manual ix-f import
+                          description: The current status of the manual IX-F import
                             request
                         service_level:
                           enum:
@@ -28952,7 +28952,7 @@ paths:
                           - finished
                           - error
                           type: string
-                          description: The current status of the manual ix-f import
+                          description: The current status of the manual IX-F import
                             request
                         service_level:
                           enum:
@@ -44499,7 +44499,7 @@ paths:
                           - finished
                           - error
                           type: string
-                          description: The current status of the manual ix-f import
+                          description: The current status of the manual IX-F import
                             request
                         service_level:
                           enum:
@@ -46189,7 +46189,7 @@ paths:
                           - finished
                           - error
                           type: string
-                          description: The current status of the manual ix-f import
+                          description: The current status of the manual IX-F import
                             request
                         service_level:
                           enum:
@@ -47830,7 +47830,7 @@ paths:
                           - finished
                           - error
                           type: string
-                          description: The current status of the manual ix-f import
+                          description: The current status of the manual IX-F import
                             request
                         service_level:
                           enum:
@@ -54600,7 +54600,7 @@ paths:
                   - finished
                   - error
                   type: string
-                  description: The current status of the manual ix-f import request
+                  description: The current status of the manual IX-F import request
                 service_level:
                   enum:
                   - ''
@@ -58990,7 +58990,7 @@ components:
           - finished
           - error
           type: string
-          description: The current status of the manual ix-f import request
+          description: The current status of the manual IX-F import request
         service_level:
           enum:
           - ''
@@ -59823,7 +59823,7 @@ components:
               - finished
               - error
               type: string
-              description: The current status of the manual ix-f import request
+              description: The current status of the manual IX-F import request
             service_level:
               enum:
               - ''
@@ -61913,7 +61913,7 @@ components:
               - finished
               - error
               type: string
-              description: The current status of the manual ix-f import request
+              description: The current status of the manual IX-F import request
             service_level:
               enum:
               - ''
@@ -62811,7 +62811,7 @@ components:
                   - finished
                   - error
                   type: string
-                  description: The current status of the manual ix-f import request
+                  description: The current status of the manual IX-F import request
                 service_level:
                   enum:
                   - ''
@@ -67641,7 +67641,7 @@ components:
                   - finished
                   - error
                   type: string
-                  description: The current status of the manual ix-f import request
+                  description: The current status of the manual IX-F import request
                 service_level:
                   enum:
                   - ''

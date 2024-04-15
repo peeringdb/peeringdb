@@ -298,7 +298,7 @@ object, exposed to api/ix/{id}/{action}
 #### request_ixf_import
 `def request_ixf_import(self, request, *args, **kwargs)`
 
-Allows managers of an ix to request an ix-f import.
+Allows managers of an ix to request an IX-F import.
 (#779)
 
 ---
