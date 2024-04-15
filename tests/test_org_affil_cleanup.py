@@ -50,15 +50,14 @@ class TestDeleteOldRequests(TestCase):
 
         # Capture output
         output = StringIO()
-        sys.stdout = output
 
         # Call the command with dry-run flag commit=False
         call_command(
-            "pdb_delete_outdated_pending_affil_request", days_old=0, commit=False
+            "pdb_delete_outdated_pending_affil_request",
+            days_old=0,
+            commit=False,
+            stdout=output,
         )
-
-        # Restore stdout
-        sys.stdout = sys.__stdout__
 
         # Verify dry-run message
         expected_message = f"Dry Run: Would have deleted {UserOrgAffiliationRequest.objects.filter(status='pending').count()} old pending requests."
@@ -70,7 +69,6 @@ class TestDeleteOldRequests(TestCase):
 
         # Capture output
         output = StringIO()
-        sys.stdout = output
 
         # Call the command with limit and commit (ensure commit=True)
         call_command(
@@ -78,35 +76,34 @@ class TestDeleteOldRequests(TestCase):
             days_old=0,
             commit=True,
             limit=2,
+            stdout=output,
         )
-
-        # Restore stdout
-        sys.stdout = sys.__stdout__
 
         actual_output = output.getvalue().strip()
 
         # Verify deletion and success message (adjust for limit)
-        assert UserOrgAffiliationRequest.objects.count() == 1  # All requests deleted
+        assert UserOrgAffiliationRequest.objects.count() == 1
 
-        assert f"Successfully deleted 2 old pending requests." in actual_output
+        assert "Successfully deleted 2 old pending requests." in actual_output
 
     def test_delete_old_requests_no_limit(self):
 
         # Capture output
         output = StringIO()
-        sys.stdout = output
+
+        count = UserOrgAffiliationRequest.objects.all().count()
 
         # Call the command with no limit and commit (ensure commit=True)
         call_command(
-            "pdb_delete_outdated_pending_affil_request", days_old=0, commit=True
+            "pdb_delete_outdated_pending_affil_request",
+            days_old=0,
+            commit=True,
+            stdout=output,
         )
 
-        # Restore stdout
-        sys.stdout = sys.__stdout__
-
         # Verify deletion and success message (count from objects)
-        assert UserOrgAffiliationRequest.objects.count() == 0  # All requests deleted
+        assert UserOrgAffiliationRequest.objects.count() == 0
         assert (
-            f"Successfully deleted {UserOrgAffiliationRequest.objects.all().count()} old pending requests."
+            f"Successfully deleted {count} old pending requests."
             in output.getvalue().strip()
         )
