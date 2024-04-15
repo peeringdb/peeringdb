@@ -1022,7 +1022,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -1405,7 +1405,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -1783,7 +1783,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -1842,7 +1842,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -2368,7 +2368,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -2751,7 +2751,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -3129,7 +3129,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -3188,7 +3188,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -3663,7 +3663,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -4046,7 +4046,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -4424,7 +4424,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -4483,7 +4483,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -5499,7 +5499,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -5862,7 +5862,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -6013,7 +6013,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -6376,7 +6376,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -6480,7 +6480,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -6843,7 +6843,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -7658,7 +7658,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -8021,7 +8021,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -8100,7 +8100,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -8485,7 +8485,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -8863,7 +8863,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -8922,7 +8922,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -9451,7 +9451,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -9814,7 +9814,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -9893,7 +9893,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -10278,7 +10278,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -10656,7 +10656,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -10715,7 +10715,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -11197,7 +11197,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -11560,7 +11560,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -11639,7 +11639,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -12024,7 +12024,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -12402,7 +12402,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -12461,7 +12461,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -14010,7 +14010,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -14656,7 +14656,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -14928,7 +14928,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -15574,7 +15574,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -15793,7 +15793,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -16439,7 +16439,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -17665,7 +17665,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -18311,7 +18311,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -18489,7 +18489,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -18874,7 +18874,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -19252,7 +19252,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -19311,7 +19311,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -19864,7 +19864,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -20510,7 +20510,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -20688,7 +20688,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -21073,7 +21073,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -21451,7 +21451,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -21510,7 +21510,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -22015,7 +22015,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -22661,7 +22661,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -22839,7 +22839,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -23224,7 +23224,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -23602,7 +23602,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -23661,7 +23661,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -24878,7 +24878,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -25524,7 +25524,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -26220,7 +26220,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -26866,7 +26866,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -27246,7 +27246,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -27892,7 +27892,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -28224,7 +28224,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -28870,7 +28870,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -29868,7 +29868,8 @@ paths:
           type: string
       - name: policy_general
         in: query
-        description: 'Peering with the routeserver is shown with an icon
+        description: 'Peering with the routeserver and BFD support is shown with an
+          icon
 
 
           Filter results by matching a value against this field.
@@ -30123,7 +30124,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -30486,7 +30487,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -30646,7 +30647,8 @@ paths:
                   - Restrictive
                   - 'No'
                   type: string
-                  description: Peering with the routeserver is shown with an icon
+                  description: Peering with the routeserver and BFD support is shown
+                    with an icon
                 policy_locations:
                   enum:
                   - Not Required
@@ -30861,7 +30863,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -31224,7 +31226,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -31384,7 +31386,8 @@ paths:
                   - Restrictive
                   - 'No'
                   type: string
-                  description: Peering with the routeserver is shown with an icon
+                  description: Peering with the routeserver and BFD support is shown
+                    with an icon
                 policy_locations:
                   enum:
                   - Not Required
@@ -31547,7 +31550,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -31910,7 +31913,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -32070,7 +32073,8 @@ paths:
                   - Restrictive
                   - 'No'
                   type: string
-                  description: Peering with the routeserver is shown with an icon
+                  description: Peering with the routeserver and BFD support is shown
+                    with an icon
                 policy_locations:
                   enum:
                   - Not Required
@@ -32572,7 +32576,8 @@ paths:
           type: string
       - name: net__policy_general
         in: query
-        description: 'Peering with the routeserver is shown with an icon
+        description: 'Peering with the routeserver and BFD support is shown with an
+          icon
 
 
           Filter results by matching a value against this field.
@@ -32915,7 +32920,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -33278,7 +33283,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -33438,7 +33443,8 @@ paths:
                       - Restrictive
                       - 'No'
                       type: string
-                      description: Peering with the routeserver is shown with an icon
+                      description: Peering with the routeserver and BFD support is
+                        shown with an icon
                     policy_locations:
                       enum:
                       - Not Required
@@ -33711,7 +33717,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -34074,7 +34080,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -34234,7 +34240,8 @@ paths:
                       - Restrictive
                       - 'No'
                       type: string
-                      description: Peering with the routeserver is shown with an icon
+                      description: Peering with the routeserver and BFD support is
+                        shown with an icon
                     policy_locations:
                       enum:
                       - Not Required
@@ -34459,7 +34466,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -34822,7 +34829,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -34982,7 +34989,8 @@ paths:
                       - Restrictive
                       - 'No'
                       type: string
-                      description: Peering with the routeserver is shown with an icon
+                      description: Peering with the routeserver and BFD support is
+                        shown with an icon
                     policy_locations:
                       enum:
                       - Not Required
@@ -35986,7 +35994,8 @@ paths:
           type: string
       - name: net__policy_general
         in: query
-        description: 'Peering with the routeserver is shown with an icon
+        description: 'Peering with the routeserver and BFD support is shown with an
+          icon
 
 
           Filter results by matching a value against this field.
@@ -36290,7 +36299,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -36653,7 +36662,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -36813,7 +36822,8 @@ paths:
                       - Restrictive
                       - 'No'
                       type: string
-                      description: Peering with the routeserver is shown with an icon
+                      description: Peering with the routeserver and BFD support is
+                        shown with an icon
                     policy_locations:
                       enum:
                       - Not Required
@@ -36933,7 +36943,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -37318,7 +37328,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -37696,7 +37706,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -37755,7 +37765,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -38314,7 +38324,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -38677,7 +38687,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -38837,7 +38847,8 @@ paths:
                       - Restrictive
                       - 'No'
                       type: string
-                      description: Peering with the routeserver is shown with an icon
+                      description: Peering with the routeserver and BFD support is
+                        shown with an icon
                     policy_locations:
                       enum:
                       - Not Required
@@ -38957,7 +38968,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -39342,7 +39353,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -39720,7 +39731,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -39779,7 +39790,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -40290,7 +40301,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -40653,7 +40664,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -40813,7 +40824,8 @@ paths:
                       - Restrictive
                       - 'No'
                       type: string
-                      description: Peering with the routeserver is shown with an icon
+                      description: Peering with the routeserver and BFD support is
+                        shown with an icon
                     policy_locations:
                       enum:
                       - Not Required
@@ -40933,7 +40945,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -41318,7 +41330,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -41696,7 +41708,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -41755,7 +41767,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -42275,6 +42287,12 @@ paths:
         required: false
         schema:
           type: integer
+      - name: bfd_support
+        in: query
+        description: Filter results by matching a value against this field.
+        required: false
+        schema:
+          type: integer
       - name: created
         in: query
         description: 'Filter results by matching a value against this field.
@@ -42776,7 +42794,8 @@ paths:
           type: string
       - name: net__policy_general
         in: query
-        description: 'Peering with the routeserver is shown with an icon
+        description: 'Peering with the routeserver and BFD support is shown with an
+          icon
 
 
           Filter results by matching a value against this field.
@@ -43095,7 +43114,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -43458,7 +43477,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -43618,7 +43637,8 @@ paths:
                       - Restrictive
                       - 'No'
                       type: string
-                      description: Peering with the routeserver is shown with an icon
+                      description: Peering with the routeserver and BFD support is
+                        shown with an icon
                     policy_locations:
                       enum:
                       - Not Required
@@ -43751,7 +43771,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -44397,7 +44417,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -44614,6 +44634,8 @@ paths:
                 ipaddr6:
                   type: string
                 is_rs_peer:
+                  type: boolean
+                bfd_support:
                   type: boolean
                 operational:
                   type: boolean
@@ -44782,7 +44804,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -45145,7 +45167,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -45305,7 +45327,8 @@ paths:
                       - Restrictive
                       - 'No'
                       type: string
-                      description: Peering with the routeserver is shown with an icon
+                      description: Peering with the routeserver and BFD support is
+                        shown with an icon
                     policy_locations:
                       enum:
                       - Not Required
@@ -45438,7 +45461,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -46084,7 +46107,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -46301,6 +46324,8 @@ paths:
                 ipaddr6:
                   type: string
                 is_rs_peer:
+                  type: boolean
+                bfd_support:
                   type: boolean
                 operational:
                   type: boolean
@@ -46420,7 +46445,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -46783,7 +46808,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -46943,7 +46968,8 @@ paths:
                       - Restrictive
                       - 'No'
                       type: string
-                      description: Peering with the routeserver is shown with an icon
+                      description: Peering with the routeserver and BFD support is
+                        shown with an icon
                     policy_locations:
                       enum:
                       - Not Required
@@ -47076,7 +47102,7 @@ paths:
                                     enum:
                                     - website
                                     - facebook
-                                    - twitter
+                                    - x
                                     - instagram
                                     - linkedin
                                     - tiktok
@@ -47722,7 +47748,7 @@ paths:
                                 enum:
                                 - website
                                 - facebook
-                                - twitter
+                                - x
                                 - instagram
                                 - linkedin
                                 - tiktok
@@ -47939,6 +47965,8 @@ paths:
                 ipaddr6:
                   type: string
                 is_rs_peer:
+                  type: boolean
+                bfd_support:
                   type: boolean
                 operational:
                   type: boolean
@@ -48538,7 +48566,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -49009,7 +49037,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -49431,7 +49459,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -50402,7 +50430,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -50780,7 +50808,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -50930,7 +50958,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -51308,7 +51336,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -51411,7 +51439,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -51789,7 +51817,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -52572,7 +52600,8 @@ paths:
           type: string
       - name: policy_general
         in: query
-        description: 'Peering with the routeserver is shown with an icon
+        description: 'Peering with the routeserver and BFD support is shown with an
+          icon
 
 
           Filter results by matching a value against this field.
@@ -53434,7 +53463,8 @@ paths:
           type: string
       - name: policy_general
         in: query
-        description: 'Peering with the routeserver is shown with an icon
+        description: 'Peering with the routeserver and BFD support is shown with an
+          icon
 
 
           Filter results by matching a value against this field.
@@ -53842,7 +53872,7 @@ paths:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -54488,7 +54518,7 @@ paths:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -54843,7 +54873,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -55225,7 +55255,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -55602,7 +55632,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -55660,7 +55690,7 @@ components:
                 enum:
                 - website
                 - facebook
-                - twitter
+                - x
                 - instagram
                 - linkedin
                 - tiktok
@@ -56087,7 +56117,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -56448,7 +56478,7 @@ components:
                 enum:
                 - website
                 - facebook
-                - twitter
+                - x
                 - instagram
                 - linkedin
                 - tiktok
@@ -56535,7 +56565,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -56897,7 +56927,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -56976,7 +57006,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -57358,7 +57388,7 @@ components:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -57736,7 +57766,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -57795,7 +57825,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -58235,7 +58265,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -58879,7 +58909,7 @@ components:
                 enum:
                 - website
                 - facebook
-                - twitter
+                - x
                 - instagram
                 - linkedin
                 - tiktok
@@ -59066,7 +59096,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -59711,7 +59741,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -59889,7 +59919,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -60271,7 +60301,7 @@ components:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -60649,7 +60679,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -60708,7 +60738,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -61156,7 +61186,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -61801,7 +61831,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -62053,7 +62083,7 @@ components:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -62699,7 +62729,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -62966,7 +62996,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -63327,7 +63357,7 @@ components:
                 enum:
                 - website
                 - facebook
-                - twitter
+                - x
                 - instagram
                 - linkedin
                 - tiktok
@@ -63484,7 +63514,8 @@ components:
           - Restrictive
           - 'No'
           type: string
-          description: Peering with the routeserver is shown with an icon
+          description: Peering with the routeserver and BFD support is shown with
+            an icon
         policy_locations:
           enum:
           - Not Required
@@ -63605,7 +63636,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -63967,7 +63998,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -64127,7 +64158,8 @@ components:
               - Restrictive
               - 'No'
               type: string
-              description: Peering with the routeserver is shown with an icon
+              description: Peering with the routeserver and BFD support is shown with
+                an icon
             policy_locations:
               enum:
               - Not Required
@@ -64311,7 +64343,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -64673,7 +64705,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -64833,7 +64865,8 @@ components:
               - Restrictive
               - 'No'
               type: string
-              description: Peering with the routeserver is shown with an icon
+              description: Peering with the routeserver and BFD support is shown with
+                an icon
             policy_locations:
               enum:
               - Not Required
@@ -64953,7 +64986,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -65335,7 +65368,7 @@ components:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -65713,7 +65746,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -65772,7 +65805,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -66226,7 +66259,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -66588,7 +66621,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -66748,7 +66781,8 @@ components:
               - Restrictive
               - 'No'
               type: string
-              description: Peering with the routeserver is shown with an icon
+              description: Peering with the routeserver and BFD support is shown with
+                an icon
             policy_locations:
               enum:
               - Not Required
@@ -66879,7 +66913,7 @@ components:
                             enum:
                             - website
                             - facebook
-                            - twitter
+                            - x
                             - instagram
                             - linkedin
                             - tiktok
@@ -67525,7 +67559,7 @@ components:
                         enum:
                         - website
                         - facebook
-                        - twitter
+                        - x
                         - instagram
                         - linkedin
                         - tiktok
@@ -67742,6 +67776,8 @@ components:
           type: string
         is_rs_peer:
           type: boolean
+        bfd_support:
+          type: boolean
         operational:
           type: boolean
         created:
@@ -67795,7 +67831,7 @@ components:
                 enum:
                 - website
                 - facebook
-                - twitter
+                - x
                 - instagram
                 - linkedin
                 - tiktok
@@ -68173,7 +68209,7 @@ components:
                     enum:
                     - website
                     - facebook
-                    - twitter
+                    - x
                     - instagram
                     - linkedin
                     - tiktok
@@ -68549,7 +68585,7 @@ components:
                 enum:
                 - website
                 - facebook
-                - twitter
+                - x
                 - instagram
                 - linkedin
                 - tiktok
