@@ -35,7 +35,7 @@ class Command(BaseCommand):
             "--max-changes",
             type=int,
             default=100,
-            help="Maximum amount of networks having a rir status change from good to bad or vice versa. If exceeded, script will exit with error and a human should look at. This is to help prevent mass flagging of networks because of bad RIR data. Default to 100.",
+            help="Maximum amount of networks having a RIR status change from good to bad or vice versa. If exceeded, script will exit with error and a human should look at. This is to help prevent mass flagging of networks because of bad RIR data. Default to 100.",
         )
 
     def log(self, msg):
