@@ -798,11 +798,11 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         (
             [
                 {"service": "website", "identifier": "https://www.example.com"},
-                {"service": "twitter", "identifier": "unknown12"},
+                {"service": "x", "identifier": "unknown12"},
             ],
             [
                 {"service": "website", "identifier": "https://www.example.com"},
-                {"service": "twitter", "identifier": "unknown12"},
+                {"service": "x", "identifier": "unknown12"},
             ],
         ),
         (
@@ -829,7 +829,7 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         (
             [
                 {"service": "website", "identifier": "https://www.example.com"},
-                {"service": "twitter", "identifier": "unknown11."},
+                {"service": "x", "identifier": "unknown11."},
             ],
             False,
         ),
@@ -837,7 +837,7 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         (
             [
                 {"service": "website", "identifier": ""},
-                {"service": "twitter", "identifier": "unknown"},
+                {"service": "x", "identifier": "unknown"},
             ],
             False,
         ),
@@ -851,7 +851,7 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         (
             [
                 {"service": "website", "identifier": None},
-                {"service": "twitter", "identifier": "unknown"},
+                {"service": "x", "identifier": "unknown"},
             ],
             False,
         ),

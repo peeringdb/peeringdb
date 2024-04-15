@@ -99,6 +99,12 @@ class Command(BaseCommand):
                 if reftag in ["carrierfac"]:
                     params.update(carrier=self.entities["carrier"][i])
 
+                if reftag == "fac":
+                    if i % 2:
+                        params.update(
+                            {"latitude": 38.909308 + i, "longitude": -77.472269 + i}
+                        )
+
                 # create object
                 entity = self.mock.create(reftag, **params)
                 self.entities[reftag].append(entity)

@@ -436,7 +436,7 @@ def validate_social_media(value):
                     raise ValidationError(
                         _("Invalid {service} URL!").format(service=service)
                     )
-            elif service in ["instagram", "twitter", "tiktok", "facebook", "linkedin"]:
+            elif service in ["instagram", "x", "tiktok", "facebook", "linkedin"]:
                 # validate username
                 regex = (
                     r"^(-*)(?=.{4,32}$)(?![.\-])(?!.*[.]{2})[a-zA-Z0-9._\-]+(?<![.])$"

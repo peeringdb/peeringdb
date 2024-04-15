@@ -53,8 +53,8 @@ PeeringDB = {
     if (service === "facebook") {
       return $('<a/>').attr('href', 'https://www.facebook.com/' + identifier).text(identifier);
     }
-    if (service === "twitter") {
-      return $('<a/>').attr('href', 'https://twitter.com/' + identifier).text(identifier);
+    if (service === "x") {
+      return $('<a/>').attr('href', 'https://x.com/' + identifier).text(identifier);
     }
     if (service === "instagram") {
       return $('<a/>').attr('href', 'https://www.instagram.com/' + identifier).text(identifier);

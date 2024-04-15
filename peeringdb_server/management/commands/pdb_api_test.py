@@ -2264,6 +2264,14 @@ class TestJSON(unittest.TestCase):
 
         assert not qset_assert.exists()
 
+        assert (
+            net.poc_set_active.filter(
+                role__in=["Technical", "NOC", "Policy"], visible__in=["Users", "Public"]
+            )
+            .exclude(email="")
+            .exists()
+        )
+
         self.assert_update(
             self.db_org_admin,
             "net",
@@ -2275,6 +2283,29 @@ class TestJSON(unittest.TestCase):
             print(netixlan)
 
         assert qset_assert.exists()
+
+        net_without_poc = Network.objects.create(status="ok", **self.make_data_net())
+
+        assert not (
+            net_without_poc.poc_set_active.filter(
+                role__in=["Technical", "NOC", "Policy"], visible__in=["Users", "Public"]
+            )
+            .exclude(email="")
+            .exists()
+        )
+
+        self.assert_update(
+            self.db_org_admin,
+            "net",
+            net_without_poc.id,
+            {"allow_ixp_update": True},
+            test_success=False,
+            test_failures={
+                "invalid": {
+                    "allow_ixp_update": "Cannot be enabled - must have a Technical, NOC, or Policy point of contact with valid email."
+                }
+            },
+        )
 
     ##########################################################################
 

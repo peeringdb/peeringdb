@@ -1,5 +1,7 @@
 import os
 import tempfile
+import xml.etree.ElementTree as ET
+import zipfile
 
 import pytest
 from django.conf import settings
@@ -17,7 +19,7 @@ def test_kmz_generation_and_download():
     """
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate some test data and run the cache gen command with the --gen-kmz param
-        call_command("pdb_generate_test_data", limit=2, commit=True)
+        call_command("pdb_generate_test_data", limit=5, commit=True)
         call_command("pdb_api_cache", gen_kmz=True, output_dir=output_dir)
         settings.GENERATING_API_CACHE = False
 
@@ -38,3 +40,14 @@ def test_kmz_generation_and_download():
             response["Content-Disposition"]
             == f'attachment; filename="{os.path.basename(output_file)}"'
         )
+        # extract kml file from kmz
+        with zipfile.ZipFile(output_file, "r") as kmz:
+            kmz.extractall(output_dir)
+
+        elementTree = ET.parse(os.path.join(output_dir, "doc.kml"))
+        root = elementTree.getroot()
+
+        placemarks = root.findall(".//{http://www.opengis.net/kml/2.2}Placemark")
+
+        # 2 fac has latitude and longitude
+        assert len(placemarks) == 2

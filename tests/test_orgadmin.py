@@ -21,7 +21,7 @@ class OrgAdminTests(TestCase):
     affiliation requests
     """
 
-    entities = ["ix", "net", "fac"]
+    entities = ["ix", "net", "fac", "carrier"]
 
     @classmethod
     def setUpTestData(cls):
@@ -526,11 +526,12 @@ class OrgAdminTests(TestCase):
         self.assertEqual(resp["status"], "ok")
 
         ids = {r["id"]: r["name"] for r in resp["permissions"]}
-        self.assertEqual(len(ids), 9)
+        self.assertEqual(len(ids), 11)
         self.assertIn("org.%d" % self.org.id, ids)
         self.assertIn("ix.%d" % self.ix.id, ids)
         self.assertIn("net.%d" % self.net.id, ids)
         self.assertIn("fac.%d" % self.fac.id, ids)
+        self.assertIn("carrier.%d" % self.carrier.id, ids)
 
         # Test #2 - cannot retrieve ids for other org as we are not admin
         request = self.factory.get(
@@ -548,11 +549,12 @@ class OrgAdminTests(TestCase):
 
         ids = org_admin.permission_ids(self.org)
         self.assertEqual(type(ids), dict)
-        self.assertEqual(len(ids), 9)
+        self.assertEqual(len(ids), 11)
         self.assertIn("org.%d" % self.org.id, ids)
         self.assertIn("ix.%d" % self.ix.id, ids)
         self.assertIn("net.%d" % self.net.id, ids)
         self.assertIn("fac.%d" % self.fac.id, ids)
+        self.assertIn("carrier.%d" % self.carrier.id, ids)
 
     def test_extract_permission_id(self):
         """

@@ -1,0 +1,3 @@
+A pending affiliation request from user {{user.username}} was deleted because it was older than {{days_old}} days.
+
+If you would still like to affiliate this user with your organization, please contact them at {{user.email}}.

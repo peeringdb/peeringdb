@@ -68,17 +68,19 @@ def generate_social_media_render_data(data, social_media, insert_index, dismiss)
         if soc["service"] == "website":
             continue
 
+        service = soc.get("service", dismiss)
+
         idx = idx + 1
         soc_data = {
             "name": f"sc_value_{i}",
             "value": soc.get("identifier", dismiss),
-            "label": _(f'{soc.get("service", dismiss)}'.capitalize()),
+            "label": _(service.capitalize()),
             "editable_label": True,
             "type": "soc",
             "label_type": "list",
             "label_name": f"sc_field_{i}",
             "label_data": "enum/social_media_services",
-            "label_value": soc.get("service", dismiss),
+            "label_value": service,
         }
         # if i == len(social_media) - 1:
         data.get("fields").insert(idx, soc_data)
@@ -96,3 +98,26 @@ def objfac_tupple(objfac_qset, obj):
         else:
             data[getattr(objfac, obj)].append(objfac.facility)
     return data
+
+
+def generate_balloonstyle_text(keys):
+    table_data = ""
+    for key in keys:
+        table_data += f"""
+        <tr>
+        <td>$[{key}/displayName]</td>
+        <td>$[{key}]</td>
+        </tr>
+        """
+    ballon_text = f"""
+    <h3>$[name]</h3>
+    $[description]
+    </br>
+    </br>
+    <table border="1">
+        <tbody>
+            {table_data}
+        </tbody>
+    </table>
+    """
+    return ballon_text

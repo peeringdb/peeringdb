@@ -141,9 +141,9 @@ def ticket_queue_rir_status_updates(networks: list, threshold: int, date: dateti
     )
 
     ticket_queue_email_only(
-        "[RIR_STATUS] RIR status degradation updates",
+        "[RIR_STATUS] RIR status updates",
         ticket_body,
-        None,
+        settings.DEFAULT_FROM_EMAIL,
     )
 
 

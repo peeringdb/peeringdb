@@ -727,7 +727,10 @@ twentyc.editable.input = new (twentyc.cls.extend(
         element.on("keydown", function(e) {
           if(e.which == 13) {
             var handler = new (twentyc.editable.action.get(action));
-            handler.execute(element, container);
+            // handle the race condition to make sure the processed data fully generated before submitting
+            setTimeout(() => {
+              handler.execute(element, container);
+            }, 100);
           }
         });
       }

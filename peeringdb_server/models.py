@@ -66,8 +66,10 @@ from django_handleref.models import CreatedDateTimeField, UpdatedDateTimeField
 from django_inet.models import ASNField
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
+from reversion.models import Version
 
 import peeringdb_server.geo as geo
+from peeringdb_server.context import current_request
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.managers import CustomManager
 from peeringdb_server.request import bypass_validation
@@ -591,6 +593,7 @@ class GeoCoordinateCache(models.Model):
         return {"longitude": cache.longitude, "latitude": cache.latitude}
 
 
+@reversion.register()
 class UserOrgAffiliationRequest(models.Model):
     """
     Whenever a user requests to be affiliated to an Organization
@@ -690,11 +693,29 @@ class UserOrgAffiliationRequest(models.Model):
             if not self.user.is_verified_user:
                 self.user.set_verified()
 
+            self.track_approval()
+
             # since it was approved, we don't need to keep the
             # request item around
             self.status = "approved"
             self.delete()
 
+    @reversion.create_revision()
+    def track_approval(self):
+        with current_request() as request:
+
+            # reversion does not track object deletions directly (which is what happens
+            # when the reuqest is approved, so we do a preliminary save to make sure a
+            # revision is created for the approval action)
+            if request:
+                reversion.set_user(request.user)
+            reversion.set_comment(
+                f"Approval of affiliation request from {self.user.full_name} to {self.org} by {reversion.get_user()}"
+            )
+            self.status = "processing-approval"
+            self.save()
+
+    @reversion.create_revision()
     def deny(self):
         """
         Deny request, marks request as denied and keeps
@@ -705,6 +726,13 @@ class UserOrgAffiliationRequest(models.Model):
             if self.user.is_org_admin(self.org) or self.user.is_org_member(self.org):
                 self.delete()
                 return
+
+        with current_request() as request:
+            if request:
+                reversion.set_user(request.user)
+            reversion.set_comment(
+                f"Denial of affiliation request from {self.user.full_name} to {self.org} by {reversion.get_user()}"
+            )
 
         self.status = "denied"
         self.save()
@@ -742,6 +770,18 @@ class UserOrgAffiliationRequest(models.Model):
                     }
                 ),
             )
+
+
+class UserOrgAffiliationRequestHistory(Version):
+    """
+    Proxy model for reversion Version to track changes in
+    UserOrgAffiliationRequest objects in django-admin
+    """
+
+    class Meta:
+        proxy = True
+        verbose_name = _("User to Organization Affiliation Request History")
+        verbose_name_plural = _("User to Organization Affiliation Request History")
 
 
 class VerificationQueueItem(models.Model):

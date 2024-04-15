@@ -871,6 +871,7 @@ set_from_env("FLAG_BAD_DATA_NEEDS_AUTH", None)
 
 # email vars should be already set from the release environment file
 # override here from env if set
+
 set_from_env("EMAIL_HOST")
 set_from_env("EMAIL_PORT")
 set_from_env("EMAIL_HOST_USER")
@@ -1375,6 +1376,9 @@ set_option("NOTIFY_ORPHANED_USER_DAYS", 30)
 # Grace period before a newly created user can be flagged for deletion
 # This is so users have some time to affiliate naturally. (days)
 set_option("MIN_AGE_ORPHANED_USER_DAYS", 14)
+
+# Setting for number of days before deleting pending user to organization affiliation requests
+set_option("AFFILIATION_REQUEST_DELETE_DAYS", 90)
 
 # Notification period to notify organizations of users missing 2FA (days)
 set_option("NOTIFY_MISSING_2FA_DAYS", 30)
