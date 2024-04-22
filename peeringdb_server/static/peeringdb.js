@@ -53,8 +53,8 @@ PeeringDB = {
     if (service === "facebook") {
       return $('<a/>').attr('href', 'https://www.facebook.com/' + identifier).text(identifier);
     }
-    if (service === "twitter") {
-      return $('<a/>').attr('href', 'https://twitter.com/' + identifier).text(identifier);
+    if (service === "x") {
+      return $('<a/>').attr('href', 'https://x.com/' + identifier).text(identifier);
     }
     if (service === "instagram") {
       return $('<a/>').attr('href', 'https://www.instagram.com/' + identifier).text(identifier);
@@ -174,7 +174,6 @@ PeeringDB = {
   fix_list_offsets : function() {
     $('.scrollable').each(function() {
       if(this.clientHeight >= this.scrollHeight && $(this).children().length>1) {
-        $(this).css("padding-right", "15px");
         $(this).find(".empty-result").css("margin-right", "-15px");
       } else {
         $(this).css("padding-right", "");
@@ -1085,7 +1084,7 @@ PeeringDB.IXFPreview = twentyc.cls.define(
 
     render_data : function(data, renderTo) {
       /**
-       * Renders the changes made by the ix-f import, called automatically
+       * Renders the changes made by the IX-F import, called automatically
        * by `render`
        *
        * @method render_data
@@ -1152,7 +1151,7 @@ PeeringDB.IXFNetPreview =  twentyc.cls.extend(
 
     render_data : function(data, renderTo) {
       /**
-       * Renders the changes made by the ix-f import, called automatically
+       * Renders the changes made by the IX-F import, called automatically
        * by `render`
        *
        * @method render_data
@@ -1231,7 +1230,7 @@ PeeringDB.IXFNetPostmortem =  twentyc.cls.extend(
 
     render_data : function(data, renderTo) {
       /**
-       * Renders the changes made by the ix-f import, called automatically
+       * Renders the changes made by the IX-F import, called automatically
        * by `render`
        *
        * @method render_data
@@ -3754,6 +3753,54 @@ twentyc.data.loaders.assign("enum/reauth_periods", "data");
 twentyc.data.loaders.assign("enum/mtus", "data");
 twentyc.data.loaders.assign("enum/social_media_services", "data");
 
+const checkAsSet = () =>{
+  // check the use of hierarchical AS-SET name and if a non-hierarchical AS-SET name is already in use
+
+  const isHierarchicalAsSet = (as_set) => /^[a-zA-Z0-9_-]+(?:::|@)[a-zA-Z0-9_-]+$/.test(as_set.trim());
+
+  const irr_as_set_container = $("div[data-edit-name='irr_as_set']");
+  let debounceTimeout;
+  const original_as_set = irr_as_set_container.text()
+  if (irr_as_set_container.length) {
+    irr_as_set_container.on("input focus", "input", (e) => {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
+        const irr_as_set = e.target.value.trim();
+        if(irr_as_set == ""){
+          irr_as_set_container.tooltip('dispose');
+          return
+        }
+
+        if (!isHierarchicalAsSet(irr_as_set)) {
+          const has_warning = irr_as_set_container.children().length > 1;
+          const url = `/api/net?irr_as_set=${irr_as_set}`;
+          const nonhierarchical_as_set_message = gettext("Clearly name your AS-SET with a hierarchical name, e.g. RIPE::AS-RIPENCC")
+
+          if (original_as_set.trim().toLowerCase() !== irr_as_set.toLowerCase() && irr_as_set !== ""){
+            // check the non-hierarchical AS-SET is already use or not
+            const nonhierarchical_as_set_already_exists_message = gettext(`An AS-SET with this name already exists, avoid ambiguity by specifying the name of the IRR you use e.g. "IRR::AS-MYNAME"`)
+            $.ajax({
+                url,
+                success: (data) => {
+                  const existing_data_length = data.data.length;
+                  const warning_message = `<small class="text-danger">${nonhierarchical_as_set_already_exists_message}</small>`;
+                  if (existing_data_length === 0 && has_warning) {
+                    irr_as_set_container.children().last().remove();
+                  } else if (existing_data_length !== 0 && !has_warning) {
+                    irr_as_set_container.append(warning_message);
+                  }
+                }
+            });
+          }
+          irr_as_set_container.tooltip({ 'title':  nonhierarchical_as_set_message }).tooltip('show');
+        }else{
+          irr_as_set_container.tooltip('dispose');
+        }
+      }, 200);
+    });
+  }
+}
+
 $(twentyc.data).on("load-enum/traffic", function(e, payload) {
   var r = {}, i = 0, data=payload.data;
   for(i=0; i<data.length; i++)
@@ -3767,7 +3814,14 @@ $(window).bind("load", function() {
 
 $(window).bind("pageshow", function() {
   PeeringDB.focus();
+  const current_hash = location.hash
+  if (current_hash != ""){
+    const target_tab = $(`a[data-bs-toggle="tab"][href="${current_hash}"`)
+    target_tab.tab("show")
+  }
   $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+    const target = e.target.getAttribute("href")
+    if (target !== null) location.hash = target
     PeeringDB.focus()
   });
 })

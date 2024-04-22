@@ -11,3 +11,4 @@ class SupportedScopes(StrEnum):
     PROFILE = "profile"
     EMAIL = "email"
     NETWORKS = "networks"
+    AMR = "amr"

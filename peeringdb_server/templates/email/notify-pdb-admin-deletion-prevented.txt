@@ -6,4 +6,4 @@ The deletion was prevented because of the following reason(s):
 
 {{ instance.not_deletable_reason }}
 
-{{ admin_url }}
+<a href="{{ admin_url }}">{{ admin_url }}</a>

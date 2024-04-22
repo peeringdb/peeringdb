@@ -564,7 +564,7 @@ A copy of all emails sent by the IX-F importer.
 IXFMemberData(django_peeringdb.models.abstract.NetworkIXLanBase)
 ```
 
-Describes a potential data update that arose during an ix-f import
+Describes a potential data update that arose during an IX-F import
 attempt for a specific member (asn, ip4, ip6) to netixlan
 (asn, ip4, ip6) where the importer could not complete the
 update automatically.
@@ -615,14 +615,14 @@ this entry.
 - ix_contacts (`@property`): Returns a list of email addresses that
 are suitable contact points for conflict resolution
 at the exchange end.
-- ixf_id (`@property`): Returns a tuple that identifies the ix-f member
+- ixf_id (`@property`): Returns a tuple that identifies the IX-F member
 as a unqiue record by asn, ip4 and ip6 address.
 - ixf_id_pretty_str (`@property`): None
 - json (`@property`): Returns dict for self.data
 - marked_for_removal (`@property`): Returns whether or not this entry implies that
 the related netixlan should be removed.
 
-We do this by checking if the ix-f data was provided
+We do this by checking if the IX-F data was provided
 or not.
 - modify_is_rs_peer (`@property`): Returns whether or not the `is_rs_peer` property
 is enabled to receive modify updates or not (#793).
@@ -669,7 +669,7 @@ If an empty dict is returned that means no changes.
 had data at the IX-F source.
 
 If not it indicates that it does not exist at the
-ix-f source.
+IX-F source.
 - requirements (`@property`): Returns list of all IXFMemberData objects
 that are still active requirements for this
 IXFMemberData object.
@@ -887,7 +887,7 @@ instance to ac, ix and net as warranted.
 #### validate_speed
 `def validate_speed(self)`
 
-Speed errors in ix-f data are raised during parse
+Speed errors in IX-F data are raised during parse
 and speed will be on the attribute.
 
 In order to properly handle invalid speed values,
@@ -1035,7 +1035,7 @@ the change.
 These attributes / properties will be available on instances of the class
 
 - changes (`@property`): Returns a dict of changes between the netixlan version
-saved by the ix-f import and the version before.
+saved by the IX-F import and the version before.
 
 Fields `created`, `updated` and `version` will be ignored.
 
@@ -1619,7 +1619,7 @@ DataChangeNotificationQueue
 - ix_result_name (`@property`): None
 - ix_sub_result_name (`@property`): None
 - ixf_id (`@property`): Returns a tuple that identifies the netixlan
-in the context of an ix-f member data entry as a unqiue record by asn, ip4 and ip6 address.
+in the context of an IX-F member data entry as a unqiue record by asn, ip4 and ip6 address.
 - ixf_id_pretty_str (`@property`): None
 - name (`@property`): None
 - net_id (`@property`): None
@@ -1722,7 +1722,7 @@ NetworkProtocolsDisabled(builtins.ValueError)
 ```
 
 Raised when a network has both ipv6 and ipv4 support
-disabled during ix-f import.
+disabled during IX-F import.
 
 
 ## OAuthApplication

@@ -17,10 +17,12 @@ import json
 import os
 import re
 import uuid
+from typing import Any
 
 import googlemaps.exceptions
 import oauth2_provider.views as oauth2_views
 import oauth2_provider.views.application as oauth2_application_views
+import pycountry
 import requests
 from allauth.account.models import EmailAddress
 from django.conf import settings as dj_settings
@@ -34,6 +36,7 @@ from django.core.exceptions import (
     ObjectDoesNotExist,
     ValidationError,
 )
+from django.core.handlers.wsgi import WSGIRequest
 from django.db import connection, transaction
 from django.db.models import Q
 from django.forms.models import modelform_factory
@@ -57,6 +60,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
+from django_otp import user_has_device
 from django_otp.plugins.otp_email.models import EmailDevice
 from django_peeringdb.const import (
     CAMPUS_HELP_TEXT,
@@ -68,10 +72,12 @@ from django_security_keys.ext.two_factor.views import (  # noqa
     DisableView as TwoFactorDisableView,
 )
 from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
+from django_security_keys.models import SecurityKey
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
+from two_factor.utils import default_device
 
 import peeringdb_server.geo
 from peeringdb_server import settings
@@ -112,6 +118,7 @@ from peeringdb_server.models import (
     NetworkContact,
     NetworkFacility,
     NetworkIXLan,
+    OAuthAccessTokenInfo,
     Organization,
     Partnership,
     Sponsorship,
@@ -758,12 +765,14 @@ def view_profile_v1(request):
     oauth = get_oauthlib_core()
     scope_email, _request = oauth.verify_request(request, scopes=["email"])
     scope_networks, _request = oauth.verify_request(request, scopes=["networks"])
+    scope_amr, amr_request = oauth.verify_request(request, scopes=["amr"])
 
     json_params = {}
     if "pretty" in request.GET:
         json_params["indent"] = 2
 
     user = request.user
+
     data = dict(
         id=request.user.id,
         given_name=request.user.first_name,
@@ -793,6 +802,18 @@ def view_profile_v1(request):
             )
 
         data["networks"] = networks
+
+    # only add amr if amr scope is present
+    if scope_amr:
+        try:
+            data["amr"] = amr_request.access_token.access_token_info.amr
+            if not data["amr"]:
+                data["amr"] = []
+            else:
+                data["amr"] = data["amr"].split(",")
+
+        except OAuthAccessTokenInfo.DoesNotExist:
+            data["amr"] = []
 
     return JsonResponse(data, json_dumps_params=json_params)
 
@@ -3209,6 +3230,11 @@ def handle_city_country_search(list_of_words, idx, q, query_idx, geo):
         del list_of_words[idx:i]
         q[query_idx] = " ".join(list_of_words)
 
+        alpha_2_country = pycountry.countries.get(alpha_2=location.strip())
+        if alpha_2_country:
+            # if location is alpha-2 country codes, change location with country name
+            location = alpha_2_country.name
+
         try:
             # geo code the location using google
             gmaps = peeringdb_server.geo.GoogleMaps(
@@ -3334,6 +3360,28 @@ class LoginView(TwoFactorLoginView):
             )
 
         return kwargs
+
+    def attempt_passwordless_auth(
+        self, request: WSGIRequest, **kwargs: Any
+    ) -> HttpResponseRedirect | None:
+        """
+        Wrap attempt_passwordless_auth so we can set a session
+        property to indicate that the passwordless auth was
+        used
+        """
+        response = super().attempt_passwordless_auth(request, **kwargs)
+
+        # if `credential` in request POST is set AND
+        # we got a response from `attempt_passwordless_auth`, passwordless
+        # authentication was used and succeeded
+
+        credential = request.POST.get("credential", None)
+        username = request.POST.get("auth-username", None)
+
+        if credential and response and username:
+            request.used_passwordless_auth = True
+
+        return response
 
     @transaction.atomic
     @method_decorator(
@@ -3474,6 +3522,42 @@ class LoginView(TwoFactorLoginView):
 
         return redir
 
+    def set_amr(self):
+        amr = []
+        done_forms = self.get_done_form_list()
+        passwordless = getattr(self, "used_passwordless_auth", False)
+
+        if not passwordless:
+            amr.append("pwd")
+        else:
+            amr.append("swk")
+
+        if "token" in done_forms:
+            # user used OTP to login
+            amr.append("otp")
+
+        if "security-key" in done_forms:
+            # user used a security key to login
+            # TODO: we cannot currently differentiate between
+            # sub types of security keys, so we just add "swk" for now
+            #
+            # We'd want to differentiate fingerprint readers, iris scanners etc.
+            # but for that webauthn attestation is needed, which we currently
+            # do not collect.
+            #
+            # NOTE: by design if passwordless authentication was used
+            # it is required to be a different security key, so there may
+            # actually be cases of amr being "swk swk" which is accurate
+            # and RFC 8176 does not seem to disallow this (multiples of the same type).
+            amr.append("swk")
+
+        # if user used more than one method to authenticate
+        # we add "mfa" to the amr list
+        if len(amr) > 1:
+            amr.append("mfa")
+
+        return amr
+
     def done(self, form_list, **kwargs):
         """
         User authenticated successfully, set language options.
@@ -3482,6 +3566,8 @@ class LoginView(TwoFactorLoginView):
         super().done(form_list, **kwargs)
 
         # TODO: do this via signal instead?
+
+        self.request.session["amr"] = self.set_amr()
 
         user_language = self.get_user().get_locale()
         translation.activate(user_language)

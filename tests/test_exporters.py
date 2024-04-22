@@ -6,6 +6,7 @@ import difflib
 import json
 import os
 import re
+import tempfile
 
 import pytest
 import reversion
@@ -91,6 +92,8 @@ class AdvancedSearchExportTest(ClientCase):
                 country=countries[i - 1],
                 zipcode=i,
                 org=cls.org[i - 1],
+                latitude=-6.591422,
+                longitude=106.786656,
             )
             for i in entity_count
         ]
@@ -291,3 +294,24 @@ class AdvancedSearchExportTest(ClientCase):
         call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
 
         self.test_export_org_csv()
+
+    def test_export_fac_kmz(self):
+        """test kmz export of facility search"""
+
+        with tempfile.TemporaryDirectory() as output_dir:
+            output_file = os.path.join(output_dir, "advanced_search_export.kmz")
+
+            # Use a Django test client to send a GET request to the export kmz download endpoint
+            client = Client()
+            response = client.get(
+                "/export/advanced-search/fac/kmz?name_search=Facility"
+            )
+
+            # Check the response
+            assert response.status_code == 200
+            assert response["Content-Type"] == "application/vnd.google-earth.kmz"
+
+            assert (
+                response["Content-Disposition"]
+                == f'attachment; filename="{os.path.basename(output_file)}"'
+            )

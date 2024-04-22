@@ -32,10 +32,10 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "-M",
-            "--max-networks-from-good-to-bad",
+            "--max-changes",
             type=int,
             default=100,
-            help="Maximum amount of networks going from good to bad. If exceeded, script will exit with error and a human should look at. This is to help prevent mass flagging of networks because of bad RIR data. Default to 100.",
+            help="Maximum amount of networks having a RIR status change from good to bad or vice versa. If exceeded, script will exit with error and a human should look at. This is to help prevent mass flagging of networks because of bad RIR data. Default to 100.",
         )
 
     def log(self, msg):
@@ -93,7 +93,9 @@ class Command(BaseCommand):
             with open(self.output, "w") as f:
                 for net in bad_networks:
                     f.write(f"AS{net.asn} {net.rir_status}\n")
-            self.log(f"{len(bad_networks)} bad networks written to {self.output}")
+            self.log(
+                f"{len(bad_networks)} unassigned networks written to {self.output}"
+            )
 
     @transaction.atomic()
     @reversion.create_revision()
@@ -107,9 +109,7 @@ class Command(BaseCommand):
         self.max_age = options.get("max_age")
         self.limit = options.get("limit")
         self.output = options.get("output")
-        self.max_networks_from_good_to_bad = options.get(
-            "max_networks_from_good_to_bad"
-        )
+        self.max_changes = options.get("max_changes")
 
         reset = options.get("reset")
         if reset:
@@ -151,6 +151,9 @@ class Command(BaseCommand):
         # rir status, networks in this list will be notified to the AC via
         # deskpro API
         networks_from_good_to_bad = []
+        networks_from_bad_to_good = []
+
+        num_pending_deletion = 0
 
         for net in networks:
             new_rir_status = rir.get_status(net.asn)
@@ -215,6 +218,7 @@ class Command(BaseCommand):
                         self.log(
                             f"AS{net.asn} still unassigned, {days} days left to deletion"
                         )
+                        num_pending_deletion += 1
 
             elif rir_status_is_ok(new_rir_status):
 
@@ -229,6 +233,8 @@ class Command(BaseCommand):
                     if self.commit:
                         batch_save.append(net)
 
+                    networks_from_bad_to_good.append(net)
+
         if networks_from_good_to_bad:
 
             # if we have too many networks going from good to bad
@@ -237,24 +243,35 @@ class Command(BaseCommand):
 
             num_networks_from_good_to_bad = len(networks_from_good_to_bad)
             self.log(
-                f"Found {num_networks_from_good_to_bad} networks going from good to bad"
+                f"Found {num_networks_from_good_to_bad} networks going from assigned to unassigned"
             )
-            if num_networks_from_good_to_bad > self.max_networks_from_good_to_bad:
+            if num_networks_from_good_to_bad > self.max_changes:
                 raise CommandError(
                     f"Too many networks going from good to bad ({num_networks_from_good_to_bad}), exiting to prevent mass flagging of networks. Please check manually. You can specify a threshold for this via the -M option."
                 )
+
+        if networks_from_bad_to_good:
+            num_networks_from_good_to_bad = len(networks_from_bad_to_good)
+            self.log(
+                f"Found {num_networks_from_good_to_bad} networks going from unassigned to assigned"
+            )
+
+        if num_pending_deletion:
+            self.log(
+                f"{num_pending_deletion} networks are pending deletion due to RIR unassignment"
+            )
 
         # batch update
 
         if self.commit:
 
-            if networks_from_good_to_bad:
+            if networks_from_bad_to_good:
 
-                # notify admin comittee on networks changed from ok RIR status to not ok RIR status
+                # notify admin comittee on networks changed from bad RIR status to ok RIR status
 
                 ticket_queue_rir_status_updates(
-                    networks_from_good_to_bad,
-                    self.max_networks_from_good_to_bad,
+                    networks_from_bad_to_good,
+                    self.max_changes,
                     now,
                 )
 

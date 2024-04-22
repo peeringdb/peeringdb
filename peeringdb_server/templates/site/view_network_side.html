@@ -38,6 +38,9 @@
     <div class="col-3 col-sm-2 col-md-2 d-none d-sm-block">
       <div data-sort-target=".speed" class="numeric">{% trans "RS Peer" %}</div>
     </div>
+    <div class="col-3 col-sm-2 col-md-2 d-none d-sm-block">
+      <div data-sort-target=".bfd_support" class="numeric">{% trans "BFD Support" %}</div>
+    </div>
     <div class="col-2 col-sm-2 col-md-2" id="filter-web">
       <div class="inner-addon left-addon">
         <i class="material-icons input-icon">filter_list</i>
@@ -122,6 +125,13 @@
                data-edit-value="{{ x.is_rs_peer }}">
             <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.is_rs_peer|as_bool %}-off{% endif %}.png" alt="RS PEER" />
           </div>
+          <div class= "col-3 col-sm-2 col-md-2 d-none d-sm-block text-center" data-edit-type="bool"
+               data-edit-name="bfd_support"
+               data-edit-template="check"
+               data-sort-value="{{ x.bfd_support }}"
+               data-edit-value="{{ x.bfd_support }}">
+            <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.bfd_support|as_bool %}-off{% endif %}.png" alt="BFD Support" />
+          </div>
 
       </div>
       <div class="ip-addr row squeeze-15">
@@ -205,13 +215,22 @@
        </div>
 
        <div class="row view_row">
-         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "RS Peer" %}</div>
-         <div class="view_value col-8 col-sm-7 col-md-8">
-           <div data-edit-type="bool"
-                data-edit-name="is_rs_peer">
-           </div>
-         </div>
-       </div>
+        <div class="view_field col-4 col-sm-5 col-md-4">{% trans "RS Peer" %}</div>
+        <div class="view_value col-8 col-sm-7 col-md-8">
+          <div data-edit-type="bool"
+               data-edit-name="is_rs_peer">
+          </div>
+        </div>
+      </div>
+
+      <div class="row view_row">
+        <div class="view_field col-4 col-sm-5 col-md-4">{% trans "BFD Support" %}</div>
+        <div class="view_value col-8 col-sm-7 col-md-8">
+          <div data-edit-type="bool"
+               data-edit-name="bfd_support">
+          </div>
+        </div>
+      </div>
 
        <div class="row view_row">
          <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Operational" %}</div>

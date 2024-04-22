@@ -616,7 +616,7 @@ class AdminTests(TestCase):
         # create partnership we can check
         _ = models.Partnership.objects.create(org=org)
 
-        # create ixlan ix-f import log we can check
+        # create ixlan IX-F import log we can check
         ixfmemberdata = models.IXFMemberData.instantiate(
             ixlan=models.NetworkIXLan.objects.first().ixlan,
             ipaddr4=models.NetworkIXLan.objects.first().ipaddr4,
@@ -625,7 +625,7 @@ class AdminTests(TestCase):
         )
         ixfmemberdata.save()
 
-        # create ixlan ix-f import log we can check
+        # create ixlan IX-F import log we can check
         _ = models.IXLanIXFMemberImportLog.objects.create(
             ixlan=models.IXLan.objects.all().first()
         )

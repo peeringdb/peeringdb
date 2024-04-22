@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                     ("error", "Import failed"),
                 ],
                 default="queued",
-                help_text="The current status of the manual ix-f import request",
+                help_text="The current status of the manual IX-F import request",
                 max_length=32,
                 verbose_name="Manual IX-F import status",
             ),

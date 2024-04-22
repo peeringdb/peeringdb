@@ -332,7 +332,7 @@ def social_media_link(identifier, service):
 
     For `website` it will just render a html link with the url as is, for services
 
-    For the services facebook, twitter, instagram, linkedIn and tiktok
+    For the services facebook, x, instagram, linkedIn and tiktok
     it will render a html link to the url to the service.
 
     Arguments:
@@ -346,8 +346,8 @@ def social_media_link(identifier, service):
         return mark_safe(
             f'<a href="https://www.facebook.com/{identifier}">{identifier}</a>'
         )
-    if service == "twitter":
-        return mark_safe(f'<a href="https://twitter.com/{identifier}">{identifier}</a>')
+    if service == "x":
+        return mark_safe(f'<a href="https://x.com/{identifier}">{identifier}</a>')
     if service == "instagram":
         return mark_safe(
             f'<a href="https://www.instagram.com/{identifier}">{identifier}</a>'

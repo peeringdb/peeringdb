@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 
 from django_grainy.util import Permissions
+from oauth2_provider.models import Grant
+
+from peeringdb_server.models import OAuthAccessTokenInfo, OAuthGrantInfo
 
 
 class ScopedClaim(ABC):
@@ -87,3 +90,29 @@ class Networks(ScopedClaim):
             asn=network.asn,
             perms=perms,
         )
+
+
+class AMR(ScopedClaim):
+    def enact(self, request):
+        try:
+            # get the grant instance by the code passed in the
+            # request body
+            body = dict(request.decoded_body)
+            code = body.get("code")
+
+            try:
+                # get the grant info instance by the grant instance
+                grant = Grant.objects.get(code=code, application=request.client)
+                grant_info = grant.grant_info
+            except (Grant.DoesNotExist, OAuthGrantInfo.DoesNotExist):
+                # if the grant info instance does not exist, set it to None
+                grant_info = None
+
+            amr = grant_info.amr if grant_info else ""
+            if amr:
+                amr = amr.split(",")
+            else:
+                amr = []
+        except OAuthAccessTokenInfo.DoesNotExist:
+            amr = []
+        return amr

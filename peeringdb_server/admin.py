@@ -51,6 +51,7 @@ from import_export.admin import ExportMixin
 from rest_framework_api_key.admin import APIKeyModelAdmin
 from rest_framework_api_key.models import APIKey
 from reversion.admin import VersionAdmin
+from reversion.models import Version
 
 import peeringdb_server.admin_commandline_tools as acltools
 from peeringdb_server.inet import RdapException, RdapLookup, rdap_pretty_error_message
@@ -99,6 +100,7 @@ from peeringdb_server.models import (
     User,
     UserAPIKey,
     UserOrgAffiliationRequest,
+    UserOrgAffiliationRequestHistory,
     VerificationQueueItem,
 )
 from peeringdb_server.util import coerce_ipaddr, round_decimal
@@ -2757,6 +2759,76 @@ class DataChangeEmail(admin.ModelAdmin, ISODateTimeMixin):
             "user",
         ],
     }
+
+
+# register a version admin view, but it only holds entries for content_type
+# UserOrgAffiliationRequest
+
+
+@admin.register(UserOrgAffiliationRequestHistory)
+class UserOrgAffiliationRequestHistoryAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "status",
+        "org",
+        "asn",
+        "comment",
+        "date_created",
+    )
+    readonly_fields = (
+        "user",
+        "status",
+        "org",
+        "asn",
+        "comment",
+        "date_created",
+    )
+    list_filter = ("content_type",)
+    search_fields = ("revision__user__username", "revision__comment", "serialized_data")
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .filter(
+                content_type=ContentType.objects.get_for_model(
+                    UserOrgAffiliationRequest
+                )
+            )
+        )
+
+    def user(self, obj):
+        return obj.revision.user
+
+    user.short_description = _("Request handled by")
+
+    def date_created(self, obj):
+        return obj.revision.date_created
+
+    def comment(self, obj):
+        return obj.revision.comment
+
+    def status(self, obj):
+        status = obj.field_dict.get("status")
+        if status == "processing-approval":
+            return "approved"
+        return status
+
+    def org(self, obj):
+        return obj.field_dict.get("org_id")
+
+    def asn(self, obj):
+        return obj.field_dict.get("asn")
+
+    # this view is completely read only
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)

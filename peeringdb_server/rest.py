@@ -891,7 +891,7 @@ class InternetExchangeMixin:
     @action(detail=True, methods=["POST"], throttle_classes=[IXFImportThrottle])
     def request_ixf_import(self, request, *args, **kwargs):
         """
-        Allows managers of an ix to request an ix-f import.
+        Allows managers of an ix to request an IX-F import.
         (#779)
         """
 

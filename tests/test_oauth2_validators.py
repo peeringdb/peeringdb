@@ -10,6 +10,7 @@ from .util import reset_group_ids
 
 @pytest.fixture
 def organization():
+    reset_group_ids()
     return models.Organization.objects.create(name="test org", status="ok")
 
 
@@ -22,7 +23,6 @@ def network(organization):
 
 @pytest.fixture
 def verified_user(organization):
-    reset_group_ids()
     user_group = Group.objects.get(name="user")
 
     user = models.User.objects.create_user(
@@ -41,6 +41,8 @@ def oauth_request(verified_user):
     request = Request("/")
     request.user = verified_user
     request.scopes = []
+    request.client = None
+    request.decoded_body = [("code", "testcode")]
     return request
 
 
@@ -60,6 +62,7 @@ def test_oidc_validator_produces_profile_claims(oauth_request):
         "email": None,
         "email_verified": None,
         "networks": None,
+        "amr": [],
     }
 
 
@@ -79,6 +82,7 @@ def test_oidc_validator_produces_email_claims(oauth_request):
         "email": "testuser@example.net",
         "email_verified": False,
         "networks": None,
+        "amr": [],
     }
 
 
@@ -105,4 +109,5 @@ def test_oidc_validator_produces_network_claims(oauth_request, network):
                 "perms": 1,
             },
         ],
+        "amr": [],
     }

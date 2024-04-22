@@ -66,8 +66,10 @@ from django_handleref.models import CreatedDateTimeField, UpdatedDateTimeField
 from django_inet.models import ASNField
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
+from reversion.models import Version
 
 import peeringdb_server.geo as geo
+from peeringdb_server.context import current_request
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.managers import CustomManager
 from peeringdb_server.request import bypass_validation
@@ -591,6 +593,7 @@ class GeoCoordinateCache(models.Model):
         return {"longitude": cache.longitude, "latitude": cache.latitude}
 
 
+@reversion.register()
 class UserOrgAffiliationRequest(models.Model):
     """
     Whenever a user requests to be affiliated to an Organization
@@ -690,11 +693,29 @@ class UserOrgAffiliationRequest(models.Model):
             if not self.user.is_verified_user:
                 self.user.set_verified()
 
+            self.track_approval()
+
             # since it was approved, we don't need to keep the
             # request item around
             self.status = "approved"
             self.delete()
 
+    @reversion.create_revision()
+    def track_approval(self):
+        with current_request() as request:
+
+            # reversion does not track object deletions directly (which is what happens
+            # when the reuqest is approved, so we do a preliminary save to make sure a
+            # revision is created for the approval action)
+            if request:
+                reversion.set_user(request.user)
+            reversion.set_comment(
+                f"Approval of affiliation request from {self.user.full_name} to {self.org} by {reversion.get_user()}"
+            )
+            self.status = "processing-approval"
+            self.save()
+
+    @reversion.create_revision()
     def deny(self):
         """
         Deny request, marks request as denied and keeps
@@ -705,6 +726,13 @@ class UserOrgAffiliationRequest(models.Model):
             if self.user.is_org_admin(self.org) or self.user.is_org_member(self.org):
                 self.delete()
                 return
+
+        with current_request() as request:
+            if request:
+                reversion.set_user(request.user)
+            reversion.set_comment(
+                f"Denial of affiliation request from {self.user.full_name} to {self.org} by {reversion.get_user()}"
+            )
 
         self.status = "denied"
         self.save()
@@ -742,6 +770,18 @@ class UserOrgAffiliationRequest(models.Model):
                     }
                 ),
             )
+
+
+class UserOrgAffiliationRequestHistory(Version):
+    """
+    Proxy model for reversion Version to track changes in
+    UserOrgAffiliationRequest objects in django-admin
+    """
+
+    class Meta:
+        proxy = True
+        verbose_name = _("User to Organization Affiliation Request History")
+        verbose_name_plural = _("User to Organization Affiliation Request History")
 
 
 class VerificationQueueItem(models.Model):
@@ -2166,7 +2206,7 @@ class InternetExchange(
 
     ixf_import_request_status = models.CharField(
         _("Manual IX-F import status"),
-        help_text=_("The current status of the manual ix-f import request"),
+        help_text=_("The current status of the manual IX-F import request"),
         choices=(
             ("queued", _("Queued")),
             ("importing", _("Importing")),
@@ -2181,7 +2221,7 @@ class InternetExchange(
         "peeringdb_server.User",
         null=True,
         blank=True,
-        help_text=_("The user that triggered the manual ix-f import request"),
+        help_text=_("The user that triggered the manual IX-F import request"),
         on_delete=models.SET_NULL,
         related_name="requested_ixf_imports",
     )
@@ -3348,7 +3388,7 @@ class IXLanIXFMemberImportLogEntry(models.Model):
     def changes(self):
         """
         Returns a dict of changes between the netixlan version
-        saved by the ix-f import and the version before.
+        saved by the IX-F import and the version before.
 
         Fields `created`, `updated` and `version` will be ignored.
         """
@@ -3389,14 +3429,14 @@ class IXLanIXFMemberImportLogEntry(models.Model):
 class NetworkProtocolsDisabled(ValueError):
     """
     Raised when a network has both ipv6 and ipv4 support
-    disabled during ix-f import.
+    disabled during IX-F import.
     """
 
 
 class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     """
-    Describes a potential data update that arose during an ix-f import
+    Describes a potential data update that arose during an IX-F import
     attempt for a specific member (asn, ip4, ip6) to netixlan
     (asn, ip4, ip6) where the importer could not complete the
     update automatically.
@@ -3405,7 +3445,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     data = models.TextField(
         null=False,
         default="{}",
-        help_text=_("JSON snapshot of the ix-f member data that " "created this entry"),
+        help_text=_("JSON snapshot of the IX-F member data that " "created this entry"),
     )
 
     log = models.TextField(blank=True, help_text=_("Activity for this entry"))
@@ -3473,7 +3513,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     )
 
     # field names of fields that can receive
-    # modifications from ix-f
+    # modifications from IX-F
 
     data_fields = [
         "speed",
@@ -3856,7 +3896,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     @property
     def ixf_id(self):
         """
-        Returns a tuple that identifies the ix-f member
+        Returns a tuple that identifies the IX-F member
         as a unqiue record by asn, ip4 and ip6 address.
         """
 
@@ -3995,7 +4035,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         had data at the IX-F source.
 
         If not it indicates that it does not exist at the
-        ix-f source.
+        IX-F source.
         """
 
         return self.data == "{}" or not self.data
@@ -4006,7 +4046,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         Returns whether or not this entry implies that
         the related netixlan should be removed.
 
-        We do this by checking if the ix-f data was provided
+        We do this by checking if the IX-F data was provided
         or not.
         """
 
@@ -4332,7 +4372,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
 
     def validate_speed(self):
         """
-        Speed errors in ix-f data are raised during parse
+        Speed errors in IX-F data are raised during parse
         and speed will be on the attribute.
 
         In order to properly handle invalid speed values,
@@ -4465,7 +4505,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
         """
         self.reason = reason
 
-        # we perist this ix-f member data that proposes removal
+        # we perist this IX-F member data that proposes removal
         # if any of these conditions are met
 
         # marked for removal, but not saved
@@ -5257,7 +5297,7 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase, ParentStatusCheckMixin):
     def ixf_id(self):
         """
         Returns a tuple that identifies the netixlan
-        in the context of an ix-f member data entry as a unqiue record by asn, ip4 and ip6 address.
+        in the context of an IX-F member data entry as a unqiue record by asn, ip4 and ip6 address.
         """
 
         self.network
@@ -6653,6 +6693,65 @@ class OAuthApplication(oauth2.AbstractApplication):
         # user should not be set on org owned apps
         if self.org_id and self.user_id:
             self.user = None
+
+
+class OAuthGrantInfo(models.Model):
+
+    """
+    OAuth grant info
+
+    Used to store additional information about a grant
+
+    - amr: Authentication method reference set on the session that
+        created the grant
+    """
+
+    grant = models.OneToOneField(
+        oauth2.Grant,
+        on_delete=models.CASCADE,
+        related_name="grant_info",
+    )
+
+    amr = models.CharField(
+        max_length=255,
+        help_text=_("Authentication method reference"),
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "peeringdb_oauth_grant_info"
+        verbose_name = _("OAuth Grant Info")
+        verbose_name_plural = _("OAuth Grant Info")
+
+
+class OAuthAccessTokenInfo(models.Model):
+    """
+    OAuth access token info
+
+    Used to store additional information about an access token
+
+    - amr: Authentication method reference set on the session that
+        created the grant that resulted in this access token
+    """
+
+    access_token = models.OneToOneField(
+        oauth2.AccessToken,
+        on_delete=models.CASCADE,
+        related_name="access_token_info",
+    )
+
+    amr = models.CharField(
+        max_length=255,
+        help_text=_("Authentication method reference"),
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "peeringdb_oauth_access_token_info"
+        verbose_name = _("OAuth Access Token Info")
+        verbose_name_plural = _("OAuth Access Token Info")
 
 
 WATCHABLE_OBJECTS = [

@@ -2215,6 +2215,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             "ipaddr4",
             "ipaddr6",
             "is_rs_peer",
+            "bfd_support",
             "operational",
         ] + HandleRefSerializer.Meta.fields
 
@@ -2894,6 +2895,7 @@ class NetworkSerializer(ModelSerializer):
 
     def update(self, instance, validated_data):
         request = self._context.get("request")
+        allow_ixp_update = validated_data.get("allow_ixp_update")
 
         if validated_data.get("asn") != instance.asn:
             raise serializers.ValidationError(
@@ -2902,9 +2904,25 @@ class NetworkSerializer(ModelSerializer):
                 }
             )
 
+        if (
+            allow_ixp_update
+            and not instance.poc_set_active.filter(
+                role__in=["Technical", "NOC", "Policy"], visible__in=["Users", "Public"]
+            )
+            .exclude(email="")
+            .exists()
+        ):
+            raise serializers.ValidationError(
+                {
+                    "allow_ixp_update": _(
+                        "Cannot be enabled - must have a Technical, NOC, or Policy point of contact with valid email."
+                    ),
+                }
+            )
+
         # if allow_ixp_update was turned on apply all existing suggestions for the network. (#499)
 
-        if validated_data.get("allow_ixp_update") and not instance.allow_ixp_update:
+        if allow_ixp_update and not instance.allow_ixp_update:
             updated = super().update(instance, validated_data)
 
             for suggestion in IXFMemberData.objects.filter(

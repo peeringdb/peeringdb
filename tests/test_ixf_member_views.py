@@ -449,7 +449,7 @@ def entities():
 
         for ixlan in entities["ixlan"]:
             ixlan.ixf_ixp_import_enabled = True
-            ixlan.ixf_ixp_member_list_url = "https://localhost/ix-f"
+            ixlan.ixf_ixp_member_list_url = "https://localhost/IX-F"
             ixlan.save()
 
         # create ixlan prefix(s)

@@ -871,6 +871,7 @@ set_from_env("FLAG_BAD_DATA_NEEDS_AUTH", None)
 
 # email vars should be already set from the release environment file
 # override here from env if set
+
 set_from_env("EMAIL_HOST")
 set_from_env("EMAIL_PORT")
 set_from_env("EMAIL_HOST_USER")
@@ -963,6 +964,7 @@ OAUTH2_PROVIDER = {
         SupportedScopes.PROFILE: "user profile",
         SupportedScopes.EMAIL: "email address",
         SupportedScopes.NETWORKS: "list of user networks and permissions",
+        SupportedScopes.AMR: "authentication method reference",
     },
     "ALLOWED_REDIRECT_URI_SCHEMES": ["https"],
     "REQUEST_APPROVAL_PROMPT": "auto",
@@ -973,6 +975,8 @@ OAUTH2_PROVIDER = {
 # migration 0085 has been applied.
 
 set_option("OAUTH2_PROVIDER_APPLICATION_MODEL", "oauth2_provider.Application")
+set_option("OAUTH2_PROVIDER_GRANT_MODEL", "oauth2_provider.Grant")
+set_option("OAUTH2_PROVIDER_ACCESS_TOKEN_MODEL", "oauth2_provider.AccessToken")
 
 # This is setting is for cookie timeout for oauth sessions.
 # After the timeout, the ongoing oauth session would expire.
@@ -1167,24 +1171,24 @@ set_option(
 
 set_option("IXF_POSTMORTEM_LIMIT", 250)
 
-# when encountering problems where an exchange's ix-f feed
+# when encountering problems where an exchange's IX-F feed
 # becomes unavilable / unparsable this setting controls
 # the interval in which we communicate the issue to them (hours)
 set_option("IXF_PARSE_ERROR_NOTIFICATION_PERIOD", 360)
 
-# toggle the creation of DeskPRO tickets from ix-f importer
+# toggle the creation of DeskPRO tickets from IX-F importer
 # conflicts
 set_option("IXF_TICKET_ON_CONFLICT", True)
 
-# send the ix-f importer generated tickets to deskpro
+# send the IX-F importer generated tickets to deskpro
 set_option("IXF_SEND_TICKETS", False)
 
 # toggle the notification of exchanges via email
-# for ix-f importer conflicts
+# for IX-F importer conflicts
 set_option("IXF_NOTIFY_IX_ON_CONFLICT", False)
 
 # toggle the notification of networks via email
-# for ix-f importer conflicts
+# for IX-F importer conflicts
 set_option("IXF_NOTIFY_NET_ON_CONFLICT", False)
 
 # number of days of a conflict being unresolved before
@@ -1204,7 +1208,7 @@ set_option("IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT", 3)
 set_option("IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD", 30)
 
 # on / off toggle for automatic stale netixlan removal
-# through ix-f (#1271)
+# through IX-F (#1271)
 #
 # default was changed to False as part of #1360
 set_option("IXF_REMOVE_STALE_NETIXLAN", False)
@@ -1372,6 +1376,9 @@ set_option("NOTIFY_ORPHANED_USER_DAYS", 30)
 # Grace period before a newly created user can be flagged for deletion
 # This is so users have some time to affiliate naturally. (days)
 set_option("MIN_AGE_ORPHANED_USER_DAYS", 14)
+
+# Setting for number of days before deleting pending user to organization affiliation requests
+set_option("AFFILIATION_REQUEST_DELETE_DAYS", 90)
 
 # Notification period to notify organizations of users missing 2FA (days)
 set_option("NOTIFY_MISSING_2FA_DAYS", 30)

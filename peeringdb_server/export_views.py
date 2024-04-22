@@ -13,13 +13,16 @@ import urllib.request
 
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
+from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from rest_framework.test import APIRequestFactory
+from simplekml import Kml, Style
 
-from peeringdb_server.models import IXLan
+from peeringdb_server.models import Campus, InternetExchange, IXLan
 from peeringdb_server.renderers import JSONEncoder
 from peeringdb_server.rest import REFTAG_MAP as RestViewSets
+from peeringdb_server.util import generate_balloonstyle_text
 
 
 def export_ixf_ix_members(ixlans, pretty=False):
@@ -113,13 +116,20 @@ def view_export_ixf_ixlan_members(request, ixlan_id):
     )
 
 
+def delete_key(data, keys):
+    for d in data:
+        for key in keys:
+            if key in d:
+                d.pop(key, "")
+
+
 class ExportView(View):
     """
     Base class for more complex data exports.
     """
 
     # supported export fortmats
-    formats = ["json", "json_pretty", "csv"]
+    formats = ["json", "json_pretty", "csv", "kmz"]
 
     # when exporting json data, if this is it not None
     # json data will be wrapped in one additional dict
@@ -134,7 +144,7 @@ class ExportView(View):
     download_name = "export.{extension}"
 
     # format to file extension translation table
-    extensions = {"csv": "csv", "json": "json", "json_pretty": "json"}
+    extensions = {"csv": "csv", "json": "json", "json_pretty": "json", "kmz": "kmz"}
 
     def get(self, request, fmt):
         fmt = fmt.replace("-", "_")
@@ -142,7 +152,7 @@ class ExportView(View):
             raise ValueError(_("Invalid export format"))
 
         response_handler = getattr(self, f"response_{fmt}")
-        response = response_handler(self.generate(request))
+        response = response_handler(self.generate(request, fmt))
 
         if self.download is True:
             # send attachment header, triggering download on the client side
@@ -172,6 +182,7 @@ class ExportView(View):
             - JsonResponse
         """
         if self.json_root_key:
+            delete_key(data, ["Latitude", "Longitude", "Notes"])
             data = {self.json_root_key: data}
         return JsonResponse(data, encoder=JSONEncoder)
 
@@ -189,6 +200,7 @@ class ExportView(View):
         """
 
         if self.json_root_key:
+            delete_key(data, ["Latitude", "Longitude", "Notes"])
             data = {self.json_root_key: data}
         return HttpResponse(
             json.dumps(data, indent=2, cls=JSONEncoder), content_type="application/json"
@@ -207,6 +219,7 @@ class ExportView(View):
         if not data:
             return ""
 
+        delete_key(data, ["Latitude", "Longitude", "Notes"])
         response = HttpResponse(content_type="text/csv")
         csv_writer = csv.DictWriter(response, fieldnames=list(data[0].keys()))
 
@@ -218,6 +231,51 @@ class ExportView(View):
                     row[k] = f"{v}"
             csv_writer.writerow(row)
 
+        return response
+
+    def response_kmz(self, data):
+        """
+        Return Response object for kmz response.
+
+        Arguments:
+            - data <list>
+
+        Returns:
+            - HttpResponse
+        """
+        if not data:
+            return ""
+
+        kml = Kml()
+        style = Style()
+        keys = list(data[0].keys())
+        for exclude_key in ["Latitude", "Longitude", "Notes"]:
+            try:
+                keys.remove(exclude_key)
+            except ValueError:
+                pass
+        style.balloonstyle.text = generate_balloonstyle_text(keys)
+        for row in data:
+            lat = row.pop("Latitude", None)
+            lon = row.pop("Longitude", None)
+            notes = row.pop("Notes", "")
+
+            if lat is None or lon is None:
+                continue
+
+            point = kml.newpoint(
+                name=row.get("Name"),
+                description=notes,
+                coords=[(lon, lat)],
+            )
+            point.style = style
+            for key, value in row.items():
+                point.extendeddata.newdata(
+                    name=key, value=escape(value), displayname=key.title()
+                )
+
+        response = HttpResponse(kml.kml())
+        response["Content-Type"] = "application/vnd.google-earth.kmz"
         return response
 
 
@@ -278,7 +336,7 @@ class AdvancedSearchExportView(ExportView):
         self.tag = tag
         return super().get(request, fmt)
 
-    def generate(self, request):
+    def generate(self, request, fmt):
         """
         Generate data for the reftag specified in self.tag
 
@@ -290,8 +348,14 @@ class AdvancedSearchExportView(ExportView):
         Returns:
             - list: list containing rendered data rows ready for export
         """
+        fmt = fmt.replace("-", "_")
         if self.tag not in ["net", "ix", "fac", "org", "campus"]:
             raise ValueError(_("Invalid tag"))
+
+        if fmt == "kmz" and self.tag not in ["org", "fac", "campus", "ix"]:
+            # export kmz only for org,fac,campus,ix
+            raise ValueError(_("Invalid export format"))
+
         data_function = getattr(self, f"generate_{self.tag}")
         return data_function(request)
 
@@ -355,6 +419,9 @@ class AdvancedSearchExportView(ExportView):
                         ("State", row["state"]),
                         ("Postal Code", row["zipcode"]),
                         ("Networks", row["net_count"]),
+                        ("Latitude", row["latitude"]),
+                        ("Longitude", row["longitude"]),
+                        ("Notes", row["notes"]),
                     ]
                 )
             )
@@ -375,6 +442,16 @@ class AdvancedSearchExportView(ExportView):
         data = self.fetch(request)
         download_data = []
         for row in data:
+            latitude = None
+            longitude = None
+            ix = InternetExchange.objects.filter(id=row["id"]).first()
+            if ix:
+                ixfac = ix.ixfac_set.filter(facility__city=row["city"]).first()
+                if ixfac:
+                    fac = ixfac.facility
+                    latitude = fac.latitude
+                    longitude = fac.longitude
+
             download_data.append(
                 collections.OrderedDict(
                     [
@@ -383,6 +460,9 @@ class AdvancedSearchExportView(ExportView):
                         ("Country", row["country"]),
                         ("City", row["city"]),
                         ("Networks", row["net_count"]),
+                        ("Latitude", latitude),
+                        ("Longitude", longitude),
+                        ("Notes", row["notes"]),
                     ]
                 )
             )
@@ -409,6 +489,9 @@ class AdvancedSearchExportView(ExportView):
                         ("Name", row["name"]),
                         ("Country", row["country"]),
                         ("City", row["city"]),
+                        ("Latitude", row["latitude"]),
+                        ("Longitude", row["longitude"]),
+                        ("Notes", row["notes"]),
                     ]
                 )
             )
@@ -429,6 +512,12 @@ class AdvancedSearchExportView(ExportView):
         data = self.fetch(request)
         download_data = []
         for row in data:
+            latitude = None
+            longitude = None
+            campus = Campus.objects.filter(id=row["id"]).first()
+            if campus:
+                latitude = campus.latitude
+                longitude = campus.longitude
             download_data.append(
                 collections.OrderedDict(
                     [
@@ -436,6 +525,9 @@ class AdvancedSearchExportView(ExportView):
                         ("Name Long", row["name_long"]),
                         ("Website", row["website"]),
                         ("Fac_set", row["fac_set"]),
+                        ("Latitude", latitude),
+                        ("Longitude", longitude),
+                        ("Notes", row["notes"]),
                     ]
                 )
             )

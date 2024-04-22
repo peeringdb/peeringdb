@@ -27,7 +27,7 @@ PeeringDB specific javascript code can be found in these files:
   - custom 20c-edit input types
   - custom 20c-edit editor handlers
   - data loaders
-  - ix-f post mortem, preview and review tools
+  - IX-F post mortem, preview and review tools
   - quick search
   - api key permissions
   - user permissions

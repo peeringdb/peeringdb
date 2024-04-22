@@ -287,6 +287,53 @@ def order_results_alphabetically(result, search_terms):
     return result
 
 
+def escape_query_string(query_string):
+    """
+    Escape special characters in a query string to make it safe for Elasticsearch queries.
+
+    Args:
+    query_string (str): The query string to be escaped.
+
+    Returns:
+    str: Escaped query string.
+    """
+    special_characters = [
+        '"',
+        ":",
+        "*",
+        "?",
+        "+",
+        "-",
+        "=",
+        "&&",
+        "||",
+        ">",
+        "<",
+        "!",
+        "(",
+        ")",
+        "{",
+        "}",
+        "[",
+        "]",
+        "^",
+        "~",
+        "/",
+    ]
+    # Escape special characters
+    escaped_string = ""
+    for char in query_string:
+        if char in special_characters:
+            escaped_string += "\\" + char
+        elif char == "\\":
+            # Escape backslash with an extra backslash
+            escaped_string += "\\\\"
+        else:
+            escaped_string += char
+
+    return escaped_string
+
+
 def search_v2(term, geo={}):
     """
     Search searchable objects (ixp, network, facility ...) by term on elasticsearch engine.
@@ -296,8 +343,10 @@ def search_v2(term, geo={}):
 
     es = new_elasticsearch()
     qs = " ".join([str(elem) for elem in term])
-    keywords = qs.split()
+    safe_qs = escape_query_string(qs)
+    keywords = safe_qs.split()
 
+    indexes = ["fac", "ix", "net", "org", "campus", "carrier"]  # Add new index names
     # will track the exact matches to put them on top of the results
     look_for_exact_matches = []
 
@@ -326,20 +375,28 @@ def search_v2(term, geo={}):
                     },
                 }
             }
+        try:
+            # when the geo is not empty, check the object index from query
+            # for the example: search input "fac in las vegas, us"
+            # before {'query': {'bool': {'must': {'query_string': {'query': ' *fac*'}}, 'filter': {'geo_distance': {'distance': '42km', 'geocode_coordinates': {'lat': 36.171563, 'lon': -115.1391009}}}}}}
+            # after  {"query": {"bool": {"must": {"term": {"_index": "fac"}}, "filter": {"geo_distance": {"distance": "42km", "geocode_coordinates": {"lat": 36.171563, "lon": -115.1391009}}}}}}
+            base_query = body["query"]["bool"]["must"]["query_string"]["query"]
+            base_queries = base_query.strip().split(" ")
+            # get the object index from query e.g net, ix, etc..
+            index = base_queries[0].replace("*", "")
+            if index in indexes:
+                # if found the object index then the search will adjust the elasticsearch index to that object index
+                body["query"]["bool"]["must"] = {"term": {"_index": index}}
+                # remove the index name from the query
+                base_query = base_query.replace(f"*{index}*", "")
+                body["query"]["bool"]["must"]["query_string"]["query"] = base_query
+                if not base_query.strip():
+                    # if body["query"]["bool"]["must"]["query_string"]["query"] is empty, to avoid empty search result
+                    del body["query"]["bool"]["must"]["query_string"]
+        except Exception:
+            pass
 
     limit = settings.SEARCH_RESULTS_LIMIT
-
-    indexes = ["fac", "ix", "net", "org", "campus", "carrier"]  # Add new index names
-
-    if term and term.strip("*").split(" ")[0].lower() in indexes:
-        ref_tag = term.strip("*").split(" ")[0]
-        indexes = [ref_tag.lower()]
-        term = term.replace(f"*{ref_tag}", "").strip()
-        if term:
-            body["query"]["bool"]["must"]["query_string"]["query"] = term
-        else:
-            del body["query"]["bool"]["must"]
-
     search_query = es.search(index=indexes, body=body, size=limit)
 
     categories = ("fac", "ix", "net", "org", "campus", "carrier")

@@ -817,7 +817,7 @@ div.list > div.scrollable {
   overflow-y: auto;
   overflow-x: hidden;
   margin-left: -15px;
-  margin-right: -15px;
+  margin-right: -10px;
   padding-left: 15px;
 /*  border-bottom: 3px #1c3f28 solid; */
 }

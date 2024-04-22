@@ -1,9 +1,9 @@
-The ix-f data for this entry has changes
+The IX-F data for this entry has changes
 {% for name, value in instance.remote_changes.items %}
 - {{ name }}: {{ value.from }} to {{ value.to }}
 {% endfor %}
 {% if recipient=="net" %}
-Your network currently has automatic ix-f updates disabled. You may review and manually accept this proposed change at <a href="{{ instance.net_url }}" target="_blank">{{ instance.net_url }}</a>
+Your network currently has automatic IX-F updates disabled. You may review and manually accept this proposed change at <a href="{{ instance.net_url }}" target="_blank">{{ instance.net_url }}</a>
 {% endif %}
 
 {% if ixf_url_public %}- IX-F Data: <a href="{{ ixf_url }}" target="_blank">{{ ixf_url }}</a>{% endif %}
