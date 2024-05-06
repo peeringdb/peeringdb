@@ -341,24 +341,26 @@ def social_media_link(identifier, service):
     """
 
     if service == "website":
-        return mark_safe(f'<a href="{identifier}">{identifier}</a>')
+        return mark_safe(f'<a href="{identifier}" target="_blank">{identifier}</a>')
     if service == "facebook":
         return mark_safe(
-            f'<a href="https://www.facebook.com/{identifier}">{identifier}</a>'
+            f'<a href="https://www.facebook.com/{identifier}" target="_blank">{identifier}</a>'
         )
     if service == "x":
-        return mark_safe(f'<a href="https://x.com/{identifier}">{identifier}</a>')
+        return mark_safe(
+            f'<a href="https://x.com/{identifier}" target="_blank">{identifier}</a>'
+        )
     if service == "instagram":
         return mark_safe(
-            f'<a href="https://www.instagram.com/{identifier}">{identifier}</a>'
+            f'<a href="https://www.instagram.com/{identifier}" target="_blank">{identifier}</a>'
         )
     if service == "linkedin":
         return mark_safe(
-            f'<a href="https://www.linkedin.com/company/{identifier}">{identifier}</a>'
+            f'<a href="https://www.linkedin.com/company/{identifier}" target="_blank">{identifier}</a>'
         )
     if service == "tiktok":
         return mark_safe(
-            f'<a href="https://www.tiktok.com/@{identifier}">{identifier}</a>'
+            f'<a href="https://www.tiktok.com/@{identifier}" target="_blank" >{identifier}</a>'
         )
 
     return identifier

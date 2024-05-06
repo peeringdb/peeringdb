@@ -10,7 +10,7 @@ import re
 import time
 import unittest
 import uuid
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 import reversion
@@ -35,6 +35,7 @@ from twentyc.rpc import (
 import peeringdb_server.geo as geo
 from peeringdb_server import inet
 from peeringdb_server import settings as pdb_settings
+from peeringdb_server.inet import RdapLookup
 from peeringdb_server.models import (
     QUEUE_ENABLED,
     REFTAG_MAP,
@@ -94,7 +95,11 @@ FAC_R = "%s:Facility" % ORG_R
 # user specs
 USER = {"user": "api_test", "password": "api_test"}
 
-USER_ORG_ADMIN = {"user": "api_test_org_admin", "password": "api_test_org_admin"}
+USER_ORG_ADMIN = {
+    "user": "api_test_org_admin",
+    "password": "api_test_org_admin",
+    "email": "admin@org.com",
+}
 
 USER_ORG_MEMBER = {"user": "api_test_org_member", "password": "api_test_org_member"}
 
@@ -631,6 +636,7 @@ class TestJSON(unittest.TestCase):
 
         # if test_failures is set we want to test fail conditions
         if test_failures:
+
             # we test fail because of invalid data
             if "invalid" in test_failures:
                 tests = test_failures["invalid"]
@@ -1350,8 +1356,13 @@ class TestJSON(unittest.TestCase):
 
         data = self.make_data_net(asn=9000900)
 
-        with pytest.raises(Exception) as exc:
-            self.assert_create(self.db_org_admin, "net", data)
+        with patch.object(
+            RdapLookup,
+            "get_asn",
+            side_effect=lambda *args, **kwargs: Mock(emails=["admin@org.com"]),
+        ):
+            with pytest.raises(Exception) as exc:
+                self.assert_create(self.db_org_admin, "net", data)
 
         assert "simulated" in str(exc.value)
 
@@ -2084,27 +2095,63 @@ class TestJSON(unittest.TestCase):
 
     def test_org_admin_002_POST_PUT_DELETE_net(self):
         data = self.make_data_net(asn=9000900)
+        # test fail email mismatch
+        with patch.object(
+            RdapLookup,
+            "get_asn",
+            side_effect=lambda *args, **kwargs: Mock(emails=["admin@org123.com"]),
+        ):
+            self.assert_create(
+                self.db_org_admin,
+                "net",
+                data,
+                test_failures={
+                    "invalid": {"asn": "Your email address and ASN emails mismatch"},
+                },
+                test_success=False,
+            )
 
-        r_data = self.assert_create(
+        # test fail email mismatch in tutorial mode if not bogon asn
+        pdb_settings.TUTORIAL_MODE = True
+        self.assert_create(
             self.db_org_admin,
             "net",
             data,
             test_failures={
-                "invalid": {"name": ""},
-                "perms": {
-                    # need to set name again so it doesnt fail unique validation
-                    "name": self.make_name("Test"),
-                    "asn": data["asn"] + 1,
-                    # set org to an organization the user doesnt have perms to
-                    "org_id": SHARED["org_r_ok"].id,
-                },
-                "status": {
-                    "org_id": SHARED["org_rwp"].id,
-                    "asn": data["asn"] + 1,
-                    "name": self.make_name("Test"),
-                },
+                "invalid": {"asn": "Your email address and ASN emails mismatch"},
             },
+            test_success=False,
         )
+        pdb_settings.TUTORIAL_MODE = False
+
+        # test success
+        with patch.object(
+            RdapLookup,
+            "get_asn",
+            side_effect=lambda *args, **kwargs: Mock(
+                emails=["admin@org.com", "admin@org123.com"]
+            ),
+        ):
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "net",
+                data,
+                test_failures={
+                    "invalid": {"name": ""},
+                    "perms": {
+                        # need to set name again so it doesnt fail unique validation
+                        "name": self.make_name("Test"),
+                        "asn": data["asn"] + 1,
+                        # set org to an organization the user doesnt have perms to
+                        "org_id": SHARED["org_r_ok"].id,
+                    },
+                    "status": {
+                        "org_id": SHARED["org_rwp"].id,
+                        "asn": data["asn"] + 1,
+                        "name": self.make_name("Test"),
+                    },
+                },
+            )
 
         SHARED["net_id"] = r_data.get("id")
 
@@ -2147,7 +2194,7 @@ class TestJSON(unittest.TestCase):
             test_success=False,
         )
 
-    ##########################################################################
+    ###########################################################################
 
     def test_org_admin_002_POST_PUT_net_legacy_info_type(self):
 
@@ -2159,11 +2206,16 @@ class TestJSON(unittest.TestCase):
 
         data = self.make_data_net(asn=9000900, info_type="NSP")
 
-        r_data = self.assert_create(
-            self.db_org_admin,
-            "net",
-            data,
-        )
+        with patch.object(
+            RdapLookup,
+            "get_asn",
+            side_effect=lambda *args, **kwargs: Mock(emails=["admin@org.com"]),
+        ):
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "net",
+                data,
+            )
 
         assert r_data["info_type"] == "NSP"
         assert r_data["info_types"] == ["NSP"]
@@ -2197,11 +2249,18 @@ class TestJSON(unittest.TestCase):
 
         # Create network with the ASN is flagged OK automatically
         data = self.make_data_net(asn=9000900)
-        r_data = self.assert_create(
-            self.db_org_admin,
-            "net",
-            data,
-        )
+        with patch.object(
+            RdapLookup,
+            "get_asn",
+            side_effect=lambda *args, **kwargs: Mock(
+                emails=["admin@org.com", "admin@org123.com"]
+            ),
+        ):
+            r_data = self.assert_create(
+                self.db_org_admin,
+                "net",
+                data,
+            )
         assert r_data.get("rir_status") == "ok"
 
     ##########################################################################
@@ -2327,26 +2386,42 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_net_looking_glass_url(self):
-        for scheme in ["http", "https", "ssh", "telnet"]:
-            r_data = self.assert_create(
-                self.db_org_admin,
-                "net",
-                self.make_data_net(asn=9000900, looking_glass=f"{scheme}://foo.bar"),
-                test_failures={"invalid": {"looking_glass": "foo://www.bar.com"}},
-            )
-            Network.objects.get(id=r_data["id"]).delete(hard=True)
+        with patch.object(
+            RdapLookup,
+            "get_asn",
+            side_effect=lambda *args, **kwargs: Mock(
+                emails=["admin@org.com", "admin@org123.com"]
+            ),
+        ):
+            for scheme in ["http", "https", "ssh", "telnet"]:
+                r_data = self.assert_create(
+                    self.db_org_admin,
+                    "net",
+                    self.make_data_net(
+                        asn=9000900, looking_glass=f"{scheme}://foo.bar"
+                    ),
+                    test_failures={"invalid": {"looking_glass": "foo://www.bar.com"}},
+                )
+                Network.objects.get(id=r_data["id"]).delete(hard=True)
 
     ##########################################################################
 
     def test_org_admin_002_POST_net_route_server_url(self):
-        for scheme in ["http", "https", "ssh", "telnet"]:
-            r_data = self.assert_create(
-                self.db_org_admin,
-                "net",
-                self.make_data_net(asn=9000900, route_server=f"{scheme}://foo.bar"),
-                test_failures={"invalid": {"route_server": "foo://www.bar.com"}},
-            )
-            Network.objects.get(id=r_data["id"]).delete(hard=True)
+        with patch.object(
+            RdapLookup,
+            "get_asn",
+            side_effect=lambda *args, **kwargs: Mock(
+                emails=["admin@org.com", "admin@org123.com"]
+            ),
+        ):
+            for scheme in ["http", "https", "ssh", "telnet"]:
+                r_data = self.assert_create(
+                    self.db_org_admin,
+                    "net",
+                    self.make_data_net(asn=9000900, route_server=f"{scheme}://foo.bar"),
+                    test_failures={"invalid": {"route_server": "foo://www.bar.com"}},
+                )
+                Network.objects.get(id=r_data["id"]).delete(hard=True)
 
     ##########################################################################
 
@@ -3078,45 +3153,6 @@ class TestJSON(unittest.TestCase):
         ix.refresh_from_db()
         assert ix.status == "deleted"
         assert ix.id != r_data["id"]
-
-    ##########################################################################
-
-    def test_org_admin_002_net_901_asn_cannot_be_changed(self):
-        """
-        Tests that issue #901 is fixed
-
-        When a verified (Status=ok) network is soft-deleted
-        re-creating another network with an identical name
-        but different ASN should NOT have it skip verification queue and status
-        should be pending.
-        """
-
-        org = SHARED["org_rw_ok"]
-
-        net = Network.objects.create(
-            org=org, status="ok", name="Network Issue 901", asn=9000901
-        )
-
-        assert net.status == "ok"
-
-        # soft-delete net
-        net.delete()
-
-        assert net.status == "deleted"
-
-        data = self.make_data_net(name=net.name, asn=9000900)
-
-        r_data = self.assert_create(
-            self.db_org_admin,
-            "net",
-            data,
-        )
-
-        assert r_data["status"] == "pending"
-        net.refresh_from_db()
-        assert net.status == "deleted"
-        assert "Name of deleted entity claimed by new entity" in net.notes_private
-        assert net.id != r_data["id"]
 
     ##########################################################################
 
@@ -5215,10 +5251,12 @@ class TestJSON(unittest.TestCase):
             asn=9000901, org_id=settings.SUGGEST_ENTITY_ORG, suggest=True
         )
 
-        r_data = self.assert_create(self.db_user, "net", data)
+        r_data = self.assert_create(
+            self.db_user, "net", data, expected_status="pending"
+        )
 
         self.assertEqual(r_data["org_id"], settings.SUGGEST_ENTITY_ORG)
-        self.assertEqual(r_data["status"], "pending")
+        # self.assertEqual(r_data["stat/us"], "pending")
 
         net = Network.objects.get(id=r_data["id"])
         self.assertEqual(net.org_id, settings.SUGGEST_ENTITY_ORG)
@@ -5569,6 +5607,7 @@ class Command(BaseCommand):
         except User.DoesNotExist:
             user = User.objects.create(username=USER.get("user"))
             user.set_password(USER.get("password"))
+            user.email = USER.get("email")
             user.save()
             cls.log("USER '%s' created!" % USER.get("user"))
         return user

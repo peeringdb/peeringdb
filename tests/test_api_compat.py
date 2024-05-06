@@ -17,7 +17,7 @@ class TestAPIClientCompat(ClientCase):
     def setUpTestData(cls):
         super().setUpTestData()
         cls.superuser = User.objects.create_user(
-            "su", "su@localhost", "su", is_superuser=True
+            "su", "neteng@20c.com", "su", is_superuser=True
         )
         cls.org = REFTAG_MAP["org"].objects.create(name="Test Org", status="ok")
 

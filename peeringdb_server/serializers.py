@@ -44,6 +44,7 @@ from django_peeringdb.models.abstract import AddressModel
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError as RestValidationError
 
+from peeringdb_server import settings as pdb_settings
 from peeringdb_server.auto_approval import auto_approve_ix
 from peeringdb_server.deskpro import (
     ticket_queue_asnauto_skipvq,
@@ -52,6 +53,7 @@ from peeringdb_server.deskpro import (
 )
 from peeringdb_server.geo import Melissa
 from peeringdb_server.inet import (
+    BogonAsn,
     RdapException,
     RdapInvalidRange,
     RdapLookup,
@@ -82,6 +84,7 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.permissions import (
     check_permissions_from_request,
+    get_email_from_user_or_key,
     get_org_key_from_request,
     get_user_from_request,
     validate_rdap_user_or_key,
@@ -1092,13 +1095,13 @@ class ModelSerializer(serializers.ModelSerializer):
 
         return super().update(instance, validated_data)
 
-    def create(self, validated_data, auto_approve=False):
+    def create(self, validated_data, auto_approve=False, suggest=False):
         """
         Entities created via the API should go into the verification
         queue with status pending if they are in the QUEUE_ENABLED
-        list.
+        list or suggest is True.
         """
-        if self.Meta.model in QUEUE_ENABLED and not auto_approve:
+        if (self.Meta.model in QUEUE_ENABLED and not auto_approve) or suggest:
             validated_data["status"] = "pending"
         else:
             validated_data["status"] = "ok"
@@ -2818,7 +2821,7 @@ class NetworkSerializer(ModelSerializer):
             del validated_data["suggest"]
 
         if validated_data["org"].id == settings.SUGGEST_ENTITY_ORG:
-            rdap = None
+            return super().create(validated_data, suggest=True)
         else:
             # rdap result may already be avalaible from
             # validation - no need to requery in such
@@ -2839,22 +2842,39 @@ class NetworkSerializer(ModelSerializer):
                         {self.field: rdap_pretty_error_message(exc)}
                     )
 
+        if isinstance(rdap, BogonAsn) and pdb_settings.TUTORIAL_MODE:
+            # if rdap instance of BogonAsn skip ASN email validation
+            # BogonAsn instances is only returned in tutorial mode
+            # However for safety we also check that TUTORIAL_MODE is set regardless
+            return super().create(validated_data, auto_approve=True)
+
+        if not validate_rdap_user_or_key(request, rdap):
+            user_email = get_email_from_user_or_key(request)
+            raise RestValidationError(
+                {
+                    "non_field_errors": [
+                        """We could not validate that the record for AS{} contains your email address ({}).
+
+Please add this email address ({}) to the RIR record for AS{} and try again.
+
+If you need further assistance, please contact {}""".format(
+                            asn,
+                            user_email,
+                            user_email,
+                            asn,
+                            settings.DEFAULT_FROM_EMAIL,
+                        ),
+                    ],
+                    "asn": "Your email address and ASN emails mismatch",
+                    "__meta": {"ignore_field_error": True},
+                }
+            )
+
         # add network to existing org
-        if rdap and validate_rdap_user_or_key(request, rdap):
-            # user email exists in RiR data, skip verification queue
-            net = super().create(validated_data, auto_approve=True)
-            ticket_queue_asnauto_skipvq(request, validated_data["org"], net, rdap)
-            return net
-
-        elif self.Meta.model in QUEUE_ENABLED:
-            # user email does NOT exist in RiR data, put into verification
-            # queue
-            validated_data["status"] = "pending"
-        else:
-            # verification queue is disabled regardless
-            validated_data["status"] = "ok"
-
-        return super().create(validated_data)
+        # user email exists in RiR data, auto approve the network
+        net = super().create(validated_data, auto_approve=True)
+        ticket_queue_asnauto_skipvq(request, validated_data["org"], net, rdap)
+        return net
 
     def validate_legacy_info_type(self, instance, validated_data):
         # Handle a write to the legacy info_type field (keep API backwards compatible)

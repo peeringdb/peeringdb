@@ -724,9 +724,8 @@ paths:
           type: string
       - name: property
         in: query
-        description: 'A property owner is the individual or entity that has title
-          to the property. A lessee is a user of a property who has a lease, an agreement,
-          with the owner of the property.
+        description: 'Leasing or renting is an agreement with a property owner for
+          use of the property.
 
 
           Filter results by matching a value against this field.
@@ -1914,9 +1913,8 @@ paths:
                   - Lessee
                   type: string
                   nullable: true
-                  description: A property owner is the individual or entity that has
-                    title to the property. A lessee is a user of a property who has
-                    a lease, an agreement, with the owner of the property.
+                  description: Leasing or renting is an agreement with a property
+                    owner for use of the property.
                 region_continent:
                   type: string
                   readOnly: true
@@ -3257,9 +3255,8 @@ paths:
                   - Lessee
                   type: string
                   nullable: true
-                  description: A property owner is the individual or entity that has
-                    title to the property. A lessee is a user of a property who has
-                    a lease, an agreement, with the owner of the property.
+                  description: Leasing or renting is an agreement with a property
+                    owner for use of the property.
                 region_continent:
                   type: string
                   readOnly: true
@@ -4555,9 +4552,8 @@ paths:
                   - Lessee
                   type: string
                   nullable: true
-                  description: A property owner is the individual or entity that has
-                    title to the property. A lessee is a user of a property who has
-                    a lease, an agreement, with the owner of the property.
+                  description: Leasing or renting is an agreement with a property
+                    owner for use of the property.
                 region_continent:
                   type: string
                   readOnly: true
@@ -7318,9 +7314,8 @@ paths:
           type: string
       - name: fac__property
         in: query
-        description: 'A property owner is the individual or entity that has title
-          to the property. A lessee is a user of a property who has a lease, an agreement,
-          with the owner of the property.
+        description: 'Leasing or renting is an agreement with a property owner for
+          use of the property.
 
 
           Filter results by matching a value against this field.
@@ -8994,9 +8989,8 @@ paths:
                       - Lessee
                       type: string
                       nullable: true
-                      description: A property owner is the individual or entity that
-                        has title to the property. A lessee is a user of a property
-                        who has a lease, an agreement, with the owner of the property.
+                      description: Leasing or renting is an agreement with a property
+                        owner for use of the property.
                     region_continent:
                       type: string
                       readOnly: true
@@ -10787,9 +10781,8 @@ paths:
                       - Lessee
                       type: string
                       nullable: true
-                      description: A property owner is the individual or entity that
-                        has title to the property. A lessee is a user of a property
-                        who has a lease, an agreement, with the owner of the property.
+                      description: Leasing or renting is an agreement with a property
+                        owner for use of the property.
                     region_continent:
                       type: string
                       readOnly: true
@@ -12533,9 +12526,8 @@ paths:
                       - Lessee
                       type: string
                       nullable: true
-                      description: A property owner is the individual or entity that
-                        has title to the property. A lessee is a user of a property
-                        who has a lease, an agreement, with the owner of the property.
+                      description: Leasing or renting is an agreement with a property
+                        owner for use of the property.
                     region_continent:
                       type: string
                       readOnly: true
@@ -16938,9 +16930,8 @@ paths:
           type: string
       - name: fac__property
         in: query
-        description: 'A property owner is the individual or entity that has title
-          to the property. A lessee is a user of a property who has a lease, an agreement,
-          with the owner of the property.
+        description: 'Leasing or renting is an agreement with a property owner for
+          use of the property.
 
 
           Filter results by matching a value against this field.
@@ -19383,9 +19374,8 @@ paths:
                       - Lessee
                       type: string
                       nullable: true
-                      description: A property owner is the individual or entity that
-                        has title to the property. A lessee is a user of a property
-                        who has a lease, an agreement, with the owner of the property.
+                      description: Leasing or renting is an agreement with a property
+                        owner for use of the property.
                     region_continent:
                       type: string
                       readOnly: true
@@ -21582,9 +21572,8 @@ paths:
                       - Lessee
                       type: string
                       nullable: true
-                      description: A property owner is the individual or entity that
-                        has title to the property. A lessee is a user of a property
-                        who has a lease, an agreement, with the owner of the property.
+                      description: Leasing or renting is an agreement with a property
+                        owner for use of the property.
                     region_continent:
                       type: string
                       readOnly: true
@@ -23733,9 +23722,8 @@ paths:
                       - Lessee
                       type: string
                       nullable: true
-                      description: A property owner is the individual or entity that
-                        has title to the property. A lessee is a user of a property
-                        who has a lease, an agreement, with the owner of the property.
+                      description: Leasing or renting is an agreement with a property
+                        owner for use of the property.
                     region_continent:
                       type: string
                       readOnly: true
@@ -29356,7 +29344,10 @@ paths:
           type: string
       - name: info_traffic
         in: query
-        description: 'Filter results by matching a value against this field.
+        description: 'Total, self-classified traffic in/out to this network.
+
+
+          Filter results by matching a value against this field.
 
 
           ``, `0-20Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
@@ -30570,6 +30561,7 @@ paths:
                   - 50-100Tbps
                   - 100+Tbps
                   type: string
+                  description: Total, self-classified traffic in/out to this network.
                 info_ratio:
                   enum:
                   - ''
@@ -31309,6 +31301,7 @@ paths:
                   - 50-100Tbps
                   - 100+Tbps
                   type: string
+                  description: Total, self-classified traffic in/out to this network.
                 info_ratio:
                   enum:
                   - ''
@@ -31996,6 +31989,7 @@ paths:
                   - 50-100Tbps
                   - 100+Tbps
                   type: string
+                  description: Total, self-classified traffic in/out to this network.
                 info_ratio:
                   enum:
                   - ''
@@ -32442,7 +32436,10 @@ paths:
           type: string
       - name: net__info_traffic
         in: query
-        description: 'Filter results by matching a value against this field.
+        description: 'Total, self-classified traffic in/out to this network.
+
+
+          Filter results by matching a value against this field.
 
 
           ``, `0-20Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
@@ -33366,6 +33363,7 @@ paths:
                       - 50-100Tbps
                       - 100+Tbps
                       type: string
+                      description: Total, self-classified traffic in/out to this network.
                     info_ratio:
                       enum:
                       - ''
@@ -34163,6 +34161,7 @@ paths:
                       - 50-100Tbps
                       - 100+Tbps
                       type: string
+                      description: Total, self-classified traffic in/out to this network.
                     info_ratio:
                       enum:
                       - ''
@@ -34912,6 +34911,7 @@ paths:
                       - 50-100Tbps
                       - 100+Tbps
                       type: string
+                      description: Total, self-classified traffic in/out to this network.
                     info_ratio:
                       enum:
                       - ''
@@ -35525,9 +35525,8 @@ paths:
           type: string
       - name: fac__property
         in: query
-        description: 'A property owner is the individual or entity that has title
-          to the property. A lessee is a user of a property who has a lease, an agreement,
-          with the owner of the property.
+        description: 'Leasing or renting is an agreement with a property owner for
+          use of the property.
 
 
           Filter results by matching a value against this field.
@@ -35860,7 +35859,10 @@ paths:
           type: string
       - name: net__info_traffic
         in: query
-        description: 'Filter results by matching a value against this field.
+        description: 'Total, self-classified traffic in/out to this network.
+
+
+          Filter results by matching a value against this field.
 
 
           ``, `0-20Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
@@ -36745,6 +36747,7 @@ paths:
                       - 50-100Tbps
                       - 100+Tbps
                       type: string
+                      description: Total, self-classified traffic in/out to this network.
                     info_ratio:
                       enum:
                       - ''
@@ -37837,9 +37840,8 @@ paths:
                       - Lessee
                       type: string
                       nullable: true
-                      description: A property owner is the individual or entity that
-                        has title to the property. A lessee is a user of a property
-                        who has a lease, an agreement, with the owner of the property.
+                      description: Leasing or renting is an agreement with a property
+                        owner for use of the property.
                     region_continent:
                       type: string
                       readOnly: true
@@ -38770,6 +38772,7 @@ paths:
                       - 50-100Tbps
                       - 100+Tbps
                       type: string
+                      description: Total, self-classified traffic in/out to this network.
                     info_ratio:
                       enum:
                       - ''
@@ -39862,9 +39865,8 @@ paths:
                       - Lessee
                       type: string
                       nullable: true
-                      description: A property owner is the individual or entity that
-                        has title to the property. A lessee is a user of a property
-                        who has a lease, an agreement, with the owner of the property.
+                      description: Leasing or renting is an agreement with a property
+                        owner for use of the property.
                     region_continent:
                       type: string
                       readOnly: true
@@ -40747,6 +40749,7 @@ paths:
                       - 50-100Tbps
                       - 100+Tbps
                       type: string
+                      description: Total, self-classified traffic in/out to this network.
                     info_ratio:
                       enum:
                       - ''
@@ -41839,9 +41842,8 @@ paths:
                       - Lessee
                       type: string
                       nullable: true
-                      description: A property owner is the individual or entity that
-                        has title to the property. A lessee is a user of a property
-                        who has a lease, an agreement, with the owner of the property.
+                      description: Leasing or renting is an agreement with a property
+                        owner for use of the property.
                     region_continent:
                       type: string
                       readOnly: true
@@ -42660,7 +42662,10 @@ paths:
           type: string
       - name: net__info_traffic
         in: query
-        description: 'Filter results by matching a value against this field.
+        description: 'Total, self-classified traffic in/out to this network.
+
+
+          Filter results by matching a value against this field.
 
 
           ``, `0-20Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
@@ -43560,6 +43565,7 @@ paths:
                       - 50-100Tbps
                       - 100+Tbps
                       type: string
+                      description: Total, self-classified traffic in/out to this network.
                     info_ratio:
                       enum:
                       - ''
@@ -45250,6 +45256,7 @@ paths:
                       - 50-100Tbps
                       - 100+Tbps
                       type: string
+                      description: Total, self-classified traffic in/out to this network.
                     info_ratio:
                       enum:
                       - ''
@@ -46891,6 +46898,7 @@ paths:
                       - 50-100Tbps
                       - 100+Tbps
                       type: string
+                      description: Total, self-classified traffic in/out to this network.
                     info_ratio:
                       enum:
                       - ''
@@ -52088,7 +52096,10 @@ paths:
           type: string
       - name: info_traffic
         in: query
-        description: 'Filter results by matching a value against this field.
+        description: 'Total, self-classified traffic in/out to this network.
+
+
+          Filter results by matching a value against this field.
 
 
           ``, `0-20Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
@@ -52951,7 +52962,10 @@ paths:
           type: string
       - name: info_traffic
         in: query
-        description: 'Filter results by matching a value against this field.
+        description: 'Total, self-classified traffic in/out to this network.
+
+
+          Filter results by matching a value against this field.
 
 
           ``, `0-20Mbps`, `20-100Mbps`, `100-1000Mbps`, `1-5Gbps`, `5-10Gbps`, `10-20Gbps`,
@@ -55762,9 +55776,8 @@ components:
           - Lessee
           type: string
           nullable: true
-          description: A property owner is the individual or entity that has title
-            to the property. A lessee is a user of a property who has a lease, an
-            agreement, with the owner of the property.
+          description: Leasing or renting is an agreement with a property owner for
+            use of the property.
         region_continent:
           type: string
           readOnly: true
@@ -57897,9 +57910,8 @@ components:
               - Lessee
               type: string
               nullable: true
-              description: A property owner is the individual or entity that has title
-                to the property. A lessee is a user of a property who has a lease,
-                an agreement, with the owner of the property.
+              description: Leasing or renting is an agreement with a property owner
+                for use of the property.
             region_continent:
               type: string
               readOnly: true
@@ -60810,9 +60822,8 @@ components:
               - Lessee
               type: string
               nullable: true
-              description: A property owner is the individual or entity that has title
-                to the property. A lessee is a user of a property who has a lease,
-                an agreement, with the owner of the property.
+              description: Leasing or renting is an agreement with a property owner
+                for use of the property.
             region_continent:
               type: string
               readOnly: true
@@ -63438,6 +63449,7 @@ components:
           - 50-100Tbps
           - 100+Tbps
           type: string
+          description: Total, self-classified traffic in/out to this network.
         info_ratio:
           enum:
           - ''
@@ -64081,6 +64093,7 @@ components:
               - 50-100Tbps
               - 100+Tbps
               type: string
+              description: Total, self-classified traffic in/out to this network.
             info_ratio:
               enum:
               - ''
@@ -64788,6 +64801,7 @@ components:
               - 50-100Tbps
               - 100+Tbps
               type: string
+              description: Total, self-classified traffic in/out to this network.
             info_ratio:
               enum:
               - ''
@@ -65877,9 +65891,8 @@ components:
               - Lessee
               type: string
               nullable: true
-              description: A property owner is the individual or entity that has title
-                to the property. A lessee is a user of a property who has a lease,
-                an agreement, with the owner of the property.
+              description: Leasing or renting is an agreement with a property owner
+                for use of the property.
             region_continent:
               type: string
               readOnly: true
@@ -66704,6 +66717,7 @@ components:
               - 50-100Tbps
               - 100+Tbps
               type: string
+              description: Total, self-classified traffic in/out to this network.
             info_ratio:
               enum:
               - ''

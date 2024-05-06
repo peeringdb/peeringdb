@@ -510,6 +510,17 @@ def view_affiliate_to_org(request):
         # if network exists
         if asn != 0 and Network.objects.filter(asn=asn).exists():
             network = Network.objects.get(asn=asn)
+            if network.status == "deleted":
+                return JsonResponse(
+                    {
+                        "non_field_errors": [
+                            _(
+                                "Unable to affiliate as this network has been deleted. Please reach out to PeeringDB support if you wish to resolve this."
+                            )
+                        ]
+                    },
+                    status=400,
+                )
             org_id = network.org.id
 
         if org_id:
@@ -1649,6 +1660,7 @@ def view_organization(request, id):
         for key in org.api_keys.filter(revoked=False).all()
     ]
     data["phone_help_text"] = field_help(NetworkContact, "phone")
+    data["info_traffic_help_text"] = field_help(Network, "info_traffic")
     data["periodic_reauth_period_help_text"] = field_help(
         Organization, "periodic_reauth_period"
     )
@@ -2553,6 +2565,11 @@ def view_network(request, id):
             }
         ]
 
+    notify_incomplete_policy_url = network_d.get("policy_general") not in [
+        "Open",
+        "No",
+    ]
+
     data = {
         "social_media_enum": v2_social_media_services(),
         "title": network_d.get("name", dismiss),
@@ -2649,6 +2666,7 @@ def view_network(request, id):
                 "data": "enum/traffic",
                 "blank": _("Not Disclosed"),
                 "label": _("Traffic Levels"),
+                "help_text": field_help(Network, "info_traffic"),
                 "value": network_d.get("info_traffic", dismiss),
             },
             {
@@ -2788,7 +2806,7 @@ def view_network(request, id):
                 "name": "policy_url",
                 "label": _("Peering Policy"),
                 "value": network_d.get("policy_url", dismiss),
-                "notify_incomplete": True,
+                "notify_incomplete": notify_incomplete_policy_url,
                 "type": "url",
             },
             {
@@ -2857,6 +2875,7 @@ def view_suggest(request, reftag):
     env = make_env()
 
     env["phone_help_text"] = field_help(NetworkContact, "phone")
+    env["info_traffic_help_text"] = field_help(Network, "info_traffic")
     return HttpResponse(template.render(env, request))
 
 

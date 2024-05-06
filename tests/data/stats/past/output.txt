@@ -4,4 +4,9 @@ fac: 1
 ix: 1
 net: 1
 org: 1
+carrier: 1
+campus: 1
+netixlan: 1
+netfac: 1
+automated_nets: 1
 users: 2

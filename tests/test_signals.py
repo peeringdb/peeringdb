@@ -13,6 +13,8 @@ from peeringdb_server.models import (
     NetworkFacility,
     NetworkIXLan,
     Organization,
+    User,
+    UserOrgAffiliationRequest,
 )
 
 
@@ -209,3 +211,31 @@ def test_bulk_create_signal():
     for i in range(1, 6):
         assert Group.objects.filter(name=f"org.{i}").exists() == True
         assert Group.objects.filter(name=f"org.{i}.admin").exists() == True
+
+
+@pytest.mark.django_db
+def test_uoar_creation():
+    user = User.objects.create_user(
+        username="user", password="user", email="user@localhost"
+    )
+    org = Organization.objects.create(name="Test Org")
+    net = Network.objects.create(name="test network", org=org, asn=123, status="ok")
+    uoar = UserOrgAffiliationRequest.objects.create(
+        asn=net.asn, org=org, org_name=org.name, user=user
+    )
+    assert uoar.status == "pending"
+
+
+@pytest.mark.django_db
+def test_uoar_creation_network_deleted():
+    user = User.objects.create_user(
+        username="user", password="user", email="user@localhost"
+    )
+    org = Organization.objects.create(name="Test Org")
+    net = Network.objects.create(
+        name="test network", org=org, asn=123, status="deleted"
+    )
+    uoar = UserOrgAffiliationRequest.objects.create(
+        asn=net.asn, org=org, org_name=org.name, user=user
+    )
+    assert uoar.status == "denied"

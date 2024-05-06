@@ -7,6 +7,7 @@ import csv
 import datetime
 import json
 import os
+import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -22,7 +23,7 @@ from simplekml import Kml, Style
 from peeringdb_server.models import Campus, InternetExchange, IXLan
 from peeringdb_server.renderers import JSONEncoder
 from peeringdb_server.rest import REFTAG_MAP as RestViewSets
-from peeringdb_server.util import generate_balloonstyle_text
+from peeringdb_server.util import add_kmz_overlay_watermark, generate_balloonstyle_text
 
 
 def export_ixf_ix_members(ixlans, pretty=False):
@@ -247,6 +248,7 @@ class ExportView(View):
             return ""
 
         kml = Kml()
+        add_kmz_overlay_watermark(kml)
         style = Style()
         keys = list(data[0].keys())
         for exclude_key in ["Latitude", "Longitude", "Notes"]:
@@ -273,8 +275,13 @@ class ExportView(View):
                 point.extendeddata.newdata(
                     name=key, value=escape(value), displayname=key.title()
                 )
+        with tempfile.NamedTemporaryFile(suffix=".kmz", delete=False) as kmz_temp_file:
+            kml.savekmz(kmz_temp_file.name)
 
-        response = HttpResponse(kml.kml())
+            kmz_temp_file.seek(0)
+            file_content = kmz_temp_file.read()
+
+        response = HttpResponse(file_content)
         response["Content-Type"] = "application/vnd.google-earth.kmz"
         return response
 

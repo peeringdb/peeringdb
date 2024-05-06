@@ -4725,6 +4725,20 @@ class Network(pdb_models.NetworkBase, ParentStatusCheckMixin, SocialMediaMixin):
         ),
     )
 
+    @classmethod
+    def automated_net_count(cls):
+        """
+        Class method that retrieves all Networks with allow_ixp_update=True.
+
+        Args:
+        None just returns a count of total automated_nets.
+
+        Returns:
+        A queryset of Network objects that match allow_ixp_update=True and status=ok .
+        """
+
+        return cls.objects.filter(allow_ixp_update=True, status="ok")
+
     netixlan_updated = models.DateTimeField(blank=True, null=True)
     netfac_updated = models.DateTimeField(blank=True, null=True)
     poc_updated = models.DateTimeField(blank=True, null=True)
@@ -7217,8 +7231,8 @@ QUEUE_NOTIFY = []
 
 if not getattr(settings, "DISABLE_VERIFICATION_QUEUE", False):
     # enable verification queue for these models
-    QUEUE_ENABLED = (User, InternetExchange, Network, Facility, Carrier, Organization)
+    QUEUE_ENABLED = (User, InternetExchange, Facility, Carrier, Organization)
 
     if not getattr(settings, "DISABLE_VERIFICATION_QUEUE_EMAILS", False):
         # send admin notification emails for these models
-        QUEUE_NOTIFY = (InternetExchange, Network, Facility, Carrier, Organization)
+        QUEUE_NOTIFY = (InternetExchange, Facility, Carrier, Organization)

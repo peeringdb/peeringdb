@@ -40,6 +40,17 @@ def validate_rdap_user_or_key(request, rdap):
     return False
 
 
+def get_email_from_user_or_key(request):
+    user = get_user_from_request(request)
+    if user:
+        return user.email
+
+    org_key = get_org_key_from_request(request)
+    if org_key:
+        return org_key.email
+    return None
+
+
 def validate_rdap_org_key(org_key, rdap):
     for email in rdap.emails:
         if email and email.lower() == org_key.email.lower():
