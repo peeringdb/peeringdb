@@ -48,7 +48,9 @@ def gen_stats():
             status="ok", allow_ixp_update=True
         ).count(),
         "organizations": Organization.objects.filter(status="ok").count(),
-        "registered_users": User.objects.count(),
+        "registered_users": User.objects.filter(
+            groups__id=settings.USER_GROUP_ID
+        ).count(),
     }
     __STATS["mod"] = timezone.now()
 

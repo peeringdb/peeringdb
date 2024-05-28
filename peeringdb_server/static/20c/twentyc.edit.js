@@ -93,6 +93,8 @@ twentyc.editable.error = {
         return gettext("File too large");
       case "Http500":
         return gettext("Internal error");
+      case "IgnoreError":
+        return "";
       default:
         return gettext("Something went wrong.");
       break;

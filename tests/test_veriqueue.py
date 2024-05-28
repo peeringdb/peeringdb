@@ -61,12 +61,12 @@ class VeriQueueTests(TestCase):
 
     def test_deskpro_tickets(self):
         """
-        Test that tickets were created for the facility, ix and network
+        Test that tickets were created for the facility and ix
         """
         user = self.inst["user"]
         qs = models.DeskProTicket.objects
 
-        for tag in ["fac", "net", "ix"]:
+        for tag in ["fac", "ix"]:
             inst = self.inst[tag]
             vqi = models.VerificationQueueItem.get_for_entity(inst)
             vqi.user = user

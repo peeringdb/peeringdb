@@ -394,8 +394,12 @@ def uoar_creation(sender, instance, created=False, **kwargs):
     """
 
     if created:
+        network = Network.objects.filter(asn=instance.asn).first()
+        if network and network.status == "deleted":
+            instance.deny()
+            return
+
         if instance.asn and not instance.org_id:
-            network = Network.objects.filter(asn=instance.asn).first()
             if network:
                 # network with targeted asn found, set org
                 instance.org = network.org

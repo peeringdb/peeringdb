@@ -1,4 +1,5 @@
 import json
+import os
 
 from django.conf import settings
 
@@ -6,7 +7,7 @@ from django.conf import settings
 from django.utils.html import escape
 from simplekml import Kml, Style
 
-from peeringdb_server.util import generate_balloonstyle_text
+from peeringdb_server.util import add_kmz_overlay_watermark, generate_balloonstyle_text
 
 
 def collect_exchanges(path=None):
@@ -101,6 +102,7 @@ def fac_export_kmz(limit=None, path=None, output_dir=None):
     kml = Kml()
     fac_folder = kml.newfolder(name="Facilities")
     style = Style()
+    add_kmz_overlay_watermark(kml)
     include_keys = [
         "org_name",
         "peeringDB",
@@ -152,5 +154,6 @@ def fac_export_kmz(limit=None, path=None, output_dir=None):
 
             point.style = style
     style.balloonstyle.text = generate_balloonstyle_text(filtered_keys)
+    fac_folder.balloonstyle = None
 
     kml.savekmz(f"{output_dir}/peeringdb.kmz")

@@ -145,14 +145,17 @@ PeeringDB = {
 
     // render markdown content
     $('[data-render-markdown="yes"]').each(function() {
-      var converter = new showdown.Converter()
+      var converter = new showdown.Converter({openLinksInNewWindow: 'true'})
       var value = $(this).data("edit-value")
       // sanitize any html tags
       var translate = $(this).find('div.translate').detach()
 
       var html = converter.makeHtml(value.replace(/>/g, '&gt;').replace(/</g, '&lt;'))
       // set html after further sanitizing output via DOMPurify
-      $(this).html(DOMPurify.sanitize(html, {SAFE_FOR_JQUERY: true}))
+      $(this).html(DOMPurify.sanitize(html, {
+        SAFE_FOR_JQUERY: true,
+        ADD_ATTR: ['target'],
+      }))
       $(this).append(translate);
     });
 
@@ -2280,8 +2283,15 @@ twentyc.editable.target.register(
       }).fail(function(r) {
         if(r.status == 400) {
           var k,i,info=[gettext("The server rejected your data")]; ///
+          errorType = "HTTPError"
+          ignore_field_error = r?.responseJSON?.meta?.ignore_field_error
+          ignore_field_error = [true,"True","true"].includes(ignore_field_error)
+          if (ignore_field_error){
+            errorType = "IgnoreError"
+            var k,i,info=[]; ///
+          }
           for(k in r.responseJSON) {
-            if(k == "meta") {
+            if(k == "meta" && !ignore_field_error) {
               var err = r.responseJSON.meta.error;
               if(err.indexOf(gettext("not yet been approved")) > 0) { //////
                 info.push(gettext("Parent entity pending review - please wait for it to be approved before adding entities to it")) ///
@@ -2298,12 +2308,12 @@ twentyc.editable.target.register(
             if(k == "non_field_errors") {
               var i;
               for(i in r.responseJSON[k])
-                info.push(r.responseJSON[k][i]);
+                info.push(r.responseJSON[k][i].replaceAll("\n","<br />"));
             }
           }
 
           me.trigger("error", {
-            type : "HTTPError",
+            type : errorType,
             info : info.join("<br />")
           });
         } else {

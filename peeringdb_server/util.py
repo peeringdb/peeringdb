@@ -5,8 +5,10 @@ import ipaddress
 from decimal import Decimal
 
 import django_peeringdb.const as const
+from django.contrib.staticfiles.finders import find
 from django.utils.translation import gettext_lazy as _
 from django_grainy.util import Permissions, check_permissions, get_permissions  # noqa
+from simplekml import Kml, OverlayXY, ScreenXY, Style, Units
 
 from peeringdb_server.models import (
     CarrierFacility,
@@ -121,3 +123,24 @@ def generate_balloonstyle_text(keys):
     </table>
     """
     return ballon_text
+
+
+def add_kmz_overlay_watermark(kml):
+    """
+    add overlay watermark in kmz
+
+    Args:
+        kml: Kml
+    Returns:
+       None
+    """
+    watermark_logo = find("pdb-logo-kmz.png")
+    screen = kml.newscreenoverlay(name="https://peeringdb.com")
+    logo_path = kml.addfile(watermark_logo)
+    screen.icon.href = logo_path
+    screen.overlayxy = OverlayXY(
+        x=0.9, y=0.1, xunits=Units.fraction, yunits=Units.fraction
+    )
+    screen.screenxy = ScreenXY(
+        x=0.98, y=0.05, xunits=Units.fraction, yunits=Units.fraction
+    )

@@ -88,6 +88,8 @@ RUN mkdir coverage
 COPY scripts/manage /usr/bin/
 COPY Ctl/docker/entrypoint.sh /
 
+RUN DJANGO_SECRET_KEY=secret manage collectstatic --no-input
+
 # inetd for whois
 COPY --from=builder /usr/sbin/inetd /usr/sbin/
 RUN true

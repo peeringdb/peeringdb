@@ -14,7 +14,7 @@ django = "^4.2"
 django-inet = ">=1.1.1"
 django-handleref = ">=2"
 # pinned until 3.5.0 release if django-peeringdb
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "support_202403" }
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "support_202404" }
 djangorestframework = ">=3.14.0"
 mysqlclient = ">=2.1.1"
 redis = ">=5.0.0"
@@ -91,6 +91,7 @@ jsonschema = ">=2.6.0"
 # selenium testing
 selenium = "^4.4.3"
 webdriver-manager = "^3.8.3"
+pyjwt = ">=2.8.0"
 
 # linting
 black = ">=20"

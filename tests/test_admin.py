@@ -603,8 +603,8 @@ class AdminTests(TestCase):
 
         # create a verification queue item we can check
         org = models.Organization.objects.all().first()
-        _ = models.Network.objects.create(
-            name="Unverified network", org=org, asn=33333, status="pending"
+        _ = models.Facility.objects.create(
+            name="Unverified facility", org=org, status="pending"
         )
         vqitem = models.VerificationQueueItem.objects.all().first()
         assert vqitem
@@ -726,7 +726,7 @@ class AdminTests(TestCase):
 
         assert user.is_staff
 
-        search_str = '<a href="/cp/logout/"'
+        search_str = 'action="/cp/logout/"'
 
         for op in ops:
             for cls in classes:
@@ -754,6 +754,8 @@ class AdminTests(TestCase):
                 cont = response.content.decode("utf-8")
                 assert response.status_code == kwargs.get(f"status_{op}", 200)
                 if response.status_code == 200:
+                    print(cont)
+                    print(url)
                     assert search_str in cont
 
         for url, method, status in extra_urls:

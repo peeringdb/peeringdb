@@ -359,7 +359,7 @@ else:
     set_option("KMZ_DOWNLOAD_URL", "https://public.peeringdb.com/peeringdb.kmz")
 
 # Keys
-set_from_env("MELISSA_KEY")
+set_from_env("MELISSA_KEY", "")
 set_from_env("GOOGLE_GEOLOC_API_KEY")
 
 set_from_env("RDAP_LACNIC_APIKEY")

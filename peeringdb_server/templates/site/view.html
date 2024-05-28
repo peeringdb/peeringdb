@@ -208,7 +208,7 @@
               data-edit-required="yes"
               {% endif %}
               data-edit-name="{{ row.name }}"
-              data-edit-template="link">{% if row.value %}<a href="{{ row.value }}">{{ row.value }}</a>{% endif %}</div>
+              data-edit-template="link">{% if row.value %}<a href="{{ row.value }}" target="_blank">{{ row.value }}</a>{% endif %}</div>
 
         {% elif row.type == "email" %}
           <div class="view_value col-8 col-sm-7 col-md-8"
@@ -544,6 +544,12 @@ $(document).ready(function() {
   $('[data-bs-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
 
 });
+</script>
+{% else %}
+<script>
+  $(document).ready(function(){
+    $('[data-bs-toggle="tooltip"][data-tooltip-show="always"]').tooltip({container:"body", trigger:"hover"});
+  })
 </script>
 {% endif %}
 

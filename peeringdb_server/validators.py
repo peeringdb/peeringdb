@@ -439,7 +439,7 @@ def validate_social_media(value):
             elif service in ["instagram", "x", "tiktok", "facebook", "linkedin"]:
                 # validate username
                 if service in ["x"]:
-                    regex = r"^[a-zA-Z0-9_]{1,15}$"
+                    regex = r"^[a-zA-Z0-9_]{4,15}$"
                 else:
                     regex = r"^(-*)(?=.{4,32}$)(?![.\-])(?!.*[.]{2})[a-zA-Z0-9._\-]+(?<![.])$"
 

@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from reversion.models import Version
 
-from peeringdb_server.models import REFTAG_MAP, UTC
+from peeringdb_server.models import REFTAG_MAP, UTC, Network
 
 
 class Command(BaseCommand):
@@ -17,7 +17,17 @@ class Command(BaseCommand):
     today will be used
     """
 
-    tags = ["fac", "ix", "net", "org"]
+    tags = [
+        "fac",
+        "ix",
+        "net",
+        "org",
+        "carrier",
+        "campus",
+        "netixlan",
+        "netfac",
+        "automated_nets",
+    ]
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -112,6 +122,9 @@ class Command(BaseCommand):
         stats = self.stats(dt)
 
         for tag in self.tags:
+            if tag == "automated_nets":
+                stats[tag] = Network.automated_net_count().count()
+                continue
             model = REFTAG_MAP[tag]
             stats[tag] = model.objects.filter(status="ok").count()
 
@@ -134,6 +147,11 @@ class Command(BaseCommand):
         stats = self.stats(dt)
 
         for tag in self.tags:
+            if tag == "automated_nets":
+                stats[tag] = (
+                    Network.automated_net_count().filter(created__lte=dt).count()
+                )
+                continue
             model = REFTAG_MAP[tag]
             stats[tag] = 0
             for obj in model.objects.filter(created__lte=dt):

@@ -851,7 +851,7 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         (
             [
                 {"service": "website", "identifier": None},
-                {"service": "x", "identifier": "unknown"},
+                {"service": "", "identifier": "unknown"},
             ],
             False,
         ),
@@ -883,6 +883,24 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
                     "identifier": "https://www.example.com",
                 },
             },
+            False,
+        ),
+        (
+            [
+                {"service": "x", "identifier": "aaa"},
+            ],
+            False,
+        ),
+        (
+            [
+                {"service": "x", "identifier": "a" * 16},
+            ],
+            False,
+        ),
+        (
+            [
+                {"service": "x", "identifier": "$bla/"},
+            ],
             False,
         ),
     ],

@@ -97,7 +97,11 @@ class DummyRestClientWithKeyAuth(RestClient):
 URL = settings.API_URL
 VERBOSE = False
 USER = {"user": "api_test", "password": "89c8ec05-b897"}
-USER_ORG_ADMIN = {"user": "api_test_org_admin", "password": "89c8ec05-b897"}
+USER_ORG_ADMIN = {
+    "user": "api_test_org_admin",
+    "password": "89c8ec05-b897",
+    "email": "admin@org.com",
+}
 USER_ORG_MEMBER = {"user": "api_test_org_member", "password": "89c8ec05-b897"}
 
 
@@ -190,7 +194,7 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         # db_org_admin becomes the tester for rw org api key
         rw_org = models.Organization.objects.get(name="API Test Organization RW")
         rw_api_key, rw_org_key = models.OrganizationAPIKey.objects.create_key(
-            name="test key", org=rw_org, email="test@localhost"
+            name="test key", org=rw_org, email=USER_ORG_ADMIN.get("email")
         )
         self.org_key = rw_api_key
 

@@ -44,6 +44,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_grainy.admin import UserPermissionInlineAdmin
 from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
+from django_otp.plugins.otp_totp.admin import TOTPDeviceAdmin
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_peeringdb.const import NET_TYPES_MULTI_CHOICE
 from django_security_keys.models import SecurityKey
@@ -2831,6 +2832,19 @@ class UserOrgAffiliationRequestHistoryAdmin(admin.ModelAdmin):
         return False
 
 
+class TOTPDeviceAdminCustom(TOTPDeviceAdmin):
+    list_display = ["get_username", "name", "confirmed"]
+    search_fields = ("user__username", "name")
+
+    def get_username(self, obj):
+        return obj.user.username
+
+    get_username.admin_order_field = "user__username"
+    get_username.short_description = "user"
+
+
+admin.site.unregister(TOTPDevice)
+admin.site.register(TOTPDevice, TOTPDeviceAdminCustom)
 admin.site.register(EnvironmentSetting, EnvironmentSettingAdmin)
 admin.site.register(IXFMemberData, IXFMemberDataAdmin)
 admin.site.register(Facility, FacilityAdmin)
