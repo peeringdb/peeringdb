@@ -6,6 +6,7 @@ from django.conf import settings
 from django.urls import include, path, re_path
 from django.views.generic import RedirectView, TemplateView
 from django.views.i18n import JavaScriptCatalog
+from oauth2_provider.views import ConnectDiscoveryInfoView
 
 import peeringdb_server.api_key_views
 import peeringdb_server.data_views
@@ -44,7 +45,7 @@ from peeringdb_server.models import (
     Network,
     Organization,
 )
-from peeringdb_server.oauth_views import AuthorizationView
+from peeringdb_server.oauth_views import AuthorizationView, OAuthMetadataView
 from peeringdb_server.verified_update.views import (
     view_verified_update,
     view_verified_update_accept,
@@ -102,7 +103,6 @@ from peeringdb_server.views import (
     watch_network,
 )
 
-# o
 # SITE
 
 
@@ -458,6 +458,24 @@ urlpatterns += [
 ]
 urlpatterns += [
     re_path(r"^oauth2/", include("oauth2_provider.urls", namespace="oauth2_provider")),
+    re_path(
+        r"^oauth2/\.well-known/oauth-authorization-server/?$",
+        OAuthMetadataView.as_view(),
+        name="oauth2_provider_metadata",
+    ),
+    # add both of these to root path as well
+    # .well-known/openid-configuration is specifically for OpenID Connect Providers and includes OpenID-specific details.
+    # .well-known/oauth-authorization-server is for OAuth 2.0 Authorization Servers and includes general OAuth 2.0 details.
+    re_path(
+        r"^\.well-known/openid-configuration/?$",
+        ConnectDiscoveryInfoView.as_view(),
+        name="oidc-connect-discovery-info",
+    ),
+    re_path(
+        r"^\.well-known/oauth-authorization-server/?$",
+        OAuthMetadataView.as_view(),
+        name="oauth2_provider_metadata",
+    ),
 ]
 
 # DEBUG

@@ -650,7 +650,13 @@ class ModelViewSet(viewsets.ModelViewSet):
         else:
             qset = qset.filter(status__in=["ok", "pending"])
 
-        if not self.kwargs:
+        is_specific_object_request = "pk" in self.kwargs
+
+        if not is_specific_object_request:
+
+            # we are handling a list request and need to apply the limit and skip
+            # parameters if they are present
+
             if limit > 0:
                 qset = qset[skip : skip + limit]
             else:

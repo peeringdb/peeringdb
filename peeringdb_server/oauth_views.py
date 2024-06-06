@@ -6,7 +6,9 @@ from django.contrib.auth.mixins import AccessMixin
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.core.signing import BadSignature
+from django.http import JsonResponse
 from django.shortcuts import resolve_url
+from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import FormView, View
 from oauth2_provider.exceptions import OAuthToolkitError
@@ -286,3 +288,83 @@ class AuthorizationView(BaseAuthorizationView, FormView):
             resolved_login_url,
             self.get_redirect_field_name(),
         )
+
+
+Application = get_application_model()
+
+
+class OAuthMetadataView(View):
+    def get(self, request, *args, **kwargs):
+        issuer_url = oauth2_settings.OIDC_ISS_ENDPOINT
+
+        if not issuer_url:
+            issuer_url = oauth2_settings.oidc_issuer(request)
+            authorization_endpoint = request.build_absolute_uri(
+                reverse("oauth2_provider:authorize")
+            )
+            token_endpoint = request.build_absolute_uri(
+                reverse("oauth2_provider:token")
+            )
+            jwks_uri = request.build_absolute_uri(reverse("oauth2_provider:jwks-info"))
+            revocation_endpoint = request.build_absolute_uri(
+                reverse("oauth2_provider:revoke-token")
+            )
+            introspection_endpoint = request.build_absolute_uri(
+                reverse("oauth2_provider:introspect")
+            )
+        else:
+            parsed_url = urlparse(oauth2_settings.OIDC_ISS_ENDPOINT)
+            host = parsed_url.scheme + "://" + parsed_url.netloc
+            authorization_endpoint = "{}{}".format(
+                host, reverse("oauth2_provider:authorize")
+            )
+            token_endpoint = "{}{}".format(host, reverse("oauth2_provider:token"))
+            jwks_uri = "{}{}".format(host, reverse("oauth2_provider:jwks-info"))
+            revocation_endpoint = "{}{}".format(
+                host, reverse("oauth2_provider:revoke-token")
+            )
+            introspection_endpoint = "{}{}".format(
+                host, reverse("oauth2_provider:introspect")
+            )
+        signing_algorithms = [Application.HS256_ALGORITHM]
+        if oauth2_settings.OIDC_RSA_PRIVATE_KEY:
+            signing_algorithms = [
+                Application.RS256_ALGORITHM,
+                Application.HS256_ALGORITHM,
+            ]
+
+        validator_class = oauth2_settings.OAUTH2_VALIDATOR_CLASS
+        validator = validator_class()
+        oidc_claims = list(set(validator.get_discovery_claims(request)))
+        scopes_class = oauth2_settings.SCOPES_BACKEND_CLASS
+        scopes = scopes_class()
+        scopes_supported = [scope for scope in scopes.get_available_scopes()]
+
+        # OAuth 2.0 and OpenID Connect Metadata
+        data = {
+            "issuer": issuer_url,
+            "authorization_endpoint": authorization_endpoint,
+            "token_endpoint": token_endpoint,
+            "jwks_uri": jwks_uri,
+            "response_types_supported": oauth2_settings.OIDC_RESPONSE_TYPES_SUPPORTED,
+            "subject_types_supported": oauth2_settings.OIDC_SUBJECT_TYPES_SUPPORTED,
+            "grant_types_supported": [
+                "authorization_code",
+                "implicit",
+                "password",
+                "client_credentials",
+                "openid hybrid",
+            ],
+            "token_endpoint_auth_methods_supported": [
+                "client_secret_basic",
+                "client_secret_post",
+            ],
+            "revocation_endpoint": revocation_endpoint,
+            "introspection_endpoint": introspection_endpoint,
+            "oidc_claims_supported": oidc_claims,
+            "scopes_supported": scopes_supported,
+            "signing_algorithms_supported": signing_algorithms,
+        }
+
+        response = JsonResponse(data)
+        return response

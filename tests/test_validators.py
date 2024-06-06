@@ -1032,12 +1032,13 @@ def geo_gmaps_mock_geocode_freeform(location):
 
 
 @pytest.mark.parametrize(
-    "current_geocode,new_geocode,city,is_valid,validated",
+    "current_geocode,new_geocode,current_city,new_city,is_valid,validated",
     [
         # test success with exists geocode (max 1km from previous geocode)
         (
             (50.951533, 1.852570),
             (50.951533, 1.851440),
+            "london",
             "london",
             True,
             (50.951533, 1.851440),
@@ -1046,17 +1047,26 @@ def geo_gmaps_mock_geocode_freeform(location):
             (40.712776, -74.005974),
             (40.712790, -74.003974),
             "new york",
+            "new york",
             True,
             (40.712790, -74.003974),
         ),
         # # test fail with exists geocode (max 1km from previous geocode)
-        ((40.712776, -74.005974), (40.712790, -73.003974), "new york", False, None),
-        ((50.951533, 1.852570), (51.951533, 0.851440), "london", False, None),
+        (
+            (40.712776, -74.005974),
+            (40.712790, -73.003974),
+            "new york",
+            "new york",
+            False,
+            None,
+        ),
+        ((50.951533, 1.852570), (51.951533, 0.851440), "london", "london", False, None),
         # test success with not exists geocode (max 50km from city)
         (
             (None, None),
             (40.712771, -74.005970),
             "new york",
+            "new york",
             True,
             (40.712771, -74.005970),
         ),
@@ -1064,19 +1074,20 @@ def geo_gmaps_mock_geocode_freeform(location):
             (None, None),
             (40.716822, -73.991032),
             "new york",
+            "new york",
             True,
             (40.716822, -73.991032),
         ),
         # test fail with not exists geocode (max 50km from city)
-        ((None, None), (36.169941, -115.139832), "new york", False, None),
-        ((None, None), (36.201902, -115.328808), "new york", False, None),
+        ((None, None), (36.169941, -115.139832), "new york", "new york", False, None),
+        ((None, None), (36.201902, -115.328808), "new york", "new york", False, None),
     ],
 )
 @patch.object(geo.GoogleMaps, "__init__", geo_mock_init)
 @patch.object(geo.Melissa, "__init__", geo_mock_init)
 @pytest.mark.django_db
 def test_validate_distance_geocode(
-    current_geocode, new_geocode, city, is_valid, validated, settings
+    current_geocode, new_geocode, current_city, new_city, is_valid, validated, settings
 ):
     settings.MELISSA_KEY = ""
     settings.GOOGLE_GEOLOC_API_KEY = ""
@@ -1085,9 +1096,13 @@ def test_validate_distance_geocode(
     ):
         if not is_valid:
             with pytest.raises(ValidationError):
-                validate_distance_geocode(current_geocode, new_geocode, city)
+                validate_distance_geocode(
+                    current_geocode, new_geocode, current_city, new_city
+                )
         else:
             assert (
-                validate_distance_geocode(current_geocode, new_geocode, city)
+                validate_distance_geocode(
+                    current_geocode, new_geocode, current_city, new_city
+                )
                 == validated
             )

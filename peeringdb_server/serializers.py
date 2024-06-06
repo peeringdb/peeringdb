@@ -289,10 +289,10 @@ class GeocodeSerializerMixin:
         update the model first
         and then normalize the geofields.
         """
-        instance = super().update(instance, validated_data)
         if not ignore_geosync:
             # Need to check if we need geosync before updating the instance
             need_geosync = self._need_geosync(instance, validated_data)
+            instance = super().update(instance, validated_data)
 
             # we dont want to geocode on tests
             if settings.RELEASE_ENV == "run_tests":
@@ -319,8 +319,9 @@ class GeocodeSerializerMixin:
                 # as a serializer validation error
                 except ValidationError as exc:
                     self.handle_geo_error(exc, instance)
+            return instance
 
-        return instance
+        return super().update(instance, validated_data)
 
     def create(self, validated_data):
         # When creating a geo-enabled object,
@@ -1815,6 +1816,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
         latitude = data.get("latitude")
         longitude = data.get("longitude")
+        city = data.get("city")
 
         # unsetting existing latitude and longitude is NOT allowed
 
@@ -1835,6 +1837,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             if (
                 latitude != self.instance.latitude
                 or longitude != self.instance.longitude
+                or city != self.instance.city
             ):
                 validate_latitude(latitude)
                 validate_longitude(longitude)
@@ -1842,6 +1845,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
                     (self.instance.latitude, self.instance.longitude),
                     (latitude, longitude),
                     self.instance.city,
+                    city,
                 )
 
         return data

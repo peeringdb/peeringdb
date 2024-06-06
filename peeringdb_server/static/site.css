@@ -157,6 +157,10 @@ a.btn.suggestion-accept {
   margin-top: 16px;
 }
 
+a.btn.suggestion-dismiss {
+  margin-top: 16px;
+}
+
 h5 {
   font-weight: bold;
 }

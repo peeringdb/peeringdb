@@ -279,6 +279,35 @@ class ProtectedAction(ValueError):
         self.protected_object = obj
 
 
+class StripFieldMixin(models.Model):
+    """
+    Mixin to remove whitespace at the beginning and end of string fields
+    """
+
+    class Meta:
+        abstract = True
+
+    def strip_string_fields(self):
+        """
+        Strip value in string fields
+        """
+        for field in self._meta.fields:
+            if isinstance(field, (models.CharField, models.TextField)):
+                value = getattr(self, field.name)
+                if value and type(value) is str:
+                    setattr(self, field.name, value.strip())
+
+    def clean(self):
+        # strip string fields in model clean validation
+        self.strip_string_fields()
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        # strip string fields when save or update object
+        self.strip_string_fields()
+        super().save(*args, **kwargs)
+
+
 class ParentStatusCheckMixin:
     """
     Mixin that implements checks for creating
@@ -476,7 +505,7 @@ class GeocodeBaseMixin(models.Model):
         return sanitized
 
 
-class GeoCoordinateCache(models.Model):
+class GeoCoordinateCache(StripFieldMixin):
 
     """
     Stores geocoordinates for address lookups.
@@ -594,7 +623,7 @@ class GeoCoordinateCache(models.Model):
 
 
 @reversion.register()
-class UserOrgAffiliationRequest(models.Model):
+class UserOrgAffiliationRequest(StripFieldMixin):
     """
     Whenever a user requests to be affiliated to an Organization
     through an ASN the request is stored in this object.
@@ -772,7 +801,7 @@ class UserOrgAffiliationRequest(models.Model):
             )
 
 
-class UserOrgAffiliationRequestHistory(Version):
+class UserOrgAffiliationRequestHistory(Version, StripFieldMixin):
     """
     Proxy model for reversion Version to track changes in
     UserOrgAffiliationRequest objects in django-admin
@@ -784,7 +813,7 @@ class UserOrgAffiliationRequestHistory(Version):
         verbose_name_plural = _("User to Organization Affiliation Request History")
 
 
-class VerificationQueueItem(models.Model):
+class VerificationQueueItem(StripFieldMixin):
     """
     Keeps track of new items created that need to be reviewed and approved
     by administrators.
@@ -893,7 +922,7 @@ class VerificationQueueItem(models.Model):
                 self.item.delete()
 
 
-class DeskProTicket(models.Model):
+class DeskProTicket(StripFieldMixin):
     subject = models.CharField(max_length=255)
     body = models.TextField()
     user = models.ForeignKey(
@@ -919,7 +948,7 @@ class DeskProTicket(models.Model):
         verbose_name_plural = _("DeskPRO Tickets")
 
 
-class DeskProTicketCC(models.Model):
+class DeskProTicketCC(StripFieldMixin):
 
     """
     Describes a contact to be cc'd on the deskpro ticket.
@@ -941,7 +970,11 @@ class DeskProTicketCC(models.Model):
 @grainy_model(namespace="peeringdb.organization")
 @reversion.register
 class Organization(
-    ProtectedMixin, pdb_models.OrganizationBase, GeocodeBaseMixin, SocialMediaMixin
+    ProtectedMixin,
+    pdb_models.OrganizationBase,
+    GeocodeBaseMixin,
+    SocialMediaMixin,
+    StripFieldMixin,
 ):
     """
     Describes a peeringdb organization.
@@ -1477,7 +1510,7 @@ def default_time_e():
     return now.replace(hour=23, minute=59, second=59, tzinfo=UTC())
 
 
-class OrganizationAPIKey(AbstractAPIKey):
+class OrganizationAPIKey(AbstractAPIKey, StripFieldMixin):
     """
     An API Key managed by an organization.
     """
@@ -1499,7 +1532,7 @@ class OrganizationAPIKey(AbstractAPIKey):
         db_table = "peeringdb_org_api_key"
 
 
-class OrganizationAPIPermission(Permission):
+class OrganizationAPIPermission(Permission, StripFieldMixin):
     """
     Describes permission for a OrganizationAPIKey.
     """
@@ -1515,7 +1548,7 @@ class OrganizationAPIPermission(Permission):
     objects = PermissionManager()
 
 
-class Sponsorship(models.Model):
+class Sponsorship(StripFieldMixin):
     """
     Allows an organization to be marked for sponsorship
     for a designated timespan.
@@ -1605,7 +1638,7 @@ class Sponsorship(models.Model):
         return True
 
 
-class SponsorshipOrganization(models.Model):
+class SponsorshipOrganization(StripFieldMixin):
     """
     Describes an organization->sponsorship relationship.
     """
@@ -1635,7 +1668,7 @@ class SponsorshipOrganization(models.Model):
     )
 
 
-class Partnership(models.Model):
+class Partnership(StripFieldMixin):
     """
     Allows an organization to be marked as a partner.
 
@@ -1674,7 +1707,7 @@ class Partnership(models.Model):
         return dict(PARTNERSHIP_LEVELS).get(self.level)
 
 
-class OrganizationMerge(models.Model):
+class OrganizationMerge(StripFieldMixin):
     """
     When an organization is merged into another via admin.merge_organizations
     it is logged here, allowing the merge to be undone.
@@ -1735,7 +1768,7 @@ class OrganizationMerge(models.Model):
         self.delete()
 
 
-class OrganizationMergeEntity(models.Model):
+class OrganizationMergeEntity(StripFieldMixin):
     """
     This holds the entities moved during an
     organization merge stored in OrganizationMerge.
@@ -1759,7 +1792,12 @@ class OrganizationMergeEntity(models.Model):
 @reversion.register
 # TODO: UNCOMMENT when #389 is merged
 # class Campus(ProtectedMixin, pdb_models.CampusBase, ParentStatusMixin):
-class Campus(ProtectedMixin, pdb_models.CampusBase, SocialMediaMixin):
+class Campus(
+    ProtectedMixin,
+    pdb_models.CampusBase,
+    SocialMediaMixin,
+    StripFieldMixin,
+):
 
     """
     Describes a peeringdb campus
@@ -1875,6 +1913,7 @@ class Facility(
     GeocodeBaseMixin,
     ParentStatusCheckMixin,
     SocialMediaMixin,
+    StripFieldMixin,
 ):
     """
     Describes a peeringdb facility.
@@ -2192,6 +2231,7 @@ class InternetExchange(
     pdb_models.InternetExchangeBase,
     ParentStatusCheckMixin,
     SocialMediaMixin,
+    StripFieldMixin,
 ):
     """
     Describes a peeringdb exchange.
@@ -2827,7 +2867,7 @@ class InternetExchange(
 @grainy_model(namespace="ixfac", parent="ix")
 @reversion.register
 class InternetExchangeFacility(
-    pdb_models.InternetExchangeFacilityBase, ParentStatusCheckMixin
+    pdb_models.InternetExchangeFacilityBase, ParentStatusCheckMixin, StripFieldMixin
 ):
     """
     Describes facility to exchange relationship.
@@ -2901,7 +2941,7 @@ class InternetExchangeFacility(
 
 @grainy_model(namespace="ixlan", namespace_instance="{instance.ix.grainy_namespace}")
 @reversion.register
-class IXLan(pdb_models.IXLanBase):
+class IXLan(pdb_models.IXLanBase, StripFieldMixin):
     """
     Describes a LAN at an exchange.
     """
@@ -3293,7 +3333,7 @@ class IXLan(pdb_models.IXLanBase):
         return result(netixlan)
 
 
-class IXLanIXFMemberImportAttempt(models.Model):
+class IXLanIXFMemberImportAttempt(StripFieldMixin):
     """
     Holds information about the most recent ixf member import
     attempt for an ixlan.
@@ -3309,7 +3349,7 @@ class IXLanIXFMemberImportAttempt(models.Model):
     info = models.TextField(null=True, blank=True)
 
 
-class IXLanIXFMemberImportLog(models.Model):
+class IXLanIXFMemberImportLog(StripFieldMixin):
     """
     Import log of a IX-F member import that changed or added at least one
     netixlan under the specified ixlans.
@@ -3351,7 +3391,7 @@ class IXLanIXFMemberImportLog(models.Model):
                     entry.netixlan.delete()
 
 
-class IXLanIXFMemberImportLogEntry(models.Model):
+class IXLanIXFMemberImportLogEntry(StripFieldMixin):
     """
     IX-F member import log entry that holds the affected netixlan and
     the netixlan's version after the change, which can be used to rollback
@@ -3433,7 +3473,7 @@ class NetworkProtocolsDisabled(ValueError):
     """
 
 
-class IXFMemberData(pdb_models.NetworkIXLanBase):
+class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
 
     """
     Describes a potential data update that arose during an IX-F import
@@ -4585,7 +4625,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase):
     namespace_instance="{instance.ixlan.grainy_namespace}.{namespace}.{instance.pk}",
 )
 @reversion.register
-class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
+class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
     """
     Descries a Prefix at an Exchange LAN.
     """
@@ -4709,7 +4749,12 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase):
 
 @grainy_model(namespace="network", parent="org")
 @reversion.register
-class Network(pdb_models.NetworkBase, ParentStatusCheckMixin, SocialMediaMixin):
+class Network(
+    pdb_models.NetworkBase,
+    ParentStatusCheckMixin,
+    SocialMediaMixin,
+    StripFieldMixin,
+):
     """
     Describes a peeringdb network.
     """
@@ -5057,7 +5102,12 @@ class Network(pdb_models.NetworkBase, ParentStatusCheckMixin, SocialMediaMixin):
     parent="network",
 )
 @reversion.register
-class NetworkContact(ProtectedMixin, pdb_models.ContactBase, ParentStatusCheckMixin):
+class NetworkContact(
+    ProtectedMixin,
+    pdb_models.ContactBase,
+    ParentStatusCheckMixin,
+    StripFieldMixin,
+):
     """
     Describes a contact point (phone, email etc.) for a network.
     """
@@ -5148,7 +5198,9 @@ class NetworkContact(ProtectedMixin, pdb_models.ContactBase, ParentStatusCheckMi
 
 @grainy_model(namespace="netfac", parent="network")
 @reversion.register
-class NetworkFacility(pdb_models.NetworkFacilityBase, ParentStatusCheckMixin):
+class NetworkFacility(
+    pdb_models.NetworkFacilityBase, ParentStatusCheckMixin, StripFieldMixin
+):
     """
     Describes a network <-> facility relationship.
     """
@@ -5258,7 +5310,9 @@ def format_speed(value):
 
 @grainy_model(namespace="ixlan", parent="network")
 @reversion.register
-class NetworkIXLan(pdb_models.NetworkIXLanBase, ParentStatusCheckMixin):
+class NetworkIXLan(
+    pdb_models.NetworkIXLanBase, ParentStatusCheckMixin, StripFieldMixin
+):
     """
     Describes a network relationship to an IX through an IX Lan.
     """
@@ -5684,7 +5738,9 @@ class NetworkIXLan(pdb_models.NetworkIXLanBase, ParentStatusCheckMixin):
 
 @grainy_model(namespace="carrier", parent="org")
 @reversion.register
-class Carrier(ProtectedMixin, pdb_models.CarrierBase, SocialMediaMixin):
+class Carrier(
+    ProtectedMixin, pdb_models.CarrierBase, SocialMediaMixin, StripFieldMixin
+):
     """
     Describes a carrier object.
     """
@@ -5739,7 +5795,7 @@ class Carrier(ProtectedMixin, pdb_models.CarrierBase, SocialMediaMixin):
 
 @grainy_model(namespace="carrierfac", parent="carrier")
 @reversion.register
-class CarrierFacility(pdb_models.CarrierFacilityBase):
+class CarrierFacility(pdb_models.CarrierFacilityBase, StripFieldMixin):
     """
     Describes a carrier <-> facility relationship.
     """
@@ -5801,7 +5857,7 @@ class CarrierFacility(pdb_models.CarrierFacilityBase):
         return f"carrierfac{self.id} {self.carrier.name} {self.facility.name}"
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
     """
     Proper length fields user.
     """
@@ -6275,7 +6331,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.api_keys.all().delete()
 
 
-class UserAPIKey(AbstractAPIKey):
+class UserAPIKey(AbstractAPIKey, StripFieldMixin):
     """
     An API Key managed by a user. Can be readonly or can take on the
     permissions of the User.
@@ -6308,7 +6364,7 @@ def password_reset_token():
     return token, hashed
 
 
-class IXFImportEmail(models.Model):
+class IXFImportEmail(StripFieldMixin):
     """
     A copy of all emails sent by the IX-F importer.
     """
@@ -6338,7 +6394,7 @@ class IXFImportEmail(models.Model):
         verbose_name_plural = _("IX-F Import Emails")
 
 
-class UserPasswordReset(models.Model):
+class UserPasswordReset(StripFieldMixin):
     class Meta:
         db_table = "peeringdb_user_password_reset"
 
@@ -6358,7 +6414,7 @@ class UserPasswordReset(models.Model):
         return sha256_crypt.verify(token, self.token)
 
 
-class CommandLineTool(models.Model):
+class CommandLineTool(StripFieldMixin):
     """
     Describes command line tool execution by a staff user inside the
     control panel (admin).
@@ -6410,7 +6466,7 @@ class CommandLineTool(models.Model):
         self.status = "running"
 
 
-class EnvironmentSetting(models.Model):
+class EnvironmentSetting(StripFieldMixin):
 
     """
     Environment settings overrides controlled through
@@ -6677,7 +6733,7 @@ class EnvironmentSetting(models.Model):
         self.save()
 
 
-class OAuthApplication(oauth2.AbstractApplication):
+class OAuthApplication(oauth2.AbstractApplication, StripFieldMixin):
 
     """
     OAuth application - extends the default oauth_provider2 application
@@ -6709,7 +6765,7 @@ class OAuthApplication(oauth2.AbstractApplication):
             self.user = None
 
 
-class OAuthGrantInfo(models.Model):
+class OAuthGrantInfo(StripFieldMixin):
 
     """
     OAuth grant info
@@ -6739,7 +6795,7 @@ class OAuthGrantInfo(models.Model):
         verbose_name_plural = _("OAuth Grant Info")
 
 
-class OAuthAccessTokenInfo(models.Model):
+class OAuthAccessTokenInfo(StripFieldMixin):
     """
     OAuth access token info
 
@@ -6783,7 +6839,7 @@ DATACHANGE_ACTIONS = [
 ]
 
 
-class DataChangeWatchedObject(models.Model):
+class DataChangeWatchedObject(StripFieldMixin):
 
     """
     Describes a user's intention to be notified about
@@ -6942,7 +6998,7 @@ class DataChangeWatchedObject(models.Model):
         return f"{self.ref_tag}.{self.object_id} ({self.pk})"
 
 
-class DataChangeNotificationQueue(models.Model):
+class DataChangeNotificationQueue(StripFieldMixin):
     # object being watched
     # this serves as a point of consolidation, notifications will be sent
     # out as a summary for this object
@@ -7162,7 +7218,7 @@ class DataChangeNotificationQueue(models.Model):
         return (self.ref_tag, self.object_id)
 
 
-class EmailAddressData(models.Model):
+class EmailAddressData(StripFieldMixin):
     email = models.OneToOneField(
         EmailAddress, on_delete=models.CASCADE, related_name="data"
     )
@@ -7172,7 +7228,7 @@ class EmailAddressData(models.Model):
         db_table = "peeringdb_email_address_data"
 
 
-class DataChangeEmail(models.Model):
+class DataChangeEmail(StripFieldMixin):
     user = models.ForeignKey(
         User, related_name="data_change_emails", on_delete=models.CASCADE
     )
