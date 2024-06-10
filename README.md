@@ -20,3 +20,9 @@ makes it easier for third parties to participate in bidding for new
 features specified by the Product Committee.
 
 Developers in the community may fork the code, [create a container for development and testing](https://docs.peeringdb.com/howto/run_development_container/), and submit pull requests.
+
+### Infrastructure model
+![Infrastructure main model](.infragenie/infrastructure_main_model.svg)
+- [peeringdb component model](.infragenie/peeringdb_component_model.svg)
+
+---
