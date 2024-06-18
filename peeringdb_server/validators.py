@@ -571,26 +571,27 @@ def validate_longitude(longitude):
     return value
 
 
-def validate_distance_geocode(current_geocode, new_geocode, city):
+def validate_distance_geocode(current_geocode, new_geocode, current_city, new_city):
     if (
         current_geocode
         and type(tuple)
         and all(value is not None for value in current_geocode)
+        and current_city == new_city
     ):
-        # When geocode already
+        # When geocode already and city not change
         max_distance = settings.FACILITY_MAX_DISTANCE_GEOCODE_EXISTS
         distance = geodesic(current_geocode, new_geocode).km
         if distance > max_distance:
             message = f"exceeds the maximum distance of {max_distance}KM from the previous geocode"
             raise ValidationError({"latitude": message, "longitude": message})
     else:
-        # When no geocode currently exists
+        # When no geocode currently exists or city change
         gmaps = geo.GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
         city_geocode = ()
         max_distance = settings.FACILITY_MAX_DISTANCE_GEOCODE_NOT_EXISTS
 
         try:
-            result = gmaps.geocode_freeform(city)
+            result = gmaps.geocode_freeform(new_city)
             city_geocode = (result.get("lat"), result.get("lng"))
         except geo.Timeout:
             raise ValidationError(_("Geo coding timed out"))

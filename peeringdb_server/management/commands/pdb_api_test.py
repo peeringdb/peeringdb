@@ -2052,6 +2052,36 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_api_filter(self):
+        ix_count = InternetExchange.objects.filter(status="ok").count()
+        ix_count_json = InternetExchange.objects.exclude(status="deleted").count()
+
+        # /api/ix return all IX with status "ok"
+        assert (
+            len(self.db_guest._request("ix", method="GET").json().get("data"))
+            == ix_count
+        )
+
+        assert (
+            len(self.db_guest._request("ix?limit=5", method="GET").json().get("data"))
+            == 5
+        )
+
+        # /api/ix.json return all IX with status not "deleted"
+        assert (
+            len(self.db_guest._request("ix.json", method="GET").json().get("data"))
+            == ix_count_json
+        )
+
+        assert (
+            len(
+                self.db_guest._request("ix.json?limit=5", method="GET")
+                .json()
+                .get("data")
+            )
+            == 5
+        )
+
     def test_campus_status(self):
         data = self.make_data_campus()
 

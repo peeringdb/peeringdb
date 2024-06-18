@@ -1,0 +1,54 @@
+{
+    "issuer": "http://testserver/oauth2",
+    "authorization_endpoint": "http://testserver/oauth2/authorize/",
+    "token_endpoint": "http://testserver/oauth2/token/",
+    "jwks_uri": "http://testserver/oauth2/.well-known/jwks.json",
+    "response_types_supported": [
+      "code",
+      "token",
+      "id_token",
+      "id_token token",
+      "code token",
+      "code id_token",
+      "code id_token token"
+    ],
+    "subject_types_supported": [
+      "public"
+    ],
+    "grant_types_supported": [
+      "authorization_code",
+      "implicit",
+      "password",
+      "client_credentials",
+      "openid hybrid"
+    ],
+    "token_endpoint_auth_methods_supported": [
+      "client_secret_basic",
+      "client_secret_post"
+    ],
+    "revocation_endpoint": "http://testserver/oauth2/revoke_token/",
+    "introspection_endpoint": "http://testserver/oauth2/introspect/",
+    "oidc_claims_supported": [
+      "name",
+      "family_name",
+      "given_name",
+      "id",
+      "email_verified",
+      "verified_user",
+      "sub",
+      "email",
+      "networks",
+      "amr"
+    ],
+    "scopes_supported": [
+      "openid",
+      "profile",
+      "email",
+      "networks",
+      "amr"
+    ],
+    "signing_algorithms_supported": [
+      "RS256",
+      "HS256"
+    ]
+  }

@@ -76,37 +76,44 @@ class Command(BaseCommand):
         """
 
         for request in requests:
+            org_name = request.org_name
+            if request.org:
+                org_name = request.org.name
+            elif request.asn:
+                org_name = f"AS{request.asn}"
+
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Deleting outdated pending request from user `{request.user}` to `{request.org}`"
+                    f"Deleting outdated pending request from user `{request.user}` to `{org_name}`"
                 )
             )
 
-            self.send_email_notifications(request, days_old)
+            self.send_email_notifications(request, days_old, org_name)
         self.delete_requests(requests)
 
-    def send_email_notifications(self, request, days_old):
+    def send_email_notifications(self, request, days_old, org_name):
 
         """
         Send email notifications to the user and the org admins about the deletion of the outdated pending requests.
         """
-
-        for admin in request.org.admin_usergroup.user_set.all():
-            self.send_email(
-                recipient=admin,
-                subject=_(
-                    "PeeringDB: %(user_name)s's Outdated Pending Requests Deleted"
+        if request.org:
+            for admin in request.org.admin_usergroup.user_set.all():
+                self.send_email(
+                    recipient=admin,
+                    subject=_(
+                        "PeeringDB: %(user_name)s's Outdated Pending Requests Deleted"
+                    )
+                    % {"user_name": request.user.full_name},
+                    template_name="email/notify-org-admin-old-pending-uoar-deleted.txt",
+                    context={"user": request.user, "days_old": days_old},
                 )
-                % {"user_name": request.user.full_name},
-                template_name="email/notify-org-admin-old-pending-uoar-deleted.txt",
-                context={"user": request.user, "days_old": days_old},
-            )
+
         self.send_email(
             recipient=request.user,
             subject=_("PeeringDB: %(org_name)s Outdated Pending Requests Deleted")
-            % {"org_name": request.org},
+            % {"org_name": org_name},
             template_name="email/notify-user-old-pending-uoar-deleted.txt",
-            context={"org": request.org, "days_old": days_old},
+            context={"org": org_name, "days_old": days_old},
         )
 
     def send_email(self, recipient, subject, template_name, context):

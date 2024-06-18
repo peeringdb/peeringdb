@@ -262,6 +262,10 @@ PeeringDB = {
     let button = popin.find("a.btn.suggestion-accept");
     PeeringDB.init_accept_suggestion(button, request, endpoint);
 
+    // Dismiss suggestion button
+    let dismiss_button = popin.find("a.btn.suggestion-dismiss");
+    dismiss_button.click(() => popin.addClass("hidden").hide())
+
     // Show the popin
     popin.removeClass("hidden").show();
    },
