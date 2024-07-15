@@ -1456,6 +1456,11 @@ class SpatialSearchMixin:
         3. set distance on the filters based on the bounding box, turning
               the query into a spatial distance search.
         """
+
+        # if distance is already specified, no need to convert
+        if filters.get("distance"):
+            return
+
         # check field value presence
 
         city = filters.get("city")
@@ -1558,7 +1563,6 @@ class SpatialSearchMixin:
     @classmethod
     def prepare_spatial_search(cls, qset, filters, distance=50):
         # no distance or negative distance provided, bail
-        print("DISTANCE: ", distance, filters)
         if distance <= 0:
             return qset
 
