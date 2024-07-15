@@ -19,6 +19,7 @@ from .util import SettingsCase
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 
 
+@pytest.mark.django_db
 def setup_module(module):
     # RDAP LOOKUP OVERRIDE
     # Since we are working with fake ASNs throughout the api tests
@@ -47,6 +48,7 @@ def setup_module(module):
     pdbinet.RdapLookup.get_asn = get_asn
 
 
+@pytest.mark.django_db
 def teardown_module(module):
     pdbinet.RdapLookup.get_asn = RdapLookup_get_asn
 
@@ -54,6 +56,7 @@ def teardown_module(module):
 class TestAutoVerifyUser(SettingsCase):
     settings = {"AUTO_VERIFY_USERS": True}
 
+    @pytest.mark.django_db
     def test_setting(self):
         user = get_user_model().objects.create_user(
             "user_a", "user_a@localhost", "user_a"
@@ -66,6 +69,7 @@ class TestAutoVerifyUser(SettingsCase):
 class TestAutoApproveAffiliation(SettingsCase):
     settings = {"AUTO_APPROVE_AFFILIATION": True}
 
+    @pytest.mark.django_db
     def test_setting(self):
         org = models.Organization.objects.create(name="Test Org", status="ok")
         net = models.Network.objects.create(
@@ -100,12 +104,14 @@ class TestAutoApproveAffiliation(SettingsCase):
         assert user_b.is_org_member(net.org) is False
 
 
+@pytest.mark.django_db
 def test_set_option():
     context = {}
     _set_option("TEST_SETTING", "hello", context)
     assert context["TEST_SETTING"] == "hello"
 
 
+@pytest.mark.django_db
 def test_set_option_w_env_var():
     """
     Environment variables take precedence over provided options
@@ -116,6 +122,7 @@ def test_set_option_w_env_var():
     assert context["TEST_SETTING"] == "world"
 
 
+@pytest.mark.django_db
 def test_set_option_coerce_env_var():
     """
     We coerce the environment variable to the same type
@@ -139,6 +146,7 @@ def test_set_option_coerce_env_var():
     assert context["TEST_SETTING"] == 123.0
 
 
+@pytest.mark.django_db
 def test_set_option_booleans():
     context = {}
     # env variables can only be set as strings
@@ -161,6 +169,7 @@ def test_set_option_booleans():
     assert context["TEST_SETTING"] is True
 
 
+@pytest.mark.django_db
 def test_set_bool():
     """
     We coerce the environment variable to a boolean
@@ -185,6 +194,7 @@ def test_set_bool():
         _set_option("TEST_SETTING", True, context)
 
 
+@pytest.mark.django_db
 def test_set_options_none():
     """
     We coerce the environment variable to a boolean

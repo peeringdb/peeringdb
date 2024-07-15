@@ -289,6 +289,16 @@ def get_cache_backend(cache_name):
             "OPTIONS": options,
         }
 
+    if cache_backend.startswith("DatabaseCache."):
+
+        _, location = cache_backend.split(".", 1)
+
+        return {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": location.strip(),
+            "OPTIONS": options,
+        }
+
 
 _ = lambda s: s
 
@@ -401,6 +411,10 @@ set_option("API_THROTTLE_MELISSA_RATE_ORG", "10/minute")
 
 set_option("API_THROTTLE_MELISSA_ENABLED_IP", False)
 set_option("API_THROTTLE_MELISSA_RATE_IP", "1/minute")
+
+# configuration for write request limiting in the api (#1322)
+
+set_option("API_THROTTLE_RATE_WRITE", "100/minute")
 
 # Configuration for response-size rate limiting in the api (#1126)
 
@@ -576,13 +590,14 @@ set_option("SESSION_ENGINE", "django.contrib.sessions.backends.db")
 set_option("DEFAULT_CACHE_BACKEND", "DatabaseCache")
 set_option("ERROR_EMAILS_CACHE_BACKEND", "LocMemCache")
 set_option("NEGATIVE_CACHE_BACKEND", "RedisCache")
+set_option("GEO_CACHE_BACKEND", "DatabaseCache.geo")
 
 # only relevant if SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 set_option("SESSION_CACHE_ALIAS", "session")
 set_option("SESSION_CACHE_BACKEND", "RedisCache")
 
 # setup caches
-cache_names = ["default", "negative", "session", "error_emails"]
+cache_names = ["default", "negative", "session", "error_emails", "geo"]
 for cache_name in cache_names:
     if cache_name not in CACHES:
         CACHES[cache_name] = get_cache_backend(cache_name)
@@ -1048,6 +1063,7 @@ if API_THROTTLE_ENABLED:
                 "peeringdb_server.rest_throttles.ResponseSizeThrottle",
                 "peeringdb_server.rest_throttles.FilterDistanceThrottle",
                 "peeringdb_server.rest_throttles.MelissaThrottle",
+                "peeringdb_server.rest_throttles.WriteRateThrottle",
             ),
             "DEFAULT_THROTTLE_RATES": {
                 "anon": API_THROTTLE_RATE_ANON,
@@ -1062,6 +1078,7 @@ if API_THROTTLE_ENABLED:
                 "melissa_org": API_THROTTLE_MELISSA_RATE_ORG,
                 "melissa_ip": API_THROTTLE_MELISSA_RATE_IP,
                 "melissa_admin": API_THROTTLE_MELISSA_RATE_ADMIN,
+                "write_api": API_THROTTLE_RATE_WRITE,
             },
         }
     )

@@ -1,13 +1,15 @@
 import json
 import os
+from unittest.mock import MagicMock, patch
 
 import googlemaps
 import pytest
+from django.core.cache import caches
 from django.core.exceptions import ValidationError
 
 import peeringdb_server.geo as geo
 import peeringdb_server.models as models
-from peeringdb_server.serializers import GeocodeSerializerMixin
+from peeringdb_server.serializers import GeocodeSerializerMixin, SpatialSearchMixin
 
 
 class MockMelissa(geo.Melissa):
@@ -66,11 +68,13 @@ def load_json(filename):
     return json_data
 
 
+@pytest.mark.django_db
 def test_geo_model_defaults(fac):
     assert fac.geocode_status is False
     assert fac.geocode_date is None
 
 
+@pytest.mark.django_db
 def test_geo_model_geocode_coordinates(fac):
     assert fac.geocode_coordinates is None
     fac.latitude = 41.876212
@@ -78,10 +82,12 @@ def test_geo_model_geocode_coordinates(fac):
     assert fac.geocode_coordinates == (41.876212, -87.631453)
 
 
+@pytest.mark.django_db
 def test_geo_model_geocode_addresss(fac):
     assert fac.geocode_address == "Some street , Chicago, IL 1234"
 
 
+@pytest.mark.django_db
 def test_need_address_suggestion(fac):
     suggested_address = {
         "name": "Geocode Fac",
@@ -97,6 +103,7 @@ def test_need_address_suggestion(fac):
     assert geocodeserializer.needs_address_suggestion(suggested_address, fac)
 
 
+@pytest.mark.django_db
 def test_does_not_need_address_suggestion(fac):
     suggested_address = {
         "name": "Geocode Fac",
@@ -112,6 +119,7 @@ def test_does_not_need_address_suggestion(fac):
     assert geocodeserializer.needs_address_suggestion(suggested_address, fac) is False
 
 
+@pytest.mark.django_db
 def test_melissa_global_address_params():
     client = geo.Melissa("")
 
@@ -135,6 +143,7 @@ def test_melissa_global_address_params():
     )
 
 
+@pytest.mark.django_db
 def test_melissa_global_address_best_result():
     client = geo.Melissa("")
 
@@ -151,6 +160,7 @@ def test_melissa_global_address_best_result():
     assert client.global_address_best_result(result) == None
 
 
+@pytest.mark.django_db
 def test_melissa_apply_global_address():
     client = geo.Melissa("")
 
@@ -186,6 +196,7 @@ def test_melissa_apply_global_address():
     assert data == expected
 
 
+@pytest.mark.django_db
 def test_melissa_sanitize(fac):
     client = MockMelissa()
 
@@ -196,3 +207,140 @@ def test_melissa_sanitize(fac):
     assert sanitized["latitude"] == 1.234567
     assert sanitized["longitude"] == 1.234567
     assert sanitized["zipcode"] == "12345"
+
+
+@pytest.fixture
+def google_maps_mock():
+    with patch("peeringdb_server.serializers.GoogleMaps") as mock:
+        gmaps = MagicMock()
+        mock.return_value = gmaps
+        gmaps.client.geocode.return_value = [
+            {
+                "geometry": {
+                    "bounds": {
+                        "northeast": {"lat": 40.9, "lng": -73.7},
+                        "southwest": {"lat": 40.5, "lng": -74.3},
+                    }
+                }
+            }
+        ]
+        gmaps.distance_from_bounds.return_value = 50
+        yield mock
+
+
+@pytest.mark.django_db
+@pytest.fixture(autouse=True)
+def clear_cache():
+    caches["geo"].clear()
+    yield
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "filters, expected_filters, expected_geocode_call",
+    [
+        (
+            {"city": "New York", "country": "US"},
+            {"city": "New York", "country": "US", "distance": 50},
+            "New York, US",
+        ),
+        (
+            {"city__in": ["New York"], "country": "US"},
+            {"city": "New York", "country": "US", "distance": 50},
+            "New York, US",
+        ),
+        (
+            {"city": "New York", "country__in": ["US"]},
+            {"city": "New York", "country": "US", "distance": 50},
+            "New York, US",
+        ),
+        (
+            {"city": "New York"},
+            {"city": "New York", "country": "US", "distance": 50},
+            "New York",
+        ),
+    ],
+)
+def test_convert_to_spatial_search(
+    google_maps_mock, filters, expected_filters, expected_geocode_call
+):
+    if "country" not in filters:
+        google_maps_mock.return_value.parse_results_get_country.return_value = "US"
+
+    SpatialSearchMixin.convert_to_spatial_search(filters)
+
+    assert filters == expected_filters
+    google_maps_mock.return_value.client.geocode.assert_called_once_with(
+        expected_geocode_call
+    )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "filters, expected_filters",
+    [
+        ({"country": "US"}, {"country": "US"}),
+        (
+            {"city__in": ["New York", "Los Angeles"], "country": "US"},
+            {"city__in": ["New York", "Los Angeles"], "country": "US"},
+        ),
+    ],
+)
+def test_convert_to_spatial_search_no_change(filters, expected_filters):
+    original_filters = filters.copy()
+
+    SpatialSearchMixin.convert_to_spatial_search(filters)
+
+    assert filters == expected_filters == original_filters
+
+
+@pytest.mark.django_db
+def test_convert_to_spatial_search_cached(google_maps_mock, settings):
+    filters = {"city": "New York", "country": "US"}
+    cache_key = "geo.city.New York_US"
+    cached_result = json.dumps(
+        [
+            {
+                "geometry": {
+                    "bounds": {
+                        "northeast": {"lat": 40.9, "lng": -73.7},
+                        "southwest": {"lat": 40.5, "lng": -74.3},
+                    }
+                }
+            }
+        ]
+    )
+
+    # Pre-populate the cache
+    caches["geo"].set(cache_key, cached_result, timeout=settings.GEOCOORD_CACHE_EXPIRY)
+
+    SpatialSearchMixin.convert_to_spatial_search(filters)
+
+    assert filters == {"city": "New York", "country": "US", "distance": 50}
+    google_maps_mock.return_value.client.geocode.assert_not_called()
+
+    # Verify that the cache was used
+    assert caches["geo"].get(cache_key) == cached_result
+
+
+@pytest.mark.django_db
+def test_convert_to_spatial_search_caching(google_maps_mock):
+    filters = {"city": "New York", "country": "US"}
+    cache_key = "geo.city.New York_US"
+
+    # Ensure cache is empty
+    assert caches["geo"].get(cache_key) is None
+
+    SpatialSearchMixin.convert_to_spatial_search(filters)
+
+    # Verify that the result was cached
+    assert caches["geo"].get(cache_key) is not None
+
+    # Clear the mocks
+    google_maps_mock.reset_mock()
+
+    # Call again to use cached result
+    SpatialSearchMixin.convert_to_spatial_search(filters)
+
+    # Verify that Google Maps API was not called again
+    google_maps_mock.return_value.client.geocode.assert_not_called()

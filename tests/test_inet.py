@@ -6,6 +6,7 @@ import pytest_filedata
 from peeringdb_server.inet import RdapNotFoundError, renumber_ipaddress
 
 
+@pytest.mark.django_db
 def test_rdap_asn_lookup(rdap):
     asn = rdap.get_asn(63311)
     assert asn.data
@@ -15,16 +16,19 @@ def test_rdap_asn_lookup(rdap):
     assert asn.org_address
 
 
+@pytest.mark.django_db
 def test_rdap_asn_lookup_not_found(rdap):
     with pytest.raises(RdapNotFoundError):
         rdap.get_asn(9999999)
 
 
+@pytest.mark.django_db
 def test_mocker(rdap):
     with pytest_filedata.RequestsData("rdap"):
         asn = rdap.get_asn(63311)
 
 
+@pytest.mark.django_db
 @pytest_filedata.RequestsData("rdap")
 def test_arin0(rdap):
     asn = rdap.get_asn(63311)
@@ -35,6 +39,7 @@ def test_arin0(rdap):
 # this should be tested in the RDAP module anyhow
 # skipping for now, but should probably just remove
 # TODO
+@pytest.mark.django_db
 @pytest.mark.skip(
     reason="looks like this ASN no longer provides the required condition for testing."
 )
@@ -45,6 +50,7 @@ def test_recurse_contacts(rdap):
     assert len(rdap.history) > 1
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "ip,old_prefix,new_prefix,valid",
     [
@@ -93,6 +99,7 @@ def test_renumber_ipaddress(ip, old_prefix, new_prefix, valid):
             renumber_ipaddress(ip, old_prefix, new_prefix)
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "input_str,compressed",
     [

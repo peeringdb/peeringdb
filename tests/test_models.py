@@ -3,6 +3,7 @@ import pytest
 from peeringdb_server.models import Facility, Network, Organization
 
 
+@pytest.mark.django_db
 def test_network_legacy_info_type():
 
     network = Network(

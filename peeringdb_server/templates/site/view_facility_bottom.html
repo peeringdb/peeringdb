@@ -3,7 +3,7 @@
 
 <!-- LOCAL EXCHANGES-->
 
-<div class="list" data-sort-container=".scrollable" data-sort-row=".row">
+<div class="list" id="api-listing-ixfac" data-sort-container=".scrollable" data-sort-row=".row">
   <div class="row">
     <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Exchanges" %}</h5>
@@ -56,7 +56,7 @@
 
 <!-- CARRIERS -->
 
-<div class="list" data-sort-container=".scrollable" data-sort-row=".row">
+<div class="list" id="api-listing-carrier" data-sort-container=".scrollable" data-sort-row=".row">
   <div class="row">
     <div class="col-6 col-sm-8 col-md-8">
       <h5>{% trans "Carriers" %}</h5>
@@ -89,7 +89,7 @@
         {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-view-action="fac_reject_carrier"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans "Remove this carrier from your facility." %}">&times;</a>
         {% endif %}
-        <div class="exchange" data-sort-value="{{ x.carrier.name|lower }}" data-filter-value="{{ x.carrier.name }}">
+        <div class="carrier" data-sort-value="{{ x.carrier.name|lower }}" data-filter-value="{{ x.carrier.name }}">
           <a href="/{{x.carrier|ref_tag}}/{{ x.carrier.id }}">{{ x.carrier.name }}</a>
         </div>
       </div>
