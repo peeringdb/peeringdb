@@ -184,13 +184,16 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
     def allow_request(self, request, view):
         # skip rate throttling for the api-cache generate process
-
         if getattr(settings, "GENERATING_API_CACHE", False):
             return True
 
         self.is_authenticated(request)
 
         ident_prefix = self.ident_prefix(request)
+
+        if request.method in ["POST", "PUT", "PATCH", "DELETE"]:
+            # writes are now checked by WriteRateThrottle
+            return True
 
         if self.user and self.user.is_superuser:
             # admin user
@@ -560,3 +563,27 @@ class MelissaThrottle(TargetedRateThrottle):
             return True
 
         return False
+
+
+class WriteRateThrottle(throttling.UserRateThrottle):
+    scope = "write_api"
+    default_rate = "2/minute"
+
+    def __init__(self):
+        super().__init__()
+        self.rate = self.get_rate()
+
+    def get_rate(self):
+        rate = EnvironmentSetting.get_setting_value("API_THROTTLE_RATE_WRITE")
+        if rate:
+            return rate
+        else:
+            return self.default_rate
+
+    def get_cache_key(self, request, view):
+        if request.method not in ["POST", "PUT", "PATCH", "DELETE"]:
+            return None
+        if request.user.is_authenticated:
+            return f"throttle_{self.scope}_{request.user.pk}"
+        else:
+            return self.get_ident(request)

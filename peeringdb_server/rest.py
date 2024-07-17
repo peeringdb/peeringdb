@@ -24,6 +24,7 @@ import reversion
 import unidecode
 from django.apps import apps
 from django.conf import settings
+from django.conf import settings as dj_settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
 from django.db import connection, transaction
@@ -31,14 +32,17 @@ from django.db.models import DateTimeField
 from django.shortcuts import redirect
 from django.urls import re_path
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from django_grainy.exceptions import PermissionDenied
+from django_ratelimit.decorators import ratelimit
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes, schema
 from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import exception_handler
 from two_factor.utils import devices_for_user
 
@@ -67,6 +71,8 @@ from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
 from peeringdb_server.serializers import ASSetSerializer, FacilitySerializer
 from peeringdb_server.util import coerce_ipaddr
+
+RATELIMITS = dj_settings.RATELIMITS
 
 
 class DataException(ValueError):
@@ -756,6 +762,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         """
         Create object.
         """
+
         try:
             self.require_data(request)
 
@@ -794,6 +801,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         """
         Update object.
         """
+
         try:
             self.require_data(request)
 
@@ -843,6 +851,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         """
         Delete object.
         """
+
         try:
             try:
                 obj = self.model.objects.get(pk=pk)

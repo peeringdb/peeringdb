@@ -4,6 +4,7 @@
 
 
 <div class="list"
+     id="api-listing-ixpfx"
      data-edit-module="api_listing"
      data-edit-group="#view"
      data-edit-target="api:ixpfx">
@@ -31,13 +32,13 @@
         <div data-edit-name="ixlan_id">{{ x.id }}</div>
         <div data-edit-name="protocol">{{ prefix.protocol }}</div>
       </div>
-      <div class="col-sm-3">
+      <div class="col-sm-3 protocol">
         {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
         {% endif %}
         {{ prefix.protocol }}
       </div>
-      <div class="col-sm-9"
+      <div class="col-sm-9 prefix"
            {% if permissions.can_write %}
            data-edit-type="string"
            {% endif %}
@@ -80,6 +81,7 @@
 <!-- IXFACS -->
 
 <div class="list"
+     id="api-listing-ixfac"
      data-sort-container=".scrollable"
      data-sort-row=".row"
 

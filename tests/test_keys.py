@@ -165,6 +165,7 @@ def test_check_perms(org, groups):
     assert check_permissions(api_key, namespace, "u") is False
 
 
+@pytest.mark.django_db
 def test_get_key_from_request():
     key = "abcd"
     factory = RequestFactory()

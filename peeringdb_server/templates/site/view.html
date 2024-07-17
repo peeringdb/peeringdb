@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<div id="view" class="view {% if permissions.can_edit %}editable{% endif %}" {% if permissions.can_edit %}data-edit-target="api:{{ref_tag}}:update" data-edit-id="{{instance.id}}" data-check-incomplete="Yes"{% endif %}>
+<div id="view" data-ref-tag="{{ ref_tag }}" class="view {% if permissions.can_edit %}editable{% endif %}" {% if permissions.can_edit %}data-edit-target="api:{{ref_tag}}:update" data-edit-id="{{instance.id}}" data-check-incomplete="Yes"{% endif %}>
 
 {% if permissions.can_edit %}
 <div class="payload">
@@ -70,6 +70,133 @@
 
 {% include "site/stats.html" %}
 
+
+<!-- EXPORT MODAL -->
+{% if ref_tag != "org" and  ref_tag != "campus" %}
+<div class="mt-2">
+    <button class="btn btn-success position-relative my-3 hide-on-edit"
+        href="#"
+        type="button"
+        id="dropdownMenuLinked"
+        aria-expanded="false"
+        data-bs-toggle="modal"
+        data-bs-target="#modalExport"
+        style="border-radius: 10px;"
+    >
+        <i class="material-icons" style="font-size: 16px; position: relative; top: 3px;">file_download</i>
+        EXPORT
+    </button>
+
+    <div class="modal" id="modalExport">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <!-- Modal body -->
+          <div class="modal-body p-0" style="background-color: #EFF0F2;">
+              <div class="d-flex justify-content-center pt-2" id="title-modal-export">
+                <h4> Export Options </h4>
+              </div>
+                <div class="d-flex justify-content-center mt-3 mb-4">
+                  <div class="w-50 bg-white p-4 border border-2" id="export-field">
+                    <div class="d-flex justify-content-between">
+                        <span>All</span>
+                        <input id="export_all" type="checkbox" value="All">
+                    </div>
+                    {% if ref_tag == "net" %}
+                    <!-- Netowrk, Public Peering Exchange Points, Interconnection Facilities and Contact Points -->
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="net" data-export-container-name="net" data-export-method="object">
+                      <span>Network</span>
+                      <input type="checkbox" value="Network">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="exchanges" data-export-container-name="netixlan" data-export-method="single-table">
+                      <span>Public Peering Exchange Points</span>
+                      <input type="checkbox" value="Public Peering Exchange Points">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="facilities" data-export-container-name="netfac" data-export-method="single-table">
+                      <span>Interconnection Facilities</span>
+                      <input type="checkbox" value="Interconnection Facilities">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="poc" data-export-container-name="poc" data-export-method="single-table">
+                      <span>Contact Points</span>
+                      <input type="checkbox" value="Contact Points">
+                    </div>
+                    {% elif ref_tag == "ix" %}
+                    <!-- Exchange, Prefixes, Local Facilities and Peers at this Exchange Point -->
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="ix" data-export-container-name="ix" data-export-method="object">
+                      <span>Exchange</span>
+                      <input type="checkbox" value="Exchange">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="prefixes" data-export-container-name="ixpfx" data-export-method="single-table">
+                      <span>Prefixes</span>
+                      <input type="checkbox" value="Prefixes">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="facilities" data-export-container-name="ixfac" data-export-method="single-table">
+                      <span>Local Facilities</span>
+                      <input type="checkbox" value="Local Facilities">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="networks" data-export-container-name="netixlan" data-export-method="single-table">
+                      <span>Peers at this Exchange Point</span>
+                      <input type="checkbox" value="Peers at this Exchange Point">
+                    </div>
+                    {% elif ref_tag == "fac" %}
+                    <!-- Facility, Campuses, Carriers, Exchanges and Networks -->
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="fac" data-export-container-name="fac" data-export-method="object">
+                      <span>Facility</span>
+                      <input type="checkbox" value="Facility">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="carriers" data-export-container-name="carrier" data-export-method="single-table">
+                      <span>Carriers</span>
+                      <input type="checkbox" value="Carriers">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="exchanges" data-export-container-name="ixfac" data-export-method="single-table">
+                      <span>Exchanges</span>
+                      <input type="checkbox" value="Exchanges">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="peers" data-export-container-name="netixlan" data-export-method="single-table">
+                      <span>Networks</span>
+                      <input type="checkbox" value="Networks">
+                    </div>
+                    {% elif ref_tag == "carrier" %}
+                    <!-- Carrier and Facilities -->
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="carrier" data-export-container-name="carrier" data-export-method="object">
+                      <span>Carrier</span>
+                      <input type="checkbox" value="Carrier">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="facilities" data-export-container-name="carrierfac" data-export-method="single-table">
+                      <span>Facilities</span>
+                      <input type="checkbox" value="Facilities">
+                    </div>
+                    {% endif %}
+                  </div>
+                  <!-- Add more checkboxes as needed -->
+                </div>
+              <div class="d-flex justify-content-center pt-2" id="title-modal-export">
+                <h4> Output Format </h4>
+              </div>
+              <div class="d-flex justify-content-center mt-4 mb-3">
+                <div class="w-50 bg-white p-4 border border-2" id="export-format">
+                  <div class="d-flex justify-content-between">
+                      <span>CSV</span>
+                      <input type="checkbox" value="CSV">
+                  </div>
+                  <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="" data-export-container-name="" data-export-method="">
+                    <span>JSON</span>
+                    <input type="checkbox" value="JSON">
+                  </div>
+                </div>
+                <!-- Add more checkboxes as needed -->
+              </div>
+              <div class="d-flex justify-content-center mt-4 py-3" >
+                <button type="button" class="btn btn-lg w-50 m-4 fs-4" data-data-export="{{data_json}}" id="btn-export">Export</button>
+                <button type="button" class="btn btn-lg w-50 m-4 fs-4" data-bs-dismiss="modal" id="btn-export">Cancel</button>
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+{% endif %}
+
+
 <div class="row">
 
   <div class="col-md-6 col-sm-12 col-12 view-left">
@@ -106,7 +233,7 @@
 
 
   <!-- fields -->
-  <div class="view_fields">
+  <div class="view_fields" id="{{ref_tag}}_section">
   {% for row in data.fields %}
   {% if row.last_soc_field %}
   <div class="row view_value text-center" data-edit-toggled="edit">
@@ -551,6 +678,54 @@ $(document).ready(function() {
   $(document).ready(function(){
     $('[data-bs-toggle="tooltip"][data-tooltip-show="always"]').tooltip({container:"body", trigger:"hover"});
   })
+</script>
+{% endif %}
+
+{% if ref_tag != "org" and  ref_tag != "campus" %}
+<!-- EXPORT FORM LOGIC -->
+<script>
+    const checkAllExportTypes = () => {
+        let allChecked = true;
+        $("#export-field input[type='checkbox']:not(#export_all)").each(function() {
+            if (!$(this).prop("checked")) {
+                allChecked = false;
+            }
+        });
+
+        $("#export_all").prop("checked", allChecked);
+    }
+
+    $("#export_all").change((e) => {
+        const toggleChecked = e.target.checked;
+        $("#export-field input[type='checkbox']").prop("checked", toggleChecked);
+    });
+
+    $("#export-field input[type='checkbox']").change(function() {
+      if(!$('#export-format input[type="checkbox"][value="CSV"]').is(":checked")){
+        if (!$(this).prop("checked")) {
+          $("#export_all").prop("checked", false);
+        } else {
+          checkAllExportTypes();
+        }
+      }else{
+        $('#export-field input[type="checkbox"]').not(this).prop('checked', false); // Uncheck other checkboxes
+      }
+    });
+
+    $('#export-format input[type="checkbox"]').change(function() {
+      $('#export-format input[type="checkbox"]').not(this).prop('checked', false); // Uncheck other checkboxes
+
+      if($('#export-format input[type="checkbox"][value="CSV"]').is(":checked")){
+        $('#export_all').attr('disabled', true)
+        $('#export_all').prop("checked", false)
+
+        if($("#export-field input[type='checkbox']:checked").length > 1) {
+          $('#export-field input[type="checkbox"]:checked').not(':last').prop('checked', false);
+        }
+      }else{
+        $('#export_all').attr('disabled', false)
+      }
+    });
 </script>
 {% endif %}
 

@@ -9,7 +9,7 @@ import googlemaps
 import requests
 import structlog
 import unidecode
-from django.core.cache import cache
+from django.core.cache import caches
 from django.utils.translation import gettext_lazy as _
 from geopy.distance import geodesic
 
@@ -148,6 +148,18 @@ class GoogleMaps:
         point1 = (northeast["lat"], northeast["lng"])
         point2 = (southwest["lat"], southwest["lng"])
         return geodesic(point1, point2).kilometers
+
+    def parse_results_get_country(self, results) -> str | None:
+        """
+        Parse the results and return the country code.
+        """
+
+        for result in results:
+            for component in result["address_components"]:
+                if "country" in component["types"]:
+                    return component["short_name"]
+
+        return None
 
 
 class Melissa:
@@ -337,7 +349,7 @@ class Melissa:
 
         key = f"geo.normalize.state.{country_code}.{state_clean}"
 
-        value = cache.get(key)
+        value = caches["geo"].get(key)
         if value is None:
             result = self.global_address(country=country_code, address1=state)
 
@@ -346,5 +358,5 @@ class Melissa:
                 value = record.get("AdministrativeArea") or state
             except (KeyError, IndexError):
                 value = state
-            cache.set(key, value, timeout=None)
+            caches["geo"].set(key, value, timeout=None)
         return value

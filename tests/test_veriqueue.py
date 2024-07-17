@@ -73,7 +73,7 @@ class VeriQueueTests(TestCase):
             vqi.save()
             self.assertEqual(
                 qs.filter(
-                    subject=f"[{settings.RELEASE_ENV}] {vqi.content_type} - {inst}"
+                    subject=f"[{settings.RELEASE_ENV}] {vqi.content_type.model_class()._meta.verbose_name} - {inst}"
                 ).exists(),
                 True,
             )

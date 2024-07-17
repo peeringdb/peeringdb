@@ -44,6 +44,7 @@ class TestWipe(ClientCase):
         assert get_user_model().objects.all().count() == 1
         assert get_user_model().objects.first().is_superuser == True
 
+    @pytest.mark.django_db
     def test_run_with_sync(self):
         """
         Test running `pdb_wipe` and sync data from

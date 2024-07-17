@@ -2912,6 +2912,7 @@ def test_vlan_list_empty(entities, save):
     assert_no_emails(ix=ixlan.ix)
 
 
+@pytest.mark.django_db
 def test_validate_json_schema():
     schema_url_base = "https://raw.githubusercontent.com/euro-ix/json-schemas/master/versions/ixp-member-list-{}.schema.json"
 
@@ -3290,6 +3291,7 @@ def test_resolve_deskpro_ticket(entities):
     """
 
 
+@pytest.mark.django_db
 def test_vlan_sanitize(data_ixf_vlan):
     """
     test that various vlan_list setups are sanitized correctly

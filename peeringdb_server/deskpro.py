@@ -190,7 +190,7 @@ def ticket_queue_vqi_notify(instance, rdap):
     org_key = instance.org_key
 
     with override("en"):
-        entity_type_name = str(instance.content_type)
+        entity_type_name = instance.content_type.model_class()._meta.verbose_name
 
     title = f"{entity_type_name} - {item}"
 

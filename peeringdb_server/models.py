@@ -6595,6 +6595,10 @@ class EnvironmentSetting(StripFieldMixin):
                 "API_THROTTLE_RATE_USER_MSG",
                 _("API: Authenticated API throttle rate message"),
             ),
+            (
+                "API_THROTTLE_RATE_WRITE",
+                _("API: Request Write API Limiting"),
+            ),
             # show database last sync
             (
                 "DATABASE_LAST_SYNC",
@@ -6657,6 +6661,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_MELISSA_ENABLED_IP": "value_bool",
         "API_THROTTLE_RATE_ANON_MSG": "value_str",
         "API_THROTTLE_RATE_USER_MSG": "value_str",
+        "API_THROTTLE_RATE_WRITE": "value_str",
         "DATABASE_LAST_SYNC": "value_str",
     }
 
@@ -6679,6 +6684,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_MELISSA_ENABLED_USER": [validate_bool],
         "API_THROTTLE_MELISSA_ENABLED_ORG": [validate_bool],
         "API_THROTTLE_MELISSA_ENABLED_IP": [validate_bool],
+        "API_THROTTLE_RATE_WRITE": [validate_api_rate],
     }
 
     @classmethod

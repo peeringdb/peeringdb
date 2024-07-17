@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django.test import (
     Client,
     RequestFactory,
-    SimpleTestCase,
+    TestCase,
     modify_settings,
     override_settings,
 )
@@ -30,9 +30,10 @@ def get_response_empty(request):
 
 
 @override_settings(ROOT_URLCONF="middleware.urls")
-class PDBCommonMiddlewareTest(SimpleTestCase):
+class PDBCommonMiddlewareTest(TestCase):
     rf = RequestFactory()
 
+    @pytest.mark.django_db
     @override_settings(PDB_PREPEND_WWW=True)
     def test_prepend_www(self):
         request = self.rf.get("/path/")

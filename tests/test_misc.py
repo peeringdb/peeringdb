@@ -7,6 +7,7 @@ import peeringdb_server.settings as settings
 import peeringdb_server.views as views
 
 
+@pytest.mark.django_db
 def test_requests_ssl():
     r = requests.get("https://www.google.com")
     assert r.status_code == 200

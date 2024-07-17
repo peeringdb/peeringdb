@@ -13,11 +13,13 @@ method.
 
 import datetime
 import ipaddress
+import json
 import re
 
 import structlog
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import caches
 from django.core.exceptions import FieldError, ValidationError
 from django.core.validators import URLValidator
 from django.db.models import Prefetch
@@ -51,7 +53,7 @@ from peeringdb_server.deskpro import (
     ticket_queue_prefixauto_approve,
     ticket_queue_rdap_error,
 )
-from peeringdb_server.geo import Melissa
+from peeringdb_server.geo import GoogleMaps, Melissa
 from peeringdb_server.inet import (
     BogonAsn,
     RdapException,
@@ -1438,9 +1440,129 @@ class SpatialSearchMixin:
     """
 
     @classmethod
+    def convert_to_spatial_search(cls, filters):
+        """
+        Checks if the a single city and country are provided
+        in the query and will convert the query to a distance search.
+
+        Order of operations:
+
+        1. check if `city` and `country` are provided
+            a. This is also valid if `city__in` or `country__in` contain
+               a single value
+            b. if country is not provided, attempt to retrieve it from
+               the google geocode api result
+        2. retrieve the city bounding box via google geocode
+        3. set distance on the filters based on the bounding box, turning
+              the query into a spatial distance search.
+        """
+
+        # if distance is already specified, no need to convert
+        if filters.get("distance"):
+            return
+
+        # check field value presence
+
+        city = filters.get("city")
+
+        # if city is not provided, check if city__in is provided
+        if not city and filters.get("city__in"):
+            city_in = filters.get("city__in")
+
+            if len(city_in) > 1:
+                return
+
+            city = city_in[0]
+
+            # update filters
+            filters["city"] = city
+            del filters["city__in"]
+
+        country = filters.get("country") or ""
+
+        # if country is not provided, check if country__in is provided
+        if not country and filters.get("country__in"):
+            country_in = filters.get("country__in")
+
+            if len(country_in) > 1:
+                return
+
+            country = country_in[0]
+
+            # update filters
+            filters["country"] = country
+            del filters["country__in"]
+
+        # if no city is provided there is nothing to do
+        if not city:
+            return
+
+        # url arguments can come in as lists, so we need to check
+        if isinstance(city, list):
+            city = city[0]
+
+        if isinstance(country, list):
+            country = country[0]
+
+        gmaps = GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY)
+
+        # google maps lookup string
+        lookup = f"{city}, {country}" if country else str(city)
+
+        # internal cache key
+        cache_key = f"geo.city.{city}_{country}" if country else f"geo.city.{city}"
+
+        cache = caches["geo"]
+
+        # check cached google maps result
+        cached = cache.get(cache_key)
+
+        if cached:
+            # we already have the geocode result cached
+            # so we can use that to set the distance
+            geocode_result = json.loads(cached)
+        else:
+            # no cache, perform lookup
+            try:
+                geocode_result = gmaps.client.geocode(lookup)
+                # cache result
+                cache.set(
+                    cache_key,
+                    json.dumps(geocode_result),
+                    timeout=settings.GEOCOORD_CACHE_EXPIRY,
+                )
+
+            except OSError as exc:
+                log.error("google_geocode_error", city=city, country=country, exc=exc)
+                return
+
+        # no geocode result, bail
+        if not geocode_result:
+            return
+
+        # no country was provided in the filters, attempt to
+        # retrieve it from the geocode result
+        if not country:
+            country = gmaps.parse_results_get_country(geocode_result)
+            filters["country"] = country
+
+            # update cache key and store for city+country as well
+            cache_key = f"geo.city.{city}_{country}"
+            cache.set(
+                cache_key,
+                json.dumps(geocode_result),
+                timeout=settings.GEOCOORD_CACHE_EXPIRY,
+            )
+
+        distance = gmaps.distance_from_bounds(
+            geocode_result[0].get("geometry").get("bounds")
+        )
+
+        filters["distance"] = distance
+
+    @classmethod
     def prepare_spatial_search(cls, qset, filters, distance=50):
         # no distance or negative distance provided, bail
-
         if distance <= 0:
             return qset
 
@@ -1731,6 +1853,8 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
                 filt="in", value=networks, qset=qset
             )
             filters.update({"not_net": kwargs.get("not_net")})
+
+        cls.convert_to_spatial_search(kwargs)
 
         if "distance" in kwargs:
             qset = cls.prepare_spatial_search(
@@ -3741,6 +3865,8 @@ class OrganizationSerializer(
             asn = kwargs.get("asn", [""])[0]
             qset = qset.filter(net_set__asn=asn, net_set__status="ok")
             filters.update({"asn": kwargs.get("asn")})
+
+        cls.convert_to_spatial_search(kwargs)
 
         if "distance" in kwargs:
             qset = cls.prepare_spatial_search(
