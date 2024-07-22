@@ -67,8 +67,12 @@ class APICacheLoader:
             and getattr(settings, "API_CACHE_ALL_LIMITS", False) is False
         ):
             return False
+
         # filters have been specified, no
         if self.filters or self.since:
+            return False
+        # spatial search, no
+        if getattr(self.qset, "spatial", False):
             return False
         # cache file non-existant, no
         if not os.path.exists(self.path):
