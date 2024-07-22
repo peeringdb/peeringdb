@@ -194,8 +194,8 @@ def test_no_api_throttle():
         # Primary key in viewset kwargs don't use cache
         (True, True, 1, 300, False, False, False, "GET", {"pk": 1}, True, False),
         # Cache file doesn't exist don't use cache
-        (True, True, 1, 300, False, False, False, "GET", {}, False, False),   
-    ]
+        (True, True, 1, 300, False, False, False, "GET", {}, False, False),
+    ],
 )
 def test_api_cache_loader_qualifies(
     api_cache_enabled,
@@ -218,7 +218,11 @@ def test_api_cache_loader_qualifies(
     filters_dict = {"some_filter": "value"} if filters else {}
     qset = models.Organization.objects.all()
     request = type("Request", (), {"method": method, "query_params": {}})
-    viewset = type("ViewSet", (), {"request": request, "model": models.Organization, "kwargs": viewset_kwargs})
+    viewset = type(
+        "ViewSet",
+        (),
+        {"request": request, "model": models.Organization, "kwargs": viewset_kwargs},
+    )
     loader = APICacheLoader(viewset, qset, filters_dict)
 
     loader.depth = depth
@@ -228,9 +232,9 @@ def test_api_cache_loader_qualifies(
         setattr(qset, "spatial", True)
 
     # Mock the os.path.exists function
-    mocker.patch('os.path.exists', return_value=file_exists)
+    mocker.patch("os.path.exists", return_value=file_exists)
 
     # Mock the path attribute of the loader
-    mocker.patch.object(loader, 'path', 'mocked/cache/path')
+    mocker.patch.object(loader, "path", "mocked/cache/path")
 
     assert loader.qualifies() == expected
