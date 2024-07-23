@@ -500,6 +500,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                     "longitude",
                     "address1",
                     "city",
+                    "city__in",
                     "state",
                     "zipcode",
                 ]:

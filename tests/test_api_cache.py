@@ -13,6 +13,7 @@ from django_grainy.models import GroupPermission, UserPermission
 
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
+from peeringdb_server.api_cache import APICacheLoader
 
 from . import test_api as api_tests
 from .util import reset_group_ids
@@ -168,3 +169,72 @@ def test_no_api_throttle():
                 data_raw = fh.read()
                 data = json.loads(data_raw)
                 assert not data.get("message")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "api_cache_enabled,api_cache_all_limits,depth,limit,filters,spatial,since,method,viewset_kwargs,file_exists,expected",
+    [
+        # All conditions met for caching: use cache
+        (True, True, 1, 300, False, False, False, "GET", {}, True, True),
+        # API cache disabled: don't use cache
+        (False, True, 1, 300, False, False, False, "GET", {}, True, False),
+        # Low limit and no depth: don't use cache
+        (True, False, 0, 200, False, False, False, "GET", {}, True, False),
+        # Limit just above the threshold: don't use cache
+        (True, True, 0, 251, False, False, False, "GET", {}, True, True),
+        # Filters specified: don't use cache
+        (True, True, 1, 300, True, False, False, "GET", {}, True, False),
+        # Spatial search don't use cache
+        (True, True, 1, 300, False, True, False, "GET", {}, True, False),
+        # Since parameter specified don't use cache
+        (True, True, 1, 300, False, False, True, "GET", {}, True, False),
+        # Non-GET method (POST) don't use cache
+        (True, True, 1, 300, False, False, False, "POST", {}, True, False),
+        # Primary key in viewset kwargs don't use cache
+        (True, True, 1, 300, False, False, False, "GET", {"pk": 1}, True, False),
+        # Cache file doesn't exist don't use cache
+        (True, True, 1, 300, False, False, False, "GET", {}, False, False),
+    ],
+)
+def test_api_cache_loader_qualifies(
+    api_cache_enabled,
+    api_cache_all_limits,
+    depth,
+    limit,
+    filters,
+    spatial,
+    since,
+    method,
+    viewset_kwargs,
+    file_exists,
+    expected,
+    settings,
+    mocker,
+):
+    settings.API_CACHE_ENABLED = api_cache_enabled
+    settings.API_CACHE_ALL_LIMITS = api_cache_all_limits
+
+    filters_dict = {"some_filter": "value"} if filters else {}
+    qset = models.Organization.objects.all()
+    request = type("Request", (), {"method": method, "query_params": {}})
+    viewset = type(
+        "ViewSet",
+        (),
+        {"request": request, "model": models.Organization, "kwargs": viewset_kwargs},
+    )
+    loader = APICacheLoader(viewset, qset, filters_dict)
+
+    loader.depth = depth
+    loader.limit = limit
+    loader.since = since if since else None
+    if spatial:
+        setattr(qset, "spatial", True)
+
+    # Mock the os.path.exists function
+    mocker.patch("os.path.exists", return_value=file_exists)
+
+    # Mock the path attribute of the loader
+    mocker.patch.object(loader, "path", "mocked/cache/path")
+
+    assert loader.qualifies() == expected
