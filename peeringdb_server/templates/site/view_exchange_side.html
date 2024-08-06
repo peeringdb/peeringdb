@@ -11,7 +11,7 @@
     <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
       <div class="inner-addon left-addon">
         <i class="material-icons input-icon">filter_list</i>
-        <input type="text" oninput="syncValue(this)" data-filter-target="#list-networks" class="form-control" />
+        <input type="text" placeholder="Filter" oninput="syncValue(this)" data-filter-target="#list-networks" class="form-control" />
       </div>
     </div>
   </div>
@@ -21,14 +21,14 @@
       <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
 
     </div>
-    <div class="col-5 col-sm-5 col-md-4">
+    <div class="col-5 col-sm-5 col-md-2">
       <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
       <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
-    <div class="col-2 col-sm-2 col-md-1 d-none d-sm-block">
+    <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
     </div>
-    <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
+    <div class="col-2 col-sm-2 col-md-3 d-none d-sm-block">
 
       <div
         data-bs-toggle="tooltip"
@@ -41,7 +41,7 @@
     <div class="col-2 col-sm-2 col-md-2" id="filter-web">
       <div class="inner-addon left-addon">
         <i class="material-icons input-icon">filter_list</i>
-        <input type="text" oninput="syncValue(this)" data-filter-target="#list-networks" class="form-control" />
+        <input type="text" placeholder="Filter" oninput="syncValue(this)" data-filter-target="#list-networks" class="form-control" />
       </div>
     </div>
   </div>
@@ -75,11 +75,11 @@
         <div class="ip4" data-sort-value="{{ x.ipaddr4|none_blank }} {{ x.ipaddr6|none_blank }}" data-filter-value="{{x.ipaddr4}}">{{ x.ipaddr4|none_blank }}</div>
 
       </div>
-      <div class="col-5 col-sm-5 col-md-4">
+      <div class="col-5 col-sm-5 col-md-2">
         <div class="asn" data-sort-value="{{ x.asn }}" data-filter-value="{{ x.asn }}">{{ x.asn }}</div>
         <div class="ip6" data-sort-value="{{ x.ipaddr6|none_blank }} {{ x.ipaddr4|none_blank }}" data-filter-value="{{x.ipaddr6}}">{{ x.ipaddr6|none_blank }}</div>
       </div>
-      <div class="col-2 col-sm-2 col-md-1 d-none d-sm-block">
+      <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
         <div class="speed" data-sort-value="{{ x.speed }}" data-filter-value="{{ x.speed|pretty_speed}}">{{ x.speed|pretty_speed }}</div>
       </div>
       <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">

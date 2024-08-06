@@ -4,9 +4,9 @@
 <div class="row">
   {% for  facility, ixfac_data in data.exchanges.items %}
   {% if forloop.counter|divisibleby:2 %}
-  <div class="col-md-6 col-sm-12 col-12 offset-pl-md-2 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0">
+  <div class="col-lg-6 col-sm-12 col-12 offset-pl-lg-0 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0">
   {% else %}
-  <div class="col-md-6 col-sm-12 col-12 offset-pr-md-2 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
+  <div class="col-lg-6 col-sm-12 col-12 offset-pr-lg-2 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
   {% endif %}
 
     <!-- EXCHANGES -->
@@ -23,6 +23,12 @@
         <div class="col-6 col-sm-8 col-md-8 table-name">
           <h5>{{facility}}</h5>
         </div>
+        <div class="col-2 col-sm-2 col-md-4 filter" id="filter-web">
+          <div class="inner-addon left-addon">
+            <i class="material-icons input-icon">filter_list</i>
+            <input type="text" placeholder="Filter" oninput="syncValue(this)" data-filter-target="#list-exchanges{{ forloop.counter }}" class="form-control" />
+          </div>
+        </div>        
         <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
           <div class="inner-addon left-addon">
             <i class="material-icons input-icon">filter_list</i>
@@ -37,22 +43,17 @@
         <div class="col-2 col-sm-2 col-md-2">
           <div data-sort-target=".facility">{% trans "Facilities" %}</div>
         </div>
-        <div class="col-2 col-sm-2 col-md-1">
+        <div class="col-2 col-sm-2 col-md-2">
           <div data-sort-target=".asns">{% trans "ASNs" %}</div>
         </div>
         <div class="col-4 col-sm-4 col-md-3">
           <div data-sort-target=".prefix">{% trans "Prefixes" %}</div>
           <div>{% trans "(IPv4/IPv6)" %}</div>
         </div>
-        <div class="col-2 col-sm-2 col-md-2">
+        <div class="col-2 col-sm-2 col-md-3">
           <div data-sort-target=".routeservers">{% trans "Routeservers" %}</div>
         </div>
-        <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
-          <div class="inner-addon left-addon">
-            <i class="material-icons input-icon">filter_list</i>
-            <input type="text" oninput="syncValue(this)" data-filter-target="#list-exchanges{{ forloop.counter }}" class="form-control" />
-          </div>
-        </div>
+
       </div>
       <div class="scrollable"
       id="list-exchanges{{ forloop.counter }}"
@@ -79,7 +80,7 @@
             <div class="facility" data-sort-value="{{ related_fac }}">{% if related_fac == data.facilities|length %}{% trans "ALL" %}{% else %}{{related_fac}}{% endif %} </div>
             {% endwith %}
           </div>
-          <div class="col-2 col-sm-2 col-md-1">
+          <div class="col-2 col-sm-2 col-md-2">
             <div class="asns" data-sort-value="{{ix.ixlan.netixlan_set.count}}">{{ix.ixlan.netixlan_set.count}}</div>
           </div>
           <div class="col-4 col-sm-4 col-md-3">

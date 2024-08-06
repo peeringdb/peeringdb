@@ -19,32 +19,32 @@
     <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
       <div class="inner-addon left-addon">
         <i class="material-icons input-icon">filter_list</i>
-        <input type="text" oninput="syncValue(this)"  data-filter-target="#list-exchanges" class="form-control" />
+        <input type="text" placeholder="Filter" oninput="syncValue(this)"  data-filter-target="#list-exchanges" class="form-control" />
       </div>
     </div>
   </div>
   <div class="row header">
-    <div class="col-4 col-sm-4 col-md-3">
+    <div class="col-3 col-sm-3 col-md-3 col-lg-3">
       <div data-sort-target=".exchange" data-sort-initial="asc">{% trans "Exchange" %}</div>
       <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
     </div>
-    <div class="col-8 col-sm-4 col-md-4">
+    <div class="col-2 col-sm-2 col-md-2 col-lg-2">
       <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
       <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
-    <div class="col-3 col-sm-2 col-md-1 d-none d-sm-block">
+    <div class="col-2 col-sm-2 col-md-2 col-lg-2 ">
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
     </div>
-    <div class="col-3 col-sm-2 col-md-2 d-none d-sm-block">
+    <div class="col-2 col-sm-2 col-md-2 col-lg-2 ">
       <div data-sort-target=".speed" class="numeric">{% trans "RS Peer" %}</div>
     </div>
-    <div class="col-3 col-sm-2 col-md-2 d-none d-sm-block">
+    <div class="col-3 col-sm-2 col-md-2 col-lg-3 ">
       <div data-sort-target=".bfd_support" class="numeric">{% trans "BFD Support" %}</div>
     </div>
     <div class="col-2 col-sm-2 col-md-2" id="filter-web">
       <div class="inner-addon left-addon">
         <i class="material-icons input-icon">filter_list</i>
-        <input type="text" oninput="syncValue(this)"  data-filter-target="#list-exchanges" class="form-control" />
+        <input type="text" placeholder="Filter" oninput="syncValue(this)"  data-filter-target="#list-exchanges" class="form-control" />
       </div>
     </div>
   </div>
@@ -68,7 +68,7 @@
       </div>
       <div class="row squeeze-15">
 
-          <div class="exchange col-4 col-sm-4 col-md-3" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
+          <div class="exchange col-3 col-sm-4 col-md-3 col-lg-3" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
 
             {% if permissions.can_delete %}
             <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
@@ -80,7 +80,7 @@
             <svg class="not-operational" data-edit-toggled="view" data-bs-toggle="tooltip" title="{% trans "Not operational" %}" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="15px" viewBox="0 0 24 24" width="15px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><g><g><path d="M12,5.99L19.53,19H4.47L12,5.99 M12,2L1,21h22L12,2L12,2z"/><polygon points="13,16 11,16 11,18 13,18"/><polygon points="13,10 11,10 11,15 13,15"/></g></g></g></svg>
 
           </div>
-          <div class="col-8 col-sm-4 col-md-4">
+          <div class="col-2 col-sm-4 col-md-2 col-lg-2">
             <div class="asn{% if permissions.can_write and x.asn != x.network.asn %} mark-value-error{% endif %}"
                {% if permissions.can_write and x.asn != x.network.asn %}
                data-bs-toggle="tooltip"
@@ -107,7 +107,7 @@
           </div>
 
 
-          <div class="speed col-2 col-sm-2 col-md-1 d-none d-sm-block"
+          <div class="speed col-2 col-sm-2 col-md-2 col-lg-2 d-sm-block"
                data-sort-value="{{ x.speed }}"
                data-filter-value="{{ x.speed|pretty_speed}}"
                {% if permissions.can_write %}
@@ -118,14 +118,14 @@
                data-edit-required="yes">
                {{ x.speed|pretty_speed }}
           </div>
-          <div class= "col-2 col-sm-2 col-md-2 d-none d-sm-block" data-edit-type="bool"
+          <div class= "col-2 col-sm-2 col-md-2 col-lg-2 d-sm-block" data-edit-type="bool"
                data-edit-name="is_rs_peer"
                data-edit-template="check"
                data-sort-value="{{ x.is_rs_peer }}"
                data-edit-value="{{ x.is_rs_peer }}">
             <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.is_rs_peer|as_bool %}-off{% endif %}.png" alt="RS PEER" />
           </div>
-          <div class= "col-3 col-sm-2 col-md-2 d-none d-sm-block text-center" data-edit-type="bool"
+          <div class= "col-3 col-sm-2 col-md-3 col-lg-2 d-sm-block text-center" data-edit-type="bool"
                data-edit-name="bfd_support"
                data-edit-template="check"
                data-sort-value="{{ x.bfd_support }}"
@@ -136,7 +136,7 @@
       </div>
       <div class="ip-addr row squeeze-15">
 
-        <div class="col-12 col-sm-4 col-md-3">
+        <div class="col-3 col-sm-4 col-md-3 col-lg-3">
           <div class="ip4"
                {% if permissions.can_write %}
                data-edit-type="string"
@@ -147,7 +147,7 @@
                {{ x.ipaddr4|none_blank }}
           </div>
         </div>
-        <div class="col-12 col-sm-8 col-md-4">
+        <div class="col-4 col-sm-8 col-md-4 col-lg-3">
           <div class="ip6"
                {% if permissions.can_write %}
                data-edit-type="string"
@@ -271,7 +271,7 @@
     <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
       <div class="inner-addon left-addon">
         <i class="material-icons input-icon">filter_list</i>
-        <input type="text" oninput="syncValue(this)"  data-filter-target="#list-facilities" class="form-control" />
+        <input type="text" placeholder="Filter" oninput="syncValue(this)"  data-filter-target="#list-facilities" class="form-control" />
       </div>
     </div>
   </div>
@@ -287,7 +287,7 @@
     <div class="col-2 col-sm-2 col-md-2" id="filter-web">
       <div class="inner-addon left-addon">
         <i class="material-icons input-icon">filter_list</i>
-        <input type="text" oninput="syncValue(this)"  data-filter-target="#list-facilities" class="form-control" />
+        <input type="text" placeholder="Filter" oninput="syncValue(this)"  data-filter-target="#list-facilities" class="form-control" />
       </div>
     </div>
   </div>

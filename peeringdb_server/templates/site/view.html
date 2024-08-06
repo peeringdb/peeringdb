@@ -227,7 +227,7 @@
 
 
 {% if ref_tag == "campus" %}
-<div class="campus-nav-container">
+<div class="campus-nav-container col-md-12">
   <div class="scroller-campus scroller-left float-left mt-2"><i class="material-icons">chevron_left</i></div>
     <div class="wrapper campus-list flex-grow-1" style="width: 100%;">
       <nav class="nav nav-tabs nav-list-campus mt-2 ps-0" id="myTab" role="tablist" style="border-bottom: none;">
@@ -246,7 +246,7 @@
 
 <div class="row">
 
-  <div class="col-md-6 col-sm-12 col-12 offset-pr-md-1 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
+  <div class="col-lg-6 col-md-12 col-sm-12 col-12 offset-pr-md-1 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
   {% if permissions.can_edit %}
   <div class="editable popin note info incomplete marg-top-15 marg-bot-15 hidden">
   {% trans "Some of the data on this page is incomplete, please update the fields marked with" %}
@@ -645,11 +645,11 @@
   </div>
 
   {% if ref_tag != "campus" %}
-  <div class="col-md-6 col-sm-12 col-12 offset-pl-md-1 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0"
+  <div class="col-lg-6 col-md-12 col-sm-12 col-12 offset-pl-md-0 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0"
     {% include side_template_name with data=data instance=instance permissions=permissions %}
   </div>
   {% else %}
-  <div class="col-md-6 col-sm-12 col-12 offset-pl-md-1 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0"
+  <div class="col-lg-6 col-md-12 col-sm-12 col-12 offset-pl-md-0 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0"
     {% include facilities_template_name with data=data instance=instance permissions=permissions %}
   </div>
   </div>

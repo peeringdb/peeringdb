@@ -140,7 +140,7 @@ $(window).bind("load", function() {
           <div class="search-container" id="search-container">
             {% include "site/header-search-container.html" with search_version=search_version %}
           </div>
-          <a class="nav-link right search-icon hide-on-mobile" style="text-decoration:none;">
+          <a class="nav-link right search-icon d-lg-none hide-on-mobile" style="text-decoration:none;">
             <i class="material-icons" id="search-icon">search</i>
           </a>
 
@@ -213,7 +213,7 @@ $(window).bind("load", function() {
               </div>
             {% else %}
               <div class="auth-link">
-                <a href="/register" >{% trans "Register" %}</a>
+                <a href="/register" class="btn btn-default">{% trans "Register" %}</a>
                 <span class="m-2">or</span>
                 <a href="{% url "two_factor:login" %}?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
               </div>

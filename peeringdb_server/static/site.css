@@ -309,6 +309,12 @@ div.header div.nav a.btn {
   border: none;
 }
 
+.table td, 
+.header > div { 
+  white-space: nowrap; 
+  
+}
+
 div.header div.nav a.btn:active {
   background-color: #455157;
 }
@@ -368,6 +374,9 @@ img.logo {
   .auth-link-mobile{
     display: none;
   }
+  div.navbar-nav {
+    margin-right: 0px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -381,6 +390,9 @@ img.logo {
   }
   .auth-link-mobile{
     display: block;
+  }
+  div.navbar-nav {
+    margin-right: 0px;
   }
 }
 
@@ -862,6 +874,14 @@ table.result th {
   padding-bottom: 5px;
 }
 
+@media (max-width: 768px) {
+  div.list > div.row.header {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    font-size: 12px !important;
+  }
+}
+
 div.row.header > div > div {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -949,14 +969,14 @@ div.list .highlight-warning {
 }
 
 .sort-asc:after {
-  content: "\e053\e313";
+  content: "\e313";
   font-family: "Material Icons";
   vertical-align: bottom;
   padding-left: 3px;
   font-size: 16px;
 }
 .sort-desc:after {
-  content: "\e053\e316";
+  content: "\e316";
   font-family: "Material Icons";
   vertical-align: bottom;
   padding-left: 3px;
@@ -1018,8 +1038,10 @@ div.list .highlight-warning {
 
 
 @media (max-width: 768px) {
+  
   div.list {
     margin-top: 10px;
+    font-size: 12px;
   }
   #content {
     padding-top: 0px;
@@ -2224,10 +2246,21 @@ input.input-block-level {
   margin-left: calc(var(--bs-gutter-x) * -.5);
 }
 
+@media (max-width: 425px) {
+  .header > div {
+    min-width: max-content;
+    font-size: 10px;
+  }
+}
+
 @media (max-width: 577px) {
   .content-footer{
     text-align: center !important;
   }
+}
+
+.pt-3.col-sm-6.content-footer {
+  margin-left: -32px;
 }
 
 [data-initials]:before {

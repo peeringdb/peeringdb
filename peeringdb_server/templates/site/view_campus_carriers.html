@@ -2,7 +2,7 @@
 {% load i18n %}
 
 <div class="row">
-<div class="col-md-6 col-sm-12 col-12 offset-pr-md-2 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
+<div class="col-md-8 col-sm-12 col-12 offset-pr-md-2 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
   <div class="list"
      data-sort-container=".scrollable"
      data-sort-row=".row"
@@ -21,13 +21,19 @@
         data-edit-group="#view"
         data-edit-target="api:carrier">
       <div class="row">
-        <div class="col-6 col-sm-8 col-md-8">
+        <div class="col-6 col-sm-8 col-md-6">
           <h5>{% trans "Carriers" %}</h5>
         </div>
+        <div class="col-6 col-sm-2 col-md-6 filter" id="filter-web">
+          <div class="inner-addon left-addon">
+            <i class="material-icons input-icon">filter_list</i>
+            <input type="text" placeholder="Filter" oninput="syncValue(this)" data-filter-target="#list-carriers" class="form-control" />
+          </div>
+        </div>        
         <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
           <div class="inner-addon left-addon">
             <i class="material-icons input-icon">filter_list</i>
-            <input type="text" oninput="syncValue(this)" data-filter-target="#list-carriers" class="form-control" />
+            <input type="text" placeholder="Filter" oninput="syncValue(this)" data-filter-target="#list-carriers" class="form-control" />
           </div>
         </div>
       </div>
@@ -38,12 +44,7 @@
         <div class="col-6 col-sm-6 col-md-4">
           <div data-sort-target=".facility">{% trans "Facilities" %}</div>
         </div>
-        <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
-          <div class="inner-addon left-addon">
-            <i class="material-icons input-icon">filter_list</i>
-            <input type="text" oninput="syncValue(this)" data-filter-target="#list-carriers" class="form-control" />
-          </div>
-        </div>
+
       </div>
 
       <div class="scrollable"
