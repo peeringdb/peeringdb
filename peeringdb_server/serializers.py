@@ -3142,7 +3142,7 @@ class IXLanPrefixSerializer(ModelSerializer):
             validate_prefix_overlap,
         ]
     )
-    in_dfz = serializers.SerializerMethodField(read_only=False)
+    in_dfz = serializers.BooleanField(required=False, default=True)
 
     class Meta:
         model = IXLanPrefix
@@ -3158,10 +3158,6 @@ class IXLanPrefixSerializer(ModelSerializer):
         related_fields = ["ixlan"]
 
         list_exclude = ["ixlan"]
-
-    @staticmethod
-    def get_in_dfz(obj):
-        return True
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):

@@ -69,7 +69,7 @@ class BaseSchema(AutoSchema):
         "PositiveIntegerField": "integer",
         "IntegerField": "integer",
         "AutoField": "integer",
-        "BooleanField": "integer",
+        "BooleanField": "boolean",
         "DecimalField": "number",
         "DateTimeField": "date-time",
         "DateField": "date",

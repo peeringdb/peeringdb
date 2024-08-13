@@ -275,7 +275,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -306,7 +306,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -413,7 +413,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: npanxx
         in: query
         description: 'Filter results by matching a value against this field.
@@ -530,7 +530,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__flagged_date
         in: query
         description: 'Date when the organization was flagged
@@ -573,7 +573,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -630,7 +630,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__periodic_reauth_period
         in: query
         description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
@@ -648,7 +648,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -658,7 +658,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -5145,7 +5145,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__flagged_date
         in: query
         description: 'Date when the organization was flagged
@@ -5188,7 +5188,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -5245,7 +5245,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__periodic_reauth_period
         in: query
         description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
@@ -5263,7 +5263,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -5273,7 +5273,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -7183,7 +7183,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: fac__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -7214,7 +7214,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: fac__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -7302,7 +7302,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: fac__npanxx
         in: query
         description: 'Filter results by matching a value against this field.
@@ -13143,7 +13143,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ixf_import_request_user__is_staff
         in: query
         description: 'Designates whether the user can log into admin site.
@@ -13152,7 +13152,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ixf_import_request_user__is_superuser
         in: query
         description: 'Designates that this user has all permissions without explicitly
@@ -13162,7 +13162,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ixf_import_request_user__last_login
         in: query
         description: 'Filter results by matching a value against this field.
@@ -13203,7 +13203,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ixf_import_request_user__notified_for_deletion
         in: query
         description: 'User has been notified about pending account deletion at this
@@ -13490,7 +13490,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__flagged_date
         in: query
         description: 'Date when the organization was flagged
@@ -13533,7 +13533,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -13590,7 +13590,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__periodic_reauth_period
         in: query
         description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
@@ -13608,7 +13608,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -13618,7 +13618,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -13710,19 +13710,19 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: proto_multicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: proto_unicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: region_continent
         in: query
         description: 'Filter results by matching a value against this field.
@@ -16799,7 +16799,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: fac__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -16830,7 +16830,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: fac__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -16918,7 +16918,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: fac__npanxx
         in: query
         description: 'Filter results by matching a value against this field.
@@ -17315,19 +17315,19 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ix__proto_multicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ix__proto_unicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ix__region_continent
         in: query
         description: 'Filter results by matching a value against this field.
@@ -24195,7 +24195,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -24418,19 +24418,19 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ix__proto_multicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ix__proto_unicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ix__region_continent
         in: query
         description: 'Filter results by matching a value against this field.
@@ -24575,7 +24575,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ixf_ixp_import_error
         in: query
         description: 'Reason IX-F data could not be parsed
@@ -25808,7 +25808,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ix
         in: query
         description: 'Find prefixes by exchange (exchange id)
@@ -25850,7 +25850,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ixlan__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -25865,7 +25865,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ixlan__ixf_ixp_import_error
         in: query
         description: 'Reason IX-F data could not be parsed
@@ -27063,8 +27063,8 @@ paths:
                 prefix:
                   type: string
                 in_dfz:
-                  type: string
-                  readOnly: true
+                  type: boolean
+                  default: true
                 created:
                   type: string
                   format: date-time
@@ -28089,8 +28089,8 @@ paths:
                 prefix:
                   type: string
                 in_dfz:
-                  type: string
-                  readOnly: true
+                  type: boolean
+                  default: true
                 created:
                   type: string
                   format: date-time
@@ -29067,8 +29067,8 @@ paths:
                 prefix:
                   type: string
                 in_dfz:
-                  type: string
-                  readOnly: true
+                  type: boolean
+                  default: true
                 created:
                   type: string
                   format: date-time
@@ -29210,7 +29210,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: asn
         in: query
         description: 'Filter results by matching a value against this field.
@@ -29273,13 +29273,13 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: info_multicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: info_never_via_route_servers
         in: query
         description: 'Indicates if this network will announce its routes via route
@@ -29289,7 +29289,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: info_prefixes4
         in: query
         description: 'Recommended maximum number of IPv4 routes/prefixes to be configured
@@ -29378,7 +29378,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: irr_as_set
         in: query
         description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
@@ -29644,7 +29644,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__flagged_date
         in: query
         description: 'Date when the organization was flagged
@@ -29687,7 +29687,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -29744,7 +29744,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__periodic_reauth_period
         in: query
         description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
@@ -29762,7 +29762,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -29772,7 +29772,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -29891,7 +29891,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: policy_url
         in: query
         description: 'Filter results by matching a value against this field.
@@ -32320,7 +32320,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__asn
         in: query
         description: 'Filter results by matching a value against this field.
@@ -32365,13 +32365,13 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__info_multicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__info_never_via_route_servers
         in: query
         description: 'Indicates if this network will announce its routes via route
@@ -32381,7 +32381,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__info_prefixes4
         in: query
         description: 'Recommended maximum number of IPv4 routes/prefixes to be configured
@@ -32470,7 +32470,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__irr_as_set
         in: query
         description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
@@ -32605,7 +32605,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__policy_url
         in: query
         description: 'Filter results by matching a value against this field.
@@ -35228,19 +35228,19 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: avail_ethernet
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: avail_sonet
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: city
         in: query
         description: 'Facility city
@@ -35394,7 +35394,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: fac__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -35425,7 +35425,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: fac__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -35513,7 +35513,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: fac__npanxx
         in: query
         description: 'Filter results by matching a value against this field.
@@ -35743,7 +35743,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__asn
         in: query
         description: 'Filter results by matching a value against this field.
@@ -35788,13 +35788,13 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__info_multicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__info_never_via_route_servers
         in: query
         description: 'Indicates if this network will announce its routes via route
@@ -35804,7 +35804,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__info_prefixes4
         in: query
         description: 'Recommended maximum number of IPv4 routes/prefixes to be configured
@@ -35893,7 +35893,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__irr_as_set
         in: query
         description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
@@ -36028,7 +36028,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__policy_url
         in: query
         description: 'Filter results by matching a value against this field.
@@ -42294,7 +42294,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: created
         in: query
         description: 'Filter results by matching a value against this field.
@@ -42345,7 +42345,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ixlan
         in: query
         description: 'Filter results by matching a value against this field.
@@ -42378,7 +42378,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ixlan__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -42393,7 +42393,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: ixlan__ixf_ixp_import_error
         in: query
         description: 'Reason IX-F data could not be parsed
@@ -42546,7 +42546,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__asn
         in: query
         description: 'Filter results by matching a value against this field.
@@ -42591,13 +42591,13 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__info_multicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__info_never_via_route_servers
         in: query
         description: 'Indicates if this network will announce its routes via route
@@ -42607,7 +42607,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__info_prefixes4
         in: query
         description: 'Recommended maximum number of IPv4 routes/prefixes to be configured
@@ -42696,7 +42696,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__irr_as_set
         in: query
         description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
@@ -42831,7 +42831,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: net__policy_url
         in: query
         description: 'Filter results by matching a value against this field.
@@ -42936,7 +42936,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: since
         in: query
         required: false
@@ -48220,7 +48220,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: flagged_date
         in: query
         description: 'Date when the organization was flagged
@@ -48263,7 +48263,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -48345,7 +48345,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: periodic_reauth_period
         in: query
         description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
@@ -48363,7 +48363,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -48373,7 +48373,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: since
         in: query
         required: false
@@ -50088,7 +50088,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__flagged_date
         in: query
         description: 'Date when the organization was flagged
@@ -50131,7 +50131,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -50188,7 +50188,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__periodic_reauth_period
         in: query
         description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
@@ -50206,7 +50206,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -50216,7 +50216,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -51962,7 +51962,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: asn
         in: query
         description: 'Filter results by matching a value against this field.
@@ -52025,13 +52025,13 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: info_multicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: info_never_via_route_servers
         in: query
         description: 'Indicates if this network will announce its routes via route
@@ -52041,7 +52041,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: info_prefixes4
         in: query
         description: 'Recommended maximum number of IPv4 routes/prefixes to be configured
@@ -52130,7 +52130,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: irr_as_set
         in: query
         description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
@@ -52396,7 +52396,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__flagged_date
         in: query
         description: 'Date when the organization was flagged
@@ -52439,7 +52439,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -52496,7 +52496,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__periodic_reauth_period
         in: query
         description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
@@ -52514,7 +52514,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -52524,7 +52524,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -52643,7 +52643,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: policy_url
         in: query
         description: 'Filter results by matching a value against this field.
@@ -52822,7 +52822,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: asn
         in: path
         required: true
@@ -52891,13 +52891,13 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: info_multicast
         in: query
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: info_never_via_route_servers
         in: query
         description: 'Indicates if this network will announce its routes via route
@@ -52907,7 +52907,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: info_prefixes4
         in: query
         description: 'Recommended maximum number of IPv4 routes/prefixes to be configured
@@ -52996,7 +52996,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: irr_as_set
         in: query
         description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
@@ -53262,7 +53262,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__flagged_date
         in: query
         description: 'Date when the organization was flagged
@@ -53305,7 +53305,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -53362,7 +53362,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__periodic_reauth_period
         in: query
         description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
@@ -53380,7 +53380,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -53390,7 +53390,7 @@ paths:
           Filter results by matching a value against this field.'
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: org__state
         in: query
         description: 'Filter results by matching a value against this field.
@@ -53509,7 +53509,7 @@ paths:
         description: Filter results by matching a value against this field.
         required: false
         schema:
-          type: integer
+          type: boolean
       - name: policy_url
         in: query
         description: 'Filter results by matching a value against this field.
@@ -62948,8 +62948,8 @@ components:
         prefix:
           type: string
         in_dfz:
-          type: string
-          readOnly: true
+          type: boolean
+          default: true
         created:
           type: string
           format: date-time
