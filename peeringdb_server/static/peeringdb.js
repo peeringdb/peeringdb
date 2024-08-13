@@ -2196,6 +2196,18 @@ twentyc.editable.target.register(
  * editable api endpoint
  */
 
+function getExcMessage(response) {
+  if (response.responseJSON) {
+    const meta = response.responseJSON.meta;
+    const message = response.responseJSON.message;
+
+    if (meta && meta.error) {
+      return `${meta.error}<br />${message || ''}`;
+    }
+  }
+  return `${response.status} ${response.statusText}`;
+}
+
 twentyc.editable.target.register(
   "api",
   {
@@ -2320,20 +2332,20 @@ twentyc.editable.target.register(
             type : errorType,
             info : info.join("<br />")
           });
-        } else {
-          if(r.responseJSON && r.responseJSON.meta && r.responseJSON.meta.error) {
-             var info = r.responseJSON.meta.error;
-             info += "<br />" + r.responseJSON.message;
-
-          } else if(r.status == 403)
-             var info = gettext("You do not have permissions to perform this action")
-          else
-             var info = r.status+" "+r.statusText
+        } else if (r.status == 403) {
+          info = getExcMessage(r);
 
           me.trigger("error", {
-            type : "HTTPError",
-            info : info
+              type: "Http403",
+              info: info
           });
+        } else {
+            info = getExcMessage(r)
+
+            me.trigger("error", {
+                type: "HTTPError",
+                info: info
+            });
         }
       });
     }

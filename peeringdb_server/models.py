@@ -5094,6 +5094,19 @@ class Network(
         self.validate_parent_status()
         super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        """
+        Delete the Network instance.
+
+        This method ensures that all related NetworkContact instances are deleted with
+        the `deleting_network` flag set to True, which allows the contacts to be deleted
+        regardless of their current state.
+
+        """
+        for contact in self.poc_set.all():
+            contact.delete(deleting_network=True)
+        super().delete(*args, **kwargs)
+
 
 # class NetworkContact(HandleRefModel):
 @grainy_model(
@@ -5149,7 +5162,7 @@ class NetworkContact(
             role__in=self.TECH_ROLES
         ).count()
 
-        if netixlan_count and tech_poc_count == 1:
+        if netixlan_count and tech_poc_count == 1 and not self._deleting_network:
             # there are active netixlans and this poc is the
             # only technical poc left
 
@@ -5160,6 +5173,19 @@ class NetworkContact(
         else:
             self._not_deletable_reason = None
             return True
+
+    def delete(self, *args, **kwargs):
+        """
+        Delete the NetworkContact instance.
+
+        This method sets the `_deleting_network` attribute to indicate whether
+        the deletion is part of a parent network deletion or not. If `deleting_network`
+        is passed as True in the kwargs, it indicates that the parent network is
+        being deleted, allowing the contact to be deleted regardless of its current state.
+
+        """
+        self._deleting_network = kwargs.pop("deleting_network", False)
+        super().delete(*args, **kwargs)
 
     @property
     def view_url(self):

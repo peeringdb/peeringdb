@@ -84,7 +84,7 @@ twentyc.editable.error = {
         return gettext("Some of the fields contain invalid values - please correct and try again.");
       break;
       case "Http403":
-        return gettext("Permission denied");
+        return gettext("Not Allowed");
       case "Http400":
         return gettext("Bad request");
       case "Http404":
