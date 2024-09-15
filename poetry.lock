@@ -1032,8 +1032,8 @@ django_inet = ">=1"
 [package.source]
 type = "git"
 url = "https://github.com/peeringdb/django-peeringdb.git"
-reference = "support_202404"
-resolved_reference = "5ee7c8b8988079c36055d3f23855372c5e066b03"
+reference = "support_202408"
+resolved_reference = "4468fed548868f729658a581405c0ce2ad5c150e"
 
 [[package]]
 name = "django-phonenumber-field"
@@ -3617,4 +3617,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "d3d53fe49de507c50724b39eb6faed02d4b09de1f1d41a5eb2eecb7c2c6dc67b"
+content-hash = "1f0df1dcf3019671af785c5c9c7f812f478c4af8a5cc8d5beea72914f252e7b0"

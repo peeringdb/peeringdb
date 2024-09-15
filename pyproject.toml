@@ -14,7 +14,7 @@ django = "^4.2"
 django-inet = ">=1.1.1"
 django-handleref = ">=2"
 # pinned until 3.5.0 release if django-peeringdb
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "support_202404" }
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "support_202408" }
 djangorestframework = ">=3.14.0"
 mysqlclient = ">=2.1.1"
 redis = ">=5.0.0"
