@@ -17,6 +17,10 @@
       <div class="view_title">{% trans "Organizations" %} (<span id="search-result-length-{{'Organization'|ref_tag}}"></span>)</div>
       <div id="search-result-{{'Organization'|ref_tag}}"></div>
     </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Carriers" %} (<span id="search-result-length-{{'Carrier'|ref_tag}}"></span>)</div>
+      <div id="search-result-{{'Carrier'|ref_tag}}"></div>
+    </div>
   </div>
 {% if request.user.is_verified_user %}
   <div class="row">

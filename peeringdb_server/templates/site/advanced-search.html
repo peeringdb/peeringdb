@@ -31,6 +31,9 @@
       </div>
       </a>
     </li>
+    <li role="presentation" class"nav-item">
+      <a href="#carrier" aria-controls="carrier" role="tab" data-bs-toggle="tab" class="nav-link {% if request.GET.reftag == "carrier" %}active{% else %}inactive{% endif %}">{% trans "Carriers" %}</a>
+    </li>
   </ul>
 
   <div class="tab-content">
@@ -48,6 +51,9 @@
     </div>
     <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "campus" %} active{% endif %}" id="campus">
       {% include "site/advanced-search-campus.html" with row_limit=row_limit%}
+    </div>
+    <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "carrier" %} active{% endif %}" id="carrier">
+      {% include "site/advanced-search-carrier.html" with row_limit=row_limit%}
     </div>
 
   <script language="javascript" type="text/javascript">
@@ -96,7 +102,7 @@
     var run_search = function() {
 
       var reftag = $.urlParam("reftag")
-      if(reftag == "net" || reftag == "ix" || reftag == "fac" || reftag == "org" || reftag == "campus") {
+      if(reftag == "net" || reftag == "ix" || reftag == "fac" || reftag == "org" || reftag == "campus" || reftag == "carrier") {
         var searchForm = $('[data-edit-target="advanced_search:'+reftag+'"]')
         searchForm.editable("loading-shim","show");
         twentyc.data.loading_done(function() {
