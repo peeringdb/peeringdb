@@ -2245,7 +2245,7 @@ twentyc.editable.target.register(
                   sortValue = d[fld.data("sort-target")];
                 }
                 fld.data("sort-value", typeof sortValue == "string" ? sortValue.toLowerCase() : sortValue);
-                fld.text(value);
+                fld.html(value);
                 if(this.tagName == "A") {
                   fld.attr("href", fld.attr("href").replace("$id", d.id));
                 }
@@ -2276,6 +2276,10 @@ twentyc.editable.target.register(
     finalize_data_fac : function(data) {
       data.sponsorship = (twentyc.data.get("sponsors")[data.org_id] || {});
       data.campus = (twentyc.data.get("campus_facilities")[data.id] || {});
+    },
+    finalize_data_carrier : function(data) {
+      data.sponsorship = (twentyc.data.get("sponsors")[data.org_id] || {});
+      data.facilities = data.carrierfac_set.length;
     }
   },
   "base"

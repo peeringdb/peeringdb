@@ -356,10 +356,10 @@ class AdvancedSearchExportView(ExportView):
             - list: list containing rendered data rows ready for export
         """
         fmt = fmt.replace("-", "_")
-        if self.tag not in ["net", "ix", "fac", "org", "campus"]:
+        if self.tag not in ["net", "ix", "fac", "org", "campus", "carrier"]:
             raise ValueError(_("Invalid tag"))
 
-        if fmt == "kmz" and self.tag not in ["org", "fac", "campus", "ix"]:
+        if fmt == "kmz" and self.tag not in ["org", "fac", "campus", "ix", "carrier"]:
             # export kmz only for org,fac,campus,ix
             raise ValueError(_("Invalid export format"))
 
@@ -535,6 +535,26 @@ class AdvancedSearchExportView(ExportView):
                         ("Latitude", latitude),
                         ("Longitude", longitude),
                         ("Notes", row["notes"]),
+                    ]
+                )
+            )
+        return download_data
+    
+    def generate_carrier(self, request):
+        """
+        Fetch carrier data from the API and render it for export.
+        """
+        data = self.fetch(request)
+        download_data = []
+        for row in data:
+            download_data.append(
+                collections.OrderedDict(
+                    [
+                        ("Name", row["name"]),
+                        ("Long Name", row["name_long"]),
+                        ("Organization", row["org_name"]), 
+                        ("Facilities", len(row["carrierfac_set"])),  
+                        
                     ]
                 )
             )
