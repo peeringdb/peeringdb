@@ -62,4 +62,17 @@
 
   </form>
   </div>
+{% if wizard.steps.current == 'auth' %}
+{% block extrascript %}
+    <script>
+      (async () => {
+        await SecurityKeys.init_autofill({
+          url_request_registration: "{% url "security-keys-request-registration" %}",
+          url_request_authentication: "{% url "security-keys-request-authentication" %}",
+          csrf_token: "{{ csrf_token }}",
+        });
+      })()
+    </script>
+{% endblock extrascript %}
+{% endif %}
 {% endblock %}

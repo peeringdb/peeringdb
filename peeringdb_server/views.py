@@ -3367,32 +3367,31 @@ class LoginView(TwoFactorLoginView):
 
         return kwargs
 
-    def attempt_passwordless_auth(
+    def attempt_passkey_auth(
         self, request: WSGIRequest, **kwargs: Any
     ) -> HttpResponseRedirect | None:
         """
-        Wrap attempt_passwordless_auth so we can set a session
-        property to indicate that the passwordless auth was
+        Wrap attempt_passkey_auth so we can set a session
+        property to indicate that the passkey auth was
         used
         """
-        response = super().attempt_passwordless_auth(request, **kwargs)
+        response = super().attempt_passkey_auth(request, **kwargs)
 
         # if `credential` in request POST is set AND
-        # we got a response from `attempt_passwordless_auth`, passwordless
+        # we got a response from `attempt_passkey_auth`, passkey
         # authentication was used and succeeded
 
         credential = request.POST.get("credential", None)
-        username = request.POST.get("auth-username", None)
 
-        if credential and response and username:
-            request.used_passwordless_auth = True
+        if credential and response:
+            request.used_passkey_auth = True
 
         return response
 
     @transaction.atomic
-    @method_decorator(
-        ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
-    )
+    # @method_decorator(
+    #     ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
+    # )
     def post(self, *args, **kwargs):
         """
         Posts to the `auth` step of the authentication
@@ -3407,9 +3406,10 @@ class LoginView(TwoFactorLoginView):
             )
             return self.render_goto_step("auth")
 
-        passwordless = self.attempt_passwordless_auth(request, **kwargs)
-        if passwordless:
-            return passwordless
+        if not request.POST.get("auth-username"):
+            attempt_passkey_auth = self.attempt_passkey_auth(request, **kwargs)
+            if attempt_passkey_auth:
+                return attempt_passkey_auth
 
         return super().post(*args, **kwargs)
 
@@ -3531,9 +3531,9 @@ class LoginView(TwoFactorLoginView):
     def set_amr(self):
         amr = []
         done_forms = self.get_done_form_list()
-        passwordless = getattr(self, "used_passwordless_auth", False)
+        passkey = getattr(self, "used_passkey_auth", False)
 
-        if not passwordless:
+        if not passkey:
             amr.append("pwd")
         else:
             amr.append("swk")
@@ -3551,7 +3551,7 @@ class LoginView(TwoFactorLoginView):
             # but for that webauthn attestation is needed, which we currently
             # do not collect.
             #
-            # NOTE: by design if passwordless authentication was used
+            # NOTE: by design if passkey authentication was used
             # it is required to be a different security key, so there may
             # actually be cases of amr being "swk swk" which is accurate
             # and RFC 8176 does not seem to disallow this (multiples of the same type).
@@ -3871,3 +3871,10 @@ def handle_2fa(request):
         return view_index(
             request, errors=[_("Login as the organization admin to perform the action")]
         )
+
+
+@ensure_csrf_cookie
+@login_required
+def view_profile_passkey(request):
+    if request.user.is_authenticated:
+        return render(request,"site/profile-passkeys.html")

@@ -6075,6 +6075,14 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
 
         return self.totpdevice_set.exists() or self.webauthn_security_keys.exists()
 
+    @property
+    def get_2fa_security_keys(self):
+        return self.webauthn_security_keys.filter(passkey_login=False).all()
+
+    @property
+    def get_passkey_security_keys(self):
+        return self.webauthn_security_keys.filter(passkey_login=True).all()
+
     @staticmethod
     def autocomplete_search_fields():
         """
