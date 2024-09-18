@@ -71,7 +71,8 @@ $(window).bind("load", function() {
 
   SecurityKeys.init({
     url_request_registration: "{% url "security-keys-request-registration" %}",
-    url_request_authentication: "{% url "security-keys-request-authentication" %}"
+    url_request_authentication: "{% url "security-keys-request-authentication" %}",
+    csrf_token:"{{ csrf_token }}"
   });
 
   $('#anon-language-preference').each(function(idx) {

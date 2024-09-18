@@ -101,6 +101,7 @@ from peeringdb_server.views import (
     view_username_retrieve_initiate,
     view_verify,
     watch_network,
+    view_profile_passkey
 )
 
 # SITE
@@ -119,6 +120,11 @@ urlpatterns = [
     re_path(
         r"^login$",
         RedirectView.as_view(pattern_name="two_factor:login", permanent=True),
+    ),
+    re_path(
+        r"^account/passkey$",
+        view_profile_passkey,
+        name="profile_passkey"
     ),
     re_path(r"^register$", view_registration, name="register"),
     re_path(r"^reset-password$", view_password_reset, name="reset-password"),

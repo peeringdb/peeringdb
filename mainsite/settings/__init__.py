@@ -951,9 +951,9 @@ set_from_file("OIDC_RSA_PRIVATE_KEY", OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH, "", str)
 
 
 AUTHENTICATION_BACKENDS += (
-    # for passwordless auth using security-key
+    # for passkey auth using security-key
     # this needs to be first so it can do some clean up
-    "django_security_keys.backends.PasswordlessAuthenticationBackend",
+    "django_security_keys.backends.PasskeyAuthenticationBackend",
     # for OAuth provider
     "oauth2_provider.backends.OAuth2Backend",
     # for OAuth against external sources

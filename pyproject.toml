@@ -54,7 +54,10 @@ djangorestframework-api-key = ">=2.3.0"
 django-structlog = ">=2.2.0"
 django-tables2 = ">=1.0.4"
 django-vanilla-views = ">=1.0.2"
-django-security-keys = ">=1.1.0"
+#django-security-keys = ">=1.1.0"
+# from branch until passkey support is released
+django-security-keys = { git = "https://github.com/20c/django-security-keys.git", branch = "passkey" }
+
 googlemaps = ">=2.5.1"
 markdown = ">=2.6.7"
 passlib = ">=1.7.1"
