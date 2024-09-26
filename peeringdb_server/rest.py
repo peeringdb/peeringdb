@@ -44,6 +44,7 @@ from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import exception_handler
+from rest_framework.pagination import PageNumberPagination
 from two_factor.utils import devices_for_user
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
@@ -401,6 +402,30 @@ class InactiveKeyBlock(permissions.BasePermission):
 # VIEW SETS
 
 
+class UnlimitedIfNoPagePagination(PageNumberPagination):
+
+
+    page_size = dj_settings.PAGE_SIZE  # default page_size
+    page_size_query_param = 'per_page'
+    max_page_size = 250 
+
+    def paginate_queryset(self, queryset, request, view=None):
+        self.request = request
+        if 'page' in request.query_params:
+            self.pagination_applied = True
+            return super().paginate_queryset(queryset, request)
+        else:
+            self.pagination_applied = False
+            return list(queryset)  # Return all without pagination
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': len(data),
+            'next': None,
+            'previous': None,
+            'results': data,
+        })
+
 class ModelViewSet(viewsets.ModelViewSet):
     """
     Generic ModelViewSet Base Class.
@@ -659,15 +684,18 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         is_specific_object_request = "pk" in self.kwargs
 
+        if limit > 0:
+            qset = qset[skip : skip + limit]
+        else:
+            qset = qset[skip:]
+
+
+
         if not is_specific_object_request:
 
             # we are handling a list request and need to apply the limit and skip
             # parameters if they are present
 
-            if limit > 0:
-                qset = qset[skip : skip + limit]
-            else:
-                qset = qset[skip:]
 
             row_count = qset.count()
             if enforced_limit and depth > 0 and row_count > enforced_limit:
@@ -683,12 +711,61 @@ class ModelViewSet(viewsets.ModelViewSet):
             )
         else:
             return qset
+        
+    pagination_class = UnlimitedIfNoPagePagination
 
     @client_check()
     def list(self, request, *args, **kwargs):
         t = time.time()
+        r = None # Initialize r to None 
+
         try:
-            r = super().list(request, *args, **kwargs)
+            # *** START OF PAGINATION LOGIC ***
+            queryset = self.filter_queryset(self.get_queryset())
+
+
+            # page_number = self.request.GET.get('page')
+            # results_per_page = self.request.GET.get('per_page', self.page_size)
+
+            paginator = self.pagination_class()
+            paginator.request = request
+            page = paginator.paginate_queryset(queryset, request, view=self)
+            
+
+            if getattr(paginator, 'pagination_applied', True):
+                serializer = self.get_serializer(page, many=True)
+                r = paginator.get_paginated_response(serializer.data)
+                self.request.meta_response['pagination'] = {
+                    'count': paginator.page.paginator.count,
+                    'has_next': paginator.page.has_next(),
+                    'has_previous': paginator.page.has_previous(),
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'page': paginator.page.number,
+                    'per_page': paginator.page.paginator.per_page,
+                    'total_pages': paginator.page.paginator.num_pages
+                }
+            else:
+                serializer = self.get_serializer(queryset, many=True)
+                r = Response(serializer.data)
+
+            
+
+            # FIXME: this waits for peeringdb-py fix to deal with 404 raise properly
+            if not r or (hasattr(r, 'data') and not len(r.data)):
+                if self.serializer_class.is_unique_query(request):
+                    return Response(
+                        status=status.HTTP_404_NOT_FOUND,
+                        data={"data": [], "detail": "Entity not found"}
+                    )
+
+            applicator = APIPermissionsApplicator(request)
+
+            if not applicator.is_generating_api_cache:
+                r.data = applicator.apply(r.data)
+                      
+            return r  
+
         except ValueError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
@@ -700,16 +777,10 @@ class ModelViewSet(viewsets.ModelViewSet):
         except CacheRedirect as inst:
             r = Response(status=200, data=inst.loader.load())
             r.context_data = {"apicache": True}
-        d = time.time() - t
-
-        # FIXME: this waits for peeringdb-py fix to deal with 404 raise properly
-        if not r or not len(r.data):
-            if self.serializer_class.is_unique_query(request):
-                return Response(
-                    status=404, data={"data": [], "detail": "Entity not found"}
-                )
-
-        print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
+            return r
+        finally:
+            d = time.time() - t
+            print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
         applicator = APIPermissionsApplicator(request)
 
