@@ -163,6 +163,12 @@
       <div class="col-1 col-sm-1 col-md-1 net_count" data-edit-name="net_count"></div>
     </div>
   </div>
+  {% if request.GET.reftag == 'ix' %}
+  <nav aria-label="...">
+    <ul class="pagination-top pagination">
+    </ul>    
+  </nav>
+  {% endif %}
 
   <div class="headers marg-top-15">
     <div class="row">

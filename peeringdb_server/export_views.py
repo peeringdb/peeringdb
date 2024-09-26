@@ -20,7 +20,7 @@ from django.views import View
 from rest_framework.test import APIRequestFactory
 from simplekml import Kml, Style
 
-from peeringdb_server.models import Campus, InternetExchange, IXLan
+from peeringdb_server.models import Campus, InternetExchange, IXLan, Network
 from peeringdb_server.renderers import JSONEncoder
 from peeringdb_server.rest import REFTAG_MAP as RestViewSets
 from peeringdb_server.util import add_kmz_overlay_watermark, generate_balloonstyle_text
@@ -306,8 +306,7 @@ class AdvancedSearchExportView(ExportView):
             - dict: un-rendered dataset returned by API
         """
         params = request.GET.dict()
-        params["limit"] = 250
-        params["depth"] = 1
+        params["depth"] = 0
 
         # prepare api request
         request_factory = APIRequestFactory()
@@ -381,6 +380,7 @@ class AdvancedSearchExportView(ExportView):
         data = self.fetch(request)
         download_data = []
         for row in data:
+            net = Network.objects.get(id=row["id"])
             download_data.append(
                 collections.OrderedDict(
                     [
@@ -392,8 +392,8 @@ class AdvancedSearchExportView(ExportView):
                         ("Network Scope", row["info_scope"]),
                         ("Traffic Levels", row["info_traffic"]),
                         ("Traffic Ratio", row["info_ratio"]),
-                        ("Exchanges", len(row["netixlan_set"])),
-                        ("Facilities", len(row["netfac_set"])),
+                        ("Exchanges", net.netixlan_set.count()),
+                        ("Facilities", net.netfac_set.count()),
                     ]
                 )
             )

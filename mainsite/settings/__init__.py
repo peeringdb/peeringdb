@@ -1099,6 +1099,7 @@ set_option("SPONSORSHIPS_EMAIL", SERVER_EMAIL)
 
 
 set_option("API_URL", "https://www.peeringdb.com/api")
+set_option("PAGE_SIZE", 250)
 set_option("API_DEPTH_ROW_LIMIT", 250)
 
 # limit results for the standard search
