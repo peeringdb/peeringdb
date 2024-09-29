@@ -1078,6 +1078,20 @@ files = [
 ]
 
 [[package]]
+name = "django-read-only"
+version = "1.16.0"
+description = "Disable Django database writes."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "django_read_only-1.16.0-py3-none-any.whl", hash = "sha256:ab4c39914094be31cb505950dc53cfcdc7fd698ba86c6f05e38ab7fd1166ae41"},
+    {file = "django_read_only-1.16.0.tar.gz", hash = "sha256:a9be30d037d0e87f0831eaf038e31cb3307b572df70df21817d123d5d8841a4f"},
+]
+
+[package.dependencies]
+django = ">=3.2"
+
+[[package]]
 name = "django-rest-swagger"
 version = "2.2.0"
 description = "Swagger UI for Django REST Framework 3.5+"
@@ -3621,4 +3635,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "d1b1b17a64ccbe4d3d99f43bbb797053ae7ccdb5ee47eeb038ffd63b8b942c00"
+content-hash = "27678f7b0fa20f3107e371813183ebe294e439509210a09587936608c55ccbfc"
