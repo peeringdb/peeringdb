@@ -19,6 +19,7 @@ import re
 import uuid
 from typing import Any
 
+import django_read_only
 import googlemaps.exceptions
 import oauth2_provider.views as oauth2_views
 import oauth2_provider.views.application as oauth2_application_views
@@ -29,6 +30,8 @@ from django.conf import settings as dj_settings
 from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import update_last_login
+from django.contrib.auth.signals import user_logged_in
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import (
@@ -3309,7 +3312,12 @@ def request_search_v2(request):
 
 @transaction.atomic
 def request_logout(request):
-    logout(request)
+    if dj_settings.DJANGO_READ_ONLY:
+        with django_read_only.temp_writes():
+            logout(request)
+    else:
+        logout(request)
+
     return redirect("/")
 
 
@@ -3407,11 +3415,24 @@ class LoginView(TwoFactorLoginView):
             return self.render_goto_step("auth")
 
         if not request.POST.get("auth-username"):
-            attempt_passkey_auth = self.attempt_passkey_auth(request, **kwargs)
-            if attempt_passkey_auth:
-                return attempt_passkey_auth
-
-        return super().post(*args, **kwargs)
+            if dj_settings.DJANGO_READ_ONLY:
+                with django_read_only.temp_writes():
+                    if dj_settings.SKIP_LAST_LOGIN_UPDATE:
+                        user_logged_in.disconnect(
+                            update_last_login, dispatch_uid="update_last_login"
+                        )
+                    attempt_passkey_auth = self.attempt_passkey_auth(request, **kwargs)
+                    if attempt_passkey_auth:
+                        return attempt_passkey_auth
+            else:
+                attempt_passkey_auth = self.attempt_passkey_auth(request, **kwargs)
+                if attempt_passkey_auth:
+                    return attempt_passkey_auth
+        if not dj_settings.DJANGO_READ_ONLY:
+            return super().post(*args, **kwargs)
+        else:
+            with django_read_only.temp_writes():
+                return super().post(*args, **kwargs)
 
     def get_context_data(self, form, **kwargs):
         """
@@ -3877,4 +3898,4 @@ def handle_2fa(request):
 @login_required
 def view_profile_passkey(request):
     if request.user.is_authenticated:
-        return render(request,"site/profile-passkeys.html")
+        return render(request, "site/profile-passkeys.html")

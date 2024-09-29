@@ -49,6 +49,7 @@ django-hashers-passlib = { git = "https://github.com/mathiasertl/django-hashers-
 django-oauth-toolkit = ">=2"
 django-phonenumber-field = ">=0.6"
 django-ratelimit = ">=4.0.0"
+django-read-only = ">=1.15.0"
 django-rest-swagger = ">=2.1.2"
 djangorestframework-api-key = ">=2.3.0"
 django-structlog = ">=2.2.0"

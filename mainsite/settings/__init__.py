@@ -729,7 +729,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.sites",
     "django.contrib.messages",
-    "django.contrib.staticfiles",
     "haystack",
     "django_otp",
     "django_otp.plugins.otp_static",
@@ -756,6 +755,7 @@ INSTALLED_APPS = [
     "django_tables2",
     "oauth2_provider",
     "peeringdb_server",
+    "django.contrib.staticfiles",
     "django_security_keys",
     "reversion",
     "captcha",
@@ -1448,6 +1448,16 @@ set_option("AUTO_UPDATE_RIR_STATUS", True)
 
 set_option("RIR_ALLOCATION_DATA_CACHE_DAYS", 1)
 
+# A toggle for read only mode
+set_option("DJANGO_READ_ONLY", False)
+
+# A toggle to skip updating the last_login on login
+set_option("SKIP_LAST_LOGIN_UPDATE", False)
+
+if DJANGO_READ_ONLY:
+    INSTALLED_APPS += [
+        "django_read_only",
+    ]
 
 # show last database sync
 set_from_env("DATABASE_LAST_SYNC", None)

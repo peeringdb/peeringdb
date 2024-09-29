@@ -6,6 +6,7 @@ import base64
 import binascii
 import json
 
+import django_read_only
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.sessions.middleware import SessionMiddleware
@@ -83,8 +84,11 @@ class PDBSessionMiddleware(SessionMiddleware):
 
         if session_key and not request.session.is_empty():
             # request specifies session and session is not empty, proceed normally
-
-            return super().process_response(request, response)
+            if settings.DJANGO_READ_ONLY:
+                with django_read_only.temp_writes():
+                    return super().process_response(request, response)
+            else:
+                return super().process_response(request, response)
 
         elif not request.COOKIES.get(settings.SESSION_COOKIE_NAME):
             # request specifies no session, check if the request.path falls into the
@@ -108,8 +112,11 @@ class PDBSessionMiddleware(SessionMiddleware):
 
             if request.path in NEW_SESSION_VALID_PATHS:
                 # path is valid for a new session, proceed normally
-
-                return super().process_response(request, response)
+                if settings.DJANGO_READ_ONLY:
+                    with django_read_only.temp_writes():
+                        return super().process_response(request, response)
+                else:
+                    return super().process_response(request, response)
             else:
                 # path is NOT valid for a new session, abort session
                 # creation
