@@ -138,6 +138,7 @@ from peeringdb_server.search import (
     is_valid_longitude,
     search,
     search_v2,
+    new_elasticsearch,
 )
 from peeringdb_server.serializers import (
     CampusSerializer,
@@ -3920,7 +3921,7 @@ def search_elasticsearch(request):
             query_dict = json.loads(query_json)
 
 
-            client = Elasticsearch(getattr(dj_settings, 'ELASTICSEARCH_URL')) 
+            client = new_elasticsearch()
 
             # Pass the parsed query dictionary directly to client.search() 
             response = client.search(index=index, body=query_dict, pretty=True, size=1000) 
