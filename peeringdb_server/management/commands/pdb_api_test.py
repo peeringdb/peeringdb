@@ -1575,6 +1575,17 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_org_admin_002_PUT_ix_media(self):
+        ix = SHARED["ix_rw_ok"]
+        data = self.assert_get_handleref(self.db_org_admin, "ix", ix.id)
+        data.update(media="ATM")
+        self.db_org_admin.update("ix", **data)
+
+        data = self.assert_get_handleref(self.db_org_admin, "ix", ix.id)
+        assert data["media"] == "Ethernet"
+
+    ##########################################################################
+
     def test_org_admin_002_POST_ix_request_ixf_import(self):
         ix = SHARED["ix_rw_ok"]
 

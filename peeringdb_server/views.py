@@ -2245,13 +2245,6 @@ def view_exchange(request, id):
                 "value": data.get("region_continent", dismiss),
             },
             {
-                "name": "media",
-                "type": "list",
-                "data": "enum/media",
-                "label": _("Media Type"),
-                "value": data.get("media", dismiss),
-            },
-            {
                 "name": "service_level",
                 "type": "list",
                 "data": "enum/service_level_types_trunc",
