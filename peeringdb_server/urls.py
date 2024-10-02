@@ -101,7 +101,9 @@ from peeringdb_server.views import (
     view_username_retrieve_initiate,
     view_verify,
     watch_network,
+    search_elasticsearch,
     view_profile_passkey
+
 )
 
 # SITE
@@ -482,6 +484,10 @@ urlpatterns += [
         OAuthMetadataView.as_view(),
         name="oauth2_provider_metadata",
     ),
+]
+
+urlpatterns += [
+    path("_search", search_elasticsearch, name="search_elasticsearch"),
 ]
 
 # DEBUG

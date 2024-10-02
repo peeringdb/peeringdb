@@ -155,6 +155,8 @@ from peeringdb_server.util import (
     v2_social_media_services,
 )
 
+from elasticsearch import Elasticsearch
+
 RATELIMITS = dj_settings.RATELIMITS
 
 
@@ -3894,6 +3896,49 @@ def handle_2fa(request):
         )
 
 
+@login_required
+def search_elasticsearch(request):
+    if not request.user.is_superuser:
+        return HttpResponseNotFound()
+
+    client = Elasticsearch(getattr(dj_settings, 'ELASTICSEARCH_URL'))
+    
+    try:
+        indices = client.indices.get_alias().keys()
+    except Exception as e:
+        indices = []
+
+    if request.method == 'POST':
+        query_json = request.POST.get('q', '')
+        index = request.POST.get('index', '_all')
+
+        if not query_json:
+            return render(request, 'site/es_search.html', {'indices': indices, 'error': 'Missing query'})
+
+        try:
+            # Parse the JSON query (raw Elasticsearch DSL)
+            query_dict = json.loads(query_json)
+
+
+            client = Elasticsearch(getattr(dj_settings, 'ELASTICSEARCH_URL')) 
+
+            # Pass the parsed query dictionary directly to client.search() 
+            response = client.search(index=index, body=query_dict, pretty=True, size=1000) 
+
+            #make response a json object
+            response = json.loads(json.dumps(response.body))
+
+            return render(request, 'site/es_search.html', {'indices': indices, 'raw_results': response})
+
+        except json.JSONDecodeError as e:
+            return render(request, 'site/es_search.html', {'error': f'Invalid JSON: {e}'})
+
+        except Exception as e:
+            return render(request, 'site/es_search.html', {'error': f'Error querying Elasticsearch: {e}'})
+
+    else:
+        return render(request, 'site/es_search.html', {'indices': indices})
+    
 @ensure_csrf_cookie
 @login_required
 def view_profile_passkey(request):
