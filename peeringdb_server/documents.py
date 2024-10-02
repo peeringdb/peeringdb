@@ -492,7 +492,6 @@ class InternetExchangeDocument(GeocodeMixin, IpAddressMixin, Document):
             # 'country',
             # "notes",
             "region_continent",
-            "media",
             "proto_unicast",
             "proto_multicast",
             "proto_ipv6",

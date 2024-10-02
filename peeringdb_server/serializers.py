@@ -3414,6 +3414,8 @@ class InternetExchangeSerializer(ModelSerializer):
     proto_unicast = serializers.SerializerMethodField()
     proto_ipv6 = serializers.SerializerMethodField()
 
+    media = serializers.SerializerMethodField()
+
     validators = [
         RequiredForMethodValidator("prefix", ["POST"]),
         SoftRequiredValidator(
@@ -3470,7 +3472,12 @@ class InternetExchangeSerializer(ModelSerializer):
         related_fields = ["org", "fac_set", "ixlan_set"]
         list_exclude = ["org"]
 
-        read_only_fields = ["proto_multicast"]
+        read_only_fields = ["proto_multicast", "media"]
+
+    def get_media(self,inst):
+        # as per #1555 this should always return "Ethernet" as the field
+        # is now deprecated
+        return "Ethernet"
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):

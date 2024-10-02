@@ -937,6 +937,7 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMi
         "proto_unicast",
         "proto_ipv6",
         "proto_multicast",
+        "media",
     )
 
     raw_id_fields = ("org", "ixf_import_request_user")

@@ -463,7 +463,6 @@ class AdvancedSearchExportView(ExportView):
                 collections.OrderedDict(
                     [
                         ("Name", row["name"]),
-                        ("Media Type", row["media"]),
                         ("Country", row["country"]),
                         ("City", row["city"]),
                         ("Networks", row["net_count"]),
