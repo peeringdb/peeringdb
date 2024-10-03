@@ -3298,6 +3298,7 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
             netixlan.ipaddr6 = ipv6
             changed.append("ipaddr6")
 
+
         # Is the netixlan a routeserver ?
         if netixlan_info.is_rs_peer != netixlan.is_rs_peer:
             netixlan.is_rs_peer = netixlan_info.is_rs_peer
@@ -5348,6 +5349,20 @@ class NetworkIXLan(
     )
     ixlan = models.ForeignKey(
         IXLan, on_delete=models.CASCADE, default=0, related_name="netixlan_set"
+    )
+    net_side = models.ForeignKey(
+        Facility, 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL, 
+        related_name="net_side_set"
+    )
+    ix_side = models.ForeignKey(
+        Facility, 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL, 
+        related_name="ix_side_set"
     )
 
     parent_relations = ["ixlan", "network"]

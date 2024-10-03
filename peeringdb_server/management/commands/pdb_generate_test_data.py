@@ -105,6 +105,12 @@ class Command(BaseCommand):
                             {"latitude": 38.909308 + i, "longitude": -77.472269 + i}
                         )
 
+                if reftag == "netixlan":
+                    params.update(
+                        net_side=self.entities["fac"][i],
+                        ix_side=self.entities["fac"][i],
+                    )
+
                 # create object
                 entity = self.mock.create(reftag, **params)
                 self.entities[reftag].append(entity)

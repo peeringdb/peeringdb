@@ -53,7 +53,10 @@ from peeringdb_server.models import (
     UTC,
     CarrierFacility,
     Facility,
+    InternetExchange,
+    InternetExchangeFacility,
     Network,
+    NetworkIXLan,
     Organization,
     OrganizationAPIKey,
     ParentStatusException,
@@ -70,7 +73,7 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
-from peeringdb_server.serializers import ASSetSerializer, FacilitySerializer
+from peeringdb_server.serializers import ASSetSerializer, FacilitySerializer, NetworkIXLanSerializer
 from peeringdb_server.util import coerce_ipaddr
 
 RATELIMITS = dj_settings.RATELIMITS
@@ -1100,6 +1103,115 @@ class CampusFacilityMixin:
         return Response(FacilitySerializer(fac).data)
 
 
+class NetworkIXLanMixin:
+    """
+    Custom API endpoint for setting or unsetting the net_side and ix_side values on a NetworkIXLan object.
+    Exposed at /api/netixlan/{id}/set-net-side and /api/netixlan/{id}/set-ix-side (POST).
+
+    These endpoints allow networks and exchanges to set (or unset) the net_side and ix_side values
+    on a NetworkIXLan by providing a valid fac_id in the payload, or unset by passing null.
+
+    Paths:
+    /api/netixlan/{id}/set-net-side:
+    /api/netixlan/{id}/set-ix-side:
+    POST:
+        Summary: Set or unset the net_side or ix_side value on a NetworkIXLan
+        Description: Allows networks or exchanges to update the corresponding side values.
+        Parameters:
+            - id: The ID of the NetworkIXLan to update (in path, required, integer)
+        RequestBody:
+            - fac_id: The ID of the Facility to set as net_side or ix_side. Null to unset (integer or null, required)
+    """
+
+    @transaction.atomic
+    @action(detail=True, methods=["POST"], url_path=r"set-net-side")
+    def add_net_side(self, request, *args, **kwargs):
+        """
+        Set or unset the net_side value on a NetworkIXLan.
+        This method sets a facility as the net_side based on the facility ID from the request payload.
+        If fac_id is null, the net_side will be unset. Permissions are checked before saving changes.
+        """
+        return self._set_side(
+            request, side="net_side", attr="netfac_set", obj="net", model=Network
+        )
+
+    @transaction.atomic
+    @action(detail=True, methods=["POST"], url_path=r"set-ix-side")
+    def add_ix_side(self, request, *args, **kwargs):
+        """
+        Set or unset the ix_side value on a NetworkIXLan.
+        This method sets a facility as the ix_side based on the facility ID from the request payload.
+        If fac_id is null, the ix_side will be unset. Permissions are checked before saving changes.
+        """
+        return self._set_side(
+            request, side="ix_side", attr="ixfac_set", obj="ix", model=InternetExchange
+        )
+
+    def _set_side(self, request, side, attr, obj, model):
+        try:
+            netixlan_id = self.kwargs.get("pk")
+            netixlan = NetworkIXLan.objects.get(id=netixlan_id)
+
+            obj_id = getattr(netixlan, f"{obj}_id")
+            obj_instance = model.objects.get(pk=obj_id)
+            if obj == "ix":
+                source_obj = netixlan.ixlan.ix
+            elif obj == "net":
+                source_obj = netixlan.network
+            else:
+                return Response(status=status.HTTP_403_FORBIDDEN)
+            if not self._has_permission(request, source_obj):
+                return Response(
+                    {"detail": f"Only admins of {obj} can set or unset the {side}"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            fac_id = request.data.get("fac_id")
+            if fac_id:
+                try:
+                    if str(fac_id).strip() == 0:
+                        raise ValueError
+                    fac_id = int(fac_id)
+                    facility_relation = getattr(obj_instance, attr).get(
+                        facility_id=fac_id
+                    )
+                    facility = facility_relation.facility
+                except model.DoesNotExist:
+                    return Response(
+                        {"detail": "Facility not found."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+                except ValueError:
+                    raise ValidationError("invalid facility")
+
+                setattr(netixlan, side, facility)
+            else:
+                setattr(netixlan, side, None)
+
+            netixlan.save()
+            return Response(
+                NetworkIXLanSerializer(netixlan).data, status=status.HTTP_200_OK
+            )
+
+        except NetworkIXLan.DoesNotExist:
+            return Response(
+                {"detail": "NetworkIXLan not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        except model.DoesNotExist:
+            return Response(
+                {"detail": f"{obj.capitalize()} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except ValidationError as inst:
+            return Response({"detail": str(inst)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _has_permission(self, request, source_obj):
+        return check_permissions_from_request(request, source_obj, "c")
+
+
 # TODO: why are we doing the import like this??!
 pdb_serializers = importlib.import_module("peeringdb_server.serializers")
 router = RestRouter(trailing_slash=False)
@@ -1160,7 +1272,7 @@ IXLanPrefixViewSet = model_view_set("IXLanPrefix")
 NetworkViewSet = model_view_set("Network")
 NetworkContactViewSet = model_view_set("NetworkContact")
 NetworkFacilityViewSet = model_view_set("NetworkFacility")
-NetworkIXLanViewSet = model_view_set("NetworkIXLan")
+NetworkIXLanViewSet = model_view_set("NetworkIXLan", mixins=(NetworkIXLanMixin,))
 OrganizationViewSet = model_view_set("Organization")
 CampusViewSet = model_view_set("Campus", mixins=(CampusFacilityMixin,))
 

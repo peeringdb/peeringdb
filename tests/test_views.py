@@ -6,17 +6,26 @@ from allauth.account.models import EmailAddress
 from django.http import response
 from django.test import Client
 from django_grainy.models import Group
+from rest_framework import status
 from rest_framework.test import APIClient
 
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
+    InternetExchangeFacility,
     Network,
+    NetworkFacility,
+    NetworkIXLan,
     Organization,
     User,
     UserAPIKey,
     UserOrgAffiliationRequest,
 )
+
+from peeringdb_server.permissions import (
+    check_permissions_from_request,
+)
+
 from tests.util import reset_group_ids
 
 URL = "/affiliate-to-org"
@@ -324,3 +333,71 @@ def test_healthcheck():
 
     response = client.get("/healthcheck")
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_post_ix_side_net_side(network, org):
+    client = APIClient()
+
+    # Setup data
+    ix = InternetExchange.objects.create(name="Test ix", status="ok", org=org)
+    netixlan = NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ix.ixlan,
+        asn=network.asn,
+        speed=20000,
+        ipaddr4="195.69.147.250",
+        ipaddr6=None,
+        status="ok",
+        is_rs_peer=False,
+        operational=False,
+    )
+
+    fac = Facility.objects.create(
+        name="Test Facility", status="ok", org=org
+    )
+
+    # Check that no facilities are linked initially
+    assert not ix.ixfac_set.filter(status="ok").exists()
+    assert not network.netfac_set.filter(status="ok").exists()
+
+    # Create InternetExchangeFacility and NetworkFacility
+    ix_facility = InternetExchangeFacility.objects.create(facility=fac, ix=ix, status="ok")
+    net_facility = NetworkFacility.objects.create(facility=fac, network=network, status="ok")
+
+    assert ix_facility.status == "ok"
+    assert net_facility.status == "ok"
+
+    # Helper function for posting and checking response status
+    def post_and_check(url, fac_id, expected_status):
+        response = client.post(
+            url,
+            {"fac_id": fac_id},
+            format="json",
+        )
+        assert response.status_code == expected_status
+
+    # Helper function to determine expected status based on permissions for network/ix
+    def expected_status(obj, permission_code):
+        request = client.request().wsgi_request
+        if not check_permissions_from_request(request, obj, permission_code):
+            return status.HTTP_403_FORBIDDEN
+        return status.HTTP_200_OK
+
+    # Test set ix_side with permission
+    ix_side_url = f"/api/netixlan/{netixlan.id}/set-ix-side"
+    post_and_check(ix_side_url, fac.id, expected_status(ix, "c"))  # Check permission on IX (InternetExchange)
+
+    # Test set net_side with permission
+    net_side_url = f"/api/netixlan/{netixlan.id}/set-net-side"
+    post_and_check(net_side_url, fac.id, expected_status(network, "c"))  # Check permission on Network
+
+    # Simulate permission denied by removing access
+    client.force_authenticate(user=None)  # Simulate unauthorized user
+
+    # Test setting ix_side with permission denied
+    post_and_check(ix_side_url, fac.id, status.HTTP_403_FORBIDDEN)
+
+    # Test setting net_side with permission denied
+    post_and_check(net_side_url, fac.id, status.HTTP_403_FORBIDDEN)
+

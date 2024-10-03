@@ -1,6 +1,72 @@
 import pytest
+import reversion
 
-from peeringdb_server.models import Facility, Network, Organization
+from peeringdb_server.models import (
+    Facility,
+    InternetExchange,
+    Network,
+    NetworkIXLan,
+    Organization,
+)
+
+
+@pytest.fixture()
+def entities():
+    with reversion.create_revision():
+        org = Organization.objects.create(name="Netflix", status="ok")
+        network = Network.objects.create(
+            name="Network",
+            asn=123,
+            org=org,
+            info_prefixes4=42,
+            info_prefixes6=42,
+            website="http://netflix.com/",
+            policy_general="Open",
+            policy_url="https://www.netflix.com/openconnect/",
+            allow_ixp_update=True,
+            status="ok",
+            irr_as_set="AS-NFLX",
+            info_unicast=True,
+            info_ipv6=True,
+        )
+
+        ix = InternetExchange.objects.create(
+            name="Test Exchange One",
+            org=org,
+            status="ok",
+            tech_email="ix1@localhost",
+        )
+
+        facility = Facility.objects.create(
+            name="Facility",
+            status="ok",
+            city="City",
+            clli="CLLI",
+            state="MD",
+            country="US",
+            zipcode=1,
+            org=org,
+        )
+
+        netixlan = NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ix.ixlan,
+            asn=network.asn,
+            speed=1,
+            ipaddr4="195.69.147.250",
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=False,
+        )
+
+    return {
+        "facility": facility,
+        "org": org,
+        "ix": ix,
+        "network": network,
+        "netixlan": netixlan,
+    }
 
 
 @pytest.mark.django_db
@@ -56,3 +122,21 @@ def test_strip_fields_model_clean_validation():
     for fac in Facility.objects.all():
         assert len(fac.name) == len(fac.name.strip())
         assert len(fac.city) == len(fac.city.strip())
+
+
+@pytest.mark.django_db
+def test_net_side_ix_side(entities):
+    fac = Facility.objects.first()
+    netixlan = NetworkIXLan.objects.first()
+
+    assert netixlan.net_side == None
+    assert netixlan.ix_side == None
+
+    netixlan.net_side = fac
+    netixlan.ix_side = fac
+
+    with reversion.create_revision():
+        netixlan.save()
+    
+    assert netixlan.net_side
+    assert netixlan.ix_side
