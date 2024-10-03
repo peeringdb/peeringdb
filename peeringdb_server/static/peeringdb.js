@@ -437,6 +437,7 @@ PeeringDB.ViewTools = {
 
     const addressFields = ["address1", "address2", "city", "state", "zipcode", "geocode"];
     var target = container.data("edit-target");
+
     if(target == "api:ix:update") {
       this.apply_data(container, data, "tech_phone");
       this.apply_data(container, data, "policy_phone");
@@ -2307,6 +2308,7 @@ twentyc.editable.target.register(
     execute : function() {
       var endpoint = this.args[1]
       var requestType = this.args[2]
+      var operation = this.args[3]
       var method = "POST"
 
       var button = $(this.sender.context);
@@ -2345,6 +2347,12 @@ twentyc.editable.target.register(
         method = "POST"
       } else {
         throw(gettext("Unknown request type:") + " "+requestType); ///
+      }
+
+      if (operation) {
+        endpoint += `/${id}/${operation}`;
+        id = null;
+        method = "POST"
       }
 
       if(button.data("confirm")) {
@@ -2432,6 +2440,13 @@ twentyc.editable.target.register(
               type: "Http403",
               info: info
           });
+        } else if (r.status == 503) {
+          info = getExcMessage(r);
+
+          me.trigger("error", {
+              type: "Http503",
+              info: info
+          });
         } else {
             info = getExcMessage(r)
 
@@ -2516,11 +2531,32 @@ twentyc.editable.module.register(
       this.target.data = data;
       this.target.args[2] = "update"
       this.target.context = row;
+      let sub_target = null
+      let edit_target = container.data("edit-target");
+      const ref_tag = $('[data-ref-tag]').data('ref-tag');
+      if(edit_target==="api:netixlan" && ref_tag === "net"){
+        sub_target = jQuery.extend(true, {}, this.target);
+        const { fac_id, ...rest } = data;
+        this.data = rest
+        sub_target.data = {
+          fac_id
+        }
+        sub_target.context = row.find("[data-edit-type='autocomplete']").first()
+        const sub_edit_target = sub_target.context.data("edit-sub-target")
+        sub_target.args = sub_edit_target.split(":")
+        sub_target.args[1] = `netixlan/${id}/${sub_target.args[1]}`
+        sub_target.args[2] = "create"
+      }
+
+      var editForm = $(`[data-edit-target="${edit_target}"]`)
 
       $(this.target).on("success", function(ev, data) {
         var finalizer = "finalize_update_"+me.target.args[1];
         if(me[finalizer]) {
           me[finalizer](id, row, data);
+        }
+        if(edit_target==="api:netixlan" && ref_tag === "net"){
+          sub_target.execute()
         }
       });
       this.target.execute();
@@ -2739,7 +2775,29 @@ twentyc.editable.module.register(
 
     },
 
-    finalize_update_netixlan : function(rowId, row, data) {
+    finalize_port_location: function(port_location){
+      fac_id = port_location.data("edit-value")
+      fac_name = port_location.data("edit-autocomplete-text")
+      fac_link = `<a href="/fac/${fac_id}">${fac_name}</a>`
+      port_location.html(fac_link)
+    },
+    waitForEdit: function () {
+        return new Promise((resolve) => {
+          const checkAttribute = setInterval(() => {
+              if (!$("#view").hasClass("mode-edit")) {
+                  clearInterval(checkAttribute);
+                  resolve();
+              }
+          }, 100);
+      });
+    },
+    finalize_update_netixlan : async function(rowId, row, data) {
+      const ref_tag = $('[data-ref-tag]').data('ref-tag');
+      if(ref_tag === "ix" || ref_tag === "net"){
+        await this.waitForEdit();
+        port_location = row.find(`[data-edit-name='fac_id'][data-edit-id='${rowId}']`).first()
+        this.finalize_port_location(port_location)
+      }
       var pretty_speed = PeeringDB.pretty_speed(data.speed)
       row.find(".speed").data("edit-content-backup", pretty_speed)
       row.find(".speed").data("edit-value", data.speed)
@@ -2982,7 +3040,19 @@ twentyc.editable.input.register(
   {
     confirm_handlers : {},
 
-
+    apply : function(value){
+      // change data-edit-autocomplete-text and data-edit-value using javascript built-in functions. because if using jquery does not work
+      source = document.querySelector(`[data-edit-id="${this.source.data('edit-id')}"][data-edit-type="autocomplete"]`)
+      if (source){
+        source.setAttribute("data-edit-autocomplete-text",this.element.val())
+        source.setAttribute("data-edit-value",this.get())
+      }
+      this.source.data("edit-autocomplete-text",this.element.val())
+      this.source.data("edit-value",this.get())
+    },
+    changed : function() {
+      return this.original_value !== this.get()
+    },
     make : function() {
       let input = this.string_make();
       let multi = this.source.data('edit-multiple')
@@ -3000,18 +3070,21 @@ twentyc.editable.input.register(
       var input = this.element;
 
       var multi = this.source.data('edit-multiple')
-
+      var input_min_char = this.source.data("edit-autocomplete-mincharacter")
       if(multi) {
         this.element.data('choices_element').insertAfter(this.element);
       }
 
       input.yourlabsAutocomplete(
         {
-          url : "/autocomplete/"+
-                this.source.data("edit-autocomplete"),
-          minimumCharacters : 2,
+          url : "/autocomplete/"+this.source.data("edit-autocomplete"),
+          minimumCharacters : input_min_char ?? 2,
           choiceSelector : "span",
-          inputClick : function(e) { return ; }
+          inputClick : function(e) { 
+            if (input_min_char !== undefined && input_min_char === 0){
+              input.trigger("input")
+            }
+          }
         }
       ).input.bind("selectChoice", function(a,b) {
 
@@ -3041,6 +3114,7 @@ twentyc.editable.input.register(
         input.val(this.source.data("edit-autocomplete-text"));
         input.data("edit-value", this.source.data("edit-value"));
         input.data("value", this.source.data("edit-value"));
+        this.original_value = this.source.data("edit-value");
       }
 
 
@@ -3144,7 +3218,7 @@ twentyc.editable.input.register(
         var t = []
       this.element.data("value", t[0]);
       this.element.val(t[1]);
-
+      this.original_value = t[0];
       }
     },
     validate : function() {
@@ -4230,7 +4304,6 @@ function getSectionDataForExport(fields, refTag) {
 }
 
 $(document).ready(function () {
-
   $('#btn-export').on('click', function () {
     exportOptions = [];
     outputFormats = [];

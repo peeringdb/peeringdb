@@ -472,7 +472,6 @@ soft_delete.short_description = _("SOFT DELETE")
 
 
 class CustomResultLengthFilter(admin.SimpleListFilter):
-
     """
     Filter object that enables custom result length
     in django-admin change lists.
@@ -1662,6 +1661,32 @@ class IXLanPrefixAdmin(SoftDeleteAdmin, ISODateTimeMixin):
         return obj.ixlan.ix
 
 
+class NetworkIXLanAdminForm(StatusForm):
+    net_side = baseForms.ChoiceField(required=False)
+    ix_side = baseForms.ChoiceField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        net_side_choices = [("", _("Not set"))]
+        ix_side_choices = [("", _("Not set"))]
+        if instance := kwargs.get("instance"):
+            net_side_choices += NetworkFacility.objects.filter(
+                status="ok", network_id=instance.net_id
+            ).values_list("facility__id", "facility__name")
+            ix_side_choices += InternetExchangeFacility.objects.filter(
+                status="ok", ix_id=instance.ix_id
+            ).values_list("facility__id", "facility__name")
+
+        self.fields["net_side"].choices = net_side_choices
+        self.fields["ix_side"].choices = ix_side_choices
+
+    def clean_net_side(self):
+        net_side = self.cleaned_data["net_side"]
+        if net_side:
+            return Facility.objects.get(pk=net_side)
+        return None
+
+
 class NetworkIXLanAdmin(SoftDeleteAdmin, ISODateTimeMixin):
     list_display = (
         "id",
@@ -1671,10 +1696,13 @@ class NetworkIXLanAdmin(SoftDeleteAdmin, ISODateTimeMixin):
         "ix",
         "ipaddr4",
         "ipaddr6",
+        "net_side",
+        "ix_side",
         "status",
         "iso_created",
         "iso_updated",
     )
+    form = NetworkIXLanAdminForm
     search_fields = (
         "asn",
         "network__asn",
@@ -1686,7 +1714,6 @@ class NetworkIXLanAdmin(SoftDeleteAdmin, ISODateTimeMixin):
     )
     readonly_fields = ("id", "ix", "net")
     list_filter = (StatusFilter,)
-    form = StatusForm
 
     raw_id_fields = ("network", "ixlan")
     autocomplete_lookup_fields = {

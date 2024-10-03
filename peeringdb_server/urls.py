@@ -21,9 +21,11 @@ from peeringdb_server.autocomplete_views import (
     FacilityAutocompleteForNetwork,
     FacilityAutocompleteForOrganization,
     FacilityAutocompleteJSON,
+    InternetExchangeFacilityAutoComplete,
     IXLanAutocomplete,
     NetworkAutocomplete,
     OrganizationAutocomplete,
+    NetworkFacilityAutocomplete,
     clt_history,
 )
 from peeringdb_server.export_views import (
@@ -434,6 +436,12 @@ urlpatterns += [
     ),
     re_path(
         r"^autocomplete/ixlan/$", IXLanAutocomplete.as_view(), name="autocomplete-ixlan"
+    ),
+    re_path(
+        r"^autocomplete/netfac/(?P<net_id>\d+)/$", NetworkFacilityAutocomplete.as_view(), name="autocomplete-netfac"
+    ),
+    re_path(
+        r"^autocomplete/ixfac/(?P<ix_id>\d+)/$", InternetExchangeFacilityAutoComplete.as_view(), name="autocomplete-ixfac"
     ),
     re_path(
         r"^autocomplete/admin/deletedversions$",

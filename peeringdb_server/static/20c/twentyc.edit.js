@@ -1601,6 +1601,10 @@ $.fn.editable = function(action, arg, dbg) {
           else
             me.html(me.data("edit-content-backup"))
 
+            if(me.data("edit-type")==="autocomplete" && me.data("edit-keep-content")==="yes"){
+              me.html(me.data("edit-content-backup"))
+            }
+
           me.data("edit-input-instance", null);
 
           mode = "view";

@@ -2384,8 +2384,15 @@ class NetworkIXLanSerializer(ModelSerializer):
             "is_rs_peer",
             "bfd_support",
             "operational",
+            "net_side",
+            "ix_side"
         ] + HandleRefSerializer.Meta.fields
 
+        
+        read_only_fields = [
+            "net_side",
+            "ix_side"
+        ]
         related_fields = ["net", "ixlan"]
 
         list_exclude = ["net", "ixlan"]
