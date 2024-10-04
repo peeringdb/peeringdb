@@ -49,9 +49,6 @@ COPY poetry.lock pyproject.toml ./
 # install dev now so we don't need a build env for testing (adds 8M)
 RUN poetry install --no-root
 
-# inetd
-RUN apk add busybox-extras
-
 #### final image here
 
 FROM base as final
@@ -72,8 +69,6 @@ COPY --from=builder "$VIRTUAL_ENV" "$VIRTUAL_ENV"
 
 RUN mkdir -p api-cache etc locale media static var/log
 COPY manage.py .
-# container exec whois
-COPY in.whoisd .
 COPY Ctl/VERSION etc
 COPY docs/ docs
 COPY mainsite/ mainsite
@@ -89,11 +84,6 @@ COPY scripts/manage /usr/bin/
 COPY Ctl/docker/entrypoint.sh /
 
 RUN DJANGO_SECRET_KEY=secret manage collectstatic --no-input
-
-# inetd for whois
-COPY --from=builder /usr/sbin/inetd /usr/sbin/
-RUN true
-COPY Ctl/docker/inetd.conf /etc/
 
 RUN chown -R pdb:pdb api-cache locale media var/log coverage
 

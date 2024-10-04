@@ -24,12 +24,6 @@ case "$1" in
   "migrate" )
     migrate
     ;;
-  "inetd" )
-    inetd -f -e -q 1024
-    ;;
-  "in.whois" )
-    exec ./in.whoisd
-    ;;
   "run_tests" )
     shift
     source venv/bin/activate
@@ -60,17 +54,17 @@ case "$1" in
     echo generating api docs
     python manage.py generateschema --file peeringdb_server/static/api-schema.yaml
     ;;
-  "whois" )
-    line=$(head -1 | tr -cd '[:alnum:]._-')
-    exec manage pdb_whois "$line"
+  "makemessages" | "compilemessages" )
+    cd /mnt
+    exec django-admin $@
+    ;;
+  "inetd" | "in.whois" | "whois" )
+    echo "whois and inetd have been removed"
+    exit 1
     ;;
   "/bin/sh" )
     echo dropping to shell
     exec $@
-    ;;
-  "makemessages" | "compilemessages" )
-    cd /mnt
-    exec django-admin $@
     ;;
   * )
     exec manage $@
