@@ -10,7 +10,6 @@ from peeringdb_server.models import (
     Organization,
     ProtectedAction,
     Sponsorship,
-    SponsorshipOrganization,
 )
 
 

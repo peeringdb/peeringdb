@@ -1,9 +1,7 @@
 import datetime
 import json
 
-import pytest
 from django.core.cache import caches
-from django.core.management import call_command
 from django.test import TestCase
 from freezegun import freeze_time
 from rest_framework.response import Response
@@ -45,7 +43,6 @@ class MelissaMockView(ModelViewSet):
 
 
 class ResponseSizeMockView(ModelViewSet):
-
     """
     Dummy view for testing thorttling based on expected response size (#1126)
     """

@@ -2,6 +2,7 @@
 DEPRECATED
 Used during ixlan migrations for #21.
 """
+
 import csv
 import datetime
 
@@ -277,9 +278,7 @@ class Command(BaseCommand):
             ixlan.save()
 
         self.log(
-            "Reparented [{}] ixlan {} from ix {} ({}) to new ix {} ({})".format(
-                ixlan.status, ixlan.id, ix.name, ix.id, new_ix.name, new_ix.id
-            )
+            f"Reparented [{ixlan.status}] ixlan {ixlan.id} from ix {ix.name} ({ix.id}) to new ix {new_ix.name} ({new_ix.id})"
         )
 
         self.stats[f"reparented_{ixlan.status}"] += 1
@@ -373,9 +372,7 @@ class Command(BaseCommand):
             self.report_migration(old_id, new_id, ixlan)
 
         self.log(
-            "Migrated [{}] ixlan id {} -> {} - Exchange: {}".format(
-                ixlan.status, old_id, new_id, ix.name
-            )
+            f"Migrated [{ixlan.status}] ixlan id {old_id} -> {new_id} - Exchange: {ix.name}"
         )
 
         # migrate ixlan id (database)
@@ -395,9 +392,7 @@ class Command(BaseCommand):
 
             with reversion.create_revision():
                 reversion.set_comment(
-                    "Migrated to new ixlan id: {} -> {} (script, #21)".format(
-                        old_id, ixlan.id
-                    )
+                    f"Migrated to new ixlan id: {old_id} -> {ixlan.id} (script, #21)"
                 )
                 reversion.add_to_revision(ixlan)
                 for netixlan in ixlan.netixlan_set.all():
@@ -442,9 +437,7 @@ class Command(BaseCommand):
 
         queries = [
             (
-                "update {} set id=%s, updated=%s where id=%s".format(
-                    IXLan._meta.db_table
-                ),
+                f"update {IXLan._meta.db_table} set id=%s, updated=%s where id=%s",
                 [new_id, now, old_id],
             ),
         ]
@@ -454,9 +447,7 @@ class Command(BaseCommand):
         for model in self.fk_relations:
             queries.append(
                 (
-                    "update {} set ixlan_id=%s, updated=%s where ixlan_id=%s".format(
-                        model._meta.db_table
-                    ),
+                    f"update {model._meta.db_table} set ixlan_id=%s, updated=%s where ixlan_id=%s",
                     [new_id, now, old_id],
                 )
             )
@@ -466,9 +457,7 @@ class Command(BaseCommand):
         for model in self.generic_relations:
             queries.append(
                 (
-                    "update {} set object_id=%s where object_id=%s and content_type_id=%s".format(
-                        model._meta.db_table
-                    ),
+                    f"update {model._meta.db_table} set object_id=%s where object_id=%s and content_type_id=%s",
                     [new_id, old_id, self.ixlan_content_type_id],
                 )
             )

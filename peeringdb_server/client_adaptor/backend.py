@@ -11,15 +11,14 @@ from django.db import IntegrityError
 from django.db.models import OneToOneRel
 from django_peeringdb.client_adaptor.backend import Backend as BaseBackend
 from django_peeringdb.client_adaptor.backend import reftag_to_cls
+from peeringdb import resource
 
 import peeringdb_server.models as models
-from peeringdb import resource
 
 __version__ = "1.0"
 
 
 class Backend(BaseBackend):
-
     """
     Custom tailored peeringdb_server backend for the
     peeringdb client we can use to sync data from

@@ -1,6 +1,7 @@
 """
 Verification queue cleanup.
 """
+
 from datetime import datetime, timedelta
 
 from django.conf import settings

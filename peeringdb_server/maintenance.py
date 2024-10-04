@@ -1,6 +1,7 @@
 """
 Django middleware to handle maintenance mode.
 """
+
 import os
 
 from django.http import JsonResponse
@@ -40,7 +41,6 @@ def raise_if_active():
 
 
 class Middleware:
-
     """
     Middleware will return 503 json responses for all write
     ops (POST PUT PATCH DELETE).

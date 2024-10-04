@@ -32,19 +32,16 @@ from django.db.models import DateTimeField
 from django.shortcuts import redirect
 from django.urls import re_path
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from django_grainy.exceptions import PermissionDenied
-from django_ratelimit.decorators import ratelimit
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes, schema
 from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
-from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
-from rest_framework.views import exception_handler
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from rest_framework.views import exception_handler
 from two_factor.utils import devices_for_user
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
@@ -54,7 +51,6 @@ from peeringdb_server.models import (
     CarrierFacility,
     Facility,
     InternetExchange,
-    InternetExchangeFacility,
     Network,
     NetworkIXLan,
     Organization,
@@ -73,7 +69,11 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
-from peeringdb_server.serializers import ASSetSerializer, FacilitySerializer, NetworkIXLanSerializer
+from peeringdb_server.serializers import (
+    ASSetSerializer,
+    FacilitySerializer,
+    NetworkIXLanSerializer,
+)
 from peeringdb_server.util import coerce_ipaddr
 
 RATELIMITS = dj_settings.RATELIMITS
@@ -96,7 +96,6 @@ class InactiveKeyException(APIException):
 
 
 class DataMissingException(DataException):
-
     """ ""
     Raised when the json data sent with a POST, PUT or PATCH
     request is missing.
@@ -107,7 +106,6 @@ class DataMissingException(DataException):
 
 
 class DataParseException(DataException):
-
     """
     Raised when the json data sent with a POST, PUT or PATCH
     request could not be parsed.
@@ -115,9 +113,7 @@ class DataParseException(DataException):
 
     def __init__(self, method, exc):
         super().__init__(
-            "Data supplied with the {} request could not be parsed: {}".format(
-                method, exc
-            )
+            f"Data supplied with the {method} request could not be parsed: {exc}"
         )
 
 
@@ -322,18 +318,11 @@ class client_check:
 
             if not compat:
                 raise ValueError(
-                    "Your client version is incompatible with server version of the api, please install peeringdb>={},<={} {}>={},<={}".format(
-                        self.version_string(self.min_version),
-                        self.version_string(self.max_version),
-                        backend,
-                        self.version_string(backend_min),
-                        self.version_string(backend_max),
-                    )
+                    f"Your client version is incompatible with server version of the api, please install peeringdb>={self.version_string(self.min_version)},<={self.version_string(self.max_version)} {backend}>={self.version_string(backend_min)},<={self.version_string(backend_max)}"
                 )
 
 
 class BasicAuthMFABlockWrite(permissions.BasePermission):
-
     """
     When an account has MFA enabled and basic-auth is used
     to authenticate the account for a write operation on the API
@@ -379,7 +368,6 @@ class BasicAuthMFABlockWrite(permissions.BasePermission):
 
 
 class InactiveKeyBlock(permissions.BasePermission):
-
     """
     When an OrganizationAPIKey or a UserAPIKey has status `inactive`
     requests made with such keys should be blocked
@@ -406,15 +394,13 @@ class InactiveKeyBlock(permissions.BasePermission):
 
 
 class UnlimitedIfNoPagePagination(PageNumberPagination):
-
-
     page_size = dj_settings.PAGE_SIZE  # default page_size
-    page_size_query_param = 'per_page'
-    max_page_size = 250 
+    page_size_query_param = "per_page"
+    max_page_size = 250
 
     def paginate_queryset(self, queryset, request, view=None):
         self.request = request
-        if 'page' in request.query_params:
+        if "page" in request.query_params:
             self.pagination_applied = True
             return super().paginate_queryset(queryset, request)
         else:
@@ -422,12 +408,15 @@ class UnlimitedIfNoPagePagination(PageNumberPagination):
             return list(queryset)  # Return all without pagination
 
     def get_paginated_response(self, data):
-        return Response({
-            'count': len(data),
-            'next': None,
-            'previous': None,
-            'results': data,
-        })
+        return Response(
+            {
+                "count": len(data),
+                "next": None,
+                "previous": None,
+                "results": data,
+            }
+        )
+
 
 class ModelViewSet(viewsets.ModelViewSet):
     """
@@ -692,13 +681,9 @@ class ModelViewSet(viewsets.ModelViewSet):
         else:
             qset = qset[skip:]
 
-
-
         if not is_specific_object_request:
-
             # we are handling a list request and need to apply the limit and skip
             # parameters if they are present
-
 
             row_count = qset.count()
             if enforced_limit and depth > 0 and row_count > enforced_limit:
@@ -714,18 +699,17 @@ class ModelViewSet(viewsets.ModelViewSet):
             )
         else:
             return qset
-        
+
     pagination_class = UnlimitedIfNoPagePagination
 
     @client_check()
     def list(self, request, *args, **kwargs):
         t = time.time()
-        r = None # Initialize r to None 
+        r = None  # Initialize r to None
 
         try:
             # *** START OF PAGINATION LOGIC ***
             queryset = self.filter_queryset(self.get_queryset())
-
 
             # page_number = self.request.GET.get('page')
             # results_per_page = self.request.GET.get('per_page', self.page_size)
@@ -733,41 +717,38 @@ class ModelViewSet(viewsets.ModelViewSet):
             paginator = self.pagination_class()
             paginator.request = request
             page = paginator.paginate_queryset(queryset, request, view=self)
-            
 
-            if getattr(paginator, 'pagination_applied', True):
+            if getattr(paginator, "pagination_applied", True):
                 serializer = self.get_serializer(page, many=True)
                 r = paginator.get_paginated_response(serializer.data)
-                self.request.meta_response['pagination'] = {
-                    'count': paginator.page.paginator.count,
-                    'has_next': paginator.page.has_next(),
-                    'has_previous': paginator.page.has_previous(),
-                    'next': paginator.get_next_link(),
-                    'previous': paginator.get_previous_link(),
-                    'page': paginator.page.number,
-                    'per_page': paginator.page.paginator.per_page,
-                    'total_pages': paginator.page.paginator.num_pages
+                self.request.meta_response["pagination"] = {
+                    "count": paginator.page.paginator.count,
+                    "has_next": paginator.page.has_next(),
+                    "has_previous": paginator.page.has_previous(),
+                    "next": paginator.get_next_link(),
+                    "previous": paginator.get_previous_link(),
+                    "page": paginator.page.number,
+                    "per_page": paginator.page.paginator.per_page,
+                    "total_pages": paginator.page.paginator.num_pages,
                 }
             else:
                 serializer = self.get_serializer(queryset, many=True)
                 r = Response(serializer.data)
 
-            
-
             # FIXME: this waits for peeringdb-py fix to deal with 404 raise properly
-            if not r or (hasattr(r, 'data') and not len(r.data)):
+            if not r or (hasattr(r, "data") and not len(r.data)):
                 if self.serializer_class.is_unique_query(request):
                     return Response(
                         status=status.HTTP_404_NOT_FOUND,
-                        data={"data": [], "detail": "Entity not found"}
+                        data={"data": [], "detail": "Entity not found"},
                     )
 
             applicator = APIPermissionsApplicator(request)
 
             if not applicator.is_generating_api_cache:
                 r.data = applicator.apply(r.data)
-                      
-            return r  
+
+            return r
 
         except ValueError as inst:
             return Response(
@@ -971,7 +952,6 @@ class ModelViewSet(viewsets.ModelViewSet):
 
 
 class InternetExchangeMixin:
-
     """
     Custom API endpoints for the internet exchange
     object, exposed to api/ix/{id}/{action}
@@ -1001,7 +981,6 @@ class InternetExchangeMixin:
 
 
 class CarrierFacilityMixin:
-
     """
     Custom API endpoints for the carrier-facility
     object, exposed to api/carrierfac/{id}/{action}
@@ -1044,7 +1023,6 @@ class CarrierFacilityMixin:
 
 
 class CampusFacilityMixin:
-
     """
     Custom API endpoints for the campus-facility
     object, exposed to /api/campus/{campus_id}/add-facility/{fac_id}

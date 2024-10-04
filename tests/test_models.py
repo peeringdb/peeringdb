@@ -71,7 +71,6 @@ def entities():
 
 @pytest.mark.django_db
 def test_network_legacy_info_type():
-
     network = Network(
         asn=1, name="Test Network", irr_as_set="AS-TEST", info_types=["Content", "NSP"]
     )
@@ -137,6 +136,6 @@ def test_net_side_ix_side(entities):
 
     with reversion.create_revision():
         netixlan.save()
-    
+
     assert netixlan.net_side
     assert netixlan.ix_side

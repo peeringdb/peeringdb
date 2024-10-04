@@ -4,7 +4,7 @@ from pprint import pprint
 import pycountry
 import reversion
 from django.core.exceptions import ValidationError
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from peeringdb_server import models
@@ -109,15 +109,7 @@ class Command(BaseCommand):
                 output_dict["country"] = entity.country.code
                 self.snapshot_model(entity, "_before", output_dict)
                 self.log(
-                    "Normalizing {} [{} {}/{} ID:{} State: {} Country: {}]".format(
-                        entity.name,
-                        reftag,
-                        i,
-                        count,
-                        entity.id,
-                        entity.state,
-                        entity.country,
-                    )
+                    f"Normalizing {entity.name} [{reftag} {i}/{count} ID:{entity.id} State: {entity.state} Country: {entity.country}]"
                 )
                 try:
                     self._normalize(entity, output_dict, self.commit)

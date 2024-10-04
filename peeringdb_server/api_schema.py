@@ -6,6 +6,7 @@ implemented through the django-rest-framework.
 
 Specify custom fields to be added to the generated open-api schema.
 """
+
 import re
 
 from django.conf import settings
@@ -35,7 +36,6 @@ class CustomField:
 
 
 class BaseSchema(AutoSchema):
-
     """
     Augments the openapi schema generation for
     the peeringdb API docs.

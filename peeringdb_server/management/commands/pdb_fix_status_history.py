@@ -1,6 +1,7 @@
 """
 Fix object status in reversion archived data (#558).
 """
+
 import json
 
 import reversion
@@ -72,9 +73,7 @@ class Command(BaseCommand):
             if archived_status != entity.status:
                 fixed += 1
                 self.log(
-                    "Fixing {}-{} {} archived status: {}".format(
-                        tag, entity.id, version.id, entity.status
-                    )
+                    f"Fixing {tag}-{entity.id} {version.id} archived status: {entity.status}"
                 )
                 if self.commit:
                     self.process_entity(entity, version)

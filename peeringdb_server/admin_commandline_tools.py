@@ -244,11 +244,7 @@ class ToolRenumberLans(CommandLineToolWrapper):
     def description(self):
         """Provide a human readable description of the command that was run."""
         try:
-            return "{}: {} to {}".format(
-                InternetExchange.objects.get(id=self.args[0]),
-                self.args[1],
-                self.args[2],
-            )
+            return f"{InternetExchange.objects.get(id=self.args[0])}: {self.args[1]} to {self.args[2]}"
         except Exception:
             # if a version of this command was run before, we still need to able
             # to display a somewhat useful discription, so fall back to this basic

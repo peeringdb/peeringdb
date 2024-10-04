@@ -2,10 +2,8 @@ import json
 import os
 from unittest.mock import MagicMock, patch
 
-import googlemaps
 import pytest
 from django.core.cache import caches
-from django.core.exceptions import ValidationError
 
 import peeringdb_server.geo as geo
 import peeringdb_server.models as models

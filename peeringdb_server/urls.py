@@ -1,6 +1,7 @@
 """
 Django url to view routing.
 """
+
 import django_security_keys.views as security_keys_views
 from django.conf import settings
 from django.urls import include, path, re_path
@@ -24,8 +25,8 @@ from peeringdb_server.autocomplete_views import (
     InternetExchangeFacilityAutoComplete,
     IXLanAutocomplete,
     NetworkAutocomplete,
-    OrganizationAutocomplete,
     NetworkFacilityAutocomplete,
+    OrganizationAutocomplete,
     clt_history,
 )
 from peeringdb_server.export_views import (
@@ -67,6 +68,7 @@ from peeringdb_server.views import (
     request_search_v2,
     request_translation,
     resend_confirmation_mail,
+    search_elasticsearch,
     unwatch_network,
     validator_result_cache,
     view_about,
@@ -88,6 +90,7 @@ from peeringdb_server.views import (
     view_password_change,
     view_password_reset,
     view_profile,
+    view_profile_passkey,
     view_profile_v1,
     view_registration,
     view_remove_org_affiliation,
@@ -103,9 +106,6 @@ from peeringdb_server.views import (
     view_username_retrieve_initiate,
     view_verify,
     watch_network,
-    search_elasticsearch,
-    view_profile_passkey
-
 )
 
 # SITE
@@ -125,11 +125,7 @@ urlpatterns = [
         r"^login$",
         RedirectView.as_view(pattern_name="two_factor:login", permanent=True),
     ),
-    re_path(
-        r"^account/passkey$",
-        view_profile_passkey,
-        name="profile_passkey"
-    ),
+    re_path(r"^account/passkey$", view_profile_passkey, name="profile_passkey"),
     re_path(r"^register$", view_registration, name="register"),
     re_path(r"^reset-password$", view_password_reset, name="reset-password"),
     re_path(r"^change-password$", view_password_change),
@@ -438,10 +434,14 @@ urlpatterns += [
         r"^autocomplete/ixlan/$", IXLanAutocomplete.as_view(), name="autocomplete-ixlan"
     ),
     re_path(
-        r"^autocomplete/netfac/(?P<net_id>\d+)/$", NetworkFacilityAutocomplete.as_view(), name="autocomplete-netfac"
+        r"^autocomplete/netfac/(?P<net_id>\d+)/$",
+        NetworkFacilityAutocomplete.as_view(),
+        name="autocomplete-netfac",
     ),
     re_path(
-        r"^autocomplete/ixfac/(?P<ix_id>\d+)/$", InternetExchangeFacilityAutoComplete.as_view(), name="autocomplete-ixfac"
+        r"^autocomplete/ixfac/(?P<ix_id>\d+)/$",
+        InternetExchangeFacilityAutoComplete.as_view(),
+        name="autocomplete-ixfac",
     ),
     re_path(
         r"^autocomplete/admin/deletedversions$",

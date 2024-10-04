@@ -1,6 +1,7 @@
 """
 Reset a deskpro ticket and requeue for publishing.
 """
+
 import re
 
 from django.core.management.base import BaseCommand

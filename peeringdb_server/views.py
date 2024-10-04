@@ -12,6 +12,7 @@ View definitions:
 - Sponsorships
 - User Registration
 """
+
 import datetime
 import json
 import os
@@ -63,7 +64,6 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
-from django_otp import user_has_device
 from django_otp.plugins.otp_email.models import EmailDevice
 from django_peeringdb.const import (
     CAMPUS_HELP_TEXT,
@@ -75,12 +75,11 @@ from django_security_keys.ext.two_factor.views import (  # noqa
     DisableView as TwoFactorDisableView,
 )
 from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
-from django_security_keys.models import SecurityKey
+from elasticsearch import Elasticsearch
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
-from two_factor.utils import default_device
 
 import peeringdb_server.geo
 from peeringdb_server import settings
@@ -136,9 +135,9 @@ from peeringdb_server.search import (
     get_lat_long_from_search_result,
     is_valid_latitude,
     is_valid_longitude,
+    new_elasticsearch,
     search,
     search_v2,
-    new_elasticsearch,
 )
 from peeringdb_server.serializers import (
     CampusSerializer,
@@ -155,8 +154,6 @@ from peeringdb_server.util import (
     objfac_tupple,
     v2_social_media_services,
 )
-
-from elasticsearch import Elasticsearch
 
 RATELIMITS = dj_settings.RATELIMITS
 
@@ -656,7 +653,6 @@ def view_set_user_locale(request):
 
 
 class ApplicationOwnerMixin:
-
     """
     OAuth mixin it that filters application queryset for ownership
     considering either the owning user or the owning organization.
@@ -674,7 +670,6 @@ class ApplicationOwnerMixin:
 
 
 class ApplicationFormMixin:
-
     """
     Used for oauth application update and registration process
 
@@ -1407,7 +1402,6 @@ def view_component(
 
 
 class OrganizationLogoUpload(View):
-
     """
     Handles public upload and setting of organization logo (#346)
     """
@@ -3340,7 +3334,6 @@ EmailDevice.verify_token = verify_token
 
 
 class LoginView(TwoFactorLoginView):
-
     """
     Extend the `LoginView` class provided
     by `two_factor` because some
@@ -3895,44 +3888,60 @@ def search_elasticsearch(request):
     if not request.user.is_superuser:
         return HttpResponseNotFound()
 
-    client = Elasticsearch(getattr(dj_settings, 'ELASTICSEARCH_URL'))
-    
+    client = Elasticsearch(getattr(dj_settings, "ELASTICSEARCH_URL"))
+
     try:
         indices = client.indices.get_alias().keys()
-    except Exception as e:
+    except Exception:
         indices = []
 
-    if request.method == 'POST':
-        query_json = request.POST.get('q', '')
-        index = request.POST.get('index', '_all')
+    if request.method == "POST":
+        query_json = request.POST.get("q", "")
+        index = request.POST.get("index", "_all")
 
         if not query_json:
-            return render(request, 'site/es_search.html', {'indices': indices, 'error': 'Missing query'})
+            return render(
+                request,
+                "site/es_search.html",
+                {"indices": indices, "error": "Missing query"},
+            )
 
         try:
             # Parse the JSON query (raw Elasticsearch DSL)
             query_dict = json.loads(query_json)
 
-
             client = new_elasticsearch()
 
-            # Pass the parsed query dictionary directly to client.search() 
-            response = client.search(index=index, body=query_dict, pretty=True, size=1000) 
+            # Pass the parsed query dictionary directly to client.search()
+            response = client.search(
+                index=index, body=query_dict, pretty=True, size=1000
+            )
 
-            #make response a json object
+            # make response a json object
             response = json.loads(json.dumps(response.body))
 
-            return render(request, 'site/es_search.html', {'indices': indices, 'raw_results': response})
+            return render(
+                request,
+                "site/es_search.html",
+                {"indices": indices, "raw_results": response},
+            )
 
         except json.JSONDecodeError as e:
-            return render(request, 'site/es_search.html', {'error': f'Invalid JSON: {e}'})
+            return render(
+                request, "site/es_search.html", {"error": f"Invalid JSON: {e}"}
+            )
 
         except Exception as e:
-            return render(request, 'site/es_search.html', {'error': f'Error querying Elasticsearch: {e}'})
+            return render(
+                request,
+                "site/es_search.html",
+                {"error": f"Error querying Elasticsearch: {e}"},
+            )
 
     else:
-        return render(request, 'site/es_search.html', {'indices': indices})
-    
+        return render(request, "site/es_search.html", {"indices": indices})
+
+
 @ensure_csrf_cookie
 @login_required
 def view_profile_passkey(request):

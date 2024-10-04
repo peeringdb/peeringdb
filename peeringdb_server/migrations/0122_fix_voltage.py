@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 def forward(apps, schema_editor):
-
     Facility = apps.get_model("peeringdb_server", "Facility")
     updated_field = Facility._meta.get_field("updated")
     updated_field_auto_now = updated_field.auto_now
@@ -13,7 +12,6 @@ def forward(apps, schema_editor):
     invalid_voltage_values = ["120 VAC", "208 VAC", "240 VAC"]
 
     for facility in Facility.handleref.all():
-
         voltage = facility.available_voltage_services
         removed = []
 
@@ -33,7 +31,6 @@ def forward(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0121_alter_field_setting_on_environmentsetting"),
     ]

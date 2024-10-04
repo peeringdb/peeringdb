@@ -1,8 +1,5 @@
-from lib2to3.pgen2 import token
-
 import pytest
-from django.conf import settings
-from django.test import Client, RequestFactory
+from django.test import RequestFactory
 from django.urls import reverse
 from django_grainy.models import UserPermission
 from grainy.const import PERM_CRUD, PERM_READ

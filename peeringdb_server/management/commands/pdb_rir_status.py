@@ -161,7 +161,6 @@ class Command(BaseCommand):
                 old_rir_status = net.rir_status
 
                 if not new_rir_status:
-
                     # missing from rir data, we use None to indicate
                     # never checked, so we set this to missing to
                     # indicate that we have checked and it is missing
@@ -169,11 +168,9 @@ class Command(BaseCommand):
                     new_rir_status = "missing"
 
                 if rir_status_is_ok(old_rir_status):
-
                     # old status was ok (assigned) or never set
 
                     if not rir_status_is_ok(new_rir_status):
-
                         # new status is not ok (!assigned) or old status was never set
 
                         self.log(f"{net.name} ({net.asn}) RIR status: {new_rir_status}")
@@ -185,7 +182,6 @@ class Command(BaseCommand):
                             batch_save.append(net)
 
                     elif old_rir_status != new_rir_status:
-
                         # both old and new status are ok (assigned), but they are different
                         net.rir_status_updated = now
                         net.rir_status = new_rir_status
@@ -194,11 +190,9 @@ class Command(BaseCommand):
                             batch_save.append(net)
 
                 elif not rir_status_is_ok(new_rir_status):
-
                     # new status is not ok
 
                     if not rir_status_is_ok(old_rir_status):
-
                         # old status was not ok (!assigned)
                         # check if we should delete the network, because
                         # it has been unassigned for too long
@@ -226,11 +220,9 @@ class Command(BaseCommand):
                             num_pending_deletion += 1
 
                 elif rir_status_is_ok(new_rir_status):
-
                     # new status is ok (assigned)
 
                     if not rir_status_is_ok(old_rir_status):
-
                         # old status was not ok (!assigned)
                         # but new status is ok (assigned)
                         net.rir_status_updated = now
@@ -241,7 +233,6 @@ class Command(BaseCommand):
                         networks_from_bad_to_good.append(net)
 
             if networks_from_good_to_bad:
-
                 # if we have too many networks going from good to bad
                 # we exit with an error to prevent mass flagging of networks due to bad
                 # RIR data
@@ -269,9 +260,7 @@ class Command(BaseCommand):
             # batch update
 
             if self.commit:
-
                 if networks_from_bad_to_good:
-
                     # notify admin comittee on networks changed from bad RIR status to ok RIR status
 
                     ticket_queue_rir_status_updates(

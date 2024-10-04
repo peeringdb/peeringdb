@@ -1429,7 +1429,6 @@ def nested(serializer, exclude=[], getter=None, through=None, **kwargs):
 
 
 class SpatialSearchMixin:
-
     """
     Mixin that enables spatial search for a model
     with address fields.
@@ -1621,7 +1620,6 @@ class SpatialSearchMixin:
 
 
 class SocialMediaSerializer(serializers.Serializer):
-
     """
     Renders the social_media property
     """
@@ -1957,7 +1955,6 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
         # if latitude or longitude has changed, validate the distance
 
         if self.instance and latitude and longitude:
-
             if (
                 latitude != self.instance.latitude
                 or longitude != self.instance.longitude
@@ -2059,13 +2056,14 @@ class CarrierSerializer(ModelSerializer):
         Allows filtering by indirect relationships, similar to NetworkSerializer.
         """
 
-        qset = qset.prefetch_related('org',
-                                     'carrierfac_set',
-                                     )  # Eagerly load the related Organization# Eagerly load the related Organization
+        qset = qset.prefetch_related(
+            "org",
+            "carrierfac_set",
+        )  # Eagerly load the related Organization# Eagerly load the related Organization
 
         filters = get_relation_filters(
             [
-                "carrierfac_set__facility_id", 
+                "carrierfac_set__facility_id",
                 # Add other relevant fields from carrierfac_set here
             ],
             cls,
@@ -2076,14 +2074,12 @@ class CarrierSerializer(ModelSerializer):
             # Handle filtering based on relationships in carrierfac_set
             if field.startswith("carrierfac_set__"):
                 if e["filt"]:
-                    filter_kwargs = {f"{field}__{e['filt']}": e['value']}
+                    filter_kwargs = {f"{field}__{e['filt']}": e["value"]}
                 else:
-                    filter_kwargs = {field: e['value']}
-                qset = qset.filter(**filter_kwargs) 
+                    filter_kwargs = {field: e["value"]}
+                qset = qset.filter(**filter_kwargs)
 
         return qset, filters
-
-    
 
     org_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(), source="org"
@@ -2100,7 +2096,6 @@ class CarrierSerializer(ModelSerializer):
         if data.get("org") and data.get("org").status != "ok":
             raise ParentStatusException(data.get("org"), self.Meta.model.handleref.tag)
         return super().validate_create(data)
-
 
     class Meta:
         model = Carrier
@@ -2123,8 +2118,8 @@ class CarrierSerializer(ModelSerializer):
         list_exclude = ["org"]
 
     def get_facilities(self, obj):
-        return ', '.join([cf.facility.name for cf in obj.carrierfac_set.all()]) 
-    
+        return ", ".join([cf.facility.name for cf in obj.carrierfac_set.all()])
+
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
 
@@ -2385,14 +2380,10 @@ class NetworkIXLanSerializer(ModelSerializer):
             "bfd_support",
             "operational",
             "net_side",
-            "ix_side"
+            "ix_side",
         ] + HandleRefSerializer.Meta.fields
 
-        
-        read_only_fields = [
-            "net_side",
-            "ix_side"
-        ]
+        read_only_fields = ["net_side", "ix_side"]
         related_fields = ["net", "ixlan"]
 
         list_exclude = ["net", "ixlan"]
@@ -2689,6 +2680,7 @@ class NetworkSerializer(ModelSerializer):
       - netfac_id, handled by prepare_query
       - fac_id, handled by prepare_query
     """
+
     netfac_set = nested(
         NetworkFacilitySerializer,
         exclude=["net_id", "net"],
@@ -2877,7 +2869,6 @@ class NetworkSerializer(ModelSerializer):
 
     @classmethod
     def finalize_query_params(cls, qset, query_params: dict):
-
         # legacy info_type field needs to be converted to info_types
         # we do this by creating an annotation based on the info_types split by ','
 
@@ -2886,9 +2877,7 @@ class NetworkSerializer(ModelSerializer):
         from django.db.models import Q
 
         for key, value in query_params.items():
-
             if key == "info_type":
-
                 # handle direct info_type filter by converting to info_types
                 # and doing a direct filter with the same value against
                 # info_types checking for startswith, contains, or endswith taking
@@ -2902,12 +2891,10 @@ class NetworkSerializer(ModelSerializer):
                 qset = qset.filter(query)
 
             elif key == "info_type__contains":
-
                 # info_type__contains filter can simply be converted to info_types
 
                 update_params["info_types__contains"] = value
             elif key == "info_type__in" or key == "info_types__in":
-
                 # info_types__in will filter on the info_types field
                 # doing an overlap check against the provided values
 
@@ -2917,7 +2904,6 @@ class NetworkSerializer(ModelSerializer):
                 qset = qset.filter(query)
 
             elif key == "info_type__startswith" or key == "info_types__startswith":
-
                 # info_type__startswith filter can simply be converted to info_types
 
                 query = Q(info_types__istartswith=value) | Q(
@@ -3024,17 +3010,11 @@ class NetworkSerializer(ModelSerializer):
             raise RestValidationError(
                 {
                     "non_field_errors": [
-                        """We could not validate that the record for AS{} contains your email address ({}).
+                        f"""We could not validate that the record for AS{asn} contains your email address ({user_email}).
 
-Please add this email address ({}) to the RIR record for AS{} and try again.
+Please add this email address ({user_email}) to the RIR record for AS{asn} and try again.
 
-If you need further assistance, please contact {}""".format(
-                            asn,
-                            user_email,
-                            user_email,
-                            asn,
-                            settings.DEFAULT_FROM_EMAIL,
-                        ),
+If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
                     ],
                     "asn": "Your email address and ASN emails mismatch",
                     "__meta": {"ignore_field_error": True},
@@ -3481,7 +3461,7 @@ class InternetExchangeSerializer(ModelSerializer):
 
         read_only_fields = ["proto_multicast", "media"]
 
-    def get_media(self,inst):
+    def get_media(self, inst):
         # as per #1555 this should always return "Ethernet" as the field
         # is now deprecated
         return "Ethernet"

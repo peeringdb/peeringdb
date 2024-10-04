@@ -1,6 +1,7 @@
 """
 Views for organization api key management.
 """
+
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse
@@ -38,14 +39,14 @@ def save_key_permissions(org, key, perms):
 
         if id == "org.%d" % org.id:
             grainy_perms[org.grainy_namespace] = permissions
-            grainy_perms[
-                f"{org.grainy_namespace}.network.*.poc_set.private"
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.network.*.poc_set.private"] = (
+                permissions
+            )
         elif id == "net":
             grainy_perms[f"{org.grainy_namespace}.network"] = permissions
-            grainy_perms[
-                f"{org.grainy_namespace}.network.*.poc_set.private"
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.network.*.poc_set.private"] = (
+                permissions
+            )
         elif id == "ix":
             grainy_perms[f"{org.grainy_namespace}.internetexchange"] = permissions
         elif id == "fac":
@@ -58,9 +59,9 @@ def save_key_permissions(org, key, perms):
                     f"{org.grainy_namespace}.network.{id[1]}.poc_set.private"
                 ] = permissions
             elif id[0] == "ix":
-                grainy_perms[
-                    f"{org.grainy_namespace}.internetexchange.{id[1]}"
-                ] = permissions
+                grainy_perms[f"{org.grainy_namespace}.internetexchange.{id[1]}"] = (
+                    permissions
+                )
             elif id[0] == "fac":
                 grainy_perms[f"{org.grainy_namespace}.facility.{id[1]}"] = permissions
 

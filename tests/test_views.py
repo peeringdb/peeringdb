@@ -1,9 +1,7 @@
-import base64
 import re
 
 import pytest
 from allauth.account.models import EmailAddress
-from django.http import response
 from django.test import Client
 from django_grainy.models import Group
 from rest_framework import status
@@ -21,11 +19,9 @@ from peeringdb_server.models import (
     UserAPIKey,
     UserOrgAffiliationRequest,
 )
-
 from peeringdb_server.permissions import (
     check_permissions_from_request,
 )
-
 from tests.util import reset_group_ids
 
 URL = "/affiliate-to-org"
@@ -353,17 +349,19 @@ def test_post_ix_side_net_side(network, org):
         operational=False,
     )
 
-    fac = Facility.objects.create(
-        name="Test Facility", status="ok", org=org
-    )
+    fac = Facility.objects.create(name="Test Facility", status="ok", org=org)
 
     # Check that no facilities are linked initially
     assert not ix.ixfac_set.filter(status="ok").exists()
     assert not network.netfac_set.filter(status="ok").exists()
 
     # Create InternetExchangeFacility and NetworkFacility
-    ix_facility = InternetExchangeFacility.objects.create(facility=fac, ix=ix, status="ok")
-    net_facility = NetworkFacility.objects.create(facility=fac, network=network, status="ok")
+    ix_facility = InternetExchangeFacility.objects.create(
+        facility=fac, ix=ix, status="ok"
+    )
+    net_facility = NetworkFacility.objects.create(
+        facility=fac, network=network, status="ok"
+    )
 
     assert ix_facility.status == "ok"
     assert net_facility.status == "ok"
@@ -386,11 +384,15 @@ def test_post_ix_side_net_side(network, org):
 
     # Test set ix_side with permission
     ix_side_url = f"/api/netixlan/{netixlan.id}/set-ix-side"
-    post_and_check(ix_side_url, fac.id, expected_status(ix, "c"))  # Check permission on IX (InternetExchange)
+    post_and_check(
+        ix_side_url, fac.id, expected_status(ix, "c")
+    )  # Check permission on IX (InternetExchange)
 
     # Test set net_side with permission
     net_side_url = f"/api/netixlan/{netixlan.id}/set-net-side"
-    post_and_check(net_side_url, fac.id, expected_status(network, "c"))  # Check permission on Network
+    post_and_check(
+        net_side_url, fac.id, expected_status(network, "c")
+    )  # Check permission on Network
 
     # Simulate permission denied by removing access
     client.force_authenticate(user=None)  # Simulate unauthorized user
@@ -400,4 +402,3 @@ def test_post_ix_side_net_side(network, org):
 
     # Test setting net_side with permission denied
     post_and_check(net_side_url, fac.id, status.HTTP_403_FORBIDDEN)
-

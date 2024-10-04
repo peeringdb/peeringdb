@@ -2,7 +2,6 @@
 
 import django.core.validators
 import django.db.models.deletion
-import django_inet.models
 from django.conf import settings
 from django.db import migrations, models
 

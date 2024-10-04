@@ -1,6 +1,7 @@
 """
 Run the IX-F Importer.
 """
+
 import json
 import sys
 import traceback
@@ -264,9 +265,7 @@ class Command(BaseCommand):
         total_notifications = []
         for ixlan in qset:
             self.log(
-                "Fetching data for -ixlan{} from {}".format(
-                    ixlan.id, ixlan.ixf_ixp_member_list_url
-                )
+                f"Fetching data for -ixlan{ixlan.id} from {ixlan.ixf_ixp_member_list_url}"
             )
             try:
                 importer = ixf.Importer()

@@ -1,6 +1,7 @@
 """
 Restore soft-deleted objects.
 """
+
 import json
 
 import reversion
@@ -58,9 +59,7 @@ class Command(BaseCommand):
                 # netixlan is at same ix as the one being undeleted, delete the other
                 # one so we can proceed with undeletion
                 self.log(
-                    "Found duplicate netixlan at same ix: {} - deleting".format(
-                        other.ipaddr4
-                    )
+                    f"Found duplicate netixlan at same ix: {other.ipaddr4} - deleting"
                 )
                 if self.commit:
                     other.delete()
@@ -81,9 +80,7 @@ class Command(BaseCommand):
                 # netixlan is at same ix as the one being undeleted, delete the other
                 # one so we can proceed with undeletion
                 self.log(
-                    "Found duplicate netixlan at same ix: {} - deleting".format(
-                        other.ipaddr6
-                    )
+                    f"Found duplicate netixlan at same ix: {other.ipaddr6} - deleting"
                 )
                 if self.commit:
                     other.delete()
@@ -120,9 +117,7 @@ class Command(BaseCommand):
                 status = None
             if status == "deleted":
                 self.log_warn(
-                    "{} was already deleted at snapshot, skipping ..".format(
-                        _label(obj)
-                    )
+                    f"{_label(obj)} was already deleted at snapshot, skipping .."
                 )
                 return
 
@@ -139,9 +134,7 @@ class Command(BaseCommand):
                     if relation and relation.status == "deleted" and relation != parent:
                         can_undelete_obj = False
                         self.log_warn(
-                            "Cannot undelete {}, dependent relation marked as deleted: {}".format(
-                                _label(obj), relation
-                            )
+                            f"Cannot undelete {_label(obj)}, dependent relation marked as deleted: {relation}"
                         )
 
         if not can_undelete_obj:

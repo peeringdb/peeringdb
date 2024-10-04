@@ -1,6 +1,7 @@
 """
 Renumber addresses by providing the first three octets of a current ip4 address and the first three octets to change to.
 """
+
 import ipaddress
 
 import reversion
@@ -95,9 +96,7 @@ class Command(BaseCommand):
                 continue
 
             self.log(
-                "Renumbering {} -> {}".format(
-                    netixlan.descriptive_name_ipv(new_addr.version), new_addr
-                )
+                f"Renumbering {netixlan.descriptive_name_ipv(new_addr.version)} -> {new_addr}"
             )
 
             if new_addr.version == 4:

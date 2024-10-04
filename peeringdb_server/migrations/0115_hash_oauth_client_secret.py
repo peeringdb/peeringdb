@@ -1,5 +1,3 @@
-import oauth2_provider.generators
-import oauth2_provider.models
 from django.db import migrations
 from oauth2_provider import settings
 

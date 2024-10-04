@@ -48,7 +48,6 @@ from peeringdb_server.inet import (
     RdapInvalidRange,
     RdapLookup,
     rdap_pretty_error_message,
-    rir_status_is_ok,
 )
 from peeringdb_server.models import (
     QUEUE_ENABLED,
@@ -77,7 +76,6 @@ def update_network_attribute(instance, attribute):
 
 def network_post_revision_commit(**kwargs):
     for vs in kwargs.get("versions"):
-
         # ignore objects that don't have the HandleRef meta class
         if not hasattr(vs.object, "HandleRef"):
             continue
@@ -150,7 +148,6 @@ def update_counts_for_ixfac(ixfac):
 
 def connector_objects_post_revision_commit(**kwargs):
     for vs in kwargs.get("versions"):
-
         # ignore objects that don't have the HandleRef meta class
         if not hasattr(vs.object, "HandleRef"):
             continue
@@ -716,7 +713,6 @@ class ESSilentRealTimeSignalProcessor(RealTimeSignalProcessor):
 
 @receiver(pre_save, sender=Network)
 def rir_status_initial(sender, instance=None, **kwargs):
-
     """
     Implements `Anytime` network update logic for RIR status handling
     laid out in https://github.com/peeringdb/peeringdb/issues/1280

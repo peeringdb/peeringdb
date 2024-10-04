@@ -2,10 +2,7 @@ import os
 import re
 from string import Formatter
 
-from django.conf import settings
-from django.test import Client, TestCase
-
-from peeringdb_server.models import Organization, User
+from django.test import TestCase
 
 
 class LocaleFilesTest(TestCase):
@@ -54,9 +51,7 @@ class LocaleFilesTest(TestCase):
             if variables_a != variables_b:
                 errors += 1
                 print(
-                    "{} Locale variable error at msgid {} -> {}".format(
-                        language, msgid, other_messages[msgid]
-                    )
+                    f"{language} Locale variable error at msgid {msgid} -> {other_messages[msgid]}"
                 )
 
             # {name} and {} type variables
@@ -71,9 +66,7 @@ class LocaleFilesTest(TestCase):
             if variables_a != variables_b:
                 errors += 1
                 print(
-                    "{} Locale variable error at msgid {} -> {}".format(
-                        language, msgid, other_messages[msgid]
-                    )
+                    f"{language} Locale variable error at msgid {msgid} -> {other_messages[msgid]}"
                 )
 
         assert errors == 0

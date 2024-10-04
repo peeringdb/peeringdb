@@ -30,7 +30,7 @@ from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import transaction
 from django.db.models import Q
 from django.db.utils import OperationalError
 from django.forms import DecimalField
@@ -52,7 +52,6 @@ from import_export.admin import ExportMixin
 from rest_framework_api_key.admin import APIKeyModelAdmin
 from rest_framework_api_key.models import APIKey
 from reversion.admin import VersionAdmin
-from reversion.models import Version
 
 import peeringdb_server.admin_commandline_tools as acltools
 from peeringdb_server.inet import RdapException, RdapLookup, rdap_pretty_error_message

@@ -1,19 +1,19 @@
 """
 Load initial data from another peeringdb instance using the REST API.
 """
-import logging
-import os
 
+import logging
+
+import peeringdb.fetch
 from confu.schema import apply_defaults
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models.signals import pre_save
 from django_peeringdb import models as djpdb_models
-
-import peeringdb.fetch
 from peeringdb import SUPPORTED_BACKENDS, resource
 from peeringdb.client import Client
 from peeringdb.config import ClientSchema
+
 from peeringdb_server import models as pdb_models
 from peeringdb_server import signals
 

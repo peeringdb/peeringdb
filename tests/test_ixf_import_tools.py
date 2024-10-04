@@ -1,29 +1,16 @@
 import base64
-import io
 import json
-import os
-import time
 
-import jsonschema
 import pytest_filedata
-import requests
-import reversion
 from django.core.cache import cache
-from django.core.management import call_command
-from django.db import transaction
-from django.test import Client, RequestFactory, TestCase
+from django.test import RequestFactory
 
 from peeringdb_server.import_views import (
     view_import_ixlan_ixf_preview,
-    view_import_net_ixf_postmortem,
     view_import_net_ixf_preview,
 )
 from peeringdb_server.models import (
     InternetExchange,
-    IXLan,
-    IXLanIXFMemberImportAttempt,
-    IXLanIXFMemberImportLog,
-    IXLanIXFMemberImportLogEntry,
     IXLanPrefix,
     Network,
     NetworkIXLan,
@@ -35,7 +22,6 @@ from .util import ClientCase
 
 
 class TestImportPreview(ClientCase):
-
     """
     Test the ixf import preview
     """

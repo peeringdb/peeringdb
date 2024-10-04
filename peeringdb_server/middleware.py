@@ -65,7 +65,6 @@ def get_auth_identity(request):
 
 
 class PDBSessionMiddleware(SessionMiddleware):
-
     """
     As PeeringDB gets a lot of repeated anonymous requests that do not
     store and re-use session cookies this lead to substantial amount of junk
@@ -129,7 +128,6 @@ class PDBSessionMiddleware(SessionMiddleware):
 
 
 class CurrentRequestContext:
-
     """
     Middleware that sets the current request context.
 
@@ -175,7 +173,6 @@ class PDBCommonMiddleware(CommonMiddleware):
 
 
 class PDBPermissionMiddleware(MiddlewareMixin):
-
     """
     Middleware that checks if the current user has the correct permissions
     to access the requested resource.
@@ -503,7 +500,6 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
 
 
 class CacheControlMiddleware(MiddlewareMixin):
-
     """
     Sets the Cache-Control s-maxage header on responses
     """
@@ -595,9 +591,9 @@ class CacheControlMiddleware(MiddlewareMixin):
                     response.context_data.get("apicache") is True
                     and settings.CACHE_CONTROL_API_CACHE
                 ):
-                    response[
-                        "Cache-Control"
-                    ] = f"s-maxage={settings.CACHE_CONTROL_API_CACHE}"
+                    response["Cache-Control"] = (
+                        f"s-maxage={settings.CACHE_CONTROL_API_CACHE}"
+                    )
             elif settings.CACHE_CONTROL_API:
                 # NO API CACHE
 
@@ -607,17 +603,17 @@ class CacheControlMiddleware(MiddlewareMixin):
             # DYNAMIC CONTENT VIEW
 
             if settings.CACHE_CONTROL_DYNAMIC_PAGE:
-                response[
-                    "Cache-Control"
-                ] = f"s-maxage={settings.CACHE_CONTROL_DYNAMIC_PAGE}"
+                response["Cache-Control"] = (
+                    f"s-maxage={settings.CACHE_CONTROL_DYNAMIC_PAGE}"
+                )
 
         elif match.url_name in self.static_views:
             # STATIC CONTENT VIEW
 
             if settings.CACHE_CONTROL_STATIC_PAGE:
-                response[
-                    "Cache-Control"
-                ] = f"s-maxage={settings.CACHE_CONTROL_STATIC_PAGE}"
+                response["Cache-Control"] = (
+                    f"s-maxage={settings.CACHE_CONTROL_STATIC_PAGE}"
+                )
 
         return response
 

@@ -58,67 +58,67 @@
 
     <nav aria-label="...">
       <ul class="pagination-bottom pagination">
-      </ul>    
+      </ul>
     </nav>
 
 
     <script language="javascript" type="text/javascript">
 
-      // Function to create pagination buttons 
+      // Function to create pagination buttons
       function createPaginationButton(text, enabled, page, reftag, isActive = false) {
         const button = document.createElement('li');
         button.classList.add('page-item');
-        
+
         if (enabled) {
           button.classList.add('enabled');
         } else {
           button.classList.add('disabled');
         }
-        
+
         if (isActive) {
           button.classList.add('active');
         }
-        
+
         const link = document.createElement('a');
         link.classList.add('page-link');
-        link.href = '#'; 
+        link.href = '#';
         link.textContent = text;
-        
+
         if (enabled) {
           link.addEventListener('click', () => {
             updateResults(reftag, page);
           });
         }
-        
+
         button.appendChild(link);
         return button;
       }
-        
+
       // Function to update pagination buttons
       function updatePagination(pagination, reftag) {
         const paginationContainer = document.querySelector('.pagination-top.pagination');
-        paginationContainer.innerHTML = ''; 
-    
+        paginationContainer.innerHTML = '';
+
         const currentPage = pagination.page;
         const totalPages = pagination.total_pages;
         const hasPrevious = pagination.has_previous;
         const hasNext = pagination.has_next;
-        const previousPage = pagination.page - 1; 
+        const previousPage = pagination.page - 1;
         const nextPage = pagination.page + 1;
-        
+
         if (hasPrevious) {
-          paginationContainer.appendChild(createPaginationButton('Previous', true, previousPage, reftag)); 
+          paginationContainer.appendChild(createPaginationButton('Previous', true, previousPage, reftag));
         }
-        
-        // Ellipsis Logic 
+
+        // Ellipsis Logic
         const maxVisiblePages = 10;
         let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
         let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
+
         for (let i = startPage; i <= endPage; i++) {
           paginationContainer.appendChild(createPaginationButton(i, true, i, reftag, i === currentPage));
         }
-    
+
         if (endPage < totalPages - 1) {
           const ellipsisButton = document.createElement('li');
           ellipsisButton.classList.add('page-item', 'disabled');
@@ -131,7 +131,7 @@
             paginationContainer.appendChild(createPaginationButton(i, true, i, reftag, i === currentPage));
           }
         }
-    
+
         if (hasNext) {
           paginationContainer.appendChild(createPaginationButton('Next', true, nextPage, reftag));
         }
@@ -143,7 +143,7 @@
         paginationContainerBottom.innerHTML = '';
 
         if (hasPrevious) {
-          paginationContainerBottom.appendChild(createPaginationButton('Previous', true, previousPage, reftag)); 
+          paginationContainerBottom.appendChild(createPaginationButton('Previous', true, previousPage, reftag));
         }
 
 
@@ -169,96 +169,96 @@
         }
 
 
-    
+
       }
-        
-      // Function to update search results 
+
+      // Function to update search results
       function updateResults(reftag, page = 1) {
         let apiUrl = `/api/${reftag}?page=${page}`;
 
         const searchParams = getSearchParameters(reftag);
-        
+
         apiUrl += `&${searchParams}`;
 
         var searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
         searchForm.editable("loading-shim", "show");
 
-    
+
         fetch(apiUrl)
           .then((response) => response.json())
           .then((data) => {
             const resultsContainer = document.querySelector(`#${reftag} .results`);
-            resultsContainer.innerHTML = ''; 
-    
+            resultsContainer.innerHTML = '';
+
             const templateRow = document.querySelector(`#advanced-search-${reftag}-item`);
-    
-            if (templateRow) { 
+
+            if (templateRow) {
               data.data.forEach(item => {
                 const rowElement = templateRow.cloneNode(true);
-                rowElement.id = ''; 
-    
-                const dataFields = rowElement.querySelectorAll('[data-edit-name]'); 
+                rowElement.id = '';
+
+                const dataFields = rowElement.querySelectorAll('[data-edit-name]');
                 dataFields.forEach(field => {
                   const fieldName = field.dataset.editName;
-                  field.textContent = item[fieldName] || ''; 
-    
+                  field.textContent = item[fieldName] || '';
+
                   if (field.tagName === 'A') {
                     field.href = `/${reftag}/${item.id}`;
                   }
                 });
-    
+
                 resultsContainer.appendChild(rowElement);
               });
             }
-    
-            updatePagination(data.meta.pagination, reftag); 
-    
+
+            updatePagination(data.meta.pagination, reftag);
+
             var searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
             searchForm.editable("loading-shim", "hide");
           })
           .catch((error) => {
             console.error('Error fetching data:', error);
             var searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
-            searchForm.editable("loading-shim", "hide"); 
+            searchForm.editable("loading-shim", "hide");
           });
       }
-    
+
       // Function to get search parameters from the form
       function getSearchParameters(reftag) {
         let params = "";
-    
+
         $(`[data-edit-target="advanced_search:${reftag}"] [data-edit-name] .editable :input`).each(function() {
-          
+
           const nameElement = $(this).closest('[data-edit-name]');
           const name = nameElement.attr('data-edit-name');
-       
+
 
           let inputElement = $(this).find(':input');
 
-    
+
           // Special handling for capacity__gte (to exclude the unit select)
           if (name === "capacity__gte") {
-            const inputElement = $(this).find('unit.editable.traffic_capacity'); 
-           
+            const inputElement = $(this).find('unit.editable.traffic_capacity');
+
             if (inputElement.length > 0) {
               value = inputElement.val();
             }
 
           } else {
-            inputElement = $(this).find(":input"); 
+            inputElement = $(this).find(":input");
           }
 
           // Get the value directly from the form element
           let value = null;
 
           if ($(this).is('input[type="text"], input[type="hidden"], textarea')) {
-            value = $(this).val(); 
+            value = $(this).val();
           } else if ($(this).is('select')) {
-            value = $(this).val(); 
+            value = $(this).val();
           } else if ($(this).is('input[type="checkbox"]')) {
-            value = $(this).prop('checked'); 
-          } 
-          
+            value = $(this).prop('checked');
+          }
+
           // Handle empty values and the default value for traffic capacity
           if (value !== "" && value !== "Gbps") {
             // Handle array values (for multi-selects)
@@ -271,10 +271,10 @@
             }
           }
         });
-    
+
         return params;
       }
-        
+
       $(window).bind("load", function() {
 
         /* wire the org presence filter configuration (does not matter, present,
@@ -292,9 +292,9 @@
               editable_input.removeData('edit-name').removeAttr('data-edit-name')
             }
           });
-    
+
         });
-        
+
         /* wire the net presence filter configuration (does not matter, present,
         * not present) to the net present filter.
         */
@@ -309,9 +309,9 @@
               filter_input.removeData('edit-name').removeAttr('data-edit-name')
             }
           });
-    
+
         });
-        
+
         var run_search = function() {
           var reftag = $.urlParam("reftag");
           if (
@@ -325,16 +325,16 @@
               '[data-edit-target="advanced_search:' + reftag + '"]'
             );
             searchForm.editable("loading-shim", "show");
-    
+
             twentyc.data.loading_done(function () {
               var target = twentyc.editable.target.instantiate(searchForm);
               target.sender = searchForm;
-              
+
 
               PeeringDB.advanced_search_result[reftag] = {
                 param: getSearchParameters(reftag)
               };
-    
+
               // Set up the export buttons
               searchForm
                 .parent()
@@ -360,7 +360,7 @@
             });
           }
         };
-    
+
         twentyc.data.load("enum/traffic", {callback:function() {
           twentyc.data.load("sponsors", {callback:function() {
             twentyc.data.load("campus_facilities", {callback:run_search})
@@ -369,7 +369,7 @@
 
         $(document).on('click', '.nav-tabs a', function (event) {
           $(".pagination-bottom.pagination").html('');
-          event.preventDefault(); 
+          event.preventDefault();
           const reftag = $(this).attr('href').substring(1);
           const currentUrl = window.location.href;
           const searchParams = currentUrl.searchParams
@@ -385,9 +385,9 @@
           searchParams.delete('reftag');
           newUrl = `${currentUrl.split('?')[0]}?${searchParams.toString()}&reftag=${reftag}`;
 
-          window.location.href = newUrl; 
+          window.location.href = newUrl;
         });
-    
+
       });
     </script>
 </div>

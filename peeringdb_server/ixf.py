@@ -59,7 +59,6 @@ REASON_VALUES_CHANGED = _(
 
 
 class MultipleVlansInPrefix(ValueError):
-
     """
     This error is raised when an IX-F export contains
     multiple vlan ids for the prefixes defined in the processed ixlan.
@@ -2210,7 +2209,6 @@ class Importer:
 
 
 class PostMortem:
-
     """
     Generate postmortem report for IX-F import.
     """

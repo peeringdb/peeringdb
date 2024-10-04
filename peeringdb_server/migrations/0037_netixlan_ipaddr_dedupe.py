@@ -51,9 +51,7 @@ def dedupe_ipaddrs(apps, schema_editor):
 
     else:
         raise migrations.exceptions.DatabaseError(
-            "There are active NetIXLan objects with repeated ipaddr4 or ipaddr6 values: {}".format(
-                active_dupes
-            )
+            f"There are active NetIXLan objects with repeated ipaddr4 or ipaddr6 values: {active_dupes}"
         )
 
 

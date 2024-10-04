@@ -30,16 +30,9 @@ def forwards_func(apps, schema_editor):
                     netixlan.status = net.status
 
                     print(
-                        "AS{}: netixlan{} {} {} at exchange {} has been moved to network AS{}, however status"
+                        f"AS{netixlan.network.asn}: netixlan{netixlan.id} {netixlan.ipaddr4} {netixlan.ipaddr6} at exchange {netixlan.ixlan.ix.id} has been moved to network AS{net.asn}, however status"
                         " between the two was mismatching "
-                        " and has been corrected, but should be reviewed".format(
-                            netixlan.network.asn,
-                            netixlan.id,
-                            netixlan.ipaddr4,
-                            netixlan.ipaddr6,
-                            netixlan.ixlan.ix.id,
-                            net.asn,
-                        )
+                        " and has been corrected, but should be reviewed"
                     )
 
                 netixlan.network = net
@@ -50,18 +43,14 @@ def forwards_func(apps, schema_editor):
                 # could not find network with asn matching asn
                 # in this case we should drop the netixlan and log it
 
-                notes = "AS{}: Could not correct non-existant local_asn AS{} @ ixlan{} ".format(
-                    netixlan.network.asn, netixlan.asn, netixlan.ixlan.id
-                )
+                notes = f"AS{netixlan.network.asn}: Could not correct non-existant local_asn AS{netixlan.asn} @ ixlan{netixlan.ixlan.id} "
                 if netixlan.status == "ok":
                     print(notes)
                     asn_missing += 1
 
     print(f"Changed related network for {migrated} netixlans")
     print(
-        "Found {} netixlans where network matching local_asn did not exist".format(
-            asn_missing
-        )
+        f"Found {asn_missing} netixlans where network matching local_asn did not exist"
     )
 
 

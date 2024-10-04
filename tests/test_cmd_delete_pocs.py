@@ -1,4 +1,3 @@
-import io
 from datetime import timedelta
 
 import pytest
@@ -10,7 +9,7 @@ from reversion.models import Version
 
 from peeringdb_server.models import Network, NetworkContact
 
-from .util import ClientCase, Group
+from .util import ClientCase
 
 
 class TestRenumberLans(ClientCase):

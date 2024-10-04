@@ -50,7 +50,6 @@ class Command(BaseCommand):
 
         num_requests = len(old_requests)
         if not commit:
-
             # loop through the outdated pending requests and write to stdout
 
             for request in old_requests:
@@ -70,7 +69,6 @@ class Command(BaseCommand):
         self.process_requests(old_requests, days_old)
 
     def process_requests(self, requests, days_old):
-
         """
         Loops through the outdated pending requests and sends email notifications to the user and the org admins and then deletes the requests.
         """
@@ -92,7 +90,6 @@ class Command(BaseCommand):
         self.delete_requests(requests)
 
     def send_email_notifications(self, request, days_old, org_name):
-
         """
         Send email notifications to the user and the org admins about the deletion of the outdated pending requests.
         """

@@ -3080,7 +3080,7 @@ twentyc.editable.input.register(
           url : "/autocomplete/"+this.source.data("edit-autocomplete"),
           minimumCharacters : input_min_char ?? 2,
           choiceSelector : "span",
-          inputClick : function(e) { 
+          inputClick : function(e) {
             if (input_min_char !== undefined && input_min_char === 0){
               input.trigger("input")
             }

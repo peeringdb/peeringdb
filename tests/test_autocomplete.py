@@ -1,15 +1,15 @@
 import json
 
 import reversion
-from django.test import Client, RequestFactory
-from django.urls import reverse, resolve
+from django.test import RequestFactory
+from django.urls import resolve, reverse
 
 from peeringdb_server import autocomplete_views
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
     InternetExchangeFacility,
-    Network, 
+    Network,
     NetworkFacility,
     Organization,
     User,
@@ -85,50 +85,42 @@ class TestAutocomplete(ClientCase):
 
         assert "First" in rsp
         assert "Second" in rsp
-    
+
     def test_netfac_autocomplete(self):
         org = Organization.objects.create(name="Test Org", status="ok")
         net = Network.objects.create(
             name="Test Network", asn=1000, status="ok", org=org
         )
 
-        fac = Facility.objects.create(
-            name="Test Facility", status="ok", org=org
-        )
+        fac = Facility.objects.create(name="Test Facility", status="ok", org=org)
 
-        netfac = NetworkFacility.objects.create(
-            network=net, facility=fac, status="ok"
-        )
+        netfac = NetworkFacility.objects.create(network=net, facility=fac, status="ok")
 
         url = reverse("autocomplete-netfac", kwargs={"net_id": net.id})
         req = self.factory.get(url)
-        req.resolver_match = resolve(url) 
+        req.resolver_match = resolve(url)
 
-        rsp = autocomplete_views.NetworkFacilityAutocomplete.as_view()(req).content.decode(
-            "utf-8"
-        )
+        rsp = autocomplete_views.NetworkFacilityAutocomplete.as_view()(
+            req
+        ).content.decode("utf-8")
 
         assert "Test Facility" in rsp
 
         # test autocomplte-netfac with filter
         req = self.factory.get(f"{url}?q=Test")
-        req.resolver_match = resolve(url) 
+        req.resolver_match = resolve(url)
 
-        rsp = autocomplete_views.NetworkFacilityAutocomplete.as_view()(req).content.decode(
-            "utf-8"
-        )
+        rsp = autocomplete_views.NetworkFacilityAutocomplete.as_view()(
+            req
+        ).content.decode("utf-8")
 
         assert "Test Facility" in rsp
 
     def test_ixfac_autocomplete(self):
         org = Organization.objects.create(name="Test Org", status="ok")
-        ix = InternetExchange.objects.create(
-            name="First IX", status="ok", org=org
-        )
+        ix = InternetExchange.objects.create(name="First IX", status="ok", org=org)
 
-        fac = Facility.objects.create(
-            name="Test Facility", status="ok", org=org
-        )
+        fac = Facility.objects.create(name="Test Facility", status="ok", org=org)
 
         ixfac = InternetExchangeFacility.objects.create(
             ix=ix, facility=fac, status="ok"
@@ -136,21 +128,21 @@ class TestAutocomplete(ClientCase):
 
         url = reverse("autocomplete-ixfac", kwargs={"ix_id": ix.id})
         req = self.factory.get(url)
-        req.resolver_match = resolve(url) 
+        req.resolver_match = resolve(url)
 
-        rsp = autocomplete_views.InternetExchangeFacilityAutoComplete.as_view()(req).content.decode(
-            "utf-8"
-        )
+        rsp = autocomplete_views.InternetExchangeFacilityAutoComplete.as_view()(
+            req
+        ).content.decode("utf-8")
 
         assert "Test Facility" in rsp
 
         # test autocomplte-ixfac with filter
         req = self.factory.get(f"{url}?q=Test")
-        req.resolver_match = resolve(url) 
+        req.resolver_match = resolve(url)
 
-        rsp = autocomplete_views.InternetExchangeFacilityAutoComplete.as_view()(req).content.decode(
-            "utf-8"
-        )
+        rsp = autocomplete_views.InternetExchangeFacilityAutoComplete.as_view()(
+            req
+        ).content.decode("utf-8")
 
         assert "Test Facility" in rsp
 
@@ -160,11 +152,11 @@ class TestAutocomplete(ClientCase):
         Network.objects.all().delete()
 
         # Data for exact matches
-        net1 = Network.objects.create(name=f"NET", asn=1, status="ok", org=org)
+        net1 = Network.objects.create(name="NET", asn=1, status="ok", org=org)
         # Data for startswith matches
-        net2 = Network.objects.create(name=f"NET DUMMY", asn=2, status="ok", org=org)
+        net2 = Network.objects.create(name="NET DUMMY", asn=2, status="ok", org=org)
         # Data for contains matches
-        net3 = Network.objects.create(name=f"TEST NET", asn=3, status="ok", org=org)
+        net3 = Network.objects.create(name="TEST NET", asn=3, status="ok", org=org)
 
         url = reverse("autocomplete-net")
 

@@ -10,32 +10,12 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
-  - repo: local
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.6.8
     hooks:
-      - id: system
-        name: isort
-        entry: poetry run isort .
-        language: system
-        pass_filenames: false
-  - repo: local
-    hooks:
-    -   id: pyupgrade
-        name: pyupgrade
-        entry: poetry run pyupgrade --py39-plus
-        language: python
-        types: [python]
-        pass_filenames: true
-  - repo: local
-    hooks:
-      - id: system
-        name: Black
-        entry: poetry run black .
-        language: system
-        pass_filenames: false
-#  - repo: local
-#    hooks:
-#      - id: system
-#        name: flake8
-#        entry: poetry run flake8 peeringdb_server
-#        language: system
-#        pass_filenames: false
+    # Run the linter.
+    - id: ruff
+      args: [ --fix ]
+    # Run the formatter.
+    - id: ruff-format

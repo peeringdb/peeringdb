@@ -1,11 +1,10 @@
 import json
 import os
 
-import pytest
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import Client, RequestFactory, TestCase
+from django.test import RequestFactory, TestCase
 
 import peeringdb_server.inet as pdbinet
 import peeringdb_server.models as models

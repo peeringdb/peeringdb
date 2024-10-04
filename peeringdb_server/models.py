@@ -22,7 +22,6 @@ When adding new fields to django-peeringdb make sure migration files for the sch
 Please open a merge request in peeringdb/django-peeringdb for the field addition as well.
 """
 
-
 import datetime
 import ipaddress
 import json
@@ -347,7 +346,6 @@ class ParentStatusCheckMixin:
 
 
 class ProtectedMixin:
-
     """
     Mixin that implements checks for changing
     / deleting a model instance that will block
@@ -445,8 +443,8 @@ class GeocodeBaseMixin(models.Model):
         Returns an address string suitable for geo API query.
         """
         # pylint: disable=missing-format-attribute
-        return "{e.address1} {e.address2}, {e.city}, {e.state} {e.zipcode}".format(
-            e=self
+        return (
+            f"{self.address1} {self.address2}, {self.city}, {self.state} {self.zipcode}"
         )
 
     def process_geo_location(self, geocode=True, save=True):
@@ -506,7 +504,6 @@ class GeocodeBaseMixin(models.Model):
 
 
 class GeoCoordinateCache(StripFieldMixin):
-
     """
     Stores geocoordinates for address lookups.
     """
@@ -732,7 +729,6 @@ class UserOrgAffiliationRequest(StripFieldMixin):
     @reversion.create_revision()
     def track_approval(self):
         with current_request() as request:
-
             # reversion does not track object deletions directly (which is what happens
             # when the reuqest is approved, so we do a preliminary save to make sure a
             # revision is created for the approval action)
@@ -949,7 +945,6 @@ class DeskProTicket(StripFieldMixin):
 
 
 class DeskProTicketCC(StripFieldMixin):
-
     """
     Describes a contact to be cc'd on the deskpro ticket.
     """
@@ -1798,7 +1793,6 @@ class Campus(
     SocialMediaMixin,
     StripFieldMixin,
 ):
-
     """
     Describes a peeringdb campus
     """
@@ -3298,7 +3292,6 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
             netixlan.ipaddr6 = ipv6
             changed.append("ipaddr6")
 
-
         # Is the netixlan a routeserver ?
         if netixlan_info.is_rs_peer != netixlan.is_rs_peer:
             netixlan.is_rs_peer = netixlan_info.is_rs_peer
@@ -3475,7 +3468,6 @@ class NetworkProtocolsDisabled(ValueError):
 
 
 class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
-
     """
     Describes a potential data update that arose during an IX-F import
     attempt for a specific member (asn, ip4, ip6) to netixlan
@@ -5289,9 +5281,7 @@ class NetworkFacility(
         """
         Returns a descriptive label of the netfac for logging purposes.
         """
-        return "netfac{} AS{} {} <-> {}".format(
-            self.id, self.network.asn, self.network.name, self.facility.name
-        )
+        return f"netfac{self.id} AS{self.network.asn} {self.network.name} <-> {self.facility.name}"
 
     def clean(self):
         # when validating an existing netfac that has a mismatching
@@ -5351,18 +5341,18 @@ class NetworkIXLan(
         IXLan, on_delete=models.CASCADE, default=0, related_name="netixlan_set"
     )
     net_side = models.ForeignKey(
-        Facility, 
-        null=True, 
-        blank=True, 
-        on_delete=models.SET_NULL, 
-        related_name="net_side_set"
+        Facility,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="net_side_set",
     )
     ix_side = models.ForeignKey(
-        Facility, 
-        null=True, 
-        blank=True, 
-        on_delete=models.SET_NULL, 
-        related_name="ix_side_set"
+        Facility,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="ix_side_set",
     )
 
     parent_relations = ["ixlan", "network"]
@@ -5384,9 +5374,7 @@ class NetworkIXLan(
         """
         Returns a descriptive label of the netixlan for logging purposes.
         """
-        return "netixlan{} AS{} {} {}".format(
-            self.id, self.asn, self.ipaddr4, self.ipaddr6
-        )
+        return f"netixlan{self.id} AS{self.asn} {self.ipaddr4} {self.ipaddr6}"
 
     @property
     def ix_name(self):
@@ -6516,7 +6504,6 @@ class CommandLineTool(StripFieldMixin):
 
 
 class EnvironmentSetting(StripFieldMixin):
-
     """
     Environment settings overrides controlled through
     django admin (/cp).
@@ -6789,7 +6776,6 @@ class EnvironmentSetting(StripFieldMixin):
 
 
 class OAuthApplication(oauth2.AbstractApplication, StripFieldMixin):
-
     """
     OAuth application - extends the default oauth_provider2 application
     and adds optional org ownership to it through an `org` relationship
@@ -6821,7 +6807,6 @@ class OAuthApplication(oauth2.AbstractApplication, StripFieldMixin):
 
 
 class OAuthGrantInfo(StripFieldMixin):
-
     """
     OAuth grant info
 
@@ -6895,7 +6880,6 @@ DATACHANGE_ACTIONS = [
 
 
 class DataChangeWatchedObject(StripFieldMixin):
-
     """
     Describes a user's intention to be notified about
     changes to a specific objects.

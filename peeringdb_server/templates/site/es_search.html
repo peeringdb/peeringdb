@@ -16,11 +16,11 @@
       {% for index_name in indices %}
         <option value="{{ index_name }}">{{ index_name }}</option>
       {% endfor %}
-  
+
       {% if not indices %}
       <option value="_all" selected>_all</option>
       {% endif %}
-  
+
     </select><br><br>
 
     <button class="btn btn-default px-4 py-2 m-2" type="submit">Search</button>
@@ -32,7 +32,7 @@
 <div id="results">
     {% if raw_results %}
       <h2>Results:</h2>
-      <pre>{{ raw_results|pprint }}</pre> 
+      <pre>{{ raw_results|pprint }}</pre>
     {% elif error %}
       <h2>Error:</h2>
       <p>{{ error }}</p>

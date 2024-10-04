@@ -84,9 +84,7 @@ def mail_users_entity_merge(users_source, users_target, entity_source, entity_ta
             "entity_type_name": entity_source._meta.verbose_name.capitalize(),
             "entity_source": entity_source,
             "entity_target": entity_target,
-            "entity_target_url": "{}/{}/{}".format(
-                settings.BASE_URL, entity_target.ref_tag, entity_target.id
-            ),
+            "entity_target_url": f"{settings.BASE_URL}/{entity_target.ref_tag}/{entity_target.id}",
             "support_email": settings.DEFAULT_FROM_EMAIL,
         }
     )
@@ -118,9 +116,7 @@ def mail_username_retrieve(email, secret):
         {
             "email": email,
             "secret": secret,
-            "username_retrieve_url": "{}/username-retrieve/complete?secret={}".format(
-                settings.BASE_URL, secret
-            ),
+            "username_retrieve_url": f"{settings.BASE_URL}/username-retrieve/complete?secret={secret}",
         }
     )
 

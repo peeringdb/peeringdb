@@ -1,6 +1,7 @@
 """
 Inspect an object's history of changes.
 """
+
 import json
 
 from django.contrib.contenttypes.models import ContentType

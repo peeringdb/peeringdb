@@ -2,6 +2,7 @@
 """
 Series of integration/unit tests for the PDB API.
 """
+
 import copy
 import datetime
 import ipaddress
@@ -636,7 +637,6 @@ class TestJSON(unittest.TestCase):
 
         # if test_failures is set we want to test fail conditions
         if test_failures:
-
             # we test fail because of invalid data
             if "invalid" in test_failures:
                 tests = test_failures["invalid"]
@@ -2107,13 +2107,21 @@ class TestJSON(unittest.TestCase):
         netixlan = NetworkIXLan.objects.create(**data)
 
         # Get queryset of netixlan with status="ok"
-        netixlan_ids = NetworkIXLan.objects.filter(status="ok").values_list('id', flat=True)
+        netixlan_ids = NetworkIXLan.objects.filter(status="ok").values_list(
+            "id", flat=True
+        )
 
         # Define helper function to check response
         def check_side_response(port_name, port_id):
-            response = self.db_guest._request(f"netixlan?{port_name}={port_id}", method="GET").json().get("data")
+            response = (
+                self.db_guest._request(f"netixlan?{port_name}={port_id}", method="GET")
+                .json()
+                .get("data")
+            )
             for item in response:
-                assert item["id"] in netixlan_ids, f"{port_name} {item['id']} not found in netixlan queryset"
+                assert (
+                    item["id"] in netixlan_ids
+                ), f"{port_name} {item['id']} not found in netixlan queryset"
 
         # Check ix_side and net_side
         check_side_response("ix_side", SHARED["fac_rw_ok"].id)
@@ -2264,7 +2272,6 @@ class TestJSON(unittest.TestCase):
     ###########################################################################
 
     def test_org_admin_002_POST_PUT_net_legacy_info_type(self):
-
         """
         Tests that setting the legacy info_type field during network
         create and update will clobber the value correctly into
@@ -2304,7 +2311,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_net_rir_status(self):
-
         """
         Implements `Anytime` network update logic for RIR status handling
         laid out in https://github.com/peeringdb/peeringdb/issues/1280
@@ -5571,9 +5577,7 @@ class TestJSON(unittest.TestCase):
         view = NetworkViewSet.as_view(view_action)
         fn = getattr(factory, method)
 
-        ERR_PARSE = "Data supplied with the {} request could not be parsed: JSON parse error - Expecting value: line 1 column 1 (char 0)".format(
-            method.upper()
-        )
+        ERR_PARSE = f"Data supplied with the {method.upper()} request could not be parsed: JSON parse error - Expecting value: line 1 column 1 (char 0)"
         ERR_MISSING = f"No data was supplied with the {method.upper()} request"
 
         # test posting invalid json error

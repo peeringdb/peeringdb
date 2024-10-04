@@ -1,6 +1,7 @@
 """
 Assorted utility functions for peeringdb site templates.
 """
+
 import ipaddress
 from decimal import Decimal
 
@@ -8,13 +9,8 @@ import django_peeringdb.const as const
 from django.contrib.staticfiles.finders import find
 from django.utils.translation import gettext_lazy as _
 from django_grainy.util import Permissions, check_permissions, get_permissions  # noqa
-from simplekml import Kml, OverlayXY, ScreenXY, Style, Units
+from simplekml import OverlayXY, ScreenXY, Units
 
-from peeringdb_server.models import (
-    CarrierFacility,
-    InternetExchangeFacility,
-    NetworkFacility,
-)
 from peeringdb_server.permissions import APIPermissionsApplicator  # noqa
 
 

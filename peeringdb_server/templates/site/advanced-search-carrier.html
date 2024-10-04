@@ -13,9 +13,9 @@
         <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
         <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="string"
-               data-edit-value="{{ request.GET.name_search }}" 
+               data-edit-value="{{ request.GET.name_search }}"
                data-edit-reset-value=""
-               data-edit-name="name_search"></div> 
+               data-edit-name="name_search"></div>
         </div>
       </div>
 
@@ -23,13 +23,13 @@
         <div class="col-4 col-sm-5 col-md-4">{% trans "Long Name" %}</div>
         <div class="col-8 col-sm-7 col-md-8">
           <div data-edit-type="string"
-               data-edit-value="{{ request.GET.name_long__in }}" 
+               data-edit-value="{{ request.GET.name_long__in }}"
                data-edit-reset-value=""
                data-edit-name="name_long__icontains"></div>
         </div>
       </div>
 
-     
+
 
     </div>
     <div class="col-12 col-sm-6 col-md-6">
@@ -54,8 +54,8 @@
                data-edit-reset-value="">
           </div>
         </div>
-      </div> 
-    </div> 
+      </div>
+    </div>
   </div>
 
   <div class="right">
@@ -72,34 +72,34 @@
   <div class="editable-templates">
     <div id="advanced-search-carrier-item" class="row">
       <div class="col-3 col-sm-3 col-md-3">
-        <a href="/carrier/$id" data-edit-name="name" class="name"></a> 
+        <a href="/carrier/$id" data-edit-name="name" class="name"></a>
       </div>
       <div class="col-3 col-sm-3 col-md-3">
         <div class="name_long" data-edit-name="name_long"></div>
       </div>
       <div class="col-3 col-sm-3 col-md-3">
-        <div class="org_name" data-edit-name="org_name"></div> 
-      </div> 
+        <div class="org_name" data-edit-name="org_name"></div>
+      </div>
       <div class="col-3 col-sm-3 col-md-3">
-        <div class="facilities" data-edit-name="facilities"></div> 
-      </div> 
+        <div class="facilities" data-edit-name="facilities"></div>
+      </div>
     </div>
   </div>
 
   <div class="headers marg-top-15">
     <div class="row">
       <div class="col-3 col-sm-3 col-md-3">
-        <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div> 
+        <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
       </div>
       <div class="col-3 col-sm-3 col-md-3">
-        <div data-sort-target=".name_long">{% trans "Long Name" %}</div> 
+        <div data-sort-target=".name_long">{% trans "Long Name" %}</div>
       </div>
       <div class="col-3 col-sm-3 col-md-3">
         <div data-sort-target=".org_name">{% trans "Organization" %}</div>
-      </div> 
+      </div>
       <div class="col-3 col-sm-3 col-md-3">
         <div data-sort-target=".fac_name">{% trans "Facilities" %}</div>
-      </div> 
+      </div>
     </div>
   </div>
 
