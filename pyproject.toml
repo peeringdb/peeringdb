@@ -115,11 +115,14 @@ pydot = ">=1.4.2"
 requires = [ "poetry>=0.12",]
 build-backend = "poetry.masonry.api"
 
-[tool.ruff]
-lint.select = [
+[tool.ruff.lint]
+select = [
     "I",  # isort
-    "UP",
+    "UP", # pyupgrade
 ]
+# ignore until we can fix correctly
+# UP031 Use format specifiers instead of percent format
+ignore = ["UP031"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
