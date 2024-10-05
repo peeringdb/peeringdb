@@ -1,11 +1,11 @@
-[tool.poetry]
+[project]
 name = "peeringdb_server"
 version = "2.61.0"
 description = "source code for PeeringDB.com"
 readme = "README.md"
 repository = "https://github.com/peeringdb/peeringdb"
-authors = [ "PeeringDB <support@peeringdb.com>",]
-license = "BSD-2-Clause"
+authors = [{ name = "PeeringDB", email = "support@peeringdb.com" }]
+license = { text = "BSD-2-Clause" }
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -116,6 +116,8 @@ requires = [ "poetry>=0.12",]
 build-backend = "poetry.masonry.api"
 
 [tool.ruff.lint]
+# XXX needs fixes
+# extend-select = [
 select = [
     "I",  # isort
     "UP", # pyupgrade
@@ -125,7 +127,18 @@ select = [
 ignore = ["UP031"]
 
 [tool.ruff.lint.per-file-ignores]
+# settings need to be refactored to use settings_manager
+"mainsite/settings/*.py" = [
+    "F821",  # undefined name
+
+]
 "tests/**/*.py" = [
+    # these should be cleaned up
+    "E711",  # Comparison to None should be 'if cond is None:'
+    "E712",  # Avoid equality comparisons to `True`
+    "F403",  # 'from module import *' used; unable to detect undefined names
+    "F841",  # Unused variable
+
     # at least this three should be fine in tests:
     "S101", # asserts allowed in tests...
     "ARG",  # Unused function args -> fixtures nevertheless are functionally relevant...
