@@ -227,6 +227,7 @@ apt-get install -qyy \
     $build_deps
 
 apt-get clean
+uv sync --locked --no-install-project
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 EOT
 
