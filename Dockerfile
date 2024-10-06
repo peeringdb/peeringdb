@@ -105,6 +105,9 @@ EOT
 # LEAVE THIS OUT if your application is NOT a proper Python package.
 # As of uv 0.4.11, you can also use
 # `cd /src && uv sync --locked --no-dev --no-editable` instead.
+COPY . /src
+RUN cd /src && uv sync --locked --no-dev --no-editable
+
 # COPY . /src
 # RUN --mount=type=cache,target=/root/.cache \
 #     uv pip install \
@@ -183,7 +186,7 @@ COPY Ctl/VERSION etc
 COPY docs/ docs
 COPY mainsite/ mainsite
 COPY $ADD_SETTINGS_FILE mainsite/settings/
-COPY src/peeringdb_server/ peeringdb_server
+# COPY src/peeringdb_server/ peeringdb_server
 COPY fixtures/ fixtures
 COPY .coveragerc .coveragerc
 RUN mkdir coverage && bash
@@ -233,14 +236,16 @@ FROM final
 # COPY Ctl/docker/entrypoint.sh .
 # COPY Ctl/docker/django-uwsgi.ini etc/
 
+WORKDIR /srv/www.peeringdb.com
 USER pdb
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["runserver"]
 
 # Strictly optional, but I like it for introspection of what I've built
 # and run a smoke test that the application can, in fact, be imported.
-# RUN <<EOT
-# python -V
-# python -Im site
 # python -Ic 'import peeringdb_server'
-# EOT
+#RUN <<EOT
+#python -V
+#python -Im site
+#python -c 'import peeringdb_server'
+#EOT
