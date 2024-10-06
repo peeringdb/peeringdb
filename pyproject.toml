@@ -79,7 +79,7 @@ dependencies = [
     "coreapi>=2.3.1",
     # FIXME: 1.15.0 has migration issues and also breaks
     # emailing of one time password
-    # XXX 
+    # XXX
     "django-two-factor-auth>=1.11,<1.15.0",
 
 

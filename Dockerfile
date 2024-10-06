@@ -160,7 +160,7 @@ EOT
 #RUN adduser -Du $uid pdb
 
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint"]
 # See <https://hynek.me/articles/docker-signals/>.
 STOPSIGNAL SIGINT
 
@@ -183,16 +183,16 @@ COPY --from=builder "$VIRTUAL_ENV" "$VIRTUAL_ENV"
 COPY Ctl/docker/django-uwsgi.ini etc/
 COPY manage.py .
 COPY Ctl/VERSION etc
+COPY Ctl/docker/entrypoint.sh ./
 COPY docs/ docs
 COPY mainsite/ mainsite
 COPY $ADD_SETTINGS_FILE mainsite/settings/
 # COPY src/peeringdb_server/ peeringdb_server
 COPY fixtures/ fixtures
 COPY .coveragerc .coveragerc
-RUN mkdir coverage && bash
+RUN mkdir coverage && ln -s srv/www.peeringdb.com/entrypoint.sh /entrypoint
 
 COPY scripts/manage /usr/bin/
-COPY Ctl/docker/entrypoint.sh /
 
 COPY --from=builder /usr/local/bin/uv /usr/bin/uv
 COPY --from=builder /srv/www.peeringdb.com/uv.lock uv.lock
@@ -219,15 +219,22 @@ COPY tests/ tests
 RUN chown -R pdb:pdb tests/
 
 # install dev deps
-RUN apk --update --no-cache add $build_deps
-RUN pip install -U poetry
-RUN poetry install --no-root
+RUN <<EOT
+apt-get update -qy
+apt-get install -qyy \
+    -o APT::Install-Recommends=false \
+    -o APT::Install-Suggests=false \
+    $build_deps
+
+apt-get clean
+rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+EOT
 
 # Same as final entrypoint for running in dev mode
 
 # move to final base
 USER pdb
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint"]
 CMD ["runserver"]
 
 #### entry point from final image, not tester
@@ -238,7 +245,7 @@ FROM final
 
 WORKDIR /srv/www.peeringdb.com
 USER pdb
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./entrypoint"]
 CMD ["runserver"]
 
 # Strictly optional, but I like it for introspection of what I've built

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-function migrate() {
+migrate() {
   echo applying migrations - django_peeringdb
   # always fake, since peeeringdb_server does not use concrete models
   manage migrate django_peeringdb --fake
