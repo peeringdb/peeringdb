@@ -7,11 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install virtualenv from poetry
-        uses: 20c/workflows/poetry@v1
+      - name: Install virtualenv
+        uses: 20c/workflows/uv@v1
       - name: Run linters
         run: |
-          poetry run pre-commit run --all-files
+          uv run pre-commit run --all-files
   test:
     needs: linting
     runs-on: ubuntu-latest

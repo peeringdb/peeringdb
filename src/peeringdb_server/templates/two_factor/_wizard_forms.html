@@ -1,0 +1,60 @@
+{% load i18n %}
+{% if rate_limit_message %}
+<div class="alert alert-danger">
+  {{ rate_limit_message }}
+</div>
+{% endif %}
+
+
+{{ wizard.management_form }}
+
+{% if wizard.steps.current == "auth" %}
+
+  {% if wizard.form.non_field_errors %}
+  <div class="alert alert-danger errors">
+    {{ wizard.form.non_field_errors }}
+  </div>
+  {% endif %}
+
+  <input type="hidden" name="next" id="next" value="{{ request.GET.next }}" />
+
+  <div class="mb-3">
+     <div class="errors">
+      {{ wizard.form.errors.username }}
+     </div>
+     <input placeholder="{% trans "Username" %}" class="form-control" type="text" id="id_auth-username" name="auth-username" value="{{ wizard.form.username.value|default:"" }}"  autocomplete="auth-username webauthn" required/>
+  </div>
+  <div class="mb-3">
+     <div class="errors">
+      {{ wizard.form.errors.password }}
+     </div>
+     <input placeholder="{% trans "Password" %}" class="form-control" type="password" name="auth-password" id="id_auth-password" required/>
+  </div>
+
+  <div>
+    <p><a href="/reset-password">{% trans "I forgot my password .." %}</a></p>
+    <p><a href="/username-retrieve">{% trans "I forgot my username .." %}</a></p>
+  </div>
+
+{% elif wizard.steps.current == "token" %}
+
+  {% if wizard.form.non_field_errors %}
+  <div class="alert alert-danger errors">
+    {{ wizard.form.non_field_errors }}
+  </div>
+  {% endif %}
+
+  <div class="errors">
+    {{ wizard.form.errors.otp_token }}
+   </div>
+  <input type="hidden" name="next" id="next" value="{{ request.GET.next }}" />
+  <input placeholder="{% trans "Token" %}" class="form-control" type="number" name="token-otp_token" min="1" max="999999" autofocus="autofocus" id="id_token-otp_token">
+
+{% else %}
+<table>
+  {{ wizard.form }}
+</table>
+{% endif %}
+
+<script>
+</script>

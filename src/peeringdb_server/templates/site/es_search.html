@@ -1,0 +1,44 @@
+{% extends "site/base.html" %}
+{% load i18n util static %}
+
+{% block header %}
+{% with page_title=request|make_page_title_for_advanced_search_result %}{{ block.super }}{% endwith %}
+{% endblock %}
+
+{% block content %}
+
+<form method="post" action="{% url 'search_elasticsearch' %}"> {% csrf_token %}
+    <label for="query">Query (JSON):</label><br>
+    <textarea name="q" id="query" rows="10" cols="80"></textarea><br>
+
+    <label for="index">Index:</label><br>
+    <select name="index" id="index">
+      {% for index_name in indices %}
+        <option value="{{ index_name }}">{{ index_name }}</option>
+      {% endfor %}
+
+      {% if not indices %}
+      <option value="_all" selected>_all</option>
+      {% endif %}
+
+    </select><br><br>
+
+    <button class="btn btn-default px-4 py-2 m-2" type="submit">Search</button>
+  </form>
+  <div>
+
+  </div>
+
+<div id="results">
+    {% if raw_results %}
+      <h2>Results:</h2>
+      <pre>{{ raw_results|pprint }}</pre>
+    {% elif error %}
+      <h2>Error:</h2>
+      <p>{{ error }}</p>
+    {% endif %}
+  </div>
+
+
+
+{% endblock %}

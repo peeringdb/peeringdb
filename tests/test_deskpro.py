@@ -1,16 +1,11 @@
-from unicodedata import name
-
 import pytest
-from django.test import Client, RequestFactory, TestCase
 
 from peeringdb_server.deskpro import MockAPIClient as DeskProClient
-from peeringdb_server.models import DeskProTicket, Group, User
+from peeringdb_server.models import Group, User
 
 
 @pytest.fixture
 def admin_user():
-    from django.conf import settings
-
     guest_group, _ = Group.objects.get_or_create(name="guest")
     user_group, _ = Group.objects.get_or_create(name="user")
 

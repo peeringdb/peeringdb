@@ -2,13 +2,11 @@ import base64
 import json
 import os
 
-import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import TestCase
-from django_grainy.models import GroupPermission, UserPermission
-from rest_framework.authtoken.models import Token
-from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
+from django_grainy.models import GroupPermission
+from rest_framework.test import APIClient, APIRequestFactory
 from twentyc.rpc.client import RestClient
 
 import peeringdb_server.inet as pdbinet

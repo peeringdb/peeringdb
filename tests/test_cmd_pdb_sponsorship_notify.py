@@ -1,13 +1,10 @@
-import random
-import string
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from django.conf import settings
 from django.core.management import call_command
 from django.test import override_settings
 
-from peeringdb_server.models import Organization, Sponsorship
+from peeringdb_server.models import Sponsorship
 
 FIVE_MONTHS_AGO = datetime.now(tz=timezone.utc) - timedelta(days=150)
 TWO_MONTHS_AGO = datetime.now(tz=timezone.utc) - timedelta(days=60)

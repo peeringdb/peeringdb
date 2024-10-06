@@ -1,28 +1,22 @@
 import ipaddress
-import os
 from unittest.mock import patch
 
 import pytest
-import requests
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.management import call_command
 from django.test import RequestFactory, override_settings
 from rest_framework.exceptions import ValidationError as RestValidationError
 
 import peeringdb_server.geo as geo
 from peeringdb_server.context import current_request
 from peeringdb_server.models import (
-    Facility,
     InternetExchange,
-    IXLan,
     IXLanPrefix,
     Network,
     NetworkContact,
     NetworkIXLan,
     Organization,
-    ProtectedAction,
 )
 from peeringdb_server.validators import (
     validate_address_space,

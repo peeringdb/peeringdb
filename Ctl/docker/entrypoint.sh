@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
 
-function migrate() {
+migrate() {
   echo applying migrations - django_peeringdb
   # always fake, since peeeringdb_server does not use concrete models
   manage migrate django_peeringdb --fake
@@ -24,13 +24,8 @@ case "$1" in
   "migrate" )
     migrate
     ;;
-  "inetd" )
-    inetd -f -e -q 1024
-    ;;
-  "in.whois" )
-    exec ./in.whoisd
-    ;;
   "run_tests" )
+    shift
     source venv/bin/activate
     export DJANGO_SETTINGS_MODULE=mainsite.settings
     export DATABASE_USER=root
@@ -42,7 +37,7 @@ case "$1" in
     unset OAUTH2_PROVIDER_APPLICATION_MODEL
     unset SESSION_COOKIE_DOMAIN
     unset PEERINGDB_SYNC_API_KEY
-    pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 tests/
+    pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 tests/ $@
     ;;
   "gen_docs" )
     source venv/bin/activate
@@ -59,17 +54,17 @@ case "$1" in
     echo generating api docs
     python manage.py generateschema --file peeringdb_server/static/api-schema.yaml
     ;;
-  "whois" )
-    line=$(head -1 | tr -cd '[:alnum:]._-')
-    exec manage pdb_whois "$line"
+  "makemessages" | "compilemessages" )
+    cd /mnt
+    exec django-admin $@
+    ;;
+  "inetd" | "in.whois" | "whois" )
+    echo "whois and inetd have been removed"
+    exit 1
     ;;
   "/bin/sh" )
     echo dropping to shell
     exec $@
-    ;;
-  "makemessages" | "compilemessages" )
-    cd /mnt
-    exec django-admin $@
     ;;
   * )
     exec manage $@

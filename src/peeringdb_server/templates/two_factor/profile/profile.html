@@ -1,0 +1,20 @@
+{% extends "two_factor/profile/profile.html" %}
+{% load i18n pdb_two_factor_ext %}
+
+{% block content %}
+<div style="text-align:left !important;">
+  {% if not user|user_has_topt_device and user|user_has_u2f_device %}
+  <h1>{% trans "Account Security" %}</h1>
+  <p>
+  {% blocktrans trimmed %}Add a TOPT method to your two-factor authentication{% endblocktrans %}
+  </p>
+  <a href="{% url 'two_factor:setup' %}" class="btn btn-primary">{% trans "Add TOTP Authentication" %}</a>
+  {% else %}
+  {{ block.super }}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content_right %}
+{% include "site/profile-2fa-security-keys.html" %}
+{% endblock %}

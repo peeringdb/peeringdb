@@ -1,23 +1,14 @@
 import json
-from urllib.parse import parse_qs, urlparse
 
 import jwt
 import pytest
-from django.conf import settings
 from django.core.signing import get_cookie_signer
-from django.test import Client, RequestFactory, override_settings
+from django.test import Client
 from django.urls import reverse
 from oauth2_provider.models import AccessToken, Application, RefreshToken
 from oauth2_provider.settings import oauth2_settings
 
 from peeringdb_server.models import OAuthApplication, Organization, User
-from peeringdb_server.views import (
-    ApplicationDelete,
-    ApplicationDetail,
-    ApplicationList,
-    ApplicationRegistration,
-    ApplicationUpdate,
-)
 from tests.util import reset_group_ids
 
 

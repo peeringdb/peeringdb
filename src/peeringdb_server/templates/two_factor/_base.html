@@ -1,0 +1,56 @@
+{% include "site/header.html" %}
+{% include "site/view_header.html" with errors=errors %}
+{% load i18n %}
+
+<div class="view_info">
+  <div class="container v2-login">
+    <div class="row marg-top-15 marg-bot-15">
+      {% if wizard %}
+      <div class="col-12 col-sm-4"></div>
+      <div class="col-12 col-sm-4  panel left">
+      {% else %}
+      <div class="col-12 col-md-6">
+      {% endif %}
+
+      {% block content %}
+      {% endblock %}
+
+      {% if wizard.steps.current == "auth" %}
+
+        {% if passkey_error %}
+
+        <p>
+        <div class="alert alert-danger">
+        {{ passkey_error }}
+        </div>
+        </p>
+
+        {% endif %}
+
+        <p>
+          <div class="alert alert-info">
+            {% blocktrans trimmed %}
+            For <strong>passkey</strong> authentication click on username then follow the passkey options provided and ensure your
+            registered U2F FIDO security key is available / connected.
+            {% endblocktrans %}
+          </div>
+        </p>
+
+      {% endif %}
+
+      </div>
+      {% if wizard %}
+      <div class="col-12 col-sm-4"></div>
+      {% else %}
+      <div class="col-12 col-md-6">
+      {% block content_right %}
+
+      {% endblock %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+{% include "site/footer.html" %}

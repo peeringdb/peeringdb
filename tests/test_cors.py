@@ -1,14 +1,10 @@
 from corsheaders.middleware import (
-    ACCESS_CONTROL_ALLOW_CREDENTIALS,
-    ACCESS_CONTROL_ALLOW_HEADERS,
     ACCESS_CONTROL_ALLOW_METHODS,
     ACCESS_CONTROL_ALLOW_ORIGIN,
-    ACCESS_CONTROL_EXPOSE_HEADERS,
-    ACCESS_CONTROL_MAX_AGE,
 )
-from django.test import Client, TestCase
+from django.test import Client
 
-from peeringdb_server.models import Organization, User
+from peeringdb_server.models import Organization
 
 from .util import ClientCase
 

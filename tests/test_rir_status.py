@@ -5,7 +5,6 @@ from peeringdb_server.models import Network, Organization
 
 @pytest.mark.django_db
 def test_network_auto_initial_rir_status():
-
     """
     Tests `Anytime` network update logic for RIR status handling
     laid out in https://github.com/peeringdb/peeringdb/issues/1280

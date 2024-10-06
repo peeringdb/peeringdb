@@ -439,10 +439,7 @@ class AdminTests(TestCase):
         netixlan_b = ixlan.netixlan_set.all()[1]
 
         url = reverse(
-            "admin:{}_{}_change".format(
-                ixlan._meta.app_label,
-                ixlan._meta.object_name,
-            ).lower(),
+            f"admin:{ixlan._meta.app_label}_{ixlan._meta.object_name}_change".lower(),
             args=(ixlan.id,),
         )
 
@@ -745,9 +742,7 @@ class AdminTests(TestCase):
                         continue
 
                 url = reverse(
-                    "admin:{}_{}_{}".format(
-                        cls._meta.app_label, cls._meta.object_name, op
-                    ).lower(),
+                    f"admin:{cls._meta.app_label}_{cls._meta.object_name}_{op}".lower(),
                     args=args,
                 )
                 response = client.get(url)
@@ -782,9 +777,7 @@ class AdminTests(TestCase):
 
         cls = models.Organization
         url = reverse(
-            "admin:{}_{}_changelist".format(
-                cls._meta.app_label, cls._meta.object_name
-            ).lower(),
+            f"admin:{cls._meta.app_label}_{cls._meta.object_name}_changelist".lower(),
         )
         response = client.get(f"{url}?sz={sz}")
         cont = response.content.decode("utf-8")

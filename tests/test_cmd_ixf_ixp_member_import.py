@@ -1,12 +1,7 @@
-import datetime
 import io
 import json
-import time
-from pprint import pprint
 
-import jsonschema
 import pytest
-import requests
 import reversion
 from django.core.cache import cache
 from django.core.management import call_command
@@ -18,13 +13,9 @@ from peeringdb_server.models import (
     InternetExchange,
     IXFImportEmail,
     IXFMemberData,
-    IXLan,
-    IXLanIXFMemberImportLog,
-    IXLanIXFMemberImportLogEntry,
     IXLanPrefix,
     Network,
     NetworkContact,
-    NetworkIXLan,
     Organization,
     User,
 )

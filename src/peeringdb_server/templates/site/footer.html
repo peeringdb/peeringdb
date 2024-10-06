@@ -1,0 +1,87 @@
+{% load i18n %}
+<div class="landing_footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-3 col-sm-4 col-12">
+      {% spaceless %}
+      {% now "Y" as current_year %}
+      &copy; 2004-{{current_year}} PeeringDB <br/>
+      {% trans "All Rights Reserved. By using this service, you agree to adhere to our" %}
+      <a href="/aup">{% trans "AUP" %}</a>.<br/>
+      {% endspaceless %}
+      <p class="marg-top-15">
+      <a href="https://github.com/peeringdb/peeringdb/issues">{{PEERINGDB_VERSION}}</a> - <a href="https://docs.peeringdb.com/gov/misc/2017-04-02-PeeringDB_Privacy_Policy.pdf">{% trans "Privacy Policy" %}</a>
+      </p>
+      <p>
+          <a target='_blank' href='https://www.facebook.com/peeringdb/'><img class="socialmedia_icon" src='{{ STATIC_URL }}/social-facebook.png' alt="Facebook"></a>
+          <a target="_blank" href="https://github.com/peeringdb/peeringdb/issues"><img class="socialmedia_icon" src="{{ STATIC_URL }}/social-github.png" alt="GitHub"></a>
+          <a target="_blank" href="https://www.linkedin.com/company/peeringdb"><img class="socialmedia_icon" src="{{ STATIC_URL }}/social-linkedin.png" alt="LinkedIn"></a>
+          <a target='_blank' href='https://twitter.com/PeeringDB'><img class="socialmedia_icon" src='{{ STATIC_URL }}/social-x.png' alt="X"></a>
+          <a target="_blank" href="https://www.youtube.com/channel/UCOrYWUg-dbL9UTFV_Lry6Wg"><img class="socialmedia_icon" src='{{ STATIC_URL }}/social-youtube.png' alt="YouTube"></a>
+        </p>
+      </div>
+      <div class="col-md-3 col-sm-4 col-12">
+        <div>
+        <a href="/about">{% trans "About" %}</a>
+        </div>
+        <div>
+        <a href="/register">{% trans "Register" %}</a>
+        </div>
+        <div>
+        <a href="/advanced_search">{% trans "Search" %}</a>
+        </div>
+        <div>
+        <a href="/sponsors">{% trans "Sponsors" %}</a>
+        </div>
+      <p> </p>
+      <h4><b>{% trans "Resources" %}</b></h4>
+        <div><a href="/apidocs" target="_blank">{% trans "API" %}</a></div>
+        <div><a href="/docs" target="_blank">{% trans "Documentation" %}</a></div>
+        <div><a href="https://docs.peeringdb.com/release_notes/#release-notes" target="_blank">{% trans "Release Notes" %}</a></div>
+        <div><a href="http://docs.peeringdb.com/faq/" target="_blank">{% trans "FAQ" %}</a></div>
+        <div><a href="http://gov.peeringdb.com/" target="_blank">{% trans "Governance" %}</a></div>
+        <div><a href="http://status.peeringdb.com/" target="_blank">{% trans "Status" %}</a></div>
+        {% if KMZ_DOWNLOAD_URL %}
+        <div><a href="{{ KMZ_DOWNLOAD_URL }}" download>{% trans "Google Earth KMZ" %}</a></div>
+        {% else %}
+        <div><a href="{% url "kmz-download" %}" download>{% trans "Google Earth KMZ" %}</a></div>
+        {% endif %}
+      <p> </p>
+      <h4><b>{% trans "Contact Us" %}</b></h4>
+      <a href="mailto:support@peeringdb.com">support@peeringdb.com</a>
+      <p></p>
+      </div>
+      <div class="col-md-4 col-sm-4 col-12">
+      <h4><b>{% trans "Global System Statistics" %}</b></h4>
+      <div class="global_stats">
+        <div>{{ global_stats.ix }} {% trans "Exchanges" %}</div>
+        <div>{{ global_stats.net }} {% trans "Networks" %}</div>
+        <div>{{ global_stats.fac }} {% trans "Facilities" %}</div>
+        <div>{{ global_stats.campus }} {% trans "Campuses" %}</div>
+        <div>{{ global_stats.carrier }} {% trans "Carriers" %}</div>
+        <div>{{ global_stats.netixlan }} {% trans "Connections to Exchanges" %}</div>
+        <div>{{ global_stats.netfac }} {% trans "Connections to Facilities" %}</div>
+        <div>{{ global_stats.automated_nets }} {% trans "Automated Networks" %}</div>
+        <div>{{ global_stats.registered_users }} {% trans "Registered Users" %}</div>
+        <div>{{ global_stats.organizations }} {% trans "Organizations" %}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% if GOOGLE_ANALYTICS_ID %}
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ GOOGLE_ANALYTICS_ID }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ GOOGLE_ANALYTICS_ID }}', {cookie_flags: 'SameSite=None;Secure'});
+</script>
+{% endif %}
+{% block extrascript %}
+
+{% endblock extrascript %}
+</body>
+</html>

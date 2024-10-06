@@ -71,6 +71,7 @@ services:
       - ../../mainsite:/srv/www.peeringdb.com/mainsite:Z
       - ../../tests:/srv/www.peeringdb.com/tests:Z
       - ../../docs:/srv/www.peeringdb.com/docs:Z
+      - ../../Ctl/docker/entrypoint.sh:/srv/www.peeringdb.com/entrypoint.sh:Z
 
       # uncomment if you want indexed search data to be persistent
       # - ../../search-data:/srv/www.peeringdb.com/search-data

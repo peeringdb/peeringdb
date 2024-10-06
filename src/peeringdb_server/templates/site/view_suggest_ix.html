@@ -1,0 +1,188 @@
+{% extends "site/base.html" %}
+{% load util %}
+{% load i18n %}
+
+{% block content %}
+<div class="row panel">
+  <div class="col-12">
+{% if user.is_verified_user %}
+
+
+<div class="marg-bot-15" id="success" style="display:none;">
+<div class="editable popin info center">
+<p>
+{% blocktrans trimmed %}
+Thank you for your suggestion.
+{% endblocktrans %}
+</p>
+<p>
+<a href="/suggest/ix">{% trans "Suggest another exchange" %}</a>
+</p>
+</div>
+</div>
+
+
+      <div class="editable always auto-toggled create-form"
+           id="create-ix-form"
+           data-edit-target="api:ix:create"
+           data-edit-enter-action="submit">
+
+        <div class="payload">
+          <div data-edit-name="suggest">yes</div>
+          <div data-edit-name="org_id">0</div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-sm-6 col-md-6">
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="name"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="website"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "City" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="city"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Country" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="country"
+                     data-edit-required="yes"
+                     data-edit-data="countries"
+                     data-edit-value="US"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Continental Region" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="region_continent"
+                     data-edit-required="yes"
+                     data-edit-data="enum/regions"></div>
+              </div>
+            </div>
+
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Unicast IPv4" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="proto_unicast"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Multicast" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="proto_multicast"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "IPv6" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="proto_ipv6"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Traffic Stats Website" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="url_stats"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Technical E-mail" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="email"
+                     data-edit-name="tech_email"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Technical Phone" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="tech_phone"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Policy E-mail" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="email"
+                     data-edit-name="policy_email"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Policy Phone" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="policy_phone"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Prefix" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-placeholder="{% trans "IPv4 or IPv6 prefix" %}"
+                     data-edit-name="prefix"></div>
+              </div>
+            </div>
+
+
+
+          </div>
+          <div class="col-12 col-sm-6 col-md-6">
+            {% include "site/entity_suggest.html" with entity_name="Exchange" %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+{% else %}
+<div class="marg-bot-15">
+<div class="editable popin error">
+<p>
+{% blocktrans trimmed %}
+Only verified users may suggest entities.
+{% endblocktrans %}
+</p>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<script language="javascript" type="text/javascript">
+$('#create-ix-form').each(function(idx) {
+  form = $(this)
+  $(this).on("action-success:submit", function(ev, data) {
+    $("#success").show();
+    form.hide();
+  })
+});
+</script>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% load i18n %}
+<div class="panel">
+  <h3>{% trans "Account Security" %}</h3>
+  <div class="d-block d-md-flex">
+    <a class="btn btn-default w-100 m-2" href="{% url "two_factor:profile" %}">{% trans "Manage Two-Factor Authentication" %}</a>
+    <a class="btn btn-default w-100 m-2" href="{% url "profile_passkey" %}">{% trans "Manage Passkey Authentication" %}</a>
+  </div>
+</div>

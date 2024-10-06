@@ -1,0 +1,213 @@
+{% load i18n static %}
+
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>{{ page_title|default:"PeeringDB" }}</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+<link rel="canonical" href="https://www.peeringdb.com{{ request.get_full_path }}" />
+
+{% with img_square="pdb-logo-square-coloured.png" img_rect="pdb-logo-rect-coloured.png" %}
+<meta property="og:title" content="PeeringDB" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="The Interconnection Database" />
+<meta property="og:url" content="https://www.peeringdb.com{{ request.get_full_path }}" />
+
+<!-- open graph -->
+
+<meta property="og:image" content="https://{{ request.get_host }}{{ STATIC_URL }}{{ img_rect }}" />
+<meta property="og:image:secure_url" content="https://{{ request.get_host }}{{ STATIC_URL }}{{ img_rect }}" />
+<meta property="og:image:alt" content="PeeringDB" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+
+<!-- twitter -->
+
+<meta property="twitter:card" content="summary" />
+<meta property="twitter:site" content="@PeeringDB" />
+<meta property="twitter:title" content="PeeringDB" />
+<meta property="twitter:description" content="The Interconnection Database" />
+<meta property="twitter:url" content="https://www.peeringdb.com{{ request.get_full_path }}" />
+<meta property="twitter:image" content="https://{{ request.get_host }}{{ STATIC_URL }}{{ img_square }}" />
+{% endwith %}
+
+<link rel="shortcut icon" type="image/png" href="{{STATIC_URL}}/favicon.ico"/>
+{% block css %}
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}bootstrap/css/bootstrap.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}autocomplete/jquery.autocomplete-light.css" />
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}20c/twentyc.edit.css" />
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}site.css" />
+{% endblock %}
+<script type="text/javascript">
+window.STATIC_URL = "{{ STATIC_URL }}";
+</script>
+<script src='https://www.google.com/recaptcha/api.js'></script>
+<script type="text/javascript" src="{{ STATIC_URL }}jquery/jquery.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js-cookie/js.cookie.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}showdown/showdown.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}dom-purify/purify.min.js"></script>
+<script type="text/javascript" src="{% static "base64/base64url-arraybuffer.js" %}"></script>
+<script type="text/javascript" src="{% static "django-security-keys/django-security-keys.js" %}"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.core.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.edit.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.filter-field.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}20c/twentyc.sortable.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}autocomplete/jquery.autocomplete-light.min.js"></script>
+
+<script type="text/javascript" src="{% url 'javascript-catalog' %}"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}peeringdb.js"></script>
+{{ form.media }}
+<script type="text/javascript" language="javascript">
+const is_authenticated = `{{request.user.is_authenticated}}` == 'True'
+$(window).bind("load", function() {
+  if(!PeeringDB.csrf)
+    PeeringDB.csrf = '{{ csrf_token }}';
+  {% if request.user.is_superuser %}
+  PeeringDB.confirmation_prompts.approve = false;
+  {% endif %}
+
+  SecurityKeys.init({
+    url_request_registration: "{% url "security-keys-request-registration" %}",
+    url_request_authentication: "{% url "security-keys-request-authentication" %}",
+    csrf_token:"{{ csrf_token }}"
+  });
+
+  $('#anon-language-preference').each(function(idx) {
+    $(this).on("change", function() {
+      Cookies.set('django_language', this.value, { expires: 365 });
+      if (is_authenticated) {
+        var selectedLocale = this.value;
+        var formData = new FormData();
+        formData.append('locale', selectedLocale);
+        fetch('/set-user-locale', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRFToken': getCSRFToken()
+          }
+        })
+        .then(response => {
+          if (response.ok) {
+            reloadPage();
+          } else {
+            console.error('Failed to set user locale');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+      } else {
+        console.log("User is not authenticated");
+        reloadPage();
+      }
+    });
+  });
+
+  function reloadPage() {
+    window.location.href = window.location.href;
+    window.location.reload();
+    // Reload the current page, without using the cache
+    document.location.reload(true);
+  }
+
+  function getCSRFToken() {
+    var csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return csrfToken ? csrfToken.value : '';
+  }
+});
+</script>
+</head>
+
+
+{% get_current_language_bidi as RTL_LANGUAGE %}
+{% if RTL_LANGUAGE %}
+<body dir="rtl">
+{% else %}
+<body>
+{% endif %}
+
+<div class="header" id="header">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-3 col-md-4 col-sm-4 col-12 logo-container">
+        <a href="/"><img class="logo img-fluid" src="{{ STATIC_URL }}/pdb-logo-coloured.png" /></a>
+      </div>
+      <div class="col-lg-5 col-md-5 col-sm-5 col-12 search-container">
+        <form action="/search{% if not search_version or search_version == 2 %}/v2{% endif %}" id="quick-search" method="POST">
+          {% csrf_token %}
+          <input placeholder="{% trans "Search here for a network, IX, or facility." %}" value="{{ request.GET.q }}" class="form-control" name="term" id="search" type="text" />
+        </form>
+        <div class="row">
+          <div class="col-6 col-sm-6">
+            <div class="advanced-search">
+              <a href="/advanced_search">{% trans "Advanced Search" %}</a>
+            </div>
+          </div>
+          <div class="col-6 col-sm-6 right">
+            <div class="v2-search">
+              {% if not search_version or search_version == 2%}
+              <a href="/search?q={{ request.GET.q }}">{% trans "Legacy Search" %}</a>
+              {% elif search_version == 1 %}
+              <a href="/search/v2?q={{ request.GET.q }}">{% trans "v2 Search" %}</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-3 col-sm-3 col-12 user-container">
+        <div class="row">
+          <div class="nav right toolbar" style="justify-content: flex-end; align-items: flex-start;">
+          {% if request.user.is_authenticated %}
+            <div class="user">
+              <a href="/profile">{{ request.user.username }}</a>
+            {% if not request.user.is_verified_user %}
+            <div class="status">({% if not request.user.email %}<span class="attention">!</span>{%endif %}
+              {% if request.user.email_confirmed %}
+              <a href="/profile">{% trans "pending" %}</a>
+              {% else %}
+              <a href="/profile">{% trans "unverified" %}</a>
+              {% endif %})
+            </div>
+            {% endif %}
+            </div>
+            <div class="dropdown" style="display:inline-block">
+              <a class="btn btn-default dropdown-toggle" id="usermenu" data-bs-toggle="dropdown" aria-haspopup="true">
+                <img class="img-fluid" src="{{ STATIC_URL }}hamburger-colorful.png" alt="navigation" title="navigation" />
+              </a>
+              <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="usermenu">
+                {% for org in user.organizations %}
+                <li><a class="dropdown-item" href="/org/{{ org.id }}">{{ org.name }}</a></li>
+                {% endfor %}
+                {% if request.user.is_verified_user %}
+                <li><a class="dropdown-item" href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
+                {% endif %}
+                <li><a class="dropdown-item" href="/profile">{% trans "Profile" %}</a></li>
+                <li><a class="dropdown-item" href="/logout">{% trans "Logout" %}</a></li>
+              </ul>
+            </div>
+          {% else %}
+            <a href="/register">{% trans "Register" %}</a> {% trans "or" %} <a href="{% url "two_factor:login" %}?next={{request.path}}" class="btn btn-default">{% trans "Login" %}</a>
+          {% endif %}
+          </div>
+        </div>
+        <div class="row">
+          <div style="justify-content: flex-end; align-items: flex-start; display: flex;">
+            <select name="language" id="anon-language-preference" class="form-control">
+              {% get_current_language as LANGUAGE_CODE %}
+              {% get_available_languages as LANGUAGES %}
+              {% for language in LANGUAGES %}
+                {% get_language_info for language.0 as li %}
+                <option value="{{ language.0 }}"{% if language.0 == LANGUAGE_CODE %} selected{% endif %}>
+                {{ li.name_translated }} ({{ li.name_local }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

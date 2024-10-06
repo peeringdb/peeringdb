@@ -1,4 +1,4 @@
-Name,Media Type,Country,City,Networks
-Exchange 1,Ethernet,US,City 1,1
-Exchange 2,Ethernet,FI,City 2,1
-Exchange 3,Ethernet,,City 3,1
+Name,Country,City,Networks
+Exchange 1,US,City 1,1
+Exchange 2,FI,City 2,1
+Exchange 3,,City 3,1

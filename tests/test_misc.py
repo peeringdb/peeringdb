@@ -1,8 +1,7 @@
 import pytest
 import requests
-from django.test import Client, TestCase
+from django.test import Client
 
-import peeringdb_server.models as models
 import peeringdb_server.settings as settings
 import peeringdb_server.views as views
 

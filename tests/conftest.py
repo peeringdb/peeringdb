@@ -3,7 +3,7 @@ import os
 import pytest
 import pytest_filedata
 
-from peeringdb_server.inet import RdapLookup, RdapNotFoundError
+from peeringdb_server.inet import RdapLookup
 
 pytest_filedata.setup(os.path.dirname(__file__))
 

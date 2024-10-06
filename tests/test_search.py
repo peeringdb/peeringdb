@@ -2,10 +2,10 @@
 Unit-tests for quick search functionality - note that advanced search is not
 tested here as that is using the PDB API entirely.
 """
+
 import datetime
 import re
 
-import pytest
 import unidecode
 from django.core.management import call_command
 from django.test import RequestFactory, TestCase

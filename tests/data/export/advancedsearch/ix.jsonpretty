@@ -2,21 +2,18 @@
   "results": [
     {
       "Name": "Exchange 1",
-      "Media Type": "Ethernet",
       "Country": "US",
       "City": "City 1",
       "Networks": 1
     },
     {
       "Name": "Exchange 2",
-      "Media Type": "Ethernet",
       "Country": "FI",
       "City": "City 2",
       "Networks": 1
     },
     {
       "Name": "Exchange 3",
-      "Media Type": "Ethernet",
       "Country": "",
       "City": "City 3",
       "Networks": 1

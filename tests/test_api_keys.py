@@ -1,6 +1,5 @@
 import base64
 import json
-import os
 
 import pytest
 from django.conf import settings
@@ -10,7 +9,6 @@ from django_grainy.models import GroupPermission
 from rest_framework.test import APIClient, APIRequestFactory
 from twentyc.rpc.client import PermissionDeniedException, RestClient
 
-import peeringdb_server.inet as pdbinet
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
 

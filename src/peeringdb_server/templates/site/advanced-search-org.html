@@ -1,0 +1,83 @@
+{% load i18n %}
+<div class="editable always auto-toggled filter-form"
+     data-edit-target="advanced_search:org"
+     data-edit-enter-action="submit"
+     data-sort-container=".results"
+     data-sort-row=".row">
+  <div class="row">
+    <div class="col-12 col-sm-6 col-md-6">
+      <!-- LEFT COLUMN -->
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-name="name_search"
+               data-edit-reset-value=""
+               data-edit-value="{{ request.GET.name_search }}"></div>
+        </div>
+      </div>
+      {% include "site/advanced-search-location.html" %}
+    </div>
+    <div class="col-12 col-sm-6 col-md-6">
+      <!-- RIGHT COLUMN -->
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "ASN" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-name="asn"
+               data-edit-reset-value=""
+               data-edit-value="{{ request.GET.asn }}"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="right">
+    <a class="btn btn-default" data-edit-action="reset">{% trans "Reset" %}</a>
+    <a class="btn btn-default" data-edit-action="submit">{% trans "Search" %}</a>
+  </div>
+
+  <div class="right marg-top-30">
+    <a class="btn btn-default btn-sm d-none" data-export-format="json-pretty" data-export-tag="org"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> JSON</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="csv" data-export-tag="org"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="kmz" data-export-tag="org"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> KMZ</a>
+  </div>
+
+  <div class="editable-templates">
+    <div id="advanced-search-org-item" class="row">
+      <div class="col-5 col-sm-6 col-md-6">
+        <a href="/org/$id" data-edit-name="name" class="name"></a>
+        <span data-edit-name="name_long" class="hint"></span>
+      </div>
+      <div class="col-1 col-sm-1 col-md-1 country" data-edit-name="country"></div>
+      <div class="col-2 col-sm-2 col-md-2 city" data-edit-name="city"></div>
+    </div>
+  </div>
+  {% if request.GET.reftag == 'org' %}
+  <nav aria-label="...">
+    <ul class="pagination-top pagination">
+    </ul>
+  </nav>
+  {% endif %}
+
+  <div class="headers marg-top-15">
+    <div class="row">
+      <div class="col-5 col-sm-6 col-md-6" data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+      <div class="col-1 col-sm-1 col-md-1" data-sort-target=".country">{% trans "Country" %}</div>
+      <div class="col-2 col-sm-2 col-md-2" data-sort-target=".city">{% trans "City" %}</div>
+    </div>
+  </div>
+
+  <div class="results-empty center" style="display:none;">
+    {% trans "No search results." %}
+  </div>
+
+
+  <div class="results">
+
+  </div>
+
+  <div class="results-cutoff center marg-top-15" style="display:none;">
+    {% blocktrans %}...More than {{ row_limit }} entries matched your query, refine your request...{% endblocktrans %}</div>
+
+
+</div>

@@ -37,7 +37,6 @@ class OIDCValidator(OAuth2Validator):
         ]
 
     def _create_access_token(self, expires, request, token, source_refresh_token=None):
-
         """
         This is the method that creates the AccessToken instance
 
@@ -73,7 +72,6 @@ class OIDCValidator(OAuth2Validator):
         return token
 
     def _create_authorization_code(self, request, code, expires=None):
-
         """
         This is the method that creates the AuthorizationGrant instance
 

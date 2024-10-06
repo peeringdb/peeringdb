@@ -1,10 +1,6 @@
 import datetime
-import io
 import ipaddress
 import json
-import os
-import time
-from pprint import pprint
 
 import jsonschema
 import pytest
@@ -22,7 +18,6 @@ from peeringdb_server.models import (
     InternetExchange,
     IXFImportEmail,
     IXFMemberData,
-    IXLan,
     IXLanIXFMemberImportLog,
     IXLanPrefix,
     Network,
@@ -3735,7 +3730,6 @@ def entities(request):
 
 
 class UseIPAddrWrapper:
-
     """
     To help test what happens when a network only
     sets either ip4 or ip6 address on their netixlan

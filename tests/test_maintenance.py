@@ -1,10 +1,9 @@
 import json
 
 import pytest
-from django.test import Client, TestCase
+from django.test import Client
 from rest_framework.test import APIClient
 
-import peeringdb_server.views as views
 from peeringdb_server import maintenance, settings
 from peeringdb_server.models import REFTAG_MAP, User
 

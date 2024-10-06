@@ -2,15 +2,12 @@ import json
 import os
 
 import pytest
-from allauth.account.signals import email_confirmed, user_signed_up
-from django.conf import settings
+from allauth.account.signals import user_signed_up
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 
 import peeringdb_server.inet as pdbinet
 from mainsite.settings import _set_bool, _set_option
-from peeringdb_server import models, serializers
-from peeringdb_server import settings as pdb_settings
+from peeringdb_server import models
 
 from .util import SettingsCase
 

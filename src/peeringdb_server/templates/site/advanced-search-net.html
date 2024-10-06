@@ -1,0 +1,250 @@
+{% load i18n util %}
+<div class="editable always auto-toggled filter-form"
+     data-edit-target="advanced_search:net"
+     data-edit-enter-action="submit"
+     data-sort-container=".results"
+     data-sort-row=".row">
+  <div class="row">
+    <div class="col-12 col-sm-6 col-md-6">
+      <!-- LEFT COLUMN -->
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-value="{{ request.GET.name_search }}"
+               data-edit-reset-value=""
+               data-edit-name="name_search"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Network Type" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-name="info_type__in"
+               data-edit-data="enum/net_types_advs"
+               data-edit-value="{{ request.GET.info_type__in }}"
+               data-edit-reset-value=""
+               data-edit-multiple="yes"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Traffic Levels" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span>)</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-name="info_traffic__in"
+               data-edit-data="enum/traffic"
+               data-edit-value="{{ request.GET.info_traffic__in }}"
+               data-edit-reset-value=""
+               data-edit-multiple="yes"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Traffic Ratio" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-name="info_ratio__in"
+               data-edit-value="{{ request.GET.info_ratio__in }}"
+               data-edit-data="enum/ratios_advs"
+               data-edit-reset-value=""
+               data-edit-multiple="yes"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="col-12 col-sm-6 col-md-6">
+      <!-- RIGHT COLUMN -->
+
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Organization" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="autocomplete"
+               data-edit-autocomplete="org"
+
+               {% if request.GET.org__name__contains %}
+               data-edit-name="org__name__contains"
+               data-edit-value="{{ request.GET.org__name__contains }}"
+               data-edit-autocomplete-text="{{ request.GET.org__name__contains }}"
+               {% else %}
+               data-edit-name="org"
+               data-edit-value="{{ request.GET.org }}"
+               data-edit-autocomplete-text="{{ request.GET.org|autocomplete_preload_org_single }}"
+               {% endif %}
+
+               data-edit-autocomplete-allow-nonexistent="yes"
+               data-edit-reset-value="">
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "ASN" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-value="{{ request.GET.asn }}"
+               data-edit-reset-value=""
+               data-edit-name="asn"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "IRR as-set/route-set" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-value="{{ request.GET.irr_as_set__startswith }}"
+               data-edit-reset-value=""
+               data-edit-name="irr_as_set__startswith"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "General Peering Policy" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-data="enum/policy_general"
+               data-edit-value="{{ request.GET.policy_general__in }}"
+               data-edit-reset-value=""
+               data-edit-multiple="yes"
+               data-edit-name="policy_general__in"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Geographic Scope" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-data="enum/scopes_advs"
+               data-edit-value="{{ request.GET.info_scope__in }}"
+               data-edit-reset-value=""
+               data-edit-multiple="yes"
+               data-edit-name="info_scope__in"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Exchange Presence" %}<span class="hint">{% trans "Search for networks that are present at one exchange and absent at another exchange" %}</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
+           <div><span class="hint">{% trans "Present" %}</span></div>
+           <div data-edit-type="autocomplete"
+                data-edit-autocomplete="ix"
+                data-edit-autocomplete-text="{{ ix_name }}"
+                data-edit-name="ix"
+                data-edit-reset-value=""
+                data-edit-value="{{request.GET.ix}}"></div>
+
+           <div><span class="hint">{% trans "Absent" %}</span></div>
+           <div data-edit-type="autocomplete"
+                data-edit-autocomplete="ix"
+                data-edit-autocomplete-text="{{ not_ix_name }}"
+                data-edit-name="not_ix"
+                data-edit-reset-value=""
+                data-edit-value="{{request.GET.not_ix}}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Facility Presence" %}<span class="hint">{% trans "Search for networks that are present at one Facility, but absent from another facility" %}</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
+           <div><span class="hint">Present</span></div>
+           <div data-edit-type="autocomplete"
+                data-edit-autocomplete="fac"
+                data-edit-autocomplete-text="{{ fac_name }}"
+                data-edit-name="fac"
+                data-edit-reset-value=""
+                data-edit-value="{{request.GET.fac}}"></div>
+
+           <div><span class="hint">Absent</span></div>
+           <div data-edit-type="autocomplete"
+                data-edit-autocomplete="fac"
+                data-edit-autocomplete-text="{{ not_fac_name }}"
+                data-edit-name="not_fac"
+                data-edit-reset-value=""
+                data-edit-value="{{request.GET.not_fac}}"></div>
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+  <div class="right">
+    <a class="btn btn-default" data-edit-action="reset">{% trans "Reset" %}</a>
+    <a class="btn btn-default" data-edit-action="submit">{% trans "Search" %}</a>
+  </div>
+
+  <div class="right marg-top-30">
+    <a class="btn btn-default btn-sm d-none" data-export-format="json-pretty" data-export-tag="net"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> JSON</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="csv" data-export-tag="net"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</a>
+  </div>
+
+  <div class="editable-templates">
+    <div id="advanced-search-net-item" class="row">
+      <div class="col-6 col-sm-4 col-md-4">
+        <a href="/net/$id" data-edit-name="name" class="name"></a>
+        <div class="aka" data-edit-name="aka"></div>
+      </div>
+      <div class="col-6 col-sm-2 col-md-2">
+        <div class="asn" data-edit-name="asn"></div>
+        <div class="policy_general" data-edit-name="policy_general"></div>
+      </div>
+      <div class="col-1 col-sm-2 col-md-2 d-none d-sm-block">
+        <div class="info_type" data-edit-name="info_type"></div>
+        <div class="info_scope" data-edit-name="info_scope"></div>
+      </div>
+      <div class="col-1 col-sm-2 col-md-2 d-none d-sm-block">
+        <div class="info_traffic" data-edit-name="info_traffic" data-sort-target="info_traffic_raw"></div>
+        <div class="info_ratio" data-edit-name="info_ratio"></div>
+      </div>
+      <div class="col-1 col-sm-2 col-md-2 d-none d-sm-block">
+        <div class="ix_count" data-edit-name="ix_count"></div>
+        <div class="fac_count" data-edit-name="fac_count"></div>
+      </div>
+    </div>
+  </div>
+  {% if request.GET.reftag == 'net' %}
+  <nav aria-label="...">
+    <ul class="pagination-top pagination">
+    </ul>
+  </nav>
+  {% endif %}
+
+  <div class="headers marg-top-15">
+    <div class="row">
+      <div class="col-6 col-sm-4 col-md-4">
+        <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+        <div data-sort-target=".aka">{% trans "Also known as" %}</div>
+      </div>
+      <div class="col-6 col-sm-2 col-md-2">
+        <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
+        <div data-sort-target=".policy_general">{% trans "General Policy" %}</div>
+      </div>
+      <div class="col-1 col-sm-2 col-md-2 d-none d-sm-block">
+        <div data-sort-target=".info_type">{% trans "Network Type" %}</div>
+        <div data-sort-target=".info_scope">{% trans "Network Scope" %}</div>
+      </div>
+      <div class="col-1 col-sm-2 col-md-2 d-none d-sm-block">
+        <div data-sort-target=".info_traffic" class="numeric">{% trans "Traffic Levels" %}</div>
+        <div data-sort-target=".info_ratio">{% trans "Traffic Ratio" %}</div>
+      </div>
+      <div class="col-1 col-sm-2 col-md-2 d-none d-sm-block">
+        <div data-sort-target=".ix_count" class="numeric">{% trans "Exchanges" %}</div>
+        <div data-sort-target=".fac_count" class="numeric">{% trans "Facilities" %}</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="results-empty center" style="display:none;">
+    {% trans "No search results." %}
+  </div>
+
+
+  <div class="results">
+
+  </div>
+
+  <div class="results-cutoff center marg-top-15" style="display:none;">
+    {% spaceless %}{% blocktrans %}...More than {{ row_limit }} entries matched your query, refine your request...{% endblocktrans %}{% endspaceless %}
+  </div>
+
+
+</div>
