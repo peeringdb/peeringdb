@@ -155,7 +155,7 @@ SHELL ["sh", "-exc"]
 # Don't run your app as root.
 RUN <<EOT
 groupadd -r pdb
-useradd -r -u $uid -d /app -g pdb -N pdb
+useradd -r -u $uid -g pdb -N pdb
 EOT
 #RUN adduser -Du $uid pdb
 
@@ -187,9 +187,10 @@ COPY Ctl/docker/entrypoint.sh ./
 COPY docs/ docs
 COPY mainsite/ mainsite
 COPY $ADD_SETTINGS_FILE mainsite/settings/
-# COPY src/peeringdb_server/ peeringdb_server
+COPY src/peeringdb_server/ peeringdb_server
 COPY fixtures/ fixtures
 COPY .coveragerc .coveragerc
+
 RUN mkdir coverage && ln -s srv/www.peeringdb.com/entrypoint.sh /entrypoint
 
 COPY scripts/manage /usr/bin/
@@ -197,11 +198,8 @@ COPY scripts/manage /usr/bin/
 COPY --from=builder /usr/local/bin/uv /usr/bin/uv
 COPY --from=builder /srv/www.peeringdb.com/uv.lock uv.lock
 COPY --from=builder /srv/www.peeringdb.com/pyproject.toml pyproject.toml
-FROM final AS debug
-CMD ["bash"]
-FROM final as nop
 
-RUN DJANGO_SECRET_KEY=secret manage collectstatic --no-input
+RUN SECRET_KEY=no manage collectstatic --no-input
 
 RUN chown -R pdb:pdb api-cache locale media var/log coverage
 

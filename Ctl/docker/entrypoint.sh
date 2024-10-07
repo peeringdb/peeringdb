@@ -62,7 +62,7 @@ case "$1" in
     echo "whois and inetd have been removed"
     exit 1
     ;;
-  "/bin/sh" )
+  "/bin/sh" | "bash" )
     echo dropping to shell
     exec $@
     ;;
