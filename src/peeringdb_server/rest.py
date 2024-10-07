@@ -32,8 +32,10 @@ from django.db.models import DateTimeField
 from django.shortcuts import redirect
 from django.urls import re_path
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from django_grainy.exceptions import PermissionDenied
+from django_ratelimit.decorators import ratelimit
 from django_security_keys.models import SecurityKeyDevice
 from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes, schema
@@ -41,6 +43,7 @@ from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import exception_handler
 from two_factor.utils import devices_for_user
 
@@ -51,6 +54,7 @@ from peeringdb_server.models import (
     CarrierFacility,
     Facility,
     InternetExchange,
+    InternetExchangeFacility,
     Network,
     NetworkIXLan,
     Organization,
@@ -113,7 +117,9 @@ class DataParseException(DataException):
 
     def __init__(self, method, exc):
         super().__init__(
-            f"Data supplied with the {method} request could not be parsed: {exc}"
+            "Data supplied with the {} request could not be parsed: {}".format(
+                method, exc
+            )
         )
 
 
@@ -318,7 +324,13 @@ class client_check:
 
             if not compat:
                 raise ValueError(
-                    f"Your client version is incompatible with server version of the api, please install peeringdb>={self.version_string(self.min_version)},<={self.version_string(self.max_version)} {backend}>={self.version_string(backend_min)},<={self.version_string(backend_max)}"
+                    "Your client version is incompatible with server version of the api, please install peeringdb>={},<={} {}>={},<={}".format(
+                        self.version_string(self.min_version),
+                        self.version_string(self.max_version),
+                        backend,
+                        self.version_string(backend_min),
+                        self.version_string(backend_max),
+                    )
                 )
 
 
@@ -394,6 +406,7 @@ class InactiveKeyBlock(permissions.BasePermission):
 
 
 class UnlimitedIfNoPagePagination(PageNumberPagination):
+
     page_size = dj_settings.PAGE_SIZE  # default page_size
     page_size_query_param = "per_page"
     max_page_size = 250
@@ -682,6 +695,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             qset = qset[skip:]
 
         if not is_specific_object_request:
+
             # we are handling a list request and need to apply the limit and skip
             # parameters if they are present
 
@@ -761,17 +775,14 @@ class ModelViewSet(viewsets.ModelViewSet):
         except CacheRedirect as inst:
             r = Response(status=200, data=inst.loader.load())
             r.context_data = {"apicache": True}
+
+            applicator = APIPermissionsApplicator(request)
+            if not applicator.is_generating_api_cache:
+                r.data = applicator.apply(r.data)
             return r
         finally:
             d = time.time() - t
             print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
-
-        applicator = APIPermissionsApplicator(request)
-
-        if not applicator.is_generating_api_cache:
-            r.data = applicator.apply(r.data)
-
-        return r
 
     @client_check()
     def retrieve(self, request, *args, **kwargs):

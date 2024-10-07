@@ -150,6 +150,10 @@ class BaseSchema(AutoSchema):
                 return "approve facility presence at carrier"
             elif "carrierfac" in path and "reject" in path:
                 return "reject facility presence at carrier"
+            elif "netixlan" in path and "set-net-side" in path:
+                return "set network side"
+            elif "netixlan" in path and "set-ix-side" in path:
+                return "set ix side"
 
             return f"{op_type} {model.HandleRef.tag}"
 
@@ -199,6 +203,18 @@ class BaseSchema(AutoSchema):
             "reject facility presence at carrier",
         ]:
             op_dict["requestBody"]["content"][content_type]["schema"] = None
+            return op_dict
+
+        # if set net side or set ix side, schema expects a fac_id
+        elif op_id in ["set network side", "set ix side"]:
+            op_dict["requestBody"]["content"][content_type]["schema"] = {
+                "type": "object",
+                "properties": {
+                    "fac_id": {"type": "integer"},
+                },
+                "required": ["fac_id"],
+            }
+            return op_dict
 
         # if we were able to get a model we want to include the markdown documentation
         # for the model type in the openapi description field (docs/api/obj_*.md)

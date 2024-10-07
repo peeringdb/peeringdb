@@ -1,7 +1,9 @@
+import base64
 import re
 
 import pytest
 from allauth.account.models import EmailAddress
+from django.http import response
 from django.test import Client
 from django_grainy.models import Group
 from rest_framework import status
@@ -19,9 +21,7 @@ from peeringdb_server.models import (
     UserAPIKey,
     UserOrgAffiliationRequest,
 )
-from peeringdb_server.permissions import (
-    check_permissions_from_request,
-)
+from peeringdb_server.permissions import check_permissions_from_request
 from tests.util import reset_group_ids
 
 URL = "/affiliate-to-org"

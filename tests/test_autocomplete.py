@@ -1,7 +1,7 @@
 import json
 
 import reversion
-from django.test import RequestFactory
+from django.test import Client, RequestFactory
 from django.urls import resolve, reverse
 
 from peeringdb_server import autocomplete_views
@@ -152,11 +152,11 @@ class TestAutocomplete(ClientCase):
         Network.objects.all().delete()
 
         # Data for exact matches
-        net1 = Network.objects.create(name="NET", asn=1, status="ok", org=org)
+        net1 = Network.objects.create(name=f"NET", asn=1, status="ok", org=org)
         # Data for startswith matches
-        net2 = Network.objects.create(name="NET DUMMY", asn=2, status="ok", org=org)
+        net2 = Network.objects.create(name=f"NET DUMMY", asn=2, status="ok", org=org)
         # Data for contains matches
-        net3 = Network.objects.create(name="TEST NET", asn=3, status="ok", org=org)
+        net3 = Network.objects.create(name=f"TEST NET", asn=3, status="ok", org=org)
 
         url = reverse("autocomplete-net")
 

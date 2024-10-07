@@ -64,6 +64,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
+from django_otp import user_has_device
 from django_otp.plugins.otp_email.models import EmailDevice
 from django_peeringdb.const import (
     CAMPUS_HELP_TEXT,
@@ -75,11 +76,13 @@ from django_security_keys.ext.two_factor.views import (  # noqa
     DisableView as TwoFactorDisableView,
 )
 from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
+from django_security_keys.models import SecurityKey
 from elasticsearch import Elasticsearch
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
+from two_factor.utils import default_device
 
 import peeringdb_server.geo
 from peeringdb_server import settings
@@ -3892,7 +3895,7 @@ def search_elasticsearch(request):
 
     try:
         indices = client.indices.get_alias().keys()
-    except Exception:
+    except Exception as e:
         indices = []
 
     if request.method == "POST":
