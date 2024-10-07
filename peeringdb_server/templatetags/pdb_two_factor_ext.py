@@ -1,6 +1,7 @@
 """
 Template filters / tags to help with two-factor auth
 """
+
 from django import template
 from django.utils.translation import gettext_lazy as _
 from django_otp import devices_for_user

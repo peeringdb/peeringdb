@@ -716,7 +716,6 @@ class ESSilentRealTimeSignalProcessor(RealTimeSignalProcessor):
 
 @receiver(pre_save, sender=Network)
 def rir_status_initial(sender, instance=None, **kwargs):
-
     """
     Implements `Anytime` network update logic for RIR status handling
     laid out in https://github.com/peeringdb/peeringdb/issues/1280

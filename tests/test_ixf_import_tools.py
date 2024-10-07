@@ -35,7 +35,6 @@ from .util import ClientCase
 
 
 class TestImportPreview(ClientCase):
-
     """
     Test the ixf import preview
     """

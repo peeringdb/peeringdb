@@ -1429,7 +1429,6 @@ def nested(serializer, exclude=[], getter=None, through=None, **kwargs):
 
 
 class SpatialSearchMixin:
-
     """
     Mixin that enables spatial search for a model
     with address fields.
@@ -1621,7 +1620,6 @@ class SpatialSearchMixin:
 
 
 class SocialMediaSerializer(serializers.Serializer):
-
     """
     Renders the social_media property
     """
@@ -2053,6 +2051,37 @@ class CarrierSerializer(ModelSerializer):
         source="carrierfac_set_active_prefetched",
     )
 
+    @classmethod
+    def prepare_query(cls, qset, **kwargs):
+        """
+        Allows filtering by indirect relationships, similar to NetworkSerializer.
+        """
+
+        qset = qset.prefetch_related(
+            "org",
+            "carrierfac_set",
+        )  # Eagerly load the related Organization# Eagerly load the related Organization
+
+        filters = get_relation_filters(
+            [
+                "carrierfac_set__facility_id",
+                # Add other relevant fields from carrierfac_set here
+            ],
+            cls,
+            **kwargs,
+        )
+
+        for field, e in list(filters.items()):
+            # Handle filtering based on relationships in carrierfac_set
+            if field.startswith("carrierfac_set__"):
+                if e["filt"]:
+                    filter_kwargs = {f"{field}__{e['filt']}": e["value"]}
+                else:
+                    filter_kwargs = {field: e["value"]}
+                qset = qset.filter(**filter_kwargs)
+
+        return qset, filters
+
     org_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(), source="org"
     )
@@ -2088,6 +2117,9 @@ class CarrierSerializer(ModelSerializer):
 
         related_fields = ["org", "carrierfac_set"]
         list_exclude = ["org"]
+
+    def get_facilities(self, obj):
+        return ", ".join([cf.facility.name for cf in obj.carrierfac_set.all()])
 
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
@@ -2348,8 +2380,11 @@ class NetworkIXLanSerializer(ModelSerializer):
             "is_rs_peer",
             "bfd_support",
             "operational",
+            "net_side",
+            "ix_side",
         ] + HandleRefSerializer.Meta.fields
 
+        read_only_fields = ["net_side", "ix_side"]
         related_fields = ["net", "ixlan"]
 
         list_exclude = ["net", "ixlan"]
@@ -3378,6 +3413,8 @@ class InternetExchangeSerializer(ModelSerializer):
     proto_unicast = serializers.SerializerMethodField()
     proto_ipv6 = serializers.SerializerMethodField()
 
+    media = serializers.SerializerMethodField()
+
     validators = [
         RequiredForMethodValidator("prefix", ["POST"]),
         SoftRequiredValidator(
@@ -3434,7 +3471,12 @@ class InternetExchangeSerializer(ModelSerializer):
         related_fields = ["org", "fac_set", "ixlan_set"]
         list_exclude = ["org"]
 
-        read_only_fields = ["proto_multicast"]
+        read_only_fields = ["proto_multicast", "media"]
+
+    def get_media(self, inst):
+        # as per #1555 this should always return "Ethernet" as the field
+        # is now deprecated
+        return "Ethernet"
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):

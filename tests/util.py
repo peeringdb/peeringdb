@@ -57,7 +57,6 @@ class ClientCase(TestCase):
 
 
 class SettingsCase(ClientCase):
-
     """
     Since we read settings from peeringdb_server.settings
     we can't use the `settings` fixture from pytest-django

@@ -6,6 +6,7 @@ import base64
 import binascii
 import json
 
+import django_read_only
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.sessions.middleware import SessionMiddleware
@@ -64,7 +65,6 @@ def get_auth_identity(request):
 
 
 class PDBSessionMiddleware(SessionMiddleware):
-
     """
     As PeeringDB gets a lot of repeated anonymous requests that do not
     store and re-use session cookies this lead to substantial amount of junk
@@ -83,8 +83,11 @@ class PDBSessionMiddleware(SessionMiddleware):
 
         if session_key and not request.session.is_empty():
             # request specifies session and session is not empty, proceed normally
-
-            return super().process_response(request, response)
+            if settings.DJANGO_READ_ONLY:
+                with django_read_only.temp_writes():
+                    return super().process_response(request, response)
+            else:
+                return super().process_response(request, response)
 
         elif not request.COOKIES.get(settings.SESSION_COOKIE_NAME):
             # request specifies no session, check if the request.path falls into the
@@ -108,8 +111,11 @@ class PDBSessionMiddleware(SessionMiddleware):
 
             if request.path in NEW_SESSION_VALID_PATHS:
                 # path is valid for a new session, proceed normally
-
-                return super().process_response(request, response)
+                if settings.DJANGO_READ_ONLY:
+                    with django_read_only.temp_writes():
+                        return super().process_response(request, response)
+                else:
+                    return super().process_response(request, response)
             else:
                 # path is NOT valid for a new session, abort session
                 # creation
@@ -122,7 +128,6 @@ class PDBSessionMiddleware(SessionMiddleware):
 
 
 class CurrentRequestContext:
-
     """
     Middleware that sets the current request context.
 
@@ -168,7 +173,6 @@ class PDBCommonMiddleware(CommonMiddleware):
 
 
 class PDBPermissionMiddleware(MiddlewareMixin):
-
     """
     Middleware that checks if the current user has the correct permissions
     to access the requested resource.
@@ -496,7 +500,6 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
 
 
 class CacheControlMiddleware(MiddlewareMixin):
-
     """
     Sets the Cache-Control s-maxage header on responses
     """
@@ -588,9 +591,9 @@ class CacheControlMiddleware(MiddlewareMixin):
                     response.context_data.get("apicache") is True
                     and settings.CACHE_CONTROL_API_CACHE
                 ):
-                    response[
-                        "Cache-Control"
-                    ] = f"s-maxage={settings.CACHE_CONTROL_API_CACHE}"
+                    response["Cache-Control"] = (
+                        f"s-maxage={settings.CACHE_CONTROL_API_CACHE}"
+                    )
             elif settings.CACHE_CONTROL_API:
                 # NO API CACHE
 
@@ -600,17 +603,17 @@ class CacheControlMiddleware(MiddlewareMixin):
             # DYNAMIC CONTENT VIEW
 
             if settings.CACHE_CONTROL_DYNAMIC_PAGE:
-                response[
-                    "Cache-Control"
-                ] = f"s-maxage={settings.CACHE_CONTROL_DYNAMIC_PAGE}"
+                response["Cache-Control"] = (
+                    f"s-maxage={settings.CACHE_CONTROL_DYNAMIC_PAGE}"
+                )
 
         elif match.url_name in self.static_views:
             # STATIC CONTENT VIEW
 
             if settings.CACHE_CONTROL_STATIC_PAGE:
-                response[
-                    "Cache-Control"
-                ] = f"s-maxage={settings.CACHE_CONTROL_STATIC_PAGE}"
+                response["Cache-Control"] = (
+                    f"s-maxage={settings.CACHE_CONTROL_STATIC_PAGE}"
+                )
 
         return response
 

@@ -163,7 +163,6 @@ class GoogleMaps:
 
 
 class Melissa:
-
     """
     Handle requests to the melissa global address
     service used for geocoding and address normalization.

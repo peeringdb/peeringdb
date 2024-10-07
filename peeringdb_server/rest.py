@@ -41,6 +41,7 @@ from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes, schema
 from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import exception_handler
@@ -52,7 +53,10 @@ from peeringdb_server.models import (
     UTC,
     CarrierFacility,
     Facility,
+    InternetExchange,
+    InternetExchangeFacility,
     Network,
+    NetworkIXLan,
     Organization,
     OrganizationAPIKey,
     ParentStatusException,
@@ -69,7 +73,11 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle
 from peeringdb_server.search import make_name_search_query
-from peeringdb_server.serializers import ASSetSerializer, FacilitySerializer
+from peeringdb_server.serializers import (
+    ASSetSerializer,
+    FacilitySerializer,
+    NetworkIXLanSerializer,
+)
 from peeringdb_server.util import coerce_ipaddr
 
 RATELIMITS = dj_settings.RATELIMITS
@@ -92,7 +100,6 @@ class InactiveKeyException(APIException):
 
 
 class DataMissingException(DataException):
-
     """ ""
     Raised when the json data sent with a POST, PUT or PATCH
     request is missing.
@@ -103,7 +110,6 @@ class DataMissingException(DataException):
 
 
 class DataParseException(DataException):
-
     """
     Raised when the json data sent with a POST, PUT or PATCH
     request could not be parsed.
@@ -329,7 +335,6 @@ class client_check:
 
 
 class BasicAuthMFABlockWrite(permissions.BasePermission):
-
     """
     When an account has MFA enabled and basic-auth is used
     to authenticate the account for a write operation on the API
@@ -375,7 +380,6 @@ class BasicAuthMFABlockWrite(permissions.BasePermission):
 
 
 class InactiveKeyBlock(permissions.BasePermission):
-
     """
     When an OrganizationAPIKey or a UserAPIKey has status `inactive`
     requests made with such keys should be blocked
@@ -399,6 +403,32 @@ class InactiveKeyBlock(permissions.BasePermission):
 
 ###############################################################################
 # VIEW SETS
+
+
+class UnlimitedIfNoPagePagination(PageNumberPagination):
+
+    page_size = dj_settings.PAGE_SIZE  # default page_size
+    page_size_query_param = "per_page"
+    max_page_size = 250
+
+    def paginate_queryset(self, queryset, request, view=None):
+        self.request = request
+        if "page" in request.query_params:
+            self.pagination_applied = True
+            return super().paginate_queryset(queryset, request)
+        else:
+            self.pagination_applied = False
+            return list(queryset)  # Return all without pagination
+
+    def get_paginated_response(self, data):
+        return Response(
+            {
+                "count": len(data),
+                "next": None,
+                "previous": None,
+                "results": data,
+            }
+        )
 
 
 class ModelViewSet(viewsets.ModelViewSet):
@@ -659,15 +689,15 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         is_specific_object_request = "pk" in self.kwargs
 
+        if limit > 0:
+            qset = qset[skip : skip + limit]
+        else:
+            qset = qset[skip:]
+
         if not is_specific_object_request:
 
             # we are handling a list request and need to apply the limit and skip
             # parameters if they are present
-
-            if limit > 0:
-                qset = qset[skip : skip + limit]
-            else:
-                qset = qset[skip:]
 
             row_count = qset.count()
             if enforced_limit and depth > 0 and row_count > enforced_limit:
@@ -684,11 +714,56 @@ class ModelViewSet(viewsets.ModelViewSet):
         else:
             return qset
 
+    pagination_class = UnlimitedIfNoPagePagination
+
     @client_check()
     def list(self, request, *args, **kwargs):
         t = time.time()
+        r = None  # Initialize r to None
+
         try:
-            r = super().list(request, *args, **kwargs)
+            # *** START OF PAGINATION LOGIC ***
+            queryset = self.filter_queryset(self.get_queryset())
+
+            # page_number = self.request.GET.get('page')
+            # results_per_page = self.request.GET.get('per_page', self.page_size)
+
+            paginator = self.pagination_class()
+            paginator.request = request
+            page = paginator.paginate_queryset(queryset, request, view=self)
+
+            if getattr(paginator, "pagination_applied", True):
+                serializer = self.get_serializer(page, many=True)
+                r = paginator.get_paginated_response(serializer.data)
+                self.request.meta_response["pagination"] = {
+                    "count": paginator.page.paginator.count,
+                    "has_next": paginator.page.has_next(),
+                    "has_previous": paginator.page.has_previous(),
+                    "next": paginator.get_next_link(),
+                    "previous": paginator.get_previous_link(),
+                    "page": paginator.page.number,
+                    "per_page": paginator.page.paginator.per_page,
+                    "total_pages": paginator.page.paginator.num_pages,
+                }
+            else:
+                serializer = self.get_serializer(queryset, many=True)
+                r = Response(serializer.data)
+
+            # FIXME: this waits for peeringdb-py fix to deal with 404 raise properly
+            if not r or (hasattr(r, "data") and not len(r.data)):
+                if self.serializer_class.is_unique_query(request):
+                    return Response(
+                        status=status.HTTP_404_NOT_FOUND,
+                        data={"data": [], "detail": "Entity not found"},
+                    )
+
+            applicator = APIPermissionsApplicator(request)
+
+            if not applicator.is_generating_api_cache:
+                r.data = applicator.apply(r.data)
+
+            return r
+
         except ValueError as inst:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
@@ -700,23 +775,14 @@ class ModelViewSet(viewsets.ModelViewSet):
         except CacheRedirect as inst:
             r = Response(status=200, data=inst.loader.load())
             r.context_data = {"apicache": True}
-        d = time.time() - t
 
-        # FIXME: this waits for peeringdb-py fix to deal with 404 raise properly
-        if not r or not len(r.data):
-            if self.serializer_class.is_unique_query(request):
-                return Response(
-                    status=404, data={"data": [], "detail": "Entity not found"}
-                )
-
-        print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
-
-        applicator = APIPermissionsApplicator(request)
-
-        if not applicator.is_generating_api_cache:
-            r.data = applicator.apply(r.data)
-
-        return r
+            applicator = APIPermissionsApplicator(request)
+            if not applicator.is_generating_api_cache:
+                r.data = applicator.apply(r.data)
+            return r
+        finally:
+            d = time.time() - t
+            print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
 
     @client_check()
     def retrieve(self, request, *args, **kwargs):
@@ -897,7 +963,6 @@ class ModelViewSet(viewsets.ModelViewSet):
 
 
 class InternetExchangeMixin:
-
     """
     Custom API endpoints for the internet exchange
     object, exposed to api/ix/{id}/{action}
@@ -927,7 +992,6 @@ class InternetExchangeMixin:
 
 
 class CarrierFacilityMixin:
-
     """
     Custom API endpoints for the carrier-facility
     object, exposed to api/carrierfac/{id}/{action}
@@ -970,7 +1034,6 @@ class CarrierFacilityMixin:
 
 
 class CampusFacilityMixin:
-
     """
     Custom API endpoints for the campus-facility
     object, exposed to /api/campus/{campus_id}/add-facility/{fac_id}
@@ -1027,6 +1090,115 @@ class CampusFacilityMixin:
         campus.save()
 
         return Response(FacilitySerializer(fac).data)
+
+
+class NetworkIXLanMixin:
+    """
+    Custom API endpoint for setting or unsetting the net_side and ix_side values on a NetworkIXLan object.
+    Exposed at /api/netixlan/{id}/set-net-side and /api/netixlan/{id}/set-ix-side (POST).
+
+    These endpoints allow networks and exchanges to set (or unset) the net_side and ix_side values
+    on a NetworkIXLan by providing a valid fac_id in the payload, or unset by passing null.
+
+    Paths:
+    /api/netixlan/{id}/set-net-side:
+    /api/netixlan/{id}/set-ix-side:
+    POST:
+        Summary: Set or unset the net_side or ix_side value on a NetworkIXLan
+        Description: Allows networks or exchanges to update the corresponding side values.
+        Parameters:
+            - id: The ID of the NetworkIXLan to update (in path, required, integer)
+        RequestBody:
+            - fac_id: The ID of the Facility to set as net_side or ix_side. Null to unset (integer or null, required)
+    """
+
+    @transaction.atomic
+    @action(detail=True, methods=["POST"], url_path=r"set-net-side")
+    def add_net_side(self, request, *args, **kwargs):
+        """
+        Set or unset the net_side value on a NetworkIXLan.
+        This method sets a facility as the net_side based on the facility ID from the request payload.
+        If fac_id is null, the net_side will be unset. Permissions are checked before saving changes.
+        """
+        return self._set_side(
+            request, side="net_side", attr="netfac_set", obj="net", model=Network
+        )
+
+    @transaction.atomic
+    @action(detail=True, methods=["POST"], url_path=r"set-ix-side")
+    def add_ix_side(self, request, *args, **kwargs):
+        """
+        Set or unset the ix_side value on a NetworkIXLan.
+        This method sets a facility as the ix_side based on the facility ID from the request payload.
+        If fac_id is null, the ix_side will be unset. Permissions are checked before saving changes.
+        """
+        return self._set_side(
+            request, side="ix_side", attr="ixfac_set", obj="ix", model=InternetExchange
+        )
+
+    def _set_side(self, request, side, attr, obj, model):
+        try:
+            netixlan_id = self.kwargs.get("pk")
+            netixlan = NetworkIXLan.objects.get(id=netixlan_id)
+
+            obj_id = getattr(netixlan, f"{obj}_id")
+            obj_instance = model.objects.get(pk=obj_id)
+            if obj == "ix":
+                source_obj = netixlan.ixlan.ix
+            elif obj == "net":
+                source_obj = netixlan.network
+            else:
+                return Response(status=status.HTTP_403_FORBIDDEN)
+            if not self._has_permission(request, source_obj):
+                return Response(
+                    {"detail": f"Only admins of {obj} can set or unset the {side}"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            fac_id = request.data.get("fac_id")
+            if fac_id:
+                try:
+                    if str(fac_id).strip() == 0:
+                        raise ValueError
+                    fac_id = int(fac_id)
+                    facility_relation = getattr(obj_instance, attr).get(
+                        facility_id=fac_id
+                    )
+                    facility = facility_relation.facility
+                except model.DoesNotExist:
+                    return Response(
+                        {"detail": "Facility not found."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+                except ValueError:
+                    raise ValidationError("invalid facility")
+
+                setattr(netixlan, side, facility)
+            else:
+                setattr(netixlan, side, None)
+
+            netixlan.save()
+            return Response(
+                NetworkIXLanSerializer(netixlan).data, status=status.HTTP_200_OK
+            )
+
+        except NetworkIXLan.DoesNotExist:
+            return Response(
+                {"detail": "NetworkIXLan not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        except model.DoesNotExist:
+            return Response(
+                {"detail": f"{obj.capitalize()} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except ValidationError as inst:
+            return Response({"detail": str(inst)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _has_permission(self, request, source_obj):
+        return check_permissions_from_request(request, source_obj, "c")
 
 
 # TODO: why are we doing the import like this??!
@@ -1089,7 +1261,7 @@ IXLanPrefixViewSet = model_view_set("IXLanPrefix")
 NetworkViewSet = model_view_set("Network")
 NetworkContactViewSet = model_view_set("NetworkContact")
 NetworkFacilityViewSet = model_view_set("NetworkFacility")
-NetworkIXLanViewSet = model_view_set("NetworkIXLan")
+NetworkIXLanViewSet = model_view_set("NetworkIXLan", mixins=(NetworkIXLanMixin,))
 OrganizationViewSet = model_view_set("Organization")
 CampusViewSet = model_view_set("Campus", mixins=(CampusFacilityMixin,))
 

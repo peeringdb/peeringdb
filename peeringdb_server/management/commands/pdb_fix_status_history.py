@@ -1,6 +1,7 @@
 """
 Fix object status in reversion archived data (#558).
 """
+
 import json
 
 import reversion

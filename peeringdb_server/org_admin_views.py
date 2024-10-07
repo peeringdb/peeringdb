@@ -1,6 +1,7 @@
 """
 View for organization administrative actions (/org endpoint).
 """
+
 from urllib.parse import urljoin
 
 from django.conf import settings
@@ -50,14 +51,14 @@ def save_user_permissions(org, user, perms):
 
         if id == "org.%d" % org.id:
             grainy_perms[org.grainy_namespace] = permissions
-            grainy_perms[
-                f"{org.grainy_namespace}.network.*.poc_set.private"
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.network.*.poc_set.private"] = (
+                permissions
+            )
         elif id == "net":
             grainy_perms[f"{org.grainy_namespace}.network"] = permissions
-            grainy_perms[
-                f"{org.grainy_namespace}.network.*.poc_set.private"
-            ] = permissions
+            grainy_perms[f"{org.grainy_namespace}.network.*.poc_set.private"] = (
+                permissions
+            )
         elif id == "ix":
             grainy_perms[f"{org.grainy_namespace}.internetexchange"] = permissions
         elif id == "fac":
@@ -74,17 +75,17 @@ def save_user_permissions(org, user, perms):
                     f"{org.grainy_namespace}.network.{id[1]}.poc_set.private"
                 ] = permissions
             elif id[0] == "ix":
-                grainy_perms[
-                    f"{org.grainy_namespace}.internetexchange.{id[1]}"
-                ] = permissions
+                grainy_perms[f"{org.grainy_namespace}.internetexchange.{id[1]}"] = (
+                    permissions
+                )
             elif id[0] == "fac":
                 grainy_perms[f"{org.grainy_namespace}.facility.{id[1]}"] = permissions
             elif id[0] == "carrier":
                 grainy_perms[f"{org.grainy_namespace}.carrier.{id[1]}"] = permissions
             elif id[0] == "sessions":
-                grainy_perms[
-                    f"{org.grainy_namespace}.network.{id[1]}.sessions"
-                ] = permissions
+                grainy_perms[f"{org.grainy_namespace}.network.{id[1]}.sessions"] = (
+                    permissions
+                )
 
     # save
     for ns, p in list(grainy_perms.items()):

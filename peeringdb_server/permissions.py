@@ -12,7 +12,6 @@ Read only user api key handling.
 Censor API output data according to permissions using grainy Applicators.
 """
 
-
 # from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
 import grainy.const as grainy_constant
 from django.conf import settings

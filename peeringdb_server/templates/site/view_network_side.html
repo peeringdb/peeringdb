@@ -31,6 +31,7 @@
     </div>
     <div class="col-3 col-sm-2 col-md-2 d-none d-sm-block">
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
+      <div data-sort-target=".net_side">{% trans "Port Location" %}</div>
     </div>
     <div class="col-3 col-sm-2 col-md-2 d-none d-sm-block">
       <div data-sort-target=".speed" class="numeric">{% trans "RS Peer" %}</div>
@@ -57,7 +58,7 @@
         <div data-edit-name="net_id">{{ instance.id }}</div>
         <div data-edit-name="ixlan_id">{{ x.ixlan_id }}</div>
       </div>
-      <div class="row squeeze-15">
+      <div class="row squeeze-15 m-0 p-0">
 
           <div class="exchange col-6 col-sm-4 col-md-3" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
 
@@ -125,7 +126,7 @@
           </div>
 
       </div>
-      <div class="ip-addr row squeeze-15">
+      <div class="ip-addr row squeeze-15 m-0 p-0">
         <div class="col-12 col-sm-3">
           <div class="ip4"
                {% if permissions.can_write %}
@@ -137,7 +138,7 @@
                {{ x.ipaddr4|none_blank }}
           </div>
         </div>
-        <div class="col-12 col-sm-9">
+        <div class="col-12 col-sm-3">
           <div class="ip6"
                {% if permissions.can_write %}
                data-edit-type="string"
@@ -147,6 +148,26 @@
                data-edit-name="ipaddr6">
                {{ x.ipaddr6|none_blank }}
            </div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="net_side"
+               {% if permissions.can_write %}
+               data-edit-type="autocomplete"
+               data-edit-autocomplete="netfac/{{ instance.id }}"
+               data-edit-autocomplete-text="{{ x.net_side.name }}"
+               data-edit-value="{{ x.net_side }}"
+               data-edit-id="{{ x.id }}"
+               data-edit-autocomplete-allow-nonexistent="yes"
+               data-edit-reset-value=""
+               data-edit-keep-content="yes"
+               data-edit-sub-target="api:set-net-side"
+               data-edit-autocomplete-mincharacter=0
+               {% endif %}
+               data-edit-name="fac_id">
+               {% if x.net_side %}
+               <a href="/{{x.net_side|ref_tag}}/{{ x.net_side.id }}" data-tooltip-show="always" data-bs-toggle="tooltip" title="{{ x.net_side }}">{{ x.net_side.name }}</a>
+               {% endif %}
+          </div>
         </div>
       </div>
     </div>

@@ -52,6 +52,12 @@
       <div class="col-2 col-sm-2 col-md-2 city" data-edit-name="city"></div>
     </div>
   </div>
+  {% if request.GET.reftag == 'org' %}
+  <nav aria-label="...">
+    <ul class="pagination-top pagination">
+    </ul>
+  </nav>
+  {% endif %}
 
   <div class="headers marg-top-15">
     <div class="row">

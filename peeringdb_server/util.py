@@ -1,6 +1,7 @@
 """
 Assorted utility functions for peeringdb site templates.
 """
+
 import ipaddress
 from decimal import Decimal
 

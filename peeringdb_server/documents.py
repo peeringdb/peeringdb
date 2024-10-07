@@ -60,7 +60,6 @@ class MultipleChoiceKeywordField(fields.KeywordField):
 
 
 class StatusMixin:
-
     """
     Ensures only objects with status=ok are indexed
     and deleted from the index if status is no longer ok
@@ -137,7 +136,6 @@ class IpAddressMixin:
 
 
 class GeocodeMixin(StatusMixin):
-
     """
     Cleans up invalid lat/lng values beforee passing
     them to the geo code field
@@ -492,7 +490,6 @@ class InternetExchangeDocument(GeocodeMixin, IpAddressMixin, Document):
             # 'country',
             # "notes",
             "region_continent",
-            "media",
             "proto_unicast",
             "proto_multicast",
             "proto_ipv6",

@@ -2,10 +2,18 @@ import json
 
 import reversion
 from django.test import Client, RequestFactory
-from django.urls import reverse
+from django.urls import resolve, reverse
 
 from peeringdb_server import autocomplete_views
-from peeringdb_server.models import InternetExchange, Network, Organization, User
+from peeringdb_server.models import (
+    Facility,
+    InternetExchange,
+    InternetExchangeFacility,
+    Network,
+    NetworkFacility,
+    Organization,
+    User,
+)
 
 from .util import ClientCase
 
@@ -77,6 +85,66 @@ class TestAutocomplete(ClientCase):
 
         assert "First" in rsp
         assert "Second" in rsp
+
+    def test_netfac_autocomplete(self):
+        org = Organization.objects.create(name="Test Org", status="ok")
+        net = Network.objects.create(
+            name="Test Network", asn=1000, status="ok", org=org
+        )
+
+        fac = Facility.objects.create(name="Test Facility", status="ok", org=org)
+
+        netfac = NetworkFacility.objects.create(network=net, facility=fac, status="ok")
+
+        url = reverse("autocomplete-netfac", kwargs={"net_id": net.id})
+        req = self.factory.get(url)
+        req.resolver_match = resolve(url)
+
+        rsp = autocomplete_views.NetworkFacilityAutocomplete.as_view()(
+            req
+        ).content.decode("utf-8")
+
+        assert "Test Facility" in rsp
+
+        # test autocomplte-netfac with filter
+        req = self.factory.get(f"{url}?q=Test")
+        req.resolver_match = resolve(url)
+
+        rsp = autocomplete_views.NetworkFacilityAutocomplete.as_view()(
+            req
+        ).content.decode("utf-8")
+
+        assert "Test Facility" in rsp
+
+    def test_ixfac_autocomplete(self):
+        org = Organization.objects.create(name="Test Org", status="ok")
+        ix = InternetExchange.objects.create(name="First IX", status="ok", org=org)
+
+        fac = Facility.objects.create(name="Test Facility", status="ok", org=org)
+
+        ixfac = InternetExchangeFacility.objects.create(
+            ix=ix, facility=fac, status="ok"
+        )
+
+        url = reverse("autocomplete-ixfac", kwargs={"ix_id": ix.id})
+        req = self.factory.get(url)
+        req.resolver_match = resolve(url)
+
+        rsp = autocomplete_views.InternetExchangeFacilityAutoComplete.as_view()(
+            req
+        ).content.decode("utf-8")
+
+        assert "Test Facility" in rsp
+
+        # test autocomplte-ixfac with filter
+        req = self.factory.get(f"{url}?q=Test")
+        req.resolver_match = resolve(url)
+
+        rsp = autocomplete_views.InternetExchangeFacilityAutoComplete.as_view()(
+            req
+        ).content.decode("utf-8")
+
+        assert "Test Facility" in rsp
 
     def test_autocomplete_sort(self):
         org = Organization.objects.create(name="Test Org", status="ok")

@@ -5,6 +5,7 @@ Network validation.
 
 Prefix renumbering.
 """
+
 import ipaddress
 
 import rdap
@@ -97,7 +98,6 @@ class RdapInvalidRange(RdapException):
 
 
 class BogonAsn(rdap.RdapAsn):
-
     """
     On tutorial mode environments, return an instance
     of this to provide an rdapasn result for asns in the
