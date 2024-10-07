@@ -54,7 +54,7 @@ PeeringDB currently is not collecting device attestation, thus has no way to ide
 "amr": ["pwd", "mfa", "otp"] # password entered + OTP
 "amr": ["pwd", "mfa", "swk"] # password entered + Security Key
 "amr": ["pwd"] # password entered
-"amr": ["mfa", "swk", "otp"] # passwordless with security key + OTP
-"amr": ["mfa", "swk", "swk"] # passwordless with security key + plus 2fa with another security key
+"amr": ["mfa", "swk", "otp"] # passkey with security key + OTP
+"amr": ["mfa", "swk", "swk"] # passkey with security key + plus 2fa with another security key
 "amr": ["swk"] # password less without mfa
 ```

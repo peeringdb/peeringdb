@@ -17,11 +17,11 @@
 
       {% if wizard.steps.current == "auth" %}
 
-        {% if passwordless_error %}
+        {% if passkey_error %}
 
         <p>
         <div class="alert alert-danger">
-        {{ passwordless_error }}
+        {{ passkey_error }}
         </div>
         </p>
 
@@ -30,8 +30,7 @@
         <p>
           <div class="alert alert-info">
             {% blocktrans trimmed %}
-            For <strong>password-less</strong> authentication leave the password field
-            empty and make sure your
+            For <strong>passkey</strong> authentication click on username then follow the passkey options provided and ensure your
             registered U2F FIDO security key is available / connected.
             {% endblocktrans %}
           </div>

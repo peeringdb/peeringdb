@@ -232,7 +232,6 @@ class FacilityAutocompleteForExchange(FacilityAutocomplete):
 
 
 class FacilityAutocompleteForOrganization(FacilityAutocomplete):
-
     """
     List of facilities under same organization ownership
     """
@@ -273,6 +272,64 @@ class OrganizationAutocomplete(AutocompleteHTMLResponse):
             item.pk,
             html.escape(item.name),
         )
+
+
+class BaseFacilityAutocompleteForPort(AutocompleteHTMLResponse):
+    """
+    Base class for facility autocomplete for ports.
+
+    Provides the base queryset and result label logic for filtering
+    facilities based on a search query (name or address1) and ordering
+    by the facility's name. This class is intended to be extended by
+    more specific facility-related autocomplete classes.
+    """
+
+    def get_queryset(self):
+        qs = Facility.objects.filter(status="ok")
+        if self.q:
+            qs = qs.filter(Q(name__icontains=self.q) | Q(address1__icontains=self.q))
+        qs = qs.order_by("name")
+        return qs
+
+    def get_result_label(self, item):
+        return '<span data-value="{}"><div class="main">{}</div></span>'.format(
+            item.facility.pk,
+            html.escape(item.facility.name),
+        )
+
+
+class NetworkFacilityAutocomplete(BaseFacilityAutocompleteForPort):
+    """
+    Autocomplete class for facilities within a specific network.
+
+    Extends the base class to filter facilities associated with a
+    specific network. Excludes facilities not linked to the network.
+    """
+
+    def get_queryset(self):
+        net_id = self.request.resolver_match.kwargs.get("net_id")
+        qs = NetworkFacility.objects.filter(status="ok", network_id=net_id)
+        if self.q:
+            qs = qs.filter(Q(facility__name__icontains=self.q))
+        return qs.order_by("facility__name")
+
+
+class InternetExchangeFacilityAutoComplete(BaseFacilityAutocompleteForPort):
+    """
+    Autocomplete class for facilities within a specific Internet Exchange (IX).
+
+    Extends the base class to filter facilities associated with a specific
+    Internet Exchange. The `ix_id` parameter is used to filter the related
+    facilities.
+    """
+
+    def get_queryset(self):
+        ix_id = self.request.resolver_match.kwargs.get("ix_id")
+        ix = InternetExchange.objects.get(pk=ix_id)
+        qs = ix.ixfac_set.filter(status="ok")
+        if self.q:
+            qs = qs.filter(Q(facility__name__icontains=self.q))
+        return qs.order_by("facility__name")
 
 
 class IXLanAutocomplete(AutocompleteHTMLResponse):

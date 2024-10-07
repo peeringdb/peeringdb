@@ -1,6 +1,7 @@
 """
 Update the cache of the RDAP cache from IANA.
 """
+
 from django.core.management.base import BaseCommand
 
 from peeringdb_server.inet import RdapLookup

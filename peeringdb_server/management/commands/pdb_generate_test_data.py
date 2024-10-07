@@ -1,6 +1,7 @@
 """
 Create test data. This will wipe all data locally, so use with caution. This command is NOT to be run on production or beta environments.
 """
+
 import reversion
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -104,6 +105,12 @@ class Command(BaseCommand):
                         params.update(
                             {"latitude": 38.909308 + i, "longitude": -77.472269 + i}
                         )
+
+                if reftag == "netixlan":
+                    params.update(
+                        net_side=self.entities["fac"][i],
+                        ix_side=self.entities["fac"][i],
+                    )
 
                 # create object
                 entity = self.mock.create(reftag, **params)

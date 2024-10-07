@@ -4,7 +4,6 @@ from django.utils.log import AdminEmailHandler
 
 
 class ThrottledAdminEmailHandler(AdminEmailHandler):
-
     """
     Throttled admin email handler
     """

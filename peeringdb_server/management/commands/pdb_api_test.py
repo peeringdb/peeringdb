@@ -1575,6 +1575,17 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_org_admin_002_PUT_ix_media(self):
+        ix = SHARED["ix_rw_ok"]
+        data = self.assert_get_handleref(self.db_org_admin, "ix", ix.id)
+        data.update(media="ATM")
+        self.db_org_admin.update("ix", **data)
+
+        data = self.assert_get_handleref(self.db_org_admin, "ix", ix.id)
+        assert data["media"] == "Ethernet"
+
+    ##########################################################################
+
     def test_org_admin_002_POST_ix_request_ixf_import(self):
         ix = SHARED["ix_rw_ok"]
 
@@ -2082,6 +2093,40 @@ class TestJSON(unittest.TestCase):
             == 5
         )
 
+    def test_api_filter_netixlan_port(self):
+        # Create a NetworkIXLan instance
+        data = self.make_data_netixlan(
+            network_id=SHARED["net_rw_ok"].id,
+            ixlan_id=SHARED["ixlan_rw_ok"].id,
+            asn=SHARED["net_rw_ok"].asn,
+            status="ok",
+            net_side=SHARED["fac_r_ok"],
+            ix_side=SHARED["fac_rw_ok"],
+        )
+        data.pop("net_id")
+        netixlan = NetworkIXLan.objects.create(**data)
+
+        # Get queryset of netixlan with status="ok"
+        netixlan_ids = NetworkIXLan.objects.filter(status="ok").values_list(
+            "id", flat=True
+        )
+
+        # Define helper function to check response
+        def check_side_response(port_name, port_id):
+            response = (
+                self.db_guest._request(f"netixlan?{port_name}={port_id}", method="GET")
+                .json()
+                .get("data")
+            )
+            for item in response:
+                assert (
+                    item["id"] in netixlan_ids
+                ), f"{port_name} {item['id']} not found in netixlan queryset"
+
+        # Check ix_side and net_side
+        check_side_response("ix_side", SHARED["fac_rw_ok"].id)
+        check_side_response("net_side", SHARED["fac_r_ok"].id)
+
     def test_campus_status(self):
         data = self.make_data_campus()
 
@@ -2227,7 +2272,6 @@ class TestJSON(unittest.TestCase):
     ###########################################################################
 
     def test_org_admin_002_POST_PUT_net_legacy_info_type(self):
-
         """
         Tests that setting the legacy info_type field during network
         create and update will clobber the value correctly into
@@ -2267,7 +2311,6 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_net_rir_status(self):
-
         """
         Implements `Anytime` network update logic for RIR status handling
         laid out in https://github.com/peeringdb/peeringdb/issues/1280

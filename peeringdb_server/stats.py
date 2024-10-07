@@ -1,6 +1,7 @@
 """
 Load and maintain global stats (displayed in peeringdb footer).
 """
+
 from django.conf import settings
 from django.utils import timezone
 

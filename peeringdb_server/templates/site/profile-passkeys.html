@@ -1,0 +1,80 @@
+{% extends "site/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="panel">
+  <h1>{% trans "Passkeys" %}</h1>
+  <div class="editable popin help marg-top-15">
+    {% blocktrans trimmed %}
+    Register your security key and use it as a Passkey authentication.
+    {% endblocktrans %}
+
+    <div class="marg-top-15 alert alert-info">
+    <p>
+    {% blocktrans trimmed %}
+    When using a Passkey security key such as <b>yubikeys</b> the initial prompt may show other
+    device-internal keys first (such as fingerprint scanners and security pins).
+    {% endblocktrans %}
+    </p>
+
+    <p>
+    {% blocktrans trimmed %}
+    If your yubikey is plugged in but does not show up in the list, <b>cancel</b> the initial prompt and a new prompt for your yubikey should appear afterwards.
+    {% endblocktrans %}
+    </p>
+    </div>
+    <div id="errors-alert">
+
+    </div>
+  </div>
+
+
+  <div class="list editable always"
+    data-edit-module="passkey_listing"
+    data-edit-target="/security_keys"
+    data-edit-id="{{ instance.id }}">
+
+    <div class="row header">
+      <div class="col-8 col-sm-10 col-md-10">
+        <div>{% trans "Name" %}</div>
+      </div>
+      <div class="col-4 col-sm-2 col-md-2"></div>
+    </div>
+
+    <div data-edit-component="list" data-edit-template="passkey-item">
+    {%   for key in user.get_passkey_security_keys %}
+      <div class="row marg-top" data-edit-id="{{ key.id }}" data-edit-label="{{ key.name }}">
+        <div class="col-8">
+          <span data-edit-name="name">{{ key.name }}</span>
+        </div>
+        <div class="col-4 right">
+          <a class="btn btn-default" data-edit-action="remove">{% trans "Remove" %}</a>
+        </div>
+      </div>
+    {%   endfor %}
+    </div>
+
+
+    <div class="row marg-top editable" data-edit-component="add">
+      <div class="col-4 col-sm-4 col-md-4">
+        <div>{% trans "Register passkey" %}</div>
+      </div>
+      <div class="col-6 col-sm-4 col-md-5">
+        <div data-edit-type="string" data-edit-name="name" data-edit-placeholder="{% trans "Name" %}"></div>
+      </div>
+      <div class="col-2 col-sm-4 col-md-3 right">
+        <a class="btn btn-default" data-edit-action="register">{% trans "Register" %}</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="editable-templates">
+    <div id="passkey-item" class="row item">
+      <div class="col-8" data-edit-name="name" data-edit-placeholder="{% trans "Name" %}"></div>
+      <div class="col-4 right">
+        <a class="btn btn-default" data-edit-action="revoke">{% trans "Remove" %}</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock content %}

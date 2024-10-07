@@ -1,6 +1,7 @@
 """
 Restore soft-deleted objects.
 """
+
 import json
 
 import reversion

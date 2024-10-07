@@ -200,6 +200,12 @@
       </div>
     </div>
   </div>
+  {% if request.GET.reftag == 'net' %}
+  <nav aria-label="...">
+    <ul class="pagination-top pagination">
+    </ul>
+  </nav>
+  {% endif %}
 
   <div class="headers marg-top-15">
     <div class="row">

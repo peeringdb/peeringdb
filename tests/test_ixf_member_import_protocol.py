@@ -3735,7 +3735,6 @@ def entities(request):
 
 
 class UseIPAddrWrapper:
-
     """
     To help test what happens when a network only
     sets either ip4 or ip6 address on their netixlan

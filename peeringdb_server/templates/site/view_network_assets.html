@@ -4,8 +4,8 @@
 
   <!-- NETWORK IX LINK ROW -->
   <div id="netixlan-item" class="row item">
-    <div class="row squeeze-15">
-      <div class="col-3 col-sm-4 col-md-4">
+    <div class="row squeeze-15 m-0 p-0">
+      <div class="col-3 col-sm-4 col-md-3">
         {% if permissions.can_delete %}
         <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
         {% endif %}
@@ -38,7 +38,7 @@
         </div>
       </div>
 
-      <div class="col-3 col-sm-2 col-md-3">
+      <div class="col-3 col-sm-2 col-md-2">
         <div class="speed"
              data-sort-name="speed"
              data-filter-name="speed"
@@ -57,16 +57,41 @@
              data-edit-template="check">
         </div>
       </div>
+
+      <div class="col-3 col-sm-2 col-md-2">
+        <div class="bfd_support"
+             data-sort-name="bfd_support"
+             data-filter-name="bfd_support"
+             data-edit-type="bool"
+             data-edit-name="bfd_support"
+             data-edit-template="check">
+        </div>
+      </div>
+
     </div>
-    <div class="row ip-addr squeeze-15">
-      <div class="col-12 col-sm-4">
+    <div class="row ip-addr squeeze-15 m-0 p-0">
+      <div class="col-12 col-sm-3">
         <div data-edit-type="string"
              data-edit-name="ipaddr4">
         </div>
       </div>
-      <div class="col-12 col-sm-8">
+      <div class="col-12 col-sm-3">
         <div data-edit-type="string"
              data-edit-name="ipaddr6" class="ip6">
+         </div>
+      </div>
+      <div class="col-12 col-sm-6">
+        <div data-edit-type="autocomplete"
+             data-edit-autocomplete="netfac/{{ instance.id }}"
+             data-edit-autocomplete-text="{{x.net_side}}"
+             data-edit-value="{{ x.net_side }}"
+             data-edit-id="{{ x.id }}"
+             data-edit-autocomplete-allow-nonexistent="yes"
+             data-edit-reset-value=""
+             data-edit-keep-content="yes"
+             data-edit-autocomplete-mincharacter=0
+             data-edit-name="net_side"
+             class="port">
          </div>
       </div>
     </div>

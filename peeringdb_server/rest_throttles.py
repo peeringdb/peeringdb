@@ -1,6 +1,7 @@
 """
 Custom rate limit handlers for the REST API.
 """
+
 import ipaddress
 import re
 
@@ -23,7 +24,6 @@ class IXFImportThrottle(throttling.UserRateThrottle):
 
 
 class TargetedRateThrottle(throttling.SimpleRateThrottle):
-
     """
     Base class for targeted rate throttling depending
     on authentication status
@@ -251,7 +251,6 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
 
 class FilterThrottle(throttling.SimpleRateThrottle):
-
     """
     Base class for API throttling targeted at specific query filters.
 
@@ -334,7 +333,6 @@ class FilterThrottle(throttling.SimpleRateThrottle):
 
 
 class FilterDistanceThrottle(FilterThrottle):
-
     """
     Rate limiting for ?distance= queries.
     """
@@ -343,7 +341,6 @@ class FilterDistanceThrottle(FilterThrottle):
 
 
 class APIAnonUserThrottle(TargetedRateThrottle):
-
     """
     General rate limiting for anonymous users via the request ip-address
     """
@@ -386,7 +383,6 @@ class APIUserThrottle(TargetedRateThrottle):
 
 
 class ResponseSizeThrottle(TargetedRateThrottle):
-
     """
     Rate limit repeated requests based request content-size
 

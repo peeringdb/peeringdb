@@ -159,7 +159,12 @@
       </div>
     </div>
   </div>
-
+  {% if request.GET.reftag == 'campus' %}
+  <nav aria-label="...">
+    <ul class="pagination-top pagination">
+    </ul>
+  </nav>
+  {% endif %}
   <div class="headers marg-top-15">
     <div class="row">
       <div class="col-4 col-sm-4 col-md-4">

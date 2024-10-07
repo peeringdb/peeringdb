@@ -19,7 +19,6 @@ __version__ = "1.0"
 
 
 class Backend(BaseBackend):
-
     """
     Custom tailored peeringdb_server backend for the
     peeringdb client we can use to sync data from

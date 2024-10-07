@@ -729,7 +729,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.sites",
     "django.contrib.messages",
-    "django.contrib.staticfiles",
     "haystack",
     "django_otp",
     "django_otp.plugins.otp_static",
@@ -756,6 +755,7 @@ INSTALLED_APPS = [
     "django_tables2",
     "oauth2_provider",
     "peeringdb_server",
+    "django.contrib.staticfiles",
     "django_security_keys",
     "reversion",
     "captcha",
@@ -951,9 +951,9 @@ set_from_file("OIDC_RSA_PRIVATE_KEY", OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH, "", str)
 
 
 AUTHENTICATION_BACKENDS += (
-    # for passwordless auth using security-key
+    # for passkey auth using security-key
     # this needs to be first so it can do some clean up
-    "django_security_keys.backends.PasswordlessAuthenticationBackend",
+    "django_security_keys.backends.PasskeyAuthenticationBackend",
     # for OAuth provider
     "oauth2_provider.backends.OAuth2Backend",
     # for OAuth against external sources
@@ -1099,6 +1099,7 @@ set_option("SPONSORSHIPS_EMAIL", SERVER_EMAIL)
 
 
 set_option("API_URL", "https://www.peeringdb.com/api")
+set_option("PAGE_SIZE", 250)
 set_option("API_DEPTH_ROW_LIMIT", 250)
 
 # limit results for the standard search
@@ -1447,6 +1448,16 @@ set_option("AUTO_UPDATE_RIR_STATUS", True)
 
 set_option("RIR_ALLOCATION_DATA_CACHE_DAYS", 1)
 
+# A toggle for read only mode
+set_option("DJANGO_READ_ONLY", False)
+
+# A toggle to skip updating the last_login on login
+set_option("SKIP_LAST_LOGIN_UPDATE", False)
+
+if DJANGO_READ_ONLY:
+    INSTALLED_APPS += [
+        "django_read_only",
+    ]
 
 # show last database sync
 set_from_env("DATABASE_LAST_SYNC", None)

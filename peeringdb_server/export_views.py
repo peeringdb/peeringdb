@@ -20,7 +20,7 @@ from django.views import View
 from rest_framework.test import APIRequestFactory
 from simplekml import Kml, Style
 
-from peeringdb_server.models import Campus, InternetExchange, IXLan
+from peeringdb_server.models import Campus, InternetExchange, IXLan, Network
 from peeringdb_server.renderers import JSONEncoder
 from peeringdb_server.rest import REFTAG_MAP as RestViewSets
 from peeringdb_server.util import add_kmz_overlay_watermark, generate_balloonstyle_text
@@ -306,8 +306,7 @@ class AdvancedSearchExportView(ExportView):
             - dict: un-rendered dataset returned by API
         """
         params = request.GET.dict()
-        params["limit"] = 250
-        params["depth"] = 1
+        params["depth"] = 0
 
         # prepare api request
         request_factory = APIRequestFactory()
@@ -356,10 +355,10 @@ class AdvancedSearchExportView(ExportView):
             - list: list containing rendered data rows ready for export
         """
         fmt = fmt.replace("-", "_")
-        if self.tag not in ["net", "ix", "fac", "org", "campus"]:
+        if self.tag not in ["net", "ix", "fac", "org", "campus", "carrier"]:
             raise ValueError(_("Invalid tag"))
 
-        if fmt == "kmz" and self.tag not in ["org", "fac", "campus", "ix"]:
+        if fmt == "kmz" and self.tag not in ["org", "fac", "campus", "ix", "carrier"]:
             # export kmz only for org,fac,campus,ix
             raise ValueError(_("Invalid export format"))
 
@@ -381,6 +380,7 @@ class AdvancedSearchExportView(ExportView):
         data = self.fetch(request)
         download_data = []
         for row in data:
+            net = Network.objects.get(id=row["id"])
             download_data.append(
                 collections.OrderedDict(
                     [
@@ -392,8 +392,8 @@ class AdvancedSearchExportView(ExportView):
                         ("Network Scope", row["info_scope"]),
                         ("Traffic Levels", row["info_traffic"]),
                         ("Traffic Ratio", row["info_ratio"]),
-                        ("Exchanges", len(row["netixlan_set"])),
-                        ("Facilities", len(row["netfac_set"])),
+                        ("Exchanges", net.netixlan_set.count()),
+                        ("Facilities", net.netfac_set.count()),
                     ]
                 )
             )
@@ -463,7 +463,6 @@ class AdvancedSearchExportView(ExportView):
                 collections.OrderedDict(
                     [
                         ("Name", row["name"]),
-                        ("Media Type", row["media"]),
                         ("Country", row["country"]),
                         ("City", row["city"]),
                         ("Networks", row["net_count"]),
@@ -535,6 +534,25 @@ class AdvancedSearchExportView(ExportView):
                         ("Latitude", latitude),
                         ("Longitude", longitude),
                         ("Notes", row["notes"]),
+                    ]
+                )
+            )
+        return download_data
+
+    def generate_carrier(self, request):
+        """
+        Fetch carrier data from the API and render it for export.
+        """
+        data = self.fetch(request)
+        download_data = []
+        for row in data:
+            download_data.append(
+                collections.OrderedDict(
+                    [
+                        ("Name", row["name"]),
+                        ("Long Name", row["name_long"]),
+                        ("Organization", row["org_name"]),
+                        ("Facilities", len(row["carrierfac_set"])),
                     ]
                 )
             )

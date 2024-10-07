@@ -19,7 +19,6 @@ from peeringdb_server.search import unaccent
 
 
 class EntityIndex(indexes.SearchIndex):
-
     """
     Search index for org, net, ix and fac entities.
     """

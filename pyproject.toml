@@ -14,7 +14,7 @@ django = "^4.2"
 django-inet = ">=1.1.1"
 django-handleref = ">=2"
 # pinned until 3.5.0 release if django-peeringdb
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "support_202404" }
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "support_202409" }
 djangorestframework = ">=3.14.0"
 mysqlclient = ">=2.1.1"
 redis = ">=5.0.0"
@@ -49,12 +49,16 @@ django-hashers-passlib = { git = "https://github.com/mathiasertl/django-hashers-
 django-oauth-toolkit = ">=2"
 django-phonenumber-field = ">=0.6"
 django-ratelimit = ">=4.0.0"
+django-read-only = ">=1.15.0"
 django-rest-swagger = ">=2.1.2"
 djangorestframework-api-key = ">=2.3.0"
 django-structlog = ">=2.2.0"
 django-tables2 = ">=1.0.4"
 django-vanilla-views = ">=1.0.2"
-django-security-keys = ">=1.1.0"
+#django-security-keys = ">=1.1.0"
+# from branch until passkey support is released
+django-security-keys = { git = "https://github.com/20c/django-security-keys.git", branch = "passkey" }
+
 googlemaps = ">=2.5.1"
 markdown = ">=2.6.7"
 passlib = ">=1.7.1"

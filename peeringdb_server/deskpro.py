@@ -431,7 +431,6 @@ class APIClient:
 
 
 class MockAPIClient(APIClient):
-
     """
     A mock API client for the deskpro API.
 
@@ -458,7 +457,6 @@ class MockAPIClient(APIClient):
 
 
 class FailingMockAPIClient(MockAPIClient):
-
     """
     A mock API client for the deskpro API
     that returns an error on post.

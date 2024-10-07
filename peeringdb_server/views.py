@@ -12,6 +12,7 @@ View definitions:
 - Sponsorships
 - User Registration
 """
+
 import datetime
 import json
 import os
@@ -19,6 +20,7 @@ import re
 import uuid
 from typing import Any
 
+import django_read_only
 import googlemaps.exceptions
 import oauth2_provider.views as oauth2_views
 import oauth2_provider.views.application as oauth2_application_views
@@ -29,6 +31,8 @@ from django.conf import settings as dj_settings
 from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import update_last_login
+from django.contrib.auth.signals import user_logged_in
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import (
@@ -73,6 +77,7 @@ from django_security_keys.ext.two_factor.views import (  # noqa
 )
 from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
 from django_security_keys.models import SecurityKey
+from elasticsearch import Elasticsearch
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
@@ -133,6 +138,7 @@ from peeringdb_server.search import (
     get_lat_long_from_search_result,
     is_valid_latitude,
     is_valid_longitude,
+    new_elasticsearch,
     search,
     search_v2,
 )
@@ -650,7 +656,6 @@ def view_set_user_locale(request):
 
 
 class ApplicationOwnerMixin:
-
     """
     OAuth mixin it that filters application queryset for ownership
     considering either the owning user or the owning organization.
@@ -668,7 +673,6 @@ class ApplicationOwnerMixin:
 
 
 class ApplicationFormMixin:
-
     """
     Used for oauth application update and registration process
 
@@ -1401,7 +1405,6 @@ def view_component(
 
 
 class OrganizationLogoUpload(View):
-
     """
     Handles public upload and setting of organization logo (#346)
     """
@@ -2240,13 +2243,6 @@ def view_exchange(request, id):
                 "data": "enum/regions",
                 "label": _("Continental Region"),
                 "value": data.get("region_continent", dismiss),
-            },
-            {
-                "name": "media",
-                "type": "list",
-                "data": "enum/media",
-                "label": _("Media Type"),
-                "value": data.get("media", dismiss),
             },
             {
                 "name": "service_level",
@@ -3309,7 +3305,12 @@ def request_search_v2(request):
 
 @transaction.atomic
 def request_logout(request):
-    logout(request)
+    if dj_settings.DJANGO_READ_ONLY:
+        with django_read_only.temp_writes():
+            logout(request)
+    else:
+        logout(request)
+
     return redirect("/")
 
 
@@ -3336,7 +3337,6 @@ EmailDevice.verify_token = verify_token
 
 
 class LoginView(TwoFactorLoginView):
-
     """
     Extend the `LoginView` class provided
     by `two_factor` because some
@@ -3367,32 +3367,31 @@ class LoginView(TwoFactorLoginView):
 
         return kwargs
 
-    def attempt_passwordless_auth(
+    def attempt_passkey_auth(
         self, request: WSGIRequest, **kwargs: Any
     ) -> HttpResponseRedirect | None:
         """
-        Wrap attempt_passwordless_auth so we can set a session
-        property to indicate that the passwordless auth was
+        Wrap attempt_passkey_auth so we can set a session
+        property to indicate that the passkey auth was
         used
         """
-        response = super().attempt_passwordless_auth(request, **kwargs)
+        response = super().attempt_passkey_auth(request, **kwargs)
 
         # if `credential` in request POST is set AND
-        # we got a response from `attempt_passwordless_auth`, passwordless
+        # we got a response from `attempt_passkey_auth`, passkey
         # authentication was used and succeeded
 
         credential = request.POST.get("credential", None)
-        username = request.POST.get("auth-username", None)
 
-        if credential and response and username:
-            request.used_passwordless_auth = True
+        if credential and response:
+            request.used_passkey_auth = True
 
         return response
 
     @transaction.atomic
-    @method_decorator(
-        ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
-    )
+    # @method_decorator(
+    #     ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
+    # )
     def post(self, *args, **kwargs):
         """
         Posts to the `auth` step of the authentication
@@ -3407,11 +3406,25 @@ class LoginView(TwoFactorLoginView):
             )
             return self.render_goto_step("auth")
 
-        passwordless = self.attempt_passwordless_auth(request, **kwargs)
-        if passwordless:
-            return passwordless
-
-        return super().post(*args, **kwargs)
+        if not request.POST.get("auth-username"):
+            if dj_settings.DJANGO_READ_ONLY:
+                with django_read_only.temp_writes():
+                    if dj_settings.SKIP_LAST_LOGIN_UPDATE:
+                        user_logged_in.disconnect(
+                            update_last_login, dispatch_uid="update_last_login"
+                        )
+                    attempt_passkey_auth = self.attempt_passkey_auth(request, **kwargs)
+                    if attempt_passkey_auth:
+                        return attempt_passkey_auth
+            else:
+                attempt_passkey_auth = self.attempt_passkey_auth(request, **kwargs)
+                if attempt_passkey_auth:
+                    return attempt_passkey_auth
+        if not dj_settings.DJANGO_READ_ONLY:
+            return super().post(*args, **kwargs)
+        else:
+            with django_read_only.temp_writes():
+                return super().post(*args, **kwargs)
 
     def get_context_data(self, form, **kwargs):
         """
@@ -3531,9 +3544,9 @@ class LoginView(TwoFactorLoginView):
     def set_amr(self):
         amr = []
         done_forms = self.get_done_form_list()
-        passwordless = getattr(self, "used_passwordless_auth", False)
+        passkey = getattr(self, "used_passkey_auth", False)
 
-        if not passwordless:
+        if not passkey:
             amr.append("pwd")
         else:
             amr.append("swk")
@@ -3551,7 +3564,7 @@ class LoginView(TwoFactorLoginView):
             # but for that webauthn attestation is needed, which we currently
             # do not collect.
             #
-            # NOTE: by design if passwordless authentication was used
+            # NOTE: by design if passkey authentication was used
             # it is required to be a different security key, so there may
             # actually be cases of amr being "swk swk" which is accurate
             # and RFC 8176 does not seem to disallow this (multiples of the same type).
@@ -3871,3 +3884,69 @@ def handle_2fa(request):
         return view_index(
             request, errors=[_("Login as the organization admin to perform the action")]
         )
+
+
+@login_required
+def search_elasticsearch(request):
+    if not request.user.is_superuser:
+        return HttpResponseNotFound()
+
+    client = Elasticsearch(getattr(dj_settings, "ELASTICSEARCH_URL"))
+
+    try:
+        indices = client.indices.get_alias().keys()
+    except Exception as e:
+        indices = []
+
+    if request.method == "POST":
+        query_json = request.POST.get("q", "")
+        index = request.POST.get("index", "_all")
+
+        if not query_json:
+            return render(
+                request,
+                "site/es_search.html",
+                {"indices": indices, "error": "Missing query"},
+            )
+
+        try:
+            # Parse the JSON query (raw Elasticsearch DSL)
+            query_dict = json.loads(query_json)
+
+            client = new_elasticsearch()
+
+            # Pass the parsed query dictionary directly to client.search()
+            response = client.search(
+                index=index, body=query_dict, pretty=True, size=1000
+            )
+
+            # make response a json object
+            response = json.loads(json.dumps(response.body))
+
+            return render(
+                request,
+                "site/es_search.html",
+                {"indices": indices, "raw_results": response},
+            )
+
+        except json.JSONDecodeError as e:
+            return render(
+                request, "site/es_search.html", {"error": f"Invalid JSON: {e}"}
+            )
+
+        except Exception as e:
+            return render(
+                request,
+                "site/es_search.html",
+                {"error": f"Error querying Elasticsearch: {e}"},
+            )
+
+    else:
+        return render(request, "site/es_search.html", {"indices": indices})
+
+
+@ensure_csrf_cookie
+@login_required
+def view_profile_passkey(request):
+    if request.user.is_authenticated:
+        return render(request, "site/profile-passkeys.html")

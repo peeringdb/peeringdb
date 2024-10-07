@@ -22,7 +22,6 @@ When adding new fields to django-peeringdb make sure migration files for the sch
 Please open a merge request in peeringdb/django-peeringdb for the field addition as well.
 """
 
-
 import datetime
 import ipaddress
 import json
@@ -347,7 +346,6 @@ class ParentStatusCheckMixin:
 
 
 class ProtectedMixin:
-
     """
     Mixin that implements checks for changing
     / deleting a model instance that will block
@@ -506,7 +504,6 @@ class GeocodeBaseMixin(models.Model):
 
 
 class GeoCoordinateCache(StripFieldMixin):
-
     """
     Stores geocoordinates for address lookups.
     """
@@ -949,7 +946,6 @@ class DeskProTicket(StripFieldMixin):
 
 
 class DeskProTicketCC(StripFieldMixin):
-
     """
     Describes a contact to be cc'd on the deskpro ticket.
     """
@@ -1798,7 +1794,6 @@ class Campus(
     SocialMediaMixin,
     StripFieldMixin,
 ):
-
     """
     Describes a peeringdb campus
     """
@@ -3474,7 +3469,6 @@ class NetworkProtocolsDisabled(ValueError):
 
 
 class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
-
     """
     Describes a potential data update that arose during an IX-F import
     attempt for a specific member (asn, ip4, ip6) to netixlan
@@ -5349,6 +5343,20 @@ class NetworkIXLan(
     ixlan = models.ForeignKey(
         IXLan, on_delete=models.CASCADE, default=0, related_name="netixlan_set"
     )
+    net_side = models.ForeignKey(
+        Facility,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="net_side_set",
+    )
+    ix_side = models.ForeignKey(
+        Facility,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="ix_side_set",
+    )
 
     parent_relations = ["ixlan", "network"]
 
@@ -6075,6 +6083,14 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
 
         return self.totpdevice_set.exists() or self.webauthn_security_keys.exists()
 
+    @property
+    def get_2fa_security_keys(self):
+        return self.webauthn_security_keys.filter(passkey_login=False).all()
+
+    @property
+    def get_passkey_security_keys(self):
+        return self.webauthn_security_keys.filter(passkey_login=True).all()
+
     @staticmethod
     def autocomplete_search_fields():
         """
@@ -6493,7 +6509,6 @@ class CommandLineTool(StripFieldMixin):
 
 
 class EnvironmentSetting(StripFieldMixin):
-
     """
     Environment settings overrides controlled through
     django admin (/cp).
@@ -6766,7 +6781,6 @@ class EnvironmentSetting(StripFieldMixin):
 
 
 class OAuthApplication(oauth2.AbstractApplication, StripFieldMixin):
-
     """
     OAuth application - extends the default oauth_provider2 application
     and adds optional org ownership to it through an `org` relationship
@@ -6798,7 +6812,6 @@ class OAuthApplication(oauth2.AbstractApplication, StripFieldMixin):
 
 
 class OAuthGrantInfo(StripFieldMixin):
-
     """
     OAuth grant info
 
@@ -6872,7 +6885,6 @@ DATACHANGE_ACTIONS = [
 
 
 class DataChangeWatchedObject(StripFieldMixin):
-
     """
     Describes a user's intention to be notified about
     changes to a specific objects.

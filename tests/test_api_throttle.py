@@ -45,7 +45,6 @@ class MelissaMockView(ModelViewSet):
 
 
 class ResponseSizeMockView(ModelViewSet):
-
     """
     Dummy view for testing thorttling based on expected response size (#1126)
     """
