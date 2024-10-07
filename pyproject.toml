@@ -107,11 +107,8 @@ dev-dependencies = [
     "webdriver-manager>=3.8.3",
 
     # linting
-    "black>=20",
-    "isort>=5.7",
-    "flake8>=3.8",
+    "ruff>=0.6",
     "pre-commit>=2.13",
-    "pyupgrade>=2.19",
 
     # docs
     "pymdgen>=1",
