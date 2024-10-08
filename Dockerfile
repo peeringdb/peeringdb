@@ -33,10 +33,21 @@ ARG run_deps=" \
 FROM ubuntu:24.04 AS base
 
 ARG virtual_env=/srv/www.peeringdb.com/venv
+ARG python_version
 
 ENV VIRTUAL_ENV="$virtual_env"
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+# - Silence uv complaining about not being able to use hard links,
+# - tell uv to byte-compile packages for faster application startups,
+# - prevent uv from accidentally downloading isolated Python builds,
+# - pick a Python,
+# - and finally declare `/app` as the target for `uv sync`.
+ENV UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PYTHON=python${python_version} \
+    UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV
 
 # base docker file from https://hynek.me/articles/docker-uv/
 FROM base AS builder
@@ -63,17 +74,6 @@ EOT
 # Security-conscious organizations should package/review uv themselves.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# - Silence uv complaining about not being able to use hard links,
-# - tell uv to byte-compile packages for faster application startups,
-# - prevent uv from accidentally downloading isolated Python builds,
-# - pick a Python,
-# - and finally declare `/app` as the target for `uv sync`.
-ENV UV_LINK_MODE=copy \
-    UV_COMPILE_BYTECODE=1 \
-    UV_PYTHON_DOWNLOADS=never \
-    UV_PYTHON=python${python_version} \
-    UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV
-
 
 WORKDIR /srv/www.peeringdb.com
 
@@ -84,7 +84,6 @@ WORKDIR /srv/www.peeringdb.com
 # keep the lock with the image in case we are debugging
 COPY uv.lock pyproject.toml ./
 
-RUN echo $(which git)
 RUN uv venv $virtual_env
 
 # Synchronize DEPENDENCIES without the application itself.
