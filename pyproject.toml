@@ -123,7 +123,7 @@ django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev 
 # not pushed to pypi -- can be removed with #1678
 django-hashers-passlib = { git = "https://github.com/mathiasertl/django-hashers-passlib.git" }
 # from branch until passkey support is released
-# django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "passkey" }
+django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "passkey" }
 
 
 [tool.ruff.lint]
