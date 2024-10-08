@@ -67,7 +67,7 @@ services:
       # this needs to be set in the shell, compose env vars aren't read yet
       - "${DJANGO_PORT:-8000}:8000"
     volumes:
-      - ../../peeringdb_server:/srv/www.peeringdb.com/peeringdb_server:Z
+      - ../../src/peeringdb_server:/srv/www.peeringdb.com/peeringdb_server:Z
       - ../../mainsite:/srv/www.peeringdb.com/mainsite:Z
       - ../../tests:/srv/www.peeringdb.com/tests:Z
       - ../../docs:/srv/www.peeringdb.com/docs:Z

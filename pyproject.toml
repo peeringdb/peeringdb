@@ -1,120 +1,154 @@
-[tool.poetry]
+[project]
 name = "peeringdb_server"
-version = "2.61.0"
+version = "2.62.0-beta"
 description = "source code for PeeringDB.com"
 readme = "README.md"
+authors = [{ name = "PeeringDB", email = "support@peeringdb.com" }]
+license = { text = "BSD-2-Clause" }
+requires-python = ">= 3.9"
+
+
+dependencies = [
+    # core requirements
+    "django>=4.2,<4.3",
+    "django-inet>=1.1.1",
+    "django-handleref>=2",
+    "django-peeringdb>=3.4.0",
+    "djangorestframework>=3.14.0",
+    "mysqlclient>=2.1.1",
+    "redis>=5.0.0",
+    "hiredis>=2.2.3",
+    "peeringdb>=2.0.0",
+    "uwsgi>=2.0.14",
+
+    "bleach>=2.1.3",
+    "django-allauth>=0.54.0",
+    "django-simple-captcha>=0.5.17",
+    "django-autocomplete-light>=3.9.4",
+    "django-bootstrap5>=23.1",
+    "django-cors-headers>=3.14.0",
+    "django-countries>=7.5.1",
+    "django-crispy-forms>=2.0",
+    "django-csp>=3.7",
+    "django-debug-toolbar>=4.0.0",
+
+    # elasticsearch-dsl / django-elasticsearch-dsl version is
+    # synced to major elasticsearch version and needs to be upgraded
+    # when elasticsearch is upgraded
+    # https://elasticsearch-dsl.readthedocs.io/en/latest/index.html#compatibility
+    "django-elasticsearch-dsl>=8,<9",
+
+    "django-extensions>=1.3.3",
+    "django-grainy>=2",
+    "django-grappelli>=2.10.1",
+    "django-import-export>2.8.0,<3",
+    "django-oauth-toolkit>=2",
+    "django-phonenumber-field>=0.6",
+    "django-ratelimit>=4.0.0",
+    "django-read-only>=1.15.0",
+    "django-rest-swagger>=2.1.2",
+    "djangorestframework-api-key>=2.3.0",
+    "django-structlog>=2.2.0",
+    "django-tables2>=1.0.4",
+    "django-two-factor-auth>=1.11",
+    "django-vanilla-views>=1.0.2",
+    "django-security-keys>=1.1",
+    "googlemaps>=2.5.1",
+    "grainy>=1.7,<2",
+    "jsonschema>=2.6.0",
+    "markdown>=2.6.7",
+    "passlib>=1.7.1",
+    "phonenumbers>=8.11.1",
+    "pyjwt>=2.8.0",
+    "rdap>=1.5.2",
+    "schema>=0.7.7",
+    "unidecode>=1.0.23",
+
+    # search
+    "django-haystack<4",
+    "whoosh<3",
+    "geopy>=2.3.0",
+    "simplekml>=1.3.6",
+    "pycountry>=23.12.11",
+
+    # these should just be pulled in automatically?
+    "django-reversion>=4, <5",
+    "certifi>=2017.11.5",
+    "tld>=0.7.6",
+    # deprecated from drf -- used by rest swagger
+    "coreapi>=2.3.1",
+
+
+    # for pdbv1 import
+    "django_hashers_passlib",
+]
+
+[project.urls]
 repository = "https://github.com/peeringdb/peeringdb"
-authors = [ "PeeringDB <support@peeringdb.com>",]
-license = "BSD-2-Clause"
 
-[tool.poetry.dependencies]
-python = "^3.9"
-# core requirements
-django = "^4.2"
-django-inet = ">=1.1.1"
-django-handleref = ">=2"
-# pinned until 3.5.0 release if django-peeringdb
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb.git", branch = "support_202409" }
-djangorestframework = ">=3.14.0"
-mysqlclient = ">=2.1.1"
-redis = ">=5.0.0"
-hiredis = ">=2.2.3"
+[tool.uv]
+dev-dependencies = [
+    # testing
+    "pytest>=6",
+    "pytest-cov>=1",
+    "pytest-django>=2.9.1",
+    "pytest-filedata>=0.1.0",
+    "pytest-mock>=3.3.1",
+    "freezegun>=1.5.1",
 
-peeringdb = ">=2.0.0"
-uwsgi = ">=2.0.14"
+    # selenium testing
+    "selenium>=4.4.3",
+    "webdriver-manager>=3.8.3",
 
-# ancilary packages
-bleach = ">=2.1.3"
-django-allauth = ">=0.54.0"
-django-simple-captcha = ">=0.5.17"
-django-autocomplete-light = ">=3.9.4"
-django-bootstrap5 = "^23.1"
-django-cors-headers = ">=3.14.0"
-django-countries = ">=7.5.1"
-django-crispy-forms = ">=2.0"
-django-csp = "^3.7"
-django-debug-toolbar = ">=4.0.0"
+    # linting
+    "ruff>=0.6",
+    "pre-commit>=2.13",
 
-# elasticsearch-dsl / django-elasticsearch-dsl version is
-# synced to major elasticsearch version and needs to be upgraded
-# when elasticsearch is upgraded
-# https://elasticsearch-dsl.readthedocs.io/en/latest/index.html#compatibility
-django-elasticsearch-dsl = "^8"
+    # docs
+    "pymdgen>=1",
+    "mkdocs>=1.1.2",
+    "markdown-include>=0.5,<1",
+    "pydot>=1.4.2",
+]
 
-django-extensions = ">=1.3.3"
-django-grainy = ">=2"
-django-grappelli = ">=2.10.1"
-django-import-export = ">2.8.0,<3"
+[tool.uv.sources]
+# until released
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202408" }
+# not pushed to pypi -- can be removed with #1678
 django-hashers-passlib = { git = "https://github.com/mathiasertl/django-hashers-passlib.git" }
-django-oauth-toolkit = ">=2"
-django-phonenumber-field = ">=0.6"
-django-ratelimit = ">=4.0.0"
-django-read-only = ">=1.15.0"
-django-rest-swagger = ">=2.1.2"
-djangorestframework-api-key = ">=2.3.0"
-django-structlog = ">=2.2.0"
-django-tables2 = ">=1.0.4"
-django-vanilla-views = ">=1.0.2"
-#django-security-keys = ">=1.1.0"
 # from branch until passkey support is released
-django-security-keys = { git = "https://github.com/20c/django-security-keys.git", branch = "passkey" }
+django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "passkey" }
 
-googlemaps = ">=2.5.1"
-markdown = ">=2.6.7"
-passlib = ">=1.7.1"
-phonenumbers = ">=8.11.1"
-# 0.7.6 breaks import
-schema = "==0.7.5"
-rdap = ">=1.5.2"
-unidecode = ">=1.0.23"
-# these should just be pulled in automatically?
-django-reversion = ">=4, <5"
-certifi = ">=2017.11.5"
-tld = ">=0.7.6"
-# deprecated from drf -- used by rest swagger
-coreapi = ">=2.3.1"
-# FIXME: 1.15.0 has migration issues and also breaks
-# emailing of one time password
-django-two-factor-auth = ">=1.11,<1.15.0"
-grainy = ">=1.7,<2"
-django-haystack = "<4"
-whoosh = "<3"
 
-geopy = ">=2.3.0"
-simplekml = ">=1.3.6"
-pycountry = ">=23.12.11"
+[tool.ruff.lint]
+# extend needs a lot of needs fixes, should schedule time
+# extend-select = [
+select = [
+    "I",  # isort
+    "UP", # pyupgrade
+]
+# ignore until we can fix correctly
+# UP031 Use format specifiers instead of percent format
+ignore = ["UP031"]
 
-[tool.poetry.group.dev.dependencies]
-# testing
-pytest = ">=6"
-pytest-cov = "*"
-pytest-django = ">=2.9.1"
-pytest-filedata = ">=0.1.0"
-pytest-mock = ">=3.3.1"
-jsonschema = ">=2.6.0"
-freezegun = ">=1.5.1"
-# selenium testing
-selenium = "^4.4.3"
-webdriver-manager = "^3.8.3"
-pyjwt = ">=2.8.0"
+[tool.ruff.lint.per-file-ignores]
+# settings need to be refactored to use settings_manager
+"mainsite/settings/*.py" = [
+    "F821", # undefined name
 
-# linting
-black = ">=20"
-isort = ">=5.7"
-flake8 = ">=3.8"
-pre-commit = ">=2.13"
-pyupgrade = ">=2.19"
+]
+"tests/**/*.py" = [
+    # these should be cleaned up
+    "E711", # Comparison to None should be 'if cond is None:'
+    "E712", # Avoid equality comparisons to `True`
+    "F403", # 'from module import *' used; unable to detect undefined names
+    "F841", # Unused variable
 
-# docs
-pymdgen = ">=1"
-mkdocs = ">=1.1.2"
-markdown-include = ">=0.5,<1"
-pydot = ">=1.4.2"
-
-[build-system]
-requires = [ "poetry>=0.12",]
-build-backend = "poetry.masonry.api"
-
-[tool.isort]
-profile = "black"
-multi_line_output = 3
+    # at least this three should be fine in tests:
+    "S101", # asserts allowed in tests...
+    "ARG",  # Unused function args -> fixtures nevertheless are functionally relevant...
+    "FBT",  # Don't care about booleans as positional arguments in tests, e.g. via @pytest.mark.parametrize()
+    # The below are debateable
+    "PLR2004", # Magic value used in comparison, ...
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+]

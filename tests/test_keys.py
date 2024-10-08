@@ -1,5 +1,3 @@
-from lib2to3.pgen2 import token
-
 import pytest
 from django.conf import settings
 from django.test import Client, RequestFactory
