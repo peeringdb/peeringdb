@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
 
-function migrate() {
+migrate() {
   echo applying migrations - django_peeringdb
   # always fake, since peeeringdb_server does not use concrete models
   manage migrate django_peeringdb --fake
@@ -23,12 +23,6 @@ case "$1" in
     ;;
   "migrate" )
     migrate
-    ;;
-  "inetd" )
-    inetd -f -e -q 1024
-    ;;
-  "in.whois" )
-    exec ./in.whoisd
     ;;
   "run_tests" )
     shift
@@ -60,17 +54,17 @@ case "$1" in
     echo generating api docs
     python manage.py generateschema --file peeringdb_server/static/api-schema.yaml
     ;;
-  "whois" )
-    line=$(head -1 | tr -cd '[:alnum:]._-')
-    exec manage pdb_whois "$line"
-    ;;
-  "/bin/sh" )
-    echo dropping to shell
-    exec $@
-    ;;
   "makemessages" | "compilemessages" )
     cd /mnt
     exec django-admin $@
+    ;;
+  "inetd" | "in.whois" | "whois" )
+    echo "whois and inetd have been removed"
+    exit 1
+    ;;
+  "/bin/sh" | "bash" )
+    echo dropping to shell
+    exec $@
     ;;
   * )
     exec manage $@
