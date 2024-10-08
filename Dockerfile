@@ -202,15 +202,16 @@ RUN SECRET_KEY=no manage collectstatic --no-input
 
 RUN chown -R pdb:pdb api-cache locale media var/log coverage
 
-##########################################################################
-
-
+USER pdb
+ENTRYPOINT ["/entrypoint"]
+CMD ["runserver"]
 
 #### test image here
 FROM final as tester
 
 ARG build_deps
 
+USER root
 WORKDIR /srv/www.peeringdb.com
 COPY tests/ tests
 RUN chown -R pdb:pdb tests/
@@ -230,27 +231,17 @@ EOT
 
 # Same as final entrypoint for running in dev mode
 
-# move to final base
 USER pdb
-ENTRYPOINT ["/entrypoint"]
-CMD ["runserver"]
 
 #### entry point from final image, not tester
 FROM final
 
-# COPY Ctl/docker/entrypoint.sh .
-# COPY Ctl/docker/django-uwsgi.ini etc/
-
-WORKDIR /srv/www.peeringdb.com
 USER pdb
-ENTRYPOINT ["./entrypoint"]
-CMD ["runserver"]
-
 # Strictly optional, but I like it for introspection of what I've built
 # and run a smoke test that the application can, in fact, be imported.
 # python -Ic 'import peeringdb_server'
-#RUN <<EOT
-#python -V
-#python -Im site
-#python -c 'import peeringdb_server'
-#EOT
+RUN <<EOT
+python -V
+python -Im site
+python -c 'import peeringdb_server'
+EOT

@@ -50,11 +50,7 @@ dependencies = [
     "djangorestframework-api-key>=2.3.0",
     "django-structlog>=2.2.0",
     "django-tables2>=1.0.4",
-
-    # FIXME: 1.15.0 has migration issues and also breaks emailing of one time password
-    # XXX
-    "django-two-factor-auth>=1.11,<1.15.0",
-
+    "django-two-factor-auth>=1.11",
     "django-vanilla-views>=1.0.2",
     "django-security-keys>=1.1",
     "googlemaps>=2.5.1",
@@ -65,9 +61,7 @@ dependencies = [
     "phonenumbers>=8.11.1",
     "pyjwt>=2.8.0",
     "rdap>=1.5.2",
-    # 0.7.6 breaks import
-    # XXX
-    "schema==0.7.5",
+    "schema>=0.7.7",
     "unidecode>=1.0.23",
 
     # search
@@ -127,7 +121,7 @@ django-security-keys = { git = "https://github.com/20c/django-security-keys.git"
 
 
 [tool.ruff.lint]
-# XXX needs fixes
+# extend needs a lot of needs fixes, should schedule time
 # extend-select = [
 select = [
     "I",  # isort
