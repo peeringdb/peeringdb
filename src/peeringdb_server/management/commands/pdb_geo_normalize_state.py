@@ -109,15 +109,7 @@ class Command(BaseCommand):
                 output_dict["country"] = entity.country.code
                 self.snapshot_model(entity, "_before", output_dict)
                 self.log(
-                    "Normalizing {} [{} {}/{} ID:{} State: {} Country: {}]".format(
-                        entity.name,
-                        reftag,
-                        i,
-                        count,
-                        entity.id,
-                        entity.state,
-                        entity.country,
-                    )
+                    f"Normalizing {entity.name} [{reftag} {i}/{count} ID:{entity.id} State: {entity.state} Country: {entity.country}]"
                 )
                 try:
                     self._normalize(entity, output_dict, self.commit)

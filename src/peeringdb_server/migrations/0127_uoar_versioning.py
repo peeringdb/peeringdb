@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("reversion", "0002_add_index_on_version_for_content_type_and_db"),
         ("peeringdb_server", "0126_update_twitter_to_x"),

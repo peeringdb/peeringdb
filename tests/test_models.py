@@ -71,7 +71,6 @@ def entities():
 
 @pytest.mark.django_db
 def test_network_legacy_info_type():
-
     network = Network(
         asn=1, name="Test Network", irr_as_set="AS-TEST", info_types=["Content", "NSP"]
     )

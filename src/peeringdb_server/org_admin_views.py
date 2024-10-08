@@ -175,8 +175,7 @@ def permission_ids(org):
 
     perms.update(
         {
-            "sessions.%d"
-            % net.id: _("Manage peering sessions - %(net_name)s")
+            "sessions.%d" % net.id: _("Manage peering sessions - %(net_name)s")
             % {"net_name": net.name}
             for net in org.net_set_active
         }
@@ -205,8 +204,7 @@ def permission_ids(org):
 
     perms.update(
         {
-            "carrier.%d"
-            % carrier.id: _("Carrier - %(carrier_name)s")
+            "carrier.%d" % carrier.id: _("Carrier - %(carrier_name)s")
             % {"carrier_name": carrier.name}
             for carrier in org.carrier_set_active
         }

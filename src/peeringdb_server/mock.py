@@ -142,8 +142,8 @@ class Mock:
 
                 # URLs
                 elif field.name.find("url") > -1:
-                    data[field.name] = "{}/{}".format(
-                        self.website(data, reftag=reftag), field.name
+                    data[field.name] = (
+                        f"{self.website(data, reftag=reftag)}/{field.name}"
                     )
 
                 # everything else is routed to the apropriate method

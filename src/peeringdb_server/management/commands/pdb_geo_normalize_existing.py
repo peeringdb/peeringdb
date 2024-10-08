@@ -204,11 +204,7 @@ class Command(BaseCommand):
             output_dict = {"id": entity.id, "name": entity.name}
             self.snapshot_model(entity, "_before", output_dict)
 
-            self.log(
-                "Normalizing {} [{} {}/{} ID:{}]".format(
-                    entity.name, reftag, i, count, entity.id
-                )
-            )
+            self.log(f"Normalizing {entity.name} [{reftag} {i}/{count} ID:{entity.id}]")
 
             proceed_to_next = False
 

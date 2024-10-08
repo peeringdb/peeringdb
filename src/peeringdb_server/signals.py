@@ -77,7 +77,6 @@ def update_network_attribute(instance, attribute):
 
 def network_post_revision_commit(**kwargs):
     for vs in kwargs.get("versions"):
-
         # ignore objects that don't have the HandleRef meta class
         if not hasattr(vs.object, "HandleRef"):
             continue
@@ -150,7 +149,6 @@ def update_counts_for_ixfac(ixfac):
 
 def connector_objects_post_revision_commit(**kwargs):
     for vs in kwargs.get("versions"):
-
         # ignore objects that don't have the HandleRef meta class
         if not hasattr(vs.object, "HandleRef"):
             continue

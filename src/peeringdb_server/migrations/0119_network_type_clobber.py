@@ -37,7 +37,6 @@ def reverse_copy_info_types_to_info_type(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0118_network_info_types"),
     ]

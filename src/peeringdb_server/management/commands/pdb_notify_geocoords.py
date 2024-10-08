@@ -27,7 +27,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-
         # Set auto_now to False to avoid updating the updated field when
         # we mark facilities as notified
         Facility._meta.get_field("updated").auto_now = False

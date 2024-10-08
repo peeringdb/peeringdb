@@ -71,11 +71,7 @@ class Command(BaseCommand):
             if entity.geocode_status:
                 continue
             i += 1
-            self.log(
-                "Syncing {} [{} {}/{} ID:{}]".format(
-                    entity.name, reftag, i, count, entity.id
-                )
-            )
+            self.log(f"Syncing {entity.name} [{reftag} {i}/{count} ID:{entity.id}]")
 
             if self.commit:
                 entity.geocode(self.gmaps)

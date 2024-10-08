@@ -77,9 +77,7 @@ class Command(BaseCommand):
                 for source in list(sources.values()):
                     if source.org.status != "ok":
                         self.log(
-                            "[error] Parent organization {} of facility {} currently has status `{}`, as such the facility cannot be undeleted, please fix the organization and run the script again".format(
-                                source.org, source, source.org.status
-                            )
+                            f"[error] Parent organization {source.org} of facility {source} currently has status `{source.org.status}`, as such the facility cannot be undeleted, please fix the organization and run the script again"
                         )
                         return
 

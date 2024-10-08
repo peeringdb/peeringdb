@@ -1955,7 +1955,6 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
         # if latitude or longitude has changed, validate the distance
 
         if self.instance and latitude and longitude:
-
             if (
                 latitude != self.instance.latitude
                 or longitude != self.instance.longitude
@@ -2681,6 +2680,7 @@ class NetworkSerializer(ModelSerializer):
       - netfac_id, handled by prepare_query
       - fac_id, handled by prepare_query
     """
+
     netfac_set = nested(
         NetworkFacilitySerializer,
         exclude=["net_id", "net"],
@@ -2869,7 +2869,6 @@ class NetworkSerializer(ModelSerializer):
 
     @classmethod
     def finalize_query_params(cls, qset, query_params: dict):
-
         # legacy info_type field needs to be converted to info_types
         # we do this by creating an annotation based on the info_types split by ','
 
@@ -2878,9 +2877,7 @@ class NetworkSerializer(ModelSerializer):
         from django.db.models import Q
 
         for key, value in query_params.items():
-
             if key == "info_type":
-
                 # handle direct info_type filter by converting to info_types
                 # and doing a direct filter with the same value against
                 # info_types checking for startswith, contains, or endswith taking
@@ -2894,12 +2891,10 @@ class NetworkSerializer(ModelSerializer):
                 qset = qset.filter(query)
 
             elif key == "info_type__contains":
-
                 # info_type__contains filter can simply be converted to info_types
 
                 update_params["info_types__contains"] = value
             elif key == "info_type__in" or key == "info_types__in":
-
                 # info_types__in will filter on the info_types field
                 # doing an overlap check against the provided values
 
@@ -2909,7 +2904,6 @@ class NetworkSerializer(ModelSerializer):
                 qset = qset.filter(query)
 
             elif key == "info_type__startswith" or key == "info_types__startswith":
-
                 # info_type__startswith filter can simply be converted to info_types
 
                 query = Q(info_types__istartswith=value) | Q(
@@ -3016,17 +3010,11 @@ class NetworkSerializer(ModelSerializer):
             raise RestValidationError(
                 {
                     "non_field_errors": [
-                        """We could not validate that the record for AS{} contains your email address ({}).
+                        f"""We could not validate that the record for AS{asn} contains your email address ({user_email}).
 
-Please add this email address ({}) to the RIR record for AS{} and try again.
+Please add this email address ({user_email}) to the RIR record for AS{asn} and try again.
 
-If you need further assistance, please contact {}""".format(
-                            asn,
-                            user_email,
-                            user_email,
-                            asn,
-                            settings.DEFAULT_FROM_EMAIL,
-                        ),
+If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
                     ],
                     "asn": "Your email address and ASN emails mismatch",
                     "__meta": {"ignore_field_error": True},

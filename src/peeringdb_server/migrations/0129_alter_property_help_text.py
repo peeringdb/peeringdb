@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("peeringdb_server", "0128_add_info_traffic_help_text"),
     ]

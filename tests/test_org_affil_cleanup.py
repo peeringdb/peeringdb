@@ -47,7 +47,6 @@ class TestDeleteOldRequests(TestCase):
                 )
 
     def test_delete_old_requests_dry_run(self):
-
         # Capture output
         output = StringIO()
 
@@ -66,7 +65,6 @@ class TestDeleteOldRequests(TestCase):
         assert expected_message in actual_output
 
     def test_delete_old_requests_with_limit(self):
-
         # Capture output
         output = StringIO()
 
@@ -87,7 +85,6 @@ class TestDeleteOldRequests(TestCase):
         assert "Successfully deleted 2 old pending requests." in actual_output
 
     def test_delete_old_requests_no_limit(self):
-
         # Capture output
         output = StringIO()
 

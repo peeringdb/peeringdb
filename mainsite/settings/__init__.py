@@ -290,7 +290,6 @@ def get_cache_backend(cache_name):
         }
 
     if cache_backend.startswith("DatabaseCache."):
-
         _, location = cache_backend.split(".", 1)
 
         return {

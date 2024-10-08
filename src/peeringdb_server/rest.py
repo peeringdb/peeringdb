@@ -117,9 +117,7 @@ class DataParseException(DataException):
 
     def __init__(self, method, exc):
         super().__init__(
-            "Data supplied with the {} request could not be parsed: {}".format(
-                method, exc
-            )
+            f"Data supplied with the {method} request could not be parsed: {exc}"
         )
 
 
@@ -324,13 +322,7 @@ class client_check:
 
             if not compat:
                 raise ValueError(
-                    "Your client version is incompatible with server version of the api, please install peeringdb>={},<={} {}>={},<={}".format(
-                        self.version_string(self.min_version),
-                        self.version_string(self.max_version),
-                        backend,
-                        self.version_string(backend_min),
-                        self.version_string(backend_max),
-                    )
+                    f"Your client version is incompatible with server version of the api, please install peeringdb>={self.version_string(self.min_version)},<={self.version_string(self.max_version)} {backend}>={self.version_string(backend_min)},<={self.version_string(backend_max)}"
                 )
 
 
@@ -406,7 +398,6 @@ class InactiveKeyBlock(permissions.BasePermission):
 
 
 class UnlimitedIfNoPagePagination(PageNumberPagination):
-
     page_size = dj_settings.PAGE_SIZE  # default page_size
     page_size_query_param = "per_page"
     max_page_size = 250
@@ -695,7 +686,6 @@ class ModelViewSet(viewsets.ModelViewSet):
             qset = qset[skip:]
 
         if not is_specific_object_request:
-
             # we are handling a list request and need to apply the limit and skip
             # parameters if they are present
 

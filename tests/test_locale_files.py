@@ -54,9 +54,7 @@ class LocaleFilesTest(TestCase):
             if variables_a != variables_b:
                 errors += 1
                 print(
-                    "{} Locale variable error at msgid {} -> {}".format(
-                        language, msgid, other_messages[msgid]
-                    )
+                    f"{language} Locale variable error at msgid {msgid} -> {other_messages[msgid]}"
                 )
 
             # {name} and {} type variables
@@ -71,9 +69,7 @@ class LocaleFilesTest(TestCase):
             if variables_a != variables_b:
                 errors += 1
                 print(
-                    "{} Locale variable error at msgid {} -> {}".format(
-                        language, msgid, other_messages[msgid]
-                    )
+                    f"{language} Locale variable error at msgid {msgid} -> {other_messages[msgid]}"
                 )
 
         assert errors == 0

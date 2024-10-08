@@ -50,7 +50,6 @@ class Command(BaseCommand):
 
         num_requests = len(old_requests)
         if not commit:
-
             # loop through the outdated pending requests and write to stdout
 
             for request in old_requests:

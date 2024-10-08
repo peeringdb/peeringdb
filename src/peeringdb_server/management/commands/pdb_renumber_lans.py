@@ -96,9 +96,7 @@ class Command(BaseCommand):
                 continue
 
             self.log(
-                "Renumbering {} -> {}".format(
-                    netixlan.descriptive_name_ipv(new_addr.version), new_addr
-                )
+                f"Renumbering {netixlan.descriptive_name_ipv(new_addr.version)} -> {new_addr}"
             )
 
             if new_addr.version == 4:

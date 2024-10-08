@@ -183,8 +183,7 @@ def enum(request, name):
 
     return JsonResponse(
         {
-            "enum/%s"
-            % name: [
+            "enum/%s" % name: [
                 {
                     "id": id,
                     # as of django-peeringdb 1.0.0 already comes in

@@ -73,9 +73,7 @@ class Command(BaseCommand):
         self.log("Wiping current data ...")
         self.wipe()
         self.log(
-            "Making {} of each - Use the --limit option to increase or decrease (5 max)".format(
-                self.limit
-            )
+            f"Making {self.limit} of each - Use the --limit option to increase or decrease (5 max)"
         )
 
         if not self.commit:

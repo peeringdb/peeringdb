@@ -38,9 +38,7 @@ def forwards_func(apps, schema_editor):
             )
 
             if qset.exists():
-                notes = "Removed duplicate netfac for AS{} @ fac{}".format(
-                    netfac.local_asn, netfac.facility_id
-                )
+                notes = f"Removed duplicate netfac for AS{netfac.local_asn} @ fac{netfac.facility_id}"
                 netfac.notes = notes
                 netfac.status = "deleted"
                 netfac.local_asn = None
@@ -62,11 +60,9 @@ def forwards_func(apps, schema_editor):
                     netfac.status = net.status
 
                     print(
-                        "AS{}: netfac{} at facility {} has been moved to network AS{}, however status"
+                        f"AS{netfac.network.asn}: netfac{netfac.facility.id} at facility {netfac.id} has been moved to network AS{net.asn}, however status"
                         " between the two was mismatching and has been corrected, "
-                        "but should be reviewed".format(
-                            netfac.network.asn, netfac.facility.id, netfac.id, net.asn
-                        )
+                        "but should be reviewed"
                     )
 
                 netfac.network = net
@@ -77,9 +73,7 @@ def forwards_func(apps, schema_editor):
                 # could not find network with asn matching local_asn
                 # in this case we should drop the netfac and log it
 
-                notes = "AS{}: Could not correct non-existant local_asn AS{} @ fac{} ".format(
-                    netfac.network.asn, netfac.local_asn, netfac.facility.id
-                )
+                notes = f"AS{netfac.network.asn}: Could not correct non-existant local_asn AS{netfac.local_asn} @ fac{netfac.facility.id} "
                 if netfac.status == "ok":
                     print(notes)
                     asn_missing += 1
@@ -87,16 +81,8 @@ def forwards_func(apps, schema_editor):
                 continue
 
     print(f"Changed related network for {migrated} netfacs")
-    print(
-        "Deleted {} netfacs for being dupes after removal of local_asn".format(
-            removed_dupe
-        )
-    )
-    print(
-        "Found {} netfacs where network matching local_asn did not exist".format(
-            asn_missing
-        )
-    )
+    print(f"Deleted {removed_dupe} netfacs for being dupes after removal of local_asn")
+    print(f"Found {asn_missing} netfacs where network matching local_asn did not exist")
 
 
 class Migration(migrations.Migration):

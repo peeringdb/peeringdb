@@ -2,6 +2,7 @@
 """
 Series of integration/unit tests for the PDB API.
 """
+
 import copy
 import datetime
 import ipaddress
@@ -636,7 +637,6 @@ class TestJSON(unittest.TestCase):
 
         # if test_failures is set we want to test fail conditions
         if test_failures:
-
             # we test fail because of invalid data
             if "invalid" in test_failures:
                 tests = test_failures["invalid"]
@@ -5577,9 +5577,7 @@ class TestJSON(unittest.TestCase):
         view = NetworkViewSet.as_view(view_action)
         fn = getattr(factory, method)
 
-        ERR_PARSE = "Data supplied with the {} request could not be parsed: JSON parse error - Expecting value: line 1 column 1 (char 0)".format(
-            method.upper()
-        )
+        ERR_PARSE = f"Data supplied with the {method.upper()} request could not be parsed: JSON parse error - Expecting value: line 1 column 1 (char 0)"
         ERR_MISSING = f"No data was supplied with the {method.upper()} request"
 
         # test posting invalid json error

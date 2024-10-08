@@ -443,8 +443,8 @@ class GeocodeBaseMixin(models.Model):
         Returns an address string suitable for geo API query.
         """
         # pylint: disable=missing-format-attribute
-        return "{e.address1} {e.address2}, {e.city}, {e.state} {e.zipcode}".format(
-            e=self
+        return (
+            f"{self.address1} {self.address2}, {self.city}, {self.state} {self.zipcode}"
         )
 
     def process_geo_location(self, geocode=True, save=True):
@@ -729,7 +729,6 @@ class UserOrgAffiliationRequest(StripFieldMixin):
     @reversion.create_revision()
     def track_approval(self):
         with current_request() as request:
-
             # reversion does not track object deletions directly (which is what happens
             # when the reuqest is approved, so we do a preliminary save to make sure a
             # revision is created for the approval action)
@@ -5282,9 +5281,7 @@ class NetworkFacility(
         """
         Returns a descriptive label of the netfac for logging purposes.
         """
-        return "netfac{} AS{} {} <-> {}".format(
-            self.id, self.network.asn, self.network.name, self.facility.name
-        )
+        return f"netfac{self.id} AS{self.network.asn} {self.network.name} <-> {self.facility.name}"
 
     def clean(self):
         # when validating an existing netfac that has a mismatching
@@ -5377,9 +5374,7 @@ class NetworkIXLan(
         """
         Returns a descriptive label of the netixlan for logging purposes.
         """
-        return "netixlan{} AS{} {} {}".format(
-            self.id, self.asn, self.ipaddr4, self.ipaddr6
-        )
+        return f"netixlan{self.id} AS{self.asn} {self.ipaddr4} {self.ipaddr6}"
 
     @property
     def ix_name(self):

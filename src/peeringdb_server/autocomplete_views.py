@@ -202,9 +202,7 @@ class NetworkAutocomplete(AutocompleteHTMLResponse):
         return qs
 
     def get_result_label(self, item):
-        return '<span data-value="{}"><div class="main">{}</div> <div class="sub">AS{}</div></span>'.format(
-            item.pk, html.escape(item.name), html.escape(item.asn)
-        )
+        return f'<span data-value="{item.pk}"><div class="main">{html.escape(item.name)}</div> <div class="sub">AS{html.escape(item.asn)}</div></span>'
 
 
 class FacilityAutocompleteForNetwork(FacilityAutocomplete):
@@ -292,10 +290,7 @@ class BaseFacilityAutocompleteForPort(AutocompleteHTMLResponse):
         return qs
 
     def get_result_label(self, item):
-        return '<span data-value="{}"><div class="main">{}</div></span>'.format(
-            item.facility.pk,
-            html.escape(item.facility.name),
-        )
+        return f'<span data-value="{item.facility.pk}"><div class="main">{html.escape(item.facility.name)}</div></span>'
 
 
 class NetworkFacilityAutocomplete(BaseFacilityAutocompleteForPort):

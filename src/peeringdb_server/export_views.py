@@ -158,9 +158,7 @@ class ExportView(View):
         if self.download is True:
             # send attachment header, triggering download on the client side
             filename = self.download_name.format(extension=self.extensions.get(fmt))
-            response["Content-Disposition"] = 'attachment; filename="{}"'.format(
-                filename
-            )
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
     def generate(self, request):
@@ -572,8 +570,8 @@ def kmz_download(request):
             response = HttpResponse(
                 file.read(), content_type="application/vnd.google-earth.kmz"
             )
-            response["Content-Disposition"] = 'attachment; filename="{}"'.format(
-                os.path.basename(settings.KMZ_EXPORT_FILE)
+            response["Content-Disposition"] = (
+                f'attachment; filename="{os.path.basename(settings.KMZ_EXPORT_FILE)}"'
             )
             response["Last-Modified"] = datetime.datetime.fromtimestamp(
                 os.path.getmtime(settings.KMZ_EXPORT_FILE)
