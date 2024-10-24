@@ -3438,14 +3438,6 @@ class LoginView(TwoFactorLoginView):
         # make_env results to context
         context.update(**make_env())
 
-        if "other_devices" in context:
-            email_device = self.get_email_device()
-
-            # If the user has an email device, we need to
-            # add the email device to the context
-            if email_device:
-                context["other_devices"] += [email_device]
-
         return context
 
     def get_email_device(self):
