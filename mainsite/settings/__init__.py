@@ -734,6 +734,7 @@ INSTALLED_APPS = [
     "django_otp.plugins.otp_totp",
     "django_otp.plugins.otp_email",
     "two_factor",
+    "two_factor.plugins.email",
     "dal",
     "dal_select2",
     "grappelli",
