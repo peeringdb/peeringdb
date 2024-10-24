@@ -16,10 +16,11 @@ def device_action(device):
     if isinstance(device, EmailDevice):
         return _("Email one time password")
     elif device:
-        if device.method == "security-key":
-            return _("U2F security key")
-
-    return phonenumber.device_action(device)
+        try:
+            if device.method == "security-key":
+                return _("U2F security key")
+        except AttributeError:
+            pass
 
 
 @register.filter
