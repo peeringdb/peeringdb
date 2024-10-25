@@ -22,9 +22,6 @@ def device_action(device):
         except AttributeError:
             pass
 
-    return phonenumber.device_action(device)
-
-
 @register.filter
 def user_has_u2f_device(user):
     return user.webauthn_security_keys.exists()
