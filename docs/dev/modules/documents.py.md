@@ -1,4 +1,4 @@
-Generated from documents.py on 2023-08-15 16:04:08.595120
+Generated from documents.py on 2024-11-12 18:19:35.039193
 
 # peeringdb_server.documents
 
@@ -19,6 +19,26 @@ Validates a longitude.
 ---
 # Classes
 ---
+
+## CampusDocument
+
+```
+CampusDocument(peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
+```
+
+Cleans up invalid lat/lng values beforee passing
+them to the geo code field
+
+
+## CarrierDocument
+
+```
+CarrierDocument(peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
+```
+
+Cleans up invalid lat/lng values beforee passing
+them to the geo code field
+
 
 ## FacilityDocument
 
@@ -88,17 +108,47 @@ for all facilities associated with the object
 ## InternetExchangeDocument
 
 ```
-InternetExchangeDocument(peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
+InternetExchangeDocument(peeringdb_server.documents.GeocodeMixin, peeringdb_server.documents.IpAddressMixin, django_elasticsearch_dsl.documents.DocType)
 ```
 
 Cleans up invalid lat/lng values beforee passing
 them to the geo code field
 
 
+## MultipleChoiceKeywordField
+
+```
+MultipleChoiceKeywordField(django_elasticsearch_dsl.fields.KeywordField)
+```
+
+Base class for all DSL objects - queries, filters, aggregations etc. Wraps
+a dictionary representing the object's json.
+
+Provides several feature:
+    - attribute access to the wrapped dictionary (.field instead of ['field'])
+    - _clone method returning a copy of self
+    - to_dict method to serialize into dict (to be sent via elasticsearch-py)
+    - basic logical operators (&, | and ~) using a Bool(Filter|Query) TODO:
+      move into a class specific for Query/Filter
+    - respects the definition of the class and (de)serializes it's
+      attributes based on the `_param_defs` definition (for example turning
+      all values in the `must` attribute into Query objects)
+
+
+### Methods
+
+#### get_value_from_instance
+`def get_value_from_instance(self, instance, field_value_to_ignore=None)`
+
+Given an model instance to index with ES, return the value that
+should be put into ES for this field.
+
+---
+
 ## NetworkDocument
 
 ```
-NetworkDocument(peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
+NetworkDocument(peeringdb_server.documents.GeocodeMixin, peeringdb_server.documents.IpAddressMixin, django_elasticsearch_dsl.documents.DocType)
 ```
 
 Cleans up invalid lat/lng values beforee passing

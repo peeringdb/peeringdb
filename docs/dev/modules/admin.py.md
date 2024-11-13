@@ -1,4 +1,4 @@
-Generated from admin.py on 2023-04-12 10:09:44.702367
+Generated from admin.py on 2024-11-12 18:19:35.408625
 
 # peeringdb_server.admin
 
@@ -27,7 +27,7 @@ set to.
 
 ---
 ## merge_organizations
-`def merge_organizations(*args, **kwargs)`
+`def merge_organizations(targets, target, request)`
 
 Merge organizations specified in targets into organization specified
 in target.
@@ -45,7 +45,7 @@ target <Organization> merge organizations with this organization
 ## CampusAdmin
 
 ```
-CampusAdmin(peeringdb_server.admin.SoftDeleteAdmin)
+CampusAdmin(peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Soft delete admin.
@@ -87,7 +87,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 ## CarrierAdmin
 
 ```
-CarrierAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin)
+CarrierAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Extend from this model admin if you want to add verification queue
@@ -130,7 +130,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 ## CarrierFacilityAdmin
 
 ```
-CarrierFacilityAdmin(peeringdb_server.admin.SoftDeleteAdmin)
+CarrierFacilityAdmin(peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Soft delete admin.
@@ -162,7 +162,7 @@ These attributes / properties will be available on instances of the class
 #### has_delete_permission
 `def has_delete_permission(self, request, obj=None)`
 
-Return True if the given request has permission to change the given
+Return True if the given request has permission to delete the given
 Django model instance, the default implementation doesn't examine the
 `obj` parameter.
 
@@ -248,7 +248,7 @@ Return the filtered queryset.
 ## DataChangeEmail
 
 ```
-DataChangeEmail(django.contrib.admin.options.ModelAdmin)
+DataChangeEmail(django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Encapsulate all admin options and functionality for a given model.
@@ -263,7 +263,7 @@ These attributes / properties will be available on instances of the class
 ## DataChangeNotificationQueueAdmin
 
 ```
-DataChangeNotificationQueueAdmin(django.contrib.admin.options.ModelAdmin)
+DataChangeNotificationQueueAdmin(django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Encapsulate all admin options and functionality for a given model.
@@ -301,7 +301,7 @@ request has permission to change *any* object of the given type.
 ## DataChangeWatchedObjectAdmin
 
 ```
-DataChangeWatchedObjectAdmin(django.contrib.admin.options.ModelAdmin)
+DataChangeWatchedObjectAdmin(django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Encapsulate all admin options and functionality for a given model.
@@ -316,7 +316,7 @@ These attributes / properties will be available on instances of the class
 ## DeskProTicketAdmin
 
 ```
-DeskProTicketAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+DeskProTicketAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Export mixin.
@@ -375,7 +375,7 @@ These attributes / properties will be available on instances of the class
 ## EnvironmentSettingAdmin
 
 ```
-EnvironmentSettingAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+EnvironmentSettingAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Export mixin.
@@ -438,7 +438,7 @@ association with the field named '__all__'.
 ## FacilityAdmin
 
 ```
-FacilityAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin)
+FacilityAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Extend from this model admin if you want to add verification queue
@@ -493,10 +493,44 @@ These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
 
+## ISODateTimeMixin
+
+```
+ISODateTimeMixin(builtins.object)
+```
+
+A mixin for Django ModelAdmin classes to format DateTimeField values as ISO strings.
+
+This mixin provides methods to format DateTimeField values in ISO 8601 format for the specified fields.
+The list of fields to be formatted and their display names is defined in the `datetime_fields` attribute.
+Each field's name will be prepended with "iso_" for the formatted version.
+
+Example:
+```
+datetime_fields = [
+    ("created", _("Created")),
+    ("updated", _("Updated")),
+    ("sent", _("Sent")),
+    ("last_login", _("Last login")),
+    ("last_notified", _("Last notified")),
+    ("rir_status_updated", _("RIR status updated")),
+    ("ixf_last_import", _("IX-F Last Import")),
+]
+```
+
+The formatted fields will be added to the ModelAdmin class with appropriate short descriptions and ordering.
+
+Usage:
+```
+class YourModelAdmin(admin.ModelAdmin, ISODateTimeMixin):
+    list_display = ("name", "iso_created", "iso_updated", "other_fields",)
+```
+
+
 ## IXFImportEmailAdmin
 
 ```
-IXFImportEmailAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+IXFImportEmailAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Export mixin.
@@ -524,7 +558,7 @@ and a boolean indicating if the results may contain duplicates.
 ## IXFMemberDataAdmin
 
 ```
-IXFMemberDataAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+IXFMemberDataAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Export mixin.
@@ -564,7 +598,7 @@ Can be overridden by the user in subclasses.
 #### has_delete_permission
 `def has_delete_permission(self, request, obj=None)`
 
-Return True if the given request has permission to change the given
+Return True if the given request has permission to delete the given
 Django model instance, the default implementation doesn't examine the
 `obj` parameter.
 
@@ -575,7 +609,7 @@ request has permission to delete *any* object of the given type.
 
 ---
 #### response_change
-`def response_change(*args, **kwargs)`
+`def response_change(self, request, obj)`
 
 Determine the HttpResponse for the change_view stage.
 
@@ -646,7 +680,7 @@ These attributes / properties will be available on instances of the class
 #### has_delete_permission
 `def has_delete_permission(self, request, obj=None)`
 
-Return True if the given request has permission to change the given
+Return True if the given request has permission to delete the given
 Django model instance, the default implementation doesn't examine the
 `obj` parameter.
 
@@ -688,7 +722,7 @@ Can be overridden by the user in subclasses.
 #### has_delete_permission
 `def has_delete_permission(self, request, obj=None)`
 
-Return True if the given request has permission to change the given
+Return True if the given request has permission to delete the given
 Django model instance, the default implementation doesn't examine the
 `obj` parameter.
 
@@ -730,7 +764,7 @@ Can be overridden by the user in subclasses.
 #### has_delete_permission
 `def has_delete_permission(self, request, obj)`
 
-Return True if the given request has permission to change the given
+Return True if the given request has permission to delete the given
 Django model instance, the default implementation doesn't examine the
 `obj` parameter.
 
@@ -744,7 +778,7 @@ request has permission to delete *any* object of the given type.
 ## IXLanPrefixAdmin
 
 ```
-IXLanPrefixAdmin(peeringdb_server.admin.SoftDeleteAdmin)
+IXLanPrefixAdmin(peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Soft delete admin.
@@ -807,7 +841,7 @@ These attributes / properties will be available on instances of the class
 ## InternetExchangeAdmin
 
 ```
-InternetExchangeAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin)
+InternetExchangeAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Extend from this model admin if you want to add verification queue
@@ -850,7 +884,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 ## InternetExchangeFacilityAdmin
 
 ```
-InternetExchangeFacilityAdmin(peeringdb_server.admin.SoftDeleteAdmin)
+InternetExchangeFacilityAdmin(peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Soft delete admin.
@@ -958,7 +992,7 @@ Renders the controls or a status message.
 ## NetworkAdmin
 
 ```
-NetworkAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin)
+NetworkAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Extend from this model admin if you want to add verification queue
@@ -970,6 +1004,16 @@ approve | deny controls to the top of its form.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
+
+### Methods
+
+#### get_search_results
+`def get_search_results(self, request, queryset, search_term)`
+
+Return a tuple containing a queryset to implement the search
+and a boolean indicating if the results may contain duplicates.
+
+---
 
 ## NetworkAdminForm
 
@@ -1001,7 +1045,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 ## NetworkContactAdmin
 
 ```
-NetworkContactAdmin(peeringdb_server.admin.SoftDeleteAdmin)
+NetworkContactAdmin(peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Soft delete admin.
@@ -1035,7 +1079,7 @@ These attributes / properties will be available on instances of the class
 ## NetworkFacilityAdmin
 
 ```
-NetworkFacilityAdmin(peeringdb_server.admin.SoftDeleteAdmin)
+NetworkFacilityAdmin(peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Soft delete admin.
@@ -1078,7 +1122,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 ## NetworkIXLanAdmin
 
 ```
-NetworkIXLanAdmin(peeringdb_server.admin.SoftDeleteAdmin)
+NetworkIXLanAdmin(peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Soft delete admin.
@@ -1097,6 +1141,33 @@ These attributes / properties will be available on instances of the class
 
 Return a tuple containing a queryset to implement the search
 and a boolean indicating if the results may contain duplicates.
+
+---
+
+## NetworkIXLanAdminForm
+
+```
+NetworkIXLanAdminForm(peeringdb_server.admin.StatusForm)
+```
+
+The main implementation of all the Form logic. Note that this class is
+different than Form. See the comments by the Form class for more info. Any
+improvements to the form API should be made to this class, not to the Form
+class.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+### Methods
+
+#### \__init__
+`def __init__(self, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
 
 ---
 
@@ -1140,7 +1211,7 @@ These attributes / properties will be available on instances of the class
 ## OrganizationAPIKeyAdmin
 
 ```
-OrganizationAPIKeyAdmin(rest_framework_api_key.admin.APIKeyModelAdmin)
+OrganizationAPIKeyAdmin(rest_framework_api_key.admin.APIKeyModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Encapsulate all admin options and functionality for a given model.
@@ -1155,7 +1226,7 @@ These attributes / properties will be available on instances of the class
 ## OrganizationAdmin
 
 ```
-OrganizationAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin)
+OrganizationAdmin(peeringdb_server.admin.ModelAdminWithVQCtrl, peeringdb_server.admin.SoftDeleteAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Extend from this model admin if you want to add verification queue
@@ -1210,7 +1281,7 @@ These attributes / properties will be available on instances of the class
 #### has_delete_permission
 `def has_delete_permission(self, request, obj=None)`
 
-Return True if the given request has permission to change the given
+Return True if the given request has permission to delete the given
 Django model instance, the default implementation doesn't examine the
 `obj` parameter.
 
@@ -1241,7 +1312,7 @@ These attributes / properties will be available on instances of the class
 #### has_delete_permission
 `def has_delete_permission(self, request, obj=None)`
 
-Return True if the given request has permission to change the given
+Return True if the given request has permission to delete the given
 Django model instance, the default implementation doesn't examine the
 `obj` parameter.
 
@@ -1317,7 +1388,7 @@ These attributes / properties will be available on instances of the class
 #### has_delete_permission
 `def has_delete_permission(self, request, obj=None)`
 
-Return True if the given request has permission to change the given
+Return True if the given request has permission to delete the given
 Django model instance, the default implementation doesn't examine the
 `obj` parameter.
 
@@ -1353,7 +1424,7 @@ ModelAdmin to a tuple of (callable, name, description) for each action.
 
 ---
 #### save_formset
-`def save_formset(*args, **kwargs)`
+`def save_formset(self, request, form, formset, change)`
 
 Given an inline formset save it to the database.
 
@@ -1482,6 +1553,22 @@ protected.
 
 ---
 
+## TOTPDeviceAdminCustom
+
+```
+TOTPDeviceAdminCustom(django_otp.plugins.otp_totp.admin.TOTPDeviceAdmin)
+```
+
+:class:`~django.contrib.admin.ModelAdmin` for
+:class:`~django_otp.plugins.otp_totp.models.TOTPDevice`.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
 ## UserAPIKeyAdmin
 
 ```
@@ -1500,7 +1587,7 @@ These attributes / properties will be available on instances of the class
 ## UserAdmin
 
 ```
-UserAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.ModelAdminWithVQCtrl, django.contrib.auth.admin.UserAdmin)
+UserAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.ModelAdminWithVQCtrl, django.contrib.auth.admin.UserAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
 Export mixin.
@@ -1534,6 +1621,34 @@ UserCreationForm(peeringdb_server.forms.UserCreationForm)
 
 A form that creates a user, with no privileges, from the given username and
 password.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+### Methods
+
+#### clean_username
+`def clean_username(self)`
+
+Reject usernames that differ only in case.
+
+---
+
+## UserDeviceInline
+
+```
+UserDeviceInline(django.contrib.admin.options.TabularInline)
+```
+
+Options for inline editing of ``model`` instances.
+
+Provide ``fk_name`` to specify the attribute name of the ``ForeignKey``
+from ``model`` to its parent. This is required if ``model`` has more than
+one ``ForeignKey`` to its parent.
 
 
 ### Instanced Attributes
@@ -1583,6 +1698,64 @@ Allow deletion of objects if the user is superuser
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
+
+## UserOrgAffiliationRequestHistoryAdmin
+
+```
+UserOrgAffiliationRequestHistoryAdmin(django.contrib.admin.options.ModelAdmin)
+```
+
+Encapsulate all admin options and functionality for a given model.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+### Methods
+
+#### get_queryset
+`def get_queryset(self, request)`
+
+Return a QuerySet of all model instances that can be edited by the
+admin site. This is used by changelist_view.
+
+---
+#### has_add_permission
+`def has_add_permission(self, request)`
+
+Return True if the given request has permission to add an object.
+Can be overridden by the user in subclasses.
+
+---
+#### has_change_permission
+`def has_change_permission(self, request, obj=None)`
+
+Return True if the given request has permission to change the given
+Django model instance, the default implementation doesn't examine the
+`obj` parameter.
+
+Can be overridden by the user in subclasses. In such case it should
+return True if the given request has permission to change the `obj`
+model instance. If `obj` is None, this should return True if the given
+request has permission to change *any* object of the given type.
+
+---
+#### has_delete_permission
+`def has_delete_permission(self, request, obj=None)`
+
+Return True if the given request has permission to delete the given
+Django model instance, the default implementation doesn't examine the
+`obj` parameter.
+
+Can be overridden by the user in subclasses. In such case it should
+return True if the given request has permission to delete the `obj`
+model instance. If `obj` is None, this should return True if the given
+request has permission to delete *any* object of the given type.
+
+---
 
 ## UserOrgAffiliationRequestInline
 
@@ -1668,6 +1841,25 @@ These attributes / properties will be available on instances of the class
 Given an inline formset save it to the database.
 
 ---
+
+## UserWebauthnSecurityKeyInline
+
+```
+UserWebauthnSecurityKeyInline(django.contrib.admin.options.TabularInline)
+```
+
+Options for inline editing of ``model`` instances.
+
+Provide ``fk_name`` to specify the attribute name of the ``ForeignKey``
+from ``model`` to its parent. This is required if ``model`` has more than
+one ``ForeignKey`` to its parent.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
 
 ## VerificationQueueAdmin
 

@@ -1,4 +1,4 @@
-Generated from api_key_views.py on 2023-04-12 10:09:44.563425
+Generated from api_key_views.py on 2024-11-12 18:19:35.039193
 
 # peeringdb_server.api_key_views
 
@@ -8,7 +8,7 @@ Views for organization api key management.
 ---
 
 ## add_user_key
-`def add_user_key(*args, **kwds)`
+`def add_user_key(request, kwargs)`
 
 Create a new User API key.
 
@@ -23,7 +23,7 @@ the given org.
 
 ---
 ## remove_user_key
-`def remove_user_key(*args, **kwds)`
+`def remove_user_key(request, kwargs)`
 
 Revoke user api key.
 

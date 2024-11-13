@@ -1,4 +1,4 @@
-Generated from validators.py on 2023-04-12 10:09:44.563425
+Generated from validators.py on 2024-11-12 18:19:35.039193
 
 # peeringdb_server.validators
 
@@ -35,6 +35,23 @@ Arguments:
 Returns:
 
 - validated value (`str`)
+
+---
+## validate_asn_prefix
+`def validate_asn_prefix(asn)`
+
+Validates a ASN prefix value
+
+Will raise RestValidationError on failure
+
+Arguments:
+
+- asn(`str`)
+
+Returns:
+
+- status (`bool`)
+- validated_value (`int`)
 
 ---
 ## validate_bool
@@ -132,6 +149,41 @@ Arguments:
 Returns:
 
 - validated value (`dict`)
+
+---
+## validate_verified_update_data
+`def validate_verified_update_data(ref_tag, obj_id, data)`
+
+Validates a VerifiedUpdate updates value
+
+Will return a False and message on failure
+
+Arguments:
+
+- ref_tag(`str`)
+- obj_id(`int`)
+- data(`dict`)
+
+Returns:
+
+- status (`bool`)
+- validated data (`dict`)
+
+---
+## validate_website_override
+`def validate_website_override(website, org_website)`
+
+Validates a website value
+
+Will raise a ValidationError on failure
+
+Arguments:
+
+- value(`str`)
+
+Returns:
+
+- validated value (`str`)
 
 ---
 ## validate_zipcode

@@ -45752,13 +45752,11 @@ paths:
                   type: boolean
                 operational:
                   type: boolean
-                net_side:
-                  type: string
-                  readOnly: true
+                net_side_id:
+                  type: integer
                   nullable: true
-                ix_side:
-                  type: string
-                  readOnly: true
+                ix_side_id:
+                  type: integer
                   nullable: true
                 created:
                   type: string
@@ -47447,13 +47445,11 @@ paths:
                   type: boolean
                 operational:
                   type: boolean
-                net_side:
-                  type: string
-                  readOnly: true
+                net_side_id:
+                  type: integer
                   nullable: true
-                ix_side:
-                  type: string
-                  readOnly: true
+                ix_side_id:
+                  type: integer
                   nullable: true
                 created:
                   type: string
@@ -49093,13 +49089,11 @@ paths:
                   type: boolean
                 operational:
                   type: boolean
-                net_side:
-                  type: string
-                  readOnly: true
+                net_side_id:
+                  type: integer
                   nullable: true
-                ix_side:
-                  type: string
-                  readOnly: true
+                ix_side_id:
+                  type: integer
                   nullable: true
                 created:
                   type: string
@@ -68847,13 +68841,11 @@ components:
           type: boolean
         operational:
           type: boolean
-        net_side:
-          type: string
-          readOnly: true
+        net_side_id:
+          type: integer
           nullable: true
-        ix_side:
-          type: string
-          readOnly: true
+        ix_side_id:
+          type: integer
           nullable: true
         created:
           type: string

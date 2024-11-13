@@ -83,6 +83,7 @@ from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 from two_factor.utils import default_device
+from two_factor.views import SetupView as BaseSetupView
 
 import peeringdb_server.geo
 from peeringdb_server import settings
@@ -115,6 +116,7 @@ from peeringdb_server.models import (
     Carrier,
     CarrierFacility,
     DataChangeWatchedObject,
+    EnvironmentSetting,
     Facility,
     InternetExchange,
     InternetExchangeFacility,
@@ -289,9 +291,14 @@ def beta_sync_dt():
     return dt.replace(hour=0, minute=0, second=0)
 
 
-def update_env_beta_sync_dt(env):
+def update_env_settings(env):
     if settings.RELEASE_ENV == "beta":
         env.update(beta_sync_dt=beta_sync_dt())
+
+    if settings.TUTORIAL_MODE:
+        env["TUTORIAL_MODE_MESSAGE"] = EnvironmentSetting.get_setting_value(
+            "TUTORIAL_MODE_MESSAGE"
+        )
 
 
 def make_env(**data):
@@ -299,7 +306,7 @@ def make_env(**data):
     env.update(**BASE_ENV)
     env.update(**{"global_stats": global_stats()})
     env.update(**data)
-    update_env_beta_sync_dt(env)
+    update_env_settings(env)
 
     return env
 
@@ -1263,7 +1270,7 @@ def view_registration(request):
         env.update(
             {"global_stats": global_stats(), "register_form": UserCreationForm()}
         )
-        update_env_beta_sync_dt(env)
+        update_env_settings(env)
         return HttpResponse(template.render(env, request))
 
     elif request.method == "POST":
@@ -1281,17 +1288,27 @@ def view_registration(request):
                 {"email": _("This email address has already been used")}, status=400
             )
 
-        # require min password length
-        # FIXME: impl password strength validation
-        if len(form.cleaned_data["password1"]) < 10:
-            return JsonResponse(
-                {"password1": _("Needs to be at least 10 characters long")}, status=400
-            )
         # filter out invalid username characters
         if form.cleaned_data["username"].startswith("apikey"):
             return JsonResponse(
-                {"username": _("Username cannot start with 'apikey'")}, status=400
+                {"username": _("Username cannot start with 'apikey'")},
+                status=400,
             )
+
+        # require min password length
+        # FIXME: impl password strength validation
+
+        # Avoid None
+        password = form.cleaned_data.get("password1") or ""
+
+        # Check password length constraints
+        if len(password) < 10:
+            return JsonResponse(
+                {"password1": _("Password must be at least 10 characters long.")},
+                status=400,
+            )
+        if len(password) > dj_settings.MAX_LENGTH_PASSWORD:
+            return JsonResponse({"password1": _("Password is too long.")}, status=400)
         # create the user
         user = form.save()
 
@@ -1365,7 +1382,7 @@ def view_index(request, errors=None):
     env = BASE_ENV.copy()
     env.update({"errors": errors, "global_stats": global_stats(), "recent": recent})
 
-    update_env_beta_sync_dt(env)
+    update_env_settings(env)
 
     return HttpResponse(template.render(env, request))
 
@@ -1398,7 +1415,7 @@ def view_component(
         }
     )
 
-    update_env_beta_sync_dt(env)
+    update_env_settings(env)
 
     env.update(**kwargs)
     return HttpResponse(template.render(env, request))
@@ -3942,3 +3959,18 @@ def search_elasticsearch(request):
 def view_profile_passkey(request):
     if request.user.is_authenticated:
         return render(request, "site/profile-passkeys.html")
+
+
+class TwoFactorSetupView(BaseSetupView):
+    def post(self, request, *args, **kwargs):
+        if not request.user.email_confirmed:
+            return JsonResponse(
+                {
+                    "error": _(
+                        "Your email must be confirmed before enabling two-factor authentication."
+                    )
+                },
+                status=403,
+            )
+
+        return super().post(request, *args, **kwargs)

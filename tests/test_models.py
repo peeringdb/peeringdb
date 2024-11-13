@@ -5,6 +5,7 @@ from peeringdb_server.models import (
     Facility,
     InternetExchange,
     Network,
+    NetworkFacility,
     NetworkIXLan,
     Organization,
 )
@@ -58,6 +59,12 @@ def entities():
             status="ok",
             is_rs_peer=True,
             operational=False,
+        )
+
+        netfac = NetworkFacility.objects.create(
+            network=network,
+            facility=facility,
+            local_asn=123,
         )
 
     return {
@@ -139,3 +146,28 @@ def test_net_side_ix_side(entities):
 
     assert netixlan.net_side
     assert netixlan.ix_side
+
+
+@pytest.mark.django_db
+def test_netixlan_save_will_sync_asn(entities):
+    netixlan = NetworkIXLan.objects.first()
+    assert netixlan.asn == netixlan.network.asn
+
+    netixlan.asn = 2
+    with reversion.create_revision():
+        netixlan.save()
+
+    assert netixlan.asn == netixlan.network.asn
+
+
+@pytest.mark.django_db
+def test_netfac_save_will_sync_asn(entities):
+    netfac = NetworkFacility.objects.first()
+    assert netfac.local_asn == netfac.network.asn
+
+    netfac.local_asn = 2
+
+    with reversion.create_revision():
+        netfac.save()
+
+    assert netfac.local_asn == netfac.network.asn

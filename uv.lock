@@ -738,7 +738,7 @@ wheels = [
 [[package]]
 name = "django-peeringdb"
 version = "3.4.0"
-source = { git = "https://github.com/peeringdb/django-peeringdb?rev=support_202408#4468fed548868f729658a581405c0ce2ad5c150e" }
+source = { git = "https://github.com/peeringdb/django-peeringdb?rev=support_202409#520dee5a5e9b51c69b7fc3e309c415421d137d2c" }
 dependencies = [
     { name = "asgiref" },
     { name = "django-countries" },
@@ -1643,7 +1643,7 @@ requires-dist = [
     { name = "django-import-export", specifier = ">2.8.0,<3" },
     { name = "django-inet", specifier = ">=1.1.1" },
     { name = "django-oauth-toolkit", specifier = ">=2" },
-    { name = "django-peeringdb", git = "https://github.com/peeringdb/django-peeringdb?rev=support_202408" },
+    { name = "django-peeringdb", git = "https://github.com/peeringdb/django-peeringdb?rev=support_202409" },
     { name = "django-phonenumber-field", specifier = ">=0.6" },
     { name = "django-ratelimit", specifier = ">=4.0.0" },
     { name = "django-read-only", specifier = ">=1.15.0" },
@@ -1686,7 +1686,7 @@ dev = [
     { name = "mkdocs", specifier = ">=1.1.2" },
     { name = "pre-commit", specifier = ">=2.13" },
     { name = "pydot", specifier = ">=1.4.2" },
-    { name = "pymdgen", specifier = ">=1" },
+    { name = "pymdgen", specifier = ">=1.1.0" },
     { name = "pytest", specifier = ">=6" },
     { name = "pytest-cov", specifier = ">=1" },
     { name = "pytest-django", specifier = ">=2.9.1" },
@@ -1959,9 +1959,16 @@ wheels = [
 
 [[package]]
 name = "pymdgen"
-version = "1.0.0"
+version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/76/50/66a3dd25a3127204db1f1077edfc250f4dc3b52142fd776556399749ff54/pymdgen-1.0.0.tar.gz", hash = "sha256:d02d298074db01269e6817b41016461cae9cc1a6231720ccff631687bf2f33da", size = 8748 }
+dependencies = [
+    { name = "pluggy" },
+    { name = "pre-commit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5b/c1/4b9e72e6e6614edb4c8b400b0fc3b714a0b6e64824c56d56211ee46ea19d/pymdgen-1.1.0.tar.gz", hash = "sha256:b171fc1b627ba780245255eb022613f46557e8186c73eae31a55c7acdacbaa24", size = 56251 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/ba/bee81472b3e1a841b4ce0203b843fb54e5ed1bf37c33f49d6b077ea699da/pymdgen-1.1.0-py3-none-any.whl", hash = "sha256:c8d165c8db0be119c4e0a6d8a6fa5abe3cf530c73353081571db0f4c66922898", size = 10672 },
+]
 
 [[package]]
 name = "pyopenssl"

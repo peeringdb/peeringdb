@@ -1,4 +1,4 @@
-Generated from org_admin_views.py on 2023-04-12 10:09:44.563425
+Generated from org_admin_views.py on 2024-11-12 18:19:35.039193
 
 # peeringdb_server.org_admin_views
 
@@ -8,7 +8,7 @@ View for organization administrative actions (/org endpoint).
 ---
 
 ## extract_permission_id
-`def extract_permission_id(source, dest, entity, org)`
+`def extract_permission_id(source, dest, entity, org, is_session=False)`
 
 Extract a user's permissioning id for the specified
 entity from source <dict> and store it in dest <dict>.
@@ -19,10 +19,12 @@ Source should be a dict containing django-namespace-perms
 Dest should be a dict where permission ids are to be
 exracted to.
 
-Entity can either be a HandleRef instance or class.
+Entity can either be a HandleRef instance or class or str.
 
 Org must be an Organization instance that owns the
 entity.
+
+is_session to handle the peering sessions permission
 
 ---
 ## load_all_user_permissions
