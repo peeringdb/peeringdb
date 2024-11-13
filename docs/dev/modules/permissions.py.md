@@ -1,4 +1,4 @@
-Generated from permissions.py on 2023-04-12 10:09:44.563425
+Generated from permissions.py on 2024-11-12 18:19:35.039193
 
 # peeringdb_server.permissions
 

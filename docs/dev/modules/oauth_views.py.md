@@ -1,4 +1,4 @@
-Generated from oauth_views.py on 2023-08-15 16:04:08.595120
+Generated from oauth_views.py on 2024-11-12 18:19:35.039193
 
 # peeringdb_server.oauth_views
 
@@ -82,3 +82,13 @@ LoginRequiredMixin(django.contrib.auth.mixins.AccessMixin)
 ```
 
 Verify that the current user is authenticated.
+
+
+## OAuthMetadataView
+
+```
+OAuthMetadataView(django.views.generic.base.View)
+```
+
+Intentionally simple parent class for all views. Only implements
+dispatch-by-method and simple sanity checking.

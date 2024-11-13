@@ -1,4 +1,4 @@
-Generated from rest_throttles.py on 2023-04-12 10:09:44.563425
+Generated from rest_throttles.py on 2024-11-12 18:19:35.039193
 
 # peeringdb_server.rest_throttles
 
@@ -198,5 +198,42 @@ Returns the recommended next request time in seconds.
 This is a custom implmentation of the original wait() logic that can
 also handle dynamic downward adjustments of rate limits (through
 changing EnvironmentSetting variables for example)
+
+---
+
+## WriteRateThrottle
+
+```
+WriteRateThrottle(rest_framework.throttling.UserRateThrottle)
+```
+
+Limits the rate of API calls that may be made by a given user.
+
+The user id will be used as a unique cache key if the user is
+authenticated.  For anonymous requests, the IP address of the request will
+be used.
+
+
+### Methods
+
+#### \__init__
+`def __init__(self)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
+#### get_cache_key
+`def get_cache_key(self, request, view)`
+
+Should return a unique cache-key which can be used for throttling.
+Must be overridden.
+
+May return `None` if the request should not be throttled.
+
+---
+#### get_rate
+`def get_rate(self)`
+
+Determine the string representation of the allowed request rate.
 
 ---

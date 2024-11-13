@@ -1,4 +1,4 @@
-Generated from renderers.py on 2023-04-12 10:09:44.702367
+Generated from renderers.py on 2024-11-12 18:19:35.408625
 
 # peeringdb_server.renderers
 
@@ -44,7 +44,7 @@ Does *not* apply JSON's character escaping for non-ascii characters.
 ### Methods
 
 #### render
-`def render(self, data, accepted_media_type=None, renderer_context=None, file_name=None)`
+`def render(self, data, accepted_media_type=None, renderer_context=None, file_name=None, default_meta=None)`
 
 Tweak output rendering and pass to parent.
 

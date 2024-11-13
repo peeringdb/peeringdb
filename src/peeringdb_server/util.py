@@ -22,8 +22,10 @@ from peeringdb_server.permissions import APIPermissionsApplicator  # noqa
 def disable_auto_now_and_save(entity):
     updated_field = entity._meta.get_field("updated")
     updated_field.auto_now = False
-    entity.save()
-    updated_field.auto_now = True
+    try:
+        entity.save()
+    finally:
+        updated_field.auto_now = True
 
 
 def round_decimal(value, places):

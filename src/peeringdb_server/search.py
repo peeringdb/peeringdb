@@ -252,37 +252,56 @@ def new_elasticsearch():
     return es
 
 
-def order_results_alphabetically(result, search_terms):
+def order_results_alphabetically(result, search_terms, original_query=""):
     """
-    Order the search results alphabetically and put the exact case-insensitive matches in front.
+    Order the search results alphabetically and put the exact case-insensitive matches in front with special handling for OR queries.
 
     Args:
-    - result: A dictionary containing categories and their search results.
-    - search_term: A list of search terms.
+    - result: A dictionary containing categories and their search results
+    - search_terms: A list of search terms
+    - original_query: The original search query string (e.g. "Equinix OR FR5")
 
     Returns:
     - result: A dictionary containing the search results in alphabetical order.
     """
+    # Check if this is an OR query
+    if " OR " in original_query:
+        # Get the term after OR
+        or_term = original_query.split(" OR ")[1].strip().lower()
 
     # Make sure the search terms are lower case
     search_terms_lower = [term.lower() for term in search_terms]
 
-    # Add the search terms as a single string to the list of search terms
+    # Add the search as a single string to the list of search terms
     search_terms_lower.append(" ".join(search_terms_lower))
 
     for category in result:
         result[category] = sorted(result[category], key=lambda x: x["name"].lower())
 
-        exact_match_index = -1
+        if " OR " in original_query:
+            # Find items matching the OR term
+            or_matches = []
+            non_or_matches = []
 
-        for index, item in enumerate(result[category]):
-            if item["name"].lower() in search_terms_lower:
-                exact_match_index = index
-                break
+            for item in result[category]:
+                if or_term in item["name"].lower():
+                    or_matches.append(item)
+                else:
+                    non_or_matches.append(item)
 
-        if exact_match_index != -1:
-            exact_match = result[category].pop(exact_match_index)
-            result[category].insert(0, exact_match)
+            # Reorder the list with OR matches first
+            result[category] = or_matches + non_or_matches
+        else:
+            exact_match_index = -1
+
+            for index, item in enumerate(result[category]):
+                if item["name"].lower() in search_terms_lower:
+                    exact_match_index = index
+                    break
+
+            if exact_match_index != -1:
+                exact_match = result[category].pop(exact_match_index)
+                result[category].insert(0, exact_match)
 
     return result
 
@@ -334,17 +353,59 @@ def escape_query_string(query_string):
     return escaped_string
 
 
+def add_and_between_keywords(keywords):
+    """
+    Add 'AND' between keywords in the list that are neither 'AND' nor 'OR'.
+
+    This function iterates through a list of keywords and appends 'AND'
+    between any consecutive keywords that are not 'AND' or 'OR'.
+
+    Args:
+        keywords (list of str): A list of keywords to process.
+
+    Returns:
+        list of str: A new list with 'AND' inserted between applicable keywords.
+    """
+
+    result = []
+
+    for i, keyword in enumerate(keywords):
+        result.append(keyword)
+
+        # Check if the current keyword is not the last one
+        if i < len(keywords) - 1:
+            # If the next keyword is neither 'AND' nor 'OR', append 'AND'
+            if keyword not in ["AND", "OR"] and keywords[i + 1] not in ["AND", "OR"]:
+                result.append("AND")
+
+    return result
+
+
 def search_v2(term, geo={}):
     """
     Search searchable objects (ixp, network, facility ...) by term on elasticsearch engine.
 
+    This function constructs a search query based on the provided term, escaping special
+    characters to ensure safety in Elasticsearch. It processes the term into keywords,
+    adds 'AND' between them as necessary, and formats the query for the search.
+
     Returns result dict.
     """
 
+    # Initialize a new Elasticsearch instance
     es = new_elasticsearch()
+
+    # Convert the term elements to strings and join them with a space
     qs = " ".join([str(elem) for elem in term])
+
+    # Escape special characters in the query string to make it safe for Elasticsearch
     safe_qs = escape_query_string(qs)
+
+    # Split the escaped query string into keywords using three spaces as the delimiter
     keywords = safe_qs.split()
+
+    # Add 'AND' between keywords as necessary
+    keywords = add_and_between_keywords(keywords)
 
     indexes = ["fac", "ix", "net", "org", "campus", "carrier"]  # Add new index names
     # will track the exact matches to put them on top of the results
@@ -359,6 +420,7 @@ def search_v2(term, geo={}):
             look_for_exact_matches.append(keyword)
             result += f" *{keyword}*"
     term = result
+
     if PARTIAL_IPV6_ADDRESS.match(" ".join(qs.split())):
         ipv6 = "\\:".join(qs.split(":"))
         term = f"*{ipv6}*"
@@ -452,7 +514,7 @@ def search_v2(term, geo={}):
                     pk_map,
                 )
 
-    result = order_results_alphabetically(result, look_for_exact_matches)
+    result = order_results_alphabetically(result, look_for_exact_matches, qs)
 
     return result
 
@@ -497,3 +559,9 @@ def append_result(tag, pk, name, org_id, sub_name, result, pk_map, extra={}):
             "extra": extra,
         }
     )
+
+
+def format_search_query(query):
+    if " " in query and " AND " not in query:
+        query = query.replace(" ", " AND ")
+    return query

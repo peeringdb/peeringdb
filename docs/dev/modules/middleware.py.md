@@ -1,9 +1,21 @@
-Generated from middleware.py on 2023-04-12 10:09:44.563425
+Generated from middleware.py on 2024-11-12 18:19:35.039193
 
 # peeringdb_server.middleware
 
 Custom django middleware.
 
+# Functions
+---
+
+## get_auth_identity
+`def get_auth_identity(request)`
+
+Returns a string that uniquely identifies the authentication
+method used for the request.
+
+This is used to cache negative authentication responses
+
+---
 # Classes
 ---
 
@@ -133,5 +145,41 @@ On the login and registration processes.
 If request.session was modified, or if the configuration is to save the
 session every time, save the changes and set a session cookie or delete
 the session cookie if the session has been emptied.
+
+---
+
+## RedisNegativeCacheMiddleware
+
+```
+RedisNegativeCacheMiddleware(django.utils.deprecation.MiddlewareMixin)
+```
+
+Middleware that uses Django's cache framework with Redis backend to cache error responses.
+
+
+### Methods
+
+#### generate_cache_key
+`def generate_cache_key(self, request)`
+
+Generate the cache key using the IP address, HTTP_AUTHORIZATION value or session ID, request path, and URL parameters.
+
+---
+#### get_ident
+`def get_ident(self, request)`
+
+Get the IP address of the client, taking both X-Forwarded-For and REMOTE_ADDR into account.
+
+---
+#### process_request
+`def process_request(self, request)`
+
+Process the request before it's passed to the view.
+
+---
+#### process_response
+`def process_response(self, request, response)`
+
+Process the response before it's sent to the client.
 
 ---

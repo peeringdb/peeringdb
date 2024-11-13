@@ -1,4 +1,4 @@
-Generated from util.py on 2023-04-12 10:09:44.563425
+Generated from util.py on 2024-11-12 18:19:35.039193
 
 # peeringdb_server.util
 
@@ -7,6 +7,17 @@ Assorted utility functions for peeringdb site templates.
 # Functions
 ---
 
+## add_kmz_overlay_watermark
+`def add_kmz_overlay_watermark(kml)`
+
+add overlay watermark in kmz
+
+Args:
+    kml: Kml
+Returns:
+   None
+
+---
 ## coerce_ipaddr
 `def coerce_ipaddr(value)`
 

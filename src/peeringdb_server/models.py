@@ -5284,21 +5284,6 @@ class NetworkFacility(
         return f"netfac{self.id} AS{self.network.asn} {self.network.name} <-> {self.facility.name}"
 
     def clean(self):
-        # when validating an existing netfac that has a mismatching
-        # local_asn value raise a validation error stating that it needs
-        # to be moved
-        #
-        # this is to catch and force correction of instances where they
-        # could not be migrated automatically during rollout of #168
-        # because the targeted local_asn did not exist in peeringdb
-
-        if self.id and self.local_asn != self.network.asn:
-            raise ValidationError(
-                _(
-                    "This entity was created for the ASN {} - please remove it from this network and recreate it under the correct network"
-                ).format(self.local_asn)
-            )
-
         # `local_asn` will eventually be dropped from the schema
         # for now make sure it is always a match to the related
         # network (#168)
@@ -5684,21 +5669,6 @@ class NetworkIXLan(
         # make sure this ip address is not claimed anywhere else
 
         self.validate_ip_conflicts()
-
-        # when validating an existing netixlan that has a mismatching
-        # asn value raise a validation error stating that it needs
-        # to be moved
-        #
-        # this is to catch and force correction of instances where they
-        # could not be migrated automatically during rollout of #168
-        # because the targeted asn did not exist in peeringdb
-
-        if self.id and self.asn != self.network.asn:
-            raise ValidationError(
-                _(
-                    "This entity was created for the ASN {} - please remove it from this network and recreate it under the correct network"
-                ).format(self.asn)
-            )
 
         # `asn` will eventually be dropped from the schema
         # for now make sure it is always a match to the related
@@ -6640,6 +6610,11 @@ class EnvironmentSetting(StripFieldMixin):
                 "DATABASE_LAST_SYNC",
                 _("Show last database sync"),
             ),
+            # tutorial mode sync message
+            (
+                "TUTORIAL_MODE_MESSAGE",
+                _("Tutorial mode banner message"),
+            ),
         ),
         unique=True,
     )
@@ -6699,6 +6674,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_RATE_USER_MSG": "value_str",
         "API_THROTTLE_RATE_WRITE": "value_str",
         "DATABASE_LAST_SYNC": "value_str",
+        "TUTORIAL_MODE_MESSAGE": "value_str",
     }
 
     setting_validators = {

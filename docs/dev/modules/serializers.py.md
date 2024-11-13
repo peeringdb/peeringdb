@@ -1,4 +1,4 @@
-Generated from serializers.py on 2023-04-12 10:09:44.563425
+Generated from serializers.py on 2024-11-12 18:19:35.039193
 
 # peeringdb_server.serializers
 
@@ -85,7 +85,7 @@ and will fail if no matching asn is found.
 ### Methods
 
 #### \__call__
-`def __call__(self, attrs)`
+`def __call__(self, attrs, serializer_field)`
 
 Call self as a function.
 
@@ -117,6 +117,15 @@ Currently supports: facility
 
 ---
 
+### Methods
+
+#### to_representation
+`def to_representation(self, data)`
+
+Object instance -> Dict of primitive datatypes.
+
+---
+
 ## CarrierFacilitySerializer
 
 ```
@@ -134,6 +143,15 @@ CarrierSerializer(peeringdb_server.serializers.ModelSerializer)
 
 Serializer for peeringdb_server.models.Carrier
 
+
+### Class Methods
+
+#### prepare_query
+`def prepare_query(cls, qset, **kwargs)`
+
+Allows filtering by indirect relationships, similar to NetworkSerializer.
+
+---
 
 ### Methods
 
@@ -161,6 +179,12 @@ Possible relationship queries:
 
 ### Methods
 
+#### \__init__
+`def __init__(self, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
 #### to_internal_value
 `def to_internal_value(self, data)`
 
@@ -171,6 +195,14 @@ Dict of native values <- Dict of primitive datatypes.
 `def to_representation(self, instance)`
 
 Object instance -> Dict of primitive datatypes.
+
+---
+#### update
+`def update(self, instance, validated_data)`
+
+When updating a geo-enabled object,
+update the model first
+and then normalize the geofields.
 
 ---
 
@@ -267,7 +299,7 @@ a address suggestion should be provided to the user.
 
 ---
 #### update
-`def update(self, instance, validated_data)`
+`def update(self, instance, validated_data, ignore_geosync=False)`
 
 When updating a geo-enabled object,
 update the model first
@@ -336,7 +368,7 @@ Possible relationship queries:
 
 Entities created via the API should go into the verification
 queue with status pending if they are in the QUEUE_ENABLED
-list.
+list or suggest is True.
 
 ---
 #### to_representation
@@ -471,11 +503,11 @@ but we can start rendering in the `social_media` field as well.
 
 ---
 #### create
-`def create(self, validated_data, auto_approve=False)`
+`def create(self, validated_data, auto_approve=False, suggest=False)`
 
 Entities created via the API should go into the verification
 queue with status pending if they are in the QUEUE_ENABLED
-list.
+list or suggest is True.
 
 ---
 #### finalize_create
@@ -582,6 +614,8 @@ Possible relationship queries:
   - net_id, handled by serializer
   - ixlan_id, handled by serializer
   - ix_id, handled by prepare_query
+  - ixlan_id, handled by serializer
+  - ix_side_id, handled by serializer
 
 
 ### Class Methods
@@ -650,7 +684,7 @@ Currently supports: ixlan_id, ix_id, netixlan_id, netfac_id, fac_id
 
 Entities created via the API should go into the verification
 queue with status pending if they are in the QUEUE_ENABLED
-list.
+list or suggest is True.
 
 ---
 #### finalize_create
@@ -659,10 +693,22 @@ list.
 This will be called on the end of POST request to this serializer.
 
 ---
+#### get_rir_status
+`def get_rir_status(self, inst)`
+
+Normalized RIR status for network
+
+---
 #### to_internal_value
 `def to_internal_value(self, data)`
 
 Dict of native values <- Dict of primitive datatypes.
+
+---
+#### to_representation
+`def to_representation(self, data)`
+
+Object instance -> Dict of primitive datatypes.
 
 ---
 
@@ -730,7 +776,7 @@ methods.
 ### Methods
 
 #### \__call__
-`def __call__(self, attrs)`
+`def __call__(self, attrs, serializer_field)`
 
 Call self as a function.
 
@@ -807,3 +853,25 @@ with address fields.
 At minimum, a model needs a country and city field, but
 address1, address2, zipcode and state are also considered
 if they exist.
+
+
+### Class Methods
+
+#### convert_to_spatial_search
+`def convert_to_spatial_search(cls, filters)`
+
+Checks if the a single city and country are provided
+in the query and will convert the query to a distance search.
+
+Order of operations:
+
+1. check if `city` and `country` are provided
+    a. This is also valid if `city__in` or `country__in` contain
+       a single value
+    b. if country is not provided, attempt to retrieve it from
+       the google geocode api result
+2. retrieve the city bounding box via google geocode
+3. set distance on the filters based on the bounding box, turning
+      the query into a spatial distance search.
+
+---

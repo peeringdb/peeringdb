@@ -94,6 +94,10 @@ class PasswordChangeForm(forms.Form):
         password = self.cleaned_data.get("password")
         if len(password) < 10:
             raise forms.ValidationError(_("Needs to be at least 10 characters long"))
+
+        if len(password) > dj_settings.MAX_LENGTH_PASSWORD:
+            raise forms.ValidationError(_("Password is too long"))
+
         return password
 
     def clean_password_v(self):

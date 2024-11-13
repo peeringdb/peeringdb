@@ -661,6 +661,7 @@ class TestJSON(unittest.TestCase):
 
                 with pytest.raises(InvalidRequestException) as excinfo:
                     db.create(typ, data_status, return_response=True)
+
                 assert "not yet been approved" in str(excinfo.value)
 
             # we test fail because of permissions
@@ -895,15 +896,17 @@ class TestJSON(unittest.TestCase):
                 # in single get mode, expand everything as long as we are at
                 # a relative depth greater than 1
                 if r_depth >= 1:
-                    self.assert_related_depth(
-                        obj.get(pk_fld),
-                        REFTAG_MAP_SLZ.get(pk_fld),
-                        r_depth - 1,
-                        t_depth,
-                        f"{note_tag}.{pk_fld}",
-                        typ=typ,
-                        field_name=pk_fld,
-                    )
+                    serializer_class = REFTAG_MAP_SLZ.get(pk_fld)
+                    if serializer_class:
+                        self.assert_related_depth(
+                            obj.get(pk_fld),
+                            serializer_class,
+                            r_depth - 1,
+                            t_depth,
+                            f"{note_tag}.{pk_fld}",
+                            typ=typ,
+                            field_name=pk_fld,
+                        )
                 else:
                     self.assertIn(
                         type(obj.get(pk_fld)),
@@ -2104,7 +2107,7 @@ class TestJSON(unittest.TestCase):
             ix_side=SHARED["fac_rw_ok"],
         )
         data.pop("net_id")
-        netixlan = NetworkIXLan.objects.create(**data)
+        _ = NetworkIXLan.objects.create(**data)
 
         # Get queryset of netixlan with status="ok"
         netixlan_ids = NetworkIXLan.objects.filter(status="ok").values_list(
@@ -2603,6 +2606,16 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_netfac(self):
+        # remove the existing netfac that was created
+        # in the setup
+        NetworkFacility.objects.get(
+            network_id=SHARED["net_rw_ok"].id, facility_id=SHARED["fac_rw_ok"].id
+        ).delete(hard=True)
+        NetworkFacility.objects.get(
+            network_id=SHARED["net_rw_pending"].id,
+            facility_id=SHARED["fac_rw_pending"].id,
+        ).delete(hard=True)
+
         data = {
             "net_id": SHARED["net_rw_ok"].id,
             "fac_id": SHARED["fac_rw_ok"].id,
@@ -5181,6 +5194,10 @@ class TestJSON(unittest.TestCase):
         net = SHARED["net_rw_ok"]
         fac = SHARED["fac_rw_ok"]
         ixlan = SHARED["ixlan_rw_ok"]
+
+        # delete the existing netfac and netixlan
+        NetworkFacility.objects.get(network=net, facility=fac).delete()
+        NetworkIXLan.objects.get(network=net, ixlan=ixlan).delete()
 
         # test netfac create without asn sent (should auto set)
 

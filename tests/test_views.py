@@ -1,15 +1,16 @@
-import base64
 import re
 
 import pytest
 from allauth.account.models import EmailAddress
-from django.http import response
 from django.test import Client
+from django.urls import reverse
 from django_grainy.models import Group
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from peeringdb_server import settings as pdb_settings
 from peeringdb_server.models import (
+    EnvironmentSetting,
     Facility,
     InternetExchange,
     InternetExchangeFacility,
@@ -22,6 +23,7 @@ from peeringdb_server.models import (
     UserOrgAffiliationRequest,
 )
 from peeringdb_server.permissions import check_permissions_from_request
+from peeringdb_server.views import BASE_ENV
 from tests.util import reset_group_ids
 
 URL = "/affiliate-to-org"
@@ -402,3 +404,88 @@ def test_post_ix_side_net_side(network, org):
 
     # Test setting net_side with permission denied
     post_and_check(net_side_url, fac.id, status.HTTP_403_FORBIDDEN)
+
+
+@pytest.mark.django_db
+def test_view_profile_two_factor_email_not_confirmed(client):
+    assert not EmailAddress.objects.filter(
+        email="test@localhost", verified=True
+    ).exists()
+
+    payload = {
+        "two_factor_setup_view-current_step": "welcome",
+    }
+
+    response = client.post(reverse("two_factor:setup"), data=payload)
+
+    assert response.status_code == 403
+    assert response.json() == {
+        "error": "Your email must be confirmed before enabling two-factor authentication."
+    }
+
+
+@pytest.mark.django_db
+def test_view_profile_two_factor_email_confirmed(client):
+    user = User.objects.get(username="test")
+    EmailAddress.objects.create(
+        user=user, email="test@localhost", verified=True, primary=True
+    )
+
+    assert EmailAddress.objects.filter(email="test@localhost", verified=True).exists()
+
+    payload = {
+        "two_factor_setup_view-current_step": "welcome",
+    }
+
+    response = client.post(reverse("two_factor:setup"), data=payload)
+
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_view_tutorial_banner(client, settings):
+    """
+    Tests that the tutorial banner is shown when TUTORIAL_MODE is True
+    """
+
+    try:
+        settings.TUTORIAL_MODE = True
+        pdb_settings.TUTORIAL_MODE = True
+        BASE_ENV["TUTORIAL_MODE"] = True
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "TUTORIAL MODE" in response.content.decode("utf-8")
+    finally:
+        BASE_ENV["TUTORIAL_MODE"] = False
+        settings.TUTORIAL_MODE = False
+        pdb_settings.TUTORIAL_MODE = False
+
+
+@pytest.mark.django_db
+def test_view_tutorial_banner_text_override(client, settings):
+    """
+    Test that the tutorial banner message can be overridden
+
+    It is overwritten by setting the EnvironmentSetting for TUTORIAL_MODE_MESSAGE
+    """
+
+    try:
+        BASE_ENV["TUTORIAL_MODE"] = True
+        settings.TUTORIAL_MODE = True
+        pdb_settings.TUTORIAL_MODE = True
+
+        EnvironmentSetting.objects.create(
+            setting="TUTORIAL_MODE_MESSAGE",
+            value_str="This is a test message",
+        )
+
+        response = client.get("/")
+
+        assert response.status_code == 200
+
+        assert "TUTORIAL MODE" in response.content.decode("utf-8")
+        assert "This is a test message" in response.content.decode("utf-8")
+    finally:
+        BASE_ENV["TUTORIAL_MODE"] = False
+        settings.TUTORIAL_MODE = False
+        pdb_settings.TUTORIAL_MODE = False

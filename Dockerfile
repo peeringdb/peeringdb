@@ -72,7 +72,7 @@ apt-get install -qyy \
 EOT
 
 # Security-conscious organizations should package/review uv themselves.
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.4 /uv /usr/local/bin/uv
 
 
 WORKDIR /srv/www.peeringdb.com

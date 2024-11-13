@@ -927,16 +927,18 @@ class ModelSerializer(serializers.ModelSerializer):
                     # expanded single realtion objects may contain sets, so
                     # make sure to prefetch those as well
 
-                    REFTAG_MAP.get(o_fld).prefetch_related(
-                        qset,
-                        request,
-                        single=fld,
-                        related=related,
-                        prefetch=prefetch,
-                        nested=route_fld,
-                        depth=depth - 1,
-                        is_list=is_list,
-                    )
+                    field = REFTAG_MAP.get(o_fld)
+                    if field:
+                        field.prefetch_related(
+                            qset,
+                            request,
+                            single=fld,
+                            related=related,
+                            prefetch=prefetch,
+                            nested=route_fld,
+                            depth=depth - 1,
+                            is_list=is_list,
+                        )
 
             if not nested:
                 # print "prefetching", [p.prefetch_through for p in prefetch]
@@ -2323,6 +2325,8 @@ class NetworkIXLanSerializer(ModelSerializer):
       - net_id, handled by serializer
       - ixlan_id, handled by serializer
       - ix_id, handled by prepare_query
+      - ixlan_id, handled by serializer
+      - ix_side_id, handled by serializer
     """
 
     net_id = serializers.PrimaryKeyRelatedField(
@@ -2330,6 +2334,18 @@ class NetworkIXLanSerializer(ModelSerializer):
     )
     ixlan_id = serializers.PrimaryKeyRelatedField(
         queryset=IXLan.objects.all(), source="ixlan"
+    )
+    net_side_id = serializers.PrimaryKeyRelatedField(
+        queryset=Facility.objects.all(),
+        source="net_side",
+        allow_null=True,
+        required=False,
+    )
+    ix_side_id = serializers.PrimaryKeyRelatedField(
+        queryset=Facility.objects.all(),
+        source="ix_side",
+        allow_null=True,
+        required=False,
     )
 
     net = serializers.SerializerMethodField()
@@ -2379,13 +2395,12 @@ class NetworkIXLanSerializer(ModelSerializer):
             "is_rs_peer",
             "bfd_support",
             "operational",
-            "net_side",
-            "ix_side",
+            "net_side_id",
+            "ix_side_id",
         ] + HandleRefSerializer.Meta.fields
 
-        read_only_fields = ["net_side", "ix_side"]
+        read_only_fields = ["net_side_id", "ix_side_id"]
         related_fields = ["net", "ixlan"]
-
         list_exclude = ["net", "ixlan"]
 
         _ref_tag = model.handleref.tag
@@ -2499,23 +2514,6 @@ class NetworkIXLanSerializer(ModelSerializer):
         except ValidationError as exc:
             raise serializers.ValidationError({"speed": exc.message})
 
-        # when validating an existing netixlan that has a mismatching
-        # asn value raise a validation error stating that it needs
-        # to be moved
-        #
-        # this is to catch and force correction of instances where they
-        # could not be migrated automatically during rollout of #168
-        # because the targeted asn did not exist in peeringdb
-
-        if self.instance and self.instance.asn != self.instance.network.asn:
-            raise serializers.ValidationError(
-                {
-                    "asn": _(
-                        "This entity was created for the ASN {} - please remove it from this network and recreate it under the correct network"
-                    ).format(self.instance.asn)
-                }
-            )
-
         return data
 
 
@@ -2625,26 +2623,6 @@ class NetworkFacilitySerializer(ModelSerializer):
             except Exception:
                 pass
         return super().run_validation(data=data)
-
-    def validate(self, data):
-        # when validating an existing netfac that has a mismatching
-        # local_asn value raise a validation error stating that it needs
-        # to be moved
-        #
-        # this is to catch and force correction of instances where they
-        # could not be migrated automatically during rollout of #168
-        # because the targeted local_asn did not exist in peeringdb
-
-        if self.instance and self.instance.local_asn != self.instance.network.asn:
-            raise serializers.ValidationError(
-                {
-                    "local_asn": _(
-                        "This entity was created for the ASN {} - please remove it from this network and recreate it under the correct network"
-                    ).format(self.instance.local_asn)
-                }
-            )
-
-        return data
 
 
 class LegacyInfoTypeField(serializers.Field):

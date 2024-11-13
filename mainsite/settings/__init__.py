@@ -1117,6 +1117,9 @@ set_option("SEARCH_MAIN_ENTITY_BOOST", 1.5)
 set_option("BASE_URL", "http://localhost")
 set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
 
+# Sets the maximum allowed length for user passwords.
+set_option("MAX_LENGTH_PASSWORD", 1024)
+
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/login"
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/verify"
 ACCOUNT_EMAIL_REQUIRED = True
@@ -1271,6 +1274,10 @@ set_option("FACILITY_MAX_DISTANCE_GEOCODE_NOT_EXISTS", 50)
 set_option("FACILITY_MAX_DISTANCE_GEOCODE_EXISTS", 1)
 
 set_option("TUTORIAL_MODE", False)
+set_option(
+    "TUTORIAL_MODE_MESSAGE",
+    "The tutorial environment is automatically restored from production when a new release is deployed. Any changes made here will not be permanent.",
+)
 
 #'guest' user group
 GUEST_GROUP_ID = 1

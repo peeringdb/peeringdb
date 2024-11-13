@@ -57,6 +57,7 @@ from peeringdb_server.models import (
     EmailAddressData,
     Facility,
     Network,
+    NetworkFacility,
     NetworkIXLan,
     Organization,
     UserOrgAffiliationRequest,
@@ -162,6 +163,30 @@ def connector_objects_post_revision_commit(**kwargs):
 
 
 reversion.signals.post_revision_commit.connect(connector_objects_post_revision_commit)
+
+
+def netixlan_sync_asn_on_save(sender, instance, **kwargs):
+    """
+    When a networkixlan is saved, sync the asn field with the network's asn.
+    """
+    if instance.asn != instance.network.asn:
+        instance.asn = instance.network.asn
+        instance.save()
+
+
+post_save.connect(netixlan_sync_asn_on_save, sender=NetworkIXLan)
+
+
+def netfac_sync_local_asn_on_save(sender, instance, **kwargs):
+    """
+    When a networkfacility is saved, sync the local_asn field with the network's asn.
+    """
+    if instance.local_asn != instance.network.asn:
+        instance.local_asn = instance.network.asn
+        instance.save()
+
+
+post_save.connect(netfac_sync_local_asn_on_save, sender=NetworkFacility)
 
 
 def addressmodel_save(sender, instance=None, **kwargs):
