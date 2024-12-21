@@ -76,7 +76,7 @@ def view_import_ixlan_ixf_preview(request, ixlan_id):
         return error_response(_("Permission denied"), status=403)
 
     importer = ixf.Importer()
-    importer.update(ixlan, save=False)
+    importer.update(ixlan, save=False, timeout=settings.IXF_FETCH_TIMEOUT)
 
     return pretty_response(importer.log)
 
