@@ -177,7 +177,7 @@ class Importer:
         self.protocol_conflict = 0
         self.emails = 0
 
-    def fetch(self, url, timeout=settings.IXF_FETCH_TIMEOUT):
+    def fetch(self, url, timeout=5):
         """
         Retrieve ixf member export data from the url.
 
@@ -496,7 +496,7 @@ class Importer:
 
         return data
 
-    def update(self, ixlan, save=True, data=None, timeout=settings.IXF_FETCH_TIMEOUT, asn=None):
+    def update(self, ixlan, save=True, data=None, timeout=5, asn=None):
         """
         Sync netixlans under this ixlan from ixf member export json data (specs
         can be found at https://github.com/euro-ix/json-schemas).
