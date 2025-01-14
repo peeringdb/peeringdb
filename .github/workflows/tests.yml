@@ -21,7 +21,7 @@ jobs:
       - name: setup dev environment
         run: touch ./Ctl/dev/.env
       - name: Start the DB
-        run: ./Ctl/dev/compose.sh up -d database
+        run: ./Ctl/dev/compose.sh up -d database elasticsearch redis
       - name: build PeeringDB
         run: ./Ctl/dev/compose.sh build --pull peeringdb
       - name: run tests
