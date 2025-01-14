@@ -1,4 +1,4 @@
-Generated on 2024-11-12 18:19:35.039193
+Generated on 2025-01-14 18:57:08.992842
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -45,6 +45,12 @@ Specify custom fields to be added to the generated open-api schema.
 
 Django apps configuration.
 
+## [auth.py](/docs/dev/modules/auth.py.md)
+
+Authentication utilities for securing API access.
+
+Provides decorators to enforce Basic Authentication or API Key Authentication on IX-F import preview.
+
 ## [autocomplete_views.py](/docs/dev/modules/autocomplete_views.py.md)
 
 Autocomplete views.
@@ -56,6 +62,10 @@ Note: Quick search behavior is specified in search.py
 ## [context.py](/docs/dev/modules/context.py.md)
 
 Define custom context managers.
+
+## [context_processors.py](/docs/dev/modules/context_processors.py.md)
+
+# Functions
 
 ## [data_views.py](/docs/dev/modules/data_views.py.md)
 
@@ -236,6 +246,15 @@ Refer to search_indexes.py for search index definition.
 ## [search_indexes.py](/docs/dev/modules/search_indexes.py.md)
 
 Defines django-haystack search indexes.
+
+## [search_v2.py](/docs/dev/modules/search_v2.py.md)
+
+Search v2 implementation used for the PeeringDB top search bar.
+
+This module constructs and executes advanced Elasticsearch queries with
+support for geo-based filtering, keyword logic (AND/OR), and partial
+IPv6 matching. It includes functionality to prioritize exact and "OR"
+term matches and organizes results alphabetically.
 
 ## [serializers.py](/docs/dev/modules/serializers.py.md)
 

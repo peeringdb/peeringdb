@@ -42,7 +42,6 @@ SUPPORTED_FIELDS = {
     "fac": [
         "address1",
         "address2",
-        "floor",
         "suite",
         "city",
         "zipcode",

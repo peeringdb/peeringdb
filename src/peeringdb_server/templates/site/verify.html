@@ -24,6 +24,10 @@
       <a href="/oauth2/applications">{% trans "Manage OAuth Applications" %}</a>
       </div>
       {% endif %}
+
+      <!-- THEME MODE -->
+      {% include "site/profile-theme-mode.html" %}
+
     </div>
     <div class="col-12 col-sm-6">
 
@@ -40,6 +44,8 @@
       {% include "site/profile-change-password.html" %}
       <!-- CHANGE USERNAME -->
       {% include "site/profile-change-username.html" %}
+      <!-- CHANGE NAME -->
+      {% include "site/profile-change-name.html" %}
       {% endif %}
 
       <!-- API Keys -->
@@ -77,6 +83,16 @@ $('#form-change-username').each(function(idx) {
     $('#username-change-success').show()
     $(this).editable("reset")
     $('div.user>a').text(data['username']);
+  })
+});
+$('#form-change-name').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    $('#name-change-success').show()
+    // update #name-current-first-name and #name-current-last-name
+    // from #input-first-name and #input-last-name
+    $('#name-current-first-name').text($('#input-first-name').val());
+    $('#name-current-last-name').text($('#input-last-name').val());
+    $(this).editable("reset")
   })
 });
 $('#form-language-preference').each(function(idx) {

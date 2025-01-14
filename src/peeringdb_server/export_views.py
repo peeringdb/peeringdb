@@ -550,7 +550,7 @@ class AdvancedSearchExportView(ExportView):
                         ("Name", row["name"]),
                         ("Long Name", row["name_long"]),
                         ("Organization", row["org_name"]),
-                        ("Facilities", len(row["carrierfac_set"])),
+                        ("Facilities", row["fac_count"]),
                     ]
                 )
             )

@@ -129,7 +129,9 @@ class SearchTests(TestCase):
         response = views.request_search(request)
         m = re.findall(
             re.escape('<a href="/sponsors" class="sponsor silver">'),
-            response.content.decode(),
+            response.content.decode()
+            .split('id="search-category-view"')[1]
+            .split('id="search-list-view"')[0],
         )
 
         assert len(m) == 4

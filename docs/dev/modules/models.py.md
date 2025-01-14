@@ -1,4 +1,4 @@
-Generated from models.py on 2024-11-12 18:19:35.039193
+Generated from models.py on 2025-01-14 18:57:08.992842
 
 # peeringdb_server.models
 
@@ -541,6 +541,13 @@ These attributes / properties will be available on instances of the class
 
 ### Methods
 
+#### clean
+`def clean(self)`
+
+As per #1482 the floor field is being deprecated
+and only empty values are allowed.
+
+---
 #### process_geo_location
 `def process_geo_location(self, geocode=True, save=True)`
 
@@ -1817,7 +1824,7 @@ Used to store additional information about a grant
 ## Organization
 
 ```
-Organization(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.OrganizationBase, peeringdb_server.models.GeocodeBaseMixin, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.StripFieldMixin)
+Organization(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.OrganizationBase, peeringdb_server.models.GeocodeBaseMixin, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.StripFieldMixin, peeringdb_server.models.ParentStatusCheckMixin)
 ```
 
 Describes a peeringdb organization.
@@ -2014,6 +2021,13 @@ Will raise ParentStatus exception on invalid status.
 Can be disabled by setting `DATA_QUALITY_VALIDATE_PARENT_STATUS` to False
 
 :return:
+
+---
+#### validate_status_change
+`def validate_status_change(self)`
+
+Validate status changes:
+- Prevent changing from 'ok' to 'pending'
 
 ---
 

@@ -2,45 +2,19 @@
 Define IX-F import preview, review and post-mortem views.
 """
 
-import base64
 import json
 
 from django.conf import settings
-from django.contrib.auth import authenticate
 from django.http import HttpResponse, JsonResponse
 from django.utils.translation import gettext_lazy as _
 from django_ratelimit.decorators import ratelimit
 
 from peeringdb_server import ixf
+from peeringdb_server.auth import enable_api_key_auth, enable_basic_auth
 from peeringdb_server.models import IXLan, Network
 from peeringdb_server.util import check_permissions
 
 RATELIMITS = settings.RATELIMITS
-
-
-def enable_basic_auth(fn):
-    """
-    A simple decorator to enable basic auth for a specific view.
-    """
-
-    def wrapped(request, *args, **kwargs):
-        if "HTTP_AUTHORIZATION" in request.META:
-            auth = request.META["HTTP_AUTHORIZATION"].split()
-            if len(auth) == 2:
-                if auth[0].lower() == "basic":
-                    username, password = (
-                        base64.b64decode(auth[1].encode("utf-8"))
-                        .decode("utf-8")
-                        .split(":", 1)
-                    )
-                    request.user = authenticate(username=username, password=password)
-                    if not request.user:
-                        return JsonResponse(
-                            {"non_field_errors": ["Invalid credentials"]}, status=401
-                        )
-        return fn(request, *args, **kwargs)
-
-    return wrapped
 
 
 def pretty_response(data):
@@ -57,13 +31,14 @@ def error_response(msg, status=400):
     group="ixf_preview",
     block=False,
 )
+@enable_api_key_auth
 @enable_basic_auth
 def view_import_ixlan_ixf_preview(request, ixlan_id):
-    # check if request was blocked by rate limiting
+    # Check if request was blocked by rate limiting
     was_limited = getattr(request, "limited", False)
     if was_limited:
         return error_response(
-            _("Please wait a bit before requesting " "another ixf import preview."),
+            _("Please wait a bit before requesting another ixf import preview."),
             status=400,
         )
 
@@ -72,7 +47,10 @@ def view_import_ixlan_ixf_preview(request, ixlan_id):
     except IXLan.DoesNotExist:
         return error_response(_("Ixlan not found"), status=404)
 
-    if not check_permissions(request.user, ixlan, "u"):
+    if hasattr(request, "org"):
+        if request.org != ixlan.ix.org:
+            return error_response(_("Permission denied"), status=403)
+    elif not check_permissions(request.user, ixlan, "u"):
         return error_response(_("Permission denied"), status=403)
 
     importer = ixf.Importer()

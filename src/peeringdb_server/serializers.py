@@ -352,6 +352,21 @@ class GeocodeSerializerMixin:
                 self.handle_geo_error(exc, instance)
         return instance
 
+    def validate_floor(self, floor: str):
+        """
+        As per #1482 the floor field is being deprecated
+        and only empty values are allowed.
+        """
+
+        if floor:
+            raise ValidationError(
+                _("Field is being deprecated.")
+                + " "
+                + _("Please move this data to the suite field and remove it from here.")
+            )
+
+        return ""
+
 
 def queryable_field_xl(fld):
     """
@@ -1468,7 +1483,14 @@ class SpatialSearchMixin:
 
         # if city is not provided, check if city__in is provided
         if not city and filters.get("city__in"):
-            city_in = filters.get("city__in")
+            city_in_raw = filters.get("city__in")
+
+            # city_in comes in as a list of url arguments, where
+            # each can potentially be a list of values separated by a comma
+            city_in = []
+            for city in city_in_raw:
+                city_in.extend(city.split(","))
+            city_in = list(set(city_in))
 
             if len(city_in) > 1:
                 return
@@ -1575,6 +1597,11 @@ class SpatialSearchMixin:
             # we require at least city and country to be defined
             # in the filters to create meaningful coordinates
             # and proceed with the distance query
+
+            # if country__in is set convert it to country
+            if not filters.get("country") and filters.get("country__in"):
+                filters["country"] = filters["country__in"]
+                del filters["country__in"]
 
             required_fields = ["country", "city"]
             errors = {}
@@ -2052,36 +2079,7 @@ class CarrierSerializer(ModelSerializer):
         source="carrierfac_set_active_prefetched",
     )
 
-    @classmethod
-    def prepare_query(cls, qset, **kwargs):
-        """
-        Allows filtering by indirect relationships, similar to NetworkSerializer.
-        """
-
-        qset = qset.prefetch_related(
-            "org",
-            "carrierfac_set",
-        )  # Eagerly load the related Organization# Eagerly load the related Organization
-
-        filters = get_relation_filters(
-            [
-                "carrierfac_set__facility_id",
-                # Add other relevant fields from carrierfac_set here
-            ],
-            cls,
-            **kwargs,
-        )
-
-        for field, e in list(filters.items()):
-            # Handle filtering based on relationships in carrierfac_set
-            if field.startswith("carrierfac_set__"):
-                if e["filt"]:
-                    filter_kwargs = {f"{field}__{e['filt']}": e["value"]}
-                else:
-                    filter_kwargs = {field: e["value"]}
-                qset = qset.filter(**filter_kwargs)
-
-        return qset, filters
+    fac_count = serializers.SerializerMethodField()
 
     org_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(), source="org"
@@ -2114,10 +2112,45 @@ class CarrierSerializer(ModelSerializer):
             "social_media",
             "notes",
             "carrierfac_set",
+            "fac_count",
         ] + HandleRefSerializer.Meta.fields
 
         related_fields = ["org", "carrierfac_set"]
         list_exclude = ["org"]
+
+    @classmethod
+    def prepare_query(cls, qset, **kwargs):
+        """
+        Allows filtering by indirect relationships, similar to NetworkSerializer.
+        """
+
+        qset = qset.prefetch_related(
+            "org",
+            "carrierfac_set",
+        )  # Eagerly load the related Organization# Eagerly load the related Organization
+
+        filters = get_relation_filters(
+            [
+                "carrierfac_set__facility_id",
+                # Add other relevant fields from carrierfac_set here
+            ],
+            cls,
+            **kwargs,
+        )
+
+        for field, e in list(filters.items()):
+            # Handle filtering based on relationships in carrierfac_set
+            if field.startswith("carrierfac_set__"):
+                if e["filt"]:
+                    filter_kwargs = {f"{field}__{e['filt']}": e["value"]}
+                else:
+                    filter_kwargs = {field: e["value"]}
+                qset = qset.filter(**filter_kwargs)
+
+        return qset, filters
+
+    def get_fac_count(self, inst):
+        return inst.carrierfac_set.filter(status="ok").count()
 
     def get_facilities(self, obj):
         return ", ".join([cf.facility.name for cf in obj.carrierfac_set.all()])

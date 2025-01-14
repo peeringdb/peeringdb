@@ -1,3 +1,5 @@
+@import url(variables.css);
+
 /* RESET */
 * { list-style:none ; margin:0 ; outline:none ; padding:0 }
 input, select, textarea { -webkit-box-sizing:border-box ; -moz-box-sizing:border-box ; box-sizing:border-box }
@@ -10,7 +12,7 @@ html { font-size:20px }
 /* SPONSOR LEVELS */
 /* designed for 1201+ */
 .sponsors-group { margin-bottom:45px ; overflow:hidden }
-    .sponsors-group h2 { color:#00203e ; font-size:1.6rem ; text-transform:uppercase ; float:left ; width:200px }
+    .sponsors-group h2 { color:var(--heading-color); font-size:1.6rem ; text-transform:uppercase ; float:left ; width:200px }
     .sponsors-group.platinum h2 { font-size:1.45rem }
     .sponsors-group.gold h2 { font-size:1.3rem }
     .sponsors-group.silver h2 { font-size:1.15rem }

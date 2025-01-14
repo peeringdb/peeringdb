@@ -1106,3 +1106,24 @@ def test_validate_distance_geocode(
                 )
                 == validated
             )
+
+
+def test_validate_status_change():
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(name="Test exchange", status="ok", org=org)
+    ix.status = "pending"
+    with pytest.raises(ValidationError):
+        ix.clean()
+        ix.save()
+
+    fac = Facility.objects.create(name="Test facility", status="ok", org=org)
+    fac.status = "pending"
+    with pytest.raises(ValidationError):
+        fac.clean()
+        fac.save()
+
+    net = Network.objects.create(name="Test network", status="ok", org=org, asn=101)
+    net.status = "pending"
+    with pytest.raises(ValidationError):
+        net.clean()
+        net.save()

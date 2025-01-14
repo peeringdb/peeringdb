@@ -38,16 +38,16 @@ ARG python_version
 ENV VIRTUAL_ENV="$virtual_env"
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# - Silence uv complaining about not being able to use hard links,
-# - tell uv to byte-compile packages for faster application startups,
-# - prevent uv from accidentally downloading isolated Python builds,
-# - pick a Python,
-# - and finally declare `/app` as the target for `uv sync`.
-ENV UV_LINK_MODE=copy \
-    UV_COMPILE_BYTECODE=1 \
-    UV_PYTHON_DOWNLOADS=never \
-    UV_PYTHON=python${python_version} \
-    UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV
+# Silence uv complaining about not being able to use hard links,
+ENV UV_LINK_MODE=copy
+# tell uv to byte-compile packages for faster application startups,
+ENV UV_COMPILE_BYTECODE=1
+# prevent uv from accidentally downloading isolated Python builds,
+ENV UV_PYTHON_DOWNLOADS=never
+# set python version
+ENV UV_PYTHON=python${python_version}
+# declare venv as the target for `uv sync`
+ENV UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV
 
 # base docker file from https://hynek.me/articles/docker-uv/
 FROM base AS builder
@@ -55,25 +55,15 @@ FROM base AS builder
 ARG python_version
 ARG build_deps
 
-# The following does not work in Podman unless you build in Docker
-# compatibility mode: <https://github.com/containers/podman/issues/8477>
-# You can manually prepend every RUN script with `set -ex` too.
-SHELL ["sh", "-exc"]
-
 ### Start Build Prep.
 ### This should be a separate build container for better reuse.
+RUN apt-get update -qy \
+    && apt-get install -qyy \
+      -o APT::Install-Recommends=false \
+      -o APT::Install-Suggests=false \
+      $build_deps
 
-RUN <<EOT
-apt-get update -qy
-apt-get install -qyy \
-    -o APT::Install-Recommends=false \
-    -o APT::Install-Suggests=false \
-    $build_deps
-EOT
-
-# Security-conscious organizations should package/review uv themselves.
-COPY --from=ghcr.io/astral-sh/uv:0.4 /uv /usr/local/bin/uv
-
+COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /usr/local/bin/uv
 
 WORKDIR /srv/www.peeringdb.com
 
@@ -92,54 +82,13 @@ RUN uv venv $virtual_env
 # step to have it cached, but with uv it's so fast, it's not worth
 # it, so we let `uv sync` create it for us automagically.
 
-RUN --mount=type=cache,target=/root/.cache <<EOT
-uv sync \
-    --locked \
-    --no-dev \
-    --no-install-project
-EOT
+RUN --mount=type=cache,target=/root/.cache \
+    uv sync --locked --no-dev --no-install-project
 
-# Now install the APPLICATION from `/src` without any dependencies.
-# `/src` will NOT be copied into the runtime container.
-# LEAVE THIS OUT if your application is NOT a proper Python package.
-# As of uv 0.4.11, you can also use
-# `cd /src && uv sync --locked --no-dev --no-editable` instead.
 COPY . /src
 RUN cd /src && uv sync --locked --no-dev --no-editable
 
-# COPY . /src
-# RUN --mount=type=cache,target=/root/.cache \
-#     uv pip install \
-#         --python=$UV_PROJECT_ENVIRONMENT \
-#         --no-deps \
-#         /src
-
-
-
-# RUN true is used here to separate problematic COPY statements,
-# per this issue: https://github.com/moby/moby/issues/37965
-
-
-
-## build container
-#FROM base as builder
-#
-#ARG build_deps
-#
-#RUN apk --update --no-cache add $build_deps
-#
-#RUN pip install -U pip poetry
-## create venv and update venv pip
-#RUN python3 -m venv "$VIRTUAL_ENV" && pip install -U pip
-#
-#WORKDIR /srv/www.peeringdb.com
-#COPY poetry.lock pyproject.toml ./
-## install dev now so we don't need a build env for testing (adds 8M)
-#RUN poetry install --no-root
-#
-
 #### final image here
-
 
 FROM base as final
 
@@ -149,31 +98,22 @@ ARG uid=996
 # extra settings file if needed
 ARG ADD_SETTINGS_FILE=mainsite/settings/dev.py
 
-SHELL ["sh", "-exc"]
-
-# Don't run your app as root.
-RUN <<EOT
-groupadd -r pdb
-useradd -r -u $uid -g pdb -N pdb
-EOT
-#RUN adduser -Du $uid pdb
-
+# setup pdb user
+RUN groupadd -r pdb \
+    && useradd -r -u $uid -g pdb -N pdb
 
 ENTRYPOINT ["/entrypoint"]
 # See <https://hynek.me/articles/docker-signals/>.
 STOPSIGNAL SIGINT
 
 
-RUN <<EOT
-apt-get update -qy
-apt-get install -qyy \
-    -o APT::Install-Recommends=false \
-    -o APT::Install-Suggests=false \
-    $run_deps
-
-apt-get clean
-rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-EOT
+RUN apt-get update -qy \
+    && apt-get install -qyy \
+      -o APT::Install-Recommends=false \
+      -o APT::Install-Suggests=false \
+      $run_deps \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /srv/www.peeringdb.com
 RUN mkdir -p api-cache etc locale media static var/log
@@ -190,7 +130,8 @@ COPY src/peeringdb_server/ peeringdb_server
 COPY fixtures/ fixtures
 COPY .coveragerc .coveragerc
 
-RUN mkdir coverage && ln -s srv/www.peeringdb.com/entrypoint.sh /entrypoint
+RUN mkdir coverage \
+    && ln -s srv/www.peeringdb.com/entrypoint.sh /entrypoint
 
 COPY scripts/manage /usr/bin/
 
@@ -217,17 +158,14 @@ COPY tests/ tests
 RUN chown -R pdb:pdb tests/
 
 # install dev deps
-RUN <<EOT
-apt-get update -qy
-apt-get install -qyy \
-    -o APT::Install-Recommends=false \
-    -o APT::Install-Suggests=false \
-    $build_deps
-
-apt-get clean
-uv sync --locked --dev --no-install-project
-rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-EOT
+RUN apt-get update -qy \
+    && apt-get install -qyy \
+      -o APT::Install-Recommends=false \
+      -o APT::Install-Suggests=false \
+      $build_deps \
+    && apt-get clean \
+    && uv sync --locked --dev --no-install-project \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Same as final entrypoint for running in dev mode
 
@@ -237,11 +175,8 @@ USER pdb
 FROM final
 
 USER pdb
-# Strictly optional, but I like it for introspection of what I've built
-# and run a smoke test that the application can, in fact, be imported.
-# python -Ic 'import peeringdb_server'
-RUN <<EOT
-python -V
-python -Im site
-python -c 'import peeringdb_server'
-EOT
+
+# smoke test
+RUN python -V \
+    && python -Im site \
+    && python -c 'import peeringdb_server'

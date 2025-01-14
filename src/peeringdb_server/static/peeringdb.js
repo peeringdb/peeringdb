@@ -4340,3 +4340,244 @@ $(document).ready(function () {
     });
   });
 });
+
+/**
+ * Get the value of a specific cookie by its name.
+ *
+ * Splits the document's cookies into key-value pairs and searches for the specified cookie name.
+ * Returns the value of the cookie if found, or null if it does not exist.
+ *
+ * @function getCookieValue
+ * @param {string} name - The name of the cookie to retrieve.
+ * @returns {string|null} The value of the cookie, or null if not found.
+ */
+function getCookieValue(name) {
+  const cookies = document.cookie.split('; ');
+  for (const cookie of cookies) {
+    const [key, val] = cookie.split('=');
+    if (key === name) return val;
+  }
+  return null;
+}
+
+/**
+ * Update the `src` attribute of an image element based on a suffix.
+ *
+ * Replaces the current suffix of the image's `src` (e.g., `-dark` or no suffix) with the provided suffix.
+ *
+ * @function updateImageSrc
+ * @param {HTMLImageElement|null} element - The image element to update.
+ * @param {string} suffix - The suffix to append to the image filename (e.g., `-dark` or an empty string).
+ */
+function updateImageSrc(element, suffix) {
+  if (element && element.src) {
+    element.src = element.src.replace(/(-dark)?\.png$/, suffix + '.png');
+  }
+}
+
+/**
+ * Update the `src` attributes of all relevant images based on the theme mode.
+ *
+ * Determines the suffix based on whether dark mode is enabled and updates:
+ * - The logo image
+ *
+ * @function updateImages
+ * @param {boolean} isDark - Whether dark mode is active.
+ */
+function updateImages(isDark) {
+  const suffix = isDark ? '-dark' : '';
+  updateImageSrc(document.getElementById('logo'), suffix);
+  updateImageSrc(document.getElementById('hamburger'), suffix);
+}
+
+/**
+ * Set the theme mode and update the UI accordingly.
+ *
+ * Determines the active theme mode (`light`, `dark`, or `auto`) and applies the necessary changes:
+ * - Saves the theme preference and mode in cookies
+ * - Updates the `data-theme` attribute on the document
+ * - Adjusts images for the selected mode
+ *
+ * @function setMode
+ * @param {string} mode - The theme mode to set (`light`, `dark`, or `auto`).
+ */
+function setMode(mode) {
+  const darkThemeMq = window.matchMedia('(prefers-color-scheme: dark)');
+  const isDark = mode === 'dark' || (mode === 'auto' && darkThemeMq.matches);
+
+  document.cookie = `theme=${mode}; path=/; max-age=31536000`;
+  document.cookie = `is_dark_mode=${isDark}; path=/; max-age=31536000`;
+
+  document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+
+  updateImages(isDark);
+}
+
+/**
+ * Initialize the theme on page load.
+ *
+ * Reads the saved theme mode from cookies (or defaults to `light`), determines if dark mode should be enabled,
+ * and updates the UI accordingly.
+ *
+ * @function initializeTheme
+ */
+function initializeTheme() {
+  const mode = getCookieValue('theme') || 'light';
+  const darkThemeMq = window.matchMedia('(prefers-color-scheme: dark)');
+  const isDark = mode === 'dark' || (mode === 'auto' && darkThemeMq.matches);
+
+  document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+  updateImages(isDark);
+}
+
+// Ensure the theme is initialized when the DOM is fully loaded and respond to system theme changes.
+document.addEventListener('DOMContentLoaded', () => {
+  initializeTheme();
+
+  const darkThemeMq = window.matchMedia('(prefers-color-scheme: dark)');
+  darkThemeMq.addEventListener('change', (e) => {
+    const mode = getCookieValue('theme');
+    if (mode === 'auto') {
+      const isDark = e.matches;
+      document.cookie = `is_dark_mode=${isDark}; path=/; max-age=31536000`;
+      document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+      updateImages(isDark);
+    }
+  });
+});
+
+/**
+ * Set up the theme container, tooltips, and theme mode buttons.
+ *
+ * Initializes theme-related functionality when the DOM is fully loaded.
+ * - Configures Bootstrap tooltips for elements within the `.theme-container`.
+ * - Updates the active state of theme mode buttons (`light`, `dark`, `auto`).
+ * - Listens for clicks on theme mode buttons to update the UI accordingly.
+ *
+ * @function DOMContentLoaded
+ */
+document.addEventListener("DOMContentLoaded", () => {
+  /**
+   * Initialize Bootstrap tooltips within the theme container.
+   *
+   * Finds all elements in the `.theme-container` with the `data-bs-toggle="tooltip"` attribute
+   * and applies Bootstrap's tooltip functionality to them.
+   */
+  const themeContainer = document.querySelector('.theme-container');
+  if (themeContainer) {
+      const tooltipTriggerList = [].slice.call(themeContainer.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.forEach(tooltipTriggerEl => {
+          new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+  }
+
+  /**
+   * Update the active state of theme mode buttons.
+   *
+   * Reads the current theme mode from cookies and applies the `active` class to the corresponding button.
+   * Removes the `active` class from all other buttons.
+   *
+   * @function updateActiveButton
+   */
+  function updateActiveButton() {
+      const mode = getCookieValue('theme') || 'light';
+      const buttons = {
+          light: document.getElementById('light-mode-btn'),
+          dark: document.getElementById('dark-mode-btn'),
+          auto: document.getElementById('auto-mode-btn')
+      };
+      Object.values(buttons).forEach(btn => btn.classList.remove('active'));
+      if (buttons[mode]) {
+          buttons[mode].classList.add('active');
+      }
+  }
+
+  // Initialize the theme mode and set the active button state.
+  initializeTheme();
+  updateActiveButton();
+
+  /**
+   * Listen for theme mode button clicks and update the UI.
+   *
+   * Attaches a click event listener to the `.btn-group` container. If a button inside
+   * the group is clicked, it triggers `updateActiveButton` to reflect the change in the UI.
+   */
+  const btnGroup = document.querySelector('.btn-group');
+  if (btnGroup) {
+      btnGroup.addEventListener('click', (e) => {
+          if (e.target.tagName === 'BUTTON') {
+              updateActiveButton();
+          }
+      });
+  }
+});
+
+/**
+ * Prevents category-view flash during pagination while in list-view
+ */
+(function() {
+  const savedMode = localStorage.getItem("searchViewMode");
+  if (savedMode === "list") {
+    document.write('<style id="view-state">' +
+      '#search-list-view { display: block !important; }' +
+      '#search-category-view { display: none !important; }' +
+    '</style>');
+  }
+})();
+
+/**
+ * Search results view switching functionality
+ *
+ * These functions handle visibility switching between two view modes:
+ * - List view: Shows search results in a single column list format
+ * - Category view: Shows search results grouped by entity types in multiple columns
+ *
+ * The view state is persisted in localStorage and button text updates to reflect current state:
+ * - In list view: Button shows "Switch to Category View"
+ * - In category view: Button shows "Switch to List View"
+ */
+
+/**
+ * Sets display mode and updates UI elements for search result
+ * @param {string} mode - View mode to set ('list' or 'category')
+ */
+function setViewMode(mode) {
+  const $listView = $("#search-list-view");
+  const $categoryView = $("#search-category-view");
+  const $toggleText = $("#search-toggle-text");
+  if (mode === "list") {
+      $listView.show();
+      $categoryView.hide();
+      $toggleText.text($toggleText.data("category-view"));
+  } else {
+      $listView.hide();
+      $categoryView.show();
+      $toggleText.text($toggleText.data("list-view"));
+  }
+  localStorage.setItem("searchViewMode", mode);
+}
+
+/**
+* Toggles between view modes based on current visibility
+* @listens click - Triggered by #search-change-view button
+*/
+function toggleSearchView() {
+  const $categoryView = $("#search-category-view");
+  const viewMode = $categoryView.is(":visible") ? "list" : "category";
+  setViewMode(viewMode);
+}
+
+/**
+ * Initialize the search view toggle functionality when document is ready
+ * Restores the last active view mode from localStorage or defaults to category view
+ */
+$(function() {
+  $("#search-change-view").on("click", toggleSearchView);
+
+  // Set initial view state
+  const savedMode = localStorage.getItem("searchViewMode");
+  setViewMode(savedMode || "category");
+
+  // Clean up the early injection
+  $("#view-state").remove();
+});

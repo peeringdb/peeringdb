@@ -1074,15 +1074,9 @@ class TestJSON(unittest.TestCase):
         network = SHARED["net_r_ok"]
 
         # need to modify objects for signals to propagate
-        with reversion.create_revision():
-            netixlan = network.netixlan_set.first()
-            netixlan.status = "pending"
-            netixlan.save()
+        netixlan = network.netixlan_set.first()
 
-        with reversion.create_revision():
-            netfac = network.netfac_set.first()
-            netfac.status = "pending"
-            netfac.save()
+        netfac = network.netfac_set.first()
 
         data = self.assert_get_handleref(self.db_user, "net", network.id)
         self.assertEqual(data.get("ix_count"), 0)
@@ -1111,15 +1105,9 @@ class TestJSON(unittest.TestCase):
     def test_user_001_GET_ix_obj_count(self):
         ix = SHARED["ix_r_ok"]
         # need to modify objects for signals to propagate
-        with reversion.create_revision():
-            netixlan = ix.ixlan.netixlan_set.first()
-            netixlan.status = "pending"
-            netixlan.save()
+        netixlan = ix.ixlan.netixlan_set.first()
 
-        with reversion.create_revision():
-            ixfac = ix.ixfac_set.first()
-            ixfac.status = "pending"
-            ixfac.save()
+        ixfac = ix.ixfac_set.first()
 
         data = self.assert_get_handleref(self.db_user, "ix", ix.id)
         self.assertEqual(data.get("net_count"), 0)
@@ -1213,6 +1201,43 @@ class TestJSON(unittest.TestCase):
         data = self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
         self.assertEqual(data.get("net_count"), 1)
         self.assertEqual(data.get("ix_count"), 1)
+
+    ##########################################################################
+
+    def test_user_001_GET_fac_with_filter_diverse_serving_substations(self):
+        fac_data_with_diverse = self.make_data_fac(diverse_serving_substations=True)
+        facility_with_diverse = Facility.objects.create(
+            status="ok", **fac_data_with_diverse
+        )
+
+        fac_data_without_diverse = self.make_data_fac(diverse_serving_substations=False)
+        facility_without_diverse = Facility.objects.create(
+            status="ok", **fac_data_without_diverse
+        )
+
+        response = self.db_user._request(
+            "fac?diverse_serving_substations=true", method="GET"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+        self.assertIn(facility_with_diverse.name, [f["name"] for f in data["data"]])
+        self.assertNotIn(
+            facility_without_diverse.name, [f["name"] for f in data["data"]]
+        )
+
+        response_false = self.db_user._request(
+            "fac?diverse_serving_substations=false", method="GET"
+        )
+        self.assertEqual(response_false.status_code, 200)
+
+        data_false = response_false.json()
+        self.assertIn(
+            facility_without_diverse.name, [f["name"] for f in data_false["data"]]
+        )
+        self.assertNotIn(
+            facility_with_diverse.name, [f["name"] for f in data_false["data"]]
+        )
 
     ##########################################################################
 
@@ -4035,6 +4060,31 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_guest_005_list_filter_fac_name_search(self):
+        fac = Facility.objects.create(
+            status="ok",
+            **self.make_data_fac(
+                name="Specific Facility", name_long="This is a very specific facility"
+            ),
+        )
+
+        # rebuild search index (name_search requires it)
+        call_command("rebuild_index", "--noinput")
+
+        data = self.db_guest.all("fac", name_search=fac.name)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], fac.id)
+
+        data = self.db_guest.all("fac", name_search=fac.name_long)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], fac.id)
+
+        fac.delete(hard=True)
+
+    ##########################################################################
+
     def test_guest_005_list_filter_fac_distance(self):
         # facility coordinates
 
@@ -4267,8 +4317,7 @@ class TestJSON(unittest.TestCase):
             netixlan = ix.ixlan.netixlan_set.first()
             if not netixlan:
                 continue
-            netixlan.status = "pending"
-            netixlan.save()
+
             with reversion.create_revision():
                 netixlan.status = "ok"
                 netixlan.save()
@@ -4363,8 +4412,7 @@ class TestJSON(unittest.TestCase):
             netixlan = network.netixlan_set.first()
             if not netixlan:
                 continue
-            netixlan.status = "pending"
-            netixlan.save()
+
             with reversion.create_revision():
                 netixlan.status = "ok"
                 netixlan.save()
@@ -4664,6 +4712,38 @@ class TestJSON(unittest.TestCase):
         for tag in ["org", "net", "ix", "fac"]:
             data = self.db_guest.all(tag, name=f"{tag} unãccented")
             self.assertEqual(len(data), 1)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_carrier_name_search(self):
+        carrier = Carrier.objects.create(
+            status="ok",
+            **self.make_data_carrier(
+                name="Specific Exchange", name_long="This is a very specific exchange"
+            ),
+        )
+
+        # add facility to carrier using CarrierFacility
+        CarrierFacility.objects.create(
+            carrier=carrier, facility=SHARED["fac_r_ok"], status="ok"
+        )
+
+        # rebuild search index (name_search requires it)
+        call_command("rebuild_index", "--noinput")
+
+        data = self.db_guest.all("carrier", name_search=carrier.name)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], carrier.id)
+            self.assertEqual(row["fac_count"], 1)
+
+        data = self.db_guest.all("carrier", name_search=carrier.name_long)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], carrier.id)
+            self.assertEqual(row["fac_count"], 1)
+
+        carrier.delete(hard=True)
 
     ##########################################################################
     # READONLY PERMISSION TESTS
@@ -4992,6 +5072,31 @@ class TestJSON(unittest.TestCase):
             self.assert_delete(
                 db, "org", test_success=False, test_failure=SHARED["org_r_ok"].id
             )
+
+    ##########################################################################
+
+    def test_readonly_users_004_list_filter_fac_name_search(self):
+        fac = Facility.objects.create(
+            status="ok",
+            **self.make_data_fac(
+                name="Specific Facility", name_long="This is a very specific facility"
+            ),
+        )
+
+        # rebuild search index (name_search requires it)
+        call_command("rebuild_index", "--noinput")
+
+        data = self.db_guest.all("fac", name_search=fac.name)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], fac.id)
+
+        data = self.db_guest.all("fac", name_search=fac.name_long)
+        self.assertEqual(len(data), 1)
+        for row in data:
+            self.assertEqual(row["id"], fac.id)
+
+        fac.delete(hard=True)
 
     ##########################################################################
     # CRUD PERMISSION TESTS

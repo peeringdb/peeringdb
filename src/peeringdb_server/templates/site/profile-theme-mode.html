@@ -1,0 +1,21 @@
+{% load i18n util %}
+  <div class="marg-top-15 theme-container">
+    <h3>{% trans "Theme Mode" %}</h3>
+    <div class="btn-group" role="group" aria-label="Theme mode selection">
+      <button id="light-mode-btn" class="btn btn-outline-dark"
+              onclick="setMode('light')"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title="Switch to Light Mode: Uses a bright and default color scheme for better visibility during the day.">Regular</button>
+      <button id="dark-mode-btn" class="btn btn-outline-dark"
+              onclick="setMode('dark')"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title="Switch to Dark Mode: Applies a darker color scheme to reduce eye strain, especially in low-light environments.">Dark Mode</button>
+      <button id="auto-mode-btn" class="btn btn-outline-dark"
+              onclick="setMode('auto')"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title="Switch to Auto Mode: Automatically adjusts between Light and Dark modes based on your system's theme settings.">Auto</button>
+    </div>
+  </div>

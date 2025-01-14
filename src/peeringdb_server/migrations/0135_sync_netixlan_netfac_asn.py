@@ -63,6 +63,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(forward_netixlan, migrations.RunPython.noop),
-        migrations.RunPython(forward_netfac, migrations.RunPython.noop),
+        # migration was not deemed necessary and introduced issues during
+        # deploy with production data.
+        #
+        # should a data fix be necessary in the future this migration should
+        # be implemented as a one-off command or django shell script
+        #
+        # migrations.RunPython(forward_netixlan, migrations.RunPython.noop),
+        # migrations.RunPython(forward_netfac, migrations.RunPython.noop),
     ]

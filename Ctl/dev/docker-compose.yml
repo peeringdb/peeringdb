@@ -63,6 +63,7 @@ services:
       DATABASE_HOST: database
       REDIS_HOST: redis
       REDIS_PASSWORD: devPASSWORD
+      ELASTICSEARCH_URL: http://elasticsearch:9200
     ports:
       # this needs to be set in the shell, compose env vars aren't read yet
       - "${DJANGO_PORT:-8000}:8000"

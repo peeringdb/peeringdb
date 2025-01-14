@@ -18,7 +18,7 @@ import json
 import os
 import re
 import uuid
-from typing import Any
+from typing import Any, Union
 
 import django_read_only
 import googlemaps.exceptions
@@ -41,6 +41,7 @@ from django.core.exceptions import (
     ValidationError,
 )
 from django.core.handlers.wsgi import WSGIRequest
+from django.core.paginator import Paginator
 from django.db import connection, transaction
 from django.db.models import Q
 from django.forms.models import modelform_factory
@@ -92,6 +93,7 @@ from peeringdb_server.data_views import BOOL_CHOICE, BOOL_CHOICE_WITH_OPT_OUT
 from peeringdb_server.deskpro import ticket_queue_rdap_error
 from peeringdb_server.forms import (
     AffiliateToOrgForm,
+    NameChangeForm,
     OrganizationLogoUploadForm,
     PasswordChangeForm,
     PasswordResetForm,
@@ -136,12 +138,14 @@ from peeringdb_server.models import (
 from peeringdb_server.org_admin_views import load_all_user_permissions
 from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
 from peeringdb_server.search import (
-    elasticsearch_proximity_entity,
     get_lat_long_from_search_result,
+    search,
+)
+from peeringdb_server.search_v2 import (
+    elasticsearch_proximity_entity,
     is_valid_latitude,
     is_valid_longitude,
     new_elasticsearch,
-    search,
     search_v2,
 )
 from peeringdb_server.serializers import (
@@ -1055,6 +1059,38 @@ def view_password_change(request):
         return JsonResponse({"status": "ok"})
 
 
+@ensure_csrf_cookie
+@login_required
+@require_http_methods(["POST"])
+def view_name_change(request):
+    """
+    Allows a user to change their first name and last name
+    """
+
+    form = NameChangeForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse(form.errors, status=400)
+
+    request.user.first_name = form.cleaned_data.get("first_name")
+    request.user.last_name = form.cleaned_data.get("last_name")
+    try:
+        request.user.full_clean()
+    except ValidationError as exc:
+        return JsonResponse(exc.message_dict, status=400)
+    request.user.save()
+
+    return JsonResponse({"status": "ok"})
+
+
+@ensure_csrf_cookie
+@login_required
+def view_profile_name_change(request):
+    """
+    Renders the name change form on the profile page.
+    """
+    return view_verify(request)
+
+
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
@@ -1592,7 +1628,16 @@ def view_organization(request, id):
                 "label": _("Address 2"),
                 "value": data.get("address2", dismiss),
             },
-            {"name": "floor", "label": _("Floor"), "value": data.get("floor", dismiss)},
+            {
+                "name": "floor",
+                "label": _("Floor"),
+                # needs to be or to catch "" and None
+                "value": (data.get("floor") or dismiss),
+                "deprecated": _(
+                    "Please move this data to the suite field and remove it from here."
+                ),
+                "notify_incomplete": False,
+            },
             {"name": "suite", "label": _("Suite"), "value": data.get("suite", dismiss)},
             {
                 "name": "location",
@@ -1807,7 +1852,16 @@ def view_facility(request, id):
                 "label": _("Address 2"),
                 "value": data.get("address2", dismiss),
             },
-            {"name": "floor", "label": _("Floor"), "value": data.get("floor", dismiss)},
+            {
+                "name": "floor",
+                "label": _("Floor"),
+                # needs to be or to catch "" and None
+                "value": (data.get("floor") or dismiss),
+                "deprecated": _(
+                    "Please move this data to the suite field and remove it from here."
+                ),
+                "notify_incomplete": False,
+            },
             {"name": "suite", "label": _("Suite"), "value": data.get("suite", dismiss)},
             {
                 "name": "location",
@@ -3034,52 +3088,191 @@ def request_api_search(request):
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
-def render_search_result(request, version=2):
+def render_search_result(request, version: int = 2) -> HttpResponse:
     """
     Triggered by hitting enter on the main search bar.
-    Renders a search result page.
-    """
-    m = None
+    Renders a search result page based on the query provided.
 
-    # will hold the entity the distance search is based on, if any (only v2 search)
+    Args:
+        request: The HTTP request object containing the search query.
+        version: The version of the search functionality to use (default is 2).
+
+    Returns:
+        HttpResponse: The rendered search result page.
+    """
+    # Extract and process the query
+    q, geo, original_query = extract_query(request, version)
+
+    # Redirect if no valid query
+    if not q and not geo:
+        return HttpResponseRedirect("/")
+
+    # Handle direct ASN or AS queries
+    asn_redirect = handle_asn_query(q, version)
+    if asn_redirect:
+        return asn_redirect
+
+    # Perform the search based on the query and version
+    result = perform_search(q, geo, version, original_query)
+
+    # Build the environment for rendering the template
+    env = build_template_environment(result, geo, version, request, q)
+    template = loader.get_template("site/search_result.html")
+
+    return HttpResponse(template.render(env, request))
+
+
+def extract_query(
+    request, version: int
+) -> tuple[list[str], dict[str, Union[str, float]], str]:
+    """
+    Extracts the query and geographical parameters from the request.
+
+    Args:
+        request: The HTTP request object.
+        version: The version of the search functionality.
+
+    Returns:
+        tuple: (query list, geo dictionary, original query string)
+    """
+    q = request.GET.getlist("q", []) if version == 2 else request.GET.get("q")
+    original_query = " ".join(q) if isinstance(q, list) else q
     geo = {}
 
     if version == 2:
-        q = request.GET.getlist("q", [])
-        original_query = " ".join(q) if isinstance(q, list) else q
-        for x in q:
-            m = re.match(r"(asn|as)(\d+)", x.lower())
-
         process_near_search(q, geo)
         process_in_search(q, geo)
 
-        if not q and not geo:
-            return HttpResponseRedirect("/")
+    return q, geo, original_query
+
+
+def handle_asn_query(q: list[str], version: int) -> HttpResponseRedirect | None:
+    """
+    Checks if the query is for a direct ASN or AS and handles redirection.
+
+    Args:
+        q: The list of query terms.
+
+    Returns:
+        HttpResponseRedirect or None
+    """
+    if version == 2:
+        for x in q:
+            match = re.match(r"(asn|as)(\d+)", x.lower())
     else:
-        q = request.GET.get("q")
-        original_query = " ".join(q) if isinstance(q, list) else q
-        if q:
-            m = re.match(r"(asn|as)(\d+)", q.lower())
+        match = re.match(r"(asn|as)(\d+)", q.lower())
 
     # if the user queried for an asn directly via AS*** or ASN***
     # redirect to the result
-    if m:
-        net = Network.objects.filter(asn=m.group(2), status="ok")
+    if match:
+        net = Network.objects.filter(asn=match.group(2), status="ok")
         if net.exists() and net.count() == 1:
             return HttpResponseRedirect(f"/net/{net.first().id}")
+    return None
 
-    incomplete_in_search = geo.pop("incomplete_in_search", False)
 
+def perform_search(
+    q: list[str], geo: dict[str, Union[str, float]], version: int, original_query: str
+) -> dict:
+    """
+    Executes the search based on the query and version.
+
+    Args:
+        q: The list of query terms.
+        geo: The geographical search parameters.
+        version: The version of the search functionality.
+        original_query: The original search query string.
+
+    Returns:
+        dict: Search results.
+    """
     if original_query:
         if version == 2:
-            result = search_v2(q, geo)
+            return search_v2(q, geo)
         else:
-            result = search(q)
-    else:
-        result = {}
+            return search(q)
+    return {}
 
-    # Feedback message construction
+
+def combine_search_results(result: dict) -> list:
+    """
+    Combines all search results into a single list.
+
+    Args:
+        result: Dictionary containing search results by category
+
+    Returns:
+        list: Combined search results
+    """
+    combined_results = []
+
+    categories = [
+        InternetExchange._handleref.tag,
+        Network._handleref.tag,
+        Facility._handleref.tag,
+        Organization._handleref.tag,
+        Campus._handleref.tag,
+        Carrier._handleref.tag,
+    ]
+
+    for category in categories:
+        if category in result:
+            for item in result[category]:
+                item["ref_tag"] = category
+                if "extra" not in item or "_score" not in item["extra"]:
+                    item["extra"] = item.get("extra", {})
+                    item["extra"]["_score"] = 0
+                if "sponsorship" in item:
+                    item["sponsorship"] = item["sponsorship"]
+                combined_results.append(item)
+
+    combined_results.sort(key=lambda x: (-x["extra"]["_score"], x["name"].lower()))
+
+    return combined_results
+
+
+def get_page_range(paginator, current_page, show_pages=5):
+    """
+    Calculate which page numbers to show in pagination.
+    Args:
+    paginator: The paginator instance
+    current_page: Current page number
+    show_pages: Number of pages to show on each side of current page
+    Returns:
+    list: Page numbers to display
+    """
+    total_pages = paginator.num_pages
+    current = current_page
+
+    if total_pages <= 2 * show_pages + 1:
+        return list(range(1, total_pages + 1))
+
+    if current <= show_pages + 1:
+        return list(range(1, 2 * show_pages + 2))
+
+    if current >= total_pages - show_pages:
+        return list(range(total_pages - 2 * show_pages, total_pages + 1))
+
+    return list(range(current - show_pages, current + show_pages + 1))
+
+
+def build_template_environment(
+    result: dict, geo: dict[str, Union[str, float]], version: int, request, q: list
+) -> dict:
+    """
+    Constructs the environment dictionary for rendering the template.
+
+    Args:
+        result: The search results.
+        geo: The geographical search parameters.
+        version: The version of the search functionality.
+        q: Search query string
+
+    Returns:
+        dict: The environment variables for the template.
+    """
     query_combined = " ".join(q) if isinstance(q, list) else q
+
     proximity_entity = geo.get("proximity_entity")
 
     sponsors = {
@@ -3087,19 +3280,33 @@ def render_search_result(request, version=2):
         for org, sponsorship in Sponsorship.active_by_org()
     }
 
-    campus_facilites = {
+    campus_facilities = {
         fac.id: fac for fac in Facility.objects.exclude(campus_id__isnull=True)
     }
 
     for tag, rows in list(result.items()):
         for item in rows:
             item["sponsorship"] = sponsors.get(item["org_id"])
+            if tag == "fac" and item["id"] in campus_facilities:
+                item["campus"] = campus_facilities[item["id"]].campus_id
 
-            if tag == "fac" and item["id"] in campus_facilites:
-                item["campus"] = campus_facilites[item["id"]].campus_id
+    combined_results = combine_search_results(result)
 
-    template = loader.get_template("site/search_result.html")
-    env = make_env(
+    page_number = int(request.GET.get("page", 1))
+    paginator = Paginator(combined_results, 10)
+    page_obj = paginator.get_page(page_number)
+
+    visible_page_range = get_page_range(paginator, page_obj.number)
+
+    as_suggestion = None
+    if query_combined.isdigit():
+        networks = result.get(Network._handleref.tag, [])
+        if networks:
+            first_net = networks[0]
+            if str(first_net.get("extra", {}).get("asn")) == query_combined:
+                as_suggestion = first_net
+
+    return make_env(
         **{
             "search_ixp": result.get(InternetExchange._handleref.tag),
             "search_net": result.get(Network._handleref.tag),
@@ -3113,21 +3320,33 @@ def render_search_result(request, version=2):
             "count_org": len(result.get(Organization._handleref.tag, [])),
             "count_campus": len(result.get(Campus._handleref.tag, [])),
             "count_carrier": len(result.get(Carrier._handleref.tag, [])),
+            "combined_results": page_obj,
+            "visible_page_range": visible_page_range,
+            "total_results": len(combined_results),
             "proximity_entity": proximity_entity,
             "geo": geo,
             "query_combined": query_combined,
-            "incomplete_in_search": incomplete_in_search,
+            "incomplete_in_search": geo.pop("incomplete_in_search", False),
             "search_version": version,
+            "as_suggestion": as_suggestion,
         }
     )
-    return HttpResponse(template.render(env, request))
 
 
-def process_near_search(q, geo):
+def process_near_search(
+    q: list[str], geo: dict[str, Union[str, float]]
+) -> dict[str, Union[str, float]]:
     """
     Handles "NEAR" search patterns.
     Extracts and processes the "NEAR" search patterns from the query string
     and updates the geo dictionary which includes the geographical search parameters.
+
+    Args:
+        q: The list of query terms.
+        geo: A dictionary to hold geographical search parameters.
+
+    Returns:
+        dict[str, Union[str, float]]: Updated geo dictionary.
     """
     for idx, query in enumerate(q):
         list_of_words = query.split()
@@ -3144,11 +3363,20 @@ def process_near_search(q, geo):
     return geo
 
 
-def process_in_search(q, geo):
+def process_in_search(
+    q: list[str], geo: dict[str, Union[str, float]]
+) -> dict[str, Union[str, float]]:
     """
     Handles "IN" search patterns.
     Extracts and processes the "IN" search patterns from the query string
     and updates the geo dictionary which includes the geographical search parameters.
+
+    Args:
+        q: The list of query terms.
+        geo: A dictionary to hold geographical search parameters.
+
+    Returns:
+        dict[str, Union[str, float]]: Updated geo dictionary.
     """
     for idx, query in enumerate(q):
         list_of_words = query.split()
@@ -3161,9 +3389,25 @@ def process_in_search(q, geo):
     return geo
 
 
-def handle_coordinate_search(list_of_words, idx, q, query_idx, geo):
+def handle_coordinate_search(
+    list_of_words: list[str],
+    idx: int,
+    q: list[str],
+    query_idx: int,
+    geo: dict[str, Union[str, float]],
+) -> dict[str, Union[str, float]]:
     """
     Handles coordinate search and updates the geo dictionary.
+
+    Args:
+        list_of_words: The list of words from the search query.
+        idx: The index of the "near" keyword.
+        q: The original list of queries.
+        query_idx: The index of the current query in the list.
+        geo: A dictionary to hold geographical search parameters.
+
+    Returns:
+        dict[str, Union[str, float]]: Updated geo dictionary.
     """
     try:
         next_index = list_of_words[idx + 1]
@@ -3187,12 +3431,28 @@ def handle_coordinate_search(list_of_words, idx, q, query_idx, geo):
     return geo
 
 
-def handle_proximity_entity_search(list_of_words, idx, q, query_idx, geo):
+def handle_proximity_entity_search(
+    list_of_words: list[str],
+    idx: int,
+    q: list[str],
+    query_idx: int,
+    geo: dict[str, Union[str, float]],
+) -> dict[str, Union[str, float]]:
     """
     Handles proximity entity search and updates the geo dictionary.
 
     Will search for an entity (fac, org etc.) by name and return its lat/lng
     to `geo` if found. The distance is set to 20km.
+
+    Args:
+        list_of_words: The list of words from the search query.
+        idx: The index of the "near" keyword.
+        q: The original list of queries.
+        query_idx: The index of the current query in the list.
+        geo: A dictionary to hold geographical search parameters.
+
+    Returns:
+        dict[str, Union[str, float]]: Updated geo dictionary.
     """
     try:
         search_string = " ".join(list_of_words[idx + 1 :])
@@ -3225,23 +3485,44 @@ def handle_proximity_entity_search(list_of_words, idx, q, query_idx, geo):
     return geo
 
 
-def handle_city_country_search(list_of_words, idx, q, query_idx, geo):
+def handle_city_country_search(
+    list_of_words: list[str],
+    idx: int,
+    q: list[str],
+    query_idx: int,
+    geo: dict[str, Union[str, float]],
+) -> dict[str, Union[str, float]]:
     """
     Handles city and country search and updates the geo dictionary.
 
     This will send of a request to google maps to geocode the city and set the
     lat and long to `geo`. The distance is set to 50km.
+
+    Args:
+        list_of_words: The list of words from the search query.
+        idx: The index of the "near" or "in" keyword.
+        q: The original list of queries.
+        query_idx: The index of the current query in the list.
+        geo: A dictionary to hold geographical search parameters.
+
+    Returns:
+        dict[str, Union[str, float]]: Updated geo dictionary.
     """
     try:
         # Find the location and country in the list of words
         location_words = []
         i = idx + 1
+        skip_in_once = False
         while i < len(list_of_words):
-            if list_of_words[i] in ["near", "in"]:
-                i += 1
-                continue
+            current_word = list_of_words[i].strip(",")
 
-            location_words.append(list_of_words[i].strip(","))
+            if current_word in ["near", "in"]:
+                if current_word == ["in"] and not skip_in_once:
+                    skip_in_once = True
+                    i += 1
+                    continue
+
+            location_words.append(current_word)
             i += 1
 
         location = " ".join(location_words)
@@ -3275,10 +3556,17 @@ def handle_city_country_search(list_of_words, idx, q, query_idx, geo):
             geo.update({"incomplete_in_search": location})
             return
 
+        filtered_result = [
+            result
+            for result in geocode_result
+            if "types" in result
+            and "country" in result["types"]
+            and "political" in result["types"]
+        ]
+
+        selected_result = filtered_result[0] if filtered_result else geocode_result[0]
         # returns locality, state and country in a dict
-        location_dict = gmaps.build_location_dict(
-            geocode_result[0].get("address_components")
-        )
+        location_dict = gmaps.build_location_dict(selected_result["address_components"])
 
         # get geo coords fromn google result
         coords = geocode_result[0].get("geometry").get("location")
@@ -3373,6 +3661,18 @@ class LoginView(TwoFactorLoginView):
             return redirect("/")
 
         return super().get(*args, **kwargs)
+
+    def get_form(self, *args, **kwargs):
+        form = super().get_form(*args, **kwargs)
+
+        if hasattr(form, "error_messages"):
+            form.error_messages = {
+                "invalid_login": "Please enter a correct %(username)s and password. Note that password "
+                "is case-sensitive.",
+                "inactive": "This account is inactive.",
+            }
+
+        return form
 
     def get_form_kwargs(self, step=None):
         kwargs = super().get_form_kwargs(step=step)

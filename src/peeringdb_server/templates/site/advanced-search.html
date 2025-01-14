@@ -200,6 +200,16 @@
                 const dataFields = rowElement.querySelectorAll('[data-edit-name]');
                 dataFields.forEach(field => {
                   const fieldName = field.dataset.editName;
+
+                  var sortValue = item[fieldName];
+
+                  // check if sortValue is a number
+                  if (!isNaN(sortValue)) {
+                    sortValue = parseFloat(sortValue);
+                  }
+
+                  $(field).data("sort-value", typeof sortValue == "string" ? sortValue.toLowerCase() : sortValue);
+
                   field.textContent = item[fieldName] || '';
 
                   if (field.tagName === 'A') {
@@ -248,6 +258,7 @@
             inputElement = $(this).find(":input");
           }
 
+
           // Get the value directly from the form element
           let value = null;
 
@@ -257,6 +268,14 @@
             value = $(this).val();
           } else if ($(this).is('input[type="checkbox"]')) {
             value = $(this).prop('checked');
+          }
+
+          // Special handler for distance, needs to discard if its just the unit
+          // (e.g., "km" or "miles")
+          if (name === "distance") {
+            if (value === "km" || value === "miles") {
+              value = "";
+            }
           }
 
           // Handle empty values and the default value for traffic capacity
@@ -329,7 +348,6 @@
             twentyc.data.loading_done(function () {
               var target = twentyc.editable.target.instantiate(searchForm);
               target.sender = searchForm;
-
 
               PeeringDB.advanced_search_result[reftag] = {
                 param: getSearchParameters(reftag)

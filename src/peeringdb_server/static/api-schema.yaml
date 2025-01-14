@@ -5937,6 +5937,9 @@ paths:
                   items:
                     type: integer
                   readOnly: true
+                fac_count:
+                  type: string
+                  readOnly: true
                 created:
                   type: string
                   format: date-time
@@ -6451,6 +6454,9 @@ paths:
                   items:
                     type: integer
                   readOnly: true
+                fac_count:
+                  type: string
+                  readOnly: true
                 created:
                   type: string
                   format: date-time
@@ -6917,6 +6923,9 @@ paths:
                   type: array
                   items:
                     type: integer
+                  readOnly: true
+                fac_count:
+                  type: string
                   readOnly: true
                 created:
                   type: string
@@ -8125,6 +8134,9 @@ paths:
                       type: array
                       items:
                         type: integer
+                      readOnly: true
+                    fac_count:
+                      type: string
                       readOnly: true
                     created:
                       type: string
@@ -9918,6 +9930,9 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    fac_count:
+                      type: string
+                      readOnly: true
                     created:
                       type: string
                       format: date-time
@@ -11662,6 +11677,9 @@ paths:
                       type: array
                       items:
                         type: integer
+                      readOnly: true
+                    fac_count:
+                      type: string
                       readOnly: true
                     created:
                       type: string
@@ -57575,6 +57593,9 @@ components:
           items:
             type: integer
           readOnly: true
+        fac_count:
+          type: string
+          readOnly: true
         created:
           type: string
           format: date-time
@@ -58023,6 +58044,9 @@ components:
               type: array
               items:
                 type: integer
+              readOnly: true
+            fac_count:
+              type: string
               readOnly: true
             created:
               type: string
