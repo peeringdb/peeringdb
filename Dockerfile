@@ -63,8 +63,7 @@ RUN apt-get update -qy \
       -o APT::Install-Suggests=false \
       $build_deps
 
-# Security-conscious organizations should package/review uv themselves.
-COPY --from=ghcr.io/astral-sh/uv:0.4 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /usr/local/bin/uv
 
 WORKDIR /srv/www.peeringdb.com
 
@@ -86,47 +85,10 @@ RUN uv venv $virtual_env
 RUN --mount=type=cache,target=/root/.cache \
     uv sync --locked --no-dev --no-install-project
 
-# Now install the APPLICATION from `/src` without any dependencies.
-# `/src` will NOT be copied into the runtime container.
-# LEAVE THIS OUT if your application is NOT a proper Python package.
-# As of uv 0.4.11, you can also use
-# `cd /src && uv sync --locked --no-dev --no-editable` instead.
 COPY . /src
 RUN cd /src && uv sync --locked --no-dev --no-editable
 
-# COPY . /src
-# RUN --mount=type=cache,target=/root/.cache \
-#     uv pip install \
-#         --python=$UV_PROJECT_ENVIRONMENT \
-#         --no-deps \
-#         /src
-
-
-
-# RUN true is used here to separate problematic COPY statements,
-# per this issue: https://github.com/moby/moby/issues/37965
-
-
-
-## build container
-#FROM base as builder
-#
-#ARG build_deps
-#
-#RUN apk --update --no-cache add $build_deps
-#
-#RUN pip install -U pip poetry
-## create venv and update venv pip
-#RUN python3 -m venv "$VIRTUAL_ENV" && pip install -U pip
-#
-#WORKDIR /srv/www.peeringdb.com
-#COPY poetry.lock pyproject.toml ./
-## install dev now so we don't need a build env for testing (adds 8M)
-#RUN poetry install --no-root
-#
-
 #### final image here
-
 
 FROM base as final
 
